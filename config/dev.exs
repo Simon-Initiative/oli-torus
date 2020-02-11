@@ -2,10 +2,10 @@ use Mix.Config
 
 # Configure your database
 config :oli, Oli.Repo,
-  username: "postgres",
-  password: "postgres",
-  database: "oli_dev",
-  hostname: "localhost",
+  username: System.get_env("DB_USER", "postgres"),
+  password: System.get_env("DB_PASSWORD", "postgres"),
+  database: System.get_env("DB_NAME", "oli_dev"),
+  hostname: System.get_env("DB_HOST", "localhost"),
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 

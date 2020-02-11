@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+      "allowSyntheticDefaultImports": true,
+      "module": "es6",
+      "target": "es6",
+      "jsx": "preserve",
+      "moduleResolution": "node",
+      "emitDecoratorMetadata": true,
+      "experimentalDecorators": true,
+      "noImplicitAny": true,
+      "strictNullChecks": true,
+      "removeComments": false,
+      "inlineSources": true,
+      "sourceMap": true,
+      "noEmitHelpers": false,
+      "alwaysStrict": true,
+      "outDir": "./dev",
+      "baseUrl": ".",
+      "paths": {
+        "*": ["src/*"]
+      }
+  },
+  "include": [
+    "src/**/*",
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

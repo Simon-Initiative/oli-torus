@@ -1,0 +1,26 @@
+version: '3'
+services:
+  postgres:
+    image: postgres
+    container_name: oli_postgres
+    ports:
+      - 5432:5432
+    env_file: ./postgres.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    container_name: oli_app
+    ports:
+      - "4000:4000"
+    env_file: ./oli.env
+    volumes:
+      - ./:/usr/src/app
+      - /usr/src/app/assets/node_modules
+
+  # ngrok:
+  #   container_name: oli_ngrok
+
+volumes:
+  postgres_data:

@@ -1,20 +1,45 @@
-# Oli
+# OLI
 
-To start your Phoenix server:
+## Dependencies
 
-  * Install dependencies with `mix deps.get`
-  * Create and migrate your database with `mix ecto.setup`
-  * Install Node.js dependencies with `cd assets && npm install`
-  * Start Phoenix endpoint with `mix phx.server`
+Have installed the following:
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+- Elixir (`$ brew install elixir`)
+- Phoenix (`$ mix archive.install hex phx_new 1.4.10`)
+- Docker
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+## Getting Started
 
-## Learn more
+1. Copy example configuration env files:
+```
+$ cp oli.example.env oli.env
+$ cp postgres.example.env postgres.env
+```
 
-  * Official website: http://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Mailing list: http://groups.google.com/group/phoenix-talk
-  * Source: https://github.com/phoenixframework/phoenix
+1. Start dockerized postgres 12 via the included docker-compose file:
+```
+$ docker-compose up -d postgres && docker-compose logs -f
+```
+
+1. Install client and server dependencies:
+```
+$ cd assets && npm install
+$ cd ../ && mix deps.get
+```
+
+1. Create database
+```
+$ mix ecto.create
+```
+
+1. Run migration to create schema
+```
+$ mix ecto.migrate
+```
+
+1. Start Phoenix server
+```
+$ mix phx.server
+```
+
+1. Open your web browser to `localhost:4000`
