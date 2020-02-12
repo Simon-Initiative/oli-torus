@@ -25,9 +25,9 @@ module.exports = (env, options) => ({
     extensions: ['.ts', '.tsx', '.js'],
     // Add webpack aliases for top level imports
     alias: {
-        components: path.resolve(__dirname, 'src/components'),
-        state: path.resolve(__dirname, 'src/state'),
-        utils: path.resolve(__dirname, 'src/utils'),
+      components: path.resolve(__dirname, 'src/components'),
+      state: path.resolve(__dirname, 'src/state'),
+      utils: path.resolve(__dirname, 'src/utils'),
     },
   },
   module: {
@@ -47,16 +47,16 @@ module.exports = (env, options) => ({
       { test: /\.ts$/, use: ['babel-loader', 'ts-loader'], exclude: /node_modules/ },
       {
         test: /\.tsx$/, use: [
-            {
-                loader: 'babel-loader',
-                options: {
-                    // This is a feature of `babel-loader` for webpack (not Babel itself).
-                    // It enables caching results in ./node_modules/.cache/babel-loader/
-                    // directory for faster rebuilds.
-                    cacheDirectory: true
-                },
+          {
+            loader: 'babel-loader',
+            options: {
+              // This is a feature of `babel-loader` for webpack (not Babel itself).
+              // It enables caching results in ./node_modules/.cache/babel-loader/
+              // directory for faster rebuilds.
+              cacheDirectory: true
             },
-            { loader: 'ts-loader' }
+          },
+          { loader: 'ts-loader' }
         ], exclude: /node_modules/
       }
     ]
