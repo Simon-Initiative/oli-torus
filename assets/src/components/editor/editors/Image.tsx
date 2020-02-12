@@ -7,6 +7,11 @@ interface ImageSize {
   height: string;
 }
 
+type Position = {
+  x: number;
+  y: number;
+}
+
 const fetchImageSize = (src: string): Promise<ImageSize> => {
   const img = new (window as any).Image();
   return new Promise((resolve, reject) => {
@@ -35,8 +40,7 @@ export interface ImageState {
 
 export class ImageEditor extends React.Component<ImageProps, ImageState> {
 
-  lastX = null;
-  lastY = null;
+  last : Maybe<Position> = Maybe.nothing();
   fetchSize: boolean;
   down: boolean;
 
@@ -70,16 +74,14 @@ export class ImageEditor extends React.Component<ImageProps, ImageState> {
             size.height = '500';
             size.width = (500 / ar) + '';
           }
-          this.setState({ size });
+          this.setState({ size: Maybe.just(size) });
         } else {
           if (parseInt(size.height, 10) > 500) {
             size.height = '500';
             size.width = (500 * ar) + '';
           }
         }
-        console.log('fetched)');
-        console.log(size);
-        this.setState({ size });
+        this.setState({ size: Maybe.just(size) });
 
 
       });
@@ -91,14 +93,10 @@ export class ImageEditor extends React.Component<ImageProps, ImageState> {
     const { editor, element, isFocused } = this.props;
     const image = element;
 
-    function onChange(event) {
-      //editor.setNodeByKey(node.key, { data: mutate<ImageData>(image, { src: event.target.value }) })
-    }
-
     const down = () => {
       this.down = true;
     }
-    const up = (e) => {
+    const up = (e: any) => {
       e.preventDefault();
       e.stopPropagation();
       if (this.down) {
@@ -109,32 +107,38 @@ export class ImageEditor extends React.Component<ImageProps, ImageState> {
       }
 
     }
-    const move = (e) => {
+    const move = (e: MouseEvent) => {
       if (this.down) {
 
         const { clientX, clientY } = e;
-        if (this.lastX === null) {
-          this.lastX = clientX;
-          this.lastY = clientY;
-        } else {
 
-          const xDiff = clientX - this.lastX;
-          const yDiff = clientY - this.lastY;
-          this.lastX = clientX;
-          this.lastY = clientY;
-          const ar = parseInt(this.state.size.height, 10) / parseInt(this.state.size.width, 10);
+        this.last.caseOf({
+          just: last => {
+            const { x, y } = last;
+            const xDiff = clientX - x;
+            const yDiff = clientY - y;
+            this.last = Maybe.just({ x: clientX, y: clientY });
 
-          if (Math.abs(xDiff) > Math.abs(yDiff)) {
-            const width = '' + (parseInt(this.state.size.width, 10) + xDiff);
-            const height = '' + (ar * parseInt(width, 10));
-            this.setState({ size: { height, width } });
-          } else {
-            const height = '' + (parseInt(this.state.size.height, 10) + yDiff);
-            const width = '' + (parseInt(height, 10) / ar);
-            this.setState({ size: { height, width } });
-          }
+            this.state.size.lift(s => {
+              const ar = parseInt(s.height, 10) / parseInt(s.width, 10);
 
-        }
+              if (Math.abs(xDiff) > Math.abs(yDiff)) {
+                const width = '' + (parseInt(s.width, 10) + xDiff);
+                const height = '' + (ar * parseInt(width, 10));
+                this.setState({ size: Maybe.just({ height, width }) });
+              } else {
+                const height = '' + (parseInt(s.height, 10) + yDiff);
+                const width = '' + (parseInt(height, 10) / ar);
+                this.setState({ size: Maybe.just({ height, width }) });
+              }
+            });
+
+            
+          },
+          nothing: () => {
+            this.last = Maybe.just({ x: clientX, y: clientY });
+          },
+        })
       }
     }
 
@@ -166,10 +170,10 @@ export class ImageEditor extends React.Component<ImageProps, ImageState> {
         style={handleStyle}><i className={'fa fa-arrows-alt'} /></div>
       : null;
 
-    const height = this.state.size === null
-      ? undefined : this.state.size.height;
-    const width = this.state.size === null
-      ? undefined : this.state.size.width;
+    const { height, width } = this.state.size.caseOf({
+      just: s => s,
+      nothing: () => (({ height: undefined, width: undefined }) as any),
+    });
 
     return (
       <div {...this.props.attributes}
