@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import * as ReactDOM from 'react-dom';
 
 import { Slate, Editable, ReactEditor, withReact, useSlate } from 'slate-react'
@@ -7,6 +7,12 @@ import { withHistory } from 'slate-history'
 import { Mark, ModelElement, schema } from './model';
 import { editorFor, markFor, hoverMenuButtons } from './editors';
 import { Range } from 'slate'
+import { Command, CommandDesc } from './interfaces';
+
+// Width of padding on right hand side to allow toolbar toggler
+// to never obstruct text
+const gutterWidth = 18;  
+
 
 const withEmbeds = (editor: SlateEditor) => {
   const { isVoid } = editor;
@@ -14,9 +20,17 @@ const withEmbeds = (editor: SlateEditor) => {
   return editor;
 }
 
+
+export type GroupDivider = {
+  type: 'GroupDivider'
+}
+
+export type ToolbarItem = CommandDesc | GroupDivider;
+
 export type EditorProps = {
   onEdit: (value: any) => void;
   value: Node[];
+  toolbarItems: ToolbarItem[];
 }
 
 export const Editor = (props: EditorProps) => {
@@ -31,10 +45,12 @@ export const Editor = (props: EditorProps) => {
   const border = {
     border: 'solid lightgray 1px',
     padding: '4px',
+    paddingRight: gutterWidth + 'px'
   }
 
   return (
     <div style={border}>
+
       <Slate
         editor={editor as any}
         value={props.value}
@@ -42,7 +58,7 @@ export const Editor = (props: EditorProps) => {
           props.onEdit(value);
         }}
       >
-        <FixedToolbar />
+        <FixedToolbar toolbarItems={props.toolbarItems}/>
         <HoveringToolbar />
         <Editable
           renderElement={renderElement}
@@ -86,14 +102,12 @@ const Leaf = ({ attributes, children, leaf }: any) => {
   return <span {...attributes}>{markup}</span>
 }
 
-
-
-function positionAndShow(el : HTMLElement) {
+function positionHovering(el : HTMLElement) {
   const menu = el;
   const native = window.getSelection() as any;
   const range = native.getRangeAt(0);
   const rect = (range as any).getBoundingClientRect();
-  (menu as any).style.opacity = 1;
+  
   (menu as any).style.position = 'absolute';
   (menu as any).style.top =
     ((rect as any).top + (window as any).pageYOffset) - 30 + 'px';
@@ -107,13 +121,8 @@ function positionAndShow(el : HTMLElement) {
 }
 
 function hideToolbar(el: HTMLElement) {
-  el.style.opacity = '0';
+  el.style.visibility = 'hidden';
 }
-
-function showToolbar(el: HTMLElement) {
-  el.style.opacity = '1';
-}
-
 
 function shouldHideToolbar(editor : ReactEditor) {
   const { selection } = editor;
@@ -123,52 +132,6 @@ function shouldHideToolbar(editor : ReactEditor) {
     SlateEditor.string(editor, selection) === '';
 }
 
-function shouldHideFixedToolbar(editor : ReactEditor) {
- 
-  return  !ReactEditor.isFocused(editor);
-}
-
-
-const FixedToolbar = () => {
-  const ref = useRef()
-  const editor = useSlate()
-
-  useEffect(() => {
-    const el = ref.current as any;
-
-    if (!el) {
-      return;
-    }
-
-    if (shouldHideFixedToolbar(editor)) {
-      hideToolbar(el);
-    } else {
-      showToolbar(el);
-    }
-  })
-
-  const style = {
-    position: 'absolute',
-    zIndex: 1,
-    top: '0px',
-    left: '0px',
-    marginTop: '-6px',
-    borderRadius: '4px',
-    transition: 'opacity 0.75s',
-  } as any;
-
-  return ReactDOM.createPortal(
-    <div ref={(ref as any)} style={{ opacity: 0, position: 'relative' }}>
-      <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>
-        <ToolbarButton icon="fas fa-bold" command={() => console.log('it')}/>
-        <ToolbarButton icon="fas fa-bold" command={() => console.log('it')}/>
-        <ToolbarButton icon="fas fa-bold" command={() => console.log('it')}/>
-        <ToolbarButton icon="fas fa-bold" command={() => console.log('it')}/>
-        <ToolbarButton icon="fas fa-bold" command={() => console.log('it')}/>
-      </div>
-    </div>, document.body
-  )
-}
 
 const HoveringToolbar = () => {
   const ref = useRef()
@@ -184,7 +147,8 @@ const HoveringToolbar = () => {
     if (shouldHideToolbar(editor)) {
       hideToolbar(el);
     } else {
-      positionAndShow(el);
+      positionHovering(el);
+      showToolbar(el)
     }
   })
 
@@ -199,12 +163,90 @@ const HoveringToolbar = () => {
   } as any;
 
   return ReactDOM.createPortal(
-    <div ref={(ref as any)} style={{ opacity: 0, position: 'relative' }}>
+    <div ref={(ref as any)} style={{ visibility: 'hidden', position: 'relative' }}>
       <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>
         {hoverMenuButtons.map(b => <FormatButton key={b.icon} icon={b.icon} command={b.command} />)}
       </div>
     </div>, document.body
   )
+}
+
+function showToolbar(el: HTMLElement) {
+  el.style.visibility = 'visible';
+}
+
+function shouldHideFixedToolbar(editor : ReactEditor) {
+  return  !ReactEditor.isFocused(editor);
+}
+
+type FixedToolbarProps = {
+  toolbarItems: ToolbarItem[];
+}
+const FixedToolbar = (props: FixedToolbarProps) => {
+  const { toolbarItems } = props;
+  const [ collapsed, setCollapsed ] = useState(false);
+  const ref = useRef()
+  const editor = useSlate()
+
+  const icon = collapsed ? 'fas fa-angle-left' : 'fas fa-angle-right';
+
+  useEffect(() => {
+    const el = ref.current as any;
+
+    if (!el) {
+      return;
+    }
+
+    if (shouldHideFixedToolbar(editor)) {
+      hideToolbar(el);
+    } else {
+      showToolbar(el);
+    }
+  });
+
+  const style = {
+    position: 'absolute',
+    zIndex: 1,
+    top: '0px',
+    right: -gutterWidth + 'px',
+    borderRadius: '4px',
+    transition: 'opacity 0.75s',
+  } as any;
+
+  const buttons = collapsed
+    ? []
+    : toolbarItems.map(t => {
+        if (t.type === 'CommandDesc') {
+          return <ToolbarButton icon={t.icon} command={t.command}/>
+        } else {
+          return <Spacer/>
+        }
+      });
+
+      
+  return (
+    <div ref={(ref as any)} style={{ visibility: 'hidden', position: 'sticky', top: '0px' }}>
+      <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>
+        {buttons}
+        <button
+          className="btn btn-secondary btn-sm"
+          style={{ width: '10px' }}
+          onMouseDown={event => {
+            event.preventDefault()
+            setCollapsed(!collapsed);
+          }}
+        >
+          <i className={icon}></i>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const Spacer = () => {
+  return (
+    <span style={{ minWidth: '5px', maxWidth: '5px'}}/>
+  );
 }
 
 const FormatButton = ({ icon, command }: any) => {
@@ -217,7 +259,7 @@ const FormatButton = ({ icon, command }: any) => {
         command(editor);
       }}
     >
-      <i className={`${icon} icon`}></i>
+      <i className={icon}></i>
     </button>
   )
 }
@@ -229,10 +271,10 @@ const ToolbarButton = ({ icon, command }: any) => {
       className="btn btn-secondary btn-sm"
       onMouseDown={event => {
         event.preventDefault()
-        command(editor);
+        command.execute(editor);
       }}
     >
-      <i className={`${icon} icon`}></i>
+      <i className={icon}></i>
     </button>
   )
 }

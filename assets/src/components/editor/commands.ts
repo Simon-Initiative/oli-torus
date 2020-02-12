@@ -18,3 +18,4 @@ export function toggleMark(editor: Editor, mark: Mark) {
         { match: n => Text.isText(n), split: true }
     );
 }
+
