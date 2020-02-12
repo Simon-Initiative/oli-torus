@@ -79,8 +79,8 @@ export function markFor(mark: Mark, children: any): JSX.Element {
 }
 
 export const hoverMenuButtons = [
-  { icon: 'bold', command: (e: Editor) => Commands.toggleMark(e, 'strong') },
-  { icon: 'italic', command: (e: Editor) => Commands.toggleMark(e, 'em') },
-  { icon: 'code', command: (e: Editor) => Commands.toggleMark(e, 'code') }
+  { icon: 'fas fa-bold', command: (e: Editor) => Commands.toggleMark(e, 'strong') },
+  { icon: 'fas fa-italic', command: (e: Editor) => Commands.toggleMark(e, 'em') },
+  { icon: 'fas fa-code', command: (e: Editor) => Commands.toggleMark(e, 'code') }
 ];
 

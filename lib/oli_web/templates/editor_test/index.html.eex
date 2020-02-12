@@ -1,0 +1,7 @@
+<script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/components.js") %>"></script>
+
+<div id="app"/>
+
+<script>
+window.component.mount('TestEditor', document.getElementById('app'));
+</script>
