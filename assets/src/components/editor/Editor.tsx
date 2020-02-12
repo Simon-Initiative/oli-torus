@@ -7,7 +7,6 @@ import { withHistory } from 'slate-history'
 import { Mark, ModelElement, schema } from './model';
 import { editorFor, markFor, hoverMenuButtons } from './editors';
 import { Range } from 'slate'
-import { DOMElement } from 'slate-react/dist/utils/dom';
 
 const withEmbeds = (editor: SlateEditor) => {
   const { isVoid } = editor;
@@ -29,34 +28,42 @@ export const Editor = (props: EditorProps) => {
     return editorFor(model, props, editor);
   }, []);
 
+  const border = {
+    border: 'solid lightgray 1px',
+    padding: '4px',
+  }
+
   return (
-    <Slate
-      editor={editor as any}
-      value={props.value}
-      onChange={value => {
-        props.onEdit(value);
-      }}
-    >
-      <HoveringToolbar />
-      <Editable
-        renderElement={renderElement}
-        renderLeaf={props => <Leaf {...props} />}
-        placeholder="Enter some text..."
-        onDOMBeforeInput={event => {
-          switch ((event as any).inputType) {
-            case 'formatBold':
-              return editor.exec({ type: 'toggle_format', format: 'bold' })
-            case 'formatItalic':
-              return editor.exec({ type: 'toggle_format', format: 'italic' })
-            case 'formatUnderline':
-              return editor.exec({
-                type: 'toggle_format',
-                format: 'underlined',
-              })
-          }
+    <div style={border}>
+      <Slate
+        editor={editor as any}
+        value={props.value}
+        onChange={value => {
+          props.onEdit(value);
         }}
-      />
-    </Slate>
+      >
+        <FixedToolbar />
+        <HoveringToolbar />
+        <Editable
+          renderElement={renderElement}
+          renderLeaf={props => <Leaf {...props} />}
+          placeholder="Enter some text..."
+          onDOMBeforeInput={event => {
+            switch ((event as any).inputType) {
+              case 'formatBold':
+                return editor.exec({ type: 'toggle_format', format: 'bold' })
+              case 'formatItalic':
+                return editor.exec({ type: 'toggle_format', format: 'italic' })
+              case 'formatUnderline':
+                return editor.exec({
+                  type: 'toggle_format',
+                  format: 'underlined',
+                })
+            }
+          }}
+        />
+      </Slate>
+    </div>
   )
 }
 
@@ -103,12 +110,64 @@ function hideToolbar(el: HTMLElement) {
   el.style.opacity = '0';
 }
 
+function showToolbar(el: HTMLElement) {
+  el.style.opacity = '1';
+}
+
+
 function shouldHideToolbar(editor : ReactEditor) {
   const { selection } = editor;
   return  !selection ||
     !ReactEditor.isFocused(editor) ||
     Range.isCollapsed(selection) ||
     SlateEditor.string(editor, selection) === '';
+}
+
+function shouldHideFixedToolbar(editor : ReactEditor) {
+ 
+  return  !ReactEditor.isFocused(editor);
+}
+
+
+const FixedToolbar = () => {
+  const ref = useRef()
+  const editor = useSlate()
+
+  useEffect(() => {
+    const el = ref.current as any;
+
+    if (!el) {
+      return;
+    }
+
+    if (shouldHideFixedToolbar(editor)) {
+      hideToolbar(el);
+    } else {
+      showToolbar(el);
+    }
+  })
+
+  const style = {
+    position: 'absolute',
+    zIndex: 1,
+    top: '0px',
+    left: '0px',
+    marginTop: '-6px',
+    borderRadius: '4px',
+    transition: 'opacity 0.75s',
+  } as any;
+
+  return ReactDOM.createPortal(
+    <div ref={(ref as any)} style={{ opacity: 0, position: 'relative' }}>
+      <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>
+        <ToolbarButton icon="fas fa-bold" command={() => console.log('it')}/>
+        <ToolbarButton icon="fas fa-bold" command={() => console.log('it')}/>
+        <ToolbarButton icon="fas fa-bold" command={() => console.log('it')}/>
+        <ToolbarButton icon="fas fa-bold" command={() => console.log('it')}/>
+        <ToolbarButton icon="fas fa-bold" command={() => console.log('it')}/>
+      </div>
+    </div>, document.body
+  )
 }
 
 const HoveringToolbar = () => {
@@ -152,7 +211,22 @@ const FormatButton = ({ icon, command }: any) => {
   const editor = useSlate()
   return (
     <button
-      className="btn btn-secondary"
+      className="btn btn-secondary btn-sm"
+      onMouseDown={event => {
+        event.preventDefault()
+        command(editor);
+      }}
+    >
+      <i className={`${icon} icon`}></i>
+    </button>
+  )
+}
+
+const ToolbarButton = ({ icon, command }: any) => {
+  const editor = useSlate()
+  return (
+    <button
+      className="btn btn-secondary btn-sm"
       onMouseDown={event => {
         event.preventDefault()
         command(editor);
