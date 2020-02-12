@@ -7,7 +7,7 @@ import { Editor } from './Editor';
 const initialValue : Node[] = [
     {
         type: 'p',
-        children: [ {text: 'This is the default content'} ]
+        children: [ {text: 'This is the editor test view.'} ]
     }
 ];
 
