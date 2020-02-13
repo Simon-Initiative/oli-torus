@@ -1,5 +1,7 @@
 # OLI
 
+![Elixir CI on Branch Push](https://github.com/Simon-Initiative/oli-torus/workflows/Elixir%20CI%20on%20Branch%20Push/badge.svg)
+
 ## Dependencies
 
 Have installed the following:
