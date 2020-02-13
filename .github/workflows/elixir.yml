@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Setup Configuration
-      run: cp oli.test.env oli.env && cp postgres.test.env postgres.env
+      run: cp oli.example.env oli.env && cp postgres.example.env postgres.env
     - name: Start Test Database
       run: docker-compose up -d postgres
     - name: Setup elixir
