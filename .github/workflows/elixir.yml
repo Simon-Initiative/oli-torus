@@ -1,4 +1,4 @@
-name: Elixir CI
+name: Elixir CI on Branch Push
 
 on: push
 
@@ -13,7 +13,7 @@ jobs:
       uses: actions/setup-elixir@v1
       with:
         elixir-version: 1.5 # Define the elixir version [required]
-#         otp-version: 22.2 # Define the OTP version [required]
+        otp-version: 22.2 # Define the OTP version [required]
     - name: Setup Configuration
       run: cp oli.test.env oli.env && cp postgres.test.env postgres.env
     - name: Start Test Database
