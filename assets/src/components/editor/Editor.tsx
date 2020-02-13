@@ -1,10 +1,9 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import * as ReactDOM from 'react-dom';
-
 import { Slate, Editable, ReactEditor, withReact, useSlate } from 'slate-react'
 import { Editor as SlateEditor, createEditor, Node } from 'slate'
 import { withHistory } from 'slate-history'
-import { Mark, ModelElement, schema } from './model';
+import { Mark, ModelElement, schema } from 'data/content/model';
 import { editorFor, markFor, hoverMenuButtons } from './editors';
 import { Range } from 'slate'
 import { Command, CommandDesc } from './interfaces';
@@ -12,13 +11,6 @@ import { Command, CommandDesc } from './interfaces';
 // Width of padding on right hand side to allow toolbar toggler
 // to never obstruct text
 const gutterWidth = 18;  
-
-
-const withEmbeds = (editor: SlateEditor) => {
-  const { isVoid } = editor;
-  editor.isVoid = element => ((schema as any)[element.type].isVoid ? true : isVoid(element));
-  return editor;
-}
 
 
 export type GroupDivider = {
@@ -35,7 +27,13 @@ export type EditorProps = {
 
 export const Editor = (props: EditorProps) => {
   
-  const editor = useMemo(() => withEmbeds(withHistory(withReact(createEditor()))), [])
+  const editor = useMemo(() => withHistory(withReact(createEditor())), [])
+
+  editor.isVoid = element => {
+    const result = (schema as any)[element.type].isVoid;
+    console.log(element.type + ' ' + result);
+    return result;
+  }
 
   const renderElement = useCallback(props => {
     const model = props.element as ModelElement;

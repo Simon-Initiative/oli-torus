@@ -3,7 +3,22 @@ import React, { useState } from 'react'
 import { Node } from 'slate'
 import { Editor, ToolbarItem } from './Editor';
 import { ReactEditor } from 'slate-react';
-import { Command, CommandDesc } from './interfaces';
+
+import { commandDesc as imageCommandDesc } from './editors/Image';
+
+const initialStem : Node[] = [
+  {
+    type: 'p',
+    children: [ {text: 'This is the editor test view.'} ]
+  },
+  {
+    type: 'img',
+    src: 'https://source.unsplash.com/random',
+    children: [ {text: ''} ],
+    caption: 'this is the caption',
+    alt: 'none'
+  },
+];
 
 const initialValue : Node[] = [
   {
@@ -38,21 +53,19 @@ const toolbarItems : ToolbarItem[] = [
   {
     type: 'GroupDivider'
   },
-  { 
-    type: 'CommandDesc', 
-    icon: 'fas fa-image', 
-    description: 'Image',
-    command: { 
-      execute: (e: ReactEditor) => console.log('u-image'), 
-      precondition: (e: ReactEditor) => true 
-    }, 
-  },
+  imageCommandDesc
 ]
 
 export const TestEditor = (props: TestEditorProps) => {
-  const [value, setValue] = useState(initialValue);
+  const [stem, setStem] = useState(initialStem);
+  const [choice, setChoice] = useState(initialValue);
 
   return (
-    <Editor value={value} onEdit={(value) => setValue(value)} toolbarItems={toolbarItems}/>
+    <div>
+      <p><b>Question Stem:</b></p>
+      <Editor value={stem} onEdit={(value) => setStem(value)} toolbarItems={toolbarItems}/>
+
+    </div>
+    
   );
 }

@@ -1,15 +1,32 @@
 import * as React from 'react';
 
-import { ModelElement, Mark } from './model';
+import * as ContentModel from 'data/content/model';
 import { Editor } from 'slate'
 import * as Commands from './commands';
 import { ImageEditor } from './editors/Image';
+import { assertNever } from 'utils/common';
+import { EditorProps } from './editors/interfaces';
 
-function assertNever(x: never): never {
-  throw new Error("Unexpected object: " + x);
-}
+export function editorFor(element: ContentModel.ModelElement, props: any, editor: any): JSX.Element {
 
-export function editorFor(element: ModelElement, props: any, editor: any): JSX.Element {
+  const editorContext = {
+    editor,
+    attributes: props.attributes,
+    children: props.children,
+  };
+
+  const elementState = {
+    isFocused: false,
+    isSelected: false,
+  }
+
+  const editorProps = {
+    model: element,
+    onEdit: (value: any) => {},
+    editorContext,
+    elementState,
+  };
+
   switch (element.type) {
     case 'p':
       return <p {...props.attributes}>{props.children}</p>;
@@ -26,16 +43,12 @@ export function editorFor(element: ModelElement, props: any, editor: any): JSX.E
     case 'h6':
       return <h6 {...props.attributes}>{props.children}</h6>;
     case 'img':
-      return <ImageEditor editor={editor} attributes={props.attributes} element={element} isFocused={false} isSelected={false} />;
+      return <ImageEditor {...(editorProps as EditorProps<ContentModel.Image>)} />;
     case 'code':
     case 'youtube':
     case 'audio':
-    case 'img':
     case 'table':
     case 'tr':
-    case 'thead':
-    case 'tbody':
-    case 'tfoot':
     case 'td':
     case 'th':
     case 'ol':
@@ -45,17 +58,14 @@ export function editorFor(element: ModelElement, props: any, editor: any): JSX.E
     case 'math_line':
     case 'code_line':
     case 'blockquote':
-    case 'example':
     case 'a':
-    case 'dfn':
-    case 'cite':
       return <span {...props.attributes}>Not implemented</span>;
     default:
       assertNever(element);
   }
 }
 
-export function markFor(mark: Mark, children: any): JSX.Element {
+export function markFor(mark: ContentModel.Mark, children: any): JSX.Element {
   switch (mark) {
     case 'em':
       return <em>{children}</em>;

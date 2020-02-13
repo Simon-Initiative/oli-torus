@@ -26,6 +26,7 @@ module.exports = (env, options) => ({
     // Add webpack aliases for top level imports
     alias: {
       components: path.resolve(__dirname, 'src/components'),
+      data: path.resolve(__dirname, 'src/data'),
       state: path.resolve(__dirname, 'src/state'),
       utils: path.resolve(__dirname, 'src/utils'),
     },
