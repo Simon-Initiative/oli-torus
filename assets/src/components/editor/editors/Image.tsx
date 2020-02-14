@@ -64,12 +64,13 @@ export const ImageEditor = (props: ImageProps) => {
   const selected = useSelected();
   const focused = useFocused();
   const [size, setSize] = useState([-1, -1]);
+  const [last, setLast] = useState([-1, -1]);
+  const [isResizing, setIsResizing] = useState(false);
+
   const imageElement = useRef(null);
   const handle = useRef(null);
   const { attributes, children } = props.editorContext;
   const { model } = props;
-  const resizeRef = React.createRef();
-
 
   useEffect(() => {
     
@@ -91,6 +92,47 @@ export const ImageEditor = (props: ImageProps) => {
     
   });
 
+
+  const down = () => setIsResizing(true);
+  
+  const up = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isResizing) {
+      setIsResizing(false);
+    }
+
+      //editor.setNodeByKey(node.key, 
+      //  { data: mutate<ImageData>(image, { height: this.state.size.height, width: this.state.size.width }) })
+  }
+
+  const move = (e: MouseEvent) => {
+    if (isResizing) {
+
+      const { clientX, clientY } = e;
+
+      if (last[0] === -1) {
+        setLast([clientX, clientY]);
+      } else {
+
+        const [lastX, lastY] = last;
+        const xDiff = clientX - lastX;
+        const yDiff = clientY - lastY;
+        
+        setLast([clientX, clientY]);
+        const [width, height] = size;
+
+        const ar = height / width;
+        
+        const w = width + xDiff;
+        const h = ar * width;
+        setSize([w, h]);
+      
+      }
+    }
+  }
+
+
   const centered = {
     display: 'flex',
     justifyContent: 'center',
@@ -98,11 +140,9 @@ export const ImageEditor = (props: ImageProps) => {
   } as any;
 
   const handleStyle = {
-    
     width: size[0] === -1 ? undefined : size[0],
     height: size[1] === -1 ? undefined : size[1],
-    
-  }
+  };
 
   const grab = {
     position: 'relative',
@@ -123,7 +163,7 @@ export const ImageEditor = (props: ImageProps) => {
     border: (selected && focused) ? 'solid 3px darkblue' : 'solid 3px white',
   } as any;
   return (
-    <div {...attributes}>
+    <div {...attributes} onMouseMove={move} onMouseUp={up as any}>
       
       <div contentEditable={false}>
         
@@ -134,7 +174,7 @@ export const ImageEditor = (props: ImageProps) => {
               src={model.src}
               style={imageStyle}
             />
-            <div><i style={grab} className="fas fa-square"></i></div>
+            <div onMouseDown={down} ><i style={grab} className="fas fa-square"></i></div>
             <div>&nbsp;</div>
           </div>
           
