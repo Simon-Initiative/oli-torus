@@ -16,7 +16,7 @@ module.exports = {
     "^utils/(.*)": "<rootDir>/src/utils/$1",
   },
   transform: {
-    ".*": "<rootDir>/jest.preprocessor.js"
+    "\\.(ts|tsx)$": "ts-jest"
   },
   testRegex: "test/.*\.test\.(ts|tsx|js)$",
   collectCoverage: true,

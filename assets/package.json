@@ -57,6 +57,7 @@
     "optimize-css-assets-webpack-plugin": "^4.0.0",
     "redux-devtools-extension": "^2.13.8",
     "sass-loader": "^8.0.0",
+    "ts-jest": "^25.2.0",
     "ts-loader": "^6.1.0",
     "tslint": "^6.0.0",
     "tslint-config-airbnb": "^5.11.2",
