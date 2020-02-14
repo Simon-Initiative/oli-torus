@@ -1,4 +1,4 @@
-name: OLI CI on Branch Push
+name: CI on Branch Push
 
 on: push
 
