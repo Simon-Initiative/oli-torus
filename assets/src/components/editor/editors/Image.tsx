@@ -32,12 +32,12 @@ const fetchImageSize = (src: string): Promise<ImageSize> => {
   });
 };
 
-const command : Command = {
+const command: Command = {
   execute: (editor: ReactEditor) => {
     const src = window.prompt('Enter the URL of the image:')
     if (!src) return;
 
-    const image = ContentModel.create<ContentModel.Image>({ type: 'img', src, children: [{text: ''}], id: guid() });
+    const image = ContentModel.create<ContentModel.Image>({ type: 'img', src, children: [{ text: '' }], id: guid() });
     Transforms.insertNodes(editor, image);
   },
   precondition: (editor: ReactEditor) => {
@@ -45,7 +45,7 @@ const command : Command = {
   },
 };
 
-export const commandDesc : CommandDesc = {
+export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
   icon: 'fas fa-image',
   description: 'Image',
@@ -67,13 +67,13 @@ export const ImageEditor = (props: ImageProps) => {
   const { attributes, children } = props.editorContext;
   const { model } = props;
 
-  const attrs = selected && focused
+  const attrs = focused
     ? getEditableAttributes(props.model)
     : [];
   const attributeEditor = attrs.length > 0
-    ? <Attributes attributes={attrs} onEdit={a => props.onEdit(ContentModel.mutate(props.model, { [a.key]: a.value }))}/>
+    ? <Attributes attributes={attrs} onEdit={a => props.onEdit(ContentModel.mutate(props.model, { [a.key]: a.value }))} />
     : null;
-  
+
   const imageStyle = {
     display: 'block',
     maxWidth: '100%',
@@ -89,7 +89,11 @@ export const ImageEditor = (props: ImageProps) => {
           src={model.src}
           style={imageStyle}
         />
-        {attributeEditor}
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ display: 'inline-block' }}><b>Caption:</b> {model.caption}</div>
+          <div style={{ display: 'inline-block' }}><b>Alt:</b> {model.alt}</div>
+        </div>
+
       </div>
       {children}
     </div>

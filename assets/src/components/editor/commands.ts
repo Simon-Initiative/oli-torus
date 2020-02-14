@@ -1,5 +1,5 @@
 import { Editor, Transforms, createEditor, Text, Node } from 'slate';
-import { Mark } from './model';
+import { Mark } from 'data/content/model';
 
 export function isMarkActive(editor: Editor, mark: Mark): boolean {
     const [match] = Editor.nodes(editor, {

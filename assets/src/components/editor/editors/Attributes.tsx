@@ -13,22 +13,30 @@ export type AttributesProps = {
 export const Attributes = (props: AttributesProps) => {
   const rows = props.attributes.map(a => {
     return (
-      <tr>
+      <div>
         <td>{a.key}</td>
         <td>{a.value}</td>
-      </tr>
+      </div>
     );
   })
   return (
-    <table className="table table-sm">
-      <tbody>
-        {rows}
-      </tbody>
-    </table>
+    <div className="container">
+      <div className="row">
+        <div className="col">
+
+        </div>
+        <div className="col-5">
+          2 of 3 (wider)
+        </div>
+        <div className="col">
+
+        </div>
+      </div>
+    </div>
   );
 }
 
-export function getEditableAttributes(model: ContentModel.ModelElement) : Attribute[] {
+export function getEditableAttributes(model: ContentModel.ModelElement): Attribute[] {
 
   const ignoreKeys = {
     id: true,
