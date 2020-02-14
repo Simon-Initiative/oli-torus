@@ -10,7 +10,7 @@ export interface CountDisplayProps {
   count: number;
   name: string;
   animals: Maybe<Immutable.List<string>>;
-};
+}
 
 /**
  * CountDisplay React Stateless Component

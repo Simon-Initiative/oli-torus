@@ -18,13 +18,16 @@
       "baseUrl": ".",
       "paths": {
         "*": ["src/*"]
-      }
+      },
+      "types": [
+        "jest"
+      ]
   },
   "include": [
     "src/**/*",
+    "test/**/*"
   ],
   "exclude": [
-    "node_modules",
-    "dist"
+    "node_modules"
   ]
 }

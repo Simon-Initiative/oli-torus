@@ -6,7 +6,7 @@ import rootReducer, { State, initState } from 'state';
 
 export function configureStore(initialState?: any) {
   const logger = createLogger({
-    stateTransformer: state => {
+    stateTransformer: (state) => {
       const newState: any = {};
 
       // automatically converts any immutablejs objects to JS representation

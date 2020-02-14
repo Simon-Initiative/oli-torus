@@ -8,8 +8,8 @@ import { CounterButtons } from 'components/CounterButtons';
 import { configureStore } from 'state/store';
 
 export const registry = {
-    'CountDisplay': CountDisplay,
-    'CounterButtons': CounterButtons, 
+  CountDisplay,
+  CounterButtons, 
 };
 
 export type ComponentName = keyof typeof registry;
