@@ -1,6 +1,7 @@
 # OLI
 
-![Elixir CI on Branch Push](https://github.com/Simon-Initiative/oli-torus/workflows/Elixir%20CI%20on%20Branch%20Push/badge.svg)
+
+[![CI on Branch Push](https://github.com/Simon-Initiative/oli-torus/workflows/CI%20on%20Branch%20Push/badge.svg?branch=master&event=push)](https://github.com/Simon-Initiative/oli-torus/actions?query=workflow%3A%22CI+on+Branch+Push%22)
 
 ## Dependencies
 
