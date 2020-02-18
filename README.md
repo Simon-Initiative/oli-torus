@@ -1,4 +1,4 @@
-# OLI
+# OLI Authoring and Delivery
 
 [![Open Learning Initiative](https://oli.cmu.edu/wp-content/uploads/2018/10/oli-logo-78px-high-1.svg)](http://oli.cmu.edu/)
 
