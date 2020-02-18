@@ -10,7 +10,7 @@ import { Command, CommandDesc } from './interfaces';
 
 // Width of padding on right hand side to allow toolbar toggler
 // to never obstruct text
-const gutterWidth = 18;  
+const gutterWidth = 18;
 
 
 export type GroupDivider = {
@@ -26,12 +26,11 @@ export type EditorProps = {
 }
 
 export const Editor = (props: EditorProps) => {
-  
+
   const editor = useMemo(() => withHistory(withReact(createEditor())), [])
 
   editor.isVoid = element => {
     const result = (schema as any)[element.type].isVoid;
-    console.log(element.type + ' ' + result);
     return result;
   }
 
@@ -52,9 +51,7 @@ export const Editor = (props: EditorProps) => {
       <Slate
         editor={editor as any}
         value={props.value}
-        onChange={value => {
-          props.onEdit(value);
-        }}
+        onChange={value => props.onEdit(value)}
       >
         <FixedToolbar toolbarItems={props.toolbarItems}/>
         <HoveringToolbar />
@@ -105,7 +102,7 @@ function positionHovering(el : HTMLElement) {
   const native = window.getSelection() as any;
   const range = native.getRangeAt(0);
   const rect = (range as any).getBoundingClientRect();
-  
+
   (menu as any).style.position = 'absolute';
   (menu as any).style.top =
     ((rect as any).top + (window as any).pageYOffset) - 30 + 'px';
@@ -221,7 +218,7 @@ const FixedToolbar = (props: FixedToolbarProps) => {
         }
       });
 
-      
+
   return (
     <div ref={(ref as any)} style={{ visibility: 'hidden', position: 'sticky', top: '0px' }}>
       <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>

@@ -48,8 +48,8 @@ export interface HeadingSix extends Element, Identifiable {
 export interface Image extends Element, Identifiable {
     type: 'img';
     src: string;
-    height?: string;
-    width?: string;
+    height?: number;
+    width?: number;
     alt?: string;
     caption?: string;
 }
@@ -57,8 +57,8 @@ export interface Image extends Element, Identifiable {
 export interface YouTube extends Element, Identifiable {
     type: 'youtube';
     src: string;
-    height: string;
-    width: string;
+    height?: number;
+    width?: number;
     alt?: string;
     caption?: string;
 }

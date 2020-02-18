@@ -1,35 +1,19 @@
 import React, { useRef, useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
 import { ReactEditor, useFocused, useSelected } from 'slate-react';
-import { Transforms, Editor, Range } from 'slate';
+import { Transforms, Editor as SlateEditor } from 'slate';
+import { updateModel, getEditMode } from './utils';
 import * as ContentModel from 'data/content/model';
 import { Maybe } from 'tsmonad';
 import { Command, CommandDesc } from '../interfaces';
 import { EditorProps } from './interfaces';
 import guid from 'utils/guid';
+import { LabelledTextEditor } from 'components/TextEditor';
+import { editorFor } from '../editors';
 
 interface ImageSize {
   width: string;
   height: string;
 }
-
-type Position = {
-  x: number;
-  y: number;
-}
-
-const fetchImageSize = (src: string): Promise<ImageSize> => {
-  const img = new (window as any).Image();
-  return new Promise((resolve, reject) => {
-    img.onload = () => {
-      resolve({ height: img.height, width: img.width });
-    };
-    img.onerror = (err: any) => {
-      reject(err);
-    };
-    img.src = src;
-  });
-};
 
 const command: Command = {
   execute: (editor: ReactEditor) => {
@@ -40,6 +24,7 @@ const command: Command = {
     Transforms.insertNodes(editor, image);
   },
   precondition: (editor: ReactEditor) => {
+
     return true;
   },
 };
@@ -50,7 +35,6 @@ export const commandDesc: CommandDesc = {
   description: 'Image',
   command,
 };
-
 
 export interface ImageProps extends EditorProps<ContentModel.Image> {
 }
@@ -63,17 +47,21 @@ export const ImageEditor = (props: ImageProps) => {
 
   const selected = useSelected();
   const focused = useFocused();
+
   const [size, setSize] = useState([-1, -1]);
   const [last, setLast] = useState([-1, -1]);
   const [isResizing, setIsResizing] = useState(false);
 
   const imageElement = useRef(null);
   const handle = useRef(null);
-  const { attributes, children } = props.editorContext;
+  const { attributes, children, editor } = props;
   const { model } = props;
 
+  const editMode = getEditMode(editor);
+
   useEffect(() => {
-    
+
+    // Do this just once, to set the state based on the size of the image
     if (size[0] === -1) {
 
       const target = imageElement.current as any;
@@ -83,27 +71,32 @@ export const ImageEditor = (props: ImageProps) => {
 
       if (target instanceof HTMLImageElement) {
         const image = target as HTMLImageElement;
-        
+
         if (handle !== null && handle.current !== null && image.width !== 0) {
           setSize([image.width, image.height]);
         }
       }
     }
-    
+
   });
 
+  // up, down, and move callbacks for managing the click and drag resize
 
   const down = () => setIsResizing(true);
-  
+
   const up = (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
     if (isResizing) {
       setIsResizing(false);
-    }
+      const height = size[1];
+      const width = size[0];
 
-      //editor.setNodeByKey(node.key, 
-      //  { data: mutate<ImageData>(image, { height: this.state.size.height, width: this.state.size.width }) })
+      const { editor, model } = props;
+      updateModel(editor, model, { height, width });
+
+    }
   }
 
   const move = (e: MouseEvent) => {
@@ -118,16 +111,14 @@ export const ImageEditor = (props: ImageProps) => {
         const [lastX, lastY] = last;
         const xDiff = clientX - lastX;
         const yDiff = clientY - lastY;
-        
-        setLast([clientX, clientY]);
-        const [width, height] = size;
 
+        setLast([clientX, clientY]);
+
+        const [width, height] = size;
         const ar = height / width;
-        
         const w = width + xDiff;
         const h = ar * width;
         setSize([w, h]);
-      
       }
     }
   }
@@ -149,10 +140,14 @@ export const ImageEditor = (props: ImageProps) => {
     left: (size[0] - 10) + 'px',
     top: '-12px',
     zIndex: 0,
-    cursor: 'grab',
+    cursor: isResizing ? 'col-resize' : 'grab',
     color: 'darkblue',
     visibility: (selected && focused) ? 'visible' : 'hidden'
   } as any;
+
+  const baseStyle = {
+    cursor: isResizing ? 'col-resize' : undefined,
+  };
 
   const imageStyle = {
     display: 'block',
@@ -162,31 +157,47 @@ export const ImageEditor = (props: ImageProps) => {
     marginRight: 'auto',
     border: (selected && focused) ? 'solid 3px darkblue' : 'solid 3px white',
   } as any;
+
+  const onEditCaption = (caption: string) => updateModel(editor, model, { caption });
+  const onEditAlt = (alt: string) => updateModel(editor, model, { alt });
+
   return (
-    <div {...attributes} onMouseMove={move} onMouseUp={up as any}>
-      
+    <div {...attributes} onMouseMove={move} onMouseUp={up as any} style={baseStyle}>
+
       <div contentEditable={false}>
-        
+
         <div style={centered}>
           <div ref={handle} style={handleStyle}>
             <img
               ref={imageElement}
               src={model.src}
               style={imageStyle}
+              draggable={false}
             />
             <div onMouseDown={down} ><i style={grab} className="fas fa-square"></i></div>
             <div>&nbsp;</div>
           </div>
-          
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ display: 'inline-block' }}><b>Caption:</b> {model.caption}</div>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ display: 'inline-block' }}><b>Alt:</b> {model.alt}</div>
+
         </div>
 
+
       </div>
+      <div style={{ textAlign: 'center' }}>
+          <LabelledTextEditor
+            label="Caption"
+            model={model.caption || ''}
+            onEdit={onEditCaption}
+            showAffordances={selected && focused}
+            editMode={editMode} />
+        </div>
+        <div style={{ textAlign: 'center' }}>
+        <LabelledTextEditor
+            label="Alt"
+            model={model.alt || ''}
+            onEdit={onEditAlt}
+            showAffordances={selected && focused}
+            editMode={editMode} />
+        </div>
       {children}
     </div>
   )

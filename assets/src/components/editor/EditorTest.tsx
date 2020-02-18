@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { Node } from 'slate'
 import { Editor, ToolbarItem } from './Editor';
 import { ReactEditor } from 'slate-react';
-
+import { AttributeEditor } from 'components/TextEditor';
 import { commandDesc as imageCommandDesc } from './editors/Image';
 
 const initialStem : Node[] = [
@@ -32,23 +32,23 @@ export type TestEditorProps = {
 }
 
 const toolbarItems : ToolbarItem[] = [
-  { 
-    type: 'CommandDesc', 
-    icon: 'fas fa-list-ol', 
+  {
+    type: 'CommandDesc',
+    icon: 'fas fa-list-ol',
     description: 'Ordered List',
-    command: { 
-      execute: (e: ReactEditor) => console.log('o-list'), 
-      precondition: (e: ReactEditor) => true 
-    }, 
+    command: {
+      execute: (e: ReactEditor) => console.log('o-list'),
+      precondition: (e: ReactEditor) => true
+    },
   },
-  { 
-    type: 'CommandDesc', 
-    icon: 'fas fa-list-ul', 
+  {
+    type: 'CommandDesc',
+    icon: 'fas fa-list-ul',
     description: 'Unordered List',
-    command: { 
-      execute: (e: ReactEditor) => console.log('u-list'), 
-      precondition: (e: ReactEditor) => true 
-    }, 
+    command: {
+      execute: (e: ReactEditor) => console.log('u-list'),
+      precondition: (e: ReactEditor) => true
+    },
   },
   {
     type: 'GroupDivider'
@@ -62,10 +62,14 @@ export const TestEditor = (props: TestEditorProps) => {
 
   return (
     <div>
+
+<p><b>Question Stem:</b></p>
+      <AttributeEditor model={'test'} onEdit={() => console.log('edit')} editMode={true} showAffordances={true}/>
+
       <p><b>Question Stem:</b></p>
       <Editor value={stem} onEdit={(value) => setStem(value)} toolbarItems={toolbarItems}/>
 
     </div>
-    
+
   );
 }

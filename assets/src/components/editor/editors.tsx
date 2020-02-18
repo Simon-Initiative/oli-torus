@@ -9,39 +9,30 @@ import { EditorProps } from './editors/interfaces';
 
 export function editorFor(element: ContentModel.ModelElement, props: any, editor: any): JSX.Element {
 
-  const editorContext = {
-    editor,
-    attributes: props.attributes,
-    children: props.children,
-  };
-
-  const elementState = {
-    isFocused: false,
-    isSelected: false,
-  }
+  const { attributes, children } = props;
 
   const editorProps = {
     model: element,
-    onEdit: (value: any) => {},
-    editorContext,
-    elementState,
+    editor,
+    attributes,
+    children,
   };
 
   switch (element.type) {
     case 'p':
-      return <p {...props.attributes}>{props.children}</p>;
+      return <p {...attributes}>{children}</p>;
     case 'h1':
-      return <h1 {...props.attributes}>{props.children}</h1>;
+      return <h1 {...attributes}>{children}</h1>;
     case 'h2':
-      return <h2 {...props.attributes}>{props.children}</h2>;
+      return <h2 {...attributes}>{children}</h2>;
     case 'h3':
-      return <h3 {...props.attributes}>{props.children}</h3>;
+      return <h3 {...attributes}>{children}</h3>;
     case 'h4':
-      return <h4 {...props.attributes}>{props.children}</h4>;
+      return <h4 {...attributes}>{children}</h4>;
     case 'h5':
-      return <h5 {...props.attributes}>{props.children}</h5>;
+      return <h5 {...attributes}>{children}</h5>;
     case 'h6':
-      return <h6 {...props.attributes}>{props.children}</h6>;
+      return <h6 {...attributes}>{children}</h6>;
     case 'img':
       return <ImageEditor {...(editorProps as EditorProps<ContentModel.Image>)} />;
     case 'code':
@@ -59,7 +50,7 @@ export function editorFor(element: ContentModel.ModelElement, props: any, editor
     case 'code_line':
     case 'blockquote':
     case 'a':
-      return <span {...props.attributes}>Not implemented</span>;
+      return <span {...attributes}>Not implemented</span>;
     default:
       assertNever(element);
   }
