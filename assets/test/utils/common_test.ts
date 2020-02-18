@@ -9,7 +9,7 @@ describe('common valueOr', () => {
     expect(valueOr(undefined, 'apple')).toBe('apple');
   });
 
-  it('should use default value', () => {
+  it('should use provided value', () => {
     expect(valueOr('orange', 'apple')).toBe('orange');
   });
 });

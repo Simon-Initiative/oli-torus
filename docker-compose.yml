@@ -1,5 +1,17 @@
 version: '3'
 services:
+  app:
+    build: .
+    container_name: oli_app
+    ports:
+      - 4000:4000
+    env_file: ./oli.env
+    depends_on:
+      - postgres
+    volumes:
+      - ./:/usr/src/app
+      - /usr/src/app/assets/node_modules
+
   postgres:
     image: postgres
     container_name: oli_postgres
@@ -8,16 +20,6 @@ services:
     env_file: ./postgres.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
-  app:
-    build: .
-    container_name: oli_app
-    ports:
-      - "4000:4000"
-    env_file: ./oli.env
-    volumes:
-      - ./:/usr/src/app
-      - /usr/src/app/assets/node_modules
 
   # ngrok:
   #   container_name: oli_ngrok
