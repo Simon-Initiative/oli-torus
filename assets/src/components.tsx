@@ -10,10 +10,10 @@ import { configureStore } from 'state/store';
 import { TestEditor } from 'components/editor/EditorTest';
 
 export const registry = {
-    'CountDisplay': CountDisplay,
-    'CounterButtons': CounterButtons, 
-    'Editor': Editor,
-    'TestEditor': TestEditor,
+  CountDisplay,
+  CounterButtons,
+  Editor,
+  TestEditor
 };
 
 export type ComponentName = keyof typeof registry;

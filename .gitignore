@@ -36,3 +36,5 @@ npm-debug.log
 /priv/static/
 oli.env
 postgres.env
+/assets/test-results/
+/assets/coverage/
