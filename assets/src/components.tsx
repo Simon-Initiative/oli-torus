@@ -5,11 +5,15 @@ import { Provider } from 'react-redux';
 import { Maybe, maybe } from 'tsmonad';
 import { CountDisplay } from 'components/CountDisplay';
 import { CounterButtons } from 'components/CounterButtons';
+import { Editor } from 'components/editor/Editor';
 import { configureStore } from 'state/store';
+import { TestEditor } from 'components/editor/EditorTest';
 
 export const registry = {
   CountDisplay,
-  CounterButtons, 
+  CounterButtons,
+  Editor,
+  TestEditor,
 };
 
 export type ComponentName = keyof typeof registry;
