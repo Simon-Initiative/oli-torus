@@ -8,9 +8,10 @@ import { Transforms } from 'slate';
  * @param model the current state of the model
  * @param changes a partial object containing the changes that are to be applied to the model
  */
-export function updateModel<T extends ContentModel.ModelElement>(editor: ReactEditor, model: T, changes: Partial<T>) {
+export function updateModel<T extends ContentModel.ModelElement>(
+  editor: ReactEditor, model: T, changes: Partial<T>) {
   const path = ReactEditor.findPath(editor, model);
-  Transforms.setNodes(editor, changes, { at: path })
+  Transforms.setNodes(editor, changes, { at: path });
 }
 
 /**

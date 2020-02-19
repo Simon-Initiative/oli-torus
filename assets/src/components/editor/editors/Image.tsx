@@ -16,10 +16,11 @@ interface ImageSize {
 
 const command: Command = {
   execute: (editor: ReactEditor) => {
-    const src = window.prompt('Enter the URL of the image:')
+    const src = window.prompt('Enter the URL of the image:');
     if (!src) return;
 
-    const image = ContentModel.create<ContentModel.Image>({ type: 'img', src, children: [{ text: '' }], id: guid() });
+    const image = ContentModel.create<ContentModel.Image>(
+      { type: 'img', src, children: [{ text: '' }], id: guid() });
     Transforms.insertNodes(editor, image);
   },
   precondition: (editor: ReactEditor) => {
@@ -96,7 +97,7 @@ export const ImageEditor = (props: ImageProps) => {
       updateModel(editor, model, { height, width });
 
     }
-  }
+  };
 
   const move = (e: MouseEvent) => {
     if (isResizing) {
@@ -120,13 +121,13 @@ export const ImageEditor = (props: ImageProps) => {
         setSize([w, h]);
       }
     }
-  }
+  };
 
 
   const centered = {
     display: 'flex',
     justifyContent: 'center',
-    width: '100%'
+    width: '100%',
   } as any;
 
   const handleStyle = {
@@ -141,7 +142,7 @@ export const ImageEditor = (props: ImageProps) => {
     zIndex: 0,
     cursor: isResizing ? 'col-resize' : 'grab',
     color: 'darkblue',
-    visibility: (selected && focused) ? 'visible' : 'hidden'
+    visibility: (selected && focused) ? 'visible' : 'hidden',
   } as any;
 
   const baseStyle = {
@@ -204,5 +205,5 @@ export const ImageEditor = (props: ImageProps) => {
 
       {children}
     </div>
-  )
-}
+  );
+};

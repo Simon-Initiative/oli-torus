@@ -1,13 +1,14 @@
 import * as React from 'react';
 
 import * as ContentModel from 'data/content/model';
-import { Editor } from 'slate'
+import { Editor } from 'slate';
 import * as Commands from './commands';
 import { ImageEditor } from './editors/Image';
 import { assertNever } from 'utils/common';
 import { EditorProps } from './editors/interfaces';
 
-export function editorFor(element: ContentModel.ModelElement, props: any, editor: any): JSX.Element {
+export function editorFor(
+  element: ContentModel.ModelElement, props: any, editor: any): JSX.Element {
 
   const { attributes, children } = props;
 
@@ -82,6 +83,6 @@ export function markFor(mark: ContentModel.Mark, children: any): JSX.Element {
 export const hoverMenuButtons = [
   { icon: 'fas fa-bold', command: (e: Editor) => Commands.toggleMark(e, 'strong') },
   { icon: 'fas fa-italic', command: (e: Editor) => Commands.toggleMark(e, 'em') },
-  { icon: 'fas fa-code', command: (e: Editor) => Commands.toggleMark(e, 'code') }
+  { icon: 'fas fa-code', command: (e: Editor) => Commands.toggleMark(e, 'code') },
 ];
 

@@ -1,36 +1,35 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 
-import { Node } from 'slate'
+import { Node } from 'slate';
 import { Editor } from './Editor';
 import { ToolbarItem } from './interfaces';
 import { ReactEditor } from 'slate-react';
-import { LabelledTextEditor } from 'components/TextEditor';
 import { commandDesc as imageCommandDesc } from './editors/Image';
 
 const initialStem : Node[] = [
   {
     type: 'p',
-    children: [ {text: 'This is the editor test view.'} ]
+    children: [{ text: 'This is the editor test view.' }],
   },
   {
     type: 'img',
     src: 'https://source.unsplash.com/random',
-    children: [ {text: ''} ],
+    children: [{ text: '' }],
     caption: 'this is the caption',
-    alt: 'none'
+    alt: 'none',
   },
 ];
 
 const initialValue : Node[] = [
   {
     type: 'p',
-    children: [ {text: 'This is the editor test view.'} ]
-  }
+    children: [{ text: 'This is the editor test view.' }],
+  },
 ];
 
 export type TestEditorProps = {
 
-}
+};
 
 const toolbarItems : ToolbarItem[] = [
   {
@@ -38,8 +37,8 @@ const toolbarItems : ToolbarItem[] = [
     icon: 'fas fa-list-ol',
     description: 'Ordered List',
     command: {
-      execute: (e: ReactEditor) => console.log('o-list'),
-      precondition: (e: ReactEditor) => true
+      execute: (e: ReactEditor) => {},
+      precondition: (e: ReactEditor) => true,
     },
   },
   {
@@ -47,15 +46,15 @@ const toolbarItems : ToolbarItem[] = [
     icon: 'fas fa-list-ul',
     description: 'Unordered List',
     command: {
-      execute: (e: ReactEditor) => console.log('u-list'),
-      precondition: (e: ReactEditor) => true
+      execute: (e: ReactEditor) => {},
+      precondition: (e: ReactEditor) => true,
     },
   },
   {
-    type: 'GroupDivider'
+    type: 'GroupDivider',
   },
-  imageCommandDesc
-]
+  imageCommandDesc,
+];
 
 export const TestEditor = (props: TestEditorProps) => {
   const [stem, setStem] = useState(initialStem);
@@ -65,9 +64,9 @@ export const TestEditor = (props: TestEditorProps) => {
     <div>
 
       <p><b>Question Stem:</b></p>
-      <Editor value={stem} onEdit={(value) => setStem(value)} toolbarItems={toolbarItems}/>
+      <Editor value={stem} onEdit={value => setStem(value)} toolbarItems={toolbarItems}/>
 
     </div>
 
   );
-}
+};

@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import * as ReactDOM from 'react-dom';
 import { ReactEditor, useSlate } from 'slate-react';
-import { Editor as SlateEditor } from 'slate';
+import { Editor as SlateEditor, Range } from 'slate';
 import { hoverMenuButtons } from './editors';
-import { Range } from 'slate';
 import { ToolbarItem, gutterWidth } from './interfaces';
 
 function positionHovering(el : HTMLElement) {
@@ -38,8 +37,8 @@ function shouldHideToolbar(editor : ReactEditor) {
 
 
 export const HoveringToolbar = () => {
-  const ref = useRef()
-  const editor = useSlate()
+  const ref = useRef();
+  const editor = useSlate();
 
   useEffect(() => {
     const el = ref.current as any;
@@ -52,9 +51,9 @@ export const HoveringToolbar = () => {
       hideToolbar(el);
     } else {
       positionHovering(el);
-      showToolbar(el)
+      showToolbar(el);
     }
-  })
+  });
 
   const style = {
     position: 'absolute',
@@ -71,9 +70,9 @@ export const HoveringToolbar = () => {
       <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>
         {hoverMenuButtons.map(b => <FormatButton key={b.icon} icon={b.icon} command={b.command} />)}
       </div>
-    </div>, document.body
-  )
-}
+    </div>, document.body,
+  );
+};
 
 function showToolbar(el: HTMLElement) {
   el.style.visibility = 'visible';
@@ -85,12 +84,13 @@ function shouldHideFixedToolbar(editor : ReactEditor) {
 
 type FixedToolbarProps = {
   toolbarItems: ToolbarItem[];
-}
+};
+
 export const FixedToolbar = (props: FixedToolbarProps) => {
   const { toolbarItems } = props;
-  const [ collapsed, setCollapsed ] = useState(false);
-  const ref = useRef()
-  const editor = useSlate()
+  const [collapsed, setCollapsed] = useState(false);
+  const ref = useRef();
+  const editor = useSlate();
 
   const icon = collapsed ? 'fas fa-angle-left' : 'fas fa-angle-right';
 
@@ -119,13 +119,12 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
 
   const buttons = collapsed
     ? []
-    : toolbarItems.map(t => {
-        if (t.type === 'CommandDesc') {
-          return <ToolbarButton icon={t.icon} command={t.command}/>
-        } else {
-          return <Spacer/>
-        }
-      });
+    : toolbarItems.map((t) => {
+      if (t.type === 'CommandDesc') {
+        return <ToolbarButton icon={t.icon} command={t.command}/>;
+      }
+      return <Spacer/>;
+    });
 
 
   return (
@@ -135,8 +134,8 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
         <button
           className="btn btn-secondary btn-sm"
           style={{ width: '10px' }}
-          onMouseDown={event => {
-            event.preventDefault()
+          onMouseDown={(event) => {
+            event.preventDefault();
             setCollapsed(!collapsed);
           }}
         >
@@ -145,40 +144,40 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
       </div>
     </div>
   );
-}
+};
 
 const Spacer = () => {
   return (
-    <span style={{ minWidth: '5px', maxWidth: '5px'}}/>
+    <span style={{ minWidth: '5px', maxWidth: '5px' }}/>
   );
-}
+};
 
 const FormatButton = ({ icon, command }: any) => {
-  const editor = useSlate()
+  const editor = useSlate();
   return (
     <button
       className="btn btn-secondary btn-sm"
-      onMouseDown={event => {
-        event.preventDefault()
+      onMouseDown={(event) => {
+        event.preventDefault();
         command(editor);
       }}
     >
       <i className={icon}></i>
     </button>
-  )
-}
+  );
+};
 
 const ToolbarButton = ({ icon, command }: any) => {
-  const editor = useSlate()
+  const editor = useSlate();
   return (
     <button
       className="btn btn-secondary btn-sm"
-      onMouseDown={event => {
-        event.preventDefault()
+      onMouseDown={(event) => {
+        event.preventDefault();
         command.execute(editor);
       }}
     >
       <i className={icon}></i>
     </button>
-  )
-}
+  );
+};

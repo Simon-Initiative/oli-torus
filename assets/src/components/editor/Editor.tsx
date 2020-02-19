@@ -29,7 +29,7 @@ export const Editor = (props: EditorProps) => {
     return result;
   };
 
-  const renderElement = useCallback(props => {
+  const renderElement = useCallback((props) => {
     const model = props.element as ModelElement;
     return editorFor(model, props, editor);
   }, []);
@@ -40,15 +40,15 @@ export const Editor = (props: EditorProps) => {
       Object
         .keys(leaf)
         .reduce((m, k) => k !== 'text' ? markFor(k as Mark, m) : m, children);
-    return <span {...attributes}>{markup}</span>
+    return <span {...attributes}>{markup}</span>;
   }, []);
 
 
   const border = {
     border: 'solid lightgray 1px',
     padding: '4px',
-    paddingRight: gutterWidth + 'px'
-  }
+    paddingRight: gutterWidth + 'px',
+  };
 
   return (
     <div style={border}>
@@ -70,5 +70,5 @@ export const Editor = (props: EditorProps) => {
         />
       </Slate>
     </div>
-  )
-}
+  );
+};
