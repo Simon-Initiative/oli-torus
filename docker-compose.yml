@@ -1,4 +1,4 @@
-version: '3'
+version: '3.5'
 services:
   app:
     build: .
@@ -11,6 +11,8 @@ services:
     volumes:
       - ./:/usr/src/app
       - /usr/src/app/assets/node_modules
+      - /usr/src/app/deps
+      - /usr/src/app/build
 
   postgres:
     image: postgres
@@ -21,8 +23,24 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  ## Additional Devtools
+
+  ### ngrok for routing SSL LTI connections to localhost using DNS
   # ngrok:
   #   container_name: oli_ngrok
+
+  ## pgadmin for postgres SQL administration
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: oli_pgadmin
+  #   logging:
+  #     driver: none
+  #   ports:
+  #     - 4001:80
+  #   env_file: ./postgres.env
+  #   volumes:
+  #     - /var/lib/pgadmin
+  #     - ./pgadmin.servers.json:/pgadmin4/servers.json
 
 volumes:
   postgres_data:
