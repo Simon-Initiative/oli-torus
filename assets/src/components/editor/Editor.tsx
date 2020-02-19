@@ -16,18 +16,18 @@ export type EditorProps = {
 
   // The fixed toolbar configuration
   toolbarItems: ToolbarItem[];
-}
+};
 
 export const Editor = (props: EditorProps) => {
 
-  const editor = useMemo(() => withHistory(withReact(createEditor())), [])
+  const editor = useMemo(() => withHistory(withReact(createEditor())), []);
 
   // Override isVoid to incorporate our schema's opinion on which
   // elements are void
-  editor.isVoid = element => {
+  editor.isVoid = (element) => {
     const result = (schema as any)[element.type].isVoid;
     return result;
-  }
+  };
 
   const renderElement = useCallback(props => {
     const model = props.element as ModelElement;

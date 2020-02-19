@@ -21,53 +21,27 @@ export const LabelledTextEditor = (props: LabelledTextEditorProps) => {
   );
 };
 
-
-function positionPopup(el : HTMLElement, target : HTMLElement) {
-  const menu = el;
-  const rect = (target as any).getBoundingClientRect();
-
-  (menu as any).style.position = 'absolute';
-  (menu as any).style.top =
-    ((rect as any).top + (window as any).pageYOffset) - 30 + 'px';
-
-  const left = ((rect as any).left +
-    window.pageXOffset -
-    (menu as any).offsetWidth / 2 +
-    (rect as any).width / 2) - 50;
-
-  (menu as any).style.left = `${left}px`;
-}
-
-function hideToolbar(el: HTMLElement) {
-  el.style.visibility = 'hidden';
-}
-
-
 export const TextEditor = (props: TextEditorProps) => {
 
   const { model, showAffordances, onEdit, editMode } = props;
-  const [ current, setCurrent ] = useState(model);
-  const [ isEditing, setIsEditing ] = useState(false);
-
-  console.log('isEditing ' + isEditing);
+  const [current, setCurrent] = useState(model);
+  const [isEditing, setIsEditing] = useState(false);
 
   const onTitleEdit = (e: any) => {
     const title = e.target.value;
     setIsEditing(false);
     onEdit(title);
-  }
+  };
 
   const onCancel = () => setIsEditing(false);
 
   const onBeginEdit = () => {
-    console.log('clicked edit');
     setIsEditing(true);
-  }
+  };
 
   const onTextChange = (e: any) => {
-    console.log("text change: " + e.target.value);
     setCurrent(e.target.value);
-  }
+  };
 
   const onKeyUp = (e: any) => {
     if (e.keyCode === ESCAPE_KEYCODE) {
@@ -129,8 +103,8 @@ export const TextEditor = (props: TextEditorProps) => {
         </button> : null}
       </React.Fragment>
     );
-  }
+  };
 
   return isEditing ? editingUI() : readOnlyUI();
 
-}
+};

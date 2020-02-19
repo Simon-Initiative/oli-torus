@@ -13,7 +13,7 @@ export const registry = {
   CountDisplay,
   CounterButtons,
   Editor,
-  TestEditor
+  TestEditor,
 };
 
 export type ComponentName = keyof typeof registry;
