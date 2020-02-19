@@ -119,11 +119,11 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
 
   const buttons = collapsed
     ? []
-    : toolbarItems.map((t) => {
+    : toolbarItems.map((t, i) => {
       if (t.type === 'CommandDesc') {
-        return <ToolbarButton icon={t.icon} command={t.command}/>;
+        return <ToolbarButton key={t.icon} icon={t.icon} command={t.command}/>;
       }
-      return <Spacer/>;
+      return <Spacer key={'spacer-' + i}/>;
     });
 
 
