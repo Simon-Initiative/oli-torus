@@ -1,10 +1,11 @@
-FROM elixir:1.10-alpine
+FROM elixir:1.10-slim
 
 WORKDIR /usr/src/app
 
 # Install system dependencies
 ## General
-RUN apk add --update inotify-tools curl git npm bash
+RUN apt-get update -y
+RUN apt-get install -y inotify-tools curl git npm bash
 
 ## Hex
 RUN mix local.hex --force
