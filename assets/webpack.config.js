@@ -22,10 +22,11 @@ module.exports = (env, options) => ({
     path: path.resolve(__dirname, '../priv/static/js')
   },
   resolve: {
-    extensions: ['.ts', '.tsx', '.js'],
+    extensions: ['.ts', '.tsx', '.js', '.jsx'],
     // Add webpack aliases for top level imports
     alias: {
       components: path.resolve(__dirname, 'src/components'),
+      data: path.resolve(__dirname, 'src/data'),
       state: path.resolve(__dirname, 'src/state'),
       utils: path.resolve(__dirname, 'src/utils'),
     },
@@ -42,6 +43,13 @@ module.exports = (env, options) => ({
       {
         test: /\.css$/,
         use: [MiniCssExtractPlugin.loader, 'css-loader']
+      },
+      {
+        test: /\.jsx$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader'
+        }
       },
       { test: /\.(png|gif|jpg|jpeg|svg)$/, use: 'file-loader' },
       { test: /\.ts$/, use: ['babel-loader', 'ts-loader'], exclude: /node_modules/ },

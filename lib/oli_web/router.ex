@@ -17,7 +17,16 @@ defmodule OliWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
+
   end
+
+  scope "/test", OliWeb do
+    pipe_through :browser
+
+    get "/editor", EditorTestController, :index
+
+  end
+
 
   # Other scopes may use custom stacks.
   # scope "/api", OliWeb do
