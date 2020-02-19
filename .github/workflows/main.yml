@@ -1,7 +1,7 @@
-name: Pull Request CI
+name: Build & Test CI
 
 on:
-  pull_request:
+  push:
     branches:
       - master
       - test
@@ -50,4 +50,3 @@ jobs:
       run: cd assets && npm run deploy
     - name: Test
       run: cd assets && npm run test
-

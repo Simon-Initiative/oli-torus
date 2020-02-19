@@ -1,8 +1,8 @@
-# OLI
+# OLI Authoring and Delivery
 
 [![Open Learning Initiative](https://oli.cmu.edu/wp-content/uploads/2018/10/oli-logo-78px-high-1.svg)](http://oli.cmu.edu/)
 
-[![CI on Branch Push](https://github.com/Simon-Initiative/oli-torus/workflows/CI%20on%20Branch%20Push/badge.svg?branch=master&event=push)](https://github.com/Simon-Initiative/oli-torus/actions?query=workflow%3A%22CI+on+Branch+Push%22)
+[![Build & Test CI](https://github.com/Simon-Initiative/oli-torus/workflows/Build%20&%20Test%20CI/badge.svg?branch=production)](https://github.com/Simon-Initiative/oli-torus/actions?query=workflow%3A%22Build+%26+Test+CI%22)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/Simon-Initiative/authoring-client/blob/master/LICENSE)
 
 ## Dependencies
