@@ -8,7 +8,6 @@ import { Command, CommandDesc } from '../interfaces';
 import { EditorProps } from './interfaces';
 import guid from 'utils/guid';
 import { LabelledTextEditor } from 'components/TextEditor';
-import { editorFor } from '../editors';
 
 interface ImageSize {
   width: string;
@@ -161,6 +160,11 @@ export const ImageEditor = (props: ImageProps) => {
   const onEditCaption = (caption: string) => updateModel(editor, model, { caption });
   const onEditAlt = (alt: string) => updateModel(editor, model, { alt });
 
+  // Note that it is important that any interactive portions of a void editor
+  // must be enclosed inside of a "contentEditable=false" container. Otherwise,
+  // slate does some weird things that non-deterministically interface with click
+  // events.
+
   return (
     <div {...attributes} onMouseMove={move} onMouseUp={up as any} style={baseStyle}>
 
@@ -180,9 +184,7 @@ export const ImageEditor = (props: ImageProps) => {
 
         </div>
 
-
-      </div>
-      <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
           <LabelledTextEditor
             label="Caption"
             model={model.caption || ''}
@@ -198,6 +200,8 @@ export const ImageEditor = (props: ImageProps) => {
             showAffordances={selected && focused}
             editMode={editMode} />
         </div>
+      </div>
+
       {children}
     </div>
   )

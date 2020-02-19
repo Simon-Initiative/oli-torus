@@ -43,105 +43,6 @@ function hideToolbar(el: HTMLElement) {
 }
 
 
-const PopupTextEditor = (props: any) => {
-  const ref = useRef()
-
-
-  useEffect(() => {
-    const el = ref.current as any;
-
-    if (!el) {
-      return;
-    }
-    console.log('popup')
-    console.log(props.target.current);
-    positionPopup(el, props.target.current);
-  })
-
-  const style = { marginTop: '5px' };
-
-
-  const onTitleEdit = (e: any) => {
-    const title = e.target.value;
-    setIsEditing(false);
-    onEdit(title);
-  }
-
-  const onCancel = () => setIsEditing(false);
-  const onBeginEdit = () => setIsEditing(true);
-  const onTextChange = (e: any) => {
-    console.log("text change: " + e.target.value);
-    setCurrent(e.target.value);
-  }
-
-  const onKeyUp = (e: any) => {
-    if (e.keyCode === ESCAPE_KEYCODE) {
-      onCancel();
-    } else if (e.keyCode === ENTER_KEYCODE) {
-      onTitleEdit(e);
-    }
-  };
-
-  return ReactDOM.createPortal(
-    <div ref={(ref as any)} style={{ position: 'relative' }}>
-      <div style={{ display: 'inline' }}>
-        <input type="text"
-          onKeyUp={onKeyUp}
-          onChange={onTextChange}
-          value={current}
-          style={style} />
-        <button
-          key="save"
-          onClick={onTitleEdit}
-          type="button"
-          className="btn btn-sm">
-          Done
-        </button>
-        <button
-          key="cancel"
-          onClick={props.onCancel}
-          type="button"
-          className="btn btn-sm">
-          Cancel
-        </button>
-      </div>
-
-    </div>, document.body
-  )
-}
-
-export const AttributeEditor = (props: TextEditorProps) => {
-  const ref = useRef();
-  const [isEditing, setIsEditing] = useState(false);
-  const { showAffordances, editMode } = props;
-  const linkStyle: any = {
-    display: 'inline-block',
-    whiteSpace: 'normal',
-    textAlign: 'left',
-    color: 'black',
-    fontWeight: 'normal',
-  };
-
-  return (
-    <React.Fragment>
-      <span ref={(ref as any)} style={linkStyle}>
-        {props.model}
-      </span>
-      {showAffordances ? <button
-        key="edit"
-        onClick={() => setIsEditing(true)}
-        type="button"
-        disabled={!editMode || isEditing}
-        className="btn btn-link btn-sm">
-        Edit
-      </button> : null}
-      { isEditing ? <PopupTextEditor {...props} target={ref} showAffordances={true} editMode={true}/> : null}
-    </React.Fragment>
-  );
-}
-
-
-
 export const TextEditor = (props: TextEditorProps) => {
 
   const { model, showAffordances, onEdit, editMode } = props;
@@ -157,7 +58,12 @@ export const TextEditor = (props: TextEditorProps) => {
   }
 
   const onCancel = () => setIsEditing(false);
-  const onBeginEdit = () => setIsEditing(true);
+
+  const onBeginEdit = () => {
+    console.log('clicked edit');
+    setIsEditing(true);
+  }
+
   const onTextChange = (e: any) => {
     console.log("text change: " + e.target.value);
     setCurrent(e.target.value);
@@ -175,7 +81,7 @@ export const TextEditor = (props: TextEditorProps) => {
     const style = { marginTop: '5px' };
 
     return (
-      <div style={{ display: 'inline' }}>
+      <div data-slate-editor style={{ display: 'inline' }}>
         <input type="text"
           onKeyUp={onKeyUp}
           onChange={onTextChange}

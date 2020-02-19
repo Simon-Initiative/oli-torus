@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 
 import { Node } from 'slate'
-import { Editor, ToolbarItem } from './Editor';
+import { Editor } from './Editor';
+import { ToolbarItem } from './interfaces';
 import { ReactEditor } from 'slate-react';
-import { AttributeEditor } from 'components/TextEditor';
+import { LabelledTextEditor } from 'components/TextEditor';
 import { commandDesc as imageCommandDesc } from './editors/Image';
 
 const initialStem : Node[] = [
@@ -62,9 +63,6 @@ export const TestEditor = (props: TestEditorProps) => {
 
   return (
     <div>
-
-<p><b>Question Stem:</b></p>
-      <AttributeEditor model={'test'} onEdit={() => console.log('edit')} editMode={true} showAffordances={true}/>
 
       <p><b>Question Stem:</b></p>
       <Editor value={stem} onEdit={(value) => setStem(value)} toolbarItems={toolbarItems}/>
