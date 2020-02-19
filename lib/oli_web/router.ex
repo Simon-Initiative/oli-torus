@@ -25,6 +25,12 @@ defmodule OliWeb.Router do
     get "/:provider", SessionController, :request
   end
 
+  scope "/dev", OliWeb do
+    pipe_through :browser
+
+    get "/uipalette", UIPaletteController, :index
+  end
+
   # Other scopes may use custom stacks.
   # scope "/api", OliWeb do
   #   pipe_through :api

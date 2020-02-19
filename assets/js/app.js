@@ -21,3 +21,13 @@ import LiveSocket from "phoenix_live_view"
 
 let liveSocket = new LiveSocket("/live", Socket)
 liveSocket.connect()
+
+$(function () {
+  $('[data-toggle="popover"]').popover();
+  $('[data-toggle="tooltip"]').tooltip();
+});
+
+$(document).ready(function(){
+    $('.ui.dropdown').dropdown();
+    $('.ui.dropdown.item').dropdown();
+});
