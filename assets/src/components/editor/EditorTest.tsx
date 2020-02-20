@@ -48,7 +48,11 @@ export const TestEditor = (props: TestEditorProps) => {
     <div>
 
       <p><b>Question Stem:</b></p>
-      <Editor value={stem} onEdit={value => setStem(value)} toolbarItems={toolbarItems} />
+      <Editor value={stem} onEdit={(value) => {
+        // const s = JSON.stringify(value, null, 2);
+        // console.log(s);
+        setStem(value);
+      }} toolbarItems={toolbarItems} />
 
     </div>
 

@@ -6,7 +6,7 @@ import { Mark, ModelElement, schema } from 'data/content/model';
 import { editorFor, markFor } from './editors';
 import { ToolbarItem, gutterWidth } from './interfaces';
 import { FixedToolbar, HoveringToolbar } from './Toolbars';
-import { withLists, onKeyDown as listOnKeyDown } from './editors/Lists';
+import { onKeyDown as listOnKeyDown } from './editors/Lists';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor (including selection state)
@@ -22,8 +22,7 @@ export type EditorProps = {
 export const Editor = (props: EditorProps) => {
 
   const editor = useMemo(() => withHistory(
-    withLists(
-      withReact(createEditor())))
+      withReact(createEditor()))
     , []);
 
   // Override isVoid to incorporate our schema's opinion on which
