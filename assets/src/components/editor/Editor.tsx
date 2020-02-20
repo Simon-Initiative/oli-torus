@@ -1,12 +1,14 @@
 import React, { useMemo, useCallback, KeyboardEvent } from 'react';
 import { Slate, Editable, withReact } from 'slate-react';
-import { createEditor, Node, Point, Range, Transforms, Editor as SlateEditor } from 'slate';
+import { createEditor, Node } from 'slate';
 import { withHistory } from 'slate-history';
 import { Mark, ModelElement, schema } from 'data/content/model';
 import { editorFor, markFor } from './editors';
 import { ToolbarItem, gutterWidth } from './interfaces';
 import { FixedToolbar, HoveringToolbar } from './Toolbars';
 import { onKeyDown as listOnKeyDown } from './editors/Lists';
+import { onKeyDown as quoteOnKeyDown } from './editors/Blockquote';
+
 
 export type EditorProps = {
   // Callback when there has been any change to the editor (including selection state)
@@ -39,6 +41,7 @@ export const Editor = (props: EditorProps) => {
 
   const onKeyDown = useCallback((e: KeyboardEvent) => {
     listOnKeyDown(editor, e);
+    quoteOnKeyDown(editor, e);
   }, []);
 
   const renderLeaf = useCallback(({ attributes, children, leaf }: any) => {
