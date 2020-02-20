@@ -36,6 +36,12 @@ export function editorFor(
       return <h6 {...attributes}>{children}</h6>;
     case 'img':
       return <ImageEditor {...(editorProps as EditorProps<ContentModel.Image>)} />;
+    case 'ol':
+      return <ol {...attributes}>{children}</ol>;
+    case 'ul':
+      return <ul {...attributes}>{children}</ul>;
+    case 'li':
+      return <li {...attributes}>{children}</li>;
     case 'code':
     case 'youtube':
     case 'audio':
@@ -43,9 +49,6 @@ export function editorFor(
     case 'tr':
     case 'td':
     case 'th':
-    case 'ol':
-    case 'ul':
-    case 'li':
     case 'math':
     case 'math_line':
     case 'code_line':

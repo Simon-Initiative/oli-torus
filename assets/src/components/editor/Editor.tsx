@@ -1,11 +1,12 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, KeyboardEvent } from 'react';
 import { Slate, Editable, withReact } from 'slate-react';
-import { createEditor, Node } from 'slate';
+import { createEditor, Node, Point, Range, Transforms, Editor as SlateEditor } from 'slate';
 import { withHistory } from 'slate-history';
 import { Mark, ModelElement, schema } from 'data/content/model';
 import { editorFor, markFor } from './editors';
 import { ToolbarItem, gutterWidth } from './interfaces';
 import { FixedToolbar, HoveringToolbar } from './Toolbars';
+import { withLists, onKeyDown as listOnKeyDown } from './editors/Lists';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor (including selection state)
@@ -20,7 +21,10 @@ export type EditorProps = {
 
 export const Editor = (props: EditorProps) => {
 
-  const editor = useMemo(() => withHistory(withReact(createEditor())), []);
+  const editor = useMemo(() => withHistory(
+    withLists(
+      withReact(createEditor())))
+    , []);
 
   // Override isVoid to incorporate our schema's opinion on which
   // elements are void
@@ -34,6 +38,9 @@ export const Editor = (props: EditorProps) => {
     return editorFor(model, props, editor);
   }, []);
 
+  const onKeyDown = useCallback((e: KeyboardEvent) => {
+    listOnKeyDown(editor, e);
+  }, []);
 
   const renderLeaf = useCallback(({ attributes, children, leaf }: any) => {
     const markup =
@@ -58,7 +65,7 @@ export const Editor = (props: EditorProps) => {
         value={props.value}
         onChange={value => props.onEdit(value)}
       >
-        <FixedToolbar toolbarItems={props.toolbarItems}/>
+        <FixedToolbar toolbarItems={props.toolbarItems} />
 
         <HoveringToolbar />
 
@@ -66,7 +73,7 @@ export const Editor = (props: EditorProps) => {
           renderElement={renderElement}
           renderLeaf={renderLeaf}
           placeholder="Enter some text..."
-
+          onKeyDown={onKeyDown}
         />
       </Slate>
     </div>
