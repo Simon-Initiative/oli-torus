@@ -4,6 +4,7 @@ import * as ContentModel from 'data/content/model';
 import { Editor } from 'slate';
 import * as Commands from './commands';
 import { ImageEditor } from './editors/Image';
+import { YouTubeEditor } from './editors/YouTube';
 import { assertNever } from 'utils/common';
 import { EditorProps } from './editors/interfaces';
 
@@ -36,8 +37,9 @@ export function editorFor(
       return <h6 {...attributes}>{children}</h6>;
     case 'img':
       return <ImageEditor {...(editorProps as EditorProps<ContentModel.Image>)} />;
-    case 'code':
     case 'youtube':
+      return <YouTubeEditor {...(editorProps as EditorProps<ContentModel.YouTube>)} />;
+    case 'code':
     case 'audio':
     case 'table':
     case 'tr':
