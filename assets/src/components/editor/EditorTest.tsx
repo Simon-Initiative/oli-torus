@@ -5,6 +5,7 @@ import { Editor } from './Editor';
 import { ToolbarItem } from './interfaces';
 import { ReactEditor } from 'slate-react';
 import { commandDesc as imageCommandDesc } from './editors/Image';
+import { commandDesc as youtubeCommandDesc } from './editors/YouTube';
 
 const initialStem : Node[] = [
   {
@@ -54,6 +55,7 @@ const toolbarItems : ToolbarItem[] = [
     type: 'GroupDivider',
   },
   imageCommandDesc,
+  youtubeCommandDesc,
 ];
 
 export const TestEditor = (props: TestEditorProps) => {
