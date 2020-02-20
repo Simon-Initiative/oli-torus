@@ -91,7 +91,7 @@ function handleTermination(editor: SlateEditor, e: KeyboardEvent) {
   }
 }
 
-// The key down handler required to allow special list processing.
+// The key down handler required to allow special quote processing.
 export const onKeyDown = (editor: SlateEditor, e: KeyboardEvent) => {
   if (e.key === 'Enter') {
     handleTermination(editor, e);
