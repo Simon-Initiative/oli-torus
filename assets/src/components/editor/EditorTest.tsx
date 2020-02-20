@@ -3,11 +3,11 @@ import React, { useState } from 'react';
 import { Node } from 'slate';
 import { Editor } from './Editor';
 import { ToolbarItem } from './interfaces';
-import { ReactEditor } from 'slate-react';
 import { commandDesc as imageCommandDesc } from './editors/Image';
+import { olCommandDesc as olCmd, ulCommanDesc as ulCmd, olCommandDesc } from './editors/Lists';
 import { commandDesc as youtubeCommandDesc } from './editors/YouTube';
 
-const initialStem : Node[] = [
+const initialStem: Node[] = [
   {
     type: 'p',
     children: [{ text: 'This is the editor test view.' }],
@@ -21,7 +21,7 @@ const initialStem : Node[] = [
   },
 ];
 
-const initialValue : Node[] = [
+const initialValue: Node[] = [
   {
     type: 'p',
     children: [{ text: 'This is the editor test view.' }],
@@ -32,25 +32,9 @@ export type TestEditorProps = {
 
 };
 
-const toolbarItems : ToolbarItem[] = [
-  {
-    type: 'CommandDesc',
-    icon: 'fas fa-list-ol',
-    description: 'Ordered List',
-    command: {
-      execute: (e: ReactEditor) => {},
-      precondition: (e: ReactEditor) => true,
-    },
-  },
-  {
-    type: 'CommandDesc',
-    icon: 'fas fa-list-ul',
-    description: 'Unordered List',
-    command: {
-      execute: (e: ReactEditor) => {},
-      precondition: (e: ReactEditor) => true,
-    },
-  },
+const toolbarItems: ToolbarItem[] = [
+  olCmd,
+  ulCmd,
   {
     type: 'GroupDivider',
   },
@@ -66,7 +50,11 @@ export const TestEditor = (props: TestEditorProps) => {
     <div>
 
       <p><b>Question Stem:</b></p>
-      <Editor value={stem} onEdit={value => setStem(value)} toolbarItems={toolbarItems}/>
+      <Editor value={stem} onEdit={(value) => {
+        // const s = JSON.stringify(value, null, 2);
+        // console.log(s);
+        setStem(value);
+      }} toolbarItems={toolbarItems} />
 
     </div>
 
