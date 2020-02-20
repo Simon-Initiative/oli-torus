@@ -1,12 +1,13 @@
 import React, { useMemo, useCallback, KeyboardEvent } from 'react';
 import { Slate, Editable, withReact } from 'slate-react';
-import { createEditor, Node, Point, Range, Transforms, Editor as SlateEditor } from 'slate';
+import { createEditor, Node, NodeEntry, Editor as SlateEditor, Transforms } from 'slate';
 import { withHistory } from 'slate-history';
-import { Mark, ModelElement, schema } from 'data/content/model';
+import { create, Mark, ModelElement, schema, Paragraph } from 'data/content/model';
 import { editorFor, markFor } from './editors';
 import { ToolbarItem, gutterWidth } from './interfaces';
 import { FixedToolbar, HoveringToolbar } from './Toolbars';
 import { onKeyDown as listOnKeyDown } from './editors/Lists';
+import guid from 'utils/guid';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor (including selection state)
@@ -30,6 +31,26 @@ export const Editor = (props: EditorProps) => {
   editor.isVoid = (element) => {
     const result = (schema as any)[element.type].isVoid;
     return result;
+  };
+
+  const { normalizeNode } = editor;
+  editor.normalizeNode = (entry: NodeEntry<Node>) => {
+
+    // Ensure that we always have a paragraph as the last node in
+    // the document, otherwise it can be impossible for a user
+    // to position their cursor after the last node
+    const [node] = entry;
+
+    if (SlateEditor.isEditor(node)) {
+      const last = node.children[node.children.length - 1];
+      if (last.type !== 'p') {
+        Transforms.insertNodes(editor, create<Paragraph>(
+          { type: 'p', children: [{ text: '' }], id: guid() }),
+          { mode: 'highest', at: SlateEditor.end(editor, []) });
+      }
+    }
+
+    normalizeNode(entry);
   };
 
   const renderElement = useCallback((props) => {
