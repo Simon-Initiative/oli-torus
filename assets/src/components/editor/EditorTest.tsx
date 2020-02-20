@@ -4,8 +4,9 @@ import { Node } from 'slate';
 import { Editor } from './Editor';
 import { ToolbarItem } from './interfaces';
 import { commandDesc as imageCommandDesc } from './editors/Image';
-import { olCommandDesc as olCmd, ulCommanDesc as ulCmd, olCommandDesc } from './editors/Lists';
+import { olCommandDesc as olCmd, ulCommanDesc as ulCmd } from './editors/Lists';
 import { commandDesc as youtubeCommandDesc } from './editors/YouTube';
+import { commandDesc as quoteCommandDesc } from './editors/Blockquote';
 
 const initialStem: Node[] = [
   {
@@ -33,6 +34,10 @@ export type TestEditorProps = {
 };
 
 const toolbarItems: ToolbarItem[] = [
+  quoteCommandDesc,
+  {
+    type: 'GroupDivider',
+  },
   olCmd,
   ulCmd,
   {

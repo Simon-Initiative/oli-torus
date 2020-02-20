@@ -5,6 +5,7 @@ import { Editor } from 'slate';
 import * as Commands from './commands';
 import { ImageEditor } from './editors/Image';
 import { YouTubeEditor } from './editors/YouTube';
+import { BlockQuoteEditor } from './editors/Blockquote';
 import { assertNever } from 'utils/common';
 import { EditorProps } from './editors/interfaces';
 
@@ -43,7 +44,8 @@ export function editorFor(
       return <ul {...attributes}>{children}</ul>;
     case 'li':
       return <li {...attributes}>{children}</li>;
-    case 'code':
+    case 'blockquote':
+      return <BlockQuoteEditor {...(editorProps as EditorProps<ContentModel.Blockquote>)} />;
     case 'youtube':
       return <YouTubeEditor {...(editorProps as EditorProps<ContentModel.YouTube>)} />;
     case 'code':
@@ -55,7 +57,7 @@ export function editorFor(
     case 'math':
     case 'math_line':
     case 'code_line':
-    case 'blockquote':
+
     case 'a':
       return <span {...attributes}>Not implemented</span>;
     default:

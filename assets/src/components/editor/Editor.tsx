@@ -7,6 +7,7 @@ import { editorFor, markFor } from './editors';
 import { ToolbarItem, gutterWidth } from './interfaces';
 import { FixedToolbar, HoveringToolbar } from './Toolbars';
 import { onKeyDown as listOnKeyDown } from './editors/Lists';
+import { onKeyDown as quoteOnKeyDown } from './editors/Blockquote';
 import guid from 'utils/guid';
 
 export type EditorProps = {
@@ -60,6 +61,7 @@ export const Editor = (props: EditorProps) => {
 
   const onKeyDown = useCallback((e: KeyboardEvent) => {
     listOnKeyDown(editor, e);
+    quoteOnKeyDown(editor, e);
   }, []);
 
   const renderLeaf = useCallback(({ attributes, children, leaf }: any) => {
