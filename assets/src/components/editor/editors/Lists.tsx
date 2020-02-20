@@ -17,6 +17,8 @@ const ul = () => ContentModel.create<ContentModel.UnorderedList>(
 const listCommandMaker = (listFactory: any) => {
   return {
     execute: (editor: ReactEditor) => {
+
+      // Wrap the blocks in an active selection as a list
       const selection = editor.selection;
       if (selection !== null && !Range.isCollapsed(selection)) {
 
@@ -27,6 +29,7 @@ const listCommandMaker = (listFactory: any) => {
         }
 
       } else {
+        // Otherwise just create an empty list
         Transforms.insertNodes(editor, listFactory());
       }
 
