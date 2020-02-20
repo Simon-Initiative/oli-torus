@@ -4,7 +4,6 @@ import * as ContentModel from 'data/content/model';
 import { Command, CommandDesc } from '../interfaces';
 import guid from 'utils/guid';
 import { KeyboardEvent } from 'react';
-import { EditorContext } from 'slate-react/dist/hooks/use-editor';
 
 const li = () => ContentModel.create<ContentModel.ListItem>(
   { type: 'li', children: [{ text: '' }], id: guid() });
@@ -15,23 +14,31 @@ const ol = () => ContentModel.create<ContentModel.OrderedList>(
 const ul = () => ContentModel.create<ContentModel.UnorderedList>(
   { type: 'ul', children: [li()], id: guid() });
 
-const ulCommand: Command = {
-  execute: (editor: ReactEditor) => {
-    Transforms.insertNodes(editor, ul());
-  },
-  precondition: (editor: ReactEditor) => {
-    return true;
-  },
+const listCommandMaker = (listFactory: any) => {
+  return {
+    execute: (editor: ReactEditor) => {
+      const selection = editor.selection;
+      if (selection !== null && !Range.isCollapsed(selection)) {
+
+        Transforms.setNodes(editor, { type: 'li' }, { at: selection });
+        Transforms.select(editor, selection);
+        if (editor.selection !== null) {
+          Transforms.wrapNodes(editor, listFactory(), { at: editor.selection });
+        }
+
+      } else {
+        Transforms.insertNodes(editor, listFactory());
+      }
+
+    },
+    precondition: (editor: ReactEditor) => {
+      return true;
+    },
+  };
 };
 
-const olCommand: Command = {
-  execute: (editor: ReactEditor) => {
-    Transforms.insertNodes(editor, ol());
-  },
-  precondition: (editor: ReactEditor) => {
-    return true;
-  },
-};
+const ulCommand: Command = listCommandMaker(ul);
+const olCommand: Command = listCommandMaker(ol);
 
 export const ulCommanDesc: CommandDesc = {
   type: 'CommandDesc',
