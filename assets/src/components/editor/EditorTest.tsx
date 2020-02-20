@@ -5,6 +5,7 @@ import { Editor } from './Editor';
 import { ToolbarItem } from './interfaces';
 import { commandDesc as imageCommandDesc } from './editors/Image';
 import { olCommandDesc as olCmd, ulCommanDesc as ulCmd, olCommandDesc } from './editors/Lists';
+import { commandDesc as youtubeCommandDesc } from './editors/YouTube';
 
 const initialStem: Node[] = [
   {
@@ -38,6 +39,7 @@ const toolbarItems: ToolbarItem[] = [
     type: 'GroupDivider',
   },
   imageCommandDesc,
+  youtubeCommandDesc,
 ];
 
 export const TestEditor = (props: TestEditorProps) => {
