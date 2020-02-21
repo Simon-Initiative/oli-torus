@@ -6,6 +6,7 @@ import * as Commands from './commands';
 import { ImageEditor } from './editors/Image';
 import { YouTubeEditor } from './editors/YouTube';
 import { BlockQuoteEditor } from './editors/Blockquote';
+import { AudioEditor } from './editors/Audio';
 import { assertNever } from 'utils/common';
 import { EditorProps } from './editors/interfaces';
 
@@ -48,8 +49,10 @@ export function editorFor(
       return <BlockQuoteEditor {...(editorProps as EditorProps<ContentModel.Blockquote>)} />;
     case 'youtube':
       return <YouTubeEditor {...(editorProps as EditorProps<ContentModel.YouTube>)} />;
-    case 'code':
     case 'audio':
+      return <AudioEditor {...(editorProps as EditorProps<ContentModel.Audio>)} />;
+    case 'code':
+
     case 'table':
     case 'tr':
     case 'td':
