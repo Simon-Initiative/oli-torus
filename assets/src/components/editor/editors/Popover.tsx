@@ -18,21 +18,6 @@ function position(el: HTMLElement, source: HTMLElement) {
   el.style.left = `${left}px`;
 }
 
-function hide(el: HTMLElement) {
-  el.style.visibility = 'hidden';
-}
-
-
-function show(el: HTMLElement) {
-  el.style.visibility = 'visible';
-}
-
-
-function shouldHide(editor: ReactEditor) {
-  return !ReactEditor.isFocused(editor);
-}
-
-
 export const Popover = (props: any) => {
   const ref = useRef();
   const editor = useSlate();
@@ -43,13 +28,8 @@ export const Popover = (props: any) => {
     if (!el) {
       return;
     }
+    position(el, props.source.current);
 
-    if (shouldHide(editor)) {
-      hide(el);
-    } else {
-      position(el, props.source.current);
-      show(el);
-    }
   });
 
   const style = {
@@ -63,7 +43,7 @@ export const Popover = (props: any) => {
   } as any;
 
   return ReactDOM.createPortal(
-    <div ref={(ref as any)} style={{ visibility: 'hidden', position: 'relative' }}>
+    <div ref={(ref as any)} style={{ position: 'relative' }}>
       <div style={style}>
         {props.children}
       </div>

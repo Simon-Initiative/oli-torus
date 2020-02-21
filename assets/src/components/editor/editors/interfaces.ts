@@ -15,4 +15,6 @@ export interface EditorProps<T extends ContentModel.ModelElement> {
   attributes: any;     // Slate attributes that must be rendering as part of the
                        // top level dom element that the component renders.
   children: any;       // The child elements that the component must render.
+
+  showPopup: (e: JSX.Element) => void;  // Displays an element in the singleton popup state
 }
