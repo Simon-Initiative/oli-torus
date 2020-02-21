@@ -14,12 +14,16 @@ const initialStem: Node[] = [
     children: [{ text: 'This is the editor test view.' }],
   },
   {
-    type: 'img',
-    src: 'https://source.unsplash.com/random',
-    children: [{ text: '' }],
-    caption: 'this is the caption',
-    alt: 'none',
+    type: 'p',
+    children: [
+      { text: 'Try to visit ' },
+      {
+        type: 'a', href: 'https://www.google.com', target: '_blank',
+        children: [{ text: 'google' }]
+      },
+    ],
   },
+
 ];
 
 const initialValue: Node[] = [

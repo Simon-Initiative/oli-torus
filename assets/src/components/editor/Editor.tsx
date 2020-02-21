@@ -24,13 +24,18 @@ export type EditorProps = {
 export const Editor = (props: EditorProps) => {
 
   const editor = useMemo(() => withHistory(
-      withReact(createEditor()))
+    withReact(createEditor()))
     , []);
 
   // Override isVoid to incorporate our schema's opinion on which
   // elements are void
   editor.isVoid = (element) => {
     const result = (schema as any)[element.type].isVoid;
+    return result;
+  };
+
+  editor.isInline = (element) => {
+    const result = (schema as any)[element.type].isInline;
     return result;
   };
 
