@@ -11,7 +11,7 @@ import { LabelledTextEditor } from 'components/TextEditor';
 
 const command: Command = {
   execute: (editor: ReactEditor) => {
-    let src = window.prompt('Enter the URL of the audio file:');
+    const src = window.prompt('Enter the URL of the audio file:');
     if (!src) return;
 
     const audio = ContentModel.create<ContentModel.Audio>(
