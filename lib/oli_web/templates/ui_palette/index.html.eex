@@ -108,6 +108,8 @@
 </nav>
 <main>
 
+	<h1>UI Palette</h1>
+
 	<section class="mb-5 pt-5" id="typography">
 		<div class="bg-light py-4 mb-5">
 			<div class="container">

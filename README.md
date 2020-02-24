@@ -91,6 +91,8 @@
 
 ### Running Tests
 
+If using docker-compose, you can start a bash session to execute any of the following commands using `docker-compose exec app bash`
+
 1. Run client tests
     ```
     $ cd assets && npm run test
