@@ -7,7 +7,7 @@ import { commandDesc as imageCommandDesc } from './editors/Image';
 import { olCommandDesc as olCmd, ulCommanDesc as ulCmd } from './editors/Lists';
 import { commandDesc as youtubeCommandDesc } from './editors/YouTube';
 import { commandDesc as quoteCommandDesc } from './editors/Blockquote';
-import { Popover } from './editors/Popover';
+import { commandDesc as audioCommandDesc } from './editors/Audio';
 
 const initialStem: Node[] = [
   {
@@ -46,6 +46,7 @@ const toolbarItems: ToolbarItem[] = [
   },
   imageCommandDesc,
   youtubeCommandDesc,
+  audioCommandDesc,
 ];
 
 export const TestEditor = (props: TestEditorProps) => {

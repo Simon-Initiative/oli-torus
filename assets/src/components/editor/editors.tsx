@@ -6,6 +6,7 @@ import { ImageEditor } from './editors/Image';
 import { YouTubeEditor } from './editors/YouTube';
 import { BlockQuoteEditor } from './editors/Blockquote';
 import { LinkEditor, commandDesc as linkCmd } from './editors/Link';
+import { AudioEditor } from './editors/Audio';
 import { assertNever } from 'utils/common';
 import { EditorProps } from './editors/interfaces';
 import { createToggleFormatCommand as format } from './commands';
@@ -51,8 +52,9 @@ export function editorFor(
       return <YouTubeEditor {...(editorProps as EditorProps<ContentModel.YouTube>)} />;
     case 'a':
       return <LinkEditor {...(editorProps as EditorProps<ContentModel.Hyperlink>)} />;
-    case 'code':
     case 'audio':
+      return <AudioEditor {...(editorProps as EditorProps<ContentModel.Audio>)} />;
+    case 'code':
     case 'table':
     case 'tr':
     case 'td':
