@@ -2,10 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import * as ReactDOM from 'react-dom';
 import { ReactEditor, useSlate } from 'slate-react';
 import { Editor as SlateEditor, Range } from 'slate';
-import { hoverMenuButtons } from './editors';
+import { hoverMenuCommands } from './editors';
 import { ToolbarItem, gutterWidth } from './interfaces';
 
-function positionHovering(el : HTMLElement) {
+function positionHovering(el: HTMLElement) {
   const menu = el;
   const native = window.getSelection() as any;
   const range = native.getRangeAt(0);
@@ -27,9 +27,9 @@ function hideToolbar(el: HTMLElement) {
   el.style.visibility = 'hidden';
 }
 
-function shouldHideToolbar(editor : ReactEditor) {
+function shouldHideToolbar(editor: ReactEditor) {
   const { selection } = editor;
-  return  !selection ||
+  return !selection ||
     !ReactEditor.isFocused(editor) ||
     Range.isCollapsed(selection) ||
     SlateEditor.string(editor, selection) === '';
@@ -68,7 +68,8 @@ export const HoveringToolbar = () => {
   return ReactDOM.createPortal(
     <div ref={(ref as any)} style={{ visibility: 'hidden', position: 'relative' }}>
       <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>
-        {hoverMenuButtons.map(b => <FormatButton key={b.icon} icon={b.icon} command={b.command} />)}
+        {hoverMenuCommands.map(b =>
+          <ToolbarButton key={b.icon} icon={b.icon} command={b.command} />)}
       </div>
     </div>, document.body,
   );
@@ -78,8 +79,8 @@ function showToolbar(el: HTMLElement) {
   el.style.visibility = 'visible';
 }
 
-function shouldHideFixedToolbar(editor : ReactEditor) {
-  return  !ReactEditor.isFocused(editor);
+function shouldHideFixedToolbar(editor: ReactEditor) {
+  return !ReactEditor.isFocused(editor);
 }
 
 type FixedToolbarProps = {
@@ -121,9 +122,9 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
     ? []
     : toolbarItems.map((t, i) => {
       if (t.type === 'CommandDesc') {
-        return <ToolbarButton key={t.icon} icon={t.icon} command={t.command}/>;
+        return <ToolbarButton key={t.icon} icon={t.icon} command={t.command} />;
       }
-      return <Spacer key={'spacer-' + i}/>;
+      return <Spacer key={'spacer-' + i} />;
     });
 
 
@@ -148,22 +149,7 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
 
 const Spacer = () => {
   return (
-    <span style={{ minWidth: '5px', maxWidth: '5px' }}/>
-  );
-};
-
-const FormatButton = ({ icon, command }: any) => {
-  const editor = useSlate();
-  return (
-    <button
-      className="btn btn-secondary btn-sm"
-      onMouseDown={(event) => {
-        event.preventDefault();
-        command(editor);
-      }}
-    >
-      <i className={icon}></i>
-    </button>
+    <span style={{ minWidth: '5px', maxWidth: '5px' }} />
   );
 };
 

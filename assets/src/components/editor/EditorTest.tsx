@@ -7,6 +7,7 @@ import { commandDesc as imageCommandDesc } from './editors/Image';
 import { olCommandDesc as olCmd, ulCommanDesc as ulCmd } from './editors/Lists';
 import { commandDesc as youtubeCommandDesc } from './editors/YouTube';
 import { commandDesc as quoteCommandDesc } from './editors/Blockquote';
+import { Popover } from './editors/Popover';
 
 const initialStem: Node[] = [
   {
@@ -17,10 +18,6 @@ const initialStem: Node[] = [
     type: 'p',
     children: [
       { text: 'Try to visit ' },
-      {
-        type: 'a', href: 'https://www.google.com', target: '_blank',
-        children: [{ text: 'google' }]
-      },
     ],
   },
 
@@ -53,17 +50,18 @@ const toolbarItems: ToolbarItem[] = [
 
 export const TestEditor = (props: TestEditorProps) => {
   const [stem, setStem] = useState(initialStem);
-  const [choice, setChoice] = useState(initialValue);
 
   return (
     <div>
 
       <p><b>Question Stem:</b></p>
-      <Editor value={stem} onEdit={(value) => {
-        // const s = JSON.stringify(value, null, 2);
-        // console.log(s);
-        setStem(value);
-      }} toolbarItems={toolbarItems} />
+      <Editor
+        value={stem} onEdit={(value) => {
+          // const s = JSON.stringify(value, null, 2);
+          // console.log('onChange');
+          // console.log(s);
+          setStem(value);
+        }} toolbarItems={toolbarItems} />
 
     </div>
 

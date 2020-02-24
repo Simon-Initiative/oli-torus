@@ -19,6 +19,7 @@ export type EditorProps = {
 
   // The fixed toolbar configuration
   toolbarItems: ToolbarItem[];
+
 };
 
 export const Editor = (props: EditorProps) => {
@@ -35,8 +36,8 @@ export const Editor = (props: EditorProps) => {
   };
 
   editor.isInline = (element) => {
-    const result = (schema as any)[element.type].isInline;
-    return result;
+    const result = (schema as any)[element.type].isBlock;
+    return !result;
   };
 
   const { normalizeNode } = editor;
@@ -49,6 +50,7 @@ export const Editor = (props: EditorProps) => {
 
     if (SlateEditor.isEditor(node)) {
       const last = node.children[node.children.length - 1];
+
       if (last.type !== 'p') {
         Transforms.insertNodes(editor, create<Paragraph>(
           { type: 'p', children: [{ text: '' }], id: guid() }),
