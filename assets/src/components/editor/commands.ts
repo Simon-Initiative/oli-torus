@@ -1,7 +1,10 @@
-import { Editor, Transforms, createEditor, Text, Node } from 'slate';
+import { Editor, Transforms, Text } from 'slate';
 import { Mark } from 'data/content/model';
+import { ReactEditor } from 'slate-react';
+import { CommandDesc } from './interfaces';
 
-export function isMarkActive(editor: Editor, mark: Mark): boolean {
+function isMarkActive(editor: ReactEditor, mark: Mark): boolean {
+
   const [match] = Editor.nodes(editor, {
     match: n => n[mark] === true,
     universal: true,
@@ -10,8 +13,9 @@ export function isMarkActive(editor: Editor, mark: Mark): boolean {
   return !!match;
 }
 
-export function toggleMark(editor: Editor, mark: Mark) {
+function toggleMark(editor: ReactEditor, mark: Mark) {
   const isActive = isMarkActive(editor, mark);
+
   Transforms.setNodes(
     editor,
     { [mark]: isActive ? null : true },
@@ -19,3 +23,17 @@ export function toggleMark(editor: Editor, mark: Mark) {
   );
 }
 
+export function createToggleFormatCommand(icon: string, mark: Mark, description: string)
+  : CommandDesc {
+  return {
+    type: 'CommandDesc',
+    icon,
+    description,
+    command: {
+      execute: (editor: ReactEditor) => toggleMark(editor, mark),
+      precondition: (editor: ReactEditor) => {
+        return true;
+      },
+    },
+  };
+}

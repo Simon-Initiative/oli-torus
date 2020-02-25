@@ -1,14 +1,15 @@
 import * as React from 'react';
 
 import * as ContentModel from 'data/content/model';
-import { Editor } from 'slate';
-import * as Commands from './commands';
+
 import { ImageEditor } from './editors/Image';
 import { YouTubeEditor } from './editors/YouTube';
 import { BlockQuoteEditor } from './editors/Blockquote';
+import { LinkEditor, commandDesc as linkCmd } from './editors/Link';
 import { AudioEditor } from './editors/Audio';
 import { assertNever } from 'utils/common';
 import { EditorProps } from './editors/interfaces';
+import { createToggleFormatCommand as format } from './commands';
 
 export function editorFor(
   element: ContentModel.ModelElement, props: any, editor: any): JSX.Element {
@@ -49,10 +50,11 @@ export function editorFor(
       return <BlockQuoteEditor {...(editorProps as EditorProps<ContentModel.Blockquote>)} />;
     case 'youtube':
       return <YouTubeEditor {...(editorProps as EditorProps<ContentModel.YouTube>)} />;
+    case 'a':
+      return <LinkEditor {...(editorProps as EditorProps<ContentModel.Hyperlink>)} />;
     case 'audio':
       return <AudioEditor {...(editorProps as EditorProps<ContentModel.Audio>)} />;
     case 'code':
-
     case 'table':
     case 'tr':
     case 'td':
@@ -61,7 +63,7 @@ export function editorFor(
     case 'math_line':
     case 'code_line':
 
-    case 'a':
+
       return <span {...attributes}>Not implemented</span>;
     default:
       assertNever(element);
@@ -91,9 +93,10 @@ export function markFor(mark: ContentModel.Mark, children: any): JSX.Element {
   }
 }
 
-export const hoverMenuButtons = [
-  { icon: 'fas fa-bold', command: (e: Editor) => Commands.toggleMark(e, 'strong') },
-  { icon: 'fas fa-italic', command: (e: Editor) => Commands.toggleMark(e, 'em') },
-  { icon: 'fas fa-code', command: (e: Editor) => Commands.toggleMark(e, 'code') },
+export const hoverMenuCommands = [
+  format('fas fa-bold', 'strong', 'Bold'),
+  format('fas fa-italic', 'em', 'Italic'),
+  format('fas fa-code', 'code', 'Code'),
+  linkCmd,
 ];
 

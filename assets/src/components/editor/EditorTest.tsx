@@ -15,24 +15,13 @@ const initialStem: Node[] = [
     children: [{ text: 'This is the editor test view.' }],
   },
   {
-    type: 'img',
-    src: 'https://source.unsplash.com/random',
-    children: [{ text: '' }],
-    caption: 'this is the caption',
-    alt: 'none',
-  },
-];
-
-const initialValue: Node[] = [
-  {
     type: 'p',
-    children: [{ text: 'This is the editor test view.' }],
+    children: [
+      { text: 'Here is a sentence.' },
+    ],
   },
+
 ];
-
-export type TestEditorProps = {
-
-};
 
 const toolbarItems: ToolbarItem[] = [
   quoteCommandDesc,
@@ -49,19 +38,19 @@ const toolbarItems: ToolbarItem[] = [
   audioCommandDesc,
 ];
 
-export const TestEditor = (props: TestEditorProps) => {
+export const TestEditor = () => {
   const [stem, setStem] = useState(initialStem);
-  const [choice, setChoice] = useState(initialValue);
 
   return (
     <div>
 
       <p><b>Question Stem:</b></p>
-      <Editor value={stem} onEdit={(value) => {
-        // const s = JSON.stringify(value, null, 2);
-        // console.log(s);
-        setStem(value);
-      }} toolbarItems={toolbarItems} />
+      <Editor
+        value={stem}
+        onEdit={(value) => {
+          setStem(value);
+        }}
+        toolbarItems={toolbarItems} />
 
     </div>
 
