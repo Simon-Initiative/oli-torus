@@ -1,9 +1,11 @@
 import React from 'react';
 import * as ContentModel from 'data/content/model';
 import { ReactEditor } from 'slate-react';
-import { Transforms, Range } from 'slate';
+import { Transforms } from 'slate';
 import { EditorProps } from './interfaces';
 import { Command, CommandDesc } from '../interfaces';
+import { updateModel } from './utils';
+
 import guid from 'utils/guid';
 
 const wrapLink = (editor: ReactEditor, link: ContentModel.Hyperlink) => {
@@ -42,10 +44,19 @@ export interface LinkProps extends EditorProps<ContentModel.Hyperlink> {
 
 export const LinkEditor = (props: LinkProps) => {
 
-  const { attributes, children, editor } = props;
+  const { attributes, children, editor, model } = props;
+
+  const onClick = (e: MouseEvent) => {
+    e.preventDefault();
+
+    const href = window.prompt('Enter the URL of the link:', model.href);
+    if (!href || href === model.href) return;
+
+    updateModel<ContentModel.Hyperlink>(editor, model, { href });
+  };
 
   return (
-    <a {...attributes} href="#">
+    <a {...attributes} href="#" onClick={onClick}>
       {children}
     </a>
   );

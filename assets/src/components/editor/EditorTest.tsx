@@ -17,22 +17,11 @@ const initialStem: Node[] = [
   {
     type: 'p',
     children: [
-      { text: 'Try to visit ' },
+      { text: 'Here is a sentence.' },
     ],
   },
 
 ];
-
-const initialValue: Node[] = [
-  {
-    type: 'p',
-    children: [{ text: 'This is the editor test view.' }],
-  },
-];
-
-export type TestEditorProps = {
-
-};
 
 const toolbarItems: ToolbarItem[] = [
   quoteCommandDesc,
@@ -49,7 +38,7 @@ const toolbarItems: ToolbarItem[] = [
   audioCommandDesc,
 ];
 
-export const TestEditor = (props: TestEditorProps) => {
+export const TestEditor = () => {
   const [stem, setStem] = useState(initialStem);
 
   return (
@@ -57,12 +46,11 @@ export const TestEditor = (props: TestEditorProps) => {
 
       <p><b>Question Stem:</b></p>
       <Editor
-        value={stem} onEdit={(value) => {
-          // const s = JSON.stringify(value, null, 2);
-          // console.log('onChange');
-          // console.log(s);
+        value={stem}
+        onEdit={(value) => {
           setStem(value);
-        }} toolbarItems={toolbarItems} />
+        }}
+        toolbarItems={toolbarItems} />
 
     </div>
 
