@@ -10,88 +10,88 @@
 
 				<a class="nav-item nav-link" href="#typography" data-toggle="tooltip" data-placement="bottom"
 					title="Typography">
-					<span class="la la-paragraph mx-2"></span>
+					<span class="fa fa-paragraph mx-2"></span>
 					<span class="d-md-none">Typography</span>
 				</a>
 
 
 				<a class="nav-item nav-link" href="#images" data-toggle="tooltip" data-placement="bottom" title="Images">
-					<span class="la la-picture-o mx-2"></span>
+					<span class="fa fa-image mx-2"></span>
 					<span class="d-md-none">Images</span>
 				</a>
 
 
 				<a class="nav-item nav-link" href="#tables" data-toggle="tooltip" data-placement="bottom" title="Tables">
-					<span class="la la-table mx-2"></span>
+					<span class="fa fa-table mx-2"></span>
 					<span class="d-md-none">Tables</span>
 				</a>
 
 
 				<a class="nav-item nav-link" href="#list-groups" data-toggle="tooltip" data-placement="bottom"
 					title="List groups">
-					<span class="la la-list-ul mx-2"></span>
+					<span class="fa fa-list-ul mx-2"></span>
 					<span class="d-md-none">List groups</span>
 				</a>
 
 
 				<a class="nav-item nav-link" href="#buttons" data-toggle="tooltip" data-placement="bottom" title="Buttons">
-					<span class="la la-square mx-2"></span>
+					<span class="fa fa-square mx-2"></span>
 					<span class="d-md-none">Buttons</span>
 				</a>
 
 
 				<a class="nav-item nav-link" href="#jumbotrons" data-toggle="tooltip" data-placement="bottom"
 					title="Jumbotrons">
-					<span class="la la-bookmark mx-2"></span>
+					<span class="fa fa-bookmark mx-2"></span>
 					<span class="d-md-none">Jumbotrons</span>
 				</a>
 
 
 				<a class="nav-item nav-link" href="#cards" data-toggle="tooltip" data-placement="bottom" title="Cards">
-					<span class="la la-square-o mx-2"></span>
+					<span class="fa fa-square mx-2"></span>
 					<span class="d-md-none">Cards</span>
 				</a>
 
 
 				<a class="nav-item nav-link" href="#forms" data-toggle="tooltip" data-placement="bottom" title="Forms">
-					<span class="la la-pencil mx-2"></span>
+					<span class="fa fa-pencil-alt mx-2"></span>
 					<span class="d-md-none">Forms</span>
 				</a>
 
 
 				<a class="nav-item nav-link" href="#navs" data-toggle="tooltip" data-placement="bottom" title="Navs">
-					<span class="la la-bars mx-2"></span>
+					<span class="fa fa-bars mx-2"></span>
 					<span class="d-md-none">Navs</span>
 				</a>
 
 
 				<a class="nav-item nav-link" href="#badges" data-toggle="tooltip" data-placement="bottom" title="Badges">
-					<span class="la la-tag mx-2"></span>
+					<span class="fa fa-tag mx-2"></span>
 					<span class="d-md-none">Badges</span>
 				</a>
 
 
 				<a class="nav-item nav-link" href="#alerts" data-toggle="tooltip" data-placement="bottom" title="Alerts">
-					<span class="la la-exclamation-triangle mx-2"></span>
+					<span class="fa fa-exclamation-triangle mx-2"></span>
 					<span class="d-md-none">Alerts</span>
 				</a>
 
 
 				<a class="nav-item nav-link" href="#popovers" data-toggle="tooltip" data-placement="bottom" title="Popovers">
-					<span class="la la-info-circle mx-2"></span>
+					<span class="fa fa-info-circle mx-2"></span>
 					<span class="d-md-none">Popovers</span>
 				</a>
 
 
 				<a class="nav-item nav-link" href="#progress-bars" data-toggle="tooltip" data-placement="bottom"
 					title="Progress bars">
-					<span class="la la-spinner mx-2"></span>
+					<span class="fa fa-spinner mx-2"></span>
 					<span class="d-md-none">Progress bars</span>
 				</a>
 
 
 				<a class="nav-item nav-link" href="#modals" data-toggle="tooltip" data-placement="bottom" title="Modals">
-					<span class="la la-window-restore mx-2"></span>
+					<span class="fa fa-window-restore mx-2"></span>
 					<span class="d-md-none">Modals</span>
 				</a>
 
@@ -99,7 +99,7 @@
 			<div class="navbar-nav">
 				<a class="nav-item nav-link" href="https://getbootstrap.com/docs/4.1/" target="_blank" data-toggle="tooltip"
 					data-placement="bottom" title="Bootstrap documentation">
-					<span class="la la-book mx-2"></span>
+					<span class="fa fa-book mx-2"></span>
 					<span class="d-md-none">Bootstrap documentation</span>
 				</a>
 			</div>
@@ -115,24 +115,24 @@
 			<div class="container">
 				<div class="d-flex justify-content-between">
 					<h2>
-						<span class="la la-paragraph mr-1"></span>
+						<span class="fa fa-paragraph mr-1"></span>
 						Typography
 					</h2>
 					<h2>
 
 						<a href="https://getbootstrap.com/docs/4.1/content/typography/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Typography docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Typography docs"><span class="fa fa-book fw"></span></a>
 
 						<a href="https://getbootstrap.com/docs/4.1/content/code/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Code docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Code docs"><span class="fa fa-book fw"></span></a>
 
 						<a href="https://getbootstrap.com/docs/4.1/utilities/colors/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Color utility docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Color utility docs"><span class="fa fa-book fw"></span></a>
 
 						<a href="https://getbootstrap.com/docs/4.1/utilities/text/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Text utility docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Text utility docs"><span class="fa fa-book fw"></span></a>
 
-						<a href="#top" class="ml-3"><span class="la la-chevron-up fw"></span></a>
+						<a href="#top" class="ml-3"><span class="fa fa-chevron-up fw"></span></a>
 					</h2>
 				</div>
 
@@ -441,21 +441,21 @@ public abstract class L2Char extends L2Object {
 			<div class="container">
 				<div class="d-flex justify-content-between">
 					<h2>
-						<span class="la la-picture-o mr-1"></span>
+						<span class="fa fa-picture-o mr-1"></span>
 						Images
 					</h2>
 					<h2>
 
 						<a href="https://getbootstrap.com/docs/4.1/content/images/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Image docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Image docs"><span class="fa fa-book fw"></span></a>
 
 						<a href="https://getbootstrap.com/docs/4.1/content/figures/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Figure docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Figure docs"><span class="fa fa-book fw"></span></a>
 
 						<a href="https://getbootstrap.com/docs/4.1/layout/media-object/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Media object docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Media object docs"><span class="fa fa-book fw"></span></a>
 
-						<a href="#top" class="ml-3"><span class="la la-chevron-up fw"></span></a>
+						<a href="#top" class="ml-3"><span class="fa fa-chevron-up fw"></span></a>
 					</h2>
 				</div>
 
@@ -515,15 +515,15 @@ public abstract class L2Char extends L2Object {
 			<div class="container">
 				<div class="d-flex justify-content-between">
 					<h2>
-						<span class="la la-table mr-1"></span>
+						<span class="fa fa-table mr-1"></span>
 						Tables
 					</h2>
 					<h2>
 
 						<a href="https://getbootstrap.com/docs/4.1/content/tables/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Table docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Table docs"><span class="fa fa-book fw"></span></a>
 
-						<a href="#top" class="ml-3"><span class="la la-chevron-up fw"></span></a>
+						<a href="#top" class="ml-3"><span class="fa fa-chevron-up fw"></span></a>
 					</h2>
 				</div>
 
@@ -884,15 +884,15 @@ public abstract class L2Char extends L2Object {
 			<div class="container">
 				<div class="d-flex justify-content-between">
 					<h2>
-						<span class="la la-list-ul mr-1"></span>
+						<span class="fa fa-list-ul mr-1"></span>
 						List groups
 					</h2>
 					<h2>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/list-group/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="List group docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="List group docs"><span class="fa fa-book fw"></span></a>
 
-						<a href="#top" class="ml-3"><span class="la la-chevron-up fw"></span></a>
+						<a href="#top" class="ml-3"><span class="fa fa-chevron-up fw"></span></a>
 					</h2>
 				</div>
 
@@ -1005,24 +1005,24 @@ public abstract class L2Char extends L2Object {
 			<div class="container">
 				<div class="d-flex justify-content-between">
 					<h2>
-						<span class="la la-square mr-1"></span>
+						<span class="fa fa-square mr-1"></span>
 						Buttons
 					</h2>
 					<h2>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/buttons/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Button docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Button docs"><span class="fa fa-book fw"></span></a>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/button-group/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Button group docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Button group docs"><span class="fa fa-book fw"></span></a>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/pagination/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Pagination docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Pagination docs"><span class="fa fa-book fw"></span></a>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/dropdowns/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Dropdown docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Dropdown docs"><span class="fa fa-book fw"></span></a>
 
-						<a href="#top" class="ml-3"><span class="la la-chevron-up fw"></span></a>
+						<a href="#top" class="ml-3"><span class="fa fa-chevron-up fw"></span></a>
 					</h2>
 				</div>
 
@@ -1298,15 +1298,15 @@ public abstract class L2Char extends L2Object {
 			<div class="container">
 				<div class="d-flex justify-content-between">
 					<h2>
-						<span class="la la-bookmark mr-1"></span>
+						<span class="fa fa-bookmark mr-1"></span>
 						Jumbotrons
 					</h2>
 					<h2>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/jumbotron/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Jumbotron docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Jumbotron docs"><span class="fa fa-book fw"></span></a>
 
-						<a href="#top" class="ml-3"><span class="la la-chevron-up fw"></span></a>
+						<a href="#top" class="ml-3"><span class="fa fa-chevron-up fw"></span></a>
 					</h2>
 				</div>
 
@@ -1344,15 +1344,15 @@ public abstract class L2Char extends L2Object {
 			<div class="container">
 				<div class="d-flex justify-content-between">
 					<h2>
-						<span class="la la-square-o mr-1"></span>
+						<span class="fa fa-square-o mr-1"></span>
 						Cards
 					</h2>
 					<h2>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/card/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Card docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Card docs"><span class="fa fa-book fw"></span></a>
 
-						<a href="#top" class="ml-3"><span class="la la-chevron-up fw"></span></a>
+						<a href="#top" class="ml-3"><span class="fa fa-chevron-up fw"></span></a>
 					</h2>
 				</div>
 
@@ -1720,18 +1720,18 @@ public abstract class L2Char extends L2Object {
 			<div class="container">
 				<div class="d-flex justify-content-between">
 					<h2>
-						<span class="la la-pencil mr-1"></span>
+						<span class="fa fa-pencil mr-1"></span>
 						Forms
 					</h2>
 					<h2>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/forms/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Form docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Form docs"><span class="fa fa-book fw"></span></a>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/input-group/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Input group docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Input group docs"><span class="fa fa-book fw"></span></a>
 
-						<a href="#top" class="ml-3"><span class="la la-chevron-up fw"></span></a>
+						<a href="#top" class="ml-3"><span class="fa fa-chevron-up fw"></span></a>
 					</h2>
 				</div>
 
@@ -2048,30 +2048,30 @@ public abstract class L2Char extends L2Object {
 			<div class="container">
 				<div class="d-flex justify-content-between">
 					<h2>
-						<span class="la la-bars mr-1"></span>
+						<span class="fa fa-bars mr-1"></span>
 						Navs
 					</h2>
 					<h2>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/navbar/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Navbar docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Navbar docs"><span class="fa fa-book fw"></span></a>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/navs/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Navs' docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Navs' docs"><span class="fa fa-book fw"></span></a>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/breadcrumb/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Breadcrumb docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Breadcrumb docs"><span class="fa fa-book fw"></span></a>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/dropdowns/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Dropdown docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Dropdown docs"><span class="fa fa-book fw"></span></a>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/scrollspy/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Scrollspy docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Scrollspy docs"><span class="fa fa-book fw"></span></a>
 
 						<a href="https://getbootstrap.com/docs/4.1/utilities/position/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Position docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Position docs"><span class="fa fa-book fw"></span></a>
 
-						<a href="#top" class="ml-3"><span class="la la-chevron-up fw"></span></a>
+						<a href="#top" class="ml-3"><span class="fa fa-chevron-up fw"></span></a>
 					</h2>
 				</div>
 
@@ -2431,15 +2431,15 @@ public abstract class L2Char extends L2Object {
 			<div class="container">
 				<div class="d-flex justify-content-between">
 					<h2>
-						<span class="la la-tag mr-1"></span>
+						<span class="fa fa-tag mr-1"></span>
 						Badges
 					</h2>
 					<h2>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/badge/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Badge docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Badge docs"><span class="fa fa-book fw"></span></a>
 
-						<a href="#top" class="ml-3"><span class="la la-chevron-up fw"></span></a>
+						<a href="#top" class="ml-3"><span class="fa fa-chevron-up fw"></span></a>
 					</h2>
 				</div>
 
@@ -2556,15 +2556,15 @@ public abstract class L2Char extends L2Object {
 			<div class="container">
 				<div class="d-flex justify-content-between">
 					<h2>
-						<span class="la la-exclamation-triangle mr-1"></span>
+						<span class="fa fa-exclamation-triangle mr-1"></span>
 						Alerts
 					</h2>
 					<h2>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/alerts/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Alert docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Alert docs"><span class="fa fa-book fw"></span></a>
 
-						<a href="#top" class="ml-3"><span class="la la-chevron-up fw"></span></a>
+						<a href="#top" class="ml-3"><span class="fa fa-chevron-up fw"></span></a>
 					</h2>
 				</div>
 
@@ -2753,18 +2753,18 @@ public abstract class L2Char extends L2Object {
 			<div class="container">
 				<div class="d-flex justify-content-between">
 					<h2>
-						<span class="la la-info-circle mr-1"></span>
+						<span class="fa fa-info-circle mr-1"></span>
 						Popovers
 					</h2>
 					<h2>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/popovers/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Popover docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Popover docs"><span class="fa fa-book fw"></span></a>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/tooltips/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Tooltip docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Tooltip docs"><span class="fa fa-book fw"></span></a>
 
-						<a href="#top" class="ml-3"><span class="la la-chevron-up fw"></span></a>
+						<a href="#top" class="ml-3"><span class="fa fa-chevron-up fw"></span></a>
 					</h2>
 				</div>
 
@@ -2795,15 +2795,15 @@ public abstract class L2Char extends L2Object {
 			<div class="container">
 				<div class="d-flex justify-content-between">
 					<h2>
-						<span class="la la-spinner mr-1"></span>
+						<span class="fa fa-spinner mr-1"></span>
 						Progress bars
 					</h2>
 					<h2>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/progress/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Progress docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Progress docs"><span class="fa fa-book fw"></span></a>
 
-						<a href="#top" class="ml-3"><span class="la la-chevron-up fw"></span></a>
+						<a href="#top" class="ml-3"><span class="fa fa-chevron-up fw"></span></a>
 					</h2>
 				</div>
 
@@ -2878,15 +2878,15 @@ public abstract class L2Char extends L2Object {
 			<div class="container">
 				<div class="d-flex justify-content-between">
 					<h2>
-						<span class="la la-window-restore mr-1"></span>
+						<span class="fa fa-window-restore mr-1"></span>
 						Modals
 					</h2>
 					<h2>
 
 						<a href="https://getbootstrap.com/docs/4.1/components/modal/" target="_blank" data-toggle="tooltip"
-							data-placement="bottom" title="Modal docs"><span class="la la-book fw"></span></a>
+							data-placement="bottom" title="Modal docs"><span class="fa fa-book fw"></span></a>
 
-						<a href="#top" class="ml-3"><span class="la la-chevron-up fw"></span></a>
+						<a href="#top" class="ml-3"><span class="fa fa-chevron-up fw"></span></a>
 					</h2>
 				</div>
 

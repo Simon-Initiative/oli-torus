@@ -31,7 +31,7 @@ const command: Command = {
 
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'las la-image',
+  icon: 'fas fa-image',
   description: 'Image',
   command,
 };
@@ -179,7 +179,7 @@ export const ImageEditor = (props: ImageProps) => {
               style={imageStyle}
               draggable={false}
             />
-            <div onMouseDown={down} ><i style={grab} className="las la-square"></i></div>
+            <div onMouseDown={down} ><i style={grab} className="fas fa-square"></i></div>
             <div>&nbsp;</div>
           </div>
 
