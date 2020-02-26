@@ -1,7 +1,7 @@
 <div class="container">
 <section class="my-5" style="text-align: center">
   <h1><%= gettext "Welcome to %{name}!", name: "OLI Authoring" %></h1>
-  <p>Create, deliver and interatively improve course content in your web browser.</p>
+  <p>Create, deliver and continuously improve your course content using your web browser.</p>
 
   <button type="button" class="btn btn-outline-dark">Create an Account →</button>
 </section>
@@ -24,7 +24,7 @@
           <p class="mt-3">Rock on &#x1F919 Check out some of the user interface elements available for torus development</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick="$('#dev-modal').remove()">Nope</button>
+        <button type="button" class="btn btn-secondary" onclick="$('#dev-modal').remove()">Dismiss</button>
         <a href="/dev/uipalette" class="btn btn-primary">Go to UI Elements</a>
       </div>
     </div>
