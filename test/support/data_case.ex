@@ -22,6 +22,7 @@ defmodule Oli.DataCase do
       import Ecto.Changeset
       import Ecto.Query
       import Oli.DataCase
+      import Oli.TestHelpers
     end
   end
 

@@ -7,6 +7,7 @@ defmodule OliWeb.Router do
     plug :fetch_flash
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug Oli.Plugs.SetUser
   end
 
   pipeline :api do
@@ -22,6 +23,8 @@ defmodule OliWeb.Router do
 
   scope "/auth", OliWeb do
     pipe_through :browser
+
+    get "/signout", SessionController, :delete
 
     get "/:provider", SessionController, :request
     get "/:provider/callback", SessionController, :create

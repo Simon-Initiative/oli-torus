@@ -22,4 +22,16 @@ defmodule OliWeb.SessionControllerTest do
     assert Enum.count(users) == 1
     assert get_flash(conn, :info) == "Thank you for signing in!"
   end
+
+  test "signs out user", %{conn: conn} do
+    user = user_fixture()
+
+    conn =
+      conn
+      |> assign(:user, user)
+      |> get("/auth/signout")
+      |> get("/")
+
+    assert conn.assigns.user == nil
+  end
 end
