@@ -69,18 +69,20 @@ defmodule Oli.Lti.HmacSHA1 do
 
   defp special_encode(str) do
     URI.encode_www_form(str)
+    |> String.replace("%2B", "%2520")   # URI.encode_www_form re-encodes + (space) to %2B, we must change this to %2520
     |> String.replace(~r/[!'()]/, &HTML.javascript_escape(&1))
     |> String.replace(~r/\*/, "%2A")
   end
 
   @spec clean_params([key: String.t]) :: [String.t]
   defp clean_params(params) do
-    Enum.filter(params, fn {key, _val} -> key != :oauth_signature end)
-    |> Enum.map(&encode_param/1)
+    params
+    |> Enum.filter(fn {key, _val} -> key != :oauth_signature end)
+    |> Enum.map(&stringify_param/1)
   end
 
-  @spec encode_param({String.t, String.t}) :: String.t
-  defp encode_param({key, val}) do
+  @spec stringify_param({String.t, String.t}) :: String.t
+  defp stringify_param({key, val}) do
     "#{key}=#{special_encode(val)}"
   end
 

@@ -51,7 +51,7 @@ defmodule OliWeb.Router do
     post "/basic_launch", LtiController, :basic_launch
   end
 
-  if "#{Mix.env}" === "dev" do
+  if "#{Mix.env}" === "dev" or "#{Mix.env}" === "test" do
     scope "/dev", OliWeb do
       pipe_through :browser
 

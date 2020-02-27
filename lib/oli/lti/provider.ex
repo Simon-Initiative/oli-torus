@@ -62,9 +62,11 @@ defmodule Oli.Lti.Provider do
   # @spec validate_request(String.t, String.t, lti_message_params, String.t) :: { :ok } | { :invalid, String.t } | { :error, any }
   def validate_request(host, method, body_params, shared_secret) do
     if validate_parameters(body_params) && validate_oauth(host, method, body_params, shared_secret) do
+      IO.puts("lti request is valid")
       { :ok }
     else
-      { :invalid, "Invalid" }
+      IO.puts("lti request is INVALID")
+      { :invalid, "LTI request is invalid" }
     end
   end
 
@@ -80,12 +82,20 @@ defmodule Oli.Lti.Provider do
 
   @spec validate_oauth(String.t, String.t, lti_message_params, String.t) :: boolean
   def validate_oauth(url, method, body_params, shared_secret) do
+    IO.puts("url " <> to_string(url))
+    IO.puts("method " <> to_string(method))
+    # IO.puts("body_params " <> to_string(body_params))
+    IO.puts("shared_secret " <> to_string(shared_secret))
+
     req_signature = HmacSHA1.build_signature(
       url,
       method,
       body_params,
       shared_secret
     )
+
+    IO.puts("req_signature " <> to_string(req_signature))
+    IO.puts("oauth_signature " <> to_string(Keyword.get(body_params, :oauth_signature)))
 
     req_signature == Keyword.get(body_params, :oauth_signature)
   end
