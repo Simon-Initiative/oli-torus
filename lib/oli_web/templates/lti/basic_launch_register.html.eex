@@ -1,0 +1,15 @@
+<h1>Welcome to OLI Torus</h1>
+
+<h3>Have we met?</h3>
+<p>
+It looks like this is the first time you are accessing OLI from you institution's LMS.
+Would you like to register your institution and get started?
+</p>
+
+<form action="/lti/institutions" id="register" method="get" encType="application/x-www-form-urlencoded">
+    <%= for param <- Map.keys(@conn.body_params) do %>
+    <input name="<%= param%>" type="hidden" value="<%= @conn.body_params[param]%>">
+    <% end %>
+
+    <button id="registerButton" class="ui primary basic button">Register My Institution</button>
+</form>

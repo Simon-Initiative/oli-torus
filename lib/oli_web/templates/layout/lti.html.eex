@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Torus</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
+    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
+  
+
+  <script
+  src="https://code.jquery.com/jquery-3.4.1.min.js"
+  integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+  crossorigin="anonymous"></script>
+  
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+
+  <style type="text/css">
+  body {
+    background-color: #FFFFFF;
+  }
+  .ui.menu .item img.logo {
+    margin-right: 1.5em;
+  }
+  .main.container {
+    margin-top: 7em;
+  }
+  .wireframe {
+    margin-top: 2em;
+  }
+  .ui.footer.segment {
+    margin: 5em 0em 0em;
+    padding: 5em 0em;
+  }
+  </style>
+
+  </head>
+  <body>
+    <script>
+      window.addEventListener( "pageshow", function ( event ) {
+        var historyTraversal = event.persisted || 
+                              ( typeof window.performance != "undefined" && 
+                                    window.performance.navigation.type === 2 );
+        if ( historyTraversal ) {
+          // Handle page restore.
+          window.location.reload();
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        showProcessingMessages: false,
+        messageStyle: "none",
+        showMathMenu: true,
+        showMathMenuMSIE: true,
+        preview: "none",
+        extensions: ["tex2jax.js", "mml2jax.js"],
+        jax: ["input/TeX", "input/MathML", "output/CommonHTML"],
+        tex2jax: {
+          inlineMath: [ ["\\(","\\)"] ],
+          displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+          processEscapes: true
+        },
+        TeX: {
+          extensions: ["AMSmath.js","AMSsymbols.js","noErrors.js","noUndefined.js"]
+        },
+        "HTML-CSS": { availableFonts: ["TeX"] },
+        SVG: {
+          useFontCache: false
+        }
+      });
+    </script>
+
+    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js"></script>
+
+    <div class="ui main text container">
+      <%= render @view_module, @view_template, assigns %>
+    </div>
+
+    <script> 
+     $(document).ready(function(){
+          $('.ui.dropdown').dropdown();
+          $('.ui.dropdown.item').dropdown();
+          $('.ui.radio.checkbox').checkbox();
+          $('.definition').popup();
+    });
+    </script>
+  </body>
+</html>

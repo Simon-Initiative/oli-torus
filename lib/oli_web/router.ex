@@ -14,6 +14,14 @@ defmodule OliWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :lti do
+    plug :put_layout, {OliWeb.LayoutView, :lti}
+  end
+
+  pipeline :www_url_form do
+    plug Plug.Parsers, parsers: [:urlencoded]
+  end
+
   scope "/", OliWeb do
     pipe_through :browser
 
@@ -30,12 +38,6 @@ defmodule OliWeb.Router do
     get "/:provider/callback", SessionController, :create
   end
 
-  scope "/dev", OliWeb do
-    pipe_through :browser
-
-    get "/uipalette", UIPaletteController, :index
-  end
-
   scope "/test", OliWeb do
     pipe_through :browser
 
@@ -43,6 +45,19 @@ defmodule OliWeb.Router do
 
   end
 
+  scope "/lti", OliWeb do
+    pipe_through [:lti, :www_url_form]
+
+    post "/basic_launch", LtiController, :basic_launch
+  end
+
+  if "#{Mix.env}" === "dev" do
+    scope "/dev", OliWeb do
+      pipe_through :browser
+
+      get "/uipalette", UIPaletteController, :index
+    end
+  end
 
   # Other scopes may use custom stacks.
   # scope "/api", OliWeb do

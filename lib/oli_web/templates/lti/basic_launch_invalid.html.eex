@@ -1,0 +1,3 @@
+<h1>LTI Launch Invalid</h1>
+
+<h3>Reason: <%=@reason %></h3>
