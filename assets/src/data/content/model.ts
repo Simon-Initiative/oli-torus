@@ -112,6 +112,7 @@ export interface Code extends Element, Identifiable {
   type: 'code';
   language: string;
   startingLineNumber: number;
+  showNumbers: boolean;
   caption?: string;
 }
 
@@ -142,6 +143,41 @@ export enum Marks {
   'code',
   'sub',
   'sup',
+}
+
+export enum CodeLanguages {
+  'none',
+  'python',
+  'java',
+  'javascript',
+  'cpp',
+  'c',
+  'c0',
+  'c#',
+  'erlang',
+  'elixir',
+  'lisp',
+  'ml',
+  'sql',
+  'perl',
+  'php',
+  'r',
+  'scala',
+  'swift',
+  'ruby',
+  'ocaml',
+  'haskell',
+  'rust',
+  'golang',
+  'text',
+  'xml',
+  'html',
+  'assembly',
+  'kotlin',
+  'f#',
+  'typescript',
+  'dart',
+  'clojure',
 }
 
 export const schema = {

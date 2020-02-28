@@ -53,7 +53,6 @@ export const TestEditor = () => {
       <Editor
         value={stem}
         onEdit={(value) => {
-          console.log(JSON.stringify(value, null, 2));
           setStem(value);
         }}
         toolbarItems={toolbarItems} />
