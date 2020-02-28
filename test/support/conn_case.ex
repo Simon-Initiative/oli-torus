@@ -21,6 +21,8 @@ defmodule OliWeb.ConnCase do
       use Phoenix.ConnTest
       alias OliWeb.Router.Helpers, as: Routes
 
+      import Oli.TestHelpers
+
       # The default endpoint for testing
       @endpoint OliWeb.Endpoint
     end

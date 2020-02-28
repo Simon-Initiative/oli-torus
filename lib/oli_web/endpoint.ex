@@ -1,6 +1,8 @@
 defmodule OliWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :oli
 
+  socket "/live", Phoenix.LiveView.Socket
+
   socket "/socket", OliWeb.UserSocket,
     websocket: true,
     longpoll: false
