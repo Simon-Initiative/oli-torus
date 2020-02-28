@@ -8,6 +8,7 @@ import { BlockQuoteEditor } from './editors/Blockquote';
 import { LinkEditor, commandDesc as linkCmd } from './editors/Link';
 import { AudioEditor } from './editors/Audio';
 import { CodeEditor, CodeBlockLine } from './editors/Code';
+import * as Table from './editors/Table';
 import { assertNever } from 'utils/common';
 import { EditorProps } from './editors/interfaces';
 import { createToggleFormatCommand as format } from './commands';
@@ -60,9 +61,13 @@ export function editorFor(
     case 'code_line':
       return <CodeBlockLine {...(editorProps as EditorProps<ContentModel.CodeLine>)} />;
     case 'table':
+      return <Table.TableEditor {...(editorProps as EditorProps<ContentModel.Table>)} />;
     case 'tr':
+      return <Table.TrEditor {...(editorProps as EditorProps<ContentModel.TableRow>)} />;
     case 'td':
+      return <Table.TdEditor {...(editorProps as EditorProps<ContentModel.TableData>)} />;
     case 'th':
+      return <Table.ThEditor {...(editorProps as EditorProps<ContentModel.TableHeader>)} />;
     case 'math':
     case 'math_line':
 
