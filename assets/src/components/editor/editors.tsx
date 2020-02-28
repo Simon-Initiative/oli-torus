@@ -7,6 +7,7 @@ import { YouTubeEditor } from './editors/YouTube';
 import { BlockQuoteEditor } from './editors/Blockquote';
 import { LinkEditor, commandDesc as linkCmd } from './editors/Link';
 import { AudioEditor } from './editors/Audio';
+import { CodeEditor, CodeBlockLine } from './editors/Code';
 import { assertNever } from 'utils/common';
 import { EditorProps } from './editors/interfaces';
 import { createToggleFormatCommand as format } from './commands';
@@ -55,13 +56,15 @@ export function editorFor(
     case 'audio':
       return <AudioEditor {...(editorProps as EditorProps<ContentModel.Audio>)} />;
     case 'code':
+      return <CodeEditor {...(editorProps as EditorProps<ContentModel.Code>)} />;
+    case 'code_line':
+      return <CodeBlockLine {...(editorProps as EditorProps<ContentModel.CodeLine>)} />;
     case 'table':
     case 'tr':
     case 'td':
     case 'th':
     case 'math':
     case 'math_line':
-    case 'code_line':
 
 
       return <span {...attributes}>Not implemented</span>;

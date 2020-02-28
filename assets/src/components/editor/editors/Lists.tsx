@@ -179,10 +179,12 @@ function handleTermination(editor: SlateEditor, e: KeyboardEvent) {
           if (nextMatch) {
             const [, nextPath] = nextMatch;
             Transforms.insertNodes(editor, p, { at: nextPath });
+            Transforms.select(editor, nextPath);
 
           // But if there is no next node, insert it at end
           } else {
             Transforms.insertNodes(editor, p, { mode: 'highest' });
+            Transforms.select(editor, SlateEditor.end(editor, []));
           }
 
           e.preventDefault();

@@ -133,6 +133,17 @@ export interface Hyperlink extends Element, Identifiable {
 
 export type Mark = 'em' | 'strong' | 'mark' | 'del' | 'var' | 'code' | 'sub' | 'sup';
 
+export enum Marks {
+  'em',
+  'strong',
+  'mark',
+  'del',
+  'var',
+  'code',
+  'sub',
+  'sup',
+}
+
 export const schema = {
   p: { isVoid: false, isBlock: true },
   h1: { isVoid: false, isBlock: true },
@@ -152,9 +163,9 @@ export const schema = {
   ul: { isVoid: false, isBlock: true },
   li: { isVoid: false, isBlock: true },
   math: { isVoid: false, isBlock: true },
-  math_line: { isVoid: false, isBlock: true },
+  math_line: { isVoid: false, isBlock: true, isSimpleText: true },
   code: { isVoid: false, isBlock: true },
-  code_line: { isVoid: false, isBlock: true },
+  code_line: { isVoid: false, isBlock: true, isSimpleText: true },
   blockquote: { isVoid: false, isBlock: true },
   a: { isVoid: false, isBlock: false },
 };
