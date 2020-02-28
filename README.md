@@ -75,14 +75,14 @@
     $ mix ecto.migrate
     ```
 
-3. To use the `oli.env` configuration, we need a helper tool to load the environment variables
+4. Load phoenix app configuration from environment file. This step is necessary anytime you change a configuration variable
     ```
-    $ npm install -g env-cmd
+    $ source oli.env
     ```
 
 4. Start Phoenix server
     ```
-    $ env-cmd -f oli.env mix phx.server
+    $ mix phx.server
     ```
     > NOTE: Use Ctrl+c to stop the Phoenix server
 
@@ -102,3 +102,14 @@ If using docker-compose, you can start a bash session to execute any of the foll
     ```
     $ mix test
     ```
+
+### Tunneling localhost connection for LTI development
+
+When making an LTI connection from an LMS such as Canvas, we need an internet accessible FQDN with SSL to properly configure a connection. The service ngrok offers an easy to use commandline tool that does just this (ngrok - secure introspectable tunnels to ngrok.
+
+1. [Download ngrok](https://ngrok.com/) and install using their instructions (Create a free account if required)
+1. Run ngrok locally to tunnel to phoenix app on port 4000
+        ```
+        ngrok http 4000
+        ```
+1. Access your running webapp using the generated https address (shown in console after `Forwarding`). This will be the same address used to configure the LMS LTI connection

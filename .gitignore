@@ -38,3 +38,4 @@ oli.env
 postgres.env
 /assets/test-results/
 /assets/coverage/
+.devmode

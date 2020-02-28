@@ -25,11 +25,7 @@ services:
 
   ## Additional Devtools
 
-  ### ngrok for routing SSL LTI connections to localhost using DNS
-  # ngrok:
-  #   container_name: oli_ngrok
-
-  ## pgadmin for postgres SQL administration
+  # ## pgadmin for postgres SQL administration
   # pgadmin:
   #   image: dpage/pgadmin4:latest
   #   container_name: oli_pgadmin
@@ -37,7 +33,7 @@ services:
   #     driver: none
   #   ports:
   #     - 4001:80
-  #   env_file: ./postgres.env
+  #   env_file: ./devtools.env
   #   volumes:
   #     - /var/lib/pgadmin
   #     - ./pgadmin.servers.json:/pgadmin4/servers.json
