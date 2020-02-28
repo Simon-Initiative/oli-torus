@@ -18,7 +18,7 @@ module.exports = {
   transform: {
     "\\.(ts|tsx)$": "ts-jest"
   },
-  testRegex: "test/.*\.test\.(ts|tsx|js)$",
+  testRegex: "test/.*_test\.(ts|tsx|js)$",
   collectCoverage: true,
   testResultsProcessor: "./node_modules/jest-html-reporter",
   cacheDirectory: "./node_modules/.cache/jest",
