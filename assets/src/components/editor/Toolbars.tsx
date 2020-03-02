@@ -3,7 +3,7 @@ import * as ReactDOM from 'react-dom';
 import { ReactEditor, useSlate } from 'slate-react';
 import { Editor as SlateEditor, Range } from 'slate';
 import { hoverMenuCommands } from './editors';
-import { ToolbarItem, gutterWidth } from './interfaces';
+import { ToolbarItem, gutterWidth, Command } from './interfaces';
 
 function positionHovering(el: HTMLElement) {
   const menu = el;
@@ -121,8 +121,11 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
   const buttons = collapsed
     ? []
     : toolbarItems.map((t, i) => {
-      if (t.type === 'CommandDesc') {
+      if (t.type === 'CommandDesc' && t.command.obtainParameters === undefined) {
         return <ToolbarButton key={t.icon} icon={t.icon} command={t.command} />;
+      }
+      if (t.type === 'CommandDesc' && t.command.obtainParameters !== undefined) {
+        return <DropdownToolbarButton key={t.icon} icon={t.icon} command={t.command} />;
       }
       return <Spacer key={'spacer-' + i} />;
     });
@@ -165,5 +168,34 @@ const ToolbarButton = ({ icon, command }: any) => {
     >
       <i className={icon}></i>
     </button>
+  );
+};
+
+const DropdownToolbarButton = ({ icon, command }: any) => {
+  const editor = useSlate();
+
+  const ref = useRef();
+
+  useEffect(() => {
+    if (ref !== null && ref.current !== null) {
+      ((window as any).$('.dropdown-toggle') as any).dropdown();
+    }
+  });
+
+  const onDone = (params: any) => command.execute(editor, params);
+  const onCancel = () => {};
+
+  return (
+    <div ref={ref as any} className="dropdown">
+      <button
+          className="btn btn-secondary btn-sm dropdown-toggle"
+          data-toggle={'dropdown'}
+          type="button">
+        <i className={icon}></i>
+      </button>
+      <div className="dropdown-menu dropdown-menu-right">
+        {(command as any).obtainParameters(editor, onDone, onCancel)}
+      </div>
+    </div>
   );
 };

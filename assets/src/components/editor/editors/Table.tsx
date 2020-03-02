@@ -7,6 +7,7 @@ import { Command, CommandDesc } from '../interfaces';
 import { EditorProps } from './interfaces';
 import guid from 'utils/guid';
 import { LabelledTextEditor } from 'components/TextEditor';
+import { SizePicker } from './SizePicker';
 
 const td = (text: string) => ContentModel.create<ContentModel.TableData>(
   { type: 'td', isHeader: false, children: [{ type: 'p', children: [{ text }] }], id: guid() });
@@ -18,17 +19,30 @@ const table = (children: ContentModel.TableRow[]) => ContentModel.create<Content
   { type: 'table', children, id: guid() });
 
 const command: Command = {
-  execute: (editor: ReactEditor) => {
+  execute: (editor: ReactEditor, params: any) => {
 
-    const t = table([
-      tr([td('one'), td('two'), td('three')]),
-      tr([td('four'), td('five'), td('six')]),
-    ]);
+    const rows : any = [];
+
+    for (let i = 0; i < params.rows; i += 1) {
+      const tds = [];
+      for (let j = 0; j < params.columns; j += 1) {
+        tds.push(td(''));
+      }
+      rows.push(tr(tds));
+    }
+
+    const t = table(rows);
     Transforms.insertNodes(editor, t);
   },
   precondition: (editor: ReactEditor) => {
 
     return true;
+  },
+
+  obtainParameters: (editor: ReactEditor,
+    onDone: (params: any) => void, onCancel: () => void) => {
+    return <SizePicker onHide={onCancel}
+     onTableCreate={(rows, columns) => onDone({ rows, columns })}/>;
   },
 };
 
@@ -121,7 +135,7 @@ const DropdownMenu = (props: any) => {
     const rows = table.children.length;
     for (let i = 0; i < rows; i += 1) {
       path[path.length - 2] = i;
-      Transforms.removeNodes(editor, { at: Path.next(path) });
+      Transforms.removeNodes(editor, { at: path });
     }
   };
 
@@ -134,7 +148,7 @@ const DropdownMenu = (props: any) => {
     width: 20,
     border: 'none',
     outline: 'none',
-  }
+  };
 
   return (
     <div ref={ref as any} className="dropdown" style={style}>
@@ -163,11 +177,11 @@ const DropdownMenu = (props: any) => {
       </div>
     </div>
   );
-}
+};
 
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'fab fa-table',
+  icon: 'fas fa-table',
   description: 'Table',
   command,
 };
@@ -181,7 +195,8 @@ export const TdEditor = (props: EditorProps<ContentModel.TableData>) => {
   const selected = useSelected();
   const focused = useFocused();
 
-  const maybeMenu = selected && focused ? <DropdownMenu editor={editor} model={props.model} /> : null;
+  const maybeMenu = selected && focused
+    ? <DropdownMenu editor={editor} model={props.model} /> : null;
 
   return (
     <td {...props.attributes}>
@@ -197,7 +212,8 @@ export const ThEditor = (props: EditorProps<ContentModel.TableHeader>) => {
   const selected = useSelected();
   const focused = useFocused();
 
-  const maybeMenu = selected && focused ? <DropdownMenu editor={editor} model={props.model} /> : null;
+  const maybeMenu = selected && focused
+    ? <DropdownMenu editor={editor} model={props.model} /> : null;
 
   return (
     <th {...props.attributes}>
