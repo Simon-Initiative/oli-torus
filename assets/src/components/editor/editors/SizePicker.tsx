@@ -50,7 +50,7 @@ export const SizePicker = (props: SizePickerProps) => {
   const cols = range(numCols);
 
   const width = (numCols * 19 + 10) + 'px';
-  const height = (numRows * 28 + 50) + 'px';
+  const height = (numRows * 28 + 15) + 'px';
 
   const mapRow = (row: number) => {
     const cells = cols.map((col: number) => (
@@ -78,13 +78,14 @@ export const SizePicker = (props: SizePickerProps) => {
   const gridStyle = {
     height,
     width,
-    padding: '0px',
+    paddingLeft: '10px',
   };
 
   const labelStyle = {
     width,
-    color: '#808080',
+    color: '#DDDDDD',
     textAlign: 'center',
+
   } as any;
 
 
@@ -92,7 +93,6 @@ export const SizePicker = (props: SizePickerProps) => {
 
   return (
     <div style={gridStyle}>
-      <div style={labelStyle}>Create Table</div>
       {rows.map((r: number) => mapRow(r))}
       <div style={labelStyle}>{sizeLabel}</div>
     </div>
