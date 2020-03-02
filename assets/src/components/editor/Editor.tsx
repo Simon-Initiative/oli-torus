@@ -1,16 +1,14 @@
 import React, { useMemo, useCallback, KeyboardEvent } from 'react';
-import { ReactEditor, Slate, Editable, withReact } from 'slate-react';
-import { createEditor, Node, Range, NodeEntry, Editor as SlateEditor, Transforms, Path } from 'slate';
+import { Slate, Editable, withReact } from 'slate-react';
+import { createEditor, Node, NodeEntry, Editor as SlateEditor, Transforms } from 'slate';
 import { withHistory } from 'slate-history';
-import { create, mutate, Mark, ModelElement, schema, Paragraph, SchemaConfig } from 'data/content/model';
+import { create, Mark, ModelElement, schema, Paragraph, SchemaConfig } from 'data/content/model';
 import { editorFor, markFor } from './editors';
 import { ToolbarItem, gutterWidth } from './interfaces';
 import { FixedToolbar, HoveringToolbar } from './Toolbars';
 import { onKeyDown as listOnKeyDown } from './editors/Lists';
 import { onKeyDown as quoteOnKeyDown } from './editors/Blockquote';
 import guid from 'utils/guid';
-import { toSimpleText, hasMark } from './utils';
-import { Transform } from 'stream';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor (including selection state)
