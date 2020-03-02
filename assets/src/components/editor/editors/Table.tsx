@@ -9,8 +9,9 @@ import guid from 'utils/guid';
 import { LabelledTextEditor } from 'components/TextEditor';
 import { SizePicker } from './SizePicker';
 
+// Helper functions for creating tables and its parts
 const td = (text: string) => ContentModel.create<ContentModel.TableData>(
-  { type: 'td', isHeader: false, children: [{ type: 'p', children: [{ text }] }], id: guid() });
+  { type: 'td', children: [{ type: 'p', children: [{ text }] }], id: guid() });
 
 const tr = (children: ContentModel.TableData[]) => ContentModel.create<ContentModel.TableRow>(
   { type: 'tr', children, id: guid() });
@@ -18,6 +19,8 @@ const tr = (children: ContentModel.TableData[]) => ContentModel.create<ContentMo
 const table = (children: ContentModel.TableRow[]) => ContentModel.create<ContentModel.Table>(
   { type: 'table', children, id: guid() });
 
+
+// The UI command for creating tables
 const command: Command = {
   execute: (editor: ReactEditor, params: any) => {
 
@@ -46,10 +49,12 @@ const command: Command = {
   },
 };
 
+// Dropdown menu that appears in each table cell.
 const DropdownMenu = (props: any) => {
 
   const ref = useRef();
 
+  // There has to be a better way to do this.
   useEffect(() => {
     if (ref !== null && ref.current !== null) {
       ((window as any).$('.dropdown-toggle') as any).dropdown();

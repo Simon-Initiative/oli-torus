@@ -180,30 +180,121 @@ export enum CodeLanguages {
   'clojure',
 }
 
+const toObj = (arr: string[]) => arr
+  .reduce((p: Object, c: string) => { (p as any)[c] = true; return p; }, {});
+
+export type SchemaConfig = {
+  isVoid: boolean,
+  isBlock: boolean,
+  isTopLevel: boolean,
+  validChildren: Object,
+};
+
+const header = {
+  isVoid: false,
+  isBlock: true,
+  isTopLevel: true,
+  validChildren: {},
+};
+
+const media = {
+  isVoid: true,
+  isBlock: true,
+  isTopLevel: true,
+  validChildren: {},
+};
+
+const tableCell = {
+  isVoid: false,
+  isBlock: true,
+  isTopLevel: false,
+  validChildren: toObj(['p', 'img', 'youtube', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'ul', 'audio', 'math', 'code', 'blockquote']),
+};
+
+const list = {
+  isVoid: false,
+  isBlock: true,
+  isTopLevel: true,
+  validChildren: toObj(['li', 'ol', 'ul']),
+};
+
 export const schema = {
-  p: { isVoid: false, isBlock: true },
-  h1: { isVoid: false, isBlock: true },
-  h2: { isVoid: false, isBlock: true },
-  h3: { isVoid: false, isBlock: true },
-  h4: { isVoid: false, isBlock: true },
-  h5: { isVoid: false, isBlock: true },
-  h6: { isVoid: false, isBlock: true },
-  img: { isVoid: true, isBlock: true },
-  youtube: { isVoid: true, isBlock: true },
-  audio: { isVoid: true, isBlock: true },
-  table: { isVoid: false, isBlock: true },
-  tr: { isVoid: false, isBlock: true },
-  th: { isVoid: false, isBlock: true },
-  td: { isVoid: false, isBlock: true },
-  ol: { isVoid: false, isBlock: true },
-  ul: { isVoid: false, isBlock: true },
-  li: { isVoid: false, isBlock: true },
-  math: { isVoid: false, isBlock: true },
-  math_line: { isVoid: false, isBlock: true, isSimpleText: true },
-  code: { isVoid: false, isBlock: true },
-  code_line: { isVoid: false, isBlock: true, isSimpleText: true },
-  blockquote: { isVoid: false, isBlock: true },
-  a: { isVoid: false, isBlock: false },
+  p: {
+    isVoid: false,
+    isBlock: true,
+    isTopLevel: true,
+    validChildren: {},
+  },
+  h1: header,
+  h2: header,
+  h3: header,
+  h4: header,
+  h5: header,
+  h6: header,
+  img: media,
+  youtube: media,
+  audio: media,
+  table: {
+    isVoid: false,
+    isBlock: true,
+    isTopLevel: true,
+    validChildren: toObj(['tr']),
+  },
+  tr: {
+    isVoid: false,
+    isBlock: true,
+    isTopLevel: false,
+    validChildren: toObj(['td', 'th']),
+  },
+  th: tableCell,
+  td: tableCell,
+  ol: list,
+  ul: list,
+  li: {
+    isVoid: false,
+    isBlock: true,
+    isTopLevel: false,
+    validChildren: toObj(['img', 'youtube', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'ul', 'audio', 'math', 'code', 'blockquote']),
+  },
+  math: {
+    isVoid: false,
+    isBlock: true,
+    isTopLevel: true,
+    validChildren: toObj(['math_line']),
+  },
+  math_line: {
+    isVoid: false,
+    isBlock: true,
+    isSimpleText: true,
+    isTopLevel: false,
+    validChildren: {},
+  },
+  code: {
+    isVoid: false,
+    isBlock: true,
+    isTopLevel: true,
+    validChildren: toObj(['math_line']),
+  },
+  code_line: {
+    isVoid: false,
+    isBlock: true,
+    isSimpleText: true,
+    isTopLevel: false,
+    validChildren: {} },
+  blockquote: {
+    isVoid: false,
+    isBlock: true,
+    isTopLevel: true,
+    validChildren: toObj(['p']),
+  },
+  a: {
+    isVoid: false,
+    isBlock: false,
+    isTopLevel: false,
+    validChildren: {},
+  },
 };
 
 
