@@ -32,6 +32,12 @@ else
   echo "##"
 fi
 
+# start database if it's not running
+if ! docker-compose ps | grep -iq "oli_postgres.\+Up"; then
+  echo "## Starting postgres database..."
+  docker-compose up -d postgres && sleep 5
+fi
+
 echo "## NOTICE: If you make changes to oli.env, you must re-source the file for changes to be applied:"
 echo "##  $ source oli.env"
 echo "##  $ mix phx.server"
@@ -39,4 +45,5 @@ echo "## "
 echo "## Use the command 'exit' to leave anytime."
 echo ""
 
-bash -c "source oli.env;PS1=\"🚧 oli-dev \033[0;34m[\w]\033[0;37m $ \" bash --norc"
+# bash --norc -c "PS1=\"🚧 oli-dev \033[0;34m[\w]\033[0;37m $ \";set -a;"
+bash --init-file <(echo "PS1=\"🚧 oli-dev \033[0;34m[\w]\033[0;37m $ \";set -a;source oli.env;")
