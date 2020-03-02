@@ -275,7 +275,7 @@ export const schema = {
     isVoid: false,
     isBlock: true,
     isTopLevel: true,
-    validChildren: toObj(['math_line']),
+    validChildren: toObj(['code_line']),
   },
   code_line: {
     isVoid: false,
