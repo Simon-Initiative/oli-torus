@@ -1,6 +1,6 @@
-import React from 'react';
-import { ReactEditor, useFocused, useSelected } from 'slate-react';
-import { Transforms } from 'slate';
+import React, { useEffect, useRef } from 'react';
+import { ReactEditor, useFocused, useSelected, useSlate } from 'slate-react';
+import { Transforms, Editor, Path } from 'slate';
 import { updateModel, getEditMode } from './utils';
 import * as ContentModel from 'data/content/model';
 import { Command, CommandDesc } from '../interfaces';
@@ -8,9 +8,8 @@ import { EditorProps } from './interfaces';
 import guid from 'utils/guid';
 import { LabelledTextEditor } from 'components/TextEditor';
 
-
 const td = (text: string) => ContentModel.create<ContentModel.TableData>(
-  { type: 'td', children: [{ type: 'p', children: [{ text }] }], id: guid() });
+  { type: 'td', isHeader: false, children: [{ type: 'p', children: [{ text }] }], id: guid() });
 
 const tr = (children: ContentModel.TableData[]) => ContentModel.create<ContentModel.TableRow>(
   { type: 'tr', children, id: guid() });
@@ -33,6 +32,139 @@ const command: Command = {
   },
 };
 
+const DropdownMenu = (props: any) => {
+
+  const ref = useRef();
+
+  useEffect(() => {
+    if (ref !== null && ref.current !== null) {
+      ((window as any).$('.dropdown-toggle') as any).dropdown();
+    }
+  });
+
+  const onToggleHeader = () => {
+    const editor: ReactEditor = props.editor;
+    const path = ReactEditor.findPath(editor, props.model);
+
+    const type = props.model.type === 'th' ? 'td' : 'th';
+    Transforms.setNodes(editor, { type }, { at: path });
+  };
+
+  const onAddRowBefore = () => {
+    const editor: ReactEditor = props.editor;
+    const path = ReactEditor.findPath(editor, props.model);
+    const [parent, parentPath] = Editor.parent(editor, path);
+
+    const count = parent.children.length;
+    const tds = [];
+    for (let i = 0; i < count; i += 1) {
+      tds.push(td(''));
+    }
+    const row: ContentModel.TableRow = tr(tds);
+
+    Transforms.insertNodes(editor, row, { at: parentPath });
+  };
+
+  const onAddRowAfter = () => {
+    const editor: ReactEditor = props.editor;
+    const path = ReactEditor.findPath(editor, props.model);
+    const [parent, parentPath] = Editor.parent(editor, path);
+
+    const count = parent.children.length;
+    const tds = [];
+    for (let i = 0; i < count; i += 1) {
+      tds.push(td(''));
+    }
+    const row: ContentModel.TableRow = tr(tds);
+    Transforms.insertNodes(editor, row, { at: Path.next(parentPath) });
+
+  };
+
+  const onAddColumnBefore = () => {
+    const editor: ReactEditor = props.editor;
+    const path = ReactEditor.findPath(editor, props.model);
+    const [, parentPath] = Editor.parent(editor, path);
+    const [table] = Editor.parent(editor, parentPath);
+
+    const rows = table.children.length;
+    for (let i = 0; i < rows; i += 1) {
+      path[path.length - 2] = i;
+      Transforms.insertNodes(editor, td(''), { at: path });
+    }
+  };
+
+  const onAddColumnAfter = () => {
+    const editor: ReactEditor = props.editor;
+    const path = ReactEditor.findPath(editor, props.model);
+    const [, parentPath] = Editor.parent(editor, path);
+    const [table] = Editor.parent(editor, parentPath);
+
+    const rows = table.children.length;
+    for (let i = 0; i < rows; i += 1) {
+      path[path.length - 2] = i;
+      Transforms.insertNodes(editor, td(''), { at: Path.next(path) });
+    }
+  };
+
+  const onDeleteRow = () => {
+    const editor: ReactEditor = props.editor;
+    const path = ReactEditor.findPath(editor, props.model);
+    Transforms.removeNodes(editor, { at: Path.parent(path) });
+  };
+
+  const onDeleteColumn = () => {
+    const editor: ReactEditor = props.editor;
+    const path = ReactEditor.findPath(editor, props.model);
+    const [, parentPath] = Editor.parent(editor, path);
+    const [table] = Editor.parent(editor, parentPath);
+
+    const rows = table.children.length;
+    for (let i = 0; i < rows; i += 1) {
+      path[path.length - 2] = i;
+      Transforms.removeNodes(editor, { at: Path.next(path) });
+    }
+  };
+
+  const style = {
+    float: 'right',
+  } as any;
+
+  const buttonStyle = {
+    height: 20,
+    width: 20,
+    border: 'none',
+    outline: 'none',
+  }
+
+  return (
+    <div ref={ref as any} className="dropdown" style={style}>
+      <button type="button"
+        style={buttonStyle}
+        className="dropdown-toggle"
+        data-reference="parent"
+        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <span className="sr-only">Toggle Dropdown</span>
+      </button>
+      <div className="dropdown-menu">
+        <h6 className="dropdown-header">Insert</h6>
+        <a className="dropdown-item" onClick={onAddRowBefore}>Row before</a>
+        <a className="dropdown-item" onClick={onAddRowAfter}>Row after</a>
+        <a className="dropdown-item" onClick={onAddColumnBefore}>Column before</a>
+        <a className="dropdown-item" onClick={onAddColumnAfter}>Column after</a>
+
+        <div className="dropdown-divider"></div>
+
+        <h6 className="dropdown-header">Delete</h6>
+        <a className="dropdown-item" onClick={onDeleteRow}>Row</a>
+        <a className="dropdown-item" onClick={onDeleteColumn}>Column</a>
+
+        <div className="dropdown-divider"></div>
+        <a className="dropdown-item" onClick={onToggleHeader}>Toggle Header</a>
+      </div>
+    </div>
+  );
+}
+
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
   icon: 'fab fa-table',
@@ -45,44 +177,33 @@ export interface TableProps extends EditorProps<ContentModel.Table> {
 
 export const TdEditor = (props: EditorProps<ContentModel.TableData>) => {
 
+  const editor = useSlate();
   const selected = useSelected();
   const focused = useFocused();
 
-
-  const style = {
-    float: 'right',
-    opacity: 0.5,
-    visibility: (selected && focused) ? 'visible' : 'hidden',
-  } as any;
-
-  const menu = (
-    <div contentEditable={false} className="dropdown" style={style}>
-      <button type="button"
-        className="btn btn-danger dropdown-toggle"
-        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <span className="sr-only">Toggle Dropdown</span>
-      </button>
-      <div className="dropdown-menu">
-        <a className="dropdown-item" href="#">Action</a>
-        <a className="dropdown-item" href="#">Another action</a>
-        <a className="dropdown-item" href="#">Something else here</a>
-        <div className="dropdown-divider"></div>
-        <a className="dropdown-item" href="#">Separated link</a>
-      </div>
-    </div>
-  );
+  const maybeMenu = selected && focused ? <DropdownMenu editor={editor} model={props.model} /> : null;
 
   return (
     <td {...props.attributes}>
-      {menu}
+      {maybeMenu}
       {props.children}
     </td>
   );
 };
 
 export const ThEditor = (props: EditorProps<ContentModel.TableHeader>) => {
+
+  const editor = useSlate();
+  const selected = useSelected();
+  const focused = useFocused();
+
+  const maybeMenu = selected && focused ? <DropdownMenu editor={editor} model={props.model} /> : null;
+
   return (
-    <th {...props.attributes}>{props.children}</th>
+    <th {...props.attributes}>
+      {maybeMenu}
+      {props.children}
+    </th>
   );
 };
 
@@ -110,9 +231,9 @@ export const TableEditor = (props: TableProps) => {
   // events.
 
   return (
-    <div {...attributes} style={ { margin: '20px' } }>
+    <div {...attributes} style={{ margin: '20px' }}>
 
-      <div className="table-responsive">
+      <div>
         <table className="table table-bordered">
           <tbody>
             {children}
