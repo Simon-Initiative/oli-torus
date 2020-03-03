@@ -1,12 +1,15 @@
-defmodule OliWeb.SessionController do
+defmodule OliWeb.AuthController do
   use OliWeb, :controller
   plug Ueberauth
 
-  # alias Oli.Account
-  alias Oli.User
-  alias Oli.Repo
+  alias Oli.Accounts
+  alias Oli.Accounts.User
 
-  def create(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
+  def index(conn, _params) do
+    render(conn, "index.html")
+  end
+
+  def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
     user_params = %{
       token: auth.credentials.token,
       first_name: auth.info.first_name,
@@ -17,7 +20,7 @@ defmodule OliWeb.SessionController do
 
     changeset = User.changeset(%User{}, user_params)
 
-    case insert_or_update_user(changeset) do
+    case Accounts.insert_or_update_user(changeset) do
       {:ok, user} ->
         conn
         |> put_flash(:info, "Thank you for signing in!")
@@ -37,12 +40,4 @@ defmodule OliWeb.SessionController do
     |> redirect(to: Routes.page_path(conn, :index))
   end
 
-  defp insert_or_update_user(changeset) do
-    case Repo.get_by(User, email: changeset.changes.email) do
-      nil ->
-        Repo.insert(changeset)
-      user ->
-        {:ok, user}
-    end
-  end
 end

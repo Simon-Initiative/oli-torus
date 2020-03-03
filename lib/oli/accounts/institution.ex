@@ -1,4 +1,4 @@
-defmodule Oli.Lti.Institution do
+defmodule Oli.Accounts.Institution do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -15,7 +15,7 @@ defmodule Oli.Lti.Institution do
   @doc false
   def changeset(institution, attrs) do
     institution
-    |> cast(attrs, [:country_code, :institution_email, :institution_url, :name, :timezone])
-    |> validate_required([:country_code, :institution_email, :institution_url, :name, :timezone])
+    |> cast(attrs, [:name, :country_code, :institution_email, :institution_url, :timezone])
+    |> validate_required([:name, :country_code, :institution_email, :institution_url, :timezone])
   end
 end

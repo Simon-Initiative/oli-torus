@@ -1,4 +1,4 @@
-defmodule Oli.User do
+defmodule Oli.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 

@@ -6,7 +6,8 @@
     <h1><%= gettext "Welcome to %{name}!", name: "OLI Authoring" %></h1>
     <p>Create, deliver and continuously improve your course content using your web browser.</p>
 
-    <a href="/auth/google?scope=email%20profile" class="btn btn-outline-dark">Create an Account →</a>
+    <a href="/auth/google?scope=email%20profile" class="btn btn-link">Register my Institution</a>
+    <a href="/institution/register" class="btn btn-outline-dark">Create an Account →</a>
   <% end %>
 </section>
 

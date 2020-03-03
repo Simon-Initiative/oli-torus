@@ -27,15 +27,19 @@ defmodule OliWeb.Router do
 
     get "/", PageController, :index
 
+    resources "/institutions", InstitutionController
   end
 
   scope "/auth", OliWeb do
     pipe_through :browser
 
-    get "/signout", SessionController, :delete
+    get "/signin", AuthController, :index
+    get "/signout", AuthController, :delete
 
-    get "/:provider", SessionController, :request
-    get "/:provider/callback", SessionController, :create
+    get "/:provider", AuthController, :request
+    get "/:provider/callback", AuthController, :callback
+    post "/:provider/callback", AuthController, :callback
+
   end
 
   scope "/test", OliWeb do

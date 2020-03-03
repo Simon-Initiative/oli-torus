@@ -12,7 +12,6 @@
 
 1. Install dependencies:
     - [Docker](https://www.docker.com/) and docker-compose
-<br />
 
 1. Initial setup
     ```
@@ -35,7 +34,13 @@
     - [Docker](https://www.docker.com/) and docker-compose
     - [Elixir](https://elixir-lang.org/) (`$ brew install elixir`)
     - [Phoenix](https://www.phoenixframework.org/) (`$ mix archive.install hex phx_new 1.4.10`)
-<br/>
+
+1. Optionally, use the provided `devmode.sh` script to automatically run all the following steps and get started
+   ```
+   $ sh ./devmode.sh
+   ```
+
+   Skip the remaining setup steps and use `mix phx.server` to run the server.
 
 1. Create configuration env files:
     ```
@@ -70,23 +75,28 @@
     $ mix ecto.create
     ```
 
-2. Run migration to create schema
+1. Run migration to create schema
     ```
     $ mix ecto.migrate
     ```
 
-4. Load phoenix app configuration from environment file. This step is necessary anytime you change a configuration variable
+1. Configure bash to properly source environment variable configurations
+   ```
+   $ set -a
+   ```
+
+1. Load phoenix app configuration from environment file. This step is necessary anytime you change a configuration variable
     ```
     $ source oli.env
     ```
 
-4. Start Phoenix server
+1. Start Phoenix server
     ```
     $ mix phx.server
     ```
     > NOTE: Use Ctrl+c to stop the Phoenix server
 
-5. Open your web browser to `localhost:4000`
+1. Open your web browser to `localhost:4000`
 
 
 ### Running Tests

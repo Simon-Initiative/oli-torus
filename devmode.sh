@@ -45,5 +45,4 @@ echo "## "
 echo "## Use the command 'exit' to leave anytime."
 echo ""
 
-# bash --norc -c "PS1=\"🚧 oli-dev \033[0;34m[\w]\033[0;37m $ \";set -a;"
-bash --init-file <(echo "PS1=\"🚧 oli-dev \033[0;34m[\w]\033[0;37m $ \";set -a;source oli.env;")
+bash --init-file <(echo "PS1=\"\[🚧\] oli-dev \[\033[0;34m\][\w]\[\033[0;37m\] $ \";set -a;source oli.env;")

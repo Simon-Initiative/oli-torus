@@ -1,0 +1,33 @@
+<h1>Show Institution</h1>
+
+<ul>
+
+  <li>
+    <strong>Name:</strong>
+    <%= @institution.name %>
+  </li>
+
+  <li>
+    <strong>Country code:</strong>
+    <%= @institution.country_code %>
+  </li>
+
+  <li>
+    <strong>Institution email:</strong>
+    <%= @institution.institution_email %>
+  </li>
+
+  <li>
+    <strong>Institution url:</strong>
+    <%= @institution.institution_url %>
+  </li>
+
+  <li>
+    <strong>Timezone:</strong>
+    <%= @institution.timezone %>
+  </li>
+
+</ul>
+
+<span><%= link "Edit", to: Routes.institution_path(@conn, :edit, @institution) %></span>
+<span><%= link "Back", to: Routes.institution_path(@conn, :index) %></span>

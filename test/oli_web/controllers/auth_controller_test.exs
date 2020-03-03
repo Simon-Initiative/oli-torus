@@ -1,4 +1,4 @@
-defmodule OliWeb.SessionControllerTest do
+defmodule OliWeb.AuthControllerTest do
   use OliWeb.ConnCase
   alias Oli.{Repo, User}
 

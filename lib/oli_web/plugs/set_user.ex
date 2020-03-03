@@ -2,7 +2,8 @@ defmodule Oli.Plugs.SetUser do
   import Plug.Conn
   import Phoenix.Controller
 
-  alias Oli.{Repo, User}
+  alias Oli.Accounts.User
+  alias Oli.Repo
 
   def init(_params) do
   end

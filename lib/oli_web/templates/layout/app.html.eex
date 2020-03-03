@@ -29,22 +29,25 @@
       <div class="container">
         <a class="navbar-brand" href="/">
           <img src="/images/oli-icon.png" width="30" height="30" class="d-inline-block align-top" alt="">
-          OLI
+          Open Learning <span style="font-weight: 200">Initiative</span>
         </a>
 
-          <ul class="navbar-nav mr-auto">
+          <%# <ul class="navbar-nav mr-auto">
             <li class="nav-item active">
               <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
             </li>
-          </ul>
+          </ul> %>
           <div class="form-inline my-2 my-lg-0">
             <%= if @conn.assigns[:user] do %>
               <span class="block lg:inline-block lg:mt-0 text-grey-darkest mr-4 no-underline hover:underline">
                 <%= "#{@conn.assigns.user.first_name} #{@conn.assigns.user.last_name}" %>
               </span>
-              <%= link "Sign out", to: Routes.session_path(@conn, :delete), class: "btn btn-dark my-2 my-sm-0" %>
+              <%= link "Sign out", to: Routes.auth_path(@conn, :delete), class: "btn btn-dark my-2 my-sm-0" %>
             <% else %>
-              <a href="/auth/google?scope=email%20profile" class="btn btn-dark my-2 my-sm-0">Sign in with Google</a>
+              <% IO.inspect(@conn.request_path) %>
+              <%= if @conn.request_path == "/" do %>
+                <a href="/auth/signin" class="btn btn-dark my-2 my-sm-0">Sign in</a>
+              <% end %>
             <% end %>
           </div>
       </div>
