@@ -150,7 +150,7 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
 
   const buttons = collapsed
     ? []
-    : [<TextFormatter/>, ...toolbarItems.map((t, i) => {
+    : [<TextFormatter key="text"/>, ...toolbarItems.map((t, i) => {
       if (t.type === 'CommandDesc' && t.command.obtainParameters === undefined) {
         return <ToolbarButton key={t.icon} icon={t.icon} command={t.command} />;
       }
