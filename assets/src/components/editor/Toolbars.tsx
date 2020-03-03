@@ -1,9 +1,53 @@
 import React, { useState, useRef, useEffect } from 'react';
 import * as ReactDOM from 'react-dom';
 import { ReactEditor, useSlate } from 'slate-react';
-import { Editor as SlateEditor, Range } from 'slate';
+import { Editor as SlateEditor, Node, Range, Transforms } from 'slate';
 import { hoverMenuCommands } from './editors';
-import { ToolbarItem, gutterWidth, Command } from './interfaces';
+import { ToolbarItem, gutterWidth } from './interfaces';
+import { schema } from 'data/content/model';
+import { Maybe } from 'tsmonad';
+
+const parentTextTypes = {
+  p: true,
+  h1: true,
+  h2: true,
+  h3: true,
+  h4: true,
+  h5: true,
+  h6: true,
+};
+
+const getRootOfText = (editor: ReactEditor) : Maybe<Node> => {
+
+  if (editor.selection !== null) {
+    let [node, path] = SlateEditor.node(editor, editor.selection);
+
+    while (node.text !== undefined || !(schema as any)[node.type].isBlock) {
+      const [nextNode, nextPath] = SlateEditor.parent(editor, path);
+      node = nextNode;
+      path = nextPath;
+    }
+
+    return Maybe.just(node);
+
+  }
+  return Maybe.nothing();
+
+};
+
+const getCurrentNode = (editor: ReactEditor) => {
+
+  if (editor.selection !== null) {
+    return SlateEditor.node(editor, editor.selection);
+  }
+  return null;
+
+};
+
+const isMarkActive = (editor: ReactEditor, format: string) => {
+  const marks = SlateEditor.marks(editor);
+  return marks ? marks[format] === true : false;
+};
 
 function positionHovering(el: HTMLElement) {
   const menu = el;
@@ -134,6 +178,7 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
   return (
     <div ref={(ref as any)} style={{ visibility: 'hidden', position: 'sticky', top: '0px' }}>
       <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>
+        <TextFormatter/>
         {buttons}
         <button
           className="btn btn-secondary btn-sm"
@@ -153,6 +198,45 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
 const Spacer = () => {
   return (
     <span style={{ minWidth: '5px', maxWidth: '5px' }} />
+  );
+};
+
+const textOptions = [
+  { value: 'p', text: 'Normal text' },
+  { value: 'h1', text: 'Title' },
+  { value: 'h2', text: 'Subtitle' },
+  { value: 'h3', text: 'Heading 1' },
+  { value: 'h4', text: 'Heading 2' },
+  { value: 'h5', text: 'Heading 3' },
+  { value: 'h6', text: 'Heading 4' },
+];
+
+const TextFormatter = () => {
+  const editor = useSlate();
+  const selected = getRootOfText(editor).caseOf({
+    just: n => (parentTextTypes as any)[n.type] ? n.type : 'p',
+    nothing: () => 'p',
+  });
+
+  const onChange = (e: any) => {
+    getRootOfText(editor).lift((n: Node) => {
+      if ((parentTextTypes as any)[n.type]) {
+        const path = ReactEditor.findPath(editor, n);
+        const type = e.target.value;
+        Transforms.setNodes(editor, { type }, { at: path });
+      }
+    });
+
+  };
+
+  return (
+    <select
+      onChange={onChange}
+      value={selected}
+      className="custom-select custom-select-sm">
+      {textOptions.map(o =>
+        <option key={o.value} value={o.value}>{o.text}</option>)}
+    </select>
   );
 };
 
