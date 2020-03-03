@@ -1,5 +1,5 @@
 import { ReactEditor } from 'slate-react';
-import { Transforms, Range, Node, Point, Editor as SlateEditor } from 'slate';
+import { Transforms, Range, Node, Point, Path, Editor as SlateEditor } from 'slate';
 import * as ContentModel from 'data/content/model';
 import { Command, CommandDesc } from '../interfaces';
 import guid from 'utils/guid';
@@ -175,17 +175,8 @@ function handleTermination(editor: SlateEditor, e: KeyboardEvent) {
             { type: 'p', children: [{ text: '' }], id: guid() });
 
           // Insert it ahead of the next node
-          const nextMatch = SlateEditor.next(editor, { at: parentPath });
-          if (nextMatch) {
-            const [, nextPath] = nextMatch;
-            Transforms.insertNodes(editor, p, { at: nextPath });
-            Transforms.select(editor, nextPath);
-
-          // But if there is no next node, insert it at end
-          } else {
-            Transforms.insertNodes(editor, p, { mode: 'highest' });
-            Transforms.select(editor, SlateEditor.end(editor, []));
-          }
+          Transforms.insertNodes(editor, p, { at: Path.next(parentPath) });
+          Transforms.select(editor, Path.next(parentPath));
 
           e.preventDefault();
         }
