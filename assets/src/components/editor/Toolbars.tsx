@@ -35,20 +35,6 @@ const getRootOfText = (editor: ReactEditor) : Maybe<Node> => {
 
 };
 
-const getCurrentNode = (editor: ReactEditor) => {
-
-  if (editor.selection !== null) {
-    return SlateEditor.node(editor, editor.selection);
-  }
-  return null;
-
-};
-
-const isMarkActive = (editor: ReactEditor, format: string) => {
-  const marks = SlateEditor.marks(editor);
-  return marks ? marks[format] === true : false;
-};
-
 function positionHovering(el: HTMLElement) {
   const menu = el;
   const native = window.getSelection() as any;
@@ -164,7 +150,7 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
 
   const buttons = collapsed
     ? []
-    : toolbarItems.map((t, i) => {
+    : [<TextFormatter/>, ...toolbarItems.map((t, i) => {
       if (t.type === 'CommandDesc' && t.command.obtainParameters === undefined) {
         return <ToolbarButton key={t.icon} icon={t.icon} command={t.command} />;
       }
@@ -172,13 +158,12 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
         return <DropdownToolbarButton key={t.icon} icon={t.icon} command={t.command} />;
       }
       return <Spacer key={'spacer-' + i} />;
-    });
+    })];
 
 
   return (
     <div ref={(ref as any)} style={{ visibility: 'hidden', position: 'sticky', top: '0px' }}>
       <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>
-        <TextFormatter/>
         {buttons}
         <button
           className="btn btn-secondary btn-sm"
