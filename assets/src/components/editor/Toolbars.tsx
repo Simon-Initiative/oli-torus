@@ -4,8 +4,7 @@ import { ReactEditor, useSlate } from 'slate-react';
 import { Editor as SlateEditor, Node, Range, Transforms } from 'slate';
 import { hoverMenuCommands } from './editors';
 import { ToolbarItem, gutterWidth } from './interfaces';
-import { schema } from 'data/content/model';
-import { Maybe } from 'tsmonad';
+import { getRootOfText } from './utils';
 
 const parentTextTypes = {
   p: true,
@@ -17,23 +16,6 @@ const parentTextTypes = {
   h6: true,
 };
 
-const getRootOfText = (editor: ReactEditor) : Maybe<Node> => {
-
-  if (editor.selection !== null) {
-    let [node, path] = SlateEditor.node(editor, editor.selection);
-
-    while (node.text !== undefined || !(schema as any)[node.type].isBlock) {
-      const [nextNode, nextPath] = SlateEditor.parent(editor, path);
-      node = nextNode;
-      path = nextPath;
-    }
-
-    return Maybe.just(node);
-
-  }
-  return Maybe.nothing();
-
-};
 
 function positionHovering(el: HTMLElement) {
   const menu = el;

@@ -1,5 +1,7 @@
-import { Node } from 'slate';
-import { Marks } from 'data/content/model';
+import { Node, Editor } from 'slate';
+import { ReactEditor } from 'slate-react';
+import { Marks, schema } from 'data/content/model';
+import { Maybe } from 'tsmonad';
 
 // Returns true if a text node contains at least one mark
 export function hasMark(textNode: Text) : boolean {
@@ -24,3 +26,23 @@ function toSimpleTextHelper(node: Node, text: string) : string {
     return updatedText;
   }, text);
 }
+
+// For the current selection, walk up through the data model to find the
+// immediate block parent.
+export const getRootOfText = (editor: ReactEditor) : Maybe<Node> => {
+
+  if (editor.selection !== null) {
+    let [node, path] = Editor.node(editor, editor.selection);
+
+    while (node.text !== undefined || !(schema as any)[node.type].isBlock) {
+      const [nextNode, nextPath] = Editor.parent(editor, path);
+      node = nextNode;
+      path = nextPath;
+    }
+
+    return Maybe.just(node);
+
+  }
+  return Maybe.nothing();
+
+};

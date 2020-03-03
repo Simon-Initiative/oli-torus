@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, KeyboardEvent } from 'react';
-import { Slate, Editable, withReact } from 'slate-react';
-import { createEditor, Node, NodeEntry, Editor as SlateEditor, Transforms } from 'slate';
+import { Slate, Editable, withReact, ReactEditor } from 'slate-react';
+import { createEditor, Node, NodeEntry, Range, Editor as SlateEditor, Transforms, Path } from 'slate';
 import { withHistory } from 'slate-history';
 import { create, Mark, ModelElement, schema, Paragraph, SchemaConfig } from 'data/content/model';
 import { editorFor, markFor } from './editors';
@@ -8,6 +8,8 @@ import { ToolbarItem, gutterWidth } from './interfaces';
 import { FixedToolbar, HoveringToolbar } from './Toolbars';
 import { onKeyDown as listOnKeyDown } from './editors/Lists';
 import { onKeyDown as quoteOnKeyDown } from './editors/Blockquote';
+import { getRootOfText } from './utils';
+
 import guid from 'utils/guid';
 
 export type EditorProps = {
@@ -20,6 +22,27 @@ export type EditorProps = {
   // The fixed toolbar configuration
   toolbarItems: ToolbarItem[];
 
+};
+
+// Pressing the Enter key on any void block should insert an empty
+// paragraph after that node
+const voidOnKeyDown = (editor: ReactEditor, e: KeyboardEvent) => {
+
+  if (e.key === 'Enter') {
+    if (editor.selection !== null && Range.isCollapsed(editor.selection)) {
+
+      getRootOfText(editor).lift((node: Node) => {
+
+        if ((schema as any)[node.type].isVoid) {
+          const path = ReactEditor.findPath(editor, node);
+          Transforms.insertNodes(editor, create<Paragraph>(
+            { type: 'p', children: [{ text: '' }], id: guid() }),
+            { at: Path.next(path) });
+        }
+      });
+
+    }
+  }
 };
 
 export const Editor = (props: EditorProps) => {
@@ -107,6 +130,7 @@ export const Editor = (props: EditorProps) => {
   }, []);
 
   const onKeyDown = useCallback((e: KeyboardEvent) => {
+    voidOnKeyDown(editor, e);
     listOnKeyDown(editor, e);
     quoteOnKeyDown(editor, e);
   }, []);
