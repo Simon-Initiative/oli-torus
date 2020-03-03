@@ -74,7 +74,7 @@ export function editorFor(
 
       return <span {...attributes}>Not implemented</span>;
     default:
-      assertNever(element);
+      return <span>{children}</span>
   }
 }
 
@@ -97,7 +97,7 @@ export function markFor(mark: ContentModel.Mark, children: any): JSX.Element {
     case 'sup':
       return <sup>{children}</sup>;
     default:
-      assertNever(mark);
+      return <span>{children}</span>
   }
 }
 

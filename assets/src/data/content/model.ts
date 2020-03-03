@@ -282,7 +282,8 @@ export const schema = {
     isBlock: true,
     isSimpleText: true,
     isTopLevel: false,
-    validChildren: {} },
+    validChildren: {}
+  },
   blockquote: {
     isVoid: false,
     isBlock: true,

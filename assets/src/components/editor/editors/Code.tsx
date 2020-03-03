@@ -9,17 +9,21 @@ import guid from 'utils/guid';
 
 import { LabelledTextEditor } from 'components/TextEditor';
 
-
-const languages = Object.values(ContentModel.CodeLanguages).sort();
+const languages = Object
+  .keys(ContentModel.CodeLanguages)
+  .filter(k => typeof ContentModel.CodeLanguages[k as any] === "number")
+  .sort();
 
 const command: Command = {
   execute: (editor: ReactEditor) => {
 
     const Code = ContentModel.create<ContentModel.Code>(
-      { type: 'code', language: 'python',
+      {
+        type: 'code', language: 'python',
         showNumbers: false,
         startingLineNumber: 1, children: [
-          { type: 'code_line', children: [{ text: '' }] }], id: guid() });
+          { type: 'code_line', children: [{ text: '' }] }], id: guid()
+      });
     Transforms.insertNodes(editor, Code);
   },
   precondition: (editor: ReactEditor) => {
@@ -78,7 +82,7 @@ export const CodeEditor = (props: CodeProps) => {
       <form>
         <div className="form-check">
           <input onChange={onNumbersChange}
-            checked={model.showNumbers} type="checkbox" className="form-check-input" id={checkId}/>
+            checked={model.showNumbers} type="checkbox" className="form-check-input" id={checkId} />
           <label className="form-check-label" htmlFor={checkId}>Line numbers</label>
         </div>
         <select className="form-control form-control-sm" value={model.language} onChange={onChange}>
@@ -90,19 +94,19 @@ export const CodeEditor = (props: CodeProps) => {
 
   return (
     <div>
-      <div {...props.attributes} style={ codeStyle }>
-        <pre style={ { fontFamily: 'Menlo, Monaco, Courier New, monospace' }} >
+      <div {...props.attributes} style={codeStyle}>
+        <pre style={{ fontFamily: 'Menlo, Monaco, Courier New, monospace' }} >
           <code>{props.children}</code>
         </pre>
-        { isActive ? attributes : null}
+        {isActive ? attributes : null}
       </div>
       <div contentEditable={false} style={{ textAlign: 'center' }}>
-          <LabelledTextEditor
-            label="Caption"
-            model={model.caption || ''}
-            onEdit={onEditCaption}
-            showAffordances={isActive}
-            editMode={editMode} />
+        <LabelledTextEditor
+          label="Caption"
+          model={model.caption || ''}
+          onEdit={onEditCaption}
+          showAffordances={isActive}
+          editMode={editMode} />
       </div>
     </div>
   );
