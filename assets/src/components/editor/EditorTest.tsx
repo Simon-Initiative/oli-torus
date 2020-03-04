@@ -8,6 +8,8 @@ import { olCommandDesc as olCmd, ulCommanDesc as ulCmd } from './editors/Lists';
 import { commandDesc as youtubeCommandDesc } from './editors/YouTube';
 import { commandDesc as quoteCommandDesc } from './editors/Blockquote';
 import { commandDesc as audioCommandDesc } from './editors/Audio';
+import { commandDesc as codeCommandDesc } from './editors/Code';
+import { commandDesc as tableCommandDesc } from './editors/Table';
 
 const initialStem: Node[] = [
   {
@@ -36,6 +38,11 @@ const toolbarItems: ToolbarItem[] = [
   imageCommandDesc,
   youtubeCommandDesc,
   audioCommandDesc,
+  {
+    type: 'GroupDivider',
+  },
+  codeCommandDesc,
+  tableCommandDesc,
 ];
 
 export const TestEditor = () => {

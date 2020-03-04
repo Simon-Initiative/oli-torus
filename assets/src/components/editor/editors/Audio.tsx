@@ -70,13 +70,13 @@ export const AudioEditor = (props: AudioProps) => {
   return (
     <div {...attributes}>
 
-      <div contentEditable={false}>
+      <div contentEditable={false} style={{ userSelect: 'none' }}>
 
         <div style={centered}>
           <audio style={playerStyle} src={src} controls />
         </div>
 
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ marginLeft: '30px' }}>
           <LabelledTextEditor
             label="Caption"
             model={model.caption || ''}
@@ -84,7 +84,7 @@ export const AudioEditor = (props: AudioProps) => {
             showAffordances={selected && focused}
             editMode={editMode} />
         </div>
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ marginLeft: '30px' }}>
           <LabelledTextEditor
             label="Alt"
             model={model.alt || ''}

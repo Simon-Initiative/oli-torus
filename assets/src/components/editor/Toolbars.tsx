@@ -1,9 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import * as ReactDOM from 'react-dom';
 import { ReactEditor, useSlate } from 'slate-react';
-import { Editor as SlateEditor, Range } from 'slate';
+import { Editor as SlateEditor, Node, Range, Transforms } from 'slate';
 import { hoverMenuCommands } from './editors';
 import { ToolbarItem, gutterWidth } from './interfaces';
+import { getRootOfText } from './utils';
+
+const parentTextTypes = {
+  p: true,
+  h1: true,
+  h2: true,
+  h3: true,
+  h4: true,
+  h5: true,
+  h6: true,
+};
+
 
 function positionHovering(el: HTMLElement) {
   const menu = el;
@@ -120,12 +132,15 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
 
   const buttons = collapsed
     ? []
-    : toolbarItems.map((t, i) => {
-      if (t.type === 'CommandDesc') {
+    : [<TextFormatter key="text"/>, ...toolbarItems.map((t, i) => {
+      if (t.type === 'CommandDesc' && t.command.obtainParameters === undefined) {
         return <ToolbarButton key={t.icon} icon={t.icon} command={t.command} />;
       }
+      if (t.type === 'CommandDesc' && t.command.obtainParameters !== undefined) {
+        return <DropdownToolbarButton key={t.icon} icon={t.icon} command={t.command} />;
+      }
       return <Spacer key={'spacer-' + i} />;
-    });
+    })];
 
 
   return (
@@ -153,6 +168,45 @@ const Spacer = () => {
   );
 };
 
+const textOptions = [
+  { value: 'p', text: 'Normal text' },
+  { value: 'h1', text: 'Title' },
+  { value: 'h2', text: 'Subtitle' },
+  { value: 'h3', text: 'Heading 1' },
+  { value: 'h4', text: 'Heading 2' },
+  { value: 'h5', text: 'Heading 3' },
+  { value: 'h6', text: 'Heading 4' },
+];
+
+const TextFormatter = () => {
+  const editor = useSlate();
+  const selected = getRootOfText(editor).caseOf({
+    just: n => (parentTextTypes as any)[n.type] ? n.type : 'p',
+    nothing: () => 'p',
+  });
+
+  const onChange = (e: any) => {
+    getRootOfText(editor).lift((n: Node) => {
+      if ((parentTextTypes as any)[n.type]) {
+        const path = ReactEditor.findPath(editor, n);
+        const type = e.target.value;
+        Transforms.setNodes(editor, { type }, { at: path });
+      }
+    });
+
+  };
+
+  return (
+    <select
+      onChange={onChange}
+      value={selected}
+      className="custom-select custom-select-sm">
+      {textOptions.map(o =>
+        <option key={o.value} value={o.value}>{o.text}</option>)}
+    </select>
+  );
+};
+
 const ToolbarButton = ({ icon, command }: any) => {
   const editor = useSlate();
   return (
@@ -165,5 +219,34 @@ const ToolbarButton = ({ icon, command }: any) => {
     >
       <i className={icon}></i>
     </button>
+  );
+};
+
+const DropdownToolbarButton = ({ icon, command }: any) => {
+  const editor = useSlate();
+
+  const ref = useRef();
+
+  useEffect(() => {
+    if (ref !== null && ref.current !== null) {
+      ((window as any).$('.dropdown-toggle') as any).dropdown();
+    }
+  });
+
+  const onDone = (params: any) => command.execute(editor, params);
+  const onCancel = () => {};
+
+  return (
+    <div ref={ref as any} className="dropdown">
+      <button
+          className="btn btn-secondary btn-sm dropdown-toggle"
+          data-toggle={'dropdown'}
+          type="button">
+        <i className={icon}></i>
+      </button>
+      <div className="dropdown-menu dropdown-menu-right">
+        {(command as any).obtainParameters(editor, onDone, onCancel)}
+      </div>
+    </div>
   );
 };

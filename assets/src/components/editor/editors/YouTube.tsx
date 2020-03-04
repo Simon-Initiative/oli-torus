@@ -77,13 +77,13 @@ export const YouTubeEditor = (props: YouTubeProps) => {
   return (
     <div {...attributes}>
 
-      <div contentEditable={false}>
+      <div contentEditable={false} style={{ userSelect: 'none' }}>
 
         <div style={centered}>
           <iframe style={playerStyle} src={fullSrc} height={height} width={width} />
         </div>
 
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ marginLeft: '30px' }}>
           <LabelledTextEditor
             label="Caption"
             model={model.caption || ''}
@@ -91,8 +91,8 @@ export const YouTubeEditor = (props: YouTubeProps) => {
             showAffordances={selected && focused}
             editMode={editMode} />
         </div>
-        <div style={{ textAlign: 'center' }}>
-        <LabelledTextEditor
+        <div style={{ marginLeft: '30px' }}>
+          <LabelledTextEditor
             label="Alt"
             model={model.alt || ''}
             onEdit={onEditAlt}
