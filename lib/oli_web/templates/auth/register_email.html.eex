@@ -115,6 +115,8 @@ a.btn-facebook:hover {
       <div class="card card-signin my-5">
         <div class="card-body">
           <h5 class="card-title text-center">Create Account</h5>
+          <%# <form action="/auth/identity" method="POST"> %>
+          <% IO.inspect(@callback_url, label: "@callback_url")%>
           <%= form_tag @callback_url, method: "post" do %>
             <div class="form-label-group">
               <input name="email" type="email" id="email" class="form-control" placeholder="Email" required autofocus>
@@ -137,7 +139,7 @@ a.btn-facebook:hover {
             </div>
 
             <div class="form-label-group">
-              <input name="institutionName" type="password" id="institutionName" class="form-control" placeholder="Password" required>
+              <input name="password" type="password" id="password" class="form-control" placeholder="Password" required>
               <label for="password">Password</label>
             </div>
 
@@ -148,7 +150,8 @@ a.btn-facebook:hover {
 
             <button class="btn btn-md btn-primary btn-block" type="submit">Register</button>
             <a href="/auth/register" class="btn btn-md btn-outline-secondary btn-block mt-4">Cancel</a>
-          <% end %>
+            <% end %>
+          <%# </form> %>
         </div>
       </div>
     </div>

@@ -22,6 +22,7 @@ defmodule OliWeb.AuthController do
   end
 
   def register_email(conn, _params) do
+    # render(conn, "register_email.html")
     render(conn, "register_email.html", callback_url: Helpers.callback_url(conn))
   end
 
@@ -32,15 +33,12 @@ defmodule OliWeb.AuthController do
   end
 
   def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
-
-    IO.inspect(auth)
-
     user_params = %{
-      # token: auth.credentials.token,
+      email: auth.info.email,
       first_name: auth.info.first_name,
       last_name: auth.info.last_name,
-      email: auth.info.email,
-      provider: "google"
+      provider: "google",
+      token: auth.credentials.token
     }
 
     changeset = User.changeset(%User{}, user_params)
@@ -57,6 +55,39 @@ defmodule OliWeb.AuthController do
         |> put_flash(:error, "Error siging in")
         |> redirect(to: Routes.page_path(conn, :index))
     end
+  end
+
+  def identity_callback(%{assigns: %{ueberauth_auth: auth}} = conn, params) do
+
+    IO.inspect(auth, label: "auth")
+
+    case validate_password(auth.credentials) do
+      :ok ->
+        user = %{id: auth.uid, name: name_from_auth(auth), avatar: auth.info.image}
+        # user = %{
+        #   email: auth.info.email,
+        #   first_name: auth.info.first_name,
+        #   last_name: auth.info.last_name,
+        #   provider: "google"
+        #   token: auth.credentials.token,
+        # }
+        conn
+        |> put_flash(:info, "Successfully authenticated.")
+        |> put_session(:current_user, user)
+        |> redirect(to: "/")
+      { :error, reason } ->
+        conn
+        |> put_flash(:error, reason)
+        |> redirect(to: "/")
+    end
+  end
+
+  def validate_password(credentials) do
+    { :ok }
+  end
+
+  def name_from_auth(auth) do
+    "Some Name"
   end
 
 end

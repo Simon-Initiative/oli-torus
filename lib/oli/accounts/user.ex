@@ -8,6 +8,7 @@ defmodule Oli.Accounts.User do
     field :last_name, :string
     field :provider, :string
     field :token, :string
+    field :password, :string
 
     timestamps()
   end
@@ -15,7 +16,7 @@ defmodule Oli.Accounts.User do
   @doc false
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:first_name, :last_name, :email, :provider, :token])
-    |> validate_required([:first_name, :last_name, :email, :provider, :token])
+    |> cast(attrs, [:email, :first_name, :last_name, :provider, :token, :password])
+    |> validate_required([:email, :first_name, :last_name, :provider])
   end
 end

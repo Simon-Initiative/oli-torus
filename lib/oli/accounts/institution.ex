@@ -8,6 +8,7 @@ defmodule Oli.Accounts.Institution do
     field :institution_url, :string
     field :name, :string
     field :timezone, :string
+    field :password, :string
 
     timestamps()
   end
@@ -15,7 +16,7 @@ defmodule Oli.Accounts.Institution do
   @doc false
   def changeset(institution, attrs) do
     institution
-    |> cast(attrs, [:name, :country_code, :institution_email, :institution_url, :timezone])
+    |> cast(attrs, [:name, :country_code, :institution_email, :institution_url, :timezone, :password])
     |> validate_required([:name, :country_code, :institution_email, :institution_url, :timezone])
   end
 end

@@ -39,6 +39,8 @@ defmodule OliWeb.Router do
     get "/register", AuthController, :register
     get "/register/email", AuthController, :register_email
 
+    post "/identity/callback", AuthController, :identity_callback
+
     get "/:provider", AuthController, :request
     get "/:provider/callback", AuthController, :callback
 

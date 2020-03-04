@@ -114,27 +114,41 @@ a.btn-facebook:hover {
     <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
       <div class="card card-signin my-5">
         <div class="card-body">
-          <h5 class="card-title text-center">Sign In</h5>
-          <form class="form-signin">
-            <a href="/auth/google?scope=email%20profile" class="btn btn-md btn-google btn-block social-signin"><i class="fab fa-google fa-lg mr-2"></i> Sign in with Google</a>
-            <a href="/auth/facebook" class="btn btn-md btn-facebook btn-block social-signin"><i class="fab fa-facebook-f fa-lg mr-2"></i> Sign in with Facebook</a>
-            <hr class="my-4">
+          <h5 class="card-title text-center">Register Institution</h5>
+          <%= form_tag @callback_url, method: "post" do %>
             <div class="form-label-group">
-              <input type="email" id="inputEmail" class="form-control" placeholder="Email address" required autofocus>
-              <label for="inputEmail">Email</label>
+              <input name="email" type="email" id="email" class="form-control" placeholder="Email" required autofocus>
+              <label for="email">Email</label>
             </div>
 
             <div class="form-label-group">
-              <input type="password" id="inputPassword" class="form-control" placeholder="Password" required>
-              <label for="inputPassword">Password</label>
+              <input name="firstName" type="text" id="firstName" class="form-control" placeholder="First Name" required>
+              <label for="firstName">First Name</label>
             </div>
 
-            <div class="custom-control custom-checkbox mb-3">
-              <input type="checkbox" class="custom-control-input" id="remember-password">
-              <label class="custom-control-label" for="remember-password">Remember password</label>
+            <div class="form-label-group">
+              <input name="lastName" type="text" id="lastName" class="form-control" placeholder="Last Name" required>
+              <label for="lastName">Last Name</label>
             </div>
-            <button class="btn btn-md btn-primary btn-block" type="submit">Sign In</button>
-          </form>
+
+            <div class="form-label-group">
+              <input name="institutionName" type="text" id="institutionName" class="form-control" placeholder="Institution or School" required>
+              <label for="institutionName">Institution or School</label>
+            </div>
+
+            <div class="form-label-group">
+              <input name="password" type="password" id="password" class="form-control" placeholder="Password" required>
+              <label for="password">Password</label>
+            </div>
+
+            <div class="form-label-group">
+              <input name="confirmPassword" type="password" id="confirmPassword" class="form-control" placeholder="Confirm Password" required>
+              <label for="confirmPassword">Confirm Password</label>
+            </div>
+
+            <button class="btn btn-md btn-primary btn-block" type="submit">Register</button>
+            <a href="/auth/register" class="btn btn-md btn-outline-secondary btn-block mt-4">Cancel</a>
+          <% end %>
         </div>
       </div>
     </div>

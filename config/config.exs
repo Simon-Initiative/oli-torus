@@ -30,7 +30,10 @@ config :ueberauth, Ueberauth,
   providers: [
     google: {Ueberauth.Strategy.Google, [default_scope: "email profile plus.me"]},
     identity: {Ueberauth.Strategy.Identity, [
-      callback_methods: ["POST"]
+      callback_methods: ["POST"],
+      uid_field: :email,
+      request_path: "/auth/identity",
+      callback_path: "/auth/identity/callback",
     ]}
   ]
 
