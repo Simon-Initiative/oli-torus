@@ -69,7 +69,6 @@ export const CodeEditor = (props: CodeProps) => {
     border: '1px solid #eeeeee',
     borderLeft: '2px solid darkblue',
     minHeight: '60px',
-    position: 'relative',
     backgroundColor: '#DDDDDD',
   } as any;
 
@@ -77,7 +76,7 @@ export const CodeEditor = (props: CodeProps) => {
   const attributes = (
     <div
       contentEditable={false}
-      style={{ position: 'absolute', bottom: '5px', right: '25px' }}
+      style={{ userSelect: 'none', position: 'absolute', bottom: '5px', right: '25px' }}
     >
       <form>
         <div className="form-check">

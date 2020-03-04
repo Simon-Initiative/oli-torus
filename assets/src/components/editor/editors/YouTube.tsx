@@ -77,7 +77,7 @@ export const YouTubeEditor = (props: YouTubeProps) => {
   return (
     <div {...attributes}>
 
-      <div contentEditable={false}>
+      <div contentEditable={false} style={{ userSelect: 'none' }}>
 
         <div style={centered}>
           <iframe style={playerStyle} src={fullSrc} height={height} width={width} />
@@ -92,7 +92,7 @@ export const YouTubeEditor = (props: YouTubeProps) => {
             editMode={editMode} />
         </div>
         <div style={{ textAlign: 'center' }}>
-        <LabelledTextEditor
+          <LabelledTextEditor
             label="Alt"
             model={model.alt || ''}
             onEdit={onEditAlt}

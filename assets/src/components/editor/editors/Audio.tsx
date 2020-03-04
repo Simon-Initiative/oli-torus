@@ -70,7 +70,7 @@ export const AudioEditor = (props: AudioProps) => {
   return (
     <div {...attributes}>
 
-      <div contentEditable={false}>
+      <div contentEditable={false} style={{ userSelect: 'none' }}>
 
         <div style={centered}>
           <audio style={playerStyle} src={src} controls />

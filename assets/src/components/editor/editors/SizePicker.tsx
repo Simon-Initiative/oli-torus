@@ -18,7 +18,7 @@ const cellContainerStyle = {
   cursor: 'pointer',
 };
 
-const cellStyle = (isHighlighted : boolean) => ({
+const cellStyle = (isHighlighted: boolean) => ({
   backgroundColor: isHighlighted ? '#81abef' : '#DDDDDD',
   border: '1px solid #DDDDDD',
   borderRadius: '3px',
@@ -79,7 +79,9 @@ export const SizePicker = (props: SizePickerProps) => {
     height,
     width,
     paddingLeft: '10px',
-  };
+    zIndex: 999,
+    position: 'relative',
+  } as any;
 
   const labelStyle = {
     width,

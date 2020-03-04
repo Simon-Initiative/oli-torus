@@ -24,7 +24,7 @@ const table = (children: ContentModel.TableRow[]) => ContentModel.create<Content
 const command: Command = {
   execute: (editor: ReactEditor, params: any) => {
 
-    const rows : any = [];
+    const rows: any = [];
 
     for (let i = 0; i < params.rows; i += 1) {
       const tds = [];
@@ -45,7 +45,7 @@ const command: Command = {
   obtainParameters: (editor: ReactEditor,
     onDone: (params: any) => void, onCancel: () => void) => {
     return <SizePicker onHide={onCancel}
-     onTableCreate={(rows, columns) => onDone({ rows, columns })}/>;
+      onTableCreate={(rows, columns) => onDone({ rows, columns })} />;
   },
 };
 
@@ -128,6 +128,7 @@ const DropdownMenu = (props: any) => {
   const onDeleteRow = () => {
     const editor: ReactEditor = props.editor;
     const path = ReactEditor.findPath(editor, props.model);
+    Transforms.deselect(editor);
     Transforms.removeNodes(editor, { at: Path.parent(path) });
   };
 
@@ -262,7 +263,7 @@ export const TableEditor = (props: TableProps) => {
         </table>
       </div>
 
-      <div contentEditable={false}>
+      <div contentEditable={false} style={{ userSelect: 'none' }}>
         <div style={{ textAlign: 'center' }}>
           <LabelledTextEditor
             label="Caption"
