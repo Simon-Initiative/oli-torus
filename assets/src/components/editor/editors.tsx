@@ -70,11 +70,9 @@ export function editorFor(
       return <Table.ThEditor {...(editorProps as EditorProps<ContentModel.TableHeader>)} />;
     case 'math':
     case 'math_line':
-
-
       return <span {...attributes}>Not implemented</span>;
     default:
-      return <span>{children}</span>
+      return <span>{children}</span>;
   }
 }
 
@@ -97,7 +95,7 @@ export function markFor(mark: ContentModel.Mark, children: any): JSX.Element {
     case 'sup':
       return <sup>{children}</sup>;
     default:
-      return <span>{children}</span>
+      return <span>{children}</span>;
   }
 }
 

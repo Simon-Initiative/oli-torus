@@ -40,7 +40,7 @@ export const getRootOfText = (editor: ReactEditor): Maybe<Node> => {
         if (node.type !== undefined) {
           if ((schema as any)[node.type] !== undefined) {
             if ((schema as any)[node.type].isBlock) {
-              return Maybe.just(node);;
+              return Maybe.just(node);
             }
             if (Editor.isEditor(node)) {
               return Maybe.nothing();

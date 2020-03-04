@@ -80,7 +80,7 @@ export const SizePicker = (props: SizePickerProps) => {
     width,
     paddingLeft: '10px',
     zIndex: 999,
-    position: 'relative',
+    opacity: .99,
   } as any;
 
   const labelStyle = {

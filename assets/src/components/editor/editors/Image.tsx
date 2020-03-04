@@ -185,7 +185,7 @@ export const ImageEditor = (props: ImageProps) => {
 
         </div>
 
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ marginLeft: '30px' }}>
           <LabelledTextEditor
             label="Caption"
             model={model.caption || ''}
@@ -193,7 +193,7 @@ export const ImageEditor = (props: ImageProps) => {
             showAffordances={selected && focused}
             editMode={editMode} />
         </div>
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ marginLeft: '30px' }}>
           <LabelledTextEditor
             label="Alt"
             model={model.alt || ''}

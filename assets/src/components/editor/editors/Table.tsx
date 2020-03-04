@@ -264,7 +264,7 @@ export const TableEditor = (props: TableProps) => {
       </div>
 
       <div contentEditable={false} style={{ userSelect: 'none' }}>
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ marginLeft: '30px' }}>
           <LabelledTextEditor
             label="Caption"
             model={model.caption || ''}
