@@ -52,6 +52,7 @@
   color: #495057;
   border: 1px solid transparent;
   border-radius: .25rem;
+  cursor: text;
   transition: all .1s ease-in-out;
 }
 
@@ -129,10 +130,10 @@ a.btn-facebook:hover {
               <input type="checkbox" class="custom-control-input" id="remember-password">
               <label class="custom-control-label" for="remember-password">Remember password</label>
             </div>
-            <button class="btn btn-md btn-primary btn-block" type="submit">Sign in</button>
+            <button class="btn btn-md btn-primary btn-block" type="submit">Sign In</button>
             <hr class="my-4">
-            <a href="/auth/google?scope=email%20profile" class="btn btn-md btn-google btn-block social-signin" type="submit"><i class="fab fa-google fa-lg mr-2"></i> Sign in with Google</a>
-            <a href="/auth/facebook" class="btn btn-md btn-facebook btn-block social-signin" type="submit"><i class="fab fa-facebook-f fa-lg mr-2"></i> Sign in with Facebook</a>
+            <a href="/auth/google?scope=email%20profile" class="btn btn-md btn-google btn-block social-signin"><i class="fab fa-google fa-lg mr-2"></i> Sign in with Google</a>
+            <a href="/auth/facebook" class="btn btn-md btn-facebook btn-block social-signin"><i class="fab fa-facebook-f fa-lg mr-2"></i> Sign in with Facebook</a>
           </form>
         </div>
       </div>

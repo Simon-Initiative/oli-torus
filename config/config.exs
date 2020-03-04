@@ -28,8 +28,12 @@ config :phoenix, :json_library, Jason
 # Configure OAuth
 config :ueberauth, Ueberauth,
   providers: [
-    google: {Ueberauth.Strategy.Google, [default_scope: "email profile plus.me"]}
+    google: {Ueberauth.Strategy.Google, [default_scope: "email profile plus.me"]},
+    identity: {Ueberauth.Strategy.Identity, [
+      callback_methods: ["POST"]
+    ]}
   ]
+
 config :ueberauth, Ueberauth.Strategy.Google.OAuth,
   client_id: System.get_env("GOOGLE_CLIENT_ID"),
   client_secret: System.get_env("GOOGLE_CLIENT_SECRET")

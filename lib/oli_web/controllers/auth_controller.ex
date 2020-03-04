@@ -5,13 +5,38 @@ defmodule OliWeb.AuthController do
   alias Oli.Accounts
   alias Oli.Accounts.User
 
-  def index(conn, _params) do
-    render(conn, "index.html")
+  alias Ueberauth.Strategy.Helpers
+
+  def signin(conn, _params) do
+    render(conn, "signin.html")
+  end
+
+  def signout(conn, _params) do
+    conn
+    |> configure_session(drop: true)
+    |> redirect(to: Routes.page_path(conn, :index))
+  end
+
+  def register(conn, _params) do
+    render(conn, "register.html")
+  end
+
+  def register_email(conn, _params) do
+    render(conn, "register_email.html", callback_url: Helpers.callback_url(conn))
+  end
+
+  def callback(%{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
+    conn
+    |> put_flash(:error, "Failed to authenticate.")
+    |> redirect(to: Routes.page_path(conn, :index))
   end
 
   def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
+
+    IO.inspect(auth)
+
     user_params = %{
-      token: auth.credentials.token,
+      # token: auth.credentials.token,
       first_name: auth.info.first_name,
       last_name: auth.info.last_name,
       email: auth.info.email,
@@ -32,12 +57,6 @@ defmodule OliWeb.AuthController do
         |> put_flash(:error, "Error siging in")
         |> redirect(to: Routes.page_path(conn, :index))
     end
-  end
-
-  def delete(conn, _params) do
-    conn
-    |> configure_session(drop: true)
-    |> redirect(to: Routes.page_path(conn, :index))
   end
 
 end
