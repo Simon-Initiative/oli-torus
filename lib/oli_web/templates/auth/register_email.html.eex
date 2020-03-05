@@ -115,27 +115,20 @@ a.btn-facebook:hover {
       <div class="card card-signin my-5">
         <div class="card-body">
           <h5 class="card-title text-center">Create Account</h5>
-          <%# <form action="/auth/identity" method="POST"> %>
-          <% IO.inspect(@callback_url, label: "@callback_url")%>
-          <%= form_tag @callback_url, method: "post" do %>
+          <%= form_tag "/auth/register/email", method: "post" do %>
             <div class="form-label-group">
               <input name="email" type="email" id="email" class="form-control" placeholder="Email" required autofocus>
               <label for="email">Email</label>
             </div>
 
             <div class="form-label-group">
-              <input name="firstName" type="text" id="firstName" class="form-control" placeholder="First Name" required>
-              <label for="firstName">First Name</label>
+              <input name="first_name" type="text" id="first_name" class="form-control" placeholder="First Name" required>
+              <label for="first_name">First Name</label>
             </div>
 
             <div class="form-label-group">
-              <input name="lastName" type="text" id="lastName" class="form-control" placeholder="Last Name" required>
-              <label for="lastName">Last Name</label>
-            </div>
-
-            <div class="form-label-group">
-              <input name="institutionName" type="text" id="institutionName" class="form-control" placeholder="Institution or School" required>
-              <label for="institutionName">Institution or School</label>
+              <input name="last_name" type="text" id="last_name" class="form-control" placeholder="Last Name" required>
+              <label for="last_name">Last Name</label>
             </div>
 
             <div class="form-label-group">
@@ -144,14 +137,13 @@ a.btn-facebook:hover {
             </div>
 
             <div class="form-label-group">
-              <input name="confirmPassword" type="password" id="confirmPassword" class="form-control" placeholder="Confirm Password" required>
-              <label for="confirmPassword">Confirm Password</label>
+              <input name="password_confirmation" type="password" id="password_confirmation" class="form-control" placeholder="Confirm Password" required>
+              <label for="password_confirmation">Confirm Password</label>
             </div>
 
             <button class="btn btn-md btn-primary btn-block" type="submit">Register</button>
             <a href="/auth/register" class="btn btn-md btn-outline-secondary btn-block mt-4">Cancel</a>
-            <% end %>
-          <%# </form> %>
+          <% end %>
         </div>
       </div>
     </div>
