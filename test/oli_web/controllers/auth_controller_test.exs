@@ -1,6 +1,7 @@
 defmodule OliWeb.AuthControllerTest do
   use OliWeb.ConnCase
-  alias Oli.{Repo, User}
+  alias Oli.Repo
+  alias Oli.Accounts.User
 
   @ueberauth_auth %{
     credentials: %{token: "fdsnoafhnoofh08h38h"},

@@ -22,31 +22,46 @@ defmodule OliWeb.AuthController do
   end
 
   def register_email_form(conn, _params) do
-    render(conn, "register_email.html", callback_url: Helpers.callback_url(conn))
+    render(conn, "register_email.html", validation_errors: %{})
   end
 
-  def register_email_submit(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
-    user_params = %{
-      email: auth.info.email,
-      first_name: auth.info.first_name,
-      last_name: auth.info.last_name,
-      provider: "identity",
-      token: auth.credentials.token
-    }
+  def register_email_submit(
+    conn,
+    %{
+      "email" => email,
+      "first_name" => first_name,
+      "last_name" => last_name,
+      "password" => password,
+      "password_confirmation" => password_confirmation
+    })
+  do
+    if password == password_confirmation do
+      IO.puts "password == password_confirmation"
+      user_params = %{
+        email: email,
+        first_name: first_name,
+        last_name: last_name,
+        provider: "identity",
+      }
 
-    changeset = User.changeset(%User{}, user_params)
+      changeset = User.changeset(%User{}, user_params)
 
-    case Accounts.create_user(changeset) do
-      {:ok, user} ->
-        conn
-        |> put_flash(:info, "Thank you for registering!")
-        |> put_session(:user_id, user.id)
-        |> redirect(to: Routes.page_path(conn, :index))
+      case Accounts.create_user(changeset) do
+        {:ok, user} ->
+          conn
+          |> put_flash(:info, "Thank you for registering!")
+          |> put_session(:user_id, user.id)
+          |> redirect(to: Routes.page_path(conn, :index))
 
-      {:error, _reason} ->
-        conn
-        |> put_flash(:error, "Error creating user")
-        |> redirect(to: Routes.page_path(conn, :index))
+        {:error, _reason} ->
+          conn
+          |> put_flash(:error, "Error creating user")
+          |> redirect(to: Routes.page_path(conn, :index))
+      end
+    else
+      IO.puts "Passwords must match"
+      conn
+      |> render("register_email.html", validation_errors: %{ "confirm_password" => "Passwords must match" })
     end
   end
 

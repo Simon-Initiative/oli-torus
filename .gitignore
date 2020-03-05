@@ -39,3 +39,4 @@ postgres.env
 /assets/test-results/
 /assets/coverage/
 .devmode
+.elixir_ls
