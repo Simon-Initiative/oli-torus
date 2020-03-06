@@ -66,13 +66,27 @@ defmodule OliWeb.AuthController do
   end
 
   def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
-    user_params = %{
-      email: auth.info.email,
-      first_name: auth.info.first_name,
-      last_name: auth.info.last_name,
-      provider: "google",
-      token: auth.credentials.token
-    }
+    user_params = case auth.provider do
+      :google ->
+        %{
+          email: auth.info.email,
+          first_name: auth.info.first_name,
+          last_name: auth.info.last_name,
+          provider: "google",
+          token: auth.credentials.token
+        }
+      :facebook ->
+        # FIXME: There has to be a better way to get first_name and last_name from facebook
+        # Changing OAuth scope params resulted in error, for now we will try to infer from full name
+        [first_name, last_name] = String.split(auth.info.name, " ")
+        %{
+          email: auth.info.email,
+          first_name: first_name,
+          last_name: last_name,
+          provider: "facebook",
+          token: auth.credentials.token
+        }
+    end
 
     changeset = User.changeset(%User{}, user_params)
 

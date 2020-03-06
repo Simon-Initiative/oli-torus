@@ -9,7 +9,7 @@ defmodule Oli.Accounts.User do
     field :provider, :string
     field :token, :string
     field :password, :string
-    field :email_verified, :boolean
+    field :email_verified, :boolean, default: false
 
     timestamps()
   end
