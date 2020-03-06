@@ -125,13 +125,11 @@ a.btn-identity:hover {
       <div class="card card-signin my-5">
         <div class="card-body">
           <h5 class="card-title text-center">Create an Account</h5>
-          <form class="form-signin">
-            <a href="/auth/google?scope=email%20profile" class="btn btn-md btn-google btn-block social-signin"><i class="fab fa-google fa-lg mr-2"></i> Google</a>
-            <a href="/auth/facebook" class="btn btn-md btn-facebook btn-block social-signin"><i class="fab fa-facebook-f fa-lg mr-2"></i> Facebook</a>
-            <a href="/auth/register/email" class="btn btn-md btn-secondary btn-block social-signin"><i class="fab fa-mail-f fa-lg mr-2"></i> Email and Password</a>
-            <hr class="my-4">
-            <a href="/institution/register" class="btn btn-md btn-link btn-block">Register as Institution</a>
-          </form>
+          <a href="/auth/google?scope=email%20profile" class="btn btn-md btn-google btn-block social-signin"><i class="fab fa-google fa-lg mr-2"></i> Google</a>
+          <a href="/auth/facebook" class="btn btn-md btn-facebook btn-block social-signin"><i class="fab fa-facebook-f fa-lg mr-2"></i> Facebook</a>
+          <a href="/auth/register/email" class="btn btn-md btn-secondary btn-block social-signin"><i class="fab fa-mail-f fa-lg mr-2"></i> Email and Password</a>
+          <hr class="my-4">
+          <a href="/institution/register" class="btn btn-md btn-link btn-block">Register as Institution</a>
         </div>
       </div>
     </div>

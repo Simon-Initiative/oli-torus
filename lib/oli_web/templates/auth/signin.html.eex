@@ -115,26 +115,26 @@ a.btn-facebook:hover {
       <div class="card card-signin my-5">
         <div class="card-body">
           <h5 class="card-title text-center">Sign In</h5>
-          <form class="form-signin">
-            <a href="/auth/google?scope=email%20profile" class="btn btn-md btn-google btn-block social-signin"><i class="fab fa-google fa-lg mr-2"></i> Sign in with Google</a>
-            <a href="/auth/facebook" class="btn btn-md btn-facebook btn-block social-signin"><i class="fab fa-facebook-f fa-lg mr-2"></i> Sign in with Facebook</a>
-            <hr class="my-4">
+          <a href="/auth/google?scope=email%20profile" class="btn btn-md btn-google btn-block social-signin"><i class="fab fa-google fa-lg mr-2"></i> Sign in with Google</a>
+          <a href="/auth/facebook" class="btn btn-md btn-facebook btn-block social-signin"><i class="fab fa-facebook-f fa-lg mr-2"></i> Sign in with Facebook</a>
+          <hr class="my-4">
+          <%= form_tag "/auth/identity/callback", method: "post", class: ["form-signin"] do %>
             <div class="form-label-group">
-              <input type="email" id="inputEmail" class="form-control" placeholder="Email address" required autofocus>
+              <input name="email" type="email" id="inputEmail" class="form-control" placeholder="Email address" required autofocus>
               <label for="inputEmail">Email</label>
             </div>
 
             <div class="form-label-group">
-              <input type="password" id="inputPassword" class="form-control" placeholder="Password" required>
+              <input name="password" type="password" id="inputPassword" class="form-control" placeholder="Password" required>
               <label for="inputPassword">Password</label>
             </div>
 
             <div class="custom-control custom-checkbox mb-3">
-              <input type="checkbox" class="custom-control-input" id="remember-password">
-              <label class="custom-control-label" for="remember-password">Remember password</label>
+              <input name="remember_password" type="checkbox" class="custom-control-input" id="remember_password">
+              <label class="custom-control-label" for="remember_password">Remember password</label>
             </div>
             <button class="btn btn-md btn-primary btn-block" type="submit">Sign In</button>
-          </form>
+          <% end %>
         </div>
       </div>
     </div>

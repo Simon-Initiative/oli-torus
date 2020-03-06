@@ -17,11 +17,29 @@ defmodule Oli.Accounts do
     end
   end
 
-  def create_user(attrs \\ %{}) do
+  def create_user(params \\ %{}) do
     %User{}
-    |> User.changeset(attrs)
+    |> User.changeset(params)
     |> Repo.insert()
   end
+
+  def get_user_by_email(email) do
+    Repo.get_by(User, email: email)
+  end
+
+  def authorize_user(user_email, password) do
+    Repo.get_by(User, email: user_email)
+      |> authorize(password)
+  end
+
+  defp authorize(nil, _password), do: {:error, "Invalid username or password"}
+  defp authorize(user, password) do
+    Bcrypt.check_pass(user, password, hash_key: :password)
+    |> resolve_authorization(user)
+  end
+
+  defp resolve_authorization({:error, _reason}, _user), do: {:error, "Invalid username or password"}
+  defp resolve_authorization({:ok, user}, _user), do: {:ok, user}
 
   alias Oli.Accounts.Institution
 

@@ -6,10 +6,10 @@ defmodule Oli.Repo.Migrations.CreateUsers do
       add :email, :string
       add :first_name, :string
       add :last_name, :string
-      add :institution_name, :string
       add :provider, :string
       add :token, :string
       add :password, :string
+      add :email_verified, :boolean
 
       timestamps()
     end

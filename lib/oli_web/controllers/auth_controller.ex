@@ -35,40 +35,34 @@ defmodule OliWeb.AuthController do
       "password_confirmation" => password_confirmation
     })
   do
-    if password == password_confirmation do
-      IO.puts "password == password_confirmation"
-      user_params = %{
-        email: email,
-        first_name: first_name,
-        last_name: last_name,
-        provider: "identity",
-      }
+    user_params = %{
+      email: email,
+      first_name: first_name,
+      last_name: last_name,
+      provider: "identity",
+      password: password,
+      password_confirmation: password_confirmation,
+      email_verified: false
+    }
 
-      changeset = User.changeset(%User{}, user_params)
+    case Accounts.create_user(user_params) do
+      {:ok, user} ->
+        conn
+        |> put_flash(:info, "Thank you for registering!")
+        |> put_session(:user_id, user.id)
+        |> redirect(to: Routes.page_path(conn, :index))
 
-      case Accounts.create_user(changeset) do
-        {:ok, user} ->
-          conn
-          |> put_flash(:info, "Thank you for registering!")
-          |> put_session(:user_id, user.id)
-          |> redirect(to: Routes.page_path(conn, :index))
-
-        {:error, _reason} ->
-          conn
-          |> put_flash(:error, "Error creating user")
-          |> redirect(to: Routes.page_path(conn, :index))
-      end
-    else
-      IO.puts "Passwords must match"
-      conn
-      |> render("register_email.html", validation_errors: %{ "confirm_password" => "Passwords must match" })
+      {:error, reason} ->
+        conn
+        |> put_flash(:error, reason)
+        |> redirect(to: Routes.auth_path(conn, :signin))
     end
   end
 
   def callback(%{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
     conn
     |> put_flash(:error, "Failed to authenticate.")
-    |> redirect(to: Routes.page_path(conn, :index))
+    |> redirect(to: Routes.auth_path(conn, :signin))
   end
 
   def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
@@ -92,41 +86,24 @@ defmodule OliWeb.AuthController do
       {:error, _reason} ->
         conn
         |> put_flash(:error, "Error siging in")
-        |> redirect(to: Routes.page_path(conn, :index))
+        |> redirect(to: Routes.auth_path(conn, :signin))
     end
   end
 
-  def identity_callback(%{assigns: %{ueberauth_auth: auth}} = conn, params) do
+  def identity_callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
+    %Ueberauth.Auth{info: %{email: email}, credentials: %{other: %{password: password}}} = auth;
 
-    IO.inspect(auth, label: "auth")
-
-    case validate_password(auth.credentials) do
-      { :ok } ->
-        user = %{id: auth.uid, name: name_from_auth(auth), avatar: auth.info.image}
-        # user = %{
-        #   email: auth.info.email,
-        #   first_name: auth.info.first_name,
-        #   last_name: auth.info.last_name,
-        #   provider: "google"
-        #   token: auth.credentials.token,
-        # }
+    case Accounts.authorize_user(email, password) do
+      { :ok, user } ->
         conn
-        |> put_flash(:info, "Successfully authenticated.")
-        |> put_session(:current_user, user)
-        |> redirect(to: "/")
+        |> put_flash(:info, "Thank you for signing in!")
+        |> put_session(:user_id, user.id)
+        |> redirect(to: Routes.page_path(conn, :index))
       { :error, reason } ->
         conn
         |> put_flash(:error, reason)
-        |> redirect(to: "/")
+        |> redirect(to: Routes.auth_path(conn, :signin))
     end
-  end
-
-  def validate_password(credentials) do
-    { :ok }
-  end
-
-  def name_from_auth(auth) do
-    "Some Name"
   end
 
 end
