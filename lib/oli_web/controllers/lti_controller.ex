@@ -17,7 +17,7 @@ defmodule OliWeb.LtiController do
       { :ok } ->
           render(conn, "basic_launch.html")
       { :invalid, reason } -> render(conn, "basic_launch_invalid.html", reason: reason)
-      { :error, error } -> render(conn, "basic_launch_error.html", error: error)
+      # { :error, error } -> render(conn, "basic_launch_error.html", error: error)
     end
   end
 

@@ -71,7 +71,6 @@ defmodule Oli.Lti.Provider do
     end
   end
 
-  @spec validate_parameters(lti_message_params) :: boolean
   def validate_parameters(body_params) do
     # TODO: replace hardcoded supported versions with a configurable variable
     is_basic_launch = Keyword.get(body_params, :lti_message_type) === "basic-lti-launch-request"
