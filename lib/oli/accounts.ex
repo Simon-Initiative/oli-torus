@@ -34,7 +34,7 @@ defmodule Oli.Accounts do
 
   defp authorize(nil, _password), do: {:error, "Invalid username or password"}
   defp authorize(user, password) do
-    Bcrypt.check_pass(user, password, hash_key: :password)
+    Bcrypt.check_pass(user, password, hash_key: :password_hash)
     |> resolve_authorization(user)
   end
 

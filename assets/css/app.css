@@ -1,1 +1,13 @@
 /* This file is for your main application css. */
+html, body {
+  /* FIXME: until we make a custom bootstrap theme */
+  font-family: 'Roboto Light', sans-serif;
+}
+
+nav.navbar {
+  border-bottom: 2px solid #eee;
+}
+
+form .form-label-group .help-block {
+  color: #dc3545;
+}

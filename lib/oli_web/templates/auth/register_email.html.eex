@@ -115,34 +115,44 @@ a.btn-facebook:hover {
       <div class="card card-signin my-5">
         <div class="card-body">
           <h5 class="card-title text-center">Create Account</h5>
-          <%= form_tag "/auth/register/email", method: "post" do %>
+          <%= form_for @changeset, Routes.auth_path(@conn, :register_email_submit), fn f -> %>
             <div class="form-label-group">
-              <input name="email" type="email" id="email" class="form-control" placeholder="Email" required autofocus>
-              <label for="email">Email</label>
+              <%= email_input f, :email, class: "form-control " <> error_class(f, :email, "is-invalid"),
+                placeholder: "Email", required: true, autofocus: focusHelper(f, :email, default: true) %>
+              <%= label f, :email, class: "control-label" %>
+              <%= error_tag f, :email %>
             </div>
 
             <div class="form-label-group">
-              <input name="first_name" type="text" id="first_name" class="form-control" placeholder="First Name" required>
-              <label for="first_name">First Name</label>
+              <%= text_input f, :first_name, class: "form-control " <> error_class(f, :first_name, "is-invalid"),
+                placeholder: "First Name", required: true, autofocus: focusHelper(f, :first_name) %>
+              <%= label f, :first_name, class: "control-label" %>
+              <%= error_tag f, :first_name %>
             </div>
 
             <div class="form-label-group">
-              <input name="last_name" type="text" id="last_name" class="form-control" placeholder="Last Name" required>
-              <label for="last_name">Last Name</label>
+              <%= text_input f, :last_name, class: "form-control " <> error_class(f, :last_name, "is-invalid"),
+                placeholder: "Last Name", required: true, autofocus: focusHelper(f, :last_name) %>
+              <%= label f, :last_name, class: "control-label" %>
+              <%= error_tag f, :last_name %>
             </div>
 
             <div class="form-label-group">
-              <input name="password" type="password" id="password" class="form-control" placeholder="Password" required>
-              <label for="password">Password</label>
+              <%= password_input f, :password, class: "form-control " <> error_class(f, [:password, :password_confirmation], "is-invalid"),
+                placeholder: "Password", required: true, autofocus: focusHelper(f, [:password, :password_confirmation]) %>
+              <%= label f, :password, class: "control-label" %>
+              <%= error_tag f, :password %>
             </div>
 
             <div class="form-label-group">
-              <input name="password_confirmation" type="password" id="password_confirmation" class="form-control" placeholder="Confirm Password" required>
-              <label for="password_confirmation">Confirm Password</label>
+              <%= password_input f, :password_confirmation, class: "form-control " <> error_class(f, :password_confirmation, "is-invalid"),
+                placeholder: "Confirm Password", required: true, autofocus: focusHelper(f, :password_confirmation) %>
+              <%= label f, :password_confirmation, "Confirm Password", class: "control-label" %>
+              <%= error_tag f, :password_confirmation %>
             </div>
 
-            <button class="btn btn-md btn-primary btn-block" type="submit">Register</button>
-            <a href="/auth/register" class="btn btn-md btn-outline-secondary btn-block mt-4">Cancel</a>
+            <%= submit "Register", class: "btn btn-md btn-primary btn-block" %>
+            <%= link "Cancel", to: Routes.auth_path(@conn, :register), class: "btn btn-md btn-outline-secondary btn-block mt-4" %>
           <% end %>
         </div>
       </div>

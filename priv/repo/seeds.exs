@@ -15,6 +15,6 @@ Oli.Repo.insert! %Oli.Accounts.User{
   first_name: "Administrator",
   last_name: "",
   provider: "identity",
-  password: Bcrypt.hash_pwd_salt(System.get_env("ADMIN_PASSWORD", "admin")),
+  password_hash: Bcrypt.hash_pwd_salt(System.get_env("ADMIN_PASSWORD", "admin")),
   email_verified: true,
 }

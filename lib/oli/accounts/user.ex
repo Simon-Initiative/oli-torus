@@ -8,40 +8,30 @@ defmodule Oli.Accounts.User do
     field :last_name, :string
     field :provider, :string
     field :token, :string
-    field :password, :string
+    field :password, :string, virtual: true  # virtual fields are NOT persisted to the database
+    field :password_confirmation, :string, virtual: true
+    field :password_hash, :string
     field :email_verified, :boolean, default: false
 
     timestamps()
   end
 
   @doc false
-  def changeset(user, attrs) do
+  def changeset(user, attrs \\ %{}) do
     user
     |> cast(attrs, [:email, :first_name, :last_name, :provider, :token, :password, :email_verified])
     |> validate_required([:email, :first_name, :last_name, :provider])
-    |> validate_length(:password, min: 6)
-    |> validate_password_confirmation(attrs)
-    |> hash_password()
     |> unique_constraint(:email)
-  end
-
-  defp validate_password_confirmation(changeset, attrs) do
-    case {changeset, attrs} do
-      {%Ecto.Changeset{valid?: true, changes: %{ password: password }}, %{ password_confirmation: password_confirmation }} ->
-        case password == password_confirmation do
-          true -> changeset
-          _ -> add_error(changeset, :password_confirmation, "Password and confirm must match")
-        end
-      _ ->
-        changeset
-    end
+    |> validate_length(:password, min: 6)
+    |> validate_confirmation(:password, message: "does not match password")
+    |> hash_password()
   end
 
   defp hash_password(changeset) do
     case changeset do
       # if changeset is valid and has a password, we want to convert it to a hash
       %Ecto.Changeset{valid?: true, changes: %{password: pass}} ->
-        put_change(changeset, :password, Bcrypt.hash_pwd_salt(pass))
+        put_change(changeset, :password_hash, Bcrypt.hash_pwd_salt(pass))
       _ ->
         changeset
     end

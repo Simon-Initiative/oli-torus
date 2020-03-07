@@ -5,8 +5,6 @@ defmodule OliWeb.AuthController do
   alias Oli.Accounts
   alias Oli.Accounts.User
 
-  alias Ueberauth.Strategy.Helpers
-
   def signin(conn, _params) do
     render(conn, "signin.html")
   end
@@ -22,17 +20,20 @@ defmodule OliWeb.AuthController do
   end
 
   def register_email_form(conn, _params) do
-    render(conn, "register_email.html", validation_errors: %{})
+    changeset = User.changeset(%User{})
+    render conn, "register_email.html", changeset: changeset
   end
 
   def register_email_submit(
     conn,
     %{
-      "email" => email,
-      "first_name" => first_name,
-      "last_name" => last_name,
-      "password" => password,
-      "password_confirmation" => password_confirmation
+      "user" => %{
+        "email" => email,
+        "first_name" => first_name,
+        "last_name" => last_name,
+        "password" => password,
+        "password_confirmation" => password_confirmation
+      },
     })
   do
     user_params = %{
@@ -52,10 +53,11 @@ defmodule OliWeb.AuthController do
         |> put_session(:user_id, user.id)
         |> redirect(to: Routes.page_path(conn, :index))
 
-      {:error, reason} ->
+      {:error, changeset} ->
+        # remove password_hash from changeset for security, just in case
+        changeset = Ecto.Changeset.delete_change(changeset, :password_hash)
         conn
-        |> put_flash(:error, reason)
-        |> redirect(to: Routes.auth_path(conn, :signin))
+        |> render("register_email.html", changeset: changeset)
     end
   end
 
