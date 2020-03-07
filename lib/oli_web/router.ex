@@ -27,7 +27,7 @@ defmodule OliWeb.Router do
 
     get "/", PageController, :index
 
-    resources "/institutions", InstitutionController
+    resources "/institutions", InstitutionController, only: [:new, :create]
   end
 
   scope "/auth", OliWeb do

@@ -4,6 +4,9 @@ defmodule OliWeb.InstitutionController do
   alias Oli.Accounts
   alias Oli.Accounts.Institution
 
+  import Oli.CountryCodes
+  import Oli.Timezones
+
   def index(conn, _params) do
     institutions = Accounts.list_institutions()
     render(conn, "index.html", institutions: institutions)
@@ -11,15 +14,15 @@ defmodule OliWeb.InstitutionController do
 
   def new(conn, _params) do
     changeset = Accounts.change_institution(%Institution{})
-    render(conn, "new.html", changeset: changeset)
+    render(conn, "new.html", changeset: changeset, country_codes: list_country_codes(), timezones: list_timezones())
   end
 
   def create(conn, %{"institution" => institution_params}) do
     case Accounts.create_institution(institution_params) do
-      {:ok, institution} ->
+      {:ok, _institution} ->
         conn
         |> put_flash(:info, "Institution created successfully.")
-        |> redirect(to: Routes.institution_path(conn, :show, institution))
+        |> redirect(to: Routes.page_path(conn, :index))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset)
