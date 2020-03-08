@@ -12,6 +12,7 @@ defmodule Oli.Accounts.User do
     field :password_confirmation, :string, virtual: true
     field :password_hash, :string
     field :email_verified, :boolean, default: false
+    has_many :institutions, Oli.Accounts.Institution
 
     timestamps()
   end

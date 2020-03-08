@@ -128,8 +128,6 @@ a.btn-identity:hover {
           <a href="/auth/google" class="btn btn-md btn-google btn-block social-signin"><i class="fab fa-google fa-lg mr-2"></i> Google</a>
           <a href="/auth/facebook" class="btn btn-md btn-facebook btn-block social-signin"><i class="fab fa-facebook-f fa-lg mr-2"></i> Facebook</a>
           <a href="/auth/register/email" class="btn btn-md btn-secondary btn-block social-signin"><i class="fab fa-mail-f fa-lg mr-2"></i> Email and Password</a>
-          <hr class="my-4">
-          <%= link "Register as Institution", to: Routes.institution_path(@conn, :new), class: "btn btn-md btn-link btn-block" %>
         </div>
       </div>
     </div>

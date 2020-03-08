@@ -8,7 +8,9 @@ defmodule Oli.Repo.Migrations.CreateInstitutions do
       add :country_code, :string
       add :institution_url, :string
       add :timezone, :string
-      add :password, :string
+      add :consumer_key, :string
+      add :shared_secret, :string
+      add :user_id, references(:users)
 
       timestamps()
     end

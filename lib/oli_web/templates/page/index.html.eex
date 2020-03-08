@@ -2,6 +2,8 @@
 <section class="my-5" style="text-align: center">
   <%= if @conn.assigns[:user] do %>
     <h1><%= gettext "Welcome back %{name}!", name: @conn.assigns.user.first_name %></h1>
+
+    <%= link "Register my Institution", to: Routes.institution_path(@conn, :new), class: "btn btn-md btn-outline-primary" %>
   <% else %>
     <h1><%= gettext "Welcome to %{name}!", name: "OLI Authoring" %></h1>
     <p>Create, deliver and continuously improve your course content using your web browser.</p>
