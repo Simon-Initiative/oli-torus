@@ -27,7 +27,7 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Creates an returns a new user
+  Creates and returns a new user
 
   ## Examples
 
