@@ -34,7 +34,7 @@ defmodule OliWeb.InstitutionController do
         |> redirect(to: Routes.page_path(conn, :index))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "new.html", changeset: changeset)
+        render(conn, "new.html", changeset: changeset, country_codes: list_country_codes(), timezones: list_timezones())
     end
   end
 
@@ -46,7 +46,7 @@ defmodule OliWeb.InstitutionController do
   def edit(conn, %{"id" => id}) do
     institution = Accounts.get_institution!(id)
     changeset = Accounts.change_institution(institution)
-    render(conn, "edit.html", institution: institution, changeset: changeset)
+    render(conn, "edit.html", institution: institution, changeset: changeset, country_codes: list_country_codes(), timezones: list_timezones())
   end
 
   def update(conn, %{"id" => id, "institution" => institution_params}) do
@@ -59,7 +59,7 @@ defmodule OliWeb.InstitutionController do
         |> redirect(to: Routes.institution_path(conn, :show, institution))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "edit.html", institution: institution, changeset: changeset)
+        render(conn, "edit.html", institution: institution, changeset: changeset, country_codes: list_country_codes(), timezones: list_timezones())
     end
   end
 

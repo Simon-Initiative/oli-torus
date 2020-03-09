@@ -1,54 +1,44 @@
 defmodule OliWeb.InstitutionControllerTest do
   use OliWeb.ConnCase
 
+  alias Oli.Repo
   alias Oli.Accounts
+  alias Oli.Accounts.User
 
-  @create_attrs %{country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", name: "some name", timezone: "some timezone"}
-  @update_attrs %{country_code: "some updated country_code", institution_email: "some updated institution_email", institution_url: "some updated institution_url", name: "some updated name", timezone: "some updated timezone"}
+  @create_attrs %{country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", name: "some name", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret"}
+  @update_attrs %{country_code: "some updated country_code", institution_email: "some updated institution_email", institution_url: "some updated institution_url", name: "some updated name", timezone: "some updated timezone", consumer_key: "some updated key", shared_secret: "some updated secret"}
   @invalid_attrs %{country_code: nil, institution_email: nil, institution_url: nil, name: nil, timezone: nil}
 
-  setup do
-    {:ok, user} = User.changeset(%User{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo"}) |> Repo.insert
-    valid_attrs = Map.put(@valid_attrs, :user_id, user.id)
-    {:ok, institution} = valid_attrs |> Accounts.create_institution()
-
-    {:ok, %{institution: institution, user: user, valid_attrs: valid_attrs}}
-  end
-
-
-  def fixture(:institution) do
-    {:ok, institution} = Accounts.create_institution(@create_attrs)
-    institution
-  end
-
   describe "index" do
+    setup [:create_institution]
+
     test "lists all institutions", %{conn: conn} do
       conn = get(conn, Routes.institution_path(conn, :index))
-      assert html_response(conn, 200) =~ "Listing Institutions"
+      assert html_response(conn, 200) =~ "My Institutions"
     end
   end
 
   describe "new institution" do
+    setup [:create_institution]
+
     test "renders form", %{conn: conn} do
       conn = get(conn, Routes.institution_path(conn, :new))
-      assert html_response(conn, 200) =~ "New Institution"
+      assert html_response(conn, 200) =~ "Register Institution"
     end
   end
 
   describe "create institution" do
-    test "redirects to show when data is valid", %{conn: conn} do
+    setup [:create_institution]
+
+    test "redirects to page index when data is valid", %{conn: conn} do
       conn = post(conn, Routes.institution_path(conn, :create), institution: @create_attrs)
 
-      assert %{id: id} = redirected_params(conn)
-      assert redirected_to(conn) == Routes.institution_path(conn, :show, id)
-
-      conn = get(conn, Routes.institution_path(conn, :show, id))
-      assert html_response(conn, 200) =~ "Show Institution"
+      assert redirected_to(conn) == Routes.page_path(conn, :index)
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
       conn = post(conn, Routes.institution_path(conn, :create), institution: @invalid_attrs)
-      assert html_response(conn, 200) =~ "New Institution"
+      assert html_response(conn, 200) =~ "Register Institution"
     end
   end
 
@@ -90,8 +80,13 @@ defmodule OliWeb.InstitutionControllerTest do
     end
   end
 
-  defp create_institution(_) do
-    institution = fixture(:institution)
-    {:ok, institution: institution}
+  defp create_institution(%{ conn: conn  }) do
+    {:ok, user} = User.changeset(%User{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo"}) |> Repo.insert
+    create_attrs = Map.put(@create_attrs, :user_id, user.id)
+    {:ok, institution} = create_attrs |> Accounts.create_institution()
+
+    conn = Plug.Test.init_test_session(conn, user_id: user.id)
+
+    {:ok, conn: conn, user: user, institution: institution}
   end
 end
