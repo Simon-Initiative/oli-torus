@@ -3,7 +3,7 @@
   <%= if @conn.assigns[:user] do %>
     <h1><%= gettext "Welcome back %{name}!", name: @conn.assigns.user.first_name %></h1>
 
-    <%= link "Register my Institution", to: Routes.institution_path(@conn, :new), class: "btn btn-md btn-outline-primary" %>
+    <%= link "My Institutions", to: Routes.institution_path(@conn, :index), class: "btn btn-md btn-outline-primary ml-4" %>
   <% else %>
     <h1><%= gettext "Welcome to %{name}!", name: "OLI Authoring" %></h1>
     <p>Create, deliver and continuously improve your course content using your web browser.</p>
@@ -26,7 +26,6 @@
             <img src="https://media.giphy.com/media/KY2ZMhnCxP008/giphy.gif" width="30" height="30" alt="" />
             Psst! You appear to be in development mode &#x1F6A7
           </h2>
-          <img src="https://media.giphy.com/media/UW7q1b2LG2DcwzBmtE/giphy.gif" width="300" height="300" alt="" />
           <p class="mt-3">Rock on &#x1F919 Check out some of the user interface elements available for torus development</p>
       </div>
       <div class="modal-footer">

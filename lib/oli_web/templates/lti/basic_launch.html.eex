@@ -1,3 +1,26 @@
-<h1>Welcome to OLI</h1>
+<h3 class="my-3">Welcome to OLI</h3>
 
-<h3>Welcome back!</h3>
+<p>LTI connection is properly configured!</p>
+<ul>
+
+  <li>
+    <strong>Institution Name:</strong>
+    <%= @institution.name %>
+  </li>
+
+  <li>
+    <strong>Country:</strong>
+    <%= @institution.country_code %>
+  </li>
+
+  <li>
+    <strong>Institution Email:</strong>
+    <%= @institution.institution_email %>
+  </li>
+
+  <li>
+    <strong>Institution URL:</strong>
+    <%= @institution.institution_url %>
+  </li>
+
+</ul>

@@ -8,7 +8,7 @@ defmodule OliWeb.InstitutionController do
   import Oli.Timezones
 
   def index(conn, _params) do
-    institutions = Accounts.list_institutions()
+    institutions = Accounts.list_institutions() |> Enum.filter(fn i -> i.user_id == conn.assigns.user.id end)
     render(conn, "index.html", institutions: institutions)
   end
 
