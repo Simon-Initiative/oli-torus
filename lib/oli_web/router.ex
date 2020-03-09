@@ -26,18 +26,21 @@ defmodule OliWeb.Router do
     plug Plug.Parsers, parsers: [:urlencoded]
   end
 
+  # open access routes
   scope "/", OliWeb do
     pipe_through :browser
 
     get "/", PageController, :index
   end
 
-  scope "/institutions", OliWeb do
+  # authorization protected routes
+  scope "/", OliWeb do
     pipe_through [:browser, :protected]
 
-    resources "/", InstitutionController
+    resources "/institutions", InstitutionController
   end
 
+  # auth routes, only accessable to guest users who are not logged in
   scope "/auth", OliWeb do
     pipe_through [:browser, OliWeb.Plugs.Guest]
 
@@ -59,39 +62,26 @@ defmodule OliWeb.Router do
     get "/:provider/callback", AuthController, :callback
   end
 
-  scope "/auth", OliWeb do
-    pipe_through :browser
-
-    get "/signout", SessionController, :delete
-
-    get "/:provider", SessionController, :request
-    get "/:provider/callback", SessionController, :create
-  end
-
-  scope "/dev", OliWeb do
-    pipe_through :browser
-
-    get "/uipalette", UIPaletteController, :index
-  end
-
-  scope "/test", OliWeb do
-    pipe_through :browser
-
-    get "/editor", EditorTestController, :index
-
-  end
-
+  # LTI routes
   scope "/lti", OliWeb do
     pipe_through [:lti, :www_url_form]
 
     post "/basic_launch", LtiController, :basic_launch
   end
 
+  # routes only accessable to developers
   if "#{Mix.env}" === "dev" or "#{Mix.env}" === "test" do
     scope "/dev", OliWeb do
       pipe_through :browser
 
       get "/uipalette", UIPaletteController, :index
+    end
+
+    scope "/test", OliWeb do
+      pipe_through :browser
+
+      get "/editor", EditorTestController, :index
+
     end
   end
 
