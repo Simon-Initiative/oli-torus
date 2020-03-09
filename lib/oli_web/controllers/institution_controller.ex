@@ -20,7 +20,7 @@ defmodule OliWeb.InstitutionController do
   def create(conn, %{"institution" => institution_params}) do
     # Generate a consumer_key and secret and add to institution_params
     consumer_key = UUID.uuid4()
-    shared_secret = Oli.Utils.random_string(40)
+    shared_secret = Oli.Utils.random_string(32)
     user_id = conn.assigns.user.id
     institution_params = institution_params
       |> Map.put("consumer_key", consumer_key)
