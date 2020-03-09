@@ -66,5 +66,10 @@
     </main>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
 
+    <script>
+    window.$ = $;
+    $('.dropdown-toggle').dropdown();
+    </script>
+
   </body>
 </html>

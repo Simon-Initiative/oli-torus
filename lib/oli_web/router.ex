@@ -59,6 +59,21 @@ defmodule OliWeb.Router do
     get "/:provider/callback", AuthController, :callback
   end
 
+  scope "/auth", OliWeb do
+    pipe_through :browser
+
+    get "/signout", SessionController, :delete
+
+    get "/:provider", SessionController, :request
+    get "/:provider/callback", SessionController, :create
+  end
+
+  scope "/dev", OliWeb do
+    pipe_through :browser
+
+    get "/uipalette", UIPaletteController, :index
+  end
+
   scope "/test", OliWeb do
     pipe_through :browser
 

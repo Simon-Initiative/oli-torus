@@ -169,7 +169,7 @@ export const ImageEditor = (props: ImageProps) => {
   return (
     <div {...attributes} onMouseMove={move} onMouseUp={up as any} style={baseStyle}>
 
-      <div contentEditable={false}>
+      <div contentEditable={false} style={{ userSelect: 'none' }}>
 
         <div style={centered}>
           <div ref={handle} style={handleStyle}>
@@ -185,7 +185,7 @@ export const ImageEditor = (props: ImageProps) => {
 
         </div>
 
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ marginLeft: '30px' }}>
           <LabelledTextEditor
             label="Caption"
             model={model.caption || ''}
@@ -193,8 +193,8 @@ export const ImageEditor = (props: ImageProps) => {
             showAffordances={selected && focused}
             editMode={editMode} />
         </div>
-        <div style={{ textAlign: 'center' }}>
-        <LabelledTextEditor
+        <div style={{ marginLeft: '30px' }}>
+          <LabelledTextEditor
             label="Alt"
             model={model.alt || ''}
             onEdit={onEditAlt}

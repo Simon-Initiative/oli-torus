@@ -54,7 +54,7 @@ defmodule Oli.MixProject do
       {:ueberauth_facebook, "~> 0.8"},
       {:ueberauth_identity, "~> 0.2"},
       {:bcrypt_elixir, "~> 2.0"},
-      { :uuid, "~> 1.1" }
+      {:uuid, "~> 1.1" }
     ]
   end
 
