@@ -7,6 +7,15 @@ defmodule OliWeb.InstitutionControllerTest do
   @update_attrs %{country_code: "some updated country_code", institution_email: "some updated institution_email", institution_url: "some updated institution_url", name: "some updated name", timezone: "some updated timezone"}
   @invalid_attrs %{country_code: nil, institution_email: nil, institution_url: nil, name: nil, timezone: nil}
 
+  setup do
+    {:ok, user} = User.changeset(%User{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo"}) |> Repo.insert
+    valid_attrs = Map.put(@valid_attrs, :user_id, user.id)
+    {:ok, institution} = valid_attrs |> Accounts.create_institution()
+
+    {:ok, %{institution: institution, user: user, valid_attrs: valid_attrs}}
+  end
+
+
   def fixture(:institution) do
     {:ok, institution} = Accounts.create_institution(@create_attrs)
     institution

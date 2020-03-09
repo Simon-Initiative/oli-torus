@@ -51,12 +51,7 @@ defmodule OliWeb.Router do
   scope "/auth", OliWeb do
     pipe_through [:browser]
 
-    get "/signin", AuthController, :signin
     get "/signout", AuthController, :signout
-
-    get "/register", AuthController, :register
-    get "/register/email", AuthController, :register_email_form
-    post "/register/email", AuthController, :register_email_submit
 
     post "/identity/callback", AuthController, :identity_callback
 
