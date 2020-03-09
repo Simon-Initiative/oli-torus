@@ -25,6 +25,7 @@ defmodule Oli.Accounts.User do
     |> unique_constraint(:email)
     |> validate_length(:password, min: 6)
     |> validate_confirmation(:password, message: "does not match password")
+    |> lowercase_email()
     |> hash_password()
   end
 
@@ -36,5 +37,9 @@ defmodule Oli.Accounts.User do
       _ ->
         changeset
     end
+  end
+
+  defp lowercase_email(changeset) do
+    update_change(changeset, :email, &String.downcase/1)
   end
 end

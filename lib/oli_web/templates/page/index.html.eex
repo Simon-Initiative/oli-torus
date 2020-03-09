@@ -1,6 +1,6 @@
 <div class="container">
 <section class="my-5" style="text-align: center">
-  <%= if @conn.assigns[:user] do %>
+  <%= if signed_in?(@conn) do %>
     <h1><%= gettext "Welcome back %{name}!", name: @conn.assigns.user.first_name %></h1>
 
     <%= link "My Institutions", to: Routes.institution_path(@conn, :index), class: "btn btn-md btn-outline-primary ml-4" %>
@@ -31,6 +31,7 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="$('#dev-modal').remove()">Dismiss</button>
         <a href="/dev/uipalette" class="btn btn-primary">Go to UI Elements</a>
+        <a href="/test/editor" class="btn btn-primary">Go to Test Editor</a>
       </div>
     </div>
   </div>

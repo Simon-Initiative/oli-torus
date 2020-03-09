@@ -109,6 +109,9 @@ defmodule OliWeb.AuthController do
   def identity_callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
     %Ueberauth.Auth{info: %{email: email}, credentials: %{other: %{password: password}}} = auth;
 
+    # emails are case-insensitive, use lowercased version
+    email = String.downcase(email)
+
     case Accounts.authorize_user(email, password) do
       { :ok, user } ->
         conn

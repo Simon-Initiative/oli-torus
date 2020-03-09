@@ -8,6 +8,15 @@ defmodule Oli.Accounts do
 
   alias Oli.Accounts.User
 
+  @doc """
+  Returns an user if one matches given email, or creates an returns a new user
+
+  ## Examples
+
+      iex> insert_or_update_user(%{field: value})
+      {:ok, %User{}}
+
+  """
   def insert_or_update_user(changeset) do
     case Repo.get_by(User, email: changeset.changes.email) do
       nil ->
@@ -17,16 +26,38 @@ defmodule Oli.Accounts do
     end
   end
 
+  @doc """
+  Creates an returns a new user
+
+  ## Examples
+
+      iex> create_user(%{field: value})
+      {:ok, %User{}}
+
+  """
   def create_user(params \\ %{}) do
     %User{}
     |> User.changeset(params)
     |> Repo.insert()
   end
 
+  @doc """
+  Gets a single user with the given email
+  """
   def get_user_by_email(email) do
     Repo.get_by(User, email: email)
   end
 
+  @doc """
+  Returns true if a user is signed in
+  """
+  def signed_in?(conn) do
+    conn.assigns[:user]
+  end
+
+  @doc """
+  Authorizes a user with the given email and passord
+  """
   def authorize_user(user_email, password) do
     Repo.get_by(User, email: user_email)
       |> authorize(password)

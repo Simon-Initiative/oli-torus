@@ -10,6 +10,10 @@ defmodule OliWeb.Router do
     plug Oli.Plugs.SetUser
   end
 
+  pipeline :protected do
+    plug Oli.Plugs.Protect
+  end
+
   pipeline :api do
     plug :accepts, ["json"]
   end
@@ -26,12 +30,26 @@ defmodule OliWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
+  end
 
-    resources "/institutions", InstitutionController
+  scope "/institutions", OliWeb do
+    pipe_through [:browser, :protected]
+
+    resources "/", InstitutionController
   end
 
   scope "/auth", OliWeb do
-    pipe_through :browser
+    pipe_through [:browser, OliWeb.Plugs.Guest]
+
+    get "/signin", AuthController, :signin
+
+    get "/register", AuthController, :register
+    get "/register/email", AuthController, :register_email_form
+    post "/register/email", AuthController, :register_email_submit
+  end
+
+  scope "/auth", OliWeb do
+    pipe_through [:browser]
 
     get "/signin", AuthController, :signin
     get "/signout", AuthController, :signout
@@ -44,10 +62,6 @@ defmodule OliWeb.Router do
 
     get "/:provider", AuthController, :request
     get "/:provider/callback", AuthController, :callback
-
-    # # POST used by email account creation form
-    # post "/:provider/callback", AuthController, :callback
-
   end
 
   scope "/test", OliWeb do
