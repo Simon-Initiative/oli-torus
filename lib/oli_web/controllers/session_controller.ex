@@ -3,7 +3,7 @@ defmodule OliWeb.SessionController do
   plug Ueberauth
 
   # alias Oli.Account
-  alias Oli.User
+  alias Oli.Accounts.User
   alias Oli.Repo
 
   def create(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
@@ -41,6 +41,7 @@ defmodule OliWeb.SessionController do
     case Repo.get_by(User, email: changeset.changes.email) do
       nil ->
         Repo.insert(changeset)
+
       user ->
         {:ok, user}
     end
