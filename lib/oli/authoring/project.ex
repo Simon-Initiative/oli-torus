@@ -11,7 +11,6 @@ defmodule Oli.Authoring.Project do
 
     belongs_to :parent_project, Oli.Authoring.Project, foreign_key: :project_id
     belongs_to :project_family, Oli.Authoring.ProjectFamily
-    belongs_to :creator, Oli.Accounts.User
     many_to_many :authors, Oli.Accounts.User, join_through: "users_projects"
   end
 
@@ -23,8 +22,7 @@ defmodule Oli.Authoring.Project do
       :slug,
       :description,
       :issues,
-      :version,
-      :creator
+      :version
     ])
     |> validate_required([:title, :slug, :version, :package_family, :authors, :creator])
     |> unique_constraint(:slug)

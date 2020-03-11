@@ -48,7 +48,6 @@ defmodule Oli.Repo.Migrations.CreateRoles do
       add :version, :string
       add :parent_project_id, references(:projects)
       add :project_family_id, references(:project_families)
-      add :creator_id, references(:users)
     end
 
     create table(:resource_types) do
