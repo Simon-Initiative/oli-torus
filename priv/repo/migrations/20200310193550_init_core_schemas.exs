@@ -1,21 +1,7 @@
-defmodule Oli.Repo.Migrations.CreateRoles do
+defmodule Oli.Repo.Migrations.InitCoreSchemas do
   use Ecto.Migration
 
   def change do
-    create table(:project_families) do
-      timestamps()
-      add :slug, :string
-    end
-
-    create table(:projects) do
-      timestamps()
-      add :title, :string
-      add :slug, :string
-      add :description, :string
-      add :version, :string
-      add :parent_project_id, references(:projects)
-      add :project_family_id, references(:project_families)
-    end
 
     create table(:resource_types) do
       timestamps()
@@ -35,6 +21,49 @@ defmodule Oli.Repo.Migrations.CreateRoles do
     create table(:section_roles) do
       timestamps()
       add :type, :string
+    end
+
+    create table(:users) do
+      add :email, :string
+      add :first_name, :string
+      add :last_name, :string
+      add :provider, :string
+      add :token, :string
+      add :password_hash, :string
+      add :email_verified, :boolean
+      add :system_role_id, references(:system_roles)
+
+      timestamps()
+    end
+
+    create unique_index(:users, [:email])
+
+    create table(:institutions) do
+      add :institution_email, :string
+      add :name, :string
+      add :country_code, :string
+      add :institution_url, :string
+      add :timezone, :string
+      add :consumer_key, :string
+      add :shared_secret, :string
+      add :user_id, references(:users)
+
+      timestamps()
+    end
+
+    create table(:project_families) do
+      timestamps()
+      add :slug, :string
+    end
+
+    create table(:projects) do
+      timestamps()
+      add :title, :string
+      add :slug, :string
+      add :description, :string
+      add :version, :string
+      add :parent_project_id, references(:projects)
+      add :project_family_id, references(:project_families)
     end
 
     create table(:sections) do
