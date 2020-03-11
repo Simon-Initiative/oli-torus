@@ -17,6 +17,7 @@ defmodule Oli.Accounts.User do
     many_to_many :projects, Oli.Authoring.Project, join_through: Oli.Accounts.UserProject
     many_to_many :sections, Oli.Delivery.Section, join_through: Oli.Accounts.UserSection
     timestamps()
+    belongs_to :system_role, Oli.Accounts.SystemRole
   end
 
   @doc false
@@ -31,9 +32,10 @@ defmodule Oli.Accounts.User do
       :password,
       :email_verified,
       :projects,
-      :sections
+      :sections,
+      :system_role
     ])
-    |> validate_required([:email, :first_name, :last_name, :provider])
+    |> validate_required([:email, :first_name, :last_name, :provider, :system_role])
     |> unique_constraint(:email)
     |> validate_length(:password, min: 6)
     |> validate_confirmation(:password, message: "does not match password")

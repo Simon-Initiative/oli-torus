@@ -3,7 +3,18 @@ defmodule Oli.Repo.Migrations.CreateRoles do
 
   def change do
     # accounts
-    create table(:roles) do
+
+    create table(:system_roles) do
+      timestamps()
+      add :type, :string
+    end
+
+    create table(:project_roles) do
+      timestamps()
+      add :type, :string
+    end
+
+    create table(:section_roles) do
       timestamps()
       add :type, :string
     end
@@ -12,14 +23,14 @@ defmodule Oli.Repo.Migrations.CreateRoles do
       timestamps()
       add :user_id, references(:users)
       add :project_id, references(:projects)
-      add :role_id, references(:roles)
+      add :project_role_id, references(:project_roles)
     end
 
     create table(:users_sections) do
       timestamps()
       add :user_id, references(:users)
       add :section_id, references(:sections)
-      add :role_id, references(:roles)
+      add :section_role_id, references(:section_roles)
     end
 
     # authoring
@@ -37,6 +48,7 @@ defmodule Oli.Repo.Migrations.CreateRoles do
       add :version, :string
       add :parent_project_id, references(:projects)
       add :project_family_id, references(:project_families)
+      add :creator_id, references(:users)
     end
 
     create table(:resource_types) do

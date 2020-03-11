@@ -1,8 +1,8 @@
-defmodule Oli.Accounts.Role do
+defmodule Oli.Accounts.ProjectRole do
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "roles" do
+  schema "project_roles" do
     field :type, :string
     timestamps()
   end

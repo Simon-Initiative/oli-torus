@@ -7,13 +7,13 @@ defmodule Oli.Accounts.UserProject do
     timestamps()
     belongs_to :user, Oli.Accounts.User
     belongs_to :project, Oli.Authoring.Project
-    belongs_to :role, Oli.Accounts.Role
+    belongs_to :project_role, Oli.Accounts.ProjectRole
   end
 
   @doc false
   def changeset(role, attrs) do
     role
-    |> cast(attrs, [:user_id, :project_id, :role_id])
-    |> validate_required([:user_id, :project_id, :role_id])
+    |> cast(attrs, [:user_id, :project_id, :project_role_id])
+    |> validate_required([:user_id, :project_id, :project_role_id])
   end
 end
