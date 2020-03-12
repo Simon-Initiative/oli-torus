@@ -12,7 +12,6 @@
 
 1. Install dependencies:
     - [Docker](https://www.docker.com/) and docker-compose
-<br />
 
 1. Initial setup
     ```
@@ -35,7 +34,13 @@
     - [Docker](https://www.docker.com/) and docker-compose
     - [Elixir](https://elixir-lang.org/) (`$ brew install elixir`)
     - [Phoenix](https://www.phoenixframework.org/) (`$ mix archive.install hex phx_new 1.4.10`)
-<br/>
+
+1. Optionally, use the provided `devmode.sh` script to automatically run all the following steps and get started
+   ```
+   $ sh ./devmode.sh
+   ```
+
+   Skip the remaining setup steps and use `mix phx.server` to run the server.
 
 1. Create configuration env files:
     ```
@@ -70,23 +75,28 @@
     $ mix ecto.create
     ```
 
-2. Run migration to create schema
+1. Run migration to create schema
     ```
     $ mix ecto.migrate
     ```
 
-3. To use the `oli.env` configuration, we need a helper tool to load the environment variables
+1. Configure bash to properly source environment variable configurations
+   ```
+   $ set -a
+   ```
+
+1. Load phoenix app configuration from environment file. This step is necessary anytime you change a configuration variable
     ```
-    $ npm install -g env-cmd
+    $ source oli.env
     ```
 
-4. Start Phoenix server
+1. Start Phoenix server
     ```
-    $ env-cmd -f oli.env mix phx.server
+    $ mix phx.server
     ```
     > NOTE: Use Ctrl+c to stop the Phoenix server
 
-5. Open your web browser to `localhost:4000`
+1. Open your web browser to `localhost:4000`
 
 
 ### Running Tests
@@ -102,3 +112,14 @@ If using docker-compose, you can start a bash session to execute any of the foll
     ```
     $ mix test
     ```
+
+### Tunneling localhost connection for LTI development
+
+When making an LTI connection from an LMS such as Canvas, we need an internet accessible FQDN with SSL to properly configure a connection. The service ngrok offers an easy to use commandline tool that does just this (ngrok - secure introspectable tunnels to ngrok.
+
+1. [Download ngrok](https://ngrok.com/) and install using their instructions (Create a free account if required)
+1. Run ngrok locally to tunnel to phoenix app on port 4000
+        ```
+        ngrok http 4000
+        ```
+1. Access your running webapp using the generated https address (shown in console after `Forwarding`). This will be the same address used to configure the LMS LTI connection

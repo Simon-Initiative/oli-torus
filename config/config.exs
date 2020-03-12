@@ -28,11 +28,23 @@ config :phoenix, :json_library, Jason
 # Configure OAuth
 config :ueberauth, Ueberauth,
   providers: [
-    google: {Ueberauth.Strategy.Google, [default_scope: "email profile plus.me"]}
+    google: {Ueberauth.Strategy.Google, [default_scope: "email profile"]},
+    facebook: {Ueberauth.Strategy.Facebook, [default_scope: "email,public_profile"]},
+    identity: {Ueberauth.Strategy.Identity, [
+      callback_methods: ["POST"],
+      uid_field: :email,
+      request_path: "/auth/identity",
+      callback_path: "/auth/identity/callback",
+    ]}
   ]
+
 config :ueberauth, Ueberauth.Strategy.Google.OAuth,
   client_id: System.get_env("GOOGLE_CLIENT_ID"),
   client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
+
+config :ueberauth, Ueberauth.Strategy.Facebook.OAuth,
+  client_id: System.get_env("FACEBOOK_CLIENT_ID"),
+  client_secret: System.get_env("FACEBOOK_CLIENT_SECRET")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

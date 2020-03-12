@@ -1,0 +1,3 @@
+<h3 class="my-3">LTI Launch Invalid</h3>
+
+<p>Reason: <span class="text-danger"><%= @reason %></span></p>

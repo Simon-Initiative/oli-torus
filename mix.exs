@@ -50,7 +50,11 @@ defmodule Oli.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:ueberauth, "~> 0.5"},
-      {:ueberauth_google, "~> 0.7"}
+      {:ueberauth_google, "~> 0.7"},
+      {:ueberauth_facebook, "~> 0.8"},
+      {:ueberauth_identity, "~> 0.2"},
+      {:bcrypt_elixir, "~> 2.0"},
+      {:uuid, "~> 1.1" }
     ]
   end
 

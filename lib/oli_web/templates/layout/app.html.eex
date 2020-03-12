@@ -5,8 +5,6 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Open Learning Initiative</title>
-    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
-
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 
@@ -23,28 +21,34 @@
     <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/font-awesome-line-awesome/css/all.min.css">
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/styles/tomorrow.min.css">
 
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
+
   </head>
   <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
       <div class="container">
         <a class="navbar-brand" href="/">
-          <img src="/images/oli-icon.png" width="30" height="30" class="d-inline-block align-top" alt="">
-          OLI
+          <img src="/images/oli-icon.png" width="30" height="30" class="d-inline-block align-top mr-2" alt="">
+          Open Learning <span style="font-weight: 200">Initiative</span>
         </a>
 
-          <ul class="navbar-nav mr-auto">
+          <%# <ul class="navbar-nav mr-auto">
             <li class="nav-item active">
               <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
             </li>
-          </ul>
+          </ul> %>
           <div class="form-inline my-2 my-lg-0">
-            <%= if @conn.assigns[:user] do %>
+            <%= if signed_in?(@conn) do %>
               <span class="block lg:inline-block lg:mt-0 text-grey-darkest mr-4 no-underline hover:underline">
                 <%= "#{@conn.assigns.user.first_name} #{@conn.assigns.user.last_name}" %>
               </span>
-              <%= link "Sign out", to: Routes.session_path(@conn, :delete), class: "btn btn-dark my-2 my-sm-0" %>
+              <%= link "Sign out", to: Routes.auth_path(@conn, :signout), class: "btn btn-dark my-2 my-sm-0" %>
             <% else %>
-              <a href="/auth/google?scope=email%20profile" class="btn btn-dark my-2 my-sm-0">Sign in with Google</a>
+              <%= if @conn.request_path == "/" do %>
+                <a href="/auth/signin" class="btn btn-dark my-2 my-sm-0">Sign in</a>
+              <% end %>
             <% end %>
           </div>
       </div>
@@ -60,9 +64,6 @@
 
       <%= render @view_module, @view_template, assigns %>
     </main>
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
 
     <script>

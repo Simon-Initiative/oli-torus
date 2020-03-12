@@ -1,13 +1,14 @@
 defmodule Oli.TestHelpers do
-  alias Oli.{Repo, User}
+  alias Oli.Repo
+  alias Oli.Accounts.User
 
   def user_fixture(attrs \\ %{}) do
     params =
       attrs
       |> Enum.into(%{
+        email: "ironman#{System.unique_integer([:positive])}@example.com",
         first_name: "Tony",
         last_name: "Stark",
-        email: "ironman#{System.unique_integer([:positive])}@example.com",
         token: "2u9dfh7979hfd",
         provider: "google"
       })

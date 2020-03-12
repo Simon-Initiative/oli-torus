@@ -42,6 +42,8 @@ defmodule OliWeb do
       import OliWeb.ErrorHelpers
       import OliWeb.Gettext
       alias OliWeb.Router.Helpers, as: Routes
+
+      import Oli.Accounts, only: [signed_in?: 1]
     end
   end
 

@@ -1,0 +1,43 @@
+<h2 class="my-4">My Institutions</h2>
+
+<%= if Enum.count(@institutions) == 0 do %>
+  <div class="my-5 text-center">
+    <%= "#{@user.first_name} #{@user.last_name}" %> has no registered institutions
+  </div>
+<% else %>
+  <table class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Country Code</th>
+        <th>Email</th>
+        <th>URL</th>
+        <th>Timezone</th>
+        <th>Consumer Key</th>
+        <th>Shared Secret</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+  <%= for institution <- @institutions do %>
+      <tr>
+        <td><%= institution.name %></td>
+        <td><%= institution.country_code %></td>
+        <td><%= institution.institution_email %></td>
+        <td><%= institution.institution_url %></td>
+        <td><%= institution.timezone %></td>
+        <td><%= institution.consumer_key %></td>
+        <td><%= institution.shared_secret %></td>
+
+        <td>
+          <span><%= link "Show", to: Routes.institution_path(@conn, :show, institution), class: "btn btn-xs btn-outline-primary my-2" %></span>
+          <span><%= link "Edit", to: Routes.institution_path(@conn, :edit, institution), class: "btn btn-xs btn-outline-primary my-2" %></span>
+          <span><%= link "Delete", to: Routes.institution_path(@conn, :delete, institution), method: :delete, data: [confirm: "Are you sure?"], class: "btn btn-xs btn-outline-danger my-2" %></span>
+        </td>
+      </tr>
+  <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<span><%= link "Register New Institution", to: Routes.institution_path(@conn, :new), class: "btn btn-md btn-outline-primary" %></span>
