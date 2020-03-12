@@ -12,6 +12,7 @@ defmodule Oli.Authoring.Project do
     belongs_to :parent_project, Oli.Authoring.Project, foreign_key: :project_id
     belongs_to :project_family, Oli.Authoring.ProjectFamily
     many_to_many :authors, Oli.Accounts.User, join_through: "users_projects"
+    has_many :pages_with_positions, Oli.Authoring.PagesWithPositions
   end
 
   @doc false
