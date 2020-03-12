@@ -2,10 +2,10 @@ defmodule Oli.Authoring.Attempt do
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "resources" do
+  schema "attempts" do
     timestamps()
     field :score, :integer
-    belongs_to :resource, Oli.Authoring.Resource
+    belongs_to :activity, Oli.Authoring.Resource
     belongs_to :user, Oli.Accounts.User
   end
 
