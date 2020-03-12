@@ -14,7 +14,7 @@ defmodule Oli.Repo.Migrations.ObjectivesCurriculum do
       add :child_id, references(:objectives)
     end
 
-    create table(:page_with_position) do
+    create table(:pages_with_position) do
       timestamps()
       add :project_id, references(:projects)
       add :page_id, references(:resources)
