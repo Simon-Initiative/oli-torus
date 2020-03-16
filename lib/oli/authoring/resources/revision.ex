@@ -14,8 +14,8 @@ defmodule Oli.Authoring.Revision do
   end
 
   @doc false
-  def changeset(user, attrs \\ %{}) do
-    user
+  def changeset(rev, attrs \\ %{}) do
+    rev
     |> cast(attrs, [
       :type,
       :md5,

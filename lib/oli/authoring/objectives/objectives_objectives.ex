@@ -10,8 +10,8 @@ defmodule Oli.Authoring.ObjectiveObjective do
   end
 
   @doc false
-  def changeset(role, attrs) do
-    role
+  def changeset(objective_objective, attrs) do
+    objective_objective
     |> cast(attrs, [:user_id, :project_id, :project_role_id])
     |> validate_required([:user_id, :project_id, :project_role_id])
   end

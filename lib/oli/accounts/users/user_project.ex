@@ -11,8 +11,8 @@ defmodule Oli.Accounts.UserProject do
   end
 
   @doc false
-  def changeset(role, attrs) do
-    role
+  def changeset(user_project, attrs) do
+    user_project
     |> cast(attrs, [:user_id, :project_id, :project_role_id])
     |> validate_required([:user_id, :project_id, :project_role_id])
   end

@@ -8,8 +8,8 @@ defmodule Oli.Accounts.ProjectRole do
   end
 
   @doc false
-  def changeset(role, attrs) do
-    role
+  def changeset(project_role, attrs) do
+    project_role
     |> cast(attrs, [:type])
     |> validate_required([:type])
   end

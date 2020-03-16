@@ -12,8 +12,8 @@ defmodule Oli.Authoring.Resource do
   end
 
   @doc false
-  def changeset(user, attrs \\ %{}) do
-    user
+  def changeset(resource, attrs \\ %{}) do
+    resource
     |> cast(attrs, [
       :title,
       :slug,

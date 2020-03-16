@@ -10,8 +10,8 @@ defmodule Oli.Authoring.Attempt do
   end
 
   @doc false
-  def changeset(user, attrs \\ %{}) do
-    user
+  def changeset(attempt, attrs \\ %{}) do
+    attempt
     |> cast(attrs, [
       :score,
       :resource,

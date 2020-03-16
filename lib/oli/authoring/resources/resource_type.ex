@@ -8,8 +8,8 @@ defmodule Oli.Authoring.ResourceType do
   end
 
   @doc false
-  def changeset(role, attrs) do
-    role
+  def changeset(resource_type, attrs) do
+    resource_type
     |> cast(attrs, [:type])
     |> validate_required([:type])
   end

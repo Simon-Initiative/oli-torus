@@ -11,8 +11,8 @@ defmodule Oli.Authoring.Objective do
   end
 
   @doc false
-  def changeset(user, attrs \\ %{}) do
-    user
+  def changeset(objective, attrs \\ %{}) do
+    objective
     |> cast(attrs, [
       :description,
       :parents,

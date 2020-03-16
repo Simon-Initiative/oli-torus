@@ -11,8 +11,8 @@ defmodule Oli.Authoring.PageWithPosition do
   end
 
   @doc false
-  def changeset(user, attrs \\ %{}) do
-    user
+  def changeset(page_with_position, attrs \\ %{}) do
+    page_with_position
     |> cast(attrs, [
       :project,
       :page,

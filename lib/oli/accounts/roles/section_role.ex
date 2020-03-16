@@ -8,8 +8,8 @@ defmodule Oli.Accounts.SectionRole do
   end
 
   @doc false
-  def changeset(role, attrs) do
-    role
+  def changeset(section_role, attrs) do
+    section_role
     |> cast(attrs, [:type])
     |> validate_required([:type])
   end
