@@ -31,11 +31,9 @@ defmodule Oli.Accounts.User do
       :token,
       :password,
       :email_verified,
-      :projects,
-      :sections,
-      :system_role
+      :system_role_id
     ])
-    |> validate_required([:email, :first_name, :last_name, :provider, :system_role])
+    |> validate_required([:email, :first_name, :last_name, :provider, :system_role_id])
     |> unique_constraint(:email)
     |> validate_length(:password, min: 6)
     |> validate_confirmation(:password, message: "does not match password")

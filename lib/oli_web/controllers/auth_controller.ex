@@ -4,6 +4,7 @@ defmodule OliWeb.AuthController do
 
   alias Oli.Accounts
   alias Oli.Accounts.User
+  alias Oli.Accounts.SystemRole
 
   def signin(conn, _params) do
     render(conn, "signin.html")
@@ -43,7 +44,8 @@ defmodule OliWeb.AuthController do
       provider: "identity",
       password: password,
       password_confirmation: password_confirmation,
-      email_verified: false
+      email_verified: false,
+      system_role_id: SystemRole.role_id.user
     }
 
     case Accounts.create_user(user_params) do
@@ -75,7 +77,8 @@ defmodule OliWeb.AuthController do
           first_name: auth.info.first_name,
           last_name: auth.info.last_name,
           provider: "google",
-          token: auth.credentials.token
+          token: auth.credentials.token,
+          system_role_id: SystemRole.role_id.user
         }
       :facebook ->
         # FIXME: There has to be a better way to get first_name and last_name from facebook
@@ -86,7 +89,8 @@ defmodule OliWeb.AuthController do
           first_name: first_name,
           last_name: last_name,
           provider: "facebook",
-          token: auth.credentials.token
+          token: auth.credentials.token,
+          system_role_id: SystemRole.role_id.user
         }
     end
 

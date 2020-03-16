@@ -13,6 +13,8 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :type, :string
     end
 
+    create unique_index(:system_roles, [:type])
+
     create table(:project_roles) do
       timestamps()
       add :type, :string
