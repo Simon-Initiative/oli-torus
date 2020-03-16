@@ -40,3 +40,4 @@ postgres.env
 /assets/coverage/
 .devmode
 .elixir_ls
+.DS_Store
