@@ -81,7 +81,7 @@ defmodule OliWeb.InstitutionControllerTest do
   end
 
   defp create_institution(%{ conn: conn  }) do
-    {:ok, user} = User.changeset(%User{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo"}) |> Repo.insert
+    {:ok, user} = User.changeset(%User{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: Accounts.SystemRole.role_id.user}) |> Repo.insert
     create_attrs = Map.put(@create_attrs, :user_id, user.id)
     {:ok, institution} = create_attrs |> Accounts.create_institution()
 

@@ -28,7 +28,6 @@ defmodule Oli.Accounts.Institution do
       :consumer_key,
       :shared_secret,
       :user_id,
-      :sections
     ])
     |> validate_required([
       :name,

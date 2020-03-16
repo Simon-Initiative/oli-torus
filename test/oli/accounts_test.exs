@@ -12,7 +12,7 @@ defmodule Oli.AccountsTest do
     @invalid_attrs %{country_code: nil, institution_email: nil, institution_url: nil, name: nil, timezone: nil}
 
     setup do
-      {:ok, user} = User.changeset(%User{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo"}) |> Repo.insert
+      {:ok, user} = User.changeset(%User{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: Accounts.SystemRole.role_id.user}) |> Repo.insert
       valid_attrs = Map.put(@valid_attrs, :user_id, user.id)
       {:ok, institution} = valid_attrs |> Accounts.create_institution()
 

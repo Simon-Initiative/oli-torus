@@ -11,23 +11,27 @@
 # and so on) as they will fail if something goes wrong.
 
 # Insert system roles
-Oli.Repo.insert! %Oli.Accounts.SystemRole{
-  id: 1,
-  type: "user"
-}
+if !Oli.Repo.get_by(Oli.Accounts.SystemRole, id: 1) do
+  Oli.Repo.insert! %Oli.Accounts.SystemRole{
+    id: 1,
+    type: "user"
+  }
 
-Oli.Repo.insert! %Oli.Accounts.SystemRole{
-  id: 2,
-  type: "admin"
-}
+  Oli.Repo.insert! %Oli.Accounts.SystemRole{
+    id: 2,
+    type: "admin"
+  }
+end
 
 # Insert admin user
-Oli.Repo.insert! %Oli.Accounts.User{
-  email: System.get_env("ADMIN_EMAIL", "admin@oli.cmu.edu"),
-  first_name: "Administrator",
-  last_name: "",
-  provider: "identity",
-  password_hash: Bcrypt.hash_pwd_salt(System.get_env("ADMIN_PASSWORD", "admin")),
-  email_verified: true,
-  system_role_id: Oli.Accounts.SystemRole.role_id.admin
-}
+if !Oli.Repo.get_by(Oli.Accounts.User, email: System.get_env("ADMIN_EMAIL", "admin@oli.cmu.edu")) do
+  Oli.Repo.insert! %Oli.Accounts.User{
+    email: System.get_env("ADMIN_EMAIL", "admin@oli.cmu.edu"),
+    first_name: "Administrator",
+    last_name: "",
+    provider: "identity",
+    password_hash: Bcrypt.hash_pwd_salt(System.get_env("ADMIN_PASSWORD", "admin")),
+    email_verified: true,
+    system_role_id: Oli.Accounts.SystemRole.role_id.admin
+  }
+end

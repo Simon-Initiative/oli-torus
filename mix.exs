@@ -54,7 +54,8 @@ defmodule Oli.MixProject do
       {:ueberauth_facebook, "~> 0.8"},
       {:ueberauth_identity, "~> 0.2"},
       {:bcrypt_elixir, "~> 2.0"},
-      {:uuid, "~> 1.1" }
+      {:uuid, "~> 1.1" },
+      {:mix_test_watch, "~> 1.0", only: :dev, runtime: false}
     ]
   end
 
@@ -68,7 +69,9 @@ defmodule Oli.MixProject do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate", "test"]
+      test: ["ecto.create --quiet", "ecto.migrate", "run priv/repo/seeds.exs", "test"],
+      # mix test.watch runs tests in deterministic order and reruns tests if any changes are made
+      "test.watch": ["test.watch --stale --seed 0"],
     ]
   end
 end

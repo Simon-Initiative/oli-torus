@@ -10,7 +10,8 @@ defmodule Oli.TestHelpers do
         first_name: "Tony",
         last_name: "Stark",
         token: "2u9dfh7979hfd",
-        provider: "google"
+        provider: "google",
+        system_role_id: 1,
       })
 
     {:ok, user} =
