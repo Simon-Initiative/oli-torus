@@ -116,5 +116,27 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :json, :string
       add :revision_id, references(:revisions)
     end
+
+    create table(:lti_tool_consumers) do
+      add :instance_guid, :string
+      add :instance_name, :string
+      add :instance_contact_email, :string
+      add :info_version, :string
+      add :info_product_family_code, :string
+      add :institution_id, references(:institutions)
+
+      timestamps()
+    end
+
+    create table(:lti_user_details) do
+      add :lti_user_id, :string
+      add :lti_user_image, :string
+      add :lti_roles, :string
+      add :user_id, references(:users)
+      add :lti_tool_consumer_id, references(:lti_tool_consumers)
+
+      timestamps()
+    end
+
   end
 end

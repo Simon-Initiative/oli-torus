@@ -9,7 +9,7 @@ defmodule Oli.Accounts do
   alias Oli.Accounts.User
 
   @doc """
-  Returns an user if one matches given email, or creates an returns a new user
+  Returns a user if one matches given email, or creates and returns a new user
 
   ## Examples
 
@@ -17,13 +17,13 @@ defmodule Oli.Accounts do
       {:ok, %User{}}
 
   """
-  def insert_or_update_user(changeset) do
-    case Repo.get_by(User, email: changeset.changes.email) do
-      nil ->
-        Repo.insert(changeset)
-      user ->
-        {:ok, user}
+  def insert_or_update_user(%{ email: email } = changes) do
+    case Repo.get_by(User, email: email) do
+      nil -> %User{}
+      user -> user
     end
+    |> User.changeset(changes)
+    |> Repo.insert_or_update
   end
 
   @doc """
@@ -35,9 +35,9 @@ defmodule Oli.Accounts do
       {:ok, %User{}}
 
   """
-  def create_user(params \\ %{}) do
+  def create_user(params \\ %{}, opts \\ []) do
     %User{}
-    |> User.changeset(params)
+    |> User.changeset(params, opts)
     |> Repo.insert()
   end
 
@@ -46,6 +46,16 @@ defmodule Oli.Accounts do
   """
   def get_user_by_email(email) do
     Repo.get_by(User, email: email)
+  end
+
+  @doc """
+  Returns true if a user exists
+  """
+  def user_with_email_exists?(email) do
+    case Repo.get_by(User, email: email) do
+      nil -> false
+      _user -> true
+    end
   end
 
   @doc """
@@ -166,5 +176,49 @@ defmodule Oli.Accounts do
   """
   def change_institution(%Institution{} = institution) do
     Institution.changeset(institution, %{})
+  end
+
+
+  alias Oli.Accounts.LtiUserDetails
+
+  @doc """
+  Returns lti user details if a record matches user_id, or creates and returns a new lti user details
+
+  ## Examples
+
+      iex> insert_or_update_lti_user_details(%{field: value})
+      {:ok, %LtiUserDetails{}}    -> # Inserted or updated with success
+      {:error, changeset}         -> # Something went wrong
+
+  """
+  def insert_or_update_lti_user_details(%{ lti_user_id: lti_user_id } = changes) do
+    case Repo.get_by(LtiUserDetails, lti_user_id: lti_user_id) do
+      nil -> %LtiUserDetails{}
+      lti_user_details -> lti_user_details
+    end
+    |> LtiUserDetails.changeset(changes)
+    |> Repo.insert_or_update
+  end
+
+
+  alias Oli.Accounts.LtiToolConsumer
+
+  @doc """
+  Returns lti tool consumer if a record matches instance_guid, or creates and returns a new lti tool consumer
+
+  ## Examples
+
+      iex> insert_or_update_lti_tool_consumer(%{field: value})
+      {:ok, %LtiToolConsumer{}}    -> # Inserted or updated with success
+      {:error, changeset}          -> # Something went wrong
+
+  """
+  def insert_or_update_lti_tool_consumer(%{ instance_guid: instance_guid } = changes) do
+    case Repo.get_by(LtiToolConsumer, instance_guid: instance_guid) do
+      nil -> %LtiToolConsumer{}
+      lti_tool_consumer -> lti_tool_consumer
+    end
+    |> LtiToolConsumer.changeset(changes)
+    |> Repo.insert_or_update
   end
 end

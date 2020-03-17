@@ -94,9 +94,7 @@ defmodule OliWeb.AuthController do
         }
     end
 
-    changeset = User.changeset(%User{}, user_params)
-
-    case Accounts.insert_or_update_user(changeset) do
+    case Accounts.insert_or_update_user(user_params) do
       {:ok, user} ->
         conn
         |> put_flash(:info, "Thank you for signing in!")

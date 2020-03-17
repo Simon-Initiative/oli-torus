@@ -43,6 +43,16 @@ defmodule OliWeb.ErrorHelpers do
     end)
   end
 
+  def translate_all_changeset_errors(changeset) do
+    Enum.reduce(Keyword.keys(changeset.errors), "", fn key, acc ->
+      if acc == "" do
+        "#{Atom.to_string(key)} #{translate_error(Keyword.get(changeset.errors, key))}"
+      else
+        acc <> ", #{Atom.to_string(key)} #{translate_error(Keyword.get(changeset.errors, key))}"
+      end
+    end)
+  end
+
   @doc """
   Translates an error message using gettext.
   """
