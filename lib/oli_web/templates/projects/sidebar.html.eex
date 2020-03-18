@@ -1,0 +1,12 @@
+<style>
+#sidebar {
+  width: 210px;
+  padding: 24px;
+  height: 100vh;
+  border-right: 1px solid rgba(51, 51, 51, .15);
+}
+</style>
+
+<div id="sidebar">
+  John Doe
+</div>

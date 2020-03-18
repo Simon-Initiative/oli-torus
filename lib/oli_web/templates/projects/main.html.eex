@@ -1,0 +1,37 @@
+<style>
+.container {
+  flex-grow: 1;
+  margin: 0;
+  padding: 48px;
+}
+h1 {
+  font-size: 14px;
+}
+small {
+  font-size: 14px;
+  color: #b3b3b3;
+}
+.row {
+  margin: 0 0 20px 0;
+}
+.page-header p {
+  margin-top: 10px;
+  color: #b3b3b3;
+}
+</style>
+
+<div class="container">
+  <div class="row">
+    <div class="page-header">
+      <h1>My Projects</h1>
+      <small>No projects yet</small>
+      <p>Create a new project to get started, or ask a friend to invite you to their project.</p>
+    </div>
+  </div>
+  <div class="row">
+   <div class="page-header">
+      <h1>Model Projects</h1>
+      <small>These proven projects are built with best practices</small>
+    </div>
+  </div>
+</div>

@@ -26,11 +26,38 @@ defmodule OliWeb.Router do
     plug Plug.Parsers, parsers: [:urlencoded]
   end
 
+  # all course building routes (dynamic pages)
+  # pipeline :project do
+  #   plug :put_layout, {OliWeb.LayoutView, "projects.html"}
+  # end
+
+  pipeline :projects do
+    plug :put_layout, {OliWeb.LayoutView, "projects.html"}
+  end
+
   # open access routes
   scope "/", OliWeb do
     pipe_through :browser
 
     get "/", PageController, :index
+  end
+
+  scope "/", OliWeb do
+    pipe_through [:browser, :projects]
+
+    get "/project/:project", ProjectController, :overview
+    get "/project/:project/objectives", ProjectController, :objectives
+    get "/project/:project/curriculum", ProjectController, :curriculum
+    get "/project/:project/publish", ProjectController, :publish
+    get "/project/:project/insights", ProjectController, :insights
+
+    get "/project/:project/:page", ProjectController, :page
+    get "/project/:project/:page/edit", ProjectController, :resource_editor
+  end
+
+  scope "/projects", OliWeb do
+    pipe_through [:browser, :projects]
+    get "/", ProjectsController, :index
   end
 
   # authorization protected routes
