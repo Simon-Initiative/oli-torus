@@ -11,7 +11,7 @@ defmodule Oli.Authoring.Project do
 
     belongs_to :parent_project, Oli.Authoring.Project, foreign_key: :project_id
     belongs_to :project_family, Oli.Authoring.ProjectFamily
-    many_to_many :authors, Oli.Accounts.Auther, join_through: "authors_projects"
+    many_to_many :authors, Oli.Accounts.Author, join_through: "authors_projects"
   end
 
   @doc false

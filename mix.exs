@@ -10,7 +10,10 @@ defmodule Oli.MixProject do
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      preferred_cli_env: [
+        "test.coverage": :test,
+      ]
     ]
   end
 
@@ -69,9 +72,13 @@ defmodule Oli.MixProject do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate", "run priv/repo/seeds.exs", "test --cover"],
-      # mix test.watch runs tests in deterministic order and reruns tests if any changes are made
-      "test.watch": ["test.watch --stale --seed 0"],
+      test: ["ecto.create --quiet", "ecto.migrate", "run priv/repo/seeds.exs", "test"],
+
+      # runs tests and produces a coverage report
+      "test.coverage": ["ecto.create --quiet", "ecto.migrate", "run priv/repo/seeds.exs", "test --cover"],
+
+      # runs tests in deterministic order, only shows one failure at a time and reruns tests if any changes are made
+      "test.watch": ["test.watch --stale --max-failures 1 --trace --seed 0"],
     ]
   end
 end

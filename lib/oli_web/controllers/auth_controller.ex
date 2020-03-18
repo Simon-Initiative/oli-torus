@@ -94,6 +94,8 @@ defmodule OliWeb.AuthController do
         }
     end
 
+    IO.inspect(author_params)
+
     case Accounts.insert_or_update_author(author_params) do
       {:ok, author} ->
         conn
