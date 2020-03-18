@@ -6,7 +6,6 @@ defmodule OliWeb.LtiController do
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Accounts.Institution
-  import OliWeb.ErrorHelpers
 
   def basic_launch(conn, _params) do
     scheme = if conn.scheme == :https, do: "https", else: "http"
@@ -31,45 +30,30 @@ defmodule OliWeb.LtiController do
   end
 
   def handle_valid_request(conn, institution) do
-    author_params = %{
-      email: conn.body_params["lis_person_contact_email_primary"],
-      first_name: conn.body_params["lis_person_name_given"],
-      last_name: conn.body_params["lis_person_name_family"],
-      provider: "lti",
-      email_verified: true,
-      system_role_id: Accounts.SystemRole.role_id.author
-    }
-
-    # TODO: Check if author already exists with given email, then they can be given the option
-    # to merge this account with the existing one
-    if Accounts.author_with_email_exists?(author_params.email), do: throw "user with email already exists"
-
-    case Accounts.create_author(author_params, ignore_required: [:last_name]) do
-      {:ok, author} ->
-        case Accounts.insert_or_update_lti_tool_consumer(%{
-          info_product_family_code: conn.body_params["tool_consumer_info_product_family_code"],
-          info_version: conn.body_params["tool_consumer_info_version"],
-          instance_contact_email: conn.body_params["tool_consumer_instance_contact_email"],
-          instance_guid: conn.body_params["tool_consumer_instance_guid"],
-          instance_name: conn.body_params["tool_consumer_instance_name"],
+    case Accounts.insert_or_update_lti_tool_consumer(%{
+      info_product_family_code: conn.body_params["tool_consumer_info_product_family_code"],
+      info_version: conn.body_params["tool_consumer_info_version"],
+      instance_contact_email: conn.body_params["tool_consumer_instance_contact_email"],
+      instance_guid: conn.body_params["tool_consumer_instance_guid"],
+      instance_name: conn.body_params["tool_consumer_instance_name"],
+      institution_id: institution.id,
+    }) do
+      {:ok, lti_tool_consumer} ->
+        case Accounts.insert_or_update_user(%{
+          email: conn.body_params["lis_person_contact_email_primary"],
+          first_name: conn.body_params["lis_person_name_given"],
+          last_name: conn.body_params["lis_person_name_family"],
+          user_id: conn.body_params["user_id"],
+          user_image: conn.body_params["user_image"],
+          roles: conn.body_params["roles"],
+          lti_tool_consumer_id: lti_tool_consumer.id,
           institution_id: institution.id,
         }) do
-          {:ok, lti_tool_consumer} ->
-            case Accounts.insert_or_update_user(%{
-              user_id: conn.body_params["user_id"],
-              user_image: conn.body_params["user_image"],
-              roles: conn.body_params["roles"],
-              author: author.id,
-              lti_tool_consumer: lti_tool_consumer.id,
-            }) do
-              {:ok, _author_details } ->
-                render(conn, "basic_launch.html", institution: institution, author: author)
-            end
-          _ ->
-            throw "Error creating LTI tool consumer"
+          {:ok, user } ->
+            render(conn, "basic_launch.html", institution: institution, user: user)
         end
-      {:error, changeset} ->
-        throw "Error creating LTI user: " <> translate_all_changeset_errors(changeset)
+      _ ->
+        throw "Error creating LTI tool consumer"
     end
   end
 

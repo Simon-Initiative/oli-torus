@@ -53,6 +53,31 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       timestamps()
     end
 
+    create table(:lti_tool_consumers) do
+      add :instance_guid, :string
+      add :instance_name, :string
+      add :instance_contact_email, :string
+      add :info_version, :string
+      add :info_product_family_code, :string
+      add :institution_id, references(:institutions)
+
+      timestamps()
+    end
+
+    create table(:user) do
+      add :email, :string
+      add :first_name, :string
+      add :last_name, :string
+      add :user_id, :string
+      add :user_image, :string
+      add :roles, :string
+      add :author_id, references(:authors)
+      add :lti_tool_consumer_id, references(:lti_tool_consumers)
+      add :institution_id, references(:institutions)
+
+      timestamps()
+    end
+
     create table(:project_families) do
       timestamps()
       add :slug, :string
@@ -115,27 +140,6 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       timestamps()
       add :json, :string
       add :revision_id, references(:revisions)
-    end
-
-    create table(:lti_tool_consumers) do
-      add :instance_guid, :string
-      add :instance_name, :string
-      add :instance_contact_email, :string
-      add :info_version, :string
-      add :info_product_family_code, :string
-      add :institution_id, references(:institutions)
-
-      timestamps()
-    end
-
-    create table(:user) do
-      add :user_id, :string
-      add :user_image, :string
-      add :roles, :string
-      add :author_id, references(:authors)
-      add :lti_tool_consumer_id, references(:lti_tool_consumers)
-
-      timestamps()
     end
 
   end

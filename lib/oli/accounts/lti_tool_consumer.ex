@@ -9,6 +9,7 @@ defmodule Oli.Accounts.LtiToolConsumer do
     field :instance_guid, :string
     field :instance_name, :string
     belongs_to :institution, Oli.Accounts.Institution
+    has_many :users, Oli.Accounts.User
 
     timestamps()
   end
