@@ -42,7 +42,7 @@
           <div class="form-inline my-2 my-lg-0">
             <%= if signed_in?(@conn) do %>
               <span class="block lg:inline-block lg:mt-0 text-grey-darkest mr-4 no-underline hover:underline">
-                <%= "#{@conn.assigns.user.first_name} #{@conn.assigns.user.last_name}" %>
+                <%= "#{@conn.assigns.current_user.first_name} #{@conn.assigns.current_user.last_name}" %>
               </span>
               <%= link "Sign out", to: Routes.auth_path(@conn, :signout), class: "btn btn-dark my-2 my-sm-0" %>
             <% else %>

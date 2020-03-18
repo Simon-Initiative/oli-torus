@@ -6,7 +6,7 @@ defmodule Oli.Accounts.SystemRole do
   Enumerates all the SystemRole ids
   """
   def role_id, do: %{
-    user: 1,
+    author: 1,
     admin: 2,
   }
 

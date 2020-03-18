@@ -14,7 +14,7 @@
 if !Oli.Repo.get_by(Oli.Accounts.SystemRole, id: 1) do
   Oli.Repo.insert! %Oli.Accounts.SystemRole{
     id: 1,
-    type: "user"
+    type: "author"
   }
 
   Oli.Repo.insert! %Oli.Accounts.SystemRole{
@@ -23,9 +23,9 @@ if !Oli.Repo.get_by(Oli.Accounts.SystemRole, id: 1) do
   }
 end
 
-# Insert admin user
-if !Oli.Repo.get_by(Oli.Accounts.User, email: System.get_env("ADMIN_EMAIL", "admin@oli.cmu.edu")) do
-  Oli.Repo.insert! %Oli.Accounts.User{
+# Insert admin author
+if !Oli.Repo.get_by(Oli.Accounts.Author, email: System.get_env("ADMIN_EMAIL", "admin@oli.cmu.edu")) do
+  Oli.Repo.insert! %Oli.Accounts.Author{
     email: System.get_env("ADMIN_EMAIL", "admin@oli.cmu.edu"),
     first_name: "Administrator",
     last_name: "",

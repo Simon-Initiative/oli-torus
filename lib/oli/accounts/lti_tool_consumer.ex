@@ -8,7 +8,6 @@ defmodule Oli.Accounts.LtiToolConsumer do
     field :instance_contact_email, :string
     field :instance_guid, :string
     field :instance_name, :string
-    has_many :lti_user_details, Oli.Accounts.LtiUserDetails
     belongs_to :institution, Oli.Accounts.Institution
 
     timestamps()

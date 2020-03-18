@@ -9,8 +9,8 @@ defmodule Oli.Authoring.RevisionBlob do
   end
 
   @doc false
-  def changeset(user, attrs \\ %{}) do
-    user
+  def changeset(author, attrs \\ %{}) do
+    author
     |> cast(attrs, [
       :revision,
       :json

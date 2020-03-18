@@ -1,6 +1,6 @@
 defmodule OliWeb.SessionControllerTest do
   use OliWeb.ConnCase
-  # alias Oli.{Repo, User}
+  # alias Oli.{Repo, Author}
 
   # @ueberauth_auth %{
   #   credentials: %{token: "fdsnoafhnoofh08h38h"},
@@ -8,31 +8,31 @@ defmodule OliWeb.SessionControllerTest do
   #   provider: :google
   # }
 
-  test "redirects user to Google for authentication", %{conn: conn} do
+  test "redirects author to Google for authentication", %{conn: conn} do
     conn = get conn, "auth/google?scope=email%20profile"
     assert redirected_to(conn, 302)
   end
 
   # FIXME: investigate why this test failing here but it works in the browser
-  # test "creates user from Google information", %{conn: conn} do
+  # test "creates author from Google information", %{conn: conn} do
   #   conn = conn
   #   |> assign(:ueberauth_auth, @ueberauth_auth)
   #   |> get("/auth/google/callback")
 
-  #   users = User |> Repo.all
-  #   assert Enum.count(users) == 1
+  #   authors = Author |> Repo.all
+  #   assert Enum.count(authors) == 1
   #   assert get_flash(conn, :info) == "Thank you for signing in!"
   # end
 
-  test "signs out user", %{conn: conn} do
-    user = user_fixture()
+  test "signs out author", %{conn: conn} do
+    author = author_fixture()
 
     conn =
       conn
-      |> assign(:user, user)
+      |> assign(:author, author)
       |> get("/auth/signout")
       |> get("/")
 
-    assert conn.assigns.user == nil
+    assert conn.assigns.author == nil
   end
 end

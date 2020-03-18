@@ -2,7 +2,7 @@ defmodule Oli.AccountsTest do
   use Oli.DataCase
 
   alias Oli.Accounts
-  alias Oli.Accounts.User
+  alias Oli.Accounts.Author
 
   describe "institutions" do
     alias Oli.Accounts.Institution
@@ -12,11 +12,11 @@ defmodule Oli.AccountsTest do
     @invalid_attrs %{country_code: nil, institution_email: nil, institution_url: nil, name: nil, timezone: nil}
 
     setup do
-      {:ok, user} = User.changeset(%User{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: Accounts.SystemRole.role_id.user}) |> Repo.insert
-      valid_attrs = Map.put(@valid_attrs, :user_id, user.id)
+      {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: Accounts.SystemRole.role_id.author}) |> Repo.insert
+      valid_attrs = Map.put(@valid_attrs, :author_id, author.id)
       {:ok, institution} = valid_attrs |> Accounts.create_institution()
 
-      {:ok, %{institution: institution, user: user, valid_attrs: valid_attrs}}
+      {:ok, %{institution: institution, author: author, valid_attrs: valid_attrs}}
     end
 
     test "list_institutions/0 returns all institutions", %{institution: institution} do

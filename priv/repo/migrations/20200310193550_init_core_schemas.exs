@@ -25,7 +25,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :type, :string
     end
 
-    create table(:users) do
+    create table(:authors) do
       add :email, :string
       add :first_name, :string
       add :last_name, :string
@@ -38,7 +38,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       timestamps()
     end
 
-    create unique_index(:users, [:email])
+    create unique_index(:authors, [:email])
 
     create table(:institutions) do
       add :institution_email, :string
@@ -48,7 +48,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :timezone, :string
       add :consumer_key, :string
       add :shared_secret, :string
-      add :user_id, references(:users)
+      add :author_id, references(:authors)
 
       timestamps()
     end
@@ -79,16 +79,16 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :registration_open, :boolean
     end
 
-    create table(:users_sections) do
+    create table(:authors_sections) do
       timestamps()
-      add :user_id, references(:users)
+      add :author_id, references(:authors)
       add :section_id, references(:sections)
       add :section_role_id, references(:section_roles)
     end
 
-    create table(:users_projects) do
+    create table(:authors_projects) do
       timestamps()
-      add :user_id, references(:users)
+      add :author_id, references(:authors)
       add :project_id, references(:projects)
       add :project_role_id, references(:project_roles)
     end
@@ -98,7 +98,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :type, :string
       add :md5, :string
       add :revision_number, :integer
-      add :author_id, references(:users)
+      add :author_id, references(:authors)
       add :previous_revision_id, references(:revisions)
     end
 
@@ -128,11 +128,11 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       timestamps()
     end
 
-    create table(:lti_user_details) do
-      add :lti_user_id, :string
-      add :lti_user_image, :string
-      add :lti_roles, :string
-      add :user_id, references(:users)
+    create table(:user) do
+      add :user_id, :string
+      add :user_image, :string
+      add :roles, :string
+      add :author_id, references(:authors)
       add :lti_tool_consumer_id, references(:lti_tool_consumers)
 
       timestamps()

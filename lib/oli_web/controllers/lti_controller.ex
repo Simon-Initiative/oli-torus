@@ -31,21 +31,21 @@ defmodule OliWeb.LtiController do
   end
 
   def handle_valid_request(conn, institution) do
-    user_params = %{
+    author_params = %{
       email: conn.body_params["lis_person_contact_email_primary"],
       first_name: conn.body_params["lis_person_name_given"],
       last_name: conn.body_params["lis_person_name_family"],
       provider: "lti",
       email_verified: true,
-      system_role_id: Accounts.SystemRole.role_id.user
+      system_role_id: Accounts.SystemRole.role_id.author
     }
 
-    # TODO: Check if user already exists with given email, then they can be given the option
+    # TODO: Check if author already exists with given email, then they can be given the option
     # to merge this account with the existing one
-    if Accounts.user_with_email_exists?(user_params.email), do: throw "User with email already exists"
+    if Accounts.author_with_email_exists?(author_params.email), do: throw "user with email already exists"
 
-    case Accounts.create_user(user_params, ignore_required: [:last_name]) do
-      {:ok, user} ->
+    case Accounts.create_author(author_params, ignore_required: [:last_name]) do
+      {:ok, author} ->
         case Accounts.insert_or_update_lti_tool_consumer(%{
           info_product_family_code: conn.body_params["tool_consumer_info_product_family_code"],
           info_version: conn.body_params["tool_consumer_info_version"],
@@ -55,15 +55,15 @@ defmodule OliWeb.LtiController do
           institution_id: institution.id,
         }) do
           {:ok, lti_tool_consumer} ->
-            case Accounts.insert_or_update_lti_user_details(%{
-              lti_user_id: conn.body_params["user_id"],
-              lti_user_image: conn.body_params["user_image"],
-              lti_roles: conn.body_params["roles"],
-              user: user.id,
+            case Accounts.insert_or_update_user(%{
+              user_id: conn.body_params["user_id"],
+              user_image: conn.body_params["user_image"],
+              roles: conn.body_params["roles"],
+              author: author.id,
               lti_tool_consumer: lti_tool_consumer.id,
             }) do
-              {:ok, _user_details } ->
-                render(conn, "basic_launch.html", institution: institution, user: user)
+              {:ok, _author_details } ->
+                render(conn, "basic_launch.html", institution: institution, author: author)
             end
           _ ->
             throw "Error creating LTI tool consumer"
