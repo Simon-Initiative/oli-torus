@@ -14,55 +14,12 @@
 if !Oli.Repo.get_by(Oli.Accounts.SystemRole, id: 1) do
   Oli.Repo.insert! %Oli.Accounts.SystemRole{
     id: 1,
-    type: :author
+    type: "author"
   }
 
   Oli.Repo.insert! %Oli.Accounts.SystemRole{
     id: 2,
-    type: :admin
-  }
-end
-
-# create project roles
-if !Oli.Repo.get_by(Oli.Accounts.ProjectRole, id: 1) do
-  Oli.Repo.insert! %Oli.Accounts.ProjectRole{
-    id: 1,
-    type: :owner
-  }
-
-  Oli.Repo.insert! %Oli.Accounts.ProjectRole{
-    id: 2,
-    type: :contributor
-  }
-end
-# create section roles
-if !Oli.Repo.get_by(Oli.Accounts.SectionRole, id: 1) do
-  Oli.Repo.insert! %Oli.Accounts.SectionRole{
-    id: 1,
-    type: :instructor
-  }
-
-  Oli.Repo.insert! %Oli.Accounts.SectionRole{
-    id: 2,
-    type: :student
-  }
-end
-
-# create resource types
-if !Oli.Repo.get_by(Oli.Accounts.ResourceType, id: 1) do
-  Oli.Repo.insert! %Oli.Accounts.ResourceType{
-    id: 1,
-    type: :unscored_page
-  }
-
-  Oli.Repo.insert! %Oli.Accounts.ResourceType{
-    id: 2,
-    type: :scored_page
-  }
-
-  Oli.Repo.insert! %Oli.Accounts.ResourceType{
-    id: 2,
-    type: :activity
+    type: "admin"
   }
 end
 
@@ -76,5 +33,48 @@ if !Oli.Repo.get_by(Oli.Accounts.Author, email: System.get_env("ADMIN_EMAIL", "a
     password_hash: Bcrypt.hash_pwd_salt(System.get_env("ADMIN_PASSWORD", "admin")),
     email_verified: true,
     system_role_id: Oli.Accounts.SystemRole.role_id.admin
+  }
+end
+
+# create project roles
+if !Oli.Repo.get_by(Oli.Accounts.ProjectRole, id: 1) do
+  Oli.Repo.insert! %Oli.Accounts.ProjectRole{
+    id: 1,
+    type: "owner"
+  }
+
+  Oli.Repo.insert! %Oli.Accounts.ProjectRole{
+    id: 2,
+    type: "contributor"
+  }
+end
+# create section roles
+if !Oli.Repo.get_by(Oli.Accounts.SectionRole, id: 1) do
+  Oli.Repo.insert! %Oli.Accounts.SectionRole{
+    id: 1,
+    type: "instructor"
+  }
+
+  Oli.Repo.insert! %Oli.Accounts.SectionRole{
+    id: 2,
+    type: "student"
+  }
+end
+
+# create resource types
+if !Oli.Repo.get_by(Oli.Authoring.ResourceType, id: 1) do
+  Oli.Repo.insert! %Oli.Authoring.ResourceType{
+    id: 1,
+    type: "unscored_page"
+  }
+
+  Oli.Repo.insert! %Oli.Authoring.ResourceType{
+    id: 2,
+    type: "scored_page"
+  }
+
+  Oli.Repo.insert! %Oli.Authoring.ResourceType{
+    id: 3,
+    type: "activity"
   }
 end
