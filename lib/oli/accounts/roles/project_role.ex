@@ -1,15 +1,15 @@
-defmodule Oli.Accounts.SectionRole do
+defmodule Oli.Accounts.ProjectRole do
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "section_roles" do
+  schema "project_roles" do
     field :type, :string
     timestamps()
   end
 
   @doc false
-  def changeset(role, attrs) do
-    role
+  def changeset(project_role, attrs) do
+    project_role
     |> cast(attrs, [:type])
     |> validate_required([:type])
   end

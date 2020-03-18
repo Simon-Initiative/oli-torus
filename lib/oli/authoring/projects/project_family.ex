@@ -8,8 +8,8 @@ defmodule Oli.Authoring.ProjectFamily do
   end
 
   @doc false
-  def changeset(author, attrs \\ %{}) do
-    author
+  def changeset(project_family, attrs \\ %{}) do
+    project_family
     |> cast(attrs, [:slug])
     |> validate_required([:slug])
     |> unique_constraint(:slug)

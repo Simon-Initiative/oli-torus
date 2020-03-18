@@ -11,8 +11,8 @@ defmodule Oli.Accounts.AuthorSection do
   end
 
   @doc false
-  def changeset(role, attrs) do
-    role
+  def changeset(user_section, attrs) do
+    user_section
     |> cast(attrs, [:author_id, :section_id, :section_role_id])
     |> validate_required([:author_id, :section_id, :section_role_id])
   end

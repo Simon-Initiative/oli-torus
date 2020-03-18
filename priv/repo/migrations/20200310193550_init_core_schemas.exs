@@ -2,7 +2,6 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
   use Ecto.Migration
 
   def change do
-
     create table(:resource_types) do
       timestamps()
       add :type, :string
@@ -138,9 +137,27 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
     create table(:revision_blobs) do
       timestamps()
-      add :json, :string
+      add :content, :map
       add :revision_id, references(:revisions)
     end
 
+    create table(:pages_with_position) do
+      timestamps()
+      add :project_id, references(:projects)
+      add :page_id, references(:resources)
+      add :position, :integer
+    end
+
+    create table(:objectives) do
+      timestamps()
+      add :description, :string
+      add :project_id, references(:projects)
+    end
+
+    create table(:objectives_objectives) do
+      timestamps()
+      add :parent_id, references(:objectives)
+      add :child_id, references(:objectives)
+    end
   end
 end

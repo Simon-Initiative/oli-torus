@@ -4,17 +4,17 @@ defmodule Oli.Authoring.RevisionBlob do
 
   schema "revision_blobs" do
     timestamps()
-    field :json, :string
+    field :content, :map
     belongs_to :revision, Oli.Authoring.Revision
   end
 
   @doc false
-  def changeset(author, attrs \\ %{}) do
-    author
+  def changeset(revision_blob, attrs \\ %{}) do
+    revision_blob
     |> cast(attrs, [
       :revision,
-      :json
+      :content
     ])
-    |> validate_required([:json, :revision])
+    |> validate_required([:content, :revision])
   end
 end
