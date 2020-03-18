@@ -26,11 +26,6 @@ defmodule OliWeb.Router do
     plug Plug.Parsers, parsers: [:urlencoded]
   end
 
-  # all course building routes (dynamic pages)
-  # pipeline :project do
-  #   plug :put_layout, {OliWeb.LayoutView, "projects.html"}
-  # end
-
   pipeline :projects do
     plug :put_layout, {OliWeb.LayoutView, "projects.html"}
   end
