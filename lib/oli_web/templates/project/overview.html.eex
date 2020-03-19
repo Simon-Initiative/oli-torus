@@ -1,0 +1,8 @@
+<%= render OliWeb.LayoutView, "project_card.html" %>
+<%= render OliWeb.LayoutView, "tutorial_card.html" %>
+<%= render OliWeb.LayoutView, "add_button.html" %>
+<%= render OliWeb.LayoutView, "project_options_menu.html" %>
+<%= render OliWeb.LayoutView, "section_header.html" %>
+<%= render OliWeb.LayoutView, "list.html" %>
+<%= render OliWeb.LayoutView, "input.html" %>
+<%= render OliWeb.LayoutView, "textarea.html" %>
