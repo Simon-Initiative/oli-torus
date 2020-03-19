@@ -1,6 +1,5 @@
 defmodule OliWeb.AuthControllerTest do
   use OliWeb.ConnCase
-  alias Oli.Repo
 
   test "redirects author to Google for authentication", %{conn: conn} do
     conn = get conn, "auth/google?scope=email%20profile"
