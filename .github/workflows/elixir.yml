@@ -27,7 +27,7 @@ jobs:
     - name: Build
       run: set -a;source oli.env && mix compile
     - name: Run Tests
-      run: set -a;source oli.env && mix test
+      run: set -a;source oli.env && mix test.coverage
 
   ts-build-test:
     runs-on: ubuntu-latest
