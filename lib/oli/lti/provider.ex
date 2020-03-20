@@ -1,5 +1,9 @@
 defmodule Oli.Lti.Provider do
   alias Oli.Lti.HmacSHA1
+  alias Oli.Lti
+
+  # amount of time an oauth_timestamp is valid is 5 min
+  @oauth_timestamp_ttl_sec 300
 
   @type lti_message_params :: [
     lti_message_type: String.t, # "basic-lti-launch-request" | "ContentItemSelectionRequest",
@@ -86,17 +90,48 @@ defmodule Oli.Lti.Provider do
 
   @spec validate_oauth(String.t, String.t, lti_message_params, String.t) :: { :ok } | { :invalid, String.t}
   def validate_oauth(url, method, body_params, shared_secret) do
-    req_signature = HmacSHA1.build_signature(
-      url,
-      method,
-      body_params,
-      shared_secret
-    )
+    case validate_timestamp(Keyword.get(body_params, :oauth_timestamp)) do
+      { :ok } ->
+        case validate_nonce(Keyword.get(body_params, :oauth_nonce)) do
+          { :ok } ->
+            req_signature = HmacSHA1.build_signature(
+              url,
+              method,
+              body_params,
+              shared_secret
+            )
 
-    if req_signature == Keyword.get(body_params, :oauth_signature) do
-      { :ok }
+            if req_signature == Keyword.get(body_params, :oauth_signature) do
+              { :ok }
+            else
+              { :invalid, "Invalid OAuth - Signature does not match"}
+            end
+          { :invalid } -> { :invalid, "Invalid OAuth - Duplicate nonce"}
+        end
+      { :invalid } -> { :invalid, "Invalid OAuth - Expired timestamp"}
+    end
+  end
+
+  def validate_timestamp(oauth_timestamp) do
+    timestamp = DateTime.from_unix!(String.to_integer(oauth_timestamp))
+    current_time = DateTime.utc_now()
+    timestamp_expiry = DateTime.add(current_time, -1 * @oauth_timestamp_ttl_sec)
+    if timestamp > timestamp_expiry do
+      {:ok}
     else
-      { :invalid, "Invalid OAuth - Signature does not match"}
+      {:invalid}
+    end
+  end
+
+  def validate_nonce(nonce) do
+    case Lti.create_nonce(%{value: nonce}) do
+      {:ok, _nonce} ->
+        # FIXME: This runs a query to delete all expired nonces on every call. This could present
+        # a performance bottleneck and may need to be optimized
+        Lti.cleanup_nonce_store()
+        { :ok }
+      {:error, %{ errors: [ value: { _msg, [{:constraint, :unique} | _]}]}} ->
+        { :invalid }
     end
   end
 
