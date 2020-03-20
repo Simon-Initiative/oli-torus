@@ -1,8 +1,8 @@
 defmodule Oli.TestHelpers do
   alias Oli.Repo
-  alias Oli.Accounts.User
+  alias Oli.Accounts.Author
 
-  def user_fixture(attrs \\ %{}) do
+  def author_fixture(attrs \\ %{}) do
     params =
       attrs
       |> Enum.into(%{
@@ -10,13 +10,14 @@ defmodule Oli.TestHelpers do
         first_name: "Tony",
         last_name: "Stark",
         token: "2u9dfh7979hfd",
-        provider: "google"
+        provider: "google",
+        system_role_id: 1,
       })
 
-    {:ok, user} =
-      User.changeset(%User{}, params)
+    {:ok, author} =
+      Author.changeset(%Author{}, params)
       |> Repo.insert()
 
-    user
+    author
   end
 end

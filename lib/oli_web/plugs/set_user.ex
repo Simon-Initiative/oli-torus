@@ -1,24 +1,24 @@
-defmodule Oli.Plugs.SetUser do
+defmodule Oli.Plugs.SetCurrentUser do
   import Plug.Conn
 
-  alias Oli.Accounts.User
+  alias Oli.Accounts.Author
   alias Oli.Repo
 
   def init(_params) do
   end
 
   def call(conn, _params) do
-    if conn.assigns[:user] do
+    if conn.assigns[:current_user] do
       conn
     else
-      user_id = get_session(conn, :user_id)
+      current_user_id = get_session(conn, :current_user_id)
 
       cond do
-        user = user_id && Repo.get(User, user_id) ->
-          assign(conn, :user, user)
+        current_user = current_user_id && Repo.get(Author, current_user_id) ->
+          assign(conn, :current_user, current_user)
 
         true ->
-          assign(conn, :user, nil)
+          assign(conn, :current_user, nil)
       end
     end
   end

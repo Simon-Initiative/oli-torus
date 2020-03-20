@@ -1,3 +1,4 @@
+#!/bin/bash
 echo ""
 echo "## Welcome to OLI devmode!"
 echo "## This is a convenience environment to help run OLI in development mode natively."
@@ -21,6 +22,8 @@ if [ ! -f .devmode ]; then
   docker-compose up -d postgres && sleep 5
 
   echo "## Creating database and running migration..."
+  set -a
+  source oli.env
   mix ecto.create
   mix ecto.migrate
 

@@ -5,7 +5,7 @@ defmodule OliWeb.Plugs.Guest do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    if Plug.Conn.get_session(conn, :user_id) do
+    if Plug.Conn.get_session(conn, :author_id) do
       conn
       |> redirect(to: OliWeb.Router.Helpers.page_path(conn, :index))
       |> halt()

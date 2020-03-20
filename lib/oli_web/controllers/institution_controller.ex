@@ -8,7 +8,7 @@ defmodule OliWeb.InstitutionController do
   import Oli.Timezones
 
   def index(conn, _params) do
-    institutions = Accounts.list_institutions() |> Enum.filter(fn i -> i.user_id == conn.assigns.user.id end)
+    institutions = Accounts.list_institutions() |> Enum.filter(fn i -> i.author_id == conn.assigns.current_user.id end)
     render(conn, "index.html", institutions: institutions)
   end
 
@@ -21,11 +21,11 @@ defmodule OliWeb.InstitutionController do
     # Generate a consumer_key and secret and add to institution_params
     consumer_key = UUID.uuid4()
     shared_secret = Oli.Utils.random_string(32)
-    user_id = conn.assigns.user.id
+    author_id = conn.assigns.current_user.id
     institution_params = institution_params
       |> Map.put("consumer_key", consumer_key)
       |> Map.put("shared_secret", shared_secret)
-      |> Map.put("user_id", user_id)
+      |> Map.put("author_id", author_id)
 
     case Accounts.create_institution(institution_params) do
       {:ok, _institution} ->

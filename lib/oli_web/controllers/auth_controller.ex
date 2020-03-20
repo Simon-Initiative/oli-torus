@@ -3,7 +3,8 @@ defmodule OliWeb.AuthController do
   plug Ueberauth
 
   alias Oli.Accounts
-  alias Oli.Accounts.User
+  alias Oli.Accounts.Author
+  alias Oli.Accounts.SystemRole
 
   def signin(conn, _params) do
     render(conn, "signin.html")
@@ -20,14 +21,14 @@ defmodule OliWeb.AuthController do
   end
 
   def register_email_form(conn, _params) do
-    changeset = User.changeset(%User{})
+    changeset = Author.changeset(%Author{})
     render conn, "register_email.html", changeset: changeset
   end
 
   def register_email_submit(
     conn,
     %{
-      "user" => %{
+      "author" => %{
         "email" => email,
         "first_name" => first_name,
         "last_name" => last_name,
@@ -36,21 +37,22 @@ defmodule OliWeb.AuthController do
       },
     })
   do
-    user_params = %{
+    author_params = %{
       email: email,
       first_name: first_name,
       last_name: last_name,
       provider: "identity",
       password: password,
       password_confirmation: password_confirmation,
-      email_verified: false
+      email_verified: false,
+      system_role_id: SystemRole.role_id.author
     }
 
-    case Accounts.create_user(user_params) do
-      {:ok, user} ->
+    case Accounts.create_author(author_params) do
+      {:ok, author} ->
         conn
         |> put_flash(:info, "Thank you for registering!")
-        |> put_session(:user_id, user.id)
+        |> put_session(:author_id, author.id)
         |> redirect(to: Routes.page_path(conn, :index))
 
       {:error, changeset} ->
@@ -68,14 +70,15 @@ defmodule OliWeb.AuthController do
   end
 
   def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
-    user_params = case auth.provider do
+    author_params = case auth.provider do
       :google ->
         %{
           email: auth.info.email,
           first_name: auth.info.first_name,
           last_name: auth.info.last_name,
           provider: "google",
-          token: auth.credentials.token
+          token: auth.credentials.token,
+          system_role_id: SystemRole.role_id.author
         }
       :facebook ->
         # FIXME: There has to be a better way to get first_name and last_name from facebook
@@ -86,17 +89,16 @@ defmodule OliWeb.AuthController do
           first_name: first_name,
           last_name: last_name,
           provider: "facebook",
-          token: auth.credentials.token
+          token: auth.credentials.token,
+          system_role_id: SystemRole.role_id.author
         }
     end
 
-    changeset = User.changeset(%User{}, user_params)
-
-    case Accounts.insert_or_update_user(changeset) do
-      {:ok, user} ->
+    case Accounts.insert_or_update_author(author_params) do
+      {:ok, author} ->
         conn
         |> put_flash(:info, "Thank you for signing in!")
-        |> put_session(:user_id, user.id)
+        |> put_session(:current_user_id, author.id)
         |> redirect(to: Routes.page_path(conn, :index))
 
       {:error, _reason} ->
@@ -112,11 +114,11 @@ defmodule OliWeb.AuthController do
     # emails are case-insensitive, use lowercased version
     email = String.downcase(email)
 
-    case Accounts.authorize_user(email, password) do
-      { :ok, user } ->
+    case Accounts.authorize_author(email, password) do
+      { :ok, author } ->
         conn
         |> put_flash(:info, "Thank you for signing in!")
-        |> put_session(:user_id, user.id)
+        |> put_session(:current_user_id, author.id)
         |> redirect(to: Routes.page_path(conn, :index))
       { :error, reason } ->
         conn

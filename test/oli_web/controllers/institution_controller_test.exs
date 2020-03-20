@@ -3,7 +3,7 @@ defmodule OliWeb.InstitutionControllerTest do
 
   alias Oli.Repo
   alias Oli.Accounts
-  alias Oli.Accounts.User
+  alias Oli.Accounts.Author
 
   @create_attrs %{country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", name: "some name", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret"}
   @update_attrs %{country_code: "some updated country_code", institution_email: "some updated institution_email", institution_url: "some updated institution_url", name: "some updated name", timezone: "some updated timezone", consumer_key: "some updated key", shared_secret: "some updated secret"}
@@ -81,12 +81,12 @@ defmodule OliWeb.InstitutionControllerTest do
   end
 
   defp create_institution(%{ conn: conn  }) do
-    {:ok, user} = User.changeset(%User{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo"}) |> Repo.insert
-    create_attrs = Map.put(@create_attrs, :user_id, user.id)
+    {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: Accounts.SystemRole.role_id.author}) |> Repo.insert
+    create_attrs = Map.put(@create_attrs, :author_id, author.id)
     {:ok, institution} = create_attrs |> Accounts.create_institution()
 
-    conn = Plug.Test.init_test_session(conn, user_id: user.id)
+    conn = Plug.Test.init_test_session(conn, current_user_id: author.id)
 
-    {:ok, conn: conn, user: user, institution: institution}
+    {:ok, conn: conn, author: author, institution: institution}
   end
 end

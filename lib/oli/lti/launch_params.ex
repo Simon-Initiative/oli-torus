@@ -8,7 +8,7 @@ defmodule Oli.Lti.LaunchParams do
     :launch_presentation_return_url,
     :resource_link_id,
     :roles,
-    :user_id,
+    :author_id,
     :lti_message_type,
     :lti_version
   ]
@@ -38,7 +38,7 @@ defmodule Oli.Lti.LaunchParams do
     :tool_consumer_info_version,
     :tool_consumer_instance_description,
     :tool_consumer_instance_guid,
-    :user_id,
+    :author_id,
     :submit
   ]
 end
