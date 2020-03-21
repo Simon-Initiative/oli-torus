@@ -63,11 +63,10 @@ defmodule Oli.Lti.Provider do
     ext_content_file_extensions: String.t | nil,   # comma separated list of the file extensions
   ]
 
-  # @spec validate_request(String.t, String.t, lti_message_params, String.t) :: { :ok } | { :invalid, String.t } | { :error, any }
-  def validate_request(host, method, body_params, shared_secret) do
+  def validate_request(req_url, method, body_params, shared_secret, current_time) do
     case validate_parameters(body_params) do
       { :ok } ->
-        case validate_oauth(host, method, body_params, shared_secret) do
+        case validate_oauth(req_url, method, body_params, shared_secret, current_time) do
           { :ok } -> { :ok }
           { :invalid, reason } -> { :invalid, reason }
         end
@@ -88,14 +87,14 @@ defmodule Oli.Lti.Provider do
     end
   end
 
-  @spec validate_oauth(String.t, String.t, lti_message_params, String.t) :: { :ok } | { :invalid, String.t}
-  def validate_oauth(url, method, body_params, shared_secret) do
-    case validate_timestamp(Keyword.get(body_params, :oauth_timestamp)) do
+  @spec validate_oauth(String.t, String.t, lti_message_params, String.t, DateTime.t) :: { :ok } | { :invalid, String.t}
+  def validate_oauth(req_url, method, body_params, shared_secret, current_time) do
+    case validate_timestamp(Keyword.get(body_params, :oauth_timestamp), current_time) do
       { :ok } ->
         case validate_nonce(Keyword.get(body_params, :oauth_nonce)) do
           { :ok } ->
             req_signature = HmacSHA1.build_signature(
-              url,
+              req_url,
               method,
               body_params,
               shared_secret
@@ -112,11 +111,10 @@ defmodule Oli.Lti.Provider do
     end
   end
 
-  def validate_timestamp(oauth_timestamp) do
+  def validate_timestamp(oauth_timestamp, current_time) do
     timestamp = DateTime.from_unix!(String.to_integer(oauth_timestamp))
-    current_time = DateTime.utc_now()
     timestamp_expiry = DateTime.add(current_time, -1 * @oauth_timestamp_ttl_sec)
-    if timestamp > timestamp_expiry do
+    if DateTime.compare(timestamp, timestamp_expiry) in [:gt, :eq] do
       {:ok}
     else
       {:invalid}

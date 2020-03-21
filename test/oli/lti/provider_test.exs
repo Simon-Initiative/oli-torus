@@ -50,7 +50,8 @@ defmodule Oli.Lti.ProviderTest do
           oauth_signature: "8vGuVoSKBBVUL+ZxC8Du7Rtkbqk=",
           custom_param1: "value1"
         ],
-        "secret"
+        "secret",
+        DateTime.from_unix!(0)
       )
     end
 
@@ -67,7 +68,8 @@ defmodule Oli.Lti.ProviderTest do
           oauth_signature: "notavalidsignature=",
           custom_param1: "value1"
         ],
-        "secret"
+        "secret",
+        DateTime.from_unix!(0)
       )
     end
   end
@@ -89,7 +91,8 @@ defmodule Oli.Lti.ProviderTest do
           oauth_signature: "Hra/KZuAi95CCMHVHR5LjFpWQhA=",
           custom_param1: "value1"
         ],
-        "secret"
+        "secret",
+        DateTime.from_unix!(0)
       )
     end
 
@@ -108,7 +111,8 @@ defmodule Oli.Lti.ProviderTest do
           oauth_signature: "notavalidsignature=",
           custom_param1: "value1"
         ],
-        "secret"
+        "secret",
+        DateTime.from_unix!(0)
       )
     end
   end
