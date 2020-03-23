@@ -27,7 +27,7 @@ a {
 
 <div id="sidebar">
   <div class="user">
-    <p>John Doe</p>
+    <%= account_link @conn %>
   </div>
   <p class="category">Build</p>
   <%= sidebar_link @conn, :overview, "Overview" %>

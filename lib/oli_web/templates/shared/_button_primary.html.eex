@@ -10,7 +10,7 @@
   color: white
 }
 .btn-primary:hover {
-  background-color: #18a0fb;
+  background-color: black;
 }
 .btn-primary:active {
   background-color: #168fe0;

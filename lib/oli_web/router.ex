@@ -26,8 +26,8 @@ defmodule OliWeb.Router do
     plug Plug.Parsers, parsers: [:urlencoded]
   end
 
-  pipeline :projects do
-    plug :put_layout, {OliWeb.LayoutView, "projects.html"}
+  pipeline :workspace_layout do
+    plug :put_layout, {OliWeb.LayoutView, "workspace.html"}
   end
 
   # open access routes
@@ -37,29 +37,26 @@ defmodule OliWeb.Router do
     get "/", PageController, :index
   end
 
-  scope "/", OliWeb do
-    pipe_through [:browser, :projects]
-
-    get "/project/:project", ProjectController, :overview
-    get "/project/:project/objectives", ProjectController, :objectives
-    get "/project/:project/curriculum", ProjectController, :curriculum
-    get "/project/:project/publish", ProjectController, :publish
-    get "/project/:project/insights", ProjectController, :insights
-
-    get "/project/:project/:page", ProjectController, :page
-    get "/project/:project/:page/edit", ProjectController, :resource_editor
-  end
-
-  scope "/projects", OliWeb do
-    pipe_through [:browser, :projects]
-    get "/", ProjectsController, :index
-  end
-
   # authorization protected routes
   scope "/", OliWeb do
-    pipe_through [:browser, :protected]
+    pipe_through [:browser, :protected, :workspace_layout]
 
+    get "/projects", WorkspaceController, :projects
+    get "/account", WorkspaceController, :account
     resources "/institutions", InstitutionController
+  end
+
+  scope "/project", OliWeb do
+    pipe_through [:browser, :protected, :workspace_layout]
+
+    get "/:project", ProjectController, :overview
+    get "/:project/objectives", ProjectController, :objectives
+    get "/:project/curriculum", ProjectController, :curriculum
+    get "/:project/publish", ProjectController, :publish
+    get "/:project/insights", ProjectController, :insights
+
+    get "/:project/:page", ProjectController, :page
+    get "/:project/:page/edit", ProjectController, :resource_editor
   end
 
   # auth routes, only accessable to guest users who are not logged in

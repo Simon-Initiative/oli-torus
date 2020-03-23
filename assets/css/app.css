@@ -1,13 +1,41 @@
 /* This file is for your main application css. */
 html, body {
   /* FIXME: until we make a custom bootstrap theme */
-  font-family: 'Roboto Light', sans-serif;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  margin: 0;
 }
 
-nav.navbar {
-  border-bottom: 2px solid #eee;
+#wrapper {
+  display: flex;
+}
+#left {
+
+}
+#right {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
 }
 
 form .form-label-group .help-block {
   color: #dc3545;
+}
+
+.btn {
+  font-weight: bold;
+  font-size: 13px;
+  border-radius: 8px;
+  padding: 8px 20px;
+  border: none;
+}
+.btn-primary {
+  background-color: black;
+  color: white;
+}
+.btn-primary:hover {
+  background-color: black;
+}
+.btn-primary:active {
+  background-color: black !important;
 }

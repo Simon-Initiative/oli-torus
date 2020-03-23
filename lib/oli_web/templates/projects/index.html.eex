@@ -1,4 +1,0 @@
-<style>
-</style>
-  <%= render "main.html", assigns %>
-</div>

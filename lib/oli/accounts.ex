@@ -62,6 +62,7 @@ defmodule Oli.Accounts do
   Returns true if a author is signed in
   """
   def signed_in?(conn) do
+    IO.inspect(conn.assigns)
     conn.assigns[:current_user]
   end
 
