@@ -5,7 +5,7 @@ defmodule Oli.Publishing.Publication do
   schema "publications" do
     field :description, :string
     field :published, :boolean, default: false
-    field :root_resources, :map
+    field :root_resources, {:array, :id}
 
     belongs_to :project, Oli.Course.Project
 

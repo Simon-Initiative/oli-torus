@@ -3,9 +3,10 @@ defmodule Oli.Activities.ActivityRevision do
   import Ecto.Changeset
 
   schema "activity_revisions" do
-    field :content, :string
+    field :content, :map
     field :deleted, :boolean, default: false
     field :slug, :string
+    field :objectives, {:array, :map}
 
     belongs_to :author, Oli.Accounts.Author
     belongs_to :activity, Oli.Activities.Activity

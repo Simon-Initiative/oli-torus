@@ -179,4 +179,61 @@ defmodule Oli.PublishingTest do
       assert %Ecto.Changeset{} = Publishing.change_activity_mapping(activity_mapping)
     end
   end
+
+  describe "objective_mappings" do
+    alias Oli.Publishing.ObjectiveMapping
+
+    @valid_attrs %{}
+    @update_attrs %{}
+    @invalid_attrs %{}
+
+    def objective_mapping_fixture(attrs \\ %{}) do
+      {:ok, objective_mapping} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> Publishing.create_objective_mapping()
+
+      objective_mapping
+    end
+
+    test "list_objective_mappings/0 returns all objective_mappings" do
+      objective_mapping = objective_mapping_fixture()
+      assert Publishing.list_objective_mappings() == [objective_mapping]
+    end
+
+    test "get_objective_mapping!/1 returns the objective_mapping with given id" do
+      objective_mapping = objective_mapping_fixture()
+      assert Publishing.get_objective_mapping!(objective_mapping.id) == objective_mapping
+    end
+
+    test "create_objective_mapping/1 with valid data creates a objective_mapping" do
+      assert {:ok, %ObjectiveMapping{} = objective_mapping} = Publishing.create_objective_mapping(@valid_attrs)
+    end
+
+    test "create_objective_mapping/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Publishing.create_objective_mapping(@invalid_attrs)
+    end
+
+    test "update_objective_mapping/2 with valid data updates the objective_mapping" do
+      objective_mapping = objective_mapping_fixture()
+      assert {:ok, %ObjectiveMapping{} = objective_mapping} = Publishing.update_objective_mapping(objective_mapping, @update_attrs)
+    end
+
+    test "update_objective_mapping/2 with invalid data returns error changeset" do
+      objective_mapping = objective_mapping_fixture()
+      assert {:error, %Ecto.Changeset{}} = Publishing.update_objective_mapping(objective_mapping, @invalid_attrs)
+      assert objective_mapping == Publishing.get_objective_mapping!(objective_mapping.id)
+    end
+
+    test "delete_objective_mapping/1 deletes the objective_mapping" do
+      objective_mapping = objective_mapping_fixture()
+      assert {:ok, %ObjectiveMapping{}} = Publishing.delete_objective_mapping(objective_mapping)
+      assert_raise Ecto.NoResultsError, fn -> Publishing.get_objective_mapping!(objective_mapping.id) end
+    end
+
+    test "change_objective_mapping/1 returns a objective_mapping changeset" do
+      objective_mapping = objective_mapping_fixture()
+      assert %Ecto.Changeset{} = Publishing.change_objective_mapping(objective_mapping)
+    end
+  end
 end

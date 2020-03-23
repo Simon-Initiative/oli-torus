@@ -293,4 +293,100 @@ defmodule Oli.Publishing do
   def change_activity_mapping(%ActivityMapping{} = activity_mapping) do
     ActivityMapping.changeset(activity_mapping, %{})
   end
+
+  alias Oli.Publishing.ObjectiveMapping
+
+  @doc """
+  Returns the list of objective_mappings.
+
+  ## Examples
+
+      iex> list_objective_mappings()
+      [%ObjectiveMapping{}, ...]
+
+  """
+  def list_objective_mappings do
+    Repo.all(ObjectiveMapping)
+  end
+
+  @doc """
+  Gets a single objective_mapping.
+
+  Raises `Ecto.NoResultsError` if the Objective mapping does not exist.
+
+  ## Examples
+
+      iex> get_objective_mapping!(123)
+      %ObjectiveMapping{}
+
+      iex> get_objective_mapping!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_objective_mapping!(id), do: Repo.get!(ObjectiveMapping, id)
+
+  @doc """
+  Creates a objective_mapping.
+
+  ## Examples
+
+      iex> create_objective_mapping(%{field: value})
+      {:ok, %ObjectiveMapping{}}
+
+      iex> create_objective_mapping(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_objective_mapping(attrs \\ %{}) do
+    %ObjectiveMapping{}
+    |> ObjectiveMapping.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a objective_mapping.
+
+  ## Examples
+
+      iex> update_objective_mapping(objective_mapping, %{field: new_value})
+      {:ok, %ObjectiveMapping{}}
+
+      iex> update_objective_mapping(objective_mapping, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_objective_mapping(%ObjectiveMapping{} = objective_mapping, attrs) do
+    objective_mapping
+    |> ObjectiveMapping.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a objective_mapping.
+
+  ## Examples
+
+      iex> delete_objective_mapping(objective_mapping)
+      {:ok, %ObjectiveMapping{}}
+
+      iex> delete_objective_mapping(objective_mapping)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_objective_mapping(%ObjectiveMapping{} = objective_mapping) do
+    Repo.delete(objective_mapping)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking objective_mapping changes.
+
+  ## Examples
+
+      iex> change_objective_mapping(objective_mapping)
+      %Ecto.Changeset{source: %ObjectiveMapping{}}
+
+  """
+  def change_objective_mapping(%ObjectiveMapping{} = objective_mapping) do
+    ObjectiveMapping.changeset(objective_mapping, %{})
+  end
 end

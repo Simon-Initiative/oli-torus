@@ -4,7 +4,8 @@ defmodule Oli.Learning.ObjectiveRevision do
 
   schema "objective_revisions" do
     field :title, :string
-    field :children, :map
+    field :children, {:array, :id}
+    field :deleted, :boolean, default: false
 
     belongs_to :objective, Oli.Learning.Objective
     belongs_to :previous_revision, Oli.Learning.ObjectiveRevision
@@ -15,7 +16,7 @@ defmodule Oli.Learning.ObjectiveRevision do
   @doc false
   def changeset(objective_revision, attrs) do
     objective_revision
-    |> cast(attrs, [:title, :children])
-    |> validate_required([:title, :children, :objective, :previous_revision])
+    |> cast(attrs, [:title, :children, :deleted])
+    |> validate_required([:title, :children, :deleted, :objective, :previous_revision])
   end
 end

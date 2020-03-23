@@ -97,7 +97,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
     create table(:publications) do
       add :description, :string
-      add :root_resources, :map
+      add :root_resources, {:array, :id}
       add :published, :boolean, default: false, null: false
       add :project_id, references(:projects)
       timestamps()
@@ -118,8 +118,9 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
     create table(:resource_revisions) do
       add :title, :string
       add :slug, :string
-      add :content, :map
-      add :children, :map
+      add :content, {:array, :map}
+      add :children, {:array, :id}
+      add :objectives, {:array, :id}
       add :deleted, :boolean, default: false, null: false
       add :author_id, references(:authors)
       add :resource_id, references(:resources)
@@ -147,7 +148,8 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
     end
 
     create table(:activity_revisions) do
-      add :content, :string
+      add :content, :map
+      add :objectives, {:array, :id}
       add :slug, :string
       add :deleted, :boolean, default: false, null: false
 
@@ -168,7 +170,8 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
     create table(:objective_revisions) do
       add :title, :string
-      add :children, :map
+      add :children, {:array, :id}
+      add :deleted, :boolean, default: false, null: false
 
       add :objective_id, references(:objectives)
       add :previous_revision_id, references(:objective_revisions)
@@ -187,6 +190,13 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :activity_id, references(:activities)
       add :publication_id, references(:publications)
       add :revision_id, references(:activity_revisions)
+      timestamps()
+    end
+
+    create table(:objective_mappings) do
+      add :objective_id, references(:objectives)
+      add :publication_id, references(:publications)
+      add :revision_id, references(:objective_revisions)
       timestamps()
     end
 
