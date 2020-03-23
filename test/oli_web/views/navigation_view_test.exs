@@ -5,7 +5,7 @@ defmodule Oli.NavigationTest do
     author = author_fixture()
 
     conn = conn
-    |> assign(:current_user, author)
+    |> assign(:current_author, author)
     |> get("/")
 
     assert html_response(conn, 200) =~ "Sign out"

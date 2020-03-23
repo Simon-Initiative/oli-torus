@@ -52,8 +52,7 @@ defmodule OliWeb.AuthController do
       {:ok, author} ->
         conn
         |> put_flash(:info, "Thank you for registering!")
-        |> put_session(:author_id, author.id)
-        |> put_session(:current_user_id, author.id)
+        |> put_session(:current_author_id, author.id)
         |> redirect(to: Routes.page_path(conn, :index))
 
       {:error, changeset} ->
@@ -98,12 +97,12 @@ defmodule OliWeb.AuthController do
     case Accounts.insert_or_update_author(author_params) do
       {:ok, author} ->
         conn
-        |> put_session(:current_user_id, author.id)
+        |> put_session(:current_author_id, author.id)
         |> redirect(to: Routes.workspace_path(conn, :index))
 
       {:error, _reason} ->
         conn
-        |> put_flash(:error, "Error siging in")
+        |> put_flash(:error, "Error signing in")
         |> redirect(to: Routes.auth_path(conn, :signin))
     end
   end
@@ -117,8 +116,8 @@ defmodule OliWeb.AuthController do
     case Accounts.authorize_author(email, password) do
       { :ok, author } ->
         conn
-        |> put_session(:current_user_id, author.id)
-      |> redirect(to: Routes.workspace_path(conn, :index))
+        |> put_session(:current_author_id, author.id)
+        |> redirect(to: Routes.workspace_path(conn, :index))
       { :error, reason } ->
         conn
         |> put_flash(:error, reason)
