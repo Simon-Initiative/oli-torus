@@ -2,6 +2,7 @@ defmodule OliWeb.LtiController do
   use OliWeb, :controller
 
   import Oli.Lti.Provider
+  import Oli.Utils
 
   alias Oli.Lti
   alias Oli.Repo
@@ -21,7 +22,7 @@ defmodule OliWeb.LtiController do
         render(conn, "basic_launch_invalid.html", reason: "Institution with consumer_key '#{consumer_key}' does not exist")
       institution ->
         shared_secret = institution.shared_secret
-        case validate_request(url, method, unsafe_map_to_keyword_list(conn.body_params), shared_secret) do
+        case validate_request(url, method, unsafe_map_to_keyword_list(conn.body_params), shared_secret, DateTime.utc_now()) do
           { :ok } ->
             handle_valid_request(conn, institution)
           { :invalid, reason } ->
@@ -72,13 +73,6 @@ defmodule OliWeb.LtiController do
 
   def handle_invalid_request(conn, reason) do
     render(conn, "basic_launch_invalid.html", reason: reason)
-  end
-
-  # Converts a map of LTI parameters to a keyword list.
-  # This function is unsafe because it expects an atom to exist for each map key,
-  # which makes it only safe for known LTI requests
-  defp unsafe_map_to_keyword_list(map) do
-    Enum.map(map, fn({key, value}) -> {String.to_atom(key), value} end)
   end
 
 end

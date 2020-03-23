@@ -9,6 +9,12 @@ defmodule Oli.Plugs.SetCurrentUser do
   end
 
   def call(conn, _params) do
+    conn
+    |> set_author
+    |> set_user
+  end
+
+  def set_author(conn) do
     if author_id = get_session(conn, :current_author_id) do
       cond do
         current_author = Repo.get(Author, author_id) ->
@@ -17,7 +23,12 @@ defmodule Oli.Plugs.SetCurrentUser do
         true ->
           assign(conn, :current_author, nil)
       end
+    else
+      conn
     end
+  end
+
+  def set_user(conn) do
     if user_id = get_session(conn, :current_user_id) do
       cond do
         current_user = Repo.get(User, user_id) ->
@@ -26,6 +37,8 @@ defmodule Oli.Plugs.SetCurrentUser do
         true ->
           assign(conn, :current_user, nil)
       end
+    else
+      conn
     end
   end
 end
