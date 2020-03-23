@@ -1,12 +1,9 @@
 defmodule OliWeb.ProjectController do
   use OliWeb, :controller
 
-  def account(conn, _params) do
-    render conn, "account.html", title: "Account", active: :account
-  end
-
-  def overview(conn, %{"project" => project_id}) do
-    render conn, "overview.html", title: "Overview", project: project_id, active: :overview
+  def overview(conn, %{"project" => project_id, }) do
+    params = %{title: "Overview", project: project_id, active: :overview}
+    render %{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html"
   end
 
   def objectives(conn, %{"project" => project_id}) do

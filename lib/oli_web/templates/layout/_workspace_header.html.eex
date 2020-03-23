@@ -23,6 +23,6 @@
 </style>
 
 <div id="header">
-  <span class="title">Projects</span>
+  <span class="title"><%= @title %></span>
   <span class="inline-button"><i class="material-icons">add</i>New Project</span>
 </div>

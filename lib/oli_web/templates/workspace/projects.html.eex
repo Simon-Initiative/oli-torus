@@ -32,6 +32,7 @@ small {
    <div class="page-header">
       <h1>Model Projects</h1>
       <small>These proven projects are built with best practices</small>
+      <%= link "Dummy Project", to: Routes.project_path(@conn, :overview, "xyz"), class: "btn btn-primary" %>
     </div>
   </div>
 </div>

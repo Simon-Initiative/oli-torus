@@ -1,4 +1,4 @@
-<main role="main" class="container">
+<main role="main">
 
   <%= if get_flash(@conn, :info) do %>
     <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
@@ -27,7 +27,7 @@
           </span>
           <%= if signed_in?(@conn) do %>
             <span class="block lg:inline-block lg:mt-0 text-grey-darkest mr-4 no-underline hover:underline">
-              <%= link "My Projects", to: Routes.workspace_path(@conn, :index), class: "btn btn-primary" %>
+              <%= link "My Projects", to: Routes.workspace_path(@conn, :projects), class: "btn btn-primary" %>
             </span>
             <%= link "Sign out", to: Routes.auth_path(@conn, :signout) %>
           <% else %>

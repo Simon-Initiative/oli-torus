@@ -23,6 +23,9 @@ a {
 .active {
   font-weight: bold;
 }
+.account-link {
+  margin: 0;
+}
 </style>
 
 <div id="sidebar">

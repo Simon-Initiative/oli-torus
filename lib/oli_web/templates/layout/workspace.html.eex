@@ -31,13 +31,11 @@
 
     <div id="wrapper">
       <div id="left">
-        <%= render (if @conn.params["project"] do OliWeb.ProjectView else OliWeb.WorkspaceView end),
-          "_sidebar.html", assigns %>
+        <%= render OliWeb.LayoutView, "_#{if @conn.params["project"] do "project" else "workspace" end}_sidebar.html", assigns %>
       </div>
 
       <div id="right">
-        <%= render (if @conn.params["project"] do OliWeb.ProjectView else OliWeb.WorkspaceView end),
-          "_header.html", assigns %>
+        <%= render OliWeb.LayoutView, "_#{if @conn.params["project"] do "project" else "workspace" end}_header.html", assigns %>
 
         <main role="main">
           <%= if get_flash(@conn, :info) do %>
