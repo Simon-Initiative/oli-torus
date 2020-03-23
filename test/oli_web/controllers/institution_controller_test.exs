@@ -85,7 +85,7 @@ defmodule OliWeb.InstitutionControllerTest do
     create_attrs = Map.put(@create_attrs, :author_id, author.id)
     {:ok, institution} = create_attrs |> Accounts.create_institution()
 
-    conn = Plug.Test.init_test_session(conn, current_user_id: author.id)
+    conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
 
     {:ok, conn: conn, author: author, institution: institution}
   end

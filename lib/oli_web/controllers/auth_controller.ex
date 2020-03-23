@@ -52,7 +52,7 @@ defmodule OliWeb.AuthController do
       {:ok, author} ->
         conn
         |> put_flash(:info, "Thank you for registering!")
-        |> put_session(:author_id, author.id)
+        |> put_session(:current_author_id, author.id)
         |> redirect(to: Routes.page_path(conn, :index))
 
       {:error, changeset} ->
@@ -98,7 +98,7 @@ defmodule OliWeb.AuthController do
       {:ok, author} ->
         conn
         |> put_flash(:info, "Thank you for signing in!")
-        |> put_session(:current_user_id, author.id)
+        |> put_session(:current_author_id, author.id)
         |> redirect(to: Routes.page_path(conn, :index))
 
       {:error, _reason} ->
@@ -118,7 +118,7 @@ defmodule OliWeb.AuthController do
       { :ok, author } ->
         conn
         |> put_flash(:info, "Thank you for signing in!")
-        |> put_session(:current_user_id, author.id)
+        |> put_session(:current_author_id, author.id)
         |> redirect(to: Routes.page_path(conn, :index))
       { :error, reason } ->
         conn

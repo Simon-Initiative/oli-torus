@@ -11,10 +11,10 @@ defmodule OliWeb.AuthControllerTest do
 
     conn =
       conn
-      |> assign(:current_user, author)
+      |> assign(:current_author, author)
       |> get("/auth/signout")
       |> get("/")
 
-    assert conn.assigns.current_user == nil
+    assert conn.assigns["current_author"] == nil
   end
 end
