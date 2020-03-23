@@ -2,7 +2,6 @@
 
 <p>LTI connection is properly configured!</p>
 <p>
-  <img src="<%= @user.user_image%>" />
   <strong>User Email:</strong> <%= @user.email %>
 </p>
 <ul>

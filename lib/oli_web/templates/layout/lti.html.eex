@@ -24,9 +24,31 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
-
   </head>
-  <body>
+  <body class="lti">
+    <nav class="navbar navbar-expand-lg navbar-light">
+      <div class="container">
+        <a class="navbar-brand" href="//oli.cmu.edu" target="_blank">
+          <img src="/images/oli-icon.png" width="30" height="30" class="d-inline-block align-top mr-2" alt="">
+          Open Learning <span style="font-weight: 200">Initiative</span>
+        </a>
+
+        <div class="nav-item dropdown form-inline my-2 my-lg-0">
+          <span class="block lg:inline-block lg:mt-0 text-grey-darkest no-underline hover:underline">
+            <%= "#{@user.first_name} #{@user.last_name}" %>
+          </span>
+          <a class="user nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <img src="<%= @user.user_image%>" class="rounded-circle" />
+          </a>
+          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+            <a class="dropdown-item" href="#">Link Account</a>
+            <%# <div class="dropdown-divider"></div>
+            <%= link "Sign out", to: Routes.auth_path(@conn, :signout), class: "dropdown-item btn btn-dark my-2 my-sm-0" %>
+          </div>
+        </div>
+      </div>
+    </nav>
+
     <main role="main" class="container">
       <%= render @view_module, @view_template, assigns %>
     </main>

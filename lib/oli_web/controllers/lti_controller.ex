@@ -3,6 +3,7 @@ defmodule OliWeb.LtiController do
 
   import Oli.Lti.Provider
 
+  alias Oli.Lti
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Accounts.Institution
@@ -50,7 +51,19 @@ defmodule OliWeb.LtiController do
           institution_id: institution.id,
         }) do
           {:ok, user } ->
-            render(conn, "basic_launch.html", institution: institution, user: user)
+            conn = conn
+              |> put_session(:current_user_id, user.id)
+
+            case Lti.parse_lti_role(user.roles) do
+              {:administrator} ->
+                render(conn, "instructor_view.html", institution: institution, user: user)
+              {:instructor} ->
+                render(conn, "instructor_view.html", institution: institution, user: user)
+              {:student} ->
+                render(conn, "student_view.html", institution: institution, user: user)
+            end
+            _ ->
+              throw "Error creating user"
         end
       _ ->
         throw "Error creating LTI tool consumer"

@@ -4,10 +4,24 @@ html, body {
   font-family: 'Roboto Light', sans-serif;
 }
 
-nav.navbar {
+body.app nav.navbar {
   border-bottom: 2px solid #eee;
 }
 
 form .form-label-group .help-block {
   color: #dc3545;
+}
+
+
+nav.navbar .user img {
+  width: 30px;
+  height: 30px;
+  border: 2px solid white;
+  -webkit-box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.75);
+  -moz-box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.75);
+  box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.75);
+}
+
+.dropdown-toggle::after {
+  vertical-align: middle;
 }

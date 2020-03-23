@@ -5,11 +5,11 @@ defmodule Oli.Plugs.Protect do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    if conn.assigns[:current_user] do
+    if conn.assigns[:current_author] do
       conn
     else
       conn = fetch_session(conn)
-      if get_session(conn, :current_user_id) do
+      if get_session(conn, :current_author_id) do
         conn
       else
         conn
