@@ -1,0 +1,20 @@
+<style>
+input {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e5e5e5;
+  padding: 6px 10px;
+  border-radius: 2px;
+  outline: none;
+  height: 31px;
+  width: 200px;
+}
+input:hover {
+  border: 1px solid #18a0fb;
+}
+input::placeholder {
+  color: #777;
+}
+</style>
+
+<input type="text" placeholder="Placeholder text" />

@@ -1,0 +1,18 @@
+<style>
+textarea {
+  border: 1px solid #e5e5e5;
+  padding: 6px 10px;
+  border-radius: 2px;
+  outline: none;
+  min-height: 90px;
+  min-width: 200px;
+  resize: both;
+}
+textarea:hover {
+  border: 1px solid #18a0fb;
+}
+textarea::placeholder {
+  color: #777;
+}
+</style>
+<textarea rows=4 placeholder="Placeholder text" ></textarea>
