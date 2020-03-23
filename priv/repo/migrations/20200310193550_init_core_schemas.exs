@@ -95,6 +95,32 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       timestamps()
     end
 
+    create table(:resources) do
+      add :slug, :string
+      add :project_id, references(:projects)
+      timestamps()
+    end
+
+    create table(:resource_types) do
+      add :type, :string
+
+      timestamps()
+    end
+
+    create table(:resource_revisions) do
+      add :title, :string
+      add :slug, :string
+      add :content, :map
+      add :children, :map
+      add :deleted, :boolean, default: false, null: false
+      add :author_id, references(:authors)
+      add :resource_id, references(:resources)
+      add :resource_type_id, references(:resource_types)
+
+      timestamps()
+    end
+
+
     create table(:authors_sections) do
       timestamps()
       add :author_id, references(:authors)
