@@ -151,6 +151,23 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       timestamps()
     end
 
+    create table(:objectives) do
+      add :slug, :string
+      add :project_id, references(:projects)
+
+      timestamps()
+    end
+
+    create table(:objective_revisions) do
+      add :title, :string
+      add :children, :map
+
+      add :objective_id, references(:objectives)
+      add :previous_revision_id, references(:objective_revisions)
+
+      timestamps()
+    end
+
     create table(:authors_sections) do
       timestamps()
       add :author_id, references(:authors)
