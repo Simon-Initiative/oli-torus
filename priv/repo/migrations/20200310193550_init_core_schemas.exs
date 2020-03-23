@@ -77,30 +77,22 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       timestamps()
     end
 
-    create table(:project_families) do
-      timestamps()
-      add :slug, :string
-    end
-
-    create table(:projects) do
-      timestamps()
+    create table(:families) do
       add :title, :string
       add :slug, :string
       add :description, :string
-      add :version, :string
-      add :parent_project_id, references(:projects)
-      add :project_family_id, references(:project_families)
+
+      timestamps()
     end
 
-    create table(:sections) do
-      timestamps()
+    create table(:projects) do
       add :title, :string
-      add :start_date, :date
-      add :end_date, :date
-      add :time_zone, :string
-      add :institution_id, references(:institutions)
-      add :open_and_free, :boolean
-      add :registration_open, :boolean
+      add :slug, :string
+      add :description, :string
+      add :project_id, references(:projects)
+      add :family_id, references(:families)
+
+      timestamps()
     end
 
     create table(:authors_sections) do
@@ -117,47 +109,5 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :project_role_id, references(:project_roles)
     end
 
-    create table(:revisions) do
-      timestamps()
-      add :type, :string
-      add :md5, :string
-      add :revision_number, :integer
-      add :author_id, references(:authors)
-      add :previous_revision_id, references(:revisions)
-    end
-
-    create table(:resources) do
-      timestamps()
-      add :title, :string
-      add :slug, :string
-      add :last_revision_id, references(:revisions)
-      add :resource_type, references(:resource_types)
-      add :project_id, references(:projects)
-    end
-
-    create table(:revision_blobs) do
-      timestamps()
-      add :content, :map
-      add :revision_id, references(:revisions)
-    end
-
-    create table(:pages_with_position) do
-      timestamps()
-      add :project_id, references(:projects)
-      add :page_id, references(:resources)
-      add :position, :integer
-    end
-
-    create table(:objectives) do
-      timestamps()
-      add :description, :string
-      add :project_id, references(:projects)
-    end
-
-    create table(:objectives_objectives) do
-      timestamps()
-      add :parent_id, references(:objectives)
-      add :child_id, references(:objectives)
-    end
   end
 end
