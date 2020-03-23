@@ -7,7 +7,7 @@ defmodule OliWeb.Router do
     plug :fetch_flash
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-    plug Oli.Plugs.SetUser
+    plug Oli.Plugs.SetCurrentUser
   end
 
   pipeline :protected do

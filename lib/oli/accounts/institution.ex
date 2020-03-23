@@ -10,8 +10,9 @@ defmodule Oli.Accounts.Institution do
     field :timezone, :string
     field :consumer_key, :string
     field :shared_secret, :string
-    belongs_to :user, Oli.Accounts.User, foreign_key: :user_id
+    belongs_to :author, Oli.Accounts.Author, foreign_key: :author_id
     has_many :sections, Oli.Delivery.Section
+    has_many :users, Oli.Accounts.User
 
     timestamps()
   end
@@ -27,8 +28,7 @@ defmodule Oli.Accounts.Institution do
       :timezone,
       :consumer_key,
       :shared_secret,
-      :user_id,
-      :sections
+      :author_id,
     ])
     |> validate_required([
       :name,
@@ -38,7 +38,7 @@ defmodule Oli.Accounts.Institution do
       :timezone,
       :consumer_key,
       :shared_secret,
-      :user_id
+      :author_id
     ])
   end
 end

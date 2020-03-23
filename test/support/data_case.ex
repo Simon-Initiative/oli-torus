@@ -39,7 +39,7 @@ defmodule Oli.DataCase do
   @doc """
   A helper that transforms changeset errors into a map of messages.
 
-      assert {:error, changeset} = Accounts.create_user(%{password: "short"})
+      assert {:error, changeset} = Accounts.create_author(%{password: "short"})
       assert "password is too short" in errors_on(changeset).password
       assert %{password: ["password is too short"]} = errors_on(changeset)
 

@@ -1,11 +1,11 @@
-defmodule Oli.Accounts.UserProject do
+defmodule Oli.Accounts.AuthorProject do
   use Ecto.Schema
   import Ecto.Changeset
 
   @primary_key false
-  schema "users_projects" do
+  schema "authors_projects" do
     timestamps()
-    belongs_to :user, Oli.Accounts.User
+    belongs_to :author, Oli.Accounts.Author
     belongs_to :project, Oli.Authoring.Project
     belongs_to :project_role, Oli.Accounts.ProjectRole
   end
@@ -13,7 +13,7 @@ defmodule Oli.Accounts.UserProject do
   @doc false
   def changeset(user_project, attrs) do
     user_project
-    |> cast(attrs, [:user_id, :project_id, :project_role_id])
-    |> validate_required([:user_id, :project_id, :project_role_id])
+    |> cast(attrs, [:author_id, :project_id, :project_role_id])
+    |> validate_required([:author_id, :project_id, :project_role_id])
   end
 end

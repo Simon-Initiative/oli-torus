@@ -14,8 +14,8 @@ defmodule Oli.Delivery.Section do
   end
 
   @doc false
-  def changeset(user, attrs \\ %{}) do
-    user
+  def changeset(author, attrs \\ %{}) do
+    author
     |> cast(attrs, [
       :title,
       :start_date,

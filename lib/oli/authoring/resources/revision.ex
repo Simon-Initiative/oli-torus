@@ -7,7 +7,7 @@ defmodule Oli.Authoring.Revision do
     field :type, :string
     field :md5, :string
     field :revision_number, :integer
-    belongs_to :author, Oli.Accounts.User
+    belongs_to :author, Oli.Accounts.Author
     belongs_to :previous_revision, Oli.Authoring.Revision
     has_one :revision_blob, Oli.Authoring.RevisionBlob
     has_one :resource, Oli.Authoring.Resource, foreign_key: :last_revision_id
