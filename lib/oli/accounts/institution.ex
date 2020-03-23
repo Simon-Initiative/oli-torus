@@ -11,7 +11,7 @@ defmodule Oli.Accounts.Institution do
     field :consumer_key, :string
     field :shared_secret, :string
     belongs_to :author, Oli.Accounts.Author, foreign_key: :author_id
-    has_many :sections, Oli.Delivery.Section
+    has_many :sections, Oli.Sections.Section
     has_many :users, Oli.Accounts.User
 
     timestamps()

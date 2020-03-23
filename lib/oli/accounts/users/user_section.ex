@@ -6,7 +6,7 @@ defmodule Oli.Accounts.AuthorSection do
   schema "authors_sections" do
     timestamps()
     belongs_to :author, Oli.Accounts.Author
-    belongs_to :section, Oli.Delivery.Section
+    belongs_to :section, Oli.Sections.Section
     belongs_to :section_role, Oli.Accounts.SectionRole
   end
 
