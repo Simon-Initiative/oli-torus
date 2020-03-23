@@ -8,5 +8,7 @@
 </style>
 
 <div id="sidebar">
-  John Doe
+  <div class="user">
+    <%= account_link @conn %>
+  </div>
 </div>

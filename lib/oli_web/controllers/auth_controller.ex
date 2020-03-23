@@ -98,7 +98,7 @@ defmodule OliWeb.AuthController do
       {:ok, author} ->
         conn
         |> put_session(:current_author_id, author.id)
-        |> redirect(to: Routes.workspace_path(conn, :index))
+        |> redirect(to: Routes.workspace_path(conn, :projects))
 
       {:error, _reason} ->
         conn
@@ -117,7 +117,7 @@ defmodule OliWeb.AuthController do
       { :ok, author } ->
         conn
         |> put_session(:current_author_id, author.id)
-        |> redirect(to: Routes.workspace_path(conn, :index))
+        |> redirect(to: Routes.workspace_path(conn, :projects))
       { :error, reason } ->
         conn
         |> put_flash(:error, reason)
