@@ -63,6 +63,14 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       timestamps()
     end
 
+    create table(:nonce_store) do
+      add :value, :string
+
+      timestamps()
+    end
+
+    create unique_index(:nonce_store, [:value])
+
     create table(:user) do
       add :email, :string
       add :first_name, :string
