@@ -20,7 +20,7 @@ defmodule Oli.Sections.Section do
   @doc false
   def changeset(section, attrs) do
     section
-    |> cast(attrs, [:title, :start_date, :end_date, :time_zone, :open_and_free, :registration_open])
-    |> validate_required([:title, :start_date, :end_date, :time_zone, :open_and_free, :registration_open, :institution, :project, :publication])
+    |> cast(attrs, [:title, :start_date, :end_date, :time_zone, :open_and_free, :registration_open, :institution_id, :project_id, :publication_id])
+    |> validate_required([:title, :start_date, :end_date, :time_zone, :open_and_free, :registration_open, :institution_id, :project_id, :publication_id])
   end
 end

@@ -6,8 +6,8 @@ defmodule Oli.PublishingTest do
   describe "publications" do
     alias Oli.Publishing.Publication
 
-    @valid_attrs %{description: "some description", published: true, root_resources: %{}}
-    @update_attrs %{description: "some updated description", published: false, root_resources: %{}}
+    @valid_attrs %{description: "some description", published: true, root_resources: %{}, project: 0}
+    @update_attrs %{description: "some updated description", published: false, root_resources: %{}, project: 0}
     @invalid_attrs %{description: nil, published: nil, root_resources: nil}
 
     def publication_fixture(attrs \\ %{}) do
@@ -69,8 +69,8 @@ defmodule Oli.PublishingTest do
   describe "resource_mappings" do
     alias Oli.Publishing.ResourceMapping
 
-    @valid_attrs %{}
-    @update_attrs %{}
+    @valid_attrs %{publication: 0, resource: 0, revision: 0}
+    @update_attrs %{publication: 0, resource: 0, revision: 0}
     @invalid_attrs %{}
 
     def resource_mapping_fixture(attrs \\ %{}) do

@@ -89,6 +89,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :title, :string
       add :slug, :string
       add :description, :string
+      add :version, :string
       add :project_id, references(:projects)
       add :family_id, references(:families)
 

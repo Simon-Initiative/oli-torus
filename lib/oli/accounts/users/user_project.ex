@@ -6,7 +6,7 @@ defmodule Oli.Accounts.AuthorProject do
   schema "authors_projects" do
     timestamps()
     belongs_to :author, Oli.Accounts.Author
-    belongs_to :project, Oli.Authoring.Project
+    belongs_to :project, Oli.Course.Project
     belongs_to :project_role, Oli.Accounts.ProjectRole
   end
 

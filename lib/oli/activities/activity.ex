@@ -11,8 +11,8 @@ defmodule Oli.Activities.Activity do
   @doc false
   def changeset(activity, attrs) do
     activity
-    |> cast(attrs, [:slug])
-    |> validate_required([:slug, :project])
+    |> cast(attrs, [:slug, :project_id])
+    |> validate_required([:slug, :project_id])
     |> unique_constraint(:slug)
   end
 end
