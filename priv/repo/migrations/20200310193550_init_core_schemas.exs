@@ -95,6 +95,14 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       timestamps()
     end
 
+    create table(:publications) do
+      add :description, :string
+      add :root_resources, :map
+      add :published, :boolean, default: false, null: false
+      add :project_id, references(:projects)
+      timestamps()
+    end
+
     create table(:resources) do
       add :slug, :string
       add :project_id, references(:projects)
@@ -165,6 +173,20 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :objective_id, references(:objectives)
       add :previous_revision_id, references(:objective_revisions)
 
+      timestamps()
+    end
+
+    create table(:resource_mappings) do
+      add :resource_id, references(:resources)
+      add :publication_id, references(:publications)
+      add :revision_id, references(:resource_revisions)
+      timestamps()
+    end
+
+    create table(:activity_mappings) do
+      add :activity_id, references(:activities)
+      add :publication_id, references(:publications)
+      add :revision_id, references(:activity_revisions)
       timestamps()
     end
 
