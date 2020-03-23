@@ -103,15 +103,24 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       timestamps()
     end
 
-    create table(:resources) do
-      add :slug, :string
+    create table(:sections) do
+      add :title, :string
+      add :start_date, :date
+      add :end_date, :date
+      add :time_zone, :string
+      add :open_and_free, :boolean, default: false, null: false
+      add :registration_open, :boolean, default: false, null: false
+
+      add :institution_id, references(:institutions)
       add :project_id, references(:projects)
+      add :publication_id, references(:publications)
+
       timestamps()
     end
 
-    create table(:resource_types) do
-      add :type, :string
-
+    create table(:resources) do
+      add :slug, :string
+      add :project_id, references(:projects)
       timestamps()
     end
 
