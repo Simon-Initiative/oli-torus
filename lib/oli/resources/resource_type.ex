@@ -1,9 +1,10 @@
-defmodule Oli.Authoring.ResourceType do
+defmodule Oli.Resources.ResourceType do
   use Ecto.Schema
   import Ecto.Changeset
 
   schema "resource_types" do
     field :type, :string
+
     timestamps()
   end
 
