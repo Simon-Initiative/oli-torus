@@ -14,7 +14,7 @@ defmodule Oli.Publishing.ActivityMapping do
   @doc false
   def changeset(activity_mapping, attrs) do
     activity_mapping
-    |> cast(attrs, [])
-    |> validate_required([:publication, :activity, :revision])
+    |> cast(attrs, [:publication_id, :activity_id, :revision_id])
+    |> validate_required([:publication_id, :activity_id, :revision_id])
   end
 end

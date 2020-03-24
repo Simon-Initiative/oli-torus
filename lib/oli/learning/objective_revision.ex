@@ -17,6 +17,6 @@ defmodule Oli.Learning.ObjectiveRevision do
   def changeset(objective_revision, attrs) do
     objective_revision
     |> cast(attrs, [:title, :children, :deleted, :objective_id, :previous_revision_id])
-    |> validate_required([:title, :children, :deleted, :objective_id, :previous_revision_id])
+    |> validate_required([:title, :children, :deleted, :objective_id])
   end
 end
