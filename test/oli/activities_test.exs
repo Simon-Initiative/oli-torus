@@ -3,6 +3,16 @@ defmodule Oli.ActivitiesTest do
 
   alias Oli.Activities
 
+  alias Oli.Accounts.SystemRole
+  alias Oli.Accounts.Institution
+  alias Oli.Accounts.Author
+  alias Oli.Course.Project
+  alias Oli.Course.Family
+  alias Oli.Publishing.Publication
+  alias Oli.Activities.Activity
+  alias Oli.Activities.ActivityRevision
+  alias Oli.Activities.Registration
+
   describe "activities" do
     alias Oli.Activities.Activity
 
@@ -10,54 +20,55 @@ defmodule Oli.ActivitiesTest do
     @update_attrs %{slug: "some updated slug"}
     @invalid_attrs %{slug: nil}
 
-    def activity_fixture(attrs \\ %{}) do
-      {:ok, activity} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> Activities.create_activity()
+    setup do
 
-      activity
+      {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
+      {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
+      {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: False, root_resources: [], project_id: project.id}) |> Repo.insert
+      {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
+      {:ok, institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
+
+      {:ok, activity} = Activity.changeset(%Activity{}, %{slug: "slug", project_id: project.id}) |> Repo.insert
+
+      valid_attrs = Map.put(@valid_attrs, :project_id, project.id)
+
+      {:ok, %{activity: activity, valid_attrs: valid_attrs}}
     end
 
-    test "list_activities/0 returns all activities" do
-      activity = activity_fixture()
+
+    test "list_activities/0 returns all activities", %{activity: activity} do
       assert Activities.list_activities() == [activity]
     end
 
-    test "get_activity!/1 returns the activity with given id" do
-      activity = activity_fixture()
+    test "get_activity!/1 returns the activity with given id", %{activity: activity} do
       assert Activities.get_activity!(activity.id) == activity
     end
 
-    test "create_activity/1 with valid data creates a activity" do
-      assert {:ok, %Activity{} = activity} = Activities.create_activity(@valid_attrs)
+    test "create_activity/1 with valid data creates a activity", %{valid_attrs: valid_attrs} do
+      assert {:ok, %Activity{} = activity} = Activities.create_activity(valid_attrs)
       assert activity.slug == "some slug"
     end
 
-    test "create_activity/1 with invalid data returns error changeset" do
+    test "create_activity/1 with invalid data returns error changeset", %{activity: activity} do
       assert {:error, %Ecto.Changeset{}} = Activities.create_activity(@invalid_attrs)
     end
 
-    test "update_activity/2 with valid data updates the activity" do
-      activity = activity_fixture()
+    test "update_activity/2 with valid data updates the activity", %{activity: activity} do
       assert {:ok, %Activity{} = activity} = Activities.update_activity(activity, @update_attrs)
       assert activity.slug == "some updated slug"
     end
 
-    test "update_activity/2 with invalid data returns error changeset" do
-      activity = activity_fixture()
+    test "update_activity/2 with invalid data returns error changeset", %{activity: activity} do
       assert {:error, %Ecto.Changeset{}} = Activities.update_activity(activity, @invalid_attrs)
       assert activity == Activities.get_activity!(activity.id)
     end
 
-    test "delete_activity/1 deletes the activity" do
-      activity = activity_fixture()
+    test "delete_activity/1 deletes the activity", %{activity: activity} do
       assert {:ok, %Activity{}} = Activities.delete_activity(activity)
       assert_raise Ecto.NoResultsError, fn -> Activities.get_activity!(activity.id) end
     end
 
-    test "change_activity/1 returns a activity changeset" do
-      activity = activity_fixture()
+    test "change_activity/1 returns a activity changeset", %{activity: activity} do
       assert %Ecto.Changeset{} = Activities.change_activity(activity)
     end
   end
@@ -65,32 +76,45 @@ defmodule Oli.ActivitiesTest do
   describe "activity_revisions" do
     alias Oli.Activities.ActivityRevision
 
-    @valid_attrs %{content: "some content", deleted: true, slug: "some slug"}
-    @update_attrs %{content: "some updated content", deleted: false, slug: "some updated slug"}
+    @valid_attrs %{content: %{}, objectives: [], deleted: true, slug: "some slug"}
+    @update_attrs %{content: %{"test" => "ok"}, objectives: [], deleted: false, slug: "some updated slug"}
     @invalid_attrs %{content: nil, deleted: nil, slug: nil}
 
-    def activity_revision_fixture(attrs \\ %{}) do
-      {:ok, activity_revision} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> Activities.create_activity_revision()
 
-      activity_revision
+    setup do
+
+      {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
+      {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
+      {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: False, root_resources: [], project_id: project.id}) |> Repo.insert
+      {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
+      {:ok, institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
+
+      {:ok, activity} = Activity.changeset(%Activity{}, %{slug: "slug", project_id: project.id}) |> Repo.insert
+      {:ok, activity_type} = Registration.changeset(%Registration{}, %{authoring_script: "1", delivery_script: "2", description: "d", element_name: "n", icon: "i", title: "t"}) |> Repo.insert
+
+      valid_attrs = Map.put(@valid_attrs, :project_id, project.id)
+        |> Map.put(:author_id, author.id)
+        |> Map.put(:activity_id, activity.id)
+        |> Map.put(:previous_revision_id, nil)
+        |> Map.put(:activity_type_id, activity_type.id)
+
+      {:ok, revision} = Activities.create_activity_revision(valid_attrs)
+
+      {:ok, %{activity_revision: revision, valid_attrs: valid_attrs}}
     end
 
-    test "list_activity_revisions/0 returns all activity_revisions" do
-      activity_revision = activity_revision_fixture()
+
+    test "list_activity_revisions/0 returns all activity_revisions", %{activity_revision: activity_revision} do
       assert Activities.list_activity_revisions() == [activity_revision]
     end
 
-    test "get_activity_revision!/1 returns the activity_revision with given id" do
-      activity_revision = activity_revision_fixture()
+    test "get_activity_revision!/1 returns the activity_revision with given id", %{activity_revision: activity_revision} do
       assert Activities.get_activity_revision!(activity_revision.id) == activity_revision
     end
 
-    test "create_activity_revision/1 with valid data creates a activity_revision" do
-      assert {:ok, %ActivityRevision{} = activity_revision} = Activities.create_activity_revision(@valid_attrs)
-      assert activity_revision.content == "some content"
+    test "create_activity_revision/1 with valid data creates a activity_revision", %{valid_attrs: valid_attrs} do
+      assert {:ok, %ActivityRevision{} = activity_revision} = Activities.create_activity_revision(valid_attrs)
+      assert activity_revision.content == %{}
       assert activity_revision.deleted == true
       assert activity_revision.slug == "some slug"
     end
@@ -99,28 +123,24 @@ defmodule Oli.ActivitiesTest do
       assert {:error, %Ecto.Changeset{}} = Activities.create_activity_revision(@invalid_attrs)
     end
 
-    test "update_activity_revision/2 with valid data updates the activity_revision" do
-      activity_revision = activity_revision_fixture()
+    test "update_activity_revision/2 with valid data updates the activity_revision", %{activity_revision: activity_revision} do
       assert {:ok, %ActivityRevision{} = activity_revision} = Activities.update_activity_revision(activity_revision, @update_attrs)
-      assert activity_revision.content == "some updated content"
+      assert activity_revision.content == %{"test" => "ok"}
       assert activity_revision.deleted == false
       assert activity_revision.slug == "some updated slug"
     end
 
-    test "update_activity_revision/2 with invalid data returns error changeset" do
-      activity_revision = activity_revision_fixture()
+    test "update_activity_revision/2 with invalid data returns error changeset", %{activity_revision: activity_revision} do
       assert {:error, %Ecto.Changeset{}} = Activities.update_activity_revision(activity_revision, @invalid_attrs)
       assert activity_revision == Activities.get_activity_revision!(activity_revision.id)
     end
 
-    test "delete_activity_revision/1 deletes the activity_revision" do
-      activity_revision = activity_revision_fixture()
+    test "delete_activity_revision/1 deletes the activity_revision", %{activity_revision: activity_revision} do
       assert {:ok, %ActivityRevision{}} = Activities.delete_activity_revision(activity_revision)
       assert_raise Ecto.NoResultsError, fn -> Activities.get_activity_revision!(activity_revision.id) end
     end
 
-    test "change_activity_revision/1 returns a activity_revision changeset" do
-      activity_revision = activity_revision_fixture()
+    test "change_activity_revision/1 returns a activity_revision changeset", %{activity_revision: activity_revision} do
       assert %Ecto.Changeset{} = Activities.change_activity_revision(activity_revision)
     end
   end
