@@ -94,11 +94,6 @@ defmodule Oli.ResourcesTest do
       assert length(Resources.list_resource_types()) == 3
     end
 
-    test "get_resource_type!/1 returns the resource_type with given id" do
-      resource_type = resource_type_fixture()
-      assert Resources.get_resource_type!(resource_type.id) == resource_type
-    end
-
     test "create_resource_type/1 with valid data creates a resource_type" do
       assert {:ok, %ResourceType{} = resource_type} = Resources.create_resource_type(@valid_attrs)
       assert resource_type.type == "some type"
@@ -118,12 +113,6 @@ defmodule Oli.ResourcesTest do
       resource_type = resource_type_fixture()
       assert {:error, %Ecto.Changeset{}} = Resources.update_resource_type(resource_type, @invalid_attrs)
       assert resource_type == Resources.get_resource_type!(resource_type.id)
-    end
-
-    test "delete_resource_type/1 deletes the resource_type" do
-      resource_type = resource_type_fixture()
-      assert {:ok, %ResourceType{}} = Resources.delete_resource_type(resource_type)
-      assert_raise Ecto.NoResultsError, fn -> Resources.get_resource_type!(resource_type.id) end
     end
 
     test "change_resource_type/1 returns a resource_type changeset" do
