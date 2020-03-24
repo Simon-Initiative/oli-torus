@@ -21,7 +21,7 @@ defmodule Oli.Resources.ResourceRevision do
   @doc false
   def changeset(resource_revision, attrs) do
     resource_revision
-    |> cast(attrs, [:title, :slug, :content, :children, :objectives, :deleted])
-    |> validate_required([:title, :slug, :content, :objectives, :children, :deleted, :objectives, :author, :previous_revision, :resource_type, :resource])
+    |> cast(attrs, [:title, :slug, :content, :children, :objectives, :deleted, :author_id, :resource_id, :previous_revision_id, :resource_type_id])
+    |> validate_required([:title, :slug, :content, :objectives, :children, :deleted, :objectives, :author_id, :resource_id, :resource_type_id])
   end
 end

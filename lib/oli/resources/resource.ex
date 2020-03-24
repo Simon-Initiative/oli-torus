@@ -13,8 +13,8 @@ defmodule Oli.Resources.Resource do
   @doc false
   def changeset(resource, attrs) do
     resource
-    |> cast(attrs, [:slug])
-    |> validate_required([:slug, :project])
+    |> cast(attrs, [:slug, :project_id])
+    |> validate_required([:slug, :project_id])
     |> unique_constraint(:slug)
   end
 end
