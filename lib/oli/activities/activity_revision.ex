@@ -19,7 +19,7 @@ defmodule Oli.Activities.ActivityRevision do
   @doc false
   def changeset(activity_revision, attrs) do
     activity_revision
-    |> cast(attrs, [:content, :slug, :deleted, :author_id, :activity_id, :previous_revision_id, :activity_id])
+    |> cast(attrs, [:content, :slug, :deleted, :objectives, :author_id, :activity_id, :previous_revision_id, :activity_id])
     |> validate_required([:content, :slug, :deleted, :objectives,  :author_id, :activity_id, :previous_revision_id, :activity_id])
     |> unique_constraint(:slug)
   end

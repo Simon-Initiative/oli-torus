@@ -17,15 +17,6 @@ defmodule Oli.SectionsTest do
     @update_attrs %{end_date: ~D[2011-05-18], open_and_free: false, registration_open: false, start_date: ~D[2011-05-18], time_zone: "some updated time_zone", title: "some updated title"}
     @invalid_attrs %{end_date: nil, open_and_free: nil, registration_open: nil, start_date: nil, time_zone: nil, title: nil}
 
-    def section_fixture(attrs \\ %{}) do
-      {:ok, section} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> Sections.create_section()
-
-      section
-    end
-
     setup do
 
       {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
