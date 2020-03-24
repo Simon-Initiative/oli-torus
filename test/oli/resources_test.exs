@@ -73,54 +73,6 @@ defmodule Oli.ResourcesTest do
     end
   end
 
-  describe "resource_types" do
-    alias Oli.Resources.ResourceType
-
-    @valid_attrs %{type: "some type"}
-    @update_attrs %{type: "some updated type"}
-    @invalid_attrs %{type: nil}
-
-    def resource_type_fixture(attrs \\ %{}) do
-      {:ok, resource_type} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> Resources.create_resource_type()
-
-      resource_type
-    end
-
-    test "list_resource_types/0 returns all resource_types" do
-      resource_type = resource_type_fixture()
-      assert length(Resources.list_resource_types()) == 3
-    end
-
-    test "create_resource_type/1 with valid data creates a resource_type" do
-      assert {:ok, %ResourceType{} = resource_type} = Resources.create_resource_type(@valid_attrs)
-      assert resource_type.type == "some type"
-    end
-
-    test "create_resource_type/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Resources.create_resource_type(@invalid_attrs)
-    end
-
-    test "update_resource_type/2 with valid data updates the resource_type" do
-      resource_type = resource_type_fixture()
-      assert {:ok, %ResourceType{} = resource_type} = Resources.update_resource_type(resource_type, @update_attrs)
-      assert resource_type.type == "some updated type"
-    end
-
-    test "update_resource_type/2 with invalid data returns error changeset" do
-      resource_type = resource_type_fixture()
-      assert {:error, %Ecto.Changeset{}} = Resources.update_resource_type(resource_type, @invalid_attrs)
-      assert resource_type == Resources.get_resource_type!(resource_type.id)
-    end
-
-    test "change_resource_type/1 returns a resource_type changeset" do
-      resource_type = resource_type_fixture()
-      assert %Ecto.Changeset{} = Resources.change_resource_type(resource_type)
-    end
-  end
-
   describe "resource_revisions" do
     alias Oli.Resources.ResourceRevision
 
