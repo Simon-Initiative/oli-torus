@@ -1,6 +1,5 @@
 defmodule OliWeb.LayoutView do
   use OliWeb, :view
-  alias Oli.Utils
 
   def active_or_nil(assigns) do
     get_in(assigns, [Access.key(:active, nil)])
