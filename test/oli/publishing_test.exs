@@ -16,6 +16,8 @@ defmodule Oli.PublishingTest do
   alias Oli.Activities.Activity
   alias Oli.Activities.ActivityRevision
   alias Oli.Activities.Registration
+  alias Oli.Learning.Objective
+  alias Oli.Learning.ObjectiveRevision
 
   describe "publications" do
     alias Oli.Publishing.Publication
@@ -220,52 +222,55 @@ defmodule Oli.PublishingTest do
     @update_attrs %{}
     @invalid_attrs %{}
 
-    def objective_mapping_fixture(attrs \\ %{}) do
-      {:ok, objective_mapping} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> Publishing.create_objective_mapping()
+    setup do
 
-      objective_mapping
+      {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
+      {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
+      {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: False, root_resources: [], project_id: project.id}) |> Repo.insert
+      {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
+      {:ok, institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
+      {:ok, objective} = Objective.changeset(%Objective{}, %{slug: "slug", project_id: project.id}) |> Repo.insert
+      {:ok, objective_revision} = ObjectiveRevision.changeset(%ObjectiveRevision{}, %{title: "some title", children: [], deleted: false, objective_id: objective.id}) |> Repo.insert
+
+      valid_attrs = Map.put(@valid_attrs, :objective_id, objective.id)
+        |> Map.put(:revision_id, objective_revision.id)
+        |> Map.put(:publication_id, publication.id)
+
+      {:ok, objective_mapping} = valid_attrs |> Publishing.create_objective_mapping()
+
+      {:ok, %{objective_mapping: objective_mapping, valid_attrs: valid_attrs}}
     end
 
-    test "list_objective_mappings/0 returns all objective_mappings" do
-      objective_mapping = objective_mapping_fixture()
+    test "list_objective_mappings/0 returns all objective_mappings", %{objective_mapping: objective_mapping} do
       assert Publishing.list_objective_mappings() == [objective_mapping]
     end
 
-    test "get_objective_mapping!/1 returns the objective_mapping with given id" do
-      objective_mapping = objective_mapping_fixture()
+    test "get_objective_mapping!/1 returns the objective_mapping with given id", %{objective_mapping: objective_mapping} do
       assert Publishing.get_objective_mapping!(objective_mapping.id) == objective_mapping
     end
 
-    test "create_objective_mapping/1 with valid data creates a objective_mapping" do
-      assert {:ok, %ObjectiveMapping{} = objective_mapping} = Publishing.create_objective_mapping(@valid_attrs)
+    test "create_objective_mapping/1 with valid data creates a objective_mapping", %{valid_attrs: valid_attrs} do
+      assert {:ok, %ObjectiveMapping{} = objective_mapping} = Publishing.create_objective_mapping(valid_attrs)
     end
 
     test "create_objective_mapping/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} = Publishing.create_objective_mapping(@invalid_attrs)
     end
 
-    test "update_objective_mapping/2 with valid data updates the objective_mapping" do
-      objective_mapping = objective_mapping_fixture()
+    test "update_objective_mapping/2 with valid data updates the objective_mapping", %{objective_mapping: objective_mapping} do
       assert {:ok, %ObjectiveMapping{} = objective_mapping} = Publishing.update_objective_mapping(objective_mapping, @update_attrs)
     end
 
-    test "update_objective_mapping/2 with invalid data returns error changeset" do
-      objective_mapping = objective_mapping_fixture()
-      assert {:error, %Ecto.Changeset{}} = Publishing.update_objective_mapping(objective_mapping, @invalid_attrs)
+    test "update_objective_mapping/2 with invalid data returns error changeset", %{objective_mapping: objective_mapping} do
       assert objective_mapping == Publishing.get_objective_mapping!(objective_mapping.id)
     end
 
-    test "delete_objective_mapping/1 deletes the objective_mapping" do
-      objective_mapping = objective_mapping_fixture()
+    test "delete_objective_mapping/1 deletes the objective_mapping", %{objective_mapping: objective_mapping} do
       assert {:ok, %ObjectiveMapping{}} = Publishing.delete_objective_mapping(objective_mapping)
       assert_raise Ecto.NoResultsError, fn -> Publishing.get_objective_mapping!(objective_mapping.id) end
     end
 
-    test "change_objective_mapping/1 returns a objective_mapping changeset" do
-      objective_mapping = objective_mapping_fixture()
+    test "change_objective_mapping/1 returns a objective_mapping changeset", %{objective_mapping: objective_mapping} do
       assert %Ecto.Changeset{} = Publishing.change_objective_mapping(objective_mapping)
     end
   end
