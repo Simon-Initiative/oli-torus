@@ -3,6 +3,8 @@ defmodule OliWeb.DeliveryView do
 
   alias Oli.Lti;
 
+  def user_role(current_user), do: Lti.parse_lti_role(current_user.roles)
+
   def user_role_text(current_user) do
     role = Lti.parse_lti_role(current_user.roles)
     case role do
@@ -20,4 +22,10 @@ defmodule OliWeb.DeliveryView do
       :administrator -> "#f39c12"
     end
   end
+
+  def account_linked?(current_user) do
+    IO.inspect(current_user)
+    current_user.author_id != nil
+  end
+
 end
