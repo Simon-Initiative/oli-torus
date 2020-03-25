@@ -52,6 +52,13 @@ defmodule Oli.Course do
   def create_project(attrs \\ %{}) do
     %Project{}
     |> Project.changeset(attrs)
+    # will have title from form
+    # add required attrs ->
+      # id?
+      # slug
+      # version
+      # family
+      # author
     |> Repo.insert()
   end
 

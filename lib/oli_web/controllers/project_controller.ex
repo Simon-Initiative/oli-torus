@@ -1,5 +1,6 @@
 defmodule OliWeb.ProjectController do
   use OliWeb, :controller
+  alias Oli.Course
 
   def overview(conn, %{"project" => project_id, }) do
     params = %{title: "Overview", project: project_id, active: :overview}
@@ -28,5 +29,17 @@ defmodule OliWeb.ProjectController do
 
   def insights(conn, %{"project" => project_id}) do
     render conn, "insights.html", title: "Insights", project: project_id, active: :insights
+  end
+
+  def create(conn, %{"project" => project_params }) do
+    IO.inspect(project_params)
+    case Course.create_project(project_params) do
+      {:ok, project} ->
+        conn
+        |> redirect(to: Routes.project_path(conn, :overview, project_params["id"]))
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        render(conn, OliWeb.WorkspaceView, "projects.html", changeset: changeset, project_title: project_params["title"])
+    end
   end
 end

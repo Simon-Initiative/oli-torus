@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/font-awesome-line-awesome/css/all.min.css">
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/styles/tomorrow.min.css">
 
-    <link href="https://fonts.googleapis.com/css?family=Inter:400,700,900|Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Inter:400,700,900|Muli:300,400,700|Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined"
       rel="stylesheet">
     <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
@@ -38,6 +38,9 @@
         <%= render OliWeb.LayoutView, "_#{if @conn.params["project"] do "project" else "workspace" end}_header.html", assigns %>
 
         <main role="main">
+
+          <%= render @view_module, @view_template, assigns %>
+
           <%= if get_flash(@conn, :info) do %>
               <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
           <% end %>
@@ -45,7 +48,6 @@
               <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
           <% end %>
 
-          <%= render @view_module, @view_template, assigns %>
         </main>
       </div>
     </div>
