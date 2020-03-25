@@ -1,4 +1,7 @@
 /* This file is for your main application css. */
+
+@import "./delivery.css";
+
 html, body {
   /* FIXME: until we make a custom bootstrap theme */
   font-family: 'Roboto Light', sans-serif;

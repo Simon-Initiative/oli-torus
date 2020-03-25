@@ -40,7 +40,7 @@
             </li>
           </ul> %>
           <div class="form-inline my-2 my-lg-0">
-            <%= if signed_in?(@conn) do %>
+            <%= if author_signed_in?(@conn) do %>
               <span class="block lg:inline-block lg:mt-0 text-grey-darkest mr-4 no-underline hover:underline">
                 <%= "#{@conn.assigns.current_author.first_name} #{@conn.assigns.current_author.last_name}" %>
               </span>

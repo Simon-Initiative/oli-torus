@@ -1,1 +1,0 @@
-<%= render OliWeb.LtiView, "configure_section.html", assigns %>

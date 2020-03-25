@@ -1,0 +1,1 @@
+<%= render OliWeb.DeliveryView, "configure_section.html", assigns %>

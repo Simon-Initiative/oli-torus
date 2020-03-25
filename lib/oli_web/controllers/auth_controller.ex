@@ -7,7 +7,12 @@ defmodule OliWeb.AuthController do
   alias Oli.Accounts.SystemRole
 
   def signin(conn, _params) do
-    render(conn, "signin.html")
+    actions = %{
+      google: Routes.auth_path(conn, :request, "google"),
+      facebook: Routes.auth_path(conn, :request, "facebook"),
+      identity: Routes.auth_path(conn, :identity_callback),
+    }
+    render(conn, "signin.html", title: "Sign In", actions: actions, show_remember_password: true, show_cancel: false)
   end
 
   def signout(conn, _params) do
@@ -63,13 +68,13 @@ defmodule OliWeb.AuthController do
     end
   end
 
-  def callback(%{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
+  def callback(%Elixir.Plug.Conn{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
     conn
     |> put_flash(:error, "Failed to authenticate.")
     |> redirect(to: Routes.auth_path(conn, :signin))
   end
 
-  def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
+  def callback(%Elixir.Plug.Conn{assigns: %{ueberauth_auth: auth}} = conn, params) do
     author_params = case auth.provider do
       :google ->
         %{
@@ -96,11 +101,12 @@ defmodule OliWeb.AuthController do
 
     case Accounts.insert_or_update_author(author_params) do
       {:ok, author} ->
-        conn
-        |> put_flash(:info, "Thank you for signing in!")
-        |> put_session(:current_author_id, author.id)
-        |> redirect(to: Routes.page_path(conn, :index))
-
+        case params do
+          %{"type" => "link-account"} ->
+            link_account_callback(conn, author)
+          _ ->
+            signin_callback(conn, author)
+        end
       {:error, _reason} ->
         conn
         |> put_flash(:error, "Error siging in")
@@ -108,7 +114,7 @@ defmodule OliWeb.AuthController do
     end
   end
 
-  def identity_callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
+  def identity_callback(%{assigns: %{ueberauth_auth: auth}} = conn, params) do
     %Ueberauth.Auth{info: %{email: email}, credentials: %{other: %{password: password}}} = auth;
 
     # emails are case-insensitive, use lowercased version
@@ -116,14 +122,35 @@ defmodule OliWeb.AuthController do
 
     case Accounts.authorize_author(email, password) do
       { :ok, author } ->
-        conn
-        |> put_flash(:info, "Thank you for signing in!")
-        |> put_session(:current_author_id, author.id)
-        |> redirect(to: Routes.page_path(conn, :index))
+        case params do
+          %{"type" => "link-account"} ->
+            link_account_callback(conn, author)
+          _ ->
+            signin_callback(conn, author)
+        end
       { :error, reason } ->
         conn
         |> put_flash(:error, reason)
         |> redirect(to: Routes.auth_path(conn, :signin))
+    end
+  end
+
+  def signin_callback(conn, author) do
+    conn
+    |> put_flash(:info, "Thank you for signing in!")
+    |> put_session(:current_author_id, author.id)
+    |> redirect(to: Routes.page_path(conn, :index))
+  end
+
+  def link_account_callback(conn, author) do
+    case Accounts.link_user_author_account(conn.assigns.current_user, author) do
+      {:ok, _user} ->
+        conn
+        |> put_flash(:info, "Account '#{author.email}' is now linked")
+        |> put_session(:current_author_id, author.id)
+        |> redirect(to: Routes.delivery_path(conn, :index))
+      _ ->
+        throw "Failed to link user and author accounts"
     end
   end
 

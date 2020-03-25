@@ -1,6 +1,6 @@
 <div class="container">
 <section class="my-5" style="text-align: center">
-  <%= if signed_in?(@conn) do %>
+  <%= if author_signed_in?(@conn) do %>
     <h1><%= gettext "Welcome back %{name}!", name: @conn.assigns.current_author.first_name %></h1>
 
     <%= link "My Institutions", to: Routes.institution_path(@conn, :index), class: "btn btn-md btn-outline-primary ml-4" %>

@@ -28,8 +28,8 @@ config :phoenix, :json_library, Jason
 # Configure OAuth
 config :ueberauth, Ueberauth,
   providers: [
-    google: {Ueberauth.Strategy.Google, [default_scope: "email profile"]},
-    facebook: {Ueberauth.Strategy.Facebook, [default_scope: "email,public_profile"]},
+    google: {Ueberauth.Strategy.Google, [default_scope: "email profile", callback_params: ["type"]]},
+    facebook: {Ueberauth.Strategy.Facebook, [default_scope: "email,public_profile", callback_params: ["type"]]},
     identity: {Ueberauth.Strategy.Identity, [
       callback_methods: ["POST"],
       uid_field: :email,

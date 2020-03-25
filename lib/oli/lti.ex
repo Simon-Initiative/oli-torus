@@ -114,12 +114,13 @@ defmodule Oli.Lti do
 
   def parse_lti_role(roles) do
     cond do
-      String.contains?(roles, "Learner") ->
-        { :student}
-      String.contains?(roles, "Instructor") ->
-        { :instructor}
       String.contains?(roles, "Administrator") ->
-        { :administrator}
+        :administrator
+      String.contains?(roles, "Instructor") ->
+        :instructor
+      String.contains?(roles, "Learner") ->
+        :student
     end
   end
+
 end

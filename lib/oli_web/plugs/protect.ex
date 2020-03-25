@@ -8,7 +8,6 @@ defmodule Oli.Plugs.Protect do
     if conn.assigns[:current_author] do
       conn
     else
-      conn = fetch_session(conn)
       if get_session(conn, :current_author_id) do
         conn
       else
