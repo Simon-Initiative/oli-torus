@@ -1,0 +1,22 @@
+<style>
+.add-button {
+  background: none;
+  border: none;
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+  color: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+}
+.add-button:hover {
+  background-color: #e5e5e5;
+  border-radius: 4px;
+}
+</style>
+<button class="add-button">
+  <i class="material-icons">add</i>
+</button>

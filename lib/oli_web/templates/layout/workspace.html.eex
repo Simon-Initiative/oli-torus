@@ -29,7 +29,26 @@
   </head>
   <body>
 
-    <%= render @view_module, @view_template, assigns %>
+    <div id="wrapper">
+      <div id="left">
+        <%= render OliWeb.LayoutView, "_#{if @conn.params["project"] do "project" else "workspace" end}_sidebar.html", assigns %>
+      </div>
+
+      <div id="right">
+        <%= render OliWeb.LayoutView, "_#{if @conn.params["project"] do "project" else "workspace" end}_header.html", assigns %>
+
+        <main role="main">
+          <%= if get_flash(@conn, :info) do %>
+              <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
+          <% end %>
+          <%= if get_flash(@conn, :error) do %>
+              <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+          <% end %>
+
+          <%= render @view_module, @view_template, assigns %>
+        </main>
+      </div>
+    </div>
 
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
 

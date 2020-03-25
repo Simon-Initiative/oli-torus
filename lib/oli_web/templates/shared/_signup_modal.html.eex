@@ -1,0 +1,54 @@
+<style>
+.signup-modal {
+  width: 420px;
+  padding: 36px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid black;
+}
+.signup-modal button.signup-google {
+  height: 48px;
+}
+.signup-modal p {
+  margin-top: 40px;
+  text-align: center;
+  font-size: 16px;
+  color: #666;
+}
+.signup-modal p.signup-or {
+  margin-bottom: 30px;
+}
+.signup-modal .btn {
+  height: 48px;
+  border: 3px solid black;
+  border-radius: 8px;
+}
+.signup-modal .btn.btn-primary {
+  margin-top: 10px;
+}
+.signup-modal input {
+  font-size: 14px;
+  border: 3px solid black;
+  border-radius: 8px;
+  padding: 16px;
+  width: 100%;
+  flex-grow: 1;
+  height: 48px;
+  margin: 10px 0;
+}
+.signup-modal input:hover {
+  border: 3px solid black;
+  border-radius: 8px;
+}
+
+</style>
+<div class="signup-modal">
+  <button class="btn signup-google">Sign up with Google</button>
+  <p class="signup-or">or</p>
+  <input placeholder="Email"/>
+  <input placeholder="Password"/>
+  <input placeholder="First Name"/>
+  <input placeholder="Last Name"/>
+  <button class="btn btn-primary">Create Account</button>
+  <p>Already have an account? Log in</p>
+</div>
