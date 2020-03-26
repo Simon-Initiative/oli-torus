@@ -1,1 +1,1 @@
-<%= render OliWeb.DeliveryView, "configure_section.html", assigns %>
+<h1>Instructor</h1>

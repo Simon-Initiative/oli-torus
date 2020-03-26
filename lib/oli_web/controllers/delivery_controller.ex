@@ -5,14 +5,19 @@ defmodule OliWeb.DeliveryController do
 
   def index(conn, _params) do
     user = conn.assigns.current_user
+    section = nil
 
-    case Lti.parse_lti_role(user.roles) do
-      :administrator ->
-        render(conn, "instructor_view.html")
-      :instructor ->
-        render(conn, "instructor_view.html")
-      :student ->
+    case {Lti.parse_lti_role(user.roles), user.author, section} do
+      {:student, _author, nil} ->
+        render(conn, "course_not_configured.html")
+      {:student, _author, _section} ->
         render(conn, "student_view.html")
+      {role, nil, nil} when role == :administrator or role == :instructor ->
+        render(conn, "welcome_options.html")
+      {role, _author, nil} when role == :administrator or role == :instructor ->
+        render(conn, "configure_section.html")
+      {role, _author, _section} when role == :administrator or role == :instructor ->
+        render(conn, "instructor_view.html")
     end
   end
 

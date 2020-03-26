@@ -1,0 +1,53 @@
+<style>
+  .configure-section {
+    text-align: center;
+  }
+
+  .btn-card {
+    cursor: pointer;
+    color: inherit;
+    user-select: none;
+  }
+
+  .btn-card:hover {
+    border: 1px solid #007bff;
+    text-decoration: none;
+    color: inherit;
+    -webkit-box-shadow: 0px 0px 4px 0px rgba(0,123,255,1);
+    -moz-box-shadow: 0px 0px 4px 0px rgba(0,123,255,1);
+    box-shadow: 0px 0px 4px 0px rgba(0,123,255,1);
+  }
+</style>
+
+<div class="configure-section mt-5">
+  <h3>Getting Started</h3>
+  <p class="mt-3">
+    Welcome <%= @current_user.first_name%>!
+    <br />
+    Let's get started by creating a section for your course. Please select one of the options below:
+  </p>
+
+  <div class="card-deck mt-5">
+    <a href="<%= Routes.delivery_path(@conn, :link_account) %>" class="card btn-card">
+      <%# <img class="card-img-top" src=".../100px180/" alt="Card image cap"> %>
+      <div class="card-body">
+        <h5 class="card-title">Link an Existing Account</h5>
+        <p class="card-text">If you have an existing account or have previously authored a course project, click here to link your account</p>
+      </div>
+    </a>
+    <a href="#" class="card btn-card">
+      <%# <img class="card-img-top" src=".../100px180/" alt="Card image cap"> %>
+      <div class="card-body">
+        <h5 class="card-title">Create a New Account</h5>
+        <p class="card-text">If you have not previously created an account and would like to author your own course project, click here to create a new account</p>
+      </div>
+    </a>
+    <a href="#" class="card btn-card">
+      <%# <img class="card-img-top" src=".../100px180/" alt="Card image cap"> %>
+      <div class="card-body">
+        <h5 class="card-title">Select an Open and Free Course</h5>
+        <p class="card-text">If you would like to create a course section from an Open and Free course, click here to select an Open and Free course</p>
+      </div>
+    </a>
+  </div>
+</div>
