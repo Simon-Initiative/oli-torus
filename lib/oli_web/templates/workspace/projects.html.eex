@@ -18,21 +18,31 @@ small {
   margin-top: 10px;
   color: #b3b3b3;
 }
+.project-cards {
+  display: flex;
+}
 </style>
 
 <div class="container">
   <div class="row">
     <div class="page-header">
       <h1>My Projects</h1>
-      <small>No projects yet</small>
-      <p>Create a new project to get started, or ask a friend to invite you to their project.</p>
+      <%= if length(@projects) == 0 do %>
+        <small>No projects yet</small>
+        <p>Create a new project to get started, or ask a friend to invite you to their project.</p>
+      <% else %>
+        <div class="project-cards">
+          <%= render_many @projects, OliWeb.SharedView, "_project_card.html",
+            %{conn: @conn, as: :project} %>
+        </div>
+      <% end %>
+
     </div>
   </div>
   <div class="row">
    <div class="page-header">
       <h1>Model Projects</h1>
-      <small>These proven projects are built with best practices</small>
-      <%= link "Dummy Project", to: Routes.project_path(@conn, :overview, "xyz"), class: "btn btn-primary" %>
+      <small>These proven projects are built with best practices in mind</small>
     </div>
   </div>
 </div>

@@ -58,6 +58,7 @@
   }
 
   .modal .modal-body {
+    background: white;
     height: calc(100% - 60px);
     padding: 30px;
     display: flex;
@@ -141,7 +142,7 @@
 
 <div id="header">
   <span class="title"><%= @title %></span>
-  <button class="inline-button" data-toggle="modal" data-target="#newProjectModal" id="button-new-project"><i class="material-icons">add</i>New Project</span>
+  <button class="inline-button" id="button-new-project"><i class="material-icons">add</i>New Project</span>
 </div>
 
 <script>

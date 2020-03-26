@@ -130,7 +130,7 @@ defmodule OliWeb.AuthController do
 
   # redirect to project overview if author has one project, else go to workspace
   defp redirect_path conn, author do
-    author = Repo.preload(author, :projects)
+    author = Repo.preload(author, [:projects])
 
     case length author.projects do
       1 -> Routes.project_path conn, :overview, hd author.projects
