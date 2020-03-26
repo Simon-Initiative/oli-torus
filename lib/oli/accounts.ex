@@ -5,6 +5,7 @@ defmodule Oli.Accounts do
 
   import Ecto.Query, warn: false
   alias Oli.Repo
+  import Ecto.Changeset
 
   alias Oli.Accounts.Author
 
@@ -39,6 +40,17 @@ defmodule Oli.Accounts do
     %Author{}
     |> Author.changeset(params, opts)
     |> Repo.insert()
+  end
+
+  # VERY important -> all author projects must be passed into the :projects
+  # change, or else the other assocations will be deleted
+  def author_to_project(author, project) do
+    author = Repo.preload(author, [:projects])
+    projects = [project | author.projects]
+
+    author
+    |> Author.changeset(%{ projects: projects})
+    |> Ecto.Changeset.put_assoc(:projects, projects)
   end
 
   @doc """

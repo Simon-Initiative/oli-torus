@@ -5,6 +5,7 @@ defmodule Oli.Course do
 
   import Ecto.Query, warn: false
   alias Oli.Repo
+  alias Oli.Course.Utils
 
   alias Oli.Course.Project
 
@@ -49,17 +50,20 @@ defmodule Oli.Course do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_project(attrs \\ %{}) do
+  def create_project(attrs) do
     %Project{}
-    |> Project.changeset(attrs)
-    # will have title from form
-    # add required attrs ->
-      # id?
-      # slug
-      # version
-      # family
-      # author
-    |> Repo.insert()
+      |> Project.changeset(attrs)
+      |> Repo.insert()
+  end
+
+  def default_project(title, family) do
+    %Project{}
+      |> Project.changeset(%{
+        title: title,
+        slug: Utils.generate_slug("projects", title),
+        version: "1.0.0",
+        family_id: family.id
+      })
   end
 
   @doc """
@@ -156,6 +160,15 @@ defmodule Oli.Course do
     %Family{}
     |> Family.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def default_family(title) do
+    %Family{}
+      |> Family.changeset(%{
+        title: title,
+        slug: Utils.generate_slug("families", title),
+        description: "New family from project creation"
+      })
   end
 
   @doc """

@@ -2,10 +2,12 @@ defmodule OliWeb.WorkspaceController do
   use OliWeb, :controller
   alias Oli.Course.Project
 
-  def projects(conn, _params) do
+  def projects(conn, params) do
     params = %{
       title: "Projects",
-      project_changeset: Project.changeset(%Project{}),
+      project_changeset: Project.changeset(%Project{
+        title: params["project_title"] || ""
+      }),
       active: :nil,
       author: conn.assigns.current_author
     }

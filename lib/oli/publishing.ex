@@ -55,6 +55,15 @@ defmodule Oli.Publishing do
     |> Repo.insert()
   end
 
+  def new_project_publication(resource, project) do
+    %Publication{}
+      |> Publication.changeset(%{
+        description: "Initial project creation",
+        root_resources: [resource.id],
+        project_id: project.id
+      })
+  end
+
   @doc """
   Updates a publication.
 

@@ -67,10 +67,13 @@ if !Oli.Repo.get_by(Oli.Resources.ResourceType, id: 1) do
     id: 1,
     type: "unscored_page"
   }
-
   Oli.Repo.insert! %Oli.Resources.ResourceType{
     id: 2,
     type: "scored_page"
+  }
+  Oli.Repo.insert! %Oli.Resources.ResourceType{
+    id: 3,
+    type: "container"
   }
 
 end

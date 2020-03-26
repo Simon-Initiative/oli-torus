@@ -112,7 +112,7 @@
 </style>
 
 <%# The `display: none` MUST be set in-line to allow access to its value %>
-<div class="modal" id="modal-new-project" style="display: none">
+<div class="modal" id="modal-new-project">
   <div class="modal-header">
     <span class="modal-title">Enter Project Title</span>
     <span class="modal-close"><i class="material-icons">close</i></span>
@@ -133,7 +133,8 @@
       <%= submit "Create Project",
         id: "button-create-project",
         class: "btn btn-primary",
-        phx_disable_with: "Creating Project..." %>
+        phx_disable_with: "Creating Project...",
+        form: f.id %>
     <% end %>
   </div>
 </div>
@@ -146,11 +147,15 @@
 <script>
   // modal
   const modal = document.getElementById("modal-new-project");
+  modal.style.display = "none";
   const openButton = document.getElementById("button-new-project");
   const closeButton = document.getElementsByClassName("modal-close")[0];
 
   const isModalDisplayed = (modal) => modal.style.display === "block";
-  const displayModal = () => modal.style.display = "block";
+  const displayModal = (e) => {
+    modal.style.display = "block";
+    e.stopPropagation();
+  }
   const hideModal = () => modal.style.display = "none";
   const closeModalOnClickOutside = (e) =>
     e.target !== modal && !modal.contains(e.target) && hideModal();
@@ -161,22 +166,21 @@
       hideModal();
       return;
     }
-    displayModal();
-    e.stopPropagation();
+    displayModal(e);
     document.getElementsByTagName("body")[0].onclick = closeModalOnClickOutside;
   };
 
   // create project
   const createProjectButton = document.getElementById("button-create-project")
-  createProjectButton.disabled = true
   const titleInput = document.getElementById("input-title")
+  createProjectButton.disabled = !titleInput.value || titleInput.value.length === 0
   const form = document.getElementById("form-create-project")
   titleInput.addEventListener('input', () => titleInput.value.length > 0
     ? createProjectButton.disabled = false
     : createProjectButton.disabled = true)
   createProjectButton.addEventListener('click', () => {
     if (!createProjectButton.disabled) {
-      // form.submit();
+      form.submit();
     }
   })
 
