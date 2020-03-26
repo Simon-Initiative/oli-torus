@@ -42,11 +42,17 @@ nav.navbar .user img {
   vertical-align: middle;
 }
 
+/* FIXME: btn class is used intermixed with other components, these styles
+ * do not agree with those other styles (e.g. btn mixed with a in dropdown menu)
+ * Commenting some of the offedning styles out for now so everything still looks
+ * unified until we can skin the entire theme
+ */
+
 .btn {
-  font-weight: bold;
+  /* font-weight: bold;
   font-size: 13px;
   border-radius: 8px;
-  padding: 8px 20px;
+  padding: 8px 20px; */
   border: none;
 }
 
