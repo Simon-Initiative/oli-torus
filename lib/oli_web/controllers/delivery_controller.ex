@@ -35,4 +35,10 @@ defmodule OliWeb.DeliveryController do
     |> render("signin.html", assigns)
   end
 
+  def signout(conn, _params) do
+    conn
+    |> configure_session(drop: true)
+    |> redirect(to: Routes.delivery_path(conn, :index))
+  end
+
 end

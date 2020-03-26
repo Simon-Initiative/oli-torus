@@ -51,6 +51,15 @@ defmodule OliWeb.LtiController do
           institution_id: institution.id,
         }) do
           {:ok, user } ->
+            # if account is linked to an author, sign them in
+            conn = if user.author_id != nil do
+              conn
+              |> put_session(:current_author_id, user.author_id)
+            else
+              conn
+            end
+
+            # sign current user in and redirect to home page
             conn
             |> put_session(:current_user_id, user.id)
             |> redirect(to: Routes.delivery_path(conn, :index))

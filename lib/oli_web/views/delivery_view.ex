@@ -24,7 +24,6 @@ defmodule OliWeb.DeliveryView do
   end
 
   def account_linked?(current_user) do
-    IO.inspect(current_user)
     current_user.author_id != nil
   end
 

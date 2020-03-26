@@ -11,11 +11,9 @@ defmodule Oli.Plugs.VerifyUser do
       if get_session(conn, :current_user_id) do
         conn
       else
-        IO.inspect(conn)
-
         conn
           |> put_view(OliWeb.DeliveryView)
-          |> render("login_required.html")
+          |> render("signin_required.html")
           |> halt()
       end
     end

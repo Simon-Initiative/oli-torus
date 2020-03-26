@@ -84,6 +84,7 @@ defmodule OliWeb.Router do
 
     get "/", DeliveryController, :index
     get "/link_account", DeliveryController, :link_account
+    get "/signout", DeliveryController, :signout
 
   end
 

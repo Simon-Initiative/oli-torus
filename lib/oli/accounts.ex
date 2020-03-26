@@ -117,6 +117,13 @@ defmodule Oli.Accounts do
     update_user(user, %{ author_id: author.id})
   end
 
+  @doc """
+  Returns true if a author is signed in
+  """
+  def user_signed_in?(conn) do
+    conn.assigns[:current_user]
+  end
+
   alias Oli.Accounts.Author
 
   @doc """
@@ -174,13 +181,6 @@ defmodule Oli.Accounts do
   """
   def author_signed_in?(conn) do
     conn.assigns[:current_author]
-  end
-
-  @doc """
-  Returns true if a author is signed in
-  """
-  def user_signed_in?(conn) do
-    conn.assigns[:current_user]
   end
 
   @doc """
