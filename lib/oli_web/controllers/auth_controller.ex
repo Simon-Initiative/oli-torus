@@ -109,7 +109,7 @@ defmodule OliWeb.AuthController do
         end
       {:error, _reason} ->
         conn
-        |> put_flash(:error, "Error siging in")
+        |> put_flash(:error, "Error signing in")
         |> redirect(to: Routes.auth_path(conn, :signin))
     end
   end
@@ -139,7 +139,7 @@ defmodule OliWeb.AuthController do
     conn
     |> put_flash(:info, "Thank you for signing in!")
     |> put_session(:current_author_id, author.id)
-    |> redirect(to: Routes.page_path(conn, :index))
+    |> redirect(to: Routes.workspace_path(conn, :index))
   end
 
   def link_account_callback(conn, author) do

@@ -1,0 +1,20 @@
+<style>
+.section-header h1 {
+  font-size: 14px;
+  margin: 0 0 2px 0;
+}
+.section-header small {
+  font-size: 11px;
+  color: #b3b3b3;
+}
+.section-header p {
+  margin-top: 10px;
+  color: #b3b3b3;
+}
+
+</style>
+<div class="section-header">
+  <h1>My Projects</h1>
+  <small>No projects yet</small>
+  <p>Create a new project to get started, or ask a friend to invite you to their project.</p>
+</div>

@@ -9,12 +9,12 @@ defmodule OliWeb.InstitutionController do
 
   def index(conn, _params) do
     institutions = Accounts.list_institutions() |> Enum.filter(fn i -> i.author_id == conn.assigns.current_author.id end)
-    render(conn, "index.html", institutions: institutions)
+    render conn, "index.html", institutions: institutions, title: "Institutions"
   end
 
   def new(conn, _params) do
     changeset = Accounts.change_institution(%Institution{})
-    render(conn, "new.html", changeset: changeset, country_codes: list_country_codes(), timezones: list_timezones())
+    render conn, "new.html", changeset: changeset, country_codes: list_country_codes(), timezones: list_timezones(), title: "Institutions"
   end
 
   def create(conn, %{"institution" => institution_params}) do
@@ -34,19 +34,19 @@ defmodule OliWeb.InstitutionController do
         |> redirect(to: Routes.page_path(conn, :index))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "new.html", changeset: changeset, country_codes: list_country_codes(), timezones: list_timezones())
+        render(conn, "new.html", changeset: changeset, country_codes: list_country_codes(), timezones: list_timezones(), title: "Institutions")
     end
   end
 
   def show(conn, %{"id" => id}) do
     institution = Accounts.get_institution!(id)
-    render(conn, "show.html", institution: institution)
+    render conn, "show.html", institution: institution, title: "Institutions"
   end
 
   def edit(conn, %{"id" => id}) do
     institution = Accounts.get_institution!(id)
     changeset = Accounts.change_institution(institution)
-    render(conn, "edit.html", institution: institution, changeset: changeset, country_codes: list_country_codes(), timezones: list_timezones())
+    render(conn, "edit.html", institution: institution, changeset: changeset, country_codes: list_country_codes(), timezones: list_timezones(), title: "Institutions")
   end
 
   def update(conn, %{"id" => id, "institution" => institution_params}) do
@@ -59,7 +59,7 @@ defmodule OliWeb.InstitutionController do
         |> redirect(to: Routes.institution_path(conn, :show, institution))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "edit.html", institution: institution, changeset: changeset, country_codes: list_country_codes(), timezones: list_timezones())
+        render(conn, "edit.html", institution: institution, changeset: changeset, country_codes: list_country_codes(), timezones: list_timezones(), title: "Institutions")
     end
   end
 

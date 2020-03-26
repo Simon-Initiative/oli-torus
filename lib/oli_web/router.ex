@@ -37,6 +37,10 @@ defmodule OliWeb.Router do
     plug Plug.Parsers, parsers: [:urlencoded]
   end
 
+  pipeline :workspace_layout do
+    plug :put_layout, {OliWeb.LayoutView, "workspace.html"}
+  end
+
   # open access routes
   scope "/", OliWeb do
     pipe_through :browser
@@ -46,9 +50,24 @@ defmodule OliWeb.Router do
 
   # authorization protected routes
   scope "/", OliWeb do
-    pipe_through [:browser, :protected]
+    pipe_through [:browser, :protected, :workspace_layout]
 
+    get "/projects", WorkspaceController, :projects
+    get "/account", WorkspaceController, :account
     resources "/institutions", InstitutionController
+  end
+
+  scope "/project", OliWeb do
+    pipe_through [:browser, :protected, :workspace_layout]
+
+    get "/:project", ProjectController, :overview
+    get "/:project/objectives", ProjectController, :objectives
+    get "/:project/curriculum", ProjectController, :curriculum
+    get "/:project/publish", ProjectController, :publish
+    get "/:project/insights", ProjectController, :insights
+
+    get "/:project/:page", ProjectController, :page
+    get "/:project/:page/edit", ProjectController, :resource_editor
   end
 
   # auth routes, only accessable to guest users who are not logged in

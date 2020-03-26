@@ -1,40 +1,81 @@
-<div class="container">
-<section class="my-5" style="text-align: center">
-  <%= if author_signed_in?(@conn) do %>
-    <h1><%= gettext "Welcome back %{name}!", name: @conn.assigns.current_author.first_name %></h1>
+<main role="main">
 
-    <%= link "My Institutions", to: Routes.institution_path(@conn, :index), class: "btn btn-md btn-outline-primary ml-4" %>
-  <% else %>
-    <h1><%= gettext "Welcome to %{name}!", name: "OLI Authoring" %></h1>
-    <p>Create, deliver and continuously improve your course content using your web browser.</p>
-
-    <a href="/auth/register" class="btn btn-outline-dark">Create an Account <i class="fa fa-arrow-right"></i></a>
+  <%= if get_flash(@conn, :info) do %>
+    <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
   <% end %>
-</section>
+  <%= if get_flash(@conn, :error) do %>
+    <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+  <% end %>
 
-<%= if "#{Mix.env}" === "dev" do %>
-  <div id="dev-modal" class="modal-dialog modal-lg" role="document" style="text-align: center">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"></h5>
-        <button type="button" class="close" onclick="$('#dev-modal').remove()">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-          <h2>
-            <img src="https://media.giphy.com/media/KY2ZMhnCxP008/giphy.gif" width="30" height="30" alt="" />
-            Psst! You appear to be in development mode &#x1F6A7
-          </h2>
-          <p class="mt-3">Rock on &#x1F919 Check out some of the user interface elements available for torus development</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick="$('#dev-modal').remove()">Dismiss</button>
-        <a href="/dev/uipalette" class="btn btn-primary">Go to UI Elements</a>
-        <a href="/test/editor" class="btn btn-primary">Go to Test Editor</a>
+  <nav class="navbar navbar-expand-lg">
+    <div class="container">
+      <img src="/images/cmu_logo.png" width="75" height="48" class="d-inline-block align-top mr-2" alt="">
+
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item">
+            <a class="nav-link text-grey-darkest no-underline hover:underline" href="/">
+              Open Learning Initiative
+            </a>
+          </li>
+        </ul>
+        <div class="form-inline my-2 my-lg-0">
+          <span class="block lg:inline-block lg:mt-0 text-grey-darkest mr-4 no-underline hover:underline">
+            Features
+          </span>
+          <span class="block lg:inline-block lg:mt-0 text-grey-darkest mr-4 no-underline hover:underline">
+            Examples
+          </span>
+          <%= if author_signed_in?(@conn) do %>
+            <span class="block lg:inline-block lg:mt-0 text-grey-darkest mr-4 no-underline hover:underline">
+              <%= link "My Projects", to: Routes.workspace_path(@conn, :projects), class: "btn btn-primary" %>
+            </span>
+            <%= link "Sign out", to: Routes.auth_path(@conn, :signout) %>
+          <% else %>
+            <%= if @conn.request_path == "/" do %>
+              <a href="/auth/signin" class="btn btn-dark my-2 my-sm-0">Sign in</a>
+            <% end %>
+          <% end %>
+        </div>
+    </div>
+  </nav>
+
+  <div class="container">
+  <section class="my-5" style="text-align: center">
+    <%= if author_signed_in?(@conn) do %>
+      <h1><%= gettext "Welcome back %{name}!", name: @conn.assigns.current_author.first_name %></h1>
+
+      <%= link "My Institutions", to: Routes.institution_path(@conn, :index), class: "btn btn-md btn-outline-primary ml-4" %>
+    <% else %>
+      <h1><%= gettext "Welcome to %{name}!", name: "OLI Authoring" %></h1>
+      <p>Create, deliver and continuously improve your course content using your web browser.</p>
+
+      <a href="/auth/register" class="btn btn-outline-dark">Create an Account <i class="fa fa-arrow-right"></i></a>
+    <% end %>
+  </section>
+
+  <%= if "#{Mix.env}" === "dev" do %>
+    <div id="dev-modal" class="modal-dialog modal-lg" role="document" style="text-align: center">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"></h5>
+          <button type="button" class="close" onclick="$('#dev-modal').remove()">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <h2>
+              <img src="https://media.giphy.com/media/KY2ZMhnCxP008/giphy.gif" width="30" height="30" alt="" />
+              Psst! You appear to be in development mode &#x1F6A7
+            </h2>
+            <p class="mt-3">Rock on &#x1F919 Check out some of the user interface elements available for torus development</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="$('#dev-modal').remove()">Dismiss</button>
+          <a href="/dev/uipalette" class="btn btn-primary">Go to UI Elements</a>
+          <a href="/test/editor" class="btn btn-primary">Go to Test Editor</a>
+        </div>
       </div>
     </div>
-  </div>
-<% end %>
+  <% end %>
 
-</div>
+</main>

@@ -1,0 +1,39 @@
+<style>
+.hero-unit.tutorial-card {
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0px 2px 14px rgba(0,0,0, .15);
+}
+.hero-unit.tutorial-card .tutorial-header {
+  height: 40px;
+  background-color: #18a0fb;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+}
+.hero-unit.tutorial-card .tutorial-header h1 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: bold;
+}
+.hero-unit.tutorial-card .tutorial-header i {
+  font-size: 20px;
+}
+.hero-unit.tutorial-card p {
+  font-size: 12px;
+  font-weight: normal;
+  color: black;
+}
+.hero-unit.tutorial-card .tutorial-description {
+  padding: 16px;
+}
+</style>
+<div class="hero-unit tutorial-card">
+  <div class="tutorial-header"><h1>Title</h1> <i class="material-icons">close</i></div>
+  <div class="tutorial-description">
+    <p>Description</p>
+  </div>
+</div>
