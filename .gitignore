@@ -1,5 +1,10 @@
 .vscode
 
+# IDEA
+*.iml
+*.ipr
+*.iws
+
 # The directory Mix will write compiled artifacts to.
 /_build/
 
