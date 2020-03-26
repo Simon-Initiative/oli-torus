@@ -139,7 +139,7 @@ defmodule OliWeb.AuthController do
     conn
     |> put_flash(:info, "Thank you for signing in!")
     |> put_session(:current_author_id, author.id)
-    |> redirect(to: Routes.workspace_path(conn, :index))
+    |> redirect(to: Routes.workspace_path(conn, :projects))
   end
 
   def link_account_callback(conn, author) do
