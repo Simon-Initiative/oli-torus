@@ -108,6 +108,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :description, :string
       add :root_resources, {:array, :id}
       add :published, :boolean, default: false, null: false
+      add :open_and_free, :boolean, default: false, null: false
       add :project_id, references(:projects)
       timestamps()
     end
@@ -119,6 +120,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :time_zone, :string
       add :open_and_free, :boolean, default: false, null: false
       add :registration_open, :boolean, default: false, null: false
+      add :context_id, :string
 
       add :institution_id, references(:institutions)
       add :project_id, references(:projects)

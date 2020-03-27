@@ -4,11 +4,11 @@ tbody tr {
 }
 </style>
 
-<%= form_for @conn, "", fn f -> %>
+<%= form_for @conn, Routes.delivery_path(@conn, :create_section), fn f -> %>
   <div class="text-center">
-    <h3>Select a Course</h3>
+    <h3>Select a Project</h3>
     <p class="mt-3">
-      Select one of the available course projects below to create your course section:
+      Select one of the published projects below to create your course section:
     </p>
   </div>
   <div>

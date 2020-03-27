@@ -5,7 +5,13 @@ defmodule OliWeb.DeliveryController do
 
   def index(conn, _params) do
     user = conn.assigns.current_user
-    section = nil
+    lti_params = get_session(conn, :lti_params)
+    section = case Oli.Sections.get_section_by(context_id: lti_params["context_id"]) do
+      {:ok, section} -> section
+      _ -> nil
+    end
+
+    IO.inspect(section, label: "section")
 
     case {Lti.parse_lti_role(user.roles), user.author, section} do
       {:student, _author, nil} ->
@@ -38,6 +44,26 @@ defmodule OliWeb.DeliveryController do
     conn
     |> put_view(OliWeb.AuthView)
     |> render("signin.html", assigns)
+  end
+
+  def create_section(conn, _params) do
+    IO.inspect(conn)
+
+    lti_params = get_session(conn, :lti_params)
+    user = conn.assigns.current_user
+    institution = Oli.Accounts.get_institution!(user.institution_id)
+
+    Oli.Sections.create_section(%{
+      time_zone: institution.timezone,
+      title: lti_params["context_title"],
+      context_id: lti_params["context_id"],
+      institution_id: user.institution_id,
+      # TODO: change project_id and publication_id to dynamic selection from conn body_params
+      project_id: 1,
+      publication_id: 1,
+    })
+    conn
+    |> redirect(to: Routes.delivery_path(conn, :index))
   end
 
   def signout(conn, _params) do

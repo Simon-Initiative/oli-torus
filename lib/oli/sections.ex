@@ -38,6 +38,20 @@ defmodule Oli.Sections do
   def get_section!(id), do: Repo.get!(Section, id)
 
   @doc """
+  Gets a single section by query parameter
+
+  ## Examples
+
+      iex> get_section_by(context_id: "123")
+      {:ok, %Section{}}
+
+      iex> get_section_by(context_id: "111")
+      { :error, changeset }
+
+  """
+  def get_section_by(clauses), do: Repo.get_by(Section, clauses)
+
+  @doc """
   Creates a section.
 
   ## Examples
