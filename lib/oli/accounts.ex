@@ -5,7 +5,6 @@ defmodule Oli.Accounts do
 
   import Ecto.Query, warn: false
   alias Oli.Repo
-  import Ecto.Changeset
 
   alias Oli.Accounts.Author
 
@@ -93,6 +92,16 @@ defmodule Oli.Accounts do
 
   defp resolve_authorization({:error, _reason}, _author), do: {:error, "Invalid authorname or password"}
   defp resolve_authorization({:ok, author}, _author), do: {:ok, author}
+
+  def can_access?(author, project) do
+    # querying join table rather than author's project associations list
+    # in case the author has many projects
+    Repo.one(
+      from assoc in "authors_projects",
+        where: assoc.author_id == ^author.id and
+        assoc.project_id == ^project.id,
+        select: count(assoc)) != 0
+  end
 
   alias Oli.Accounts.Institution
 

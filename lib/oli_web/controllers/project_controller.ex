@@ -1,13 +1,12 @@
 defmodule OliWeb.ProjectController do
   use OliWeb, :controller
-  alias Oli.Publishing
-  alias Oli.Resources
   alias Oli.Course
   alias Oli.Accounts
-  alias Oli.Repo
-  alias Ecto.Multi
 
-  def overview(conn, %{"project" => project_id, }) do
+  plug :fetch_project, except: [:create]
+  plug :authorize_project, except: [:create]
+
+  def overview(conn, %{"project" => project_id}) do
     params = %{title: "Overview", project: project_id, active: :overview}
     render %{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html"
   end
@@ -37,29 +36,7 @@ defmodule OliWeb.ProjectController do
   end
 
   def create(conn, %{"project" => %{"title" => title} = project_attrs}) do
-    # Here's how this works:
-    # Multi chains database operations and performs a single transaction at the end.
-    # If one operation fails, the changes are rolled back.
-    # `insert` takes a changeset in order to create a new row, and `merge` takes a lambda
-    # that allows you to access the changesets created in previous Multi calls
-    result = Multi.new
-      |> Multi.insert(:family, Course.default_family(title))
-      |> Multi.merge(fn %{family: family} ->
-        Multi.new
-          |> Multi.insert(:project, Course.default_project(title, family)) end)
-      |> Multi.merge(fn %{project: project} ->
-        Multi.new
-          |> Multi.update(:author, Accounts.author_to_project(conn.assigns.current_author, project))
-          |> Multi.insert(:resource, Resources.new_project_resource(project)) end)
-      |> Multi.merge(fn %{author: author, project: project, resource: resource} ->
-        Multi.new
-        |> Multi.insert(:resource_revision, Resources.new_project_resource_revision(author, project, resource))
-        |> Multi.insert(:publication, Publishing.new_project_publication(resource, project)) end)
-      |> Repo.transaction
-
-      IO.inspect(result)
-
-      case result do
+      case Course.create_project(title, conn.assigns.current_author) do
         {:ok, %{project: project} = results} ->
           redirect conn, to: Routes.project_path(conn, :overview, project)
         {:error, _failed_operation, _failed_value, _changes_before_failure} ->
@@ -67,5 +44,28 @@ defmodule OliWeb.ProjectController do
             |> put_flash(:error, "Could not create project. Please try again")
             |> redirect(to: Routes.workspace_path(conn, :projects, project_title: title))
       end
+  end
+
+  defp fetch_project(conn, _) do
+    case Course.get_project_by_slug(conn.params["project"]) do
+      project -> conn
+        |> assign(:project, project)
+      nil ->
+        conn
+        |> put_flash(:info, "That project does not exist")
+        |> redirect(to: Routes.workspace_path(conn, :projects))
+        |> halt()
+    end
+  end
+
+  defp authorize_project(conn, _) do
+    if Accounts.can_access?(conn.assigns[:current_author], conn.assigns[:project]) do
+      conn
+    else
+      conn
+       |> put_flash(:info, "You don't have access to that project")
+       |> redirect(to: Routes.workspace_path(conn, :projects))
+       |> halt()
+    end
   end
 end
