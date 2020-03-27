@@ -14,13 +14,6 @@ defmodule OliWeb.ProjectController do
     render conn, "curriculum.html", title: "Curriculum", project: project_id, active: :curriculum
   end
 
-  def page(conn, %{"project" => project_id}) do
-    render conn, "page.html", title: "Page", project: project_id, active: :page
-  end
-
-  def resource_editor(conn, %{"project" => project_id}) do
-    render conn, "resource_editor.html", title: "Resource Editor", project: project_id, active: :resource_editor
-  end
 
   def publish(conn, %{"project" => project_id}) do
     render conn, "publish.html", title: "Publish", project: project_id, active: :publish

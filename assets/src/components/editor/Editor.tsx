@@ -143,15 +143,8 @@ export const Editor = (props: EditorProps) => {
     return <span {...attributes}>{markup}</span>;
   }, []);
 
-
-  const border = {
-    border: 'solid lightgray 1px',
-    padding: '4px',
-    paddingRight: gutterWidth + 'px',
-  };
-
   return (
-    <div style={border}>
+    <div>
 
       <Slate
         editor={editor as any}

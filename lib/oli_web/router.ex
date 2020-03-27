@@ -55,8 +55,8 @@ defmodule OliWeb.Router do
     get "/:project/publish", ProjectController, :publish
     get "/:project/insights", ProjectController, :insights
 
-    get "/:project/:page", ProjectController, :page
-    get "/:project/:page/edit", ProjectController, :resource_editor
+    get "/:project/:page", ResourceController, :view
+    get "/:project/:page/edit", ResourceController, :edit
   end
 
   # auth routes, only accessable to guest users who are not logged in

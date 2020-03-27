@@ -2,16 +2,17 @@ defmodule Oli.SectionsTest do
   use Oli.DataCase
 
   alias Oli.Sections
+  
+  alias Oli.Accounts.SystemRole
+  alias Oli.Accounts.Institution
+  alias Oli.Accounts.Author
+  alias Oli.Course.Project
+  alias Oli.Course.Family
+  alias Oli.Publishing.Publication
 
   describe "sections" do
     alias Oli.Sections.Section
 
-    alias Oli.Accounts.SystemRole
-    alias Oli.Accounts.Institution
-    alias Oli.Accounts.Author
-    alias Oli.Course.Project
-    alias Oli.Course.Family
-    alias Oli.Publishing.Publication
 
     @valid_attrs %{end_date: ~D[2010-04-17], open_and_free: true, registration_open: true, start_date: ~D[2010-04-17], time_zone: "some time_zone", title: "some title"}
     @update_attrs %{end_date: ~D[2011-05-18], open_and_free: false, registration_open: false, start_date: ~D[2011-05-18], time_zone: "some updated time_zone", title: "some updated title"}
