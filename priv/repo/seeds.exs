@@ -28,7 +28,7 @@ if !Oli.Repo.get_by(Oli.Accounts.Author, email: System.get_env("ADMIN_EMAIL", "a
   Oli.Repo.insert! %Oli.Accounts.Author{
     email: System.get_env("ADMIN_EMAIL", "admin@oli.cmu.edu"),
     first_name: "Administrator",
-    last_name: "",
+    last_name: "Admin",
     provider: "identity",
     password_hash: Bcrypt.hash_pwd_salt(System.get_env("ADMIN_PASSWORD", "admin")),
     email_verified: true,

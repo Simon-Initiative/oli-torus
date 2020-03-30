@@ -3,8 +3,8 @@ defmodule OliWeb.ProjectController do
   alias Oli.Course
   alias Oli.Accounts
 
-  plug :fetch_project, except: [:create]
-  plug :authorize_project, except: [:create]
+  plug :fetch_project when not action in [:create]
+  plug :authorize_project when not action in [:create]
 
   def overview(conn, %{"project" => project_id}) do
     params = %{title: "Overview", project: project_id, active: :overview}
@@ -35,11 +35,12 @@ defmodule OliWeb.ProjectController do
     render conn, "insights.html", title: "Insights", project: project_id, active: :insights
   end
 
-  def create(conn, %{"project" => %{"title" => title} = project_attrs}) do
+  def create(conn, %{"project" => %{"title" => title} = _project_attrs}) do
       case Course.create_project(title, conn.assigns.current_author) do
-        {:ok, %{project: project} = results} ->
+        {:ok, %{project: project} = _results} ->
           redirect conn, to: Routes.project_path(conn, :overview, project)
         {:error, _failed_operation, _failed_value, _changes_before_failure} ->
+          IO.inspect(_failed_value)
           conn
             |> put_flash(:error, "Could not create project. Please try again")
             |> redirect(to: Routes.workspace_path(conn, :projects, project_title: title))
@@ -48,13 +49,13 @@ defmodule OliWeb.ProjectController do
 
   defp fetch_project(conn, _) do
     case Course.get_project_by_slug(conn.params["project"]) do
-      project -> conn
-        |> assign(:project, project)
       nil ->
         conn
         |> put_flash(:info, "That project does not exist")
         |> redirect(to: Routes.workspace_path(conn, :projects))
         |> halt()
+      project -> conn
+        |> assign(:project, project)
     end
   end
 

@@ -1,21 +1,23 @@
 defmodule Oli.Plugs.Protect do
   import Plug.Conn
   import Phoenix.Controller
+  alias Oli.Plugs.SetCurrentUser
 
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    if conn.assigns[:current_author] do
-      conn
-    else
-      conn = fetch_session(conn)
-      if get_session(conn, :current_author_id) do
-        conn
-      else
-        conn
-          |> redirect(to: OliWeb.Router.Helpers.auth_path(conn, :signin))
-          |> halt()
-      end
+    case conn.assigns[:current_author] do
+      nil ->
+        conn = SetCurrentUser.set_author(fetch_session(conn))
+
+        case conn.assigns.current_author do
+          nil ->
+            conn
+            |> redirect(to: OliWeb.Router.Helpers.auth_path(conn, :signin))
+            |> halt()
+          _ -> conn
+        end
+      _ -> conn
     end
   end
 end

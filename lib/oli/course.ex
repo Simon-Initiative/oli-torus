@@ -62,10 +62,10 @@ defmodule Oli.Course do
     # `insert` takes a changeset in order to create a new row, and `merge` takes a lambda
     # that allows you to access the changesets created in previous Multi calls
     Multi.new
-    |> Multi.insert(:family, Course.default_family(title))
+    |> Multi.insert(:family, default_family(title))
     |> Multi.merge(fn %{family: family} ->
       Multi.new
-      |> Multi.insert(:project, Course.default_project(title, family)) end)
+      |> Multi.insert(:project, default_project(title, family)) end)
     |> Multi.merge(fn %{project: project} ->
       Multi.new
       |> Multi.update(:author, Accounts.author_to_project(author, project))

@@ -17,4 +17,9 @@ defmodule OliWeb.AuthControllerTest do
 
     assert conn.assigns["current_author"] == nil
   end
+
+  describe "log in" do
+    test "redirects to workspace if author has multiple projects"
+    test "redirects to project overview if author only has one project"
+  end
 end

@@ -17,7 +17,7 @@ defmodule Oli.Course.Project do
 
   @doc false
   def changeset(project, attrs \\ %{}) do
-    changeset = project
+    project
       |> cast(attrs, [:title, :slug, :description, :version, :family_id, :project_id])
       |> validate_required([:title, :slug, :version, :family_id])
       |> unique_constraint(:slug)

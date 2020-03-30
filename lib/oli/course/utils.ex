@@ -1,6 +1,5 @@
 defmodule Oli.Course.Utils do
   @chars "abcdefghijklmnopqrstuvwxyz" |> String.split("")
-  @initial_version "1.0.0"
 
   def generate_slug(table, string) do
     unique_slug(
@@ -15,7 +14,7 @@ defmodule Oli.Course.Utils do
     end) |> Enum.join("")
   end
 
-  defp unique_slug(table, "", _suffixes) do "" end
+  defp unique_slug(_table, "", _suffixes) do "" end
   defp unique_slug(table, title, [suffix | remaining]) do
     candidate = title <> suffix
 
@@ -27,7 +26,7 @@ defmodule Oli.Course.Utils do
       {:ok, _results } -> unique_slug(table, title, remaining)
     end
   end
-  defp unique_slug(table, _, []) do "" end
+  defp unique_slug(_table, _, []) do "" end
 
   defp slugify(nil) do "" end
   defp slugify(title) do

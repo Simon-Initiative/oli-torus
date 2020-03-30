@@ -26,11 +26,12 @@ defmodule OliWeb.ProjectControllerTest do
     test "displays the page"
   end
 
-  describe "project:show" do
-    test "displays the page"
-  end
-
-  describe "project:create" do
-    test "creates a project"
+  describe "create a project" do
+    test "creates a new family"
+    test "creates a new project tied to the family"
+    test "associates the currently logged in author with the new project"
+    test "creates a new container resource"
+    test "creates a new resource revision for the container"
+    test "creates a new publication associated with the project and containing the container resource"
   end
 end
