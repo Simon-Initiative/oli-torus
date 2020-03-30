@@ -4,6 +4,10 @@ defmodule Oli.AccountsTest do
   alias Oli.Accounts
   alias Oli.Accounts.Author
 
+  describe "users" do
+    # TODO: Implement tests
+  end
+
   describe "institutions" do
     alias Oli.Accounts.Institution
 

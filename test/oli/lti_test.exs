@@ -3,6 +3,10 @@ defmodule Oli.LtiTest do
 
   alias Oli.Lti
 
+  describe "parse_lti_role" do
+    # TODO: implement me
+  end
+
   describe "nonce_store" do
     alias Oli.Lti.Nonce
 

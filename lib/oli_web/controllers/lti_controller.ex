@@ -62,7 +62,6 @@ defmodule OliWeb.LtiController do
             # sign current user in and redirect to home page
             conn
             |> put_session(:current_user_id, user.id)
-            |> put_session(:context_id, conn.body_params["context_id"])
             |> put_session(:lti_params, conn.body_params)
             |> redirect(to: Routes.delivery_path(conn, :index))
 

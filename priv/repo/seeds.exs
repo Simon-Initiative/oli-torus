@@ -107,15 +107,6 @@ if Mix.env == :dev do
     family_id: family.id,
   })
 
-  {:ok, project} = Oli.Course.create_project(%{
-    description: "An example course for development",
-    slug: UUID.uuid4(),
-    title: "Example Course",
-    version: "1.0",
-    parent_project: nil,
-    family_id: family.id,
-  })
-
   {:ok, resource} = Oli.Resources.create_resource(%{
     slug: UUID.uuid4(),
     project_id: project.id,
