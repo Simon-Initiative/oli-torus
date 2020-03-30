@@ -1,4 +1,5 @@
 import { ModelElement } from './model';
+import guid from 'utils/guid';
 export type ResourceContent = StructuredContent | ActivityReference;
 
 export enum ResourceType {
@@ -21,6 +22,17 @@ export enum ActivityPurpose {
   'simulation' = 'Simulation',
   'walkthrough' = 'Walkthrough',
 }
+
+export const createDefaultStructuredContent = () => {
+  return {
+    type: 'content',
+    id: guid(),
+    children: [
+      { type: 'p', id: guid(), children: [{ text: ' ' }] },
+    ],
+    purpose: ContentPurpose.none,
+  } as StructuredContent;
+};
 
 export interface StructuredContent {
   type: 'content';

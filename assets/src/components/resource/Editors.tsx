@@ -57,8 +57,8 @@ export const Editors = (props: EditorsProps) => {
   });
 
   return (
-    <React.Fragment>
+    <div className="d-flex flex-column flex-grow-1">
       {editors}
-    </React.Fragment>
+    </div>
   );
 };

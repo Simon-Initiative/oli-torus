@@ -148,7 +148,7 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
       <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>
         {buttons}
         <button
-          className="btn btn-secondary btn-sm"
+          className="btn btn-sm"
           style={{ width: '10px' }}
           onMouseDown={(event) => {
             event.preventDefault();
@@ -211,7 +211,7 @@ const ToolbarButton = ({ icon, command }: any) => {
   const editor = useSlate();
   return (
     <button
-      className="btn btn-secondary btn-sm"
+      className="btn btn-sm"
       onMouseDown={(event) => {
         event.preventDefault();
         command.execute(editor);
@@ -239,7 +239,7 @@ const DropdownToolbarButton = ({ icon, command }: any) => {
   return (
     <div ref={ref as any} className="dropdown">
       <button
-          className="btn btn-secondary btn-sm dropdown-toggle"
+          className="btn btn-sm dropdown-toggle"
           data-toggle={'dropdown'}
           type="button">
         <i className={icon}></i>
