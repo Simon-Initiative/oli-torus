@@ -10,5 +10,5 @@ export type EditorDesc = {
 export interface ActivityEditorMap {
 
   // Index signature
-  [prop: string]: Editor;
+  [prop: string]: EditorDesc;
 }

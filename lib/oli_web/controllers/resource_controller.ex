@@ -9,4 +9,8 @@ defmodule OliWeb.ResourceController do
     render conn, "edit.html", title: "Resource Editor", project: project_id, active: :resource_editor
   end
 
+  def update(conn, %{"project" => project_id, "resource" => resource_id }) do
+    json conn, %{ "type" => "success"}
+  end
+
 end
