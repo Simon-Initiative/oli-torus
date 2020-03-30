@@ -41,15 +41,15 @@ defmodule Oli.CourseTest do
       assert Course.get_project!(project.id) == project
     end
 
-    test "create_project/1 with valid data creates a project", %{valid_attrs: valid_attrs} do
-      assert {:ok, %Project{} = project} = Course.create_project(valid_attrs)
+    test "create_empty_project/1 with valid data creates a project", %{valid_attrs: valid_attrs} do
+      assert {:ok, %Project{} = project} = Course.create_empty_project(valid_attrs)
       assert project.description == "some description"
       assert project.slug == "some slug"
       assert project.title == "some title"
     end
 
-    test "create_project/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Course.create_project(@invalid_attrs)
+    test "create_empty_project/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Course.create_empty_project(@invalid_attrs)
     end
 
     test "update_project/2 with valid data updates the project", %{project: project}  do

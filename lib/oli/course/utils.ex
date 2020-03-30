@@ -14,7 +14,7 @@ defmodule Oli.Course.Utils do
     end) |> Enum.join("")
   end
 
-  defp unique_slug(_table, "", _suffixes) do "" end
+  defp unique_slug(_table, "", _suffixes), do: ""
   defp unique_slug(table, title, [suffix | remaining]) do
     candidate = title <> suffix
 
@@ -28,8 +28,6 @@ defmodule Oli.Course.Utils do
   end
   defp unique_slug(_table, _, []) do "" end
 
-  defp slugify(nil) do "" end
-  defp slugify(title) do
-    String.downcase(title, :default) |> String.replace(" ", "_")
-  end
+  defp slugify(nil), do: ""
+  defp slugify(title), do: String.downcase(title, :default) |> String.replace(" ", "_")
 end

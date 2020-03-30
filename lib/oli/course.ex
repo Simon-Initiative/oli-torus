@@ -43,17 +43,17 @@ defmodule Oli.Course do
   def get_project!(id), do: Repo.get!(Project, id)
   def get_project_by_slug(slug), do: Repo.get_by(Project, slug: slug)
 
+  @doc "Only for testing PRoject changeset and database transaction logic.
+  Use `create_project` for application use"
+  def create_empty_project(attrs \\ %{}) do
+    %Project{}
+    |> Project.changeset(attrs)
+    |> Repo.insert()
+  end
+
   @doc """
-  Creates a project.
-
-  ## Examples
-
-      iex> create_project(%{field: value})
-      {:ok, %Project{}}
-
-      iex> create_project(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
+  Creates a project tied to an author.
+  create_project(title : string, author : Author)
   """
   def create_project(title, author) do
     # Here's how this works:
@@ -77,7 +77,7 @@ defmodule Oli.Course do
     |> Repo.transaction
   end
 
-  def default_project(title, family) do
+  defp default_project(title, family) do
     %Project{}
       |> Project.changeset(%{
         title: title,
