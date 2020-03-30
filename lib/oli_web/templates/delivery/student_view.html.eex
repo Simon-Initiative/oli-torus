@@ -1,1 +1,30 @@
-<h2>Student</h2>
+<% # FIXME: Decide on final ui and remove %>
+<pre class="text-center">### UI BELOW IS FOR EXAMPLE PURPOSES AND IS SUBJECT TO CHANGE ###</pre>
+
+<div class="my-3">
+  <h3><%= @section.title %></h3>
+  <p class="text-secondary"><%= @section.publication.description %></p>
+
+  <p class="course-stats mt-4">
+    <div class="d-flex flex-row">
+      <div>Progress:</div>
+      <div class="flex-fill"></div>
+      <div>75% Complete</div>
+    </div>
+    <%= render "_progress_bar.html" %>
+
+    <div class="my-3 d-flex flex-row">
+      <div class="flex-1"></div>
+      <div class="flex-1 text-center">
+        <a href="<%= Routes.delivery_path(@conn, :index) %>" target="_blank" class="btn btn-primary">Continue Course <i class="fa fa-arrow-right"></i></a>
+      </div>
+      <div class="flex-1 text-right"></div>
+    </div>
+  </p>
+
+  <hr class="my-4"/>
+
+  <h5>Course Outline</h5>
+  <%= render "_course_outline.html" %>
+  </div>
+</div>

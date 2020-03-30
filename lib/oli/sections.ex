@@ -49,7 +49,7 @@ defmodule Oli.Sections do
       { :error, changeset }
 
   """
-  def get_section_by(clauses), do: Repo.get_by(Section, clauses)
+  def get_section_by(clauses), do: Repo.get_by(Section, clauses) |> Repo.preload([:publication, :project])
 
   @doc """
   Creates a section.

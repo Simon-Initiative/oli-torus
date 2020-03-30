@@ -19,6 +19,15 @@
   }
 </style>
 
+<script>
+$(function() {
+  $('#link-account').on('click', function linkAccountClick() {
+    console.log('clicked!')
+    $('.configure-section').html('<h4>Please reload your browser</h4>');
+  });
+})
+</script>
+
 <div class="configure-section mt-5">
   <h3>Getting Started</h3>
   <p class="mt-3">
@@ -28,7 +37,7 @@
   </p>
 
   <div class="card-deck mt-5">
-    <a href="<%= Routes.delivery_path(@conn, :link_account) %>" class="card btn-card">
+    <a id="link-account" href="<%= Routes.delivery_path(@conn, :link_account) %>" target="_blank" class="card btn-card">
       <%# <img class="card-img-top" src=".../100px180/" alt="Card image cap"> %>
       <div class="card-body">
         <h5 class="card-title">Link an Existing Account</h5>

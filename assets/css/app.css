@@ -68,3 +68,7 @@ nav.navbar .user img {
 .btn-primary:active {
   background-color: black;
 }
+
+.flex-1 {
+  flex: 1;
+}
