@@ -133,7 +133,7 @@ defmodule OliWeb.AuthController do
     author = Repo.preload(author, [:projects])
 
     case length author.projects do
-      1 -> Routes.project_path conn, :overview, hd author.projects
+      1 -> Routes.project_path conn, :overview, (hd author.projects).slug
       _ -> Routes.workspace_path conn, :projects
     end
   end

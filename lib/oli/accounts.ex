@@ -103,6 +103,13 @@ defmodule Oli.Accounts do
         select: count(assoc)) != 0
   end
 
+  def project_author_count(project) do
+    Repo.one(
+      from assoc in "authors_projects",
+        where: assoc.project_id == ^project.id,
+        select: count(assoc))
+  end
+
   alias Oli.Accounts.Institution
 
   @doc """

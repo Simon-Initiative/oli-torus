@@ -40,7 +40,6 @@ defmodule OliWeb.ProjectController do
         {:ok, %{project: project} = _results} ->
           redirect conn, to: Routes.project_path(conn, :overview, project)
         {:error, _failed_operation, _failed_value, _changes_before_failure} ->
-          IO.inspect(_failed_value)
           conn
             |> put_flash(:error, "Could not create project. Please try again")
             |> redirect(to: Routes.workspace_path(conn, :projects, project_title: title))

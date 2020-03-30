@@ -22,7 +22,10 @@ defmodule Oli.TestHelpers do
     author
   end
 
+  def make_n_projects(0, _author), do: []
   def make_n_projects(n, author) do
-    Enum.map 1..n, fn _ -> Course.create_project("test project", author) end
+    1..n
+      |> Enum.map(fn _ -> Course.create_project("test project", author) end)
+      |> Enum.map(fn {:ok, %{project: project}} -> project end)
   end
 end
