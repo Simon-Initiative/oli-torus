@@ -1,5 +1,6 @@
 defmodule Oli.TestHelpers do
   alias Oli.Repo
+  alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Lti.HmacSHA1
   import Oli.Utils
@@ -13,7 +14,7 @@ defmodule Oli.TestHelpers do
         last_name: "Stark",
         token: "2u9dfh7979hfd",
         provider: "google",
-        system_role_id: 1,
+        system_role_id: Accounts.SystemRole.role_id.author,
       })
 
     {:ok, author} =
@@ -21,6 +22,110 @@ defmodule Oli.TestHelpers do
       |> Repo.insert()
 
     author
+  end
+
+  def institution_fixture(attrs \\ %{}) do
+    params =
+      attrs
+      |> Enum.into(%{
+        country_code: "US",
+        institution_email: "institution@example.edu",
+        institution_url: "institution.example.edu",
+        name: "Example Institution",
+        timezone: "US/Eastern",
+        consumer_key: "test-consumer-key",
+        shared_secret: "test-secret",
+      })
+
+    {:ok, institution} = Accounts.create_institution(params)
+
+    institution
+  end
+
+  def package_fixture(author_id \\ 1, attrs \\ []) do
+    {:ok, family} = Oli.Course.create_family(
+      Keyword.get(attrs, :family, %{})
+      |> Enum.into(%{
+        description: "An example course for development",
+        slug: "example-course",
+        title: "Example Course",
+      })
+    )
+
+    {:ok, project} = Oli.Course.create_project(
+      Keyword.get(attrs, :project, %{})
+      |> Enum.into(%{
+        description: "An example course for development",
+        slug: UUID.uuid4(),
+        title: "Example Course",
+        version: "1.0",
+        parent_project: nil,
+        family_id: family.id,
+      })
+    )
+
+    {:ok, resource} = Oli.Resources.create_resource(
+      Keyword.get(attrs, :resource, %{})
+      |> Enum.into(%{
+        slug: UUID.uuid4(),
+        project_id: project.id,
+      })
+    )
+
+    {:ok, objective} = Oli.Learning.create_objective(
+        Keyword.get(attrs, :objective, %{})
+        |> Enum.into(%{
+        slug: UUID.uuid4(),
+        project_id: project.id,
+      })
+    )
+
+    {:ok, objective_revision} = Oli.Learning.create_objective_revision(
+        Keyword.get(attrs, :objective_revision, %{})
+        |> Enum.into(%{
+        title: "Example Objective",
+        children: [],
+        objective_id: objective.id,
+        previous_revision_id: nil,
+      })
+    )
+
+    resource_revision_content = Keyword.get(attrs, :resource_revision_content, %{}) |> Enum.into(%{})
+
+    {:ok, resource_revision} = Oli.Resources.create_resource_revision(
+        Keyword.get(attrs, :resource_revision, %{})
+        |> Enum.into(%{
+        children: [],
+        content: [resource_revision_content],
+        objectives: [objective.id],
+        slug: UUID.uuid4(),
+        title: "Example Page",
+        author_id: author_id,
+        resource_id: resource.id,
+        previous_revision_id: nil,
+        resource_type_id: 1,
+      })
+    )
+
+    {:ok, publication} = Oli.Publishing.create_publication(
+        Keyword.get(attrs, :publication, %{})
+        |> Enum.into(%{
+        description: "An example course for development",
+        published: true,
+        root_resources: [resource.id],
+        project_id: project.id,
+      })
+    )
+
+    %{
+      family: family,
+      project: project,
+      resource: resource,
+      objective: objective,
+      objective_revision: objective_revision,
+      resource_revision: resource_revision,
+      publication: publication,
+    }
   end
 
   def url_from_conn(conn) do
@@ -31,14 +136,14 @@ defmodule Oli.TestHelpers do
     "#{scheme}://#{conn.host}#{port}/lti/basic_launch"
   end
 
-  def build_lti_request(req_url, shared_secret, nonce) do
-    lti_params = %{
-      "oauth_consumer_key" => "60dc6375-5eeb-4475-8788-fb69e32153b6",
+  def build_lti_request(req_url, shared_secret, attrs \\ %{}) do
+    lti_params = attrs |> Enum.into(%{
+      "oauth_consumer_key" => "test-consumer-key",
       "oauth_signature_method" => "HMAC-SHA1",
       "oauth_timestamp" => DateTime.utc_now() |> DateTime.to_unix() |> Integer.to_string,
-      "oauth_nonce" => nonce,
+      "oauth_nonce" => random_string(16),
       "oauth_version" => "1.0",
-      "context_id" => "4dde05e8ca1973bcca9bffc13e1548820eee93a3",
+      "context_id" => "some-context-id",
       "context_label" => "Torus",
       "context_title" => "Torus Test",
       "ext_roles" => "urn:lti:instrole:ims/lis/Student,urn:lti:role:ims/lis/Learner,urn:lti:sysrole:ims/lis/User",
@@ -62,7 +167,7 @@ defmodule Oli.TestHelpers do
       "tool_consumer_instance_name" => "OLI Canvas Admin",
       "user_id" => "dc86d3e58c1025af0b2cce49205ad2cb1019d546",
       "user_image" => "https://canvas.oli.cmu.edu/images/messages/avatar-50.png",
-    }
+    })
 
     oauth_signature = HmacSHA1.build_signature(
       req_url,

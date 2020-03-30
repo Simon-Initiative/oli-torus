@@ -1,39 +1,59 @@
 defmodule OliWeb.DeliveryControllerTest do
   use OliWeb.ConnCase
 
-  alias Oli.Repo
   alias Oli.Accounts
-  alias Oli.Accounts.Author
 
-  describe "delivery_controller" do
+  describe "delivery_controller index" do
     setup [:setup_session]
 
-    test "index handles student with no section", %{conn: conn} do
+    test "handles student with no section", %{conn: conn} do
       conn = conn
       |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~ "Your instructor has not configured this course section. Please check back soon."
     end
 
+    test "handles student with section", %{conn: conn, project: project, lti_params: lti_params, publication: publication} do
+      conn = conn
+      |> post(Routes.delivery_path(conn, :create_section, %{ project_id: project.id, publication_id: publication.id }))
+      |> get(Routes.delivery_path(conn, :index))
+
+      assert html_response(conn, 200) =~ "<h3>#{lti_params["context_title"]}</h3>"
+    end
+
+    test "handles instructor with no linked account", %{conn: conn, user: user} do
+      {:ok, _user} = Accounts.update_user(user, %{roles: "Instructor"})
+      conn = conn
+      |> get(Routes.delivery_path(conn, :index))
+
+      assert html_response(conn, 200) =~ "<h3>Getting Started</h3>"
+      assert html_response(conn, 200) =~ "Link an Existing Account"
+    end
+
+    test "handles instructor with no section", %{conn: conn, user: user} do
+      {:ok, _user} = Accounts.update_user(user, %{author_id: 1, roles: "Instructor"})
+      conn = conn
+      |> get(Routes.delivery_path(conn, :index))
+
+      assert html_response(conn, 200) =~ "<h3>Select a Project</h3>"
+    end
+
+    test "handles instructor with section", %{conn: conn, project: project, lti_params: lti_params, user: user, publication: publication} do
+      {:ok, _user} = Accounts.update_user(user, %{author_id: 1, roles: "Instructor"})
+      conn = conn
+      |> post(Routes.delivery_path(conn, :create_section, %{ project_id: project.id, publication_id: publication.id }))
+      |> get(Routes.delivery_path(conn, :index))
+
+      assert html_response(conn, 200) =~ "<h3>#{lti_params["context_title"]}"
+      assert html_response(conn, 200) =~ "Edit Course</a>"
+    end
+
   end
 
-  @institution_attrs %{
-    country_code: "some country_code",
-    institution_email: "some institution_email",
-    institution_url: "some institution_url",
-    name: "some name",
-    timezone: "some timezone",
-    consumer_key: "60dc6375-5eeb-4475-8788-fb69e32153b6",
-    shared_secret: "6BCF251D1C1181C938BFA91896D4BE9B",
-  }
-
   defp setup_session(%{conn: conn}) do
-    {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: Accounts.SystemRole.role_id.author}) |> Repo.insert
-    institution_attrs = Map.put(@institution_attrs, :author_id, author.id)
-
-    {:ok, institution} = institution_attrs |> Accounts.create_institution()
-
-    lti_params = build_lti_request(url_from_conn(conn), "some-secret", "some-nonce")
+    author = author_fixture()
+    institution = institution_fixture(%{ author_id: author.id })
+    lti_params = build_lti_request(url_from_conn(conn), "some-secret")
 
     {:ok, lti_tool_consumer} = Accounts.insert_or_update_lti_tool_consumer(%{
       info_product_family_code: lti_params["tool_consumer_info_product_family_code"],
@@ -54,10 +74,20 @@ defmodule OliWeb.DeliveryControllerTest do
       institution_id: institution.id,
     })
 
+    %{ project: project, publication: publication } = package_fixture()
+
     conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
       |> put_session(:current_user_id, user.id)
       |> put_session(:lti_params, lti_params)
 
-    {:ok, conn: conn, author: author, institution: institution}
+    {:ok,
+      conn: conn,
+      author: author,
+      institution: institution,
+      lti_params: lti_params,
+      user: user,
+      project: project,
+      publication: publication,
+    }
   end
 end

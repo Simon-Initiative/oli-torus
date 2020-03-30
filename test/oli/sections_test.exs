@@ -52,10 +52,12 @@ defmodule Oli.SectionsTest do
       assert Sections.get_section!(section.id) == section
     end
 
-    test "get_section_by!/1 returns the section and preloaded associations using the criteria", %{section: _section} do
-      # TODO: implement me
+    test "get_section_by!/1 returns the section and preloaded associations using the criteria", %{section: section} do
+      found_section = Sections.get_section_by(context_id: section.context_id)
+      assert found_section.id == section.id
+      {%Project{} = _project} = {found_section.project}
+      {%Publication{} = _publication} = {found_section.publication}
     end
-
 
     test "create_section/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} = Sections.create_section(@invalid_attrs)

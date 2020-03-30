@@ -89,6 +89,8 @@ tbody tr {
       </table>
     </div>
     <div class="text-center">
+      <%= hidden_input f, "project_id", value: "1" %>
+      <%= hidden_input f, "publication_id", value: "1" %>
       <%= submit "Select and Continue", class: "btn btn-primary" %>
     </div>
   </div>
