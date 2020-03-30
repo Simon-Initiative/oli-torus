@@ -35,6 +35,6 @@
 
 <div id="header">
   <span class="title"><%= @title %></span>
-  <span class="project"><%= @project %> <i class="material-icons">arrow_drop_down</i></span>
+  <span class="project"><%= @project.title %> <i class="material-icons">arrow_drop_down</i></span>
   <span class="preview"><i class="material-icons">ondemand_video</i></span>
 </div>
