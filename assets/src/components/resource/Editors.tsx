@@ -50,7 +50,6 @@ export const Editors = (props: EditorsProps) => {
 
   const editors = content.map((c, i) => {
     const onEdit = (updatedComponent : ResourceContent) => {
-      console.log(content.get(0));
       const updated = content.set(i, updatedComponent);
       props.onEdit(updated);
     };

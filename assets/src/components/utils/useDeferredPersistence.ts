@@ -39,11 +39,28 @@ function usePrevious(value: any) {
   return ref.current;
 }
 
+const useBeforeUnload = (
+  project: ProjectId, resource: ResourceId, status: PersistenceState, pending: any) => {
+
+  const handleBeforeunload = (evt: BeforeUnloadEvent) => {
+    if (status.type === 'Pending') {
+      issueSaveRequest(project, resource, pending);
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener('beforeunload', handleBeforeunload);
+    return () => window.removeEventListener('beforeunload', handleBeforeunload);
+  }, [status, pending]);
+};
+
+
 export function useDeferredPersistence(
   project: ProjectId, resource: ResourceId, content: Immutable.List<any>) {
 
   const [status, setStatus] = useState({ type: 'Idle' } as PersistenceState);
   const [pending, setPending] = useState(content);
+  useBeforeUnload(project, resource, status, pending);
 
   const previous = usePrevious(status);
   useEffect(() => {

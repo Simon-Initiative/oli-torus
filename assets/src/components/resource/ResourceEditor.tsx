@@ -23,8 +23,6 @@ export type ResourceEditorProps = {
 // The resource editor
 export const ResourceEditor = (props: ResourceEditorProps) => {
 
-  // const [content, setContent] = useState(Immutable.List<ResourceContent>(props.content));
-
   const { projectId, resourceId, content } = props;
 
   const lock = useLock(props.projectId, props.resourceId);
@@ -40,12 +38,12 @@ export const ResourceEditor = (props: ResourceEditorProps) => {
     return (
       <div>
         <p>{status.type}</p>
-      <div className="d-flex flex-row align-items-baseline">
-        <Outline {...props} editMode={lock.editMode}
-          onEdit={c => onEdit(c)} content={state}/>
-        <Editors {...props} editMode={lock.editMode}
-          onEdit={c => onEdit(c)} content={state}/>
-      </div>
+        <div className="d-flex flex-row align-items-baseline">
+          <Outline {...props} editMode={lock.editMode}
+            onEdit={c => onEdit(c)} content={state}/>
+          <Editors {...props} editMode={lock.editMode}
+            onEdit={c => onEdit(c)} content={state}/>
+        </div>
       </div>
     );
   }

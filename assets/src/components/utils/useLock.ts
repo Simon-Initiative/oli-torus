@@ -40,7 +40,10 @@ export function useLock(project: ProjectId, resource: ResourceId) {
         setLock(suceeded);
 
         window.addEventListener('beforeunload', (event) => {
-          Lock.releaseLock(project, resource);
+          // Wait a second before releasing lock. This is a bit of a hack
+          // solution to guarantee that a deferred save is handled before
+          // the lock is released
+          setTimeout(() => Lock.releaseLock(project, resource), 1000);
         });
 
       } else if (result.type === 'failure') {
