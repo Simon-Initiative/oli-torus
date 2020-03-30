@@ -1,6 +1,7 @@
 <style>
 .container {
   flex-grow: 1;
+  flex-wrap: wrap;
   margin: 0;
   padding: 48px;
 }

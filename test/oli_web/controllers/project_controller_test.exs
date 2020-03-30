@@ -61,8 +61,8 @@ defmodule OliWeb.ProjectControllerTest do
       {:ok, %{transaction: transaction}}
     end
 
-    test "creates a new family", %{transaction: transaction} do
-      assert !is_nil(transaction.family)
+    test "creates a new family", %{transaction: %{family: family}} do
+      assert !is_nil(family)
     end
 
     test "creates a new project tied to the family", %{transaction: %{project: project, family: family}} do
