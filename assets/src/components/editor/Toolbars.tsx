@@ -54,7 +54,6 @@ export const HoveringToolbar = () => {
 
   useEffect(() => {
     const el = ref.current as any;
-    console.log('toolbar effect');
     if (!el) {
       return;
     }
@@ -62,7 +61,6 @@ export const HoveringToolbar = () => {
     if (shouldHideToolbar(editor)) {
       hideToolbar(el);
     } else {
-      console.log('position it');
       positionHovering(el);
       showToolbar(el);
     }

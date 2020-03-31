@@ -1,10 +1,9 @@
 import React, { useMemo, useCallback, KeyboardEvent } from 'react';
 import { Slate, Editable, withReact, ReactEditor } from 'slate-react';
 import { createEditor, Node, NodeEntry, Range, Editor as SlateEditor, Transforms, Path } from 'slate';
-import { withHistory } from 'slate-history';
 import { create, Mark, ModelElement, schema, Paragraph, SchemaConfig } from 'data/content/model';
 import { editorFor, markFor } from './editors';
-import { ToolbarItem, gutterWidth } from './interfaces';
+import { ToolbarItem } from './interfaces';
 import { FixedToolbar, HoveringToolbar } from './Toolbars';
 import { onKeyDown as listOnKeyDown } from './editors/Lists';
 import { onKeyDown as quoteOnKeyDown } from './editors/Blockquote';
@@ -143,9 +142,6 @@ export const Editor = (props: EditorProps) => {
     return <span {...attributes}>{markup}</span>;
   }, []);
 
-  console.log('editor render');
-  console.log(props.editMode);
-
   return (
     <div>
 
@@ -159,7 +155,6 @@ export const Editor = (props: EditorProps) => {
         <HoveringToolbar />
 
         <Editable
-          readOnly={!props.editMode}
           renderElement={renderElement}
           renderLeaf={renderLeaf}
           placeholder="Enter some text..."

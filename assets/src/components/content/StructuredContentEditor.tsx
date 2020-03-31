@@ -16,7 +16,6 @@ export const StructuredContentEditor = (props: StructuredContentEditor) => {
   const { content, toolbarItems, editMode } = props;
 
   const onEdit = (children: any) => {
-    console.log('edit')
     const updated = Object.assign({}, content, { children });
     props.onEdit(updated);
   };
