@@ -49,9 +49,7 @@ const voidOnKeyDown = (editor: ReactEditor, e: KeyboardEvent) => {
 
 export const Editor = (props: EditorProps) => {
 
-  const editor = useMemo(() => withHistory(
-    withReact(createEditor()))
-    , []);
+  const editor = useMemo(() => withReact(createEditor()), []);
 
   // Override isVoid to incorporate our schema's opinion on which
   // elements are void
@@ -144,6 +142,9 @@ export const Editor = (props: EditorProps) => {
         .reduce((m, k) => k !== 'text' ? markFor(k as Mark, m) : m, children);
     return <span {...attributes}>{markup}</span>;
   }, []);
+
+  console.log('editor render');
+  console.log(props.editMode);
 
   return (
     <div>

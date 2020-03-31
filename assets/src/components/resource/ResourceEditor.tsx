@@ -1,5 +1,5 @@
 import * as Immutable from 'immutable';
-import React, { useState } from 'react';
+import React, { useState, useReducer } from 'react';
 import { ResourceContent, ResourceType } from 'data/content/resource';
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
@@ -10,6 +10,7 @@ import { Outline } from './Outline';
 import { TitleBar } from './TitleBar';
 import { ProjectId, ResourceId } from 'data/types';
 import { makeRequest } from 'data/persistence/common';
+import { undoReducer, undo, redo, update, UndoState } from './undo';
 
 export type ResourceEditorProps = {
   resourceType: ResourceType,     // Page or assessment?
@@ -36,16 +37,22 @@ function issueSaveRequest(project: ProjectId, resource: ResourceId, body: any) {
 // The resource editor
 export const ResourceEditor = (props: ResourceEditorProps) => {
 
-  const { projectId, resourceId, content, editorMap } = props;
+  const { projectId, resourceId, editorMap } = props;
 
-  const lock = useLock(props.projectId, props.resourceId);
-  const [state, setState] = useState(Immutable.List<ResourceContent>(content));
-  const status = useDeferredPersistence(
-    issueSaveRequest.bind(undefined, projectId, resourceId), state);
   const [title, setTitle] = useState(props.title);
+  const lock = useLock(props.projectId, props.resourceId);
+
+  const [state, dispatch] = useReducer(undoReducer, {
+    current: Immutable.List<ResourceContent>(props.content),
+    undoStack: Immutable.Stack<Immutable.List<ResourceContent>>(),
+    redoStack: Immutable.Stack<Immutable.List<ResourceContent>>(),
+  } as UndoState);
+
+  const status = useDeferredPersistence(
+    issueSaveRequest.bind(undefined, projectId, resourceId), state.current);
 
   const onEdit = (content: Immutable.List<ResourceContent>) => {
-    setState(content);
+    dispatch(update(content));
   };
 
   const onTitleEdit = (title: string) => {
@@ -53,11 +60,15 @@ export const ResourceEditor = (props: ResourceEditorProps) => {
     issueSaveRequest(projectId, resourceId, { title });
   };
 
-  const onAddItem = (c : ResourceContent) => setState(state.push(c));
+  const onAddItem = (c : ResourceContent) => dispatch(update(state.current.push(c)));
 
   return (
     <div>
       <TitleBar
+        onUndo={() => dispatch(undo())}
+        onRedo={() => dispatch(redo())}
+        canUndo={state.undoStack.size > 0}
+        canRedo={state.redoStack.size > 0}
         title={title}
         onTitleEdit={onTitleEdit}
         onAddItem={onAddItem}
@@ -67,13 +78,13 @@ export const ResourceEditor = (props: ResourceEditorProps) => {
       <div className="d-flex flex-row align-items-baseline">
         {
         // We only show the outline if there is more than one content element in the resource
-        state.size > 1
+        state.current.size > 0
           ? <Outline {...props} editMode={lock.editMode}
-          onEdit={c => onEdit(c)} content={state}/>
+          onEdit={c => onEdit(c)} content={state.current}/>
           : null
         }
         <Editors {...props} editMode={lock.editMode}
-          onEdit={c => onEdit(c)} content={state}/>
+          onEdit={c => onEdit(c)} content={state.current}/>
       </div>
     </div>
   );

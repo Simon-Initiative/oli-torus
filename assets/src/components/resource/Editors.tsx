@@ -34,6 +34,7 @@ export const Editors = (props: EditorsProps) => {
     if (content.type === 'content') {
       return (
         <ResourceContentFrame
+          key={content.id}
           allowRemoval={contentSize > 1} editMode={editMode} label="Content" onRemove={onRemove}>
           <StructuredContentEditor
             key={content.id}
@@ -62,6 +63,7 @@ export const Editors = (props: EditorsProps) => {
 
     return (
       <ResourceContentFrame
+        key={content.id}
         allowRemoval={contentSize > 1}
         editMode={editMode}
         label={editor.friendlyName}

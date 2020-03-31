@@ -10,12 +10,16 @@ export type TitleBarProps = {
   editMode: boolean,              // Whether or not the user is editing
   onTitleEdit: (title: string) => void;
   onAddItem: (content: ResourceContent) => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
 };
 
 // The resource editor
 export const TitleBar = (props: TitleBarProps) => {
 
-  const { editMode, title, onTitleEdit, onAddItem } = props;
+  const { editMode, title, onTitleEdit, onAddItem, canUndo, canRedo } = props;
 
   const onAddContent = () => onAddItem(createDefaultStructuredContent());
 
@@ -25,16 +29,25 @@ export const TitleBar = (props: TitleBarProps) => {
         <TextEditor
           onEdit={onTitleEdit} model={title} showAffordances={true} editMode={editMode}/>
       </div>
-      <div className="">
-        <div className="dropdown">
-          <button className={`btn dropdown-toggle ${editMode ? '' : 'disabled'}`} type="button"
-            id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            +
-          </button>
-          <div className="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
-            <a className="dropdown-item" onClick={onAddContent}>Content</a>
-            <a className="dropdown-item disabled" href="#">Multiple Choice</a>
-            <a className="dropdown-item disabled" href="#">Short Answer</a>
+
+      <div className="btn-group btn-group-sm" role="group" aria-label="Undo redo creation">
+        <button className={`btn ${canUndo ? '' : 'disabled'}`} type="button" onClick={props.onUndo}>
+          <span><i className="fas fa-undo"></i></span>
+        </button>
+        <button className={`btn ${canRedo ? '' : 'disabled'}`} type="button" onClick={props.onRedo}>
+        <span><i className="fas fa-redo"></i></span>
+        </button>
+        <div className="">
+          <div className="dropdown">
+            <button className={`btn dropdown-toggle ${editMode ? '' : 'disabled'}`} type="button"
+              id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              +
+            </button>
+            <div className="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+              <a className="dropdown-item" onClick={onAddContent}>Content</a>
+              <a className="dropdown-item disabled" href="#">Multiple Choice</a>
+              <a className="dropdown-item disabled" href="#">Short Answer</a>
+            </div>
           </div>
         </div>
       </div>
