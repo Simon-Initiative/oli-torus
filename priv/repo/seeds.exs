@@ -141,8 +141,8 @@ if Mix.env == :dev do
   {:ok, _publication} = Oli.Publishing.create_publication(%{
     description: "An example course for development",
     published: true,
+    open_and_free: true,
     root_resources: [resource.id],
     project_id: project.id,
   })
-
 end

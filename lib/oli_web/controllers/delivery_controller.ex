@@ -15,8 +15,9 @@ defmodule OliWeb.DeliveryController do
         render(conn, "student_view.html", section: section)
       {role, nil, nil} when role == :administrator or role == :instructor ->
         render(conn, "getting_started.html")
-      {role, _author, nil} when role == :administrator or role == :instructor ->
-        render(conn, "configure_section.html")
+      {role, author, nil} when role == :administrator or role == :instructor ->
+        publications = Oli.Publishing.available_publications(author)
+        render(conn, "configure_section.html", publications: publications)
       {role, _author, section} when role == :administrator or role == :instructor ->
         render(conn, "instructor_view.html", section: section)
     end
@@ -41,18 +42,18 @@ defmodule OliWeb.DeliveryController do
     |> render("signin.html", assigns)
   end
 
-  def create_section(conn, %{ "project_id" => project_id, "publication_id" => publication_id}) do
+  def create_section(conn, %{"publication_id" => publication_id}) do
     lti_params = get_session(conn, :lti_params)
     user = conn.assigns.current_user
     institution = Oli.Accounts.get_institution!(user.institution_id)
+    publication = Oli.Publishing.get_publication!(publication_id)
 
     Oli.Sections.create_section(%{
       time_zone: institution.timezone,
       title: lti_params["context_title"],
       context_id: lti_params["context_id"],
       institution_id: user.institution_id,
-      # TODO: change project_id and publication_id to dynamic selection from conn body_params
-      project_id: project_id,
+      project_id: publication.project_id,
       publication_id: publication_id,
     })
 

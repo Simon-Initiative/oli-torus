@@ -4,7 +4,21 @@ tbody tr {
 }
 </style>
 
-<%= form_for @conn, Routes.delivery_path(@conn, :create_section), fn f -> %>
+<script>
+$(function() {
+  $('input[name="publication_id"]').on('change', function() {
+    $('input[name="publication_id"]').not(this).prop('checked', false);
+
+    if ($('input[name="publication_id"]:checked').length > 0) {
+      $('#select-submit').prop('disabled', false);
+    } else {
+      $('#select-submit').prop('disabled', true);
+    }
+  });
+})
+</script>
+
+<%= form_for @conn, Routes.delivery_path(@conn, :create_section), fn _f -> %>
   <div class="text-center">
     <h3>Select a Project</h3>
     <p class="mt-3">
@@ -15,35 +29,33 @@ tbody tr {
     <%= if @current_user.author != nil do %>
       <div class="my-5">
         <h4>My Projects</h4>
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th scope="col" style="width: 5%"></th>
-              <th scope="col" style="width: 35%">Title</th>
-              <th scope="col" style="width: 10%">Version</th>
-              <th scope="col" style="width: 20%">Owner</th>
-              <th scope="col" style="width: 20%">Date Published</th>
-              <th scope="col" style="width: 10%"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><input type="checkbox" ></td>
-              <td>Algebra 2</td>
-              <td>1.0</td>
-              <td>Me</td>
-              <td>About a week ago</td>
-              <td><a href="#">Details</a></td>
-            </tr>
-          </tbody>
-        </table>
+        <%= if @publications |> Enum.filter(fn p -> !p.open_and_free end) |> Enum.count > 1 do %>
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th scope="col" style="width: 5%"></th>
+                <th scope="col" style="width: 50%">Title</th>
+                <th scope="col" style="width: 15%">Version</th>
+                <th scope="col" style="width: 30%">Date Published</th>
+              </tr>
+            </thead>
+            <tbody>
+              <%= for pub <- @publications |> Enum.filter(fn p -> !p.open_and_free end) do %>
+                <tr>
+                  <td><input type="checkbox" ></td>
+                  <td><%= pub.project.title %></td>
+                  <td><%= pub.project.version %></td>
+                  <td><%= format_datetime(pub.inserted_at) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% else %>
+          <p class="my-3 text-center text-secondary">
+          You have not published any projects
+          </p>
+        <% end %>
         </div>
-
-        <div class="my-5">
-        <h4>My Institution</h4>
-        <p class="my-3 text-center text-secondary">
-        Your institution has not published any shared projects
-        </p>
       </div>
     <% end %>
 
@@ -53,45 +65,25 @@ tbody tr {
         <thead>
           <tr>
             <th scope="col" style="width: 5%"></th>
-            <th scope="col" style="width: 35%">Title</th>
-            <th scope="col" style="width: 10%">Version</th>
-            <th scope="col" style="width: 20%">Owner</th>
-            <th scope="col" style="width: 20%">Date Published</th>
-            <th scope="col" style="width: 10%"></th>
+            <th scope="col" style="width: 50%">Title</th>
+            <th scope="col" style="width: 15%">Version</th>
+            <th scope="col" style="width: 30%">Date Published</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td><input type="checkbox" ></td>
-            <td>Algebra</td>
-            <td>2.2</td>
-            <td>Mindy Forster</td>
-            <td>June 13, 2017</td>
-            <td><a href="#">Details</a></td>
-          </tr>
-          <tr>
-            <td><input type="checkbox" ></td>
-            <td>Chemistry</td>
-            <td>1.0</td>
-            <td>Clay Faulkner</td>
-            <td>April 22, 2019</td>
-            <td><a href="#">Details</a></td>
-          </tr>
-          <tr>
-            <td><input type="checkbox" ></td>
-            <td>Multivariable Calculus</td>
-            <td>4.1</td>
-            <td>Mischa Riggs</td>
-            <td>Augut 26, 2019</td>
-            <td><a href="#">Details</a></td>
-          </tr>
+          <%= for pub <- @publications |> Enum.filter(fn p -> p.open_and_free end) do %>
+            <tr>
+              <td><input type="checkbox" name="publication_id" value="<%= pub.id %>"></td>
+              <td><%= pub.project.title %></td>
+              <td><%= pub.project.version %></td>
+              <td><%= format_datetime(pub.inserted_at) %></td>
+            </tr>
+          <% end %>
         </tbody>
       </table>
     </div>
     <div class="text-center">
-      <%= hidden_input f, "project_id", value: "1" %>
-      <%= hidden_input f, "publication_id", value: "1" %>
-      <%= submit "Select and Continue", class: "btn btn-primary" %>
+      <%= submit "Select and Continue", id: "select-submit", class: "btn btn-primary", disabled: true %>
     </div>
   </div>
 <% end %>
