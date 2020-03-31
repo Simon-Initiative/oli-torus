@@ -1,7 +1,8 @@
+import React from 'react';
 
 export type EditorDesc = {
-  deliveryElement: string;
-  authoringElement: string;
+  deliveryElement: string | React.FunctionComponent;
+  authoringElement: string | React.FunctionComponent;
   icon: string;
   description: string;
   friendlyName: string;

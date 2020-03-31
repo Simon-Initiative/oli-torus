@@ -15,7 +15,7 @@ export type ResourceEditorProps = {
 export const Outline = (props: ResourceEditorProps) => {
 
   const { editorMap, editMode } = props;
-  const [content, setContent] = useState(Immutable.List<ResourceContent>(props.content));
+  const content = Immutable.List<ResourceContent>(props.content);
 
   // Factory for creating top level editors, for things like structured
   // content or referenced activities
@@ -25,7 +25,7 @@ export const Outline = (props: ResourceEditorProps) => {
 
     if (content.type === 'content') {
       return (
-        <a href="#" key={content.id} className="list-group-item list-group-item-action">
+        <a href="#" key={content.id} style={ { marginTop: '0px' } } className="list-group-item list-group-item-action">
           <div className="d-flex w-100 justify-content-between">
             <h5 className="mb-1">Content</h5>
             {content.purpose !== 'None' ? <small>{content.purpose}</small> : null}
@@ -38,7 +38,7 @@ export const Outline = (props: ResourceEditorProps) => {
     const activityEditor = editorMap[content.type];
 
     return (
-      <a href="#" key={content.id} className="list-group-item list-group-item-action">
+      <a href="#" key={content.id} style={ { marginTop: '0px' } } className="list-group-item list-group-item-action">
         <div className="d-flex w-100 justify-content-between">
           <h5 className="mb-1">{activityEditor.friendlyName}</h5>
           {content.purpose !== 'None' ? <small>{content.purpose}</small> : null}
@@ -51,7 +51,7 @@ export const Outline = (props: ResourceEditorProps) => {
   const entries = content.toArray().map((c, i) => {
     const onEdit = (updatedComponent : ResourceContent) => {
       const updated = content.set(i, updatedComponent);
-      setContent(updated);
+      props.onEdit(updated);
     };
     return createEntry(editorMap, c);
   });

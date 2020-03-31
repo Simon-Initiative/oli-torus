@@ -22,6 +22,8 @@ export type EditorProps = {
   // The fixed toolbar configuration
   toolbarItems: ToolbarItem[];
 
+  // Whether or not editing is allowed
+  editMode: boolean;
 };
 
 // Pressing the Enter key on any void block should insert an empty
@@ -156,6 +158,7 @@ export const Editor = (props: EditorProps) => {
         <HoveringToolbar />
 
         <Editable
+          readOnly={!props.editMode}
           renderElement={renderElement}
           renderLeaf={renderLeaf}
           placeholder="Enter some text..."

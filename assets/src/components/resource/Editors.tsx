@@ -1,10 +1,11 @@
 import * as Immutable from 'immutable';
 import React from 'react';
 import { ResourceContent, ResourceType } from 'data/content/resource';
-import { ActivityEditorMap } from 'data/content/editors';
+import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { UnsupportedActivity } from './UnsupportedActivity';
 import { getToolbarForResourceType } from './toolbar';
 import { StructuredContentEditor } from 'components/content/StructuredContentEditor';
+import { ResourceContentFrame } from 'components/content/ResourceContentFrame';
 
 export type EditorsProps = {
   editMode: boolean,              // Whether or not we can edit
@@ -24,36 +25,59 @@ export const Editors = (props: EditorsProps) => {
   const createEditor = (
     editorMap: ActivityEditorMap,
     content: ResourceContent,
+    editMode: boolean,
     onEdit: (content: ResourceContent) => void,
-    editMode: boolean) : JSX.Element => {
+    onRemove: () => void,
+    contentSize: number,
+    ) : JSX.Element => {
 
     if (content.type === 'content') {
       return (
-        <StructuredContentEditor
-          key={content.id}
-          editMode={editMode}
-          content={content}
-          onEdit={onEdit}
-          toolbarItems={getToolbarForResourceType(resourceType)}/>
+        <ResourceContentFrame
+          allowRemoval={contentSize > 1} editMode={editMode} label="Content" onRemove={onRemove}>
+          <StructuredContentEditor
+            key={content.id}
+            editMode={editMode}
+            content={content}
+            onEdit={onEdit}
+            toolbarItems={getToolbarForResourceType(resourceType)}/>
+        </ResourceContentFrame>
       );
     }
 
-    const element = editorMap[content.type]
-      ? editorMap[content.type].deliveryElement : UnsupportedActivity;
+    const unsupported : EditorDesc = {
+      deliveryElement: UnsupportedActivity,
+      authoringElement: UnsupportedActivity,
+      icon: '',
+      description: 'Not supported',
+      friendlyName: 'Not supported',
+    };
+
+    const editor = editorMap[content.type]
+      ? editorMap[content.type] : unsupported;
 
     const props = {
 
     };
 
-    return React.createElement(element, props);
+    return (
+      <ResourceContentFrame
+        allowRemoval={contentSize > 1}
+        editMode={editMode}
+        label={editor.friendlyName}
+        onRemove={onRemove}>
+
+        {React.createElement(editor.deliveryElement, props)}
+      </ResourceContentFrame>
+    );
   };
 
-  const editors = content.map((c, i) => {
-    const onEdit = (updatedComponent : ResourceContent) => {
-      const updated = content.set(i, updatedComponent);
-      props.onEdit(updated);
-    };
-    return createEditor(editorMap, c, onEdit, editMode);
+  const editors = content.map((c, index) => {
+
+    const onEdit = (u : ResourceContent) => props.onEdit(content.set(index, u));
+    const onRemove = () => props.onEdit(content.remove(index));
+
+    return createEditor(editorMap, c, editMode, onEdit, onRemove, content.size);
   });
 
   return (

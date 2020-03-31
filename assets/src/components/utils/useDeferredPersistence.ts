@@ -1,7 +1,5 @@
 import * as Immutable from 'immutable';
 import { useState, useEffect, useRef } from 'react';
-import { ProjectId, ResourceId } from 'data/types';
-import { makeRequest } from 'data/persistence/common';
 
 const quietPeriodInMs = 3000;
 const maxDeferredTimeInMs = 15000;
@@ -20,16 +18,6 @@ export interface InFlight {
   type: 'InFlight';
 }
 
-function issueSaveRequest(project: ProjectId, resource: ResourceId, body: any) {
-
-  const params = {
-    method: 'PUT',
-    body,
-    url: `/project/${project}/${resource}/edit`,
-  };
-
-  return makeRequest(params);
-}
 
 function usePrevious(value: any) {
   const ref = useRef();
@@ -40,11 +28,13 @@ function usePrevious(value: any) {
 }
 
 const useBeforeUnload = (
-  project: ProjectId, resource: ResourceId, status: PersistenceState, pending: any) => {
+  issueSaveRequest: (body: any) => Promise<any>,
+  status: PersistenceState,
+  pending: any) => {
 
   const handleBeforeunload = (evt: BeforeUnloadEvent) => {
     if (status.type === 'Pending') {
-      issueSaveRequest(project, resource, pending);
+      issueSaveRequest(pending);
     }
   };
 
@@ -56,11 +46,11 @@ const useBeforeUnload = (
 
 
 export function useDeferredPersistence(
-  project: ProjectId, resource: ResourceId, content: Immutable.List<any>) {
+  issueSaveRequest: (body: any) => Promise<any>, content: Immutable.List<any>) {
 
   const [status, setStatus] = useState({ type: 'Idle' } as PersistenceState);
   const [pending, setPending] = useState(content);
-  useBeforeUnload(project, resource, status, pending);
+  useBeforeUnload(issueSaveRequest, status, pending);
 
   const previous = usePrevious(status);
   useEffect(() => {
@@ -94,7 +84,7 @@ export function useDeferredPersistence(
 
       setStatus({ type: 'InFlight' });
 
-      issueSaveRequest(project, resource, (pending as any).toArray())
+      issueSaveRequest((pending as any).toArray())
         .then(() => requestFinished(pending))
         .catch(() => requestFinished(pending));
     });

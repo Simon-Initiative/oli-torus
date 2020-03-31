@@ -1,8 +1,10 @@
 import { StructuredContent } from './resource';
 
+const textLimit = 25;
+
 export function getContentDescription(content: StructuredContent) : JSX.Element {
 
-  if (content.children.length > 1) {
+  if (content.children.length > 0) {
     const first = content.children[0];
 
     switch (first.type) {
@@ -30,10 +32,10 @@ export function getContentDescription(content: StructuredContent) : JSX.Element 
       case 'p':
       case 'blockquote':
         let text = '';
-        for (let i = 0; i < first.children.length && text.length < 30; i += 1) {
+        for (let i = 0; i < first.children.length && text.length < textLimit; i += 1) {
           text += first.children[i].text;
         }
-        text = text.substr(0, 30);
+        text = text.substr(0, textLimit);
         return <span>{text}</span>;
     }
   }

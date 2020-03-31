@@ -1,13 +1,14 @@
 import * as Immutable from 'immutable';
 import React, { useState } from 'react';
-import { ResourceContent, ResourceType, createDefaultStructuredContent } from 'data/content/resource';
+import { ResourceContent, ResourceType } from 'data/content/resource';
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
 import { useLock } from '../utils/useLock';
 import { useDeferredPersistence } from '../utils/useDeferredPersistence';
 import { Editors } from './Editors';
 import { Outline } from './Outline';
-import { TextEditor } from '../TextEditor';
+import { TitleBar } from './TitleBar';
+import { ProjectId, ResourceId } from 'data/types';
 import { makeRequest } from 'data/persistence/common';
 
 export type ResourceEditorProps = {
@@ -22,14 +23,25 @@ export type ResourceEditorProps = {
   editorMap: ActivityEditorMap,   // Map of activity types to activity elements
 };
 
+function issueSaveRequest(project: ProjectId, resource: ResourceId, body: any) {
+  const params = {
+    method: 'PUT',
+    body,
+    url: `/project/${project}/${resource}/edit`,
+  };
+
+  return makeRequest(params);
+}
+
 // The resource editor
 export const ResourceEditor = (props: ResourceEditorProps) => {
 
-  const { projectId, resourceId, content } = props;
+  const { projectId, resourceId, content, editorMap } = props;
 
   const lock = useLock(props.projectId, props.resourceId);
   const [state, setState] = useState(Immutable.List<ResourceContent>(content));
-  const status = useDeferredPersistence(projectId, resourceId, state);
+  const status = useDeferredPersistence(
+    issueSaveRequest.bind(undefined, projectId, resourceId), state);
   const [title, setTitle] = useState(props.title);
 
   const onEdit = (content: Immutable.List<ResourceContent>) => {
@@ -38,42 +50,28 @@ export const ResourceEditor = (props: ResourceEditorProps) => {
 
   const onTitleEdit = (title: string) => {
     setTitle(title);
+    issueSaveRequest(projectId, resourceId, { title });
   };
 
-  const onAddContent = () => setState(state.push(createDefaultStructuredContent()));
-
-  const titleBar = (
-    <div className="d-flex flex-row align-items-baseline">
-      <div className="flex-grow-1">
-        <TextEditor
-          onEdit={onTitleEdit} model={title} showAffordances={true} editMode={lock.editMode}/>
-      </div>
-      <div className="">
-      <div className="dropdown">
-        <button className="btn dropdown-toggle" type="button"
-          id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          +
-        </button>
-        <div className="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
-          <a className="dropdown-item" onClick={onAddContent}>Content</a>
-          <a className="dropdown-item disabled" href="#">Multiple Choice</a>
-          <a className="dropdown-item disabled" href="#">Short Answer</a>
-        </div>
-      </div>
-      </div>
-    </div>
-  );
-
-  // We only show the outline if there is more than one content element in the resource
+  const onAddItem = (c : ResourceContent) => setState(state.push(c));
 
   return (
     <div>
-      {titleBar}
+      <TitleBar
+        title={title}
+        onTitleEdit={onTitleEdit}
+        onAddItem={onAddItem}
+        editMode={lock.editMode}
+        editorMap={editorMap}/>
+
       <div className="d-flex flex-row align-items-baseline">
-        {state.size > 1
+        {
+        // We only show the outline if there is more than one content element in the resource
+        state.size > 1
           ? <Outline {...props} editMode={lock.editMode}
           onEdit={c => onEdit(c)} content={state}/>
-          : null }
+          : null
+        }
         <Editors {...props} editMode={lock.editMode}
           onEdit={c => onEdit(c)} content={state}/>
       </div>
