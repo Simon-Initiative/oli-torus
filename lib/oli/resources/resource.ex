@@ -2,6 +2,7 @@ defmodule Oli.Resources.Resource do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive {Phoenix.Param, key: :slug}
   schema "resources" do
     field :slug, :string
 
@@ -17,4 +18,5 @@ defmodule Oli.Resources.Resource do
     |> validate_required([:slug, :project_id])
     |> unique_constraint(:slug)
   end
+
 end

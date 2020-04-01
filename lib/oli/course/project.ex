@@ -2,6 +2,7 @@ defmodule Oli.Course.Project do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive {Phoenix.Param, key: :slug}
   schema "projects" do
     field :description, :string
     field :slug, :string
@@ -15,10 +16,11 @@ defmodule Oli.Course.Project do
   end
 
   @doc false
-  def changeset(project, attrs) do
+  def changeset(project, attrs \\ %{}) do
     project
-    |> cast(attrs, [:title, :slug, :description, :version, :family_id, :project_id])
-    |> validate_required([:title, :slug, :description, :version, :family_id])
-    |> unique_constraint(:slug)
+      |> cast(attrs, [:title, :slug, :description, :version, :family_id, :project_id])
+      |> validate_required([:title, :slug, :version, :family_id])
+      |> unique_constraint(:slug)
   end
+
 end

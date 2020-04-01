@@ -5,8 +5,13 @@ defmodule Oli.Course do
 
   import Ecto.Query, warn: false
   alias Oli.Repo
+  alias Oli.Course.Utils
 
   alias Oli.Course.Project
+  alias Ecto.Multi
+  alias Oli.Publishing
+  alias Oli.Resources
+  alias Oli.Accounts
 
   @doc """
   Returns the list of projects.
@@ -36,23 +41,50 @@ defmodule Oli.Course do
 
   """
   def get_project!(id), do: Repo.get!(Project, id)
+  def get_project_by_slug(slug), do: Repo.get_by(Project, slug: slug)
 
-  @doc """
-  Creates a project.
-
-  ## Examples
-
-      iex> create_project(%{field: value})
-      {:ok, %Project{}}
-
-      iex> create_project(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_project(attrs \\ %{}) do
+  @doc "Only for testing PRoject changeset and database transaction logic.
+  Use `create_project` for application use"
+  def create_empty_project(attrs \\ %{}) do
     %Project{}
     |> Project.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Creates a project tied to an author.
+  create_project(title : string, author : Author)
+  """
+  def create_project(title, author) do
+    # Here's how this works:
+    # Multi chains database operations and performs a single transaction at the end.
+    # If one operation fails, the changes are "rolled back" (no transaction is performed).
+    # `insert` takes a changeset in order to create a new row, and `merge` takes a lambda
+    # that allows you to access the changesets created in previous Multi calls
+    Multi.new
+    |> Multi.insert(:family, default_family(title))
+    |> Multi.merge(fn %{family: family} ->
+      Multi.new
+      |> Multi.insert(:project, default_project(title, family)) end)
+    |> Multi.merge(fn %{project: project} ->
+      Multi.new
+      |> Multi.update(:author, Accounts.author_to_project(author, project))
+      |> Multi.insert(:resource, Resources.new_project_resource(project)) end)
+    |> Multi.merge(fn %{author: author, project: project, resource: resource} ->
+      Multi.new
+      |> Multi.insert(:resource_revision, Resources.new_project_resource_revision(author, project, resource))
+      |> Multi.insert(:publication, Publishing.new_project_publication(resource, project)) end)
+    |> Repo.transaction
+  end
+
+  defp default_project(title, family) do
+    %Project{}
+      |> Project.changeset(%{
+        title: title,
+        slug: Utils.generate_slug("projects", title),
+        version: "1.0.0",
+        family_id: family.id
+      })
   end
 
   @doc """
@@ -149,6 +181,15 @@ defmodule Oli.Course do
     %Family{}
     |> Family.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def default_family(title) do
+    %Family{}
+      |> Family.changeset(%{
+        title: title,
+        slug: Utils.generate_slug("families", title),
+        description: "New family from project creation"
+      })
   end
 
   @doc """

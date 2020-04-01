@@ -3,9 +3,9 @@ defmodule Oli.Resources.ResourceRevision do
   import Ecto.Changeset
 
   schema "resource_revisions" do
-    field :children, {:array, :id}
-    field :content, {:array, :map}
-    field :objectives, {:array, :id}
+    field :children, {:array, :id}, default: []
+    field :content, {:array, :map}, default: []
+    field :objectives, {:array, :id}, default: []
     field :deleted, :boolean, default: false
     field :slug, :string
     field :title, :string
@@ -19,7 +19,7 @@ defmodule Oli.Resources.ResourceRevision do
   end
 
   @doc false
-  def changeset(resource_revision, attrs) do
+  def changeset(resource_revision, attrs \\ %{}) do
     resource_revision
     |> cast(attrs, [:title, :slug, :content, :children, :objectives, :deleted, :author_id, :resource_id, :previous_revision_id, :resource_type_id])
     |> validate_required([:title, :slug, :content, :objectives, :children, :deleted, :objectives, :author_id, :resource_id, :resource_type_id])

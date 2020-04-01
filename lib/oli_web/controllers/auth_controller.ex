@@ -5,6 +5,7 @@ defmodule OliWeb.AuthController do
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Accounts.SystemRole
+  alias Oli.Repo
 
   def signin(conn, _params) do
     render(conn, "signin.html")
@@ -51,9 +52,8 @@ defmodule OliWeb.AuthController do
     case Accounts.create_author(author_params) do
       {:ok, author} ->
         conn
-        |> put_flash(:info, "Thank you for registering!")
         |> put_session(:current_author_id, author.id)
-        |> redirect(to: Routes.page_path(conn, :index))
+        |> redirect(to: Routes.workspace_path(conn, :projects))
 
       {:error, changeset} ->
         # remove password_hash from changeset for security, just in case
@@ -98,7 +98,7 @@ defmodule OliWeb.AuthController do
       {:ok, author} ->
         conn
         |> put_session(:current_author_id, author.id)
-        |> redirect(to: Routes.workspace_path(conn, :projects))
+        |> redirect(to: (redirect_path conn, author))
 
       {:error, _reason} ->
         conn
@@ -108,7 +108,10 @@ defmodule OliWeb.AuthController do
   end
 
   def identity_callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
-    %Ueberauth.Auth{info: %{email: email}, credentials: %{other: %{password: password}}} = auth;
+    %Ueberauth.Auth{
+      info: %{email: email},
+      credentials: %{other: %{password: password}}
+    } = auth
 
     # emails are case-insensitive, use lowercased version
     email = String.downcase(email)
@@ -117,11 +120,21 @@ defmodule OliWeb.AuthController do
       { :ok, author } ->
         conn
         |> put_session(:current_author_id, author.id)
-        |> redirect(to: Routes.workspace_path(conn, :projects))
+        |> redirect(to: (redirect_path conn, author))
       { :error, reason } ->
         conn
         |> put_flash(:error, reason)
         |> redirect(to: Routes.auth_path(conn, :signin))
+    end
+  end
+
+  # redirect to project overview if author has one project, else go to workspace
+  defp redirect_path conn, author do
+    author = Repo.preload(author, [:projects])
+
+    case length author.projects do
+      1 -> Routes.project_path conn, :overview, (hd author.projects).slug
+      _ -> Routes.workspace_path conn, :projects
     end
   end
 
