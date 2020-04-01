@@ -3,8 +3,8 @@ defmodule OliWeb.ResourceController do
 
   import OliWeb.ProjectPlugs
 
-  plug :fetch_project when action not in [:view]
-  plug :authorize_project when action not in [:view]
+  plug :fetch_project when action not in [:view, :update]
+  plug :authorize_project when action not in [:view, :update]
 
   def view(conn, %{"project" => _project_id}) do
     render conn, "page.html", title: "Page", active: :page
