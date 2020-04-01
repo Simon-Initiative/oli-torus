@@ -3,8 +3,8 @@ defmodule OliWeb.ProjectController do
   alias Oli.Course
   alias Oli.Accounts
 
-  plug :fetch_project when not action in [:create]
-  plug :authorize_project when not action in [:create]
+  plug :fetch_project when action not in [:create]
+  plug :authorize_project when action not in [:create]
 
   def overview(conn, %{"project" => _project_id}) do
     params = %{title: "Overview", active: :overview}
