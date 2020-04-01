@@ -1,7 +1,7 @@
 defmodule OliWeb.ProjectController do
   use OliWeb, :controller
   alias Oli.Course
-  alias Oli.Accounts
+  import OliWeb.ProjectPlugs
 
   plug :fetch_project when action not in [:create]
   plug :authorize_project when action not in [:create]
@@ -38,26 +38,4 @@ defmodule OliWeb.ProjectController do
       end
   end
 
-  defp fetch_project(conn, _) do
-    case Course.get_project_by_slug(conn.params["project"]) do
-      nil ->
-        conn
-        |> put_flash(:info, "That project does not exist")
-        |> redirect(to: Routes.workspace_path(conn, :projects))
-        |> halt()
-      project -> conn
-        |> assign(:project, project)
-    end
-  end
-
-  defp authorize_project(conn, _) do
-    if Accounts.can_access?(conn.assigns[:current_author], conn.assigns[:project]) do
-      conn
-    else
-      conn
-       |> put_flash(:info, "You don't have access to that project")
-       |> redirect(to: Routes.workspace_path(conn, :projects))
-       |> halt()
-    end
-  end
 end
