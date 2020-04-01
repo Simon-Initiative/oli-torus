@@ -12,8 +12,7 @@ defmodule OliWeb.ProjectController do
   end
 
   def objectives(conn, %{"project" => project_id}) do
-    objectives = Oli.Learning.list_objectives();
-    render conn, "objectives.html", title: "Objectives", project: project_id, objectives: objectives
+    render conn, "objectives.html", title: "Objectives", active: :objectives
   end
 
   def curriculum(conn, %{"project" => project_id}) do
