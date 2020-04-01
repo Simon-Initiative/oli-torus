@@ -114,11 +114,11 @@ a.btn-facebook:hover {
     <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
       <div class="card card-signin my-5">
         <div class="card-body">
-          <h5 class="card-title text-center">Sign In</h5>
-          <a href="/auth/google" class="btn btn-md btn-google btn-block social-signin"><i class="fab fa-google fa-lg mr-2"></i> Sign in with Google</a>
-          <a href="/auth/facebook" class="btn btn-md btn-facebook btn-block social-signin"><i class="fab fa-facebook-f fa-lg mr-2"></i> Sign in with Facebook</a>
+          <h5 class="card-title text-center"><%= @title %></h5>
+          <a href="<%= @actions.google %>" class="btn btn-md btn-google btn-block social-signin"><i class="fab fa-google fa-lg mr-2"></i> Sign in with Google</a>
+          <a href="<%= @actions.facebook %>" class="btn btn-md btn-facebook btn-block social-signin"><i class="fab fa-facebook-f fa-lg mr-2"></i> Sign in with Facebook</a>
           <hr class="my-4">
-          <%= form_for @conn, Routes.auth_path(@conn, :identity_callback), fn f -> %>
+          <%= form_for @conn, @actions.identity, fn f -> %>
             <div class="form-label-group">
               <%= email_input f, :email, class: "form-control", placeholder: "Email", required: true, autofocus: true %>
               <%= label f, :email, class: "control-label" %>
@@ -129,10 +129,12 @@ a.btn-facebook:hover {
               <%= label f, :password, class: "control-label" %>
             </div>
 
-            <div class="custom-control custom-checkbox mb-3">
-              <input name="remember_password" type="checkbox" class="custom-control-input" id="remember_password">
-              <label class="custom-control-label" for="remember_password">Remember password</label>
-            </div>
+            <%= if @show_remember_password do %>
+              <div class="custom-control custom-checkbox mb-3">
+                <input name="remember_password" type="checkbox" class="custom-control-input" id="remember_password">
+                <label class="custom-control-label" for="remember_password">Remember password</label>
+              </div>
+            <% end %>
             <%= submit "Sign In", class: "btn btn-md btn-primary btn-block" %>
           <% end %>
         </div>

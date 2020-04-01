@@ -1,14 +1,17 @@
 /* This file is for your main application css. */
+
+@import "./delivery.css";
+
 html, body {
   /* FIXME: until we make a custom bootstrap theme */
   font-family: 'Inter', sans-serif;
-  font-size: 11px;
   margin: 0;
 }
 
 #wrapper {
   display: flex;
 }
+
 #left {
 
 }
@@ -43,20 +46,50 @@ form .form-label-group .help-block {
   color: #dc3545;
 }
 
-.btn {
+body.app nav.navbar {
+  border-bottom: 2px solid #eee;
+}
+
+nav.navbar .user img {
+  width: 30px;
+  height: 30px;
+  border: 2px solid white;
+  -webkit-box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.75);
+  -moz-box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.75);
+  box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.75);
+}
+
+.dropdown-toggle::after {
+  vertical-align: middle;
+}
+
+/* FIXME: btn class is used intermixed with other components, these styles
+ * do not agree with those other styles (e.g. btn mixed with a in dropdown menu)
+ * Commenting some of the offedning styles out for now so everything still looks
+ * unified until we can skin the entire theme
+ */
+
+/* .btn {
   font-weight: bold;
   font-size: 13px;
   border-radius: 8px;
   padding: 8px 20px;
   border: none;
 }
+
 .btn-primary {
-  background-color: black;
+  background-color: #343a40;
   color: white;
 }
+
 .btn-primary:hover {
   background-color: black;
 }
+
 .btn-primary:active {
-  background-color: black !important;
+  background-color: black;
+} */
+
+.flex-1 {
+  flex: 1;
 }

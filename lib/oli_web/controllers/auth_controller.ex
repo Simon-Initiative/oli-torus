@@ -8,7 +8,12 @@ defmodule OliWeb.AuthController do
   alias Oli.Repo
 
   def signin(conn, _params) do
-    render(conn, "signin.html")
+    actions = %{
+      google: Routes.auth_path(conn, :request, "google"),
+      facebook: Routes.auth_path(conn, :request, "facebook"),
+      identity: Routes.auth_path(conn, :identity_callback),
+    }
+    render(conn, "signin.html", title: "Sign In", actions: actions, show_remember_password: true, show_cancel: false)
   end
 
   def signout(conn, _params) do
@@ -18,12 +23,30 @@ defmodule OliWeb.AuthController do
   end
 
   def register(conn, _params) do
-    render(conn, "register.html")
+    actions = %{
+      google: Routes.auth_path(conn, :request, "google"),
+      facebook: Routes.auth_path(conn, :request, "facebook"),
+      identity: Routes.auth_path(conn, :register_email_form),
+    }
+    render(conn, "register.html", title: "Create an Account", actions: actions)
+  end
+
+  def register_email_form(conn, %{"type" => "link-account"}) do
+    actions = %{
+      submit: Routes.auth_path(conn, :register_email_submit, type: "link-account"),
+      cancel: Routes.delivery_path(conn, :index)
+    }
+    changeset = Author.changeset(%Author{})
+    render conn, "register_email.html", changeset: changeset, actions: actions
   end
 
   def register_email_form(conn, _params) do
+    actions = %{
+      submit: Routes.auth_path(conn, :register_email_submit),
+      cancel: Routes.auth_path(conn, :register)
+    }
     changeset = Author.changeset(%Author{})
-    render conn, "register_email.html", changeset: changeset
+    render conn, "register_email.html", changeset: changeset, actions: actions
   end
 
   def register_email_submit(
@@ -36,7 +59,7 @@ defmodule OliWeb.AuthController do
         "password" => password,
         "password_confirmation" => password_confirmation
       },
-    })
+    } = params)
   do
     author_params = %{
       email: email,
@@ -51,9 +74,12 @@ defmodule OliWeb.AuthController do
 
     case Accounts.create_author(author_params) do
       {:ok, author} ->
-        conn
-        |> put_session(:current_author_id, author.id)
-        |> redirect(to: Routes.workspace_path(conn, :projects))
+        case params do
+          %{"type" => "link-account"} ->
+            link_account_callback(conn, author)
+          _ ->
+            signin_callback(conn, author)
+        end
 
       {:error, changeset} ->
         # remove password_hash from changeset for security, just in case
@@ -63,13 +89,13 @@ defmodule OliWeb.AuthController do
     end
   end
 
-  def callback(%{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
+  def callback(%Elixir.Plug.Conn{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
     conn
     |> put_flash(:error, "Failed to authenticate.")
     |> redirect(to: Routes.auth_path(conn, :signin))
   end
 
-  def callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
+  def callback(%Elixir.Plug.Conn{assigns: %{ueberauth_auth: auth}} = conn, params) do
     author_params = case auth.provider do
       :google ->
         %{
@@ -96,6 +122,13 @@ defmodule OliWeb.AuthController do
 
     case Accounts.insert_or_update_author(author_params) do
       {:ok, author} ->
+        case params do
+          %{"type" => "link-account"} ->
+            link_account_callback(conn, author)
+          _ ->
+            signin_callback(conn, author)
+        end
+
         conn
         |> put_session(:current_author_id, author.id)
         |> redirect(to: (redirect_path conn, author))
@@ -107,24 +140,52 @@ defmodule OliWeb.AuthController do
     end
   end
 
-  def identity_callback(%{assigns: %{ueberauth_auth: auth}} = conn, _params) do
+  def identity_callback(%{assigns: %{ueberauth_auth: auth}} = conn, params) do
     %Ueberauth.Auth{
-      info: %{email: email},
-      credentials: %{other: %{password: password}}
-    } = auth
+      info: %{
+        email: email,
+      },
+      credentials: %{
+        other: %{
+          password: password,
+        }
+      }
+    } = auth;
 
     # emails are case-insensitive, use lowercased version
     email = String.downcase(email)
 
     case Accounts.authorize_author(email, password) do
       { :ok, author } ->
-        conn
-        |> put_session(:current_author_id, author.id)
-        |> redirect(to: (redirect_path conn, author))
+        case params do
+          %{"type" => "link-account"} ->
+            link_account_callback(conn, author)
+          _ ->
+            signin_callback(conn, author)
+        end
       { :error, reason } ->
         conn
         |> put_flash(:error, reason)
         |> redirect(to: Routes.auth_path(conn, :signin))
+    end
+  end
+
+  def signin_callback(conn, author) do
+    conn
+    |> put_flash(:info, "Thank you for signing in!")
+    |> put_session(:current_author_id, author.id)
+    |> redirect(to: redirect_path(conn, author))
+  end
+
+  def link_account_callback(conn, author) do
+    case Accounts.link_user_author_account(conn.assigns.current_user, author) do
+      {:ok, _user} ->
+        conn
+        |> put_flash(:info, "Account '#{author.email}' is now linked")
+        |> put_session(:current_author_id, author.id)
+        |> redirect(to: Routes.delivery_path(conn, :index))
+      _ ->
+        throw "Failed to link user and author accounts"
     end
   end
 

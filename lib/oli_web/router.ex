@@ -5,7 +5,8 @@ defmodule OliWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_flash
-    plug :protect_from_forgery
+    # disable protect_from_forgery in development environment
+    if Mix.env != :dev, do: plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug Oli.Plugs.SetCurrentUser
   end
@@ -19,7 +20,17 @@ defmodule OliWeb.Router do
   end
 
   pipeline :lti do
-    plug :put_layout, {OliWeb.LayoutView, :lti}
+    plug :fetch_session
+    plug :fetch_flash
+    plug Oli.Plugs.SetCurrentUser
+  end
+
+  pipeline :delivery do
+    plug :fetch_session
+    plug :fetch_flash
+    plug :put_layout, {OliWeb.LayoutView, :delivery}
+    plug Oli.Plugs.SetCurrentUser
+    plug Oli.Plugs.VerifyUser
   end
 
   pipeline :www_url_form do
@@ -76,10 +87,9 @@ defmodule OliWeb.Router do
 
     get "/signout", AuthController, :signout
 
-    post "/identity/callback", AuthController, :identity_callback
-
     get "/:provider", AuthController, :request
     get "/:provider/callback", AuthController, :callback
+    post "/identity/callback", AuthController, :identity_callback
   end
 
   # LTI routes
@@ -89,8 +99,20 @@ defmodule OliWeb.Router do
     post "/basic_launch", LtiController, :basic_launch
   end
 
+  scope "/course", OliWeb do
+    pipe_through [:delivery]
+
+    get "/", DeliveryController, :index
+    get "/link_account", DeliveryController, :link_account
+    get "/create_and_link_account", DeliveryController, :create_and_link_account
+    post "/section", DeliveryController, :create_section
+    get "/signout", DeliveryController, :signout
+
+    get "/open_and_free", DeliveryController, :list_open_and_free
+  end
+
   # routes only accessable to developers
-  if "#{Mix.env}" === "dev" or "#{Mix.env}" === "test" do
+  if Mix.env === :dev or Mix.env === :test do
     scope "/dev", OliWeb do
       pipe_through :browser
 

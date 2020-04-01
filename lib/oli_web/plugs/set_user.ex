@@ -31,7 +31,7 @@ defmodule Oli.Plugs.SetCurrentUser do
   def set_user(conn) do
     if user_id = get_session(conn, :current_user_id) do
       cond do
-        current_user = Repo.get(User, user_id) ->
+        current_user = Repo.get(User, user_id) |> Repo.preload([:author]) ->
           assign(conn, :current_user, current_user)
 
         true ->

@@ -1,0 +1,95 @@
+<style>
+tbody tr {
+  cursor: pointer;
+}
+</style>
+
+<script>
+$(function() {
+  $('input[name="publication_id"]').on('change', function() {
+    $('input[name="publication_id"]').not(this).prop('checked', false);
+
+    if ($('input[name="publication_id"]:checked').length > 0) {
+      $('#select-submit').prop('disabled', false);
+    } else {
+      $('#select-submit').prop('disabled', true);
+    }
+  });
+})
+</script>
+
+<%= form_for @conn, Routes.delivery_path(@conn, :create_section), fn _f -> %>
+  <div class="text-center">
+    <h3>Select a Project</h3>
+    <p class="mt-3">
+      Select one of the published projects below to create your course section:
+    </p>
+  </div>
+  <div>
+    <%= if assigns[:author] != nil do %>
+      <div class="my-5">
+        <h4>My Projects</h4>
+        <%= if Enum.count(@my_publications) > 0 do %>
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th scope="col" style="width: 5%"></th>
+                <th scope="col" style="width: 50%">Title</th>
+                <th scope="col" style="width: 15%">Version</th>
+                <th scope="col" style="width: 30%">Date Published</th>
+              </tr>
+            </thead>
+            <tbody>
+              <%= for pub <- @my_publications do %>
+                <tr>
+                  <td><input type="checkbox" ></td>
+                  <td><%= pub.project.title %></td>
+                  <td><%= pub.project.version %></td>
+                  <td><%= format_datetime(pub.inserted_at) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% else %>
+          <p class="my-3 text-center text-secondary">
+          You have not published any projects
+          </p>
+        <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="my-5">
+      <h4>Open and Free</h4>
+        <%= if Enum.count(@open_and_free_publications) > 0 do %>
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th scope="col" style="width: 5%"></th>
+                <th scope="col" style="width: 50%">Title</th>
+                <th scope="col" style="width: 15%">Version</th>
+                <th scope="col" style="width: 30%">Date Published</th>
+              </tr>
+            </thead>
+            <tbody>
+              <%= for pub <- @open_and_free_publications do %>
+                <tr>
+                  <td><input type="checkbox" name="publication_id" value="<%= pub.id %>"></td>
+                  <td><%= pub.project.title %></td>
+                  <td><%= pub.project.version %></td>
+                  <td><%= format_datetime(pub.inserted_at) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% else %>
+          <p class="my-3 text-center text-secondary">
+          There are no published open and free courses
+          </p>
+        <% end %>
+    </div>
+    <div class="text-center">
+      <%= submit "Select and Continue", id: "select-submit", class: "btn btn-primary", disabled: true %>
+    </div>
+  </div>
+<% end %>
