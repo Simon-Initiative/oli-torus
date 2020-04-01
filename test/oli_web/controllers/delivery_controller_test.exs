@@ -74,7 +74,7 @@ defmodule OliWeb.DeliveryControllerTest do
       institution_id: institution.id,
     })
 
-    %{ project: project, publication: publication } = package_fixture()
+    %{ project: project, publication: publication } = package_fixture(author)
 
     conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
       |> put_session(:current_user_id, user.id)

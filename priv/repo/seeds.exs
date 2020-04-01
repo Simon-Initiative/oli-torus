@@ -95,57 +95,6 @@ if Mix.env == :dev do
   end
 
   # create an example package and publication
-  {:ok, family} = Oli.Course.create_family(%{
-    description: "An example course for development",
-    slug: "example-course",
-    title: "Example Course",
-  })
-
-  {:ok, project} = Oli.Course.create_project(%{
-    description: "An example course for development",
-    slug: UUID.uuid4(),
-    title: "Example Course",
-    version: "1.0",
-    parent_project: nil,
-    family_id: family.id,
-  })
-
-  {:ok, resource} = Oli.Resources.create_resource(%{
-    slug: UUID.uuid4(),
-    project_id: project.id,
-  })
-
-  {:ok, objective} = Oli.Learning.create_objective(%{
-    slug: UUID.uuid4(),
-    project_id: project.id,
-  })
-
-  {:ok, _objective_revision} = Oli.Learning.create_objective_revision(%{
-    title: "Example Objective",
-    children: [],
-    objective_id: objective.id,
-    previous_revision_id: nil,
-  })
-
-  example_content = %{}
-
-  {:ok, _resource_revision} = Oli.Resources.create_resource_revision(%{
-    children: [],
-    content: [example_content],
-    objectives: [objective.id],
-    slug: UUID.uuid4(),
-    title: "Example Page",
-    author_id: 1,
-    resource_id: resource.id,
-    previous_revision_id: nil,
-    resource_type_id: 1,
-  })
-
-  {:ok, _publication} = Oli.Publishing.create_publication(%{
-    description: "An example course for development",
-    published: true,
-    open_and_free: true,
-    root_resources: [resource.id],
-    project_id: project.id,
-  })
+  author = Oli.Accounts.get_author_by_email(System.get_env("ADMIN_EMAIL", "admin@oli.cmu.edu"))
+  {:ok, project} = Oli.Course.create_project("Example Open and Free Course", author)
 end
