@@ -136,9 +136,6 @@ a.btn-facebook:hover {
               </div>
             <% end %>
             <%= submit "Sign In", class: "btn btn-md btn-primary btn-block" %>
-            <%= if @show_cancel do %>
-              <%= link "Cancel", to:  @actions.cancel, class: "btn btn-md btn-link btn-block" %>
-            <% end %>
           <% end %>
         </div>
       </div>

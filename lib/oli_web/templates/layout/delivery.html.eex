@@ -69,7 +69,7 @@
                   <div class="dropdown-divider"></div>
                   <%= link "Sign out", to: Routes.delivery_path(@conn, :signout), id: "signout-link", class: "dropdown-item btn" %>
                 <% else %>
-                  <a class="dropdown-item" href="<%= Routes.delivery_path(@conn, :link_account) %>">Link Account</a>
+                  <a class="dropdown-item" href="<%= Routes.delivery_path(@conn, :link_account) %>">Link Existing Account</a>
                 <% end %>
               </div>
             </div>

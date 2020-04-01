@@ -103,9 +103,11 @@ defmodule OliWeb.Router do
 
     get "/", DeliveryController, :index
     get "/link_account", DeliveryController, :link_account
+    get "/create_and_link_account", DeliveryController, :create_and_link_account
     post "/section", DeliveryController, :create_section
     get "/signout", DeliveryController, :signout
 
+    get "/open_and_free", DeliveryController, :list_open_and_free
   end
 
   # routes only accessable to developers

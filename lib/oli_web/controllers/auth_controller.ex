@@ -22,12 +22,30 @@ defmodule OliWeb.AuthController do
   end
 
   def register(conn, _params) do
-    render(conn, "register.html")
+    actions = %{
+      google: Routes.auth_path(conn, :request, "google"),
+      facebook: Routes.auth_path(conn, :request, "facebook"),
+      identity: Routes.auth_path(conn, :register_email_form),
+    }
+    render(conn, "register.html", title: "Create an Account", actions: actions)
+  end
+
+  def register_email_form(conn, %{"type" => "link-account"}) do
+    actions = %{
+      submit: Routes.auth_path(conn, :register_email_submit, type: "link-account"),
+      cancel: Routes.delivery_path(conn, :index)
+    }
+    changeset = Author.changeset(%Author{})
+    render conn, "register_email.html", changeset: changeset, actions: actions
   end
 
   def register_email_form(conn, _params) do
+    actions = %{
+      submit: Routes.auth_path(conn, :register_email_submit),
+      cancel: Routes.auth_path(conn, :register)
+    }
     changeset = Author.changeset(%Author{})
-    render conn, "register_email.html", changeset: changeset
+    render conn, "register_email.html", changeset: changeset, actions: actions
   end
 
   def register_email_submit(
@@ -40,7 +58,7 @@ defmodule OliWeb.AuthController do
         "password" => password,
         "password_confirmation" => password_confirmation
       },
-    })
+    } = params)
   do
     author_params = %{
       email: email,
@@ -55,10 +73,12 @@ defmodule OliWeb.AuthController do
 
     case Accounts.create_author(author_params) do
       {:ok, author} ->
-        conn
-        |> put_flash(:info, "Thank you for registering!")
-        |> put_session(:current_author_id, author.id)
-        |> redirect(to: Routes.page_path(conn, :index))
+        case params do
+          %{"type" => "link-account"} ->
+            link_account_callback(conn, author)
+          _ ->
+            signin_callback(conn, author)
+        end
 
       {:error, changeset} ->
         # remove password_hash from changeset for security, just in case

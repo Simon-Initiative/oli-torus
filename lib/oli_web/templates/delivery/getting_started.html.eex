@@ -21,11 +21,10 @@
 
 <script>
 $(function() {
-  $('#link-account').on('click', function linkAccountClick() {
-    console.log('clicked!')
+  $('a.link-account').on('click', function() {
     $('.configure-section').html('<h4>Please reload your browser</h4>');
   });
-})
+});
 </script>
 
 <div class="configure-section mt-5">
@@ -37,25 +36,22 @@ $(function() {
   </p>
 
   <div class="card-deck mt-5">
-    <a id="link-account" href="<%= Routes.delivery_path(@conn, :link_account) %>" target="_blank" class="card btn-card">
-      <%# <img class="card-img-top" src=".../100px180/" alt="Card image cap"> %>
+    <a href="<%= Routes.delivery_path(@conn, :link_account) %>" target="_blank" class="card btn-card link-account">
       <div class="card-body">
         <h5 class="card-title">Link an Existing Account</h5>
         <p class="card-text">If you have an existing account or have previously authored a course project, click here to link your account</p>
       </div>
     </a>
-    <a href="#" class="card btn-card">
-      <%# <img class="card-img-top" src=".../100px180/" alt="Card image cap"> %>
+    <a href="<%= Routes.delivery_path(@conn, :create_and_link_account) %>" target="_blank" class="card btn-card link-account">
       <div class="card-body">
         <h5 class="card-title">Create a New Account</h5>
         <p class="card-text">If you have not previously created an account and would like to author your own course project, click here to create a new account</p>
       </div>
     </a>
-    <a href="#" class="card btn-card">
-      <%# <img class="card-img-top" src=".../100px180/" alt="Card image cap"> %>
+    <a href="<%= Routes.delivery_path(@conn, :list_open_and_free) %>" class="card btn-card">
       <div class="card-body">
         <h5 class="card-title">Select an Open and Free Course</h5>
-        <p class="card-text">If you would like to create a course section from an Open and Free course, click here to select an Open and Free course</p>
+        <p class="card-text">If you would like to create a course section from an Open and Free course, click here</p>
       </div>
     </a>
   </div>

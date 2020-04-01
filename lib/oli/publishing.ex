@@ -33,6 +33,9 @@ defmodule Oli.Publishing do
       [%Publication{}, ...]
 
   """
+  def available_publications() do
+    Repo.all(Publication, open_and_free: true) |> Repo.preload([:project])
+  end
   def available_publications(%Author{} = author) do
     Repo.all from pub in Publication,
       join: proj in Project, on: pub.project_id == proj.id,

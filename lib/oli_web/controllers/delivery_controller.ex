@@ -17,10 +17,17 @@ defmodule OliWeb.DeliveryController do
         render(conn, "getting_started.html")
       {role, author, nil} when role == :administrator or role == :instructor ->
         publications = Oli.Publishing.available_publications(author)
-        render(conn, "configure_section.html", publications: publications)
+        my_publications = publications |> Enum.filter(fn p -> !p.open_and_free end)
+        open_and_free_publications = publications |> Enum.filter(fn p -> p.open_and_free end)
+        render(conn, "configure_section.html", author: author, my_publications: my_publications, open_and_free_publications: open_and_free_publications)
       {role, _author, section} when role == :administrator or role == :instructor ->
         render(conn, "instructor_view.html", section: section)
     end
+  end
+
+  def list_open_and_free(conn, _params) do
+    open_and_free_publications = Oli.Publishing.available_publications()
+    render(conn, "configure_section.html", open_and_free_publications: open_and_free_publications)
   end
 
   def link_account(conn, _params) do
@@ -28,18 +35,33 @@ defmodule OliWeb.DeliveryController do
       google: Routes.auth_path(conn, :request, "google", type: "link-account"),
       facebook: Routes.auth_path(conn, :request, "facebook", type: "link-account"),
       identity: Routes.auth_path(conn, :identity_callback, type: "link-account"),
-      cancel: Routes.delivery_path(conn, :index),
     }
 
     assigns = conn.assigns
     |> Map.put(:title, "Link Existing Account")
     |> Map.put(:actions, actions)
     |> Map.put(:show_remember_password, false)
-    |> Map.put(:show_cancel, true)
 
     conn
     |> put_view(OliWeb.AuthView)
     |> render("signin.html", assigns)
+  end
+
+  def create_and_link_account(conn, _params) do
+    actions = %{
+      google: Routes.auth_path(conn, :request, "google", type: "link-account"),
+      facebook: Routes.auth_path(conn, :request, "facebook", type: "link-account"),
+      identity: Routes.auth_path(conn, :register_email_form, type: "link-account"),
+    }
+
+    assigns = conn.assigns
+    |> Map.put(:title, "Create and Link Account")
+    |> Map.put(:actions, actions)
+    |> Map.put(:show_remember_password, false)
+
+    conn
+    |> put_view(OliWeb.AuthView)
+    |> render("register.html", assigns)
   end
 
   def create_section(conn, %{"publication_id" => publication_id}) do
