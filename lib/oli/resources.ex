@@ -55,6 +55,14 @@ defmodule Oli.Resources do
     |> Repo.insert()
   end
 
+  def new_project_resource(project) do
+    %Resource{}
+      |> Resource.changeset(%{
+        project_id: project.id,
+        slug: project.slug <> "_root_container"
+      })
+  end
+
   @doc """
   Updates a resource.
 
@@ -245,6 +253,20 @@ defmodule Oli.Resources do
     %ResourceRevision{}
     |> ResourceRevision.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def new_project_resource_revision(author, project, resource) do
+    %ResourceRevision{}
+      |> ResourceRevision.changeset(%{
+        slug: project.slug <> "_root_container",
+        title: project.title <> " root container",
+        author_id: author.id,
+        resource_id: resource.id,
+        resource_type_id: Repo.one!(
+          from rt in "resource_types",
+          where: rt.type == "container",
+          select: rt.id)
+      })
   end
 
   @doc """

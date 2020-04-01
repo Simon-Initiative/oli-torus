@@ -1,0 +1,16 @@
+<%= render OliWeb.SharedView, "_tutorial_card.html" %>
+<%= render OliWeb.SharedView, "_add_button.html" %>
+<%= render OliWeb.SharedView, "_project_options_menu.html" %>
+<%= render OliWeb.SharedView, "_section_header.html" %>
+<%= render OliWeb.SharedView, "_list.html" %>
+<%= render OliWeb.SharedView, "_input.html" %>
+<%= render OliWeb.SharedView, "_textarea.html" %>
+<%= render OliWeb.SharedView, "_button_primary.html" %>
+<%= render OliWeb.SharedView, "_signup_modal.html" %>
+<i class="material-icons-outlined">assignment</i>
+<i class="material-icons-outlined">check_box</i>
+<i class="material-icons-outlined">format_list_bulleted</i> Multiple Choice
+<i class="material-icons-outlined">mode_comment</i> Short Answer
+<i class="material-icons-outlined">font_download</i> Content
+<p style="color: #EB5757">Error text</p>
+<p style="color: #55C273">Success text</p>

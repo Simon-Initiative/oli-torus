@@ -17,4 +17,5 @@ defmodule OliWeb.AuthControllerTest do
 
     assert conn.assigns["current_author"] == nil
   end
+
 end

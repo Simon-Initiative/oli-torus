@@ -1,12 +1,5 @@
 <main role="main">
 
-  <%= if get_flash(@conn, :info) do %>
-    <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
-  <% end %>
-  <%= if get_flash(@conn, :error) do %>
-    <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
-  <% end %>
-
   <nav class="navbar navbar-expand-lg">
     <div class="container">
       <img src="/images/cmu_logo.png" width="75" height="48" class="d-inline-block align-top mr-2" alt="">

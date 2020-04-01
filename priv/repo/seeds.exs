@@ -28,7 +28,7 @@ if !Oli.Repo.get_by(Oli.Accounts.Author, email: System.get_env("ADMIN_EMAIL", "a
   Oli.Repo.insert! %Oli.Accounts.Author{
     email: System.get_env("ADMIN_EMAIL", "admin@oli.cmu.edu"),
     first_name: "Administrator",
-    last_name: "",
+    last_name: "Admin",
     provider: "identity",
     password_hash: Bcrypt.hash_pwd_salt(System.get_env("ADMIN_PASSWORD", "admin")),
     email_verified: true,
@@ -67,10 +67,13 @@ if !Oli.Repo.get_by(Oli.Resources.ResourceType, id: 1) do
     id: 1,
     type: "unscored_page"
   }
-
   Oli.Repo.insert! %Oli.Resources.ResourceType{
     id: 2,
     type: "scored_page"
+  }
+  Oli.Repo.insert! %Oli.Resources.ResourceType{
+    id: 3,
+    type: "container"
   }
 
 end

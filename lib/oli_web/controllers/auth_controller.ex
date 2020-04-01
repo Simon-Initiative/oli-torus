@@ -5,6 +5,7 @@ defmodule OliWeb.AuthController do
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Accounts.SystemRole
+  alias Oli.Repo
 
   def signin(conn, _params) do
     actions = %{
@@ -127,6 +128,11 @@ defmodule OliWeb.AuthController do
           _ ->
             signin_callback(conn, author)
         end
+
+        conn
+        |> put_session(:current_author_id, author.id)
+        |> redirect(to: (redirect_path conn, author))
+
       {:error, _reason} ->
         conn
         |> put_flash(:error, "Error signing in")
@@ -135,7 +141,16 @@ defmodule OliWeb.AuthController do
   end
 
   def identity_callback(%{assigns: %{ueberauth_auth: auth}} = conn, params) do
-    %Ueberauth.Auth{info: %{email: email}, credentials: %{other: %{password: password}}} = auth;
+    %Ueberauth.Auth{
+      info: %{
+        email: email,
+      },
+      credentials: %{
+        other: %{
+          password: password,
+        }
+      }
+    } = auth;
 
     # emails are case-insensitive, use lowercased version
     email = String.downcase(email)
@@ -159,7 +174,7 @@ defmodule OliWeb.AuthController do
     conn
     |> put_flash(:info, "Thank you for signing in!")
     |> put_session(:current_author_id, author.id)
-    |> redirect(to: Routes.workspace_path(conn, :projects))
+    |> redirect(to: redirect_path(conn, author))
   end
 
   def link_account_callback(conn, author) do
@@ -171,6 +186,16 @@ defmodule OliWeb.AuthController do
         |> redirect(to: Routes.delivery_path(conn, :index))
       _ ->
         throw "Failed to link user and author accounts"
+    end
+  end
+
+  # redirect to project overview if author has one project, else go to workspace
+  defp redirect_path conn, author do
+    author = Repo.preload(author, [:projects])
+
+    case length author.projects do
+      1 -> Routes.project_path conn, :overview, (hd author.projects).slug
+      _ -> Routes.workspace_path conn, :projects
     end
   end
 

@@ -16,7 +16,7 @@ defmodule Oli.Accounts.Author do
     belongs_to :system_role, Oli.Accounts.SystemRole
     has_many :institutions, Oli.Accounts.Institution
     has_many :users, Oli.Accounts.User
-    many_to_many :projects, Oli.Course.Project, join_through: Oli.Accounts.AuthorProject
+    many_to_many :projects, Oli.Course.Project, join_through: Oli.Accounts.AuthorProject, on_replace: :delete
     many_to_many :sections, Oli.Sections.Section, join_through: Oli.Accounts.AuthorSection
 
     timestamps()

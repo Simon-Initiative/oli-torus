@@ -20,6 +20,27 @@ html, body {
   flex-direction: column;
   flex-grow: 1;
 }
+#right .container {
+  flex-grow: 1;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 48px;
+}
+#right h1 {
+  display: inline-block;
+  font-size: 14px;
+}
+#right small {
+  font-size: 14px;
+  color: #b3b3b3;
+}
+#right .row {
+  margin: 0 0 20px 0;
+}
+#right .page-header p {
+  margin-top: 10px;
+  color: #b3b3b3;
+}
 
 form .form-label-group .help-block {
   color: #dc3545;

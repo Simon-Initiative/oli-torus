@@ -1,9 +1,12 @@
 defmodule Oli.TestHelpers do
+  import Oli.Utils
+
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Lti.HmacSHA1
-  import Oli.Utils
+  alias Oli.Course
+  alias Oli.Course.Project
 
   def author_fixture(attrs \\ %{}) do
     params =
@@ -42,90 +45,9 @@ defmodule Oli.TestHelpers do
     institution
   end
 
-  def package_fixture(author_id \\ 1, attrs \\ []) do
-    {:ok, family} = Oli.Course.create_family(
-      Keyword.get(attrs, :family, %{})
-      |> Enum.into(%{
-        description: "An example course for development",
-        slug: "example-course",
-        title: "Example Course",
-      })
-    )
-
-    {:ok, project} = Oli.Course.create_project(
-      Keyword.get(attrs, :project, %{})
-      |> Enum.into(%{
-        description: "An example course for development",
-        slug: UUID.uuid4(),
-        title: "Example Course",
-        version: "1.0",
-        parent_project: nil,
-        family_id: family.id,
-      })
-    )
-
-    {:ok, resource} = Oli.Resources.create_resource(
-      Keyword.get(attrs, :resource, %{})
-      |> Enum.into(%{
-        slug: UUID.uuid4(),
-        project_id: project.id,
-      })
-    )
-
-    {:ok, objective} = Oli.Learning.create_objective(
-        Keyword.get(attrs, :objective, %{})
-        |> Enum.into(%{
-        slug: UUID.uuid4(),
-        project_id: project.id,
-      })
-    )
-
-    {:ok, objective_revision} = Oli.Learning.create_objective_revision(
-        Keyword.get(attrs, :objective_revision, %{})
-        |> Enum.into(%{
-        title: "Example Objective",
-        children: [],
-        objective_id: objective.id,
-        previous_revision_id: nil,
-      })
-    )
-
-    resource_revision_content = Keyword.get(attrs, :resource_revision_content, %{}) |> Enum.into(%{})
-
-    {:ok, resource_revision} = Oli.Resources.create_resource_revision(
-        Keyword.get(attrs, :resource_revision, %{})
-        |> Enum.into(%{
-        children: [],
-        content: [resource_revision_content],
-        objectives: [objective.id],
-        slug: UUID.uuid4(),
-        title: "Example Page",
-        author_id: author_id,
-        resource_id: resource.id,
-        previous_revision_id: nil,
-        resource_type_id: 1,
-      })
-    )
-
-    {:ok, publication} = Oli.Publishing.create_publication(
-        Keyword.get(attrs, :publication, %{})
-        |> Enum.into(%{
-        description: "An example course for development",
-        published: true,
-        root_resources: [resource.id],
-        project_id: project.id,
-      })
-    )
-
-    %{
-      family: family,
-      project: project,
-      resource: resource,
-      objective: objective,
-      objective_revision: objective_revision,
-      resource_revision: resource_revision,
-      publication: publication,
-    }
+  def package_fixture(author) do
+    {:ok, resources} = Course.create_project("test project", author)
+    resources
   end
 
   def url_from_conn(conn) do
@@ -177,6 +99,21 @@ defmodule Oli.TestHelpers do
     )
 
     Map.put(lti_params, "oauth_signature", oauth_signature)
+  end
+
+  def make_n_projects(0, _author), do: []
+  def make_n_projects(n, author) do
+    1..n
+      |> Enum.map(fn _ -> Course.create_project("test project", author) end)
+      |> Enum.map(fn {:ok, %{project: project}} -> project end)
+  end
+
+  @doc "Only for testing Project changeset and database transaction logic.
+  Use `create_project` for application use"
+  def create_empty_project(attrs \\ %{}) do
+    %Project{}
+    |> Project.changeset(attrs)
+    |> Repo.insert()
   end
 
 end

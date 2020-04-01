@@ -61,6 +61,7 @@ defmodule OliWeb.Router do
     pipe_through [:browser, :protected, :workspace_layout]
 
     get "/:project", ProjectController, :overview
+    post "/", ProjectController, :create
     get "/:project/objectives", ProjectController, :objectives
     get "/:project/curriculum", ProjectController, :curriculum
     get "/:project/publish", ProjectController, :publish
