@@ -41,6 +41,17 @@ defmodule Oli.Accounts do
     |> Repo.insert()
   end
 
+  # VERY important -> all author projects must be passed into the :projects
+  # change, or else the other assocations will be deleted
+  def author_to_project(author, project) do
+    author = Repo.preload(author, [:projects])
+    projects = [project | author.projects]
+
+    author
+    |> Author.changeset(%{ projects: projects})
+    |> Ecto.Changeset.put_assoc(:projects, projects)
+  end
+
   @doc """
   Gets a single author with the given email
   """
@@ -81,6 +92,23 @@ defmodule Oli.Accounts do
 
   defp resolve_authorization({:error, _reason}, _author), do: {:error, "Invalid authorname or password"}
   defp resolve_authorization({:ok, author}, _author), do: {:ok, author}
+
+  def can_access?(author, project) do
+    # querying join table rather than author's project associations list
+    # in case the author has many projects
+    Repo.one(
+      from assoc in "authors_projects",
+        where: assoc.author_id == ^author.id and
+        assoc.project_id == ^project.id,
+        select: count(assoc)) != 0
+  end
+
+  def project_author_count(project) do
+    Repo.one(
+      from assoc in "authors_projects",
+        where: assoc.project_id == ^project.id,
+        select: count(assoc))
+  end
 
   alias Oli.Accounts.Institution
 

@@ -2,6 +2,7 @@ defmodule Oli.Learning.Objective do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive {Phoenix.Param, key: :slug}
   schema "objectives" do
     field :slug, :string
     belongs_to :project, Oli.Course.Project

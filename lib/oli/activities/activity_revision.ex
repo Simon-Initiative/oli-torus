@@ -2,6 +2,7 @@ defmodule Oli.Activities.ActivityRevision do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive {Phoenix.Param, key: :slug}
   schema "activity_revisions" do
     field :content, :map
     field :deleted, :boolean, default: false

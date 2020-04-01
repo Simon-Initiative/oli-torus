@@ -1,0 +1,1 @@
+<%= link "Back to workspace", to: Routes.workspace_path(@conn, :projects), class: "btn btn-primary" %>
