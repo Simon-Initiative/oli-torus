@@ -1,0 +1,24 @@
+<%= if Enum.count(@objectives) == 0 do %>
+  <div class="my-5 text-center">
+    No objectives
+  </div>
+<% else %>
+  <table class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>Title</th>
+      </tr>
+    </thead>
+    <tbody>
+  <%= for objective <- @objectives do %>
+      <tr>
+        <td><%= objective.title %></td>
+        <td>
+          <span><%= link "Edit", to: Routes.objective_path(@conn, :edit, @project, objective), class: "btn btn-xs btn-outline-primary my-2" %></span>
+        </td>
+      </tr>
+  <% end %>
+    </tbody>
+  </table>
+<% end %>
+<span><%= link "Create New Objective", to: Routes.objective_path(@conn, :new, @project), class: "btn btn-md btn-outline-primary" %></span>

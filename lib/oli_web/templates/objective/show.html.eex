@@ -1,0 +1,13 @@
+<h1>Show Institution</h1>
+
+<ul>
+
+  <li>
+    <strong>Title:</strong>
+    <%= @objective.title %>
+  </li>
+
+</ul>
+
+<span><%= link "Edit", to: Routes.objective_path(@conn, :edit, @project, @objective) %></span>
+<span><%= link "Back", to: Routes.project_path(@conn, :objectives, @project) %></span>

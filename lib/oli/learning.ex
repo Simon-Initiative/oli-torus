@@ -50,9 +50,34 @@ defmodule Oli.Learning do
 
   """
   def create_objective(attrs \\ %{}) do
+    Multi.new
+    |> Multi.insert(:objective, do_create_objective(attrs))
+    |> Multi.merge(fn %{objective: objective} ->
+      Multi.new
+      |> Multi.insert(:objective_revision, do_create_objective_revision(Map.get(attrs, :title), objective)) end)
+    |> Repo.transaction
+  end
+
+  defp do_create_objective(attrs) do
     %Objective{}
-    |> Objective.changeset(attrs)
-    |> Repo.insert()
+    |> Objective.changeset(%{
+      slug: slugify(Map.get(attrs, :title)),
+      project_id: Map.get(attrs, :project_id)
+    })
+  end
+
+  defp do_create_objective_revision(attr, objective) do
+    %ObjectiveRevision{}
+    |> ObjectiveRevision.changeset(%{
+      title: Map.get(attrs, :title),
+      project_id: project_id
+    })
+  end
+
+  defp slugify(str) do
+    str
+    |> String.downcase()
+    |> String.replace(~r/[^\w-]+/u, "-")
   end
 
   @doc """
