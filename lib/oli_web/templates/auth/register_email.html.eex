@@ -115,7 +115,7 @@ a.btn-facebook:hover {
       <div class="card card-signin my-5">
         <div class="card-body">
           <h5 class="card-title text-center">Create Account</h5>
-          <%= form_for @changeset, Routes.auth_path(@conn, :register_email_submit), fn f -> %>
+          <%= form_for @changeset, @actions.submit, fn f -> %>
             <div class="form-label-group">
               <%= email_input f, :email, class: "form-control " <> error_class(f, :email, "is-invalid"),
                 placeholder: "Email", required: true, autofocus: focusHelper(f, :email, default: true) %>
@@ -152,7 +152,7 @@ a.btn-facebook:hover {
             </div>
 
             <%= submit "Register", class: "btn btn-md btn-primary btn-block" %>
-            <%= link "Cancel", to: Routes.auth_path(@conn, :register), class: "btn btn-md btn-outline-secondary btn-block mt-4" %>
+            <%= link "Cancel", to: @actions.cancel, class: "btn btn-md btn-outline-secondary btn-block mt-4" %>
           <% end %>
         </div>
       </div>

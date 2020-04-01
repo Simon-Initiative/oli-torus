@@ -7,6 +7,8 @@ defmodule Oli.Publishing do
   alias Oli.Repo
 
   alias Oli.Publishing.Publication
+  alias Oli.Course.Project
+  alias Oli.Accounts.Author
 
   @doc """
   Returns the list of publications.
@@ -19,6 +21,28 @@ defmodule Oli.Publishing do
   """
   def list_publications do
     Repo.all(Publication)
+  end
+
+  @doc """
+  Returns the list of publications available to an author. If no author is specified,
+  then it will only return publicly available open and free publications
+
+  ## Examples
+
+      iex> available_publications(author)
+      [%Publication{}, ...]
+
+  """
+  def available_publications() do
+    Repo.all(Publication, open_and_free: true) |> Repo.preload([:project])
+  end
+  def available_publications(%Author{} = author) do
+    Repo.all from pub in Publication,
+      join: proj in Project, on: pub.project_id == proj.id,
+      left_join: a in assoc(proj, :authors),
+      where: a.id == ^author.id or pub.open_and_free == true,
+      preload: [:project],
+      select: pub
   end
 
   @doc """

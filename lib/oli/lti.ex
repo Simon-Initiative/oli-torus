@@ -111,4 +111,16 @@ defmodule Oli.Lti do
     from(n in Nonce, where: n.inserted_at < ^nonce_expiry)
     |> Repo.delete_all
   end
+
+  def parse_lti_role(roles) do
+    cond do
+      String.contains?(roles, "Administrator") ->
+        :administrator
+      String.contains?(roles, "Instructor") ->
+        :instructor
+      String.contains?(roles, "Learner") ->
+        :student
+    end
+  end
+
 end
