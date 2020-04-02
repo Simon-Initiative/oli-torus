@@ -9,6 +9,7 @@ defmodule OliWeb.ObjectiveController do
 #  plug :authorize_project when not action in [:create, :update, :delete]
 
   def create(conn, %{"project" => project_id, "objective" => objective_params}) do
+    # :TODO: need to figure out how to do authorization here; above plugs failing
     project = Course.get_project_by_slug(conn.params["project"])
     params = Map.merge(objective_params, %{"project_id" => project.id})
     case Learning.create_objective(params) do
@@ -25,6 +26,7 @@ defmodule OliWeb.ObjectiveController do
   end
 
   def update(conn, %{"project" => project_id, "id" => id, "objective" => objective_params}) do
+    # :TODO: need to figure out how to do authorization here; above plugs failing
     objective = Learning.get_objective!(id)
     project = Course.get_project_by_slug(conn.params["project"])
     params = Map.merge(objective_params, %{"project_id" => project.id})
@@ -42,6 +44,7 @@ defmodule OliWeb.ObjectiveController do
   end
 
   def delete(conn, %{"project" => project_id, "id" => id}) do
+    # :TODO: need to figure out how to do authorization here; above plugs failing
     objective = Learning.get_objective!(id)
     {:ok, _objective} = Learning.delete_objective(objective)
 
