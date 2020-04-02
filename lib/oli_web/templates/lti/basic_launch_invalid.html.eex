@@ -1,3 +1,5 @@
-<h3 class="my-3">LTI Launch Invalid</h3>
+<h3 class="my-3">LTI Connection is Invalid</h3>
 
 <p>Reason: <span class="text-danger"><%= @reason %></span></p>
+
+<p>If you need help configuring your LTI connection, please <a href="https://oli.cmu.edu/jcourse/webui/help.do" target="_blank">contact OLI Support</a></p>

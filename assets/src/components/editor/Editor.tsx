@@ -1,10 +1,9 @@
 import React, { useMemo, useCallback, KeyboardEvent } from 'react';
 import { Slate, Editable, withReact, ReactEditor } from 'slate-react';
 import { createEditor, Node, NodeEntry, Range, Editor as SlateEditor, Transforms, Path } from 'slate';
-import { withHistory } from 'slate-history';
 import { create, Mark, ModelElement, schema, Paragraph, SchemaConfig } from 'data/content/model';
 import { editorFor, markFor } from './editors';
-import { ToolbarItem, gutterWidth } from './interfaces';
+import { ToolbarItem } from './interfaces';
 import { FixedToolbar, HoveringToolbar } from './Toolbars';
 import { onKeyDown as listOnKeyDown } from './editors/Lists';
 import { onKeyDown as quoteOnKeyDown } from './editors/Blockquote';
@@ -22,6 +21,8 @@ export type EditorProps = {
   // The fixed toolbar configuration
   toolbarItems: ToolbarItem[];
 
+  // Whether or not editing is allowed
+  editMode: boolean;
 };
 
 // Pressing the Enter key on any void block should insert an empty
@@ -47,9 +48,7 @@ const voidOnKeyDown = (editor: ReactEditor, e: KeyboardEvent) => {
 
 export const Editor = (props: EditorProps) => {
 
-  const editor = useMemo(() => withHistory(
-    withReact(createEditor()))
-    , []);
+  const editor = useMemo(() => withReact(createEditor()), []);
 
   // Override isVoid to incorporate our schema's opinion on which
   // elements are void
@@ -143,15 +142,8 @@ export const Editor = (props: EditorProps) => {
     return <span {...attributes}>{markup}</span>;
   }, []);
 
-
-  const border = {
-    border: 'solid lightgray 1px',
-    padding: '4px',
-    paddingRight: gutterWidth + 'px',
-  };
-
   return (
-    <div style={border}>
+    <div>
 
       <Slate
         editor={editor as any}

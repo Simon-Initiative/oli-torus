@@ -18,7 +18,7 @@
           <span class="block lg:inline-block lg:mt-0 text-grey-darkest mr-4 no-underline hover:underline">
             Examples
           </span>
-          <%= if signed_in?(@conn) do %>
+          <%= if author_signed_in?(@conn) do %>
             <span class="block lg:inline-block lg:mt-0 text-grey-darkest mr-4 no-underline hover:underline">
               <%= link "My Projects", to: Routes.workspace_path(@conn, :projects), class: "btn btn-primary" %>
             </span>
@@ -34,7 +34,7 @@
 
   <div class="container">
   <section class="my-5" style="text-align: center">
-    <%= if signed_in?(@conn) do %>
+    <%= if author_signed_in?(@conn) do %>
       <h1><%= gettext "Welcome back %{name}!", name: @conn.assigns.current_author.first_name %></h1>
 
       <%= link "My Institutions", to: Routes.institution_path(@conn, :index), class: "btn btn-md btn-outline-primary ml-4" %>

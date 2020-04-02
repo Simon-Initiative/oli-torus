@@ -9,13 +9,15 @@ import { CounterButtons } from 'components/CounterButtons';
 import { Editor } from 'components/editor/Editor';
 import { configureStore } from 'state/store';
 import { TestEditor } from 'components/editor/EditorTest';
+import { ResourceEditor } from 'components/resource/ResourceEditor';
 
 export const registry = {
   CountDisplay,
   CounterButtons,
   Editor,
   TestEditor,
-};
+  ResourceEditor,
+} as any;
 
 export type ComponentName = keyof typeof registry;
 

@@ -11,9 +11,24 @@ defmodule Oli.Learning do
 
   alias Oli.Publishing.Publication
   alias Oli.Learning.Objective
+  alias Oli.Learning.ObjectiveFamily
+
   alias Oli.Learning.ObjectiveRevision
   alias Oli.Publishing
   alias Oli.Publishing.ObjectiveMapping
+  
+  def create_objective_family(attrs \\ %{}) do
+    %ObjectiveFamily{}
+    |> ObjectiveFamily.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def new_objective_family() do
+    %ObjectiveFamily{}
+      |> ObjectiveFamily.changeset(%{
+      })
+  end
+
   @doc """
   Returns the list of objectives.
 
@@ -95,6 +110,13 @@ defmodule Oli.Learning do
       deleted: false,
       objective_id: objective.id
     })
+  end
+
+  def new_project_objective(project, family) do
+    %Objective{}
+      |> Objective.changeset(%{
+        project_id: project.id, family_id: family.id
+      })
   end
 
   @doc """

@@ -1,16 +1,16 @@
 defmodule OliWeb.ProjectController do
   use OliWeb, :controller
   alias Oli.Course
+  import OliWeb.ProjectPlugs
   alias Oli.Accounts
   alias Oli.Publishing
   alias Oli.Learning
 
   require Logger
+  plug :fetch_project when action not in [:create]
+  plug :authorize_project when action not in [:create]
 
-  plug :fetch_project when not action in [:create]
-  plug :authorize_project when not action in [:create]
-
-  def overview(conn, %{"project" => project_id}) do
+  def overview(conn, %{"project" => _project_id}) do
     params = %{title: "Overview", active: :overview}
     render %{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html"
   end
@@ -25,23 +25,15 @@ defmodule OliWeb.ProjectController do
     render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
   end
 
-  def curriculum(conn, %{"project" => project_id}) do
+  def curriculum(conn, %{"project" => _project_id}) do
     render conn, "curriculum.html", title: "Curriculum", active: :curriculum
   end
 
-  def page(conn, %{"project" => project_id}) do
-    render conn, "page.html", title: "Page", active: :page
-  end
-
-  def resource_editor(conn, %{"project" => project_id}) do
-    render conn, "resource_editor.html", title: "Resource Editor", active: :resource_editor
-  end
-
-  def publish(conn, %{"project" => project_id}) do
+  def publish(conn, %{"project" => _project_id}) do
     render conn, "publish.html", title: "Publish", active: :publish
   end
 
-  def insights(conn, %{"project" => project_id}) do
+  def insights(conn, %{"project" => _project_id}) do
     render conn, "insights.html", title: "Insights", active: :insights
   end
 
@@ -56,26 +48,4 @@ defmodule OliWeb.ProjectController do
       end
   end
 
-  defp fetch_project(conn, _) do
-    case Course.get_project_by_slug(conn.params["project"]) do
-      nil ->
-        conn
-        |> put_flash(:info, "That project does not exist")
-        |> redirect(to: Routes.workspace_path(conn, :projects))
-        |> halt()
-      project -> conn
-        |> assign(:project, project)
-    end
-  end
-
-  defp authorize_project(conn, _) do
-    if Accounts.can_access?(conn.assigns[:current_author], conn.assigns[:project]) do
-      conn
-    else
-      conn
-       |> put_flash(:info, "You don't have access to that project")
-       |> redirect(to: Routes.workspace_path(conn, :projects))
-       |> halt()
-    end
-  end
 end

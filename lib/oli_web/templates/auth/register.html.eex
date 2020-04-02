@@ -124,10 +124,10 @@ a.btn-identity:hover {
     <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
       <div class="card card-signin my-5">
         <div class="card-body">
-          <h5 class="card-title text-center">Create an Account</h5>
-          <a href="/auth/google" class="btn btn-md btn-google btn-block social-signin"><i class="fab fa-google fa-lg mr-2"></i> Google</a>
-          <a href="/auth/facebook" class="btn btn-md btn-facebook btn-block social-signin"><i class="fab fa-facebook-f fa-lg mr-2"></i> Facebook</a>
-          <a href="/auth/register/email" class="btn btn-md btn-secondary btn-block social-signin"><i class="fab fa-mail-f fa-lg mr-2"></i> Email and Password</a>
+          <h5 class="card-title text-center"><%= @title %></h5>
+          <a href="<%= @actions.google %>" class="btn btn-md btn-google btn-block social-signin"><i class="fab fa-google fa-lg mr-2"></i> Sign in with Google</a>
+          <a href="<%= @actions.facebook %>" class="btn btn-md btn-facebook btn-block social-signin"><i class="fab fa-facebook-f fa-lg mr-2"></i> Sign in with Facebook</a>
+          <a href="<%= @actions.identity %>" class="btn btn-md btn-secondary btn-block social-signin"><i class="fab fa-mail-f fa-lg mr-2"></i> Email and Password</a>
         </div>
       </div>
     </div>
