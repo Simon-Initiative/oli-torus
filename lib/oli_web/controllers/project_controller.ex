@@ -1,7 +1,8 @@
 defmodule OliWeb.ProjectController do
   use OliWeb, :controller
-  alias Oli.Course
+
   import OliWeb.ProjectPlugs
+  alias Oli.Course
   alias Oli.Accounts
   alias Oli.Publishing
   alias Oli.Learning

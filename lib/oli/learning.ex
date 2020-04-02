@@ -72,10 +72,13 @@ defmodule Oli.Learning do
   """
   def create_objective(attrs \\ %{}) do
     Multi.new
-    |> Multi.insert(:objective, do_create_objective(attrs))
+    |> Multi.insert(:objective_family, new_objective_family())
+    |> Multi.merge(fn %{objective_family: objective_family} ->
+      Multi.new
+      |> Multi.insert(:objective, do_create_objective(attrs, objective_family)) end)
     |> Multi.merge(fn %{objective: objective} ->
       Multi.new
-      |> Multi.insert(:objective_revision, do_create_objective_revision(attrs, objective))end)
+      |> Multi.insert(:objective_revision, do_create_objective_revision(attrs, objective)) end)
     |> Multi.merge(fn %{objective: objective, objective_revision: objective_revision} ->
       Multi.new
       |> Multi.insert(:objective_mapping, do_create_objective_mapping(Publishing.get_unpublished_publication(Map.get(attrs, "project_id")), objective, objective_revision))end)
@@ -91,12 +94,12 @@ defmodule Oli.Learning do
     })
   end
 
-  defp do_create_objective(attrs) do
+  defp do_create_objective(attrs, objective_family) do
     slug = Utils.generate_slug("objectives", Map.get(attrs, "title"))
     project_id = Map.get(attrs, "project_id");
     %Objective{}
     |> Objective.changeset(%{
-      slug: slug,
+      family: objective_family.id,
       project_id: project_id
     })
   end
