@@ -1,5 +1,0 @@
-<h1>Edit Objective</h1>
-
-<%= render "form.html", Map.put(assigns, :action, Routes.objective_path(@conn, :update, @project, @objective)) %>
-
-<span><%= link "Back", to: Routes.project_path(@conn, :objectives, @project) %></span>

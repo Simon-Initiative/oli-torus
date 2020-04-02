@@ -47,3 +47,4 @@ postgres.env
 .devmode
 .elixir_ls
 .DS_Store
+/amisc/

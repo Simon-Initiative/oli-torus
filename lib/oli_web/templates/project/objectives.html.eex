@@ -158,7 +158,21 @@
       <div class="flex"><h1>Objectives</h1> <button class="add-button" id="button-new-objective"><i class="material-icons">add</i></button></div>
         <small>At the end of the course my students should be able to...</small>
         <p></p>
-
+<%= if Enum.count(@objective_mappings) == 0 do %>
+  <div class="my-5 text-center">
+    No objectives
+  </div>
+<% else %>
+  <table class="table table-striped table-bordered">
+    <tbody>
+  <%= for objective_mapping <- @objective_mappings do %>
+      <tr>
+        <td><%= objective_mapping.revision.title %></td>
+      </tr>
+  <% end %>
+    </tbody>
+  </table>
+<% end %>
     </div>
   </div>
 </div>

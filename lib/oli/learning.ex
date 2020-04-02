@@ -12,6 +12,7 @@ defmodule Oli.Learning do
   alias Oli.Publishing.Publication
   alias Oli.Learning.Objective
   alias Oli.Learning.ObjectiveRevision
+  alias Oli.Publishing
   alias Oli.Publishing.ObjectiveMapping
   @doc """
   Returns the list of objectives.
@@ -62,15 +63,8 @@ defmodule Oli.Learning do
       |> Multi.insert(:objective_revision, do_create_objective_revision(attrs, objective))end)
     |> Multi.merge(fn %{objective: objective, objective_revision: objective_revision} ->
       Multi.new
-      |> Multi.insert(:objective_mapping, do_create_objective_mapping(get_default_publication(Map.get(attrs, "project_id")), objective, objective_revision))end)
+      |> Multi.insert(:objective_mapping, do_create_objective_mapping(Publishing.get_unpublished_publication(Map.get(attrs, "project_id")), objective, objective_revision))end)
     |> Repo.transaction
-  end
-
-  defp get_default_publication(project_id)do
-    Repo.one(
-      from p in "publications",
-      where: p.project_id == ^project_id and p.published == false,
-      select: p.id)
   end
 
   defp do_create_objective_mapping(publication_id, objective, objective_revision) do
@@ -83,7 +77,6 @@ defmodule Oli.Learning do
   end
 
   defp do_create_objective(attrs) do
-#    Logger.debug "do_create_objective value: #{inspect(attrs)}"
     slug = Utils.generate_slug("objectives", Map.get(attrs, "title"))
     project_id = Map.get(attrs, "project_id");
     %Objective{}

@@ -5,10 +5,8 @@ defmodule OliWeb.ObjectiveController do
   alias Oli.Learning
   alias Oli.Learning.Objective
 
-#  def new(conn, %{"project" => project_id}) do
-#    changeset = Learning.change_objective(%Objective{})
-#    render conn, "new.html", changeset: changeset, title: "Objectives"
-#  end
+#  plug :fetch_project when not action in [:create, :update, :delete]
+#  plug :authorize_project when not action in [:create, :update, :delete]
 
   def create(conn, %{"project" => project_id, "objective" => objective_params}) do
     project = Course.get_project_by_slug(conn.params["project"])
@@ -26,17 +24,6 @@ defmodule OliWeb.ObjectiveController do
     end
   end
 
-  def show(conn, %{"project" => project_id, "id" => id}) do
-    objective = Learning.get_objective!(id)
-    render conn, "show.html", objective: objective, title: "Objectives"
-  end
-
-  def edit(conn, %{"project" => project_id, "id" => id}) do
-    objective = Learning.get_objective!(id)
-    changeset = Learning.change_objective(objective)
-    render(conn, "edit.html", objective: objective, changeset: changeset, title: "Objectives")
-  end
-
   def update(conn, %{"project" => project_id, "id" => id, "objective" => objective_params}) do
     objective = Learning.get_objective!(id)
     project = Course.get_project_by_slug(conn.params["project"])
@@ -48,7 +35,9 @@ defmodule OliWeb.ObjectiveController do
         |> redirect(to: Routes.objective_path(conn, :show, project_id, objective))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "edit.html", objective: objective, changeset: changeset, title: "Objectives")
+        conn
+        |> put_flash(:error, "Objective update failed.")
+        |> redirect(to: Routes.project_path(conn, :objectives, project_id))
     end
   end
 
@@ -59,6 +48,29 @@ defmodule OliWeb.ObjectiveController do
     conn
     |> put_flash(:info, "Objective deleted successfully.")
     |> redirect(to: Routes.project_path(conn, :objectives, project_id))
+  end
+
+  defp fetch_project(conn, _) do
+    case Course.get_project_by_slug(conn.params["project"]) do
+      nil ->
+        conn
+        |> put_flash(:info, "That project does not exist")
+        |> redirect(to: Routes.workspace_path(conn, :projects))
+        |> halt()
+      project -> conn
+                 |> assign(:project, project)
+    end
+  end
+
+  defp authorize_project(conn, _) do
+    if Accounts.can_access?(conn.assigns[:current_author], conn.assigns[:project]) do
+      conn
+    else
+      conn
+      |> put_flash(:info, "You don't have access to that project")
+      |> redirect(to: Routes.workspace_path(conn, :projects))
+      |> halt()
+    end
   end
 
 end
