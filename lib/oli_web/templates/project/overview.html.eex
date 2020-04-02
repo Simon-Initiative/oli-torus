@@ -1,5 +1,4 @@
 <style>
-
 .overview .flex {
   display: flex;
 }
@@ -8,10 +7,14 @@
   margin-right: 8px;
 }
 </style>
+
 <div class="overview container">
   <div class="row">
     <div class="page-header">
-      <div class="flex"><h1>Collaborators</h1> <%= render OliWeb.SharedView, "_add_button.html" %></div>
+      <div class="flex"><h1>Collaborators</h1> <button id="add-collaborator" class="add-button">
+        <i class="material-icons">add</i>
+        </button>
+      </div>
         <small>Add collaborators to invite them to contribute to your course.</small>
         <ul>
           <%= render_many @collaborators, OliWeb.ProjectView, "_li_collaborator.html", %{as: :collaborator} %>
@@ -32,3 +35,10 @@
     </div>
   </div>
 </div>
+
+<script>
+document.getElementById('add-collaborator').onClick = (e) => {
+  const email = window.prompt("Enter the author's email to add them to the course.");
+
+};
+</script>
