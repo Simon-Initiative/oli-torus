@@ -3,35 +3,35 @@ defmodule OliWeb.ProjectController do
   alias Oli.Course
   alias Oli.Accounts
 
-  plug :fetch_project when not action in [:create]
-  plug :authorize_project when not action in [:create]
+  plug :fetch_project when action not in [:create]
+  plug :authorize_project when action not in [:create]
 
-  def overview(conn, %{"project" => project_id}) do
+  def overview(conn, %{"project" => _project_id}) do
     params = %{title: "Overview", active: :overview}
     render %{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html"
   end
 
-  def objectives(conn, %{"project" => project_id}) do
+  def objectives(conn, %{"project" => _project_id}) do
     render conn, "objectives.html", title: "Objectives", active: :objectives
   end
 
-  def curriculum(conn, %{"project" => project_id}) do
+  def curriculum(conn, %{"project" => _project_id}) do
     render conn, "curriculum.html", title: "Curriculum", active: :curriculum
   end
 
-  def page(conn, %{"project" => project_id}) do
+  def page(conn, %{"project" => _project_id}) do
     render conn, "page.html", title: "Page", active: :page
   end
 
-  def resource_editor(conn, %{"project" => project_id}) do
+  def resource_editor(conn, %{"project" => _project_id}) do
     render conn, "resource_editor.html", title: "Resource Editor", active: :resource_editor
   end
 
-  def publish(conn, %{"project" => project_id}) do
+  def publish(conn, %{"project" => _project_id}) do
     render conn, "publish.html", title: "Publish", active: :publish
   end
 
-  def insights(conn, %{"project" => project_id}) do
+  def insights(conn, %{"project" => _project_id}) do
     render conn, "insights.html", title: "Insights", active: :insights
   end
 
