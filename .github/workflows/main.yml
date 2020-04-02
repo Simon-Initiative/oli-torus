@@ -24,8 +24,10 @@ jobs:
         otp-version: 22.2 # Define the OTP version [required]
     - name: Install Dependencies
       run: mix deps.get
-    - name: Build
-      run: set -a;source oli.env && mix compile
+    - name: Build Dependencies
+      run: mix deps.compile
+    - name: Build Project
+      run: set -a;source oli.env && mix compile --warnings-as-errors
     - name: Run Tests
       run: set -a;source oli.env && mix test.coverage
 
