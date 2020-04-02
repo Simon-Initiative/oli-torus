@@ -20,7 +20,7 @@
     font-weight: bold;
   }
 
-  #header .add-button {
+  .add-button {
     background: none;
     border: none;
     width: 30px;
@@ -33,7 +33,7 @@
     cursor: pointer;
     user-select: none;
   }
-  #header .add-button:hover {
+  .add-button:hover {
     background-color: #e5e5e5;
     border-radius: 4px;
   }
@@ -54,8 +54,8 @@
     margin-top: 72px;
     /*margin-right: 48px;*/
     box-shadow: 0 0 4px rgba(0, 0, 0, .25);
-    width: 360px;
-    height: 260px;
+    width: 460px;
+    height: 360px;
   }
   .modal .modal-header {
     display: flex;
