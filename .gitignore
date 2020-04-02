@@ -48,3 +48,4 @@ postgres.env
 .elixir_ls
 .DS_Store
 /amisc/
+/docker-compose-dev.yml
