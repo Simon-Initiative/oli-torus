@@ -96,5 +96,5 @@ if Mix.env == :dev do
 
   # create an example package and publication
   author = Oli.Accounts.get_author_by_email(System.get_env("ADMIN_EMAIL", "admin@oli.cmu.edu"))
-  {:ok, project} = Oli.Course.create_project("Example Open and Free Course", author)
+  {:ok, _project} = Oli.Course.create_project("Example Open and Free Course", author)
 end

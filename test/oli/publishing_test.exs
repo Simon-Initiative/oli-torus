@@ -18,6 +18,7 @@ defmodule Oli.PublishingTest do
   alias Oli.Activities.ActivityRevision
   alias Oli.Activities.Registration
   alias Oli.Learning.Objective
+  alias Oli.Learning.ObjectiveFamily
   alias Oli.Learning.ObjectiveRevision
 
   describe "publications" do
@@ -233,7 +234,8 @@ defmodule Oli.PublishingTest do
       {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: False, root_resources: [], project_id: project.id}) |> Repo.insert
       {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
       {:ok, _institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
-      {:ok, objective} = Objective.changeset(%Objective{}, %{slug: "slug", project_id: project.id}) |> Repo.insert
+      {:ok, objective_family} = ObjectiveFamily.changeset(%ObjectiveFamily{}, %{}) |> Repo.insert
+      {:ok, objective} = Objective.changeset(%Objective{}, %{family_id: objective_family.id, project_id: project.id}) |> Repo.insert
       {:ok, objective_revision} = ObjectiveRevision.changeset(%ObjectiveRevision{}, %{title: "some title", children: [], deleted: false, objective_id: objective.id}) |> Repo.insert
 
       valid_attrs = Map.put(@valid_attrs, :objective_id, objective.id)

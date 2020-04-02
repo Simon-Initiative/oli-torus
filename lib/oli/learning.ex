@@ -7,6 +7,19 @@ defmodule Oli.Learning do
   alias Oli.Repo
 
   alias Oli.Learning.Objective
+  alias Oli.Learning.ObjectiveFamily
+
+  def create_objective_family(attrs \\ %{}) do
+    %ObjectiveFamily{}
+    |> ObjectiveFamily.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def new_objective_family() do
+    %ObjectiveFamily{}
+      |> ObjectiveFamily.changeset(%{
+      })
+  end
 
   @doc """
   Returns the list of objectives.
@@ -53,6 +66,13 @@ defmodule Oli.Learning do
     %Objective{}
     |> Objective.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def new_project_objective(project, family) do
+    %Objective{}
+      |> Objective.changeset(%{
+        project_id: project.id, family_id: family.id
+      })
   end
 
   @doc """
