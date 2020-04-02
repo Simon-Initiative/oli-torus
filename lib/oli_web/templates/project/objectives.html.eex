@@ -1,24 +1,206 @@
-<%= if Enum.count(@objectives) == 0 do %>
-  <div class="my-5 text-center">
-    No objectives
+<style>
+  .flex {
+    display: flex;
+  }
+  .objective h1 {
+    line-height: 30px;
+    margin-right: 8px;
+  }
+  #header {
+    height: 62px;
+    border-bottom: 1px solid rgba(51, 51, 51, .15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 48px;
+    font-size: 14px;
+  }
+
+  #header .title {
+    font-weight: bold;
+  }
+
+  #header .add-button {
+    background: none;
+    border: none;
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+    color: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+  }
+  #header .add-button:hover {
+    background-color: #e5e5e5;
+    border-radius: 4px;
+  }
+
+  .new-project-modal {
+    margin-top: 72px;
+    margin-right: 48px;
+    box-shadow: 0 0 4px rgba(0,0,0,.25);
+  }
+
+  .modal {
+    font-family: Muli, sans-serif;
+    overflow: auto;
+    position: fixed;
+    z-index: 1;
+    border: none;
+    margin: auto;
+    margin-top: 72px;
+    /*margin-right: 48px;*/
+    box-shadow: 0 0 4px rgba(0, 0, 0, .25);
+    width: 360px;
+    height: 260px;
+  }
+  .modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 60px;
+    padding: 0 15px 0 30px;
+    background-color: black;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+  }
+
+  .modal .modal-body {
+    background: white;
+    height: calc(100% - 60px);
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal .btn.btn-primary {
+    width: 100%;
+    height: 50px;
+    font-size: 18px;
+  }
+  .modal .btn.btn-primary:disabled,
+  .btn.btn-primary:disabled:hover {
+    background-color: black;
+    border: none;
+  }
+
+  .modal-close {
+    font-size: 28px;
+    cursor: pointer;
+  }
+
+  .modal form {
+    width: 100%;
+  }
+
+  input.input-bold {
+    font-size: 14px;
+    border: 3px solid black;
+    border-radius: 8px;
+    padding: 16px;
+    width: 100%;
+    flex-grow: 1;
+    height: 48px;
+    outline: none;
+  }
+
+  .modal-body .form-label-group {
+    margin-bottom: 20px;
+  }
+
+  input.input-bold:hover {
+    border: 3px solid black;
+    border-radius: 8px;
+  }
+
+  label.input-bold {
+    color: #b3b3b3;
+    margin: 5px 0;
+  }
+</style>
+
+<%# The `display: none` MUST be set in-line to allow access to its value %>
+<div class="modal" id="modal-new-objective">
+  <div class="modal-header">
+    <span class="modal-title">Enter Objective</span>
+    <span class="modal-close"><i class="material-icons">close</i></span>
   </div>
-<% else %>
-  <table class="table table-striped table-bordered">
-    <thead>
-      <tr>
-        <th>Title</th>
-      </tr>
-    </thead>
-    <tbody>
-  <%= for objective <- @objectives do %>
-      <tr>
-        <td><%= objective.title %></td>
-        <td>
-          <span><%= link "Edit", to: Routes.objective_path(@conn, :edit, @project, objective), class: "btn btn-xs btn-outline-primary my-2" %></span>
-        </td>
-      </tr>
-  <% end %>
-    </tbody>
-  </table>
-<% end %>
-<span><%= link "Create New Objective", to: Routes.objective_path(@conn, :new, @project), class: "btn btn-md btn-outline-primary" %></span>
+  <div class="modal-body">
+    <%= form_for @objective_changeset, Routes.objective_path(@conn, :create, @project), [id: "form-create-objective"], fn f -> %>
+      <div class="form-label-group">
+        <%= textarea f,
+          :title,
+          class: "form-control input-bold " <> error_class(f, :title, "is-invalid"),
+          placeholder: "Determine whether two events are independent or not.",
+          id: "input-title",
+          required: true,
+          autofocus: focusHelper(f, :title, default: true) %>
+        <%= label f, :title, "This can be changed later", class: "control-label input-bold" %>
+        <%= error_tag f, :title %>
+      </div>
+      <%= submit "Add Objective",
+        id: "button-create-objective",
+        class: "btn btn-primary",
+        phx_disable_with: "Adding Objective...",
+        form: f.id %>
+    <% end %>
+  </div>
+</div>
+
+<div class="objective container">
+  <div class="row">
+    <div class="page-header">
+      <div class="flex"><h1>Objectives</h1> <button class="add-button" id="button-new-objective"><i class="material-icons">add</i></button></div>
+        <small>At the end of the course my students should be able to...</small>
+        <p></p>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // modal
+  const modal = document.getElementById("modal-new-objective");
+  modal.style.display = "none";
+  const openButton = document.getElementById("button-new-objective");
+  const closeButton = document.getElementsByClassName("modal-close")[0];
+
+  const isModalDisplayed = (modal) => modal.style.display === "block";
+  const displayModal = (e) => {
+    modal.style.display = "block";
+    e.stopPropagation();
+  };
+  const hideModal = () => modal.style.display = "none";
+  const closeModalOnClickOutside = (e) =>
+    e.target !== modal && !modal.contains(e.target) && hideModal();
+
+  closeButton.onclick = hideModal;
+  openButton.onclick = (e) => {
+    if (isModalDisplayed(modal)) {
+      hideModal();
+      return;
+    }
+    displayModal(e);
+    document.getElementsByTagName("body")[0].onclick = closeModalOnClickOutside;
+  };
+
+  // create objective
+  const createProjectButton = document.getElementById("button-create-objective")
+  const titleInput = document.getElementById("input-title")
+  createProjectButton.disabled = !titleInput.value || titleInput.value.length === 0
+  const form = document.getElementById("form-create-objective")
+  titleInput.addEventListener('input', () => titleInput.value.length > 0
+    ? createProjectButton.disabled = false
+    : createProjectButton.disabled = true)
+  createProjectButton.addEventListener('click', () => {
+    if (!createProjectButton.disabled) {
+      form.submit();
+    }
+  })
+
+</script>

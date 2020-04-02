@@ -2,12 +2,17 @@ defmodule Oli.Learning do
   @moduledoc """
   The Learning context.
   """
+  require Logger
 
   import Ecto.Query, warn: false
+  alias Ecto.Multi
   alias Oli.Repo
+  alias Oli.Course.Utils
 
+  alias Oli.Publishing.Publication
   alias Oli.Learning.Objective
-
+  alias Oli.Learning.ObjectiveRevision
+  alias Oli.Publishing.ObjectiveMapping
   @doc """
   Returns the list of objectives.
 
@@ -38,7 +43,7 @@ defmodule Oli.Learning do
   def get_objective!(id), do: Repo.get!(Objective, id)
 
   @doc """
-  Creates a objective.
+  Creates an objective.
 
   ## Examples
 
@@ -54,30 +59,49 @@ defmodule Oli.Learning do
     |> Multi.insert(:objective, do_create_objective(attrs))
     |> Multi.merge(fn %{objective: objective} ->
       Multi.new
-      |> Multi.insert(:objective_revision, do_create_objective_revision(Map.get(attrs, :title), objective)) end)
+      |> Multi.insert(:objective_revision, do_create_objective_revision(attrs, objective))end)
+    |> Multi.merge(fn %{objective: objective, objective_revision: objective_revision} ->
+      Multi.new
+      |> Multi.insert(:objective_mapping, do_create_objective_mapping(get_default_publication(Map.get(attrs, "project_id")), objective, objective_revision))end)
     |> Repo.transaction
   end
 
-  defp do_create_objective(attrs) do
-    %Objective{}
-    |> Objective.changeset(%{
-      slug: slugify(Map.get(attrs, :title)),
-      project_id: Map.get(attrs, :project_id)
+  defp get_default_publication(project_id)do
+    Repo.one(
+      from p in "publications",
+      where: p.project_id == ^project_id and p.published == false,
+      select: p.id)
+  end
+
+  defp do_create_objective_mapping(publication_id, objective, objective_revision) do
+    %ObjectiveMapping{}
+    |> ObjectiveMapping.changeset(%{
+      publication_id: publication_id,
+      objective_id: objective.id,
+      revision_id: objective_revision.id
     })
   end
 
-  defp do_create_objective_revision(attr, objective) do
-    %ObjectiveRevision{}
-    |> ObjectiveRevision.changeset(%{
-      title: Map.get(attrs, :title),
+  defp do_create_objective(attrs) do
+#    Logger.debug "do_create_objective value: #{inspect(attrs)}"
+    slug = Utils.generate_slug("objectives", Map.get(attrs, "title"))
+    project_id = Map.get(attrs, "project_id");
+    %Objective{}
+    |> Objective.changeset(%{
+      slug: slug,
       project_id: project_id
     })
   end
 
-  defp slugify(str) do
-    str
-    |> String.downcase()
-    |> String.replace(~r/[^\w-]+/u, "-")
+  defp do_create_objective_revision(attrs, objective) do
+    title = Map.get(attrs, "title")
+    %ObjectiveRevision{}
+    |> ObjectiveRevision.changeset(%{
+      title: title,
+      children: [],
+      deleted: false,
+      objective_id: objective.id
+    })
   end
 
   @doc """
@@ -127,7 +151,6 @@ defmodule Oli.Learning do
     Objective.changeset(objective, %{})
   end
 
-  alias Oli.Learning.ObjectiveRevision
 
   @doc """
   Returns the list of objective_revisions.

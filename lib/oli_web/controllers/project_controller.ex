@@ -12,7 +12,10 @@ defmodule OliWeb.ProjectController do
   end
 
   def objectives(conn, %{"project" => project_id}) do
-    render conn, "objectives.html", title: "Objectives", active: :objectives
+    objectives = Oli.Learning.list_objectives();
+    changeset = Oli.Learning.change_objective(%Oli.Learning.Objective{})
+    params = %{title: "Objectives", objectives: objectives, objective_changeset: changeset}
+    render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
   end
 
   def curriculum(conn, %{"project" => project_id}) do

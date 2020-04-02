@@ -10,9 +10,9 @@ services:
       - postgres
     volumes:
       - ./:/usr/src/app
-      - app_node_modules:/usr/src/app/assets/node_modules
-      - app_deps:/usr/src/app/deps
-      - app_build:/usr/src/app/build
+#      - app_node_modules:/usr/src/app/assets/node_modules
+#      - app_deps:/usr/src/app/deps
+#      - app_build:/usr/src/app/build
 
   postgres:
     image: postgres
