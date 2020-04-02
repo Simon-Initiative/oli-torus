@@ -129,8 +129,13 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       timestamps()
     end
 
+    create table(:resource_families) do
+      timestamps()
+    end
+
+
     create table(:resources) do
-      add :slug, :string
+      add :family_id, references(:resource_families)
       add :project_id, references(:projects)
       timestamps()
     end

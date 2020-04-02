@@ -7,6 +7,19 @@ defmodule Oli.Resources do
   alias Oli.Repo
 
   alias Oli.Resources.Resource
+  alias Oli.Resources.ResourceFamily
+
+  def create_resource_family(attrs \\ %{}) do
+    %ResourceFamily{}
+    |> ResourceFamily.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def new_resource_family() do
+    %ResourceFamily{}
+      |> ResourceFamily.changeset(%{
+      })
+  end
 
   @doc """
   Returns the list of resources.
@@ -37,29 +50,11 @@ defmodule Oli.Resources do
   """
   def get_resource!(id), do: Repo.get!(Resource, id)
 
-  @doc """
-  Creates a resource.
 
-  ## Examples
-
-      iex> create_resource(%{field: value})
-      {:ok, %Resource{}}
-
-      iex> create_resource(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_resource(attrs \\ %{}) do
-    %Resource{}
-    |> Resource.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  def new_project_resource(project) do
+  def new_project_resource(project, family) do
     %Resource{}
       |> Resource.changeset(%{
-        project_id: project.id,
-        slug: project.slug <> "_root_container"
+        project_id: project.id, family_id: family.id
       })
   end
 

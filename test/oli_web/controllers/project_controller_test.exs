@@ -76,7 +76,7 @@ defmodule OliWeb.ProjectControllerTest do
     end
 
     test "creates a new container resource", %{transaction: %{resource: resource}} do
-      assert resource.slug =~ "root_container"
+      assert resource != nil
     end
 
     test "creates a new resource revision for the container", %{transaction: %{resource: resource, resource_revision: resource_revision}} do
