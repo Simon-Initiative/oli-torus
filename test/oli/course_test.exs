@@ -5,7 +5,7 @@ defmodule Oli.CourseTest do
   alias Oli.Course.Family
   alias Oli.Course.Project
 
-  describe "projects" do
+  describe "projects basic" do
     alias Oli.Course.Project
 
     @valid_attrs %{description: "some description", slug: "some slug", version: "1", title: "some title"}
@@ -39,6 +39,11 @@ defmodule Oli.CourseTest do
 
     test "get_project!/1 returns the project with given id", %{project: project} do
       assert Course.get_project!(project.id) == project
+    end
+
+    test "create project with invalid data returns error changeset" do
+      empty_title = ""
+      assert {:error, _, _, _} = Course.create_project(empty_title, author_fixture())
     end
 
     test "create_empty_project/1 with valid data creates a project", %{valid_attrs: valid_attrs} do
@@ -134,6 +139,43 @@ defmodule Oli.CourseTest do
     test "change_family/1 returns a family changeset" do
       family = family_fixture()
       assert %Ecto.Changeset{} = Course.change_family(family)
+    end
+  end
+
+  describe "project creation with associations" do
+    setup do
+      {:ok, transaction} = Course.create_project("test project", author_fixture())
+      {:ok, %{transaction: transaction}}
+    end
+
+    test "creates a new family", %{transaction: %{family: family}} do
+      assert !is_nil(family)
+    end
+
+    test "creates a new project tied to the family", %{transaction: %{project: project, family: family}} do
+      project = Repo.preload(project, [:family])
+      assert project.family.slug == family.slug
+    end
+
+    test "associates the currently logged in author with the new project", %{transaction: %{author: author, project: project}} do
+      author = Repo.preload(author, [:projects])
+      assert Enum.find(author.projects, false, fn candidate -> candidate == project end)
+    end
+
+    test "creates a new container resource", %{transaction: %{resource: resource}} do
+      assert resource.slug =~ "root_container"
+    end
+
+    test "creates a new resource revision for the container", %{transaction: %{resource: resource, resource_revision: resource_revision}} do
+      revision = Repo.preload(resource_revision, [:resource])
+      assert revision.slug =~ "root_container"
+      assert revision.resource == resource
+    end
+
+    test "creates a new publication associated with the project and containing the container resource", %{transaction: %{publication: publication, resource: resource, project: project}} do
+      assert Enum.find(publication.root_resources, fn candidate_id -> candidate_id == resource.id end)
+      publication = Repo.preload(publication, [:project])
+      assert publication.project == project
     end
   end
 end

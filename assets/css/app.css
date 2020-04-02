@@ -39,11 +39,26 @@ html, body {
   color: #b3b3b3;
 }
 
+#right ul {
+  padding-left: 16px;
+}
+#right li {
+  padding-left: 10px;
+  margin-bottom: 16px;
+}
+#right li:last-of-type {
+  margin-bottom: 0;
+}
+#right li small {
+  font-size: inherit;
+  color: #b3b3b3;
+}
+
 form .form-label-group .help-block {
   color: #dc3545;
 }
 
-.btn {
+/* .btn {
   font-weight: bold;
   font-size: 13px;
   border-radius: 8px;
@@ -59,4 +74,4 @@ form .form-label-group .help-block {
 }
 .btn-primary:active {
   background-color: black !important;
-}
+} */

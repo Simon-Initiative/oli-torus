@@ -1,10 +1,13 @@
 defmodule OliWeb.ProjectControllerTest do
   use OliWeb.ConnCase
   alias Oli.Repo
-  alias Oli.Course
+  alias Oli.Course.Project
 
   @basic_get_routes [:overview, :objectives, :curriculum, :publish, :insights]
   setup [:author_project_conn]
+  @valid_attrs %{title: "default title"}
+  @invalid_attrs %{title: ""}
+  @update_attrs %{title: "another title", description: "default description"}
 
   describe "authorization" do
     test "all get routes redirect to workspace path when attempting to view a project that does not exist", %{conn: conn} do
@@ -55,40 +58,39 @@ defmodule OliWeb.ProjectControllerTest do
     end
   end
 
-  describe "create a project" do
-    setup do
-      {:ok, transaction} = Course.create_project("test project", author_fixture())
-      {:ok, %{transaction: transaction}}
+  describe "create project" do
+    test "redirects to page index when data is valid", %{conn: conn} do
+      conn = post(conn, Routes.project_path(conn, :create), project: @valid_attrs)
+
+      assert html_response(conn, 302) =~ "/project/"
     end
 
-    test "creates a new family", %{transaction: %{family: family}} do
-      assert !is_nil(family)
+    test "redirects back to workspace when data is invalid", %{conn: conn} do
+      conn = post(conn, Routes.project_path(conn, :create), project: @invalid_attrs)
+      assert html_response(conn, 302) =~ "/projects"
+    end
+  end
+
+  describe "update project" do
+    test "performs update when data is valid", %{conn: conn, project: project} do
+      put(conn, Routes.project_path(conn, :update, project), project: @update_attrs)
+      assert Repo.get_by(Project, @update_attrs)
     end
 
-    test "creates a new project tied to the family", %{transaction: %{project: project, family: family}} do
-      project = Repo.preload(project, [:family])
-      assert project.family.slug == family.slug
+    test "prevents update when data is invalid", %{conn: conn, project: project} do
+      conn = put(conn, Routes.project_path(conn, :update, project), project: @invalid_attrs)
+      refute Repo.get_by(Project, @invalid_attrs)
     end
 
-    test "associates the currently logged in author with the new project", %{transaction: %{author: author, project: project}} do
-      author = Repo.preload(author, [:projects])
-      assert Enum.find(author.projects, false, fn candidate -> candidate == project end)
+    test "redirects on success", %{conn: conn, project: project} do
+      conn = put(conn, Routes.project_path(conn, :update, project), project: @update_attrs)
+      assert redirected_to(conn) == Routes.project_path(conn, :overview, project)
     end
 
-    test "creates a new container resource", %{transaction: %{resource: resource}} do
-      assert resource.slug =~ "root_container"
-    end
-
-    test "creates a new resource revision for the container", %{transaction: %{resource: resource, resource_revision: resource_revision}} do
-      revision = Repo.preload(resource_revision, [:resource])
-      assert revision.slug =~ "root_container"
-      assert revision.resource == resource
-    end
-
-    test "creates a new publication associated with the project and containing the container resource", %{transaction: %{publication: publication, resource: resource, project: project}} do
-      assert Enum.find(publication.root_resources, fn candidate_id -> candidate_id == resource.id end)
-      publication = Repo.preload(publication, [:project])
-      assert publication.project == project
+    test "does not redirect on failure", %{conn: conn, project: project} do
+      conn = put(conn, Routes.project_path(conn, :update, project), project: @invalid_attrs)
+      refute conn.assigns.changeset.valid?
+      assert html_response(conn, 200) =~ "Overview"
     end
   end
 

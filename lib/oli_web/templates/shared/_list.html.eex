@@ -1,23 +1,7 @@
 <style>
-ul {
-  padding-left: 16px;
-}
-li {
-  padding-left: 10px;
-  margin-bottom: 16px;
-}
-li:last-of-type {
-  margin-bottom: 0;
-}
-li small {
-  font-size: inherit;
-  color: #b3b3b3;
-}
 
 </style>
 <ul>
-  <li>Item one, <small>emphasized</small></li>
-  <li>Item two</li>
-  <li>Item three</li>
-  <li>Item four</li>
+  <%# <%= render_many @list_items, OliWeb.SharedView, "_list_item.html",
+    %{conn: @conn, as: :list_item} %> %>
 </ul>

@@ -1,0 +1,6 @@
+<li>
+  <%= "#{@collaborator.first_name} #{@collaborator.last_name}, "%>
+  <small>
+    <%= "#{@collaborator.email}" %>
+  </small>
+</li>

@@ -41,7 +41,13 @@ defmodule Oli.Course do
 
   """
   def get_project!(id), do: Repo.get!(Project, id)
-  def get_project_by_slug(slug), do: Repo.get_by(Project, slug: slug)
+  def get_project_by_slug(slug) do
+    if is_nil(slug) do
+      nil
+    else
+      Repo.get_by(Project, slug: slug)
+    end
+  end
 
   @doc "Only for testing PRoject changeset and database transaction logic.
   Use `create_project` for application use"

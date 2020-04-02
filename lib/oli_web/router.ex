@@ -49,15 +49,17 @@ defmodule OliWeb.Router do
   scope "/project", OliWeb do
     pipe_through [:browser, :protected, :workspace_layout]
 
-    get "/:project", ProjectController, :overview
     post "/", ProjectController, :create
-    get "/:project/objectives", ProjectController, :objectives
-    get "/:project/curriculum", ProjectController, :curriculum
-    get "/:project/publish", ProjectController, :publish
-    get "/:project/insights", ProjectController, :insights
+    put "/:project_id", ProjectController, :update
+    delete "/:project_id", ProjectController, :delete
 
-    get "/:project/:page", ProjectController, :page
-    get "/:project/:page/edit", ProjectController, :resource_editor
+    get "/:project_id", ProjectController, :overview
+    get "/:project_id/objectives", ProjectController, :objectives
+    get "/:project_id/curriculum", ProjectController, :curriculum
+    get "/:project_id/publish", ProjectController, :publish
+    get "/:project_id/insights", ProjectController, :insights
+    get "/:project_id/:page", ProjectController, :page
+    get "/:project_id/:page/edit", ProjectController, :resource_editor
   end
 
   # auth routes, only accessable to guest users who are not logged in
