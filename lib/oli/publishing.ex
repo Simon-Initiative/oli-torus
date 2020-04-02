@@ -349,7 +349,6 @@ defmodule Oli.Publishing do
     Logger.debug "get_objective_mappings_by_publication #{publication_id}"
     from(p in ObjectiveMapping, where: p.publication_id == ^publication_id, preload: [:objective, :revision])
     |> Repo.all()
-#               |> Repo.preload [:objective, :revision]
   end
 
   @doc """
