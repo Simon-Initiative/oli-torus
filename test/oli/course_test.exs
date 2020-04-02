@@ -12,14 +12,14 @@ defmodule Oli.CourseTest do
     @update_attrs %{description: "some updated description", version: "1", slug: "some updated slug", title: "some updated title"}
     @invalid_attrs %{description: nil, slug: nil, title: nil}
 
-    def project_fixture(attrs \\ %{}) do
-      {:ok, project} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> Course.create_project()
+    # def project_fixture(attrs \\ %{}) do
+    #   {:ok, project} =
+    #     attrs
+    #     |> Enum.into(@valid_attrs)
+    #     |> Course.create_project()
 
-      project
-    end
+    #   project
+    # end
 
     setup do
 
@@ -47,14 +47,14 @@ defmodule Oli.CourseTest do
     end
 
     test "create_empty_project/1 with valid data creates a project", %{valid_attrs: valid_attrs} do
-      assert {:ok, %Project{} = project} = Course.create_empty_project(valid_attrs)
+      assert {:ok, %Project{} = project} = create_empty_project(valid_attrs)
       assert project.description == "some description"
       assert project.slug == "some slug"
       assert project.title == "some title"
     end
 
     test "create_empty_project/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Course.create_empty_project(@invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} = create_empty_project(@invalid_attrs)
     end
 
     test "update_project/2 with valid data updates the project", %{project: project}  do

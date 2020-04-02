@@ -42,6 +42,7 @@ defmodule OliWeb.Endpoint do
   plug Plug.Session,
     store: :cookie,
     key: "_oli_key",
+    extra: "SameSite=None; Secure;",
     signing_salt: "KydU49lB"
 
   plug OliWeb.Router

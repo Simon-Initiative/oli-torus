@@ -77,3 +77,24 @@ if !Oli.Repo.get_by(Oli.Resources.ResourceType, id: 1) do
   }
 
 end
+
+# only seed with sample data if in development mode
+if Mix.env == :dev do
+  # create an example institution
+  if !Oli.Repo.get_by(Oli.Accounts.Institution, id: 1) do
+    {:ok, _institution} = Oli.Accounts.create_institution(%{
+      country_code: "US",
+      institution_email: "admin@oli.cmu.edu",
+      institution_url: "oli.cmu.edu",
+      name: "Open Learning Initiative",
+      timezone: "US/Eastern",
+      consumer_key: "0527416a-29ec-4537-b560-6897286a33ec",
+      shared_secret: "4FE4F15E33AACCD85D7E198055B2FE83",
+      author_id: 1,
+    })
+  end
+
+  # create an example package and publication
+  author = Oli.Accounts.get_author_by_email(System.get_env("ADMIN_EMAIL", "admin@oli.cmu.edu"))
+  {:ok, project} = Oli.Course.create_project("Example Open and Free Course", author)
+end

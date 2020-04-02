@@ -3,6 +3,20 @@ defmodule Oli.LtiTest do
 
   alias Oli.Lti
 
+  describe "parse_lti_role" do
+    test "handles student role" do
+      assert Lti.parse_lti_role("Learner") == :student
+    end
+
+    test "handles instructor role" do
+      assert Lti.parse_lti_role("Instructor") == :instructor
+    end
+
+    test "handles administrator role" do
+      assert Lti.parse_lti_role("Instructor,urn:lti:instrole:ims/lis/Administrator") == :administrator
+    end
+  end
+
   describe "nonce_store" do
     alias Oli.Lti.Nonce
 

@@ -49,14 +49,6 @@ defmodule Oli.Course do
     end
   end
 
-  @doc "Only for testing PRoject changeset and database transaction logic.
-  Use `create_project` for application use"
-  def create_empty_project(attrs \\ %{}) do
-    %Project{}
-    |> Project.changeset(attrs)
-    |> Repo.insert()
-  end
-
   @doc """
   Creates a project tied to an author.
   create_project(title : string, author : Author)
@@ -68,19 +60,19 @@ defmodule Oli.Course do
     # `insert` takes a changeset in order to create a new row, and `merge` takes a lambda
     # that allows you to access the changesets created in previous Multi calls
     Multi.new
-    |> Multi.insert(:family, default_family(title))
-    |> Multi.merge(fn %{family: family} ->
-      Multi.new
-      |> Multi.insert(:project, default_project(title, family)) end)
-    |> Multi.merge(fn %{project: project} ->
-      Multi.new
-      |> Multi.update(:author, Accounts.author_to_project(author, project))
-      |> Multi.insert(:resource, Resources.new_project_resource(project)) end)
-    |> Multi.merge(fn %{author: author, project: project, resource: resource} ->
-      Multi.new
-      |> Multi.insert(:resource_revision, Resources.new_project_resource_revision(author, project, resource))
-      |> Multi.insert(:publication, Publishing.new_project_publication(resource, project)) end)
-    |> Repo.transaction
+      |> Multi.insert(:family, default_family(title))
+      |> Multi.merge(fn %{family: family} ->
+        Multi.new
+        |> Multi.insert(:project, default_project(title, family)) end)
+      |> Multi.merge(fn %{project: project} ->
+        Multi.new
+        |> Multi.update(:author, Accounts.author_to_project(author, project))
+        |> Multi.insert(:resource, Resources.new_project_resource(project)) end)
+      |> Multi.merge(fn %{author: author, project: project, resource: resource} ->
+        Multi.new
+        |> Multi.insert(:resource_revision, Resources.new_project_resource_revision(author, project, resource))
+        |> Multi.insert(:publication, Publishing.new_project_publication(resource, project)) end)
+      |> Repo.transaction
   end
 
   defp default_project(title, family) do
