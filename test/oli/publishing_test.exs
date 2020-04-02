@@ -14,6 +14,7 @@ defmodule Oli.PublishingTest do
   alias Oli.Resources.ResourceFamily
   alias Oli.Resources.ResourceRevision
   alias Oli.Activities.Activity
+  alias Oli.Activities.ActivityFamily
   alias Oli.Activities.ActivityRevision
   alias Oli.Activities.Registration
   alias Oli.Learning.Objective
@@ -170,7 +171,8 @@ defmodule Oli.PublishingTest do
       {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
       {:ok, _institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
 
-      {:ok, activity} = Activity.changeset(%Activity{}, %{slug: "slug", project_id: project.id}) |> Repo.insert
+      {:ok, activity_family} = ActivityFamily.changeset(%ActivityFamily{}, %{}) |> Repo.insert
+      {:ok, activity} = Activity.changeset(%Activity{}, %{project_id: project.id, family_id: activity_family.id}) |> Repo.insert
       {:ok, activity_type} = Registration.changeset(%Registration{}, %{authoring_script: "1", delivery_script: "2", description: "d", element_name: "n", icon: "i", title: "t"}) |> Repo.insert
       {:ok, revision} = ActivityRevision.changeset(%ActivityRevision{}, %{author_id: author.id, activity_id: activity.id, activity_type_id: activity_type.id, content: %{}, objectives: [], deleted: true, slug: "some slug"}) |> Repo.insert
 
