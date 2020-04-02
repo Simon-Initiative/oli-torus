@@ -95,11 +95,10 @@ defmodule Oli.Learning do
   end
 
   defp do_create_objective(attrs, objective_family) do
-    slug = Utils.generate_slug("objectives", Map.get(attrs, "title"))
     project_id = Map.get(attrs, "project_id");
     %Objective{}
     |> Objective.changeset(%{
-      family: objective_family.id,
+      family_id: objective_family.id,
       project_id: project_id
     })
   end
