@@ -1,6 +1,11 @@
 name: Build & Test CI
 
 on:
+  pull_request:
+    branches:
+      - master
+      - test
+      - production
   push:
     branches:
       - master
