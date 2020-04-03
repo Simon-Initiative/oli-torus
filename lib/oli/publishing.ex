@@ -166,6 +166,11 @@ defmodule Oli.Publishing do
   """
   def get_resource_mapping!(id), do: Repo.get!(ResourceMapping, id)
 
+  def get_resource_mapping!(publication_id, resource_id) do
+    Repo.one!(from p in ResourceMapping, where: p.publication_id == ^publication_id and p.resource_id == ^resource_id)
+  end
+
+
   @doc """
   Creates a resource_mapping.
 
