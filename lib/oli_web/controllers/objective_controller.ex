@@ -5,8 +5,8 @@ defmodule OliWeb.ObjectiveController do
   alias Oli.Course
   alias Oli.Learning
 
-  plug :fetch_project when not action in [:create, :update, :delete]
-  plug :authorize_project when not action in [:create, :update, :delete]
+  plug :fetch_project when action in [:create, :update, :delete]
+  plug :authorize_project when action in [:create, :update, :delete]
 
   def create(conn, %{"project" => project_id, "objective" => objective_params}) do
     project = Course.get_project_by_slug(conn.params["project"])
