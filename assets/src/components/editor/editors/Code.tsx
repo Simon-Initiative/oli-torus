@@ -89,8 +89,8 @@ export const CodeEditor = (props: CodeProps) => {
 
         <div className="form-check">
           <input disabled={!isActive} onChange={onNumbersChange}
-            checked={model.showNumbers} type="checkbox" className="form-check-input" id={checkId} />
-          <label className="form-check-label" htmlFor={checkId}>Line numbers</label>
+            checked={model.showNumbers} type="checkbox" className="form-check-input" id={checkId + ''} />
+          <label className="form-check-label" htmlFor={checkId + ''}>Line numbers</label>
         </div>
 
       </form>

@@ -54,7 +54,6 @@ export const HoveringToolbar = () => {
 
   useEffect(() => {
     const el = ref.current as any;
-
     if (!el) {
       return;
     }
@@ -81,7 +80,7 @@ export const HoveringToolbar = () => {
     <div ref={(ref as any)} style={{ visibility: 'hidden', position: 'relative' }}>
       <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>
         {hoverMenuCommands.map(b =>
-          <ToolbarButton key={b.icon} icon={b.icon} command={b.command} />)}
+          <ToolbarButton style="btn-secondary" key={b.icon} icon={b.icon} command={b.command} />)}
       </div>
     </div>, document.body,
   );
@@ -134,10 +133,11 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
     ? []
     : [<TextFormatter key="text"/>, ...toolbarItems.map((t, i) => {
       if (t.type === 'CommandDesc' && t.command.obtainParameters === undefined) {
-        return <ToolbarButton key={t.icon} icon={t.icon} command={t.command} />;
+        return <ToolbarButton
+          style="" key={t.icon} icon={t.icon} command={t.command} />;
       }
       if (t.type === 'CommandDesc' && t.command.obtainParameters !== undefined) {
-        return <DropdownToolbarButton key={t.icon} icon={t.icon} command={t.command} />;
+        return <DropdownToolbarButton style="" key={t.icon} icon={t.icon} command={t.command} />;
       }
       return <Spacer key={'spacer-' + i} />;
     })];
@@ -148,7 +148,7 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
       <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>
         {buttons}
         <button
-          className="btn btn-secondary btn-sm"
+          className="btn btn-sm"
           style={{ width: '10px' }}
           onMouseDown={(event) => {
             event.preventDefault();
@@ -207,11 +207,11 @@ const TextFormatter = () => {
   );
 };
 
-const ToolbarButton = ({ icon, command }: any) => {
+const ToolbarButton = ({ icon, command, style }: any) => {
   const editor = useSlate();
   return (
     <button
-      className="btn btn-secondary btn-sm"
+      className={`btn btn-sm ${style}`}
       onMouseDown={(event) => {
         event.preventDefault();
         command.execute(editor);
@@ -222,7 +222,7 @@ const ToolbarButton = ({ icon, command }: any) => {
   );
 };
 
-const DropdownToolbarButton = ({ icon, command }: any) => {
+const DropdownToolbarButton = ({ icon, command, style }: any) => {
   const editor = useSlate();
 
   const ref = useRef();
@@ -239,7 +239,7 @@ const DropdownToolbarButton = ({ icon, command }: any) => {
   return (
     <div ref={ref as any} className="dropdown">
       <button
-          className="btn btn-secondary btn-sm dropdown-toggle"
+          className={`btn btn-sm dropdown-toggle ${style}`}
           data-toggle={'dropdown'}
           type="button">
         <i className={icon}></i>

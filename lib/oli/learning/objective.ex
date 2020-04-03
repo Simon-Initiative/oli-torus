@@ -2,9 +2,8 @@ defmodule Oli.Learning.Objective do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @derive {Phoenix.Param, key: :slug}
   schema "objectives" do
-    field :slug, :string
+    belongs_to :family, Oli.Learning.ObjectiveFamily
     belongs_to :project, Oli.Course.Project
     timestamps()
   end
@@ -12,8 +11,7 @@ defmodule Oli.Learning.Objective do
   @doc false
   def changeset(objective, attrs) do
     objective
-    |> cast(attrs, [:slug, :project_id])
-    |> validate_required([:slug, :project_id])
-    |> unique_constraint(:slug)
+    |> cast(attrs, [:family_id, :project_id])
+    |> validate_required([:family_id, :project_id])
   end
 end

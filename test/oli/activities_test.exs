@@ -10,15 +10,16 @@ defmodule Oli.ActivitiesTest do
   alias Oli.Course.Family
   alias Oli.Publishing.Publication
   alias Oli.Activities.Activity
+  alias Oli.Activities.ActivityFamily
   alias Oli.Activities.ActivityRevision
   alias Oli.Activities.Registration
 
   describe "activities" do
     alias Oli.Activities.Activity
 
-    @valid_attrs %{slug: "some slug"}
-    @update_attrs %{slug: "some updated slug"}
-    @invalid_attrs %{slug: nil}
+    @valid_attrs %{}
+    @update_attrs %{}
+    @invalid_attrs %{}
 
     setup do
 
@@ -28,11 +29,12 @@ defmodule Oli.ActivitiesTest do
       {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
       {:ok, _institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
 
-      {:ok, activity} = Activity.changeset(%Activity{}, %{slug: "slug", project_id: project.id}) |> Repo.insert
+      {:ok, activity_family} = ActivityFamily.changeset(%ActivityFamily{}, %{}) |> Repo.insert
+      {:ok, activity} = Activity.changeset(%Activity{}, %{project_id: project.id, family_id: activity_family.id}) |> Repo.insert
 
       valid_attrs = Map.put(@valid_attrs, :project_id, project.id)
 
-      {:ok, %{activity: activity, valid_attrs: valid_attrs}}
+      {:ok, %{activity: activity, valid_attrs: valid_attrs, project: project, family: activity_family}}
     end
 
 
@@ -44,23 +46,8 @@ defmodule Oli.ActivitiesTest do
       assert Activities.get_activity!(activity.id) == activity
     end
 
-    test "create_activity/1 with valid data creates a activity", %{valid_attrs: valid_attrs} do
-      assert {:ok, %Activity{} = activity} = Activities.create_activity(valid_attrs)
-      assert activity.slug == "some slug"
-    end
-
-    test "create_activity/1 with invalid data returns error changeset", %{activity: _activity} do
-      assert {:error, %Ecto.Changeset{}} = Activities.create_activity(@invalid_attrs)
-    end
-
-    test "update_activity/2 with valid data updates the activity", %{activity: activity} do
-      assert {:ok, %Activity{} = activity} = Activities.update_activity(activity, @update_attrs)
-      assert activity.slug == "some updated slug"
-    end
-
-    test "update_activity/2 with invalid data returns error changeset", %{activity: activity} do
-      assert {:error, %Ecto.Changeset{}} = Activities.update_activity(activity, @invalid_attrs)
-      assert activity == Activities.get_activity!(activity.id)
+    test "new_project_activity/2 with valid data creates a activity", %{project: project, family: family} do
+      assert %Ecto.Changeset{valid?: true} = Activities.new_project_activity(project, family)
     end
 
     test "delete_activity/1 deletes the activity", %{activity: activity} do
@@ -89,7 +76,8 @@ defmodule Oli.ActivitiesTest do
       {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
       {:ok, _institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
 
-      {:ok, activity} = Activity.changeset(%Activity{}, %{slug: "slug", project_id: project.id}) |> Repo.insert
+      {:ok, activity_family} = ActivityFamily.changeset(%ActivityFamily{}, %{}) |> Repo.insert
+      {:ok, activity} = Activity.changeset(%Activity{}, %{project_id: project.id, family_id: activity_family.id}) |> Repo.insert
       {:ok, activity_type} = Registration.changeset(%Registration{}, %{authoring_script: "1", delivery_script: "2", description: "d", element_name: "n", icon: "i", title: "t"}) |> Repo.insert
 
       valid_attrs = Map.put(@valid_attrs, :project_id, project.id)
