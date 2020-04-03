@@ -161,13 +161,20 @@ defmodule Oli.Accounts do
 
   # VERY important -> all author projects must be passed into the :projects
   # change, or else the other assocations will be deleted
-  def author_to_project(author, project) do
-    author = Repo.preload(author, [:projects])
-    projects = [project | author.projects]
-
+  defp update_projects_for_author(author, projects) do
     author
     |> Author.changeset(%{ projects: projects})
     |> Ecto.Changeset.put_assoc(:projects, projects)
+  end
+
+  def add_project_to_author(author, project) do
+    author = Repo.preload(author, [:projects])
+    update_projects_for_author(author, [project | author.projects])
+  end
+
+  def remove_project_from_author(author, project) do
+    author = Repo.preload(author, [:projects])
+    update_projects_for_author(author, author.projects -- project)
   end
 
   @doc """

@@ -1,6 +1,10 @@
 <li>
   <%= "#{@collaborator.first_name} #{@collaborator.last_name}, "%>
   <small>
-    <%= "#{@collaborator.email}" %>
+    <%= "#{@collaborator.email}" %> <%= form_for %{author: @collaborator}, Routes.author_project_path(@conn, :delete), fn f -> %>
+      <%= submit do %>
+        <i class="material-icons">close</i>
+      <% end %>
+    <% end %>
   </small>
 </li>

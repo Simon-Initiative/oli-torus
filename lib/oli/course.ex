@@ -66,7 +66,7 @@ defmodule Oli.Course do
         |> Multi.insert(:project, default_project(title, family)) end)
       |> Multi.merge(fn %{project: project} ->
         Multi.new
-        |> Multi.update(:author, Accounts.author_to_project(author, project))
+        |> Multi.update(:author, Accounts.add_project_to_author(author, project))
         |> Multi.insert(:resource, Resources.new_project_resource(project)) end)
       |> Multi.merge(fn %{author: author, project: project, resource: resource} ->
         Multi.new

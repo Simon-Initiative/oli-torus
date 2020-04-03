@@ -8,6 +8,33 @@
 }
 </style>
 
+<div class="modal" id="modal-add-collaborator">
+  <div class="modal-header">
+    <span class="modal-title">Add collaborator to project</span>
+    <span class="modal-close"><i class="material-icons">close</i></span>
+  </div>
+  <div class="modal-body">
+    <%= form_for %{collaborator: %{project: @project}}, Routes.author_project_path(@conn, :create), [id: "form-add-collaborator"], fn f -> %>
+      <div class="form-label-group">
+        <%= text_input f,
+          :email,
+          class: "form-control input-bold " <> error_class(f, :title, "is-invalid"),
+          placeholder: "Introduction to Psychology",
+          id: "input-title",
+          required: true,
+          autofocus: focusHelper(f, :email, default: true) %>
+        <%= label f, :email, "User email", class: "control-label input-bold" %>
+        <%= error_tag f, :email %>
+      </div>
+      <%= submit "Add collaborator",
+        id: "button-add-project",
+        class: "btn btn-primary",
+        phx_disable_with: "Adding Collaborator...",
+        form: f.id %>
+    <% end %>
+  </div>
+</div>
+
 <div class="overview container">
   <div class="row">
     <div class="page-header">
@@ -37,8 +64,43 @@
 </div>
 
 <script>
-document.getElementById('add-collaborator').onClick = (e) => {
-  const email = window.prompt("Enter the author's email to add them to the course.");
+  // modal
+  const modal = document.getElementById("modal-add-collaborator");
+  modal.style.display = "none";
+  const openButton = document.getElementById("button-add-collaborator");
+  const closeButton = document.getElementsByClassName("modal-close")[0];
 
-};
+  const isModalDisplayed = (modal) => modal.style.display === "block";
+  const displayModal = (e) => {
+    modal.style.display = "block";
+    e.stopPropagation();
+  }
+  const hideModal = () => modal.style.display = "none";
+  const closeModalOnClickOutside = (e) =>
+    e.target !== modal && !modal.contains(e.target) && hideModal();
+
+  closeButton.onclick = hideModal;
+  openButton.onclick = (e) => {
+    if (isModalDisplayed(modal)) {
+      hideModal();
+      return;
+    }
+    displayModal(e);
+    document.getElementsByTagName("body")[0].onclick = closeModalOnClickOutside;
+  };
+
+  // create project
+  const createProjectButton = document.getElementById("button-add-collaborator")
+  const titleInput = document.getElementById("input-title")
+  createProjectButton.disabled = !titleInput.value || titleInput.value.length === 0
+  const form = document.getElementById("form-add-collaborator")
+  titleInput.addEventListener('input', () => titleInput.value.length > 0
+    ? createProjectButton.disabled = false
+    : createProjectButton.disabled = true)
+  createProjectButton.addEventListener('click', () => {
+    if (!createProjectButton.disabled) {
+      form.submit();
+    }
+  })
+
 </script>
