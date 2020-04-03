@@ -2,7 +2,6 @@ defmodule Oli.Publishing do
   @moduledoc """
   The Publishing context.
   """
-  require Logger
 
   import Ecto.Query, warn: false
   alias Oli.Repo
@@ -370,7 +369,6 @@ defmodule Oli.Publishing do
 
   """
   def get_objective_mappings_by_publication(publication_id) do
-    Logger.debug "get_objective_mappings_by_publication #{publication_id}"
     from(p in ObjectiveMapping, where: p.publication_id == ^publication_id, preload: [:objective, :revision])
     |> Repo.all()
   end

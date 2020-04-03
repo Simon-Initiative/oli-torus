@@ -2,7 +2,6 @@ defmodule OliWeb.ObjectiveController do
   use OliWeb, :controller
   import OliWeb.ProjectPlugs
 
-  require Logger
   alias Oli.Course
   alias Oli.Learning
   alias Oli.Learning.Objective

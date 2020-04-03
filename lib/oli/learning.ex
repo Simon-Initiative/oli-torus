@@ -2,7 +2,6 @@ defmodule Oli.Learning do
   @moduledoc """
   The Learning context.
   """
-  require Logger
 
   import Ecto.Query, warn: false
   alias Ecto.Multi

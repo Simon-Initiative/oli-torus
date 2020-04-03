@@ -7,7 +7,6 @@ defmodule OliWeb.ProjectController do
   alias Oli.Publishing
   alias Oli.Learning
 
-  require Logger
   plug :fetch_project when action not in [:create]
   plug :authorize_project when action not in [:create]
 
@@ -20,7 +19,6 @@ defmodule OliWeb.ProjectController do
     project = Course.get_project_by_slug(conn.params["project"])
     publication_id = Publishing.get_unpublished_publication(project.id)
     objective_mappings = Publishing.get_objective_mappings_by_publication(publication_id)
-    Logger.info "objective_mappings #{inspect(objective_mappings)}"
     changeset = Learning.change_objective(%Learning.Objective{})
     params = %{title: "Objectives", objective_mappings: objective_mappings, objective_changeset: changeset}
     render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
