@@ -4,7 +4,6 @@ defmodule OliWeb.ObjectiveController do
 
   alias Oli.Course
   alias Oli.Learning
-  alias Oli.Learning.Objective
 
   plug :fetch_project when not action in [:create, :update, :delete]
   plug :authorize_project when not action in [:create, :update, :delete]
@@ -18,7 +17,7 @@ defmodule OliWeb.ObjectiveController do
         |> put_flash(:info, "Objective created successfully.")
         |> redirect(to: Routes.project_path(conn, :objectives, project_id))
 
-      {:error, %Ecto.Changeset{} = changeset} ->
+      {:error, %Ecto.Changeset{} = _changeset} ->
         conn
         |> put_flash(:error, "Objective creation failed.")
         |> redirect(to: Routes.project_path(conn, :objectives, project_id))
@@ -35,7 +34,7 @@ defmodule OliWeb.ObjectiveController do
         |> put_flash(:info, "Objective updated successfully.")
         |> redirect(to: Routes.objective_path(conn, :show, project_id, objective))
 
-      {:error, %Ecto.Changeset{} = changeset} ->
+      {:error, %Ecto.Changeset{} = _changeset} ->
         conn
         |> put_flash(:error, "Objective update failed.")
         |> redirect(to: Routes.project_path(conn, :objectives, project_id))

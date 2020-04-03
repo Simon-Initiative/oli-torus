@@ -3,7 +3,6 @@ defmodule OliWeb.ProjectController do
 
   import OliWeb.ProjectPlugs
   alias Oli.Course
-  alias Oli.Accounts
   alias Oli.Publishing
   alias Oli.Learning
 
@@ -15,7 +14,7 @@ defmodule OliWeb.ProjectController do
     render %{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html"
   end
 
-  def objectives(conn, %{"project" => project_id}) do
+  def objectives(conn, %{"project" => _project_id}) do
     project = Course.get_project_by_slug(conn.params["project"])
     publication_id = Publishing.get_unpublished_publication(project.id)
     objective_mappings = Publishing.get_objective_mappings_by_publication(publication_id)

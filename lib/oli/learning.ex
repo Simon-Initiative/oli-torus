@@ -6,9 +6,7 @@ defmodule Oli.Learning do
   import Ecto.Query, warn: false
   alias Ecto.Multi
   alias Oli.Repo
-  alias Oli.Course.Utils
 
-  alias Oli.Publishing.Publication
   alias Oli.Learning.Objective
   alias Oli.Learning.ObjectiveFamily
 
