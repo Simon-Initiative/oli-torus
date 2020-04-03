@@ -129,8 +129,14 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       timestamps()
     end
 
+    create table(:resource_families) do
+      timestamps()
+    end
+
+
+
     create table(:resources) do
-      add :slug, :string
+      add :family_id, references(:resource_families)
       add :project_id, references(:projects)
       timestamps()
     end
@@ -161,8 +167,12 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       timestamps()
     end
 
+    create table(:activity_families) do
+      timestamps()
+    end
+
     create table(:activities) do
-      add :slug, :string
+      add :family_id, references(:activity_families)
       add :project_id, references(:projects)
       timestamps()
     end
@@ -181,8 +191,13 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       timestamps()
     end
 
+
+    create table(:objective_families) do
+      timestamps()
+    end
+
     create table(:objectives) do
-      add :slug, :string
+      add :family_id, references(:objective_families)
       add :project_id, references(:projects)
 
       timestamps()

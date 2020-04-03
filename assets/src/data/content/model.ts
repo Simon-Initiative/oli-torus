@@ -15,7 +15,7 @@ export type ModelElement
   | ListItem | Math | MathLine | Code | CodeLine | Blockquote | Hyperlink;
 
 export interface Identifiable {
-  id: string;
+  id: number;
 }
 
 export interface Paragraph extends Element, Identifiable {

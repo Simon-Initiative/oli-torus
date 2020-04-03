@@ -67,8 +67,19 @@ defmodule OliWeb.Router do
     get "/:project/publish", ProjectController, :publish
     get "/:project/insights", ProjectController, :insights
 
-    get "/:project/:page", ProjectController, :page
-    get "/:project/:page/edit", ProjectController, :resource_editor
+    get "/:project/:page", ResourceController, :view
+    get "/:project/:page/edit", ResourceController, :edit
+
+  end
+
+  scope "/api/v1/project", OliWeb do
+    pipe_through [:api, :protected]
+
+    put "/:project/:resource/edit", ResourceController, :update
+
+    post "/:project/:resource/lock", LockController, :acquire
+    delete "/:project/:resource/lock", LockController, :release
+
   end
 
   # auth routes, only accessable to guest users who are not logged in
@@ -127,8 +138,4 @@ defmodule OliWeb.Router do
     end
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", OliWeb do
-  #   pipe_through :api
-  # end
 end
