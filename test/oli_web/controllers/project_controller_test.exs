@@ -82,6 +82,10 @@ defmodule OliWeb.ProjectControllerTest do
       refute Repo.get_by(Project, @invalid_attrs)
     end
 
+    test "creates a new container resource", %{transaction: %{resource: resource}} do
+      assert resource != nil
+    end
+
     test "redirects on success", %{conn: conn, project: project} do
       conn = put(conn, Routes.project_path(conn, :update, project), project: @update_attrs)
       assert redirected_to(conn) == Routes.project_path(conn, :overview, project)

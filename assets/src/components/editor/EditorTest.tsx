@@ -53,6 +53,7 @@ export const TestEditor = () => {
 
       <p><b>Question Stem:</b></p>
       <Editor
+        editMode={true}
         value={stem}
         onEdit={(value) => {
           setStem(value);

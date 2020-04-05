@@ -7,6 +7,19 @@ defmodule Oli.Activities do
   alias Oli.Repo
 
   alias Oli.Activities.Activity
+  alias Oli.Activities.ActivityFamily
+
+  def create_activity_family(attrs \\ %{}) do
+    %ActivityFamily{}
+    |> ActivityFamily.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def new_activity_family() do
+    %ActivityFamily{}
+      |> ActivityFamily.changeset(%{
+      })
+  end
 
   @doc """
   Returns the list of activities.
@@ -53,6 +66,13 @@ defmodule Oli.Activities do
     %Activity{}
     |> Activity.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def new_project_activity(project, family) do
+    %Activity{}
+      |> Activity.changeset(%{
+        project_id: project.id, family_id: family.id
+      })
   end
 
   @doc """

@@ -4,6 +4,8 @@ defmodule OliWeb.ProjectController do
   alias Oli.Course.Project
   alias Oli.Accounts
   alias Oli.Utils
+  import OliWeb.ProjectPlugs
+  alias Oli.AuthorsProjects
 
   plug :fetch_project when action not in [:create]
   plug :authorize_project when action not in [:create]
@@ -14,7 +16,7 @@ defmodule OliWeb.ProjectController do
       title: "Overview",
       active: :overview,
       collaborators: Accounts.project_authors(project),
-      changeset: Utils.value_or(
+      project_changeset: Utils.value_or(
         Map.get(project_params, :changeset),
         Project.changeset(project)),
     }
@@ -42,6 +44,7 @@ defmodule OliWeb.ProjectController do
   end
 
   def insights(conn, _project_params) do
+
     render conn, "insights.html", title: "Insights", active: :insights
   end
 
@@ -56,48 +59,4 @@ defmodule OliWeb.ProjectController do
       end
   end
 
-  def update(conn, %{"project" => project_params}) do
-    project = conn.assigns.project
-    case Course.update_project(project, project_params) do
-      {:ok, project} ->
-        conn
-        |> put_flash(:info, "Project updated successfully.")
-        |> redirect(to: Routes.project_path(conn, :overview, project))
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        overview_params = %{
-          title: "Overview",
-          active: :overview,
-          collaborators: Accounts.project_authors(project),
-          changeset: changeset
-        }
-        conn
-        |> Map.put(:assigns, Map.merge(conn.assigns, overview_params))
-        |> put_flash(:error, "Project could not be updated.")
-        |> render("overview.html")
-    end
-  end
-
-  defp fetch_project(conn, _) do
-    project = Course.get_project_by_slug(conn.params["project_id"])
-    if is_nil(project) do
-        conn
-        |> put_flash(:info, "That project does not exist")
-        |> redirect(to: Routes.workspace_path(conn, :projects))
-        |> halt()
-    else conn
-        |> assign(:project, project)
-    end
-  end
-
-  defp authorize_project(conn, _) do
-    if Accounts.can_access?(conn.assigns.current_author, conn.assigns.project) do
-      conn
-    else
-      conn
-       |> put_flash(:info, "You don't have access to that project")
-       |> redirect(to: Routes.workspace_path(conn, :projects))
-       |> halt()
-    end
-  end
 end

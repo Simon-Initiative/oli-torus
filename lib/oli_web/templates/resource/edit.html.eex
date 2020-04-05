@@ -1,0 +1,29 @@
+<script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/components.js") %>"></script>
+
+<div id="editor"/>
+
+<script>
+
+const context = {
+  resourceType: 'page',
+  authorId: 2,
+  projectId: 3,
+  resourceId: 4,
+  editMode: true,
+  title: 'This is the title',
+  content: [
+    {
+      type: 'content',
+      id: 'some-unique-id',
+      children: [
+        { type: 'p', id: 'another-id', children: [{ text: 'This is the paragraph'}]}
+      ]
+    }
+  ],
+  objectives: [],
+  allObjectives: [],
+  editorMap: {},
+};
+
+window.component.mount('ResourceEditor', document.getElementById('editor'), context);
+</script>

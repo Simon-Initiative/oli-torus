@@ -8,13 +8,15 @@
 }
 </style>
 
-<div class="modal" id="modal-add-collaborator">
-  <div class="modal-header">
-    <span class="modal-title">Add collaborator to project</span>
-    <span class="modal-close"><i class="material-icons">close</i></span>
-  </div>
-  <div class="modal-body">
-    <%= form_for %{collaborator: %{project: @project}}, Routes.author_project_path(@conn, :create), [id: "form-add-collaborator"], fn f -> %>
+<div class="overview container">
+  <div class="row">
+    <div class="page-header">
+      <div class="flex"><h1>Collaborators</h1>
+      <%# <button id="button-add-collaborator" class="add-button">
+        <i class="material-icons">add</i>
+        </button> %>
+      </div>
+      <%= form_for @conn, Routes.author_project_path(@conn, :create, @project), [id: "form-add-collaborator"], fn f -> %>
       <div class="form-label-group">
         <%= text_input f,
           :email,
@@ -27,24 +29,14 @@
         <%= error_tag f, :email %>
       </div>
       <%= submit "Add collaborator",
-        id: "button-add-project",
+        id: "button-create-collaborator",
         class: "btn btn-primary",
         phx_disable_with: "Adding Collaborator...",
         form: f.id %>
     <% end %>
-  </div>
-</div>
-
-<div class="overview container">
-  <div class="row">
-    <div class="page-header">
-      <div class="flex"><h1>Collaborators</h1> <button id="add-collaborator" class="add-button">
-        <i class="material-icons">add</i>
-        </button>
-      </div>
         <small>Add collaborators to invite them to contribute to your course.</small>
         <ul>
-          <%= render_many @collaborators, OliWeb.ProjectView, "_li_collaborator.html", %{as: :collaborator} %>
+          <%= render_many @collaborators, OliWeb.ProjectView, "_li_collaborator.html", %{conn: @conn, as: :collaborator, project: @project} %>
         </ul>
     </div>
   </div>
@@ -52,7 +44,7 @@
     <div class="page-header">
       <div class="flex"><h1>Details</h1></div>
         <small>Change information about your course.</small>
-        <%= form_for @changeset, Routes.project_path(@conn, :update, @project), fn f -> %>
+        <%= form_for @project_changeset, Routes.project_path(@conn, :update, @project), fn f -> %>
             <div class="form-label-group">
               <%= label f, :description, class: "control-label" %>
               <%= textarea f, :description, class: "form-control", placeholder: "Course description. This is used in these places...", required: false %>
@@ -62,45 +54,3 @@
     </div>
   </div>
 </div>
-
-<script>
-  // modal
-  const modal = document.getElementById("modal-add-collaborator");
-  modal.style.display = "none";
-  const openButton = document.getElementById("button-add-collaborator");
-  const closeButton = document.getElementsByClassName("modal-close")[0];
-
-  const isModalDisplayed = (modal) => modal.style.display === "block";
-  const displayModal = (e) => {
-    modal.style.display = "block";
-    e.stopPropagation();
-  }
-  const hideModal = () => modal.style.display = "none";
-  const closeModalOnClickOutside = (e) =>
-    e.target !== modal && !modal.contains(e.target) && hideModal();
-
-  closeButton.onclick = hideModal;
-  openButton.onclick = (e) => {
-    if (isModalDisplayed(modal)) {
-      hideModal();
-      return;
-    }
-    displayModal(e);
-    document.getElementsByTagName("body")[0].onclick = closeModalOnClickOutside;
-  };
-
-  // create project
-  const createProjectButton = document.getElementById("button-add-collaborator")
-  const titleInput = document.getElementById("input-title")
-  createProjectButton.disabled = !titleInput.value || titleInput.value.length === 0
-  const form = document.getElementById("form-add-collaborator")
-  titleInput.addEventListener('input', () => titleInput.value.length > 0
-    ? createProjectButton.disabled = false
-    : createProjectButton.disabled = true)
-  createProjectButton.addEventListener('click', () => {
-    if (!createProjectButton.disabled) {
-      form.submit();
-    }
-  })
-
-</script>

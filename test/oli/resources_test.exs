@@ -11,14 +11,15 @@ defmodule Oli.ResourcesTest do
   alias Oli.Course.Family
   alias Oli.Publishing.Publication
   alias Oli.Resources.Resource
+  alias Oli.Resources.ResourceFamily
   alias Oli.Resources.ResourceRevision
 
   describe "resources" do
     alias Oli.Resources.Resource
 
-    @valid_attrs %{slug: "some slug"}
-    @update_attrs %{slug: "some updated slug"}
-    @invalid_attrs %{slug: nil}
+    @valid_attrs %{}
+    @update_attrs %{}
+    @invalid_attrs %{}
 
     setup do
 
@@ -28,11 +29,12 @@ defmodule Oli.ResourcesTest do
       {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
       {:ok, _institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
 
-      {:ok, resource} = Resource.changeset(%Resource{}, %{slug: "slug", project_id: project.id}) |> Repo.insert
+      {:ok, resource_family} = ResourceFamily.changeset(%ResourceFamily{}, %{}) |> Repo.insert
+      {:ok, resource} = Resource.changeset(%Resource{}, %{project_id: project.id, family_id: resource_family.id}) |> Repo.insert
 
       valid_attrs = Map.put(@valid_attrs, :project_id, project.id)
 
-      {:ok, %{resource: resource, valid_attrs: valid_attrs}}
+      {:ok, %{resource: resource, valid_attrs: valid_attrs, project: project, resource_family: resource_family}}
     end
 
     test "list_resources/0 returns all resources", %{resource: resource} do
@@ -43,23 +45,8 @@ defmodule Oli.ResourcesTest do
       assert Resources.get_resource!(resource.id) == resource
     end
 
-    test "create_resource/1 with valid data creates a resource", %{valid_attrs: valid_attrs} do
-      assert {:ok, %Resource{} = resource} = Resources.create_resource(valid_attrs)
-      assert resource.slug == "some slug"
-    end
-
-    test "create_resource/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Resources.create_resource(@invalid_attrs)
-    end
-
-    test "update_resource/2 with valid data updates the resource", %{resource: resource}  do
-      assert {:ok, %Resource{} = resource} = Resources.update_resource(resource, @update_attrs)
-      assert resource.slug == "some updated slug"
-    end
-
-    test "update_resource/2 with invalid data returns error changeset", %{resource: resource}  do
-      assert {:error, %Ecto.Changeset{}} = Resources.update_resource(resource, @invalid_attrs)
-      assert resource == Resources.get_resource!(resource.id)
+    test "new_project_resource/2 with valid data creates a resource", %{project: project, resource_family: resource_family} do
+      assert %Ecto.Changeset{valid?: true} = Resources.new_project_resource(project, resource_family)
     end
 
     test "delete_resource/1 deletes the resource", %{resource: resource}  do
@@ -87,7 +74,8 @@ defmodule Oli.ResourcesTest do
       {:ok, _publication} = Publication.changeset(%Publication{}, %{description: "description", published: False, root_resources: [], project_id: project.id}) |> Repo.insert
       {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
       {:ok, _institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
-      {:ok, resource} = Resource.changeset(%Resource{}, %{slug: "slug", project_id: project.id}) |> Repo.insert
+      {:ok, resource_family} = ResourceFamily.changeset(%ResourceFamily{}, %{}) |> Repo.insert
+      {:ok, resource} = Resource.changeset(%Resource{}, %{family_id: resource_family.id, project_id: project.id}) |> Repo.insert
 
       resource_type = Resources.list_resource_types() |> hd
 
