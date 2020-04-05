@@ -74,7 +74,7 @@ defmodule OliWeb.ProjectController do
         conn
         |> Map.put(:assigns, Map.merge(conn.assigns, overview_params))
         |> put_flash(:error, "Project could not be updated.")
-        |> render "overview.html"
+        |> render("overview.html")
     end
   end
 

@@ -1,9 +1,9 @@
 defmodule OliWeb.AuthorProjectController do
   use OliWeb, :controller
-  alias Oli.Accounts
+  alias Oli.AuthorsProjects
 
-  def create(conn, %{"collaborator" => %{"project" => project, "email" => email}}) do
-    case Accounts.add_project_to_author(author, project) do
+  def create(conn, %{"collaborator" => %{"project" => project, "author" => author}}) do
+    case AuthorsProjects.add_project_to_author(author, project) do
 
       {:ok, %{project: project} = _results} ->
         redirect conn, to: Routes.project_path(conn, :overview, project)
@@ -18,8 +18,8 @@ defmodule OliWeb.AuthorProjectController do
     # For later use -> change author role within project
   end
 
-  def delete(conn, %{"author" => author}) do
-    case Accounts.remove_project_from_author(author, project) do
+  def delete(conn, %{"author" => author, "project" => project}) do
+    case AuthorsProjects.remove_project_from_author(author, project) do
       {:ok, %{project: project} = _results} ->
         redirect conn, to: Routes.project_path(conn, :overview, project)
       {:error, _} ->

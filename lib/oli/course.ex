@@ -11,7 +11,7 @@ defmodule Oli.Course do
   alias Ecto.Multi
   alias Oli.Publishing
   alias Oli.Resources
-  alias Oli.Accounts
+  alias Oli.AuthorsProjects
 
   @doc """
   Returns the list of projects.
@@ -66,8 +66,11 @@ defmodule Oli.Course do
         |> Multi.insert(:project, default_project(title, family)) end)
       |> Multi.merge(fn %{project: project} ->
         Multi.new
-        |> Multi.update(:author, Accounts.add_project_to_author(author, project))
-        |> Multi.insert(:resource, Resources.new_project_resource(project)) end)
+        |> Multi.update(:author, AuthorsProjects.add_project_to_author(author, project))
+        |> Multi.insert(:resource_family, Resources.new_resource_family()) end)
+      |> Multi.merge(fn %{resource_family: resource_family, project: project} ->
+        Multi.new
+        |> Multi.insert(:resource, Resources.new_project_resource(project, resource_family)) end)
       |> Multi.merge(fn %{author: author, project: project, resource: resource} ->
         Multi.new
         |> Multi.insert(:resource_revision, Resources.new_project_resource_revision(author, project, resource))
