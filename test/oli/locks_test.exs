@@ -45,53 +45,53 @@ defmodule Oli.LocksTest do
     end
 
     test "acquire/3 does acquire the lock", %{author1: author1, mapping: %{ publication_id: publication_id, resource_id: resource_id }} do
-      assert Locks.acquire(publication_id, resource_id, author1.id) == {:ok}
+      assert Locks.acquire_or_update(publication_id, resource_id, author1.id) == {:ok}
     end
 
     test "acquire/3 does not acquire if already acquired", %{author1: author1, author2: author2, mapping: %{ publication_id: publication_id, resource_id: resource_id }} do
-      assert Locks.acquire(publication_id, resource_id, author1.id) == {:ok}
+      assert Locks.acquire_or_update(publication_id, resource_id, author1.id) == {:ok}
 
       id = author1.id
 
-      case Locks.acquire(publication_id, resource_id, author2.id) do
+      case Locks.acquire_or_update(publication_id, resource_id, author2.id) do
         {:lock_not_acquired, {^id, _}} -> assert(true)
         _ -> assert(false)
       end
     end
 
     test "can acquire then release", %{author1: author1, mapping: %{ publication_id: publication_id, resource_id: resource_id }} do
-      assert Locks.acquire(publication_id, resource_id, author1.id) == {:ok}
+      assert Locks.acquire_or_update(publication_id, resource_id, author1.id) == {:ok}
       assert Locks.release(publication_id, resource_id, author1.id) == {:ok}
     end
 
     test "can only release if acquired", %{author1: author1, author2: author2, mapping: %{ publication_id: publication_id, resource_id: resource_id }} do
-      assert Locks.acquire(publication_id, resource_id, author1.id) == {:ok}
+      assert Locks.acquire_or_update(publication_id, resource_id, author1.id) == {:ok}
       assert Locks.release(publication_id, resource_id, author2.id) == {:lock_not_held}
     end
 
     test "updating a lock (repeated acquisition)", %{author1: author1, author2: author2, mapping: %{ publication_id: publication_id, resource_id: resource_id }} do
 
-      assert Locks.acquire(publication_id, resource_id, author1.id) == {:ok}
-      {:lock_not_acquired, {_, date1}} = Locks.acquire(publication_id, resource_id, author2.id)
+      assert Locks.acquire_or_update(publication_id, resource_id, author1.id) == {:ok}
+      {:lock_not_acquired, {_, date1}} = Locks.acquire_or_update(publication_id, resource_id, author2.id)
 
       :timer.sleep(2000);
 
-      assert Locks.acquire(publication_id, resource_id, author1.id) == {:ok}
-      {:lock_not_acquired, {_, date2}} = Locks.acquire(publication_id, resource_id, author2.id)
+      assert Locks.acquire_or_update(publication_id, resource_id, author1.id) == {:ok}
+      {:lock_not_acquired, {_, date2}} = Locks.acquire_or_update(publication_id, resource_id, author2.id)
       assert date1 != date2
     end
 
     test "acquiring an expired lock", %{author1: author1, author2: author2, mapping: %{ publication_id: publication_id, resource_id: resource_id }} do
 
       # Acquire a lock
-      assert Locks.acquire(publication_id, resource_id, author1.id) == {:ok}
+      assert Locks.acquire_or_update(publication_id, resource_id, author1.id) == {:ok}
 
       # Then manually set the last_updated_at time back to yesterday
       mapping = Publishing.get_resource_mapping!(publication_id, resource_id)
       Publishing.update_resource_mapping(mapping, %{lock_updated_at: yesterday() })
 
       # Now verify that we can acquire it via another user
-      assert Locks.acquire(publication_id, resource_id, author2.id) == {:ok}
+      assert Locks.acquire_or_update(publication_id, resource_id, author2.id) == {:ok}
     end
 
 
