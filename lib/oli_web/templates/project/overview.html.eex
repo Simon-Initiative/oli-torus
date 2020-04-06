@@ -44,7 +44,7 @@
     <div class="page-header">
       <div class="flex"><h1>Details</h1></div>
         <small>Change information about your course.</small>
-        <%= form_for @project_changeset, Routes.project_path(@conn, :update, @project), fn f -> %>
+        <%= form_for @changeset, Routes.project_path(@conn, :update, @project), fn f -> %>
             <div class="form-label-group">
               <%= label f, :description, class: "control-label" %>
               <%= textarea f, :description, class: "form-control", placeholder: "Course description. This is used in these places...", required: false %>

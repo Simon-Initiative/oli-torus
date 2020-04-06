@@ -12,15 +12,6 @@ defmodule Oli.CourseTest do
     @update_attrs %{description: "some updated description", version: "1", slug: "some updated slug", title: "some updated title"}
     @invalid_attrs %{description: nil, slug: nil, title: nil}
 
-    # def project_fixture(attrs \\ %{}) do
-    #   {:ok, project} =
-    #     attrs
-    #     |> Enum.into(@valid_attrs)
-    #     |> Course.create_project()
-
-    #   project
-    # end
-
     setup do
 
       {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
@@ -144,8 +135,9 @@ defmodule Oli.CourseTest do
 
   describe "project creation with associations" do
     setup do
-      {:ok, transaction} = Course.create_project("test project", author_fixture())
-      {:ok, %{transaction: transaction}}
+      author = author_fixture()
+      {:ok, transaction} = Course.create_project("test project", author)
+      {:ok, %{transaction: transaction, author: author}}
     end
 
     test "creates a new family", %{transaction: %{family: family}} do
@@ -157,13 +149,15 @@ defmodule Oli.CourseTest do
       assert project.family.slug == family.slug
     end
 
-    test "associates the currently logged in author with the new project", %{transaction: %{author: author, project: project}} do
-      author = Repo.preload(author, [:projects])
-      assert Enum.find(author.projects, false, fn candidate -> candidate == project end)
+    test "associates the currently logged in author with the new project", %{transaction: %{author_project: author_project, project: project}, author: author} do
+      assert !is_nil(author_project)
+      assert author_project.author_id == author.id
+      assert author_project.project_id == project.id
+      assert Repo.preload(author_project, [:project_role]).project_role.type == "owner"
     end
 
-    test "creates a new container resource", %{transaction: %{resource: resource}} do
-      assert resource.slug =~ "root_container"
+    test "creates a new container resource", %{transaction: %{resource_revision: revision}} do
+      assert revision.slug =~ "root_container"
     end
 
     test "creates a new resource revision for the container", %{transaction: %{resource: resource, resource_revision: resource_revision}} do

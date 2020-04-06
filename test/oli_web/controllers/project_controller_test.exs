@@ -61,7 +61,6 @@ defmodule OliWeb.ProjectControllerTest do
   describe "create project" do
     test "redirects to page index when data is valid", %{conn: conn} do
       conn = post(conn, Routes.project_path(conn, :create), project: @valid_attrs)
-
       assert html_response(conn, 302) =~ "/project/"
     end
 
@@ -78,12 +77,8 @@ defmodule OliWeb.ProjectControllerTest do
     end
 
     test "prevents update when data is invalid", %{conn: conn, project: project} do
-      conn = put(conn, Routes.project_path(conn, :update, project), project: @invalid_attrs)
+      put(conn, Routes.project_path(conn, :update, project), project: @invalid_attrs)
       refute Repo.get_by(Project, @invalid_attrs)
-    end
-
-    test "creates a new container resource", %{transaction: %{resource: resource}} do
-      assert resource != nil
     end
 
     test "redirects on success", %{conn: conn, project: project} do
@@ -96,14 +91,6 @@ defmodule OliWeb.ProjectControllerTest do
       refute conn.assigns.changeset.valid?
       assert html_response(conn, 200) =~ "Overview"
     end
-  end
-
-  defp author_project_conn(%{conn: conn}) do
-    author = author_fixture()
-    [project | _rest] = make_n_projects(1, author)
-    conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
-
-    {:ok, conn: conn, author: author, project: project}
   end
 
   defp unauthorized_redirect(conn, path, project) do

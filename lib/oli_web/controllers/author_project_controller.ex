@@ -2,10 +2,9 @@ defmodule OliWeb.AuthorProjectController do
   use OliWeb, :controller
   alias Oli.AuthorsProjects
 
-  def create(conn, %{"email" => email} = params) do
+  def create(conn, %{"email" => email}) do
     project_id = conn.params["project_id"]
-    case AuthorsProjects.new_collaborator(email, project_id) do
-
+    case AuthorsProjects.create_author_project(email, project_id) do
       {:ok, _results} ->
         redirect conn, to: Routes.project_path(conn, :overview, project_id)
       {:error, _error} ->
@@ -15,18 +14,17 @@ defmodule OliWeb.AuthorProjectController do
     end
   end
 
-  def update(conn, %{"author" => author}) do
+  def update(_conn, %{"author" => _author}) do
     # For later use -> change author role within project
   end
 
   def delete(conn, %{"project_id" => project_id, "author_email" => author_email}) do
-    case AuthorsProjects.remove_project_from_author(author_email, project_id) do
-      # FIXME -> change to :ok, results when deleting one author_project
-      {n, _results} ->
+    case AuthorsProjects.delete_author_project(author_email, project_id) do
+      {:ok, _} ->
         redirect conn, to: Routes.project_path(conn, :overview, project_id)
-      {:error, _} ->
+      {:error, message} ->
         conn
-          |> put_flash(:error, "Could not remove author from project. Please try again")
+          |> put_flash(:error, "Error: #{message}. Please try again")
           |> redirect(to: Routes.project_path(conn, :overview, project_id))
     end
   end

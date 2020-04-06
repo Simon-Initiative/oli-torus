@@ -67,6 +67,7 @@ defmodule OliWeb.Router do
     get "/:project_id/publish", ProjectController, :publish
     get "/:project_id/insights", ProjectController, :insights
 
+    # Page editor
     get "/:project_id/:page", ProjectController, :view
     get "/:project_id/:page/edit", ProjectController, :edit
 

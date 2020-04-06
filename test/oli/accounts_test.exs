@@ -75,9 +75,6 @@ defmodule Oli.AccountsTest do
     test "change_user/1 returns a user changeset", %{user: user} do
       assert %Ecto.Changeset{} = Accounts.change_user(user)
     end
-
-    test "add author to project"
-    test "remove author from project"
   end
 
   describe "institutions" do

@@ -5,7 +5,6 @@ defmodule OliWeb.ProjectController do
   alias Oli.Accounts
   alias Oli.Utils
   import OliWeb.ProjectPlugs
-  alias Oli.AuthorsProjects
 
   plug :fetch_project when action not in [:create]
   plug :authorize_project when action not in [:create]
@@ -16,7 +15,7 @@ defmodule OliWeb.ProjectController do
       title: "Overview",
       active: :overview,
       collaborators: Accounts.project_authors(project),
-      project_changeset: Utils.value_or(
+      changeset: Utils.value_or(
         Map.get(project_params, :changeset),
         Project.changeset(project)),
     }
@@ -59,4 +58,25 @@ defmodule OliWeb.ProjectController do
       end
   end
 
+  def update(conn, %{"project" => project_params}) do
+    project = conn.assigns.project
+    case Course.update_project(project, project_params) do
+      {:ok, project} ->
+        conn
+        |> put_flash(:info, "Project updated successfully.")
+        |> redirect(to: Routes.project_path(conn, :overview, project))
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        overview_params = %{
+          title: "Overview",
+          active: :overview,
+          collaborators: Accounts.project_authors(project),
+          changeset: changeset
+        }
+        conn
+        |> Map.put(:assigns, Map.merge(conn.assigns, overview_params))
+        |> put_flash(:error, "Project could not be updated.")
+        |> render("overview.html")
+    end
+  end
 end

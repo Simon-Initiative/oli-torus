@@ -116,4 +116,17 @@ defmodule Oli.TestHelpers do
     |> Repo.insert()
   end
 
+  def author_project_conn(%{conn: conn}) do
+    author = author_fixture()
+    [project | _rest] = make_n_projects(1, author)
+    conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
+
+    {:ok, conn: conn, author: author, project: project}
+  end
+
+  def author_project_fixture(_conn) do
+    author = author_fixture()
+    [project | _rest] = make_n_projects(1, author)
+    {:ok, author: author, project: project}
+  end
 end
