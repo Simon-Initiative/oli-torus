@@ -63,6 +63,10 @@ defmodule OliWeb.Router do
     get "/:project", ProjectController, :overview
     post "/", ProjectController, :create
     get "/:project/objectives", ProjectController, :objectives
+    post "/:project/objectives", ObjectiveController, :create
+    patch "/:project/objectives/:id", ObjectiveController, :update
+    put "/:project/objectives/:id", ObjectiveController, :update
+    delete "/:project/objectives/:id", ObjectiveController, :delete
     get "/:project/curriculum", ProjectController, :curriculum
     get "/:project/publish", ProjectController, :publish
     get "/:project/insights", ProjectController, :insights

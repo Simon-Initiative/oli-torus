@@ -135,6 +135,23 @@ defmodule Oli.Publishing do
     Publication.changeset(publication, %{})
   end
 
+  @doc """
+  Get unpublished publication for a project. This assumes there is only one unpublished publication per project.
+   ## Examples
+
+      iex> get_unpublished_publication!(123)
+      %Publication{}
+
+      iex> get_unpublished_publication!(456)
+      ** (Ecto.NoResultsError)
+  """
+  def get_unpublished_publication(project_id)do
+    Repo.one(
+      from p in "publications",
+      where: p.project_id == ^project_id and p.published == false,
+      select: p.id)
+  end
+
   alias Oli.Publishing.ResourceMapping
 
   @doc """
@@ -340,6 +357,20 @@ defmodule Oli.Publishing do
   """
   def list_objective_mappings do
     Repo.all(ObjectiveMapping)
+  end
+
+  @doc """
+  Returns the list of objective_mappings for a given publication.
+
+  ## Examples
+
+      iex> get_objective_mappings_for_publication()
+      [%ObjectiveMapping{}, ...]
+
+  """
+  def get_objective_mappings_by_publication(publication_id) do
+    from(p in ObjectiveMapping, where: p.publication_id == ^publication_id, preload: [:objective, :revision])
+    |> Repo.all()
   end
 
   @doc """

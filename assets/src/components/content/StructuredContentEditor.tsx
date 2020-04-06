@@ -10,7 +10,7 @@ export type StructuredContentEditor = {
   toolbarItems: ToolbarItem[],    // Toolbar to use
 };
 
-// The resource editor
+// The resource editor for content
 export const StructuredContentEditor = (props: StructuredContentEditor) => {
 
   const { content, toolbarItems, editMode } = props;
