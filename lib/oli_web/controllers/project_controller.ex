@@ -1,10 +1,12 @@
 defmodule OliWeb.ProjectController do
   use OliWeb, :controller
-  alias Oli.Course
+  import OliWeb.ProjectPlugs
   alias Oli.Course.Project
   alias Oli.Accounts
   alias Oli.Utils
-  import OliWeb.ProjectPlugs
+  alias Oli.Course
+  alias Oli.Publishing
+  alias Oli.Learning
 
   plug :fetch_project when action not in [:create]
   plug :authorize_project when action not in [:create]
@@ -22,8 +24,13 @@ defmodule OliWeb.ProjectController do
     render %{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html"
   end
 
-  def objectives(conn, _project_params) do
-    render conn, "objectives.html", title: "Objectives", active: :objectives
+  def objectives(conn, %{"project" => _project_id}) do
+    project = Course.get_project_by_slug(conn.params["project"])
+    publication_id = Publishing.get_unpublished_publication(project.id)
+    objective_mappings = Publishing.get_objective_mappings_by_publication(publication_id)
+    changeset = Learning.change_objective(%Learning.Objective{})
+    params = %{title: "Objectives", objective_mappings: objective_mappings, objective_changeset: changeset, active: :objectives}
+    render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
   end
 
   def curriculum(conn, _project_params) do

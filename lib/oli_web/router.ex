@@ -60,7 +60,7 @@ defmodule OliWeb.Router do
   scope "/project", OliWeb do
     pipe_through [:browser, :protected, :workspace_layout]
 
-    # Display pages for viewing project content
+    # Project display pages
     get "/:project_id", ProjectController, :overview
     get "/:project_id/objectives", ProjectController, :objectives
     get "/:project_id/curriculum", ProjectController, :curriculum
@@ -71,12 +71,23 @@ defmodule OliWeb.Router do
     get "/:project_id/:page", ProjectController, :view
     get "/:project_id/:page/edit", ProjectController, :edit
 
-    # Updating a project
+    # Project
     post "/", ProjectController, :create
     put "/:project_id", ProjectController, :update
     delete "/:project_id", ProjectController, :delete
 
-    # Updating a project's collaborators
+    # Objectives
+    get "/:project/objectives", ProjectController, :objectives
+    post "/:project/objectives", ObjectiveController, :create
+    patch "/:project/objectives/:id", ObjectiveController, :update
+    put "/:project/objectives/:id", ObjectiveController, :update
+    delete "/:project/objectives/:id", ObjectiveController, :delete
+
+    # Pages
+    get "/:project/:page", ResourceController, :view
+    get "/:project/:page/edit", ResourceController, :edit
+
+    # Collaborators
     post "/:project_id/collaborators", AuthorProjectController, :create
     put "/:project_id/collaborators/:author_email", AuthorProjectController, :update
     delete "/:project_id/collaborators/:author_email", AuthorProjectController, :delete

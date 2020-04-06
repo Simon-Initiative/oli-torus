@@ -216,6 +216,8 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :resource_id, references(:resources)
       add :publication_id, references(:publications)
       add :revision_id, references(:resource_revisions)
+      add :locked_by_id, references(:authors), null: true
+      add :lock_updated_at, :naive_datetime
       timestamps()
     end
 
