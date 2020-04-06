@@ -131,6 +131,10 @@ defmodule Oli.PublishingTest do
       assert Publishing.get_resource_mapping!(resource_mapping.id) == resource_mapping
     end
 
+    test "get_resource_mapping!/2 returns the resource_mapping with given publication and resource", %{resource_mapping: resource_mapping} do
+      assert Publishing.get_resource_mapping!(resource_mapping.publication_id, resource_mapping.resource_id) == resource_mapping
+    end
+
     test "create_resource_mapping/1 with valid data creates a resource_mapping", %{valid_attrs: valid_attrs} do
       assert {:ok, %ResourceMapping{} = resource_mapping} = Publishing.create_resource_mapping(valid_attrs)
     end
