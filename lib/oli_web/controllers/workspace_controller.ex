@@ -11,7 +11,7 @@ defmodule OliWeb.WorkspaceController do
         Map.put(project, :author_count, Accounts.project_author_count(project)) end)
     params = %{
       title: "Projects",
-      project_changeset: Project.changeset(%Project{
+      changeset: Project.changeset(%Project{
         title: params["project_title"] || ""
       }),
       active: :nil,

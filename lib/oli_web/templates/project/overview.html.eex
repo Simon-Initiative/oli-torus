@@ -1,5 +1,5 @@
 <style>
-.flex {
+.overview .flex {
   display: flex;
 }
 .overview h1 {
@@ -7,12 +7,50 @@
   margin-right: 8px;
 }
 </style>
+
 <div class="overview container">
   <div class="row">
     <div class="page-header">
-      <div class="flex"><h1>Collaborators</h1> <%= render OliWeb.SharedView, "_add_button.html" %></div>
+      <div class="flex"><h1>Collaborators</h1>
+      <%# <button id="button-add-collaborator" class="add-button">
+        <i class="material-icons">add</i>
+        </button> %>
+      </div>
+      <%= form_for @conn, Routes.author_project_path(@conn, :create, @project), [id: "form-add-collaborator"], fn f -> %>
+      <div class="form-label-group">
+        <%= text_input f,
+          :email,
+          class: "form-control input-bold " <> error_class(f, :title, "is-invalid"),
+          placeholder: "Introduction to Psychology",
+          id: "input-title",
+          required: true,
+          autofocus: focusHelper(f, :email, default: true) %>
+        <%= label f, :email, "User email", class: "control-label input-bold" %>
+        <%= error_tag f, :email %>
+      </div>
+      <%= submit "Add collaborator",
+        id: "button-create-collaborator",
+        class: "btn btn-primary",
+        phx_disable_with: "Adding Collaborator...",
+        form: f.id %>
+    <% end %>
         <small>Add collaborators to invite them to contribute to your course.</small>
-        <p></p>
+        <ul>
+          <%= render_many @collaborators, OliWeb.ProjectView, "_li_collaborator.html", %{conn: @conn, as: :collaborator, project: @project} %>
+        </ul>
+    </div>
+  </div>
+  <div class="row">
+    <div class="page-header">
+      <div class="flex"><h1>Details</h1></div>
+        <small>Change information about your course.</small>
+        <%= form_for @changeset, Routes.project_path(@conn, :update, @project), fn f -> %>
+            <div class="form-label-group">
+              <%= label f, :description, class: "control-label" %>
+              <%= textarea f, :description, class: "form-control", placeholder: "Course description. This is used in these places...", required: false %>
+            </div>
+            <%= submit "Save description", class: "btn btn-md btn-primary btn-block" %>
+          <% end %>
     </div>
   </div>
 </div>

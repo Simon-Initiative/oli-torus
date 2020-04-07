@@ -5,7 +5,7 @@ defmodule OliWeb.ProjectPlugs do
   alias OliWeb.Router.Helpers, as: Routes
 
   def fetch_project(conn, _) do
-    case Course.get_project_by_slug(conn.params["project"]) do
+    case Course.get_project_by_slug(conn.params["project_id"]) do
       nil ->
         conn
         |> Phoenix.Controller.put_flash(:info, "That project does not exist")

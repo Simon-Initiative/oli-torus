@@ -119,7 +119,7 @@
     <span class="modal-close"><i class="material-icons">close</i></span>
   </div>
   <div class="modal-body">
-    <%= form_for @project_changeset, Routes.project_path(@conn, :create), [id: "form-create-project"], fn f -> %>
+    <%= form_for @changeset, Routes.project_path(@conn, :create), [id: "form-create-project"], fn f -> %>
       <div class="form-label-group">
         <%= text_input f,
           :title,

@@ -60,20 +60,37 @@ defmodule OliWeb.Router do
   scope "/project", OliWeb do
     pipe_through [:browser, :protected, :workspace_layout]
 
-    get "/:project", ProjectController, :overview
+    # Project display pages
+    get "/:project_id", ProjectController, :overview
+    get "/:project_id/objectives", ProjectController, :objectives
+    get "/:project_id/curriculum", ProjectController, :curriculum
+    get "/:project_id/publish", ProjectController, :publish
+    get "/:project_id/insights", ProjectController, :insights
+
+    # Page editor
+    get "/:project_id/:page", ProjectController, :view
+    get "/:project_id/:page/edit", ProjectController, :edit
+
+    # Project
     post "/", ProjectController, :create
+    put "/:project_id", ProjectController, :update
+    delete "/:project_id", ProjectController, :delete
+
+    # Objectives
     get "/:project/objectives", ProjectController, :objectives
     post "/:project/objectives", ObjectiveController, :create
     patch "/:project/objectives/:id", ObjectiveController, :update
     put "/:project/objectives/:id", ObjectiveController, :update
     delete "/:project/objectives/:id", ObjectiveController, :delete
-    get "/:project/curriculum", ProjectController, :curriculum
-    get "/:project/publish", ProjectController, :publish
-    get "/:project/insights", ProjectController, :insights
 
+    # Pages
     get "/:project/:page", ResourceController, :view
     get "/:project/:page/edit", ResourceController, :edit
 
+    # Collaborators
+    post "/:project_id/collaborators", AuthorProjectController, :create
+    put "/:project_id/collaborators/:author_email", AuthorProjectController, :update
+    delete "/:project_id/collaborators/:author_email", AuthorProjectController, :delete
   end
 
   scope "/api/v1/project", OliWeb do
