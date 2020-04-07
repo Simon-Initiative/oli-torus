@@ -1,5 +1,11 @@
 .vscode
 
+# IDEA
+*.iml
+*.ipr
+*.iws
+/.idea/
+
 # The directory Mix will write compiled artifacts to.
 /_build/
 
@@ -41,3 +47,5 @@ postgres.env
 .devmode
 .elixir_ls
 .DS_Store
+/amisc/
+/docker-compose-dev.yml

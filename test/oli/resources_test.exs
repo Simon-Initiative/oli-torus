@@ -62,10 +62,10 @@ defmodule Oli.ResourcesTest do
   describe "resource_revisions" do
     alias Oli.Resources.ResourceRevision
 
+
     @valid_attrs %{objectives: [], children: [], content: [], deleted: true, slug: "some slug", title: "some title"}
     @update_attrs %{objectives: [], children: [], content: [], deleted: false, slug: "some updated slug", title: "some updated title"}
     @invalid_attrs %{children: nil, content: nil, deleted: nil, slug: nil, title: nil}
-
 
     setup do
 

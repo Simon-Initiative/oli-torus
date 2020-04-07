@@ -11,7 +11,7 @@ defmodule Oli.Course do
   alias Ecto.Multi
   alias Oli.Publishing
   alias Oli.Resources
-  alias Oli.Accounts
+  alias Oli.AuthorsProjects
 
   @doc """
   Returns the list of projects.
@@ -41,7 +41,13 @@ defmodule Oli.Course do
 
   """
   def get_project!(id), do: Repo.get!(Project, id)
-  def get_project_by_slug(slug), do: Repo.get_by(Project, slug: slug)
+  def get_project_by_slug(slug) do
+    if is_nil(slug) do
+      nil
+    else
+      Repo.get_by(Project, slug: slug)
+    end
+  end
 
   @doc """
   Creates a project tied to an author.
@@ -60,12 +66,12 @@ defmodule Oli.Course do
         |> Multi.insert(:project, default_project(title, family)) end)
       |> Multi.merge(fn %{project: project} ->
         Multi.new
-        |> Multi.update(:author, Accounts.author_to_project(author, project))
-        |> Multi.insert(:resource_family, Resources.new_resource_family()) end)
+        |> Multi.insert(:author_project, AuthorsProjects.author_project(author.email, project.slug)) end)
+      |> Multi.insert(:resource_family, Resources.new_resource_family())
       |> Multi.merge(fn %{resource_family: resource_family, project: project} ->
         Multi.new
         |> Multi.insert(:resource, Resources.new_project_resource(project, resource_family)) end)
-      |> Multi.merge(fn %{author: author, project: project, resource: resource} ->
+      |> Multi.merge(fn %{project: project, resource: resource} ->
         Multi.new
         |> Multi.insert(:resource_revision, Resources.new_project_resource_revision(author, project, resource))
         |> Multi.insert(:publication, Publishing.new_project_publication(resource, project)) end)
