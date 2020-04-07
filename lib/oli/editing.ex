@@ -34,7 +34,7 @@ defmodule Oli.Editing do
   end
 
   defp get_latest_revision(publication, resource) do
-    mapping = Publishing.get_resource_mapping!(publication, resource)
+    mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
     Resources.get_resource_revision!(mapping.revision_id)
   end
 
@@ -52,14 +52,15 @@ defmodule Oli.Editing do
       resource_type_id: previous.resource_type_id
     })
 
-    mapping = Publishing.get_resource_mapping!(publication, resource)
+    mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
     {:ok, _mapping} = Publishing.update_resource_mapping(mapping, %{ revision_id: revision.id })
 
     revision
   end
 
   defp update_revision(revision, update) do
-    Resources.update_resource_revision(revision, update)
+    {:ok, updated} = Resources.update_resource_revision(revision, update)
+    updated
   end
 
 end

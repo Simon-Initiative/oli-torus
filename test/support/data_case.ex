@@ -23,6 +23,8 @@ defmodule Oli.DataCase do
       import Ecto.Query
       import Oli.DataCase
       import Oli.TestHelpers
+
+      alias Oli.Seeder
     end
   end
 
