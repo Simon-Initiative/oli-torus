@@ -75,7 +75,7 @@ defmodule Oli.EditingTest do
 
       # set the lock so that it is valid and held by a different user
       {:ok, author2} = Author.changeset(%Author{}, %{email: "test2@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
-      {:acquired} = Locks.acquire_or_update(publication.id, resource.id, author2.id)
+      {:acquired} = Locks.acquire(publication.id, resource.id, author2.id)
 
       # now try to make the edit with the original user
       content = [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }]

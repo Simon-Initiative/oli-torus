@@ -11,7 +11,6 @@ defmodule Oli.ResourceEditing do
   alias Oli.Accounts
   alias Oli.Resources.ResourceRevision
   alias Oli.Repo
-  alias Oli.Utils.Time
 
   @doc """
   Attempts to process an edit for a resource specified by a given
@@ -46,9 +45,9 @@ defmodule Oli.ResourceEditing do
     do
       Repo.transaction(fn ->
 
-        case Locks.acquire_or_update(publication.id, resource.id, author.id) do
+        case Locks.update(publication.id, resource.id, author.id) do
 
-          # If we reacquired the lock, we must first create a new revision
+          # If we acquired the lock, we must first create a new revision
           {:acquired} -> get_latest_revision(publication, resource)
             |> create_new_revision(publication, resource, author.id)
             |> update_revision(update)
@@ -93,13 +92,10 @@ defmodule Oli.ResourceEditing do
          {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil()
     do
-      case Locks.acquire_or_update(publication.id, resource.id, author.id) do
+      case Locks.acquire(publication.id, resource.id, author.id) do
 
         # If we reacquired the lock, we must first create a new revision
         {:acquired} -> {:acquired}
-
-        # A successful lock update means we can safely edit the existing revision
-        {:updated} -> {:acquired}
 
         # error or not able to lock results in a failed edit
         {:lock_not_acquired, {locked_by, _}} -> {:lock_not_acquired, locked_by}

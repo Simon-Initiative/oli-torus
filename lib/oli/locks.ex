@@ -20,18 +20,62 @@ defmodule Oli.Locks do
   editing session without closing their browser.
 
   ## Actions
-  Only two actions exist for a lock: `acquire_or_update` and `release`. It is
-  safe - and by design - to call `acquire_or_update` repeatedly without calling
-  release.  This is how a lock's last updated date and time is updated and thus
-  how a lock is does not expire.
+  Three actions exist for a lock: `acquire`, `update` and `release`. Lock acquiring
+  results in the resource mapping record being stamped with the users id, but
+  with an `nil` last updated at date.  Updating a lock sets the last updated at
+  date. Releasing a lock sets both the user and last updated at to `nil`. Coupled
+  with
 
   """
 
   alias Oli.Publishing
-  alias Oli.Publishing.ResourceMapping
 
   # Locks that are not updated after 10 minutes are considered to be expired
   @ttl 10 * 60
+
+  @doc """
+  Attempts to acquire or update a lock for user `user_id` the resource mapping
+  defined by `publication_id` and `resource_id`.
+
+  Returns:
+
+  .`{:acquired}` if the lock was acquired
+  .`{:error}` if an internal error was encountered
+  .`{:lock_not_acquired, {user_id, date_time}}` the date and user id of the existing lock
+
+  """
+  @spec acquire(number, number, number) ::
+          {:error}
+          | {:acquired}
+          | {:lock_not_acquired,
+             {number,
+              %{
+                calendar: atom,
+                day: any,
+                hour: any,
+                microsecond: any,
+                minute: any,
+                month: any,
+                second: any,
+                year: any
+              }}}
+  def acquire(publication_id, resource_id, user_id) do
+
+    # Get the mapping that pertains to this publication and resource
+    case Publishing.get_resource_mapping!(publication_id, resource_id) do
+
+      # Acquire the lock if held already by this user
+      %{locked_by_id: ^user_id} = mapping -> lock_action(mapping, user_id, &always?/1, {:acquired}, {:acquired}, nil)
+
+      # Acquire the lock if no user has this mapping locked
+      %{locked_by_id: nil} = mapping -> lock_action(mapping, user_id, &always?/1, {:acquired}, {:acquired}, nil)
+
+      # Otherwise, another user may have this locked, acquire it if
+      # the lock is expired
+      %{ locked_by_id: other_user_id, lock_updated_at: lock_updated_at} = mapping ->
+        lock_action(mapping, user_id, &expired?/1, {:acquired}, {:lock_not_acquired, {other_user_id, lock_updated_at}}, nil)
+    end
+  end
 
   @doc """
   Attempts to acquire or update a lock for user `user_id` the resource mapping
@@ -45,7 +89,7 @@ defmodule Oli.Locks do
   .`{:lock_not_acquired, {user_id, date_time}}` the date and user id of the existing lock
 
   """
-  @spec acquire_or_update(number, number, number) ::
+  @spec update(number, number, number) ::
           {:error}
           | {:acquired}
           | {:updated}
@@ -61,22 +105,25 @@ defmodule Oli.Locks do
                 second: any,
                 year: any
               }}}
-  def acquire_or_update(publication_id, resource_id, user_id) do
+  def update(publication_id, resource_id, user_id) do
 
     # Get the mapping that pertains to this publication and resource
     case Publishing.get_resource_mapping!(publication_id, resource_id) do
 
-      # Acquire / update the lock if held already by this user
-      %{locked_by_id: ^user_id} = mapping -> acquire_or_update_lock(mapping, user_id)
+      # Acquire the lock if held already by this user and the lock is expired or its last_updated_date is empty
+      # otherwise, simply update it
+      %{locked_by_id: ^user_id} = mapping -> lock_action(mapping, user_id, &expired_or_empty?/1, {:acquired}, {:updated}, now())
 
       # Acquire the lock if no user has this mapping locked
-      %{locked_by_id: nil} = mapping -> acquire_lock(mapping, user_id, {:acquired})
+      %{locked_by_id: nil} = mapping -> lock_action(mapping, user_id, &always?/1, {:acquired}, {:acquired}, now())
 
       # Otherwise, another user may have this locked, acquire it if
-      # the lock is expired
-      mapping -> acquire_or_not(mapping, user_id)
+      # the lock is expired, otherwise report lock not acquired
+      %{ locked_by_id: other_user_id, lock_updated_at: lock_updated_at} = mapping ->
+        lock_action(mapping, user_id, &expired?/1, {:acquired}, {:lock_not_acquired, {other_user_id, lock_updated_at}}, now())
     end
   end
+
 
   @doc """
   Releases a lock held by user `user_id` the resource mapping
@@ -102,29 +149,34 @@ defmodule Oli.Locks do
     datetime
   end
 
-  defp acquire_lock(mapping, user, result) do
-    case Publishing.update_resource_mapping(mapping, %{ locked_by_id: user, lock_updated_at: now()}) do
-      {:ok, _} -> result
-      {:error, _} -> {:error}
+  defp lock_action(mapping, current_user_id, predicate, success_result, failure_result, lock_updated_at) do
+    case predicate.(mapping) do
+      true -> case Publishing.update_resource_mapping(mapping, %{ locked_by_id: current_user_id, lock_updated_at: lock_updated_at}) do
+        {:ok, _} -> success_result
+        {:error, _} -> {:error}
+      end
+      false -> failure_result
     end
   end
 
-  defp acquire_or_update_lock(%ResourceMapping{ lock_updated_at: lock_updated_at } = mapping, user) do
-
-    if NaiveDateTime.diff(now(), lock_updated_at) > @ttl do
-      acquire_lock(mapping, user, {:acquired})
-    else
-      acquire_lock(mapping, user, {:updated})
-    end
+  defp always?(_mapping) do
+    true
   end
 
-  defp acquire_or_not(%ResourceMapping{ locked_by_id: locked_by_id, lock_updated_at: lock_updated_at } = mapping, user) do
+  defp expired?(%{ lock_updated_at: lock_updated_at, updated_at: updated_at} = mapping) do
 
-    if NaiveDateTime.diff(now(), lock_updated_at) > @ttl do
-      acquire_lock(mapping, user, {:acquired})
-    else
-      {:lock_not_acquired, {locked_by_id, lock_updated_at}}
+    # A lock is expired if a diff from now vs lock_updated_at field exceeds the ttl
+    # If a no edit has been made, we use the timestamp updated_at instead for this calculation
+    to_use = case lock_updated_at do
+      nil -> updated_at
+      _ -> lock_updated_at
     end
+
+    NaiveDateTime.diff(now(), to_use) > @ttl
+  end
+
+  defp expired_or_empty?(%{ lock_updated_at: lock_updated_at} = mapping) do
+    lock_updated_at == nil or expired?(mapping)
   end
 
   defp release_lock(mapping) do
