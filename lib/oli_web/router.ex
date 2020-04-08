@@ -103,6 +103,8 @@ defmodule OliWeb.Router do
 
   end
 
+
+
   # auth routes, only accessable to guest users who are not logged in
   scope "/auth", OliWeb do
     pipe_through [:browser, OliWeb.Plugs.Guest]

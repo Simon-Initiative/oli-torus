@@ -25,7 +25,7 @@ defmodule Oli.ResourcesTest do
 
       {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
       {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
-      {:ok, _publication} = Publication.changeset(%Publication{}, %{description: "description", published: False, root_resources: [], project_id: project.id}) |> Repo.insert
+      {:ok, _publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resources: [], project_id: project.id}) |> Repo.insert
       {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
       {:ok, _institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
 
@@ -71,7 +71,7 @@ defmodule Oli.ResourcesTest do
 
       {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
       {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
-      {:ok, _publication} = Publication.changeset(%Publication{}, %{description: "description", published: False, root_resources: [], project_id: project.id}) |> Repo.insert
+      {:ok, _publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resources: [], project_id: project.id}) |> Repo.insert
       {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
       {:ok, _institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
       {:ok, resource_family} = ResourceFamily.changeset(%ResourceFamily{}, %{}) |> Repo.insert
@@ -86,7 +86,25 @@ defmodule Oli.ResourcesTest do
 
       {:ok, revision} = valid_attrs |> Resources.create_resource_revision()
 
-      {:ok, %{revision: revision, valid_attrs: valid_attrs}}
+      {:ok, %{revision: revision, valid_attrs: valid_attrs, resource_type: resource_type.id, family: family, author: author}}
+    end
+
+    test "get_resource_from_slugs/2 returns correct resource", %{revision: revision, resource_type: resource_type, family: family, author: author} do
+
+      # Add another project, resource, and revision
+      {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "another_slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
+      {:ok, resource_family} = ResourceFamily.changeset(%ResourceFamily{}, %{}) |> Repo.insert
+      {:ok, resource} = Resource.changeset(%Resource{}, %{family_id: resource_family.id, project_id: project.id}) |> Repo.insert
+      {:ok, _rev} = ResourceRevision.changeset(%ResourceRevision{}, %{resource_type_id: resource_type, author_id: author.id, resource_id: resource.id, objectives: [], children: [], content: [], deleted: false, slug: "another_slug", title: "some title"}) |> Repo.insert
+
+      found = Resources.get_resource_from_slugs("slug", "some slug")
+      assert found.id == revision.resource_id
+
+      found = Resources.get_resource_from_slugs("another_slug", "another_slug")
+      assert found.id == resource.id
+
+      found = Resources.get_resource_from_slugs("another_slug", "missing")
+      assert found == nil
     end
 
     test "list_resource_revisions/0 returns all resource_revisions", %{revision: revision} do
