@@ -49,8 +49,8 @@ defmodule Oli.PublishingTest do
       {:ok, project2} = Project.changeset(%Project{}, %{description: "description", slug: "another", title: "title", version: "1", family_id: family.id}) |> Repo.insert
       {:ok, publication2} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resources: [], project_id: project2.id}) |> Repo.insert
 
-      assert Publishing.get_unpublished_publication!("slug", 1).id == publication.id
-      assert Publishing.get_unpublished_publication!("another", 1).id == publication2.id
+      assert Publishing.get_unpublished_publication("slug", 1).id == publication.id
+      assert Publishing.get_unpublished_publication("another", 1).id == publication2.id
     end
 
 

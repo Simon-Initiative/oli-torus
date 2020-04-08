@@ -97,11 +97,14 @@ defmodule Oli.ResourcesTest do
       {:ok, resource} = Resource.changeset(%Resource{}, %{family_id: resource_family.id, project_id: project.id}) |> Repo.insert
       {:ok, _rev} = ResourceRevision.changeset(%ResourceRevision{}, %{resource_type_id: resource_type, author_id: author.id, resource_id: resource.id, objectives: [], children: [], content: [], deleted: false, slug: "another_slug", title: "some title"}) |> Repo.insert
 
-      found = Resources.get_resource_from_slugs!("slug", "some slug")
+      found = Resources.get_resource_from_slugs("slug", "some slug")
       assert found.id == revision.resource_id
 
-      found = Resources.get_resource_from_slugs!("another_slug", "another_slug")
+      found = Resources.get_resource_from_slugs("another_slug", "another_slug")
       assert found.id == resource.id
+
+      found = Resources.get_resource_from_slugs("another_slug", "missing")
+      assert found == nil
     end
 
     test "list_resource_revisions/0 returns all resource_revisions", %{revision: revision} do

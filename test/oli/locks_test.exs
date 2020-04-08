@@ -97,9 +97,6 @@ defmodule Oli.LocksTest do
 
   end
 
-  defp yesterday() do
-    {:ok, datetime} = DateTime.now("Etc/UTC")
-    DateTime.add(datetime, -(60 * 60 * 24), :second)
-  end
+
 
 end

@@ -10,27 +10,35 @@ defmodule Oli.Editing do
     # We need all of this to operate atomically
     Repo.transaction(fn ->
 
-      publication = Publishing.get_unpublished_publication!(project_slug, user_id)
-      resource = Resources.get_resource_from_slugs!(project_slug, revision_slug)
+      publication = Publishing.get_unpublished_publication(project_slug, user_id)
+      resource = Resources.get_resource_from_slugs(project_slug, revision_slug)
 
-      # update the lock
-      case Locks.acquire_or_update(publication.id, resource.id, user_id) do
-
-        # If we reacquired the lock, we must first create a new revision
-        {:acquired} -> get_latest_revision(publication, resource)
-          |> create_new_revision(publication, resource, user_id)
-          |> update_revision(update)
-
-        # A successful lock update means we can safely edit the existing revision
-        {:updated} -> get_latest_revision(publication, resource)
-          |> update_revision(update)
-
-        # error or not able to lock results in a failed edit
-        result -> Repo.rollback(result)
+      case {publication, resource} do
+        {nil, nil} -> Repo.rollback({:not_found})
+        {_, nil} -> Repo.rollback({:not_found})
+        {nil, _} -> Repo.rollback({:not_found})
+        _ -> lock_then_process(publication, resource, user_id, update)
       end
 
     end)
 
+  end
+
+  defp lock_then_process(publication, resource, user_id, update) do
+    case Locks.acquire_or_update(publication.id, resource.id, user_id) do
+
+      # If we reacquired the lock, we must first create a new revision
+      {:acquired} -> get_latest_revision(publication, resource)
+        |> create_new_revision(publication, resource, user_id)
+        |> update_revision(update)
+
+      # A successful lock update means we can safely edit the existing revision
+      {:updated} -> get_latest_revision(publication, resource)
+        |> update_revision(update)
+
+      # error or not able to lock results in a failed edit
+      result -> Repo.rollback(result)
+    end
   end
 
   defp get_latest_revision(publication, resource) do
