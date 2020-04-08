@@ -38,34 +38,13 @@ config :ueberauth, Ueberauth,
     ]}
   ]
 
-google_client_id = System.get_env("GOOGLE_CLIENT_ID") ||
-  raise """
-  environment variable GOOGLE_CLIENT_ID is missing. You can set this variable in oli.env
-  """
-google_client_secret = System.get_env("GOOGLE_CLIENT_SECRET") ||
-  raise """
-  environment variable GOOGLE_CLIENT_SECRET is missing. You can set this variable in oli.env
-  """
-
 config :ueberauth, Ueberauth.Strategy.Google.OAuth,
-  client_id: google_client_id,
-  client_secret: google_client_secret
-
-
-facebook_client_id = System.get_env("FACEBOOK_CLIENT_ID") ||
-    raise """
-    environment variable FACEBOOK_CLIENT_ID is missing.
-    You can set this variable in oli.env
-    """
-facebook_client_secret = System.get_env("FACEBOOK_CLIENT_SECRET") ||
-    raise """
-    environment variable FACEBOOK_CLIENT_SECRET is missing.
-    You can set this variable in oli.env
-    """
+  client_id: System.get_env("GOOGLE_CLIENT_ID"),
+  client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
 
 config :ueberauth, Ueberauth.Strategy.Facebook.OAuth,
-  client_id: facebook_client_id,
-  client_secret: facebook_client_secret
+  client_id: System.get_env("FACEBOOK_CLIENT_ID"),
+  client_secret: System.get_env("FACEBOOK_CLIENT_SECRET")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
