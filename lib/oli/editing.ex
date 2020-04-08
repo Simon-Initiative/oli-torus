@@ -6,6 +6,7 @@ defmodule Oli.ResourceEditing do
 
   alias Oli.Locks
   alias Oli.Publishing
+  alias Oli.Course
   alias Oli.Resources
   alias Oli.Accounts
   alias Oli.Resources.ResourceRevision
@@ -25,12 +26,15 @@ defmodule Oli.ResourceEditing do
   .`{:ok, %ResourceRevision{}}` when the edit processes successfully the
   .`{:error, {:lock_not_acquired}}` if the lock could not be acquired or updated
   .`{:error, {:not_found}}` if the project, resource, or user cannot be found
+  .`{:error, {:not_authorized}}` if the user is not authorized to edit this resource
   """
   @spec edit(String.t, String.t, String.t, %{})
-    :: {:ok, %ResourceRevision{}} | {:error, {:not_found}} | {:error, {:lock_not_acquired}}
+    :: {:ok, %ResourceRevision{}} | {:error, {:not_found}} | {:error, {:lock_not_acquired}} | {:error, {:not_authorized}}
   def edit(project_slug, revision_slug, author_email, update) do
 
     with {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
+         {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
+         {:ok} <- authorize_user(author, project),
          {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil()
     do
@@ -57,6 +61,13 @@ defmodule Oli.ResourceEditing do
       error -> error
     end
 
+  end
+
+  defp authorize_user(author, project) do
+    case Accounts.can_access?(author, project) do
+      true -> {:ok}
+      false -> {:error, {:not_authorized}}
+    end
   end
 
   defp trap_nil(result) do

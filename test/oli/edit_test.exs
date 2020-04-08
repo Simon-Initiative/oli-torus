@@ -103,7 +103,16 @@ defmodule Oli.EditingTest do
       assert {:error, {:not_found}} = result
     end
 
+    test "edit/4 fails when the author doesn't have permission to edit", %{} do
 
+      # try to make the edit using an unauthorized author
+      content = [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }]
+      {:ok, author2} = Author.changeset(%Author{}, %{email: "test2@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
+
+      result = ResourceEditing.edit("slug", "some_title", author2.email, %{ content: content })
+
+      assert {:error, {:not_authorized}} = result
+    end
 
   end
 
