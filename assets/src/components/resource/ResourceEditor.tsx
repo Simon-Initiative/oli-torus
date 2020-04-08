@@ -8,15 +8,15 @@ import { useDeferredPersistence } from '../utils/useDeferredPersistence';
 import { Editors } from './Editors';
 import { Outline } from './Outline';
 import { TitleBar } from './TitleBar';
-import { ProjectId, ResourceId } from 'data/types';
+import { ProjectSlug, ResourceSlug } from 'data/types';
 import { makeRequest } from 'data/persistence/common';
 import { undoReducer, undo, redo, update, UndoState } from './undo';
 
 export type ResourceEditorProps = {
   resourceType: ResourceType,     // Page or assessment?
-  authorId: number,               // The current author
-  projectId: number,              // The current project
-  resourceId: number,             // The current resource
+  authorEmail: string,            // The current author
+  projectId: ProjectSlug,         // The current project
+  resourceId: ResourceSlug,       // The current resource
   title: string,                  // The title of the resource
   content: ResourceContent[],     // Content of the resource
   objectives: Objective[],        // Attached objectives
@@ -24,7 +24,7 @@ export type ResourceEditorProps = {
   editorMap: ActivityEditorMap,   // Map of activity types to activity elements
 };
 
-function issueSaveRequest(project: ProjectId, resource: ResourceId, body: any) {
+function issueSaveRequest(project: ProjectSlug, resource: ResourceSlug, body: any) {
   const params = {
     method: 'PUT',
     body,

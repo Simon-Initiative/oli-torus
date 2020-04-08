@@ -1,20 +1,19 @@
 import { makeRequest, ServerError } from './common';
-import { ProjectId, ResourceId } from '../types';
+import { ProjectSlug, ResourceSlug } from '../types';
 
-export type LockResult = LockSuccess | LockFailure | ServerError;
+export type LockResult = Acquired | NotAcquired | ServerError;
 
-export type LockSuccess = {
-  type: 'success',
+export type Acquired = {
+  type: 'acquired',
 };
 
-export type LockFailure = {
-  type: 'failure',
-  lockedBy: string,
-  lockedAt: Date,
+export type NotAcquired = {
+  type: 'not_acquired',
+  user: string,
 };
 
 export function releaseLock(
-  project: ProjectId, resource: ResourceId): Promise<LockResult> {
+  project: ProjectSlug, resource: ResourceSlug): Promise<LockResult> {
 
   const params = {
     url: `/project/${project}/${resource}/lock`,
@@ -24,7 +23,7 @@ export function releaseLock(
 }
 
 export function acquireLock(
-  project: ProjectId, resource: ResourceId): Promise<LockResult> {
+  project: ProjectSlug, resource: ResourceSlug): Promise<LockResult> {
 
   const params = {
     url: `/project/${project}/${resource}/lock`,

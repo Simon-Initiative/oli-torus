@@ -15,17 +15,25 @@ defmodule OliWeb.ResourceController do
     render conn, "edit.html", title: "Resource Editor", active: :resource_editor
   end
 
-  def update(conn, %{"project" => project_slug, "resource" => resource_slug }) do
+  def update(conn, %{"project" => project_slug, "resource" => resource_slug, "update" => update }) do
 
-    current_author_id
+    author = conn.assigns[:current_author]
 
-    case ResourceEditing.edit(project_slug, resource_slug, author, update) do
-      {:ok, _revision} -> json conn, %{ "type" => "success"}
-      {:error, {:lock_not_acquired}} -> json conn, %{ "type" => "lock_not_acquired"}
-      {:error, {:not_found}} -> json conn, %{ "type" => "not_found"}
-      _ -> json conn, %{ "type" => "error"}
+    case ResourceEditing.edit(project_slug, resource_slug, author.email, update) do
+
+      {:ok, revision} -> json conn, %{ "type" => "success", "revision_slug" => revision.slug}
+      {:error, {:lock_not_acquired}} -> error(conn, 423, "locked")
+      {:error, {:not_found}} -> error(conn, 404, "not found")
+      {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
+      _ -> error(conn, 500, "server error")
     end
 
+  end
+
+  defp error(conn, code, reason) do
+    conn
+    |> send_resp(code, reason)
+    |> halt()
   end
 
 end

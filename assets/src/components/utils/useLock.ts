@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import * as Lock from 'data/persistence/lock';
-import { ProjectId, ResourceId } from 'data/types';
+import { ProjectSlug, ResourceSlug } from 'data/types';
 
 export type LockState = LockInitializing | LockedByUser | LockedByAnother | LockFailed;
 
@@ -27,7 +27,7 @@ const failed : LockFailed = { type: 'LockFailed', editMode: false };
 const suceeded : LockedByUser = { type: 'LockedByUser', editMode: true };
 
 
-export function useLock(project: ProjectId, resource: ResourceId) {
+export function useLock(project: ProjectSlug, resource: ResourceSlug) {
 
   const [lock, setLock] = useState(initializing as LockState);
 
@@ -35,7 +35,7 @@ export function useLock(project: ProjectId, resource: ResourceId) {
 
     Lock.acquireLock(project, resource)
     .then((result) => {
-      if (result.type === 'success') {
+      if (result.type === 'acquired') {
 
         setLock(suceeded);
 
@@ -46,8 +46,8 @@ export function useLock(project: ProjectId, resource: ResourceId) {
           setTimeout(() => Lock.releaseLock(project, resource), 1000);
         });
 
-      } else if (result.type === 'failure') {
-        setLock({ type: 'LockedByAnother', editMode: false, user: result.lockedBy });
+      } else if (result.type === 'not_acquired') {
+        setLock({ type: 'LockedByAnother', editMode: false, user: result.user });
       } else {
         setLock(failed);
       }

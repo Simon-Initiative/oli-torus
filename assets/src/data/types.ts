@@ -1,5 +1,5 @@
 
-export type ResourceId = number;
-export type ProjectId = number;
+export type ResourceSlug = string;
+export type ProjectSlug = string;
 export type ElementId = number;
-export type UserId = number;
+export type UserEmail = string;
