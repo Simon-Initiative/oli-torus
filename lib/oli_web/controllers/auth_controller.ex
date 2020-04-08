@@ -129,10 +129,6 @@ defmodule OliWeb.AuthController do
             signin_callback(conn, author)
         end
 
-        conn
-        |> put_session(:current_author_id, author.id)
-        |> redirect(to: (redirect_path conn, author))
-
       {:error, _reason} ->
         conn
         |> put_flash(:error, "Error signing in")
