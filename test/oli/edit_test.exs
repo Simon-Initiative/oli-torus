@@ -1,6 +1,7 @@
 defmodule Oli.EditingTest do
   use Oli.DataCase
 
+  alias Oli.Resources
   alias Oli.ResourceEditing
   alias Oli.Publishing
   alias Oli.Accounts.Author
@@ -20,6 +21,20 @@ defmodule Oli.EditingTest do
       {:ok, updated_revision} = ResourceEditing.edit("slug", "some_title", author.email, %{ content: content })
 
       assert revision.id != updated_revision.id
+    end
+
+    test "edit/4 can edit multiple parameters", %{author: author, revision: revision } do
+
+      content = [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }]
+      title = "a new title"
+
+      {:ok, updated_revision} = ResourceEditing.edit("slug", "some_title", author.email, %{ title: title, content: content })
+
+      # read it back from the db and verify both edits were made
+      from_db = Resources.get_resource_revision!(updated_revision.id)
+
+      assert "a new title" == from_db.title
+      assert length(from_db.content) == 1
     end
 
     test "edit/4 reuses the same revision when the lock is in place", %{mapping: mapping, author: author, revision: revision } do

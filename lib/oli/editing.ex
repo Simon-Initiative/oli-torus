@@ -15,10 +15,15 @@ defmodule Oli.ResourceEditing do
   Attempts process an edit for a resource specified by a given
   project and revision slug, for the author specified by email.
 
+  The update parameter is a map containing key-value pairs of the
+  attributes of a ResourceRevision that are to be edited. It can
+  contain any number of key-value pairs, but the keys must match
+  the schema of `%ResourceRevision{}` struct.
+
   Returns:
 
   .`{:ok, %ResourceRevision{}}` when the edit processes successfully the
-  .`{:error, {:lock_not_acquired}}` if the lock was updated
+  .`{:error, {:lock_not_acquired}}` if the lock could not be acquired or updated
   .`{:error, {:not_found}}` if the project, resource, or user cannot be found
   """
   @spec edit(String.t, String.t, String.t, %{})
