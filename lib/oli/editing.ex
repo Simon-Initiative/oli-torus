@@ -1,43 +1,63 @@
-defmodule Oli.Editing do
+defmodule Oli.ResourceEditing do
+  @moduledoc """
+  This module provides content editing facilities for resources.
+
+  """
 
   alias Oli.Locks
   alias Oli.Publishing
   alias Oli.Resources
+  alias Oli.Accounts
+  alias Oli.Resources.ResourceRevision
   alias Oli.Repo
 
-  def edit(project_slug, revision_slug, user_id, update) do
+  @doc """
+  Attempts process an edit for a resource specified by a given
+  project and revision slug, for the author specified by email.
 
-    # We need all of this to operate atomically
-    Repo.transaction(fn ->
+  Returns:
 
-      publication = Publishing.get_unpublished_publication(project_slug, user_id)
-      resource = Resources.get_resource_from_slugs(project_slug, revision_slug)
+  .`{:ok, %ResourceRevision{}}` when the edit processes successfully the
+  .`{:error, {:lock_not_acquired}}` if the lock was updated
+  .`{:error, {:not_found}}` if the project, resource, or user cannot be found
+  """
+  @spec edit(String.t, String.t, String.t, %{})
+    :: {:ok, %ResourceRevision{}} | {:error, {:not_found}} | {:error, {:lock_not_acquired}}
+  def edit(project_slug, revision_slug, author_email, update) do
 
-      case {publication, resource} do
-        {nil, nil} -> Repo.rollback({:not_found})
-        {_, nil} -> Repo.rollback({:not_found})
-        {nil, _} -> Repo.rollback({:not_found})
-        _ -> lock_then_process(publication, resource, user_id, update)
-      end
+    with {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
+         {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
+         {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil()
+    do
+      Repo.transaction(fn ->
 
-    end)
+        case Locks.acquire_or_update(publication.id, resource.id, author.id) do
+
+          # If we reacquired the lock, we must first create a new revision
+          {:acquired} -> get_latest_revision(publication, resource)
+            |> create_new_revision(publication, resource, author.id)
+            |> update_revision(update)
+
+          # A successful lock update means we can safely edit the existing revision
+          {:updated} -> get_latest_revision(publication, resource)
+            |> update_revision(update)
+
+          # error or not able to lock results in a failed edit
+          result -> Repo.rollback(result)
+        end
+
+      end)
+
+    else
+      error -> error
+    end
 
   end
 
-  defp lock_then_process(publication, resource, user_id, update) do
-    case Locks.acquire_or_update(publication.id, resource.id, user_id) do
-
-      # If we reacquired the lock, we must first create a new revision
-      {:acquired} -> get_latest_revision(publication, resource)
-        |> create_new_revision(publication, resource, user_id)
-        |> update_revision(update)
-
-      # A successful lock update means we can safely edit the existing revision
-      {:updated} -> get_latest_revision(publication, resource)
-        |> update_revision(update)
-
-      # error or not able to lock results in a failed edit
-      result -> Repo.rollback(result)
+  defp trap_nil(result) do
+    case result do
+      nil -> {:error, {:not_found}}
+      _ -> {:ok, result}
     end
   end
 
@@ -47,6 +67,7 @@ defmodule Oli.Editing do
   end
 
   defp create_new_revision(previous, publication, resource, author_id) do
+
     {:ok, revision} = Resources.create_resource_revision(%{
       children: previous.children,
       content: previous.content,

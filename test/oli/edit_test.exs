@@ -1,7 +1,7 @@
 defmodule Oli.EditingTest do
   use Oli.DataCase
 
-  alias Oli.Editing
+  alias Oli.ResourceEditing
   alias Oli.Publishing
   alias Oli.Accounts.Author
   alias Oli.Accounts.SystemRole
@@ -17,7 +17,7 @@ defmodule Oli.EditingTest do
     test "edit/4 creates a new revision when no lock in place", %{author: author, revision: revision } do
 
       content = [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }]
-      {:ok, updated_revision} = Editing.edit("slug", "some_title", author.id, %{ content: content })
+      {:ok, updated_revision} = ResourceEditing.edit("slug", "some_title", author.email, %{ content: content })
 
       assert revision.id != updated_revision.id
     end
@@ -28,7 +28,7 @@ defmodule Oli.EditingTest do
       Publishing.update_resource_mapping(mapping, %{lock_updated_at: Time.now(), locked_by_id: author.id})
 
       content = [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }]
-      {:ok, updated_revision} = Editing.edit("slug", "some_title", author.id, %{ content: content })
+      {:ok, updated_revision} = ResourceEditing.edit("slug", "some_title", author.email, %{ content: content })
 
       assert revision.id == updated_revision.id
     end
@@ -39,7 +39,7 @@ defmodule Oli.EditingTest do
       Publishing.update_resource_mapping(mapping, %{lock_updated_at: yesterday(), locked_by_id: author.id})
 
       content = [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }]
-      {:ok, updated_revision} = Editing.edit("slug", "some_title", author.id, %{ content: content })
+      {:ok, updated_revision} = ResourceEditing.edit("slug", "some_title", author.email, %{ content: content })
 
       assert revision.id != updated_revision.id
     end
@@ -52,7 +52,7 @@ defmodule Oli.EditingTest do
 
       # now try to make the edit with the original user
       content = [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }]
-      result = Editing.edit("slug", "some_title", author.id, %{ content: content })
+      result = ResourceEditing.edit("slug", "some_title", author.email, %{ content: content })
 
       id = author2.id
       assert {:error, {:lock_not_acquired, {^id, _}}} = result
@@ -62,7 +62,7 @@ defmodule Oli.EditingTest do
 
       # try to make the edit on a resource that isn't found via a revision slug
       content = [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }]
-      result = Editing.edit("slug", "some_missing_slug", author.id, %{ content: content })
+      result = ResourceEditing.edit("slug", "some_missing_slug", author.email, %{ content: content })
 
       assert {:error, {:not_found}} = result
     end
@@ -71,7 +71,7 @@ defmodule Oli.EditingTest do
 
       # try to make the edit on a resource that isn't found via a revision slug
       content = [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }]
-      result = Editing.edit("some_missing_slug", "some_title", author.id, %{ content: content })
+      result = ResourceEditing.edit("some_missing_slug", "some_title", author.email, %{ content: content })
 
       assert {:error, {:not_found}} = result
     end
