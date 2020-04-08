@@ -1,14 +1,12 @@
 defmodule OliWeb.LockController do
   use OliWeb, :controller
 
-  def acquire(conn, %{"project" => project_id, "resource" => resource_id, "user" => user_id }) do
-
+  def acquire(conn, %{"project" => _project_slug, "resource" => _resource_slug, "user" => _user }) do
     response = %{ "type" => "success"}
     json(conn, response)
   end
 
-  def release(conn, %{"project" => project_id, "resource" => resource_id, "user" => user_id}) do
-
+  def release(conn, %{"project" => _project_slug, "resource" => _resource_slug, "user" => _user}) do
     response = %{ "type" => "success"}
     json(conn, response)
   end
