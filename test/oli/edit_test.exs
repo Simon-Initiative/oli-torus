@@ -37,6 +37,18 @@ defmodule Oli.EditingTest do
       assert length(from_db.content) == 1
     end
 
+    test "edit/4 can handle string keys in the update map", %{author: author, revision: revision } do
+
+      title = "a new title"
+
+      {:ok, updated_revision} = ResourceEditing.edit("slug", "some_title", author.email, %{ "title" => title })
+
+      # read it back from the db and verify both edits were made
+      from_db = Resources.get_resource_revision!(updated_revision.id)
+
+      assert "a new title" == from_db.title
+    end
+
     test "edit/4 reuses the same revision when the lock is in place", %{mapping: mapping, author: author, revision: revision } do
 
       # set the lock so that it is valid and held by the same user

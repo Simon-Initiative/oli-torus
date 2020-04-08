@@ -12,7 +12,7 @@ defmodule Oli.ResourceEditing do
   alias Oli.Repo
 
   @doc """
-  Attempts process an edit for a resource specified by a given
+  Attempts to process an edit for a resource specified by a given
   project and revision slug, for the author specified by email.
 
   The update parameter is a map containing key-value pairs of the
