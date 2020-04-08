@@ -20,6 +20,8 @@ jobs:
     - uses: actions/checkout@v2
     - name: Setup Configuration
       run: cp oli.example.env oli.env && cp postgres.example.env postgres.env
+    - name: Apply Configuration
+      run: set -a;source oli.env
     - name: Start Test Database
       run: docker-compose up -d postgres
     - name: Setup elixir
@@ -32,9 +34,9 @@ jobs:
     - name: Build Dependencies
       run: mix deps.compile
     - name: Build Project
-      run: set -a;source oli.env && mix compile --warnings-as-errors
+      run: mix compile --warnings-as-errors
     - name: Run Tests
-      run: set -a;source oli.env && mix test.coverage
+      run: mix test.coverage
 
   ts-build-test:
     runs-on: ubuntu-latest
