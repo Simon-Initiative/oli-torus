@@ -30,8 +30,8 @@ defmodule Oli.PublishingTest do
 
     setup do
 
-      {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
-      {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
+      {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "slug"}) |> Repo.insert
+      {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "slug", version: "1", family_id: family.id}) |> Repo.insert
       {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resources: [], project_id: project.id}) |> Repo.insert
 
       valid_attrs = Map.put(@valid_attrs, :project_id, project.id)
@@ -46,11 +46,11 @@ defmodule Oli.PublishingTest do
       {:ok, _another} = Publication.changeset(%Publication{}, %{description: "description", published: true, root_resources: [], project_id: project.id}) |> Repo.insert
 
       # and another project with an unpublished publication
-      {:ok, project2} = Project.changeset(%Project{}, %{description: "description", slug: "another", title: "title", version: "1", family_id: family.id}) |> Repo.insert
+      {:ok, project2} = Project.changeset(%Project{}, %{description: "description", slug: "title", title: "title", version: "1", family_id: family.id}) |> Repo.insert
       {:ok, publication2} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resources: [], project_id: project2.id}) |> Repo.insert
 
       assert Publishing.get_unpublished_publication("slug", 1).id == publication.id
-      assert Publishing.get_unpublished_publication("another", 1).id == publication2.id
+      assert Publishing.get_unpublished_publication("title", 1).id == publication2.id
     end
 
 

@@ -2,6 +2,8 @@ defmodule Oli.Resources.ResourceRevision do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Oli.Utils.Slug
+
   schema "resource_revisions" do
     field :children, {:array, :id}, default: []
     field :content, {:array, :map}, default: []
@@ -23,5 +25,7 @@ defmodule Oli.Resources.ResourceRevision do
     resource_revision
     |> cast(attrs, [:title, :slug, :content, :children, :objectives, :deleted, :author_id, :resource_id, :previous_revision_id, :resource_type_id])
     |> validate_required([:title, :slug, :content, :objectives, :children, :deleted, :objectives, :author_id, :resource_id, :resource_type_id])
+    |> Slug.maybe_update_slug("resource_revisions")
   end
+
 end

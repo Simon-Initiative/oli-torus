@@ -92,18 +92,18 @@ defmodule Oli.ResourcesTest do
     test "get_resource_from_slugs/2 returns correct resource", %{revision: revision, resource_type: resource_type, family: family, author: author} do
 
       # Add another project, resource, and revision
-      {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "another_slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
+      {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "another_title", title: "another_title", version: "1", family_id: family.id}) |> Repo.insert
       {:ok, resource_family} = ResourceFamily.changeset(%ResourceFamily{}, %{}) |> Repo.insert
       {:ok, resource} = Resource.changeset(%Resource{}, %{family_id: resource_family.id, project_id: project.id}) |> Repo.insert
-      {:ok, _rev} = ResourceRevision.changeset(%ResourceRevision{}, %{resource_type_id: resource_type, author_id: author.id, resource_id: resource.id, objectives: [], children: [], content: [], deleted: false, slug: "another_slug", title: "some title"}) |> Repo.insert
+      {:ok, _rev} = ResourceRevision.changeset(%ResourceRevision{}, %{resource_type_id: resource_type, author_id: author.id, resource_id: resource.id, objectives: [], children: [], content: [], deleted: false, slug: "another_slug", title: "another_slug"}) |> Repo.insert
 
-      found = Resources.get_resource_from_slugs("slug", "some slug")
+      found = Resources.get_resource_from_slugs("title", "some_title")
       assert found.id == revision.resource_id
 
-      found = Resources.get_resource_from_slugs("another_slug", "another_slug")
+      found = Resources.get_resource_from_slugs("another_title", "another_slug")
       assert found.id == resource.id
 
-      found = Resources.get_resource_from_slugs("another_slug", "missing")
+      found = Resources.get_resource_from_slugs("another_title", "missing")
       assert found == nil
     end
 
@@ -120,7 +120,6 @@ defmodule Oli.ResourcesTest do
       assert revision.children == []
       assert revision.content == []
       assert revision.deleted == true
-      assert revision.slug == "some slug"
       assert revision.title == "some title"
     end
 
@@ -133,7 +132,7 @@ defmodule Oli.ResourcesTest do
       assert revision.children == []
       assert revision.content == []
       assert revision.deleted == false
-      assert revision.slug == "some updated slug"
+      assert revision.slug == "some_updated_title"
       assert revision.title == "some updated title"
     end
 
