@@ -97,4 +97,9 @@ if Mix.env == :dev do
   # create an example package and publication
   author = Oli.Accounts.get_author_by_email(System.get_env("ADMIN_EMAIL", "admin@oli.cmu.edu"))
   {:ok, _project} = Oli.Course.create_project("Example Open and Free Course", author)
+
+  # add a complete base project and attach the admin user as an author
+  Oli.Seeder.base_project_with_resource()
+    |> Oli.Seeder.add_author(author, :admin)
+
 end

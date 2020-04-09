@@ -28,9 +28,13 @@ export const TextEditor = (props: TextEditorProps) => {
   const [isEditing, setIsEditing] = useState(false);
 
   const onTitleEdit = (e: any) => {
-    const title = e.target.value;
     setIsEditing(false);
-    onEdit(title);
+    onEdit(current);
+  };
+
+  const onSave = (e: any) => {
+    setIsEditing(false);
+    onEdit(current);
   };
 
   const onCancel = () => setIsEditing(false);
@@ -63,7 +67,7 @@ export const TextEditor = (props: TextEditorProps) => {
           style={style} />
         <button
           key="save"
-          onClick={onTitleEdit}
+          onClick={onSave}
           type="button"
           className="btn btn-sm">
           Done

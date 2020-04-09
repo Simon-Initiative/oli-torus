@@ -15,8 +15,8 @@ import { undoReducer, undo, redo, update, UndoState } from './undo';
 export type ResourceEditorProps = {
   resourceType: ResourceType,     // Page or assessment?
   authorEmail: string,            // The current author
-  projectId: ProjectSlug,         // The current project
-  resourceId: ResourceSlug,       // The current resource
+  projectSlug: ProjectSlug,         // The current project
+  resourceSlug: ResourceSlug,       // The current resource
   title: string,                  // The title of the resource
   content: ResourceContent[],     // Content of the resource
   objectives: Objective[],        // Attached objectives
@@ -27,7 +27,7 @@ export type ResourceEditorProps = {
 function issueSaveRequest(project: ProjectSlug, resource: ResourceSlug, body: any) {
   const params = {
     method: 'PUT',
-    body,
+    body: JSON.stringify({ update: body }),
     url: `/project/${project}/${resource}/edit`,
   };
 
@@ -37,10 +37,10 @@ function issueSaveRequest(project: ProjectSlug, resource: ResourceSlug, body: an
 // The resource editor
 export const ResourceEditor = (props: ResourceEditorProps) => {
 
-  const { projectId, resourceId, editorMap } = props;
+  const { projectSlug, resourceSlug, editorMap } = props;
 
   const [title, setTitle] = useState(props.title);
-  const lock = useLock(props.projectId, props.resourceId);
+  const lock = useLock(props.projectSlug, props.resourceSlug);
 
   const [state, dispatch] = useReducer(undoReducer, {
     current: Immutable.List<ResourceContent>(props.content),
@@ -49,7 +49,7 @@ export const ResourceEditor = (props: ResourceEditorProps) => {
   } as UndoState);
 
   const status = useDeferredPersistence(
-    issueSaveRequest.bind(undefined, projectId, resourceId), state.current);
+    issueSaveRequest.bind(undefined, projectSlug, resourceSlug), state.current);
 
   const onEdit = (content: Immutable.List<ResourceContent>) => {
     dispatch(update(content));
@@ -57,7 +57,7 @@ export const ResourceEditor = (props: ResourceEditorProps) => {
 
   const onTitleEdit = (title: string) => {
     setTitle(title);
-    issueSaveRequest(projectId, resourceId, { title });
+    issueSaveRequest(projectSlug, resourceSlug, { title });
   };
 
   const onAddItem = (c : ResourceContent) => dispatch(update(state.current.push(c)));

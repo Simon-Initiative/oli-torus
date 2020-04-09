@@ -1,4 +1,4 @@
-defmodule Oli.ResourceEditing do
+defmodule Oli.Editing.ResourceEditor do
   @moduledoc """
   This module provides content editing facilities for resources.
 
@@ -140,6 +140,38 @@ defmodule Oli.ResourceEditing do
 
 
 
+  @doc """
+  Creates the context necessary to power a client side resource editor
+  for a specific resource / revision.
+  """
+  def create_context(project_slug, revision_slug, author) do
+
+    with {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
+         {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil()
+    do
+      case get_latest_revision(publication, resource) do
+        nil -> {:error, :not_found}
+        revision -> {:ok, create(revision, project_slug, revision_slug, author)}
+      end
+    else
+      _ -> {:error, :not_found}
+    end
+  end
+
+  defp create(revision, project_slug, revision_slug, author) do
+    %Oli.Editing.ResourceContext{
+      authorEmail: author.email,
+      projectSlug: project_slug,
+      resourceSlug: revision_slug,
+      editorMap: %{},
+      objectives: [],
+      allObjectives: [],
+      title: revision.title,
+      resourceType: revision.resource_type.type,
+      content: revision.content
+    }
+  end
+
   defp authorize_user(author, project) do
     case Accounts.can_access?(author, project) do
       true -> {:ok}
@@ -156,7 +188,9 @@ defmodule Oli.ResourceEditing do
 
   defp get_latest_revision(publication, resource) do
     mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
-    Resources.get_resource_revision!(mapping.revision_id)
+    revision = Resources.get_resource_revision!(mapping.revision_id)
+
+    Repo.preload(revision, :resource_type)
   end
 
   defp create_new_revision(previous, publication, resource, author_id) do

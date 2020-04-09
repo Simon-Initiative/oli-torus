@@ -1,0 +1,7 @@
+
+<div class="alert alert-danger" role="alert">
+  <h4 class="alert-heading">Something went wrong!</h4>
+  <p>Hmmmm, we can't seem to locate or load the resource you were trying to access.</p>
+  <hr>
+  <p class="mb-0"><b>Tip:</b> Refresh your browser and try again.</p>
+</div>

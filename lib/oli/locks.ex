@@ -163,7 +163,7 @@ defmodule Oli.Locks do
     true
   end
 
-  defp expired?(%{ lock_updated_at: lock_updated_at, updated_at: updated_at} = mapping) do
+  defp expired?(%{ lock_updated_at: lock_updated_at, updated_at: updated_at}) do
 
     # A lock is expired if a diff from now vs lock_updated_at field exceeds the ttl
     # If a no edit has been made, we use the timestamp updated_at instead for this calculation
