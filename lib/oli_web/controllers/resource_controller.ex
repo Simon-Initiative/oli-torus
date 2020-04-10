@@ -6,6 +6,7 @@ defmodule OliWeb.ResourceController do
 
   plug :fetch_project when action not in [:view, :update]
   plug :authorize_project when action not in [:view, :update]
+  plug :disable_caching when action in [:edit]
 
   def view(conn, %{"project_id" => _project_id}) do
     render conn, "page.html", title: "Page", active: :page
@@ -14,7 +15,7 @@ defmodule OliWeb.ResourceController do
   def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
 
     case ResourceEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
-      {:ok, context} -> render conn, "edit.html", title: "Resource Editor", context: Jason.encode!(context)
+      {:ok, context} -> render(conn, "edit.html", title: "Resource Editor", context: Jason.encode!(context))
       {:error, :not_found} -> render conn, OliWeb.SharedView, "_not_found.html"
     end
 
@@ -23,9 +24,6 @@ defmodule OliWeb.ResourceController do
   def update(conn, %{"project" => project_slug, "resource" => resource_slug, "update" => update }) do
 
     author = conn.assigns[:current_author]
-
-    IO.inspect author
-    IO.inspect update
 
     case ResourceEditor.edit(project_slug, resource_slug, author.email, update) do
 

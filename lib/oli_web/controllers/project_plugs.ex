@@ -27,4 +27,8 @@ defmodule OliWeb.ProjectPlugs do
     end
   end
 
+  def disable_caching(conn, _) do
+    Plug.Conn.put_resp_header(conn, "Cache-Control", "no-store")
+  end
+
 end
