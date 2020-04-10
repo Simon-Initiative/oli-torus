@@ -23,9 +23,45 @@ export const Outline = (props: ResourceEditorProps) => {
     editorMap: ActivityEditorMap,
     content: ResourceContent) : JSX.Element => {
 
+    const handleDragEnter = (e: React.DragEvent<HTMLAnchorElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    const handleDragLeave = (e: React.DragEvent<HTMLAnchorElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    const handleDrop = (e: React.DragEvent<HTMLAnchorElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
     if (content.type === 'content') {
+
+      const handleDragStart = (e: React.DragEvent<HTMLAnchorElement>) => {
+        const dt = e.dataTransfer;
+        const preview = `
+          <a href="#" style="margin-top: 0px;" class="list-group-item">
+            <div className="d-flex w-100 justify-content-between">
+              <h5 className="mb-1">Content</h5>
+              <small></small>
+            </div>
+            <small>${getContentDescription(content)}</small>
+          </a>
+        `;
+        dt.setData('text/html', preview);
+
+        //e.preventDefault();
+        //e.stopPropagation();
+      };
+
       return (
-        <a href="#" key={content.id} style={ { marginTop: '0px' } } className="list-group-item list-group-item-action">
+        <a draggable={true} href="#" key={content.id} style={ { marginTop: '0px' } } className="list-group-item list-group-item-action"
+          onDrop={handleDrop}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragStart={handleDragStart}
+        >
           <div className="d-flex w-100 justify-content-between">
             <h5 className="mb-1">Content</h5>
             {content.purpose !== 'None' ? <small>{content.purpose}</small> : null}
@@ -38,7 +74,11 @@ export const Outline = (props: ResourceEditorProps) => {
     const activityEditor = editorMap[content.type];
 
     return (
-      <a href="#" key={content.id} style={ { marginTop: '0px' } } className="list-group-item list-group-item-action">
+      <a href="#" key={content.id} style={ { marginTop: '0px' } } className="list-group-item list-group-item-action"
+        onDrop={handleDrop}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+      >
         <div className="d-flex w-100 justify-content-between">
           <h5 className="mb-1">{activityEditor.friendlyName}</h5>
           {content.purpose !== 'None' ? <small>{content.purpose}</small> : null}
