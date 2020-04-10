@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 
 export interface TextEditorProps {
@@ -26,6 +26,10 @@ export const TextEditor = (props: TextEditorProps) => {
   const { model, showAffordances, onEdit, editMode } = props;
   const [current, setCurrent] = useState(model);
   const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    setCurrent(model);
+  }, [model]);
 
   const onTitleEdit = (e: any) => {
     setIsEditing(false);
