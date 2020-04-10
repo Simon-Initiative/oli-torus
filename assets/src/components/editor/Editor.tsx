@@ -155,6 +155,7 @@ export const Editor = (props: EditorProps) => {
         <HoveringToolbar />
 
         <Editable
+          readOnly={!props.editMode}
           renderElement={renderElement}
           renderLeaf={renderLeaf}
           placeholder="Enter some text..."
