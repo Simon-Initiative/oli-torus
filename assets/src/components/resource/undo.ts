@@ -1,33 +1,20 @@
 import * as Immutable from 'immutable';
-import { ResourceContent } from 'data/content/resource';
 
-export type ContentList = Immutable.List<ResourceContent>;
-
-export type UndoState = {
-  current: ContentList,
-  undoStack: Immutable.Stack<ContentList>,
-  redoStack: Immutable.Stack<ContentList>,
-};
-
-export type UndoAction = Undo | Redo | Update;
-
-export interface Undo {
-  type: 'undo';
-}
-export interface Redo {
-  type: 'redo';
-}
-export interface Update {
-  type: 'update';
-  current: ContentList;
+export interface UndoableState<T> {
+  current: T;
+  undoStack: Immutable.Stack<T>;
+  redoStack: Immutable.Stack<T>;
 }
 
-export const undo = () => ({ type: 'undo' } as Undo);
-export const redo = () => ({ type: 'redo' } as Redo);
-export const update = (current: any) => ({ type: 'update', current } as Update);
+export function init<T>(current: T): UndoableState<T> {
+  return {
+    current,
+    undoStack: Immutable.Stack<T>(),
+    redoStack: Immutable.Stack<T>(),
+  };
+}
 
-
-function processUndo(state: UndoState): UndoState {
+export function processUndo<T>(state: UndoableState<T>): UndoableState<T> {
 
   const current = state.undoStack.peek();
 
@@ -40,7 +27,7 @@ function processUndo(state: UndoState): UndoState {
   return state;
 }
 
-function processRedo(state: UndoState): UndoState {
+export function processRedo<T>(state: UndoableState<T>): UndoableState<T> {
 
   const current = state.redoStack.peek();
 
@@ -53,23 +40,11 @@ function processRedo(state: UndoState): UndoState {
   return state;
 }
 
-function processUpdate(state: UndoState, current: ContentList): UndoState {
+export function processUpdate<T>(
+  state: UndoableState<T>, update: Partial<T>): UndoableState<T> {
   return {
-    current,
+    current: Object.assign({}, state.current, update),
     undoStack: state.undoStack.push(state.current),
     redoStack: state.redoStack,
   };
-}
-
-export function undoReducer(state : UndoState, action : UndoAction) {
-  switch (action.type) {
-    case 'undo':
-      return processUndo(state);
-    case 'redo':
-      return processRedo(state);
-    case 'update':
-      return processUpdate(state, action.current);
-    default:
-      throw new Error();
-  }
 }
