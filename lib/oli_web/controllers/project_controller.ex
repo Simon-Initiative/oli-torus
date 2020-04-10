@@ -24,8 +24,8 @@ defmodule OliWeb.ProjectController do
     render %{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html"
   end
 
-  def objectives(conn, %{"project" => _project_id}) do
-    project = Course.get_project_by_slug(conn.params["project"])
+  def objectives(conn, _project_params) do
+    project = Course.get_project_by_slug(conn.params["project_id"])
     publication_id = Publishing.get_unpublished_publication(project.id)
     objective_mappings = Publishing.get_objective_mappings_by_publication(publication_id)
     changeset = Learning.change_objective(%Learning.Objective{})
@@ -33,8 +33,22 @@ defmodule OliWeb.ProjectController do
     render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
   end
 
+  def unpublished(pub), do: pub.published == false
+
   def curriculum(conn, _project_params) do
-    render conn, "curriculum.html", title: "Curriculum", active: :curriculum
+    publication = Publishing.get_unpublished_publication(conn.assigns.project)
+    resource_mappings = Publishing.get_resource_mappings_by_publication(publication.id)
+    [container_id | _] = publication.root_resources
+    container = Oli.Repo.preload(Oli.Resources.get_resource!(container_id), [:resource_revisions])
+    revision = container.resource_revisions
+      |> Enum.max_by(&(&1.inserted_at), NaiveDateTime)
+    IO.inspect(revision)
+    pages = Enum.map(revision.children, &(Oli.Resources.get_resource!(&1)))
+
+    render conn, "curriculum.html", title: "Curriculum", active: :curriculum, pages: pages, container_revision: revision
+
+    # display as list
+    # make each list item a title with a link to the page
   end
 
   def page(conn, _project_params) do

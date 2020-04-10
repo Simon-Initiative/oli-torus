@@ -145,7 +145,7 @@ defmodule Oli.Publishing do
       iex> get_unpublished_publication!(456)
       ** (Ecto.NoResultsError)
   """
-  def get_unpublished_publication(project_id)do
+  def get_unpublished_publication(project_id) do
     Repo.one(
       from p in "publications",
       where: p.project_id == ^project_id and p.published == false,
@@ -251,6 +251,11 @@ defmodule Oli.Publishing do
   """
   def change_resource_mapping(%ResourceMapping{} = resource_mapping) do
     ResourceMapping.changeset(resource_mapping, %{})
+  end
+
+  def get_resource_mappings_by_publication(publication_id) do
+    from(p in ResourceMapping, where: p.publication_id == ^publication_id, preload: [:resource, :revision])
+    |> Repo.all()
   end
 
   alias Oli.Publishing.ActivityMapping

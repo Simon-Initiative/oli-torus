@@ -171,5 +171,9 @@ defmodule Oli.CourseTest do
       publication = Repo.preload(publication, [:project])
       assert publication.project == project
     end
+
+    test "project should always have an unpublished, 'active' publication", %{transaction: %{project: project}} do
+      assert Enum.find(Oli.Repo.preload(project, [:publications]).publications, &(&1.published == false))
+    end
   end
 end

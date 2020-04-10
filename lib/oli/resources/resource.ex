@@ -6,6 +6,7 @@ defmodule Oli.Resources.Resource do
 
     belongs_to :family, Oli.Resources.ResourceFamily
     belongs_to :project, Oli.Course.Project
+    has_many :resource_revisions, Oli.Resources.ResourceRevision
 
     timestamps()
   end
