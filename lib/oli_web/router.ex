@@ -15,6 +15,11 @@ defmodule OliWeb.Router do
     plug Oli.Plugs.Protect
   end
 
+  pipeline :authoring do
+    plug Oli.Plugs.NoCache
+  end
+
+
   pipeline :api do
     plug :accepts, ["json"]
   end
@@ -50,7 +55,7 @@ defmodule OliWeb.Router do
 
   # authorization protected routes
   scope "/", OliWeb do
-    pipe_through [:browser, :protected, :workspace_layout]
+    pipe_through [:browser, :protected, :workspace_layout, :authoring]
 
     get "/projects", WorkspaceController, :projects
     get "/account", WorkspaceController, :account
@@ -58,7 +63,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/project", OliWeb do
-    pipe_through [:browser, :protected, :workspace_layout]
+    pipe_through [:browser, :protected, :workspace_layout, :authoring]
 
     # Project display pages
     get "/:project_id", ProjectController, :overview

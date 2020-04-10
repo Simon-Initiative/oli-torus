@@ -6,7 +6,6 @@ defmodule OliWeb.ResourceController do
 
   plug :fetch_project when action not in [:view, :update]
   plug :authorize_project when action not in [:view, :update]
-  plug :disable_caching when action in [:edit]
 
   def view(conn, %{"project_id" => _project_id}) do
     render conn, "page.html", title: "Page", active: :page
