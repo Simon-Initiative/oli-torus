@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { ResourceContent } from 'data/content/resource';
 import { ActivityEditorMap } from 'data/content/editors';
 import { getContentDescription } from 'data/content/utils';
+import { toSimpleText } from '../editor/utils';
+import { DragHandle } from './DragHandle';
 
 export type ResourceEditorProps = {
   editMode: boolean,              // Whether or not we can edit
@@ -11,81 +13,137 @@ export type ResourceEditorProps = {
   editorMap: ActivityEditorMap,   // Map of activity types to activity elements
 };
 
+// @ts-ignore
+const DropTarget = ({ id, index, onDrop }) => {
+  const [hovered, setHovered] = useState(false);
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => setHovered(true);
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => setHovered(false);
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setHovered(false);
+    onDrop(e, index);
+  };
+  const handleOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+  };
+
+  const backgroundColor = hovered ? 'orange' : undefined;
+
+  return (
+    <div key={id + '-drop'} className="border-0 p-1"
+      style={ { backgroundColor } }
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      onDragOver={handleOver}
+    >
+    </div>
+  );
+};
+
+
 // Outline of the content
-export const Outline = (props: ResourceEditorProps) => {
+type OutlineEntryProps = {
+  content: ResourceContent,
+  editorMap: ActivityEditorMap,
+  index: number,
+  onDrop: (id: React.DragEvent<HTMLDivElement>, index: number) => void,
+};
 
-  const { editorMap, editMode } = props;
-  const content = Immutable.List<ResourceContent>(props.content);
+const OutlineEntry = (props: OutlineEntryProps) => {
 
-  // Factory for creating top level editors, for things like structured
-  // content or referenced activities
-  const createEntry = (
-    editorMap: ActivityEditorMap,
-    content: ResourceContent) : JSX.Element => {
+  const { content, editorMap } = props;
 
-    const handleDragEnter = (e: React.DragEvent<HTMLAnchorElement>) => {
-      e.preventDefault();
-      e.stopPropagation();
-    };
-    const handleDragLeave = (e: React.DragEvent<HTMLAnchorElement>) => {
-      e.preventDefault();
-      e.stopPropagation();
-    };
-    const handleDrop = (e: React.DragEvent<HTMLAnchorElement>) => {
-      e.preventDefault();
-      e.stopPropagation();
-    };
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    const dt = e.dataTransfer;
 
-    if (content.type === 'content') {
+    // Enables dragging of the underlying JSON of nodes into VSCode for
+    // debugging / troubleshooting purposes
+    const resource = JSON.stringify([{
+      resource: '' + content.id,
+      content: JSON.stringify(content, null, 2),
+      viewState: null,
+      encoding: 'UTF-8',
+      mode: null,
+      isExternal: false,
+    }]);
 
-      const handleDragStart = (e: React.DragEvent<HTMLAnchorElement>) => {
-        const dt = e.dataTransfer;
-        const preview = `
-          <a href="#" style="margin-top: 0px;" class="list-group-item">
-            <div className="d-flex w-100 justify-content-between">
-              <h5 className="mb-1">Content</h5>
-              <small></small>
-            </div>
-            <small>${getContentDescription(content)}</small>
-          </a>
-        `;
-        dt.setData('text/html', preview);
+    dt.setData('CodeEditors', resource);
+    dt.setData('application/x-oli-resource-content', JSON.stringify(content));
+    dt.setData('text/html', toSimpleText(content));
+    dt.setData('text/plain', toSimpleText(content));
+    dt.effectAllowed = 'move';
 
-        //e.preventDefault();
-        //e.stopPropagation();
-      };
+  };
 
-      return (
-        <a draggable={true} href="#" key={content.id} style={ { marginTop: '0px' } } className="list-group-item list-group-item-action"
-          onDrop={handleDrop}
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
+  if (content.type === 'content') {
+    return (
+      <React.Fragment>
+        <DropTarget id={content.id} index={props.index} onDrop={props.onDrop}/>
+        <div draggable={true} key={content.id} className="border-0 p-1"
           onDragStart={handleDragStart}
         >
-          <div className="d-flex w-100 justify-content-between">
-            <h5 className="mb-1">Content</h5>
-            {content.purpose !== 'None' ? <small>{content.purpose}</small> : null}
+          <div className="d-flex">
+            <DragHandle/>
+            <div className="m-2">
+              <div className="d-flex justify-content-between">
+                <h5 className="mb-1">Content</h5>
+                {content.purpose !== 'None' ? <small>{content.purpose}</small> : null}
+              </div>
+              <small>{getContentDescription(content)}</small>
+            </div>
           </div>
-          <small>{getContentDescription(content)}</small>
-        </a>
-      );
-    }
+        </div>
+      </React.Fragment>
+    );
+  }
 
-    const activityEditor = editorMap[content.type];
+  const activityEditor = editorMap[content.type];
 
-    return (
-      <a href="#" key={content.id} style={ { marginTop: '0px' } } className="list-group-item list-group-item-action"
-        onDrop={handleDrop}
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
+  return (
+    <React.Fragment>
+      <DropTarget id={content.id} index={props.index} onDrop={props.onDrop}/>
+      <div draggable={true} key={content.id} className="m-10"
+        onDragStart={handleDragStart}
       >
+        <DragHandle/>
         <div className="d-flex w-100 justify-content-between">
           <h5 className="mb-1">{activityEditor.friendlyName}</h5>
           {content.purpose !== 'None' ? <small>{content.purpose}</small> : null}
         </div>
         <small></small>
-      </a>
-    );
+      </div>
+    </React.Fragment>
+  );
+};
+
+// Outline of the content
+export const Outline = (props: ResourceEditorProps) => {
+
+  const { editorMap, editMode, onEdit } = props;
+  const content = Immutable.List<ResourceContent>(props.content);
+
+  const onDrop = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+    if (editMode) {
+      const data = e.dataTransfer.getData('application/x-oli-resource-content');
+
+      if (data) {
+        const droppedContent = JSON.parse(data);
+        const sourceIndex = content.findIndex(c => c.id === droppedContent.id);
+
+        if (sourceIndex === -1) {
+          // This is a cross window drop, we insert it
+          onEdit(content.insert(index, droppedContent));
+
+        } else if (sourceIndex > -1) {
+          // Handle a window to window drop
+          const adjusted = sourceIndex < index ? index - 1 : index;
+          onEdit(content.remove(sourceIndex).insert(adjusted, droppedContent));
+        }
+      }
+    }
   };
 
   const entries = content.toArray().map((c, i) => {
@@ -93,11 +151,11 @@ export const Outline = (props: ResourceEditorProps) => {
       const updated = content.set(i, updatedComponent);
       props.onEdit(updated);
     };
-    return createEntry(editorMap, c);
+    return <OutlineEntry content={c} index={i} editorMap={editorMap} onDrop={onDrop}/>;
   });
 
   return (
-    <div className="list-group" style={ { width: '150px' } }>
+    <div style={ { width: '150px' } }>
       {entries}
     </div>
   );
