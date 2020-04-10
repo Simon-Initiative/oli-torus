@@ -73,7 +73,6 @@ defmodule OliWeb.Router do
     delete "/:project_id", ProjectController, :delete
 
     # Objectives
-    get "/:project/objectives", ProjectController, :objectives
     post "/:project/objectives", ObjectiveController, :create
     patch "/:project/objectives/:id", ObjectiveController, :update
     put "/:project/objectives/:id", ObjectiveController, :update
