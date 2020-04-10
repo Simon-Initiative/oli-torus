@@ -1,8 +1,8 @@
 
 // Use a pool of already created guids to optimize performance
 // in areas of the code that quickly request thousands of guids:
-const pool : Uint32Array[] = [];
 const POOL_SIZE = 1000;
+const pool : number[] = [];
 
 // Used to track our hit rate for tuning purposes
 let hits = 0;
@@ -10,7 +10,7 @@ let misses = 0;
 
 // Fill the pool up to its configured max size
 function fillPool() {
-  pool.push(createSome(POOL_SIZE - pool.length));
+  createSome(POOL_SIZE - pool.length).forEach(n => pool.push(n));
 }
 
 // Every second, refill the pool.
@@ -33,19 +33,15 @@ export default function guid() : number {
   // The pool was empty so we need to create one
   // for this request
   misses = misses + 1;
-  return createSome(1)[0];
+  fillPool();
+
+  return pool.pop() as any;
 }
 
-/**
- * Returns an RFC4122 version 4 compliant GUID.
- * See http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
- * for source and related discussion. d
- */
 function createSome(count: number) {
   const array = new Uint32Array(count);
   window.crypto.getRandomValues(array);
   return array;
 }
-
 
 (window as any).guid = guid;

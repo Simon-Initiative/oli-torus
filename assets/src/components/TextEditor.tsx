@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 
 export interface TextEditorProps {
@@ -27,10 +27,18 @@ export const TextEditor = (props: TextEditorProps) => {
   const [current, setCurrent] = useState(model);
   const [isEditing, setIsEditing] = useState(false);
 
+  useEffect(() => {
+    setCurrent(model);
+  }, [model]);
+
   const onTitleEdit = (e: any) => {
-    const title = e.target.value;
     setIsEditing(false);
-    onEdit(title);
+    onEdit(current);
+  };
+
+  const onSave = (e: any) => {
+    setIsEditing(false);
+    onEdit(current);
   };
 
   const onCancel = () => setIsEditing(false);
@@ -63,7 +71,7 @@ export const TextEditor = (props: TextEditorProps) => {
           style={style} />
         <button
           key="save"
-          onClick={onTitleEdit}
+          onClick={onSave}
           type="button"
           className="btn btn-sm">
           Done

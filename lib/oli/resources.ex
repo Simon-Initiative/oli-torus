@@ -59,6 +59,7 @@ defmodule Oli.Resources do
   @spec get_resource_from_slugs(String.t, String.t) :: any
   def get_resource_from_slugs(project, revision) do
     query = from r in Resource,
+          distinct: r.id,
           join: p in Project, on: r.project_id == p.id,
           join: v in ResourceRevision, on: v.resource_id == r.id,
           where: p.slug == ^project and v.slug == ^revision,

@@ -2,6 +2,8 @@ defmodule Oli.Course.Project do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Oli.Utils.Slug
+
   @derive {Phoenix.Param, key: :slug}
   schema "projects" do
     field :description, :string
@@ -21,7 +23,7 @@ defmodule Oli.Course.Project do
     project
       |> cast(attrs, [:title, :slug, :description, :version, :family_id, :project_id])
       |> validate_required([:title, :slug, :version, :family_id])
-      |> unique_constraint(:slug)
+      |> Slug.maybe_update_slug("projects")
   end
 
 end

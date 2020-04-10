@@ -34,8 +34,6 @@ defmodule Oli.Seeder do
 
     {:ok, mapping} = Publishing.create_resource_mapping(%{ publication_id: publication.id, resource_id: resource.id, revision_id: revision.id})
 
-
-
     Map.put(%{}, :family, family)
       |> Map.put(:project, project)
       |> Map.put(:publication, publication)
@@ -46,6 +44,11 @@ defmodule Oli.Seeder do
       |> Map.put(:resource_type, resource_type)
       |> Map.put(:revision, revision)
       |> Map.put(:mapping, mapping)
+  end
+
+  def add_author(%{ project: project} = map, author, atom) do
+    {:ok, _} = AuthorProject.changeset(%AuthorProject{}, %{author_id: author.id, project_id: project.id, project_role_id: ProjectRole.role_id.owner}) |> Repo.insert
+    Map.put(map, atom, author)
   end
 
 end

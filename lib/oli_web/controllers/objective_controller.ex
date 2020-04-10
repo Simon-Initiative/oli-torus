@@ -9,7 +9,7 @@ defmodule OliWeb.ObjectiveController do
   plug :authorize_project when action in [:create, :update, :delete]
 
   def create(conn, %{"project" => project_id, "objective" => objective_params}) do
-    project = Course.get_project_by_slug(conn.params["project"])
+    project = conn.assigns.project
     params = Map.merge(objective_params, %{"project_id" => project.id})
     case Learning.create_objective(params) do
       {:ok, _objective} ->
@@ -29,10 +29,10 @@ defmodule OliWeb.ObjectiveController do
     project = Course.get_project_by_slug(conn.params["project"])
     params = Map.merge(objective_params, %{"project_id" => project.id})
     case Learning.update_objective(objective, params) do
-      {:ok, objective} ->
+      {:ok, _objective} ->
         conn
         |> put_flash(:info, "Objective updated successfully.")
-        |> redirect(to: Routes.objective_path(conn, :show, project_id, objective))
+        |> redirect(to: Routes.project_path(conn, :objectives, project_id))
 
       {:error, %Ecto.Changeset{} = _changeset} ->
         conn

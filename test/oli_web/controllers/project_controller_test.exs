@@ -7,7 +7,7 @@ defmodule OliWeb.ProjectControllerTest do
   setup [:author_project_conn]
   @valid_attrs %{title: "default title"}
   @invalid_attrs %{title: ""}
-  @update_attrs %{title: "another title", description: "default description"}
+  @update_attrs %{description: "default description"}
 
   describe "authorization" do
     test "all get routes redirect to workspace path when attempting to view a project that does not exist", %{conn: conn} do
@@ -83,7 +83,7 @@ defmodule OliWeb.ProjectControllerTest do
 
     test "redirects on success", %{conn: conn, project: project} do
       conn = put(conn, Routes.project_path(conn, :update, project), project: @update_attrs)
-      assert redirected_to(conn) == Routes.project_path(conn, :overview, project)
+      assert redirected_to(conn) =~ Routes.project_path(conn, :overview, project)
     end
 
     test "does not redirect on failure", %{conn: conn, project: project} do
