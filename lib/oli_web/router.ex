@@ -15,6 +15,11 @@ defmodule OliWeb.Router do
     plug Oli.Plugs.Protect
   end
 
+  pipeline :authoring do
+    plug Oli.Plugs.NoCache
+  end
+
+
   pipeline :api do
     plug :accepts, ["json"]
   end
@@ -50,7 +55,7 @@ defmodule OliWeb.Router do
 
   # authorization protected routes
   scope "/", OliWeb do
-    pipe_through [:browser, :protected, :workspace_layout]
+    pipe_through [:browser, :protected, :workspace_layout, :authoring]
 
     get "/projects", WorkspaceController, :projects
     get "/account", WorkspaceController, :account
@@ -58,7 +63,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/project", OliWeb do
-    pipe_through [:browser, :protected, :workspace_layout]
+    pipe_through [:browser, :protected, :workspace_layout, :authoring]
 
     # Project display pages
     get "/:project_id", ProjectController, :overview
@@ -67,25 +72,20 @@ defmodule OliWeb.Router do
     get "/:project_id/publish", ProjectController, :publish
     get "/:project_id/insights", ProjectController, :insights
 
-    # Page editor
-    get "/:project_id/:page", ProjectController, :view
-    get "/:project_id/:page/edit", ProjectController, :edit
-
     # Project
     post "/", ProjectController, :create
     put "/:project_id", ProjectController, :update
     delete "/:project_id", ProjectController, :delete
 
     # Objectives
-    get "/:project/objectives", ProjectController, :objectives
     post "/:project/objectives", ObjectiveController, :create
     patch "/:project/objectives/:id", ObjectiveController, :update
     put "/:project/objectives/:id", ObjectiveController, :update
     delete "/:project/objectives/:id", ObjectiveController, :delete
 
-    # Pages
-    get "/:project/:page", ResourceController, :view
-    get "/:project/:page/edit", ResourceController, :edit
+    # Resource
+    get "/:project_id/:revision_slug", ResourceController, :view
+    get "/:project_id/:revision_slug/edit", ResourceController, :edit
 
     # Collaborators
     post "/:project_id/collaborators", AuthorProjectController, :create
@@ -102,6 +102,8 @@ defmodule OliWeb.Router do
     delete "/:project/:resource/lock", LockController, :release
 
   end
+
+
 
   # auth routes, only accessable to guest users who are not logged in
   scope "/auth", OliWeb do

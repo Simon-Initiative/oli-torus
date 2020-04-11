@@ -6,7 +6,9 @@ defmodule Oli.Resources do
   import Ecto.Query, warn: false
   alias Oli.Repo
 
+  alias Oli.Course.Project
   alias Oli.Resources.Resource
+  alias Oli.Resources.ResourceRevision
   alias Oli.Resources.ResourceFamily
 
   def create_resource_family(attrs \\ %{}) do
@@ -49,6 +51,21 @@ defmodule Oli.Resources do
 
   """
   def get_resource!(id), do: Repo.get!(Resource, id)
+
+
+  @doc """
+  Gets a single resource, based on a revision and project slug.
+  """
+  @spec get_resource_from_slugs(String.t, String.t) :: any
+  def get_resource_from_slugs(project, revision) do
+    query = from r in Resource,
+          distinct: r.id,
+          join: p in Project, on: r.project_id == p.id,
+          join: v in ResourceRevision, on: v.resource_id == r.id,
+          where: p.slug == ^project and v.slug == ^revision,
+          select: r
+    Repo.one(query)
+  end
 
 
   def new_project_resource(project, family) do

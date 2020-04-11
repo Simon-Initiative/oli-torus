@@ -84,8 +84,12 @@ defmodule OliWeb.AuthController do
       {:error, changeset} ->
         # remove password_hash from changeset for security, just in case
         changeset = Ecto.Changeset.delete_change(changeset, :password_hash)
+        actions = %{
+          submit: Routes.auth_path(conn, :register_email_submit),
+          cancel: Routes.auth_path(conn, :register)
+        }
         conn
-        |> render("register_email.html", changeset: changeset)
+        |> render("register_email.html", changeset: changeset, actions: actions)
     end
   end
 
@@ -128,10 +132,6 @@ defmodule OliWeb.AuthController do
           _ ->
             signin_callback(conn, author)
         end
-
-        conn
-        |> put_session(:current_author_id, author.id)
-        |> redirect(to: (redirect_path conn, author))
 
       {:error, _reason} ->
         conn

@@ -10,7 +10,7 @@ defmodule Oli.Plugs.Protect do
       nil ->
         conn = SetCurrentUser.set_author(fetch_session(conn))
 
-        case conn.assigns.current_author do
+        case conn.assigns[:current_author] do
           nil ->
             conn
             |> redirect(to: OliWeb.Router.Helpers.auth_path(conn, :signin))

@@ -28,25 +28,29 @@ defmodule Oli.PublishingTest do
     @update_attrs %{description: "some updated description", published: false, root_resources: [], project: 0}
     @invalid_attrs %{description: nil, published: nil, root_resources: nil}
 
-    def publication_fixture(attrs \\ %{}) do
-      {:ok, publication} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> Publishing.create_publication()
-
-      publication
-    end
-
-
     setup do
 
-      {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
-      {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
-      {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: False, root_resources: [], project_id: project.id}) |> Repo.insert
+      {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "slug"}) |> Repo.insert
+      {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "slug", version: "1", family_id: family.id}) |> Repo.insert
+      {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resources: [], project_id: project.id}) |> Repo.insert
 
       valid_attrs = Map.put(@valid_attrs, :project_id, project.id)
 
-      {:ok, %{publication: publication, valid_attrs: valid_attrs}}
+      {:ok, %{publication: publication, project: project, family: family, valid_attrs: valid_attrs}}
+    end
+
+    test "get_unpublished_publications/2 returns the correct publication", %{publication: publication, family: family, project: project} do
+
+      # add a few more published publications
+      {:ok, _another} = Publication.changeset(%Publication{}, %{description: "description", published: true, root_resources: [], project_id: project.id}) |> Repo.insert
+      {:ok, _another} = Publication.changeset(%Publication{}, %{description: "description", published: true, root_resources: [], project_id: project.id}) |> Repo.insert
+
+      # and another project with an unpublished publication
+      {:ok, project2} = Project.changeset(%Project{}, %{description: "description", slug: "title", title: "title", version: "1", family_id: family.id}) |> Repo.insert
+      {:ok, publication2} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resources: [], project_id: project2.id}) |> Repo.insert
+
+      assert Publishing.get_unpublished_publication("slug", 1).id == publication.id
+      assert Publishing.get_unpublished_publication("title", 1).id == publication2.id
     end
 
 
@@ -61,7 +65,7 @@ defmodule Oli.PublishingTest do
     test "create_publication/1 with valid data creates a publication", %{valid_attrs: valid_attrs} do
       assert {:ok, %Publication{} = publication} = Publishing.create_publication(valid_attrs)
       assert publication.description == "some description"
-      assert publication.published == false
+      assert publication.published == true
       assert publication.root_resources == []
     end
 
@@ -102,7 +106,7 @@ defmodule Oli.PublishingTest do
 
       {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
       {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
-      {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: False, root_resources: [], project_id: project.id}) |> Repo.insert
+      {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resources: [], project_id: project.id}) |> Repo.insert
       {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
       {:ok, _institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
 
@@ -172,7 +176,7 @@ defmodule Oli.PublishingTest do
 
       {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
       {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
-      {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: False, root_resources: [], project_id: project.id}) |> Repo.insert
+      {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resources: [], project_id: project.id}) |> Repo.insert
       {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
       {:ok, _institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
 
@@ -235,7 +239,7 @@ defmodule Oli.PublishingTest do
 
       {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
       {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
-      {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: False, root_resources: [], project_id: project.id}) |> Repo.insert
+      {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resources: [], project_id: project.id}) |> Repo.insert
       {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
       {:ok, _institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
       {:ok, objective_family} = ObjectiveFamily.changeset(%ObjectiveFamily{}, %{}) |> Repo.insert

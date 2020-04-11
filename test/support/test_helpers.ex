@@ -8,6 +8,11 @@ defmodule Oli.TestHelpers do
   alias Oli.Course
   alias Oli.Course.Project
 
+  def yesterday() do
+    {:ok, datetime} = DateTime.now("Etc/UTC")
+    DateTime.add(datetime, -(60 * 60 * 24), :second)
+  end
+
   def author_fixture(attrs \\ %{}) do
     params =
       attrs

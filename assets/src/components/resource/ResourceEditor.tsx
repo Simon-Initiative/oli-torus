@@ -1,22 +1,23 @@
 import * as Immutable from 'immutable';
-import React, { useState, useReducer } from 'react';
-import { ResourceContent, ResourceType } from 'data/content/resource';
+import React from 'react';
+import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
+import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
+import { ResourceContent, ResourceType, createDefaultStructuredContent } from 'data/content/resource';
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
-import { useLock } from '../utils/useLock';
-import { useDeferredPersistence } from '../utils/useDeferredPersistence';
 import { Editors } from './Editors';
 import { Outline } from './Outline';
 import { TitleBar } from './TitleBar';
-import { ProjectId, ResourceId } from 'data/types';
+import { ProjectSlug, ResourceSlug } from 'data/types';
 import { makeRequest } from 'data/persistence/common';
-import { undoReducer, undo, redo, update, UndoState } from './undo';
+import { UndoableState, processRedo, processUndo, processUpdate, init } from './undo';
+import { releaseLock, acquireLock } from 'data/persistence/lock';
 
 export type ResourceEditorProps = {
   resourceType: ResourceType,     // Page or assessment?
-  authorId: number,               // The current author
-  projectId: number,              // The current project
-  resourceId: number,             // The current resource
+  authorEmail: string,            // The current author
+  projectSlug: ProjectSlug,       // The current project
+  resourceSlug: ResourceSlug,     // The current resource
   title: string,                  // The title of the resource
   content: ResourceContent[],     // Content of the resource
   objectives: Objective[],        // Attached objectives
@@ -24,69 +25,168 @@ export type ResourceEditorProps = {
   editorMap: ActivityEditorMap,   // Map of activity types to activity elements
 };
 
-function issueSaveRequest(project: ProjectId, resource: ResourceId, body: any) {
-  const params = {
-    method: 'PUT',
-    body,
-    url: `/project/${project}/${resource}/edit`,
-  };
+// This is the state of our resource that is undoable
+type Undoable = {
+  title: string,
+  content: Immutable.List<ResourceContent>,
+  objectives: Immutable.List<Objective>,
+};
 
-  return makeRequest(params);
+type ResourceEditorState = {
+  undoable: UndoableState<Undoable>,
+  editMode: boolean,
+  persistence: 'idle' | 'pending' | 'inflight',
+};
+
+// Creates a function that when invoked submits a save request
+function prepareSaveFn(project: ProjectSlug, resource: ResourceSlug, body: any) {
+  return () => {
+    const params = {
+      method: 'PUT',
+      body: JSON.stringify({ update: body }),
+      url: `/project/${project}/${resource}/edit`,
+    };
+
+    return makeRequest(params);
+  };
+}
+
+// Ensures that there is some default content if the initial content
+// of this resource is empty
+function withDefaultContent(content: ResourceContent[]) {
+  return content.length > 0
+    ? content
+    : [createDefaultStructuredContent()];
+}
+
+
+function registerUnload(strategy: PersistenceStrategy) {
+  return window.addEventListener('beforeunload', (event) => {
+    strategy.destroy();
+  });
+}
+
+function unregisterUnload(listener: any) {
+  window.removeEventListener('beforeunload', listener);
 }
 
 // The resource editor
-export const ResourceEditor = (props: ResourceEditorProps) => {
+export class ResourceEditor extends React.Component<ResourceEditorProps, ResourceEditorState> {
 
-  const { projectId, resourceId, editorMap } = props;
+  persistence: PersistenceStrategy;
+  windowUnloadListener: any;
 
-  const [title, setTitle] = useState(props.title);
-  const lock = useLock(props.projectId, props.resourceId);
+  constructor(props: ResourceEditorProps) {
+    super(props);
 
-  const [state, dispatch] = useReducer(undoReducer, {
-    current: Immutable.List<ResourceContent>(props.content),
-    undoStack: Immutable.Stack<Immutable.List<ResourceContent>>(),
-    redoStack: Immutable.Stack<Immutable.List<ResourceContent>>(),
-  } as UndoState);
+    const { title, objectives, content } = props;
 
-  const status = useDeferredPersistence(
-    issueSaveRequest.bind(undefined, projectId, resourceId), state.current);
+    this.state = {
+      editMode: true,
+      undoable: init({
+        title,
+        objectives: Immutable.List<Objective>(objectives),
+        content: Immutable.List<ResourceContent>(withDefaultContent(content)),
+      }),
+      persistence: 'idle',
+    };
 
-  const onEdit = (content: Immutable.List<ResourceContent>) => {
-    dispatch(update(content));
-  };
+    this.persistence = new DeferredPersistenceStrategy();
 
-  const onTitleEdit = (title: string) => {
-    setTitle(title);
-    issueSaveRequest(projectId, resourceId, { title });
-  };
+    this.update = this.update.bind(this);
+    this.undo = this.undo.bind(this);
+    this.redo = this.redo.bind(this);
 
-  const onAddItem = (c : ResourceContent) => dispatch(update(state.current.push(c)));
+  }
 
-  return (
-    <div>
-      <TitleBar
-        onUndo={() => dispatch(undo())}
-        onRedo={() => dispatch(redo())}
-        canUndo={state.undoStack.size > 0}
-        canRedo={state.redoStack.size > 0}
-        title={title}
-        onTitleEdit={onTitleEdit}
-        onAddItem={onAddItem}
-        editMode={lock.editMode}
-        editorMap={editorMap}/>
+  componentDidMount() {
 
-      <div className="d-flex flex-row align-items-baseline">
-        {
-        // We only show the outline if there is more than one content element in the resource
-        state.current.size > 0
-          ? <Outline {...props} editMode={lock.editMode}
-          onEdit={c => onEdit(c)} content={state.current}/>
-          : null
-        }
-        <Editors {...props} editMode={lock.editMode}
-          onEdit={c => onEdit(c)} content={state.current}/>
+    const { projectSlug, resourceSlug } = this.props;
+
+    this.persistence.initialize(
+      acquireLock.bind(undefined, projectSlug, resourceSlug),
+      releaseLock.bind(undefined, projectSlug, resourceSlug),
+      () => {},
+      () => {},
+      persistence => this.setState({ persistence }),
+    ).then((editMode) => {
+      this.setState({ editMode });
+      if (editMode) {
+        this.windowUnloadListener = registerUnload(this.persistence);
+      }
+    });
+  }
+
+  componentWillUnmount() {
+    this.persistence.destroy();
+    if (this.windowUnloadListener !== null) {
+      unregisterUnload(this.windowUnloadListener);
+    }
+  }
+
+  update(update: Partial<Undoable>) {
+    this.setState(
+      { undoable: processUpdate(this.state.undoable, update) },
+      () => this.save());
+  }
+
+  save() {
+    const { projectSlug, resourceSlug } = this.props;
+    this.persistence.save(
+      prepareSaveFn(projectSlug, resourceSlug, this.state.undoable.current));
+  }
+
+  undo() {
+    this.setState({ undoable: processUndo(this.state.undoable) },
+    () => this.save());
+  }
+
+  redo() {
+    this.setState({ undoable: processRedo(this.state.undoable) },
+    () => this.save());
+  }
+
+  render() {
+
+    const props = this.props;
+    const state = this.state;
+
+    const onEdit = (content: Immutable.List<ResourceContent>) => {
+      this.update({ content });
+    };
+
+    const onTitleEdit = (title: string) => {
+      this.update({ title });
+    };
+
+    const onAddItem = (c : ResourceContent) =>
+      this.update({ content: this.state.undoable.current.content.push(c) });
+
+    return (
+      <div>
+        <TitleBar
+          onUndo={this.undo}
+          onRedo={this.redo}
+          canUndo={state.undoable.undoStack.size > 0}
+          canRedo={state.undoable.redoStack.size > 0}
+          title={state.undoable.current.title}
+          onTitleEdit={onTitleEdit}
+          onAddItem={onAddItem}
+          editMode={this.state.editMode}
+          editorMap={this.props.editorMap}/>
+
+        <div className="d-flex flex-row align-items-baseline">
+          {
+          // We only show the outline if there is more than one content element in the resource
+          state.undoable.current.content.size > 0
+            ? <Outline {...props} editMode={this.state.editMode}
+            onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
+            : null
+          }
+          <Editors {...props} editMode={this.state.editMode}
+            onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
+        </div>
       </div>
-    </div>
-  );
-
-};
+    );
+  }
+}

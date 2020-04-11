@@ -24,8 +24,8 @@ defmodule OliWeb.ProjectController do
     render %{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html"
   end
 
-  def objectives(conn, _project_params) do
-    project = Course.get_project_by_slug(conn.params["project_id"])
+  def objectives(conn, _params) do
+    project = conn.assigns.project
     publication_id = Publishing.get_unpublished_publication(project.id)
     objective_mappings = Publishing.get_objective_mappings_by_publication(publication_id)
     changeset = Learning.change_objective(%Learning.Objective{})

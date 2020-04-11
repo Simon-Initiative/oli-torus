@@ -23,7 +23,9 @@ export function makeRequest<SuccessType>(
   params: HttpRequestParams): Promise<SuccessType | ServerError> {
 
   const method = params.method ? params.method : 'GET';
-  const headers = params.headers ? params.headers : {};
+  const headers = params.headers ? params.headers : {
+    'Content-Type': 'application/json',
+  };
   const hasTextResult = params.hasTextResult ? params.hasTextResult : false;
 
   const { body, url, query } = params;

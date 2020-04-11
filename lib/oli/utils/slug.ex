@@ -1,7 +1,23 @@
-defmodule Oli.Course.Utils do
+defmodule Oli.Utils.Slug do
+
   @chars "abcdefghijklmnopqrstuvwxyz1234567890" |> String.split("")
 
-  def generate_slug(table, string) do
+  def maybe_update_slug(changeset, table) do
+    case changeset.valid? do
+      true ->
+        case Ecto.Changeset.get_change(changeset, :title) do
+          nil -> case Ecto.Changeset.get_field(changeset, :title) do
+            nil -> changeset
+            title -> Ecto.Changeset.put_change(changeset, :slug, generate(table, title))
+          end
+          title -> Ecto.Changeset.put_change(changeset, :slug, generate(table, title))
+        end
+
+      _ -> changeset
+    end
+  end
+
+  defp generate(table, title) do
 
     suffixes = [
       fn -> "" end,
@@ -16,13 +32,13 @@ defmodule Oli.Course.Utils do
       fn -> str(10) end,
     ]
 
-    unique_slug(table, slugify(string), suffixes)
+    unique_slug(table, slugify(title), suffixes)
   end
 
   def str(length) do
-    Enum.reduce((1..length), [], fn (_i, acc) ->
+    "_" <> (Enum.reduce((1..length), [], fn (_i, acc) ->
       [Enum.random(@chars) | acc]
-    end) |> Enum.join("")
+    end) |> Enum.join(""))
   end
 
   defp unique_slug(_table, "", _suffixes), do: ""
@@ -40,5 +56,11 @@ defmodule Oli.Course.Utils do
   defp unique_slug(_table, _, []) do "" end
 
   defp slugify(nil), do: ""
-  defp slugify(title), do: String.downcase(title, :default) |> String.replace(" ", "_")
+  defp slugify(title) do
+    String.downcase(title, :default)
+      |> String.trim()
+      |> String.replace(" ", "_")
+      |> URI.encode_www_form()
+      |> String.slice(0, 30)
+  end
 end

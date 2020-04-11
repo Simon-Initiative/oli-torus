@@ -40,7 +40,7 @@ defmodule Oli.CourseTest do
     test "create_empty_project/1 with valid data creates a project", %{valid_attrs: valid_attrs} do
       assert {:ok, %Project{} = project} = create_empty_project(valid_attrs)
       assert project.description == "some description"
-      assert project.slug == "some slug"
+      assert project.slug == "some_title"
       assert project.title == "some title"
     end
 
@@ -51,7 +51,7 @@ defmodule Oli.CourseTest do
     test "update_project/2 with valid data updates the project", %{project: project}  do
       assert {:ok, %Project{} = project} = Course.update_project(project, @update_attrs)
       assert project.description == "some updated description"
-      assert project.slug == "some updated slug"
+      assert project.slug == "some_updated_title"
       assert project.title == "some updated title"
     end
 

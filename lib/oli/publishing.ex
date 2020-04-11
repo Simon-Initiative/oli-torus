@@ -45,6 +45,14 @@ defmodule Oli.Publishing do
       select: pub
   end
 
+
+  def get_unpublished_publication(project_slug, _author_id) do
+    Repo.one from pub in Publication,
+      join: proj in Project, on: pub.project_id == proj.id,
+      where: proj.slug == ^project_slug and pub.published == false,
+      select: pub
+  end
+
   @doc """
   Gets a single publication.
 
