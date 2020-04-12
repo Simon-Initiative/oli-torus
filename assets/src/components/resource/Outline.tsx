@@ -43,18 +43,8 @@ const DropTarget = ({ id, index, onDrop }) => {
   );
 };
 
-
-// Outline of the content
-type OutlineEntryProps = {
-  content: ResourceContent,
-  editorMap: ActivityEditorMap,
-  index: number,
-  onDrop: (id: React.DragEvent<HTMLDivElement>, index: number) => void,
-};
-
-const OutlineEntry = (props: OutlineEntryProps) => {
-
-  const { content, editorMap } = props;
+// @ts-ignore
+const OutlineContent = ({ content, index, onDrop, desc }) => {
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     const dt = e.dataTransfer;
@@ -78,44 +68,44 @@ const OutlineEntry = (props: OutlineEntryProps) => {
 
   };
 
-  if (content.type === 'content') {
-    return (
-      <React.Fragment>
-        <DropTarget id={content.id} index={props.index} onDrop={props.onDrop}/>
-        <div draggable={true} key={content.id} className="border-0 p-1"
-          onDragStart={handleDragStart}
-        >
-          <div className="d-flex">
-            <DragHandle/>
-            <div className="m-2">
-              <div className="d-flex justify-content-between">
-                <h5 className="mb-1">Content</h5>
-                {content.purpose !== 'None' ? <small>{content.purpose}</small> : null}
-              </div>
-              <small>{getContentDescription(content)}</small>
-            </div>
-          </div>
-        </div>
-      </React.Fragment>
-    );
-  }
-
-  const activityEditor = editorMap[content.type];
-
   return (
     <React.Fragment>
-      <DropTarget id={content.id} index={props.index} onDrop={props.onDrop}/>
-      <div draggable={true} key={content.id} className="m-10"
+      <DropTarget id={content.id} index={index} onDrop={onDrop}/>
+      <div draggable={true} key={content.id} className="border-0 p-1"
         onDragStart={handleDragStart}
       >
-        <DragHandle/>
-        <div className="d-flex w-100 justify-content-between">
-          <h5 className="mb-1">{activityEditor.friendlyName}</h5>
-          {content.purpose !== 'None' ? <small>{content.purpose}</small> : null}
+        <div className="d-flex">
+          <DragHandle/>
+          <div className="m-2">
+            <div className="d-flex justify-content-between">
+              <h5 className="mb-1">Content</h5>
+              {content.purpose !== 'None' ? <small>{content.purpose}</small> : null}
+            </div>
+            <small>{desc}</small>
+          </div>
         </div>
-        <small></small>
       </div>
     </React.Fragment>
+  );
+};
+
+// Outline of the content
+type OutlineEntryProps = {
+  content: ResourceContent,
+  editorMap: ActivityEditorMap,
+  index: number,
+  onDrop: (id: React.DragEvent<HTMLDivElement>, index: number) => void,
+};
+
+const OutlineEntry = (props: OutlineEntryProps) => {
+
+  const { content, editorMap } = props;
+
+  const desc = content.type === 'content'
+    ? getContentDescription(content) : editorMap[content.type].friendlyName;
+
+  return (
+    <OutlineContent {...props} desc={desc} />
   );
 };
 
@@ -136,13 +126,37 @@ export const Outline = (props: ResourceEditorProps) => {
         if (sourceIndex === -1) {
           // This is a cross window drop, we insert it
           onEdit(content.insert(index, droppedContent));
+          return;
 
-        } else if (sourceIndex > -1) {
-          // Handle a window to window drop
+        }
+        if (sourceIndex > -1) {
+          // Handle a same window drag and drop
           const adjusted = sourceIndex < index ? index - 1 : index;
-          onEdit(content.remove(sourceIndex).insert(adjusted, droppedContent));
+          const reordered = content.remove(sourceIndex).insert(adjusted, droppedContent);
+          onEdit(reordered);
+          return;
         }
       }
+
+      // Handle a drag and drop from VSCode
+      const text = e.dataTransfer.getData('codeeditors');
+      if (text) {
+        try {
+          const json = JSON.parse(text);
+          const parsedContent = JSON.parse(json[0].content);
+
+          // Remove it if we find the same identified content item
+          const inserted = content
+            .filter(c => parsedContent.id !== c.id)
+            // Then insert it
+            .insert(index, parsedContent);
+
+          onEdit(inserted);
+        } catch (err) {
+
+        }
+      }
+
     }
   };
 
@@ -151,12 +165,12 @@ export const Outline = (props: ResourceEditorProps) => {
       const updated = content.set(i, updatedComponent);
       props.onEdit(updated);
     };
-    return <OutlineEntry content={c} index={i} editorMap={editorMap} onDrop={onDrop}/>;
+    return <OutlineEntry key={c.id} content={c} index={i} editorMap={editorMap} onDrop={onDrop}/>;
   });
 
   return (
     <div style={ { width: '150px' } }>
-      {entries}
+      {[...entries, <DropTarget key="last" id="last" index={entries.length} onDrop={onDrop}/>]}
     </div>
   );
 };
