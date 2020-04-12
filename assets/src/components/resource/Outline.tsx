@@ -71,7 +71,8 @@ const OutlineContent = ({ content, index, onDrop, desc }) => {
   return (
     <React.Fragment>
       <DropTarget id={content.id} index={index} onDrop={onDrop}/>
-      <div draggable={true} key={content.id} className="border-0 p-1"
+      <div
+        draggable={true} key={content.id} className="border-0 p-1"
         onDragStart={handleDragStart}
       >
         <div className="d-flex">
