@@ -6,9 +6,10 @@ import { ResourceContent, ResourceType, createDefaultStructuredContent } from 'd
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
 import { Editors } from './Editors';
+import { Objectives } from './Objectives';
 import { Outline } from './Outline';
 import { TitleBar } from './TitleBar';
-import { ProjectSlug, ResourceSlug } from 'data/types';
+import { ProjectSlug, ResourceSlug, ObjectiveSlug } from 'data/types';
 import { makeRequest } from 'data/persistence/common';
 import { UndoableState, processRedo, processUndo, processUpdate, init } from './undo';
 import { releaseLock, acquireLock } from 'data/persistence/lock';
@@ -29,11 +30,12 @@ export type ResourceEditorProps = {
 type Undoable = {
   title: string,
   content: Immutable.List<ResourceContent>,
-  objectives: Immutable.List<Objective>,
+  objectives: Immutable.List<ObjectiveSlug>,
 };
 
 type ResourceEditorState = {
   undoable: UndoableState<Undoable>,
+  allObjectives: Immutable.List<Objective>,
   editMode: boolean,
   persistence: 'idle' | 'pending' | 'inflight',
 };
@@ -79,16 +81,17 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
   constructor(props: ResourceEditorProps) {
     super(props);
 
-    const { title, objectives, content } = props;
+    const { title, objectives, allObjectives, content } = props;
 
     this.state = {
       editMode: true,
       undoable: init({
         title,
-        objectives: Immutable.List<Objective>(objectives),
+        objectives: Immutable.List<ObjectiveSlug>(objectives.map(o => o.id)),
         content: Immutable.List<ResourceContent>(withDefaultContent(content)),
       }),
       persistence: 'idle',
+      allObjectives: Immutable.List<Objective>(allObjectives),
     };
 
     this.persistence = new DeferredPersistenceStrategy();
@@ -191,7 +194,11 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           onAddItem={onAddItem}
           editMode={this.state.editMode}
           editorMap={this.props.editorMap}/>
-
+        <Objectives
+          editMode={this.state.editMode}
+          selected={this.state.undoable.current.objectives}
+          objectives={this.state.allObjectives}
+          onEdit={objectives => this.update({ objectives })} />
         {editingImpl}
       </div>
     );
