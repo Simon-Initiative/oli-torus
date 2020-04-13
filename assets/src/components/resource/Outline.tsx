@@ -2,9 +2,9 @@ import * as Immutable from 'immutable';
 import React, { useState } from 'react';
 import { ResourceContent } from 'data/content/resource';
 import { ActivityEditorMap } from 'data/content/editors';
-import { getContentDescription } from 'data/content/utils';
 import { toSimpleText } from '../editor/utils';
 import { DragHandle } from './DragHandle';
+import { getContentDescription } from 'data/content/utils';
 
 export type ResourceEditorProps = {
   editMode: boolean,              // Whether or not we can edit
@@ -79,11 +79,11 @@ const OutlineContent = ({ content, index, onDrop, desc, onFocus, onMove }) => {
   return (
     <div
       onKeyDown={handleKeyDown}
-      onFocus={e => onFocus(index, desc)}
+      onFocus={e => onFocus(index)}
       role="option"
       aria-describedby="outline-list-operation"
       tabIndex={index}
-      style={ { paddingLeft: '4px' } }>
+      style={ { paddingLeft: '4px', paddingRight: '4px' } }>
 
       <DropTarget id={content.id} index={index} onDrop={onDrop}/>
 
@@ -93,9 +93,9 @@ const OutlineContent = ({ content, index, onDrop, desc, onFocus, onMove }) => {
       >
         <div className="d-flex">
           <DragHandle/>
-          <div className="m-2">
+          <div className="m-2 text-truncate">
             <div className="d-flex justify-content-between">
-              <h5 className="mb-1">Content</h5>
+              <div className="mb-1">Content</div>
               {content.purpose !== 'None' ? <small>{content.purpose}</small> : null}
             </div>
             <small>{desc}</small>
@@ -112,7 +112,7 @@ type OutlineEntryProps = {
   editorMap: ActivityEditorMap,
   index: number,
   onDrop: (id: React.DragEvent<HTMLDivElement>, index: number) => void,
-  onFocus: (index: number, desc: string) => void,
+  onFocus: (index: number) => void,
   onMove: (index: number, up: boolean) => void,
 };
 
@@ -121,7 +121,7 @@ const OutlineEntry = (props: OutlineEntryProps) => {
   const { content, editorMap } = props;
 
   const desc = content.type === 'content'
-    ? 'Content' : editorMap[content.type].friendlyName;
+    ? getContentDescription(content) : editorMap[content.type].friendlyName;
 
   return (
     <OutlineContent {...props} desc={desc} />
@@ -135,7 +135,11 @@ export const Outline = (props: ResourceEditorProps) => {
   const content = Immutable.List<ResourceContent>(props.content);
   const [assisstive, setAssisstive] = useState('');
 
-  const onFocus = (index: number, desc: string) => {
+  const onFocus = (index: number) => {
+    const item = content.get(index) as ResourceContent;
+    const desc = item.type === 'content'
+      ? getContentDescription(item) : editorMap[item.type].friendlyName;
+
     setAssisstive(
       `Listbox. ${index + 1} of ${content.size}. ${desc}.`);
   };

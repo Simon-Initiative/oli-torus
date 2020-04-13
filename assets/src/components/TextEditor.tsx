@@ -6,6 +6,7 @@ export interface TextEditorProps {
   model: string;
   showAffordances: boolean;
   editMode: boolean;
+  size?: 'regular' | 'large';
 }
 
 export interface LabelledTextEditorProps extends TextEditorProps {
@@ -64,7 +65,7 @@ export const TextEditor = (props: TextEditorProps) => {
 
     return (
       <div data-slate-editor style={{ display: 'inline' }}>
-        <input type="text"
+        <input type="text" className={props.size === 'large' ? 'form-control-lg' : ''}
           onKeyUp={onKeyUp}
           onChange={onTextChange}
           value={current}
@@ -94,6 +95,7 @@ export const TextEditor = (props: TextEditorProps) => {
       textAlign: 'left',
       color: 'black',
       fontWeight: 'normal',
+      fontSize: props.size === 'large' ? '18pt' : '12pt',
     };
 
     return (

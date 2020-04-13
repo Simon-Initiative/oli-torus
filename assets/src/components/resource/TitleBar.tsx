@@ -25,9 +25,13 @@ export const TitleBar = (props: TitleBarProps) => {
 
   return (
     <div className="d-flex flex-row align-items-baseline">
-      <div className="flex-grow-1">
+      <div className="flex-grow-1 p-4">
         <TextEditor
-          onEdit={onTitleEdit} model={title} showAffordances={true} editMode={editMode}/>
+          onEdit={onTitleEdit}
+          model={title}
+          showAffordances={true}
+          size="large"
+          editMode={editMode}/>
       </div>
 
       <div className="btn-group btn-group-sm" role="group" aria-label="Undo redo creation">

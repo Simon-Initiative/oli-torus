@@ -32,18 +32,22 @@ export const Editors = (props: EditorsProps) => {
     ) : JSX.Element => {
 
     if (content.type === 'content') {
-      return (
+
+      const editor = <StructuredContentEditor
+        key={content.id}
+        editMode={editMode}
+        content={content}
+        onEdit={onEdit}
+        toolbarItems={getToolbarForResourceType(resourceType)}/>;
+
+      return contentSize > 1
+        ?
         <ResourceContentFrame
           key={content.id}
-          allowRemoval={contentSize > 1} editMode={editMode} label="Content" onRemove={onRemove}>
-          <StructuredContentEditor
-            key={content.id}
-            editMode={editMode}
-            content={content}
-            onEdit={onEdit}
-            toolbarItems={getToolbarForResourceType(resourceType)}/>
+          allowRemoval={true} editMode={editMode} label="Content" onRemove={onRemove}>
+            {editor}
         </ResourceContentFrame>
-      );
+        : editor;
     }
 
     const unsupported : EditorDesc = {
@@ -61,17 +65,19 @@ export const Editors = (props: EditorsProps) => {
 
     };
 
-    return (
-      <ResourceContentFrame
-        key={content.id}
-        allowRemoval={contentSize > 1}
-        editMode={editMode}
-        label={editor.friendlyName}
-        onRemove={onRemove}>
+    const editorElement = React.createElement(editor.deliveryElement, props);
 
-        {React.createElement(editor.deliveryElement, props)}
-      </ResourceContentFrame>
-    );
+    return contentSize > 1
+        ?
+        <ResourceContentFrame
+          key={content.id}
+          allowRemoval={contentSize > 1}
+          editMode={editMode}
+          label={editor.friendlyName}
+          onRemove={onRemove}>
+          {editorElement}
+        </ResourceContentFrame>
+        : editorElement;
   };
 
   const editors = content.map((c, index) => {

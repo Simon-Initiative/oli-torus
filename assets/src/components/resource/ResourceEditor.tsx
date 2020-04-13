@@ -162,6 +162,23 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     const onAddItem = (c : ResourceContent) =>
       this.update({ content: this.state.undoable.current.content.push(c) });
 
+    const editingImpl = state.undoable.current.content.size > 1
+      ? (
+          <div className="d-flex flex-row align-items-start">
+            <Outline {...props} editMode={this.state.editMode}
+              onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
+            <Editors {...props} editMode={this.state.editMode}
+              onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
+          </div>
+        )
+      : (
+          <div className="p-4">
+            <Editors {...props} editMode={this.state.editMode}
+              onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
+          </div>
+        );
+
+
     return (
       <div>
         <TitleBar
@@ -175,17 +192,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           editMode={this.state.editMode}
           editorMap={this.props.editorMap}/>
 
-        <div className="d-flex flex-row align-items-baseline">
-          {
-          // We only show the outline if there is more than one content element in the resource
-          state.undoable.current.content.size > 0
-            ? <Outline {...props} editMode={this.state.editMode}
-            onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
-            : null
-          }
-          <Editors {...props} editMode={this.state.editMode}
-            onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
-        </div>
+        {editingImpl}
       </div>
     );
   }
