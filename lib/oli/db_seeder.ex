@@ -14,7 +14,7 @@ defmodule Oli.Seeder do
   alias Oli.Resources.Resource
   alias Oli.Resources.ResourceFamily
   alias Oli.Resources.ResourceRevision
-  alias Oli.Learning
+
   alias Oli.Learning.Objective
   alias Oli.Learning.ObjectiveFamily
   alias Oli.Learning.ObjectiveRevision
