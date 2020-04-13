@@ -46,4 +46,5 @@ export interface ActivityReference {
   id: number;
   idRef: number;
   purpose: ActivityPurpose;
+  children: [];
 }

@@ -147,25 +147,26 @@ defmodule Oli.Editing.ResourceEditor do
   def create_context(project_slug, revision_slug, author) do
 
     with {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
-         {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil()
+         {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil(),
+         {:ok, objectives} <- Publishing.get_published_objectives(publication.id) |> trap_nil()
     do
       case get_latest_revision(publication, resource) do
         nil -> {:error, :not_found}
-        revision -> {:ok, create(revision, project_slug, revision_slug, author)}
+        revision -> {:ok, create(revision, project_slug, revision_slug, author, objectives)}
       end
     else
       _ -> {:error, :not_found}
     end
   end
 
-  defp create(revision, project_slug, revision_slug, author) do
+  defp create(revision, project_slug, revision_slug, author, all_objectives) do
     %Oli.Editing.ResourceContext{
       authorEmail: author.email,
       projectSlug: project_slug,
       resourceSlug: revision_slug,
       editorMap: %{},
-      objectives: [],
-      allObjectives: [],
+      objectives: revision.objectives,
+      allObjectives: all_objectives,
       title: revision.title,
       resourceType: revision.resource_type.type,
       content: revision.content
