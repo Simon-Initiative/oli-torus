@@ -102,10 +102,12 @@ defmodule Oli.ActivitiesTest do
     end
 
     test "create_activity_revision/1 with valid data creates a activity_revision", %{valid_attrs: valid_attrs} do
-      assert {:ok, %ActivityRevision{} = activity_revision} = Activities.create_activity_revision(valid_attrs)
+
+      with_different_slug = Map.put(valid_attrs, :slug, "different")
+      assert {:ok, %ActivityRevision{} = activity_revision} = Activities.create_activity_revision(with_different_slug)
       assert activity_revision.content == %{}
       assert activity_revision.deleted == true
-      assert activity_revision.slug == "some slug"
+      assert activity_revision.slug == "different"
     end
 
     test "create_activity_revision/1 with invalid data returns error changeset" do

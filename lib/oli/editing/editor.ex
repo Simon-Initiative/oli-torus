@@ -165,7 +165,7 @@ defmodule Oli.Editing.ResourceEditor do
       resourceSlug: revision_slug,
       editorMap: %{},
       objectives: [],
-      allObjectives: [],
+      allObjectives: [%{ id: "one", title: "First one"}, %{ id: "two", title: "Second one"}],
       title: revision.title,
       resourceType: revision.resource_type.type,
       content: revision.content
