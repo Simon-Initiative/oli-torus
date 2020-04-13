@@ -44,7 +44,15 @@ const DropTarget = ({ id, index, onDrop }) => {
 };
 
 // @ts-ignore
-const OutlineContent = ({ content, index, onDrop, desc }) => {
+const OutlineContent = ({ content, index, onDrop, desc, onFocus, onMove }) => {
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.shiftKey && e.key === 'ArrowDown') {
+      onMove(index, false);
+    } else if (e.shiftKey && e.key === 'ArrowUp') {
+      onMove(index, true);
+    }
+  };
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     const dt = e.dataTransfer;
@@ -69,10 +77,18 @@ const OutlineContent = ({ content, index, onDrop, desc }) => {
   };
 
   return (
-    <React.Fragment>
+    <div
+      onKeyDown={handleKeyDown}
+      onFocus={e => onFocus(index, desc)}
+      role="option"
+      aria-describedby="outline-list-operation"
+      tabIndex={index}
+      style={ { paddingLeft: '4px' } }>
+
       <DropTarget id={content.id} index={index} onDrop={onDrop}/>
+
       <div
-        draggable={true} key={content.id} className="border-0 p-1"
+        draggable={true} key={content.id}
         onDragStart={handleDragStart}
       >
         <div className="d-flex">
@@ -86,7 +102,7 @@ const OutlineContent = ({ content, index, onDrop, desc }) => {
           </div>
         </div>
       </div>
-    </React.Fragment>
+    </div>
   );
 };
 
@@ -96,6 +112,8 @@ type OutlineEntryProps = {
   editorMap: ActivityEditorMap,
   index: number,
   onDrop: (id: React.DragEvent<HTMLDivElement>, index: number) => void,
+  onFocus: (index: number, desc: string) => void,
+  onMove: (index: number, up: boolean) => void,
 };
 
 const OutlineEntry = (props: OutlineEntryProps) => {
@@ -103,7 +121,7 @@ const OutlineEntry = (props: OutlineEntryProps) => {
   const { content, editorMap } = props;
 
   const desc = content.type === 'content'
-    ? getContentDescription(content) : editorMap[content.type].friendlyName;
+    ? 'Content' : editorMap[content.type].friendlyName;
 
   return (
     <OutlineContent {...props} desc={desc} />
@@ -115,6 +133,31 @@ export const Outline = (props: ResourceEditorProps) => {
 
   const { editorMap, editMode, onEdit } = props;
   const content = Immutable.List<ResourceContent>(props.content);
+  const [assisstive, setAssisstive] = useState('');
+
+  const onFocus = (index: number, desc: string) => {
+    setAssisstive(
+      `Listbox. ${index + 1} of ${content.size}. ${desc}.`);
+  };
+
+  const onMove = (index: number, up: boolean) => {
+
+    if (index === 0 && up) return;
+
+    const item = content.get(index) as ResourceContent;
+    const inserted = content
+      .remove(index)
+      .insert(index + (up ? -1 : 1), item as any);
+
+    onEdit(inserted);
+
+    const newIndex = inserted.findIndex(c => c.id === item.id);
+    const desc = item.type === 'content'
+      ? 'Content' : editorMap[item.type].friendlyName;
+
+    setAssisstive(
+      `Listbox. ${newIndex + 1} of ${content.size}. ${desc}.`);
+  };
 
   const onDrop = (e: React.DragEvent<HTMLDivElement>, index: number) => {
     if (editMode) {
@@ -166,12 +209,20 @@ export const Outline = (props: ResourceEditorProps) => {
       const updated = content.set(i, updatedComponent);
       props.onEdit(updated);
     };
-    return <OutlineEntry key={c.id} content={c} index={i} editorMap={editorMap} onDrop={onDrop}/>;
+    return <OutlineEntry key={c.id} content={c}
+      index={i} editorMap={editorMap} onMove={onMove} onDrop={onDrop} onFocus={onFocus}/>;
   });
 
   return (
-    <div style={ { width: '150px' } }>
-      {[...entries, <DropTarget key="last" id="last" index={entries.length} onDrop={onDrop}/>]}
+    <div style={ { width: '150px' } } role="listbox">
+      <span aria-live="assertive" className="assistive-text">
+        {assisstive}
+      </span>
+      <span id="outline-list-operation" className="assistive-text">
+        Press shift key to reorder items
+      </span>
+      {[...entries, <DropTarget key="last" id="last" index={entries.length}
+        onDrop={onDrop}/>]}
     </div>
   );
 };
