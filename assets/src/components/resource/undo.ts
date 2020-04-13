@@ -16,12 +16,12 @@ export function init<T>(current: T): UndoableState<T> {
 
 export function processUndo<T>(state: UndoableState<T>): UndoableState<T> {
 
-  const current = state.undoStack.peek();
+  const next = state.undoStack.peek();
 
-  if (current !== undefined) {
+  if (next !== undefined) {
     const undoStack = state.undoStack.pop();
-    const redoStack = state.redoStack.push(current);
-    return { current, undoStack, redoStack };
+    const redoStack = state.redoStack.push(state.current);
+    return { current: next, undoStack, redoStack };
   }
 
   return state;
@@ -29,12 +29,12 @@ export function processUndo<T>(state: UndoableState<T>): UndoableState<T> {
 
 export function processRedo<T>(state: UndoableState<T>): UndoableState<T> {
 
-  const current = state.redoStack.peek();
+  const next = state.redoStack.peek();
 
-  if (current !== undefined) {
-    const undoStack = state.undoStack.push(current);
+  if (next !== undefined) {
+    const undoStack = state.undoStack.push(state.current);
     const redoStack = state.redoStack.pop();
-    return { current, undoStack, redoStack };
+    return { current: next, undoStack, redoStack };
   }
 
   return state;

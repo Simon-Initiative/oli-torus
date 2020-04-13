@@ -27,6 +27,21 @@ defmodule Oli.PublishingTest do
       {:ok, %{publication: publication, project: project, family: family, valid_attrs: valid_attrs}}
     end
 
+    test "get_published_objectives/1 returns the objective revisions", _ do
+
+      %{publication: publication} = Oli.Seeder.base_project_with_resource()
+        |> Oli.Seeder.add_objective("one")
+        |> Oli.Seeder.add_objective("two")
+        |> Oli.Seeder.add_objective("three")
+
+      [first | rest ] = Publishing.get_published_objectives(publication.id)
+      assert length(rest) == 2
+      assert first.slug == "one"
+      assert first.title == "one"
+
+    end
+
+
     test "get_unpublished_publications/2 returns the correct publication", %{publication: publication, family: family, project: project} do
 
       # add a few more published publications

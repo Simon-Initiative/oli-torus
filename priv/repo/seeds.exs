@@ -115,5 +115,8 @@ if Mix.env == :dev do
   Oli.Seeder.base_project_with_resource()
     |> Oli.Seeder.add_author(admin_author, :admin_author)
     |> Oli.Seeder.add_author(test_author, :test_author)
+    |> Oli.Seeder.add_objective("Define and describe something")
+    |> Oli.Seeder.add_objective("Compare and contrast something")
+    |> Oli.Seeder.add_objective("Pick and choose when something")
 
 end

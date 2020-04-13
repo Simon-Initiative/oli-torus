@@ -143,8 +143,8 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :title, :string
       add :slug, :string
       add :content, {:array, :map}
-      add :children, {:array, :id}
-      add :objectives, {:array, :id}
+      add :children, {:array, :string}
+      add :objectives, {:array, :string}
       add :deleted, :boolean, default: false, null: false
       add :author_id, references(:authors)
       add :resource_id, references(:resources)
@@ -153,6 +153,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
       timestamps()
     end
+    create unique_index(:resource_revisions, [:slug], name: :index_slug_resources)
 
     create table(:activity_registrations) do
       add :title, :string
@@ -188,7 +189,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
       timestamps()
     end
-
+    create unique_index(:activity_revisions, [:slug], name: :index_slug_activities)
 
     create table(:objective_families) do
       timestamps()
@@ -203,6 +204,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
     create table(:objective_revisions) do
       add :title, :string
+      add :slug, :string
       add :children, {:array, :id}
       add :deleted, :boolean, default: false, null: false
 
@@ -211,6 +213,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
       timestamps()
     end
+    create unique_index(:objective_revisions, [:slug], name: :index_slug_objectives)
 
     create table(:resource_mappings) do
       add :resource_id, references(:resources)

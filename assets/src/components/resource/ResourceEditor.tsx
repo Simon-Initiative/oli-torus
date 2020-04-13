@@ -6,9 +6,10 @@ import { ResourceContent, ResourceType, createDefaultStructuredContent } from 'd
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
 import { Editors } from './Editors';
+import { Objectives } from './Objectives';
 import { Outline } from './Outline';
 import { TitleBar } from './TitleBar';
-import { ProjectSlug, ResourceSlug } from 'data/types';
+import { ProjectSlug, ResourceSlug, ObjectiveSlug } from 'data/types';
 import { makeRequest } from 'data/persistence/common';
 import { UndoableState, processRedo, processUndo, processUpdate, init } from './undo';
 import { releaseLock, acquireLock } from 'data/persistence/lock';
@@ -20,7 +21,7 @@ export type ResourceEditorProps = {
   resourceSlug: ResourceSlug,     // The current resource
   title: string,                  // The title of the resource
   content: ResourceContent[],     // Content of the resource
-  objectives: Objective[],        // Attached objectives
+  objectives: ObjectiveSlug[],        // Attached objectives
   allObjectives: Objective[],     // All objectives
   editorMap: ActivityEditorMap,   // Map of activity types to activity elements
 };
@@ -29,11 +30,12 @@ export type ResourceEditorProps = {
 type Undoable = {
   title: string,
   content: Immutable.List<ResourceContent>,
-  objectives: Immutable.List<Objective>,
+  objectives: Immutable.List<ObjectiveSlug>,
 };
 
 type ResourceEditorState = {
   undoable: UndoableState<Undoable>,
+  allObjectives: Immutable.List<Objective>,
   editMode: boolean,
   persistence: 'idle' | 'pending' | 'inflight',
 };
@@ -79,16 +81,17 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
   constructor(props: ResourceEditorProps) {
     super(props);
 
-    const { title, objectives, content } = props;
+    const { title, objectives, allObjectives, content } = props;
 
     this.state = {
       editMode: true,
       undoable: init({
         title,
-        objectives: Immutable.List<Objective>(objectives),
+        objectives: Immutable.List<ObjectiveSlug>(objectives),
         content: Immutable.List<ResourceContent>(withDefaultContent(content)),
       }),
       persistence: 'idle',
+      allObjectives: Immutable.List<Objective>(allObjectives),
     };
 
     this.persistence = new DeferredPersistenceStrategy();
@@ -174,15 +177,14 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           onAddItem={onAddItem}
           editMode={this.state.editMode}
           editorMap={this.props.editorMap}/>
-
-        <div className="d-flex flex-row align-items-baseline">
-          {
-          // We only show the outline if there is more than one content element in the resource
-          state.undoable.current.content.size > 0
-            ? <Outline {...props} editMode={this.state.editMode}
+        <Objectives
+          editMode={this.state.editMode}
+          selected={this.state.undoable.current.objectives}
+          objectives={this.state.allObjectives}
+          onEdit={objectives => this.update({ objectives })} />
+        <div className="d-flex flex-row align-items-start">
+          <Outline {...props} editMode={this.state.editMode}
             onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
-            : null
-          }
           <Editors {...props} editMode={this.state.editMode}
             onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
         </div>
