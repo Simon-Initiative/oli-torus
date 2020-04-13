@@ -15,6 +15,13 @@ export type EditorsProps = {
   resourceType: ResourceType,
 };
 
+function createEditorWithLabel(
+  content: ResourceContent, resourceType: ResourceType,
+  editMode: boolean, onEdit: (content: ResourceContent) => void) {
+
+
+}
+
 // The list of editors
 export const Editors = (props: EditorsProps) => {
 
@@ -23,31 +30,17 @@ export const Editors = (props: EditorsProps) => {
   // Factory for creating top level editors, for things like structured
   // content or referenced activities
   const createEditor = (
-    editorMap: ActivityEditorMap,
     content: ResourceContent,
-    editMode: boolean,
     onEdit: (content: ResourceContent) => void,
-    onRemove: () => void,
-    contentSize: number,
-    ) : JSX.Element => {
+    ) : [JSX.Element, string] => {
 
     if (content.type === 'content') {
-
-      const editor = <StructuredContentEditor
+      return [<StructuredContentEditor
         key={content.id}
         editMode={editMode}
         content={content}
         onEdit={onEdit}
-        toolbarItems={getToolbarForResourceType(resourceType)}/>;
-
-      return contentSize > 1
-        ?
-        <ResourceContentFrame
-          key={content.id}
-          allowRemoval={true} editMode={editMode} label="Content" onRemove={onRemove}>
-            {editor}
-        </ResourceContentFrame>
-        : editor;
+        toolbarItems={getToolbarForResourceType(resourceType)}/>, 'Content'];
     }
 
     const unsupported : EditorDesc = {
@@ -61,23 +54,10 @@ export const Editors = (props: EditorsProps) => {
     const editor = editorMap[content.type]
       ? editorMap[content.type] : unsupported;
 
-    const props = {
+    const props = {};
 
-    };
+    return [React.createElement(editor.deliveryElement, props), editor.friendlyName];
 
-    const editorElement = React.createElement(editor.deliveryElement, props);
-
-    return contentSize > 1
-        ?
-        <ResourceContentFrame
-          key={content.id}
-          allowRemoval={contentSize > 1}
-          editMode={editMode}
-          label={editor.friendlyName}
-          onRemove={onRemove}>
-          {editorElement}
-        </ResourceContentFrame>
-        : editorElement;
   };
 
   const editors = content.map((c, index) => {
@@ -85,7 +65,20 @@ export const Editors = (props: EditorsProps) => {
     const onEdit = (u : ResourceContent) => props.onEdit(content.set(index, u));
     const onRemove = () => props.onEdit(content.remove(index));
 
-    return createEditor(editorMap, c, editMode, onEdit, onRemove, content.size);
+    const [editor, label] = createEditor(c, onEdit);
+
+    return (
+      <ResourceContentFrame
+        key={c.id}
+        allowRemoval={content.size > 1}
+        editMode={editMode}
+        label={label}
+        onRemove={onRemove}>
+
+        {editor}
+
+      </ResourceContentFrame>
+    );
   });
 
   return (
