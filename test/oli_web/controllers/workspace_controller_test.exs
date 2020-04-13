@@ -24,7 +24,7 @@ defmodule OliWeb.WorkspaceControllerTest do
       make_n_projects(0, author)
 
       conn = get(conn, Routes.workspace_path(conn, :projects))
-      assert length(Repo.preload(author, [:projects]).projects) == 0
+      assert Enum.empty?(Repo.preload(author, [:projects]).projects)
       assert html_response(conn, 200) =~ "No projects"
     end
 

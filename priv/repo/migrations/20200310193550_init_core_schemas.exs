@@ -237,10 +237,14 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
     create table(:authors_sections) do
       timestamps()
-      add :author_id, references(:authors)
-      add :section_id, references(:sections)
+      add :author_id, references(:authors), primary_key: true
+      add :section_id, references(:sections), primary_key: true
       add :section_role_id, references(:section_roles)
     end
+
+    create_index(:authors_sections, [:author_id])
+    create_index(:authors_sections, [:section_id])
+    create unique_index(:authors_sections, [:author_id, :section_id], name: :index_author_section)
 
     create table(:authors_projects, primary_key: false) do
       timestamps()
@@ -249,6 +253,8 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :project_role_id, references(:project_roles)
     end
 
+    create index(:authors_projects, [:author_id])
+    create index(:authors_projects, [:project_id])
     create unique_index(:authors_projects, [:author_id, :project_id], name: :index_author_project)
   end
 end

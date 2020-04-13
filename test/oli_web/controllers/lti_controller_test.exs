@@ -23,7 +23,7 @@ defmodule OliWeb.LtiControllerTest do
       |> post(Routes.lti_path(conn, :basic_launch), build_lti_request(url_from_conn(conn), "test-secret"))
 
       assert html_response(conn, 200) =~ "LTI Connection is Invalid"
-      assert Enum.count(Repo.all(Accounts.User)) == 0
+      assert Enum.Empty?(Repo.all(Accounts.User))
     end
 
     test "uses existing user on subsequent lti requests", %{conn: conn, institution: _institution} do

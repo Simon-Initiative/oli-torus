@@ -1,12 +1,11 @@
 defmodule OliWeb.ProjectController do
   use OliWeb, :controller
   import OliWeb.ProjectPlugs
-  alias Oli.Course.Project
   alias Oli.Accounts
   alias Oli.Utils
-  alias Oli.Course
+  alias Oli.Authoring.{Course, Learning}
+  alias Oli.Authoring.Course.Project
   alias Oli.Publishing
-  alias Oli.Learning
 
   plug :fetch_project when action not in [:create]
   plug :authorize_project when action not in [:create]
@@ -36,16 +35,20 @@ defmodule OliWeb.ProjectController do
   def unpublished(pub), do: pub.published == false
 
   def curriculum(conn, _project_params) do
-    publication = Publishing.get_unpublished_publication(conn.assigns.project)
-    resource_mappings = Publishing.get_resource_mappings_by_publication(publication.id)
-    [container_id | _] = publication.root_resources
-    container = Oli.Repo.preload(Oli.Resources.get_resource!(container_id), [:resource_revisions])
-    revision = container.resource_revisions
-      |> Enum.max_by(&(&1.inserted_at), NaiveDateTime)
-    IO.inspect(revision)
-    pages = Enum.map(revision.children, &(Oli.Resources.get_resource!(&1)))
+    # publication = Publishing.get_unpublished_publication(conn.assigns.project)
+    # resource_mappings = Publishing.get_resource_mappings_by_publication(publication.id)
+    # [container_id | _] = publication.root_resources
+    # container = Oli.Repo.preload(Oli.Resources.get_resource!(container_id), [:resource_revisions])
+    # revision = container.resource_revisions
+    #   |> Enum.max_by(&(&1.inserted_at), NaiveDateTime)
+    # IO.inspect(revision)
+    # pages = Enum.map(revision.children, &(Oli.Resources.get_resource!(&1)))
 
-    render conn, "curriculum.html", title: "Curriculum", active: :curriculum, pages: pages, container_revision: revision
+    render conn, "curriculum.html",
+    title: "Curriculum",
+    active: :curriculum
+    # pages: pages,
+    # container_revision: revision
 
     # display as list
     # make each list item a title with a link to the page

@@ -7,12 +7,12 @@ defmodule OliWeb.AuthorProjectControllerTest do
 
   describe "create" do
     test "redirects to project path when data is valid", %{conn: conn, project: project} do
-      conn = post(conn, Routes.author_project_path(conn, :create, project), email: @admin_email)
+      conn = post(conn, Routes.collaborator_path(conn, :create, project), email: @admin_email)
       assert html_response(conn, 302) =~ "/project/"
     end
 
     test "redirects to project path when data is invalid", %{conn: conn, project: project} do
-      conn = post(conn, Routes.author_project_path(conn, :create, project), email: @invalid_email)
+      conn = post(conn, Routes.collaborator_path(conn, :create, project), email: @invalid_email)
       assert html_response(conn, 302) =~ "/project/"
     end
   end
@@ -20,12 +20,13 @@ defmodule OliWeb.AuthorProjectControllerTest do
   describe "delete" do
 
     test "redirects to project path when data is valid", %{conn: conn, project: project} do
-      conn = delete(conn, Routes.author_project_path(conn, :delete, project, @admin_email))
+      Oli.Authoring.Collaborators.add_collaborator(@admin_email, project.slug)
+      conn = delete(conn, Routes.collaborator_path(conn, :delete, project, @admin_email))
       assert html_response(conn, 302) =~ "/project/"
     end
 
     test "redirects to project path when data is invalid", %{conn: conn, project: project} do
-      conn = delete(conn, Routes.author_project_path(conn, :delete, project, @invalid_email))
+      conn = delete(conn, Routes.collaborator_path(conn, :delete, project, @invalid_email))
       assert html_response(conn, 302) =~ "/project/"
     end
   end

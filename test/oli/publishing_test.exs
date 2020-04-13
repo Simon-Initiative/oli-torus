@@ -1,28 +1,16 @@
 defmodule Oli.PublishingTest do
   use Oli.DataCase
 
+  alias Oli.Accounts.{SystemRole, Institution, Author}
+  alias Oli.Authoring.Course.{Project, Family}
   alias Oli.Publishing
-
-  alias Oli.Accounts.SystemRole
-  alias Oli.Accounts.Institution
-  alias Oli.Accounts.Author
-  alias Oli.Course.Project
-  alias Oli.Course.Family
-  alias Oli.Publishing.Publication
-  alias Oli.Resources
-  alias Oli.Resources.Resource
-  alias Oli.Resources.ResourceFamily
-  alias Oli.Resources.ResourceRevision
-  alias Oli.Activities.Activity
-  alias Oli.Activities.ActivityFamily
-  alias Oli.Activities.ActivityRevision
-  alias Oli.Activities.Registration
-  alias Oli.Learning.Objective
-  alias Oli.Learning.ObjectiveFamily
-  alias Oli.Learning.ObjectiveRevision
+  alias Oli.Publishing.{Publication, ResourceMapping, ActivityMapping, ObjectiveMapping}
+  alias Oli.Authoring.Resources
+  alias Oli.Authoring.Resources.{Resource, ResourceFamily, ResourceRevision}
+  alias Oli.Authoring.Activities.{Activity, ActivityFamily, ActivityRevision, Registration}
+  alias Oli.Authoring.Learning.{Objective, ObjectiveFamily, ObjectiveRevision}
 
   describe "publications" do
-    alias Oli.Publishing.Publication
 
     @valid_attrs %{description: "some description", published: true, root_resources: [], project: 0}
     @update_attrs %{description: "some updated description", published: false, root_resources: [], project: 0}
@@ -53,11 +41,6 @@ defmodule Oli.PublishingTest do
       assert Publishing.get_unpublished_publication("title", 1).id == publication2.id
     end
 
-
-    test "list_publications/0 returns all publications", %{publication: publication} do
-      assert Publishing.list_publications() == [publication]
-    end
-
     test "get_publication!/1 returns the publication with given id", %{publication: publication} do
       assert Publishing.get_publication!(publication.id) == publication
     end
@@ -73,30 +56,9 @@ defmodule Oli.PublishingTest do
       assert {:error, %Ecto.Changeset{}} = Publishing.create_publication(@invalid_attrs)
     end
 
-    test "update_publication/2 with valid data updates the publication", %{publication: publication} do
-      assert {:ok, %Publication{} = publication} = Publishing.update_publication(publication, @update_attrs)
-      assert publication.description == "some updated description"
-      assert publication.published == false
-      assert publication.root_resources == []
-    end
-
-    test "update_publication/2 with invalid data returns error changeset", %{publication: publication} do
-      assert {:error, %Ecto.Changeset{}} = Publishing.update_publication(publication, @invalid_attrs)
-      assert publication == Publishing.get_publication!(publication.id)
-    end
-
-    test "delete_publication/1 deletes the publication", %{publication: publication} do
-      assert {:ok, %Publication{}} = Publishing.delete_publication(publication)
-      assert_raise Ecto.NoResultsError, fn -> Publishing.get_publication!(publication.id) end
-    end
-
-    test "change_publication/1 returns a publication changeset", %{publication: publication} do
-      assert %Ecto.Changeset{} = Publishing.change_publication(publication)
-    end
   end
 
   describe "resource_mappings" do
-    alias Oli.Publishing.ResourceMapping
 
     @valid_attrs %{}
     @update_attrs %{}
@@ -126,11 +88,6 @@ defmodule Oli.PublishingTest do
       {:ok, %{resource_mapping: resource_mapping, valid_attrs: valid_attrs}}
     end
 
-
-    test "list_resource_mappings/0 returns all resource_mappings", %{resource_mapping: resource_mapping} do
-      assert Publishing.list_resource_mappings() == [resource_mapping]
-    end
-
     test "get_resource_mapping!/1 returns the resource_mapping with given id", %{resource_mapping: resource_mapping} do
       assert Publishing.get_resource_mapping!(resource_mapping.id) == resource_mapping
     end
@@ -155,18 +112,9 @@ defmodule Oli.PublishingTest do
       assert resource_mapping == Publishing.get_resource_mapping!(resource_mapping.id)
     end
 
-    test "delete_resource_mapping/1 deletes the resource_mapping", %{resource_mapping: resource_mapping} do
-      assert {:ok, %ResourceMapping{}} = Publishing.delete_resource_mapping(resource_mapping)
-      assert_raise Ecto.NoResultsError, fn -> Publishing.get_resource_mapping!(resource_mapping.id) end
-    end
-
-    test "change_resource_mapping/1 returns a resource_mapping changeset", %{resource_mapping: resource_mapping} do
-      assert %Ecto.Changeset{} = Publishing.change_resource_mapping(resource_mapping)
-    end
   end
 
   describe "activity_mappings" do
-    alias Oli.Publishing.ActivityMapping
 
     @valid_attrs %{}
     @update_attrs %{}
@@ -194,10 +142,6 @@ defmodule Oli.PublishingTest do
       {:ok, %{activity_mapping: activity_mapping, valid_attrs: valid_attrs}}
     end
 
-    test "list_activity_mappings/0 returns all activity_mappings", %{activity_mapping: activity_mapping} do
-      assert Publishing.list_activity_mappings() == [activity_mapping]
-    end
-
     test "get_activity_mapping!/1 returns the activity_mapping with given id", %{activity_mapping: activity_mapping} do
       assert Publishing.get_activity_mapping!(activity_mapping.id) == activity_mapping
     end
@@ -210,26 +154,9 @@ defmodule Oli.PublishingTest do
       assert {:error, %Ecto.Changeset{}} = Publishing.create_activity_mapping(@invalid_attrs)
     end
 
-    test "update_activity_mapping/2 with valid data updates the activity_mapping", %{activity_mapping: activity_mapping} do
-      assert {:ok, %ActivityMapping{} = activity_mapping} = Publishing.update_activity_mapping(activity_mapping, @update_attrs)
-    end
-
-    test "update_activity_mapping/2 with invalid data returns error changeset", %{activity_mapping: activity_mapping} do
-      assert activity_mapping == Publishing.get_activity_mapping!(activity_mapping.id)
-    end
-
-    test "delete_activity_mapping/1 deletes the activity_mapping", %{activity_mapping: activity_mapping} do
-      assert {:ok, %ActivityMapping{}} = Publishing.delete_activity_mapping(activity_mapping)
-      assert_raise Ecto.NoResultsError, fn -> Publishing.get_activity_mapping!(activity_mapping.id) end
-    end
-
-    test "change_activity_mapping/1 returns a activity_mapping changeset", %{activity_mapping: activity_mapping} do
-      assert %Ecto.Changeset{} = Publishing.change_activity_mapping(activity_mapping)
-    end
   end
 
   describe "objective_mappings" do
-    alias Oli.Publishing.ObjectiveMapping
 
     @valid_attrs %{}
     @update_attrs %{}
@@ -255,10 +182,6 @@ defmodule Oli.PublishingTest do
       {:ok, %{objective_mapping: objective_mapping, valid_attrs: valid_attrs}}
     end
 
-    test "list_objective_mappings/0 returns all objective_mappings", %{objective_mapping: objective_mapping} do
-      assert Publishing.list_objective_mappings() == [objective_mapping]
-    end
-
     test "get_objective_mapping!/1 returns the objective_mapping with given id", %{objective_mapping: objective_mapping} do
       assert Publishing.get_objective_mapping!(objective_mapping.id) == objective_mapping
     end
@@ -269,19 +192,6 @@ defmodule Oli.PublishingTest do
 
     test "create_objective_mapping/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} = Publishing.create_objective_mapping(@invalid_attrs)
-    end
-
-    test "update_objective_mapping/2 with valid data updates the objective_mapping", %{objective_mapping: objective_mapping} do
-      assert {:ok, %ObjectiveMapping{} = objective_mapping} = Publishing.update_objective_mapping(objective_mapping, @update_attrs)
-    end
-
-    test "update_objective_mapping/2 with invalid data returns error changeset", %{objective_mapping: objective_mapping} do
-      assert objective_mapping == Publishing.get_objective_mapping!(objective_mapping.id)
-    end
-
-    test "delete_objective_mapping/1 deletes the objective_mapping", %{objective_mapping: objective_mapping} do
-      assert {:ok, %ObjectiveMapping{}} = Publishing.delete_objective_mapping(objective_mapping)
-      assert_raise Ecto.NoResultsError, fn -> Publishing.get_objective_mapping!(objective_mapping.id) end
     end
 
     test "change_objective_mapping/1 returns a objective_mapping changeset", %{objective_mapping: objective_mapping} do

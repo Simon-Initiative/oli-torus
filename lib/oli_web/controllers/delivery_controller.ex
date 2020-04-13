@@ -1,12 +1,15 @@
 defmodule OliWeb.DeliveryController do
   use OliWeb, :controller
+  alias Oli.Delivery.Sections
+  alias Oli.Publishing
+  alias Oli.Accounts
 
-  alias Oli.Lti
+  alias Oli.Delivery.Lti
 
   def index(conn, _params) do
     user = conn.assigns.current_user
     lti_params = get_session(conn, :lti_params)
-    section = Oli.Sections.get_section_by(context_id: lti_params["context_id"])
+    section = Sections.get_section_by(context_id: lti_params["context_id"])
 
     case {Lti.parse_lti_role(user.roles), user.author, section} do
       {:student, _author, nil} ->
@@ -16,7 +19,7 @@ defmodule OliWeb.DeliveryController do
       {role, nil, nil} when role == :administrator or role == :instructor ->
         render(conn, "getting_started.html")
       {role, author, nil} when role == :administrator or role == :instructor ->
-        publications = Oli.Publishing.available_publications(author)
+        publications = Publishing.available_publications(author)
         my_publications = publications |> Enum.filter(fn p -> !p.open_and_free end)
         open_and_free_publications = publications |> Enum.filter(fn p -> p.open_and_free end)
         render(conn, "configure_section.html", author: author, my_publications: my_publications, open_and_free_publications: open_and_free_publications)
@@ -26,7 +29,7 @@ defmodule OliWeb.DeliveryController do
   end
 
   def list_open_and_free(conn, _params) do
-    open_and_free_publications = Oli.Publishing.available_publications()
+    open_and_free_publications = Publishing.available_publications()
     render(conn, "configure_section.html", open_and_free_publications: open_and_free_publications)
   end
 
@@ -67,10 +70,10 @@ defmodule OliWeb.DeliveryController do
   def create_section(conn, %{"publication_id" => publication_id}) do
     lti_params = get_session(conn, :lti_params)
     user = conn.assigns.current_user
-    institution = Oli.Accounts.get_institution!(user.institution_id)
-    publication = Oli.Publishing.get_publication!(publication_id)
+    institution = Accounts.get_institution!(user.institution_id)
+    publication = Publishing.get_publication!(publication_id)
 
-    Oli.Sections.create_section(%{
+    Sections.create_section(%{
       time_zone: institution.timezone,
       title: lti_params["context_title"],
       context_id: lti_params["context_id"],

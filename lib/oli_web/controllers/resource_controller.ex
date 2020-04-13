@@ -1,7 +1,7 @@
 defmodule OliWeb.ResourceController do
   use OliWeb, :controller
 
-  alias Oli.Editing.ResourceEditor
+  alias Oli.Authoring.Editing.ResourceEditor
   import OliWeb.ProjectPlugs
 
   plug :fetch_project when action not in [:view, :update]

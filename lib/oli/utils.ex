@@ -33,4 +33,7 @@ defmodule Oli.Utils do
     minute = if datetime.minute < 10, do: "#{datetime.minute}0", else: datetime.minute
     "#{datetime.month}/#{datetime.day}/#{datetime.year} #{hour}:#{minute} #{ampm}"
   end
+
+  def trap_nil(nil), do: {:error, {:not_found}}
+  def trap_nil(result), do: {:ok, result}
 end

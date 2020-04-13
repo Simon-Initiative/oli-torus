@@ -129,6 +129,7 @@ defmodule Oli.TestHelpers do
     {:ok, conn: conn, author: author, project: project}
   end
 
+  def author_project_fixture(), do: author_project_fixture(nil)
   def author_project_fixture(_conn) do
     author = author_fixture()
     [project | _rest] = make_n_projects(1, author)

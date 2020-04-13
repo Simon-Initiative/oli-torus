@@ -1,21 +1,13 @@
 defmodule Oli.LearningTest do
   use Oli.DataCase
 
-  alias Oli.Learning
-
-
-  alias Oli.Accounts.SystemRole
-  alias Oli.Accounts.Institution
-  alias Oli.Accounts.Author
-  alias Oli.Course.Project
-  alias Oli.Course.Family
+  alias Oli.Accounts.{SystemRole, Institution, Author}
+  alias Oli.Authoring.Course.{Project, Family}
+  alias Oli.Authoring.Learning
+  alias Oli.Authoring.Learning.{Objective, ObjectiveFamily, ObjectiveRevision}
   alias Oli.Publishing.Publication
-  alias Oli.Learning.Objective
-  alias Oli.Learning.ObjectiveFamily
-  alias Oli.Learning.ObjectiveRevision
 
   describe "objectives" do
-    alias Oli.Learning.Objective
 
     @valid_attrs %{slug: "some slug"}
     @update_attrs %{slug: "some updated slug"}
@@ -33,16 +25,8 @@ defmodule Oli.LearningTest do
       {:ok, %{objective: objective, project: project, family: objective_family, valid_attrs: valid_attrs}}
     end
 
-    test "list_objectives/0 returns all objectives", %{objective: objective} do
-      assert Learning.list_objectives() == [objective]
-    end
-
     test "get_objective!/1 returns the objective with given id", %{objective: objective} do
       assert Learning.get_objective!(objective.id) == objective
-    end
-
-    test "new_project_resource/2 with valid data creates an objective", %{project: project, family: family} do
-      assert %Ecto.Changeset{valid?: true} = Learning.new_project_objective(project, family)
     end
 
     test "delete_objective/1 deletes the objective", %{objective: objective} do
@@ -56,7 +40,6 @@ defmodule Oli.LearningTest do
   end
 
   describe "objective_revisions" do
-    alias Oli.Learning.ObjectiveRevision
 
     @valid_attrs %{title: "some title", children: [], deleted: false}
     @update_attrs %{title: "some updated title", children: [], deleted: true}
@@ -79,10 +62,6 @@ defmodule Oli.LearningTest do
       {:ok, %{objective_revision: revision, valid_attrs: valid_attrs}}
     end
 
-    test "list_objective_revisions/0 returns all objective_revisions", %{objective_revision: objective_revision} do
-      assert Learning.list_objective_revisions() == [objective_revision]
-    end
-
     test "get_objective_revision!/1 returns the objective_revision with given id", %{objective_revision: objective_revision} do
       assert Learning.get_objective_revision!(objective_revision.id) == objective_revision
     end
@@ -96,23 +75,5 @@ defmodule Oli.LearningTest do
       assert {:error, %Ecto.Changeset{}} = Learning.create_objective_revision(@invalid_attrs)
     end
 
-    test "update_objective_revision/2 with valid data updates the objective_revision", %{objective_revision: objective_revision} do
-      assert {:ok, %ObjectiveRevision{} = objective_revision} = Learning.update_objective_revision(objective_revision, @update_attrs)
-      assert objective_revision.title == "some updated title"
-    end
-
-    test "update_objective_revision/2 with invalid data returns error changeset", %{objective_revision: objective_revision} do
-      assert {:error, %Ecto.Changeset{}} = Learning.update_objective_revision(objective_revision, @invalid_attrs)
-      assert objective_revision == Learning.get_objective_revision!(objective_revision.id)
-    end
-
-    test "delete_objective_revision/1 deletes the objective_revision", %{objective_revision: objective_revision} do
-      assert {:ok, %ObjectiveRevision{}} = Learning.delete_objective_revision(objective_revision)
-      assert_raise Ecto.NoResultsError, fn -> Learning.get_objective_revision!(objective_revision.id) end
-    end
-
-    test "change_objective_revision/1 returns a objective_revision changeset", %{objective_revision: objective_revision} do
-      assert %Ecto.Changeset{} = Learning.change_objective_revision(objective_revision)
-    end
   end
 end

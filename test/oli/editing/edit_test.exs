@@ -1,8 +1,8 @@
 defmodule Oli.EditingTest do
   use Oli.DataCase
 
-  alias Oli.Resources
-  alias Oli.Editing.ResourceEditor
+  alias Oli.Authoring.Resources
+  alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Publishing
   alias Oli.Accounts.Author
   alias Oli.Accounts.SystemRole

@@ -1,21 +1,13 @@
 defmodule Oli.ResourcesTest do
   use Oli.DataCase
 
-  alias Oli.Resources
-
-
-  alias Oli.Accounts.SystemRole
-  alias Oli.Accounts.Institution
-  alias Oli.Accounts.Author
-  alias Oli.Course.Project
-  alias Oli.Course.Family
+  alias Oli.Accounts.{SystemRole, Institution, Author}
+  alias Oli.Authoring.Course.{Project, Family}
   alias Oli.Publishing.Publication
-  alias Oli.Resources.Resource
-  alias Oli.Resources.ResourceFamily
-  alias Oli.Resources.ResourceRevision
+  alias Oli.Authoring.Resources
+  alias Oli.Authoring.Resources.{Resource, ResourceFamily, ResourceRevision}
 
   describe "resources" do
-    alias Oli.Resources.Resource
 
     @valid_attrs %{}
     @update_attrs %{}
@@ -49,18 +41,9 @@ defmodule Oli.ResourcesTest do
       assert %Ecto.Changeset{valid?: true} = Resources.new_project_resource(project, resource_family)
     end
 
-    test "delete_resource/1 deletes the resource", %{resource: resource}  do
-      assert {:ok, %Resource{}} = Resources.delete_resource(resource)
-      assert_raise Ecto.NoResultsError, fn -> Resources.get_resource!(resource.id) end
-    end
-
-    test "change_resource/1 returns a resource changeset", %{resource: resource}  do
-      assert %Ecto.Changeset{} = Resources.change_resource(resource)
-    end
   end
 
   describe "resource_revisions" do
-    alias Oli.Resources.ResourceRevision
 
 
     @valid_attrs %{objectives: [], children: [], content: [], deleted: true, slug: "some slug", title: "some title"}
@@ -107,10 +90,6 @@ defmodule Oli.ResourcesTest do
       assert found == nil
     end
 
-    test "list_resource_revisions/0 returns all resource_revisions", %{revision: revision} do
-      assert Resources.list_resource_revisions() == [revision]
-    end
-
     test "get_resource_revision!/1 returns the resource_revision with given id", %{revision: revision}  do
       assert Resources.get_resource_revision!(revision.id) == revision
     end
@@ -141,13 +120,5 @@ defmodule Oli.ResourcesTest do
       assert revision == Resources.get_resource_revision!(revision.id)
     end
 
-    test "delete_resource_revision/1 deletes the resource_revision", %{revision: revision}  do
-      assert {:ok, %ResourceRevision{}} = Resources.delete_resource_revision(revision)
-      assert_raise Ecto.NoResultsError, fn -> Resources.get_resource_revision!(revision.id) end
-    end
-
-    test "change_resource_revision/1 returns a resource_revision changeset", %{revision: revision}  do
-      assert %Ecto.Changeset{} = Resources.change_resource_revision(revision)
-    end
   end
 end

@@ -1,19 +1,14 @@
 defmodule Oli.LocksTest do
   use Oli.DataCase
 
-  alias Oli.Publishing
 
-  alias Oli.Accounts.SystemRole
-  alias Oli.Accounts.Institution
-  alias Oli.Accounts.Author
-  alias Oli.Course.Project
-  alias Oli.Course.Family
+  alias Oli.Accounts.{SystemRole, Institution, Author}
+  alias Oli.Authoring.Course.{Project, Family}
+  alias Oli.Publishing
   alias Oli.Publishing.Publication
-  alias Oli.Resources
-  alias Oli.Resources.Resource
-  alias Oli.Resources.ResourceFamily
-  alias Oli.Resources.ResourceRevision
-  alias Oli.Locks
+  alias Oli.Authoring.Resources
+  alias Oli.Authoring.Resources.{Resource, ResourceFamily, ResourceRevision}
+  alias Oli.Authoring.Locks
 
   describe "locks" do
 

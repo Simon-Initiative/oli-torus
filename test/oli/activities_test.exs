@@ -1,21 +1,14 @@
 defmodule Oli.ActivitiesTest do
   use Oli.DataCase
 
-  alias Oli.Activities
-
-  alias Oli.Accounts.SystemRole
-  alias Oli.Accounts.Institution
-  alias Oli.Accounts.Author
-  alias Oli.Course.Project
-  alias Oli.Course.Family
+  alias Oli.Accounts.{SystemRole, Institution, Author}
+  alias Oli.Authoring.Activities
+  alias Oli.Authoring.Activities.{Activity, ActivityFamily, ActivityRevision, Registration}
+  alias Oli.Authoring.Course
+  alias Oli.Authoring.Course.{Project, Family}
   alias Oli.Publishing.Publication
-  alias Oli.Activities.Activity
-  alias Oli.Activities.ActivityFamily
-  alias Oli.Activities.ActivityRevision
-  alias Oli.Activities.Registration
 
   describe "activities" do
-    alias Oli.Activities.Activity
 
     @valid_attrs %{}
     @update_attrs %{}
@@ -62,7 +55,6 @@ defmodule Oli.ActivitiesTest do
   end
 
   describe "activity_revisions" do
-    alias Oli.Activities.ActivityRevision
 
     @valid_attrs %{content: %{}, objectives: [], deleted: true, slug: "some slug"}
     @update_attrs %{content: %{"test" => "ok"}, objectives: [], deleted: false, slug: "some updated slug"}
@@ -135,7 +127,6 @@ defmodule Oli.ActivitiesTest do
   end
 
   describe "activity_registrations" do
-    alias Oli.Activities.Registration
 
     @valid_attrs %{authoring_script: "some authoring_script", delivery_script: "some delivery_script", description: "some description", element_name: "some element_name", icon: "some icon", title: "some title"}
     @update_attrs %{authoring_script: "some updated authoring_script", delivery_script: "some updated delivery_script", description: "some updated description", element_name: "some updated element_name", icon: "some updated icon", title: "some updated title"}

@@ -1,6 +1,6 @@
 defmodule OliWeb.ProjectPlugs do
 
-  alias Oli.Course
+  alias Oli.Authoring.Course
   alias Oli.Accounts
   alias OliWeb.Router.Helpers, as: Routes
 

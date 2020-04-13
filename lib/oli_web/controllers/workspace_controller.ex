@@ -1,6 +1,6 @@
 defmodule OliWeb.WorkspaceController do
   use OliWeb, :controller
-  alias Oli.Course.Project
+  alias Oli.Authoring.Course.Project
   alias Oli.Repo
   alias Oli.Accounts
 
