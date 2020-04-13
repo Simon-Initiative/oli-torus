@@ -14,6 +14,11 @@ defmodule Oli.Seeder do
   alias Oli.Resources.Resource
   alias Oli.Resources.ResourceFamily
   alias Oli.Resources.ResourceRevision
+  alias Oli.Learning
+  alias Oli.Learning.Objective
+  alias Oli.Learning.ObjectiveFamily
+  alias Oli.Learning.ObjectiveRevision
+
 
   def base_project_with_resource() do
 
@@ -25,14 +30,14 @@ defmodule Oli.Seeder do
 
     {:ok, institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
 
+    # A single resource with a mapped revision
     {:ok, resource_family} = ResourceFamily.changeset(%ResourceFamily{}, %{}) |> Repo.insert
     {:ok, resource} = Resource.changeset(%Resource{}, %{project_id: project.id, family_id: resource_family.id}) |> Repo.insert
-
     resource_type = Resources.list_resource_types() |> hd
-
     {:ok, revision} = ResourceRevision.changeset(%ResourceRevision{}, %{author_id: author.id, objectives: [], resource_type_id: resource_type.id, children: [], content: [], deleted: true, slug: "some_title", title: "some title", resource_id: resource.id}) |> Repo.insert
-
     {:ok, mapping} = Publishing.create_resource_mapping(%{ publication_id: publication.id, resource_id: resource.id, revision_id: revision.id})
+
+
 
     Map.put(%{}, :family, family)
       |> Map.put(:project, project)
@@ -44,6 +49,15 @@ defmodule Oli.Seeder do
       |> Map.put(:resource_type, resource_type)
       |> Map.put(:revision, revision)
       |> Map.put(:mapping, mapping)
+  end
+
+  def add_objective(%{ project: project, publication: publication, author: author} = map, title) do
+    {:ok, objective_family} = ObjectiveFamily.changeset(%ObjectiveFamily{}, %{}) |> Repo.insert
+    {:ok, objective} = Objective.changeset(%Objective{}, %{project_id: project.id, family_id: objective_family.id}) |> Repo.insert
+    {:ok, revision} = ObjectiveRevision.changeset(%ObjectiveRevision{}, %{author_id: author.id, children: [], title: title, deleted: false, objective_id: objective.id}) |> Repo.insert
+    {:ok, _mapping} = Publishing.create_objective_mapping(%{ publication_id: publication.id, objective_id: objective.id, revision_id: revision.id})
+
+    map
   end
 
   def add_author(%{ project: project} = map, author, atom) do

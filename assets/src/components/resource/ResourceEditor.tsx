@@ -21,7 +21,7 @@ export type ResourceEditorProps = {
   resourceSlug: ResourceSlug,     // The current resource
   title: string,                  // The title of the resource
   content: ResourceContent[],     // Content of the resource
-  objectives: Objective[],        // Attached objectives
+  objectives: ObjectiveSlug[],        // Attached objectives
   allObjectives: Objective[],     // All objectives
   editorMap: ActivityEditorMap,   // Map of activity types to activity elements
 };
@@ -87,7 +87,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       editMode: true,
       undoable: init({
         title,
-        objectives: Immutable.List<ObjectiveSlug>(objectives.map(o => o.id)),
+        objectives: Immutable.List<ObjectiveSlug>(objectives),
         content: Immutable.List<ResourceContent>(withDefaultContent(content)),
       }),
       persistence: 'idle',

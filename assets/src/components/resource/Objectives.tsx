@@ -4,8 +4,6 @@ import { Typeahead } from 'react-bootstrap-typeahead';
 import { Objective, ObjectiveSlug } from 'data/content/objective';
 import guid from 'utils/guid';
 
-import 'react-bootstrap-typeahead/css/Typeahead.css';
-
 export type ObjectivesProps = {
   objectives: Immutable.List<Objective>;
   selected: Immutable.List<ObjectiveSlug>;
@@ -16,9 +14,18 @@ export type ObjectivesProps = {
 export const Objectives = (props: ObjectivesProps) => {
 
   const { objectives, onEdit, editMode, selected } = props;
+
+  // Typeahed throws a bunch of warnings if it doesn't contain
+  // a unique DOM id.  So we generate one for it.
   const [id] = useState('' + guid);
 
-  const map = Immutable.Map<ObjectiveSlug, Objective>(objectives.toArray().map(o => [o.id, o]));
+  // Typeahead options MUST contain an 'id' field.  So we add one in, using
+  // our slug as its contents.
+  const withIds = objectives.map(o => Object.assign(o, { id: o.slug }));
+
+  // The current 'selected' state of Typeahead must be the same shape as
+  // the options objects. So we look up from our list of slugs those objects.
+  const map = Immutable.Map<ObjectiveSlug, Objective>(withIds.toArray().map(o => [o.slug, o]));
   const asObjectives = selected.toArray().map(s => map.get(s) as Objective);
 
   return (
@@ -29,11 +36,14 @@ export const Objectives = (props: ObjectivesProps) => {
         multiple={true}
         disabled={!editMode}
         onChange={(updated: Objective[]) => {
+
+          // This check handles some weirdness where Typeahead fires onChange when
+          // there really isn't a change.
           if (updated.length !== selected.size) {
-            onEdit(Immutable.List<ObjectiveSlug>(updated.map(o => o.id)));
+            onEdit(Immutable.List<ObjectiveSlug>(updated.map(o => o.slug)));
           }
         }}
-        options={objectives.toArray()}
+        options={withIds.toArray()}
         labelKey="title"
         selected={asObjectives}
         placeholder="Select learning objectives..."

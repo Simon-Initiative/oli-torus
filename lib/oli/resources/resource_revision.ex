@@ -5,9 +5,9 @@ defmodule Oli.Resources.ResourceRevision do
   alias Oli.Utils.Slug
 
   schema "resource_revisions" do
-    field :children, {:array, :id}, default: []
+    field :children, {:array, :string}, default: []
     field :content, {:array, :map}, default: []
-    field :objectives, {:array, :id}, default: []
+    field :objectives, {:array, :string}, default: []
     field :deleted, :boolean, default: false
     field :slug, :string
     field :title, :string

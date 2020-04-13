@@ -2,6 +2,8 @@ defmodule Oli.Learning.ObjectiveRevision do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Oli.Utils.Slug
+
   schema "objective_revisions" do
     field :title, :string
     field :slug, :string
@@ -19,5 +21,6 @@ defmodule Oli.Learning.ObjectiveRevision do
     objective_revision
     |> cast(attrs, [:title, :slug, :children, :deleted, :objective_id, :previous_revision_id])
     |> validate_required([:title, :children, :deleted, :objective_id])
+    |> Slug.maybe_update_slug("objective_revisions")
   end
 end

@@ -2,6 +2,6 @@ import { ObjectiveSlug } from 'data/types';
 export { ObjectiveSlug } from 'data/types';
 
 export type Objective = {
-  id: ObjectiveSlug,
+  slug: ObjectiveSlug,
   title: string,
 };
