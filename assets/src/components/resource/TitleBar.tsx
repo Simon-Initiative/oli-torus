@@ -31,6 +31,7 @@ export const TitleBar = (props: TitleBarProps) => {
           model={title}
           showAffordances={true}
           size="large"
+          allowEmptyContents={false}
           editMode={editMode}/>
       </div>
 

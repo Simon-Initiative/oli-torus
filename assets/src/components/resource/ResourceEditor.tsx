@@ -165,23 +165,6 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     const onAddItem = (c : ResourceContent) =>
       this.update({ content: this.state.undoable.current.content.push(c) });
 
-    const editingImpl = state.undoable.current.content.size > 1
-      ? (
-          <div className="d-flex flex-row align-items-start">
-            <Outline {...props} editMode={this.state.editMode}
-              onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
-            <Editors {...props} editMode={this.state.editMode}
-              onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
-          </div>
-        )
-      : (
-          <div className="p-4">
-            <Editors {...props} editMode={this.state.editMode}
-              onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
-          </div>
-        );
-
-
     return (
       <div>
         <TitleBar
@@ -199,7 +182,12 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           selected={this.state.undoable.current.objectives}
           objectives={this.state.allObjectives}
           onEdit={objectives => this.update({ objectives })} />
-        {editingImpl}
+        <div className="d-flex flex-row align-items-start">
+          <Outline {...props} editMode={this.state.editMode}
+            onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
+          <Editors {...props} editMode={this.state.editMode}
+            onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
+        </div>
       </div>
     );
   }
