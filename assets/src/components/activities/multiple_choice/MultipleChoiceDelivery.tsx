@@ -24,7 +24,6 @@ export class MultipleChoiceDelivery extends HTMLElement {
 
   constructor() {
     super();
-    console.log('here we are');
     this.mountPoint = document.createElement('div');
   }
 
@@ -33,7 +32,7 @@ export class MultipleChoiceDelivery extends HTMLElement {
     const token = this.getAttribute('token');
     const model = JSON.parse(this.getAttribute('model') as any);
     const state = JSON.parse(this.getAttribute('state') as any);
-    console.log(model);
+
     return {
       token,
       model,
