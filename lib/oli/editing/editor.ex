@@ -164,7 +164,7 @@ defmodule Oli.Editing.ResourceEditor do
       authorEmail: author.email,
       projectSlug: project_slug,
       resourceSlug: revision_slug,
-      editorMap: %{},
+      editorMap: Oli.Activities.create_registered_activity_map(),
       objectives: revision.objectives,
       allObjectives: all_objectives,
       title: revision.title,

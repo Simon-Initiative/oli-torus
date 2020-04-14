@@ -5,7 +5,7 @@ export type ModeSpecification = {
 };
 
 export type Manifest = {
-  id: string,
+  type: string,
   friendlyName: string,
   description: string,
   delivery: ModeSpecification,

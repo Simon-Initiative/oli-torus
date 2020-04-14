@@ -19,7 +19,14 @@ defmodule Oli.Activities do
       description: manifest.description,
       title: manifest.friendlyName,
       icon: "nothing",
+      slug: manifest.id,
     })
+  end
+
+  def create_registered_activity_map() do
+    list_activity_registrations()
+      |> Enum.map(&Oli.Activities.ActivityMapEntry.from_registration/1)
+      |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.slug, e) end)
   end
 
   def create_activity_family(attrs \\ %{}) do

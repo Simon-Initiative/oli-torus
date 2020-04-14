@@ -156,6 +156,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
     create unique_index(:resource_revisions, [:slug], name: :index_slug_resources)
 
     create table(:activity_registrations) do
+      add :slug, :string
       add :title, :string
       add :icon, :string
       add :description, :string
@@ -166,6 +167,12 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
       timestamps()
     end
+    create unique_index(:activity_registrations, [:slug], name: :index_slug_registrations)
+    create unique_index(:activity_registrations, [:delivery_element], name: :index_delivery_element_registrations)
+    create unique_index(:activity_registrations, [:authoring_element], name: :index_authoring_element_registrations)
+    create unique_index(:activity_registrations, [:delivery_script], name: :index_delivery_script_registrations)
+    create unique_index(:activity_registrations, [:authoring_script], name: :index_authoring_script_registrations)
+
 
     create table(:activity_families) do
       timestamps()
