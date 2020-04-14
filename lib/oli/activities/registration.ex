@@ -6,7 +6,8 @@ defmodule Oli.Activities.Registration do
     field :authoring_script, :string
     field :delivery_script, :string
     field :description, :string
-    field :element_name, :string
+    field :authoring_element, :string
+    field :delivery_element, :string
     field :icon, :string
     field :title, :string
 
@@ -16,7 +17,7 @@ defmodule Oli.Activities.Registration do
   @doc false
   def changeset(registration, attrs) do
     registration
-    |> cast(attrs, [:title, :icon, :description, :element_name, :delivery_script, :authoring_script])
-    |> validate_required([:title, :icon, :description, :element_name, :delivery_script, :authoring_script])
+    |> cast(attrs, [:title, :icon, :description, :delivery_element, :authoring_element, :delivery_script, :authoring_script])
+    |> validate_required([:title, :icon, :description, :delivery_element, :authoring_element, :delivery_script, :authoring_script])
   end
 end

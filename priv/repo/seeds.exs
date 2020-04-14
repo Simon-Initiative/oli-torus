@@ -79,6 +79,10 @@ if !Oli.Repo.get_by(Oli.Resources.ResourceType, id: 1) do
 
 end
 
+# Seed the database with the locally implemented activity types
+Oli.Registrar.register_local_activities()
+
+
 # only seed with sample data if in development mode
 if Mix.env == :dev do
   # create an example institution

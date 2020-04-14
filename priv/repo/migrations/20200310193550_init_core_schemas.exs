@@ -159,7 +159,8 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :title, :string
       add :icon, :string
       add :description, :string
-      add :element_name, :string
+      add :delivery_element, :string
+      add :authoring_element, :string
       add :delivery_script, :string
       add :authoring_script, :string
 
