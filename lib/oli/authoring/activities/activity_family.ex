@@ -8,7 +8,7 @@ defmodule Oli.Authoring.Activities.ActivityFamily do
   end
 
   @doc false
-  def changeset(activity_family, attrs) do
+  def changeset(activity_family, attrs \\ %{}) do
     activity_family
     |> cast(attrs, [])
     |> validate_required([])

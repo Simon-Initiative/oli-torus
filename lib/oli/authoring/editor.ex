@@ -6,6 +6,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
 
   alias Oli.Authoring.{Locks, Course, Resources}
   alias Oli.Authoring.Resources.ResourceRevision
+  alias Oli.Authoring.Editing.ResourceContext
   alias Oli.Publishing
   alias Oli.Accounts
   alias Oli.Repo
@@ -137,8 +138,6 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
 
   end
 
-
-
   @doc """
   Creates the context necessary to power a client side resource editor
   for a specific resource / revision.
@@ -159,7 +158,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
   end
 
   defp create(revision, project_slug, revision_slug, author, all_objectives) do
-    %Oli.Editing.ResourceContext{
+    %ResourceContext{
       authorEmail: author.email,
       projectSlug: project_slug,
       resourceSlug: revision_slug,

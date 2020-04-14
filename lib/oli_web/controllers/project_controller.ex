@@ -37,7 +37,7 @@ defmodule OliWeb.ProjectController do
   def curriculum(conn, _project_params) do
     # publication = Publishing.get_unpublished_publication(conn.assigns.project)
     # resource_mappings = Publishing.get_resource_mappings_by_publication(publication.id)
-    # [container_id | _] = publication.root_resources
+    # container_id = publication.root_resource_id
     # container = Oli.Repo.preload(Oli.Resources.get_resource!(container_id), [:resource_revisions])
     # revision = container.resource_revisions
     #   |> Enum.max_by(&(&1.inserted_at), NaiveDateTime)
@@ -73,9 +73,9 @@ defmodule OliWeb.ProjectController do
 
   def create(conn, %{"project" => %{"title" => title} = _project_params}) do
       case Course.create_project(title, conn.assigns.current_author) do
-        {:ok, %{project: project} = _results} ->
+        {:ok, %{project: project}} ->
           redirect conn, to: Routes.project_path(conn, :overview, project)
-        {:error, _failed_operation, _failed_value, _changes_before_failure} ->
+        {:error, _changeset} ->
           conn
             |> put_flash(:error, "Could not create project. Please try again")
             |> redirect(to: Routes.workspace_path(conn, :projects, project_title: title))

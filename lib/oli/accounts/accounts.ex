@@ -3,11 +3,7 @@ defmodule Oli.Accounts do
   import Ecto.Query, warn: false
   alias Oli.Repo
 
-  alias Oli.Accounts.User
-
-  def list_users do
-    Repo.all(User)
-  end
+  alias Oli.Accounts.{User, Author, Institution, LtiToolConsumer}
 
   def get_user!(id), do: Repo.get!(User, id)
 
@@ -45,8 +41,6 @@ defmodule Oli.Accounts do
   def user_signed_in?(conn) do
     conn.assigns[:current_user]
   end
-
-  alias Oli.Accounts.Author
 
   @doc """
   Returns an author if one matches given email, or creates and returns a new author
@@ -129,8 +123,6 @@ defmodule Oli.Accounts do
       select: author)
   end
 
-  alias Oli.Accounts.Institution
-
   def list_institutions do
     Repo.all(Institution)
   end
@@ -157,9 +149,6 @@ defmodule Oli.Accounts do
     Institution.changeset(institution, %{})
   end
 
-
-  alias Oli.Accounts.User
-
   @doc """
   Returns lti author details if a record matches author_id, or creates and returns a new lti author details
 
@@ -178,9 +167,6 @@ defmodule Oli.Accounts do
     |> User.changeset(changes)
     |> Repo.insert_or_update
   end
-
-
-  alias Oli.Accounts.LtiToolConsumer
 
   @doc """
   Returns lti tool consumer if a record matches instance_guid, or creates and returns a new lti tool consumer

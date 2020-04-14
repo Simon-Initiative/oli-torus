@@ -3,18 +3,12 @@ defmodule Oli.Authoring.Activities do
   import Ecto.Query, warn: false
   alias Oli.Repo
 
-  alias Oli.Authoring.Activities.{Activity, ActivityFamily, Registration}
+  alias Oli.Authoring.Activities.{Activity, ActivityFamily, Registration, ActivityRevision}
 
   def create_activity_family(attrs \\ %{}) do
     %ActivityFamily{}
     |> ActivityFamily.changeset(attrs)
     |> Repo.insert()
-  end
-
-  def new_activity_family() do
-    %ActivityFamily{}
-      |> ActivityFamily.changeset(%{
-      })
   end
 
   def list_activities do
@@ -32,7 +26,8 @@ defmodule Oli.Authoring.Activities do
   def new_project_activity(project, family) do
     %Activity{}
       |> Activity.changeset(%{
-        project_id: project.id, family_id: family.id
+        project_id: project.id,
+        family_id: family.id
       })
   end
 
@@ -49,8 +44,6 @@ defmodule Oli.Authoring.Activities do
   def change_activity(%Activity{} = activity) do
     Activity.changeset(activity, %{})
   end
-
-  alias Oli.Authoring.Activities.ActivityRevision
 
   def list_activity_revisions do
     Repo.all(ActivityRevision)

@@ -2,9 +2,10 @@ defmodule Oli.Publishing do
   import Ecto.Query, warn: false
   alias Oli.Repo
 
-  alias Oli.Publishing.{Publication, ResourceMapping, ActivityMapping, ObjectiveMapping}
-  alias Oli.Course.Project
+  alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Learning.ObjectiveRevision
   alias Oli.Accounts.Author
+  alias Oli.Publishing.{Publication, ResourceMapping, ActivityMapping, ObjectiveMapping}
 
   @doc """
   Returns the list of publications available to an author. If no author is specified,
@@ -13,7 +14,6 @@ defmodule Oli.Publishing do
   def available_publications() do
     Repo.all(Publication, open_and_free: true) |> Repo.preload([:project])
   end
-
   def available_publications(%Author{} = author) do
     Repo.all from pub in Publication,
       join: proj in Project, on: pub.project_id == proj.id,
@@ -21,6 +21,30 @@ defmodule Oli.Publishing do
       where: a.id == ^author.id or pub.open_and_free == true,
       preload: [:project],
       select: pub
+  end
+
+  def initial_publication_setup(project, resource, resource_revision) do
+    Repo.transaction(fn ->
+      with {:ok, publication} <- create_publication(%{
+          project_id: project.id,
+          root_resource_id: resource.id,
+        }),
+        {:ok, resource_mapping} <- create_resource_mapping(%{
+          publication_id: publication.id,
+          resource_id: resource.id,
+          revision_id: resource_revision.id,
+        })
+        # {:ok, objective_mapping} <- create_objective_mapping(%{
+        #   publication_id: publication.id,
+        #   objective_id: objective.id,
+        #   revision_id: objective_revision.id,
+        # })
+      do
+        publication
+      else
+        error -> Repo.rollback(error)
+      end
+    end)
   end
 
   def get_unpublished_publication(project_slug, _author_id) do
@@ -40,11 +64,11 @@ defmodule Oli.Publishing do
 
   def new_project_publication(resource, project) do
     %Publication{}
-      |> Publication.changeset(%{
-        description: "Initial project creation",
-        root_resources: [resource.id],
-        project_id: project.id
-      })
+    |> Publication.changeset(%{
+      description: "Initial project creation",
+      root_resource_id: resource.id,
+      project_id: project.id
+    })
   end
 
   @doc """
@@ -104,9 +128,6 @@ defmodule Oli.Publishing do
   def change_objective_mapping(%ObjectiveMapping{} = objective_mapping) do
     ObjectiveMapping.changeset(objective_mapping, %{})
   end
-
-  alias Oli.Learning.ObjectiveRevision
-  alias Oli.Publishing.ObjectiveMapping
 
   @doc """
   Returns the list of objectives (their slugs and titles)

@@ -15,7 +15,7 @@ defmodule Oli.Publishing.ResourceMapping do
   end
 
   @doc false
-  def changeset(resource_mapping, attrs) do
+  def changeset(resource_mapping, attrs \\ %{}) do
     resource_mapping
     |> cast(attrs, [:publication_id, :resource_id, :revision_id, :locked_by_id, :lock_updated_at])
     |> validate_required([:publication_id, :resource_id, :revision_id])

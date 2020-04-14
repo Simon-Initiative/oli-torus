@@ -12,7 +12,7 @@ defmodule Oli.Publishing.ObjectiveMapping do
   end
 
   @doc false
-  def changeset(objective_mapping \\ %Oli.Publishing.ObjectiveMapping{}, attrs \\ %{}) do
+  def changeset(objective_mapping, attrs \\ %{}) do
     objective_mapping
     |> cast(attrs, [:publication_id, :objective_id, :revision_id])
     |> validate_required([:publication_id, :objective_id, :revision_id])

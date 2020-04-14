@@ -8,7 +8,7 @@ defmodule Oli.Authoring.Learning.ObjectiveFamily do
   end
 
   @doc false
-  def changeset(objective_family, attrs) do
+  def changeset(objective_family, attrs \\ %{}) do
     objective_family
     |> cast(attrs, [])
     |> validate_required([])

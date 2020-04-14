@@ -7,7 +7,7 @@ defmodule Oli.EditingTest do
   alias Oli.Accounts.Author
   alias Oli.Accounts.SystemRole
   alias Oli.Utils.Time
-  alias Oli.Locks
+  alias Oli.Authoring.Locks
 
   describe "editing" do
 

@@ -5,15 +5,35 @@ defmodule Oli.Authoring.Resources do
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Resources.{Resource, ResourceRevision, ResourceFamily, ResourceType}
 
-  def create_resource_family(attrs \\ %{}) do
+  def initial_resource_setup(author, project) do
+    Repo.transaction(fn ->
+      with {:ok, resource_family} <- create_resource_family(),
+           {:ok, resource} <- create_new_resource(project, resource_family),
+           {:ok, resource_revision} <- create_resource_revision(%{
+              slug: project.slug <> "_root_container",
+              title: project.title <> " root container",
+              author_id: author.id,
+              resource_id: resource.id,
+              resource_type_id: Repo.one!(
+                from rt in "resource_types",
+                where: rt.type == "container",
+                select: rt.id)
+            })
+      do
+        %{}
+        |> Map.put(:resource_family, resource_family)
+        |> Map.put(:resource, resource)
+        |> Map.put(:resource_revision, resource_revision)
+      else
+        {:error, error} -> Repo.rollback(error)
+      end
+    end)
+  end
+
+  defp create_resource_family(attrs \\ %{}) do
     %ResourceFamily{}
     |> ResourceFamily.changeset(attrs)
     |> Repo.insert()
-  end
-
-  def new_resource_family() do
-    %ResourceFamily{}
-      |> ResourceFamily.changeset(%{})
   end
 
   def list_resources do
@@ -33,11 +53,13 @@ defmodule Oli.Authoring.Resources do
     Repo.one(query)
   end
 
-  def new_project_resource(project, family) do
+  def create_new_resource(project, family) do
     %Resource{}
-      |> Resource.changeset(%{
-        project_id: project.id, family_id: family.id
-      })
+    |> Resource.changeset(%{
+      project_id: project.id,
+      family_id: family.id,
+    })
+    |> Repo.insert()
   end
 
   def update_resource(%Resource{} = resource, attrs) do
@@ -56,20 +78,6 @@ defmodule Oli.Authoring.Resources do
     %ResourceRevision{}
     |> ResourceRevision.changeset(attrs)
     |> Repo.insert()
-  end
-
-  def new_project_resource_revision(author, project, resource) do
-    %ResourceRevision{}
-      |> ResourceRevision.changeset(%{
-        slug: project.slug <> "_root_container",
-        title: project.title <> " root container",
-        author_id: author.id,
-        resource_id: resource.id,
-        resource_type_id: Repo.one!(
-          from rt in "resource_types",
-          where: rt.type == "container",
-          select: rt.id)
-      })
   end
 
   def update_resource_revision(%ResourceRevision{} = resource_revision, attrs) do

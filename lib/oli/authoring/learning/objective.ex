@@ -9,7 +9,7 @@ defmodule Oli.Authoring.Learning.Objective do
   end
 
   @doc false
-  def changeset(objective \\ %Oli.Authoring.Learning.Objective{}, attrs \\ %{}) do
+  def changeset(objective, attrs \\ %{}) do
     objective
     |> cast(attrs, [:family_id, :project_id])
     |> validate_required([:family_id, :project_id])

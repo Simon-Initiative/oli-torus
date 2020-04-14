@@ -32,7 +32,7 @@ defmodule Oli.CourseTest do
 
     test "create project with invalid data returns error changeset" do
       empty_title = ""
-      assert {:error, _, _, _} = Course.create_project(empty_title, author_fixture())
+      assert {:error, results} = Course.create_project(empty_title, author_fixture())
     end
 
     test "create_empty_project/1 with valid data creates a project", %{valid_attrs: valid_attrs} do
@@ -108,8 +108,8 @@ defmodule Oli.CourseTest do
   describe "project creation with associations" do
     setup do
       author = author_fixture()
-      {:ok, transaction} = Course.create_project("test project", author)
-      {:ok, %{transaction: transaction, author: author}}
+      {:ok, results} = Course.create_project("test project", author)
+      {:ok, Map.put(results, :author, author: author)}
     end
 
     test "creates a new family", %{transaction: %{family: family}} do
@@ -139,7 +139,7 @@ defmodule Oli.CourseTest do
     end
 
     test "creates a new publication associated with the project and containing the container resource", %{transaction: %{publication: publication, resource: resource, project: project}} do
-      assert Enum.find(publication.root_resources, fn candidate_id -> candidate_id == resource.id end)
+      assert Repo.preload(publication, [:root_resource]).root_resource == resource
       publication = Repo.preload(publication, [:project])
       assert publication.project == project
     end

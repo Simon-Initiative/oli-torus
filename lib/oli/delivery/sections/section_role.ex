@@ -8,7 +8,7 @@ defmodule Oli.Delivery.Sections.SectionRole do
   end
 
   @doc false
-  def changeset(section_role \\ %Oli.Delivery.Sections.SectionRole{}, attrs \\ %{}) do
+  def changeset(section_role, attrs \\ %{}) do
     section_role
     |> cast(attrs, [:type])
     |> validate_required([:type])

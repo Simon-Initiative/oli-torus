@@ -6,48 +6,48 @@ defmodule Oli.Authoring.Course do
   alias Oli.Publishing
   alias Oli.Authoring.{Resources, Collaborators}
   alias Oli.Authoring.Course.{Utils, Project, Family}
+  alias Oli.Authoring.Learning
 
   def list_projects do
     Repo.all(Project)
   end
 
   def get_project!(id), do: Repo.get!(Project, id)
-  def get_project_by_slug(slug) do
-    if is_nil(slug) do
-      nil
-    else
-      Repo.get_by(Project, slug: slug)
-    end
-  end
+  def get_project_by_slug(nil), do: nil
+  def get_project_by_slug(slug) when is_binary(slug), do: Repo.get_by(Project, slug: slug)
 
   def create_project(title, author) do
-    new()
-    |> insert(:family, default_family(title))
-    |> merge(fn %{family: family} ->
-      new()
-      |> insert(:project, default_project(title, family)) end)
-    |> merge(fn %{project: project} ->
-      new()
-      |> insert(:collaborator, Collaborators.change_collaborator(author.email, project.slug)) end)
-    |> insert(:resource_family, Resources.new_resource_family())
-    |> merge(fn %{resource_family: resource_family, project: project} ->
-      new()
-      |> insert(:resource, Resources.new_project_resource(project, resource_family)) end)
-    |> merge(fn %{project: project, resource: resource} ->
-      new()
-      |> insert(:resource_revision, Resources.new_project_resource_revision(author, project, resource))
-      |> insert(:publication, Publishing.new_project_publication(resource, project)) end)
-    |> Repo.transaction
+    Repo.transaction(fn ->
+      with {:ok, family} <- create_family(default_family(title)),
+           {:ok, project} <- create_project(default_project(title, family)),
+           {:ok, _collaborator} <- Collaborators.add_collaborator(author, project),
+           {:ok, %{resource: resource, resource_revision: resource_revision}}
+              <- Resources.initial_resource_setup(author, project),
+          #  {:ok, %{objective: objective, objective_revision: objective_revision}}
+          #     <- Learning.initial_objective_setup(project),
+           {:ok, publication}
+              <- Publishing.initial_publication_setup(project, resource, resource_revision)
+      do
+        %{project: project, publication: publication}
+      else
+        {:error, error} -> Repo.rollback(error)
+      end
+    end)
+  end
+
+  defp create_project(attrs \\ %{}) do
+    %Project{}
+    |> Project.changeset(attrs)
+    |> Repo.insert()
   end
 
   defp default_project(title, family) do
-    %Project{}
-      |> Project.changeset(%{
-        title: title,
-        slug: Utils.generate_slug("projects", title),
-        version: "1.0.0",
-        family_id: family.id
-      })
+    %{
+      title: title,
+      slug: Utils.generate_slug("projects", title),
+      version: "1.0.0",
+      family_id: family.id
+    }
   end
 
   def update_project(%Project{} = project, attrs) do
@@ -58,24 +58,23 @@ defmodule Oli.Authoring.Course do
 
   def get_family!(id), do: Repo.get!(Family, id)
 
-  def create_family(attrs \\ %{}) do
-    %Family{}
-    |> Family.changeset(attrs)
-    |> Repo.insert()
-  end
-
   def update_family(%Family{} = family, attrs) do
     family
     |> Family.changeset(attrs)
     |> Repo.update()
   end
 
-  defp default_family(title) do
+  def create_family(attrs \\ %{}) do
     %Family{}
-      |> Family.changeset(%{
-        title: title,
-        slug: Utils.generate_slug("families", title),
-        description: "New family from project creation"
-      })
+    |> Family.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  defp default_family(title) do
+    %{
+      title: title,
+      slug: Utils.generate_slug("families", title),
+      description: "New family from project creation",
+    }
   end
 end

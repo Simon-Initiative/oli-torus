@@ -16,7 +16,7 @@ defmodule Oli.Accounts.SystemRole do
   end
 
   @doc false
-  def changeset(system_role \\ %Oli.Accounts.SystemRole{}, attrs \\ %{}) do
+  def changeset(system_role, attrs \\ %{}) do
     system_role
     |> cast(attrs, [:type])
     |> validate_required([:type])

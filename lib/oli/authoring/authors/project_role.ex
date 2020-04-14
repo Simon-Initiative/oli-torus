@@ -13,7 +13,7 @@ defmodule Oli.Authoring.Authors.ProjectRole do
   end
 
   @doc false
-  def changeset(project_role \\ %Oli.Authoring.Authors.ProjectRole{}, attrs \\ %{}) do
+  def changeset(project_role, attrs \\ %{}) do
     project_role
     |> cast(attrs, [:type])
     |> validate_required([:type])

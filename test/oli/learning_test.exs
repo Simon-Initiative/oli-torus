@@ -5,6 +5,7 @@ defmodule Oli.LearningTest do
   alias Oli.Authoring.Course.{Project, Family}
   alias Oli.Authoring.Learning
   alias Oli.Authoring.Learning.{Objective, ObjectiveFamily, ObjectiveRevision}
+  alias Oli.Authoring.Resources.{Resource, ResourceRevision, ResourceFamily}
   alias Oli.Publishing.Publication
 
   describe "objectives" do
@@ -33,10 +34,6 @@ defmodule Oli.LearningTest do
       assert {:ok, %Objective{}} = Learning.delete_objective(objective)
       assert_raise Ecto.NoResultsError, fn -> Learning.get_objective!(objective.id) end
     end
-
-    test "change_objective/1 returns a objective changeset", %{objective: objective} do
-      assert %Ecto.Changeset{} = Learning.change_objective(objective)
-    end
   end
 
   describe "objective_revisions" do
@@ -49,7 +46,9 @@ defmodule Oli.LearningTest do
 
       {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
       {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
-      {:ok, _publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resources: [], project_id: project.id}) |> Repo.insert
+      {:ok, resource_family} = ResourceFamily.changeset(%ResourceFamily{}, %{}) |> Repo.insert
+      {:ok, resource} = Resource.changeset(%Resource{}, %{project_id: project.id, family_id: resource_family.id}) |> Repo.insert
+      {:ok, _publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resource_id: resource.id, project_id: project.id}) |> Repo.insert
       {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
       {:ok, _institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
       {:ok, objective_family} = ObjectiveFamily.changeset(%ObjectiveFamily{}, %{}) |> Repo.insert
@@ -61,19 +60,5 @@ defmodule Oli.LearningTest do
 
       {:ok, %{objective_revision: revision, valid_attrs: valid_attrs}}
     end
-
-    test "get_objective_revision!/1 returns the objective_revision with given id", %{objective_revision: objective_revision} do
-      assert Learning.get_objective_revision!(objective_revision.id) == objective_revision
-    end
-
-    test "create_objective_revision/1 with valid data creates a objective_revision", %{valid_attrs: valid_attrs} do
-      assert {:ok, %ObjectiveRevision{} = objective_revision} = Learning.create_objective_revision(valid_attrs)
-      assert objective_revision.title == "some title"
-    end
-
-    test "create_objective_revision/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Learning.create_objective_revision(@invalid_attrs)
-    end
-
   end
 end
