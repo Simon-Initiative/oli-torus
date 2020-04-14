@@ -288,4 +288,29 @@ defmodule Oli.PublishingTest do
       assert %Ecto.Changeset{} = Publishing.change_objective_mapping(objective_mapping)
     end
   end
+
+  describe "project publishing" do
+
+    # test "diff_publications/2 returns the changes between 2 publications", %{} do
+
+    # end
+
+    test "publish_project/1 publishes the active unpublished publication and creates a new working unpublished publication for a project", %{} do
+
+    end
+
+    test "publish_project/1 publishes all currently locked resources and any new edits to the locked resource result in creation of a new revision", %{} do
+
+    end
+
+
+    test "publish_project/1 publishes all referenced objectives and activities", %{} do
+
+    end
+
+    test "update_existing_section_publications/1 updates all existing sections using the project to the latest publication", %{} do
+
+    end
+
+  end
 end

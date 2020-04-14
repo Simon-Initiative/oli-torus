@@ -466,4 +466,47 @@ defmodule Oli.Publishing do
   def change_objective_mapping(%ObjectiveMapping{} = objective_mapping) do
     ObjectiveMapping.changeset(objective_mapping, %{})
   end
+
+  @doc """
+  Publishes the active publication and creates a new working unpublished publication for a project
+  """
+  def publish_project(project) do
+    active_publication = Repo.get_by!(Project, project_id: project.id, published: false)
+
+    # create a new publication to capture all further edits
+    {:ok, new_publication} = create_publication(active_publication |> Enum.into(%{published: false}))
+
+    # create new mappings for the new publication
+    # {:ok, mappings} = Repo.get_by(ResourceMapping, publication_id: active_publication.id, preload: [:resource, :revision])
+    {:ok, resource_mappings} = Repo.get_by(ResourceMapping, publication_id: active_publication.id)
+    {:ok, activity_mappings} = Repo.get_by(ActivityMapping, publication_id: active_publication.id)
+    {:ok, objective_mappings} = Repo.get_by(ObjectiveMapping, publication_id: active_publication.id)
+
+    new_resource_mappings = resource_mappings
+      |> Enum.map(fn resource_mapping ->
+        update_resource_mapping(resource_mapping, %{publication_id: new_publication.id})
+      end)
+    Repo.insert_all(ResourceMapping, new_resource_mappings)
+
+    new_activity_mappings = activity_mappings
+      |> Enum.map(fn resource_mapping ->
+        update_activity_mapping(resource_mapping, %{publication_id: new_publication.id})
+      end)
+    Repo.insert_all(ActivityMapping, new_activity_mappings)
+
+    new_objective_mappings = objective_mappings
+      |> Enum.map(fn resource_mapping ->
+        update_objective_mapping(resource_mapping, %{publication_id: new_publication.id})
+      end)
+    Repo.insert_all(ObjectiveMapping, new_objective_mappings)
+
+    # set the active publication to published
+    update_publication(active_publication, %{published: true})
+
+    {:ok, active_publication}
+  end
+
+  def update_existing_section_publications(publication) do
+
+  end
 end
