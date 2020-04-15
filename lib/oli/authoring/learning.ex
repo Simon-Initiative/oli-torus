@@ -143,7 +143,7 @@ defmodule Oli.Authoring.Learning do
       iex> change_objective_revision(objective_revision)
       %Ecto.Changeset{source: %ObjectiveRevision{}}
   """
-  defp change_objective_revision(attrs, objective) do
+  def change_objective_revision(attrs, objective) do
     title = Map.get(attrs, "title")
     %ObjectiveRevision{}
     |> ObjectiveRevision.changeset(%{
