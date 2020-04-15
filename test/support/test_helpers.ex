@@ -146,8 +146,8 @@ defmodule Oli.TestHelpers do
     author = author_fixture()
     [project | _rest] = make_n_projects(1, author)
     objective = objective_fixture(project);
-    revision = objective.objective_revision
+    objective_revision = objective.objective_revision
     conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
-    {:ok, conn: conn, author: author, project: project, revision: revision}
+    {:ok, conn: conn, author: author, project: project, objective_revision: objective_revision}
   end
 end

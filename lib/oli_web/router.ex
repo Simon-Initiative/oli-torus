@@ -79,7 +79,6 @@ defmodule OliWeb.Router do
 
     # Objectives
     post "/:project_id/objectives", ObjectiveController, :create
-    patch "/:project_id/objectives/:id", ObjectiveController, :update
     put "/:project_id/objectives/:id", ObjectiveController, :update
     delete "/:project_id/objectives/:id", ObjectiveController, :delete
 
