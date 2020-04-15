@@ -13,15 +13,17 @@ defmodule Oli.Publishing do
   alias Oli.Publishing.ObjectiveMapping
 
   @doc """
-  Returns the list of objectives (their slugs and titles)
+  Returns the list of objectives (their objective_ids, slugs and titles)
   that pertain to a given publication.
   """
   def get_published_objectives(publication_id) do
     Repo.all from mapping in ObjectiveMapping,
       join: rev in ObjectiveRevision, on: mapping.revision_id == rev.id,
       where: mapping.publication_id == ^publication_id,
-      select: map(rev, [:slug, :title])
+      select: map(rev, [:objective_id, :slug, :title])
   end
+
+
 
   @doc """
   Returns the list of publications.

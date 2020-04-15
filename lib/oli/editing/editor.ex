@@ -11,6 +11,7 @@ defmodule Oli.Editing.ResourceEditor do
   alias Oli.Accounts
   alias Oli.Resources.ResourceRevision
   alias Oli.Repo
+  alias Oli.Learning
 
   @doc """
   Attempts to process an edit for a resource specified by a given
@@ -148,24 +149,37 @@ defmodule Oli.Editing.ResourceEditor do
 
     with {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil(),
-         {:ok, objectives} <- Publishing.get_published_objectives(publication.id) |> trap_nil()
+         {:ok, objectives} <- Publishing.get_published_objectives(publication.id) |> trap_nil(),
+         {:ok, revision} <- get_latest_revision(publication, resource) |> trap_nil(),
+         {:ok, objectives_without_ids} <- strip_ids(objectives) |> trap_nil(),
+         {:ok, attached_objectives} <- id_to_slug(revision.objectives, objectives) |> trap_nil()
     do
-      case get_latest_revision(publication, resource) do
-        nil -> {:error, :not_found}
-        revision -> {:ok, create(revision, project_slug, revision_slug, author, objectives)}
-      end
+      {:ok, create(revision, project_slug, revision_slug, author, objectives_without_ids, attached_objectives)}
     else
       _ -> {:error, :not_found}
     end
   end
 
-  defp create(revision, project_slug, revision_slug, author, all_objectives) do
+  # removes the objective_id from the maps contained with a list of objectives
+  defp strip_ids(objectives) do
+    Enum.map(objectives, fn o -> Map.delete(o, :objective_id) end)
+  end
+
+  # takes the attached objectives in the form of a list of objective ids
+  # and converts it to a list of slugs, using all current objectives
+  defp id_to_slug(attached_objectives, all_objectives) do
+    map = Enum.reduce(all_objectives, %{}, fn o, m -> Map.put(m, Map.get(o, :objective_id), o) end)
+    Enum.map(attached_objectives, fn o -> Map.get(map, o) |> Map.get(:slug) end)
+  end
+
+
+  defp create(revision, project_slug, revision_slug, author, all_objectives, objectives) do
     %Oli.Editing.ResourceContext{
       authorEmail: author.email,
       projectSlug: project_slug,
       resourceSlug: revision_slug,
       editorMap: Oli.Activities.create_registered_activity_map(),
-      objectives: revision.objectives,
+      objectives: objectives,
       allObjectives: all_objectives,
       title: revision.title,
       resourceType: revision.resource_type.type,
@@ -216,7 +230,17 @@ defmodule Oli.Editing.ResourceEditor do
   end
 
   defp update_revision(revision, update) do
-    {:ok, updated} = Resources.update_resource_revision(revision, update)
+    IO.puts "UPDATED"
+    IO.inspect update
+
+    converted_back_to_ids = case Map.get(update, "objectives") do
+      nil -> update
+      objectives -> Map.put(update, "objectives", Learning.get_ids_from_objective_slugs(objectives))
+    end
+
+    IO.inspect converted_back_to_ids
+
+    {:ok, updated} = Resources.update_resource_revision(revision, converted_back_to_ids)
     updated
   end
 

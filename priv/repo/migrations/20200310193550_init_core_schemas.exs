@@ -143,8 +143,8 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :title, :string
       add :slug, :string
       add :content, {:array, :map}
-      add :children, {:array, :string}
-      add :objectives, {:array, :string}
+      add :children, {:array, :id}
+      add :objectives, {:array, :id}
       add :deleted, :boolean, default: false, null: false
       add :author_id, references(:authors)
       add :resource_id, references(:resources)
