@@ -1,5 +1,4 @@
 defmodule OliWeb.ObjectiveController do
-  require Logger
   use OliWeb, :controller
   import OliWeb.ProjectPlugs
 
@@ -17,7 +16,6 @@ defmodule OliWeb.ObjectiveController do
   def create(conn, %{"project_id" => project_id, "objective" => objective_params}) do
     project = conn.assigns.project
     params = Map.merge(objective_params, %{"project_id" => project.id})
-    Logger.info("Creating objective: #{inspect(params)}")
     with {:ok, _objective} <- Learning.create_objective(params)
     do
       conn
