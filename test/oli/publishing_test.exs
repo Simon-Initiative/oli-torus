@@ -354,7 +354,7 @@ defmodule Oli.PublishingTest do
     end
 
     test "update_existing_section_publications/2 updates all existing sections using the project to the latest publication",
-      # %{publication: publication, project: project} do
+      %{publication: publication, project: project} do
 
       # {:ok, %Section{} = section} = Sections.create_section(valid_attrs)
 
