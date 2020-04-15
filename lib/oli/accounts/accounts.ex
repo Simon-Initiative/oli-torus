@@ -29,6 +29,12 @@ defmodule Oli.Accounts do
 
   @doc """
   Links a User to Author account
+
+  ## Examples
+      iex> link_user_author_account(user, author)
+      {:ok, %User{}}
+      iex> update_user(user, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
   """
   def link_user_author_account(nil, _author), do: throw "No current_user to link to author. This function should only be called in an LTI context"
   def link_user_author_account(user, author) do
@@ -44,6 +50,10 @@ defmodule Oli.Accounts do
 
   @doc """
   Returns an author if one matches given email, or creates and returns a new author
+
+  ## Examples
+      iex> insert_or_update_author(%{field: value})
+      {:ok, %Author{}}
   """
   def insert_or_update_author(%{ email: email } = changes) do
     case Repo.get_by(Author, email: email) do
@@ -60,6 +70,9 @@ defmodule Oli.Accounts do
     |> Repo.insert()
   end
 
+  @doc """
+  Gets a single author with the given email
+  """
   def get_author_by_email(email) do
     Repo.get_by(Author, email: email)
   end
