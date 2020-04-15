@@ -13,6 +13,11 @@ defmodule Oli.TestHelpers do
     DateTime.add(datetime, -(60 * 60 * 24), :second)
   end
 
+  def now() do
+    {:ok, datetime} = DateTime.now("Etc/UTC")
+    datetime
+  end
+
   def author_fixture(attrs \\ %{}) do
     params =
       attrs

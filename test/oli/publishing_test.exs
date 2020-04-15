@@ -20,6 +20,7 @@ defmodule Oli.PublishingTest do
   alias Oli.Learning.Objective
   alias Oli.Learning.ObjectiveFamily
   alias Oli.Learning.ObjectiveRevision
+  alias Oli.Editing.ResourceEditor
 
   describe "publications" do
     alias Oli.Publishing.Publication
@@ -295,16 +296,18 @@ defmodule Oli.PublishingTest do
       Seeder.base_project_with_resource()
     end
 
-    # test "diff_publications/2 returns the changes between 2 publications", %{} do
-
-    # end
-
     test "publish_project/1 publishes the active unpublished publication and creates a new working unpublished publication for a project", %{publication: publication, project: project} do
       {:ok, %Publication{} = published} = Publishing.publish_project(project)
 
       # original publication should now be published
       assert published.id == publication.id
       assert published.published == true
+    end
+
+    test "publish_project/1 creates a new working unpublished publication for a project",
+      %{publication: publication, project: project} do
+
+      {:ok, %Publication{} = published} = Publishing.publish_project(project)
 
       # the unpublished publication for the project should now be a new different publication
       new_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
@@ -327,12 +330,39 @@ defmodule Oli.PublishingTest do
       assert original_objective_mappings != Publishing.get_objective_mappings_by_publication(new_publication.id)
     end
 
-    test "publish_project/1 publishes all currently locked resources and any new edits to the locked resource result in creation of a new revision", %{publication: publication, project: project} do
+    test "publish_project/1 publishes all currently locked resources and any new edits to the locked resource result in creation of a new revision",
+      %{publication: publication, project: project, author: author, mapping: mapping, revision: revision} do
+
+      # lock the resource
+      Publishing.update_resource_mapping(mapping, %{lock_updated_at: now(), locked_by_id: author.id})
+
       {:ok, %Publication{} = published} = Publishing.publish_project(project)
+
+      # publication should succeed even if a resource is "locked"
+      new_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+      assert new_publication.id != publication.id
+
+      # further edits to the locked resource should occur in a new revision
+      content = [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }]
+      {:ok, updated_revision} = ResourceEditor.edit("title", "some_title", author.email, %{ content: content })
+      assert revision.id != updated_revision.id
+
+      # further edits should not be present in published resource
+      resource_mapping = Publishing.get_resource_mapping!(published.id, revision.resource_id)
+      old_revision = Resources.get_resource_revision!(resource_mapping.revision_id)
+      assert old_revision.content == revision.content
+    end
+
+    test "update_existing_section_publications/2 updates all existing sections using the project to the latest publication",
+      # %{publication: publication, project: project} do
+
+      # {:ok, %Section{} = section} = Sections.create_section(valid_attrs)
+
+      # {:ok, %Publication{} = published} = Publishing.publish_project(project)
 
     end
 
-    test "update_existing_section_publications/1 updates all existing sections using the project to the latest publication", %{} do
+    test "diff_publications/2 returns the changes between 2 publications", %{} do
 
     end
 

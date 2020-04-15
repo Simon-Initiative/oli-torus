@@ -9,6 +9,7 @@ defmodule Oli.Publishing do
   alias Oli.Publishing.Publication
   alias Oli.Course.Project
   alias Oli.Accounts.Author
+  alias Oli.Sections
 
   @doc """
   Returns the list of publications.
@@ -547,8 +548,6 @@ defmodule Oli.Publishing do
       publication_id: publication.id,
       resource_id: resource_mapping.resource_id,
       revision_id: resource_mapping.revision_id,
-      locked_by_id: resource_mapping.locked_by_id,
-      lock_updated_at: resource_mapping.lock_updated_at,
     })
     new_mapping
   end
@@ -571,7 +570,15 @@ defmodule Oli.Publishing do
     new_mapping
   end
 
-  def update_existing_section_publications(publication) do
+  def update_existing_section_publications(publication, project) do
+    latest_publication = get_unpublished_publication_by_slug!(project.slug)
+    Sections.get_sections_by_publication(publication)
+    |> Enum.map(fn section ->
+      Sections.update_section(section, %{publication_id: latest_publication.id})
+    end)
+  end
+
+  def diff_publications(p1, p2) do
 
   end
 end
