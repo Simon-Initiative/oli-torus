@@ -42,7 +42,7 @@ defmodule Oli.Authoring.Course do
     end)
   end
 
-  defp create_project(attrs \\ %{}) do
+  defp create_project(attrs) do
     %Project{}
     |> Project.changeset(attrs)
     |> Repo.insert()
