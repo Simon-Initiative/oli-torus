@@ -54,7 +54,6 @@ defmodule OliWeb.ObjectiveController do
 
   def delete(conn, %{"project_id" => project_id, "id" => id}) do
     with {:ok, objective_revision} <- Repo.get(ObjectiveRevision, id) |> trap_nil(),
-#         {:ok, revision_change_set} <- ObjectiveRevision.changeset(objective_revision, %{deleted: true}),
          {:ok, _objective_revision} <- Learning.update_objective_revision(objective_revision, %{deleted: true})
     do
       conn
