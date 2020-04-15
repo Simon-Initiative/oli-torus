@@ -79,7 +79,7 @@ defmodule Oli.ActivitiesTest do
 
       {:ok, activity_family} = ActivityFamily.changeset(%ActivityFamily{}, %{}) |> Repo.insert
       {:ok, activity} = Activity.changeset(%Activity{}, %{project_id: project.id, family_id: activity_family.id}) |> Repo.insert
-      {:ok, activity_type} = Registration.changeset(%Registration{}, %{authoring_script: "1", delivery_script: "2", description: "d", element_name: "n", icon: "i", title: "t"}) |> Repo.insert
+      {:ok, activity_type} = Registration.changeset(%Registration{}, %{slug: "slug", authoring_script: "1", delivery_script: "2", description: "d", authoring_element: "n", delivery_element: "n", icon: "i", title: "t"}) |> Repo.insert
 
       valid_attrs = Map.put(@valid_attrs, :project_id, project.id)
         |> Map.put(:author_id, author.id)
@@ -139,9 +139,9 @@ defmodule Oli.ActivitiesTest do
   describe "activity_registrations" do
     alias Oli.Activities.Registration
 
-    @valid_attrs %{authoring_script: "some authoring_script", delivery_script: "some delivery_script", description: "some description", element_name: "some element_name", icon: "some icon", title: "some title"}
-    @update_attrs %{authoring_script: "some updated authoring_script", delivery_script: "some updated delivery_script", description: "some updated description", element_name: "some updated element_name", icon: "some updated icon", title: "some updated title"}
-    @invalid_attrs %{authoring_script: nil, delivery_script: nil, description: nil, element_name: nil, icon: nil, title: nil}
+    @valid_attrs %{slug: "slug", authoring_script: "some authoring_script", delivery_script: "some delivery_script", description: "some description", delivery_element: "some element_name", authoring_element: "some element_name", icon: "some icon", title: "some title"}
+    @update_attrs %{slug: "slug", authoring_script: "some updated authoring_script", delivery_script: "some updated delivery_script", description: "some updated description", delivery_element: "some updated element_name", authoring_element: "some updated element_name", icon: "some updated icon", title: "some updated title"}
+    @invalid_attrs %{slug: nil, authoring_script: nil, delivery_script: nil, description: nil, element_name: nil, icon: nil, title: nil}
 
     def registration_fixture(attrs \\ %{}) do
       {:ok, registration} =
@@ -153,8 +153,9 @@ defmodule Oli.ActivitiesTest do
     end
 
     test "list_activity_registrations/0 returns all activity_registrations" do
-      registration = registration_fixture()
-      assert Activities.list_activity_registrations() == [registration]
+      registration_fixture()
+      registrations = Activities.list_activity_registrations()
+      assert length(registrations) == 2
     end
 
     test "get_registration!/1 returns the registration with given id" do
@@ -167,7 +168,7 @@ defmodule Oli.ActivitiesTest do
       assert registration.authoring_script == "some authoring_script"
       assert registration.delivery_script == "some delivery_script"
       assert registration.description == "some description"
-      assert registration.element_name == "some element_name"
+      assert registration.authoring_element == "some element_name"
       assert registration.icon == "some icon"
       assert registration.title == "some title"
     end
@@ -182,7 +183,7 @@ defmodule Oli.ActivitiesTest do
       assert registration.authoring_script == "some updated authoring_script"
       assert registration.delivery_script == "some updated delivery_script"
       assert registration.description == "some updated description"
-      assert registration.element_name == "some updated element_name"
+      assert registration.authoring_element == "some updated element_name"
       assert registration.icon == "some updated icon"
       assert registration.title == "some updated title"
     end

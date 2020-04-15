@@ -197,7 +197,7 @@ defmodule Oli.PublishingTest do
 
       {:ok, activity_family} = ActivityFamily.changeset(%ActivityFamily{}, %{}) |> Repo.insert
       {:ok, activity} = Activity.changeset(%Activity{}, %{project_id: project.id, family_id: activity_family.id}) |> Repo.insert
-      {:ok, activity_type} = Registration.changeset(%Registration{}, %{authoring_script: "1", delivery_script: "2", description: "d", element_name: "n", icon: "i", title: "t"}) |> Repo.insert
+      {:ok, activity_type} = Registration.changeset(%Registration{}, %{slug: "slug", authoring_script: "1", delivery_script: "2", description: "d", authoring_element: "n", delivery_element: "n", icon: "i", title: "t"}) |> Repo.insert
       {:ok, revision} = ActivityRevision.changeset(%ActivityRevision{}, %{author_id: author.id, activity_id: activity.id, activity_type_id: activity_type.id, content: %{}, objectives: [], deleted: true, slug: "some slug"}) |> Repo.insert
 
       valid_attrs = Map.put(@valid_attrs, :revision_id, revision.id)
