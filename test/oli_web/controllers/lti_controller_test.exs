@@ -12,7 +12,6 @@ defmodule OliWeb.LtiControllerTest do
       |> Map.put(:host, "www.example.com")
       |> post(Routes.lti_path(conn, :basic_launch), build_lti_request(url_from_conn(conn), "test-secret"))
 
-
       assert redirected_to(conn, :found) =~ "/course"
       assert Enum.count(Repo.all(Accounts.User)) == 1
     end

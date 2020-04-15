@@ -26,7 +26,7 @@ defmodule OliWeb.ProjectController do
 
   def objectives(conn, _params) do
     project = conn.assigns.project
-    publication_id = Publishing.get_unpublished_publication(project.id)
+    publication_id = Publishing.get_unpublished_publication_id!(project.id)
     objective_mappings = Publishing.get_objective_mappings_by_publication(publication_id)
     changeset = Learning.change_objective(%Learning.Objective{})
     params = %{title: "Objectives", objective_mappings: objective_mappings, objective_changeset: changeset, active: :objectives}

@@ -39,7 +39,7 @@ defmodule Oli.PublishingTest do
       {:ok, %{publication: publication, project: project, family: family, valid_attrs: valid_attrs}}
     end
 
-    test "get_unpublished_publications/2 returns the correct publication", %{publication: publication, family: family, project: project} do
+    test "get_unpublished_publication_by_slug!/1 returns the correct publication", %{publication: publication, family: family, project: project} do
 
       # add a few more published publications
       {:ok, _another} = Publication.changeset(%Publication{}, %{description: "description", published: true, root_resources: [], project_id: project.id}) |> Repo.insert
@@ -49,8 +49,8 @@ defmodule Oli.PublishingTest do
       {:ok, project2} = Project.changeset(%Project{}, %{description: "description", slug: "title", title: "title", version: "1", family_id: family.id}) |> Repo.insert
       {:ok, publication2} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resources: [], project_id: project2.id}) |> Repo.insert
 
-      assert Publishing.get_unpublished_publication("slug", 1).id == publication.id
-      assert Publishing.get_unpublished_publication("title", 1).id == publication2.id
+      assert Publishing.get_unpublished_publication_by_slug!("slug").id == publication.id
+      assert Publishing.get_unpublished_publication_by_slug!("title").id == publication2.id
     end
 
 
@@ -291,20 +291,44 @@ defmodule Oli.PublishingTest do
 
   describe "project publishing" do
 
+    setup do
+      Seeder.base_project_with_resource()
+    end
+
     # test "diff_publications/2 returns the changes between 2 publications", %{} do
 
     # end
 
-    test "publish_project/1 publishes the active unpublished publication and creates a new working unpublished publication for a project", %{} do
+    test "publish_project/1 publishes the active unpublished publication and creates a new working unpublished publication for a project", %{publication: publication, project: project} do
+      {:ok, %Publication{} = published} = Publishing.publish_project(project)
 
+      # original publication should now be published
+      assert published.id == publication.id
+      assert published.published == true
+
+      # the unpublished publication for the project should now be a new different publication
+      new_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+      assert new_publication.id != publication.id
+
+      # mappings should be retained in the original published publication
+      original_resource_mappings = Publishing.get_resource_mappings_by_publication(publication.id)
+      original_activity_mappings = Publishing.get_resource_mappings_by_publication(publication.id)
+      original_objective_mappings = Publishing.get_resource_mappings_by_publication(publication.id)
+      published_resource_mappings = Publishing.get_resource_mappings_by_publication(published.id)
+      published_activity_mappings = Publishing.get_resource_mappings_by_publication(published.id)
+      published_objective_mappings = Publishing.get_resource_mappings_by_publication(published.id)
+      assert original_resource_mappings == published_resource_mappings
+      assert original_activity_mappings == published_activity_mappings
+      assert original_objective_mappings == published_objective_mappings
+
+      # mappings should now be replaced with new mappings in the new publication
+      assert original_resource_mappings != Publishing.get_resource_mappings_by_publication(new_publication.id)
+      assert original_activity_mappings != Publishing.get_activity_mappings_by_publication(new_publication.id)
+      assert original_objective_mappings != Publishing.get_objective_mappings_by_publication(new_publication.id)
     end
 
-    test "publish_project/1 publishes all currently locked resources and any new edits to the locked resource result in creation of a new revision", %{} do
-
-    end
-
-
-    test "publish_project/1 publishes all referenced objectives and activities", %{} do
+    test "publish_project/1 publishes all currently locked resources and any new edits to the locked resource result in creation of a new revision", %{publication: publication, project: project} do
+      {:ok, %Publication{} = published} = Publishing.publish_project(project)
 
     end
 

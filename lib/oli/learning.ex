@@ -13,7 +13,7 @@ defmodule Oli.Learning do
   alias Oli.Learning.ObjectiveRevision
   alias Oli.Publishing
   alias Oli.Publishing.ObjectiveMapping
-  
+
   def create_objective_family(attrs \\ %{}) do
     %ObjectiveFamily{}
     |> ObjectiveFamily.changeset(attrs)
@@ -78,7 +78,7 @@ defmodule Oli.Learning do
       |> Multi.insert(:objective_revision, do_create_objective_revision(attrs, objective)) end)
     |> Multi.merge(fn %{objective: objective, objective_revision: objective_revision} ->
       Multi.new
-      |> Multi.insert(:objective_mapping, do_create_objective_mapping(Publishing.get_unpublished_publication(Map.get(attrs, "project_id")), objective, objective_revision))end)
+      |> Multi.insert(:objective_mapping, do_create_objective_mapping(Publishing.get_unpublished_publication_id!(Map.get(attrs, "project_id")), objective, objective_revision))end)
     |> Repo.transaction
   end
 

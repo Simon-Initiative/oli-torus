@@ -40,7 +40,7 @@ defmodule Oli.Editing.ResourceEditor do
     with {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
-         {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
+         {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil()
     do
       Repo.transaction(fn ->
@@ -89,7 +89,7 @@ defmodule Oli.Editing.ResourceEditor do
     with {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
-         {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
+         {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil()
     do
       case Locks.acquire(publication.id, resource.id, author.id) do
@@ -125,7 +125,7 @@ defmodule Oli.Editing.ResourceEditor do
     with {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
-         {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
+         {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil()
     do
       case Locks.release(publication.id, resource.id, author.id) do
@@ -146,7 +146,7 @@ defmodule Oli.Editing.ResourceEditor do
   """
   def create_context(project_slug, revision_slug, author) do
 
-    with {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
+    with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil()
     do
       case get_latest_revision(publication, resource) do

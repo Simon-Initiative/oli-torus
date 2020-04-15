@@ -45,8 +45,34 @@ defmodule Oli.Publishing do
       select: pub
   end
 
+  @doc """
+  Gets the ID of the unpublished publication for a project. This assumes there is only one unpublished publication per project.
+   ## Examples
 
-  def get_unpublished_publication(project_slug, _author_id) do
+      iex> get_unpublished_publication_id!(123)
+      %Publication{}
+
+      iex> get_unpublished_publication_id!(456)
+      ** (Ecto.NoResultsError)
+  """
+  def get_unpublished_publication_id!(project_id)do
+    Repo.one(
+      from p in "publications",
+      where: p.project_id == ^project_id and p.published == false,
+      select: p.id)
+  end
+
+  @doc """
+  Get unpublished publication for a project from slug. This assumes there is only one unpublished publication per project.
+   ## Examples
+
+      iex> get_unpublished_publication_by_slug!("my-project-slug")
+      %Publication{}
+
+      iex> get_unpublished_publication_by_slug!("invalid-slug")
+      ** (Ecto.NoResultsError)
+  """
+  def get_unpublished_publication_by_slug!(project_slug) do
     Repo.one from pub in Publication,
       join: proj in Project, on: pub.project_id == proj.id,
       where: proj.slug == ^project_slug and pub.published == false,
@@ -143,23 +169,6 @@ defmodule Oli.Publishing do
     Publication.changeset(publication, %{})
   end
 
-  @doc """
-  Get unpublished publication for a project. This assumes there is only one unpublished publication per project.
-   ## Examples
-
-      iex> get_unpublished_publication!(123)
-      %Publication{}
-
-      iex> get_unpublished_publication!(456)
-      ** (Ecto.NoResultsError)
-  """
-  def get_unpublished_publication(project_id)do
-    Repo.one(
-      from p in "publications",
-      where: p.project_id == ^project_id and p.published == false,
-      select: p.id)
-  end
-
   alias Oli.Publishing.ResourceMapping
 
   @doc """
@@ -173,6 +182,20 @@ defmodule Oli.Publishing do
   """
   def list_resource_mappings do
     Repo.all(ResourceMapping)
+  end
+
+  @doc """
+  Returns the list of resource_mappings for a given publication.
+
+  ## Examples
+
+      iex> get_resource_mappings_for_publication()
+      [%ResourceMapping{}, ...]
+
+  """
+  def get_resource_mappings_by_publication(publication_id) do
+    from(p in ResourceMapping, where: p.publication_id == ^publication_id, preload: [:resource, :revision])
+    |> Repo.all()
   end
 
   @doc """
@@ -274,6 +297,20 @@ defmodule Oli.Publishing do
   """
   def list_activity_mappings do
     Repo.all(ActivityMapping)
+  end
+
+  @doc """
+  Returns the list of activity_mappings for a given publication.
+
+  ## Examples
+
+      iex> get_activity_mappings_for_publication()
+      [%ActivityMapping{}, ...]
+
+  """
+  def get_activity_mappings_by_publication(publication_id) do
+    from(p in ActivityMapping, where: p.publication_id == ^publication_id, preload: [:activity, :revision])
+    |> Repo.all()
   end
 
   @doc """
@@ -468,42 +505,70 @@ defmodule Oli.Publishing do
   end
 
   @doc """
-  Publishes the active publication and creates a new working unpublished publication for a project
+  Publishes the active publication and creates a new working unpublished publication for a project.
+  Returns the published publication
+
+  ## Examples
+
+      iex> publish_project(project)
+      {:ok, %Publication{}}
   """
   def publish_project(project) do
-    active_publication = Repo.get_by!(Project, project_id: project.id, published: false)
+    active_publication = get_unpublished_publication_by_slug!(project.slug)
 
     # create a new publication to capture all further edits
-    {:ok, new_publication} = create_publication(active_publication |> Enum.into(%{published: false}))
+    {:ok, new_publication} = create_publication(%{
+      description: active_publication.description,
+      published: false,
+      open_and_free: active_publication.open_and_free,
+      root_resources: active_publication.root_resources,
+      project_id: active_publication.project_id,
+    })
 
     # create new mappings for the new publication
-    # {:ok, mappings} = Repo.get_by(ResourceMapping, publication_id: active_publication.id, preload: [:resource, :revision])
-    {:ok, resource_mappings} = Repo.get_by(ResourceMapping, publication_id: active_publication.id)
-    {:ok, activity_mappings} = Repo.get_by(ActivityMapping, publication_id: active_publication.id)
-    {:ok, objective_mappings} = Repo.get_by(ObjectiveMapping, publication_id: active_publication.id)
+    resource_mappings = get_resource_mappings_by_publication(active_publication.id)
+    activity_mappings = get_activity_mappings_by_publication(active_publication.id)
+    objective_mappings = get_objective_mappings_by_publication(active_publication.id)
 
-    new_resource_mappings = resource_mappings
-      |> Enum.map(fn resource_mapping ->
-        update_resource_mapping(resource_mapping, %{publication_id: new_publication.id})
-      end)
-    Repo.insert_all(ResourceMapping, new_resource_mappings)
+    # create a copy_mapping function bound to new_publication
+    copy_mapping_fn = &(copy_mapping_for_publication &1, new_publication)
 
-    new_activity_mappings = activity_mappings
-      |> Enum.map(fn resource_mapping ->
-        update_activity_mapping(resource_mapping, %{publication_id: new_publication.id})
-      end)
-    Repo.insert_all(ActivityMapping, new_activity_mappings)
-
-    new_objective_mappings = objective_mappings
-      |> Enum.map(fn resource_mapping ->
-        update_objective_mapping(resource_mapping, %{publication_id: new_publication.id})
-      end)
-    Repo.insert_all(ObjectiveMapping, new_objective_mappings)
+    # copy mappings for resources, activities, and objectives
+    Enum.map(resource_mappings, copy_mapping_fn)
+    Enum.map(activity_mappings, copy_mapping_fn)
+    Enum.map(objective_mappings, copy_mapping_fn)
 
     # set the active publication to published
     update_publication(active_publication, %{published: true})
+  end
 
-    {:ok, active_publication}
+  defp copy_mapping_for_publication(%ResourceMapping{} = resource_mapping, publication) do
+    {:ok, new_mapping} = create_resource_mapping(%{
+      publication_id: publication.id,
+      resource_id: resource_mapping.resource_id,
+      revision_id: resource_mapping.revision_id,
+      locked_by_id: resource_mapping.locked_by_id,
+      lock_updated_at: resource_mapping.lock_updated_at,
+    })
+    new_mapping
+  end
+
+  defp copy_mapping_for_publication(%ActivityMapping{} = activity_mapping, publication) do
+    {:ok, new_mapping} = create_activity_mapping(%{
+      publication_id: publication.id,
+      activity_id: activity_mapping.activity_id,
+      revision_id: activity_mapping.revision_id,
+    })
+    new_mapping
+  end
+
+  defp copy_mapping_for_publication(%ObjectiveMapping{} = objective_mapping, publication) do
+    {:ok, new_mapping} = create_objective_mapping(%{
+      publication_id: publication.id,
+      objective_id: objective_mapping.objective_id,
+      revision_id: objective_mapping.revision_id,
+    })
+    new_mapping
   end
 
   def update_existing_section_publications(publication) do
