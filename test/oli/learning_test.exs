@@ -115,4 +115,26 @@ defmodule Oli.LearningTest do
       assert %Ecto.Changeset{} = Learning.change_objective_revision(objective_revision)
     end
   end
+
+  describe "slugs to id test" do
+
+    setup do
+      Seeder.base_project_with_resource()
+        |> Seeder.add_objective("one")
+        |> Seeder.add_objective("two")
+        |> Seeder.add_objective("three")
+    end
+
+    test "get_ids_from_objective_slugs/1 returns ids", _ do
+      ids = Learning.get_ids_from_objective_slugs(["one", "two", "three"])
+      assert length(ids) == 3
+      assert Kernel.is_number(hd(ids))
+    end
+
+    test "get_ids_from_objective_slugs/1 returns only valid ones", _ do
+      ids = Learning.get_ids_from_objective_slugs(["one", "dog", "apply"])
+      assert length(ids) == 1
+      assert Kernel.is_number(hd(ids))
+    end
+  end
 end

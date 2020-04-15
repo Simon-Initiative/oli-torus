@@ -230,15 +230,11 @@ defmodule Oli.Editing.ResourceEditor do
   end
 
   defp update_revision(revision, update) do
-    IO.puts "UPDATED"
-    IO.inspect update
 
     converted_back_to_ids = case Map.get(update, "objectives") do
       nil -> update
       objectives -> Map.put(update, "objectives", Learning.get_ids_from_objective_slugs(objectives))
     end
-
-    IO.inspect converted_back_to_ids
 
     {:ok, updated} = Resources.update_resource_revision(revision, converted_back_to_ids)
     updated
