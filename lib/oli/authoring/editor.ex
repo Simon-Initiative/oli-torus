@@ -178,7 +178,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
     end
   end
 
-  defp get_latest_revision(publication, resource) do
+  def get_latest_revision(publication, resource) do
     mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
     revision = Resources.get_resource_revision!(mapping.revision_id)
 
