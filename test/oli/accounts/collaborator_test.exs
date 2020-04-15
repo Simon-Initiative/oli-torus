@@ -1,4 +1,4 @@
-defmodule Oli.Accounts.AuthorProjectTest do
+defmodule Oli.Accounts.CollaboratorTest do
   use Oli.DataCase
   alias Oli.Authoring.Collaborators
   import ExUnit.Assertions

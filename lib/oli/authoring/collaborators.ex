@@ -22,7 +22,7 @@ defmodule Oli.Authoring.Collaborators do
         project_role_id: project_role.id,
       })
     else
-      error -> {:error, error}
+      error -> error
     end
   end
 
@@ -36,8 +36,11 @@ defmodule Oli.Authoring.Collaborators do
     add_collaborator(author.email, project.slug)
   end
   def add_collaborator(email, project_slug) when is_binary(email) and is_binary(project_slug) do
-    change_collaborator(email, project_slug)
-    |> Repo.insert
+    changeset_or_error = change_collaborator(email, project_slug)
+    case changeset_or_error do
+      %Ecto.Changeset{} -> Repo.insert(changeset_or_error)
+      {:error, e} -> changeset_or_error
+    end
   end
 
   def remove_collaborator(email, project_slug) when is_binary(email) and is_binary(project_slug) do

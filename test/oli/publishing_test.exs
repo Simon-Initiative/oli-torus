@@ -136,7 +136,7 @@ defmodule Oli.PublishingTest do
   describe "activity_mappings" do
 
     @valid_attrs %{}
-    @update_attrs %{}
+    # @update_attrs %{}
     @invalid_attrs %{}
 
     setup do
@@ -180,7 +180,7 @@ defmodule Oli.PublishingTest do
   describe "objective_mappings" do
 
     @valid_attrs %{}
-    @update_attrs %{}
+    # @update_attrs %{}
     @invalid_attrs %{}
 
     setup do

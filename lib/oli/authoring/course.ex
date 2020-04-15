@@ -18,17 +18,26 @@ defmodule Oli.Authoring.Course do
 
   def create_project(title, author) do
     Repo.transaction(fn ->
-      with {:ok, family} <- create_family(default_family(title)),
-           {:ok, project} <- create_project(default_project(title, family)),
-           {:ok, _collaborator} <- Collaborators.add_collaborator(author, project),
-           {:ok, %{resource: resource, resource_revision: resource_revision}}
+      with {:ok, project_family} <- create_family(default_family(title)),
+           {:ok, project} <- create_project(default_project(title, project_family)),
+           {:ok, collaborator} <- Collaborators.add_collaborator(author, project),
+           {:ok, %{resource: resource, resource_revision: resource_revision, resource_family: resource_family}}
               <- Resources.initial_resource_setup(author, project),
           #  {:ok, %{objective: objective, objective_revision: objective_revision}}
           #     <- Learning.initial_objective_setup(project),
-           {:ok, publication}
+           {:ok, %{publication: publication, resource_mapping: resource_mapping}}
               <- Publishing.initial_publication_setup(project, resource, resource_revision)
       do
-        %{project: project, publication: publication}
+        %{
+          project_family: project_family,
+          project: project,
+          author_project: collaborator,
+          resource: resource,
+          resource_revision: resource_revision,
+          resource_family: resource_family,
+          publication: publication,
+          resource_mapping: resource_mapping,
+        }
       else
         {:error, error} -> Repo.rollback(error)
       end

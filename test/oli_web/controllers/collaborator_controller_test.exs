@@ -1,4 +1,4 @@
-defmodule OliWeb.AuthorProjectControllerTest do
+defmodule OliWeb.CollaboratorControllerTest do
   use OliWeb.ConnCase
 
   @admin_email "admin@oli.cmu.edu"

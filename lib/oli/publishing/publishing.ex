@@ -40,7 +40,9 @@ defmodule Oli.Publishing do
         #   revision_id: objective_revision.id,
         # })
       do
-        publication
+        %{}
+        |> Map.put(:publication, publication)
+        |> Map.put(:resource_mapping, resource_mapping)
       else
         error -> Repo.rollback(error)
       end

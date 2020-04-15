@@ -109,42 +109,42 @@ defmodule Oli.CourseTest do
     setup do
       author = author_fixture()
       {:ok, results} = Course.create_project("test project", author)
-      {:ok, Map.put(results, :author, author: author)}
+      {:ok, Map.put(results, :author, author)}
     end
 
-    test "creates a new family", %{transaction: %{family: family}} do
+    test "creates a new family", %{project_family: family} do
       assert !is_nil(family)
     end
 
-    test "creates a new project tied to the family", %{transaction: %{project: project, family: family}} do
+    test "creates a new project tied to the family", %{project: project, project_family: family} do
       project = Repo.preload(project, [:family])
       assert project.family.slug == family.slug
     end
 
-    test "associates the currently logged in author with the new project", %{transaction: %{author_project: author_project, project: project}, author: author} do
+    test "associates the currently logged in author with the new project", %{author_project: author_project, project: project, author: author} do
       assert !is_nil(author_project)
       assert author_project.author_id == author.id
       assert author_project.project_id == project.id
       assert Repo.preload(author_project, [:project_role]).project_role.type == "owner"
     end
 
-    test "creates a new container resource", %{transaction: %{resource_revision: revision}} do
+    test "creates a new container resource", %{resource_revision: revision} do
       assert revision.slug =~ "root_container"
     end
 
-    test "creates a new resource revision for the container", %{transaction: %{resource: resource, resource_revision: resource_revision}} do
+    test "creates a new resource revision for the container", %{resource: resource, resource_revision: resource_revision} do
       revision = Repo.preload(resource_revision, [:resource])
       assert revision.slug =~ "root_container"
       assert revision.resource == resource
     end
 
-    test "creates a new publication associated with the project and containing the container resource", %{transaction: %{publication: publication, resource: resource, project: project}} do
+    test "creates a new publication associated with the project and containing the container resource", %{publication: publication, resource: resource, project: project} do
       assert Repo.preload(publication, [:root_resource]).root_resource == resource
       publication = Repo.preload(publication, [:project])
       assert publication.project == project
     end
 
-    test "project should always have an unpublished, 'active' publication", %{transaction: %{project: project}} do
+    test "project should always have an unpublished, 'active' publication", %{project: project} do
       assert Enum.find(Oli.Repo.preload(project, [:publications]).publications, &(&1.published == false))
     end
   end

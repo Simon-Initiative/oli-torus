@@ -4,15 +4,15 @@ defmodule Oli.LearningTest do
   alias Oli.Accounts.{SystemRole, Institution, Author}
   alias Oli.Authoring.Course.{Project, Family}
   alias Oli.Authoring.Learning
-  alias Oli.Authoring.Learning.{Objective, ObjectiveFamily, ObjectiveRevision}
-  alias Oli.Authoring.Resources.{Resource, ResourceRevision, ResourceFamily}
+  alias Oli.Authoring.Learning.{Objective, ObjectiveFamily}
+  alias Oli.Authoring.Resources.{Resource, ResourceFamily}
   alias Oli.Publishing.Publication
 
   describe "objectives" do
 
     @valid_attrs %{slug: "some slug"}
-    @update_attrs %{slug: "some updated slug"}
-    @invalid_attrs %{slug: nil}
+    # @update_attrs %{slug: "some updated slug"}
+    # @invalid_attrs %{slug: nil}
 
     setup do
 
@@ -39,8 +39,8 @@ defmodule Oli.LearningTest do
   describe "objective_revisions" do
 
     @valid_attrs %{title: "some title", children: [], deleted: false}
-    @update_attrs %{title: "some updated title", children: [], deleted: true}
-    @invalid_attrs %{title: nil, children: nil, deleted: nil}
+    # @update_attrs %{title: "some updated title", children: [], deleted: true}
+    # @invalid_attrs %{title: nil, children: nil, deleted: nil}
 
     setup do
 
