@@ -80,7 +80,7 @@ if !Oli.Repo.get_by(Oli.Authoring.Resources.ResourceType, id: 1) do
 end
 
 # Seed the database with the locally implemented activity types
-if (length(Oli.Activities.list_activity_registrations()) == 0) do
+if Enum.empty?(Oli.Authoring.Activities.list_activity_registrations()) do
   Oli.Registrar.register_local_activities()
 end
 

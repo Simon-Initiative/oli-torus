@@ -7,7 +7,6 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
   alias Oli.Authoring.{Locks, Course, Resources}
   alias Oli.Authoring.Learning
   alias Oli.Authoring.Resources.ResourceRevision
-  alias Oli.Authoring.Editing.ResourceContext
   alias Oli.Publishing
   alias Oli.Accounts
   alias Oli.Repo
@@ -171,11 +170,11 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
     end
 
   defp create(revision, project_slug, revision_slug, author, all_objectives, objectives) do
-    %Oli.Editing.ResourceContext{
+    %Oli.Authoring.Editing.ResourceContext{
       authorEmail: author.email,
       projectSlug: project_slug,
       resourceSlug: revision_slug,
-      editorMap: Oli.Activities.create_registered_activity_map(),
+      editorMap: Oli.Authoring.Activities.create_registered_activity_map(),
       objectives: objectives,
       allObjectives: all_objectives,
       title: revision.title,

@@ -1,7 +1,7 @@
 defmodule Oli.RegistrarTest do
   use Oli.DataCase
 
-  alias Oli.Activities
+  alias Oli.Authoring.Activities
 
   describe "activity registration" do
 

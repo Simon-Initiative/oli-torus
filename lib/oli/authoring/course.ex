@@ -1,12 +1,10 @@
 defmodule Oli.Authoring.Course do
 
   import Ecto.Query, warn: false
-  import Ecto.Multi
   alias Oli.Repo
   alias Oli.Publishing
   alias Oli.Authoring.{Resources, Collaborators}
   alias Oli.Authoring.Course.{Utils, Project, Family}
-  alias Oli.Authoring.Learning
 
   def list_projects do
     Repo.all(Project)

@@ -3,7 +3,8 @@ defmodule Oli.Authoring.Activities do
   import Ecto.Query, warn: false
   alias Oli.Repo
 
-  alias Oli.Authoring.Activities.{Activity, ActivityFamily, Manifest, Registration, ActivityRevision}
+  alias Oli.Authoring.Activities.{Activity, ActivityFamily, Registration, ActivityRevision}
+  alias Oli.Activities.Manifest
 
   def register_activity(%Manifest{} = manifest) do
     create_registration(%{

@@ -39,7 +39,7 @@ defmodule Oli.Authoring.Collaborators do
     changeset_or_error = change_collaborator(email, project_slug)
     case changeset_or_error do
       %Ecto.Changeset{} -> Repo.insert(changeset_or_error)
-      {:error, e} -> changeset_or_error
+      {:error, _e} -> changeset_or_error
     end
   end
 
@@ -59,7 +59,7 @@ defmodule Oli.Authoring.Collaborators do
       end
 
     else
-      error -> {:error, "Author not found in project"}
+      _error -> {:error, "Author not found in project"}
     end
   end
 end
