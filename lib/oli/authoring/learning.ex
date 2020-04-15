@@ -7,6 +7,15 @@ defmodule Oli.Authoring.Learning do
   alias Oli.Publishing
   alias Oli.Publishing.ObjectiveMapping
 
+  # From a list of objective revision slugs, convert to a list of objective ids
+  def get_ids_from_objective_slugs(slugs) do
+    result = Repo.all from rev in ObjectiveRevision,
+      where: rev.slug in ^slugs,
+      select: map(rev, [:objective_id])
+
+    Enum.map(result, fn m -> Map.get(m, :objective_id) end)
+  end
+
   def get_objective!(id), do: Repo.get!(Objective, id)
 
   def create_objective(attrs \\ %{}) do

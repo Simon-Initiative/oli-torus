@@ -73,6 +73,16 @@ defmodule Oli.Publishing do
     })
   end
 
+  def update_publication(%Publication{} = publication, attrs) do
+    publication
+    |> Publication.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def delete_publication(%Publication{} = publication) do
+    Repo.delete(publication)
+  end
+
   @doc """
   Get unpublished publication for a project. This assumes there is only one unpublished publication per project.
   """
@@ -101,6 +111,14 @@ defmodule Oli.Publishing do
     |> Repo.update()
   end
 
+  def change_resource_mapping(%ResourceMapping{} = resource_mapping) do
+    ResourceMapping.changeset(resource_mapping, %{})
+  end
+
+  def delete_resource_mapping(%ResourceMapping{} = resource_mapping) do
+    Repo.delete(resource_mapping)
+  end
+
   def get_resource_mappings_by_publication(publication_id) do
     from(p in ResourceMapping, where: p.publication_id == ^publication_id, preload: [:resource, :revision])
     |> Repo.all()
@@ -112,6 +130,20 @@ defmodule Oli.Publishing do
     %ActivityMapping{}
     |> ActivityMapping.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def update_activity_mapping(%ActivityMapping{} = activity_mapping, attrs) do
+    activity_mapping
+    |> ActivityMapping.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def change_activity_mapping(%ActivityMapping{} = activity_mapping) do
+    ActivityMapping.changeset(activity_mapping, %{})
+  end
+
+  def delete_activity_mapping(%ActivityMapping{} = activity_mapping) do
+    Repo.delete(activity_mapping)
   end
 
   def get_objective_mappings_by_publication(publication_id) do
@@ -127,8 +159,18 @@ defmodule Oli.Publishing do
     |> Repo.insert()
   end
 
+  def update_objective_mapping(%ObjectiveMapping{} = objective_mapping, attrs) do
+    objective_mapping
+    |> ObjectiveMapping.changeset(attrs)
+    |> Repo.update()
+  end
+
   def change_objective_mapping(%ObjectiveMapping{} = objective_mapping) do
     ObjectiveMapping.changeset(objective_mapping, %{})
+  end
+
+  def delete_objective_mapping(%ObjectiveMapping{} = objective_mapping) do
+    Repo.delete(objective_mapping)
   end
 
   @doc """

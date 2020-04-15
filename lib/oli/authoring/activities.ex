@@ -3,7 +3,26 @@ defmodule Oli.Authoring.Activities do
   import Ecto.Query, warn: false
   alias Oli.Repo
 
-  alias Oli.Authoring.Activities.{Activity, ActivityFamily, Registration, ActivityRevision}
+  alias Oli.Authoring.Activities.{Activity, ActivityFamily, Manifest, Registration, ActivityRevision}
+
+  def register_activity(%Manifest{} = manifest) do
+    create_registration(%{
+      authoring_script: manifest.id <> "-authoring.js",
+      authoring_element: manifest.authoring.element,
+      delivery_script: manifest.id <> "-delivery.js",
+      delivery_element: manifest.delivery.element,
+      description: manifest.description,
+      title: manifest.friendlyName,
+      icon: "nothing",
+      slug: manifest.id,
+    })
+  end
+
+  def create_registered_activity_map() do
+    list_activity_registrations()
+      |> Enum.map(&Oli.Activities.ActivityMapEntry.from_registration/1)
+      |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.slug, e) end)
+  end
 
   def create_activity_family(attrs \\ %{}) do
     %ActivityFamily{}

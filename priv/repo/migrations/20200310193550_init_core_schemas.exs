@@ -118,8 +118,8 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :title, :string
       add :slug, :string
       add :content, {:array, :map}
-      add :children, {:array, :string}
-      add :objectives, {:array, :string}
+      add :children, {:array, :id}
+      add :objectives, {:array, :id}
       add :deleted, :boolean, default: false, null: false
       add :author_id, references(:authors)
       add :resource_id, references(:resources)
@@ -156,15 +156,23 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
     end
 
     create table(:activity_registrations) do
+      add :slug, :string
       add :title, :string
       add :icon, :string
       add :description, :string
-      add :element_name, :string
+      add :delivery_element, :string
+      add :authoring_element, :string
       add :delivery_script, :string
       add :authoring_script, :string
 
       timestamps()
     end
+    create unique_index(:activity_registrations, [:slug], name: :index_slug_registrations)
+    create unique_index(:activity_registrations, [:delivery_element], name: :index_delivery_element_registrations)
+    create unique_index(:activity_registrations, [:authoring_element], name: :index_authoring_element_registrations)
+    create unique_index(:activity_registrations, [:delivery_script], name: :index_delivery_script_registrations)
+    create unique_index(:activity_registrations, [:authoring_script], name: :index_authoring_script_registrations)
+
 
     create table(:activity_families) do
       timestamps()
