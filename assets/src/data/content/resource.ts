@@ -1,6 +1,22 @@
 import { ModelElement } from './model';
+import { ProjectSlug, ResourceSlug, ObjectiveSlug } from 'data/types';
+import { Objective } from 'data/content/objective';
+
 import guid from 'utils/guid';
 export type ResourceContent = StructuredContent | ActivityReference;
+
+
+export type ResourceContext = {
+  resourceType: ResourceType,     // Page or assessment?
+  authorEmail: string,            // The current author
+  projectSlug: ProjectSlug,       // The current project
+  resourceSlug: ResourceSlug,     // The current resource
+  title: string,                  // The title of the resource
+  content: ResourceContent[],     // Content of the resource
+  objectives: ObjectiveSlug[],    // Attached objectives
+  allObjectives: Objective[],     // All objectives
+};
+
 
 export enum ResourceType {
   'page',

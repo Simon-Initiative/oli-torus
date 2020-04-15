@@ -49,6 +49,7 @@ export const Editors = (props: EditorsProps) => {
       icon: '',
       description: 'Not supported',
       friendlyName: 'Not supported',
+      slug: 'unknown',
     };
 
     const editor = editorMap[content.type]

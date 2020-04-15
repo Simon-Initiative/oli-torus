@@ -2,6 +2,8 @@ defmodule OliWeb.ResourceController do
   use OliWeb, :controller
 
   alias Oli.Editing.ResourceEditor
+  alias Oli.Activities
+
   import OliWeb.ProjectPlugs
 
   plug :fetch_project when action not in [:view, :update]
@@ -14,10 +16,15 @@ defmodule OliWeb.ResourceController do
   def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
 
     case ResourceEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
-      {:ok, context} -> render(conn, "edit.html", title: "Resource Editor", context: Jason.encode!(context))
+      {:ok, context} -> render(conn, "edit.html", title: "Resource Editor", context: Jason.encode!(context), scripts: get_scripts())
       {:error, :not_found} -> render conn, OliWeb.SharedView, "_not_found.html"
     end
 
+  end
+
+  defp get_scripts() do
+    Activities.list_activity_registrations()
+      |> Enum.map(fn r -> Map.get(r, :authoring_script) end)
   end
 
   def update(conn, %{"project" => project_slug, "resource" => resource_slug, "update" => update }) do

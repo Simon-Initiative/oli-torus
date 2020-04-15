@@ -2,7 +2,7 @@ import * as Immutable from 'immutable';
 import React from 'react';
 import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
-import { ResourceContent, ResourceType, createDefaultStructuredContent } from 'data/content/resource';
+import { ResourceContent, ResourceContext, createDefaultStructuredContent } from 'data/content/resource';
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
 import { Editors } from './Editors';
@@ -14,17 +14,9 @@ import { makeRequest } from 'data/persistence/common';
 import { UndoableState, processRedo, processUndo, processUpdate, init } from './undo';
 import { releaseLock, acquireLock } from 'data/persistence/lock';
 
-export type ResourceEditorProps = {
-  resourceType: ResourceType,     // Page or assessment?
-  authorEmail: string,            // The current author
-  projectSlug: ProjectSlug,       // The current project
-  resourceSlug: ResourceSlug,     // The current resource
-  title: string,                  // The title of the resource
-  content: ResourceContent[],     // Content of the resource
-  objectives: ObjectiveSlug[],        // Attached objectives
-  allObjectives: Objective[],     // All objectives
-  editorMap: ActivityEditorMap,   // Map of activity types to activity elements
-};
+export interface ResourceEditorProps extends ResourceContext {
+  editorMap: ActivityEditorMap;   // Map of activity types to activity elements
+}
 
 // This is the state of our resource that is undoable
 type Undoable = {
@@ -168,6 +160,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     return (
       <div>
         <TitleBar
+          resourceContext={props}
           onUndo={this.undo}
           onRedo={this.redo}
           canUndo={state.undoable.undoStack.size > 0}
