@@ -124,38 +124,29 @@
   }
 </style>
 
-<%# The `display: none` MUST be set in-line to allow access to its value %>
-<div class="modal" id="modal-new-objective">
-  <div class="modal-header">
-    <span class="modal-title">Enter Objective</span>
-    <span class="modal-close"><i class="material-icons">close</i></span>
-  </div>
-  <div class="modal-body">
-    <%= form_for @objective_changeset, Routes.objective_path(@conn, :create, @project), [id: "form-create-objective"], fn f -> %>
-      <div class="form-label-group">
-        <%= textarea f,
-          :title,
-          class: "form-control input-bold " <> error_class(f, :title, "is-invalid"),
-          placeholder: "Determine whether two events are independent or not.",
-          id: "input-title",
-          required: true,
-          autofocus: focusHelper(f, :title, default: true) %>
-        <%= label f, :title, "This can be changed later", class: "control-label input-bold" %>
-        <%= error_tag f, :title %>
-      </div>
-      <%= submit "Add Objective",
-        id: "button-create-objective",
-        class: "btn btn-primary",
-        phx_disable_with: "Adding Objective...",
-        form: f.id %>
-    <% end %>
-  </div>
-</div>
 
 <div class="objective container">
   <div class="row">
     <div class="page-header">
-      <div class="flex"><h1>Objectives</h1> <button class="add-button" id="button-new-objective"><i class="material-icons">add</i></button></div>
+    <%= form_for @objective_changeset, Routes.objective_path(@conn, :create, @project), [id: "form-create-objective", class: "form-inline"], fn f -> %>
+          <div class="form-label-group">
+            <%= text_input f,
+              :title,
+              class: "form-control mb-2 mr-sm-2 mb-sm-0 " <> error_class(f, :title, "is-invalid"),
+              placeholder: "New Learning Objective",
+              id: "input-title",
+              required: true,
+              autofocus: focusHelper(f, :title, default: true) %>
+            <%= error_tag f, :title %>
+          </div>
+          <%= submit "Create",
+            id: "button-create-objective",
+            type: "button",
+            class: "btn btn-primary",
+            phx_disable_with: "Adding Objective...",
+            form: f.id %>
+        <% end %>
+
         <small>At the end of the course my students should be able to...</small>
         <p></p>
 <%= if Enum.count(@objective_mappings) == 0 do %>
@@ -168,6 +159,9 @@
   <%= for objective_mapping <- @objective_mappings do %>
       <tr>
         <td><%= objective_mapping.revision.title %></td>
+        <td>Reword</td>
+        <td>Remove</td>
+        <td>sub-objective</td>
       </tr>
   <% end %>
     </tbody>
@@ -178,41 +172,16 @@
 </div>
 
 <script>
-  // modal
-  const modal = document.getElementById("modal-new-objective");
-  modal.style.display = "none";
-  const openButton = document.getElementById("button-new-objective");
-  const closeButton = document.getElementsByClassName("modal-close")[0];
-
-  const isModalDisplayed = (modal) => modal.style.display === "block";
-  const displayModal = (e) => {
-    modal.style.display = "block";
-    e.stopPropagation();
-  };
-  const hideModal = () => modal.style.display = "none";
-  const closeModalOnClickOutside = (e) =>
-    e.target !== modal && !modal.contains(e.target) && hideModal();
-
-  closeButton.onclick = hideModal;
-  openButton.onclick = (e) => {
-    if (isModalDisplayed(modal)) {
-      hideModal();
-      return;
-    }
-    displayModal(e);
-    document.getElementsByTagName("body")[0].onclick = closeModalOnClickOutside;
-  };
-
   // create objective
-  const createProjectButton = document.getElementById("button-create-objective")
+  const objectiveButton = document.getElementById("button-create-objective")
   const titleInput = document.getElementById("input-title")
-  createProjectButton.disabled = !titleInput.value || titleInput.value.length === 0
+  objectiveButton.disabled = !titleInput.value || titleInput.value.length === 0
   const form = document.getElementById("form-create-objective")
   titleInput.addEventListener('input', () => titleInput.value.length > 0
-    ? createProjectButton.disabled = false
-    : createProjectButton.disabled = true)
-  createProjectButton.addEventListener('click', () => {
-    if (!createProjectButton.disabled) {
+    ? objectiveButton.disabled = false
+    : objectiveButton.disabled = true)
+  objectiveButton.addEventListener('click', () => {
+    if (!objectiveButton.disabled) {
       form.submit();
     }
   })

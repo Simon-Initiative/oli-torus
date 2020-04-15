@@ -7,6 +7,7 @@ defmodule Oli.TestHelpers do
   alias Oli.Lti.HmacSHA1
   alias Oli.Course
   alias Oli.Course.Project
+  alias Oli.Learning
 
   def yesterday() do
     {:ok, datetime} = DateTime.now("Etc/UTC")
@@ -53,6 +54,12 @@ defmodule Oli.TestHelpers do
   def package_fixture(author) do
     {:ok, resources} = Course.create_project("test project", author)
     resources
+  end
+
+  def objective_fixture(project) do
+    params = Map.merge(%{"title" => "Test learning objective"}, %{"project_id" => project.id})
+    {:ok, objective} = Learning.create_objective(params)
+    objective
   end
 
   def url_from_conn(conn) do
@@ -133,5 +140,14 @@ defmodule Oli.TestHelpers do
     author = author_fixture()
     [project | _rest] = make_n_projects(1, author)
     {:ok, author: author, project: project}
+  end
+
+  def author_project_objective_fixture(%{conn: conn}) do
+    author = author_fixture()
+    [project | _rest] = make_n_projects(1, author)
+    objective = objective_fixture(project);
+    revision = objective.objective_revision
+    conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
+    {:ok, conn: conn, author: author, project: project, revision: revision}
   end
 end
