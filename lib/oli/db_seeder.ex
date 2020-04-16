@@ -34,6 +34,8 @@ defmodule Oli.Seeder do
 
     {:ok, mapping} = Publishing.create_resource_mapping(%{ publication_id: publication.id, resource_id: resource.id, revision_id: revision.id})
 
+    {:ok, publication} = Publishing.update_publication(publication, %{root_resources: [resource.id]})
+
     Map.put(%{}, :family, family)
       |> Map.put(:project, project)
       |> Map.put(:publication, publication)

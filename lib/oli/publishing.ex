@@ -570,15 +570,59 @@ defmodule Oli.Publishing do
     new_mapping
   end
 
-  def update_existing_section_publications(publication, project) do
-    latest_publication = get_unpublished_publication_by_slug!(project.slug)
-    Sections.get_sections_by_publication(publication)
+  def update_all_section_publications(project, publication) do
+    Sections.get_sections_by_project(project)
     |> Enum.map(fn section ->
-      Sections.update_section(section, %{publication_id: latest_publication.id})
+      Sections.update_section(section, %{publication_id: publication.id})
     end)
   end
 
   def diff_publications(p1, p2) do
+    all_resource_revisions_p1 = get_resource_revisions_for_publication(p1)
+    all_resource_revisions_p2 = get_resource_revisions_for_publication(p2)
 
+    # go through every resource in p1 to identify any resources that are identical, changed, or deleted in p2
+    {visited, changes} = Map.keys(all_resource_revisions_p1)
+    |> Enum.reduce({%{}, %{}}, fn id, {visited, acc} ->
+      if Map.has_key?(all_resource_revisions_p2, id) do
+        {_res_p1, rev_p1} = all_resource_revisions_p1[id]
+        {_res_p2, rev_p2} = all_resource_revisions_p2[id]
+        if rev_p1.id == rev_p2.id do
+          {Map.put(visited, id, true), Map.put_new(acc, id, :identical)}
+        else
+          {Map.put(visited, id, true), Map.put_new(acc, id, :changed)}
+        end
+      else
+        {visited, Map.put_new(acc, id, :deleted)}
+      end
+    end)
+
+    # go through every resource in p2 that wasn't in p1 to identify new resources
+    changes = Map.keys(all_resource_revisions_p2)
+    |> Enum.filter(fn id -> !Map.has_key?(visited, id) end)
+    |> Enum.reduce(changes, fn id, acc ->
+      Map.put_new(acc, id, :added)
+    end)
+
+    changes
+  end
+
+  defp get_resource_revisions_for_publication(publication) do
+    resource_mappings = get_resource_mappings_by_publication(publication.id)
+    activity_mappings = get_activity_mappings_by_publication(publication.id)
+    objective_mappings = get_objective_mappings_by_publication(publication.id)
+
+    resource_mappings ++ activity_mappings ++ objective_mappings
+    |> Enum.filter(fn mapping -> mapping.revision.deleted == false end)
+    |> Enum.reduce(%{}, fn mapping, acc ->
+      case mapping do
+        %ResourceMapping{resource_id: resource_id, resource: resource, revision: revision} ->
+          Map.put_new(acc, resource_id, {resource, revision})
+        %ActivityMapping{activity_id: activity_id, activity: activity, revision: revision} ->
+          Map.put_new(acc, activity_id, {activity, revision})
+        %ObjectiveMapping{objective_id: objective_id, objective: objective, revision: revision} ->
+          Map.put_new(acc, objective_id, {objective, revision})
+      end
+    end)
   end
 end

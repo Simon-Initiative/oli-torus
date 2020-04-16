@@ -48,6 +48,7 @@ defmodule Oli.TestHelpers do
         timezone: "US/Eastern",
         consumer_key: "test-consumer-key",
         shared_secret: "test-secret",
+        author_id: 1,
       })
 
     {:ok, institution} = Accounts.create_institution(params)

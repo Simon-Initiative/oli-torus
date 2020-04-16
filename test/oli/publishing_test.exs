@@ -21,6 +21,7 @@ defmodule Oli.PublishingTest do
   alias Oli.Learning.ObjectiveFamily
   alias Oli.Learning.ObjectiveRevision
   alias Oli.Editing.ResourceEditor
+  alias Oli.Sections
 
   describe "publications" do
     alias Oli.Publishing.Publication
@@ -344,7 +345,7 @@ defmodule Oli.PublishingTest do
 
       # further edits to the locked resource should occur in a new revision
       content = [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }]
-      {:ok, updated_revision} = ResourceEditor.edit("title", "some_title", author.email, %{ content: content })
+      {:ok, updated_revision} = ResourceEditor.edit(project.slug, revision.slug, author.email, %{ content: content })
       assert revision.id != updated_revision.id
 
       # further edits should not be present in published resource
@@ -353,17 +354,84 @@ defmodule Oli.PublishingTest do
       assert old_revision.content == revision.content
     end
 
-    test "update_existing_section_publications/2 updates all existing sections using the project to the latest publication",
-      %{publication: publication, project: project} do
+    test "update_all_section_publications/2 updates all existing sections using the project to the latest publication",
+      %{project: project} do
+      institution = institution_fixture()
 
-      # {:ok, %Section{} = section} = Sections.create_section(valid_attrs)
+      {:ok, original_publication} = Publishing.publish_project(project)
 
-      # {:ok, %Publication{} = published} = Publishing.publish_project(project)
+      {:ok, section} = Sections.create_section(%{
+        time_zone: "US/Central",
+        title: "title",
+        context_id: "some-context-id",
+        institution_id: institution.id,
+        project_id: project.id,
+        publication_id: original_publication.id,
+      })
 
+      assert [section] = Sections.get_sections_by_publication(original_publication)
+
+      {:ok, original_publication} = Publishing.publish_project(project)
+
+      # update all sections to use the new publication
+      new_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+      Publishing.update_all_section_publications(project, new_publication)
+
+      # section associated with new publication...
+      assert [section] = Sections.get_sections_by_publication(new_publication)
+
+      # ...and removed from the old one
+      assert [] = Sections.get_sections_by_publication(original_publication)
     end
 
-    test "diff_publications/2 returns the changes between 2 publications", %{} do
+    test "diff_publications/2 returns the changes between 2 publications",
+      %{project: project, author: author, revision: revision} do
+        # for some reason, db_seeder starts off with the revision as deleted, so undelete it
+        {:ok, revision} = Resources.update_resource_revision(revision, %{deleted: false})
 
+        # create a few more resources
+        {:ok, %{revision: r2_revision}} = Resources.create_project_resource(%{
+          objectives: [],
+          children: [],
+          content: [],
+          title: "resource 1",
+        }, Resources.resource_type.unscored_page, author, project)
+        {:ok, %{revision: r3_revision}} = Resources.create_project_resource(%{
+          objectives: [],
+          children: [],
+          content: [],
+          title: "resource 2",
+        }, Resources.resource_type.unscored_page, author, project)
+
+        # create first publication
+        {:ok, %Publication{} = p1} = Publishing.publish_project(project)
+
+        # make some edits
+        content = [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }]
+        {:ok, _updated_revision} = ResourceEditor.edit(project.slug, revision.slug, author.email, %{content: content})
+
+        # add another resource
+        {:ok, %{revision: r4_revision}} = Resources.create_project_resource(%{
+          objectives: [],
+          children: [],
+          content: [],
+          title: "resource 3",
+        }, Resources.resource_type.unscored_page, author, project)
+
+        # delete a resource
+        {:ok, _updated_revision} = ResourceEditor.edit(project.slug, r3_revision.slug, author.email, %{deleted: true})
+
+        # get the active publication as the second publication
+        p2 = Publishing.get_unpublished_publication_by_slug!(project.slug)
+
+        # generate diff
+        diff = Publishing.diff_publications(p1, p2)
+
+        assert Map.keys(diff) |> Enum.count == 4
+        assert diff[revision.resource_id] == :changed
+        assert diff[r2_revision.resource_id] == :identical
+        assert diff[r3_revision.resource_id] == :deleted
+        assert diff[r4_revision.resource_id] == :added
     end
 
   end

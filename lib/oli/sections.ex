@@ -68,6 +68,22 @@ defmodule Oli.Sections do
   end
 
   @doc """
+  Gets all sections that use a particular project
+
+  ## Examples
+
+      iex> get_sections_by_project(project)
+      [%Section{}, ...]
+
+      iex> get_sections_by_project(invalid_project)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_sections_by_project(project) do
+    from(s in Section, where: s.project_id == ^project.id) |> Repo.all()
+  end
+
+  @doc """
   Creates a section.
 
   ## Examples
