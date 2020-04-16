@@ -217,6 +217,10 @@ defmodule Oli.Editing.ResourceEditor do
 
   end
 
+  defp convert_to_activity_ids(update) do
+    update
+  end
+
   defp convert_to_activity_slugs(content, publication_id) do
 
     found_activities = Enum.filter(content, fn c -> Map.get(c, "type") == "activity-reference" end)
