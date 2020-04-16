@@ -6,6 +6,10 @@ defmodule Oli.Editing.ActivityEditor do
 
   import Oli.Editing.Utils
   alias Oli.Activities.ActivityRevision
+  alias Oli.Editing.ResourceEditor
+  alias Oli.Editing.ActivityContext
+  alias Oli.Editing.SiblingActivity
+  alias Oli.Resources
   alias Oli.Publishing
   alias Oli.Activities
   alias Oli.Accounts.Author
@@ -45,5 +49,43 @@ defmodule Oli.Editing.ActivityEditor do
     end)
 
   end
+
+  @doc """
+  Creates the context necessary to power a client side activity editor,
+  where this activity is being editing within the context of being
+  referenced from a resource.
+  """
+  def create_context(project_slug, revision_slug, activity_slug, author) do
+
+    with {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
+         {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil(),
+         {:ok, _objectives} <- Publishing.get_published_objectives(publication.id) |> trap_nil(),
+         {:ok, %{content: _content} = _revision} <- ResourceEditor.get_latest_revision(publication, resource) |> trap_nil(),
+         {:ok, %{activity_type: activity_type, content: model, title: title} = _activity_revision} <- Activities.get_activity_revision(activity_slug) |> trap_nil()
+    do
+
+      context = %ActivityContext{
+        authoringScript: activity_type.authoring_script,
+        authoringElement: activity_type.authoring_element,
+        friendlyName: activity_type.title,
+        description: activity_type.description,
+        authorEmail: author.email,
+        projectSlug: project_slug,
+        resourceSlug: revision_slug,
+        activitySlug: activity_slug,
+        title: title,
+        model: model,
+        objectives: %{},
+        allObjectives: [],
+        previousActivity: nil,
+        nextActivity: nil
+      }
+
+      {:ok, context}
+    else
+      _ -> {:error, :not_found}
+    end
+  end
+
 
 end

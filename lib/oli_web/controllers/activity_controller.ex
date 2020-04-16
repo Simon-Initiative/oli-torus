@@ -3,6 +3,20 @@ defmodule OliWeb.ActivityController do
 
   alias Oli.Editing.ActivityEditor
 
+  import OliWeb.ProjectPlugs
+
+  plug :fetch_project when action in [:edit]
+  plug :authorize_project when action in [:edit]
+
+  def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug, "activity_slug" => activity_slug}) do
+
+    case ActivityEditor.create_context(project_slug, revision_slug, activity_slug, conn.assigns[:current_author]) do
+      {:ok, context} -> render(conn, "edit.html", title: "Activity Editor", script: context.authoringScript, context: Jason.encode!(context))
+      {:error, :not_found} -> render conn, OliWeb.SharedView, "_not_found.html"
+    end
+
+  end
+
   def create(conn, %{"project" => project_slug, "activity_type" => activity_type_slug, "model" => model }) do
 
     author = conn.assigns[:current_author]

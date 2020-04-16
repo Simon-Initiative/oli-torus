@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom';
 const MultipleChoice = (props: any) => {
   return (
     <div style={{ width: '100%', height: '100px', border: 'solid 1px gray' }}>
+      <h2>Welcome to the multiple choice editor!</h2>
       <p>{props.model.stem}</p>
     </div>
   );

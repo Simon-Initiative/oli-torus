@@ -3,7 +3,7 @@ defmodule Oli.Editing.ResourceEditor do
   This module provides content editing facilities for resources.
 
   """
-
+  import Oli.Editing.Utils
   alias Oli.Locks
   alias Oli.Publishing
   alias Oli.Activities
@@ -254,13 +254,13 @@ defmodule Oli.Editing.ResourceEditor do
   end
 
   # removes the objective_id from the maps contained with a list of objectives
-  defp strip_ids(objectives) do
+  def strip_ids(objectives) do
     Enum.map(objectives, fn o -> Map.delete(o, :objective_id) end)
   end
 
   # takes the attached objectives in the form of a list of objective ids
   # and converts it to a list of slugs, using all current objectives
-  defp id_to_slug(attached_objectives, all_objectives) do
+  def id_to_slug(attached_objectives, all_objectives) do
     map = Enum.reduce(all_objectives, %{}, fn o, m -> Map.put(m, Map.get(o, :objective_id), o) end)
     Enum.map(attached_objectives, fn o -> Map.get(map, o) |> Map.get(:slug) end)
   end
@@ -281,24 +281,9 @@ defmodule Oli.Editing.ResourceEditor do
     }
   end
 
-  # Ensure that the author can access this project
-  defp authorize_user(author, project) do
-    case Accounts.can_access?(author, project) do
-      true -> {:ok}
-      false -> {:error, {:not_authorized}}
-    end
-  end
-
-  defp trap_nil(result) do
-    case result do
-      nil -> {:error, {:not_found}}
-      _ -> {:ok, result}
-    end
-  end
-
   # Retrieve the latest (current) revision for a resource given the
   # active publication
-  defp get_latest_revision(publication, resource) do
+  def get_latest_revision(publication, resource) do
     mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
     revision = Resources.get_resource_revision!(mapping.revision_id)
 
