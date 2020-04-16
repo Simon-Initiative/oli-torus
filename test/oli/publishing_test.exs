@@ -22,6 +22,7 @@ defmodule Oli.PublishingTest do
   alias Oli.Learning.ObjectiveRevision
   alias Oli.Editing.ResourceEditor
   alias Oli.Sections
+  alias Oli.Sections.Section
 
   describe "publications" do
     alias Oli.Publishing.Publication
@@ -360,7 +361,7 @@ defmodule Oli.PublishingTest do
 
       {:ok, original_publication} = Publishing.publish_project(project)
 
-      {:ok, section} = Sections.create_section(%{
+      {:ok, %Section{id: section_id}} = Sections.create_section(%{
         time_zone: "US/Central",
         title: "title",
         context_id: "some-context-id",
@@ -369,7 +370,7 @@ defmodule Oli.PublishingTest do
         publication_id: original_publication.id,
       })
 
-      assert [section] = Sections.get_sections_by_publication(original_publication)
+      assert [%Section{id: ^section_id}] = Sections.get_sections_by_publication(original_publication)
 
       {:ok, original_publication} = Publishing.publish_project(project)
 
@@ -378,7 +379,7 @@ defmodule Oli.PublishingTest do
       Publishing.update_all_section_publications(project, new_publication)
 
       # section associated with new publication...
-      assert [section] = Sections.get_sections_by_publication(new_publication)
+      assert [%Section{id: ^section_id}] = Sections.get_sections_by_publication(new_publication)
 
       # ...and removed from the old one
       assert [] = Sections.get_sections_by_publication(original_publication)
