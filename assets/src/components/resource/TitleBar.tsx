@@ -1,9 +1,14 @@
 
 import React from 'react';
-import { ResourceContent, ResourceContext, createDefaultStructuredContent } from 'data/content/resource';
+import { ResourceContent, ResourceContext, ActivityReference,
+  ActivityPurpose, createDefaultStructuredContent } from 'data/content/resource';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
+import { ActivityModelSchema } from 'components/activities/types';
 import { TextEditor } from '../TextEditor';
 import { invokeCreationFunc } from 'components/activities/creation';
+import { createActivity, Created } from 'data/persistence/activity';
+import { ProjectSlug } from 'data/types';
+import guid from 'utils/guid';
 
 type AddCallback = (content: ResourceContent) => void;
 
@@ -23,12 +28,25 @@ export type TitleBarProps = {
 const ItemCreationDropDown = (
   { editMode, onAddItem, editorMap, resourceContext }
   : {editMode: boolean, onAddItem: AddCallback,
-    editorMap: ActivityEditorMap, resourceContext: ResourceContext}) => {
+    editorMap: ActivityEditorMap, resourceContext: ResourceContext }) => {
 
   const handleAdd = (editorDesc: EditorDesc) => {
+
+    let model : ActivityModelSchema;
     invokeCreationFunc(editorDesc.slug, resourceContext)
-      .then((model) => {
-        // console.log(model);
+      .then((createdModel) => {
+        model = createdModel;
+        return createActivity(resourceContext.projectSlug, editorDesc.slug, model);
+      })
+      .then((result: Created) => {
+        const resourceContent : ActivityReference = {
+          type: 'activity-reference',
+          id: guid(),
+          activitySlug: result.revisionSlug,
+          purpose: ActivityPurpose.none,
+          children: [],
+        };
+        onAddItem(resourceContent);
       })
       .catch((err) => {
         // console.log(err);

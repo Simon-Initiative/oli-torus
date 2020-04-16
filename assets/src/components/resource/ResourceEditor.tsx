@@ -38,7 +38,7 @@ function prepareSaveFn(project: ProjectSlug, resource: ResourceSlug, body: any) 
     const params = {
       method: 'PUT',
       body: JSON.stringify({ update: body }),
-      url: `/project/${project}/${resource}/edit`,
+      url: `/project/${project}/resource/${resource}`,
     };
 
     return makeRequest(params);

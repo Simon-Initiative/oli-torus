@@ -1,9 +1,10 @@
 import { ModelElement } from './model';
-import { ProjectSlug, ResourceSlug, ObjectiveSlug } from 'data/types';
+import { ProjectSlug, ResourceSlug, ObjectiveSlug, ActivitySlug, ActivityTypeSlug } from 'data/types';
 import { Objective } from 'data/content/objective';
 
 import guid from 'utils/guid';
-export type ResourceContent = StructuredContent | ActivityReference;
+import { ActivityModelSchema } from 'components/activities/types';
+export type ResourceContent = StructuredContent | ActivityRef;
 
 
 export type ResourceContext = {
@@ -57,10 +58,17 @@ export interface StructuredContent {
   purpose: ContentPurpose;
 }
 
-export interface ActivityReference {
-  type: 'activity';
+export interface ActivityRef {
+  type: 'activityRef';
   id: number;
-  idRef: number;
+  activitySlug: ActivitySlug;
   purpose: ActivityPurpose;
   children: [];
+}
+
+export interface Activity {
+  type: 'activity';
+  activitySlug: ActivitySlug;
+  typeSlug: ActivityTypeSlug;
+  model: ActivityModelSchema;
 }
