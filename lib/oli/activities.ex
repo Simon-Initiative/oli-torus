@@ -163,6 +163,14 @@ defmodule Oli.Activities do
   end
 
   @doc """
+  Returns the activity revisions for a list of revision slugs.
+  """
+  def get_activity_revisions(slugs) do
+    Repo.all(from p in ActivityRevision, where: p.slug in ^slugs)
+  end
+
+
+  @doc """
   Gets a single activity_revision.
 
   Raises `Ecto.NoResultsError` if the Activity revision does not exist.

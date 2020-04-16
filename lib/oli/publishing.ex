@@ -12,6 +12,9 @@ defmodule Oli.Publishing do
   alias Oli.Learning.ObjectiveRevision
   alias Oli.Publishing.ObjectiveMapping
 
+  alias Oli.Publishing.ActivityMapping
+  alias Oli.Activities.ActivityRevision
+
   @doc """
   Returns the list of objectives (their objective_ids, slugs and titles)
   that pertain to a given publication.
@@ -23,6 +26,16 @@ defmodule Oli.Publishing do
       select: map(rev, [:objective_id, :slug, :title])
   end
 
+  @doc """
+  Returns the activity revisions for a list of activity ids
+  that pertain to a given publication.
+  """
+  def get_published_activity_revisions(publication_id, activity_ids) do
+    Repo.all from mapping in ActivityMapping,
+      join: rev in ActivityRevision, on: mapping.revision_id == rev.id,
+      where: mapping.publication_id == ^publication_id and mapping.activity_id in ^activity_ids,
+      select: rev
+  end
 
 
   @doc """
