@@ -39,7 +39,7 @@ defmodule Oli.Editing.ActivityEditor do
       do
         revision
       else
-        error -> IO.inspect(error) |> Repo.rollback()
+        error -> Repo.rollback(error)
       end
 
     end)
