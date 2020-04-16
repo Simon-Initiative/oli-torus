@@ -2,7 +2,8 @@ import * as Immutable from 'immutable';
 import React from 'react';
 import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
-import { ResourceContent, ResourceContext, createDefaultStructuredContent } from 'data/content/resource';
+import { ResourceContent, ResourceContext,
+  Activity, ActivityMap, createDefaultStructuredContent } from 'data/content/resource';
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
 import { Editors } from './Editors';
@@ -16,6 +17,7 @@ import { releaseLock, acquireLock } from 'data/persistence/lock';
 
 export interface ResourceEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap;   // Map of activity types to activity elements
+  activities: ActivityMap;
 }
 
 // This is the state of our resource that is undoable
@@ -28,6 +30,7 @@ type Undoable = {
 type ResourceEditorState = {
   undoable: UndoableState<Undoable>,
   allObjectives: Immutable.List<Objective>,
+  activities: Immutable.Map<string, Activity>,
   editMode: boolean,
   persistence: 'idle' | 'pending' | 'inflight',
 };
@@ -73,7 +76,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
   constructor(props: ResourceEditorProps) {
     super(props);
 
-    const { title, objectives, allObjectives, content } = props;
+    const { title, objectives, allObjectives, content, activities } = props;
 
     this.state = {
       editMode: true,
@@ -84,6 +87,8 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       }),
       persistence: 'idle',
       allObjectives: Immutable.List<Objective>(allObjectives),
+      activities: Immutable.Map<string, Activity>(
+        Object.keys(activities).map(k => [k, activities[k]])),
     };
 
     this.persistence = new DeferredPersistenceStrategy();
@@ -154,8 +159,12 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       this.update({ title });
     };
 
-    const onAddItem = (c : ResourceContent) =>
+    const onAddItem = (c : ResourceContent, a? : Activity) => {
       this.update({ content: this.state.undoable.current.content.push(c) });
+      if (a) {
+        this.setState({ activities: this.state.activities.set(a.activitySlug, a) });
+      }
+    };
 
     return (
       <div>
@@ -177,8 +186,10 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           onEdit={objectives => this.update({ objectives })} />
         <div className="d-flex flex-row align-items-start">
           <Outline {...props} editMode={this.state.editMode}
+            activities={this.state.activities}
             onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
           <Editors {...props} editMode={this.state.editMode}
+            activities={this.state.activities}
             onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
         </div>
       </div>

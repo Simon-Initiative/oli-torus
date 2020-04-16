@@ -1,6 +1,6 @@
 import * as Immutable from 'immutable';
 import React from 'react';
-import { ResourceContent, ResourceType } from 'data/content/resource';
+import { ResourceContent, Activity, ResourceType } from 'data/content/resource';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { UnsupportedActivity } from './UnsupportedActivity';
 import { getToolbarForResourceType } from './toolbar';
@@ -13,19 +13,14 @@ export type EditorsProps = {
   onEdit: (content: Immutable.List<ResourceContent>) => void,
   editorMap: ActivityEditorMap,   // Map of activity types to activity elements
   resourceType: ResourceType,
+  activities: Immutable.Map<string, Activity>,
 };
 
-function createEditorWithLabel(
-  content: ResourceContent, resourceType: ResourceType,
-  editMode: boolean, onEdit: (content: ResourceContent) => void) {
-
-
-}
 
 // The list of editors
 export const Editors = (props: EditorsProps) => {
 
-  const { editorMap, editMode, resourceType, content } = props;
+  const { editorMap, editMode, resourceType, content, activities } = props;
 
   // Factory for creating top level editors, for things like structured
   // content or referenced activities
@@ -52,12 +47,24 @@ export const Editors = (props: EditorsProps) => {
       slug: 'unknown',
     };
 
-    const editor = editorMap[content.type]
-      ? editorMap[content.type] : unsupported;
+    const activity = activities.get(content.activitySlug);
+    let editor;
+    let props;
+    if (activity !== undefined) {
+      editor = editorMap[activity.typeSlug]
+        ? editorMap[activity.typeSlug] : unsupported;
 
-    const props = {};
+      props = {
+        model: JSON.stringify(activity !== undefined ? activity.model : {}),
+      };
 
-    return [React.createElement(editor.deliveryElement, props), editor.friendlyName];
+    } else {
+      editor = unsupported;
+      props = {};
+    }
+
+    return [React.createElement(editor.deliveryElement,
+      props as any), editor.friendlyName];
 
   };
 

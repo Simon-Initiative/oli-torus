@@ -9,7 +9,6 @@ import { LinkEditor, commandDesc as linkCmd } from './editors/Link';
 import { AudioEditor } from './editors/Audio';
 import { CodeEditor, CodeBlockLine } from './editors/Code';
 import * as Table from './editors/Table';
-import { assertNever } from 'utils/common';
 import { EditorProps } from './editors/interfaces';
 import { createToggleFormatCommand as format } from './commands';
 

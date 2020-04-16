@@ -1,16 +1,17 @@
 import * as Immutable from 'immutable';
 import React, { useState } from 'react';
-import { ResourceContent } from 'data/content/resource';
+import { ResourceContent, Activity } from 'data/content/resource';
 import { ActivityEditorMap } from 'data/content/editors';
 import { toSimpleText } from '../editor/utils';
 import { DragHandle } from './DragHandle';
 import { getContentDescription } from 'data/content/utils';
 
-export type ResourceEditorProps = {
+export type OutlineProps = {
   editMode: boolean,              // Whether or not we can edit
   content: Immutable.List<ResourceContent>,     // Content of the resource
   onEdit: (content: Immutable.List<ResourceContent>) => void,
   editorMap: ActivityEditorMap,   // Map of activity types to activity elements
+  activities: Immutable.Map<string, Activity>,
 };
 
 // @ts-ignore
@@ -95,7 +96,7 @@ const OutlineContent = ({ content, index, onDrop, desc, onFocus, onMove }) => {
           <DragHandle/>
           <div className="m-2 text-truncate">
             <div className="d-flex justify-content-between">
-              <div className="mb-1">Content</div>
+              <div className="mb-1">{content.type === 'content' ? 'Content' : 'Activity'}</div>
               {content.purpose !== 'None' ? <small>{content.purpose}</small> : null}
             </div>
             <small>{desc}</small>
@@ -110,6 +111,7 @@ const OutlineContent = ({ content, index, onDrop, desc, onFocus, onMove }) => {
 type OutlineEntryProps = {
   content: ResourceContent,
   editorMap: ActivityEditorMap,
+  activities: Immutable.Map<string, Activity>,
   index: number,
   onDrop: (id: React.DragEvent<HTMLDivElement>, index: number) => void,
   onFocus: (index: number) => void,
@@ -118,10 +120,18 @@ type OutlineEntryProps = {
 
 const OutlineEntry = (props: OutlineEntryProps) => {
 
-  const { content, editorMap } = props;
+  const { content, editorMap, activities } = props;
 
-  const desc = content.type === 'content'
-    ? getContentDescription(content) : editorMap[content.type].friendlyName;
+
+  let desc;
+  if (content.type === 'content') {
+    desc = getContentDescription(content);
+  } else if (activities.has(content.activitySlug)) {
+    const activity = activities.get(content.activitySlug);
+    desc = editorMap[(activity as any).typeSlug].friendlyName;
+  } else {
+    desc = 'Unknown';
+  }
 
   return (
     <OutlineContent {...props} desc={desc} />
@@ -129,9 +139,9 @@ const OutlineEntry = (props: OutlineEntryProps) => {
 };
 
 // Outline of the content
-export const Outline = (props: ResourceEditorProps) => {
+export const Outline = (props: OutlineProps) => {
 
-  const { editorMap, editMode, onEdit } = props;
+  const { editorMap, editMode, onEdit, activities } = props;
   const content = Immutable.List<ResourceContent>(props.content);
   const [assisstive, setAssisstive] = useState('');
 
@@ -214,6 +224,7 @@ export const Outline = (props: ResourceEditorProps) => {
       props.onEdit(updated);
     };
     return <OutlineEntry key={c.id} content={c}
+      activities={activities}
       index={i} editorMap={editorMap} onMove={onMove} onDrop={onDrop} onFocus={onFocus}/>;
   });
 

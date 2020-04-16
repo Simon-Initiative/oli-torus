@@ -183,7 +183,8 @@ defmodule Oli.Editing.ResourceEditor do
       allObjectives: all_objectives,
       title: revision.title,
       resourceType: revision.resource_type.type,
-      content: revision.content
+      content: revision.content,
+      activities: %{}
     }
   end
 

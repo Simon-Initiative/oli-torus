@@ -4,7 +4,7 @@ import { Objective } from 'data/content/objective';
 
 import guid from 'utils/guid';
 import { ActivityModelSchema } from 'components/activities/types';
-export type ResourceContent = StructuredContent | ActivityRef;
+export type ResourceContent = StructuredContent | ActivityReference;
 
 
 export type ResourceContext = {
@@ -58,8 +58,8 @@ export interface StructuredContent {
   purpose: ContentPurpose;
 }
 
-export interface ActivityRef {
-  type: 'activityRef';
+export interface ActivityReference {
+  type: 'activity-reference';
   id: number;
   activitySlug: ActivitySlug;
   purpose: ActivityPurpose;
@@ -71,4 +71,8 @@ export interface Activity {
   activitySlug: ActivitySlug;
   typeSlug: ActivityTypeSlug;
   model: ActivityModelSchema;
+}
+
+export interface ActivityMap {
+  [prop: string]: Activity;
 }

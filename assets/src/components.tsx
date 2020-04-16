@@ -1,7 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
-import * as Immutable from 'immutable';
 import { Provider } from 'react-redux';
 import { Maybe, maybe } from 'tsmonad';
 import { CountDisplay } from 'components/CountDisplay';
@@ -44,5 +43,4 @@ let store = configureStore();
 };
 
 // Expose other libraries to server-side rendered templates
-(window as any).Immutable = Immutable;
 (window as any).Maybe = Maybe;

@@ -1,16 +1,15 @@
 
 import React from 'react';
-import { ResourceContent, ResourceContext, ActivityReference,
+import { ResourceContent, Activity, ResourceContext, ActivityReference,
   ActivityPurpose, createDefaultStructuredContent } from 'data/content/resource';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { ActivityModelSchema } from 'components/activities/types';
 import { TextEditor } from '../TextEditor';
 import { invokeCreationFunc } from 'components/activities/creation';
 import { createActivity, Created } from 'data/persistence/activity';
-import { ProjectSlug } from 'data/types';
 import guid from 'utils/guid';
 
-type AddCallback = (content: ResourceContent) => void;
+type AddCallback = (content: ResourceContent, a? : Activity) => void;
 
 export type TitleBarProps = {
   title: string,                  // The title of the resource
@@ -39,6 +38,7 @@ const ItemCreationDropDown = (
         return createActivity(resourceContext.projectSlug, editorDesc.slug, model);
       })
       .then((result: Created) => {
+
         const resourceContent : ActivityReference = {
           type: 'activity-reference',
           id: guid(),
@@ -46,7 +46,15 @@ const ItemCreationDropDown = (
           purpose: ActivityPurpose.none,
           children: [],
         };
-        onAddItem(resourceContent);
+
+        const activity : Activity = {
+          type: 'activity',
+          activitySlug: result.revisionSlug,
+          typeSlug: editorDesc.slug,
+          model,
+        };
+
+        onAddItem(resourceContent, activity);
       })
       .catch((err) => {
         // console.log(err);
