@@ -1,0 +1,17 @@
+{
+  "id": "oli_multiple_choice",
+  "friendlyName": "Multiple Choice",
+  "description": "A traditional multiple choice question with one correct answer",
+  "delivery": {
+    "element": "oli-multiple-choice-delivery",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "oli-multiple-choice-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "schemaPruning": {
+    "type": "keys",
+    "keys": ["feedback"]
+  }
+}

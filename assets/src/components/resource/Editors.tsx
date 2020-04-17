@@ -1,6 +1,6 @@
 import * as Immutable from 'immutable';
 import React from 'react';
-import { ResourceContent, ResourceType } from 'data/content/resource';
+import { ResourceContent, Activity, ResourceType } from 'data/content/resource';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { UnsupportedActivity } from './UnsupportedActivity';
 import { getToolbarForResourceType } from './toolbar';
@@ -13,37 +13,29 @@ export type EditorsProps = {
   onEdit: (content: Immutable.List<ResourceContent>) => void,
   editorMap: ActivityEditorMap,   // Map of activity types to activity elements
   resourceType: ResourceType,
+  activities: Immutable.Map<string, Activity>,
 };
+
 
 // The list of editors
 export const Editors = (props: EditorsProps) => {
 
-  const { editorMap, editMode, resourceType, content } = props;
+  const { editorMap, editMode, resourceType, content, activities } = props;
 
   // Factory for creating top level editors, for things like structured
   // content or referenced activities
   const createEditor = (
-    editorMap: ActivityEditorMap,
     content: ResourceContent,
-    editMode: boolean,
     onEdit: (content: ResourceContent) => void,
-    onRemove: () => void,
-    contentSize: number,
-    ) : JSX.Element => {
+    ) : [JSX.Element, string] => {
 
     if (content.type === 'content') {
-      return (
-        <ResourceContentFrame
-          key={content.id}
-          allowRemoval={contentSize > 1} editMode={editMode} label="Content" onRemove={onRemove}>
-          <StructuredContentEditor
-            key={content.id}
-            editMode={editMode}
-            content={content}
-            onEdit={onEdit}
-            toolbarItems={getToolbarForResourceType(resourceType)}/>
-        </ResourceContentFrame>
-      );
+      return [<StructuredContentEditor
+        key={content.id}
+        editMode={editMode}
+        content={content}
+        onEdit={onEdit}
+        toolbarItems={getToolbarForResourceType(resourceType)}/>, 'Content'];
     }
 
     const unsupported : EditorDesc = {
@@ -52,26 +44,28 @@ export const Editors = (props: EditorsProps) => {
       icon: '',
       description: 'Not supported',
       friendlyName: 'Not supported',
+      slug: 'unknown',
     };
 
-    const editor = editorMap[content.type]
-      ? editorMap[content.type] : unsupported;
+    const activity = activities.get(content.activitySlug);
+    let editor;
+    let props;
+    if (activity !== undefined) {
+      editor = editorMap[activity.typeSlug]
+        ? editorMap[activity.typeSlug] : unsupported;
 
-    const props = {
+      props = {
+        model: JSON.stringify(activity !== undefined ? activity.model : {}),
+      };
 
-    };
+    } else {
+      editor = unsupported;
+      props = {};
+    }
 
-    return (
-      <ResourceContentFrame
-        key={content.id}
-        allowRemoval={contentSize > 1}
-        editMode={editMode}
-        label={editor.friendlyName}
-        onRemove={onRemove}>
+    return [React.createElement(editor.deliveryElement,
+      props as any), editor.friendlyName];
 
-        {React.createElement(editor.deliveryElement, props)}
-      </ResourceContentFrame>
-    );
   };
 
   const editors = content.map((c, index) => {
@@ -79,7 +73,20 @@ export const Editors = (props: EditorsProps) => {
     const onEdit = (u : ResourceContent) => props.onEdit(content.set(index, u));
     const onRemove = () => props.onEdit(content.remove(index));
 
-    return createEditor(editorMap, c, editMode, onEdit, onRemove, content.size);
+    const [editor, label] = createEditor(c, onEdit);
+
+    return (
+      <ResourceContentFrame
+        key={c.id}
+        allowRemoval={content.size > 1}
+        editMode={editMode}
+        label={label}
+        onRemove={onRemove}>
+
+        {editor}
+
+      </ResourceContentFrame>
+    );
   });
 
   return (

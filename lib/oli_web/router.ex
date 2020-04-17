@@ -78,28 +78,32 @@ defmodule OliWeb.Router do
     delete "/:project_id", ProjectController, :delete
 
     # Objectives
-    post "/:project/objectives", ObjectiveController, :create
-    patch "/:project/objectives/:id", ObjectiveController, :update
-    put "/:project/objectives/:id", ObjectiveController, :update
-    delete "/:project/objectives/:id", ObjectiveController, :delete
+    post "/:project_id/objectives", ObjectiveController, :create
+    patch "/:project_id/objectives/:id", ObjectiveController, :update
+    put "/:project_id/objectives/:id", ObjectiveController, :update
+    delete "/:project_id/objectives/:id", ObjectiveController, :delete
 
     # Resource
     get "/:project_id/:revision_slug", ResourceController, :view
     get "/:project_id/:revision_slug/edit", ResourceController, :edit
 
     # Collaborators
-    post "/:project_id/collaborators", AuthorProjectController, :create
-    put "/:project_id/collaborators/:author_email", AuthorProjectController, :update
-    delete "/:project_id/collaborators/:author_email", AuthorProjectController, :delete
+    post "/:project_id/collaborators", CollaboratorController, :create
+    put "/:project_id/collaborators/:author_email", CollaboratorController, :update
+    delete "/:project_id/collaborators/:author_email", CollaboratorController, :delete
   end
 
   scope "/api/v1/project", OliWeb do
     pipe_through [:api, :protected]
 
-    put "/:project/:resource/edit", ResourceController, :update
+    put "/:project/resource/:resource", ResourceController, :update
 
-    post "/:project/:resource/lock", LockController, :acquire
-    delete "/:project/:resource/lock", LockController, :release
+    post "/:project/activity/:activity_type", ActivityController, :create
+    put "/:project/activity/:activity", ActivityController, :update
+    delete "/:project/activity", ActivityController, :delete
+
+    post "/:project/lock/:resource", LockController, :acquire
+    delete "/:project/lock/:resource", LockController, :release
 
   end
 

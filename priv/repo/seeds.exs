@@ -38,45 +38,50 @@ end
 
 
 # create project roles
-if !Oli.Repo.get_by(Oli.Accounts.ProjectRole, id: 1) do
-  Oli.Repo.insert! %Oli.Accounts.ProjectRole{
+if !Oli.Repo.get_by(Oli.Authoring.Authors.ProjectRole, id: 1) do
+  Oli.Repo.insert! %Oli.Authoring.Authors.ProjectRole{
     id: 1,
     type: "owner"
   }
 
-  Oli.Repo.insert! %Oli.Accounts.ProjectRole{
+  Oli.Repo.insert! %Oli.Authoring.Authors.ProjectRole{
     id: 2,
     type: "contributor"
   }
 end
 # create section roles
-if !Oli.Repo.get_by(Oli.Accounts.SectionRole, id: 1) do
-  Oli.Repo.insert! %Oli.Accounts.SectionRole{
+if !Oli.Repo.get_by(Oli.Delivery.Sections.SectionRole, id: 1) do
+  Oli.Repo.insert! %Oli.Delivery.Sections.SectionRole{
     id: 1,
     type: "instructor"
   }
 
-  Oli.Repo.insert! %Oli.Accounts.SectionRole{
+  Oli.Repo.insert! %Oli.Delivery.Sections.SectionRole{
     id: 2,
     type: "student"
   }
 end
 
 # create resource types
-if !Oli.Repo.get_by(Oli.Resources.ResourceType, id: 1) do
-  Oli.Repo.insert! %Oli.Resources.ResourceType{
+if !Oli.Repo.get_by(Oli.Authoring.Resources.ResourceType, id: 1) do
+  Oli.Repo.insert! %Oli.Authoring.Resources.ResourceType{
     id: 1,
     type: "unscored_page"
   }
-  Oli.Repo.insert! %Oli.Resources.ResourceType{
+  Oli.Repo.insert! %Oli.Authoring.Resources.ResourceType{
     id: 2,
     type: "scored_page"
   }
-  Oli.Repo.insert! %Oli.Resources.ResourceType{
+  Oli.Repo.insert! %Oli.Authoring.Resources.ResourceType{
     id: 3,
     type: "container"
   }
 
+end
+
+# Seed the database with the locally implemented activity types
+if Enum.empty?(Oli.Authoring.Activities.list_activity_registrations()) do
+  Oli.Registrar.register_local_activities()
 end
 
 # only seed with sample data if in development mode
@@ -109,11 +114,14 @@ if Mix.env == :dev do
   admin_author = Oli.Accounts.get_author_by_email(System.get_env("ADMIN_EMAIL", "admin@oli.cmu.edu"))
   test_author = Oli.Accounts.get_author_by_email("test@oli.cmu.edu")
 
-  {:ok, _project} = Oli.Course.create_project("Example Open and Free Course", admin_author)
+  {:ok, _project} = Oli.Authoring.Course.create_project("Example Open and Free Course", admin_author)
 
   # add a complete base project and attach the admin user as an author
   Oli.Seeder.base_project_with_resource()
     |> Oli.Seeder.add_author(admin_author, :admin_author)
     |> Oli.Seeder.add_author(test_author, :test_author)
+    |> Oli.Seeder.add_objective("Define and describe something")
+    |> Oli.Seeder.add_objective("Compare and contrast something")
+    |> Oli.Seeder.add_objective("Pick and choose when something")
 
 end

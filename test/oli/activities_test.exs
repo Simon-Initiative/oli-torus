@@ -1,21 +1,14 @@
 defmodule Oli.ActivitiesTest do
   use Oli.DataCase
 
-  alias Oli.Activities
-
-  alias Oli.Accounts.SystemRole
-  alias Oli.Accounts.Institution
-  alias Oli.Accounts.Author
-  alias Oli.Course.Project
-  alias Oli.Course.Family
+  alias Oli.Accounts.{SystemRole, Institution, Author}
+  alias Oli.Authoring.Activities
+  alias Oli.Authoring.Activities.{Activity, ActivityFamily, ActivityRevision, Registration}
+  alias Oli.Authoring.Course.{Project, Family}
   alias Oli.Publishing.Publication
-  alias Oli.Activities.Activity
-  alias Oli.Activities.ActivityFamily
-  alias Oli.Activities.ActivityRevision
-  alias Oli.Activities.Registration
+  alias Oli.Authoring.Resources.{Resource, ResourceFamily}
 
   describe "activities" do
-    alias Oli.Activities.Activity
 
     @valid_attrs %{}
     @update_attrs %{}
@@ -26,7 +19,9 @@ defmodule Oli.ActivitiesTest do
       {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
       {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "tit
       le", version: "1", family_id: family.id}) |> Repo.insert
-      {:ok, _publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resources: [], project_id: project.id}) |> Repo.insert
+      {:ok, resource_family} = ResourceFamily.changeset(%ResourceFamily{}, %{}) |> Repo.insert
+      {:ok, resource} = Resource.changeset(%Resource{}, %{project_id: project.id, family_id: resource_family.id}) |> Repo.insert
+      {:ok, _publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resource_id: resource.id, project_id: project.id}) |> Repo.insert
       {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
       {:ok, _institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
 
@@ -62,10 +57,9 @@ defmodule Oli.ActivitiesTest do
   end
 
   describe "activity_revisions" do
-    alias Oli.Activities.ActivityRevision
 
-    @valid_attrs %{content: %{}, objectives: [], deleted: true, slug: "some slug"}
-    @update_attrs %{content: %{"test" => "ok"}, objectives: [], deleted: false, slug: "some updated slug"}
+    @valid_attrs %{content: %{}, objectives: [], deleted: true, title: "some slug"}
+    @update_attrs %{content: %{"test" => "ok"}, objectives: [], deleted: false, title: "test"}
     @invalid_attrs %{content: nil, deleted: nil, slug: nil}
 
 
@@ -73,13 +67,15 @@ defmodule Oli.ActivitiesTest do
 
       {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
       {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
-      {:ok, _publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resources: [], project_id: project.id}) |> Repo.insert
+      {:ok, resource_family} = ResourceFamily.changeset(%ResourceFamily{}, %{}) |> Repo.insert()
+      {:ok, resource} = Resource.changeset(%Resource{}, %{project_id: project.id, family_id: resource_family.id}) |> Repo.insert()
+      {:ok, _publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resource_id: resource.id, project_id: project.id}) |> Repo.insert
       {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
       {:ok, _institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
 
       {:ok, activity_family} = ActivityFamily.changeset(%ActivityFamily{}, %{}) |> Repo.insert
       {:ok, activity} = Activity.changeset(%Activity{}, %{project_id: project.id, family_id: activity_family.id}) |> Repo.insert
-      {:ok, activity_type} = Registration.changeset(%Registration{}, %{authoring_script: "1", delivery_script: "2", description: "d", element_name: "n", icon: "i", title: "t"}) |> Repo.insert
+      {:ok, activity_type} = Registration.changeset(%Registration{}, %{slug: "slug", authoring_script: "1", delivery_script: "2", description: "d", authoring_element: "n", delivery_element: "n", icon: "i", title: "t"}) |> Repo.insert
 
       valid_attrs = Map.put(@valid_attrs, :project_id, project.id)
         |> Map.put(:author_id, author.id)
@@ -102,10 +98,11 @@ defmodule Oli.ActivitiesTest do
     end
 
     test "create_activity_revision/1 with valid data creates a activity_revision", %{valid_attrs: valid_attrs} do
+
       assert {:ok, %ActivityRevision{} = activity_revision} = Activities.create_activity_revision(valid_attrs)
       assert activity_revision.content == %{}
       assert activity_revision.deleted == true
-      assert activity_revision.slug == "some slug"
+      assert activity_revision.slug != "some_slug"
     end
 
     test "create_activity_revision/1 with invalid data returns error changeset" do
@@ -116,7 +113,7 @@ defmodule Oli.ActivitiesTest do
       assert {:ok, %ActivityRevision{} = activity_revision} = Activities.update_activity_revision(activity_revision, @update_attrs)
       assert activity_revision.content == %{"test" => "ok"}
       assert activity_revision.deleted == false
-      assert activity_revision.slug == "some updated slug"
+      assert activity_revision.slug == "test"
     end
 
     test "update_activity_revision/2 with invalid data returns error changeset", %{activity_revision: activity_revision} do
@@ -135,11 +132,10 @@ defmodule Oli.ActivitiesTest do
   end
 
   describe "activity_registrations" do
-    alias Oli.Activities.Registration
 
-    @valid_attrs %{authoring_script: "some authoring_script", delivery_script: "some delivery_script", description: "some description", element_name: "some element_name", icon: "some icon", title: "some title"}
-    @update_attrs %{authoring_script: "some updated authoring_script", delivery_script: "some updated delivery_script", description: "some updated description", element_name: "some updated element_name", icon: "some updated icon", title: "some updated title"}
-    @invalid_attrs %{authoring_script: nil, delivery_script: nil, description: nil, element_name: nil, icon: nil, title: nil}
+    @valid_attrs %{slug: "slug", authoring_script: "some authoring_script", delivery_script: "some delivery_script", description: "some description", delivery_element: "some element_name", authoring_element: "some element_name", icon: "some icon", title: "some title"}
+    @update_attrs %{slug: "slug", authoring_script: "some updated authoring_script", delivery_script: "some updated delivery_script", description: "some updated description", delivery_element: "some updated element_name", authoring_element: "some updated element_name", icon: "some updated icon", title: "some updated title"}
+    @invalid_attrs %{slug: nil, authoring_script: nil, delivery_script: nil, description: nil, element_name: nil, icon: nil, title: nil}
 
     def registration_fixture(attrs \\ %{}) do
       {:ok, registration} =
@@ -151,8 +147,9 @@ defmodule Oli.ActivitiesTest do
     end
 
     test "list_activity_registrations/0 returns all activity_registrations" do
-      registration = registration_fixture()
-      assert Activities.list_activity_registrations() == [registration]
+      registration_fixture()
+      registrations = Activities.list_activity_registrations()
+      assert length(registrations) == 2
     end
 
     test "get_registration!/1 returns the registration with given id" do
@@ -165,7 +162,7 @@ defmodule Oli.ActivitiesTest do
       assert registration.authoring_script == "some authoring_script"
       assert registration.delivery_script == "some delivery_script"
       assert registration.description == "some description"
-      assert registration.element_name == "some element_name"
+      assert registration.authoring_element == "some element_name"
       assert registration.icon == "some icon"
       assert registration.title == "some title"
     end
@@ -180,7 +177,7 @@ defmodule Oli.ActivitiesTest do
       assert registration.authoring_script == "some updated authoring_script"
       assert registration.delivery_script == "some updated delivery_script"
       assert registration.description == "some updated description"
-      assert registration.element_name == "some updated element_name"
+      assert registration.authoring_element == "some updated element_name"
       assert registration.icon == "some updated icon"
       assert registration.title == "some updated title"
     end

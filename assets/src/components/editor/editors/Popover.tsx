@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import * as ReactDOM from 'react-dom';
-import { ReactEditor, useSlate } from 'slate-react';
+import { useSlate } from 'slate-react';
 
 function position(el: HTMLElement, source: HTMLElement) {
 

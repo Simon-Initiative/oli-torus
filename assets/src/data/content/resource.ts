@@ -1,6 +1,23 @@
 import { ModelElement } from './model';
+import { ProjectSlug, ResourceSlug, ObjectiveSlug, ActivitySlug, ActivityTypeSlug } from 'data/types';
+import { Objective } from 'data/content/objective';
+
 import guid from 'utils/guid';
+import { ActivityModelSchema } from 'components/activities/types';
 export type ResourceContent = StructuredContent | ActivityReference;
+
+
+export type ResourceContext = {
+  resourceType: ResourceType,     // Page or assessment?
+  authorEmail: string,            // The current author
+  projectSlug: ProjectSlug,       // The current project
+  resourceSlug: ResourceSlug,     // The current resource
+  title: string,                  // The title of the resource
+  content: ResourceContent[],     // Content of the resource
+  objectives: ObjectiveSlug[],    // Attached objectives
+  allObjectives: Objective[],     // All objectives
+};
+
 
 export enum ResourceType {
   'page',
@@ -42,8 +59,20 @@ export interface StructuredContent {
 }
 
 export interface ActivityReference {
-  type: 'activity';
+  type: 'activity-reference';
   id: number;
-  idRef: number;
+  activitySlug: ActivitySlug;
   purpose: ActivityPurpose;
+  children: [];
+}
+
+export interface Activity {
+  type: 'activity';
+  activitySlug: ActivitySlug;
+  typeSlug: ActivityTypeSlug;
+  model: ActivityModelSchema;
+}
+
+export interface ActivityMap {
+  [prop: string]: Activity;
 }

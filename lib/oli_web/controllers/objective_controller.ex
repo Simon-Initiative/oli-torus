@@ -2,13 +2,12 @@ defmodule OliWeb.ObjectiveController do
   use OliWeb, :controller
   import OliWeb.ProjectPlugs
 
-  alias Oli.Course
-  alias Oli.Learning
+  alias Oli.Authoring.{Course, Learning}
 
   plug :fetch_project when action in [:create, :update, :delete]
   plug :authorize_project when action in [:create, :update, :delete]
 
-  def create(conn, %{"project" => project_id, "objective" => objective_params}) do
+  def create(conn, %{"project_id" => project_id, "objective" => objective_params}) do
     project = conn.assigns.project
     params = Map.merge(objective_params, %{"project_id" => project.id})
     case Learning.create_objective(params) do
@@ -24,7 +23,7 @@ defmodule OliWeb.ObjectiveController do
     end
   end
 
-  def update(conn, %{"project" => project_id, "id" => id, "objective" => objective_params}) do
+  def update(conn, %{"project_id" => project_id, "id" => id, "objective" => objective_params}) do
     objective = Learning.get_objective!(id)
     project = Course.get_project_by_slug(conn.params["project"])
     params = Map.merge(objective_params, %{"project_id" => project.id})
@@ -41,7 +40,7 @@ defmodule OliWeb.ObjectiveController do
     end
   end
 
-  def delete(conn, %{"project" => project_id, "id" => id}) do
+  def delete(conn, %{"project_id" => project_id, "id" => id}) do
     objective = Learning.get_objective!(id)
     {:ok, _objective} = Learning.delete_objective(objective)
 
