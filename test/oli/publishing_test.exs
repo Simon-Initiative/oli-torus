@@ -7,8 +7,6 @@ defmodule Oli.PublishingTest do
   alias Oli.Accounts.SystemRole
   alias Oli.Accounts.Institution
   alias Oli.Accounts.Author
-  alias Oli.Course.Project
-  alias Oli.Course.Family
   alias Oli.Publishing.Publication
   alias Oli.Resources
   alias Oli.Resources.Resource
@@ -21,9 +19,9 @@ defmodule Oli.PublishingTest do
   alias Oli.Learning.Objective
   alias Oli.Learning.ObjectiveFamily
   alias Oli.Learning.ObjectiveRevision
-  alias Oli.Editing.ResourceEditor
-  alias Oli.Sections
-  alias Oli.Sections.Section
+  alias Oli.Authoring.Editing.ResourceEditor
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.{Publication, ResourceMapping, ActivityMapping, ObjectiveMapping}
   alias Oli.Authoring.Resources
   alias Oli.Authoring.Resources.{Resource, ResourceFamily, ResourceRevision}

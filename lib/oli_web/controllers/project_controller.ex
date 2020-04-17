@@ -41,7 +41,6 @@ defmodule OliWeb.ProjectController do
     # container = Oli.Repo.preload(Oli.Resources.get_resource!(container_id), [:resource_revisions])
     # revision = container.resource_revisions
     #   |> Enum.max_by(&(&1.inserted_at), NaiveDateTime)
-    # IO.inspect(revision)
     # pages = Enum.map(revision.children, &(Oli.Resources.get_resource!(&1)))
 
     render conn, "curriculum.html",

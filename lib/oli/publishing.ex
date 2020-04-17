@@ -287,11 +287,6 @@ defmodule Oli.Publishing do
     Repo.delete(resource_mapping)
   end
 
-  def get_resource_mappings_by_publication(publication_id) do
-    from(p in ResourceMapping, where: p.publication_id == ^publication_id, preload: [:resource, :revision])
-    |> Repo.all()
-  end
-
   @doc """
   Returns the list of activity_mappings.
   ## Examples
@@ -487,7 +482,7 @@ defmodule Oli.Publishing do
       description: active_publication.description,
       published: false,
       open_and_free: active_publication.open_and_free,
-      root_resources: active_publication.root_resources,
+      root_resource_id: active_publication.root_resource_id,
       project_id: active_publication.project_id,
     })
 

@@ -57,9 +57,11 @@ defmodule Oli.ResourcesTest do
       } = revision
     end
 
-    test "delete_resource/1 deletes the resource", %{resource: resource}  do
+    test "delete_resource/1 deletes the resource", %{project: project, resource_family: resource_family}  do
+      {:ok, resource} = Resource.changeset(%Resource{}, %{project_id: project.id, family_id: resource_family.id}) |> Repo.insert
       assert {:ok, %Resource{}} = Resources.delete_resource(resource)
       assert_raise Ecto.NoResultsError, fn -> Resources.get_resource!(resource.id) end
+    end
 
     test "create_new_resource/2 with valid data creates a resource", %{project: project, resource_family: resource_family} do
       assert {:ok, resource} = Resources.create_new_resource(project, resource_family)

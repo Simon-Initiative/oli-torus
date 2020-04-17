@@ -103,7 +103,7 @@ defmodule Oli.Authoring.Resources do
     %Project{} = project,
     %ResourceFamily{} = family
   ) do
-    with {:ok, resource} <- create_new_resource(project, family) |> Repo.insert,
+    with {:ok, resource} <- create_new_resource(project, family),
          attrs <- Map.merge(attrs, %{
            author_id: author.id,
            resource_type_id: resource_type.id,
