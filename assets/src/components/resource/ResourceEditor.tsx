@@ -9,7 +9,9 @@ import { ActivityEditorMap } from 'data/content/editors';
 import { Editors } from './Editors';
 import { Objectives } from './Objectives';
 import { Outline } from './Outline';
-import { TitleBar } from './TitleBar';
+import { TitleBar } from '../content/TitleBar';
+import { UndoRedo } from '../content/UndoRedo';
+import { AddResourceContent } from '../content/AddResourceContent';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug } from 'data/types';
 import { makeRequest } from 'data/persistence/common';
 import { UndoableState, processRedo, processUndo, processUpdate, init } from './undo';
@@ -169,16 +171,20 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     return (
       <div>
         <TitleBar
-          resourceContext={props}
-          onUndo={this.undo}
-          onRedo={this.redo}
-          canUndo={state.undoable.undoStack.size > 0}
-          canRedo={state.undoable.redoStack.size > 0}
           title={state.undoable.current.title}
           onTitleEdit={onTitleEdit}
-          onAddItem={onAddItem}
-          editMode={this.state.editMode}
-          editorMap={this.props.editorMap}/>
+          editMode={this.state.editMode}>
+          <UndoRedo
+            canRedo={this.state.undoable.redoStack.size > 0}
+            canUndo={this.state.undoable.undoStack.size > 0}
+            onUndo={this.undo} onRedo={this.redo}/>
+          <AddResourceContent
+            editMode={this.state.editMode}
+            onAddItem={onAddItem}
+            editorMap={props.editorMap}
+            resourceContext={props}
+          />
+        </TitleBar>
         <Objectives
           editMode={this.state.editMode}
           selected={this.state.undoable.current.objectives}

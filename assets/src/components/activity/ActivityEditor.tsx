@@ -4,7 +4,8 @@ import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
 import { ActivityContext, ObjectiveMap } from 'data/content/activity';
 import { Objective } from 'data/content/objective';
-
+import { TitleBar } from '../content/TitleBar';
+import { UndoRedo } from '../content/UndoRedo';
 import { Objectives } from '../resource/Objectives';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug, ActivitySlug } from 'data/types';
 import { makeRequest } from 'data/persistence/common';
@@ -59,6 +60,7 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
 
   persistence: PersistenceStrategy;
   windowUnloadListener: any;
+  ref: any;
 
   constructor(props: ActivityEditorProps) {
     super(props);
@@ -84,6 +86,7 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
     this.undo = this.undo.bind(this);
     this.redo = this.redo.bind(this);
 
+    this.ref = React.createRef();
   }
 
   componentDidMount() {
@@ -102,6 +105,14 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
         this.windowUnloadListener = registerUnload(this.persistence);
       }
     });
+
+    if (this.ref !== null) {
+      this.ref.current.addEventListener('modelUpdated', (e : CustomEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.update(e.detail);
+      });
+    }
   }
 
   componentWillUnmount() {
@@ -135,24 +146,31 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
 
   render() {
 
-    const { authoringElement, model } = this.props;
+    const { authoringElement } = this.props;
     const state = this.state;
-
-    const onModelEdit = (model: ActivityModelSchema) => {
-      this.update({ model });
-    };
 
     const onTitleEdit = (title: string) => {
       this.update({ title });
     };
 
     const webComponentProps = {
-      model: JSON.stringify(model),
+      model: JSON.stringify(this.state.undoable.current.model),
     };
 
     return (
       <div>
-        {React.createElement(authoringElement, webComponentProps as any)}
+        <TitleBar
+          title={state.undoable.current.title}
+          onTitleEdit={onTitleEdit}
+          editMode={this.state.editMode}>
+          <UndoRedo
+            canRedo={this.state.undoable.redoStack.size > 0}
+            canUndo={this.state.undoable.undoStack.size > 0}
+            onUndo={this.undo} onRedo={this.redo}/>
+        </TitleBar>
+        <div ref={this.ref}>
+          {React.createElement(authoringElement, webComponentProps as any)}
+        </div>
       </div>
     );
   }

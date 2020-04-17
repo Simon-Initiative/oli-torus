@@ -1,45 +1,28 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { TextEditor } from 'components/TextEditor';
+import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import { MultipleChoiceModelSchema } from './schema';
 
-const MultipleChoice = (props: any) => {
+const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>) => {
+
+  const onStemEdit = (stem: string) => {
+    const model = Object.assign({}, props.model, { stem });
+    props.onEdit(model);
+  };
+
   return (
     <div style={{ width: '100%', height: '100px', border: 'solid 1px gray' }}>
       <h2>Welcome to the multiple choice editor!</h2>
-      <p>{props.model.stem}</p>
+      <TextEditor showAffordances={true} model={props.model.stem}
+        editMode={true} onEdit={onStemEdit} />
     </div>
   );
 };
 
-export class MultipleChoiceAuthoring extends HTMLElement {
-
-  mountPoint: HTMLDivElement;
-
-  constructor() {
-    super();
-
-    this.mountPoint = document.createElement('div');
-  }
-
-  props() {
-
-    const token = this.getAttribute('token');
-    const model = this.getAttribute('model');
-    const state = this.getAttribute('state');
-
-    return {
-      token,
-      model,
-      state,
-    };
-  }
-
-  connectedCallback() {
-    this.attachShadow({ mode: 'open' }).appendChild(this.mountPoint);
-    ReactDOM.render(<MultipleChoice {...this.props()} />, this.mountPoint);
-  }
-
-  attributeChangedCallback(name: any, oldValue: any, newValue: any) {
-    ReactDOM.render(<MultipleChoice {...this.props()} />, this.mountPoint);
+export class MultipleChoiceAuthoring extends AuthoringElement<MultipleChoiceModelSchema> {
+  render(mountPoint: HTMLDivElement, props: AuthoringElementProps<MultipleChoiceModelSchema>) {
+    ReactDOM.render(<MultipleChoice {...props} />, mountPoint);
   }
 }
 
