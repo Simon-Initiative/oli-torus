@@ -15,7 +15,7 @@ defmodule OliWeb.ObjectiveController do
 
   def create(conn, %{"project_id" => project_id, "objective" => objective_params}) do
     project = conn.assigns.project
-    params = Map.merge(objective_params, %{"project_id" => project.id})
+    params = Map.merge(objective_params, %{"project_id" => project.id, "project_slug" => project.slug})
     with {:ok, _objective} <- Learning.create_objective(params)
     do
       conn
@@ -31,10 +31,10 @@ defmodule OliWeb.ObjectiveController do
     end
   end
 
-  def update(conn, %{"project_id" => project_id, "id" => id, "objective" => objective_params}) do
+  def update(conn, %{"project_id" => project_id, "objective_slug" => objective_slug, "objective" => objective_params}) do
     project = conn.assigns.project
-    params = Map.merge(objective_params, %{"project_id" => project.id})
-    with {:ok, objective_revision} <- Repo.get(ObjectiveRevision, id) |> trap_nil(),
+    params = Map.merge(objective_params, %{"project_id" => project.id, "project_slug" => project.slug})
+    with {:ok, objective_revision} <- Learning.get_objective_revision_from_slug(project_id, objective_slug) |> trap_nil(),
          {:ok, _objective_revision} <- Learning.update_objective_revision(objective_revision, params)
     do
       conn
@@ -50,8 +50,9 @@ defmodule OliWeb.ObjectiveController do
     end
   end
 
-  def delete(conn, %{"project_id" => project_id, "id" => id}) do
-    with {:ok, objective_revision} <- Repo.get(ObjectiveRevision, id) |> trap_nil(),
+  def delete(conn, %{"project_id" => project_id, "objective_slug" => objective_slug}) do
+    project = conn.assigns.project
+    with {:ok, objective_revision} <- Learning.get_objective_revision_from_slug(project.slug, objective_slug) |> trap_nil(),
          {:ok, _objective_revision} <- Learning.update_objective_revision(objective_revision, %{deleted: true})
     do
       conn

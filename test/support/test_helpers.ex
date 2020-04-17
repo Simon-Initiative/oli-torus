@@ -57,7 +57,7 @@ defmodule Oli.TestHelpers do
   end
 
   def objective_fixture(project) do
-    params = Map.merge(%{"title" => "Test learning objective"}, %{"project_id" => project.id})
+    params = Map.merge(%{"title" => "Test learning objective"}, %{"project_id" => project.id, "project_slug" => project.slug})
     {:ok, objective} = Learning.create_objective(params)
     objective
   end
@@ -132,7 +132,6 @@ defmodule Oli.TestHelpers do
     author = author_fixture()
     [project | _rest] = make_n_projects(1, author)
     conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
-
     {:ok, conn: conn, author: author, project: project}
   end
 

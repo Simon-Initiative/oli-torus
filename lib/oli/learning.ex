@@ -7,6 +7,7 @@ defmodule Oli.Learning do
   alias Ecto.Multi
   alias Oli.Repo
 
+  alias Oli.Course.Project
   alias Oli.Learning.Objective
   alias Oli.Learning.ObjectiveFamily
 
@@ -56,6 +57,34 @@ defmodule Oli.Learning do
   def get_objective!(id), do: Repo.get!(Objective, id)
 
   @doc """
+  Gets a single objective, based on a revision and project slugs.
+  """
+  @spec get_objective_from_slug(String.t, String.t) :: any
+  def get_objective_from_slug(project_slug, revision_slug) do
+    query = from o in Objective,
+                 distinct: o.id,
+                 join: p in Project, on: o.project_id == p.id,
+                 join: v in ObjectiveRevision, on: v.objective_id == o.id,
+                 where: p.slug == ^project_slug and v.slug == ^revision_slug,
+                 select: o
+    Repo.one(query)
+  end
+
+  @doc """
+  Gets a single objective_revision, based on a revision and project slugs.
+  """
+  @spec get_objective_revision_from_slug(String.t, String.t) :: any
+  def get_objective_revision_from_slug(project_slug, revision_slug) do
+    query = from v in ObjectiveRevision,
+                 distinct: v.id,
+                 join: o in Objective, on: v.objective_id == o.id,
+                 join: p in Project, on: o.project_id == p.id,
+                 where: p.slug == ^project_slug and v.slug == ^revision_slug,
+                 select: v
+    Repo.one(query)
+  end
+
+  @doc """
   Creates an objective.
 
   ## Examples
@@ -76,16 +105,32 @@ defmodule Oli.Learning do
     |> Multi.merge(fn %{objective: objective} ->
       Multi.new
       |> Multi.insert(:objective_revision, do_create_objective_revision(attrs, objective)) end)
+    |> Multi.merge(fn %{objective_revision: objective_revision} ->
+      Multi.new
+      |> Multi.run(:objective_parent, fn _repo, _changes ->
+        do_add_objective_to_parent(attrs, objective_revision)
+      end)
+    end)
     |> Multi.merge(fn %{objective: objective, objective_revision: objective_revision} ->
       Multi.new
-      |> Multi.insert(:objective_mapping, do_create_objective_mapping(Publishing.get_unpublished_publication(Map.get(attrs, "project_id")), objective, objective_revision))end)
+      |> Multi.insert(:objective_mapping, do_create_objective_mapping(attrs, objective, objective_revision))end)
     |> Repo.transaction
   end
 
-  defp do_create_objective_mapping(publication_id, objective, objective_revision) do
+  defp do_add_objective_to_parent(attrs, objective_revision) do
+    if Map.has_key?(attrs, "parent_slug") do
+      parent_objective_revision = get_objective_revision_from_slug(Map.get(attrs, "project_slug"), Map.get(attrs, "parent_slug"))
+      children = parent_objective_revision.children ++ [objective_revision.id]
+      update_objective_revision(parent_objective_revision, %{children: children})
+    end
+    {:ok, :val}
+  end
+
+  defp do_create_objective_mapping(attrs, objective, objective_revision) do
+    publication = Publishing.get_unpublished_publication(Map.get(attrs, "project_slug"))
     %ObjectiveMapping{}
     |> ObjectiveMapping.changeset(%{
-      publication_id: publication_id,
+      publication_id: publication.id,
       objective_id: objective.id,
       revision_id: objective_revision.id
     })

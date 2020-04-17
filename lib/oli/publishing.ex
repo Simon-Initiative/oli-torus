@@ -66,6 +66,7 @@ defmodule Oli.Publishing do
       select: pub
   end
 
+
   @doc """
   Gets a single publication.
 
@@ -158,19 +159,13 @@ defmodule Oli.Publishing do
 
   @doc """
   Get unpublished publication for a project. This assumes there is only one unpublished publication per project.
-   ## Examples
-
-      iex> get_unpublished_publication!(123)
-      %Publication{}
-
-      iex> get_unpublished_publication!(456)
-      ** (Ecto.NoResultsError)
   """
-  def get_unpublished_publication(project_id)do
-    Repo.one(
-      from p in "publications",
-      where: p.project_id == ^project_id and p.published == false,
-      select: p.id)
+  @spec get_unpublished_publication(String.t) :: any
+  def get_unpublished_publication(project_slug) do
+    Repo.one from pub in Publication,
+          join: proj in Project, on: pub.project_id == proj.id,
+          where: proj.slug == ^project_slug and pub.published == false,
+          select: pub
   end
 
   alias Oli.Publishing.ResourceMapping
@@ -395,8 +390,11 @@ defmodule Oli.Publishing do
 
   """
   def get_objective_mappings_by_publication(publication_id) do
-    from(p in ObjectiveMapping, where: p.publication_id == ^publication_id, preload: [:objective, :revision])
-    |> Repo.all()
+    Repo.all from mapping in ObjectiveMapping,
+             join: rev in ObjectiveRevision, on: mapping.revision_id == rev.id,
+             where: mapping.publication_id == ^publication_id and rev.deleted == false,
+             select: mapping,
+             preload: [:objective, :revision]
   end
 
   @doc """
