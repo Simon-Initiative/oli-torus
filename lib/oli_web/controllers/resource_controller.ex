@@ -1,8 +1,8 @@
 defmodule OliWeb.ResourceController do
   use OliWeb, :controller
 
-  alias Oli.Editing.ResourceEditor
-  alias Oli.Activities
+  alias Oli.Authoring.Editing.ResourceEditor
+  alias Oli.Authoring.Activities
 
   import OliWeb.ProjectPlugs
 

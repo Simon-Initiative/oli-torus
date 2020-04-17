@@ -2,29 +2,20 @@ defmodule Oli.Seeder do
 
   alias Oli.Publishing
   alias Oli.Repo
-  alias Oli.Accounts.SystemRole
-  alias Oli.Accounts.ProjectRole
-  alias Oli.Accounts.Institution
-  alias Oli.Accounts.Author
-  alias Oli.Accounts.AuthorProject
-  alias Oli.Course.Project
-  alias Oli.Course.Family
+  alias Oli.Accounts.{SystemRole, ProjectRole, Institution, Author}
+  alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
+  alias Oli.Authoring.Course.{Project, Family}
+  alias Oli.Authoring.Learning.{Objective, ObjectiveFamily, ObjectiveRevision}
+  alias Oli.Authoring.Resources
+  alias Oli.Authoring.Resources.{Resource, ResourceFamily, ResourceRevision}
   alias Oli.Publishing.Publication
-  alias Oli.Resources
-  alias Oli.Resources.Resource
-  alias Oli.Resources.ResourceFamily
-  alias Oli.Resources.ResourceRevision
 
-  alias Oli.Learning.Objective
-  alias Oli.Learning.ObjectiveFamily
-  alias Oli.Learning.ObjectiveRevision
 
 
   def base_project_with_resource() do
 
     {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
     {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
-    {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resources: [], project_id: project.id}) |> Repo.insert
     {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
     {:ok, _} = AuthorProject.changeset(%AuthorProject{}, %{author_id: author.id, project_id: project.id, project_role_id: ProjectRole.role_id.owner}) |> Repo.insert
 
@@ -35,6 +26,7 @@ defmodule Oli.Seeder do
     {:ok, resource} = Resource.changeset(%Resource{}, %{project_id: project.id, family_id: resource_family.id}) |> Repo.insert
     resource_type = Resources.list_resource_types() |> hd
     {:ok, revision} = ResourceRevision.changeset(%ResourceRevision{}, %{author_id: author.id, objectives: [], resource_type_id: resource_type.id, children: [], content: [], deleted: true, slug: "some_title", title: "some title", resource_id: resource.id}) |> Repo.insert
+    {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resource_id: resource.id, project_id: project.id}) |> Repo.insert
     {:ok, mapping} = Publishing.create_resource_mapping(%{ publication_id: publication.id, resource_id: resource.id, revision_id: revision.id})
 
 

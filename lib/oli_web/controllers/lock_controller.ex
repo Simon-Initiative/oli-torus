@@ -1,7 +1,7 @@
 defmodule OliWeb.LockController do
   use OliWeb, :controller
 
-  alias Oli.Editing.ResourceEditor
+  alias Oli.Authoring.Editing.ResourceEditor
 
   def acquire(conn, %{"project" => project_slug, "resource" => resource_slug}) do
 

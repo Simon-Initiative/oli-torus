@@ -1,5 +1,5 @@
 defmodule Oli.Lti.ProviderTest do
-  alias Oli.Lti.Provider
+  alias Oli.Delivery.Lti.Provider
   import Phoenix.ConnTest
 
   use OliWeb.ConnCase, async: true

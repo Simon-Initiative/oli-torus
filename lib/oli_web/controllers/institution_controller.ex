@@ -4,8 +4,7 @@ defmodule OliWeb.InstitutionController do
   alias Oli.Accounts
   alias Oli.Accounts.Institution
 
-  import Oli.CountryCodes
-  import Oli.Timezones
+  import Oli.Delivery.{CountryCodes, Timezones}
 
   def index(conn, _params) do
     institutions = Accounts.list_institutions() |> Enum.filter(fn i -> i.author_id == conn.assigns.current_author.id end)
