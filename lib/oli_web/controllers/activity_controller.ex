@@ -30,11 +30,15 @@ defmodule OliWeb.ActivityController do
 
   end
 
-  def update(conn, %{"project" => _project_slug, "activity" => activity_slug, "update" => _model }) do
-    IO.puts "Received activity update"
-    _author = conn.assigns[:current_author]
+  def update(conn, %{"project" => project_slug, "resource" => resource_slug, "activity" => activity_slug, "update" => update }) do
+    author = conn.assigns[:current_author]
 
-    json conn, %{ "type" => "success", "revisionSlug" => activity_slug}
+    case ActivityEditor.edit(project_slug, resource_slug, activity_slug, author.email, update) do
+      {:ok, %{slug: slug}} -> json conn, %{ "type" => "success", "revisionSlug" => slug}
+      {:error, {:not_found}} -> error(conn, 404, "not found")
+      {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
+      _ -> error(conn, 500, "server error")
+    end
   end
 
   def delete(conn, %{"project" => _project_slug, "activity" => _activity_slug }) do

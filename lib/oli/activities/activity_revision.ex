@@ -11,7 +11,7 @@ defmodule Oli.Activities.ActivityRevision do
     field :deleted, :boolean, default: false
     field :slug, :string
     field :title, :string
-    field :objectives, {:array, :map}
+    field :objectives, :map
 
     belongs_to :author, Oli.Accounts.Author
     belongs_to :activity, Oli.Activities.Activity

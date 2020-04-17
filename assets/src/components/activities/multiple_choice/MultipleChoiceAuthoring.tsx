@@ -12,7 +12,7 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
   };
 
   return (
-    <div style={{ width: '100%', height: '100px', border: 'solid 1px gray' }}>
+    <div>
       <h2>Welcome to the multiple choice editor!</h2>
       <TextEditor showAffordances={true} model={props.model.stem}
         editMode={true} onEdit={onStemEdit} />

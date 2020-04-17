@@ -64,8 +64,8 @@ defmodule Oli.ActivitiesTest do
   describe "activity_revisions" do
     alias Oli.Activities.ActivityRevision
 
-    @valid_attrs %{content: %{}, objectives: [], deleted: true, title: "some slug"}
-    @update_attrs %{content: %{"test" => "ok"}, objectives: [], deleted: false, title: "test"}
+    @valid_attrs %{content: %{}, objectives: %{}, deleted: true, title: "some slug"}
+    @update_attrs %{content: %{"test" => "ok"}, objectives: %{}, deleted: false, title: "test"}
     @invalid_attrs %{content: nil, deleted: nil, slug: nil}
 
 

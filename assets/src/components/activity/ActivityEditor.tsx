@@ -21,7 +21,7 @@ export interface ActivityEditorProps extends ActivityContext {
 // This is the state of our activity editing that is undoable
 type Undoable = {
   title: string,
-  model: ActivityModelSchema,
+  content: ActivityModelSchema,
   objectives: Immutable.Map<string, Immutable.List<ObjectiveSlug>>,
 };
 
@@ -35,6 +35,7 @@ type ActivityEditorState = {
 // Creates a function that when invoked submits a save request
 function prepareSaveFn(
   project: ProjectSlug, resource: ResourceSlug, activity: ActivitySlug, body: any) {
+
   return () => {
     const params = {
       method: 'PUT',
@@ -75,7 +76,7 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
       undoable: init({
         title,
         objectives: Immutable.Map<string, Immutable.List<ObjectiveSlug>>(o as any),
-        model,
+        content: model,
       }),
       persistence: 'idle',
       allObjectives: Immutable.List<Objective>(allObjectives),
@@ -111,7 +112,9 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
       this.ref.current.addEventListener('modelUpdated', (e : CustomEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        this.update(e.detail);
+
+        // Convert it back to using 'content', instead of 'model'
+        this.update({ content: Object.assign({}, e.detail.model) });
       });
     }
   }
@@ -155,7 +158,7 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
     };
 
     const webComponentProps = {
-      model: JSON.stringify(this.state.undoable.current.model),
+      model: JSON.stringify(this.state.undoable.current.content),
     };
 
     return (
