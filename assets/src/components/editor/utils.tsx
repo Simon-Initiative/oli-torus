@@ -1,4 +1,4 @@
-import { Node, Editor, Path } from 'slate';
+import { Node, Editor } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { Marks, schema } from 'data/content/model';
 import { Maybe } from 'tsmonad';

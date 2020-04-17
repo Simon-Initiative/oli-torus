@@ -28,15 +28,10 @@ export class MultipleChoiceDelivery extends HTMLElement {
   }
 
   props() {
-
-    const token = this.getAttribute('token');
     const model = JSON.parse(this.getAttribute('model') as any);
-    const state = JSON.parse(this.getAttribute('state') as any);
 
     return {
-      token,
       model,
-      state,
     };
   }
 

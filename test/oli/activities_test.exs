@@ -58,8 +58,8 @@ defmodule Oli.ActivitiesTest do
 
   describe "activity_revisions" do
 
-    @valid_attrs %{content: %{}, objectives: [], deleted: true, slug: "some slug"}
-    @update_attrs %{content: %{"test" => "ok"}, objectives: [], deleted: false, slug: "some updated slug"}
+    @valid_attrs %{content: %{}, objectives: [], deleted: true, title: "some slug"}
+    @update_attrs %{content: %{"test" => "ok"}, objectives: [], deleted: false, title: "test"}
     @invalid_attrs %{content: nil, deleted: nil, slug: nil}
 
 
@@ -99,11 +99,10 @@ defmodule Oli.ActivitiesTest do
 
     test "create_activity_revision/1 with valid data creates a activity_revision", %{valid_attrs: valid_attrs} do
 
-      with_different_slug = Map.put(valid_attrs, :slug, "different")
-      assert {:ok, %ActivityRevision{} = activity_revision} = Activities.create_activity_revision(with_different_slug)
+      assert {:ok, %ActivityRevision{} = activity_revision} = Activities.create_activity_revision(valid_attrs)
       assert activity_revision.content == %{}
       assert activity_revision.deleted == true
-      assert activity_revision.slug == "different"
+      assert activity_revision.slug != "some_slug"
     end
 
     test "create_activity_revision/1 with invalid data returns error changeset" do
@@ -114,7 +113,7 @@ defmodule Oli.ActivitiesTest do
       assert {:ok, %ActivityRevision{} = activity_revision} = Activities.update_activity_revision(activity_revision, @update_attrs)
       assert activity_revision.content == %{"test" => "ok"}
       assert activity_revision.deleted == false
-      assert activity_revision.slug == "some updated slug"
+      assert activity_revision.slug == "test"
     end
 
     test "update_activity_revision/2 with invalid data returns error changeset", %{activity_revision: activity_revision} do

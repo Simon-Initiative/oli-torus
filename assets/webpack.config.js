@@ -22,8 +22,8 @@ const populateEntries = () => {
     const manifest = require(manifestPath);
     const rootPath = manifestPath.substr(0, manifestPath.indexOf('manifest.json'));
     return {
-      [manifest.id + '-authoring']: [rootPath + manifest.authoring.entry],
-      [manifest.id + '-delivery']: [rootPath + manifest.delivery.entry],
+      [manifest.id + '_authoring']: [rootPath + manifest.authoring.entry],
+      [manifest.id + '_delivery']: [rootPath + manifest.delivery.entry],
     };
   });
 

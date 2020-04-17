@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom';
 
 export interface TextEditorProps {
   onEdit: (model: string) => void;

@@ -14,8 +14,8 @@ defmodule Oli.RegistrarTest do
 
       assert r.title == "Multiple Choice"
       assert r.description == "A traditional multiple choice question with one correct answer"
-      assert r.authoring_script == "oli-multiple-choice-authoring.js"
-      assert r.delivery_script == "oli-multiple-choice-delivery.js"
+      assert r.authoring_script == "oli_multiple_choice_authoring.js"
+      assert r.delivery_script == "oli_multiple_choice_delivery.js"
       assert r.authoring_element == "oli-multiple-choice-authoring"
       assert r.delivery_element == "oli-multiple-choice-delivery"
 
@@ -27,9 +27,9 @@ defmodule Oli.RegistrarTest do
 
       assert (Map.keys(map) |> length) == 1
 
-      r = Map.get(map, "oli-multiple-choice")
+      r = Map.get(map, "oli_multiple_choice")
 
-      assert r.slug == "oli-multiple-choice"
+      assert r.slug == "oli_multiple_choice"
       assert r.description == "A traditional multiple choice question with one correct answer"
       assert r.friendlyName == "Multiple Choice"
       assert r.authoringElement == "oli-multiple-choice-authoring"

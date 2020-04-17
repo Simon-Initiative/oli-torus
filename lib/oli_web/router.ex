@@ -96,10 +96,14 @@ defmodule OliWeb.Router do
   scope "/api/v1/project", OliWeb do
     pipe_through [:api, :protected]
 
-    put "/:project/:resource/edit", ResourceController, :update
+    put "/:project/resource/:resource", ResourceController, :update
 
-    post "/:project/:resource/lock", LockController, :acquire
-    delete "/:project/:resource/lock", LockController, :release
+    post "/:project/activity/:activity_type", ActivityController, :create
+    put "/:project/activity/:activity", ActivityController, :update
+    delete "/:project/activity", ActivityController, :delete
+
+    post "/:project/lock/:resource", LockController, :acquire
+    delete "/:project/lock/:resource", LockController, :release
 
   end
 
