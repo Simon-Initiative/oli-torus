@@ -8,13 +8,14 @@ defmodule Oli.Activities do
 
   alias Oli.Activities.Activity
   alias Oli.Activities.ActivityFamily
+  alias Oli.Activities.Registration
   alias Oli.Activities.Manifest
 
   def register_activity(%Manifest{} = manifest) do
     create_registration(%{
-      authoring_script: manifest.id <> "-authoring.js",
+      authoring_script: manifest.id <> "_authoring.js",
       authoring_element: manifest.authoring.element,
-      delivery_script: manifest.id <> "-delivery.js",
+      delivery_script: manifest.id <> "_delivery.js",
       delivery_element: manifest.delivery.element,
       description: manifest.description,
       title: manifest.friendlyName,
@@ -39,6 +40,10 @@ defmodule Oli.Activities do
     %ActivityFamily{}
       |> ActivityFamily.changeset(%{
       })
+  end
+
+  def get_registration_by_slug(slug) do
+    Repo.one(from p in Registration, where: p.slug == ^slug)
   end
 
   @doc """
@@ -158,6 +163,14 @@ defmodule Oli.Activities do
   end
 
   @doc """
+  Returns the activity revisions for a list of revision slugs.
+  """
+  def get_activity_revisions(slugs) do
+    Repo.all(from p in ActivityRevision, where: p.slug in ^slugs)
+  end
+
+
+  @doc """
   Gets a single activity_revision.
 
   Raises `Ecto.NoResultsError` if the Activity revision does not exist.
@@ -238,7 +251,6 @@ defmodule Oli.Activities do
     ActivityRevision.changeset(activity_revision, %{})
   end
 
-  alias Oli.Activities.Registration
 
   @doc """
   Returns the list of activity_registrations.

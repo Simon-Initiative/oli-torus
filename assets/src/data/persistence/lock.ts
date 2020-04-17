@@ -16,7 +16,7 @@ export function releaseLock(
   project: ProjectSlug, resource: ResourceSlug): Promise<LockResult> {
 
   const params = {
-    url: `/project/${project}/${resource}/lock`,
+    url: `/project/${project}/lock/${resource}`,
     method: 'DELETE',
   };
   return makeRequest<LockResult>(params);
@@ -26,7 +26,7 @@ export function acquireLock(
   project: ProjectSlug, resource: ResourceSlug): Promise<LockResult> {
 
   const params = {
-    url: `/project/${project}/${resource}/lock`,
+    url: `/project/${project}/lock/${resource}`,
     method: 'POST',
   };
   return makeRequest<LockResult>(params);

@@ -186,8 +186,9 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
     create table(:activity_revisions) do
       add :content, :map
-      add :objectives, {:array, :id}
+      add :objectives, {:array, :map}
       add :slug, :string
+      add :title, :string
       add :deleted, :boolean, default: false, null: false
 
       add :author_id, references(:authors)

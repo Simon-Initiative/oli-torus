@@ -1,5 +1,5 @@
 {
-  "id": "oli-multiple-choice",
+  "id": "oli_multiple_choice",
   "friendlyName": "Multiple Choice",
   "description": "A traditional multiple choice question with one correct answer",
   "delivery": {
@@ -9,5 +9,9 @@
   "authoring": {
     "element": "oli-multiple-choice-authoring",
     "entry": "./authoring-entry.ts"
+  },
+  "schemaPruning": {
+    "type": "keys",
+    "keys": ["feedback"]
   }
 }
