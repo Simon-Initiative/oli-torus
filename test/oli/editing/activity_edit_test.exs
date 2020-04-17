@@ -165,6 +165,31 @@ defmodule Oli.ActivityEditingTest do
       assert context.previousActivity.activitySlug == slug_2
       assert context.nextActivity == nil
 
+       # Reorder, with interspersed content
+       update = %{ "content" => [
+        %{ "type" => "content", "id" => 1, "purpose" => "none", "children" => []},
+        %{ "type" => "activity-reference", "id" => 7, "activitySlug" => slug_3, "purpose" => "none"},
+        %{ "type" => "content", "id" => 3, "purpose" => "none", "children" => []},
+        %{ "type" => "content", "id" => 4, "purpose" => "none", "children" => []},
+        %{ "type" => "activity-reference", "id" => 5, "activitySlug" => slug_2, "purpose" => "none"},
+        %{ "type" => "content", "id" => 6, "purpose" => "none", "children" => []},
+        %{ "type" => "activity-reference", "id" => 2, "activitySlug" => slug_1, "purpose" => "none"},
+        %{ "type" => "content", "id" => 8, "purpose" => "none", "children" => []}]}
+      assert {:ok, _} =  ResourceEditor.edit(project.slug, revision.slug, author.email, update)
+
+      {:ok, context} = ActivityEditor.create_context(project.slug, revision.slug, slug_1, author)
+      assert context.nextActivity == nil
+      assert context.previousActivity.activitySlug == slug_2
+
+      {:ok, context} = ActivityEditor.create_context(project.slug, revision.slug, slug_2, author)
+      assert context.previousActivity.activitySlug == slug_3
+      assert context.nextActivity.activitySlug == slug_1
+
+      {:ok, context} = ActivityEditor.create_context(project.slug, revision.slug, slug_3, author)
+      assert context.nextActivity.activitySlug == slug_2
+      assert context.previousActivity == nil
+
+
     end
 
     test "attaching an unknown activity to a resource fails", %{author: author, project: project, revision: revision } do

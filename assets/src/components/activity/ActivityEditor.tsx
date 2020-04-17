@@ -6,6 +6,7 @@ import { ActivityContext, ObjectiveMap } from 'data/content/activity';
 import { Objective } from 'data/content/objective';
 import { TitleBar } from '../content/TitleBar';
 import { UndoRedo } from '../content/UndoRedo';
+import { Navigation } from './Navigation';
 import { Objectives } from '../resource/Objectives';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug, ActivitySlug } from 'data/types';
 import { makeRequest } from 'data/persistence/common';
@@ -170,6 +171,9 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
         </TitleBar>
         <div ref={this.ref}>
           {React.createElement(authoringElement, webComponentProps as any)}
+        </div>
+        <div>
+          <Navigation {...this.props}/>
         </div>
       </div>
     );

@@ -223,6 +223,10 @@ defmodule Oli.Publishing do
     Repo.one!(from p in ResourceMapping, where: p.publication_id == ^publication_id and p.resource_id == ^resource_id)
   end
 
+  def get_activity_mapping(publication_id, activity_id) do
+    Repo.one(from p in ActivityMapping, where: p.publication_id == ^publication_id and p.activity_id == ^activity_id)
+  end
+
 
   @doc """
   Creates a resource_mapping.

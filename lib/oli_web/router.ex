@@ -83,11 +83,8 @@ defmodule OliWeb.Router do
     put "/:project/objectives/:id", ObjectiveController, :update
     delete "/:project/objectives/:id", ObjectiveController, :delete
 
-    # Resource
-    get "/:project_id/:revision_slug", ResourceController, :view
-    get "/:project_id/:revision_slug/edit", ResourceController, :edit
-
-    # Activity
+    # Editors
+    get "/:project_id/resource/:revision_slug", ResourceController, :edit
     get "/:project_id/resource/:revision_slug/activity/:activity_slug", ActivityController, :edit
 
     # Collaborators

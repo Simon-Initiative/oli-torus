@@ -9,10 +9,6 @@ defmodule OliWeb.ResourceController do
   plug :fetch_project when action not in [:view, :update]
   plug :authorize_project when action not in [:view, :update]
 
-  def view(conn, %{"project_id" => _project_id}) do
-    render conn, "page.html", title: "Page", active: :page
-  end
-
   def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
 
     case ResourceEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
