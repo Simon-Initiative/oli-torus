@@ -31,10 +31,10 @@ defmodule Oli.Publishing do
   that pertain to a given publication.
   """
   def get_published_activity_revisions(publication_id, activity_ids) do
-    Repo.all from mapping in ActivityMapping,
+    Repo.all(from mapping in ActivityMapping,
       join: rev in ActivityRevision, on: mapping.revision_id == rev.id,
       where: mapping.publication_id == ^publication_id and mapping.activity_id in ^activity_ids,
-      select: rev
+      select: rev) |> Repo.preload(:activity_type)
   end
 
 

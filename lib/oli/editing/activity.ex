@@ -59,10 +59,13 @@ defmodule Oli.Editing.ActivityEditor do
 
     with {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil(),
-         {:ok, _objectives} <- Publishing.get_published_objectives(publication.id) |> trap_nil(),
-         {:ok, %{content: _content} = _revision} <- ResourceEditor.get_latest_revision(publication, resource) |> trap_nil(),
-         {:ok, %{activity_type: activity_type, content: model, title: title} = _activity_revision} <- Activities.get_activity_revision(activity_slug) |> trap_nil()
+         {:ok, objectives} <- Publishing.get_published_objectives(publication.id) |> trap_nil(),
+         {:ok, objectives_without_ids} <- ResourceEditor.strip_ids(objectives) |> trap_nil(),
+         {:ok, %{content: content}} <- ResourceEditor.get_latest_revision(publication, resource) |> trap_nil(),
+         {:ok, %{activity_id: activity_id, activity_type: activity_type, content: model, title: title}} <- Activities.get_activity_revision(activity_slug) |> trap_nil()
     do
+
+      {previous, next} = find_sibling_activities(activity_id, content, publication.id)
 
       context = %ActivityContext{
         authoringScript: activity_type.authoring_script,
@@ -76,15 +79,69 @@ defmodule Oli.Editing.ActivityEditor do
         title: title,
         model: model,
         objectives: %{},
-        allObjectives: [],
-        previousActivity: nil,
-        nextActivity: nil
+        allObjectives: objectives_without_ids,
+        previousActivity: previous,
+        nextActivity: next
       }
 
       {:ok, context}
     else
       _ -> {:error, :not_found}
     end
+  end
+
+  # Find the next and previous 'sibling' activities to the activity
+  # specified by activity_id, in the array of content, all through
+  # the lens of a specific publication. Previous and next refer to the
+  # activities that precede or follow the given activity in the content
+  # list, but only looking at activities.
+  defp find_sibling_activities(activity_id, content, publication_id) do
+
+    # find the siblings in one pass:
+    {previous, _, next} = Enum.filter(content, fn c -> Map.get(c, "type") == "activity-reference" end)
+      |> Enum.reduce({nil, nil, nil}, fn c, {p, f, n} ->
+
+      case {Map.get(c, "activity_id"), p, f, n} do
+
+        # handle the case when we visit our activity, we return
+        # the current previous and set the current, leaving next nil
+        {^activity_id, p, _, _} -> {p, Map.get(c, "activity_id"), nil}
+
+        # handle the case that we are visiting an activity when we
+        # haven't encountered yet our activity, just record the current
+        # element as the candidate previous
+        {_, _, nil, _} -> {Map.get(c, "activity_id"), nil, nil}
+
+        # handle the case where we have visited our activity and now
+        # have encountered the first activity after it
+        {_, _, _, nil} -> {p, f, Map.get(c, "activity_id")}
+
+        # we have found everything that we are going to find, just
+        # pass the current results thru
+        {_, _, _, _} -> {p, f, n}
+      end
+
+    end)
+
+    # get the published revisions for these activity ids
+    revisions = case {previous, next} do
+      {nil, nil} -> [nil, nil]
+      {nil, n} -> Publishing.get_published_activity_revisions(publication_id, [n]) |> List.insert_at(0, nil)
+      {p, nil} -> Publishing.get_published_activity_revisions(publication_id, [p]) |> List.insert_at(1, nil)
+      {p, n} -> Publishing.get_published_activity_revisions(publication_id, [p, n])
+    end
+
+    # convert them to sibling activity representations
+    as_siblings = Enum.map(revisions, fn r ->
+      case r do
+        nil -> nil
+        rev -> %SiblingActivity{friendlyName: rev.activity_type.title, title: rev.title, activitySlug: rev.slug}
+      end
+    end)
+
+    # return them as a tuple
+    List.to_tuple(as_siblings)
+
   end
 
 
