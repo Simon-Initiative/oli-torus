@@ -6,17 +6,45 @@ const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
+// Determines the entry points for the webpack by looking at activity
+// implementations in src/components/activities folder
+const populateEntries = () => {
+
+  // These are the non-activity bundles
+  const initialEntries = {
+    app: ['./js/app.js'],
+    components: ['./src/components.tsx'],
+  };
+
+  const manifests = glob.sync("./src/components/activities/*/manifest.json", {});
+
+  const foundActivities = manifests.map((manifestPath) => {
+    const manifest = require(manifestPath);
+    const rootPath = manifestPath.substr(0, manifestPath.indexOf('manifest.json'));
+    return {
+      [manifest.id + '_authoring']: [rootPath + manifest.authoring.entry],
+      [manifest.id + '_delivery']: [rootPath + manifest.delivery.entry],
+    };
+  });
+
+  // Merge the attributes of all found activities and the initialEntries
+  // into one single object.
+  const merged = foundActivities.reduce((p, c) => Object.assign({}, p, c), initialEntries);
+
+  // Validate: We should have (2 * foundActivities.length) + number of keys in initialEntries
+  // If we don't it is likely due to a naming collision in two or more manifests
+  if (Object.keys(merged).length != Object.keys(initialEntries).length + (2 * foundActivities.length)) {
+    throw new Error('Encountered a possible naming collision in activity manifests. Aborting.');
+  }
+
+  return merged;
+};
+
 module.exports = (env, options) => ({
   optimization: {
     chunkIds: "named",
 		splitChunks: {
 			cacheGroups: {
-				commons: {
-					chunks: "initial",
-					minChunks: 2,
-					maxInitialRequests: 5, // The default limit is too small to showcase the effect
-					minSize: 0 // This is example is too small to create commons chunks
-				},
 				vendor: {
 					test: /node_modules/,
 					chunks: "initial",
@@ -31,10 +59,7 @@ module.exports = (env, options) => ({
       new OptimizeCSSAssetsPlugin({})
     ]
   },
-  entry: {
-    app: ['./js/app.js'],
-    components: ['./src/components.tsx'],
-  },
+  entry: populateEntries(),
   output: {
     filename: '[name].js',
     path: path.resolve(__dirname, '../priv/static/js')

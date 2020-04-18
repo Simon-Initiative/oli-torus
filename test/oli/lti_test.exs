@@ -1,7 +1,7 @@
 defmodule Oli.LtiTest do
   use Oli.DataCase
 
-  alias Oli.Lti
+  alias Oli.Delivery.Lti
 
   describe "parse_lti_role" do
     test "handles student role" do
@@ -18,7 +18,7 @@ defmodule Oli.LtiTest do
   end
 
   describe "nonce_store" do
-    alias Oli.Lti.Nonce
+    alias Oli.Delivery.Lti.Nonce
 
     @valid_attrs %{value: "some value"}
     @update_attrs %{value: "some updated value"}

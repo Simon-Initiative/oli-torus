@@ -1,7 +1,7 @@
 defmodule OliWeb.ProjectControllerTest do
   use OliWeb.ConnCase
   alias Oli.Repo
-  alias Oli.Course.Project
+  alias Oli.Authoring.Course.Project
 
   @basic_get_routes [:overview, :objectives, :curriculum, :publish, :insights]
   setup [:author_project_conn]
@@ -17,7 +17,7 @@ defmodule OliWeb.ProjectControllerTest do
     end
 
     test "author can not access projects that do not belong to them", %{conn: conn, author: author} do
-      {:ok, author: _author2, project: project2} = author_project()
+      {:ok, author: _author2, project: project2} = author_project_fixture()
       conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
       @basic_get_routes
         |> Enum.each(fn path -> unauthorized_redirect(conn, path, project2.slug) end)
@@ -96,12 +96,6 @@ defmodule OliWeb.ProjectControllerTest do
   defp unauthorized_redirect(conn, path, project) do
     conn = get(conn, Routes.project_path(conn, path, project))
     assert redirected_to(conn) == Routes.workspace_path(conn, :projects)
-  end
-
-  defp author_project() do
-    author = author_fixture()
-    [project | _rest] = make_n_projects(1, author)
-    {:ok, author: author, project: project}
   end
 
 end

@@ -2,7 +2,8 @@ import * as Immutable from 'immutable';
 import React from 'react';
 import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
-import { ResourceContent, ResourceType, createDefaultStructuredContent } from 'data/content/resource';
+import { ResourceContent, ResourceContext,
+  Activity, ActivityMap, createDefaultStructuredContent } from 'data/content/resource';
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
 import { Editors } from './Editors';
@@ -14,17 +15,10 @@ import { makeRequest } from 'data/persistence/common';
 import { UndoableState, processRedo, processUndo, processUpdate, init } from './undo';
 import { releaseLock, acquireLock } from 'data/persistence/lock';
 
-export type ResourceEditorProps = {
-  resourceType: ResourceType,     // Page or assessment?
-  authorEmail: string,            // The current author
-  projectSlug: ProjectSlug,       // The current project
-  resourceSlug: ResourceSlug,     // The current resource
-  title: string,                  // The title of the resource
-  content: ResourceContent[],     // Content of the resource
-  objectives: ObjectiveSlug[],        // Attached objectives
-  allObjectives: Objective[],     // All objectives
-  editorMap: ActivityEditorMap,   // Map of activity types to activity elements
-};
+export interface ResourceEditorProps extends ResourceContext {
+  editorMap: ActivityEditorMap;   // Map of activity types to activity elements
+  activities: ActivityMap;
+}
 
 // This is the state of our resource that is undoable
 type Undoable = {
@@ -36,6 +30,7 @@ type Undoable = {
 type ResourceEditorState = {
   undoable: UndoableState<Undoable>,
   allObjectives: Immutable.List<Objective>,
+  activities: Immutable.Map<string, Activity>,
   editMode: boolean,
   persistence: 'idle' | 'pending' | 'inflight',
 };
@@ -46,7 +41,7 @@ function prepareSaveFn(project: ProjectSlug, resource: ResourceSlug, body: any) 
     const params = {
       method: 'PUT',
       body: JSON.stringify({ update: body }),
-      url: `/project/${project}/${resource}/edit`,
+      url: `/project/${project}/resource/${resource}`,
     };
 
     return makeRequest(params);
@@ -81,7 +76,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
   constructor(props: ResourceEditorProps) {
     super(props);
 
-    const { title, objectives, allObjectives, content } = props;
+    const { title, objectives, allObjectives, content, activities } = props;
 
     this.state = {
       editMode: true,
@@ -92,6 +87,8 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       }),
       persistence: 'idle',
       allObjectives: Immutable.List<Objective>(allObjectives),
+      activities: Immutable.Map<string, Activity>(
+        Object.keys(activities).map(k => [k, activities[k]])),
     };
 
     this.persistence = new DeferredPersistenceStrategy();
@@ -162,12 +159,17 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       this.update({ title });
     };
 
-    const onAddItem = (c : ResourceContent) =>
+    const onAddItem = (c : ResourceContent, a? : Activity) => {
       this.update({ content: this.state.undoable.current.content.push(c) });
+      if (a) {
+        this.setState({ activities: this.state.activities.set(a.activitySlug, a) });
+      }
+    };
 
     return (
       <div>
         <TitleBar
+          resourceContext={props}
           onUndo={this.undo}
           onRedo={this.redo}
           canUndo={state.undoable.undoStack.size > 0}
@@ -184,8 +186,10 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           onEdit={objectives => this.update({ objectives })} />
         <div className="d-flex flex-row align-items-start">
           <Outline {...props} editMode={this.state.editMode}
+            activities={this.state.activities}
             onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
           <Editors {...props} editMode={this.state.editMode}
+            activities={this.state.activities}
             onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
         </div>
       </div>

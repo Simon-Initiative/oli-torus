@@ -1,12 +1,10 @@
 defmodule Oli.CourseTest do
   use Oli.DataCase
 
-  alias Oli.Course
-  alias Oli.Course.Family
-  alias Oli.Course.Project
+  alias Oli.Authoring.Course
+  alias Oli.Authoring.Course.{Family, Project}
 
   describe "projects basic" do
-    alias Oli.Course.Project
 
     @valid_attrs %{description: "some description", slug: "some slug", version: "1", title: "some title"}
     @update_attrs %{description: "some updated description", version: "1", slug: "some updated slug", title: "some updated title"}
@@ -34,7 +32,7 @@ defmodule Oli.CourseTest do
 
     test "create project with invalid data returns error changeset" do
       empty_title = ""
-      assert {:error, _, _, _} = Course.create_project(empty_title, author_fixture())
+      assert {:error, results} = Course.create_project(empty_title, author_fixture())
     end
 
     test "create_empty_project/1 with valid data creates a project", %{valid_attrs: valid_attrs} do
@@ -59,19 +57,9 @@ defmodule Oli.CourseTest do
       assert {:error, %Ecto.Changeset{}} = Course.update_project(project, @invalid_attrs)
       assert project == Course.get_project!(project.id)
     end
-
-    test "delete_project/1 deletes the project", %{project: project}  do
-      assert {:ok, %Project{}} = Course.delete_project(project)
-      assert_raise Ecto.NoResultsError, fn -> Course.get_project!(project.id) end
-    end
-
-    test "change_project/1 returns a project changeset", %{project: project}  do
-      assert %Ecto.Changeset{} = Course.change_project(project)
-    end
   end
 
   describe "families" do
-    alias Oli.Course.Family
 
     @valid_attrs %{description: "some description", slug: "some slug", title: "some title"}
     @update_attrs %{description: "some updated description", slug: "some updated slug", title: "some updated title"}
@@ -84,11 +72,6 @@ defmodule Oli.CourseTest do
         |> Course.create_family()
 
       family
-    end
-
-    test "list_families/0 returns all families" do
-      family = family_fixture()
-      assert Course.list_families() == [family]
     end
 
     test "get_family!/1 returns the family with given id" do
@@ -120,56 +103,49 @@ defmodule Oli.CourseTest do
       assert {:error, %Ecto.Changeset{}} = Course.update_family(family, @invalid_attrs)
       assert family == Course.get_family!(family.id)
     end
-
-    test "delete_family/1 deletes the family" do
-      family = family_fixture()
-      assert {:ok, %Family{}} = Course.delete_family(family)
-      assert_raise Ecto.NoResultsError, fn -> Course.get_family!(family.id) end
-    end
-
-    test "change_family/1 returns a family changeset" do
-      family = family_fixture()
-      assert %Ecto.Changeset{} = Course.change_family(family)
-    end
   end
 
   describe "project creation with associations" do
     setup do
       author = author_fixture()
-      {:ok, transaction} = Course.create_project("test project", author)
-      {:ok, %{transaction: transaction, author: author}}
+      {:ok, results} = Course.create_project("test project", author)
+      {:ok, Map.put(results, :author, author)}
     end
 
-    test "creates a new family", %{transaction: %{family: family}} do
+    test "creates a new family", %{project_family: family} do
       assert !is_nil(family)
     end
 
-    test "creates a new project tied to the family", %{transaction: %{project: project, family: family}} do
+    test "creates a new project tied to the family", %{project: project, project_family: family} do
       project = Repo.preload(project, [:family])
       assert project.family.slug == family.slug
     end
 
-    test "associates the currently logged in author with the new project", %{transaction: %{author_project: author_project, project: project}, author: author} do
+    test "associates the currently logged in author with the new project", %{author_project: author_project, project: project, author: author} do
       assert !is_nil(author_project)
       assert author_project.author_id == author.id
       assert author_project.project_id == project.id
       assert Repo.preload(author_project, [:project_role]).project_role.type == "owner"
     end
 
-    test "creates a new container resource", %{transaction: %{resource_revision: revision}} do
+    test "creates a new container resource", %{resource_revision: revision} do
       assert revision.slug =~ "root_container"
     end
 
-    test "creates a new resource revision for the container", %{transaction: %{resource: resource, resource_revision: resource_revision}} do
+    test "creates a new resource revision for the container", %{resource: resource, resource_revision: resource_revision} do
       revision = Repo.preload(resource_revision, [:resource])
       assert revision.slug =~ "root_container"
       assert revision.resource == resource
     end
 
-    test "creates a new publication associated with the project and containing the container resource", %{transaction: %{publication: publication, resource: resource, project: project}} do
-      assert Enum.find(publication.root_resources, fn candidate_id -> candidate_id == resource.id end)
+    test "creates a new publication associated with the project and containing the container resource", %{publication: publication, resource: resource, project: project} do
+      assert Repo.preload(publication, [:root_resource]).root_resource == resource
       publication = Repo.preload(publication, [:project])
       assert publication.project == project
+    end
+
+    test "project should always have an unpublished, 'active' publication", %{project: project} do
+      assert Enum.find(Oli.Repo.preload(project, [:publications]).publications, &(&1.published == false))
     end
   end
 end

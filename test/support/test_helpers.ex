@@ -51,9 +51,9 @@ defmodule Oli.TestHelpers do
     institution
   end
 
-  def package_fixture(author) do
-    {:ok, resources} = Course.create_project("test project", author)
-    resources
+  def project_fixture(author) do
+    {:ok, project} = Course.create_project("test project", author)
+    project
   end
 
   def objective_fixture(project) do
@@ -120,8 +120,6 @@ defmodule Oli.TestHelpers do
       |> Enum.map(fn {:ok, %{project: project}} -> project end)
   end
 
-  @doc "Only for testing Project changeset and database transaction logic.
-  Use `create_project` for application use"
   def create_empty_project(attrs \\ %{}) do
     %Project{}
     |> Project.changeset(attrs)
@@ -135,6 +133,7 @@ defmodule Oli.TestHelpers do
     {:ok, conn: conn, author: author, project: project}
   end
 
+  def author_project_fixture(), do: author_project_fixture(nil)
   def author_project_fixture(_conn) do
     author = author_fixture()
     [project | _rest] = make_n_projects(1, author)

@@ -1,7 +1,7 @@
 defmodule OliWeb.LtiController do
   use OliWeb, :controller
 
-  import Oli.Lti.Provider
+  import Oli.Delivery.Lti.Provider
   import Oli.Utils
 
   alias Oli.Repo

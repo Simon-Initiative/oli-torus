@@ -1,19 +1,14 @@
 defmodule Oli.LocksTest do
   use Oli.DataCase
 
-  alias Oli.Publishing
 
-  alias Oli.Accounts.SystemRole
-  alias Oli.Accounts.Institution
-  alias Oli.Accounts.Author
-  alias Oli.Course.Project
-  alias Oli.Course.Family
+  alias Oli.Accounts.{SystemRole, Institution, Author}
+  alias Oli.Authoring.Course.{Project, Family}
+  alias Oli.Publishing
   alias Oli.Publishing.Publication
-  alias Oli.Resources
-  alias Oli.Resources.Resource
-  alias Oli.Resources.ResourceFamily
-  alias Oli.Resources.ResourceRevision
-  alias Oli.Locks
+  alias Oli.Authoring.Resources
+  alias Oli.Authoring.Resources.{Resource, ResourceFamily, ResourceRevision}
+  alias Oli.Authoring.Locks
 
   describe "locks" do
 
@@ -23,13 +18,13 @@ defmodule Oli.LocksTest do
 
       {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
       {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
-      {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resources: [], project_id: project.id}) |> Repo.insert
       {:ok, author1} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
       {:ok, author2} = Author.changeset(%Author{}, %{email: "test2@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
       {:ok, _institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author1.id}) |> Repo.insert
 
       {:ok, resource_family} = ResourceFamily.changeset(%ResourceFamily{}, %{}) |> Repo.insert
       {:ok, resource} = Resource.changeset(%Resource{}, %{project_id: project.id, family_id: resource_family.id}) |> Repo.insert
+      {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resource_id: resource.id, project_id: project.id}) |> Repo.insert
 
       resource_type = Resources.list_resource_types() |> hd
 
