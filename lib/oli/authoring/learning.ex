@@ -128,6 +128,17 @@ defmodule Oli.Authoring.Learning do
     })
   end
 
+  defp do_create_objective_revision(attrs, objective) do
+    title = Map.get(attrs, "title")
+    %ObjectiveRevision{}
+    |> ObjectiveRevision.changeset(%{
+      title: title,
+      children: [],
+      deleted: false,
+      objective_id: objective.id
+    })
+  end
+
   @doc """
   Deletes a objective.
   ## Examples

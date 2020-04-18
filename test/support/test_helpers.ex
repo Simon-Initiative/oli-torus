@@ -4,10 +4,9 @@ defmodule Oli.TestHelpers do
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Accounts.Author
-  alias Oli.Lti.HmacSHA1
-  alias Oli.Course
-  alias Oli.Course.Project
-  alias Oli.Learning
+  alias Oli.Delivery.Lti.HmacSHA1
+  alias Oli.Authoring.Course
+  alias Oli.Authoring.Course.Project
 
   def yesterday() do
     {:ok, datetime} = DateTime.now("Etc/UTC")
@@ -130,6 +129,7 @@ defmodule Oli.TestHelpers do
     author = author_fixture()
     [project | _rest] = make_n_projects(1, author)
     conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
+
     {:ok, conn: conn, author: author, project: project}
   end
 
