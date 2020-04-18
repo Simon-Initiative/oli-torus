@@ -50,7 +50,7 @@ defmodule OliWeb.Router do
   scope "/", OliWeb do
     pipe_through :browser
 
-    get "/", PageController, :index
+    get "/", StaticPageController, :index
   end
 
   # authorization protected routes
