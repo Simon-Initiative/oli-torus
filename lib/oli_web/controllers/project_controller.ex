@@ -25,7 +25,7 @@ defmodule OliWeb.ProjectController do
 
   def objectives(conn, _params) do
     project = conn.assigns.project
-    publication_id = Publishing.get_unpublished_publication(project.id)
+    publication_id = Publishing.get_unpublished_publication_id!(project.id)
     objective_mappings = Publishing.get_objective_mappings_by_publication(publication_id)
     changeset = Learning.change_objective(%Learning.Objective{})
     params = %{title: "Objectives", objective_mappings: objective_mappings, objective_changeset: changeset, active: :objectives}
@@ -41,7 +41,6 @@ defmodule OliWeb.ProjectController do
     # container = Oli.Repo.preload(Oli.Resources.get_resource!(container_id), [:resource_revisions])
     # revision = container.resource_revisions
     #   |> Enum.max_by(&(&1.inserted_at), NaiveDateTime)
-    # IO.inspect(revision)
     # pages = Enum.map(revision.children, &(Oli.Resources.get_resource!(&1)))
 
     render conn, "curriculum.html",

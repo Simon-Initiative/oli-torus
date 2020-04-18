@@ -62,7 +62,7 @@ defmodule Oli.Authoring.Learning do
       |> Multi.insert(:objective_revision, change_objective_revision(attrs, objective)) end)
     |> Multi.merge(fn %{objective: objective, objective_revision: objective_revision} ->
       Multi.new
-      |> Multi.insert(:objective_mapping, change_objective_mapping(Publishing.get_unpublished_publication(Map.get(attrs, "project_id")), objective, objective_revision))end)
+      |> Multi.insert(:objective_mapping, change_objective_mapping(Publishing.get_unpublished_publication_id!(Map.get(attrs, "project_id")), objective, objective_revision))end)
     |> Repo.transaction
   end
 
