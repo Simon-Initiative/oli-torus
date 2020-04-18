@@ -7,6 +7,7 @@ defmodule Oli.TestHelpers do
   alias Oli.Delivery.Lti.HmacSHA1
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Learning
 
   def yesterday() do
     {:ok, datetime} = DateTime.now("Etc/UTC")

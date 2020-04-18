@@ -2,6 +2,7 @@ defmodule OliWeb.ObjectiveController do
   use OliWeb, :controller
   import OliWeb.ProjectPlugs
 
+  alias Oli.Authoring.Course.Project
   alias Oli.Authoring.{Course, Learning}
 
   plug :fetch_project when action in [:create, :update, :delete]

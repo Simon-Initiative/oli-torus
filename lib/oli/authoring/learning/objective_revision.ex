@@ -7,7 +7,7 @@ defmodule Oli.Authoring.Learning.ObjectiveRevision do
   schema "objective_revisions" do
     field :title, :string
     field :slug, :string
-    field :children, {:array, :id}
+    field :children, {:array, :id}, default: []
     field :deleted, :boolean, default: false
 
     belongs_to :objective, Oli.Authoring.Learning.Objective

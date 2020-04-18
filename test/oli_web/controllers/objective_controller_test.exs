@@ -1,12 +1,9 @@
 defmodule OliWeb.ObjectiveControllerTest do
   use OliWeb.ConnCase
   alias Oli.Repo
-  alias Oli.Course.Project
-
-  alias Oli.Learning
-  alias Oli.Learning.Objective
-  alias Oli.Learning.ObjectiveFamily
-  alias Oli.Learning.ObjectiveRevision
+  alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Learning
+  alias Oli.Authoring.Learning.{Objective, ObjectiveFamily, ObjectiveRevision}
 
   setup [:author_project_objective_fixture]
   @valid_attrs %{title: "default title"}
@@ -30,7 +27,9 @@ defmodule OliWeb.ObjectiveControllerTest do
     test "sub-objective x-status header with value 'success' when data is valid", %{conn: conn, project: project, objective_revision: parent_objective_revision} do
       sub_objective_valid_attrs = Map.merge(@sub_valid_attrs, %{parent_slug: parent_objective_revision.slug})
       conn = post(conn, Routes.objective_path(conn, :create, project.slug), objective: sub_objective_valid_attrs)
-      IO.inspect Learning.get_objective_revision!(parent_objective_revision.id)
+      parent = Learning.get_objective_revision!(parent_objective_revision.id)
+      child = Repo.get_by(ObjectiveRevision, @sub_valid_attrs)
+      assert Enum.member?(parent.children, child.id)
       assert get_req_header(conn, "x-status") == ["success"]
     end
   end
