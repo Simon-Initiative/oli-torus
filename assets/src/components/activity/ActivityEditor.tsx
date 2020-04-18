@@ -97,7 +97,8 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
       this.persistence.destroy();
 
       e.preventDefault();
-      e.returnValue = '';
+      // Note: Not all browsers will display this custom message.
+      e.returnValue = 'You have unsaved changes, are you sure you want to leave?';
     }
   }
 
