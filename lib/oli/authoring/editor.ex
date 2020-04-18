@@ -41,7 +41,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
     with {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
-         {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
+         {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil(),
          {:ok, converted_update} <- convert_to_activity_ids(update)
     do
@@ -91,7 +91,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
     with {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
-         {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
+         {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil()
     do
       case Locks.acquire(publication.id, resource.id, author.id) do
@@ -127,7 +127,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
     with {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
-         {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
+         {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil()
     do
       case Locks.release(publication.id, resource.id, author.id) do
@@ -148,7 +148,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
 
     editor_map = Oli.Authoring.Activities.create_registered_activity_map()
 
-    with {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
+    with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil(),
          {:ok, objectives} <- Publishing.get_published_objectives(publication.id) |> trap_nil(),
          {:ok, %{content: content} = revision} <- get_latest_revision(publication, resource) |> trap_nil(),

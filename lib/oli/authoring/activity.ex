@@ -30,7 +30,7 @@ defmodule Oli.Editing.ActivityEditor do
 
       with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
-         {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
+         {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, family} <- Activities.create_activity_family(),
          {:ok, activity} <- Activities.create_activity(%{project_id: project.id, family_id: family.id}),
          {:ok, activity_type} <- Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),

@@ -28,8 +28,7 @@ defmodule Oli.Seeder do
     {:ok, revision} = ResourceRevision.changeset(%ResourceRevision{}, %{author_id: author.id, objectives: [], resource_type_id: resource_type.id, children: [], content: [], deleted: true, slug: "some_title", title: "some title", resource_id: resource.id}) |> Repo.insert
     {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resource_id: resource.id, project_id: project.id}) |> Repo.insert
     {:ok, mapping} = Publishing.create_resource_mapping(%{ publication_id: publication.id, resource_id: resource.id, revision_id: revision.id})
-
-
+    {:ok, publication} = Publishing.update_publication(publication, %{root_resource_id: resource.id})
 
     Map.put(%{}, :family, family)
       |> Map.put(:project, project)

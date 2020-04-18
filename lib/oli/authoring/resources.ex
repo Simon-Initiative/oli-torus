@@ -2,7 +2,13 @@ defmodule Oli.Authoring.Resources do
   import Ecto.Query, warn: false
   alias Oli.Repo
 
-  alias Oli.Authoring.Course.Project
+  alias Oli.Course.Project
+  alias Oli.Accounts.Author
+  alias Oli.Resources.Resource
+  alias Oli.Resources.ResourceRevision
+  alias Oli.Resources.ResourceFamily
+  alias Oli.Publishing
+  alias Oli.Authoring.Course.{Utils, Project}
   alias Oli.Authoring.Resources.{Resource, ResourceRevision, ResourceFamily, ResourceType}
 
   def initial_resource_setup(author, project) do
@@ -80,6 +86,40 @@ defmodule Oli.Authoring.Resources do
     |> Repo.insert()
   end
 
+  def create_project_resource(
+    %{objectives: _, children: _, content: _, title: _} = attrs,
+    %ResourceType{} = resource_type,
+    %Author{} = author,
+    %Project{} = project
+  ) do
+    {:ok, family} = create_resource_family()
+    create_project_resource(attrs, resource_type, author, project, family)
+  end
+
+  def create_project_resource(
+    %{objectives: _, children: _, content: _, title: title} = attrs,
+    %ResourceType{} = resource_type,
+    %Author{} = author,
+    %Project{} = project,
+    %ResourceFamily{} = family
+  ) do
+    with {:ok, resource} <- create_new_resource(project, family),
+         attrs <- Map.merge(attrs, %{
+           author_id: author.id,
+           resource_type_id: resource_type.id,
+           resource_id: resource.id,
+           slug: Utils.generate_slug("resource_revisions", title)
+         }),
+         {:ok, revision} <- create_resource_revision(attrs),
+         publication <- Publishing.get_unpublished_publication_by_slug!(project.slug),
+         {:ok, mapping} <- Publishing.create_resource_mapping(%{ publication_id: publication.id, resource_id: resource.id, revision_id: revision.id})
+    do
+      {:ok, %{resource: resource, revision: revision, project: project, family: family, mapping: mapping}}
+    else
+      error -> error
+    end
+  end
+
   @doc """
   Updates a resource.
   ## Examples
@@ -115,6 +155,22 @@ defmodule Oli.Authoring.Resources do
   def change_resource(%Resource{} = resource) do
     Resource.changeset(resource, %{})
   end
+
+  def get_latest_resource_revision(resource, project) do
+    publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+    mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
+
+    get_resource_revision!(mapping.revision_id)
+  end
+
+  @doc """
+  Enumerates all the resource_types
+  """
+  def resource_type, do: %{
+    unscored_page: Oli.Repo.get(ResourceType, 1),
+    scored_page: Oli.Repo.get(ResourceType, 2),
+    container: Oli.Repo.get(ResourceType, 3),
+  }
 
   @doc """
   Returns the list of resource_types.

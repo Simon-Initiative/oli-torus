@@ -4,7 +4,7 @@ defmodule OliWeb.CollaboratorController do
 
   def create(conn, %{"email" => email}) do
     project_id = conn.params["project_id"]
-    IO.puts("project id: #{project_id}")
+
     case Collaborators.add_collaborator(email, project_id) do
       {:ok, _results} ->
         redirect conn, to: Routes.project_path(conn, :overview, project_id)
