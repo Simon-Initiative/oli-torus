@@ -62,7 +62,30 @@ defmodule OliWeb.ProjectController do
   end
 
   def publish(conn, _project_params) do
-    render conn, "publish.html", title: "Publish", active: :publish
+    project = conn.assigns.project
+    latest_published_publication = Publishing.get_latest_published_publication_by_slug!(project.slug)
+    active_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+
+    {has_changes, active_publication_changes} = case latest_published_publication do
+      nil -> {true, nil}
+      _ ->
+        changes = Publishing.diff_publications(latest_published_publication, active_publication)
+          |> (&(:maps.filter fn _, v -> v != :identical end, &1)).()
+        has_changes = Map.values(changes)
+          |> Enum.any?(fn {status, _} -> status != :identical end)
+        {has_changes, changes}
+      end
+
+    render conn, "publish.html", title: "Publish", active: :publish, latest_published_publication: latest_published_publication, active_publication_changes: active_publication_changes, has_changes: has_changes
+  end
+
+  def publish_active(conn, _params) do
+    project = conn.assigns.project
+    Publishing.publish_project(project)
+
+    conn
+    |> put_flash(:info, "Publish Successful!")
+    |> redirect(to: Routes.project_path(conn, :publish, project))
   end
 
   def insights(conn, _project_params) do
