@@ -58,6 +58,7 @@ defmodule Oli.Editing.ResourceEditor do
 
           # A successful lock update means we can safely edit the existing revision
           {:updated} -> get_latest_revision(publication, resource)
+            |> maybe_create_new_revision(publication, resource, author.id, converted_update)
             |> update_revision(converted_update)
 
           # error or not able to lock results in a failed edit
@@ -288,6 +289,18 @@ defmodule Oli.Editing.ResourceEditor do
     revision = Resources.get_resource_revision!(mapping.revision_id)
 
     Repo.preload(revision, :resource_type)
+  end
+
+  # create a new revision only if the slug will change due to this update
+  defp maybe_create_new_revision(previous, publication, resource, author_id, update) do
+
+    title = Map.get(update, "title", previous.title)
+
+    if (title != previous.title) do
+      create_new_revision(previous, publication, resource, author_id)
+    else
+      previous
+    end
   end
 
   # Creates a new resource revision and updates the publication mapping

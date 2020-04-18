@@ -60,7 +60,11 @@ defmodule Oli.Editing.ActivityEditor do
             |> update_revision(update)
 
           # A successful lock update means we can safely edit the existing revision
-          {:updated} -> get_latest_revision(publication, activity_slug)
+          # unless, that is, if the update would change the corresponding slug.
+          # In that case we need to create a new revision. Otherwise, future attempts
+          # to resolve this activity via the historical slugs would fail.
+          {:updated} -> get_latest_revision(publication.id, activity.id)
+            |> maybe_create_new_revision(publication, activity, author.id, update)
             |> update_revision(update)
 
           # error or not able to lock results in a failed edit
@@ -74,7 +78,6 @@ defmodule Oli.Editing.ActivityEditor do
     end
 
   end
-
 
   # Creates a new resource revision and updates the publication mapping
   defp create_new_revision(previous, publication, activity, author_id) do
@@ -95,6 +98,18 @@ defmodule Oli.Editing.ActivityEditor do
     {:ok, _mapping} = Publishing.update_activity_mapping(mapping, %{ revision_id: revision.id })
 
     revision
+  end
+
+  # create a new revision only if the slug will change due to this update
+  defp maybe_create_new_revision(previous, publication, activity, author_id, update) do
+
+    title = Map.get(update, "title", previous.title)
+
+    if (title != previous.title) do
+      create_new_revision(previous, publication, activity, author_id)
+    else
+      previous
+    end
   end
 
   # Applies the update to the revision, converting any objective slugs back to ids
@@ -152,9 +167,6 @@ defmodule Oli.Editing.ActivityEditor do
          {:ok, %{activity_id: activity_id}} <- Activities.get_activity_revision(activity_slug) |> trap_nil(),
          {:ok, %{activity_type: activity_type, content: model, title: title}} <- get_latest_revision(publication.id, activity_id) |> trap_nil()
     do
-
-
-
 
       {previous, next} = find_sibling_activities(activity_id, content, publication.id)
 

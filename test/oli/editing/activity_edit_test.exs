@@ -4,6 +4,7 @@ defmodule Oli.ActivityEditingTest do
   alias Oli.Editing.ActivityEditor
   alias Oli.Editing.ResourceEditor
   alias Oli.Editing.ResourceContext
+  alias Oli.Activities
 
   describe "activity editing" do
 
@@ -50,6 +51,31 @@ defmodule Oli.ActivityEditingTest do
       # and that activity map entry has a type slug that references an editor map entry
       %{typeSlug: typeSlug} = Map.get(activities, activity_slug)
       assert Map.has_key?(editorMap, typeSlug)
+
+    end
+
+    test "can repeatedly edit an activity", %{author: author, project: project, revision: revision } do
+
+      content = %{ "stem" => "Hey there" }
+      {:ok, %{slug: slug}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content)
+
+      # Verify that we can issue a resource edit that attaches the activity
+      update = %{ "content" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug, "purpose" => "none"}]}
+      assert {:ok, _} =  ResourceEditor.edit(project.slug, revision.slug, author.email, update)
+
+      update = %{ "title" => "edited title"}
+      {:ok, first} = ActivityEditor.edit(project.slug, revision.slug, slug, author.email, update)
+
+      actual = Activities.get_activity_revision!(first.id)
+      assert actual.title == "edited title"
+      assert actual.slug == "edited_title"
+
+      update = %{ "title" => "edited title"}
+      {:ok, _} = ActivityEditor.edit(project.slug, revision.slug, slug, author.email, update)
+      actual2 = Activities.get_activity_revision!(first.id)
+
+      # ensure that it did not create a new revision
+      assert actual2.id == actual.id
 
     end
 
