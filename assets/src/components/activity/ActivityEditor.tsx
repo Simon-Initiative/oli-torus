@@ -1,6 +1,6 @@
 import * as Immutable from 'immutable';
 import React from 'react';
-import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
+import { PersistenceStrategy, PersistenceState } from 'data/persistence/PersistenceStrategy';
 import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
 import { ActivityContext, ObjectiveMap } from 'data/content/activity';
 import { Objective } from 'data/content/objective';
@@ -13,6 +13,7 @@ import { makeRequest } from 'data/persistence/common';
 import { UndoableState, processRedo, processUndo, processUpdate, init } from '../resource/undo';
 import { releaseLock, acquireLock } from 'data/persistence/lock';
 import { ActivityModelSchema } from 'components/activities/types';
+import { PersistenceStatus } from 'components/content/PersistenceStatus';
 
 export interface ActivityEditorProps extends ActivityContext {
 
@@ -29,7 +30,7 @@ type ActivityEditorState = {
   undoable: UndoableState<Undoable>,
   allObjectives: Immutable.List<Objective>,
   editMode: boolean,
-  persistence: 'idle' | 'pending' | 'inflight',
+  persistence: PersistenceState,
 };
 
 // Creates a function that when invoked submits a save request
@@ -47,10 +48,8 @@ function prepareSaveFn(
   };
 }
 
-function registerUnload(strategy: PersistenceStrategy) {
-  return window.addEventListener('beforeunload', (event) => {
-    strategy.destroy();
-  });
+function registerUnload(strategy: PersistenceStrategy, unloadFn : any) {
+  return window.addEventListener('beforeunload', unloadFn);
 }
 
 function unregisterUnload(listener: any) {
@@ -82,13 +81,24 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
       allObjectives: Immutable.List<Objective>(allObjectives),
     };
 
-    this.persistence = new DeferredPersistenceStrategy();
+    this.persistence = new DeferredPersistenceStrategy(500);
 
     this.update = this.update.bind(this);
     this.undo = this.undo.bind(this);
     this.redo = this.redo.bind(this);
 
     this.ref = React.createRef();
+  }
+
+  beforeUnload(e: any) {
+    if (this.state.persistence === 'idle') {
+      this.persistence.destroy();
+    } else {
+      this.persistence.destroy();
+
+      e.preventDefault();
+      e.returnValue = '';
+    }
   }
 
   componentDidMount() {
@@ -104,7 +114,7 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
     ).then((editMode) => {
       this.setState({ editMode });
       if (editMode) {
-        this.windowUnloadListener = registerUnload(this.persistence);
+        this.windowUnloadListener = registerUnload(this.persistence, this.beforeUnload.bind(this));
       }
     });
 
@@ -167,6 +177,7 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
           title={state.undoable.current.title}
           onTitleEdit={onTitleEdit}
           editMode={this.state.editMode}>
+          <PersistenceStatus persistence={this.state.persistence}/>
           <UndoRedo
             canRedo={this.state.undoable.redoStack.size > 0}
             canUndo={this.state.undoable.undoStack.size > 0}

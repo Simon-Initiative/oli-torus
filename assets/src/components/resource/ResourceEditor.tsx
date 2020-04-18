@@ -11,6 +11,7 @@ import { Objectives } from './Objectives';
 import { Outline } from './Outline';
 import { TitleBar } from '../content/TitleBar';
 import { UndoRedo } from '../content/UndoRedo';
+import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { AddResourceContent } from '../content/AddResourceContent';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug } from 'data/types';
 import { makeRequest } from 'data/persistence/common';
@@ -174,6 +175,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           title={state.undoable.current.title}
           onTitleEdit={onTitleEdit}
           editMode={this.state.editMode}>
+          <PersistenceStatus persistence={this.state.persistence}/>
           <UndoRedo
             canRedo={this.state.undoable.redoStack.size > 0}
             canUndo={this.state.undoable.undoStack.size > 0}
