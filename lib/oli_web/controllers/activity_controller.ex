@@ -1,7 +1,7 @@
 defmodule OliWeb.ActivityController do
   use OliWeb, :controller
 
-  alias Oli.Editing.ActivityEditor
+  alias Oli.Authoring.Editing.ActivityEditor
 
   import OliWeb.ProjectPlugs
 

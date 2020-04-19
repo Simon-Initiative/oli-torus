@@ -8,7 +8,8 @@ export type TitleBarProps = {
   children: any;
 };
 
-
+// Title bar component that allows title bar editing and displays
+// any collection of child components
 export const TitleBar = (props: TitleBarProps) => {
 
   const { editMode, title, onTitleEdit, children } = props;

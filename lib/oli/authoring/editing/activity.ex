@@ -20,13 +20,13 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   alias Oli.Authoring.Locks
 
   @doc """
-  Attempts to process an edit for a resource specified by a given
-  project and revision slug, for the author specified by email.
+  Attempts to process an edit for an activity specified by a given
+  project and revision slug and activity slug for the author specified by email.
 
   The update parameter is a map containing key-value pairs of the
-  attributes of a ResourceRevision that are to be edited. It can
+  attributes of an ActivityRevision that are to be edited. It can
   contain any number of key-value pairs, but the keys must match
-  the schema of `%ResourceRevision{}` struct.
+  the schema of `%ActivityRevision{}` struct.
 
   Not acquiring the lock here is considered a failure, as it is
   not an expected condition that a client would encounter. The client
@@ -34,10 +34,10 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   Returns:
 
-  .`{:ok, %ResourceRevision{}}` when the edit processes successfully the
+  .`{:ok, %ActivityRevision{}}` when the edit processes successfully
   .`{:error, {:lock_not_acquired}}` if the lock could not be acquired or updated
-  .`{:error, {:not_found}}` if the project, resource, or user cannot be found
-  .`{:error, {:not_authorized}}` if the user is not authorized to edit this resource
+  .`{:error, {:not_found}}` if the project, resource, activity, or user cannot be found
+  .`{:error, {:not_authorized}}` if the user is not authorized to edit this activity
   .`{:error, {:error}}` unknown error
   """
   @spec edit(String.t, String.t, String.t, String.t, %{})
@@ -80,7 +80,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   end
 
-  # Creates a new resource revision and updates the publication mapping
+  # Creates a new activity revision and updates the publication mapping
   defp create_new_revision(previous, publication, activity, author_id) do
 
     {:ok, revision} = Activities.create_activity_revision(%{
@@ -207,6 +207,11 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   # the lens of a specific publication. Previous and next refer to the
   # activities that precede or follow the given activity in the content
   # list, but only looking at activities.
+  #
+  # Returns a tuple of SiblingActivity structs of the form { previous, next }
+  # corresponding to the previous and next sibling activities. If there is
+  # not a previous or next activity (e.g. the activity specified is first or is the
+  # only activity) then nil is returned inside the tuple.
   defp find_sibling_activities(activity_id, content, publication_id) do
 
     references = Enum.filter(content, fn c -> Map.get(c, "type") == "activity-reference" end)

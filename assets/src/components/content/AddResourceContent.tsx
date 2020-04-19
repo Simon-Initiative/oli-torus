@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ResourceContent, Activity, ResourceContext, ActivityReference,
   ActivityPurpose, createDefaultStructuredContent } from 'data/content/resource';
@@ -10,7 +9,8 @@ import guid from 'utils/guid';
 
 type AddCallback = (content: ResourceContent, a? : Activity) => void;
 
-
+// Component that presents a drop down to use to add structure
+// content or the any of the registered activities
 export const AddResourceContent = (
   { editMode, onAddItem, editorMap, resourceContext }
   : {editMode: boolean, onAddItem: AddCallback,

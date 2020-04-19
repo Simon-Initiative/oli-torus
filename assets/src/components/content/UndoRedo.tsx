@@ -1,6 +1,7 @@
 
 import React from 'react';
 
+// Your basic undo redo toolbar
 export const UndoRedo = ({ canUndo, canRedo, onUndo, onRedo }
   : {canUndo: boolean, canRedo: boolean, onUndo: () => void, onRedo: () => void}) => {
 
