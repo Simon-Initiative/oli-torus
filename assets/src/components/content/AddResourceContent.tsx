@@ -4,7 +4,7 @@ import { ResourceContent, Activity, ResourceContext, ActivityReference,
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { ActivityModelSchema } from 'components/activities/types';
 import { invokeCreationFunc } from 'components/activities/creation';
-import { createActivity, Created } from 'data/persistence/activity';
+import * as Persistence from 'data/persistence/activity';
 import guid from 'utils/guid';
 
 type AddCallback = (content: ResourceContent, a? : Activity) => void;
@@ -22,9 +22,9 @@ export const AddResourceContent = (
     invokeCreationFunc(editorDesc.slug, resourceContext)
       .then((createdModel) => {
         model = createdModel;
-        return createActivity(resourceContext.projectSlug, editorDesc.slug, model);
+        return Persistence.create(resourceContext.projectSlug, editorDesc.slug, model);
       })
-      .then((result: Created) => {
+      .then((result: Persistence.Created) => {
 
         const resourceContent : ActivityReference = {
           type: 'activity-reference',

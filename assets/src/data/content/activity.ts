@@ -1,5 +1,5 @@
 
-import { ProjectSlug, ResourceSlug, ObjectiveSlug, ActivitySlug, ActivityTypeSlug } from 'data/types';
+import { ProjectSlug, ResourceSlug, ObjectiveSlug, ActivitySlug } from 'data/types';
 import { Objective } from 'data/content/objective';
 
 import { ActivityModelSchema } from 'components/activities/types';

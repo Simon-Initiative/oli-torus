@@ -9,9 +9,9 @@ import { UndoRedo } from '../content/UndoRedo';
 import { Navigation } from './Navigation';
 import { Objectives } from '../resource/Objectives';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug, ActivitySlug } from 'data/types';
-import { makeRequest } from 'data/persistence/common';
 import { UndoableState, processRedo, processUndo, processUpdate, init } from '../resource/undo';
 import { releaseLock, acquireLock } from 'data/persistence/lock';
+import * as Persistence from 'data/persistence/activity';
 import { ActivityModelSchema } from 'components/activities/types';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
 
@@ -35,17 +35,10 @@ type ActivityEditorState = {
 
 // Creates a function that when invoked submits a save request
 function prepareSaveFn(
-  project: ProjectSlug, resource: ResourceSlug, activity: ActivitySlug, body: any) {
+  project: ProjectSlug, resource: ResourceSlug,
+  activity: ActivitySlug, update: Persistence.ActivityUpdate) {
 
-  return () => {
-    const params = {
-      method: 'PUT',
-      body: JSON.stringify({ update: body }),
-      url: `/project/${project}/resource/${resource}/activity/${activity}`,
-    };
-
-    return makeRequest(params);
-  };
+  return () => Persistence.edit(project, resource, activity, update);
 }
 
 function registerUnload(strategy: PersistenceStrategy, unloadFn : any) {

@@ -14,7 +14,7 @@ import { UndoRedo } from '../content/UndoRedo';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { AddResourceContent } from '../content/AddResourceContent';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug } from 'data/types';
-import { makeRequest } from 'data/persistence/common';
+import * as Persistence from 'data/persistence/resource';
 import { UndoableState, processRedo, processUndo, processUpdate, init } from './undo';
 import { releaseLock, acquireLock } from 'data/persistence/lock';
 
@@ -39,16 +39,10 @@ type ResourceEditorState = {
 };
 
 // Creates a function that when invoked submits a save request
-function prepareSaveFn(project: ProjectSlug, resource: ResourceSlug, body: any) {
-  return () => {
-    const params = {
-      method: 'PUT',
-      body: JSON.stringify({ update: body }),
-      url: `/project/${project}/resource/${resource}`,
-    };
+function prepareSaveFn(
+  project: ProjectSlug, resource: ResourceSlug, update: Persistence.ResourceUpdate) {
 
-    return makeRequest(params);
-  };
+  return () => Persistence.edit(project, resource, update);
 }
 
 // Ensures that there is some default content if the initial content
