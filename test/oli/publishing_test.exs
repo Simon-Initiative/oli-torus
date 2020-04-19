@@ -335,9 +335,6 @@ defmodule Oli.PublishingTest do
 
     test "diff_publications/2 returns the changes between 2 publications",
       %{project: project, author: author, revision: revision} do
-        # for some reason, db_seeder starts off with the revision as deleted, so undelete it
-        {:ok, revision} = Resources.update_resource_revision(revision, %{deleted: false})
-
         # create a few more resources
         {:ok, %{revision: r2_revision}} = Resources.create_project_resource(%{
           objectives: [],
@@ -377,10 +374,10 @@ defmodule Oli.PublishingTest do
         diff = Publishing.diff_publications(p1, p2)
 
         assert Map.keys(diff) |> Enum.count == 4
-        assert diff[revision.resource_id] == :changed
-        assert diff[r2_revision.resource_id] == :identical
-        assert diff[r3_revision.resource_id] == :deleted
-        assert diff[r4_revision.resource_id] == :added
+        assert {:changed, _} = diff[revision.resource_id]
+        assert {:identical, _} = diff[r2_revision.resource_id]
+        assert {:deleted, _} = diff[r3_revision.resource_id]
+        assert {:added, _} = diff[r4_revision.resource_id]
     end
 
   end

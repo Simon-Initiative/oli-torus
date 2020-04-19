@@ -1,0 +1,43 @@
+<style>
+  .badge-identical {
+    background-color: #95a5a6;
+  }
+  .badge-added {
+    background-color: #27ae60;
+  }
+  .badge-deleted {
+    background-color: #c0392b;
+  }
+  .badge-changed {
+    background-color: #f1c40f;
+  }
+  .text-slug {
+    color: #bdc3c7;
+  }
+</style>
+<div class="publish container">
+
+<%= case {@has_changes, @active_publication_changes} do %>
+  <% {true, nil} -> %>
+    This project has not been published yet
+  <% {false, _} -> %>
+    No changes since last publish on <%= format_datetime(@latest_published_publication.updated_at) %>
+  <% {true, changes} -> %>
+    <h5>Changes since last publish:</h5>
+    <%= for {status, %{revision: revision}}  <- Map.values(changes) do %>
+      <p>
+        <span class="badge badge-secondary badge-<%= status %>"><%= status %></span> <%= revision.title %> <span class="text-slug">(<%= revision.slug %>)</span>
+      </p>
+    <% end %>
+<% end %>
+  <div class="my-4">
+    <%= form_for @conn, Routes.project_path(@conn, :publish_active, @project), fn _ -> %>
+      <%# <%= hidden_input f, "project_", value: "" %>
+      <%= submit "Publish",
+        id: "button-publish",
+        class: "btn btn-primary",
+        disabled: !@has_changes,
+        phx_disable_with: "Publishing..." %>
+    <% end %>
+  </div>
+</div>

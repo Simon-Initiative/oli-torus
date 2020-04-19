@@ -70,6 +70,7 @@ defmodule OliWeb.Router do
     get "/:project_id/objectives", ProjectController, :objectives
     get "/:project_id/curriculum", ProjectController, :curriculum
     get "/:project_id/publish", ProjectController, :publish
+    post "/:project_id/publish", ProjectController, :publish_active
     get "/:project_id/insights", ProjectController, :insights
 
     # Project
