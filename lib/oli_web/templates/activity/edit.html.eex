@@ -1,9 +1,9 @@
-<script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/components.js") %>"></script>
+<script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/activityeditor.js") %>"></script>
 
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> @script) %>"></script>
 
 <div id="editor"/>
 
 <script>
-  window.component.mount('ActivityEditor', document.getElementById('editor'), <%= raw(@context) %>);
+  window.oliMountApplication(document.getElementById('editor'), <%= raw(@context) %>);
 </script>
