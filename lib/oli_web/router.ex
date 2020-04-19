@@ -78,19 +78,19 @@ defmodule OliWeb.Router do
     delete "/:project_id", ProjectController, :delete
 
     # Objectives
-    post "/:project/objectives", ObjectiveController, :create
-    patch "/:project/objectives/:id", ObjectiveController, :update
-    put "/:project/objectives/:id", ObjectiveController, :update
-    delete "/:project/objectives/:id", ObjectiveController, :delete
+    post "/:project_id/objectives", ObjectiveController, :create
+    patch "/:project_id/objectives/:id", ObjectiveController, :update
+    put "/:project_id/objectives/:id", ObjectiveController, :update
+    delete "/:project_id/objectives/:id", ObjectiveController, :delete
 
     # Editors
     get "/:project_id/resource/:revision_slug", ResourceController, :edit
     get "/:project_id/resource/:revision_slug/activity/:activity_slug", ActivityController, :edit
 
     # Collaborators
-    post "/:project_id/collaborators", AuthorProjectController, :create
-    put "/:project_id/collaborators/:author_email", AuthorProjectController, :update
-    delete "/:project_id/collaborators/:author_email", AuthorProjectController, :delete
+    post "/:project_id/collaborators", CollaboratorController, :create
+    put "/:project_id/collaborators/:author_email", CollaboratorController, :update
+    delete "/:project_id/collaborators/:author_email", CollaboratorController, :delete
   end
 
   scope "/api/v1/project", OliWeb do

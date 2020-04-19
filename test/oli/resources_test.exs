@@ -1,21 +1,13 @@
 defmodule Oli.ResourcesTest do
   use Oli.DataCase
 
-  alias Oli.Resources
-
-
-  alias Oli.Accounts.SystemRole
-  alias Oli.Accounts.Institution
-  alias Oli.Accounts.Author
-  alias Oli.Course.Project
-  alias Oli.Course.Family
+  alias Oli.Accounts.{SystemRole, Institution, Author}
+  alias Oli.Authoring.Course.{Project, Family}
   alias Oli.Publishing.Publication
-  alias Oli.Resources.Resource
-  alias Oli.Resources.ResourceFamily
-  alias Oli.Resources.ResourceRevision
+  alias Oli.Authoring.Resources
+  alias Oli.Authoring.Resources.{Resource, ResourceFamily, ResourceRevision}
 
   describe "resources" do
-    alias Oli.Resources.Resource
 
     @valid_attrs %{}
     @update_attrs %{}
@@ -25,16 +17,15 @@ defmodule Oli.ResourcesTest do
 
       {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
       {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
-      {:ok, _publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resources: [], project_id: project.id}) |> Repo.insert
+      {:ok, resource_family} = ResourceFamily.changeset(%ResourceFamily{}, %{}) |> Repo.insert
+      {:ok, resource} = Resource.changeset(%Resource{}, %{project_id: project.id, family_id: resource_family.id}) |> Repo.insert
+      {:ok, _publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resource_id: resource.id, project_id: project.id}) |> Repo.insert
       {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
       {:ok, _institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
 
-      {:ok, resource_family} = ResourceFamily.changeset(%ResourceFamily{}, %{}) |> Repo.insert
-      {:ok, resource} = Resource.changeset(%Resource{}, %{project_id: project.id, family_id: resource_family.id}) |> Repo.insert
-
       valid_attrs = Map.put(@valid_attrs, :project_id, project.id)
 
-      {:ok, %{resource: resource, valid_attrs: valid_attrs, project: project, resource_family: resource_family}}
+      {:ok, %{resource: resource, valid_attrs: valid_attrs, project: project, resource_family: resource_family, author: author}}
     end
 
     test "list_resources/0 returns all resources", %{resource: resource} do
@@ -45,22 +36,40 @@ defmodule Oli.ResourcesTest do
       assert Resources.get_resource!(resource.id) == resource
     end
 
-    test "new_project_resource/2 with valid data creates a resource", %{project: project, resource_family: resource_family} do
-      assert %Ecto.Changeset{valid?: true} = Resources.new_project_resource(project, resource_family)
+    test "create_project_resource/2 with valid data creates a new resource for a project and all the necessary constructs", %{author: author, project: project} do
+      resource_type = Resources.list_resource_types() |> hd
+      attrs = %{
+        objectives: [],
+        children: [],
+        content: [],
+        title: "some title",
+      }
+      assert {:ok, %{resource: resource, revision: revision, project: _, family: _, mapping: _} = result} = Resources.create_project_resource(attrs, resource_type, author, project)
+
+      resource_id = resource.id
+      assert %{
+        objectives: [],
+        children: [],
+        content: [],
+        title: "some title",
+        slug: "some_title",
+        resource_id: ^resource_id
+      } = revision
     end
 
-    test "delete_resource/1 deletes the resource", %{resource: resource}  do
+    test "delete_resource/1 deletes the resource", %{project: project, resource_family: resource_family}  do
+      {:ok, resource} = Resource.changeset(%Resource{}, %{project_id: project.id, family_id: resource_family.id}) |> Repo.insert
       assert {:ok, %Resource{}} = Resources.delete_resource(resource)
       assert_raise Ecto.NoResultsError, fn -> Resources.get_resource!(resource.id) end
     end
 
-    test "change_resource/1 returns a resource changeset", %{resource: resource}  do
-      assert %Ecto.Changeset{} = Resources.change_resource(resource)
+    test "create_new_resource/2 with valid data creates a resource", %{project: project, resource_family: resource_family} do
+      assert {:ok, resource} = Resources.create_new_resource(project, resource_family)
     end
+
   end
 
   describe "resource_revisions" do
-    alias Oli.Resources.ResourceRevision
 
 
     @valid_attrs %{objectives: [], children: [], content: [], deleted: true, slug: "some slug", title: "some title"}
@@ -71,7 +80,9 @@ defmodule Oli.ResourcesTest do
 
       {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
       {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
-      {:ok, _publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resources: [], project_id: project.id}) |> Repo.insert
+      {:ok, resource_family} = ResourceFamily.changeset(%ResourceFamily{}, %{}) |> Repo.insert
+      {:ok, resource} = Resource.changeset(%Resource{}, %{project_id: project.id, family_id: resource_family.id}) |> Repo.insert
+      {:ok, _publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resource_id: resource.id, project_id: project.id}) |> Repo.insert
       {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
       {:ok, _institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
       {:ok, resource_family} = ResourceFamily.changeset(%ResourceFamily{}, %{}) |> Repo.insert
@@ -107,10 +118,6 @@ defmodule Oli.ResourcesTest do
       assert found == nil
     end
 
-    test "list_resource_revisions/0 returns all resource_revisions", %{revision: revision} do
-      assert Resources.list_resource_revisions() == [revision]
-    end
-
     test "get_resource_revision!/1 returns the resource_revision with given id", %{revision: revision}  do
       assert Resources.get_resource_revision!(revision.id) == revision
     end
@@ -141,13 +148,5 @@ defmodule Oli.ResourcesTest do
       assert revision == Resources.get_resource_revision!(revision.id)
     end
 
-    test "delete_resource_revision/1 deletes the resource_revision", %{revision: revision}  do
-      assert {:ok, %ResourceRevision{}} = Resources.delete_resource_revision(revision)
-      assert_raise Ecto.NoResultsError, fn -> Resources.get_resource_revision!(revision.id) end
-    end
-
-    test "change_resource_revision/1 returns a resource_revision changeset", %{revision: revision}  do
-      assert %Ecto.Changeset{} = Resources.change_resource_revision(revision)
-    end
   end
 end

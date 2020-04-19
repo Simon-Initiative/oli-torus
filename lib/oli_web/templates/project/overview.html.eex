@@ -16,7 +16,7 @@
         <i class="material-icons">add</i>
         </button> %>
       </div>
-      <%= form_for @conn, Routes.author_project_path(@conn, :create, @project), [id: "form-add-collaborator"], fn f -> %>
+      <%= form_for @conn, Routes.collaborator_path(@conn, :create, @project), [id: "form-add-collaborator"], fn f -> %>
       <div class="form-label-group">
         <%= text_input f,
           :email,

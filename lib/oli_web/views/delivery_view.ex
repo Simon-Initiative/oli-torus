@@ -1,7 +1,7 @@
 defmodule OliWeb.DeliveryView do
   use OliWeb, :view
 
-  alias Oli.Lti;
+  alias Oli.Delivery.Lti
 
   def user_role(current_user), do: Lti.parse_lti_role(current_user.roles)
 
