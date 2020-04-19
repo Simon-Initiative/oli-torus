@@ -6,7 +6,10 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   model: T;
 }
 
-
+// An abstract delivery web component, designed to delegate to
+// a React component.  This delivery web component will re-render
+// the underlying React component when the 'model' attribute of the
+// the web component changes
 export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTMLElement {
 
   mountPoint: HTMLDivElement;

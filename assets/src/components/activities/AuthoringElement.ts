@@ -5,6 +5,13 @@ export interface AuthoringElementProps<T extends ActivityModelSchema> {
   onEdit: (model: T) => void;
 }
 
+// An abstract authoring web component, designed to delegate to
+// a React authoring component.  This authoring web component will re-render
+// the underlying React component when the 'model' attribute of the
+// the web component changes.  It also traps onEdit callbacks from the
+// React component and translated these calls into dispatches of the
+// 'modelUpdated' CustomEvent.  It is this CustomEvent that is handled by
+// Torus to process updates from the authoring web component.
 export abstract class AuthoringElement<T extends ActivityModelSchema> extends HTMLElement {
 
   mountPoint: HTMLDivElement;
