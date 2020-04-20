@@ -7,7 +7,7 @@
 
 <div class="objective container">
   <div class="row">
-    <div class="page-header">
+    <div class="page-header" style="width: 100%">
         <small>At the end of the course my students should be able to...</small>
     <%=
     route = Routes.objective_path(@conn, :create, @project)
@@ -28,7 +28,7 @@
   <div class="list-group w-100">
      <%=
      Enum.map(@objective_mappings, fn x ->
-         params = %{conn: @conn, objective_mapping: x.mapping, children: x.children, project: @project, objective_changeset: @objective_changeset}
+         params = %{conn: @conn, objective_mapping: x.mapping, children: x.children, depth: 1, project: @project, objective_changeset: @objective_changeset}
          if assigns[:edit] do
             params = Map.merge(params, %{edit: @edit})
             render OliWeb.ProjectView, "_objectives_list.html", params

@@ -3,7 +3,7 @@
     <%= text_input f,
       :title,
       value: @title_value,
-      class: "form-control mb-2 mr-sm-2 mb-sm-0 title" <> error_class(f, :title, "is-invalid"),
+      class: "form-control mb-2 mr-sm-2 mb-sm-0 title container-fluid" <> error_class(f, :title, "is-invalid"),
       placeholder: @place_holder,
       id: "input-title-" <> @form_id,
       required: true,

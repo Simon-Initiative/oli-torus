@@ -244,7 +244,14 @@ defmodule Oli.Authoring.Learning do
       {:error, %Ecto.Changeset{}}
   """
   def delete_objective_revision(%ObjectiveRevision{} = objective_revision) do
-    Repo.delete(objective_revision)
+    list = objective_revision.children ++ [objective_revision.id]
+    query = from(o in ObjectiveRevision, where: o.id in ^list)
+    update_info = Repo.update_all(query,
+      set: [
+        deleted: true
+      ]
+    )
+    {:ok, update_info}
   end
 
   defp new_objective_family() do

@@ -58,7 +58,7 @@ defmodule OliWeb.ObjectiveController do
   def delete(conn, %{"project_id" => project_id, "objective_slug" => objective_slug}) do
     project = conn.assigns.project
     with {:ok, objective_revision} <- Learning.get_objective_revision_from_slug(project.slug, objective_slug) |> trap_nil(),
-         {:ok, _objective_revision} <- Learning.update_objective_revision(objective_revision, %{deleted: true})
+         {:ok, _objective_revision} <- Learning.delete_objective_revision(objective_revision)
     do
       conn
       |> put_flash(:info, "Objective deleted successfully.")
