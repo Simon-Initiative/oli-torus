@@ -1,6 +1,5 @@
 defmodule Oli.Plugs.Protect do
   import Plug.Conn
-  import Phoenix.Controller
   alias Oli.Plugs.SetCurrentUser
 
   def init(opts), do: opts
