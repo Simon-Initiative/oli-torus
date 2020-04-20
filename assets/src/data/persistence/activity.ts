@@ -26,11 +26,11 @@ export function create(
 
 export function edit(
   project: ProjectSlug, resource: ResourceSlug,
-  activity: ActivitySlug, model: ActivityUpdate) {
+  activity: ActivitySlug, update: ActivityUpdate) {
 
   const params = {
     method: 'PUT',
-    body: JSON.stringify({ model }),
+    body: JSON.stringify({ update }),
     url: `/project/${project}/resource/${resource}/activity/${activity}`,
   };
 
