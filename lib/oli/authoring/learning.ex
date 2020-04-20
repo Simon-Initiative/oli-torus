@@ -84,10 +84,10 @@ defmodule Oli.Authoring.Learning do
     |> Multi.insert(:objective_family, new_objective_family())
     |> Multi.merge(fn %{objective_family: objective_family} ->
       Multi.new
-      |> Multi.insert(:objective, do_create_objective(attrs, objective_family)) end)
+      |> Multi.insert(:objective, create_objective(attrs, objective_family)) end)
     |> Multi.merge(fn %{objective: objective} ->
       Multi.new
-      |> Multi.insert(:objective_revision, do_create_objective_revision(attrs, objective)) end)
+      |> Multi.insert(:objective_revision, create_objective_revision(attrs, objective)) end)
     |> Multi.merge(fn %{objective_revision: objective_revision} ->
       Multi.new
       |> Multi.run(:objective_parent, fn _repo, _changes ->
@@ -110,7 +110,7 @@ defmodule Oli.Authoring.Learning do
     })
   end
 
-  defp do_create_objective(attrs, objective_family) do
+  defp create_objective(attrs, objective_family) do
     project_id = Map.get(attrs, "project_id");
     %Objective{}
     |> Objective.changeset(%{
@@ -119,7 +119,7 @@ defmodule Oli.Authoring.Learning do
     })
   end
 
-  defp do_create_objective_revision(attrs, objective) do
+  defp create_objective_revision(attrs, objective) do
     title = Map.get(attrs, "title")
     %ObjectiveRevision{}
     |> ObjectiveRevision.changeset(%{
