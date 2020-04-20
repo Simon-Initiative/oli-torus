@@ -1,192 +1,62 @@
 <style>
-  .flex {
-    display: flex;
-  }
   .objective h1 {
     line-height: 30px;
     margin-right: 8px;
   }
-  #header {
-    height: 62px;
-    border-bottom: 1px solid rgba(51, 51, 51, .15);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 48px;
-    font-size: 14px;
-  }
-
-  #header .title {
-    font-weight: bold;
-  }
-
-  .add-button {
-    background: none;
-    border: none;
-    width: 30px;
-    height: 30px;
-    font-size: 16px;
-    color: black;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    user-select: none;
-  }
-  .add-button:hover {
-    background-color: #e5e5e5;
-    border-radius: 4px;
-  }
-
-  .new-project-modal {
-    margin-top: 72px;
-    margin-right: 48px;
-    box-shadow: 0 0 4px rgba(0,0,0,.25);
-  }
-
-  .modal {
-    font-family: Muli, sans-serif;
-    overflow: auto;
-    position: fixed;
-    z-index: 1;
-    border: none;
-    margin: auto;
-    margin-top: 72px;
-    /*margin-right: 48px;*/
-    box-shadow: 0 0 4px rgba(0, 0, 0, .25);
-    width: 460px;
-    height: 360px;
-  }
-  .modal .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    height: 60px;
-    padding: 0 15px 0 30px;
-    background-color: black;
-    color: white;
-    font-weight: bold;
-    font-size: 18px;
-  }
-
-  .modal .modal-body {
-    background: white;
-    height: calc(100% - 60px);
-    padding: 30px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .modal .btn.btn-primary {
-    width: 100%;
-    height: 50px;
-    font-size: 18px;
-  }
-  .modal .btn.btn-primary:disabled,
-  .btn.btn-primary:disabled:hover {
-    background-color: black;
-    border: none;
-  }
-
-  .modal-close {
-    font-size: 28px;
-    cursor: pointer;
-  }
-
-  .modal form {
-    width: 100%;
-  }
-
-  input.input-bold {
-    font-size: 14px;
-    border: 3px solid black;
-    border-radius: 8px;
-    padding: 16px;
-    width: 100%;
-    flex-grow: 1;
-    height: 48px;
-    outline: none;
-  }
-
-  .modal-body .form-label-group {
-    margin-bottom: 20px;
-  }
-
-  input.input-bold:hover {
-    border: 3px solid black;
-    border-radius: 8px;
-  }
-
-  label.input-bold {
-    color: #b3b3b3;
-    margin: 5px 0;
-  }
 </style>
-
 
 <div class="objective container">
   <div class="row">
     <div class="page-header">
-    <%= form_for @objective_changeset, Routes.objective_path(@conn, :create, @project), [id: "form-create-objective", class: "form-inline"], fn f -> %>
-          <div class="form-label-group">
-            <%= text_input f,
-              :title,
-              class: "form-control mb-2 mr-sm-2 mb-sm-0 " <> error_class(f, :title, "is-invalid"),
-              placeholder: "New Learning Objective",
-              id: "input-title",
-              required: true,
-              autofocus: focusHelper(f, :title, default: true) %>
-            <%= error_tag f, :title %>
-          </div>
-          <%= submit "Create",
-            id: "button-create-objective",
-            type: "button",
-            class: "btn btn-primary",
-            phx_disable_with: "Adding Objective...",
-            form: f.id %>
-        <% end %>
-
         <small>At the end of the course my students should be able to...</small>
-        <p></p>
+    <%= render OliWeb.ProjectView, "_objective_render.html",
+     %{conn: @conn, project: @project, objective_changeset: @objective_changeset, title_value: "", parent_slug_value: "", form_id: "create-objective",
+      ob_action: :create, place_holder: "New Learning Objective", phx_disable_with: "Adding Objective...", button_text: "Create", mode: :new_objectve} %>
+    </div>
+  </div>
 <%= if Enum.count(@objective_mappings) == 0 do %>
+<div class="row">
   <div class="my-5 text-center">
     No objectives
   </div>
+  </div>
 <% else %>
-  <div class="list-group">
-
-  </div>
-  <table class="table table-striped table-bordered">
-    <tbody>
-  <%= for objective_mapping <- @objective_mappings do %>
-      <tr>
-        <td><%= objective_mapping.revision.title %></td>
-        <td>Reword</td>
-        <td>Remove</td>
-        <td>sub-objective</td>
-      </tr>
-  <% end %>
-    </tbody>
-  </table>
+<div class="row">
+  <div class="list-group w-100">
+     <%=
+     Enum.map(@objective_mappings, fn x ->
+         params = %{conn: @conn, objective_mapping: x.mapping, children: x.children, project: @project, objective_changeset: @objective_changeset}
+         if assigns[:edit] do params = Map.merge(params, %{edit: @edit})
+            render OliWeb.ProjectView, "_objectives_list.html", params
+         else
+            params = Map.merge(params, %{edit: :none})
+            render OliWeb.ProjectView, "_objectives_list.html", params
+         end
+     end)
+     %>
+ </div>
+</div>
 <% end %>
-    </div>
-  </div>
 </div>
 
 <script>
-  // create objective
-  const objectiveButton = document.getElementById("button-create-objective")
-  const titleInput = document.getElementById("input-title")
-  objectiveButton.disabled = !titleInput.value || titleInput.value.length === 0
-  const form = document.getElementById("form-create-objective")
-  titleInput.addEventListener('input', () => titleInput.value.length > 0
-    ? objectiveButton.disabled = false
-    : objectiveButton.disabled = true)
-  objectiveButton.addEventListener('click', () => {
-    if (!objectiveButton.disabled) {
-      form.submit();
-    }
-  })
+  // Process objective form
+  document.querySelectorAll(".ob-form-button").forEach(
+      (element) => {
+          console.log("buttons "+element.id);
+          const titleInput = document.getElementById("input-title-"+element.id);
+          element.disabled = !titleInput.value || titleInput.value.length === 0;
 
+          titleInput.addEventListener('input', () => titleInput.value.length > 0
+            ? element.disabled = false
+            : element.disabled = true);
+
+          element.addEventListener('click', (e) => {
+            if (!element.disabled) {
+              const form = document.getElementById("form-"+element.id);
+              form.submit();
+            }
+          })
+      }
+  );
 </script>

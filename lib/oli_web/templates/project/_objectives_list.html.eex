@@ -1,0 +1,53 @@
+<style>
+.to-show {
+    display: none;
+}
+
+.list-group-item {
+    position: relative;
+    display: block;
+    padding: .45rem 1.05rem;
+    margin-bottom: -1px;
+    background-color: #fff;
+    border: 1px solid rgba(0,0,0,.125);
+}
+
+.list-group-item:hover > .to-show{
+  display: flex;
+}
+
+</style>
+
+<div class="list-group-item list-group-item-action flex-column align-items-start" >
+<div class="w-100 to-show">
+	<%= button to: Routes.project_path(@conn, :edit_objective, @project, @objective_mapping.revision.slug), method: :get, class: "add-button" do %>
+	   <i class="material-icons">edit</i>
+	<% end %>
+	<%= button to: Routes.objective_path(@conn, :delete, @project, @objective_mapping.revision.slug), method: :delete, class: "add-button" do %>
+       <i class="material-icons">delete</i>
+    <% end %>
+	<%= button to: Routes.project_path(@conn, :add_sub_objective, @project, @objective_mapping.revision.slug), method: :get, class: "add-button" do %>
+   	   <i class="material-icons">add</i>
+   	<% end %>
+	</div>
+	<div class="w-100 ">
+	<%= cond do
+         @edit == @objective_mapping.revision.slug ->
+           render OliWeb.ProjectView, "_objective_render.html",
+               %{conn: @conn, project: @project, objective_changeset: @objective_changeset,
+               title_value: @objective_mapping.revision.title, place_holder: @objective_mapping.revision.title,
+                phx_disable_with: "Updating Objective...", button_text: "Reword", form_id: "edit-objective",
+                children: @children, ob_action: :update, parent_slug_value: "", objective_mapping: @objective_mapping, mode: :edit}
+         @edit == "add_sub_" <> @objective_mapping.revision.slug ->
+           render OliWeb.ProjectView, "_objective_render.html",
+              %{conn: @conn, project: @project, objective_changeset: @objective_changeset, title_value: "",
+              parent_slug_value: @objective_mapping.revision.slug, place_holder: "New Sub-Objective",
+               phx_disable_with: "Adding Sub-Objective...", button_text: "Create", form_id: "create-sub-objective",
+               children: @children, ob_action: :create, objective_mapping: @objective_mapping, mode: :add_sub_objective}
+         true ->
+            render OliWeb.ProjectView, "_objective_render.html", %{conn: @conn, project: @project, objective_mapping: @objective_mapping,
+            objective_changeset: @objective_changeset, children: @children, mode: :show}
+         end %>
+	</div>
+
+</div>

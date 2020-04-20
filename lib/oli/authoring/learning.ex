@@ -91,16 +91,16 @@ defmodule Oli.Authoring.Learning do
     |> Multi.merge(fn %{objective_revision: objective_revision} ->
       Multi.new
       |> Multi.run(:objective_parent, fn _repo, _changes ->
-        do_add_objective_to_parent(attrs, objective_revision)
+        add_objective_to_parent(attrs, objective_revision)
       end)
     end)
     |> Multi.merge(fn %{objective: objective, objective_revision: objective_revision} ->
       Multi.new
-      |> Multi.insert(:objective_mapping, do_create_objective_mapping(attrs, objective, objective_revision))end)
+      |> Multi.insert(:objective_mapping, create_objective_mapping(attrs, objective, objective_revision))end)
     |> Repo.transaction
   end
 
-  defp do_create_objective_mapping(attrs, objective, objective_revision) do
+  defp create_objective_mapping(attrs, objective, objective_revision) do
     publication = Publishing.get_unpublished_publication(Map.get(attrs, "project_slug"))
     %ObjectiveMapping{}
     |> ObjectiveMapping.changeset(%{
@@ -130,8 +130,8 @@ defmodule Oli.Authoring.Learning do
     })
   end
 
-  defp do_add_objective_to_parent(attrs, objective_revision) do
-    if Map.has_key?(attrs, "parent_slug") do
+  defp add_objective_to_parent(attrs, objective_revision) do
+    if Map.has_key?(attrs, "parent_slug") and String.strip(Map.get(attrs, "parent_slug")) != ""  do
       parent_objective_revision = get_objective_revision_from_slug(Map.get(attrs, "project_slug"), Map.get(attrs, "parent_slug"))
       children = parent_objective_revision.children ++ [objective_revision.id]
       update_objective_revision(parent_objective_revision, %{children: children})
