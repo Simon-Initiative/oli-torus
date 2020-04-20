@@ -6,8 +6,6 @@
        <%=
        Enum.map(@children, fn x ->
            params = %{conn: @conn, objective_mapping: x, children: [], project: @project, objective_changeset: @objective_changeset}
-           IO.puts "sub edit"
-           IO.inspect @conn.assigns[:edit]
            if @conn.assigns[:edit] do
               params = Map.merge(params, %{edit: @conn.assigns[:edit]})
               render OliWeb.ProjectView, "_objectives_list.html", params
