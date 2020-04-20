@@ -39,7 +39,7 @@ defmodule Oli.MixProject do
       {:credo, "~> 1.1.0", only: [:dev, :test], runtime: true},
       {:dialyxir, "~> 0.5.0", only: [:dev], runtime: true},
       {:floki, "~> 0.23.0"},
-      {:phoenix, "~> 1.4.10"},
+      {:phoenix, "~> 1.4.16"},
       {:phoenix_pubsub, "~> 1.1"},
       {:phoenix_ecto, "~> 4.0"},
       {:ecto_sql, "~> 3.1"},

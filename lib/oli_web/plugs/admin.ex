@@ -1,6 +1,5 @@
 defmodule Oli.Plugs.EnsureAdmin do
   import Plug.Conn
-  import Phoenix.Controller
   alias Oli.Accounts.SystemRole
 
   @admin_role_id SystemRole.role_id() |> Map.get(:admin)

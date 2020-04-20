@@ -13,7 +13,7 @@ defmodule Oli.Plugs.Protect do
           nil ->
             conn
             |> Phoenix.Controller.redirect(to: OliWeb.Router.Helpers.auth_path(conn, :signin))
-            |> Phoenix.Controller.halt()
+            |> halt()
           _ -> conn
         end
       _ -> conn
