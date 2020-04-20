@@ -12,8 +12,8 @@ defmodule Oli.Plugs.Protect do
         case conn.assigns[:current_author] do
           nil ->
             conn
-            |> redirect(to: OliWeb.Router.Helpers.auth_path(conn, :signin))
-            |> halt()
+            |> Phoenix.Controller.redirect(to: OliWeb.Router.Helpers.auth_path(conn, :signin))
+            |> Phoenix.Controller.halt()
           _ -> conn
         end
       _ -> conn
