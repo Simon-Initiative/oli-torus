@@ -1,50 +1,26 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
+import { MultipleChoiceModelSchema } from './schema';
 
-const MultipleChoice = (props: any) => {
+
+const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) => {
   return (
-    <div style={{ width: '100%', height: '100px', border: 'solid 1px gray' }}>
+    <div>
+      <h3>Multiple choice delivery.  A react component inside a web component</h3>
       <p>{props.model.stem}</p>
     </div>
   );
 };
 
-
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'oli-multiple-choice': any;
-    }
+// Defines the web component, a simple wrapper over our React component above
+export class MultipleChoiceDelivery extends DeliveryElement<MultipleChoiceModelSchema> {
+  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MultipleChoiceModelSchema>) {
+    ReactDOM.render(<MultipleChoice {...props} />, mountPoint);
   }
 }
 
-export class MultipleChoiceDelivery extends HTMLElement {
-
-  mountPoint: HTMLDivElement;
-
-  constructor() {
-    super();
-    this.mountPoint = document.createElement('div');
-  }
-
-  props() {
-    const model = JSON.parse(this.getAttribute('model') as any);
-
-    return {
-      model,
-    };
-  }
-
-  connectedCallback() {
-    this.attachShadow({ mode: 'open' }).appendChild(this.mountPoint);
-    ReactDOM.render(<MultipleChoice {...this.props()} />, this.mountPoint);
-  }
-
-  attributeChangedCallback(name: any, oldValue: any, newValue: any) {
-    ReactDOM.render(<MultipleChoice {...this.props()} />, this.mountPoint);
-  }
-}
-
+// Register the web component:
 import * as ActivityTypes from '../types';
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
 window.customElements.define(manifest.delivery.element, MultipleChoiceDelivery);

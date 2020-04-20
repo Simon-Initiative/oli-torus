@@ -84,9 +84,9 @@ defmodule OliWeb.Router do
     put "/:project_id/objectives/:id", ObjectiveController, :update
     delete "/:project_id/objectives/:id", ObjectiveController, :delete
 
-    # Resource
-    get "/:project_id/:revision_slug", ResourceController, :view
-    get "/:project_id/:revision_slug/edit", ResourceController, :edit
+    # Editors
+    get "/:project_id/resource/:revision_slug", ResourceController, :edit
+    get "/:project_id/resource/:revision_slug/activity/:activity_slug", ActivityController, :edit
 
     # Collaborators
     post "/:project_id/collaborators", CollaboratorController, :create
@@ -100,8 +100,8 @@ defmodule OliWeb.Router do
     put "/:project/resource/:resource", ResourceController, :update
 
     post "/:project/activity/:activity_type", ActivityController, :create
-    put "/:project/activity/:activity", ActivityController, :update
-    delete "/:project/activity", ActivityController, :delete
+    put "/:project/resource/:resource/activity/:activity", ActivityController, :update
+    delete "/:project/resource/:resource/activity", ActivityController, :delete
 
     post "/:project/lock/:resource", LockController, :acquire
     delete "/:project/lock/:resource", LockController, :release

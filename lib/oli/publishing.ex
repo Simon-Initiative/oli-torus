@@ -15,10 +15,10 @@ defmodule Oli.Publishing do
   that pertain to a given publication.
   """
   def get_published_activity_revisions(publication_id, activity_ids) do
-    Repo.all from mapping in ActivityMapping,
+    Repo.all(from mapping in ActivityMapping,
       join: rev in ActivityRevision, on: mapping.revision_id == rev.id,
       where: mapping.publication_id == ^publication_id and mapping.activity_id in ^activity_ids,
-      select: rev
+      select: rev) |> Repo.preload(:activity_type)
   end
 
   @doc """
@@ -253,6 +253,10 @@ defmodule Oli.Publishing do
 
   def get_resource_mapping!(publication_id, resource_id) do
     Repo.one!(from p in ResourceMapping, where: p.publication_id == ^publication_id and p.resource_id == ^resource_id)
+  end
+
+  def get_activity_mapping(publication_id, activity_id) do
+    Repo.one(from p in ActivityMapping, where: p.publication_id == ^publication_id and p.activity_id == ^activity_id)
   end
 
   @doc """

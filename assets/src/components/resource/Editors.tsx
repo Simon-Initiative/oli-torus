@@ -6,6 +6,8 @@ import { UnsupportedActivity } from './UnsupportedActivity';
 import { getToolbarForResourceType } from './toolbar';
 import { StructuredContentEditor } from 'components/content/StructuredContentEditor';
 import { ResourceContentFrame } from 'components/content/ResourceContentFrame';
+import { ProjectSlug, ResourceSlug } from 'data/types';
+
 
 export type EditorsProps = {
   editMode: boolean,              // Whether or not we can edit
@@ -14,13 +16,16 @@ export type EditorsProps = {
   editorMap: ActivityEditorMap,   // Map of activity types to activity elements
   resourceType: ResourceType,
   activities: Immutable.Map<string, Activity>,
+  projectSlug: ProjectSlug,
+  resourceSlug: ResourceSlug,
 };
 
 
 // The list of editors
 export const Editors = (props: EditorsProps) => {
 
-  const { editorMap, editMode, resourceType, content, activities } = props;
+  const { editorMap, editMode, resourceType,
+    content, activities, projectSlug, resourceSlug } = props;
 
   // Factory for creating top level editors, for things like structured
   // content or referenced activities
@@ -75,12 +80,16 @@ export const Editors = (props: EditorsProps) => {
 
     const [editor, label] = createEditor(c, onEdit);
 
+    const editingLink = c.type === 'activity-reference'
+      ? `/project/${projectSlug}/resource/${resourceSlug}/activity/${c.activitySlug}` : undefined;
+
     return (
       <ResourceContentFrame
         key={c.id}
         allowRemoval={content.size > 1}
         editMode={editMode}
         label={label}
+        editingLink={editingLink}
         onRemove={onRemove}>
 
         {editor}
