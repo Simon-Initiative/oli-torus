@@ -1,6 +1,8 @@
 defmodule OliWeb.Router do
   use OliWeb, :router
 
+  import Phoenix.LiveDashboard.Router
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -9,6 +11,10 @@ defmodule OliWeb.Router do
     if Mix.env != :dev, do: plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug Oli.Plugs.SetCurrentUser
+  end
+
+  pipeline :admin do
+    plug Oli.Plugs.EnsureAdmin
   end
 
   pipeline :protected do
@@ -150,6 +156,11 @@ defmodule OliWeb.Router do
     get "/open_and_free", DeliveryController, :list_open_and_free
   end
 
+  scope "/admin", OliWeb do
+    pipe_through [:browser, :protected, :admin]
+    live_dashboard "/dashboard", metrics: OliWeb.Telemetry
+  end
+
   # routes only accessable to developers
   if Mix.env === :dev or Mix.env === :test do
     scope "/dev", OliWeb do
@@ -164,6 +175,7 @@ defmodule OliWeb.Router do
       get "/editor", EditorTestController, :index
 
     end
+
   end
 
 end

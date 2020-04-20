@@ -12,6 +12,7 @@ config :oli,
 
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,
+  live_view: [signing_salt: "SECRET_SALT"],
   url: [host: "localhost"],
   secret_key_base: "GE9cpXBwVXNaplyUCYbIWqERmC/OlcR5iVMwLX9/W7gzQRxkD1ETjda9E0jW/BW1",
   render_errors: [view: OliWeb.ErrorView, accepts: ~w(html json)],
