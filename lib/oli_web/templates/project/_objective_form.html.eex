@@ -1,4 +1,4 @@
-<%= form_for @objective_changeset, Routes.objective_path(@conn, @ob_action, @project), [id: "form-" <> @form_id, class: "form-inline"], fn f -> %>
+<%= form_for @objective_changeset, @route, [method: @method, id: "form-" <> @form_id, class: "form-inline"], fn f -> %>
   <div class="form-label-group">
     <%= text_input f,
       :title,

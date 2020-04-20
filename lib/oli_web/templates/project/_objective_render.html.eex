@@ -6,7 +6,10 @@
        <%=
        Enum.map(@children, fn x ->
            params = %{conn: @conn, objective_mapping: x, children: [], project: @project, objective_changeset: @objective_changeset}
-           if assigns[:edit] do params = Map.merge(params, %{edit: @edit})
+           IO.puts "sub edit"
+           IO.inspect @conn.assigns[:edit]
+           if @conn.assigns[:edit] do
+              params = Map.merge(params, %{edit: @conn.assigns[:edit]})
               render OliWeb.ProjectView, "_objectives_list.html", params
            else
               params = Map.merge(params, %{edit: :none})
@@ -21,7 +24,7 @@
   <div class="d-flex" >
      <%= render OliWeb.ProjectView, "_objective_form.html",
                  %{conn: @conn, project: @project, objective_changeset: @objective_changeset, title_value: @title_value,
-                  parent_slug_value: @parent_slug_value, ob_action: @ob_action, form_id: @form_id,
+                  parent_slug_value: @parent_slug_value, route: @route, form_id: @form_id, method: @method,
                   place_holder: @place_holder, phx_disable_with: @phx_disable_with, button_text: @button_text} %>
      <%= button "Cancel", to: Routes.project_path(@conn, :objectives, @project), method: :get, class: "btn btn-primary"%>
   </div>
@@ -29,7 +32,8 @@
          <%=
          Enum.map(@children, fn x ->
              params = %{conn: @conn, objective_mapping: x, children: [], project: @project, objective_changeset: @objective_changeset}
-             if assigns[:edit] do params = Map.merge(params, %{edit: @edit})
+             if @conn.assigns[:edit] do
+                params = Map.merge(params, %{edit: @conn.assigns[:edit]})
                 render OliWeb.ProjectView, "_objectives_list.html", params
              else
                 params = Map.merge(params, %{edit: :none})
@@ -42,7 +46,7 @@
  <div class="d-flex" >
       <%= render OliWeb.ProjectView, "_objective_form.html",
                   %{conn: @conn, project: @project, objective_changeset: @objective_changeset, title_value: @title_value,
-                  parent_slug_value: @parent_slug_value, ob_action: @ob_action, form_id: @form_id,
+                  parent_slug_value: @parent_slug_value, route: @route, form_id: @form_id, method: @method,
                   place_holder: @place_holder, phx_disable_with: @phx_disable_with, button_text: @button_text} %>
       <%= button "Cancel", to: Routes.project_path(@conn, :objectives, @project), method: :get, class: "btn btn-primary"%>
    </div>
@@ -50,7 +54,7 @@
 <div class="d-flex" >
      <%= render OliWeb.ProjectView, "_objective_form.html",
                  %{conn: @conn, project: @project, objective_changeset: @objective_changeset, title_value: @title_value,
-                 parent_slug_value: @parent_slug_value, ob_action: @ob_action, form_id: @form_id,
+                 parent_slug_value: @parent_slug_value, route: @route, form_id: @form_id, method: @method,
                  place_holder: @place_holder, phx_disable_with: @phx_disable_with, button_text: @button_text} %>
 </div>
 

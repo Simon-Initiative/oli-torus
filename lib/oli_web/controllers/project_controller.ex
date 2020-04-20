@@ -24,20 +24,32 @@ defmodule OliWeb.ProjectController do
     render %{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html"
   end
 
-  def objectives(conn, _params) do
+  def objectives(conn, _request_params) do
     params = fetch_objective_mappings_params(conn)
     render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
   end
 
-  def edit_objective(conn, %{"project_id" => project_id, "objective_slug" => objective_slug}) do
-    params = Map.merge(fetch_objective_mappings_params(conn), %{edit: objective_slug})
-    render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
+  def edit_objective(conn, request_params) do
+    params = fetch_objective_mappings_params(conn)
+#    IO.inspect request_params
+    case Map.get(request_params, "action") do
+      "edit_objective" ->
+        params = Map.merge(params, %{edit: Map.get(request_params, "objective_slug")})
+        render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
+      "add_sub_objective" ->
+        params = Map.merge(params, %{edit: "add_sub_"<>Map.get(request_params, "objective_slug")})
+        render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
+      nil ->
+        render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
+    end
+#    params = Map.merge(fetch_objective_mappings_params(conn), %{edit: objective_slug})
+#    render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
   end
-
-  def add_sub_objective(conn, %{"project_id" => project_id, "objective_slug" => objective_slug}) do
-    params = Map.merge(fetch_objective_mappings_params(conn), %{edit: "add_sub_"<>objective_slug})
-    render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
-  end
+#
+#  def add_sub_objective(conn, %{"project_id" => project_id, "objective_slug" => objective_slug}) do
+#    params = Map.merge(fetch_objective_mappings_params(conn), %{edit: "add_sub_"<>objective_slug})
+#    render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
+#  end
 
   defp fetch_objective_mappings_params(conn) do
     project = conn.assigns.project
@@ -55,10 +67,11 @@ defmodule OliWeb.ProjectController do
       if Enum.member?(children_list, mapping.revision.id) do
         acc
        else
-        [x] ++ acc
+        [mapping] ++ acc
        end
     end)
 
+    # Build parent/children tree structure
     parents = parents |> Enum.reduce([], fn(x, acc) ->
       children = objective_mappings |>  Enum.reduce([], fn(mapping, mapping_acc) ->
         if Enum.member?(x.revision.children, mapping.revision.id) do

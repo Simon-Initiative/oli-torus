@@ -20,30 +20,34 @@
 
 <div class="list-group-item list-group-item-action flex-column align-items-start" >
 <div class="w-100 to-show">
-	<%= button to: Routes.project_path(@conn, :edit_objective, @project, @objective_mapping.revision.slug), method: :get, class: "add-button" do %>
+	<%= button to: Routes.project_path(@conn, :edit_objective, @project, @objective_mapping.revision.slug, :edit_objective), method: :get, class: "add-button" do %>
 	   <i class="material-icons">edit</i>
 	<% end %>
-	<%= button to: Routes.objective_path(@conn, :delete, @project, @objective_mapping.revision.slug), method: :delete, class: "add-button" do %>
+	<%= button to: Routes.objective_path(@conn, :delete, @project, @objective_mapping.revision.slug),
+	   data: [confirm: "Are you sure you want to delete that objective?"], method: :delete, class: "add-button" do %>
        <i class="material-icons">delete</i>
     <% end %>
-	<%= button to: Routes.project_path(@conn, :add_sub_objective, @project, @objective_mapping.revision.slug), method: :get, class: "add-button" do %>
+	<%= button to: Routes.project_path(@conn, :edit_objective, @project, @objective_mapping.revision.slug, :add_sub_objective), method: :get, class: "add-button" do %>
    	   <i class="material-icons">add</i>
    	<% end %>
 	</div>
 	<div class="w-100 ">
 	<%= cond do
          @edit == @objective_mapping.revision.slug ->
+           route = Routes.objective_path(@conn, :update, @project, @objective_mapping.revision.slug)
            render OliWeb.ProjectView, "_objective_render.html",
                %{conn: @conn, project: @project, objective_changeset: @objective_changeset,
                title_value: @objective_mapping.revision.title, place_holder: @objective_mapping.revision.title,
-                phx_disable_with: "Updating Objective...", button_text: "Reword", form_id: "edit-objective",
-                children: @children, ob_action: :update, parent_slug_value: "", objective_mapping: @objective_mapping, mode: :edit}
+                phx_disable_with: "Updating Objective...", button_text: "Reword", form_id: "edit-objective", method: "put",
+                children: @children, route: route, parent_slug_value: "", objective_mapping: @objective_mapping,
+                 mode: :edit}
          @edit == "add_sub_" <> @objective_mapping.revision.slug ->
+           route = Routes.objective_path(@conn, :create, @project)
            render OliWeb.ProjectView, "_objective_render.html",
               %{conn: @conn, project: @project, objective_changeset: @objective_changeset, title_value: "",
-              parent_slug_value: @objective_mapping.revision.slug, place_holder: "New Sub-Objective",
+              parent_slug_value: @objective_mapping.revision.slug, place_holder: "New Sub-Objective", method: "post",
                phx_disable_with: "Adding Sub-Objective...", button_text: "Create", form_id: "create-sub-objective",
-               children: @children, ob_action: :create, objective_mapping: @objective_mapping, mode: :add_sub_objective}
+               children: @children, route: route, objective_mapping: @objective_mapping, mode: :add_sub_objective}
          true ->
             render OliWeb.ProjectView, "_objective_render.html", %{conn: @conn, project: @project, objective_mapping: @objective_mapping,
             objective_changeset: @objective_changeset, children: @children, mode: :show}

@@ -9,9 +9,12 @@
   <div class="row">
     <div class="page-header">
         <small>At the end of the course my students should be able to...</small>
-    <%= render OliWeb.ProjectView, "_objective_render.html",
-     %{conn: @conn, project: @project, objective_changeset: @objective_changeset, title_value: "", parent_slug_value: "", form_id: "create-objective",
-      ob_action: :create, place_holder: "New Learning Objective", phx_disable_with: "Adding Objective...", button_text: "Create", mode: :new_objectve} %>
+    <%=
+    route = Routes.objective_path(@conn, :create, @project)
+    render OliWeb.ProjectView, "_objective_render.html",
+     %{conn: @conn, project: @project, objective_changeset: @objective_changeset, title_value: "", parent_slug_value: "",
+     form_id: "create-objective", method: "post", route: route, place_holder: "New Learning Objective",
+     phx_disable_with: "Adding Objective...", button_text: "Create", mode: :new_objectve} %>
     </div>
   </div>
 <%= if Enum.count(@objective_mappings) == 0 do %>
@@ -26,7 +29,8 @@
      <%=
      Enum.map(@objective_mappings, fn x ->
          params = %{conn: @conn, objective_mapping: x.mapping, children: x.children, project: @project, objective_changeset: @objective_changeset}
-         if assigns[:edit] do params = Map.merge(params, %{edit: @edit})
+         if assigns[:edit] do
+            params = Map.merge(params, %{edit: @edit})
             render OliWeb.ProjectView, "_objectives_list.html", params
          else
             params = Map.merge(params, %{edit: :none})
