@@ -1,0 +1,30 @@
+<h1>All Pages</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th><%= link "Add New Page", to: Routes.curriculum_path(@conn, :create, @project), method: :post %></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for page <- @pages do %>
+    <tr>
+      <td>
+        <%= link page.title, to: Routes.resource_path(@conn, :edit, @project, page.slug) %>
+      </td>
+      <td>
+        <%= link "Toggle scored/unscored", to: Routes.resource_path(@conn, :update, @project, page.slug), method: :put %>
+      </td>
+      <td>
+        <%= link "Delete", to: Routes.resource_path(@conn, :delete, @project, page.slug), method: :delete, data: [confirm: "Are you sure?"] %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<script>
+/*
+
+*/
+</script>

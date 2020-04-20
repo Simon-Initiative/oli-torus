@@ -10,6 +10,7 @@ defmodule Oli.Authoring.Resources do
   alias Oli.Publishing
   alias Oli.Authoring.Course.{Utils, Project}
   alias Oli.Authoring.Resources.{Resource, ResourceRevision, ResourceFamily, ResourceType}
+  alias Oli.Authoring.Editing.ResourceEditor
 
   def initial_resource_setup(author, project) do
     Repo.transaction(fn ->
@@ -112,9 +113,27 @@ defmodule Oli.Authoring.Resources do
          }),
          {:ok, revision} <- create_resource_revision(attrs),
          publication <- Publishing.get_unpublished_publication_by_slug!(project.slug),
-         {:ok, mapping} <- Publishing.create_resource_mapping(%{ publication_id: publication.id, resource_id: resource.id, revision_id: revision.id})
+         {:ok, mapping} <- Publishing.create_resource_mapping(%{ publication_id: publication.id, resource_id: resource.id, revision_id: revision.id}),
+         # Creating a resource must also create a new revision for the publication's "container" resource
+         # to attach it to the curriculum
+         {:ok, container} <- update_resource_revision(
+          ResourceEditor.create_new_revision(
+            get_root_container(project),
+            publication,
+            root_resource(project),
+            author.id),
+          %{children: [resource.id | get_root_container(project).children]})
     do
-      {:ok, %{resource: resource, revision: revision, project: project, family: family, mapping: mapping}}
+      {:ok,
+        %{
+          resource: resource,
+          revision: revision,
+          project: project,
+          family: family,
+          mapping: mapping,
+          root_container: container
+        }
+      }
     else
       error -> error
     end
@@ -262,6 +281,7 @@ defmodule Oli.Authoring.Resources do
       iex> get_resource_revision!(456)
       ** (Ecto.NoResultsError)
   """
+  def get_resource_revision!(slug) when is_binary(slug), do: Repo.get_by(ResourceRevision, slug: slug)
   def get_resource_revision!(id), do: Repo.get!(ResourceRevision, id)
 
   @doc """
@@ -304,6 +324,18 @@ defmodule Oli.Authoring.Resources do
     Repo.delete(resource_revision)
   end
 
+  def mark_revision_deleted(project_slug, revision_slug, author_id) do
+    previous_revision = Repo.preload(get_resource_revision!(revision_slug), :resource)
+
+    update_resource_revision(
+      ResourceEditor.create_new_revision(
+        previous_revision,
+        Publishing.get_unpublished_publication_by_slug!(project_slug),
+        previous_revision.resource,
+        author_id),
+      %{deleted: true})
+  end
+
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking resource_revision changes.
   ## Examples
@@ -312,6 +344,33 @@ defmodule Oli.Authoring.Resources do
   """
   def change_resource_revision(%ResourceRevision{} = resource_revision) do
     ResourceRevision.changeset(resource_revision, %{})
+  end
+
+  def get_root_container(project) do
+    project
+    |> root_resource()
+    |> get_latest_resource_revision(project)
+  end
+
+  defp root_resource(project) do
+    project.slug
+    |> Publishing.get_unpublished_publication_by_slug!
+    |> Repo.preload(:root_resource)
+    |> Map.get(:root_resource)
+  end
+
+  def get_root_pages(root_container, project) do
+    root_container
+    |> Map.get(:children)
+    |> Enum.map(& get_resource!(&1))
+    |> Enum.map(& get_latest_resource_revision(&1, project))
+    |> Enum.filter(& !&1.deleted)
+  end
+
+  def list_all_pages(project) do
+    project
+    |> get_root_container()
+    |> get_root_pages(project)
   end
 
 end

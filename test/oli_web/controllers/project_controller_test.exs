@@ -32,21 +32,14 @@ defmodule OliWeb.ProjectControllerTest do
 
   describe "objectives" do
     test "displays the page", %{conn: conn, project: project} do
-      conn = get(conn, Routes.project_path(conn, :curriculum, project.slug))
+      conn = get(conn, Routes.project_path(conn, :objectives, project.slug))
       assert html_response(conn, 200) =~ "Objectives"
-    end
-  end
-
-  describe "curriculum" do
-    test "displays the page", %{conn: conn, project: project} do
-      conn = get(conn, Routes.project_path(conn, :curriculum, project.slug))
-      assert html_response(conn, 200) =~ "Curriculum"
     end
   end
 
   describe "publish" do
     test "displays the page", %{conn: conn, project: project} do
-      conn = get(conn, Routes.project_path(conn, :curriculum, project.slug))
+      conn = get(conn, Routes.project_path(conn, :publish, project.slug))
       assert html_response(conn, 200) =~ "Publish"
     end
   end

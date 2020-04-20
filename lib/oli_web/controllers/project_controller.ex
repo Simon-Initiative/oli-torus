@@ -34,25 +34,6 @@ defmodule OliWeb.ProjectController do
 
   def unpublished(pub), do: pub.published == false
 
-  def curriculum(conn, _project_params) do
-    # publication = Publishing.get_unpublished_publication(conn.assigns.project)
-    # resource_mappings = Publishing.get_resource_mappings_by_publication(publication.id)
-    # container_id = publication.root_resource_id
-    # container = Oli.Repo.preload(Oli.Resources.get_resource!(container_id), [:resource_revisions])
-    # revision = container.resource_revisions
-    #   |> Enum.max_by(&(&1.inserted_at), NaiveDateTime)
-    # pages = Enum.map(revision.children, &(Oli.Resources.get_resource!(&1)))
-
-    render conn, "curriculum.html",
-    title: "Curriculum",
-    active: :curriculum
-    # pages: pages,
-    # container_revision: revision
-
-    # display as list
-    # make each list item a title with a link to the page
-  end
-
   def page(conn, _project_params) do
     render conn, "page.html", title: "Page", active: :page
   end

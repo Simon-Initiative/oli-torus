@@ -3,6 +3,7 @@ defmodule OliWeb.ResourceController do
 
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Authoring.Activities
+  alias Oli.Authoring.Resources
 
   import OliWeb.ProjectPlugs
 
@@ -40,6 +41,17 @@ defmodule OliWeb.ResourceController do
       _ -> error(conn, 500, "server error")
     end
 
+  end
+
+  def delete(conn, %{"project_id" => project_slug, "revision_slug" => resource_slug }) do
+    case Resources.mark_revision_deleted(project_slug, resource_slug, conn.assigns.current_author.id) do
+      {:ok, _} ->
+        redirect conn, to: Routes.curriculum_path(conn, :index, project_slug)
+      {:error, message} ->
+        conn
+          |> put_flash(:error, "Error: #{message}. Please try again")
+          |> redirect(to: Routes.curriculum_path(conn, :index, project_slug))
+    end
   end
 
   defp error(conn, code, reason) do

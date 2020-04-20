@@ -295,7 +295,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
   end
 
   # Creates a new resource revision and updates the publication mapping
-  defp create_new_revision(previous, publication, resource, author_id) do
+  def create_new_revision(previous, publication, resource, author_id) do
 
     {:ok, revision} = Resources.create_resource_revision(%{
       children: previous.children,
