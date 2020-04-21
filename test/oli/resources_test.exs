@@ -9,27 +9,12 @@ defmodule Oli.ResourcesTest do
 
   describe "resources" do
 
-    @valid_attrs %{}
-    @update_attrs %{}
-    @invalid_attrs %{}
-
     setup do
-
-      {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
-      {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
-      {:ok, resource_family} = ResourceFamily.changeset(%ResourceFamily{}, %{}) |> Repo.insert
-      {:ok, resource} = Resource.changeset(%Resource{}, %{project_id: project.id, family_id: resource_family.id}) |> Repo.insert
-      {:ok, _publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resource_id: resource.id, project_id: project.id}) |> Repo.insert
-      {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
-      {:ok, _institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
-
-      valid_attrs = Map.put(@valid_attrs, :project_id, project.id)
-
-      {:ok, %{resource: resource, valid_attrs: valid_attrs, project: project, resource_family: resource_family, author: author}}
+      Seeder.base_project_with_resource()
     end
 
     test "list_resources/0 returns all resources", %{resource: resource} do
-      assert Resources.list_resources() == [resource]
+      assert Enum.find(Resources.list_resources(), false, & (&1 == resource))
     end
 
     test "get_resource!/1 returns the resource with given id", %{resource: resource}  do
@@ -52,7 +37,7 @@ defmodule Oli.ResourcesTest do
         children: [],
         content: [],
         title: "some title",
-        slug: "some_title",
+        slug: _,
         resource_id: ^resource_id
       } = revision
     end
@@ -65,6 +50,25 @@ defmodule Oli.ResourcesTest do
 
     test "create_new_resource/2 with valid data creates a resource", %{project: project, resource_family: resource_family} do
       assert {:ok, resource} = Resources.create_new_resource(project, resource_family)
+    end
+
+    test "initial_resource_setup(author, project) creates a resource with the correct associations", %{author: author, project: project} do
+      {:ok, %{resource: resource, resource_revision: revision, resource_family: family}} = Resources.initial_resource_setup(author, project)
+      assert Repo.preload(resource, :family).family == family
+      assert Repo.preload(revision, :resource_type).resource_type == Resources.resource_type().container
+      assert Repo.preload(revision, :resource).resource == resource
+    end
+
+    test "mark revision deleted", %{project: project, revision: revision, author: author} do
+      refute revision.deleted
+      {:ok, new_revision} = Resources.mark_revision_deleted(project.slug, revision.slug, author.id)
+      assert new_revision.deleted
+    end
+
+    test "list_all_pages(project)", %{project: project, revision: revision} do
+      pages = Resources.list_all_pages(project)
+      refute Enum.empty?(pages)
+      assert Enum.find(pages, & &1 == revision)
     end
 
   end

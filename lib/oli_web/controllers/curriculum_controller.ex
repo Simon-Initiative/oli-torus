@@ -17,21 +17,21 @@ defmodule OliWeb.CurriculumController do
 
   def create(conn, _params) do
     %{ project: project, current_author: author } = conn.assigns
-    result = Resources.create_project_resource(
+
+    case Resources.create_project_resource(
       %{
         objectives: [],
         children: [],
         content: [],
         title: "New Page",
       }, Resources.resource_type.unscored_page, author, project
-    )
-    case result do
+    ) do
       {:ok, _resource} ->
         conn
         |> put_flash(:info, "New page created")
         |> redirect(to: Routes.curriculum_path(conn, :index, project))
 
-      {:error, %Ecto.Changeset{} = changeset} ->
+      {:error, %Ecto.Changeset{} = _changeset} ->
         conn
         |> put_flash(:error, "Could not create page")
         |> redirect(to: Routes.curriculum_path(conn, :index, project))
@@ -43,10 +43,10 @@ defmodule OliWeb.CurriculumController do
     resource = Resources.get_resource!(id)
 
     case Resources.update_resource(resource, resource_params) do
-      {:ok, resource} ->
+      {:ok, _resource} ->
         conn
         |> put_flash(:info, "resource updated successfully.")
-        |> redirect(to: Routes.page_path(conn, :show, resource))
+        |> redirect(to: Routes.curriculum_path(conn, :index, conn.assigns.project))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html", resource: resource, changeset: changeset)

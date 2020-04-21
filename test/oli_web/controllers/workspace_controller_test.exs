@@ -51,11 +51,4 @@ defmodule OliWeb.WorkspaceControllerTest do
     end
   end
 
-  def author_conn(%{conn: conn}) do
-    author = author_fixture()
-    conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
-
-    {:ok, conn: conn, author: author}
-  end
-
 end

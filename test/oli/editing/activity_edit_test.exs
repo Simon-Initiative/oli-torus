@@ -18,7 +18,6 @@ defmodule Oli.ActivityEditingTest do
     end
 
     test "can create and attach an activity to a resource", %{author: author, project: project, revision: revision } do
-
       content = %{ "stem" => "Hey there" }
       {:ok, %{slug: slug, activity_id: activity_id}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content)
 

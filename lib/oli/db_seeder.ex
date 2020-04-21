@@ -23,31 +23,32 @@ defmodule Oli.Seeder do
 
     # A single container resource with a mapped revision
     {:ok, resource_family} = ResourceFamily.changeset(%ResourceFamily{}, %{}) |> Repo.insert
-    {:ok, resource} = Resource.changeset(%Resource{}, %{project_id: project.id, family_id: resource_family.id}) |> Repo.insert
-    resource_type = Resources.resource_type().container
-    {:ok, revision} = ResourceRevision.changeset(%ResourceRevision{}, %{author_id: author.id, objectives: [], resource_type_id: resource_type.id, children: [], content: [], deleted: false, slug: "some_title", title: "some title", resource_id: resource.id}) |> Repo.insert
+    {:ok, container_resource} = Resource.changeset(%Resource{}, %{project_id: project.id, family_id: resource_family.id}) |> Repo.insert
+    {:ok, container_revision} = ResourceRevision.changeset(%ResourceRevision{}, %{author_id: author.id, objectives: [], resource_type_id: Resources.resource_type().container.id, children: [], content: [], deleted: false, slug: "some_title", title: "some title", resource_id: container_resource.id}) |> Repo.insert
 
     # Apply the container resource as the publication root resource
-    {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resource_id: resource.id, project_id: project.id}) |> Repo.insert
-    {:ok, mapping} = Publishing.create_resource_mapping(%{ publication_id: publication.id, resource_id: resource.id, revision_id: revision.id})
-    {:ok, publication} = Publishing.update_publication(publication, %{root_resource_id: resource.id})
+    {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resource_id: container_resource.id, project_id: project.id}) |> Repo.insert
+    {:ok, _mapping} = Publishing.create_resource_mapping(%{ publication_id: publication.id, resource_id: container_resource.id, revision_id: container_revision.id})
 
     # Add two children "page" resources to the publication
     {:ok, resource_family2} = ResourceFamily.changeset(%ResourceFamily{}, %{}) |> Repo.insert
     {:ok, resource2} = Resource.changeset(%Resource{}, %{project_id: project.id, family_id: resource_family2.id}) |> Repo.insert
-    unscored_page1 = Resources.resource_type().unscored_page
-    {:ok, revision2} = ResourceRevision.changeset(%ResourceRevision{}, %{author_id: author.id, objectives: [], resource_type_id: unscored_page1.id, children: [], content: [], deleted: false, slug: "unscored_page_1", title: "Unscored Page 1", resource_id: resource2.id}) |> Repo.insert
+    {:ok, revision2} = ResourceRevision.changeset(%ResourceRevision{}, %{author_id: author.id, objectives: [], resource_type_id: Resources.resource_type().unscored_page.id, children: [], content: [], deleted: false, slug: "unscored_page_1", title: "Unscored Page 1", resource_id: resource2.id}) |> Repo.insert
+    {:ok, mapping2} = Publishing.create_resource_mapping(%{ publication_id: publication.id, resource_id: resource2.id, revision_id: revision2.id})
 
     {:ok, resource_family3} = ResourceFamily.changeset(%ResourceFamily{}, %{}) |> Repo.insert
     {:ok, resource3} = Resource.changeset(%Resource{}, %{project_id: project.id, family_id: resource_family3.id}) |> Repo.insert
-    unscored_page2 = Resources.resource_type().unscored_page
-    {:ok, revision3} = ResourceRevision.changeset(%ResourceRevision{}, %{author_id: author.id, objectives: [], resource_type_id: unscored_page2.id, children: [], content: [], deleted: false, slug: "unscored_page_2", title: "Unscored Page 2", resource_id: resource3.id}) |> Repo.insert
-
-    # add resource 2 and 3 as children to the container and update mappings
-    Resources.update_resource_revision(revision, %{children: [resource2.id, resource3.id]})
-    {:ok, _mapping2} = Publishing.create_resource_mapping(%{ publication_id: publication.id, resource_id: resource2.id, revision_id: revision2.id})
+    {:ok, revision3} = ResourceRevision.changeset(%ResourceRevision{}, %{author_id: author.id, objectives: [], resource_type_id: Resources.resource_type().unscored_page.id, children: [], content: [], deleted: false, slug: "unscored_page_2", title: "Unscored Page 2", resource_id: resource3.id}) |> Repo.insert
     {:ok, _mapping3} = Publishing.create_resource_mapping(%{ publication_id: publication.id, resource_id: resource3.id, revision_id: revision3.id})
 
+    # add resource 2 and 3 as children to the container and update mappings
+    Resources.update_resource_revision(
+      Oli.Authoring.Editing.ResourceEditor.create_new_revision(
+            container_revision,
+            publication,
+            container_resource,
+            author.id),
+      %{children: [resource2.id, resource3.id]})
 
     Map.put(%{}, :family, family)
       |> Map.put(:project, project)
@@ -55,10 +56,9 @@ defmodule Oli.Seeder do
       |> Map.put(:author, author)
       |> Map.put(:institution, institution)
       |> Map.put(:resource_family, resource_family)
-      |> Map.put(:resource, resource)
-      |> Map.put(:resource_type, resource_type)
-      |> Map.put(:revision, revision)
-      |> Map.put(:mapping, mapping)
+      |> Map.put(:resource, resource2)
+      |> Map.put(:revision, revision2)
+      |> Map.put(:mapping, mapping2)
   end
 
   def add_objective(%{ project: project, publication: publication, author: author} = map, title) do

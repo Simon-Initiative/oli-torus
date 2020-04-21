@@ -346,7 +346,13 @@ defmodule Oli.Authoring.Resources do
     ResourceRevision.changeset(resource_revision, %{})
   end
 
-  def get_root_container(project) do
+  def list_all_pages(project) do
+    project
+    |> get_root_container()
+    |> get_root_pages(project)
+  end
+
+  defp get_root_container(project) do
     project
     |> root_resource()
     |> get_latest_resource_revision(project)
@@ -359,18 +365,12 @@ defmodule Oli.Authoring.Resources do
     |> Map.get(:root_resource)
   end
 
-  def get_root_pages(root_container, project) do
+  defp get_root_pages(root_container, project) do
     root_container
     |> Map.get(:children)
     |> Enum.map(& get_resource!(&1))
     |> Enum.map(& get_latest_resource_revision(&1, project))
     |> Enum.filter(& !&1.deleted)
-  end
-
-  def list_all_pages(project) do
-    project
-    |> get_root_container()
-    |> get_root_pages(project)
   end
 
 end

@@ -34,6 +34,10 @@ defmodule Oli.Utils do
     "#{datetime.month}/#{datetime.day}/#{datetime.year} #{hour}:#{minute} #{ampm}"
   end
 
-  def trap_nil(nil), do: {:error, {:not_found}}
-  def trap_nil(result), do: {:ok, result}
+  def trap_nil(result, description_tag \\ :not_found) do
+    case result do
+      nil -> {:error, {description_tag}}
+      _ -> {:ok, result}
+    end
+  end
 end

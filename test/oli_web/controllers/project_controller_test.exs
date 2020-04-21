@@ -3,7 +3,7 @@ defmodule OliWeb.ProjectControllerTest do
   alias Oli.Repo
   alias Oli.Authoring.Course.Project
 
-  @basic_get_routes [:overview, :objectives, :curriculum, :publish, :insights]
+  @basic_get_routes [:overview, :objectives, :publish, :insights]
   setup [:author_project_conn]
   @valid_attrs %{title: "default title"}
   @invalid_attrs %{title: ""}
@@ -25,7 +25,7 @@ defmodule OliWeb.ProjectControllerTest do
 
   describe "overview" do
     test "displays the page", %{conn: conn, project: project} do
-      conn = get(conn, Routes.project_path(conn, :curriculum, project.slug))
+      conn = get(conn, Routes.project_path(conn, :overview, project.slug))
       assert html_response(conn, 200) =~ "Overview"
     end
   end
@@ -46,7 +46,7 @@ defmodule OliWeb.ProjectControllerTest do
 
   describe "insights" do
     test "displays the page", %{conn: conn, project: project} do
-      conn = get(conn, Routes.project_path(conn, :curriculum, project.slug))
+      conn = get(conn, Routes.project_path(conn, :insights, project.slug))
       assert html_response(conn, 200) =~ "Insights"
     end
   end
