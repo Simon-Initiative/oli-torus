@@ -110,7 +110,6 @@ defmodule Oli.Authoring.Learning do
       do
         children = parent_objective_mapping.revision.children ++ [objective_revision.id]
         update_objective_revision(parent_objective_mapping.revision, %{children: children})
-        {:ok, :val}
       else
         error -> error
       end
