@@ -1,18 +1,37 @@
 import * as Immutable from 'immutable';
 import React, { useState } from 'react';
-import { ResourceContent, Activity } from 'data/content/resource';
+import { ProjectSlug } from 'data/types';
+import { ResourceContent, Activity, ActivityReference, StructuredContent } from 'data/content/resource';
 import { ActivityEditorMap } from 'data/content/editors';
 import { toSimpleText } from '../editor/utils';
 import { DragHandle } from './DragHandle';
 import { getContentDescription } from 'data/content/utils';
+import * as Persistence from 'data/persistence/activity';
 
 export type OutlineProps = {
+  projectSlug: ProjectSlug,
   editMode: boolean,              // Whether or not we can edit
   content: Immutable.List<ResourceContent>,     // Content of the resource
   onEdit: (content: Immutable.List<ResourceContent>) => void,
   editorMap: ActivityEditorMap,   // Map of activity types to activity elements
   activities: Immutable.Map<string, Activity>,
 };
+
+type DragPayload = StructuredContent | ActivityPayload | UnknownPayload;
+
+interface ActivityPayload {
+  type: 'ActivityPayload';
+  id: number;
+  activity: Activity;
+  reference: ActivityReference;
+  project: ProjectSlug;
+}
+
+interface UnknownPayload {
+  type: 'UnknownPayload';
+  id: number;
+  data: any;
+}
 
 // @ts-ignore
 const DropTarget = ({ id, index, onDrop }) => {
@@ -44,8 +63,23 @@ const DropTarget = ({ id, index, onDrop }) => {
   );
 };
 
-// @ts-ignore
-const OutlineContent = ({ content, index, onDrop, desc, onFocus, onMove }) => {
+
+// Outline of the content
+type OutlineEntryProps = {
+  description: string | JSX.Element,
+  dragPayload: DragPayload,
+  content: ResourceContent,
+  editorMap: ActivityEditorMap,
+  activities: Immutable.Map<string, Activity>,
+  index: number,
+  onDrop: (id: React.DragEvent<HTMLDivElement>, index: number) => void,
+  onFocus: (index: number) => void,
+  onMove: (index: number, up: boolean) => void,
+};
+
+const OutlineEntry = (props: OutlineEntryProps) => {
+
+  const { content, dragPayload, index, onDrop, description, onFocus, onMove } = props;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.shiftKey && e.key === 'ArrowDown') {
@@ -62,7 +96,7 @@ const OutlineContent = ({ content, index, onDrop, desc, onFocus, onMove }) => {
     // debugging / troubleshooting purposes
     const resource = JSON.stringify([{
       resource: '' + content.id,
-      content: JSON.stringify(content, null, 2),
+      content: JSON.stringify(dragPayload, null, 2),
       viewState: null,
       encoding: 'UTF-8',
       mode: null,
@@ -70,7 +104,7 @@ const OutlineContent = ({ content, index, onDrop, desc, onFocus, onMove }) => {
     }]);
 
     dt.setData('CodeEditors', resource);
-    dt.setData('application/x-oli-resource-content', JSON.stringify(content));
+    dt.setData('application/x-oli-resource-content', JSON.stringify(dragPayload));
     dt.setData('text/html', toSimpleText(content));
     dt.setData('text/plain', toSimpleText(content));
     dt.effectAllowed = 'move';
@@ -99,7 +133,7 @@ const OutlineContent = ({ content, index, onDrop, desc, onFocus, onMove }) => {
               <div className="mb-1">{content.type === 'content' ? 'Content' : 'Activity'}</div>
               {content.purpose !== 'None' ? <small>{content.purpose}</small> : null}
             </div>
-            <small>{desc}</small>
+            <small>{description}</small>
           </div>
         </div>
       </div>
@@ -107,41 +141,11 @@ const OutlineContent = ({ content, index, onDrop, desc, onFocus, onMove }) => {
   );
 };
 
-// Outline of the content
-type OutlineEntryProps = {
-  content: ResourceContent,
-  editorMap: ActivityEditorMap,
-  activities: Immutable.Map<string, Activity>,
-  index: number,
-  onDrop: (id: React.DragEvent<HTMLDivElement>, index: number) => void,
-  onFocus: (index: number) => void,
-  onMove: (index: number, up: boolean) => void,
-};
-
-const OutlineEntry = (props: OutlineEntryProps) => {
-
-  const { content, editorMap, activities } = props;
-
-
-  let desc;
-  if (content.type === 'content') {
-    desc = getContentDescription(content);
-  } else if (activities.has(content.activitySlug)) {
-    const activity = activities.get(content.activitySlug);
-    desc = editorMap[(activity as any).typeSlug].friendlyName;
-  } else {
-    desc = 'Unknown';
-  }
-
-  return (
-    <OutlineContent {...props} desc={desc} />
-  );
-};
 
 // Outline of the content
 export const Outline = (props: OutlineProps) => {
 
-  const { editorMap, editMode, onEdit, activities } = props;
+  const { editorMap, editMode, onEdit, activities, projectSlug } = props;
   const content = Immutable.List<ResourceContent>(props.content);
   const [assisstive, setAssisstive] = useState('');
 
@@ -178,19 +182,55 @@ export const Outline = (props: OutlineProps) => {
       const data = e.dataTransfer.getData('application/x-oli-resource-content');
 
       if (data) {
-        const droppedContent = JSON.parse(data);
+        const droppedContent = JSON.parse(data) as DragPayload;
+
         const sourceIndex = content.findIndex(c => c.id === droppedContent.id);
 
         if (sourceIndex === -1) {
-          // This is a cross window drop, we insert it
-          onEdit(content.insert(index, droppedContent));
+
+          // This is a cross window drop, we insert it but have to have to
+          // ensure that for activities that we create a new activity for
+          // tied to this project
+          if (droppedContent.type === 'ActivityPayload') {
+
+            if (droppedContent.project !== projectSlug) {
+
+              Persistence.create(
+                droppedContent.project,
+                droppedContent.activity.typeSlug,
+                droppedContent.activity.model)
+              .then((result: Persistence.Created) => {
+                onEdit(content.insert(index, droppedContent.reference));
+              });
+
+            } else {
+              onEdit(content.insert(index, droppedContent.reference));
+            }
+
+
+          } else if (droppedContent.type === 'content') {
+            onEdit(content.insert(index, droppedContent));
+          } else {
+            onEdit(content.insert(index, droppedContent.data));
+          }
+
           return;
 
         }
         if (sourceIndex > -1) {
           // Handle a same window drag and drop
           const adjusted = sourceIndex < index ? index - 1 : index;
-          const reordered = content.remove(sourceIndex).insert(adjusted, droppedContent);
+
+          let toInsert;
+          if (droppedContent.type === 'ActivityPayload') {
+            toInsert = droppedContent.reference;
+          } else if (droppedContent.type === 'content') {
+            toInsert = droppedContent;
+          } else {
+            toInsert = droppedContent.data;
+          }
+
+          const reordered = content.remove(sourceIndex).insert(adjusted, toInsert);
           onEdit(reordered);
           return;
         }
@@ -219,13 +259,40 @@ export const Outline = (props: OutlineProps) => {
   };
 
   const entries = content.toArray().map((c, i) => {
-    const onEdit = (updatedComponent : ResourceContent) => {
-      const updated = content.set(i, updatedComponent);
-      props.onEdit(updated);
-    };
-    return <OutlineEntry key={c.id} content={c}
-      activities={activities}
-      index={i} editorMap={editorMap} onMove={onMove} onDrop={onDrop} onFocus={onFocus}/>;
+
+    let description;
+    let dragPayload : DragPayload;
+    if (c.type === 'content') {
+      description = getContentDescription(c);
+      dragPayload = c;
+    } else if (activities.has(c.activitySlug)) {
+      const activity = activities.get(c.activitySlug);
+      description = editorMap[(activity as any).typeSlug].friendlyName;
+      dragPayload = {
+        type: 'ActivityPayload',
+        id: c.id,
+        reference: c,
+        activity: activity as Activity,
+        project: projectSlug,
+      } as ActivityPayload;
+    } else {
+      description = 'Unknown';
+      dragPayload = { type: 'UnknownPayload', data: c, id: c.id };
+    }
+
+    return (
+      <OutlineEntry
+        key={c.id}
+        description={description}
+        dragPayload={dragPayload}
+        content={c}
+        activities={activities}
+        index={i}
+        editorMap={editorMap}
+        onMove={onMove}
+        onDrop={onDrop}
+        onFocus={onFocus}/>
+    );
   });
 
   return (

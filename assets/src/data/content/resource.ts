@@ -4,9 +4,12 @@ import { Objective } from 'data/content/objective';
 
 import guid from 'utils/guid';
 import { ActivityModelSchema } from 'components/activities/types';
+
+// The types of things that can be present as top level
+// entries in a resource content array
 export type ResourceContent = StructuredContent | ActivityReference;
 
-
+// The full context necessary to operate a resource editing session
 export type ResourceContext = {
   resourceType: ResourceType,     // Page or assessment?
   authorEmail: string,            // The current author
@@ -17,7 +20,6 @@ export type ResourceContext = {
   objectives: ObjectiveSlug[],    // Attached objectives
   allObjectives: Objective[],     // All objectives
 };
-
 
 export enum ResourceType {
   'page',

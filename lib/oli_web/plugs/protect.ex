@@ -1,6 +1,5 @@
 defmodule Oli.Plugs.Protect do
   import Plug.Conn
-  import Phoenix.Controller
   alias Oli.Plugs.SetCurrentUser
 
   def init(opts), do: opts
@@ -13,7 +12,7 @@ defmodule Oli.Plugs.Protect do
         case conn.assigns[:current_author] do
           nil ->
             conn
-            |> redirect(to: OliWeb.Router.Helpers.auth_path(conn, :signin))
+            |> Phoenix.Controller.redirect(to: OliWeb.Router.Helpers.auth_path(conn, :signin))
             |> halt()
           _ -> conn
         end

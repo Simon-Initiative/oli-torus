@@ -170,7 +170,7 @@ defmodule Oli.PublishingTest do
       {:ok, activity_family} = ActivityFamily.changeset(%ActivityFamily{}, %{}) |> Repo.insert
       {:ok, activity} = Activity.changeset(%Activity{}, %{project_id: project.id, family_id: activity_family.id}) |> Repo.insert
       {:ok, activity_type} = Registration.changeset(%Registration{}, %{slug: "slug", authoring_script: "1", delivery_script: "2", description: "d", authoring_element: "n", delivery_element: "n", icon: "i", title: "t"}) |> Repo.insert
-      {:ok, revision} = ActivityRevision.changeset(%ActivityRevision{}, %{author_id: author.id, activity_id: activity.id, activity_type_id: activity_type.id, content: %{}, objectives: [], deleted: true, slug: "some slug"}) |> Repo.insert
+      {:ok, revision} = ActivityRevision.changeset(%ActivityRevision{}, %{author_id: author.id, activity_id: activity.id, activity_type_id: activity_type.id, content: %{}, objectives: %{}, deleted: true, slug: "some slug"}) |> Repo.insert
 
       valid_attrs = Map.put(@valid_attrs, :revision_id, revision.id)
         |> Map.put(:publication_id, publication.id)
@@ -335,7 +335,6 @@ defmodule Oli.PublishingTest do
 
     test "diff_publications/2 returns the changes between 2 publications",
       %{project: project, author: author, revision: revision} do
-
         # create a few more resources
         {:ok, %{revision: r2_revision}} = Resources.create_project_resource(%{
           objectives: [],
@@ -373,12 +372,11 @@ defmodule Oli.PublishingTest do
 
         # generate diff
         diff = Publishing.diff_publications(p1, p2)
-
         assert Map.keys(diff) |> Enum.count == 6
-        assert diff[revision.resource_id] == :changed
-        assert diff[r2_revision.resource_id] == :identical
-        assert diff[r3_revision.resource_id] == :deleted
-        assert diff[r4_revision.resource_id] == :added
+        assert {:changed, _} = diff[revision.resource_id]
+        assert {:identical, _} = diff[r2_revision.resource_id]
+        assert {:deleted, _} = diff[r3_revision.resource_id]
+        assert {:added, _} = diff[r4_revision.resource_id]
     end
 
   end

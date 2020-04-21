@@ -9,6 +9,7 @@ import { Editor } from 'components/editor/Editor';
 import { configureStore } from 'state/store';
 import { TestEditor } from 'components/editor/EditorTest';
 import { ResourceEditor } from 'components/resource/ResourceEditor';
+import { ActivityEditor } from 'components/activity/ActivityEditor';
 
 export const registry = {
   CountDisplay,
@@ -16,6 +17,7 @@ export const registry = {
   Editor,
   TestEditor,
   ResourceEditor,
+  ActivityEditor,
 } as any;
 
 export type ComponentName = keyof typeof registry;

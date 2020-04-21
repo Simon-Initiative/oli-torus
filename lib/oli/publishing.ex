@@ -15,10 +15,10 @@ defmodule Oli.Publishing do
   that pertain to a given publication.
   """
   def get_published_activity_revisions(publication_id, activity_ids) do
-    Repo.all from mapping in ActivityMapping,
+    Repo.all(from mapping in ActivityMapping,
       join: rev in ActivityRevision, on: mapping.revision_id == rev.id,
       where: mapping.publication_id == ^publication_id and mapping.activity_id in ^activity_ids,
-      select: rev
+      select: rev) |> Repo.preload(:activity_type)
   end
 
   @doc """
@@ -108,6 +108,24 @@ defmodule Oli.Publishing do
     Repo.one from pub in Publication,
       join: proj in Project, on: pub.project_id == proj.id,
       where: proj.slug == ^project_slug and pub.published == false,
+      select: pub
+  end
+
+  @doc """
+  Gets the latest published publication for a project from slug.
+   ## Examples
+
+      iex> get_latest_published_publication_by_slug!("my-project-slug")
+      %Publication{}
+
+      iex> get_latest_published_publication_by_slug!("invalid-slug")
+      ** (Ecto.NoResultsError)
+  """
+  def get_latest_published_publication_by_slug!(project_slug) do
+    Repo.one from pub in Publication,
+      join: proj in Project, on: pub.project_id == proj.id,
+      where: proj.slug == ^project_slug and pub.published == true,
+      order_by: [desc: pub.updated_at], limit: 1,
       select: pub
   end
 
@@ -235,6 +253,10 @@ defmodule Oli.Publishing do
 
   def get_resource_mapping!(publication_id, resource_id) do
     Repo.one!(from p in ResourceMapping, where: p.publication_id == ^publication_id and p.resource_id == ^resource_id)
+  end
+
+  def get_activity_mapping(publication_id, activity_id) do
+    Repo.one(from p in ActivityMapping, where: p.publication_id == ^publication_id and p.activity_id == ^activity_id)
   end
 
   @doc """
@@ -546,14 +568,15 @@ defmodule Oli.Publishing do
     |> Enum.reduce({%{}, %{}}, fn id, {visited, acc} ->
       if Map.has_key?(all_resource_revisions_p2, id) do
         {_res_p1, rev_p1} = all_resource_revisions_p1[id]
-        {_res_p2, rev_p2} = all_resource_revisions_p2[id]
+        {res_p2, rev_p2} = all_resource_revisions_p2[id]
         if rev_p1.id == rev_p2.id do
-          {Map.put(visited, id, true), Map.put_new(acc, id, :identical)}
+          {Map.put(visited, id, true), Map.put_new(acc, id, {:identical, %{resource: res_p2, revision: rev_p2}})}
         else
-          {Map.put(visited, id, true), Map.put_new(acc, id, :changed)}
+          {Map.put(visited, id, true), Map.put_new(acc, id, {:changed, %{resource: res_p2, revision: rev_p2}})}
         end
       else
-        {visited, Map.put_new(acc, id, :deleted)}
+        {res_p1, rev_p1} = all_resource_revisions_p1[id]
+        {visited, Map.put_new(acc, id, {:deleted, %{resource: res_p1, revision: rev_p1}})}
       end
     end)
 
@@ -561,7 +584,8 @@ defmodule Oli.Publishing do
     changes = Map.keys(all_resource_revisions_p2)
     |> Enum.filter(fn id -> !Map.has_key?(visited, id) end)
     |> Enum.reduce(changes, fn id, acc ->
-      Map.put_new(acc, id, :added)
+      {res_p2, rev_p2} = all_resource_revisions_p2[id]
+      Map.put_new(acc, id, {:added, %{resource: res_p2, revision: rev_p2}})
     end)
 
     changes
