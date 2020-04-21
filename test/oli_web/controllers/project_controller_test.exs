@@ -3,7 +3,7 @@ defmodule OliWeb.ProjectControllerTest do
   alias Oli.Repo
   alias Oli.Authoring.Course.Project
 
-  @basic_get_routes [:overview, :objectives, :curriculum, :publish, :insights]
+  @basic_get_routes [:overview, :objectives, :publish, :insights]
   setup [:author_project_conn]
   @valid_attrs %{title: "default title"}
   @invalid_attrs %{title: ""}
@@ -25,35 +25,28 @@ defmodule OliWeb.ProjectControllerTest do
 
   describe "overview" do
     test "displays the page", %{conn: conn, project: project} do
-      conn = get(conn, Routes.project_path(conn, :curriculum, project.slug))
+      conn = get(conn, Routes.project_path(conn, :overview, project.slug))
       assert html_response(conn, 200) =~ "Overview"
     end
   end
 
   describe "objectives" do
     test "displays the page", %{conn: conn, project: project} do
-      conn = get(conn, Routes.project_path(conn, :curriculum, project.slug))
+      conn = get(conn, Routes.project_path(conn, :objectives, project.slug))
       assert html_response(conn, 200) =~ "Objectives"
-    end
-  end
-
-  describe "curriculum" do
-    test "displays the page", %{conn: conn, project: project} do
-      conn = get(conn, Routes.project_path(conn, :curriculum, project.slug))
-      assert html_response(conn, 200) =~ "Curriculum"
     end
   end
 
   describe "publish" do
     test "displays the page", %{conn: conn, project: project} do
-      conn = get(conn, Routes.project_path(conn, :curriculum, project.slug))
+      conn = get(conn, Routes.project_path(conn, :publish, project.slug))
       assert html_response(conn, 200) =~ "Publish"
     end
   end
 
   describe "insights" do
     test "displays the page", %{conn: conn, project: project} do
-      conn = get(conn, Routes.project_path(conn, :curriculum, project.slug))
+      conn = get(conn, Routes.project_path(conn, :insights, project.slug))
       assert html_response(conn, 200) =~ "Insights"
     end
   end

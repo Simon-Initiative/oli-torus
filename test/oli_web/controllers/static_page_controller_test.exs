@@ -1,4 +1,4 @@
-defmodule OliWeb.PageControllerTest do
+defmodule OliWeb.StaticPageControllerTest do
   use OliWeb.ConnCase
 
   test "GET /", %{conn: conn} do

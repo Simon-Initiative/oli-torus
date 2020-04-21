@@ -35,7 +35,7 @@ a {
   <p class="category">Build</p>
   <%= sidebar_link @conn, :overview, "Overview" %>
   <%= sidebar_link @conn, :objectives, "Objectives" %>
-  <%= sidebar_link @conn, :curriculum, "Curriculum" %>
+  <%= link "Curriculum", to: Routes.curriculum_path(@conn, :index, @project) %>
   <%= sidebar_link @conn, :publish, "Publish" %>
   <hr>
   <p class="category">Improve</p>

@@ -55,7 +55,7 @@ defmodule Oli.EditingTest do
       Publishing.update_resource_mapping(mapping, %{lock_updated_at: Time.now(), locked_by_id: author.id})
 
       content = [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }]
-      {:ok, updated_revision} = ResourceEditor.edit("title", "some_title", author.email, %{ "content" => content })
+      {:ok, updated_revision} = ResourceEditor.edit("title", revision.slug, author.email, %{ "content" => content })
 
       assert revision.id == updated_revision.id
     end
@@ -71,7 +71,7 @@ defmodule Oli.EditingTest do
       assert revision.id != updated_revision.id
     end
 
-    test "edit/4 fails when the lock cannot be acquired or updated", %{author: author, publication: publication, resource: resource } do
+    test "edit/4 fails when the lock cannot be acquired or updated", %{author: author, publication: publication, resource: resource, revision: revision } do
 
       # set the lock so that it is valid and held by a different user
       {:ok, author2} = Author.changeset(%Author{}, %{email: "test2@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
@@ -79,7 +79,7 @@ defmodule Oli.EditingTest do
 
       # now try to make the edit with the original user
       content = [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }]
-      result = ResourceEditor.edit("title", "some_title", author.email, %{ "content" => content })
+      result = ResourceEditor.edit("title", revision.slug, author.email, %{ "content" => content })
 
       id = author2.id
       assert {:error, {:lock_not_acquired, {^id, _}}} = result

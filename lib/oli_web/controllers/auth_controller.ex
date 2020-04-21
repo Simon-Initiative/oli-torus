@@ -19,7 +19,7 @@ defmodule OliWeb.AuthController do
   def signout(conn, _params) do
     conn
     |> configure_session(drop: true)
-    |> redirect(to: Routes.page_path(conn, :index))
+    |> redirect(to: Routes.static_page_path(conn, :index))
   end
 
   def register(conn, _params) do

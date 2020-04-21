@@ -56,7 +56,7 @@ defmodule OliWeb.Router do
   scope "/", OliWeb do
     pipe_through :browser
 
-    get "/", PageController, :index
+    get "/", StaticPageController, :index
   end
 
   # authorization protected routes
@@ -75,7 +75,6 @@ defmodule OliWeb.Router do
     get "/:project_id", ProjectController, :overview
     get "/:project_id/objectives", ProjectController, :objectives
     get "/:project_id/objectives/:objective_slug/:action", ProjectController, :edit_objective
-    get "/:project_id/curriculum", ProjectController, :curriculum
     get "/:project_id/publish", ProjectController, :publish
     post "/:project_id/publish", ProjectController, :publish_active
     get "/:project_id/insights", ProjectController, :insights
@@ -90,8 +89,12 @@ defmodule OliWeb.Router do
     put "/:project_id/objectives/:objective_slug", ObjectiveController, :update
     delete "/:project_id/objectives/:objective_slug", ObjectiveController, :delete
 
+    # Curriculum
+    resources "/:project_id/curriculum", CurriculumController, only: [:index, :create, :update]
+
     # Editors
     get "/:project_id/resource/:revision_slug", ResourceController, :edit
+    delete "/:project_id/resource/:revision_slug", ResourceController, :delete
     get "/:project_id/resource/:revision_slug/activity/:activity_slug", ActivityController, :edit
 
     # Collaborators
@@ -113,8 +116,6 @@ defmodule OliWeb.Router do
     delete "/:project/lock/:resource", LockController, :release
 
   end
-
-
 
   # auth routes, only accessable to guest users who are not logged in
   scope "/auth", OliWeb do

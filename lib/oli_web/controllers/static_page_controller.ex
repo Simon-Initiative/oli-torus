@@ -1,4 +1,4 @@
-defmodule OliWeb.PageController do
+defmodule OliWeb.StaticPageController do
   use OliWeb, :controller
 
   def index(conn, _params) do

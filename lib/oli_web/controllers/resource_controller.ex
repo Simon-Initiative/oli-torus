@@ -3,6 +3,7 @@ defmodule OliWeb.ResourceController do
 
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Authoring.Activities
+  alias Oli.Authoring.Resources
 
   import OliWeb.ProjectPlugs
 
@@ -13,7 +14,10 @@ defmodule OliWeb.ResourceController do
 
     case ResourceEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
       {:ok, context} -> render(conn, "edit.html", title: "Resource Editor", context: Jason.encode!(context), scripts: get_scripts())
-      {:error, :not_found} -> render conn, OliWeb.SharedView, "_not_found.html"
+      {:error, :not_found} ->
+        conn
+        |> put_view(OliWeb.SharedView)
+        |> render("_not_found.html", title: "Not Found")
     end
 
   end
@@ -36,6 +40,17 @@ defmodule OliWeb.ResourceController do
       _ -> error(conn, 500, "server error")
     end
 
+  end
+
+  def delete(conn, %{"project_id" => project_slug, "revision_slug" => resource_slug }) do
+    case Resources.mark_revision_deleted(project_slug, resource_slug, conn.assigns.current_author.id) do
+      {:ok, _} ->
+        redirect conn, to: Routes.curriculum_path(conn, :index, project_slug)
+      {:error, message} ->
+        conn
+          |> put_flash(:error, "Error: #{message}. Please try again")
+          |> redirect(to: Routes.curriculum_path(conn, :index, project_slug))
+    end
   end
 
   defp error(conn, code, reason) do
