@@ -6,17 +6,8 @@ defmodule OliWeb.ObjectiveController do
   alias Oli.Authoring.{Course, Learning, Utils}
   alias Oli.Publishing
 
-  plug :fetch_project when action in [:create, :update, :delete, :edit, :add_sub_objective]
-  plug :authorize_project when action in [:create, :update, :delete, :edit, :add_sub_objective]
-
-  def objectives(conn, _params) do
-    project = conn.assigns.project
-    publication = Publishing.get_unpublished_publication(project.slug)
-    objective_mappings = Publishing.get_objective_mappings_by_publication(publication.id)
-    changeset = Learning.change_objective(%Learning.Objective{})
-    params = %{title: "Objectives", objective_mappings: objective_mappings, objective_changeset: changeset, active: :objectives}
-    render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
-  end
+  plug :fetch_project when action in [:create, :update, :delete]
+  plug :authorize_project when action in [:create, :update, :delete]
 
   def create(conn, %{"project_id" => project_id, "objective" => objective_params}) do
     project = conn.assigns.project
