@@ -6,7 +6,6 @@
 .list-group-item:hover .to-show{
   display: flex;
 }
-
 </style>
 
 <div class="list-group-item list-group-item-action d-flex  align-items-start" >

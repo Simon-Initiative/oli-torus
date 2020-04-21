@@ -1,9 +1,3 @@
-<style>
-.btn-primary-mine {
-    margin-left: 3px;
-}
-
-</style>
 <%= cond do %>
 <% @mode == :show -> %>
   <div class="mb-1"><%= "#{@objective_mapping.revision.title}" %></div>
