@@ -2,7 +2,8 @@ defmodule OliWeb.ObjectiveController do
   use OliWeb, :controller
   import OliWeb.ProjectPlugs
 
-  alias Oli.Authoring.{Learning}
+  alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.{Course, Learning}
   alias Oli.Publishing
   import Oli.Utils
 
@@ -19,6 +20,7 @@ defmodule OliWeb.ObjectiveController do
       |> put_req_header("x-status", "success")
       |> redirect(to: Routes.project_path(conn, :objectives, project_id))
     else
+      error ->
         conn
         |> put_flash(:error, "Objective creation failed.")
         |> put_req_header("x-status", "failed")
@@ -38,6 +40,7 @@ defmodule OliWeb.ObjectiveController do
       |> put_req_header("x-status", "success")
       |> redirect(to: Routes.project_path(conn, :objectives, project_id))
     else
+      error ->
         conn
         |> put_flash(:error, "Objective update failed.")
         |> put_req_header("x-status", "failed")
@@ -56,6 +59,7 @@ defmodule OliWeb.ObjectiveController do
       |> put_req_header("x-status", "success")
       |> redirect(to: Routes.project_path(conn, :objectives, project_id))
     else
+      error ->
         conn
         |> put_flash(:error, "Objective delete failed.")
         |> put_req_header("x-status", "failed")
