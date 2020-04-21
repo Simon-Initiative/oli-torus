@@ -92,13 +92,9 @@ defmodule OliWeb.Router do
     # Curriculum
     resources "/:project_id/curriculum", CurriculumController, only: [:index, :create, :update]
 
-    # Resource
-    get "/:project_id/:revision_slug", ResourceController, :view
-    get "/:project_id/:revision_slug/edit", ResourceController, :edit
-    delete "/:project_id/:revision_slug", ResourceController, :delete
-
     # Editors
     get "/:project_id/resource/:revision_slug", ResourceController, :edit
+    delete "/:project_id/resource/:revision_slug", ResourceController, :delete
     get "/:project_id/resource/:revision_slug/activity/:activity_slug", ActivityController, :edit
 
     # Collaborators

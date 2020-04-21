@@ -14,7 +14,10 @@ defmodule OliWeb.ResourceController do
 
     case ResourceEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
       {:ok, context} -> render(conn, "edit.html", title: "Resource Editor", context: Jason.encode!(context), scripts: get_scripts())
-      {:error, :not_found} -> render conn, OliWeb.SharedView, "_not_found.html", title: "Not Found"
+      {:error, :not_found} ->
+        conn
+        |> put_view(OliWeb.SharedView)
+        |> render("_not_found.html", title: "Not Found")
     end
 
   end

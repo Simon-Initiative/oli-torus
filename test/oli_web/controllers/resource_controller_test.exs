@@ -3,38 +3,40 @@ defmodule OliWeb.ResourceControllerTest do
 
   setup [:project_seed]
 
-  describe "index" do
-    test "lists pages", %{conn: conn, project: project} do
-      conn = get(conn, Routes.curriculum_path(conn, :index, project))
-      assert html_response(conn, 200) =~ "Pages"
+  describe "edit" do
+    test "renders resource editor", %{conn: conn, project: project, revision: revision} do
+      conn = get(conn, Routes.resource_path(conn, :edit, project.slug, revision.slug))
+      assert html_response(conn, 200) =~ "Resource Editor"
+    end
+
+    test "renders error when resource does not exist", %{conn: conn, project: project} do
+      conn = get(conn, Routes.resource_path(conn, :edit, project.slug, "does_not_exist"))
+      assert html_response(conn, 200) =~ "Not Found"
     end
   end
 
-  describe "create page" do
-    test "redirects back to curriculum with new page", %{conn: conn, project: project} do
-      conn = post(conn, Routes.curriculum_path(conn, :create, project))
+  describe "update resource" do
+    test "valid response on valid update", %{conn: conn, project: project, revision: revision} do
+      conn = put(conn, Routes.resource_path(conn, :update, project.slug, revision.slug, %{ "update" => %{"title" => "new title" }}))
+      assert %{ "type" => "success" } = json_response(conn, 200)
+    end
+
+    test "error response on invalid update", %{conn: conn, project: project} do
+      conn = put(conn, Routes.resource_path(conn, :update, project.slug, "does_not_exist", %{ "update" => %{"title" => "new title" }}))
+      assert response(conn, 404)
+    end
+  end
+
+  describe "delete resource" do
+    test "redirects if resource is marked deleted", %{conn: conn, project: project, revision: revision} do
+      conn = delete(conn, Routes.resource_path(conn, :delete, project, revision))
       assert redirected_to(conn) == Routes.curriculum_path(conn, :index, project)
-
-      conn = get(conn, Routes.curriculum_path(conn, :index, project))
-      assert html_response(conn, 200) =~ "New Page"
     end
 
-  end
-
-  describe "update page" do
-    @tag :skip
-    test "redirects when data is valid", %{conn: conn, project: project} do
-      conn = put(conn, Routes.curriculum_path(conn, :update, project))
-      assert redirected_to(conn) == Routes.curriculum_path(conn, :show, project)
-
-      conn = get(conn, Routes.curriculum_path(conn, :show, project))
-      assert html_response(conn, 200)
-    end
-
-    @tag :skip
-    test "renders errors when data is invalid", %{conn: conn, project: project} do
-      conn = put(conn, Routes.curriculum_path(conn, :update, project))
-      assert html_response(conn, 200) =~ "Edit Page"
+    test "shows error page if resource is not found", %{conn: conn, project: project} do
+      conn = delete(conn, Routes.resource_path(conn, :delete, project, "does_not_exist"))
+      assert get_flash(conn, :error)
+      assert redirected_to(conn) == Routes.curriculum_path(conn, :index, project)
     end
   end
 

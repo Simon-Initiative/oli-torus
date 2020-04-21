@@ -325,15 +325,20 @@ defmodule Oli.Authoring.Resources do
   end
 
   def mark_revision_deleted(project_slug, revision_slug, author_id) do
-    previous_revision = Repo.preload(get_resource_revision!(revision_slug), :resource)
-
-    update_resource_revision(
-      ResourceEditor.create_new_revision(
-        previous_revision,
-        Publishing.get_unpublished_publication_by_slug!(project_slug),
-        previous_revision.resource,
-        author_id),
-      %{deleted: true})
+    previous_revision = get_resource_revision!(revision_slug)
+    if !is_nil(previous_revision)
+    do
+      preloaded = Repo.preload(previous_revision, :resource)
+      update_resource_revision(
+        ResourceEditor.create_new_revision(
+          preloaded,
+          Publishing.get_unpublished_publication_by_slug!(project_slug),
+          preloaded.resource,
+          author_id),
+        %{deleted: true})
+    else
+      {:error, "resource not found"}
+    end
   end
 
   @doc """

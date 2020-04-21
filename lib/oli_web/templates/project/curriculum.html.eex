@@ -1,5 +1,0 @@
-Pages:
-<%# <%= @pages %>
-
-
-<%= link "Test page", to: Routes.resource_path(@conn, :edit, "title", "some_title") %>

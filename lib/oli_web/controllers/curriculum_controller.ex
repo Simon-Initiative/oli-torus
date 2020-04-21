@@ -8,8 +8,6 @@ defmodule OliWeb.CurriculumController do
   plug :authorize_project
 
   def index(conn, _params) do
-    # for the pages, preload the resource type
-    # write a utility for displaying what the "convert" button will do -> convert to scored or unscored
     render(conn, "index.html",
       pages: Resources.list_all_pages(conn.assigns.project),
       title: "Curriculum")
