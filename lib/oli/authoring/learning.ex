@@ -6,6 +6,7 @@ defmodule Oli.Authoring.Learning do
   alias Oli.Authoring.Learning.{Objective, ObjectiveFamily, ObjectiveRevision}
   alias Oli.Publishing
   alias Oli.Publishing.ObjectiveMapping
+  import Oli.Utils
 
   # From a list of objective revision slugs, convert to a list of objective ids
   def get_ids_from_objective_slugs(slugs) do
@@ -42,34 +43,6 @@ defmodule Oli.Authoring.Learning do
       ** (Ecto.NoResultsError)
   """
   def get_objective!(id), do: Repo.get!(Objective, id)
-
-  @doc """
-  Gets a single objective, based on a revision and project slugs.
-  """
-  @spec get_objective_from_slug(String.t, String.t) :: any
-  def get_objective_from_slug(project_slug, revision_slug) do
-    query = from o in Objective,
-                 distinct: o.id,
-                 join: p in Project, on: o.project_id == p.id,
-                 join: v in ObjectiveRevision, on: v.objective_id == o.id,
-                 where: p.slug == ^project_slug and v.slug == ^revision_slug,
-                 select: o
-    Repo.one(query)
-  end
-
-  @doc """
-  Gets a single objective_revision, based on a revision and project slugs.
-  """
-  @spec get_objective_revision_from_slug(String.t, String.t) :: any
-  def get_objective_revision_from_slug(project_slug, revision_slug) do
-    query = from v in ObjectiveRevision,
-                 distinct: v.id,
-                 join: o in Objective, on: v.objective_id == o.id,
-                 join: p in Project, on: o.project_id == p.id,
-                 where: p.slug == ^project_slug and v.slug == ^revision_slug,
-                 select: v
-    Repo.one(query)
-  end
 
   @doc """
   Creates an objective.
@@ -132,11 +105,18 @@ defmodule Oli.Authoring.Learning do
 
   defp add_objective_to_parent(attrs, objective_revision) do
     if Map.has_key?(attrs, "parent_slug") and String.strip(Map.get(attrs, "parent_slug")) != ""  do
-      parent_objective_revision = get_objective_revision_from_slug(Map.get(attrs, "project_slug"), Map.get(attrs, "parent_slug"))
-      children = parent_objective_revision.children ++ [objective_revision.id]
-      update_objective_revision(parent_objective_revision, %{children: children})
+      with {:ok, publication} <- Publishing.get_unpublished_publication(Map.get(attrs, "project_slug")) |> trap_nil(),
+           {:ok, parent_objective_mapping} <- Publishing.get_objective_mapping(publication.id, Map.get(attrs, "parent_slug")) |> trap_nil()
+      do
+        children = parent_objective_mapping.revision.children ++ [objective_revision.id]
+        update_objective_revision(parent_objective_mapping.revision, %{children: children})
+        {:ok, :val}
+      else
+        error -> error
+      end
+    else
+       {:ok, :val}
     end
-    {:ok, :val}
   end
 
   @doc """

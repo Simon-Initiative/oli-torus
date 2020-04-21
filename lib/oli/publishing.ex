@@ -416,6 +416,14 @@ defmodule Oli.Publishing do
              preload: [:objective, :revision]
   end
 
+  def get_objective_mapping(publication_id, objective_slug) do
+    Repo.one from mapping in ObjectiveMapping,
+             join: rev in ObjectiveRevision, on: mapping.revision_id == rev.id,
+             where: mapping.publication_id == ^publication_id and rev.slug == ^objective_slug,
+             select: mapping,
+             preload: [:objective, :revision]
+  end
+
   @doc """
   Gets a single objective_mapping.
   Raises `Ecto.NoResultsError` if the Objective mapping does not exist.
