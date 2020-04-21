@@ -2,7 +2,6 @@ defmodule Oli.Authoring.Learning do
   import Ecto.Query, warn: false
   alias Ecto.Multi
   alias Oli.Repo
-  alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Learning.{Objective, ObjectiveFamily, ObjectiveRevision}
   alias Oli.Publishing
   alias Oli.Publishing.ObjectiveMapping
@@ -104,7 +103,7 @@ defmodule Oli.Authoring.Learning do
   end
 
   defp add_objective_to_parent(attrs, objective_revision) do
-    if Map.has_key?(attrs, "parent_slug") and String.strip(Map.get(attrs, "parent_slug")) != ""  do
+    if Map.has_key?(attrs, "parent_slug") and String.trim(Map.get(attrs, "parent_slug")) != ""  do
       with {:ok, publication} <- Publishing.get_unpublished_publication(Map.get(attrs, "project_slug")) |> trap_nil(),
            {:ok, parent_objective_mapping} <- Publishing.get_objective_mapping(publication.id, Map.get(attrs, "parent_slug")) |> trap_nil()
       do
