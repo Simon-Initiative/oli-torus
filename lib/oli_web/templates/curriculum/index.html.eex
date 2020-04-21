@@ -13,7 +13,7 @@
         <%= link page.title, to: Routes.resource_path(@conn, :edit, @project, page.slug) %>
       </td>
       <td>
-        <%= link "Toggle scored/unscored", to: Routes.resource_path(@conn, :update, @project, page.slug), method: :put %>
+        <% #<%= link "Toggle scored/unscored", to: Routes.resource_path(@conn, :update, @project, page.slug), method: :put %>
       </td>
       <td>
         <%= link "Delete", to: Routes.resource_path(@conn, :delete, @project, page.slug), method: :delete, data: [confirm: "Are you sure?"] %>

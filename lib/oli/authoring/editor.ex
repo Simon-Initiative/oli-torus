@@ -148,12 +148,12 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
 
     editor_map = Oli.Authoring.Activities.create_registered_activity_map()
 
-    with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(:publication),
-         {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil(:resource),
-         {:ok, objectives} <- Publishing.get_published_objectives(publication.id) |> trap_nil(:objectives),
-         {:ok, %{content: content} = revision} <- get_latest_revision(publication, resource) |> trap_nil(:revision),
-         {:ok, objectives_without_ids} <- strip_ids(objectives) |> trap_nil(:objs_wo_ids),
-         {:ok, attached_objectives} <- id_to_slug(revision.objectives, objectives) |> trap_nil(:attached_objs),
+    with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug),
+         {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug),
+         {:ok, objectives} <- Publishing.get_published_objectives(publication.id),
+         {:ok, %{content: content} = revision} <- get_latest_revision(publication, resource),
+         {:ok, objectives_without_ids} <- strip_ids(objectives),
+         {:ok, attached_objectives} <- id_to_slug(revision.objectives, objectives),
          {:ok, activities} <- create_activities_map(publication.id, content)
     do
       {:ok, create(publication.id, revision, project_slug, revision_slug, author, objectives_without_ids, attached_objectives, activities, editor_map)}

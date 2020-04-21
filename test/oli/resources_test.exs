@@ -27,7 +27,7 @@ defmodule Oli.ResourcesTest do
         objectives: [],
         children: [],
         content: [],
-        title: "some title",
+        title: "a new title",
       }
       assert {:ok, %{resource: resource, revision: revision, project: _, family: _, mapping: _} = result} = Resources.create_project_resource(attrs, resource_type, author, project)
 
@@ -36,8 +36,8 @@ defmodule Oli.ResourcesTest do
         objectives: [],
         children: [],
         content: [],
-        title: "some title",
-        slug: _,
+        title: "a new title",
+        slug: "a_new_title",
         resource_id: ^resource_id
       } = revision
     end

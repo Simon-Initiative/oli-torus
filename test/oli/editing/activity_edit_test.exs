@@ -34,7 +34,7 @@ defmodule Oli.ActivityEditingTest do
       # Now generate the resource editing context with this attached activity in place
       # so that we can verify that the activities, editorMap and content are all wired
       # together correctly
-      {:ok, %ResourceContext{activities: activities, content: content, editorMap: editorMap}} = ResourceEditor.create_context(project.slug, revision.slug, author)
+      {:ok, %ResourceContext{activities: activities, content: content, editorMap: editorMap}} = ResourceEditor.create_context(project.slug, updated_revision.slug, author)
 
       activity_ref = hd(content)
 
