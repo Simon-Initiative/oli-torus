@@ -6,6 +6,7 @@ defmodule OliWeb.ProjectController do
   alias Oli.Authoring.{Course, Learning}
   alias Oli.Authoring.Course.Project
   alias Oli.Publishing
+  alias Oli.Publishing.ObjectiveMappingTransfer
 
   plug :fetch_project when action not in [:create]
   plug :authorize_project when action not in [:create]
@@ -23,13 +24,61 @@ defmodule OliWeb.ProjectController do
     render %{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html"
   end
 
-  def objectives(conn, _params) do
-    project = conn.assigns.project
-    publication_id = Publishing.get_unpublished_publication_id!(project.id)
-    objective_mappings = Publishing.get_objective_mappings_by_publication(publication_id)
-    changeset = Learning.change_objective(%Learning.Objective{})
-    params = %{title: "Objectives", objective_mappings: objective_mappings, objective_changeset: changeset, active: :objectives}
+  def objectives(conn, _request_params) do
+    params = fetch_objective_mappings_params(conn)
     render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
+  end
+
+  def edit_objective(conn, request_params) do
+    params = fetch_objective_mappings_params(conn)
+#    IO.inspect request_params
+    case Map.get(request_params, "action") do
+      "edit_objective" ->
+        params = Map.merge(params, %{edit: Map.get(request_params, "objective_slug")})
+        render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
+      "add_sub_objective" ->
+        params = Map.merge(params, %{edit: "add_sub_"<>Map.get(request_params, "objective_slug")})
+        render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
+      nil ->
+        render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
+    end
+  end
+
+  defp fetch_objective_mappings_params(conn) do
+    project = conn.assigns.project
+    publication = Publishing.get_unpublished_publication(project.slug)
+    objective_mappings = Publishing.get_objective_mappings_by_publication(publication.id)
+    changeset = Learning.change_objective(%Learning.Objective{})
+    if Enum.empty?(objective_mappings) do
+      %{title: "Objectives", objective_mappings: [], objective_changeset: changeset, active: :objectives}
+    else
+      # Extract all children references from objectives
+      children_list = objective_mappings
+                      |> Enum.map(fn mapping ->
+        mapping.revision.children
+      end) |> Enum.reduce(fn(children, acc) -> children ++ acc end)
+
+      # Filter out parent mappings (i.e. objective is a parent if not in children list)
+      parents = objective_mappings |> Enum.reduce([], fn(mapping, acc) ->
+        if Enum.member?(children_list, mapping.revision.id) do
+          acc
+        else
+          [mapping] ++ acc
+        end
+      end)
+      # Build parent/children tree structure
+      parents = parents |> Enum.reduce([], fn(x, acc) ->
+        children = objective_mappings |>  Enum.reduce([], fn(mapping, mapping_acc) ->
+          if Enum.member?(x.revision.children, mapping.revision.id) do
+            [mapping] ++ mapping_acc
+          else
+            mapping_acc
+          end
+        end)
+        [%ObjectiveMappingTransfer{mapping: x, children: children}] ++ acc
+      end)
+      %{title: "Objectives", objective_mappings: parents, objective_changeset: changeset, active: :objectives}
+    end
   end
 
   def unpublished(pub), do: pub.published == false

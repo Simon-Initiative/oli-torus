@@ -1,0 +1,22 @@
+<%= form_for @objective_changeset, @route, [method: @method, id: "form-" <> @form_id, class: "form-inline"], fn f -> %>
+  <div class="form-label-group">
+    <%= text_input f,
+      :title,
+      value: @title_value,
+      class: "form-control mb-2 mr-sm-2 mb-sm-0 title container-fluid" <> error_class(f, :title, "is-invalid"),
+      placeholder: @place_holder,
+      id: "input-title-" <> @form_id,
+      required: true,
+      autofocus: focusHelper(f, :title, default: true)%>
+      <%= hidden_input f,
+      :parent_slug,
+      value: @parent_slug_value %>
+    <%= error_tag f, :title %>
+  </div>
+  <%= submit @button_text,
+    id: @form_id,
+    type: "button",
+    class: "btn btn-primary ob-form-button",
+    phx_disable_with: @phx_disable_with,
+    form: f.id %>
+<% end %>

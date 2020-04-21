@@ -74,6 +74,8 @@ defmodule OliWeb.Router do
     # Project display pages
     get "/:project_id", ProjectController, :overview
     get "/:project_id/objectives", ProjectController, :objectives
+    get "/:project_id/objectives/:objective_slug/:action", ProjectController, :edit_objective
+    get "/:project_id/curriculum", ProjectController, :curriculum
     get "/:project_id/publish", ProjectController, :publish
     post "/:project_id/publish", ProjectController, :publish_active
     get "/:project_id/insights", ProjectController, :insights
@@ -85,9 +87,8 @@ defmodule OliWeb.Router do
 
     # Objectives
     post "/:project_id/objectives", ObjectiveController, :create
-    patch "/:project_id/objectives/:id", ObjectiveController, :update
-    put "/:project_id/objectives/:id", ObjectiveController, :update
-    delete "/:project_id/objectives/:id", ObjectiveController, :delete
+    put "/:project_id/objectives/:objective_slug", ObjectiveController, :update
+    delete "/:project_id/objectives/:objective_slug", ObjectiveController, :delete
 
     # Curriculum
     resources "/:project_id/curriculum", CurriculumController, only: [:index, :create, :update]
