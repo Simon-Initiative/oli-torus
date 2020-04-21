@@ -19,7 +19,7 @@ defmodule OliWeb.ObjectiveController do
       |> put_req_header("x-status", "success")
       |> redirect(to: Routes.project_path(conn, :objectives, project_id))
     else
-      error ->
+      _error ->
         conn
         |> put_flash(:error, "Objective creation failed.")
         |> put_req_header("x-status", "failed")
@@ -39,7 +39,7 @@ defmodule OliWeb.ObjectiveController do
       |> put_req_header("x-status", "success")
       |> redirect(to: Routes.project_path(conn, :objectives, project_id))
     else
-      error ->
+      _error ->
         conn
         |> put_flash(:error, "Objective update failed.")
         |> put_req_header("x-status", "failed")
@@ -58,7 +58,7 @@ defmodule OliWeb.ObjectiveController do
       |> put_req_header("x-status", "success")
       |> redirect(to: Routes.project_path(conn, :objectives, project_id))
     else
-      error ->
+      _error ->
         conn
         |> put_flash(:error, "Objective delete failed.")
         |> put_req_header("x-status", "failed")
