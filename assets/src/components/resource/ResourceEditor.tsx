@@ -9,9 +9,12 @@ import { ActivityEditorMap } from 'data/content/editors';
 import { Editors } from './Editors';
 import { Objectives } from './Objectives';
 import { Outline } from './Outline';
-import { TitleBar } from './TitleBar';
+import { TitleBar } from '../content/TitleBar';
+import { UndoRedo } from '../content/UndoRedo';
+import { PersistenceStatus } from 'components/content/PersistenceStatus';
+import { AddResourceContent } from '../content/AddResourceContent';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug } from 'data/types';
-import { makeRequest } from 'data/persistence/common';
+import * as Persistence from 'data/persistence/resource';
 import { UndoableState, processRedo, processUndo, processUpdate, init } from './undo';
 import { releaseLock, acquireLock } from 'data/persistence/lock';
 
@@ -36,16 +39,10 @@ type ResourceEditorState = {
 };
 
 // Creates a function that when invoked submits a save request
-function prepareSaveFn(project: ProjectSlug, resource: ResourceSlug, body: any) {
-  return () => {
-    const params = {
-      method: 'PUT',
-      body: JSON.stringify({ update: body }),
-      url: `/project/${project}/resource/${resource}`,
-    };
+function prepareSaveFn(
+  project: ProjectSlug, resource: ResourceSlug, update: Persistence.ResourceUpdate) {
 
-    return makeRequest(params);
-  };
+  return () => Persistence.edit(project, resource, update);
 }
 
 // Ensures that there is some default content if the initial content
@@ -169,16 +166,21 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     return (
       <div>
         <TitleBar
-          resourceContext={props}
-          onUndo={this.undo}
-          onRedo={this.redo}
-          canUndo={state.undoable.undoStack.size > 0}
-          canRedo={state.undoable.redoStack.size > 0}
           title={state.undoable.current.title}
           onTitleEdit={onTitleEdit}
-          onAddItem={onAddItem}
-          editMode={this.state.editMode}
-          editorMap={this.props.editorMap}/>
+          editMode={this.state.editMode}>
+          <PersistenceStatus persistence={this.state.persistence}/>
+          <UndoRedo
+            canRedo={this.state.undoable.redoStack.size > 0}
+            canUndo={this.state.undoable.undoStack.size > 0}
+            onUndo={this.undo} onRedo={this.redo}/>
+          <AddResourceContent
+            editMode={this.state.editMode}
+            onAddItem={onAddItem}
+            editorMap={props.editorMap}
+            resourceContext={props}
+          />
+        </TitleBar>
         <Objectives
           editMode={this.state.editMode}
           selected={this.state.undoable.current.objectives}

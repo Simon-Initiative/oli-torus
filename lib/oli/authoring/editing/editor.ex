@@ -3,7 +3,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
   This module provides content editing facilities for resources.
 
   """
-
+  import Oli.Authoring.Editing.Utils
   alias Oli.Authoring.{Locks, Course, Resources, Learning}
   alias Oli.Authoring.Resources.ResourceRevision
   alias Oli.Publishing
@@ -11,7 +11,6 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
   alias Oli.Authoring.Activities.ActivityRevision
   alias Oli.Accounts
   alias Oli.Repo
-  import Oli.Utils
 
   @doc """
   Attempts to process an edit for a resource specified by a given
@@ -41,7 +40,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
     with {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
-         {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
+         {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil(),
          {:ok, converted_update} <- convert_to_activity_ids(update)
     do
@@ -56,6 +55,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
 
           # A successful lock update means we can safely edit the existing revision
           {:updated} -> get_latest_revision(publication, resource)
+            |> maybe_create_new_revision(publication, resource, author.id, converted_update)
             |> update_revision(converted_update)
 
           # error or not able to lock results in a failed edit
@@ -91,7 +91,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
     with {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
-         {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
+         {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil()
     do
       case Locks.acquire(publication.id, resource.id, author.id) do
@@ -127,7 +127,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
     with {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
-         {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
+         {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil()
     do
       case Locks.release(publication.id, resource.id, author.id) do
@@ -148,7 +148,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
 
     editor_map = Oli.Authoring.Activities.create_registered_activity_map()
 
-    with {:ok, publication} <- Publishing.get_unpublished_publication(project_slug, author.id) |> trap_nil(),
+    with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil(),
          {:ok, objectives} <- Publishing.get_published_objectives(publication.id) |> trap_nil(),
          {:ok, %{content: content} = revision} <- get_latest_revision(publication, resource) |> trap_nil(),
@@ -250,13 +250,13 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
   end
 
   # removes the objective_id from the maps contained with a list of objectives
-  defp strip_ids(objectives) do
+  def strip_ids(objectives) do
     Enum.map(objectives, fn o -> Map.delete(o, :objective_id) end)
   end
 
   # takes the attached objectives in the form of a list of objective ids
   # and converts it to a list of slugs, using all current objectives
-  defp id_to_slug(attached_objectives, all_objectives) do
+  def id_to_slug(attached_objectives, all_objectives) do
     map = Enum.reduce(all_objectives, %{}, fn o, m -> Map.put(m, Map.get(o, :objective_id), o) end)
     Enum.map(attached_objectives, fn o -> Map.get(map, o) |> Map.get(:slug) end)
   end
@@ -277,21 +277,25 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
     }
   end
 
-  # Ensure that the author can access this project
-  defp authorize_user(author, project) do
-    case Accounts.can_access?(author, project) do
-      true -> {:ok}
-      false -> {:error, {:not_authorized}}
-    end
-  end
-
   # Retrieve the latest (current) revision for a resource given the
   # active publication
-  defp get_latest_revision(publication, resource) do
+  def get_latest_revision(publication, resource) do
     mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
     revision = Resources.get_resource_revision!(mapping.revision_id)
 
     Repo.preload(revision, :resource_type)
+  end
+
+  # create a new revision only if the slug will change due to this update
+  defp maybe_create_new_revision(previous, publication, resource, author_id, update) do
+
+    title = Map.get(update, "title", previous.title)
+
+    if (title != previous.title) do
+      create_new_revision(previous, publication, resource, author_id)
+    else
+      previous
+    end
   end
 
   # Creates a new resource revision and updates the publication mapping

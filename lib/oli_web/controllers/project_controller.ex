@@ -42,49 +42,43 @@ defmodule OliWeb.ProjectController do
       nil ->
         render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
     end
-#    params = Map.merge(fetch_objective_mappings_params(conn), %{edit: objective_slug})
-#    render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
   end
-#
-#  def add_sub_objective(conn, %{"project_id" => project_id, "objective_slug" => objective_slug}) do
-#    params = Map.merge(fetch_objective_mappings_params(conn), %{edit: "add_sub_"<>objective_slug})
-#    render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
-#  end
 
   defp fetch_objective_mappings_params(conn) do
     project = conn.assigns.project
     publication = Publishing.get_unpublished_publication(project.slug)
     objective_mappings = Publishing.get_objective_mappings_by_publication(publication.id)
+    changeset = Learning.change_objective(%Learning.Objective{})
+    if Enum.empty?(objective_mappings) do
+      %{title: "Objectives", objective_mappings: [], objective_changeset: changeset, active: :objectives}
+    else
+      # Extract all children references from objectives
+      children_list = objective_mappings
+                      |> Enum.map(fn mapping ->
+        mapping.revision.children
+      end) |> Enum.reduce(fn(children, acc) -> children ++ acc end)
 
-    # Extract all children references from objectives
-    children_list = objective_mappings
-    |> Enum.map(fn mapping ->
-      mapping.revision.children
-    end) |> Enum.reduce(fn(children, acc) -> children ++ acc end)
-
-    # Filter out parent mappings (i.e. objective is a parent if not in children list)
-    parents = objective_mappings |> Enum.reduce([], fn(mapping, acc) ->
-      if Enum.member?(children_list, mapping.revision.id) do
-        acc
-       else
-        [mapping] ++ acc
-       end
-    end)
-
-    # Build parent/children tree structure
-    parents = parents |> Enum.reduce([], fn(x, acc) ->
-      children = objective_mappings |>  Enum.reduce([], fn(mapping, mapping_acc) ->
-        if Enum.member?(x.revision.children, mapping.revision.id) do
-          [mapping] ++ mapping_acc
+      # Filter out parent mappings (i.e. objective is a parent if not in children list)
+      parents = objective_mappings |> Enum.reduce([], fn(mapping, acc) ->
+        if Enum.member?(children_list, mapping.revision.id) do
+          acc
         else
-          mapping_acc
+          [mapping] ++ acc
         end
       end)
-      [%ObjectiveMappingTransfer{mapping: x, children: children}] ++ acc
-    end)
-
-    changeset = Learning.change_objective(%Learning.Objective{})
-    %{title: "Objectives", objective_mappings: parents, objective_changeset: changeset, active: :objectives}
+      # Build parent/children tree structure
+      parents = parents |> Enum.reduce([], fn(x, acc) ->
+        children = objective_mappings |>  Enum.reduce([], fn(mapping, mapping_acc) ->
+          if Enum.member?(x.revision.children, mapping.revision.id) do
+            [mapping] ++ mapping_acc
+          else
+            mapping_acc
+          end
+        end)
+        [%ObjectiveMappingTransfer{mapping: x, children: children}] ++ acc
+      end)
+      %{title: "Objectives", objective_mappings: parents, objective_changeset: changeset, active: :objectives}
+    end
   end
 
   def unpublished(pub), do: pub.published == false
@@ -96,7 +90,6 @@ defmodule OliWeb.ProjectController do
     # container = Oli.Repo.preload(Oli.Resources.get_resource!(container_id), [:resource_revisions])
     # revision = container.resource_revisions
     #   |> Enum.max_by(&(&1.inserted_at), NaiveDateTime)
-    # IO.inspect(revision)
     # pages = Enum.map(revision.children, &(Oli.Resources.get_resource!(&1)))
 
     render conn, "curriculum.html",
@@ -118,7 +111,30 @@ defmodule OliWeb.ProjectController do
   end
 
   def publish(conn, _project_params) do
-    render conn, "publish.html", title: "Publish", active: :publish
+    project = conn.assigns.project
+    latest_published_publication = Publishing.get_latest_published_publication_by_slug!(project.slug)
+    active_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+
+    {has_changes, active_publication_changes} = case latest_published_publication do
+      nil -> {true, nil}
+      _ ->
+        changes = Publishing.diff_publications(latest_published_publication, active_publication)
+          |> (&(:maps.filter fn _, v -> v != :identical end, &1)).()
+        has_changes = Map.values(changes)
+          |> Enum.any?(fn {status, _} -> status != :identical end)
+        {has_changes, changes}
+      end
+
+    render conn, "publish.html", title: "Publish", active: :publish, latest_published_publication: latest_published_publication, active_publication_changes: active_publication_changes, has_changes: has_changes
+  end
+
+  def publish_active(conn, _params) do
+    project = conn.assigns.project
+    Publishing.publish_project(project)
+
+    conn
+    |> put_flash(:info, "Publish Successful!")
+    |> redirect(to: Routes.project_path(conn, :publish, project))
   end
 
   def insights(conn, _project_params) do

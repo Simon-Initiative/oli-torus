@@ -8,12 +8,23 @@ export type ResourceContentFrameProps = {
   label: string,                  // The content label
   onRemove: () => void,           // Callback for removal
   children: any,
+  editingLink?: string,
 };
 
 // Provides a common frame around any resource content editor
 export const ResourceContentFrame = (props: ResourceContentFrameProps) => {
 
-  const { label, onRemove, allowRemoval, children } = props;
+  const { label, onRemove, allowRemoval, children, editingLink } = props;
+  const style = { background: 'transparent', padding: 0, margin: 0, marginRight: '8px', border: 0 };
+  const link = editingLink !== undefined
+    ? (
+        <a
+          style={style}
+          href={editingLink}>
+          <span><i className="fas fa-edit"></i></span>
+        </a>
+      )
+    : null;
 
   return (
     <div className="card" style={ { width: '100%' } }>
@@ -22,6 +33,7 @@ export const ResourceContentFrame = (props: ResourceContentFrameProps) => {
           <div className="flex-grow-1">
             {label}
           </div>
+          {link}
           <CloseButton editMode={allowRemoval} onClick={onRemove}/>
         </div>
       </div>

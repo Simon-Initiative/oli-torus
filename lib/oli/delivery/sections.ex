@@ -40,6 +40,38 @@ defmodule Oli.Delivery.Sections do
   def get_section_by(clauses), do: Repo.get_by(Section, clauses) |> Repo.preload([:publication, :project])
 
   @doc """
+  Gets all sections that use a particular publication
+
+  ## Examples
+
+      iex> get_sections_by_publication("123")
+      [%Section{}, ...]
+
+      iex> get_sections_by_publication("456")
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_sections_by_publication(publication) do
+    from(s in Section, where: s.publication_id == ^publication.id) |> Repo.all()
+  end
+
+  @doc """
+  Gets all sections that use a particular project
+
+  ## Examples
+
+      iex> get_sections_by_project(project)
+      [%Section{}, ...]
+
+      iex> get_sections_by_project(invalid_project)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_sections_by_project(project) do
+    from(s in Section, where: s.project_id == ^project.id) |> Repo.all()
+  end
+
+  @doc """
   Creates a section.
   ## Examples
       iex> create_section(%{field: value})

@@ -25,7 +25,7 @@ defmodule Oli.ResourcesTest do
 
       valid_attrs = Map.put(@valid_attrs, :project_id, project.id)
 
-      {:ok, %{resource: resource, valid_attrs: valid_attrs, project: project, resource_family: resource_family}}
+      {:ok, %{resource: resource, valid_attrs: valid_attrs, project: project, resource_family: resource_family, author: author}}
     end
 
     test "list_resources/0 returns all resources", %{resource: resource} do
@@ -34,6 +34,33 @@ defmodule Oli.ResourcesTest do
 
     test "get_resource!/1 returns the resource with given id", %{resource: resource}  do
       assert Resources.get_resource!(resource.id) == resource
+    end
+
+    test "create_project_resource/2 with valid data creates a new resource for a project and all the necessary constructs", %{author: author, project: project} do
+      resource_type = Resources.list_resource_types() |> hd
+      attrs = %{
+        objectives: [],
+        children: [],
+        content: [],
+        title: "some title",
+      }
+      assert {:ok, %{resource: resource, revision: revision, project: _, family: _, mapping: _} = result} = Resources.create_project_resource(attrs, resource_type, author, project)
+
+      resource_id = resource.id
+      assert %{
+        objectives: [],
+        children: [],
+        content: [],
+        title: "some title",
+        slug: "some_title",
+        resource_id: ^resource_id
+      } = revision
+    end
+
+    test "delete_resource/1 deletes the resource", %{project: project, resource_family: resource_family}  do
+      {:ok, resource} = Resource.changeset(%Resource{}, %{project_id: project.id, family_id: resource_family.id}) |> Repo.insert
+      assert {:ok, %Resource{}} = Resources.delete_resource(resource)
+      assert_raise Ecto.NoResultsError, fn -> Resources.get_resource!(resource.id) end
     end
 
     test "create_new_resource/2 with valid data creates a resource", %{project: project, resource_family: resource_family} do

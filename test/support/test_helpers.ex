@@ -14,6 +14,11 @@ defmodule Oli.TestHelpers do
     DateTime.add(datetime, -(60 * 60 * 24), :second)
   end
 
+  def now() do
+    {:ok, datetime} = DateTime.now("Etc/UTC")
+    datetime
+  end
+
   def author_fixture(attrs \\ %{}) do
     params =
       attrs
@@ -44,6 +49,7 @@ defmodule Oli.TestHelpers do
         timezone: "US/Eastern",
         consumer_key: "test-consumer-key",
         shared_secret: "test-secret",
+        author_id: 1,
       })
 
     {:ok, institution} = Accounts.create_institution(params)

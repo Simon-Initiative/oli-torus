@@ -167,6 +167,23 @@ defmodule Oli.Authoring.Activities do
     Repo.all(from p in ActivityRevision, where: p.slug in ^slugs)
   end
 
+  def get_activity_revision(slug) do
+    Repo.one(from p in ActivityRevision, where: p.slug == ^slug) |> Repo.preload([:activity_type])
+  end
+
+  @doc """
+  Gets a single activity, based on slug.
+  """
+  @spec get_activity_from_slug(String.t) :: any
+  def get_activity_from_slug(slug) do
+    query = from r in Activity,
+          distinct: r.id,
+          join: v in ActivityRevision, on: v.activity_id == r.id,
+          where: v.slug == ^slug,
+          select: r
+    Repo.one(query)
+  end
+
 
   @doc """
   Gets a single activity_revision.
@@ -183,6 +200,7 @@ defmodule Oli.Authoring.Activities do
 
   """
   def get_activity_revision!(id), do: Repo.get!(ActivityRevision, id)
+
 
   @doc """
   Creates a activity_revision.
@@ -278,6 +296,8 @@ defmodule Oli.Authoring.Activities do
 
   """
   def get_registration!(id), do: Repo.get!(Registration, id)
+
+  def get_registration(id), do: Repo.get(Registration, id)
 
   @doc """
   Creates a registration.

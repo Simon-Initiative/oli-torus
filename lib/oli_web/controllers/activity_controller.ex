@@ -1,7 +1,21 @@
 defmodule OliWeb.ActivityController do
   use OliWeb, :controller
 
-  alias Oli.Editing.ActivityEditor
+  alias Oli.Authoring.Editing.ActivityEditor
+
+  import OliWeb.ProjectPlugs
+
+  plug :fetch_project when action in [:edit]
+  plug :authorize_project when action in [:edit]
+
+  def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug, "activity_slug" => activity_slug}) do
+
+    case ActivityEditor.create_context(project_slug, revision_slug, activity_slug, conn.assigns[:current_author]) do
+      {:ok, context} -> render(conn, "edit.html", title: "Activity Editor", script: context.authoringScript, context: Jason.encode!(context))
+      {:error, :not_found} -> render conn, OliWeb.SharedView, "_not_found.html"
+    end
+
+  end
 
   def create(conn, %{"project" => project_slug, "activity_type" => activity_type_slug, "model" => model }) do
 
@@ -16,10 +30,15 @@ defmodule OliWeb.ActivityController do
 
   end
 
-  def update(conn, %{"project" => _project_slug, "activity" => _activity_slug, "model" => _model }) do
+  def update(conn, %{"project" => project_slug, "resource" => resource_slug, "activity" => activity_slug, "update" => update }) do
+    author = conn.assigns[:current_author]
 
-    _author = conn.assigns[:current_author]
-
+    case ActivityEditor.edit(project_slug, resource_slug, activity_slug, author.email, update) do
+      {:ok, %{slug: slug}} -> json conn, %{ "type" => "success", "revisionSlug" => slug}
+      {:error, {:not_found}} -> error(conn, 404, "not found")
+      {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
+      _ -> error(conn, 500, "server error")
+    end
   end
 
   def delete(conn, %{"project" => _project_slug, "activity" => _activity_slug }) do

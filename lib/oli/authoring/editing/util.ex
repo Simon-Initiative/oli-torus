@@ -1,4 +1,4 @@
-defmodule Oli.Editing.Utils do
+defmodule Oli.Authoring.Editing.Utils do
 
   alias Oli.Accounts
 

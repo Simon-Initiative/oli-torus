@@ -1,6 +1,8 @@
 defmodule OliWeb.Router do
   use OliWeb, :router
 
+  import Phoenix.LiveDashboard.Router
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -9,6 +11,10 @@ defmodule OliWeb.Router do
     if Mix.env != :dev, do: plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug Oli.Plugs.SetCurrentUser
+  end
+
+  pipeline :admin do
+    plug Oli.Plugs.EnsureAdmin
   end
 
   pipeline :protected do
@@ -70,6 +76,7 @@ defmodule OliWeb.Router do
     get "/:project_id/objectives", ProjectController, :objectives
     get "/:project_id/curriculum", ProjectController, :curriculum
     get "/:project_id/publish", ProjectController, :publish
+    post "/:project_id/publish", ProjectController, :publish_active
     get "/:project_id/insights", ProjectController, :insights
 
     # Project
@@ -84,9 +91,9 @@ defmodule OliWeb.Router do
     put "/:project_id/objectives/:objective_slug", ObjectiveController, :update
     delete "/:project_id/objectives/:objective_slug", ObjectiveController, :delete
 
-    # Resource
-    get "/:project_id/:revision_slug", ResourceController, :view
-    get "/:project_id/:revision_slug/edit", ResourceController, :edit
+    # Editors
+    get "/:project_id/resource/:revision_slug", ResourceController, :edit
+    get "/:project_id/resource/:revision_slug/activity/:activity_slug", ActivityController, :edit
 
     # Collaborators
     post "/:project_id/collaborators", CollaboratorController, :create
@@ -100,8 +107,8 @@ defmodule OliWeb.Router do
     put "/:project/resource/:resource", ResourceController, :update
 
     post "/:project/activity/:activity_type", ActivityController, :create
-    put "/:project/activity/:activity", ActivityController, :update
-    delete "/:project/activity", ActivityController, :delete
+    put "/:project/resource/:resource/activity/:activity", ActivityController, :update
+    delete "/:project/resource/:resource/activity", ActivityController, :delete
 
     post "/:project/lock/:resource", LockController, :acquire
     delete "/:project/lock/:resource", LockController, :release
@@ -150,6 +157,11 @@ defmodule OliWeb.Router do
     get "/open_and_free", DeliveryController, :list_open_and_free
   end
 
+  scope "/admin", OliWeb do
+    pipe_through [:browser, :protected, :admin]
+    live_dashboard "/dashboard", metrics: OliWeb.Telemetry
+  end
+
   # routes only accessable to developers
   if Mix.env === :dev or Mix.env === :test do
     scope "/dev", OliWeb do
@@ -164,6 +176,7 @@ defmodule OliWeb.Router do
       get "/editor", EditorTestController, :index
 
     end
+
   end
 
 end
