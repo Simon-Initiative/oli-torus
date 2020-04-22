@@ -29,8 +29,17 @@ defmodule Oli.Content.Writers.Writer do
   @callback blockquote(%Context{}, next, %{}) :: [any()]
   @callback a(%Context{}, next, %{}) :: [any()]
 
-  def render(%Context{} = context, %{"type" => "text"} = text, impl) do
-    impl.text(context, text)
+  def render(%Context{} = context, content_list, impl) when is_list(content_list) do
+    Enum.map(content_list, fn content -> render(context, content, impl) end)
+  end
+
+  def render(%Context{} = context, %{"type" => "content", "children" => children}, impl) do
+    Enum.map(children, fn child -> render(context, child, impl) end)
+  end
+
+  @spec render(Oli.Content.Writers.Context.t(), maybe_improper_list | map, any) :: any
+  def render(%Context{} = context, %{"text" => _text} = text_entity, impl) do
+    impl.text(context, text_entity)
   end
 
   def render(%Context{} = context, children, impl) when is_list(children) do
