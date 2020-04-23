@@ -18,7 +18,7 @@ li.flex > * {
   margin-right: 8px;
 }
 #right li {
-  margin: 0;
+  margin: 3px 0;
   padding: 0;
 }
 .link-page {
@@ -33,9 +33,11 @@ li.flex > * {
 }
 </style>
 
-<%# Re-add keyboard reordering? %>
+<%# Wait until live-view to re-add keyboard reordering? %>
 
-<h1>Pages</h1> <%= link "Add New Page", to: Routes.curriculum_path(@conn, :create, @project), method: :post %>
+<h1>Pages</h1>
+<%= link "Add Unscored Page", to: Routes.curriculum_path(@conn, :create, @project, %{"type" => "Unscored"}), method: :post %>
+<%= link "Add Scored Page", to: Routes.curriculum_path(@conn, :create, @project, %{"type" => "Scored"}), method: :post %>
 <small>Drag to change the order that content will be presented to students</small>
 
 <ol id="list">
@@ -47,10 +49,12 @@ li.flex > * {
       id="<%= page.slug %>"
       ondrop="itemDropped(event, <%= index %>)"
     >
-      <i class="material-icons-outlined">assignment</i>
+      <%= case page.resource_type.type do
+        "unscored_page" -> render "icon_unscored_page.html"
+        "scored_page" -> render "icon_scored_page.html"
+      end %>
       <span><%= index %>.</span>
       <%= link page.title, to: Routes.resource_path(@conn, :edit, @project, page.slug), class: "link-page" %>
-      <%= link "Toggle scored/unscored", to: Routes.resource_path(@conn, :update, @project, page.slug), method: :put, class: "link-page" %>
       <%= link "Delete", to: Routes.resource_path(@conn, :delete, @project, page.slug), method: :delete, data: [confirm: "Are you sure?"], class: "link-delete" %>
     </li>
   <% end %>
@@ -95,6 +99,10 @@ li.flex > * {
     let dropTarget = getLi(e.target)
     const data = JSON.parse(event.dataTransfer.getData('text/plain'))
     const droppedItem = document.getElementById(data.id)
+
+    if (data.index === index) {
+      return
+    }
 
     const draggingUp = data.index > index
     if (draggingUp) {

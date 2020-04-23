@@ -13,20 +13,24 @@ defmodule OliWeb.CurriculumController do
       title: "Curriculum")
   end
 
-  def create(conn, _params) do
+  def create(conn, %{"type" => type}) do
     %{ project: project, current_author: author } = conn.assigns
+    resource_type = case type do
+      "Scored" -> Resources.resource_type.scored_page
+      "Unscored" -> Resources.resource_type.unscored_page
+      _ -> Resources.resource_type.unscored_page
+    end
 
     case Resources.create_project_resource(
       %{
         objectives: [],
         children: [],
         content: [],
-        title: "New Page",
-      }, Resources.resource_type.unscored_page, author, project
+        title: "New #{type} Page",
+      }, resource_type, author, project
     ) do
       {:ok, _resource} ->
         conn
-        |> put_flash(:info, "New page created")
         |> redirect(to: Routes.curriculum_path(conn, :index, project))
 
       {:error, %Ecto.Changeset{} = _changeset} ->
@@ -38,7 +42,6 @@ defmodule OliWeb.CurriculumController do
 
   def update(conn, %{"update" => update_params} = params) do
     %{project: project, current_author: author} = conn.assigns
-    IO.inspect(params, label: "update params")
 
     case Resources.update_root_container_children(project, author, update_params) do
       {:ok, _resource} ->

@@ -384,6 +384,7 @@ defmodule Oli.Authoring.Resources do
     project
     |> get_root_container()
     |> get_root_pages(project)
+    |> Enum.map(& Repo.preload(&1, :resource_type))
   end
 
   defp get_root_container(project) do
