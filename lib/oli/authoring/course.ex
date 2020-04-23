@@ -4,7 +4,13 @@ defmodule Oli.Authoring.Course do
   alias Oli.Repo
   alias Oli.Publishing
   alias Oli.Authoring.{Resources, Collaborators}
-  alias Oli.Authoring.Course.{Utils, Project, Family}
+  alias Oli.Authoring.Course.{Utils, Project, Family, ProjectResource}
+
+  def create_project_resource(attrs) do
+    %ProjectResource{}
+    |> ProjectResource.changeset(attrs)
+    |> Repo.insert()
+  end
 
   def list_projects do
     Repo.all(Project)

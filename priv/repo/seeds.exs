@@ -64,18 +64,8 @@ end
 
 # create resource types
 if !Oli.Repo.get_by(Oli.Authoring.Resources.ResourceType, id: 1) do
-  Oli.Repo.insert! %Oli.Authoring.Resources.ResourceType{
-    id: 1,
-    type: "unscored_page"
-  }
-  Oli.Repo.insert! %Oli.Authoring.Resources.ResourceType{
-    id: 2,
-    type: "scored_page"
-  }
-  Oli.Repo.insert! %Oli.Authoring.Resources.ResourceType{
-    id: 3,
-    type: "container"
-  }
+
+  Enum.map(Oli.Resources.ResourceType.get_types(), &Oli.Resources.create_resource_type/1)
 
 end
 
@@ -117,11 +107,11 @@ if Mix.env == :dev do
   {:ok, _project} = Oli.Authoring.Course.create_project("Example Open and Free Course", admin_author)
 
   # add a complete base project and attach the admin user as an author
-  Oli.Seeder.base_project_with_resource()
-    |> Oli.Seeder.add_author(admin_author, :admin_author)
-    |> Oli.Seeder.add_author(test_author, :test_author)
-    |> Oli.Seeder.add_objective("Define and describe something")
-    |> Oli.Seeder.add_objective("Compare and contrast something")
-    |> Oli.Seeder.add_objective("Pick and choose when something")
+  # Oli.Seeder.base_project_with_resource()
+  #  |> Oli.Seeder.add_author(admin_author, :admin_author)
+   # |> Oli.Seeder.add_author(test_author, :test_author)
+   ## |> Oli.Seeder.add_objective("Define and describe something")
+   # |> Oli.Seeder.add_objective("Compare and contrast something")
+  #  |> Oli.Seeder.add_objective("Pick and choose when something")
 
 end

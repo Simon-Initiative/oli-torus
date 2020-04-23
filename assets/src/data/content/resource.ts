@@ -11,7 +11,7 @@ export type ResourceContent = StructuredContent | ActivityReference;
 
 // The full context necessary to operate a resource editing session
 export type ResourceContext = {
-  resourceType: ResourceType,     // Page or assessment?
+  graded: boolean,                // Page or assessment?
   authorEmail: string,            // The current author
   projectSlug: ProjectSlug,       // The current project
   resourceSlug: ResourceSlug,     // The current resource

@@ -1,14 +1,15 @@
-defmodule Oli.Authoring.Editing.ResourceEditor do
+defmodule Oli.Authoring.Editing.PageEditor do
   @moduledoc """
-  This module provides content editing facilities for resources.
+  This module provides content editing facilities for pages.
 
   """
   import Oli.Authoring.Editing.Utils
-  alias Oli.Authoring.{Locks, Course, Resources, Learning}
-  alias Oli.Authoring.Resources.ResourceRevision
-  alias Oli.Publishing
-  alias Oli.Authoring.Activities
-  alias Oli.Authoring.Activities.ActivityRevision
+  alias Oli.Authoring.{Locks, Course}
+  alias Oli.Resources.Revision
+  alias Oli.Resources.Resource
+  alias Oli.Resources
+  alias Oli.Publishing2, as: Publishing
+  alias Oli.Activities
   alias Oli.Accounts
   alias Oli.Repo
 
@@ -19,7 +20,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
   The update parameter is a map containing key-value pairs of the
   attributes of a ResourceRevision that are to be edited. It can
   contain any number of key-value pairs, but the keys must match
-  the schema of `%ResourceRevision{}` struct.
+  the schema of `%Revision{}` struct.
 
   Not acquiring the lock here is considered a failure, as it is
   not an expected condition that a client would encounter. The client
@@ -34,14 +35,14 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
   .`{:error, {:error}}` unknown error
   """
   @spec edit(String.t, String.t, String.t, %{})
-    :: {:ok, %ResourceRevision{}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:lock_not_acquired}} | {:error, {:not_authorized}}
+    :: {:ok, %Revision{}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:lock_not_acquired}} | {:error, {:not_authorized}}
   def edit(project_slug, revision_slug, author_email, update) do
 
     with {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
          {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
-         {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil(),
+         {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
          {:ok, converted_update} <- convert_to_activity_ids(update)
     do
       Repo.transaction(fn ->
@@ -146,11 +147,11 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
   """
   def create_context(project_slug, revision_slug, author) do
 
-    editor_map = Oli.Authoring.Activities.create_registered_activity_map()
+    editor_map = Oli.Activities.create_registered_activity_map()
 
     with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
-         {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil(),
-         {:ok, objectives} <- Publishing.get_published_objectives(publication.id) |> trap_nil(),
+         {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
+         {:ok, objectives} <- Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, %{content: content} = revision} <- get_latest_revision(publication, resource) |> trap_nil(),
          {:ok, objectives_without_ids} <- strip_ids(objectives) |> trap_nil(),
          {:ok, attached_objectives} <- id_to_slug(revision.objectives, objectives) |> trap_nil(),
@@ -165,7 +166,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
   # From the array of maps found in a resource revision content, produce a
   # map of the content of the activity revisions that pertain to the
   # current publication
-  defp create_activities_map(publication_id, content) do
+  defp create_activities_map(publication_id, %{ "model" => content}) do
 
     # Now see if we even have any activities that need to be mapped
     found_activities = Enum.filter(content, fn c -> Map.get(c, "type") == "activity-reference" end)
@@ -179,7 +180,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
       # find the published revisions for these activities, and convert them
       # to a form suitable for front-end consumption
       {:ok, Publishing.get_published_activity_revisions(publication_id, found_activities)
-        |> Enum.map(fn %ActivityRevision{activity_type_id: activity_type_id, slug: slug, content: content} -> %{ type: "activity", typeSlug: Map.get(id_to_slug, activity_type_id), activitySlug: slug, model: content} end)
+        |> Enum.map(fn %Revision{activity_type_id: activity_type_id, slug: slug, content: content} -> %{ type: "activity", typeSlug: Map.get(id_to_slug, activity_type_id), activitySlug: slug, model: content} end)
         |> Enum.reduce(%{}, fn e, m -> Map.put(m, Map.get(e, :activitySlug), e) end)}
     else
       {:ok, %{}}
@@ -190,15 +191,15 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
   # Reverse references found in a resource update for activites. They will
   # come from the client as activity revision slugs, we store them internally
   # as activity ids.
-  defp convert_to_activity_ids(%{ "content" => content} = update) do
+  defp convert_to_activity_ids(%{ "content" => %{ "model" => content}} = update) do
 
     found_activities = Enum.filter(content, fn c -> Map.get(c, "type") == "activity-reference" end)
       |> Enum.map(fn c -> Map.get(c, "activitySlug") end)
 
     slug_to_id = case found_activities do
       [] -> %{}
-      activities -> Activities.get_activity_revisions(activities)
-        |> Enum.reduce(%{}, fn e, m -> Map.put(m, Map.get(e, :slug), Map.get(e, :activity_id)) end)
+      activity_slugs -> Oli.Resources.map_resource_ids_from_slugs(activity_slugs)
+        |> Enum.reduce(%{}, fn e, m -> Map.put(m, Map.get(e, :slug), Map.get(e, :resource_id)) end)
     end
 
     if Enum.all?(found_activities, fn slug -> Map.has_key?(slug_to_id, slug) end) do
@@ -211,7 +212,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
         end
       end
 
-      {:ok, Map.put(update, "content", Enum.map(content, convert))}
+      {:ok, Map.put(update, "content", %{ "model" => Enum.map(content, convert) })}
     else
       {:error, :not_found}
     end
@@ -225,7 +226,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
   end
 
   # For the activity ids found in content, convert them to activity revision slugs
-  defp convert_to_activity_slugs(content, publication_id) do
+  defp convert_to_activity_slugs(%{ "model" => content}, publication_id) do
 
     found_activities = Enum.filter(content, fn c -> Map.get(c, "type") == "activity-reference" end)
       |> Enum.map(fn c -> Map.get(c, "activity_id") end)
@@ -233,7 +234,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
     id_to_slug = case found_activities do
       [] -> %{}
       activities -> Publishing.get_published_activity_revisions(publication_id, activities)
-        |> Enum.reduce(%{}, fn e, m -> Map.put(m, Map.get(e, :activity_id), Map.get(e, :slug)) end)
+        |> Enum.reduce(%{}, fn e, m -> Map.put(m, Map.get(e, :resource_id), Map.get(e, :slug)) end)
     end
 
     convert = fn c ->
@@ -245,7 +246,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
       end
     end
 
-    Enum.map(content, convert)
+    %{ "model" => Enum.map(content, convert)}
 
   end
 
@@ -271,7 +272,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
       objectives: objectives,
       allObjectives: all_objectives,
       title: revision.title,
-      resourceType: revision.resource_type.type,
+      graded: revision.graded,
       content: convert_to_activity_slugs(revision.content, publication_id),
       activities: activities
     }
@@ -280,10 +281,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
   # Retrieve the latest (current) revision for a resource given the
   # active publication
   def get_latest_revision(publication, resource) do
-    mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
-    revision = Resources.get_resource_revision!(mapping.revision_id)
-
-    Repo.preload(revision, :resource_type)
+    Publishing.get_published_revision(publication.id, resource.id)
   end
 
   # create a new revision only if the slug will change due to this update
@@ -301,8 +299,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
   # Creates a new resource revision and updates the publication mapping
   def create_new_revision(previous, publication, resource, author_id) do
 
-    {:ok, revision} = Resources.create_resource_revision(%{
-      children: previous.children,
+    {:ok, revision} = Resources.create_revision(%{
       content: previous.content,
       objectives: previous.objectives,
       deleted: previous.deleted,
@@ -311,7 +308,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
       author_id: author_id,
       resource_id: previous.resource_id,
       previous_revision_id: previous.id,
-      resource_type_id: previous.resource_type_id
+      resource_type_id: previous.resource_type_id,
     })
 
     mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
@@ -328,7 +325,9 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
       objectives -> Map.put(update, "objectives", Learning.get_ids_from_objective_slugs(objectives))
     end
 
-    {:ok, updated} = Resources.update_resource_revision(revision, converted_back_to_ids)
+
+    {:ok, updated} = Oli.Resources.update_revision(revision, converted_back_to_ids)
+
     updated
   end
 

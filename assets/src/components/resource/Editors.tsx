@@ -14,7 +14,7 @@ export type EditorsProps = {
   content: Immutable.List<ResourceContent>,     // Content of the resource
   onEdit: (content: Immutable.List<ResourceContent>) => void,
   editorMap: ActivityEditorMap,   // Map of activity types to activity elements
-  resourceType: ResourceType,
+  graded: boolean,
   activities: Immutable.Map<string, Activity>,
   projectSlug: ProjectSlug,
   resourceSlug: ResourceSlug,
@@ -24,7 +24,7 @@ export type EditorsProps = {
 // The list of editors
 export const Editors = (props: EditorsProps) => {
 
-  const { editorMap, editMode, resourceType,
+  const { editorMap, editMode, graded,
     content, activities, projectSlug, resourceSlug } = props;
 
   // Factory for creating top level editors, for things like structured
@@ -40,7 +40,8 @@ export const Editors = (props: EditorsProps) => {
         editMode={editMode}
         content={content}
         onEdit={onEdit}
-        toolbarItems={getToolbarForResourceType(resourceType)}/>, 'Content'];
+        toolbarItems={getToolbarForResourceType(
+          graded ? ResourceType.assessment : ResourceType.page)}/>, 'Content'];
     }
 
     const unsupported : EditorDesc = {
