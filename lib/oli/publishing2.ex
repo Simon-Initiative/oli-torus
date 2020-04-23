@@ -268,6 +268,17 @@ defmodule Oli.Publishing do
     |> Repo.all()
   end
 
+  def get_objective_mappings_by_publication(publication_id) do
+
+    objective = Oli.Resources.ResourceType.get_id_by_type("objective")
+
+    Repo.all(from mapping in PublishedResource,
+      join: rev in Oli.Resources.Revision, on: mapping.revision_id == rev.id,
+      where: rev.resource_type_id == ^objective and mapping.publication_id == ^publication_id,
+      select: rev) |> Repo.preload([:resource, :revision])
+
+  end
+
   @doc """
   Gets a single resource_mapping.
   Raises `Ecto.NoResultsError` if the Resource mapping does not exist.

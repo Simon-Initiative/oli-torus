@@ -98,7 +98,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   def fetch_objective_mappings_params(project) do
 
     publication = Publishing.get_unpublished_publication(project.slug)
-    objective_mappings = Publishing.get_resource_mappings_by_publication(publication.id)
+    objective_mappings = Publishing.get_objective_mappings_by_publication(publication.id)
     changeset = Oli.Resources.change_revision(%Oli.Resources.Revision{})
 
     if Enum.empty?(objective_mappings) do
