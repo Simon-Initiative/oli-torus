@@ -61,7 +61,6 @@ li.flex > * {
 </ol>
 
 <script>
-  const form = document.getElementById("form-curriculum")
   const list = document.getElementById('list')
 
   function getLi(target) {
