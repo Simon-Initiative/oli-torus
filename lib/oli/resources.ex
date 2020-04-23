@@ -2,6 +2,9 @@ defmodule Oli.Resources do
   import Ecto.Query, warn: false
   alias Oli.Repo
 
+  # Resources only know about Resources.  Resources
+  # should not have a dependency on a Project or Publication
+  # or Page or Container or any other higher level construct
   alias Oli.Resources.Resource
   alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
@@ -72,6 +75,24 @@ defmodule Oli.Resources do
     |> Resource.changeset(%{
     })
     |> Repo.insert()
+  end
+
+  @doc """
+  Creates a new resource and revision pair, returning both newly
+  created constructs.
+  ## Examples
+      iex> create_resource_and_revision(%{title: "title", resource_type_id: 1})
+      {:ok, %{%Resource{}, %Revision{}}
+      iex> create_resource_and_revision(resource, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_resource_and_revision(attrs) do
+    {:ok, resource} = create_new_resource()
+
+    {:ok, revision} = Map.merge(attrs, %{ resource_id: resource.id })
+      |> create_revision()
+
+    {:ok, %{resource: resource, revision: revision}}
   end
 
 
@@ -202,10 +223,30 @@ defmodule Oli.Resources do
       iex> update_revision(revision, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
-  def update_revision(%Revision{} = revision, attrs) do
-    revision
+  def update_revision(revision, attrs) do
+    Oli.Resources.Utils.to_revision(revision)
     |> Revision.changeset(attrs)
     |> Repo.update()
+  end
+
+  def create_revision_from_previous(previous_revision, attrs) do
+
+    attrs = Map.merge(%{
+      content: previous_revision.content,
+      objectives: previous_revision.objectives,
+      children: previous_revision.children,
+      deleted: previous_revision.deleted,
+      slug: previous_revision.slug,
+      title: previous_revision.title,
+      graded: previous_revision.graded,
+      author_id: previous_revision.author_id,
+      resource_id: previous_revision.resource_id,
+      previous_revision_id: previous_revision.id,
+      resource_type_id: previous_revision.resource_type_id,
+      activity_type_id: previous_revision.activity_type_id
+    }, attrs)
+
+    Resources.create_revision(attrs)
   end
 
   @doc """
@@ -214,8 +255,9 @@ defmodule Oli.Resources do
       iex> change_revision(revision)
       %Ecto.Changeset{source: %Revision{}}
   """
-  def change_revision(%Revision{} = revision) do
-    Revision.changeset(revision, %{})
+  def change_revision(revision) do
+    Oli.Resources.Utils.to_revision(revision)
+    |> Revision.changeset(%{})
   end
 
 end

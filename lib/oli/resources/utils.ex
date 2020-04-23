@@ -7,8 +7,86 @@ defmodule Oli.Resources.Utils do
   alias Oli.Resources.Objective
   alias Oli.Resources.Activity
 
-  def to_revision(wrapper) do
-    Map.merge(%Oli.Resources.Revision{}, wrapper)
+  def to_revision(%Revision{} = revision), do: revision
+
+  def to_revision(%Activity{} = wrapper) do
+    %Revision{
+      id: wrapper.id,
+      title: wrapper.title,
+      slug: wrapper.slug,
+      deleted: wrapper.deleted,
+      content: wrapper.content,
+      children: [],
+      graded: false,
+      objectives: wrapper.objectives,
+      resource_id: wrapper.resource_id,
+      resource_type_id: wrapper.resource_type_id,
+      author_id: wrapper.author_id,
+      previous_revision_id: wrapper.previous_revision_id,
+      activity_type_id: wrapper.activity_type_id,
+      inserted_at: wrapper.inserted_at,
+      updated_at: wrapper.updated_at
+    }
+  end
+
+  def to_revision(%Page{} = wrapper) do
+    %Revision{
+      id: wrapper.id,
+      title: wrapper.title,
+      slug: wrapper.slug,
+      deleted: wrapper.deleted,
+      content: wrapper.content,
+      children: [],
+      graded: wrapper.graded,
+      objectives: wrapper.objectives,
+      resource_id: wrapper.resource_id,
+      resource_type_id: wrapper.resource_type_id,
+      author_id: wrapper.author_id,
+      previous_revision_id: wrapper.previous_revision_id,
+      activity_type_id: nil,
+      inserted_at: wrapper.inserted_at,
+      updated_at: wrapper.updated_at
+    }
+  end
+
+  def to_revision(%Container{} = wrapper) do
+    %Revision{
+      id: wrapper.id,
+      title: wrapper.title,
+      slug: wrapper.slug,
+      deleted: wrapper.deleted,
+      content: %{},
+      children: wrapper.children,
+      graded: false,
+      objectives: wrapper.objectives,
+      resource_id: wrapper.resource_id,
+      resource_type_id: wrapper.resource_type_id,
+      author_id: wrapper.author_id,
+      previous_revision_id: wrapper.previous_revision_id,
+      activity_type_id: nil,
+      inserted_at: wrapper.inserted_at,
+      updated_at: wrapper.updated_at
+    }
+  end
+
+  def to_revision(%Objective{} = wrapper) do
+    %Revision{
+      id: wrapper.id,
+      title: wrapper.title,
+      slug: wrapper.slug,
+      deleted: wrapper.deleted,
+      content: %{},
+      children: wrapper.children,
+      graded: false,
+      objectives: %{},
+      resource_id: wrapper.resource_id,
+      resource_type_id: wrapper.resource_type_id,
+      author_id: wrapper.author_id,
+      previous_revision_id: wrapper.previous_revision_id,
+      activity_type_id: nil,
+      inserted_at: wrapper.inserted_at,
+      updated_at: wrapper.updated_at
+    }
   end
 
   def to_wrapper(%Revision{resource_type_id: resource_type_id} = revision) do

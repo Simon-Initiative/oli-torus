@@ -14,7 +14,9 @@ defmodule Oli.Resources.Page do
     :previous_revision_id,
     :content,
     :objectives,
-    :graded
+    :graded,
+    :inserted_at,
+    :updated_at,
   ]
 
   def from_revision(%Oli.Resources.Revision{} = revision) do
@@ -30,6 +32,8 @@ defmodule Oli.Resources.Page do
       content: revision.content,
       objectives: Map.get(revision.objectives, revision.resource_id),
       graded: revision.graded,
+      inserted_at: revision.inserted_at,
+      updated_at: revision.updated_at
     }
   end
 

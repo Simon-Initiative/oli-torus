@@ -14,7 +14,9 @@ defmodule Oli.Resources.Activity do
     :previous_revision_id,
     :content,
     :objectives,
-    :activity_type_id
+    :activity_type_id,
+    :inserted_at,
+    :updated_at,
   ]
 
   def from_revision(%Oli.Resources.Revision{} = revision) do
@@ -30,6 +32,8 @@ defmodule Oli.Resources.Activity do
       content: revision.content,
       objectives: revision.objectives,
       activity_type_id: revision.activity_type_id,
+      inserted_at: revision.inserted_at,
+      updated_at: revision.updated_at
     }
   end
 

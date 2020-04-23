@@ -264,6 +264,30 @@ defmodule Oli.Publishing2 do
     Repo.one!(from p in PublishedResource, where: p.publication_id == ^publication_id and p.resource_id == ^resource_id)
   end
 
+  def get_resource_mapping(publication_id, resource_id) do
+    Repo.one(from p in PublishedResource, where: p.publication_id == ^publication_id and p.resource_id == ^resource_id)
+  end
+
+  @doc """
+  Creates a new, or updates the existing published resource
+  for the given publication and revision.
+  """
+  def upsert_published_resource(%Publication{} = publication, revision) do
+    case get_resource_mapping(publication.id, revision.resource_id) do
+      nil -> create_resource_mapping(%{publication_id: publication.id, resource_id: revision.resource_id, revision_id: revision.id})
+      mapping -> update_resource_mapping(mapping, %{resource_id: revision.resource_id, revision_id: revision.id})
+    end
+  end
+
+  def publish_new_revision(previous_revision, changes, publication, author_id) do
+
+    changes = Map.merge(changes, %{author_id: author_id})
+
+    {:ok, revision} = Oli.Resources.create_revision_from_previous(previous_revision, changes)
+    {:ok, _} = upsert_published_resource(publication, revision)
+
+    revision
+  end
 
   @doc """
   Creates a resource_mapping.

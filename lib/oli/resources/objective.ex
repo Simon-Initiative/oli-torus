@@ -13,6 +13,8 @@ defmodule Oli.Resources.Objective do
     :author_id,
     :previous_revision_id,
     :children,
+    :inserted_at,
+    :updated_at,
   ]
 
   def from_revision(%Oli.Resources.Revision{} = revision) do
@@ -26,6 +28,8 @@ defmodule Oli.Resources.Objective do
       author_id: revision.author_id,
       previous_revision_id: revision.previous_revision_id,
       children: revision.children,
+      inserted_at: revision.inserted_at,
+      updated_at: revision.updated_at
     }
   end
 

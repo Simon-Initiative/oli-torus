@@ -15,6 +15,8 @@ defmodule Oli.Resources.Container do
     :content,
     :objectives,
     :children,
+    :inserted_at,
+    :updated_at,
   ]
 
   def from_revision(%Oli.Resources.Revision{} = revision) do
@@ -30,6 +32,8 @@ defmodule Oli.Resources.Container do
       content: revision.content,
       objectives: Map.get(revision.objectives, revision.resource_id),
       children: revision.children,
+      inserted_at: revision.inserted_at,
+      updated_at: revision.updated_at
     }
   end
 
