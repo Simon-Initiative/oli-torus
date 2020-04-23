@@ -68,7 +68,7 @@ defmodule Oli.ResourcesTest do
     test "list_all_pages(project)", %{project: project, revision: revision} do
       pages = Resources.list_all_pages(project)
       refute Enum.empty?(pages)
-      assert Enum.find(pages, & &1 == revision)
+      assert Enum.find(pages, & &1.id == revision.id)
     end
 
   end

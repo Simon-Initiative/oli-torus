@@ -12,11 +12,11 @@ defmodule OliWeb.CurriculumControllerTest do
 
   describe "create page" do
     test "redirects back to curriculum with new page", %{conn: conn, project: project} do
-      conn = post(conn, Routes.curriculum_path(conn, :create, project))
+      conn = post(conn, Routes.curriculum_path(conn, :create, project, %{"type" => "Unscored"}))
       assert redirected_to(conn) == Routes.curriculum_path(conn, :index, project)
 
       conn = get(conn, Routes.curriculum_path(conn, :index, project))
-      assert html_response(conn, 200) =~ "New Page"
+      assert html_response(conn, 200) =~ "Pages"
     end
 
   end

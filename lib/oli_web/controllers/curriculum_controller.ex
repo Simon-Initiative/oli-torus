@@ -40,7 +40,7 @@ defmodule OliWeb.CurriculumController do
     end
   end
 
-  def update(conn, %{"update" => update_params} = params) do
+  def update(conn, %{"update" => update_params}) do
     %{project: project, current_author: author} = conn.assigns
 
     case Resources.update_root_container_children(project, author, update_params) do
