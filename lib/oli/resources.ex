@@ -8,7 +8,6 @@ defmodule Oli.Resources do
   alias Oli.Resources.Resource
   alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
-  alias Oli.Resources
 
   @doc """
   Returns the list of resources.

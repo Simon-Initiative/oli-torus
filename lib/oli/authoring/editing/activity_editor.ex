@@ -153,12 +153,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   end
 
-  # Retrieve the latest (current) revision for a resource given the
-  # active publication
-  def get_latest_revision(publication_id, resource_id) do
-    Publishing.get_published_revision(publication_id, resource_id)
-    |> Repo.preload([:activity_type])
-  end
+
 
   @doc """
   Creates the context necessary to power a client side activity editor,
@@ -201,10 +196,11 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end
   end
 
-
-  def get_latest_revision(publication_id, activity_id) do
-    Publishing.get_published_revision(publication_id, activity_id)
-      |> Repo.preload(:activity_type)
+  # Retrieve the latest (current) revision for a resource given the
+  # active publication
+  def get_latest_revision(publication_id, resource_id) do
+    Publishing.get_published_revision(publication_id, resource_id)
+    |> Repo.preload([:activity_type])
   end
 
   # Find the next and previous 'sibling' activities to the activity

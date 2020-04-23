@@ -35,9 +35,10 @@ defmodule Oli.Resources.Objective do
 
   def create_new(attrs) do
 
-    {:ok, resource} = Resources.create_resource()
+    {:ok, resource} = Resources.create_new_resource()
 
     with_type = Map.put(attrs, :resource_type_id, @type_id)
+      |> Map.put(:resource_id, resource.id)
     {:ok, revision} = Resources.create_revision(with_type)
 
     {:ok, from_revision(revision)}

@@ -6,7 +6,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
   import Oli.Authoring.Editing.Utils
   alias Oli.Authoring.{Locks, Course}
   alias Oli.Resources.Revision
-  alias Oli.Resources.Resource
   alias Oli.Resources
   alias Oli.Publishing
   alias Oli.Activities
@@ -93,7 +92,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
          {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
-         {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil()
+         {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil()
     do
       case Locks.acquire(publication.id, resource.id, author.id) do
 
@@ -129,7 +128,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
          {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
-         {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil()
+         {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil()
     do
       case Locks.release(publication.id, resource.id, author.id) do
         {:error} -> {:error, {:error}}
