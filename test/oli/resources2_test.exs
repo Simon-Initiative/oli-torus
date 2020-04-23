@@ -14,7 +14,7 @@ defmodule Oli.Resources.ResourcesTest do
     end
 
     test "list_resources/0 returns all resources", _ do
-      assert length(Resources.list_resources()) == 1
+      assert length(Resources.list_resources()) == 3
     end
 
     test "get_resource!/1 returns the resource with given id", %{container_resource: container_resource}  do
