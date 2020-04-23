@@ -8,6 +8,7 @@ defmodule Oli.Resources do
   alias Oli.Resources.Resource
   alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
+  alias Oli.Resources
 
   @doc """
   Returns the list of resources.
@@ -246,7 +247,7 @@ defmodule Oli.Resources do
       activity_type_id: previous_revision.activity_type_id
     }, attrs)
 
-    Resources.create_revision(attrs)
+    create_revision(attrs)
   end
 
   @doc """

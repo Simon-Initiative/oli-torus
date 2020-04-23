@@ -5,41 +5,37 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   the items within a container.
 
   """
-  import Oli.Authoring.Editing.Utils
-  alias Oli.Authoring.{Locks, Course}
+
   alias Oli.Resources.Revision
-  alias Oli.Resources.Resource
-  alias Oli.Resources.ResourceType
-  alias Oli.Resources
   alias Oli.Publishing2, as: Publishing
-  alias Oli.Activities
-  alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Authoring.Course.Project
   alias Oli.Repo
 
+  def list_all_pages(%Project{} = project) do
+    root_resource = get_root_container(project)
+    Publishing.get_unpublished_revisions(project, root_resource.children)
+  end
+
   def add_new(
-    %{objectives: _, children: _, content: _, title: title} = attrs,
-    %ResourceType{} = resource_type,
+    %{objectives: _, children: _, content: _, title: _} = attrs,
     %Author{} = author,
     %Project{} = project
   ) do
 
     get_root_container(project)
-    |> add_new(attrs, resource_type, author, project)
+    |> add_new(attrs, author, project)
   end
 
   def add_new(
     %Revision{} = container,
-    %{objectives: _, children: _, content: _, title: title} = attrs,
-    %ResourceType{} = resource_type,
+    %{objectives: _, children: _, content: _, title: _} = attrs,
     %Author{} = author,
     %Project{} = project
   ) do
 
     attrs = Map.merge(attrs, %{
       author_id: author.id,
-      resource_type_id: resource_type.id
     })
 
     with {:ok, %{resource: resource, revision: revision}} <- Oli.Authoring.Course.create_and_attach_resource(project, attrs),
@@ -61,7 +57,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     end
   end
 
-  def append_to_container(container, revision_to_attach, publication, author) do
+  def append_to_container(container, publication, revision_to_attach, author) do
     attrs = %{
       children: [revision_to_attach.resource_id | container.children],
       author_id: author.id
@@ -71,7 +67,6 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
     {:ok, revision}
   end
-
 
   defp get_root_container(project) do
     project

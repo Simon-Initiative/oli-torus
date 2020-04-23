@@ -24,6 +24,26 @@ defmodule Oli.Publishing2 do
       select: rev) |> Repo.preload(:activity_type)
   end
 
+  # For a project, return the all the current revisions associated
+  # with the unpublished publication for a list of resource_ids
+  def get_unpublished_revisions(project, resource_ids) do
+
+    project_id = project.id
+
+    revisions = Repo.all(from m in Oli.Publishing.PublishedResource,
+      join: rev in Oli.Resources.Revision, on: rev.id == m.revision_id,
+      join: p in Oli.Publishing.Publication, on: p.id == m.publication_id,
+      where: p.published == false and m.resource_id in ^resource_ids and p.project_id == ^project_id,
+      select: rev)
+
+    # order them according to the resource_ids
+    map = Enum.reduce(revisions, %{}, fn e, m -> Map.put(m, e.resource_id, e) end)
+    Enum.map(resource_ids, fn resource_id -> Map.get(map, resource_id) end)
+
+  end
+
+
+
   @doc """
   Returns the list of publications.
   ## Examples
