@@ -162,4 +162,9 @@ defmodule Oli.TestHelpers do
     conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
     {:ok, conn: conn, author: author, project: project, objective_revision: objective_revision}
   end
+
+  def read_json_file(filename) do
+    with {:ok, body} <- File.read(filename),
+         {:ok, json} <- Poison.decode(body), do: {:ok, json}
+  end
 end
