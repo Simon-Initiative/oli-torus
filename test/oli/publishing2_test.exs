@@ -2,7 +2,7 @@ defmodule Oli.PublishingTest do
   use Oli.DataCase
 
   alias Oli.Authoring.Course
-  alias Oli.Publishing2, as: Publishing
+  alias Oli.Publishing
   alias Oli.Publishing.Publication
   alias Oli.Resources
   alias Oli.Delivery.Sections

@@ -3,7 +3,7 @@ defmodule Oli.EditingTest do
 
   alias Oli.Resources
   alias Oli.Authoring.Editing.PageEditor
-  alias Oli.Publishing2, as: Publishing
+  alias Oli.Publishing
   alias Oli.Accounts.Author
   alias Oli.Accounts.SystemRole
   alias Oli.Utils.Time

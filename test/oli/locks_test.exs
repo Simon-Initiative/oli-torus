@@ -2,7 +2,7 @@ defmodule Oli.LocksTest do
   use Oli.DataCase
 
   alias Oli.Authoring.Locks
-  alias Oli.Publishing2, as: Publishing
+  alias Oli.Publishing
 
   describe "locks" do
 

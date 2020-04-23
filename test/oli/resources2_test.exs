@@ -1,11 +1,7 @@
 defmodule Oli.Resources.ResourcesTest do
   use Oli.DataCase
 
-  alias Oli.Accounts.{SystemRole, Institution, Author}
-  alias Oli.Authoring.Course.{Project, Family}
-  alias Oli.Publishing.Publication
   alias Oli.Resources
-  alias Oli.Resources.{Resource, Revision}
 
   describe "resources" do
 

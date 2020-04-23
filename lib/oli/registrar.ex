@@ -1,6 +1,6 @@
 defmodule Oli.Registrar do
 
-  alias Oli.Authoring.Activities
+  alias Oli.Activities
   alias Oli.Activities.Manifest
 
   def register_local_activities() do

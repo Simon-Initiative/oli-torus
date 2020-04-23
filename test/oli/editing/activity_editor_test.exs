@@ -2,7 +2,6 @@ defmodule Oli.ActivityEditingTest do
   use Oli.DataCase
 
   alias Oli.Authoring.Editing.{ResourceContext, PageEditor, ActivityEditor}
-  alias Oli.Authoring.Activities
   alias Oli.Resources
 
   describe "activity editing" do

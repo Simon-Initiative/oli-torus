@@ -23,7 +23,7 @@ defmodule Oli.Resources.ResourceType do
   def get_id_by_type("objective"), do: Map.get(@by_type, "objective")
 
 
-  schema "resource_types2" do
+  schema "resource_types" do
     field :type, :string
 
     timestamps()

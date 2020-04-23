@@ -88,12 +88,16 @@ defmodule Oli.Resources do
       {:error, %Ecto.Changeset{}}
   """
   def create_resource_and_revision(attrs) do
-    {:ok, resource} = create_new_resource()
 
-    {:ok, revision} = Map.merge(attrs, %{ resource_id: resource.id })
-      |> create_revision()
+    case create_new_resource() do
+      {:ok, resource} -> case Map.merge(attrs, %{ resource_id: resource.id })
+        |> create_revision() do
+          {:ok, revision} -> {:ok, %{resource: resource, revision: revision}}
+          error -> error
+        end
+      error -> error
+    end
 
-    {:ok, %{resource: resource, revision: revision}}
   end
 
 

@@ -22,10 +22,13 @@ defmodule Oli.Authoring.Course do
 
 
   def create_and_attach_resource(project, attrs) do
-    {:ok, %{resource: resource, revision: revision}} = Oli.Resources.create_resource_and_revision(attrs)
-    {:ok, project_resource} = attach_to_project(resource, project)
-
-    {:ok, %{resource: resource, revision: revision, project_resource: project_resource}}
+    with {:ok, %{resource: resource, revision: revision}} <- Oli.Resources.create_resource_and_revision(attrs),
+        {:ok, project_resource} = attach_to_project(resource, project)
+    do
+      {:ok, %{resource: resource, revision: revision, project_resource: project_resource}}
+    else
+      error -> error
+    end
   end
 
   def attach_to_project(%{resource: resource}, project) do

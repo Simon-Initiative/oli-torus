@@ -63,14 +63,14 @@ if !Oli.Repo.get_by(Oli.Delivery.Sections.SectionRole, id: 1) do
 end
 
 # create resource types
-if !Oli.Repo.get_by(Oli.Authoring.Resources.ResourceType, id: 1) do
+if !Oli.Repo.get_by(Oli.Resources.ResourceType, id: 1) do
 
   Enum.map(Oli.Resources.ResourceType.get_types(), &Oli.Resources.create_resource_type/1)
 
 end
 
 # Seed the database with the locally implemented activity types
-if Enum.empty?(Oli.Authoring.Activities.list_activity_registrations()) do
+if Enum.empty?(Oli.Activities.list_activity_registrations()) do
   Oli.Registrar.register_local_activities()
 end
 
