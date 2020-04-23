@@ -8,7 +8,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Resources.Revision
   alias Oli.Resources.Resource
   alias Oli.Resources
-  alias Oli.Publishing2, as: Publishing
+  alias Oli.Publishing
   alias Oli.Activities
   alias Oli.Accounts
   alias Oli.Repo

@@ -28,7 +28,7 @@ defmodule Oli.Authoring.Locks do
 
   """
 
-  alias Oli.Publishing2, as: Publishing
+  alias Oli.Publishing
 
   # Locks that are not updated after 10 minutes are considered to be expired
   @ttl 10 * 60

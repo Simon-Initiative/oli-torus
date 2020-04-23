@@ -7,7 +7,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   """
 
   alias Oli.Resources.Revision
-  alias Oli.Publishing2, as: Publishing
+  alias Oli.Publishing
   alias Oli.Accounts.Author
   alias Oli.Authoring.Course.Project
   alias Oli.Repo

@@ -1,4 +1,4 @@
-defmodule Oli.Publishing2 do
+defmodule Oli.Publishing do
 
   import Ecto.Query, warn: false
   alias Oli.Repo
@@ -7,7 +7,6 @@ defmodule Oli.Publishing2 do
   alias Oli.Accounts.Author
   alias Oli.Delivery.Sections
   alias Oli.Publishing.{Publication, PublishedResource}
-  alias Oli.Authoring.Activities.ActivityRevision
 
 
   @doc """

@@ -2,7 +2,7 @@ defmodule Oli.Authoring.Course do
 
   import Ecto.Query, warn: false
   alias Oli.Repo
-  alias Oli.Publishing2, as: Publishing
+  alias Oli.Publishing
   alias Oli.Authoring.{Collaborators}
   alias Oli.Authoring.Course.{Utils, Project, Family, ProjectResource}
 

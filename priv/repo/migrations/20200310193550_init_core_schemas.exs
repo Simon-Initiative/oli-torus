@@ -7,11 +7,6 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :type, :string
     end
 
-    create table(:resource_types2) do
-      timestamps()
-      add :type, :string
-    end
-
     create table(:system_roles) do
       timestamps()
       add :type, :string
@@ -109,42 +104,15 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       timestamps()
     end
 
-    create table(:resource_families) do
-      timestamps()
-    end
-
     create table(:resources) do
-      add :family_id, references(:resource_families)
-      add :project_id, references(:projects)
       timestamps()
     end
-
-    create table(:resources2) do
-      timestamps()
-    end
-
-
-    create table(:resource_revisions) do
-      add :title, :string
-      add :slug, :string
-      add :content, {:array, :map}
-      add :children, {:array, :id}
-      add :objectives, {:array, :id}
-      add :deleted, :boolean, default: false, null: false
-      add :author_id, references(:authors)
-      add :resource_id, references(:resources)
-      add :resource_type_id, references(:resource_types)
-      add :previous_revision_id, references(:resource_revisions)
-
-      timestamps()
-    end
-    create unique_index(:resource_revisions, [:slug], name: :index_slug_resources)
 
     create table(:publications) do
       add :description, :string
       add :published, :boolean, default: false, null: false
       add :open_and_free, :boolean, default: false, null: false
-      add :root_resource_id, references(:resources2)
+      add :root_resource_id, references(:resources)
       add :project_id, references(:projects)
       timestamps()
     end
@@ -184,7 +152,6 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
     create unique_index(:activity_registrations, [:authoring_script], name: :index_authoring_script_registrations)
 
 
-
     create table(:revisions) do
       add :title, :string
       add :slug, :string
@@ -194,8 +161,8 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :deleted, :boolean, default: false, null: false
       add :graded, :boolean, default: false, null: false
       add :author_id, references(:authors)
-      add :resource_id, references(:resources2)
-      add :resource_type_id, references(:resource_types2)
+      add :resource_id, references(:resources)
+      add :resource_type_id, references(:resource_types)
       add :previous_revision_id, references(:revisions)
       add :activity_type_id, references(:activity_registrations)
 
@@ -203,81 +170,8 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
     end
     create index(:revisions, [:slug], name: :index_slug_revisions)
 
-    create table(:activity_families) do
-      timestamps()
-    end
-
-    create table(:activities) do
-      add :family_id, references(:activity_families)
-      add :project_id, references(:projects)
-      timestamps()
-    end
-
-    create table(:activity_revisions) do
-      add :content, :map
-      add :objectives, :map
-      add :slug, :string
-      add :title, :string
-      add :deleted, :boolean, default: false, null: false
-
-      add :author_id, references(:authors)
-      add :activity_id, references(:activities)
-      add :activity_type_id, references(:activity_registrations)
-      add :previous_revision_id, references(:activity_revisions)
-
-      timestamps()
-    end
-    create index(:activity_revisions, [:slug], name: :index_slug_activities)
-
-    create table(:objective_families) do
-      timestamps()
-    end
-
-    create table(:objectives) do
-      add :family_id, references(:objective_families)
-      add :project_id, references(:projects)
-
-      timestamps()
-    end
-
-    create table(:objective_revisions) do
-      add :title, :string
-      add :slug, :string
-      add :children, {:array, :id}
-      add :deleted, :boolean, default: false, null: false
-
-      add :objective_id, references(:objectives)
-      add :previous_revision_id, references(:objective_revisions)
-
-      timestamps()
-    end
-    create unique_index(:objective_revisions, [:slug], name: :index_slug_objectives)
-
-    create table(:resource_mappings) do
-      add :resource_id, references(:resources)
-      add :publication_id, references(:publications)
-      add :revision_id, references(:resource_revisions)
-      add :locked_by_id, references(:authors), null: true
-      add :lock_updated_at, :naive_datetime
-      timestamps()
-    end
-
-    create table(:activity_mappings) do
-      add :activity_id, references(:activities)
-      add :publication_id, references(:publications)
-      add :revision_id, references(:activity_revisions)
-      timestamps()
-    end
-
-    create table(:objective_mappings) do
-      add :objective_id, references(:objectives)
-      add :publication_id, references(:publications)
-      add :revision_id, references(:objective_revisions)
-      timestamps()
-    end
-
     create table(:published_resources) do
-      add :resource_id, references(:resources2)
+      add :resource_id, references(:resources)
       add :publication_id, references(:publications)
       add :revision_id, references(:revisions)
       add :locked_by_id, references(:authors), null: true
@@ -311,7 +205,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
     create table(:projects_resources, primary_key: false) do
       timestamps()
       add :project_id, references(:projects), primary_key: true
-      add :resource_id, references(:resources2), primary_key: true
+      add :resource_id, references(:resources), primary_key: true
     end
 
     create index(:projects_resources, [:resource_id])

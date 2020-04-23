@@ -11,7 +11,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ActivityContext
   alias Oli.Authoring.Editing.SiblingActivity
-  alias Oli.Publishing2, as: Publishing
+  alias Oli.Publishing
   alias Oli.Activities
   alias Oli.Accounts.Author
   alias Oli.Authoring.Course
