@@ -11,6 +11,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Activities
   alias Oli.Accounts
   alias Oli.Repo
+  import Ecto.Query, warn: false
 
   @doc """
   Attempts to process an edit for a resource specified by a given
@@ -316,14 +317,24 @@ defmodule Oli.Authoring.Editing.PageEditor do
     revision
   end
 
+  defp get_ids_from_objective_slugs(slugs) do
+    result = Repo.all(from rev in Oli.Resources.Revision,
+      where: rev.slug in ^slugs,
+      select: map(rev, [:resource_id, :slug]))
+
+    map = Enum.reduce(result, %{}, fn e, m -> Map.put(m, e.slug, e) end)
+
+    Enum.map(slugs, fn slug -> Map.get(map, slug) end)
+      |> Enum.map(fn m -> Map.get(m, :resource_id) end)
+  end
+
   # Applies the update to the revision, converting any objective slugs back to ids
   defp update_revision(revision, update) do
 
     converted_back_to_ids = case Map.get(update, "objectives") do
       nil -> update
-      objectives -> Map.put(update, "objectives", Learning.get_ids_from_objective_slugs(objectives))
+      objectives -> Map.put(update, "objectives", get_ids_from_objective_slugs(objectives))
     end
-
 
     {:ok, updated} = Oli.Resources.update_revision(revision, converted_back_to_ids)
 
