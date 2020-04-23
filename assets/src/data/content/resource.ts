@@ -5,6 +5,15 @@ import { Objective } from 'data/content/objective';
 import guid from 'utils/guid';
 import { ActivityModelSchema } from 'components/activities/types';
 
+
+export type PageContent = {
+  model: ResourceContent[],
+};
+
+export type AttachedObjectives = {
+  attached: ObjectiveSlug[],
+};
+
 // The types of things that can be present as top level
 // entries in a resource content array
 export type ResourceContent = StructuredContent | ActivityReference;
@@ -16,8 +25,8 @@ export type ResourceContext = {
   projectSlug: ProjectSlug,       // The current project
   resourceSlug: ResourceSlug,     // The current resource
   title: string,                  // The title of the resource
-  content: ResourceContent[],     // Content of the resource
-  objectives: ObjectiveSlug[],    // Attached objectives
+  content: PageContent,           // Content of the resource
+  objectives: AttachedObjectives, // Attached objectives
   allObjectives: Objective[],     // All objectives
 };
 
