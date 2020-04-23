@@ -1,9 +1,8 @@
 defmodule OliWeb.ObjectiveControllerTest do
   use OliWeb.ConnCase
   alias Oli.Repo
-  alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Learning
-  alias Oli.Authoring.Learning.{Objective, ObjectiveFamily, ObjectiveRevision}
+  alias Oli.Authoring.Learning.{ObjectiveRevision}
 
   setup [:author_project_objective_fixture]
   @valid_attrs %{title: "default title"}

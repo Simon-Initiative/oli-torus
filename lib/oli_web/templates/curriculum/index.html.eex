@@ -1,24 +1,121 @@
-<h1>All Pages</h1>
+<style>
+  [draggable] {
+    user-select: none;
+    cursor: move;
+    }
+.flex {
+  display: flex;
+  flex-direction: row;
+}
+li.flex > *:first-child {
+  margin-right: 8px;
+}
+li.flex > *:last-child {
+  margin-left: 8px;
+}
+li.flex > * {
+  margin-left: 8px;
+  margin-right: 8px;
+}
+#right li {
+  margin: 0;
+  padding: 0;
+}
+.link-page {
+  margin: 0;
+}
+.link-delete {
+  color: #EB5757;
+  margin: 0;
+}
+#right ol {
+  max-width: 1000px;
+}
+</style>
 
-<table>
-  <thead>
-    <tr>
-      <th><%= link "Add New Page", to: Routes.curriculum_path(@conn, :create, @project), method: :post %></th>
-    </tr>
-  </thead>
-  <tbody>
-<%= for page <- @pages do %>
-    <tr>
-      <td>
-        <%= link page.title, to: Routes.resource_path(@conn, :edit, @project, page.slug) %>
-      </td>
-      <td>
-        <% #<%= link "Toggle scored/unscored", to: Routes.resource_path(@conn, :update, @project, page.slug), method: :put %>
-      </td>
-      <td>
-        <%= link "Delete", to: Routes.resource_path(@conn, :delete, @project, page.slug), method: :delete, data: [confirm: "Are you sure?"] %>
-      </td>
-    </tr>
-<% end %>
-  </tbody>
-</table>
+<%# Re-add keyboard reordering? %>
+
+<h1>Pages</h1> <%= link "Add New Page", to: Routes.curriculum_path(@conn, :create, @project), method: :post %>
+<small>Drag to change the order that content will be presented to students</small>
+
+<ol id="list">
+  <%= for {page, index} <- Enum.with_index(@pages) do %>
+    <li class="flex"
+      draggable="true"
+      ondragstart="itemDragStarted(event, <%= index %>)"
+      ondragover="itemDraggingOver(event, <%= index %>)"
+      id="<%= page.slug %>"
+      ondrop="itemDropped(event, <%= index %>)"
+    >
+      <i class="material-icons-outlined">assignment</i>
+      <span><%= index %>.</span>
+      <%= link page.title, to: Routes.resource_path(@conn, :edit, @project, page.slug), class: "link-page" %>
+      <%= link "Toggle scored/unscored", to: Routes.resource_path(@conn, :update, @project, page.slug), method: :put, class: "link-page" %>
+      <%= link "Delete", to: Routes.resource_path(@conn, :delete, @project, page.slug), method: :delete, data: [confirm: "Are you sure?"], class: "link-delete" %>
+    </li>
+  <% end %>
+</ol>
+
+<script>
+  const form = document.getElementById("form-curriculum")
+  const list = document.getElementById('list')
+
+  function getLi(target) {
+    if (target.nodeName !== 'LI') {
+      target = target.parentNode;
+    }
+    return target
+  }
+
+  function insertAfter(newNode, existingNode) {
+    existingNode.parentNode.insertBefore(newNode, existingNode.nextSibling);
+  }
+
+  function itemDragStarted(e, index) {
+    let target = getLi(e.target)
+
+    const data = JSON.stringify({
+      index: index,
+      id: target.id,
+    })
+
+    event.dataTransfer.setData('text/plain', data)
+    event.dataTransfer.effectAllowed = 'move';
+  }
+
+  function itemDraggingOver(e, index) {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  function itemDropped(e, index) {
+    e.preventDefault()
+    e.stopPropagation()
+
+    let dropTarget = getLi(e.target)
+    const data = JSON.parse(event.dataTransfer.getData('text/plain'))
+    const droppedItem = document.getElementById(data.id)
+
+    const draggingUp = data.index > index
+    if (draggingUp) {
+      list.insertBefore(droppedItem, dropTarget)
+    } else {
+      insertAfter(droppedItem, dropTarget)
+    }
+
+    const listItems = Array.from(list.children).map(c => c.id)
+    triggerReorderOnServer("<%= @project.slug %>", listItems)
+  }
+
+  function triggerReorderOnServer(project_slug, update) {
+    const url = `/project/${project_slug}/curriculum`
+    const params = {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ update }),
+    };
+    window.fetch(url, params)
+      .then(_ => location.reload())
+      .catch()
+  }
+</script>

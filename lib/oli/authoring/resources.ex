@@ -78,6 +78,19 @@ defmodule Oli.Authoring.Resources do
     Repo.one(query)
   end
 
+  @spec get_resource_ids_from_revision_slugs(String.t, [String.t]) :: any
+  def get_resource_ids_from_revision_slugs(project, revisions) do
+    query = from r in Resource,
+      join: p in Project, on: r.project_id == p.id,
+      join: v in ResourceRevision, on: v.resource_id == r.id,
+      where: p.slug == ^project and v.slug in ^revisions,
+      distinct: r.id,
+      select: [r.id, v.slug]
+
+    Repo.all(query)
+    |> Enum.reduce(%{}, & Map.put(&2, hd(tl(&1)), hd(&1)))
+  end
+
   def create_new_resource(project, family) do
     %Resource{}
     |> Resource.changeset(%{
@@ -349,6 +362,22 @@ defmodule Oli.Authoring.Resources do
   """
   def change_resource_revision(%ResourceRevision{} = resource_revision) do
     ResourceRevision.changeset(resource_revision, %{})
+  end
+
+  def update_root_container_children(project, author, reordered_slugs) do
+    # Change here to enable "cross project drag and drop -> if resource is not found (nil),
+    # create new resource in this project by cloning the existing resource
+    resources = get_resource_ids_from_revision_slugs(project.slug, reordered_slugs)
+    reordered_children = reordered_slugs
+    |> Enum.map(& Map.get(resources, &1))
+
+    update_resource_revision(
+      ResourceEditor.create_new_revision(
+        get_root_container(project),
+        Publishing.get_unpublished_publication_by_slug!(project.slug),
+        root_resource(project),
+        author.id),
+      %{children: reordered_children})
   end
 
   def list_all_pages(project) do

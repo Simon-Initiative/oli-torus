@@ -36,18 +36,20 @@ defmodule OliWeb.CurriculumController do
     end
   end
 
-  def update(conn, %{"id" => id, "resource" => resource_params}) do
-    # handle re-ordering here. Take full list of id's, set root container children with new ids
-    resource = Resources.get_resource!(id)
+  def update(conn, %{"update" => update_params} = params) do
+    %{project: project, current_author: author} = conn.assigns
+    IO.inspect(params, label: "update params")
 
-    case Resources.update_resource(resource, resource_params) do
+    case Resources.update_root_container_children(project, author, update_params) do
       {:ok, _resource} ->
-        conn
-        |> put_flash(:info, "resource updated successfully.")
-        |> redirect(to: Routes.curriculum_path(conn, :index, conn.assigns.project))
+        render(conn, "index.html",
+        pages: Resources.list_all_pages(conn.assigns.project),
+        title: "Curriculum")
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "edit.html", resource: resource, changeset: changeset)
+      {:error, _} ->
+        render(conn, "index.html",
+        pages: Resources.list_all_pages(conn.assigns.project),
+        title: "Curriculum")
     end
   end
 
