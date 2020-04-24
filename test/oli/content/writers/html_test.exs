@@ -4,6 +4,8 @@ defmodule Oli.Content.Writers.HTMLTest do
   alias Oli.Content.Writers
   alias Oli.Content.Writers.Writer
 
+  import ExUnit.CaptureLog
+
   describe "HTML writer" do
     setup do
       author = author_fixture()
@@ -28,5 +30,27 @@ defmodule Oli.Content.Writers.HTMLTest do
       assert rendered_html_string =~ "<iframe\n  id=\"fhdCslFcKFU\"\n  width=\"640\"\n  height=\"476\"\n  src=\"https://www.youtube.com/embed/fhdCslFcKFU\"\n  frameBorder=\"0\"\n  style=\"display: block; margin-left: auto; margin-right: auto;\"\n></iframe>"
       assert rendered_html_string =~ "<pre><code>import fresh-pots\n</pre></code>"
     end
+
+    test "renders malformed content gracefully", %{author: author} do
+      {:ok, content} = read_json_file("./test/oli/content/writers/example_malformed_content.json")
+      context = %Writers.Context{user: author}
+
+      assert capture_log(fn ->
+        rendered_html = Writer.render(context, content, Writers.HTML)
+        _rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
+      end) =~ "Content element is invalid"
+    end
+
+    test "renders unsupported element properly", %{author: author} do
+      {:ok, content} = read_json_file("./test/oli/content/writers/example_unsupported_content.json")
+      context = %Writers.Context{user: author}
+
+      rendered_html = Writer.render(context, content, Writers.HTML)
+      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
+
+      assert rendered_html_string =~ "<h3>Introduction</h3>"
+      assert rendered_html_string =~ "<div class=\"unsupported-element\">Element type 'i-am-unsupported' is not supported"
+    end
+
   end
 end

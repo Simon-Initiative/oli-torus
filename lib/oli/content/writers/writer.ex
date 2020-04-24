@@ -1,6 +1,8 @@
 defmodule Oli.Content.Writers.Writer do
   alias Oli.Content.Writers.Context
 
+  require Logger
+
   @type next :: (() -> String.t())
   @type children :: [%{}]
 
@@ -28,6 +30,7 @@ defmodule Oli.Content.Writers.Writer do
   @callback code_line(%Context{}, next, %{}) :: [any()]
   @callback blockquote(%Context{}, next, %{}) :: [any()]
   @callback a(%Context{}, next, %{}) :: [any()]
+  @callback unsupported(%Context{}, %{}) :: [any()]
 
   def render(%Context{} = context, content_list, impl) when is_list(content_list) do
     Enum.map(content_list, fn content -> render(context, content, impl) end)
@@ -73,7 +76,13 @@ defmodule Oli.Content.Writers.Writer do
       "code_line" -> impl.code_line(context, next, entity)
       "blockquote" -> impl.blockquote(context, next, entity)
       "a" -> impl.a(context, next, entity)
+      _ -> impl.unsupported(context, entity)
     end
+  end
+
+  def render(%Context{} = _context, entity, _impl) do
+    Logger.warn("Content element is invalid: #{Kernel.inspect(entity)}")
+    ["<div class=\"invalid-element\">Element is invalid. Please contact support.</div>\n"]
   end
 
 end

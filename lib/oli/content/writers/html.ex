@@ -125,13 +125,17 @@ defmodule Oli.Content.Writers.HTML do
     escape_xml!(text) |> wrap_with_marks(text_entity)
   end
 
+  def unsupported(%Context{} = _context, %{"type" => type}) do
+    ["<div class=\"unsupported-element\">Element type '", type ,"' is not supported</div>\n"]
+  end
+
   def escape_xml!(text) do
     case HTML.html_escape(text) do
       {:safe, result} -> result
     end
   end
 
-  def wrap_with_marks(text, text_entity) do
+  defp wrap_with_marks(text, text_entity) do
     supported_mark_tags = %{
       "em" => "em",
       "strong" => "strong",
