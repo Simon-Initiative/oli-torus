@@ -7,6 +7,7 @@ tbody tr {
 <script>
 $(function() {
   $('input[name="publication_id"]').on('change', function() {
+    console.log('here')
     $('input[name="publication_id"]').not(this).prop('checked', false);
 
     if ($('input[name="publication_id"]:checked').length > 0) {
@@ -42,7 +43,7 @@ $(function() {
             <tbody>
               <%= for pub <- @my_publications do %>
                 <tr>
-                  <td><input type="checkbox" ></td>
+                  <td><input type="checkbox" name="publication_id" value="<%= pub.id %>"></td>
                   <td><%= pub.project.title %></td>
                   <td><%= pub.project.version %></td>
                   <td><%= format_datetime(pub.inserted_at) %></td>

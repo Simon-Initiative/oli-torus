@@ -600,7 +600,7 @@ defmodule Oli.Publishing do
     changes
   end
 
-  defp get_resource_revisions_for_publication(publication) do
+  def get_resource_revisions_for_publication(publication) do
     resource_mappings = get_resource_mappings_by_publication(publication.id)
     activity_mappings = get_activity_mappings_by_publication(publication.id)
     objective_mappings = get_objective_mappings_by_publication(publication.id)

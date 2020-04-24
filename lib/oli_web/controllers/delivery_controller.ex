@@ -20,8 +20,8 @@ defmodule OliWeb.DeliveryController do
         render(conn, "getting_started.html")
       {role, author, nil} when role == :administrator or role == :instructor ->
         publications = Publishing.available_publications(author)
-        my_publications = publications |> Enum.filter(fn p -> !p.open_and_free end)
-        open_and_free_publications = publications |> Enum.filter(fn p -> p.open_and_free end)
+        my_publications = publications |> Enum.filter(fn p -> !p.open_and_free && p.published end)
+        open_and_free_publications = publications |> Enum.filter(fn p -> p.open_and_free && p.published end)
         render(conn, "configure_section.html", author: author, my_publications: my_publications, open_and_free_publications: open_and_free_publications)
       {role, _author, section} when role == :administrator or role == :instructor ->
         render(conn, "instructor_view.html", section: section)
