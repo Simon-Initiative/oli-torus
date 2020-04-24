@@ -13,7 +13,7 @@ jobs:
           persist-credentials: false
         run: cp oli.example.env oli.env
 
-      - name: Setup elixir 🧪
+      - name: Setup Elixir 🧪
         uses: actions/setup-elixir@v1
         with:
           elixir-version: 1.10.2 # Define the elixir version [required]

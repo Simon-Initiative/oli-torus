@@ -17,12 +17,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout and Configure 🛎️🔧
     - uses: actions/checkout@v2
+    - name: Checkout and Configure 🛎️🔧
       run: cp oli.example.env oli.env && cp postgres.example.env postgres.env
     - name: Start Test Database 🗄
       run: docker-compose up -d postgres
-    - name: Setup elixir 🧪
+    - name: Setup Elixir 🧪
       uses: actions/setup-elixir@v1
       with:
         elixir-version: 1.10.2 # Define the elixir version [required]
@@ -40,12 +40,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout and Configure 🛎️🔧
+    - name: Checkout 🛎️
     - uses: actions/checkout@v2
+    - name: Configure 🔧
     - uses: actions/setup-node@v1
       with:
         node-version: '12.x'
-    - name: Setup elixir 🧪
+    - name: Setup Elixir 🧪
       uses: actions/setup-elixir@v1
       with:
         elixir-version: 1.10.2 # Define the elixir version [required]
