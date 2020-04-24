@@ -48,7 +48,7 @@ defmodule OliWeb.ObjectiveController do
   end
 
 
-  def update(conn, %{"project_id" => project_id, "objective_slug" => objective_slug, "revision" => objective_params}) do
+  def update(conn, %{"project_id" => _project_id, "objective_slug" => objective_slug, "revision" => objective_params}) do
 
     project = conn.assigns.project
     author = conn.assigns[:current_author]

@@ -11,8 +11,6 @@ defmodule OliWeb.ResourceController do
 
   def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
 
-    {:ok, context} = PageEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author])
-
     case PageEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
       {:ok, context} -> render(conn, "edit.html", title: "Resource Editor", context: Jason.encode!(context), scripts: get_scripts())
       {:error, :not_found} ->

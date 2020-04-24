@@ -12,12 +12,12 @@ defmodule OliWeb.ObjectiveControllerTest do
 
   describe "create objective" do
     test "x-status header with value 'success' when data is valid", %{conn: conn, project: project} do
-      conn = post(conn, Routes.objective_path(conn, :create, project.slug), objective: @valid_attrs)
+      conn = post(conn, Routes.objective_path(conn, :create, project.slug), revision: @valid_attrs)
       assert get_req_header(conn, "x-status") == ["success"]
     end
 
     test "x-status header with value 'failed' when data is invalid", %{conn: conn, project: project} do
-      conn = post(conn, Routes.objective_path(conn, :create, project.slug), objective: @invalid_attrs)
+      conn = post(conn, Routes.objective_path(conn, :create, project.slug), revision: @invalid_attrs)
       assert get_req_header(conn, "x-status") == ["failed"]
     end
   end
@@ -26,7 +26,7 @@ defmodule OliWeb.ObjectiveControllerTest do
     test "sub-objective x-status header with value 'success' when data is valid", %{conn: conn, project: project, objective_revision: parent_objective_revision} do
 
       sub_objective_valid_attrs = Map.merge(@sub_valid_attrs, %{parent_slug: parent_objective_revision.slug})
-      conn = post(conn, Routes.objective_path(conn, :create, project.slug), objective: sub_objective_valid_attrs)
+      conn = post(conn, Routes.objective_path(conn, :create, project.slug), revision: sub_objective_valid_attrs)
 
       parent = hd(Publishing.get_unpublished_revisions(project, [parent_objective_revision.resource_id]))
 
@@ -38,22 +38,22 @@ defmodule OliWeb.ObjectiveControllerTest do
 
   describe "update objective" do
     test "performs update when data is valid", %{conn: conn, project: project, objective_revision: objective_revision} do
-      put(conn, Routes.objective_path(conn, :update, project.slug, objective_revision.slug), objective: @update_attrs)
+      put(conn, Routes.objective_path(conn, :update, project.slug, objective_revision.slug), revision: @update_attrs)
       assert Repo.get_by(Revision, @update_attrs)
     end
 
     test "prevents update when data is invalid", %{conn: conn, project: project, objective_revision: objective_revision} do
-      put(conn, Routes.objective_path(conn, :update, project.slug, objective_revision.slug), objective: @invalid_attrs)
+      put(conn, Routes.objective_path(conn, :update, project.slug, objective_revision.slug), revision: @invalid_attrs)
       refute Repo.get_by(Revision, @invalid_attrs)
     end
 
     test "x-status value 'success' on success", %{conn: conn, project: project, objective_revision: objective_revision} do
-      conn = put(conn, Routes.objective_path(conn, :update, project.slug, objective_revision.slug), objective: @update_attrs)
+      conn = put(conn, Routes.objective_path(conn, :update, project.slug, objective_revision.slug), revision: @update_attrs)
       assert get_req_header(conn, "x-status") == ["success"]
     end
 
     test "x-status value 'failed' on failure", %{conn: conn, project: project, objective_revision: objective_revision} do
-      conn = put(conn, Routes.objective_path(conn, :update, project.slug, objective_revision.slug), objective: @invalid_attrs)
+      conn = put(conn, Routes.objective_path(conn, :update, project.slug, objective_revision.slug), revision: @invalid_attrs)
       assert get_req_header(conn, "x-status") == ["failed"]
     end
   end
