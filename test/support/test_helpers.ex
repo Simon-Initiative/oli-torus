@@ -67,7 +67,7 @@ defmodule Oli.TestHelpers do
       project,
       %{title: "Test learning objective", author_id: author.id, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective")})
 
-    publication = Publishing.get_unpublished_publication(project.slug)
+    publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
     Publishing.upsert_published_resource(publication, revision)
 
     %{objective: objective, objective_revision: revision}

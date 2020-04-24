@@ -7,14 +7,14 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   """
 
   alias Oli.Resources.Revision
-  alias Oli.Publishing
   alias Oli.Accounts.Author
   alias Oli.Authoring.Course.Project
-  alias Oli.Repo
+  alias Oli.Publishing.AuthoringResolver
+  alias Oli.Publishing.ChangeTracker
 
   def list_all_pages(%Project{} = project) do
-    root_resource = get_root_container(project)
-    Publishing.get_unpublished_revisions(project, root_resource.children)
+    root_resource = AuthoringResolver.root_resource(project.slug)
+    AuthoringResolver.from_resource_id(project.slug, root_resource.children)
   end
 
   def add_new(
@@ -23,7 +23,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     %Project{} = project
   ) do
 
-    get_root_container(project)
+    AuthoringResolver.root_resource(project.slug)
     |> add_new(attrs, author, project)
   end
 
@@ -38,54 +38,23 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       author_id: author.id,
     })
 
-    with {:ok, %{resource: resource, revision: revision}} <- Oli.Authoring.Course.create_and_attach_resource(project, attrs),
-         publication <- Publishing.get_unpublished_publication_by_slug!(project.slug),
-         {:ok, mapping} <- Publishing.upsert_published_resource(publication, revision),
-         {:ok, container} <- append_to_container(container, publication, revision, author)
+    with {:ok, %{revision: revision}} <- Oli.Authoring.Course.create_and_attach_resource(project, attrs),
+         {:ok, _} <- ChangeTracker.track_revision(project.slug, revision),
+         {:ok, _} <- append_to_container(container, project.slug, revision, author)
     do
-      {:ok,
-        %{
-          resource: resource,
-          revision: revision,
-          project: project,
-          mapping: mapping,
-          root_container: container
-        }
-      }
+      {:ok, revision}
     else
       error -> error
     end
   end
 
-  def append_to_container(container, publication, revision_to_attach, author) do
-    attrs = %{
+  def append_to_container(container, project_slug, revision_to_attach, author) do
+
+    append = %{
       children: [revision_to_attach.resource_id | container.children],
       author_id: author.id
     }
-    {:ok, revision} = Oli.Resources.create_revision_from_previous(container, attrs)
-    {:ok, _} = Publishing.upsert_published_resource(publication, revision)
-
-    {:ok, revision}
-  end
-
-  defp get_root_container(project) do
-    project
-    |> root_resource()
-    |> get_latest_resource_revision(project)
-  end
-
-  def get_latest_resource_revision(resource, project) do
-    publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
-    mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
-
-    Oli.Resources.get_revision!(mapping.revision_id)
-  end
-
-  defp root_resource(project) do
-    project.slug
-    |> Publishing.get_unpublished_publication_by_slug!
-    |> Repo.preload(:root_resource)
-    |> Map.get(:root_resource)
+    ChangeTracker.track_revision(project_slug, container, append)
   end
 
 
