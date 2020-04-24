@@ -229,8 +229,8 @@ defmodule Oli.Publishing do
 
     Repo.all from mapping in PublishedResource,
       join: rev in Oli.Resources.Revision, on: mapping.revision_id == rev.id,
-      where: rev.resource_type_id == ^objective and mapping.publication_id == ^publication_id,
-      select: map(rev, [:slug, :title])
+      where: rev.deleted == false and rev.resource_type_id == ^objective and mapping.publication_id == ^publication_id,
+      select: map(rev, [:slug, :title, :resource_id])
   end
 
   @doc """
@@ -274,8 +274,9 @@ defmodule Oli.Publishing do
 
     Repo.all(from mapping in PublishedResource,
       join: rev in Oli.Resources.Revision, on: mapping.revision_id == rev.id,
-      where: rev.resource_type_id == ^objective and mapping.publication_id == ^publication_id,
-      select: rev) |> Repo.preload([:resource, :revision])
+      where: rev.deleted == false and rev.resource_type_id == ^objective and mapping.publication_id == ^publication_id,
+      select: mapping,
+      preload: [:resource, :revision])
 
   end
 

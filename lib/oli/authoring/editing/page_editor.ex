@@ -258,9 +258,19 @@ defmodule Oli.Authoring.Editing.PageEditor do
   # takes the attached objectives in the form of a map of "attached" to a list of objective ids
   # and converts it to a map of "attached" to list of slugs, using all current objectives
   def id_to_slug(attached_objectives, all_objectives) do
-    map = Enum.reduce(all_objectives, %{}, fn o, m -> Map.put(m, Map.get(o, :objective_id), o) end)
+    map = Enum.reduce(all_objectives, %{}, fn o, m -> Map.put(m, Map.get(o, :resource_id), o) end)
 
-    %{attached: Enum.map(Map.get(attached_objectives, "attached"), fn o -> Map.get(map, o) |> Map.get(:slug) end)}
+    attached = Enum.reduce(Map.get(attached_objectives, "attached"), [],
+      fn o, acc ->
+        if Map.has_key?(map, o) do
+          acc ++ [Map.get(Map.get(map, o), :slug)]
+        else
+          acc
+        end
+      end
+    )
+
+    %{attached: attached}
   end
 
   # Create the resource editing content that we will supply to the client side editor
@@ -335,7 +345,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
     converted_back_to_ids = case Map.get(update, "objectives") do
       nil -> update
       %{ "attached" => []} -> update
-      %{ "attached" => objectives} -> Map.put(update, "objectives", get_ids_from_objective_slugs(objectives))
+      %{ "attached" => objectives} -> Map.put(update, "objectives", %{"attached" => get_ids_from_objective_slugs(objectives)})
     end
 
     {:ok, updated} = Oli.Resources.update_revision(revision, converted_back_to_ids)

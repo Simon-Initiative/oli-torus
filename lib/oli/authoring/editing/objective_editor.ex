@@ -70,6 +70,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
     case container_slug do
       nil -> {:ok, nil}
+      "" -> {:ok, nil}
       slug -> append_to_container(slug, publication, revision_to_attach, author)
     end
 
@@ -81,6 +82,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     with {:ok, resource} <- Resources.get_resource_from_slug(container_slug) |> trap_nil(),
         {:ok, revision} <- Publishing.get_published_revision(publication.id, resource.id) |> trap_nil()
     do
+
       attrs = %{
         children: [revision_to_attach.resource_id | revision.children],
         author_id: author.id

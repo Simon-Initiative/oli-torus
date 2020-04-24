@@ -17,7 +17,7 @@ defmodule OliWeb.CurriculumController do
     %{ project: project, current_author: author } = conn.assigns
 
     attrs = %{
-      objectives: %{},
+      objectives: %{ "attached" => []},
       children: [],
       content: %{ "model" => []},
       title: "New Page",
