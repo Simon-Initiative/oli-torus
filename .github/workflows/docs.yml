@@ -24,7 +24,7 @@ jobs:
       - name: Install Elixir Dependencies ⬇️
         run: mix deps.get
 
-      - name: Build Dependencies 🔨⬇️
+      - name: Build Dependencies 🔨📦
         run: mix deps.compile
 
       - name: Build Docs 🔨📄
