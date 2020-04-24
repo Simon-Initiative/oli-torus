@@ -1,9 +1,8 @@
 defmodule OliWeb.ResourceController do
   use OliWeb, :controller
 
-  alias Oli.Authoring.Editing.ResourceEditor
-  alias Oli.Authoring.Activities
-  alias Oli.Authoring.Resources
+  alias Oli.Authoring.Editing.PageEditor
+  alias Oli.Activities
 
   import OliWeb.ProjectPlugs
 
@@ -12,7 +11,7 @@ defmodule OliWeb.ResourceController do
 
   def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
 
-    case ResourceEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
+    case PageEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
       {:ok, context} -> render(conn, "edit.html", title: "Resource Editor", context: Jason.encode!(context), scripts: get_scripts())
       {:error, :not_found} ->
         conn
@@ -31,7 +30,7 @@ defmodule OliWeb.ResourceController do
 
     author = conn.assigns[:current_author]
 
-    case ResourceEditor.edit(project_slug, resource_slug, author.email, update) do
+    case PageEditor.edit(project_slug, resource_slug, author.email, update) do
 
       {:ok, revision} -> json conn, %{ "type" => "success", "revision_slug" => revision.slug}
       {:error, {:lock_not_acquired}} -> error(conn, 423, "locked")
@@ -42,15 +41,8 @@ defmodule OliWeb.ResourceController do
 
   end
 
-  def delete(conn, %{"project_id" => project_slug, "revision_slug" => resource_slug }) do
-    case Resources.mark_revision_deleted(project_slug, resource_slug, conn.assigns.current_author.id) do
-      {:ok, _} ->
-        redirect conn, to: Routes.curriculum_path(conn, :index, project_slug)
-      {:error, message} ->
-        conn
-          |> put_flash(:error, "Error: #{message}. Please try again")
-          |> redirect(to: Routes.curriculum_path(conn, :index, project_slug))
-    end
+  def delete(_conn, %{"project_id" => _project_slug, "revision_slug" => _resource_slug }) do
+
   end
 
   defp error(conn, code, reason) do

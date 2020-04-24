@@ -6,7 +6,7 @@ defmodule Oli.Publishing.Publication do
     field :description, :string
     field :published, :boolean, default: false
     field :open_and_free, :boolean, default: false
-    belongs_to :root_resource, Oli.Authoring.Resources.Resource
+    belongs_to :root_resource, Oli.Resources.Resource
     belongs_to :project, Oli.Authoring.Course.Project
 
     timestamps()

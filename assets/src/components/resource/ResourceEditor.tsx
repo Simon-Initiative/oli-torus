@@ -2,7 +2,7 @@ import * as Immutable from 'immutable';
 import React from 'react';
 import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
-import { ResourceContent, ResourceContext,
+import { ResourceContent, ResourceContext, PageContent,
   Activity, ActivityMap, createDefaultStructuredContent } from 'data/content/resource';
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
@@ -79,8 +79,8 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       editMode: true,
       undoable: init({
         title,
-        objectives: Immutable.List<ObjectiveSlug>(objectives),
-        content: Immutable.List<ResourceContent>(withDefaultContent(content)),
+        objectives: Immutable.List<ObjectiveSlug>(objectives.attached),
+        content: Immutable.List<ResourceContent>(withDefaultContent(content.model)),
       }),
       persistence: 'idle',
       allObjectives: Immutable.List<Objective>(allObjectives),
@@ -129,8 +129,15 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 
   save() {
     const { projectSlug, resourceSlug } = this.props;
+
+    const toSave : Persistence.ResourceUpdate = {
+      objectives: { attached: this.state.undoable.current.objectives.toArray() },
+      title: this.state.undoable.current.title,
+      content: { model: this.state.undoable.current.content.toArray() },
+    };
+
     this.persistence.save(
-      prepareSaveFn(projectSlug, resourceSlug, this.state.undoable.current));
+      prepareSaveFn(projectSlug, resourceSlug, toSave));
   }
 
   undo() {
