@@ -17,8 +17,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Checkout and Configure 🛎️🔧
+    - name: Checkout 🛎️
+      uses: actions/checkout@v2
+    - name: Configure 🔧
       run: cp oli.example.env oli.env && cp postgres.example.env postgres.env
     - name: Start Test Database 🗄
       run: docker-compose up -d postgres
@@ -29,7 +30,7 @@ jobs:
         otp-version: 22.2 # Define the OTP version [required]
     - name: Install Elixir Dependencies ⬇️
       run: mix deps.get
-    - name: Build Dependencies 🔨⬇️
+    - name: Build Dependencies 🔨📦
       run: mix deps.compile
     - name: Build Project 🔨
       run: set -a;source oli.env && mix compile --warnings-as-errors
@@ -41,9 +42,9 @@ jobs:
 
     steps:
     - name: Checkout 🛎️
-    - uses: actions/checkout@v2
+      uses: actions/checkout@v2
     - name: Configure 🔧
-    - uses: actions/setup-node@v1
+      uses: actions/setup-node@v1
       with:
         node-version: '12.x'
     - name: Setup Elixir 🧪
@@ -53,7 +54,7 @@ jobs:
         otp-version: 22.2 # Define the OTP version [required]
     - name: Install Elixir Dependencies ⬇️
       run: mix deps.get
-    - name: Install node_module Dependencies ⬇️
+    - name: Install node_module Dependencies 📦
       run: cd assets && npm install
     - name: Lint 🧹
       run: cd assets && npm run lint
