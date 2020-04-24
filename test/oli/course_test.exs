@@ -138,14 +138,17 @@ defmodule Oli.CourseTest do
       assert revision.resource == resource
     end
 
-    test "creates a new publication associated with the project and containing the container resource", %{publication: publication, resource: resource, project: project} do
-      assert Repo.preload(publication, [:root_resource]).root_resource == resource
-      publication = Repo.preload(publication, [:project])
-      assert publication.project == project
-    end
-
     test "project should always have an unpublished, 'active' publication", %{project: project} do
       assert Enum.find(Oli.Repo.preload(project, [:publications]).publications, &(&1.published == false))
     end
+
+    test "creates a new publication associated with the project and containing the container resource", %{publication: publication, resource: resource, project: project} do
+
+      publication = Repo.preload(publication, [:project])
+      assert publication.project == project
+      assert Repo.preload(publication, [:root_resource]).root_resource == resource
+
+    end
+
   end
 end

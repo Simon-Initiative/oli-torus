@@ -1,8 +1,10 @@
-defmodule Oli.Authoring.Resources.ResourceFamily do
+defmodule Oli.Resources.Resource do
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "resource_families" do
+  schema "resources" do
+
+    has_many :resource_revisions, Oli.Resources.Revision
 
     timestamps()
   end

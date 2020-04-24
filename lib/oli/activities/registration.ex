@@ -1,4 +1,4 @@
-defmodule Oli.Authoring.Activities.Registration do
+defmodule Oli.Activities.Registration do
   use Ecto.Schema
   import Ecto.Changeset
 
