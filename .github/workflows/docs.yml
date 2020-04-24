@@ -1,0 +1,36 @@
+name: Build & Deploy Docs
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v2 # If you're using actions/checkout@v2 you must set persist-credentials to false in most cases for the deployment to work correctly.
+        with:
+          persist-credentials: false
+        run: cp oli.example.env oli.env
+
+      - name: Setup elixir 🧪
+      uses: actions/setup-elixir@v1
+      with:
+        elixir-version: 1.10.2 # Define the elixir version [required]
+        otp-version: 22.2 # Define the OTP version [required]
+
+      - name: Install Elixir Dependencies ⬇️
+        run: mix deps.get
+
+      - name: Build Dependencies 🔨⬇️
+        run: mix deps.compile
+
+      - name: Build Docs 🔨📄
+        run: mix docs
+
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@releases/v3
+        with:
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: doc # The folder the action should deploy.

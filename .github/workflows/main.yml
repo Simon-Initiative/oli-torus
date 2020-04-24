@@ -17,45 +17,58 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Checkout and Configure 🛎️🔧
     - uses: actions/checkout@v2
-    - name: Setup Configuration
       run: cp oli.example.env oli.env && cp postgres.example.env postgres.env
-    - name: Start Test Database
+
+    - name: Start Test Database 🗄
       run: docker-compose up -d postgres
-    - name: Setup elixir
+
+    - name: Setup elixir 🧪
       uses: actions/setup-elixir@v1
       with:
         elixir-version: 1.10.2 # Define the elixir version [required]
         otp-version: 22.2 # Define the OTP version [required]
-    - name: Install Dependencies
+
+    - name: Install Elixir Dependencies ⬇️
       run: mix deps.get
-    - name: Build Dependencies
+
+    - name: Build Dependencies 🔨⬇️
       run: mix deps.compile
-    - name: Build Project
+
+    - name: Build Project 🔨
       run: set -a;source oli.env && mix compile --warnings-as-errors
-    - name: Run Tests
+
+    - name: Run Tests ⚙️
       run: set -a;source oli.env && mix test.coverage
 
   ts-build-test:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Checkout and Configure 🛎️🔧
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v1
       with:
         node-version: '12.x'
-    - name: Setup elixir
+
+    - name: Setup elixir 🧪
       uses: actions/setup-elixir@v1
       with:
         elixir-version: 1.10.2 # Define the elixir version [required]
         otp-version: 22.2 # Define the OTP version [required]
-    - name: Install Elixir Dependencies
+
+    - name: Install Elixir Dependencies ⬇️
       run: mix deps.get
-    - name: Install node_module Dependencies
+
+    - name: Install node_module Dependencies ⬇️
       run: cd assets && npm install
-    - name: Lint
+
+    - name: Lint 🧹
       run: cd assets && npm run lint
-    - name: Build
+
+    - name: Build 🔨
       run: cd assets && npm run deploy
-    - name: Test
+
+    - name: Test ⚙️
       run: cd assets && npm run test
