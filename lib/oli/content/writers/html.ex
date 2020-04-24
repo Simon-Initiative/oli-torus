@@ -100,8 +100,7 @@ defmodule Oli.Content.Writers.HTML do
   def code(%Context{} = _context, next, %{
     "language" => _language,
     "startingLineNumber" => _startingLineNumber,
-    "showNumbers" => _showNumbers,
-    "caption" => _caption
+    "showNumbers" => _showNumbers
   }) do
     ["<pre><code>", next.(), "</pre></code>\n"]
   end
