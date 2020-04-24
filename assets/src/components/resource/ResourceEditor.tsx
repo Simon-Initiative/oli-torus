@@ -131,7 +131,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     const { projectSlug, resourceSlug } = this.props;
 
     const toSave : Persistence.ResourceUpdate = {
-      objectives: {attached: this.state.undoable.current.objectives.toArray() },
+      objectives: { attached: this.state.undoable.current.objectives.toArray() },
       title: this.state.undoable.current.title,
       content: { model: this.state.undoable.current.content.toArray() },
     };
