@@ -20,25 +20,19 @@ jobs:
     - name: Checkout and Configure 🛎️🔧
     - uses: actions/checkout@v2
       run: cp oli.example.env oli.env && cp postgres.example.env postgres.env
-
     - name: Start Test Database 🗄
       run: docker-compose up -d postgres
-
     - name: Setup elixir 🧪
       uses: actions/setup-elixir@v1
       with:
         elixir-version: 1.10.2 # Define the elixir version [required]
         otp-version: 22.2 # Define the OTP version [required]
-
     - name: Install Elixir Dependencies ⬇️
       run: mix deps.get
-
     - name: Build Dependencies 🔨⬇️
       run: mix deps.compile
-
     - name: Build Project 🔨
       run: set -a;source oli.env && mix compile --warnings-as-errors
-
     - name: Run Tests ⚙️
       run: set -a;source oli.env && mix test.coverage
 
@@ -51,24 +45,18 @@ jobs:
     - uses: actions/setup-node@v1
       with:
         node-version: '12.x'
-
     - name: Setup elixir 🧪
       uses: actions/setup-elixir@v1
       with:
         elixir-version: 1.10.2 # Define the elixir version [required]
         otp-version: 22.2 # Define the OTP version [required]
-
     - name: Install Elixir Dependencies ⬇️
       run: mix deps.get
-
     - name: Install node_module Dependencies ⬇️
       run: cd assets && npm install
-
     - name: Lint 🧹
       run: cd assets && npm run lint
-
     - name: Build 🔨
       run: cd assets && npm run deploy
-
     - name: Test ⚙️
       run: cd assets && npm run test
