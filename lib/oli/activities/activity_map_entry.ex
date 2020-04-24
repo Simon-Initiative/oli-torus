@@ -1,6 +1,6 @@
 defmodule Oli.Activities.ActivityMapEntry do
 
-  alias Oli.Authoring.Activities.Registration
+  alias Oli.Activities.Registration
 
   @derive Jason.Encoder
   defstruct [:deliveryElement, :authoringElement, :icon, :description, :friendlyName, :slug]

@@ -1,29 +1,30 @@
 defmodule OliWeb.CurriculumController do
   use OliWeb, :controller
   import OliWeb.ProjectPlugs
-
-  alias Oli.Authoring.Resources
+  alias Oli.Authoring.Editing.ContainerEditor
+  alias Oli.Resources
 
   plug :fetch_project
   plug :authorize_project
 
   def index(conn, _params) do
     render(conn, "index.html",
-      pages: Resources.list_all_pages(conn.assigns.project),
+      pages: ContainerEditor.list_all_pages(conn.assigns.project),
       title: "Curriculum")
   end
 
   def create(conn, _params) do
     %{ project: project, current_author: author } = conn.assigns
 
-    case Resources.create_project_resource(
-      %{
-        objectives: [],
-        children: [],
-        content: [],
-        title: "New Page",
-      }, Resources.resource_type.unscored_page, author, project
-    ) do
+    attrs = %{
+      objectives: %{ "attached" => []},
+      children: [],
+      content: %{ "model" => []},
+      title: "New Page",
+      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page")
+    }
+
+    case ContainerEditor.add_new(attrs, author, project) do
       {:ok, _resource} ->
         conn
         |> put_flash(:info, "New page created")

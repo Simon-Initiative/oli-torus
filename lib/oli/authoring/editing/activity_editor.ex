@@ -5,14 +5,14 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   """
 
   import Oli.Authoring.Editing.Utils
-  alias Oli.Activities.ActivityRevision
-  alias Oli.Authoring.Editing.ResourceEditor
+  alias Oli.Resources
+  alias Oli.Resources.Revision
+  alias Oli.Resources.Activity
+  alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ActivityContext
   alias Oli.Authoring.Editing.SiblingActivity
-  alias Oli.Authoring.Resources
-  alias Oli.Authoring.Activities.ActivityRevision
   alias Oli.Publishing
-  alias Oli.Authoring.Activities
+  alias Oli.Activities
   alias Oli.Accounts.Author
   alias Oli.Authoring.Course
   alias Oli.Repo
@@ -24,9 +24,9 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   project and revision slug and activity slug for the author specified by email.
 
   The update parameter is a map containing key-value pairs of the
-  attributes of an ActivityRevision that are to be edited. It can
+  attributes of a Revision that are to be edited. It can
   contain any number of key-value pairs, but the keys must match
-  the schema of `%ActivityRevision{}` struct.
+  the schema of `%Revision{}` struct.
 
   Not acquiring the lock here is considered a failure, as it is
   not an expected condition that a client would encounter. The client
@@ -34,22 +34,22 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   Returns:
 
-  .`{:ok, %ActivityRevision{}}` when the edit processes successfully
+  .`{:ok, %Revision{}}` when the edit processes successfully
   .`{:error, {:lock_not_acquired}}` if the lock could not be acquired or updated
   .`{:error, {:not_found}}` if the project, resource, activity, or user cannot be found
   .`{:error, {:not_authorized}}` if the user is not authorized to edit this activity
   .`{:error, {:error}}` unknown error
   """
   @spec edit(String.t, String.t, String.t, String.t, %{})
-    :: {:ok, %ActivityRevision{}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:lock_not_acquired}} | {:error, {:not_authorized}}
+    :: {:ok, %Revision{}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:lock_not_acquired}} | {:error, {:not_authorized}}
   def edit(project_slug, revision_slug, activity_slug, author_email, update) do
 
     with {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
-         {:ok, activity} <- Activities.get_activity_from_slug(activity_slug) |> trap_nil(),
+         {:ok, activity} <- Resources.get_resource_from_slug(activity_slug) |> trap_nil(),
          {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
-         {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil()
+         {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil()
     do
       Repo.transaction(fn ->
 
@@ -83,20 +83,21 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   # Creates a new activity revision and updates the publication mapping
   defp create_new_revision(previous, publication, activity, author_id) do
 
-    {:ok, revision} = Activities.create_activity_revision(%{
+    {:ok, revision} = Resources.create_revision(%{
+      resource_type_id: previous.resource_type_id,
       content: previous.content,
       objectives: previous.objectives,
       deleted: previous.deleted,
       slug: previous.slug,
       title: previous.title,
       author_id: author_id,
-      activity_id: previous.activity_id,
+      resource_id: previous.resource_id,
       previous_revision_id: previous.id,
       activity_type_id: previous.activity_type_id
     })
 
-    mapping = Publishing.get_activity_mapping(publication.id, activity.id)
-    {:ok, _mapping} = Publishing.update_activity_mapping(mapping, %{ revision_id: revision.id })
+    Publishing.get_resource_mapping!(publication.id, activity.id)
+    |> Publishing.update_resource_mapping(%{ revision_id: revision.id })
 
     revision
   end
@@ -115,7 +116,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   # Applies the update to the revision, converting any objective slugs back to ids
   defp update_revision(revision, update) do
-    {:ok, updated} = Activities.update_activity_revision(revision, update)
+    {:ok, updated} = Resources.update_revision(revision, update)
     updated
   end
 
@@ -124,13 +125,13 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   Returns:
 
-  .`{:ok, %ActivityRevision{}}` when the creation processes succeeds
+  .`{:ok, %Activity{}}` when the creation processes succeeds
   .`{:error, {:not_found}}` if the project, resource, or user cannot be found
   .`{:error, {:not_authorized}}` if the user is not authorized to create this activity
   .`{:error, {:error}}` unknown error
   """
   @spec create(String.t, String.t, %Author{}, %{})
-    :: {:ok, %ActivityRevision{}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:not_authorized}}
+    :: {:ok, %Revision{}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:not_authorized}}
   def create(project_slug, activity_type_slug, author, model) do
 
     Repo.transaction(fn ->
@@ -138,13 +139,12 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
          {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
-         {:ok, family} <- Activities.create_activity_family(),
-         {:ok, activity} <- Activities.create_activity(%{project_id: project.id, family_id: family.id}),
          {:ok, activity_type} <- Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
-         {:ok, revision} <- Activities.create_activity_revision(%{objectives: %{}, author_id: author.id, activity_id: activity.id, content: model, activity_type_id: activity_type.id}),
-         {:ok, _mapping} <- Publishing.create_activity_mapping(%{publication_id: publication.id, activity_id: activity.id, revision_id: revision.id})
+         {:ok, activity} <- Activity.create_new(%{title: activity_type.title, objectives: %{}, author_id: author.id, content: model, activity_type_id: activity_type.id}),
+         {:ok, _} <- Course.create_project_resource(%{ project_id: project.id, resource_id: activity.resource_id}) |> trap_nil(),
+         {:ok, _mapping} <- Publishing.create_resource_mapping(%{publication_id: publication.id, resource_id: activity.resource_id, revision_id: activity.id})
       do
-        revision
+        activity
       else
         error -> Repo.rollback(error)
       end
@@ -152,6 +152,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end)
 
   end
+
+
 
   @doc """
   Creates the context necessary to power a client side activity editor,
@@ -161,11 +163,11 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   def create_context(project_slug, revision_slug, activity_slug, author) do
 
     with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
-         {:ok, resource} <- Resources.get_resource_from_slugs(project_slug, revision_slug) |> trap_nil(),
-         {:ok, objectives} <- Publishing.get_published_objectives(publication.id) |> trap_nil(),
-         {:ok, objectives_without_ids} <- ResourceEditor.strip_ids(objectives) |> trap_nil(),
-         {:ok, %{content: content}} <- ResourceEditor.get_latest_revision(publication, resource) |> trap_nil(),
-         {:ok, %{activity_id: activity_id}} <- Activities.get_activity_revision(activity_slug) |> trap_nil(),
+         {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
+         {:ok, objectives} <- Publishing.get_published_objective_details(publication.id) |> trap_nil(),
+         {:ok, objectives_without_ids} <- PageEditor.strip_ids(objectives) |> trap_nil(),
+         {:ok, %{content: content}} <- PageEditor.get_latest_revision(publication, resource) |> trap_nil(),
+         {:ok, %{id: activity_id}} <- Resources.get_resource_from_slug(activity_slug) |> trap_nil(),
          {:ok, %{activity_type: activity_type, content: model, title: title}} <- get_latest_revision(publication.id, activity_id) |> trap_nil()
     do
 
@@ -194,12 +196,11 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end
   end
 
-
-  def get_latest_revision(publication_id, activity_id) do
-    mapping = Publishing.get_activity_mapping(publication_id, activity_id)
-    revision = Activities.get_activity_revision!(mapping.revision_id)
-
-    Repo.preload(revision, :activity_type)
+  # Retrieve the latest (current) revision for a resource given the
+  # active publication
+  def get_latest_revision(publication_id, resource_id) do
+    Publishing.get_published_revision(publication_id, resource_id)
+    |> Repo.preload([:activity_type])
   end
 
   # Find the next and previous 'sibling' activities to the activity
@@ -212,7 +213,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   # corresponding to the previous and next sibling activities. If there is
   # not a previous or next activity (e.g. the activity specified is first or is the
   # only activity) then nil is returned inside the tuple.
-  defp find_sibling_activities(activity_id, content, publication_id) do
+  defp find_sibling_activities(activity_id, %{"model" => content}, publication_id) do
 
     references = Enum.filter(content, fn c -> Map.get(c, "type") == "activity-reference" end)
     size = length(references)

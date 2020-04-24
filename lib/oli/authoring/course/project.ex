@@ -14,6 +14,7 @@ defmodule Oli.Authoring.Course.Project do
     belongs_to :parent_project, Oli.Authoring.Course.Project, foreign_key: :project_id
     belongs_to :family, Oli.Authoring.Course.Family
     many_to_many :authors, Oli.Accounts.Author, join_through: Oli.Authoring.Authors.AuthorProject
+    many_to_many :resources, Oli.Resources.Resource, join_through: Oli.Authoring.Course.ProjectResource
     has_many :publications, Oli.Publishing.Publication
 
     timestamps()
