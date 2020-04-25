@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.21.3">
+    <meta name="project" content="OLI Torus v0.1.0">
+    <title>Oli.Authoring.Locks — OLI Torus v0.1.0</title>
+    <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
+    <script src="dist/sidebar_items-6a74edf3a4.js"></script>
+      <script src="docs_config.js"></script>
+    <script async src="dist/app-a225d03098e64fef431a.js"></script>
+  </head>
+  <body data-type="modules">
+    <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+<div class="main">
+
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" title="Collapse/expand sidebar"></span>
+</button>
+
+<section class="sidebar">
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button">
+      <span class="icon-search" aria-hidden="true"></span>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button">
+      <span class="icon-cross" title="Cancel search"></span>
+    </button>
+    <label class="search-label">
+      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Search" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectDetails">
+      <a href="http://oli.cmu.edu" class="sidebar-projectName">
+OLI Torus      </a>
+      <h2 class="sidebar-projectVersion">
+        v0.1.0
+      </h2>
+    </div>
+      <a href="http://oli.cmu.edu">
+        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
+      </a>
+  </div>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list" href="#full-list">Modules</a></li>
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+      <h1>
+        <small class="app-vsn">OLI Torus v0.1.0</small>
+Oli.Authoring.Locks          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+      </h1>
+
+
+        <section id="moduledoc">
+<p>This module provides an interface to durable write locks. These locks are
+durable in the sense that they will survive server restarts given that
+they are stored in the database.</p>
+<h2 id="module-scoping" class="section-heading">
+  <a href="#module-scoping" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Scoping
+</h2>
+
+<p>Locks are scoped to publication and resource. This allows the implementation
+to support multiple locks per resource per project. This is necessary
+to allow the situation where an author (from the project) is editing a
+resource concurrent to an instructor (from a section) editing that same
+resource.  Each edit in this example would pertain to a differrent publication,
+thus the scoping of locks to publication and resource.</p>
+<h2 id="module-lock-expiration" class="section-heading">
+  <a href="#module-lock-expiration" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Lock Expiration
+</h2>
+
+<p>This implementation allows a user to acquire an already locked resource
+mapping that is held by another user if that existing lock has expired. Locks
+are considered to be expired if they have not been updated for <code class="inline">@ttl</code> seconds.
+This handles the case that a user locks a resource and then abandons their
+editing session without closing their browser.</p>
+<h2 id="module-actions" class="section-heading">
+  <a href="#module-actions" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Actions
+</h2>
+
+<p>Three actions exist for a lock: <code class="inline">acquire</code>, <code class="inline">update</code> and <code class="inline">release</code>. Lock acquiring
+results in the resource mapping record being stamped with the users id, but
+with an <code class="inline">nil</code> last updated at date.  Updating a lock sets the last updated at
+date. Releasing a lock sets both the user and last updated at to <code class="inline">nil</code>. Coupled
+with</p>
+        </section>
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#acquire/3">acquire(publication_id, resource_id, user_id)</a>
+  </div>
+    <div class="summary-synopsis"><p>Attempts to acquire or update a lock for user <code class="inline">user_id</code> the resource mapping
+defined by <code class="inline">publication_id</code> and <code class="inline">resource_id</code>.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#release/3">release(publication_id, resource_id, user_id)</a>
+  </div>
+    <div class="summary-synopsis"><p>Releases a lock held by user <code class="inline">user_id</code> the resource mapping
+defined by <code class="inline">publication_id</code> and <code class="inline">resource_id</code>.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#update/3">update(publication_id, resource_id, user_id)</a>
+  </div>
+    <div class="summary-synopsis"><p>Attempts to acquire or update a lock for user <code class="inline">user_id</code> the resource mapping
+defined by <code class="inline">publication_id</code> and <code class="inline">resource_id</code>.</p></div>
+</div>
+  </div>
+        </section>
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions          </h1>
+          <div class="functions-list">
+<section class="detail" id="acquire/3">
+  <div class="detail-header">
+    <a href="#acquire/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">acquire(publication_id, resource_id, user_id)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L62" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+      <div class="specs">
+          <pre>acquire(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()) ::
+  {:error}
+  | {:acquired}
+  | {:lock_not_acquired,
+     {<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(),
+      %{
+        calendar: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(),
+        day: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+        hour: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+        microsecond: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+        minute: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+        month: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+        second: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+        year: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()
+      }}}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Attempts to acquire or update a lock for user <code class="inline">user_id</code> the resource mapping
+defined by <code class="inline">publication_id</code> and <code class="inline">resource_id</code>.</p>
+<p>Returns:</p>
+<p>.<code class="inline">{:acquired}</code> if the lock was acquired
+.<code class="inline">{:error}</code> if an internal error was encountered
+.<code class="inline">{:lock_not_acquired, {user_id, date_time}}</code> the date and user id of the existing lock</p>
+  </section>
+</section>
+<section class="detail" id="release/3">
+  <div class="detail-header">
+    <a href="#release/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">release(publication_id, resource_id, user_id)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L140" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+      <div class="specs">
+          <pre>release(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()) :: {:error} | {:lock_not_held} | {:ok}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Releases a lock held by user <code class="inline">user_id</code> the resource mapping
+defined by <code class="inline">publication_id</code> and <code class="inline">resource_id</code>.</p>
+<p>Returns:</p>
+<p>.<code class="inline">{:ok}</code> if the lock was released
+.<code class="inline">{:error}</code> if an internal error was encountered
+.<code class="inline">{:lock_not_held}</code> if the lock was not held by this user</p>
+  </section>
+</section>
+<section class="detail" id="update/3">
+  <div class="detail-header">
+    <a href="#update/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">update(publication_id, resource_id, user_id)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L108" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+      <div class="specs">
+          <pre>update(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()) ::
+  {:error}
+  | {:acquired}
+  | {:updated}
+  | {:lock_not_acquired,
+     {<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(),
+      %{
+        calendar: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(),
+        day: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+        hour: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+        microsecond: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+        minute: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+        month: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+        second: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+        year: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()
+      }}}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Attempts to acquire or update a lock for user <code class="inline">user_id</code> the resource mapping
+defined by <code class="inline">publication_id</code> and <code class="inline">resource_id</code>.</p>
+<p>Returns:</p>
+<p>.<code class="inline">{:acquired}</code> if the lock was acquired
+.<code class="inline">{:updated}</code> if the lock was updated
+.<code class="inline">{:error}</code> if an internal error was encountered
+.<code class="inline">{:lock_not_acquired, {user_id, date_time}}</code> the date and user id of the existing lock</p>
+  </section>
+</section>
+          </div>
+        </section>
+      <footer class="footer">
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.21.3),
+          </span>
+          <span class="line">
+            designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+          </span>
+        </p>
+        <p>
+          <button class="line footer-button display-shortcuts-help">
+            Display keyboard shortcuts
+          </button>
+          <button class="line footer-button night-mode-toggle">
+            Toggle night mode
+          </button>
+          <button class="line footer-button display-quick-switch">
+            Go to a HexDocs package
+          </button>
+          <button class="line footer-button tooltips-toggle">
+            <span class="tooltips-option-disable">Disable tooltips</span>
+            <span class="tooltips-option-enable">Enable tooltips</span>
+          </button>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+  </body>
+</html>
