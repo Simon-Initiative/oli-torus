@@ -3,8 +3,14 @@ defmodule Oli.Authoring.Course do
   import Ecto.Query, warn: false
   alias Oli.Repo
   alias Oli.Publishing
-  alias Oli.Authoring.{Resources, Collaborators}
-  alias Oli.Authoring.Course.{Utils, Project, Family}
+  alias Oli.Authoring.{Collaborators}
+  alias Oli.Authoring.Course.{Utils, Project, Family, ProjectResource}
+
+  def create_project_resource(attrs) do
+    %ProjectResource{}
+    |> ProjectResource.changeset(attrs)
+    |> Repo.insert()
+  end
 
   def list_projects do
     Repo.all(Project)
@@ -14,15 +20,45 @@ defmodule Oli.Authoring.Course do
   def get_project_by_slug(nil), do: nil
   def get_project_by_slug(slug) when is_binary(slug), do: Repo.get_by(Project, slug: slug)
 
+
+  def create_and_attach_resource(project, attrs) do
+    with {:ok, %{resource: resource, revision: revision}} <- Oli.Resources.create_resource_and_revision(attrs),
+        {:ok, project_resource} = attach_to_project(resource, project)
+    do
+      {:ok, %{resource: resource, revision: revision, project_resource: project_resource}}
+    else
+      error -> error
+    end
+  end
+
+  def attach_to_project(%{resource: resource}, project) do
+    attach_to_project(resource, project)
+  end
+
+  def attach_to_project(resource, project) do
+    create_project_resource(%{project_id: project.id, resource_id: resource.id})
+  end
+
+
+  def initial_resource_setup(author, project) do
+
+    attrs = %{
+      title: project.title <> " root container",
+      author_id: author.id,
+      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
+    }
+    create_and_attach_resource(project, attrs)
+
+  end
+
+
   def create_project(title, author) do
     Repo.transaction(fn ->
       with {:ok, project_family} <- create_family(default_family(title)),
            {:ok, project} <- create_project(default_project(title, project_family)),
            {:ok, collaborator} <- Collaborators.add_collaborator(author, project),
-           {:ok, %{resource: resource, resource_revision: resource_revision, resource_family: resource_family}}
-              <- Resources.initial_resource_setup(author, project),
-          #  {:ok, %{objective: objective, objective_revision: objective_revision}}
-          #     <- Learning.initial_objective_setup(project),
+           {:ok, %{resource: resource, revision: resource_revision}}
+              <- initial_resource_setup(author, project),
            {:ok, %{publication: publication, resource_mapping: resource_mapping}}
               <- Publishing.initial_publication_setup(project, resource, resource_revision)
       do
@@ -32,7 +68,6 @@ defmodule Oli.Authoring.Course do
           author_project: collaborator,
           resource: resource,
           resource_revision: resource_revision,
-          resource_family: resource_family,
           publication: publication,
           resource_mapping: resource_mapping,
         }

@@ -7,7 +7,7 @@ defmodule Oli.TestHelpers do
   alias Oli.Delivery.Lti.HmacSHA1
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
-  alias Oli.Authoring.Learning
+  alias Oli.Publishing
 
   def yesterday() do
     {:ok, datetime} = DateTime.now("Etc/UTC")
@@ -62,10 +62,15 @@ defmodule Oli.TestHelpers do
     project
   end
 
-  def objective_fixture(project) do
-    params = Map.merge(%{"title" => "Test learning objective"}, %{"project_id" => project.id, "project_slug" => project.slug})
-    {:ok, objective} = Learning.create_objective(params)
-    objective
+  def objective_fixture(project, author) do
+    {:ok, %{resource: objective, revision: revision}} = Course.create_and_attach_resource(
+      project,
+      %{title: "Test learning objective", author_id: author.id, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective")})
+
+    publication = Publishing.get_unpublished_publication(project.slug)
+    Publishing.upsert_published_resource(publication, revision)
+
+    %{objective: objective, objective_revision: revision}
   end
 
   def url_from_conn(conn) do
@@ -157,9 +162,14 @@ defmodule Oli.TestHelpers do
   def author_project_objective_fixture(%{conn: conn}) do
     author = author_fixture()
     [project | _rest] = make_n_projects(1, author)
-    objective = objective_fixture(project);
+    objective = objective_fixture(project, author);
     objective_revision = objective.objective_revision
     conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
     {:ok, conn: conn, author: author, project: project, objective_revision: objective_revision}
+  end
+
+  def read_json_file(filename) do
+    with {:ok, body} <- File.read(filename),
+         {:ok, json} <- Poison.decode(body), do: {:ok, json}
   end
 end

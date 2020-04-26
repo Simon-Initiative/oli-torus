@@ -1,25 +1,47 @@
 defmodule Oli.Publishing do
+
   import Ecto.Query, warn: false
   alias Oli.Repo
 
   alias Oli.Authoring.Course.Project
-  alias Oli.Authoring.Learning.ObjectiveRevision
   alias Oli.Accounts.Author
   alias Oli.Delivery.Sections
-  alias Oli.Publishing.{Publication, ResourceMapping, ActivityMapping, ObjectiveMapping}
-  alias Oli.Authoring.Activities.ActivityRevision
-  alias Oli.Publishing.ResourceMapping
+  alias Oli.Publishing.{Publication, PublishedResource}
+
 
   @doc """
   Returns the activity revisions for a list of activity ids
   that pertain to a given publication.
   """
   def get_published_activity_revisions(publication_id, activity_ids) do
-    Repo.all(from mapping in ActivityMapping,
-      join: rev in ActivityRevision, on: mapping.revision_id == rev.id,
-      where: mapping.publication_id == ^publication_id and mapping.activity_id in ^activity_ids,
+
+    activity = Oli.Resources.ResourceType.get_id_by_type("activity")
+
+    Repo.all(from mapping in PublishedResource,
+      join: rev in Oli.Resources.Revision, on: mapping.revision_id == rev.id,
+      where: rev.resource_type_id == ^activity and mapping.publication_id == ^publication_id and mapping.resource_id in ^activity_ids,
       select: rev) |> Repo.preload(:activity_type)
   end
+
+  # For a project, return the all the current revisions associated
+  # with the unpublished publication for a list of resource_ids
+  def get_unpublished_revisions(project, resource_ids) do
+
+    project_id = project.id
+
+    revisions = Repo.all(from m in Oli.Publishing.PublishedResource,
+      join: rev in Oli.Resources.Revision, on: rev.id == m.revision_id,
+      join: p in Oli.Publishing.Publication, on: p.id == m.publication_id,
+      where: p.published == false and m.resource_id in ^resource_ids and p.project_id == ^project_id,
+      select: rev)
+
+    # order them according to the resource_ids
+    map = Enum.reduce(revisions, %{}, fn e, m -> Map.put(m, e.resource_id, e) end)
+    Enum.map(resource_ids, fn resource_id -> Map.get(map, resource_id) end)
+
+  end
+
+
 
   @doc """
   Returns the list of publications.
@@ -63,7 +85,7 @@ defmodule Oli.Publishing do
   """
   def get_unpublished_publication_id!(project_id)do
     Repo.one(
-      from p in "publications",
+      from p in Publication,
       where: p.project_id == ^project_id and p.published == false,
       select: p.id)
   end
@@ -200,6 +222,17 @@ defmodule Oli.Publishing do
           select: pub
   end
 
+
+  def get_published_objective_details(publication_id) do
+
+    objective = Oli.Resources.ResourceType.get_id_by_type("objective")
+
+    Repo.all from mapping in PublishedResource,
+      join: rev in Oli.Resources.Revision, on: mapping.revision_id == rev.id,
+      where: rev.deleted == false and rev.resource_type_id == ^objective and mapping.publication_id == ^publication_id,
+      select: map(rev, [:slug, :title, :resource_id])
+  end
+
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking publication changes.
   ## Examples
@@ -218,7 +251,7 @@ defmodule Oli.Publishing do
       [%ResourceMapping{}, ...]
   """
   def list_resource_mappings do
-    Repo.all(ResourceMapping)
+    Repo.all(PublishedResource)
   end
 
   @doc """
@@ -231,8 +264,20 @@ defmodule Oli.Publishing do
 
   """
   def get_resource_mappings_by_publication(publication_id) do
-    from(p in ResourceMapping, where: p.publication_id == ^publication_id, preload: [:resource, :revision])
+    from(p in PublishedResource, where: p.publication_id == ^publication_id, preload: [:resource, :revision])
     |> Repo.all()
+  end
+
+  def get_objective_mappings_by_publication(publication_id) do
+
+    objective = Oli.Resources.ResourceType.get_id_by_type("objective")
+
+    Repo.all(from mapping in PublishedResource,
+      join: rev in Oli.Resources.Revision, on: mapping.revision_id == rev.id,
+      where: rev.deleted == false and rev.resource_type_id == ^objective and mapping.publication_id == ^publication_id,
+      select: mapping,
+      preload: [:resource, :revision])
+
   end
 
   @doc """
@@ -244,14 +289,35 @@ defmodule Oli.Publishing do
       iex> get_resource_mapping!(456)
       ** (Ecto.NoResultsError)
   """
-  def get_resource_mapping!(id), do: Repo.get!(ResourceMapping, id)
+  def get_resource_mapping!(id), do: Repo.get!(PublishedResource, id)
 
   def get_resource_mapping!(publication_id, resource_id) do
-    Repo.one!(from p in ResourceMapping, where: p.publication_id == ^publication_id and p.resource_id == ^resource_id)
+    Repo.one!(from p in PublishedResource, where: p.publication_id == ^publication_id and p.resource_id == ^resource_id)
   end
 
-  def get_activity_mapping(publication_id, activity_id) do
-    Repo.one(from p in ActivityMapping, where: p.publication_id == ^publication_id and p.activity_id == ^activity_id)
+  def get_resource_mapping(publication_id, resource_id) do
+    Repo.one(from p in PublishedResource, where: p.publication_id == ^publication_id and p.resource_id == ^resource_id)
+  end
+
+  @doc """
+  Creates a new, or updates the existing published resource
+  for the given publication and revision.
+  """
+  def upsert_published_resource(%Publication{} = publication, revision) do
+    case get_resource_mapping(publication.id, revision.resource_id) do
+      nil -> create_resource_mapping(%{publication_id: publication.id, resource_id: revision.resource_id, revision_id: revision.id})
+      mapping -> update_resource_mapping(mapping, %{resource_id: revision.resource_id, revision_id: revision.id})
+    end
+  end
+
+  def publish_new_revision(previous_revision, changes, publication, author_id) do
+
+    changes = Map.merge(changes, %{author_id: author_id})
+
+    {:ok, revision} = Oli.Resources.create_revision_from_previous(previous_revision, changes)
+    {:ok, _} = upsert_published_resource(publication, revision)
+
+    revision
   end
 
   @doc """
@@ -263,8 +329,8 @@ defmodule Oli.Publishing do
       {:error, %Ecto.Changeset{}}
   """
   def create_resource_mapping(attrs \\ %{}) do
-    %ResourceMapping{}
-    |> ResourceMapping.changeset(attrs)
+    %PublishedResource{}
+    |> PublishedResource.changeset(attrs)
     |> Repo.insert()
   end
 
@@ -276,9 +342,9 @@ defmodule Oli.Publishing do
       iex> update_resource_mapping(resource_mapping, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
-  def update_resource_mapping(%ResourceMapping{} = resource_mapping, attrs) do
+  def update_resource_mapping(%PublishedResource{} = resource_mapping, attrs) do
     resource_mapping
-    |> ResourceMapping.changeset(attrs)
+    |> PublishedResource.changeset(attrs)
     |> Repo.update()
   end
 
@@ -288,8 +354,8 @@ defmodule Oli.Publishing do
       iex> change_resource_mapping(resource_mapping)
       %Ecto.Changeset{source: %ResourceMapping{}}
   """
-  def change_resource_mapping(%ResourceMapping{} = resource_mapping) do
-    ResourceMapping.changeset(resource_mapping, %{})
+  def change_resource_mapping(%PublishedResource{} = resource_mapping) do
+    PublishedResource.changeset(resource_mapping, %{})
   end
 
   @doc """
@@ -300,200 +366,20 @@ defmodule Oli.Publishing do
       iex> delete_resource_mapping(resource_mapping)
       {:error, %Ecto.Changeset{}}
   """
-  def delete_resource_mapping(%ResourceMapping{} = resource_mapping) do
+  def delete_resource_mapping(%PublishedResource{} = resource_mapping) do
     Repo.delete(resource_mapping)
   end
 
-  @doc """
-  Returns the list of activity_mappings.
-  ## Examples
-      iex> list_activity_mappings()
-      [%ActivityMapping{}, ...]
-  """
-  def list_activity_mappings do
-    Repo.all(ActivityMapping)
-  end
-
-  @doc """
-  Returns the list of activity_mappings for a given publication.
-
-  ## Examples
-
-      iex> get_activity_mappings_for_publication()
-      [%ActivityMapping{}, ...]
-
-  """
-  def get_activity_mappings_by_publication(publication_id) do
-    from(p in ActivityMapping, where: p.publication_id == ^publication_id, preload: [:activity, :revision])
-    |> Repo.all()
-  end
-
-  @doc """
-  Gets a single activity_mapping.
-  Raises `Ecto.NoResultsError` if the Activity mapping does not exist.
-  ## Examples
-      iex> get_activity_mapping!(123)
-      %ActivityMapping{}
-      iex> get_activity_mapping!(456)
-      ** (Ecto.NoResultsError)
-  """
-  def get_activity_mapping!(id), do: Repo.get!(ActivityMapping, id)
-
-  @doc """
-  Creates a activity_mapping.
-  ## Examples
-      iex> create_activity_mapping(%{field: value})
-      {:ok, %ActivityMapping{}}
-      iex> create_activity_mapping(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-  """
-  def create_activity_mapping(attrs \\ %{}) do
-    %ActivityMapping{}
-    |> ActivityMapping.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Updates a activity_mapping.
-  ## Examples
-      iex> update_activity_mapping(activity_mapping, %{field: new_value})
-      {:ok, %ActivityMapping{}}
-      iex> update_activity_mapping(activity_mapping, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-  """
-  def update_activity_mapping(%ActivityMapping{} = activity_mapping, attrs) do
-    activity_mapping
-    |> ActivityMapping.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking activity_mapping changes.
-  ## Examples
-      iex> change_activity_mapping(activity_mapping)
-      %Ecto.Changeset{source: %ActivityMapping{}}
-  """
-  def change_activity_mapping(%ActivityMapping{} = activity_mapping) do
-    ActivityMapping.changeset(activity_mapping, %{})
-  end
-
-  @doc """
-  Deletes a activity_mapping.
-  ## Examples
-      iex> delete_activity_mapping(activity_mapping)
-      {:ok, %ActivityMapping{}}
-      iex> delete_activity_mapping(activity_mapping)
-      {:error, %Ecto.Changeset{}}
-  """
-  def delete_activity_mapping(%ActivityMapping{} = activity_mapping) do
-    Repo.delete(activity_mapping)
-  end
-
-  @doc """
-  Returns the list of objective_mappings.
-  ## Examples
-      iex> list_objective_mappings()
-      [%ObjectiveMapping{}, ...]
-  """
-  def list_objective_mappings do
-    Repo.all(ObjectiveMapping)
-  end
-
-  @doc """
-  Returns the list of objective_mappings for a given publication.
-
-  ## Examples
-
-      iex> get_objective_mappings_for_publication()
-      [%ObjectiveMapping{}, ...]
-
-  """
-  def get_objective_mappings_by_publication(publication_id) do
-    Repo.all from mapping in ObjectiveMapping,
-             join: rev in ObjectiveRevision, on: mapping.revision_id == rev.id,
-             where: mapping.publication_id == ^publication_id and rev.deleted == false,
-             select: mapping,
-             preload: [:objective, :revision]
-  end
-
-  def get_objective_mapping(publication_id, objective_slug) do
-    Repo.one from mapping in ObjectiveMapping,
-             join: rev in ObjectiveRevision, on: mapping.revision_id == rev.id,
-             where: mapping.publication_id == ^publication_id and rev.slug == ^objective_slug,
-             select: mapping,
-             preload: [:objective, :revision]
-  end
-
-  @doc """
-  Gets a single objective_mapping.
-  Raises `Ecto.NoResultsError` if the Objective mapping does not exist.
-  ## Examples
-      iex> get_objective_mapping!(123)
-      %ObjectiveMapping{}
-      iex> get_objective_mapping!(456)
-      ** (Ecto.NoResultsError)
-  """
-  def get_objective_mapping!(id), do: Repo.get!(ObjectiveMapping, id)
-
-  @doc """
-  Creates a objective_mapping.
-  ## Examples
-      iex> create_objective_mapping(%{field: value})
-      {:ok, %ObjectiveMapping{}}
-      iex> create_objective_mapping(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-  """
-  def create_objective_mapping(attrs \\ %{}) do
-    %ObjectiveMapping{}
-    |> ObjectiveMapping.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Updates a objective_mapping.
-  ## Examples
-      iex> update_objective_mapping(objective_mapping, %{field: new_value})
-      {:ok, %ObjectiveMapping{}}
-      iex> update_objective_mapping(objective_mapping, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-  """
-  def update_objective_mapping(%ObjectiveMapping{} = objective_mapping, attrs) do
-    objective_mapping
-    |> ObjectiveMapping.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking objective_mapping changes.
-  ## Examples
-      iex> change_objective_mapping(objective_mapping)
-      %Ecto.Changeset{source: %ObjectiveMapping{}}
-  """
-  def change_objective_mapping(%ObjectiveMapping{} = objective_mapping) do
-    ObjectiveMapping.changeset(objective_mapping, %{})
-  end
-
-  @doc """
-  Deletes a objective_mapping.
-  ## Examples
-      iex> delete_objective_mapping(objective_mapping)
-      {:ok, %ObjectiveMapping{}}
-      iex> delete_objective_mapping(objective_mapping)
-      {:error, %Ecto.Changeset{}}
-  """
-  def delete_objective_mapping(%ObjectiveMapping{} = objective_mapping) do
-    Repo.delete(objective_mapping)
-  end
 
   @doc """
   Returns the list of objectives (their slugs and titles)
   that pertain to a given publication.
   """
-  def get_published_objectives(publication_id) do
-    Repo.all from mapping in ObjectiveMapping,
-      join: rev in ObjectiveRevision, on: mapping.revision_id == rev.id,
-      where: mapping.publication_id == ^publication_id,
-      select: map(rev, [:slug, :title])
+  def get_published_revision(publication_id, resource_id) do
+    Repo.one from mapping in PublishedResource,
+      join: rev in Oli.Resources.Revision, on: mapping.revision_id == rev.id,
+      where: mapping.resource_id == ^resource_id and mapping.publication_id == ^publication_id,
+      select: rev
   end
 
   @doc """
@@ -519,22 +405,18 @@ defmodule Oli.Publishing do
 
     # create new mappings for the new publication
     resource_mappings = get_resource_mappings_by_publication(active_publication.id)
-    activity_mappings = get_activity_mappings_by_publication(active_publication.id)
-    objective_mappings = get_objective_mappings_by_publication(active_publication.id)
 
     # create a copy_mapping function bound to new_publication
     copy_mapping_fn = &(copy_mapping_for_publication &1, new_publication)
 
     # copy mappings for resources, activities, and objectives
     Enum.map(resource_mappings, copy_mapping_fn)
-    Enum.map(activity_mappings, copy_mapping_fn)
-    Enum.map(objective_mappings, copy_mapping_fn)
 
     # set the active publication to published
     update_publication(active_publication, %{published: true})
   end
 
-  defp copy_mapping_for_publication(%ResourceMapping{} = resource_mapping, publication) do
+  defp copy_mapping_for_publication(%PublishedResource{} = resource_mapping, publication) do
     {:ok, new_mapping} = create_resource_mapping(%{
       publication_id: publication.id,
       resource_id: resource_mapping.resource_id,
@@ -543,23 +425,6 @@ defmodule Oli.Publishing do
     new_mapping
   end
 
-  defp copy_mapping_for_publication(%ActivityMapping{} = activity_mapping, publication) do
-    {:ok, new_mapping} = create_activity_mapping(%{
-      publication_id: publication.id,
-      activity_id: activity_mapping.activity_id,
-      revision_id: activity_mapping.revision_id,
-    })
-    new_mapping
-  end
-
-  defp copy_mapping_for_publication(%ObjectiveMapping{} = objective_mapping, publication) do
-    {:ok, new_mapping} = create_objective_mapping(%{
-      publication_id: publication.id,
-      objective_id: objective_mapping.objective_id,
-      revision_id: objective_mapping.revision_id,
-    })
-    new_mapping
-  end
 
   def update_all_section_publications(project, publication) do
     Sections.get_sections_by_project(project)
@@ -602,20 +467,11 @@ defmodule Oli.Publishing do
 
   defp get_resource_revisions_for_publication(publication) do
     resource_mappings = get_resource_mappings_by_publication(publication.id)
-    activity_mappings = get_activity_mappings_by_publication(publication.id)
-    objective_mappings = get_objective_mappings_by_publication(publication.id)
 
-    resource_mappings ++ activity_mappings ++ objective_mappings
+    # filter out revisions that are marked as deleted, then convert
+    # to a map of resource_ids to {resource, revision} tuples
+    resource_mappings
     |> Enum.filter(fn mapping -> mapping.revision.deleted == false end)
-    |> Enum.reduce(%{}, fn mapping, acc ->
-      case mapping do
-        %ResourceMapping{resource_id: resource_id, resource: resource, revision: revision} ->
-          Map.put_new(acc, resource_id, {resource, revision})
-        %ActivityMapping{activity_id: activity_id, activity: activity, revision: revision} ->
-          Map.put_new(acc, activity_id, {activity, revision})
-        %ObjectiveMapping{objective_id: objective_id, objective: objective, revision: revision} ->
-          Map.put_new(acc, objective_id, {objective, revision})
-      end
-    end)
+    |> Enum.reduce(%{}, fn m, acc -> Map.put_new(acc, m.resource_id, {m.resource, m.revision}) end)
   end
 end

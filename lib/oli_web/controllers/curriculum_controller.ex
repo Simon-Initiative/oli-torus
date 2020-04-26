@@ -1,34 +1,32 @@
 defmodule OliWeb.CurriculumController do
   use OliWeb, :controller
   import OliWeb.ProjectPlugs
-
-  alias Oli.Authoring.Resources
+  alias Oli.Authoring.Editing.ContainerEditor
+  alias Oli.Resources
 
   plug :fetch_project
   plug :authorize_project
 
   def index(conn, _params) do
     render(conn, "index.html",
-      pages: Resources.list_all_pages(conn.assigns.project),
+      pages: ContainerEditor.list_all_pages(conn.assigns.project),
       title: "Curriculum")
   end
 
   def create(conn, %{"type" => type}) do
     %{ project: project, current_author: author } = conn.assigns
-    resource_type = case type do
-      "Scored" -> Resources.resource_type.scored_page
-      "Unscored" -> Resources.resource_type.unscored_page
-      _ -> Resources.resource_type.unscored_page
-    end
 
-    case Resources.create_project_resource(
-      %{
-        objectives: [],
-        children: [],
-        content: [],
-        title: "New #{type} Page",
-      }, resource_type, author, project
-    ) do
+    attrs = %{
+      objectives: %{ "attached" => []},
+      children: [],
+      content: %{ "model" => []},
+      title: "New Page",
+      graded: type == "Scored",
+      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page")
+    }
+
+    case ContainerEditor.add_new(attrs, author, project) do
+
       {:ok, _resource} ->
         conn
         |> redirect(to: Routes.curriculum_path(conn, :index, project))
@@ -46,12 +44,12 @@ defmodule OliWeb.CurriculumController do
     case Resources.update_root_container_children(project, author, update_params) do
       {:ok, _resource} ->
         render(conn, "index.html",
-        pages: Resources.list_all_pages(conn.assigns.project),
+        pages: ContainerEditor.list_all_pages(conn.assigns.project),
         title: "Curriculum")
 
       {:error, _} ->
         render(conn, "index.html",
-        pages: Resources.list_all_pages(conn.assigns.project),
+        pages: ContainerEditor.list_all_pages(conn.assigns.project),
         title: "Curriculum")
     end
   end

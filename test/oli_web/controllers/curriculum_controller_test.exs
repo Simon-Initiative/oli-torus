@@ -39,7 +39,7 @@ defmodule OliWeb.CurriculumControllerTest do
   end
 
   def project_seed(%{conn: conn}) do
-    seeds = Oli.Seeder.base_project_with_resource()
+    seeds = Oli.Seeder.base_project_with_resource2()
     conn = Plug.Test.init_test_session(conn, current_author_id: seeds.author.id)
 
     {:ok, Map.merge(%{conn: conn}, seeds)}

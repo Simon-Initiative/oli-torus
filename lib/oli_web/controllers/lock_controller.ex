@@ -1,13 +1,13 @@
 defmodule OliWeb.LockController do
   use OliWeb, :controller
 
-  alias Oli.Authoring.Editing.ResourceEditor
+  alias Oli.Authoring.Editing.PageEditor
 
   def acquire(conn, %{"project" => project_slug, "resource" => resource_slug}) do
 
     author = conn.assigns[:current_author]
 
-    case ResourceEditor.acquire_lock(project_slug, resource_slug, author.email) do
+    case PageEditor.acquire_lock(project_slug, resource_slug, author.email) do
       {:acquired} -> json conn, %{ "type" => "acquired"}
       {:lock_not_acquired, user} -> json conn, %{ "type" => "not_acquired", "user" => user}
       {:error, {:not_found}} -> error(conn, 404, "not found")
@@ -19,7 +19,7 @@ defmodule OliWeb.LockController do
   def release(conn, %{"project" => project_slug, "resource" => resource_slug}) do
     author = conn.assigns[:current_author]
 
-    case ResourceEditor.release_lock(project_slug, resource_slug, author.email) do
+    case PageEditor.release_lock(project_slug, resource_slug, author.email) do
       {:ok, {:released}} -> json conn, %{ "type" => "released"}
       {:error, {:not_found}} -> error(conn, 404, "not found")
       {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")

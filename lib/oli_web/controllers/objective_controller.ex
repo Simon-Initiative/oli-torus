@@ -2,67 +2,88 @@ defmodule OliWeb.ObjectiveController do
   use OliWeb, :controller
   import OliWeb.ProjectPlugs
 
-  alias Oli.Authoring.Learning
-  alias Oli.Publishing
-  import Oli.Utils
+  alias Oli.Authoring.Editing.ObjectiveEditor
 
   plug :fetch_project when action in [:create, :update, :delete]
   plug :authorize_project when action in [:create, :update, :delete]
 
-  def create(conn, %{"project_id" => project_id, "objective" => objective_params}) do
+  def create(conn, %{"project_id" => _, "revision" => objective_params}) do
     project = conn.assigns.project
-    params = Map.merge(objective_params, %{"project_id" => project.id, "project_slug" => project.slug})
-    with {:ok, _objective} <- Learning.create_objective(params)
-    do
-      conn
-      |> put_flash(:info, "Objective created successfully.")
-      |> put_req_header("x-status", "success")
-      |> redirect(to: Routes.project_path(conn, :objectives, project_id))
-    else
-      _error ->
-        conn
+    author = conn.assigns[:current_author]
+    container_slug = Map.get(objective_params, "parent_slug")
+
+    with_atom_keys = Map.keys(objective_params)
+    |> Enum.reduce(%{}, fn k, m -> Map.put(m, String.to_atom(k), Map.get(objective_params, k)) end)
+
+    case ObjectiveEditor.add_new(with_atom_keys, author, project, container_slug) do
+      {:ok, _} -> conn
+        |> put_flash(:info, "Objective created successfully.")
+        |> put_req_header("x-status", "success")
+        |> redirect(to: Routes.project_path(conn, :objectives, project.slug))
+      _error -> conn
         |> put_flash(:error, "Objective creation failed.")
         |> put_req_header("x-status", "failed")
-        |> redirect(to: Routes.project_path(conn, :objectives, project_id))
+        |> redirect(to: Routes.project_path(conn, :objectives, project.slug))
     end
+
   end
 
-  def update(conn, %{"project_id" => project_id, "objective_slug" => objective_slug, "objective" => objective_params}) do
+
+  def create(conn, %{"project_id" => _, "title" => title}) do
+
     project = conn.assigns.project
-    params = Map.merge(objective_params, %{"project_id" => project.id, "project_slug" => project.slug})
-    with {:ok, publication} <- Publishing.get_unpublished_publication(project.slug) |> trap_nil(),
-         {:ok, objective_mapping} <- Publishing.get_objective_mapping(publication.id, objective_slug) |> trap_nil(),
-         {:ok, _objective_revision} <- Learning.update_objective_revision(objective_mapping.revision, params)
-    do
-      conn
-      |> put_flash(:info, "Objective updated successfully.")
-      |> put_req_header("x-status", "success")
-      |> redirect(to: Routes.project_path(conn, :objectives, project_id))
-    else
-      _error ->
-        conn
+    author = conn.assigns[:current_author]
+
+    case ObjectiveEditor.add_new(%{title: title}, author, project, nil) do
+      {:ok, _} -> conn
+        |> put_flash(:info, "Objective created successfully.")
+        |> put_req_header("x-status", "success")
+        |> redirect(to: Routes.project_path(conn, :objectives, project.slug))
+      _error -> conn
+        |> put_flash(:error, "Objective creation failed.")
+        |> put_req_header("x-status", "failed")
+        |> redirect(to: Routes.project_path(conn, :objectives, project.slug))
+    end
+
+  end
+
+
+  def update(conn, %{"project_id" => _project_id, "objective_slug" => objective_slug, "revision" => objective_params}) do
+
+    project = conn.assigns.project
+    author = conn.assigns[:current_author]
+
+    with_atom_keys = Map.keys(objective_params)
+    |> Enum.reduce(%{}, fn k, m -> Map.put(m, String.to_atom(k), Map.get(objective_params, k)) end)
+
+    case ObjectiveEditor.edit(objective_slug, with_atom_keys, author, project) do
+      {:ok, _} -> conn
+        |> put_flash(:info, "Objective updated successfully.")
+        |> put_req_header("x-status", "success")
+        |> redirect(to: Routes.project_path(conn, :objectives, project.slug))
+      _error -> conn
         |> put_flash(:error, "Objective update failed.")
         |> put_req_header("x-status", "failed")
-        |> redirect(to: Routes.project_path(conn, :objectives, project_id))
+        |> redirect(to: Routes.project_path(conn, :objectives, project.slug))
     end
+
   end
 
-  def delete(conn, %{"project_id" => project_id, "objective_slug" => objective_slug}) do
+  def delete(conn, %{"project_id" => _, "objective_slug" => objective_slug}) do
+
     project = conn.assigns.project
-    with {:ok, publication} <- Publishing.get_unpublished_publication(project.slug) |> trap_nil(),
-         {:ok, objective_mapping} <- Publishing.get_objective_mapping(publication.id, objective_slug) |> trap_nil(),
-         {:ok, _objective_revision} <- Learning.delete_objective_revision(objective_mapping.revision)
-    do
-      conn
-      |> put_flash(:info, "Objective deleted successfully.")
-      |> put_req_header("x-status", "success")
-      |> redirect(to: Routes.project_path(conn, :objectives, project_id))
-    else
-      _error ->
-        conn
+    author = conn.assigns[:current_author]
+
+    case ObjectiveEditor.edit(objective_slug, %{ deleted: true }, author, project) do
+      {:ok, _} -> conn
+        |> put_flash(:info, "Objective deleted successfully.")
+        |> put_req_header("x-status", "success")
+        |> redirect(to: Routes.project_path(conn, :objectives, project.slug))
+      _error -> conn
         |> put_flash(:error, "Objective delete failed.")
         |> put_req_header("x-status", "failed")
-        |> redirect(to: Routes.project_path(conn, :objectives, project_id))
+        |> redirect(to: Routes.project_path(conn, :objectives, project.slug))
     end
+
   end
 end
