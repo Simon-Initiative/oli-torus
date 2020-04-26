@@ -7,6 +7,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   """
 
   alias Oli.Resources.Revision
+  alias Oli.Resources
   alias Oli.Accounts.Author
   alias Oli.Authoring.Course.Project
   alias Oli.Publishing.AuthoringResolver
@@ -22,7 +23,6 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     %Author{} = author,
     %Project{} = project
   ) do
-
     AuthoringResolver.root_resource(project.slug)
     |> add_new(attrs, author, project)
   end
@@ -48,8 +48,29 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     end
   end
 
-  def append_to_container(container, project_slug, revision_to_attach, author) do
+  def update_children(project, author, reordered_slugs) do
+    AuthoringResolver.root_resource(project.slug)
+    |> update_children(project, author, reordered_slugs)
+  end
 
+  def update_children(container, project, author, reordered_slugs) do
+
+    # Change here to enable "cross project drag and drop -> if resource is not found (nil),
+    # create new resource in this project by cloning the existing resource
+
+    # Create a change that reorders the children accoring to
+    # the supplied reordered_slugs.
+    reordering = %{
+      children: Resources.get_resources_from_slug(reordered_slugs) |> Enum.map(fn r -> r.id end),
+      author_id: author.id
+    }
+
+    # Apply that change to the container, generating a new revision
+    ChangeTracker.track_revision(project.slug, container, reordering)
+
+  end
+
+  defp append_to_container(container, project_slug, revision_to_attach, author) do
     append = %{
       children: [revision_to_attach.resource_id | container.children],
       author_id: author.id

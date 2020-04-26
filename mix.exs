@@ -13,6 +13,16 @@ defmodule Oli.MixProject do
       deps: deps(),
       preferred_cli_env: [
         "test.coverage": :test,
+      ],
+
+      # Docs
+      name: "OLI Torus",
+      source_url: "https://github.com/Simon-Initiative/oli-torus",
+      homepage_url: "http://oli.cmu.edu",
+      docs: [
+        main: "Oli", # The main page in the docs
+        logo: "assets/static/images/oli-icon.png",
+        extras: ["README.md", "LICENSE.md", "docs/DEVELOPER.md"]
       ]
     ]
   end
@@ -62,7 +72,8 @@ defmodule Oli.MixProject do
       {:ueberauth_identity, "~> 0.2"},
       {:bcrypt_elixir, "~> 2.2"},
       {:uuid, "~> 1.1" },
-      {:mix_test_watch, "~> 1.0", only: :dev, runtime: false}
+      {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.21", only: :dev, runtime: false}
     ]
   end
 
