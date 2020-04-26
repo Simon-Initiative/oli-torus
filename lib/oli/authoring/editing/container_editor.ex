@@ -6,6 +6,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
   """
 
+  import Oli.Authoring.Editing.Utils
   alias Oli.Resources.Revision
   alias Oli.Resources
   alias Oli.Accounts.Author
@@ -13,11 +14,21 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Publishing.ChangeTracker
 
+  @doc """
+  Lists all top level resource revisions contained in a container.
+  """
   def list_all_pages(%Project{} = project) do
-    root_resource = AuthoringResolver.root_resource(project.slug)
-    AuthoringResolver.from_resource_id(project.slug, root_resource.children)
+    AuthoringResolver.root_resource(project.slug)
+    |> list_all_pages(project)
   end
 
+  def list_all_pages(container, %Project{} = project) do
+    AuthoringResolver.from_resource_id(project.slug, container.children)
+  end
+
+  @doc """
+  Creates and adds a new page as a child of a container.
+  """
   def add_new(
     %{objectives: _, children: _, content: _, title: _} = attrs,
     %Author{} = author,
@@ -48,25 +59,63 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     end
   end
 
-  def update_children(project, author, reordered_slugs) do
+  @doc """
+  Reorders the children of a container, based off of a source revision
+  to remove and an index where to insert it within the collection of
+  children.
+  """
+  def reorder_children(project, author, source, index) do
     AuthoringResolver.root_resource(project.slug)
-    |> update_children(project, author, reordered_slugs)
+    |> reorder_children(project, author, source, index)
   end
 
-  def update_children(container, project, author, reordered_slugs) do
+
+  def reorder_children(container, project, author, source, index) do
 
     # Change here to enable "cross project drag and drop -> if resource is not found (nil),
     # create new resource in this project by cloning the existing resource
 
-    # Create a change that reorders the children accoring to
-    # the supplied reordered_slugs.
-    reordering = %{
-      children: Resources.get_resources_from_slug(reordered_slugs) |> Enum.map(fn r -> r.id end),
-      author_id: author.id
-    }
+    # Get the resource idd associated with the source revision
 
-    # Apply that change to the container, generating a new revision
-    ChangeTracker.track_revision(project.slug, container, reordering)
+    with {:ok, %{id: resource_id }} <- Resources.get_resource_from_slug(source) |> trap_nil()
+    do
+
+      source_index = Enum.find_index(container.children, fn id -> id == resource_id end)
+
+      # Adjust the insert index based on whether
+      # first removing the source would throw off the
+      # insertion by 1
+      insert_index = case source_index do
+        nil -> index
+        s -> if s < index do
+          index - 1
+        else
+          index
+        end
+      end
+
+      # Apply the reordering in a way that is as robust as possible to situations
+      # where the user that originated the reorder was looking at an out of date
+      # version of the page
+
+      # Use filter here to remove the source from anywhere that it was actually found
+      children = Enum.filter(container.children, fn id -> id !== resource_id end)
+      # And insert_at to insert it, in a way that is robust to index positions that
+      # don't even make sense
+      |> List.insert_at(insert_index, resource_id)
+
+      # Create a change that reorders the children
+      reordering = %{
+        children: children,
+        author_id: author.id
+      }
+
+      # Apply that change to the container, generating a new revision
+      ChangeTracker.track_revision(project.slug, container, reordering)
+
+    else
+      _ -> {:error, :not_found}
+    end
 
   end
 

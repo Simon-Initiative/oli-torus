@@ -37,10 +37,10 @@ defmodule OliWeb.CurriculumController do
     end
   end
 
-  def update(conn, %{"update" => update_params}) do
+  def update(conn, %{"sourceSlug" => source, "index" => index}) do
     %{project: project, current_author: author} = conn.assigns
 
-    case ContainerEditor.update_children(project, author, update_params) do
+    case ContainerEditor.reorder_children(project, author, source, index) do
       {:ok, _resource} ->
         render(conn, "index.html",
         pages: ContainerEditor.list_all_pages(conn.assigns.project),
