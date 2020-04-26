@@ -1,0 +1,3 @@
+<div href="#" class="my-2 d-flex flex-row">
+    <a href="#"><i class="far fa-edit"></i> <%= @page.title%></a><div class="flex-1"></div><div href="#">22/32 Students</div>
+  </div>

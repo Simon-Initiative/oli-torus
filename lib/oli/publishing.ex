@@ -465,7 +465,14 @@ defmodule Oli.Publishing do
     changes
   end
 
-  def get_resource_revisions_for_publication(publication) do
+  def get_published_revisions(publication) do
+    get_resource_mappings_by_publication(publication.id)
+    |> Enum.map(& Repo.preload(&1, :revision))
+    |> Enum.map(& Map.get(&1, :revision))
+    |> Enum.filter(& !&1.deleted)
+  end
+
+  defp get_resource_revisions_for_publication(publication) do
     resource_mappings = get_resource_mappings_by_publication(publication.id)
 
     # filter out revisions that are marked as deleted, then convert

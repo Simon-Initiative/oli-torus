@@ -10,12 +10,13 @@ defmodule OliWeb.DeliveryController do
     user = conn.assigns.current_user
     lti_params = get_session(conn, :lti_params)
     section = Sections.get_section_by(context_id: lti_params["context_id"])
+    pages = Publishing.get_published_revisions(section.publication)
 
     case {Lti.parse_lti_role(user.roles), user.author, section} do
       {:student, _author, nil} ->
         render(conn, "course_not_configured.html")
       {:student, _author, section} ->
-        render(conn, "student_view.html", section: section)
+        render(conn, "student_view.html", section: section, pages: pages)
       {role, nil, nil} when role == :administrator or role == :instructor ->
         render(conn, "getting_started.html")
       {role, author, nil} when role == :administrator or role == :instructor ->
@@ -24,8 +25,13 @@ defmodule OliWeb.DeliveryController do
         open_and_free_publications = publications |> Enum.filter(fn p -> p.open_and_free && p.published end)
         render(conn, "configure_section.html", author: author, my_publications: my_publications, open_and_free_publications: open_and_free_publications)
       {role, _author, section} when role == :administrator or role == :instructor ->
-        render(conn, "instructor_view.html", section: section)
+        render(conn, "instructor_view.html", section: section, pages: pages)
     end
+  end
+
+  def resource(conn, _params) do
+    page = %{}
+    render(conn, "page.html", page: page)
   end
 
   def list_open_and_free(conn, _params) do

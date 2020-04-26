@@ -154,6 +154,8 @@ defmodule OliWeb.Router do
     post "/section", DeliveryController, :create_section
     get "/signout", DeliveryController, :signout
 
+    get "/page/:revision_slug", DeliveryController, :resource
+
     get "/open_and_free", DeliveryController, :list_open_and_free
   end
 
