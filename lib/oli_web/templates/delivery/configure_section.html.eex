@@ -7,7 +7,6 @@ tbody tr {
 <script>
 $(function() {
   $('input[name="publication_id"]').on('change', function() {
-    console.log('here')
     $('input[name="publication_id"]').not(this).prop('checked', false);
 
     if ($('input[name="publication_id"]:checked').length > 0) {
