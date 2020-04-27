@@ -1,3 +1,5 @@
 <div href="#" class="my-2 d-flex flex-row">
+  <%= link to: Routes.delivery_path(@conn, :resource, @page.slug) do %>
     <a href="#"><i class="far fa-file"></i> <%= @page.title %></a>
-  </div>
+  <% end %>
+</div>

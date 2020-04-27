@@ -10,6 +10,12 @@ defmodule OliWeb.DeliveryController do
     user = conn.assigns.current_user
     lti_params = get_session(conn, :lti_params)
     section = Sections.get_section_by(context_id: lti_params["context_id"])
+    IO.inspect(section)
+
+    # Get publication from section
+    # Get root resource from publication
+    # pages = root resource.children
+    # Add darren's delivery resolver
     pages = Publishing.get_published_revisions(section.publication)
 
     case {Lti.parse_lti_role(user.roles), user.author, section} do
