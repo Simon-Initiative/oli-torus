@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Authoring.Editing.ContainerEditor — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-dd25955b27.js"></script>
+    <script src="dist/sidebar_items-588342c861.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -116,7 +116,18 @@ the items within a container.</p>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#reorder_children/4">reorder_children(project, author, source, index)</a>
+    <a href="#remove_child/3">remove_child(project, author, revision_slug)</a>
+  </div>
+    <div class="summary-synopsis"><p>Removes a child from a container, and marks that child as deleted.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#remove_child/4">remove_child(container, project, author, revision_slug)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#reorder_child/4">reorder_child(project, author, source, index)</a>
   </div>
     <div class="summary-synopsis"><p>Reorders the children of a container, based off of a source revision
 to remove and an index where to insert it within the collection of
@@ -124,7 +135,7 @@ children.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#reorder_children/5">reorder_children(container, project, author, source, index)</a>
+    <a href="#reorder_child/5">reorder_child(container, project, author, source, index)</a>
   </div>
 </div>
   </div>
@@ -145,7 +156,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">add_new(attrs, author, project)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L32" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L34" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -161,7 +172,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">add_new(container, attrs, author, project)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L41" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L43" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -176,7 +187,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">list_all_pages(project)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L20" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L22" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -192,7 +203,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">list_all_pages(container, project)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L25" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L27" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -200,14 +211,45 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="reorder_children/4">
+<section class="detail" id="remove_child/3">
   <div class="detail-header">
-    <a href="#reorder_children/4" class="detail-link" title="Link to this function">
+    <a href="#remove_child/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">reorder_children(project, author, source, index)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L67" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">remove_child(project, author, revision_slug)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L73" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Removes a child from a container, and marks that child as deleted.</p>
+  </section>
+</section>
+<section class="detail" id="remove_child/4">
+  <div class="detail-header">
+    <a href="#remove_child/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">remove_child(container, project, author, revision_slug)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L79" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="reorder_child/4">
+  <div class="detail-header">
+    <a href="#reorder_child/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">reorder_child(project, author, source, index)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L128" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -218,14 +260,14 @@ to remove and an index where to insert it within the collection of
 children.</p>
   </section>
 </section>
-<section class="detail" id="reorder_children/5">
+<section class="detail" id="reorder_child/5">
   <div class="detail-header">
-    <a href="#reorder_children/5" class="detail-link" title="Link to this function">
+    <a href="#reorder_child/5" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">reorder_children(container, project, author, source, index)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L73" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">reorder_child(container, project, author, source, index)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L134" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
