@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Authoring.Editing.ContainerEditor — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-e5d34fc177.js"></script>
+    <script src="dist/sidebar_items-dd25955b27.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -96,6 +96,7 @@ the items within a container.</p>
   <div class="summary-signature">
     <a href="#add_new/3">add_new(attrs, author, project)</a>
   </div>
+    <div class="summary-synopsis"><p>Creates and adds a new page as a child of a container.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
@@ -104,17 +105,26 @@ the items within a container.</p>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#append_to_container/4">append_to_container(container, publication, revision_to_attach, author)</a>
-  </div>
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#get_latest_resource_revision/2">get_latest_resource_revision(resource, project)</a>
-  </div>
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
     <a href="#list_all_pages/1">list_all_pages(project)</a>
+  </div>
+    <div class="summary-synopsis"><p>Lists all top level resource revisions contained in a container.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#list_all_pages/2">list_all_pages(container, project)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#reorder_children/4">reorder_children(project, author, source, index)</a>
+  </div>
+    <div class="summary-synopsis"><p>Reorders the children of a container, based off of a source revision
+to remove and an index where to insert it within the collection of
+children.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#reorder_children/5">reorder_children(container, project, author, source, index)</a>
   </div>
 </div>
   </div>
@@ -135,12 +145,13 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">add_new(attrs, author, project)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L20" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L32" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
   </div>
   <section class="docstring">
+<p>Creates and adds a new page as a child of a container.</p>
   </section>
 </section>
 <section class="detail" id="add_new/4">
@@ -150,37 +161,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">add_new(container, attrs, author, project)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L30" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-  </div>
-  <section class="docstring">
-  </section>
-</section>
-<section class="detail" id="append_to_container/4">
-  <div class="detail-header">
-    <a href="#append_to_container/4" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">append_to_container(container, publication, revision_to_attach, author)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L60" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-  </div>
-  <section class="docstring">
-  </section>
-</section>
-<section class="detail" id="get_latest_resource_revision/2">
-  <div class="detail-header">
-    <a href="#get_latest_resource_revision/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">get_latest_resource_revision(resource, project)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L77" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L41" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -195,7 +176,56 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">list_all_pages(project)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L15" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L20" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Lists all top level resource revisions contained in a container.</p>
+  </section>
+</section>
+<section class="detail" id="list_all_pages/2">
+  <div class="detail-header">
+    <a href="#list_all_pages/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">list_all_pages(container, project)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L25" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="reorder_children/4">
+  <div class="detail-header">
+    <a href="#reorder_children/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">reorder_children(project, author, source, index)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L67" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Reorders the children of a container, based off of a source revision
+to remove and an index where to insert it within the collection of
+children.</p>
+  </section>
+</section>
+<section class="detail" id="reorder_children/5">
+  <div class="detail-header">
+    <a href="#reorder_children/5" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">reorder_children(container, project, author, source, index)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L73" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
