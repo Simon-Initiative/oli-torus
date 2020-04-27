@@ -4,7 +4,7 @@ defmodule Oli.Authoring.Course.ProjectResource do
 
   @primary_key false
   schema "projects_resources" do
-    timestamps()
+    timestamps(type: :utc_datetime)
     field :project_id, :integer, primary_key: true
     field :resource_id, :integer, primary_key: true
   end

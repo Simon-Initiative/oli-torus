@@ -4,7 +4,7 @@ defmodule Oli.Delivery.Sections.AuthorSection do
 
   @primary_key false
   schema "authors_sections" do
-    timestamps()
+    timestamps(type: :utc_datetime)
     belongs_to :author, Oli.Accounts.Author
     belongs_to :section, Oli.Delivery.Sections.Section
     belongs_to :section_role, Oli.Delivery.Sections.SectionRole

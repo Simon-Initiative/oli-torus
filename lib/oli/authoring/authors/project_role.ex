@@ -9,7 +9,7 @@ defmodule Oli.Authoring.Authors.ProjectRole do
 
   schema "project_roles" do
     field :type, :string
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

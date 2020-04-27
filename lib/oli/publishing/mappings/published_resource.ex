@@ -11,7 +11,7 @@ defmodule Oli.Publishing.PublishedResource do
     belongs_to :revision, Oli.Resources.Revision
     belongs_to :author, Oli.Accounts.Author, foreign_key: :locked_by_id
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

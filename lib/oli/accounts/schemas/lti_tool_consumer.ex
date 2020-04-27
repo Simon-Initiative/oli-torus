@@ -11,7 +11,7 @@ defmodule Oli.Accounts.LtiToolConsumer do
     belongs_to :institution, Oli.Accounts.Institution
     has_many :users, Oli.Accounts.User
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

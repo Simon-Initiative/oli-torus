@@ -3,7 +3,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
   def change do
     create table(:resource_types) do
-      timestamps()
+      timestamps(type: :timestamptz)
       add :type, :string
     end
 

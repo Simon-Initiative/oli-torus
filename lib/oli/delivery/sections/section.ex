@@ -14,7 +14,7 @@ defmodule Oli.Delivery.Sections.Section do
     belongs_to :project, Oli.Authoring.Course.Project
     belongs_to :publication, Oli.Publishing.Publication
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false
