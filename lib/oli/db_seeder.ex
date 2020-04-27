@@ -47,6 +47,40 @@ defmodule Oli.Seeder do
 
   end
 
+  def another_project(author, institution) do
+
+    {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
+    {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
+
+    {:ok, _} = AuthorProject.changeset(%AuthorProject{}, %{author_id: author.id, project_id: project.id, project_role_id: ProjectRole.role_id.owner}) |> Repo.insert
+
+    # A single container resource with a mapped revision
+    {:ok, container_resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
+    {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: container_resource.id}) |> Repo.insert
+    {:ok, container_revision} = Oli.Resources.create_revision(%{author_id: author.id, objectives: %{}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"), children: [], content: %{}, deleted: false, slug: "some_title", title: "some title", resource_id: container_resource.id})
+
+    {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resource_id: container_resource.id, project_id: project.id}) |> Repo.insert
+
+    publish_resource(publication, container_resource, container_revision)
+
+    %{resource: page1, revision: revision1} = create_page("Page one", publication, project, author)
+    %{resource: page2, revision: revision2} = create_page("Page two", publication, project, author)
+    container_revision = attach_pages_to([page1, page2], container_resource, container_revision, publication)
+
+    Map.put(%{}, :family, family)
+      |> Map.put(:project, project)
+      |> Map.put(:author, author)
+      |> Map.put(:institution, institution)
+      |> Map.put(:publication, publication)
+      |> Map.put(:container_resource, container_resource)
+      |> Map.put(:container_revision, container_revision)
+      |> Map.put(:page1, page1)
+      |> Map.put(:page2, page2)
+      |> Map.put(:revision1, revision1)
+      |> Map.put(:revision2, revision2)
+
+  end
+
   defp publish_resource(publication, resource, revision) do
     Publishing.create_resource_mapping(%{ publication_id: publication.id, resource_id: resource.id, revision_id: revision.id})
   end

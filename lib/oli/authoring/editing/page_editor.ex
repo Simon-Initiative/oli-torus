@@ -8,6 +8,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Resources.Revision
   alias Oli.Resources
   alias Oli.Publishing
+  alias Oli.Publishing.AuthoringResolver
   alias Oli.Activities
   alias Oli.Accounts
   alias Oli.Repo
@@ -150,9 +151,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
     editor_map = Oli.Activities.create_registered_activity_map()
 
     with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
-         {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
+         {:ok, %{content: content} = revision} <- AuthoringResolver.from_revision_slug(project_slug, revision_slug) |> trap_nil(),
          {:ok, objectives} <- Publishing.get_published_objective_details(publication.id) |> trap_nil(),
-         {:ok, %{content: content} = revision} <- get_latest_revision(publication, resource) |> trap_nil(),
          {:ok, objectives_without_ids} <- strip_ids(objectives) |> trap_nil(),
          {:ok, attached_objectives} <- id_to_slug(revision.objectives, objectives) |> trap_nil(),
          {:ok, activities} <- create_activities_map(publication.id, content)

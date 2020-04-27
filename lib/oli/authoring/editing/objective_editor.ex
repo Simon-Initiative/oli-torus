@@ -4,7 +4,6 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   alias Oli.Repo
   alias Oli.Resources
-  alias Oli.Publishing
   alias Oli.Publishing.ObjectiveMappingTransfer
   alias Oli.Publishing
   alias Oli.Accounts.Author
@@ -99,7 +98,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   def fetch_objective_mappings_params(project) do
 
-    publication = Publishing.get_unpublished_publication(project.slug)
+    publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
     objective_mappings = Publishing.get_objective_mappings_by_publication(publication.id)
     changeset = Oli.Resources.change_revision(%Oli.Resources.Revision{})
 

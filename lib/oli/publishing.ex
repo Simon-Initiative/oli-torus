@@ -8,7 +8,6 @@ defmodule Oli.Publishing do
   alias Oli.Delivery.Sections
   alias Oli.Publishing.{Publication, PublishedResource}
 
-
   @doc """
   Returns the activity revisions for a list of activity ids
   that pertain to a given publication.
@@ -210,18 +209,6 @@ defmodule Oli.Publishing do
   def delete_publication(%Publication{} = publication) do
     Repo.delete(publication)
   end
-
-  @doc """
-  Get unpublished publication for a project. This assumes there is only one unpublished publication per project.
-  """
-  @spec get_unpublished_publication(String.t) :: any
-  def get_unpublished_publication(project_slug) do
-    Repo.one from pub in Publication,
-          join: proj in Project, on: pub.project_id == proj.id,
-          where: proj.slug == ^project_slug and pub.published == false,
-          select: pub
-  end
-
 
   def get_published_objective_details(publication_id) do
 
