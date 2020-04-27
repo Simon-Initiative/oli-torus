@@ -9,29 +9,28 @@ defmodule OliWeb.DeliveryController do
   def index(conn, _params) do
     user = conn.assigns.current_user
     lti_params = get_session(conn, :lti_params)
-    section = Sections.get_section_by(context_id: lti_params["context_id"])
-    IO.inspect(section)
 
-    # Get publication from section
-    # Get root resource from publication
-    # pages = root resource.children
-    # Add darren's delivery resolver
-    pages = Publishing.get_published_revisions(section.publication)
+    section = Sections.get_section_by(context_id: lti_params["context_id"])
+    # IO.inspect(section)
 
     case {Lti.parse_lti_role(user.roles), user.author, section} do
       {:student, _author, nil} ->
         render(conn, "course_not_configured.html")
+
       {:student, _author, section} ->
-        render(conn, "student_view.html", section: section, pages: pages)
+        redirect(conn, to: Routes.student_delivery_path(conn, :index, section.context_id))
+
       {role, nil, nil} when role == :administrator or role == :instructor ->
         render(conn, "getting_started.html")
+
       {role, author, nil} when role == :administrator or role == :instructor ->
         publications = Publishing.available_publications(author)
         my_publications = publications |> Enum.filter(fn p -> !p.open_and_free && p.published end)
         open_and_free_publications = publications |> Enum.filter(fn p -> p.open_and_free && p.published end)
         render(conn, "configure_section.html", author: author, my_publications: my_publications, open_and_free_publications: open_and_free_publications)
+
       {role, _author, section} when role == :administrator or role == :instructor ->
-        render(conn, "instructor_view.html", section: section, pages: pages)
+        redirect(conn, to: Routes.instructor_delivery_path(conn, :index, section.context_id))
     end
   end
 

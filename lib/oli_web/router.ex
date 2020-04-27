@@ -37,11 +37,15 @@ defmodule OliWeb.Router do
   end
 
   pipeline :delivery do
+    plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_flash
-    plug :put_layout, {OliWeb.LayoutView, :delivery}
+    # disable protect_from_forgery in development environment
+    if Mix.env != :dev, do: plug :protect_from_forgery
+    plug :put_secure_browser_headers
     plug Oli.Plugs.SetCurrentUser
     plug Oli.Plugs.VerifyUser
+    plug :put_layout, {OliWeb.LayoutView, :delivery}
   end
 
   pipeline :www_url_form do
@@ -150,14 +154,35 @@ defmodule OliWeb.Router do
     pipe_through [:delivery]
 
     get "/", DeliveryController, :index
+
     get "/link_account", DeliveryController, :link_account
     get "/create_and_link_account", DeliveryController, :create_and_link_account
     post "/section", DeliveryController, :create_section
     get "/signout", DeliveryController, :signout
-
-    get "/page/:revision_slug", DeliveryController, :resource
-
     get "/open_and_free", DeliveryController, :list_open_and_free
+
+  end
+
+  # A student's view of a delivered course section goes thru
+  # the "/delivery/course" prefix, while an instructor's view
+  # goes thru the "/delivery/section" prefix.
+  scope "/delivery", OliWeb do
+
+    scope "/course" do
+      pipe_through [:delivery]
+
+      get "/:context_id/page/:revision_slug", StudentDeliveryController, :page
+      get "/:context_id", StudentDeliveryController, :index
+
+    end
+
+    scope "/section" do
+      pipe_through [:delivery]
+
+      get "/:context_id", InstructorDeliveryController, :index
+
+    end
+
   end
 
   scope "/admin", OliWeb do
