@@ -1,0 +1,6 @@
+<style>
+  .material-icons-outlined.icon {
+    width: 24px;
+  }
+</style>
+<i class='material-icons-outlined icon'>check_box</i>

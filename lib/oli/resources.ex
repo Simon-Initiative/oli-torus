@@ -55,7 +55,11 @@ defmodule Oli.Resources do
           join: v in Revision, on: v.resource_id == r.id,
           where: v.slug in ^revisions,
           select: r
-    Repo.all(query)
+    resources = Repo.all(query)
+
+    # order them according to the input revisions
+    map = Enum.reduce(resources, %{}, fn e, m -> Map.put(m, e.id, e) end)
+    Enum.map(revisions, fn r -> Map.get(map, r.resource_id) end)
   end
 
   @doc """
