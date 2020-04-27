@@ -64,6 +64,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
 
       {:acquired} = Locks.acquire(publication.id, page1.id, author2.id)
 
+      # Verify that the remove failed due to the lock
       case ContainerEditor.remove_child(project, author, revision1.slug) do
         {:ok, _} -> assert false
         {:error, {:lock_not_acquired, _}} -> assert true
