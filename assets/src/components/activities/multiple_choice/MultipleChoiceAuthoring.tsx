@@ -371,7 +371,10 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
       return (slice as Partial<MultipleChoiceModelSchema>).authoring !== undefined;
     }
 
+    props.editMode = true;
     if (!props.editMode) return;
+
+    // convert all this junk to immer....
 
     if (hasAuthoringKey(modelSlice)) {
       authoringSlice = Object.assign({}, props.model.authoring, modelSlice.authoring);
