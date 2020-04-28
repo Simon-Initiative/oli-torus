@@ -10,7 +10,8 @@ defmodule Oli.Delivery.Instructor.OverviewDesc do
     with {:ok, root_resource} <- Resolver.root_resource(context_id) |> Oli.Utils.trap_nil(),
       {:ok, section} <- Sections.get_section_by(context_id: context_id) |> Oli.Utils.trap_nil()
     do
-      {:ok, %Oli.Delivery.Student.OverviewDesc{
+
+      {:ok, %Oli.Delivery.Instructor.OverviewDesc{
         pages: Resolver.from_resource_id(context_id, root_resource.children),
         title: section.title,
         description: section.project.description

@@ -401,6 +401,9 @@ defmodule Oli.Publishing do
 
     # set the active publication to published
     update_publication(active_publication, %{published: true})
+
+    # push forward all existing sections to this newly published publication
+    update_all_section_publications(project, active_publication)
   end
 
   defp copy_mapping_for_publication(%PublishedResource{} = resource_mapping, publication) do
