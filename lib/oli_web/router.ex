@@ -180,6 +180,7 @@ defmodule OliWeb.Router do
       pipe_through [:delivery]
 
       get "/:context_id", InstructorDeliveryController, :index
+      get "/:context_id/page/:revision_slug", InstructorDeliveryController, :page
 
     end
 

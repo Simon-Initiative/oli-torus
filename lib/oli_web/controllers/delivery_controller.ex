@@ -11,7 +11,6 @@ defmodule OliWeb.DeliveryController do
     lti_params = get_session(conn, :lti_params)
 
     section = Sections.get_section_by(context_id: lti_params["context_id"])
-    # IO.inspect(section)
 
     case {Lti.parse_lti_role(user.roles), user.author, section} do
       {:student, _author, nil} ->
@@ -32,6 +31,7 @@ defmodule OliWeb.DeliveryController do
       {role, _author, section} when role == :administrator or role == :instructor ->
         redirect(conn, to: Routes.instructor_delivery_path(conn, :index, section.context_id))
     end
+
   end
 
   def resource(conn, _params) do

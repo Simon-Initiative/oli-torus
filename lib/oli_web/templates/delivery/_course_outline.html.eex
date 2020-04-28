@@ -9,7 +9,7 @@
 <div class="course-outline">
   <%= for page <- @pages do %>
     <%= case page.graded do
-      false -> render "link_page.html", page: page
-      true -> render "link_assessment.html", page: page
+      false -> render "link_page.html", page: page, link: @path_route.(@conn, @context_id, page.slug)
+      true -> render "link_assessment.html", page: page, link: @path_route.(@conn, @context_id, page.slug)
     end %>
   <% end %>
