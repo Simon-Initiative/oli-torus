@@ -18,24 +18,62 @@ export { MultipleChoiceDelivery } from './MultipleChoiceDelivery';
 export { MultipleChoiceAuthoring } from './MultipleChoiceAuthoring';
 
 // Registers the creation function:
-import { Manifest, ActivityModelSchema, CreationContext } from '../types';
+import { Manifest, CreationContext } from '../types';
 import { registerCreationFunc } from '../creation';
+import { MultipleChoiceModelSchema, Choice, RichText } from './schema';
+import * as ContentModel from 'data/content/model';
+import guid from 'utils/guid';
 const manifest : Manifest = require('./manifest.json');
 
-interface MultipleChoiceSchema extends ActivityModelSchema {
-  stem: string;
-  choices: string[];
-  feedback: string[];
+export function fromText(text: string): { id: number, content: RichText } {
+  return {
+    id: guid(),
+    content: [
+      ContentModel.create<ContentModel.Paragraph>({
+        type: 'p',
+        children: [{ text }],
+        id: guid(),
+      }),
+    ],
+  };
 }
 
-const model : MultipleChoiceSchema = {
-  stem: '',
-  choices: ['A', 'B', 'C', 'D'],
-  feedback: ['A', 'B', 'C', 'D'],
+export const feedback = (text: string, match: string | number, score: number = 0) => ({
+  ...fromText(text),
+  match,
+  score,
+});
+
+
+const defaultModel : () => MultipleChoiceModelSchema = () => {
+  const choiceA: Choice = fromText('Choice A');
+  const choiceB: Choice = fromText('Choice B');
+
+  const feedbackA = feedback('Feedback A', choiceA.id, 1);
+  const feedbackB = feedback('Feedback B', choiceB.id, 0);
+
+  return {
+    stem: fromText('Question Stem'),
+    choices: [
+      choiceA,
+      choiceB,
+    ],
+    authoring: {
+      feedback: [
+        feedbackA,
+        feedbackB,
+      ],
+      hints: [
+        fromText('Deer in headlights hint'),
+        fromText('Cognitive hint'),
+        fromText('Bottom out hint'),
+      ],
+    },
+  };
 };
 
-function createFn(content: CreationContext) : Promise<MultipleChoiceSchema> {
-  return Promise.resolve(Object.assign({}, model));
+function createFn(content: CreationContext) : Promise<MultipleChoiceModelSchema> {
+  return Promise.resolve(Object.assign({}, defaultModel()));
 }
 
 registerCreationFunc(manifest, createFn);

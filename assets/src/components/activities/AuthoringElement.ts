@@ -3,6 +3,7 @@ import { ActivityModelSchema } from './types';
 export interface AuthoringElementProps<T extends ActivityModelSchema> {
   model: T;
   onEdit: (model: T) => void;
+  editMode: boolean;
 }
 
 // An abstract authoring web component, designed to delegate to
@@ -22,9 +23,13 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     this.mountPoint = document.createElement('div');
   }
 
+  // Add editMode -> listen, re-render etc
+
   props() : AuthoringElementProps<T> {
 
-    const model = JSON.parse(this.getAttribute('model') as any);
+    const getProp = (key: string) => JSON.parse(this.getAttribute(key) as any);
+    const model = getProp('model');
+    const editMode = getProp('editMode') as boolean;
 
     const onEdit = (model: any) => {
       this.dispatchEvent(new CustomEvent('modelUpdated', { bubbles: true, detail: { model } }));
@@ -33,6 +38,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     return {
       onEdit,
       model,
+      editMode,
     };
   }
 
@@ -47,5 +53,5 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     this.render(this.mountPoint, this.props());
   }
 
-  static get observedAttributes() { return ['model']; }
+  static get observedAttributes() { return ['model', 'editMode']; }
 }

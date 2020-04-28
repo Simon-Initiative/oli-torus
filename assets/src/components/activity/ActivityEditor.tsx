@@ -163,6 +163,7 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
 
     const webComponentProps = {
       model: JSON.stringify(this.state.undoable.current.content),
+      editMode: JSON.stringify(this.state.editMode),
     };
 
     return (
