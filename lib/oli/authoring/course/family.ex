@@ -8,7 +8,7 @@ defmodule Oli.Authoring.Course.Family do
     field :slug, :string
     field :title, :string
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

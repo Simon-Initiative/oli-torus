@@ -6,7 +6,7 @@ defmodule Oli.Resources.Resource do
 
     has_many :resource_revisions, Oli.Resources.Revision
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

@@ -21,9 +21,11 @@
   <% {true, nil} -> %>
     This project has not been published yet
   <% {false, _} -> %>
-    No changes since last publish on <%= format_datetime(@latest_published_publication.updated_at) %>
+    <div class="my-2">Last Published: <%= @latest_published_publication.updated_at |> Timex.format!("{relative}", :relative) %></div>
+    <div class="my-2">No changes since last publish.</div>
   <% {true, changes} -> %>
-    <h5>Changes since last publish:</h5>
+    <div class="my-2">Last Published: <%= @latest_published_publication.updated_at |> Timex.format!("{relative}", :relative) %></div>
+    <div class="my-2">Changes since last publish:</div>
     <%= for {status, %{revision: revision}}  <- Map.values(changes) do %>
       <p>
         <span class="badge badge-secondary badge-<%= status %>"><%= status %></span> <%= revision.title %> <span class="text-slug">(<%= revision.slug %>)</span>

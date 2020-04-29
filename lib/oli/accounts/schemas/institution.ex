@@ -14,7 +14,7 @@ defmodule Oli.Accounts.Institution do
     has_many :sections, Oli.Delivery.Sections.Section
     has_many :users, Oli.Accounts.User
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

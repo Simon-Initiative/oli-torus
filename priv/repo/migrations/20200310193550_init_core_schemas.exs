@@ -3,24 +3,24 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
   def change do
     create table(:resource_types) do
-      timestamps()
+      timestamps(type: :timestamptz)
       add :type, :string
     end
 
     create table(:system_roles) do
-      timestamps()
+      timestamps(type: :timestamptz)
       add :type, :string
     end
 
     create unique_index(:system_roles, [:type])
 
     create table(:project_roles) do
-      timestamps()
+      timestamps(type: :timestamptz)
       add :type, :string
     end
 
     create table(:section_roles) do
-      timestamps()
+      timestamps(type: :timestamptz)
       add :type, :string
     end
 
@@ -34,7 +34,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :email_verified, :boolean
       add :system_role_id, references(:system_roles)
 
-      timestamps()
+      timestamps(type: :timestamptz)
     end
 
     create unique_index(:authors, [:email])
@@ -49,7 +49,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :shared_secret, :string
       add :author_id, references(:authors)
 
-      timestamps()
+      timestamps(type: :timestamptz)
     end
 
     create table(:lti_tool_consumers) do
@@ -60,13 +60,13 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :info_product_family_code, :string
       add :institution_id, references(:institutions)
 
-      timestamps()
+      timestamps(type: :timestamptz)
     end
 
     create table(:nonce_store) do
       add :value, :string
 
-      timestamps()
+      timestamps(type: :timestamptz)
     end
 
     create unique_index(:nonce_store, [:value])
@@ -82,7 +82,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :lti_tool_consumer_id, references(:lti_tool_consumers)
       add :institution_id, references(:institutions)
 
-      timestamps()
+      timestamps(type: :timestamptz)
     end
 
     create table(:families) do
@@ -90,7 +90,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :slug, :string
       add :description, :string
 
-      timestamps()
+      timestamps(type: :timestamptz)
     end
 
     create table(:projects) do
@@ -101,11 +101,11 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :project_id, references(:projects)
       add :family_id, references(:families)
 
-      timestamps()
+      timestamps(type: :timestamptz)
     end
 
     create table(:resources) do
-      timestamps()
+      timestamps(type: :timestamptz)
     end
 
     create table(:publications) do
@@ -114,7 +114,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :open_and_free, :boolean, default: false, null: false
       add :root_resource_id, references(:resources)
       add :project_id, references(:projects)
-      timestamps()
+      timestamps(type: :timestamptz)
     end
 
     create table(:sections) do
@@ -130,7 +130,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :project_id, references(:projects)
       add :publication_id, references(:publications)
 
-      timestamps()
+      timestamps(type: :timestamptz)
     end
 
     create table(:activity_registrations) do
@@ -143,7 +143,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :delivery_script, :string
       add :authoring_script, :string
 
-      timestamps()
+      timestamps(type: :timestamptz)
     end
     create unique_index(:activity_registrations, [:slug], name: :index_slug_registrations)
     create unique_index(:activity_registrations, [:delivery_element], name: :index_delivery_element_registrations)
@@ -166,7 +166,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :previous_revision_id, references(:revisions)
       add :activity_type_id, references(:activity_registrations)
 
-      timestamps()
+      timestamps(type: :timestamptz)
     end
     create index(:revisions, [:slug], name: :index_slug_revisions)
 
@@ -176,11 +176,11 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :revision_id, references(:revisions)
       add :locked_by_id, references(:authors), null: true
       add :lock_updated_at, :naive_datetime
-      timestamps()
+      timestamps(type: :timestamptz)
     end
 
     create table(:authors_sections) do
-      timestamps()
+      timestamps(type: :timestamptz)
       add :author_id, references(:authors), primary_key: true
       add :section_id, references(:sections), primary_key: true
       add :section_role_id, references(:section_roles)
@@ -191,7 +191,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
     create unique_index(:authors_sections, [:author_id, :section_id], name: :index_author_section)
 
     create table(:authors_projects, primary_key: false) do
-      timestamps()
+      timestamps(type: :timestamptz)
       add :author_id, references(:authors), primary_key: true
       add :project_id, references(:projects), primary_key: true
       add :project_role_id, references(:project_roles)
@@ -203,7 +203,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
 
     create table(:projects_resources, primary_key: false) do
-      timestamps()
+      timestamps(type: :timestamptz)
       add :project_id, references(:projects), primary_key: true
       add :resource_id, references(:resources), primary_key: true
     end
