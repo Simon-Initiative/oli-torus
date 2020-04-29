@@ -1,8 +1,8 @@
-defmodule Oli.Content.Writers.HTML do
-  alias Oli.Content.Writers.Context
+defmodule Oli.Rendering.Content.Html do
+  alias Oli.Rendering.Context
   alias Phoenix.HTML
 
-  @behaviour Oli.Content.Writers.Writer
+  @behaviour Oli.Rendering.Content
 
   def p(%Context{} = _context, next, _) do
     ["<p>", next.(), "</p>\n"]
