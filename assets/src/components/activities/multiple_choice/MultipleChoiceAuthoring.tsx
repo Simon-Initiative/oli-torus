@@ -1,7 +1,7 @@
 import React, { ChangeEvent } from 'react';
 import ReactDOM from 'react-dom';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
-import { MultipleChoiceModelSchema, Choice, Feedback, Hint } from './schema';
+import { MultipleChoiceModelSchema, Choice, Feedback, Hint, Stem } from './schema';
 import { RichText } from 'components/activities/multiple_choice/schema';
 import * as ActivityTypes from '../types';
 import { getToolbarForResourceType } from 'components/resource/toolbar';
@@ -26,7 +26,10 @@ const ModelSliceEditor = ({ editMode, text, onEdit }: ModelSliceEditorProps) => 
       <Editor
         editMode={editMode}
         value={text}
-        onEdit={onEdit}
+        onEdit={(value) => {
+          console.log(value)
+          onEdit(value);
+        }}
         toolbarItems={getToolbarForResourceType(1)}
       />
     </div>
@@ -68,31 +71,16 @@ const QuestionTypeDropdown = ({ options }: OptionsProps) => {
   );
 };
 
-type SkillsProps = {
-  skills: any;
-  editMode: boolean;
-};
-const Skills = ({ skills }: SkillsProps) => {
-  return (
-    <div style={{ margin: '2rem 0' }}>
-      <h5>Skills</h5>
-      <small>What skills does this question target?</small>
-    </div>
-  );
-};
-
 type StemProps = {
-  stem: RichText;
+  stem: Stem;
   onEdit: (modelSlice: ModelSlice) => void;
   editMode: boolean;
 };
 const Stem = ({ stem, onEdit, editMode }: StemProps) => {
-  function wrapStem(stem: RichText): ModelSlice {
-    return { stem: { content: stem } };
-  }
-  const onStemEdit = (stem: RichText) => {
-    console.log(wrapStem(stem))
-    onEdit(wrapStem(stem));
+  const onStemEdit = (content: RichText) => {
+    onEdit({
+      stem: Object.assign({}, stem, { content }),
+    });
   };
 
   return (
@@ -103,7 +91,7 @@ const Stem = ({ stem, onEdit, editMode }: StemProps) => {
       </small>
       <ModelSliceEditor
         editMode={editMode}
-        text={stem}
+        text={stem.content}
         onEdit={onStemEdit}
       />
     </div>
@@ -277,6 +265,7 @@ const Hints = ({ hints, onEdit, editMode }: HintsProps) => {
   const cognitiveHints = hints.slice(1, hints.length - 1);
 
   const onHintEdit = (content: RichText, id: number) => {
+    console.log('content', content, id)
     onEdit({
       authoring: {
         hints: hints.map((hint) => {
@@ -288,11 +277,31 @@ const Hints = ({ hints, onEdit, editMode }: HintsProps) => {
   };
 
   const onRemoveHint = (id: number) => {
+    // only cognitive hints after the first can be removed.
+    if (hints.length <= 3) return;
+    const hintIndex = hints.findIndex(hint => hint.id === id);
+    const isValidIndex = hintIndex > 1 && hintIndex < hints.length - 1;
+    if (!isValidIndex) return;
 
+    onEdit({
+      authoring: {
+        hints: hints.filter(hint => hint.id !== id),
+      },
+    });
   };
 
   const onAddHint = () => {
+    const newHint: Hint = fromText('');
 
+    // new hints are always cognitive hints. they should be inserted
+    // right before the bottomOut hint at the end of the list
+    const bottomOutIndex = hints.length - 1;
+
+    onEdit({
+      authoring: {
+        hints: hints.slice(0, bottomOutIndex).concat(newHint).concat(hints[bottomOutIndex]),
+      },
+    });
   };
 
   return (
@@ -318,7 +327,7 @@ const Hints = ({ hints, onEdit, editMode }: HintsProps) => {
       </div>
       {cognitiveHints.map((hint, index) => (
         <div key={hint.id}>
-          {index > 1 ?
+          {index > 0 ?
             <button
               type="button"
               className="close"
@@ -335,12 +344,14 @@ const Hints = ({ hints, onEdit, editMode }: HintsProps) => {
             text={hint.content}
             onEdit={(text: RichText) => onHintEdit(text, hint.id)}
           />
-          <button
-            disabled={!editMode}
-            onClick={e => onAddHint()}
-            className="btn btn-primary">Add cognitive hint</button>
         </div>
       ))}
+      <button
+        disabled={!editMode}
+        onClick={e => onAddHint()}
+        className="btn btn-primary">
+          Add cognitive hint
+      </button>
 
       <div>
         <div>
@@ -363,6 +374,7 @@ type ModelSlice = Partial<MultipleChoiceModelSchema> |
 
 const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>) => {
   console.log('model', props.model)
+  console.log('props.editmode', props.editMode)
 
   const onModelEdit = (modelSlice: ModelSlice) => {
     let authoringSlice;
@@ -371,7 +383,6 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
       return (slice as Partial<MultipleChoiceModelSchema>).authoring !== undefined;
     }
 
-    props.editMode = true;
     if (!props.editMode) return;
 
     // convert all this junk to immer....
@@ -386,8 +397,11 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
         acc[k] = v;
         return acc;
       }, {} as any);
+    const newModel = Object.assign({}, props.model,
+      { authoring: authoringSlice }, nonAuthoringSlice);
 
-    props.onEdit(Object.assign({}, props.model, { authoring: authoringSlice }, nonAuthoringSlice));
+    console.log('newModel', newModel)
+    props.onEdit(newModel);
   };
 
   const { choices, stem, authoring: { feedback, hints } } = props.model;
@@ -400,9 +414,14 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
   return (
     <div className="card">
       <div className="card-body" style={{ padding: '2rem' }}>
-        <QuestionTypeDropdown options={questionTypes} {...commonProps} />
-        {/* <Skills skills={[]} /> */}
-        <Stem stem={stem.content} {...commonProps} />
+        <QuestionTypeDropdown
+          {...commonProps}
+          options={questionTypes}
+        />
+        <Stem
+          {...commonProps}
+          stem={stem}
+        />
         <Choices
           {...commonProps}
           choices={choices}
@@ -429,5 +448,3 @@ export class MultipleChoiceAuthoring extends AuthoringElement<MultipleChoiceMode
 
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
 window.customElements.define(manifest.authoring.element, MultipleChoiceAuthoring);
-
-
