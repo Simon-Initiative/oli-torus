@@ -28,6 +28,7 @@ defmodule OliWeb.CurriculumController do
 
       {:ok, _resource} ->
         conn
+        |> put_flash(:info, "Page created")
         |> redirect(to: Routes.curriculum_path(conn, :index, project))
 
       {:error, %Ecto.Changeset{} = _changeset} ->
@@ -40,17 +41,27 @@ defmodule OliWeb.CurriculumController do
   def update(conn, %{"sourceSlug" => source, "index" => index}) do
     %{project: project, current_author: author} = conn.assigns
 
-    case ContainerEditor.reorder_children(project, author, source, index) do
+    case ContainerEditor.reorder_child(project, author, source, index) do
+      {:ok, _resource} -> json(conn, %{ "success" => "true"})
+      {:error, _} -> json(conn, %{ "success" => "false"})
+    end
+  end
+
+  def delete(conn, %{"id" => page_slug}) do
+    %{project: project, current_author: author} = conn.assigns
+
+    case ContainerEditor.remove_child(project, author, page_slug) do
       {:ok, _resource} ->
-        render(conn, "index.html",
-        pages: ContainerEditor.list_all_pages(conn.assigns.project),
-        title: "Curriculum")
+        conn
+        |> put_flash(:info, "Page deleted.")
+        |> redirect(to: Routes.curriculum_path(conn, :index, project))
 
       {:error, _} ->
-        render(conn, "index.html",
-        pages: ContainerEditor.list_all_pages(conn.assigns.project),
-        title: "Curriculum")
+        conn
+        |> put_flash(:error, "Page not deleted.")
+        |> redirect(to: Routes.curriculum_path(conn, :index, project))
     end
+
   end
 
 end

@@ -4,7 +4,7 @@ defmodule Oli.Delivery.Sections.SectionRole do
 
   schema "section_roles" do
     field :type, :string
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

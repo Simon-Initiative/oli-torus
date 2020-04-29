@@ -4,7 +4,7 @@ defmodule Oli.Authoring.Authors.AuthorProject do
 
   @primary_key false
   schema "authors_projects" do
-    timestamps()
+    timestamps(type: :utc_datetime)
     field :author_id, :integer, primary_key: true
     field :project_id, :integer, primary_key: true
     belongs_to :project_role, Oli.Authoring.Authors.ProjectRole

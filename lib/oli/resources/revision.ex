@@ -22,7 +22,7 @@ defmodule Oli.Resources.Revision do
     field :graded, :boolean, default: false
     belongs_to :activity_type, Oli.Activities.Registration
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

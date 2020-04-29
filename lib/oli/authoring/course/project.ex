@@ -17,7 +17,7 @@ defmodule Oli.Authoring.Course.Project do
     many_to_many :resources, Oli.Resources.Resource, join_through: Oli.Authoring.Course.ProjectResource
     has_many :publications, Oli.Publishing.Publication
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

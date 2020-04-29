@@ -12,7 +12,7 @@ defmodule Oli.Activities.Registration do
     field :icon, :string
     field :title, :string
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

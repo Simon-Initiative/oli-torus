@@ -12,6 +12,21 @@
   margin: 0px;
   margin-left: 30px;
 }
+
+li.page {
+  height: 50px;
+}
+
+li.over {
+  background: #DDDDDD;
+}
+
+li.page:hover{
+  background: #EEEEEE;
+}
+li.page:last-child:hover{
+  background: transparent;
+}
 </style>
 
 <%# Wait until live-view to re-add keyboard reordering? %>
@@ -30,11 +45,14 @@
 <ol id="list" style="list-style-type: none; margin-top: 40px;">
   <%= for {page, index} <- Enum.with_index(@pages) do %>
     <li
+      class="page"
       draggable="true"
+      ondragenter="dragEnter(event)"
+      ondragend="dragEnd(event)"
       ondragstart="itemDragStarted(event, '<%= page.slug %>', <%= index %>)"
       ondragover="itemDraggingOver(event)"
       id="<%= page.slug %>"
-      ondrop="itemDropped(event, '<%= page.slug %>', <%= index %>)"
+      ondrop="itemDropped(event, <%= index %>)"
     >
       <div class="d-flex p-1" style="align-items: center;">
         <span style="margin-top: 4px;"><%= case page.graded do
@@ -43,11 +61,19 @@
         end %></span>
         <span class="p-2" style="text-align: top;"><%= index + 1 %>. </span>
         <%= link page.title, to: Routes.resource_path(@conn, :edit, @project, page.slug), class: "link-page" %>
-        <%= link "Delete", to: Routes.resource_path(@conn, :delete, @project, page.slug), method: :delete, data: [confirm: "Are you sure?"], class: "link-delete" %>
+        <%= link "Delete", to: Routes.curriculum_path(@conn, :delete, @project, page.slug), method: :delete, data: [confirm: "Are you sure?"], class: "link-delete" %>
 
       </div>
     </li>
   <% end %>
+  <li
+    class="page"
+    ondragenter="dragEnter(event)"
+    ondragover="itemDraggingOver(event)"
+    ondrop="itemDropped(event, <%= length(@pages) %>)"
+    >
+
+  </li>
 </ol>
 
 </div>
@@ -60,6 +86,23 @@
       target = target.parentNode;
     }
     return target
+  }
+
+  function dragEnter(event) {
+
+    const t = event.currentTarget;
+
+    if (t.nodeName === 'LI') {
+      event.stopPropagation();
+      event.preventDefault();
+
+      $(".page").removeClass("over");
+      t.className = "page over"
+    }
+  }
+
+  function dragEnd(event) {
+    $(".page").removeClass("over");
   }
 
   function insertAfter(newNode, existingNode) {
@@ -84,7 +127,7 @@
     e.dataTransfer.dropEffect = 'move'
   }
 
-  function itemDropped(e, slug, index) {
+  function itemDropped(e, index) {
     e.preventDefault()
     e.stopPropagation()
 

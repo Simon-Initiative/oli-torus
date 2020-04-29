@@ -16,8 +16,9 @@ defmodule Oli.Delivery.Sections.Section do
 
     has_many :enrollments, Oli.Delivery.Sections.Enrollment
 
-    timestamps()
-  end
+    timestamps(type: :utc_datetime)
+
+end
 
   @doc false
   def changeset(section, attrs) do
