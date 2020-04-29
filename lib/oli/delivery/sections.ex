@@ -9,6 +9,18 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.Section
 
   @doc """
+  Enrolls a user in a course section.
+  ## Examples
+      iex> list_sections()
+      [%Section{}, ...]
+  """
+  def enroll(user_id, context_id, section_role_id) do
+    %Enrollment{user_id: user_id, context_id: context_id, section_role_id: section_role_id}
+    |> Enrollment.changeset(%{})
+    |> Repo.insert_or_update
+  end
+
+  @doc """
   Returns the list of sections.
   ## Examples
       iex> list_sections()

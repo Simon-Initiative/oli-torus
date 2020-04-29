@@ -51,21 +51,16 @@ if !Oli.Repo.get_by(Oli.Authoring.Authors.ProjectRole, id: 1) do
 end
 # create section roles
 if !Oli.Repo.get_by(Oli.Delivery.Sections.SectionRole, id: 1) do
-  Oli.Repo.insert! %Oli.Delivery.Sections.SectionRole{
-    id: 1,
-    type: "instructor"
-  }
 
-  Oli.Repo.insert! %Oli.Delivery.Sections.SectionRole{
-    id: 2,
-    type: "student"
-  }
+  Oli.Delivery.Sections.SectionRole.get_section_roles()
+  |> Enum.map(&Oli.Repo.insert!/1)
 end
 
 # create resource types
 if !Oli.Repo.get_by(Oli.Resources.ResourceType, id: 1) do
 
-  Enum.map(Oli.Resources.ResourceType.get_types(), &Oli.Resources.create_resource_type/1)
+  Oli.Resources.ResourceType.get_types()
+  |> Enum.map(&Oli.Resources.create_resource_type/1)
 
 end
 

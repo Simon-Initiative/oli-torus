@@ -51,6 +51,10 @@ defmodule OliWeb.LtiController do
           institution_id: institution.id,
         }) do
           {:ok, user } ->
+
+            # Ensure that we capture an enrollment, if this section exists
+            maybe_enroll_user(user.id, conn.body_params)
+
             # if account is linked to an author, sign them in
             conn = if user.author_id != nil do
               conn
@@ -75,6 +79,21 @@ defmodule OliWeb.LtiController do
 
   def handle_invalid_request(conn, reason) do
     render(conn, "basic_launch_invalid.html", reason: reason)
+  end
+
+  # If a course section exists for the context_id, ensure that
+  # this user has an enrollment in this section
+  defp maybe_enroll_user(user_id, %{ "roles" => roles, "context_id" => context_id}) do
+
+    section_role_id = case Lti.parse_lti_role(roles) do
+      :student -> SectionRole.get_section_role_by_type("student").id
+      _ -> SectionRole.get_section_role_by_type("instructor").id
+    end
+
+    case Sections.get_section_by(context_id: context_id) do
+      nil -> {:ok, nil}
+      section_id -> Sections.enroll(user_id, section_id, section_role_id)
+    end
   end
 
 end

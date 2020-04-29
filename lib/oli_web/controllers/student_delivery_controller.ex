@@ -10,7 +10,9 @@ defmodule OliWeb.StudentDeliveryController do
     user = conn.assigns.current_user
 
     case OverviewDesc.get_overview_desc(context_id, user) do
-      {:ok, overview} -> render(conn, "index.html", overview)
+      {:ok, overview} -> render(conn, "index.html",
+        context_id: context_id, pages: overview.pages, title: overview.title, description: overview.description)
+      {:error, {:not_authorized}} -> render(conn, "not_authorized.html")
       {:error, _} -> render(conn, "error.html")
     end
   end
