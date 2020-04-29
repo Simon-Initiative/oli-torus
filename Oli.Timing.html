@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.21.3">
+    <meta name="project" content="OLI Torus v0.1.0">
+    <title>Oli.Timing — OLI Torus v0.1.0</title>
+    <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
+    <script src="dist/sidebar_items-8d6e045dcb.js"></script>
+      <script src="docs_config.js"></script>
+    <script async src="dist/app-a225d03098e64fef431a.js"></script>
+  </head>
+  <body data-type="modules">
+    <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+<div class="main">
+
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" title="Collapse/expand sidebar"></span>
+</button>
+
+<section class="sidebar">
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button">
+      <span class="icon-search" aria-hidden="true"></span>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button">
+      <span class="icon-cross" title="Cancel search"></span>
+    </button>
+    <label class="search-label">
+      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Search" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectDetails">
+      <a href="http://oli.cmu.edu" class="sidebar-projectName">
+OLI Torus      </a>
+      <h2 class="sidebar-projectVersion">
+        v0.1.0
+      </h2>
+    </div>
+      <a href="http://oli.cmu.edu">
+        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
+      </a>
+  </div>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list" href="#full-list">Modules</a></li>
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+      <h1>
+        <small class="app-vsn">OLI Torus v0.1.0</small>
+Oli.Timing          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/timing.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+      </h1>
+
+
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#emit/3">emit(arg, tags, measurement_atom)</a>
+  </div>
+    <div class="summary-synopsis"><p>Emits a telemetry event for the given tags and measurement.
+Designed to be used in conjunction with <code class="inline">Oli.Timing.run</code>.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#run/1">run(func)</a>
+  </div>
+    <div class="summary-synopsis"><p>Runs a function and times its execution.
+Returns a tuple of the form <code class="inline">{time, result}</code> where time
+is the time in <code class="inline">microseconds</code> and <code class="inline">result</code> is the return
+result of the function.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#run/2">run(func, args)</a>
+  </div>
+</div>
+  </div>
+        </section>
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions          </h1>
+          <div class="functions-list">
+<section class="detail" id="emit/3">
+  <div class="detail-header">
+    <a href="#emit/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">emit(arg, tags, measurement_atom)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/timing.ex#L36" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Emits a telemetry event for the given tags and measurement.
+Designed to be used in conjunction with <code class="inline">Oli.Timing.run</code>.</p>
+<h2 id="emit/3-examples" class="section-heading">
+  <a href="#emit/3-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="5677405240-1">(</span><span class="k" data-group-id="5677405240-2">fn</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="s">&quot;4&quot;</span><span class="w"> </span><span class="k" data-group-id="5677405240-2">end</span><span class="p" data-group-id="5677405240-1">)</span><span class="w"> </span><span class="o">|&gt;</span><span class="w"> </span><span class="n">emit</span><span class="p" data-group-id="5677405240-3">(</span><span class="p" data-group-id="5677405240-4">[</span><span class="ss">:oli</span><span class="p">,</span><span class="w"> </span><span class="ss">:four</span><span class="p">,</span><span class="w"> </span><span class="ss">:calc</span><span class="p" data-group-id="5677405240-4">]</span><span class="p">,</span><span class="w"> </span><span class="ss">:duration</span><span class="p" data-group-id="5677405240-3">)</span><span class="w">
+</span><span class="s">&quot;4&quot;</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="run/1">
+  <div class="detail-header">
+    <a href="#run/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">run(func)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/timing.ex#L18" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Runs a function and times its execution.
+Returns a tuple of the form <code class="inline">{time, result}</code> where time
+is the time in <code class="inline">microseconds</code> and <code class="inline">result</code> is the return
+result of the function.</p>
+<h2 id="run/1-examples" class="section-heading">
+  <a href="#run/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="1631211921-1">(</span><span class="k" data-group-id="1631211921-2">fn</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="s">&quot;3&quot;</span><span class="w"> </span><span class="k" data-group-id="1631211921-2">end</span><span class="p" data-group-id="1631211921-1">)</span><span class="w">
+</span><span class="p" data-group-id="1631211921-3">{</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;3&quot;</span><span class="p" data-group-id="1631211921-3">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="1631211921-4">(</span><span class="k" data-group-id="1631211921-5">fn</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="o">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="k" data-group-id="1631211921-5">end</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1631211921-6">[</span><span class="s">&quot;Bob&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot; Ross&quot;</span><span class="p" data-group-id="1631211921-6">]</span><span class="p" data-group-id="1631211921-4">)</span><span class="w">
+</span><span class="p" data-group-id="1631211921-7">{</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Bob Ross&quot;</span><span class="p" data-group-id="1631211921-7">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="run/2">
+  <div class="detail-header">
+    <a href="#run/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">run(func, args)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/timing.ex#L22" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+          </div>
+        </section>
+      <footer class="footer">
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.21.3),
+          </span>
+          <span class="line">
+            designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+          </span>
+        </p>
+        <p>
+          <button class="line footer-button display-shortcuts-help">
+            Display keyboard shortcuts
+          </button>
+          <button class="line footer-button night-mode-toggle">
+            Toggle night mode
+          </button>
+          <button class="line footer-button display-quick-switch">
+            Go to a HexDocs package
+          </button>
+          <button class="line footer-button tooltips-toggle">
+            <span class="tooltips-option-disable">Disable tooltips</span>
+            <span class="tooltips-option-enable">Enable tooltips</span>
+          </button>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+  </body>
+</html>

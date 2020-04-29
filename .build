@@ -1,4 +1,4 @@
-dist/search_items-2e27274d22.js
+dist/search_items-e9dd4092a0.js
 dist/app-a225d03098e64fef431a.js
 dist/elixir-0ab8a6a80ebaaa287431.css
 dist/erlang-bd206729da4d0d280293.css
@@ -6,7 +6,7 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/sidebar_items-588342c861.js
+dist/sidebar_items-8d6e045dcb.js
 api-reference.html
 readme.html
 license.html
@@ -49,6 +49,7 @@ Oli.Content.Writers.HTML.html
 Oli.Content.Writers.Writer.html
 Oli.Delivery.html
 Oli.Delivery.CountryCodes.html
+Oli.Delivery.Instructor.OverviewDesc.html
 Oli.Delivery.Lti.html
 Oli.Delivery.Lti.HmacSHA1.html
 Oli.Delivery.Lti.LaunchParams.html
@@ -57,17 +58,22 @@ Oli.Delivery.Lti.OAuthParams.html
 Oli.Delivery.Lti.Provider.html
 Oli.Delivery.Sections.html
 Oli.Delivery.Sections.AuthorSection.html
+Oli.Delivery.Sections.Enrollment.html
 Oli.Delivery.Sections.Section.html
 Oli.Delivery.Sections.SectionRole.html
+Oli.Delivery.Sections.SectionRoles.html
+Oli.Delivery.Student.OverviewDesc.html
 Oli.Delivery.Timezones.html
 Oli.Plugs.EnsureAdmin.html
 Oli.Plugs.NoCache.html
 Oli.Plugs.Protect.html
+Oli.Plugs.RemoveXFrameOptions.html
 Oli.Plugs.SetCurrentUser.html
 Oli.Plugs.VerifyUser.html
 Oli.Publishing.html
 Oli.Publishing.AuthoringResolver.html
 Oli.Publishing.ChangeTracker.html
+Oli.Publishing.DeliveryResolver.html
 Oli.Publishing.ObjectiveMappingTransfer.html
 Oli.Publishing.Publication.html
 Oli.Publishing.PublishedResource.html
@@ -84,6 +90,7 @@ Oli.Resources.ResourceType.html
 Oli.Resources.Revision.html
 Oli.Resources.Utils.html
 Oli.Seeder.html
+Oli.Timing.html
 Oli.Utils.html
 Oli.Utils.Slug.html
 Oli.Utils.Time.html
@@ -105,6 +112,8 @@ OliWeb.ErrorView.html
 OliWeb.Gettext.html
 OliWeb.InstitutionController.html
 OliWeb.InstitutionView.html
+OliWeb.InstructorDeliveryController.html
+OliWeb.InstructorDeliveryView.html
 OliWeb.LayoutView.html
 OliWeb.LockController.html
 OliWeb.LtiController.html
@@ -122,6 +131,8 @@ OliWeb.Router.Helpers.html
 OliWeb.SharedView.html
 OliWeb.StaticPageController.html
 OliWeb.StaticPageView.html
+OliWeb.StudentDeliveryController.html
+OliWeb.StudentDeliveryView.html
 OliWeb.Telemetry.html
 OliWeb.UIPaletteController.html
 OliWeb.UIPaletteView.html

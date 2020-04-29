@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Utils — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-588342c861.js"></script>
+    <script src="dist/sidebar_items-8d6e045dcb.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -102,6 +102,8 @@ Oli.Utils          <a href="https://github.com/Simon-Initiative/oli-torus/blob/m
   <div class="summary-signature">
     <a href="#trap_nil/2">trap_nil(result, description_tag \\ :not_found)</a>
   </div>
+    <div class="summary-synopsis"><p>Traps a nil and wraps it in an {:error, _} tuple, otherwise passes thru
+the non-nil result as {:ok, result}</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
@@ -135,7 +137,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">format_datetime(datetime)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L30" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L31" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -150,7 +152,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">random_string(length)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L5" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L6" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -167,12 +169,14 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">trap_nil(result, description_tag \\ :not_found)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L37" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L42" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
   </div>
   <section class="docstring">
+<p>Traps a nil and wraps it in an {:error, _} tuple, otherwise passes thru
+the non-nil result as {:ok, result}</p>
   </section>
 </section>
 <section class="detail" id="unsafe_map_to_keyword_list/1">
@@ -182,7 +186,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">unsafe_map_to_keyword_list(map)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L15" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L16" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -200,7 +204,7 @@ which makes it only safe for requests with known parameter names that are define
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">value_or(value, default_value)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L22" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L23" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
