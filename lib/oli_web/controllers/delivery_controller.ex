@@ -1,6 +1,8 @@
 defmodule OliWeb.DeliveryController do
   use OliWeb, :controller
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionRoles
   alias Oli.Publishing
   alias Oli.Accounts
 
@@ -84,7 +86,7 @@ defmodule OliWeb.DeliveryController do
     institution = Accounts.get_institution!(user.institution_id)
     publication = Publishing.get_publication!(publication_id)
 
-    Sections.create_section(%{
+    {:ok, %Section{id: id}} = Sections.create_section(%{
       time_zone: institution.timezone,
       title: lti_params["context_title"],
       context_id: lti_params["context_id"],
@@ -92,6 +94,9 @@ defmodule OliWeb.DeliveryController do
       project_id: publication.project_id,
       publication_id: publication_id,
     })
+
+    # Enroll this user as an instructor
+    Sections.enroll(user.id, id, SectionRoles.get_by_type("instructor").id)
 
     conn
     |> redirect(to: Routes.delivery_path(conn, :index))

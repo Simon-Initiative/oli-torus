@@ -52,7 +52,7 @@ end
 # create section roles
 if !Oli.Repo.get_by(Oli.Delivery.Sections.SectionRole, id: 1) do
 
-  Oli.Delivery.Sections.SectionRole.get_section_roles()
+  Oli.Delivery.Sections.SectionRoles.list()
   |> Enum.map(&Oli.Repo.insert!/1)
 end
 

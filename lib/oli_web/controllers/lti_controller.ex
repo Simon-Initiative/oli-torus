@@ -7,6 +7,9 @@ defmodule OliWeb.LtiController do
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Accounts.Institution
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionRoles
+
 
   def basic_launch(conn, _params) do
     scheme = if conn.scheme == :https, do: "https", else: "http"
@@ -85,14 +88,14 @@ defmodule OliWeb.LtiController do
   # this user has an enrollment in this section
   defp maybe_enroll_user(user_id, %{ "roles" => roles, "context_id" => context_id}) do
 
-    section_role_id = case Lti.parse_lti_role(roles) do
-      :student -> SectionRole.get_section_role_by_type("student").id
-      _ -> SectionRole.get_section_role_by_type("instructor").id
+    section_role_id = case Oli.Delivery.Lti.parse_lti_role(roles) do
+      :student -> SectionRoles.get_by_type("student").id
+      _ -> SectionRoles.get_by_type("instructor").id
     end
 
     case Sections.get_section_by(context_id: context_id) do
       nil -> {:ok, nil}
-      section_id -> Sections.enroll(user_id, section_id, section_role_id)
+      %{id: section_id} -> Sections.enroll(user_id, section_id, section_role_id)
     end
   end
 
