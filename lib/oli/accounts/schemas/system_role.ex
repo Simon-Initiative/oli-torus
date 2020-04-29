@@ -12,7 +12,7 @@ defmodule Oli.Accounts.SystemRole do
 
   schema "system_roles" do
     field :type, :string
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

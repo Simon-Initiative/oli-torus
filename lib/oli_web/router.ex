@@ -96,7 +96,7 @@ defmodule OliWeb.Router do
     delete "/:project_id/objectives/:objective_slug", ObjectiveController, :delete
 
     # Curriculum
-    resources "/:project_id/curriculum", CurriculumController, only: [:index, :create]
+    resources "/:project_id/curriculum", CurriculumController, only: [:index, :create, :delete]
     put "/:project_id/curriculum", CurriculumController, :update
 
     # Editors
