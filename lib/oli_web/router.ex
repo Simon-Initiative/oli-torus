@@ -7,6 +7,7 @@ defmodule OliWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_flash
+    plug Plug.Telemetry, event_prefix: [:oli, :plug]
     # disable protect_from_forgery in development environment
     if Mix.env != :dev, do: plug :protect_from_forgery
     plug :put_secure_browser_headers
@@ -40,6 +41,7 @@ defmodule OliWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_flash
+    plug Plug.Telemetry, event_prefix: [:oli, :plug]
     # disable protect_from_forgery in development environment
     if Mix.env != :dev, do: plug :protect_from_forgery
     plug :put_secure_browser_headers
@@ -180,6 +182,7 @@ defmodule OliWeb.Router do
       pipe_through [:delivery]
 
       get "/:context_id", InstructorDeliveryController, :index
+      get "/:context_id/page/:revision_slug", InstructorDeliveryController, :page
 
     end
 

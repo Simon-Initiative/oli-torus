@@ -1,8 +1,14 @@
-<div class="text-center my-5">
-<h2>LMS Sign In Required</h2>
+<% # FIXME: Decide on final ui and remove %>
 
-<p>You need to sign in from your LMS again.</p>
+<div class="my-3">
+  <h3><%= @title %></h3>
+  <p class="text-secondary"><%= @description %></p>
 
-<p>Please sign in using your institution's learning management system to access course content.<br />If you are viewing this page from an LMS, simply reload the page.</p>
-<p><a href="https://canvas.oli.cmu.edu">Open Learning Initiative</a> ｜ <a href="https://www.instructure.com/canvas/login/free-for-teacher">Canvas</a> ｜ <a href="https://www.blackboard.com/">Blackboard</a> ｜ <a href="https://moodle.org/login/index.php">Moodle</a></p>
+  <h4>Student View</h4>
+
+  <hr class="my-4"/>
+
+  <h5>Course Outline</h5>
+  <%= render OliWeb.DeliveryView, "_course_outline.html", context_id: @context_id, pages: @pages, path_route: &OliWeb.StudentDeliveryView.page_route/3 %>
+  </div>
 </div>

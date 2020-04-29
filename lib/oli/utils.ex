@@ -1,4 +1,5 @@
 defmodule Oli.Utils do
+
   @doc """
   Generates a random hex string of the given length
   """
@@ -34,6 +35,10 @@ defmodule Oli.Utils do
     "#{datetime.month}/#{datetime.day}/#{datetime.year} #{hour}:#{minute} #{ampm}"
   end
 
+  @doc """
+  Traps a nil and wraps it in an {:error, _} tuple, otherwise passes thru
+  the non-nil result as {:ok, result}
+  """
   def trap_nil(result, description_tag \\ :not_found) do
     case result do
       nil -> {:error, {description_tag}}

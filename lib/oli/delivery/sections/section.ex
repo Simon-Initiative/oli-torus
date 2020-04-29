@@ -14,6 +14,8 @@ defmodule Oli.Delivery.Sections.Section do
     belongs_to :project, Oli.Authoring.Course.Project
     belongs_to :publication, Oli.Publishing.Publication
 
+    has_many :enrollments, Oli.Delivery.Sections.Enrollment
+
     timestamps()
   end
 

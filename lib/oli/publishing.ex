@@ -400,7 +400,12 @@ defmodule Oli.Publishing do
     Enum.map(resource_mappings, copy_mapping_fn)
 
     # set the active publication to published
-    update_publication(active_publication, %{published: true})
+    result = update_publication(active_publication, %{published: true})
+
+    # push forward all existing sections to this newly published publication
+    update_all_section_publications(project, active_publication)
+
+    result
   end
 
   defp copy_mapping_for_publication(%PublishedResource{} = resource_mapping, publication) do

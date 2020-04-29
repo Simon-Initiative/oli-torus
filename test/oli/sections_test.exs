@@ -2,9 +2,101 @@ defmodule Oli.SectionsTest do
   use Oli.DataCase
 
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{Section}
+  alias Oli.Delivery.Sections.{Section, SectionRoles}
   alias Oli.Authoring.Course.Project
   alias Oli.Publishing.Publication
+
+  describe "enrollments" do
+    @valid_attrs %{end_date: ~D[2010-04-17], open_and_free: true, registration_open: true, start_date: ~D[2010-04-17], time_zone: "some time_zone", title: "some title", context_id: "context_id"}
+
+    setup do
+      map = Seeder.base_project_with_resource2()
+
+      institution = Map.get(map, :institution)
+      project = Map.get(map, :project)
+      publication = Map.get(map, :publication)
+
+      valid_attrs = Map.put(@valid_attrs, :institution_id, institution.id)
+        |> Map.put(:project_id, project.id)
+        |> Map.put(:publication_id, publication.id)
+
+      consumer = lti_consumer_fixture(%{institution_id: institution.id})
+      user1 = user_fixture(%{lti_tool_consumer_id: consumer.id, institution_id: institution.id})
+      user2 = user_fixture(%{lti_tool_consumer_id: consumer.id, institution_id: institution.id})
+      user3 = user_fixture(%{lti_tool_consumer_id: consumer.id, institution_id: institution.id})
+
+      {:ok, section} = valid_attrs |> Sections.create_section()
+
+      {:ok, Map.merge(map, %{section: section, user1: user1, user2: user2, user3: user3})}
+
+    end
+
+    test "list_enrollments/1 returns valid enrollments", %{section: section, user1: user1, user2: user2, user3: user3} do
+
+      assert Sections.list_enrollments("context_id") == []
+
+      Sections.enroll(user1.id, section.id, SectionRoles.get_by_type("instructor").id)
+      Sections.enroll(user2.id, section.id, SectionRoles.get_by_type("student").id)
+      Sections.enroll(user3.id, section.id, SectionRoles.get_by_type("student").id)
+
+      assert length(Sections.list_enrollments("context_id")) == 3
+
+      [one, two, three] = Sections.list_enrollments("context_id")
+
+      assert one.user_id == user1.id
+      assert two.user_id == user2.id
+      assert three.user_id == user3.id
+
+      assert one.section_id == section.id
+      assert two.section_id == section.id
+      assert three.section_id == section.id
+
+      assert one.section_role_id == SectionRoles.get_by_type("instructor").id
+      assert two.section_role_id == SectionRoles.get_by_type("student").id
+      assert three.section_role_id == SectionRoles.get_by_type("student").id
+
+    end
+
+    test "enroll/3 upserts correctly", %{section: section, user1: user1} do
+
+      assert Sections.list_enrollments("context_id") == []
+
+      # Enroll a user as instructor
+      Sections.enroll(user1.id, section.id, SectionRoles.get_by_type("instructor").id)
+      [one] = Sections.list_enrollments("context_id")
+      assert one.section_role_id == SectionRoles.get_by_type("instructor").id
+
+      # Now enroll again as same role, this should be idempotent
+      Sections.enroll(user1.id, section.id, SectionRoles.get_by_type("instructor").id)
+      [one] = Sections.list_enrollments("context_id")
+      assert one.section_role_id == SectionRoles.get_by_type("instructor").id
+
+      # Now enroll again with different role, this should update the role
+      Sections.enroll(user1.id, section.id, SectionRoles.get_by_type("student").id)
+      [one] = Sections.list_enrollments("context_id")
+      assert one.section_role_id == SectionRoles.get_by_type("student").id
+
+
+    end
+
+    test "is_enrolled_as?/3 works", %{section: section, user1: user1, user2: user2} do
+
+      assert Sections.list_enrollments("context_id") == []
+
+      # Enroll a user as instructor
+      Sections.enroll(user1.id, section.id, SectionRoles.get_by_type("instructor").id)
+
+      # Now check for enrollment
+      assert Sections.is_enrolled_as?(user1.id, "context_id", SectionRoles.get_by_type("instructor"))
+      refute Sections.is_enrolled_as?(user1.id, "context_id", SectionRoles.get_by_type("student"))
+      refute Sections.is_enrolled_as?(user2.id, "context_id", SectionRoles.get_by_type("instructor"))
+      refute Sections.is_enrolled_as?(user2.id, "context_id", SectionRoles.get_by_type("student"))
+
+    end
+
+
+
+  end
 
   describe "sections" do
     @valid_attrs %{end_date: ~D[2010-04-17], open_and_free: true, registration_open: true, start_date: ~D[2010-04-17], time_zone: "some time_zone", title: "some title", context_id: "some context_id"}

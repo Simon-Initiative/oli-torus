@@ -13,4 +13,6 @@ defmodule Oli.Delivery.Sections.SectionRole do
     |> cast(attrs, [:type])
     |> validate_required([:type])
   end
+
+
 end
