@@ -9,7 +9,7 @@ defmodule Oli.Publishing.Publication do
     belongs_to :root_resource, Oli.Resources.Resource
     belongs_to :project, Oli.Authoring.Course.Project
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

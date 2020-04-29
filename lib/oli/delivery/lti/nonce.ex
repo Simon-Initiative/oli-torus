@@ -5,7 +5,7 @@ defmodule Oli.Delivery.Lti.Nonce do
   schema "nonce_store" do
     field :value, :string
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

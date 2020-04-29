@@ -25,6 +25,6 @@
   <hr class="my-4"/>
 
   <h5>Course Outline</h5>
-  <%= render "_course_outline.html" %>
+  <%= render "_course_outline.html", pages: @pages %>
   </div>
 </div>

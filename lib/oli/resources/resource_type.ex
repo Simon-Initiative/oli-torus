@@ -26,7 +26,7 @@ defmodule Oli.Resources.ResourceType do
   schema "resource_types" do
     field :type, :string
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

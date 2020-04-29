@@ -39,7 +39,7 @@ jobs:
       run: mix deps.compile
 
     - name: Build Project 🔨
-      run: set -a;source oli.env && mix compile --warnings-as-errors
+      run: set -a;source oli.env && mix clean && mix compile --warnings-as-errors
 
     - name: Run Tests ⚙️
       run: set -a;source oli.env && mix test.coverage

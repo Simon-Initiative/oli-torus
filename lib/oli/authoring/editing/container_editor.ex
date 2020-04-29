@@ -13,6 +13,8 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   alias Oli.Authoring.Course.Project
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Publishing.ChangeTracker
+  alias Oli.Authoring.Editing.PageEditor
+  alias Oli.Repo
 
   @doc """
   Lists all top level resource revisions contained in a container.
@@ -49,14 +51,73 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       author_id: author.id,
     })
 
-    with {:ok, %{revision: revision}} <- Oli.Authoring.Course.create_and_attach_resource(project, attrs),
-         {:ok, _} <- ChangeTracker.track_revision(project.slug, revision),
-         {:ok, _} <- append_to_container(container, project.slug, revision, author)
+    # We want to ensure that the creation and attachment either
+    # all succeeds or all fails
+    Repo.transaction(fn ->
+
+      with {:ok, %{revision: revision}} <- Oli.Authoring.Course.create_and_attach_resource(project, attrs),
+          {:ok, _} <- ChangeTracker.track_revision(project.slug, revision),
+          {:ok, _} <- append_to_container(container, project.slug, revision, author)
+      do
+        revision
+      else
+        {:error, e} -> Repo.rollback(e)
+      end
+
+    end)
+  end
+
+  @doc """
+  Removes a child from a container, and marks that child as deleted.
+  """
+  def remove_child(project, author, revision_slug) do
+    AuthoringResolver.root_resource(project.slug)
+    |> remove_child(project, author, revision_slug)
+  end
+
+
+  def remove_child(container, project, author, revision_slug) do
+
+    with {:ok, %{id: resource_id }} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil()
     do
-      {:ok, revision}
+
+      children = Enum.filter(container.children, fn id -> id !== resource_id end)
+
+      # Create a change that removes the child
+      removal = %{
+        children: children,
+        author_id: author.id
+      }
+
+      # Create a change to mark the child as deleted
+      deletion = %{
+        deleted: true,
+        author_id: author.id
+      }
+
+      # Atomically apply the changes
+      Repo.transaction(fn ->
+
+        # It is important to edit the page via PageEditor, since it will ensure
+        # that a lock can be acquired before editing. This will not allow the deletion
+        # to occur if another user is editing. It *will* allow deletion to occur if
+        # this current user is editing this page (like in another tab). This is due
+        # to the re-entrant natures of our locks.
+
+        with {:ok, _} <- PageEditor.edit(project.slug, revision_slug, author.email, deletion),
+         {:ok, revision} = ChangeTracker.track_revision(project.slug, container, removal)
+        do
+          revision
+        else
+          {:error, e} -> Repo.rollback(e)
+        end
+
+      end)
+
     else
-      error -> error
+      _ -> {:error, :not_found}
     end
+
   end
 
   @doc """
@@ -64,13 +125,13 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   to remove and an index where to insert it within the collection of
   children.
   """
-  def reorder_children(project, author, source, index) do
+  def reorder_child(project, author, source, index) do
     AuthoringResolver.root_resource(project.slug)
-    |> reorder_children(project, author, source, index)
+    |> reorder_child(project, author, source, index)
   end
 
 
-  def reorder_children(container, project, author, source, index) do
+  def reorder_child(container, project, author, source, index) do
 
     # Change here to enable "cross project drag and drop -> if resource is not found (nil),
     # create new resource in this project by cloning the existing resource

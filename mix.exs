@@ -73,7 +73,8 @@ defmodule Oli.MixProject do
       {:bcrypt_elixir, "~> 2.2"},
       {:uuid, "~> 1.1" },
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
-      {:ex_doc, "~> 0.21", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.21", only: :dev, runtime: false},
+      {:timex, "~> 3.5"}
     ]
   end
 

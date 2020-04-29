@@ -25,6 +25,13 @@ defmodule OliWeb.Telemetry do
         unit: {:native, :millisecond}
       ),
 
+      # Plug
+      counter("oli.plug.start.system_time"),
+      summary("oli.plug.stop.duration", unit: {:native, :millisecond}),
+
+      summary("oli.resolvers.authoring.duration"),
+      summary("oli.resolvers.delivery.duration"),
+
       # Database Time Metrics
       summary("oli.repo.query.total_time", unit: {:native, :millisecond}),
       summary("oli.repo.query.decode_time", unit: {:native, :millisecond}),

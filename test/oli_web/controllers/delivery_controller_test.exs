@@ -13,12 +13,12 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 200) =~ "Your instructor has not configured this course section. Please check back soon."
     end
 
-    test "handles student with section", %{conn: conn, project: project, lti_params: lti_params, publication: publication} do
+    test "handles student with section", %{conn: conn, project: project, publication: publication} do
       conn = conn
       |> post(Routes.delivery_path(conn, :create_section, %{ project_id: project.id, publication_id: publication.id }))
       |> get(Routes.delivery_path(conn, :index))
 
-      assert html_response(conn, 200) =~ "<h3>#{lti_params["context_title"]}</h3>"
+      assert html_response(conn, 302) =~ "redirected"
     end
 
     test "handles instructor with no linked account", %{conn: conn, user: user} do
@@ -38,14 +38,13 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 200) =~ "<h3>Select a Project</h3>"
     end
 
-    test "handles instructor with section", %{conn: conn, project: project, lti_params: lti_params, user: user, publication: publication} do
+    test "handles instructor with section", %{conn: conn, project: project, user: user, publication: publication} do
       {:ok, _user} = Accounts.update_user(user, %{author_id: 1, roles: "Instructor"})
       conn = conn
       |> post(Routes.delivery_path(conn, :create_section, %{ project_id: project.id, publication_id: publication.id }))
       |> get(Routes.delivery_path(conn, :index))
 
-      assert html_response(conn, 200) =~ "<h3>#{lti_params["context_title"]}"
-      assert html_response(conn, 200) =~ "Edit Course</a>"
+      assert html_response(conn, 302) =~ "redirect"
     end
 
   end
@@ -87,7 +86,7 @@ defmodule OliWeb.DeliveryControllerTest do
       lti_params: lti_params,
       user: user,
       project: project,
-      publication: publication,
+      publication: publication
     }
   end
 end

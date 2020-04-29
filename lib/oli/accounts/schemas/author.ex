@@ -19,7 +19,7 @@ defmodule Oli.Accounts.Author do
     many_to_many :projects, Oli.Authoring.Course.Project, join_through: Oli.Authoring.Authors.AuthorProject, on_replace: :delete
     many_to_many :sections, Oli.Delivery.Sections.Section, join_through: Oli.Delivery.Sections.AuthorSection
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false
