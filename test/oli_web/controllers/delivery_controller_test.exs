@@ -18,7 +18,7 @@ defmodule OliWeb.DeliveryControllerTest do
       |> post(Routes.delivery_path(conn, :create_section, %{ project_id: project.id, publication_id: publication.id }))
       |> get(Routes.delivery_path(conn, :index))
 
-      assert html_response(conn, 200) =~ "<h3>#{lti_params["context_title"]}</h3>"
+      assert html_response(conn, 302) =~ "redirected"
     end
 
     test "handles instructor with no linked account", %{conn: conn, user: user} do
@@ -44,8 +44,7 @@ defmodule OliWeb.DeliveryControllerTest do
       |> post(Routes.delivery_path(conn, :create_section, %{ project_id: project.id, publication_id: publication.id }))
       |> get(Routes.delivery_path(conn, :index))
 
-      assert html_response(conn, 200) =~ "<h3>#{lti_params["context_title"]}"
-      assert html_response(conn, 200) =~ "Edit Course</a>"
+      assert html_response(conn, 302) =~ "redirect"
     end
 
   end
