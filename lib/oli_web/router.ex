@@ -44,7 +44,14 @@ defmodule OliWeb.Router do
     plug Plug.Telemetry, event_prefix: [:oli, :plug]
     # disable protect_from_forgery in development environment
     if Mix.env != :dev, do: plug :protect_from_forgery
+
+    # do not change the order of the next two, our Removal
+    # plug removes a header that put_secure_browser_headers
+    # adds which prevents an LMS from displaying our site
+    # within an iframe
     plug :put_secure_browser_headers
+    plug Oli.Plugs.RemoveXFrameOptions
+
     plug Oli.Plugs.SetCurrentUser
     plug Oli.Plugs.VerifyUser
     plug :put_layout, {OliWeb.LayoutView, :delivery}
