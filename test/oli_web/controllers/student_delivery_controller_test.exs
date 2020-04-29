@@ -1,51 +1,40 @@
-defmodule OliWeb.DeliveryControllerTest do
+defmodule OliWeb.StudentDeliveryControllerTest do
   use OliWeb.ConnCase
-
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionRoles
   alias Oli.Accounts
 
   describe "delivery_controller index" do
     setup [:setup_session]
 
-    test "handles student with no section", %{conn: conn} do
-      conn = conn
-      |> get(Routes.delivery_path(conn, :index))
+    test "handles student access by an enrolled student", %{conn: conn, user: user, section: section} do
 
-      assert html_response(conn, 200) =~ "Your instructor has not configured this course section. Please check back soon."
+      Sections.enroll(user.id, section.id, SectionRoles.get_by_type("student").id)
+
+      conn = conn
+      |> get(Routes.student_delivery_path(conn, :index, section.context_id))
+
+      assert html_response(conn, 200) =~ "Student View"
     end
 
-    test "handles student with section", %{conn: conn, project: project, publication: publication} do
+    test "handles student access who is not enrolled", %{conn: conn, section: section} do
       conn = conn
-      |> post(Routes.delivery_path(conn, :create_section, %{ project_id: project.id, publication_id: publication.id }))
-      |> get(Routes.delivery_path(conn, :index))
+      |> get(Routes.student_delivery_path(conn, :index, section.context_id))
 
-      assert html_response(conn, 302) =~ "redirected"
+      assert html_response(conn, 200) =~ "Not authorized"
     end
 
-    test "handles instructor with no linked account", %{conn: conn, user: user} do
-      {:ok, _user} = Accounts.update_user(user, %{roles: "Instructor"})
-      conn = conn
-      |> get(Routes.delivery_path(conn, :index))
+    test "handles student access by an instructor", %{conn: conn, user: user, section: section} do
 
-      assert html_response(conn, 200) =~ "<h3>Getting Started</h3>"
-      assert html_response(conn, 200) =~ "Link an Existing Account"
+      Sections.enroll(user.id, section.id, SectionRoles.get_by_type("instructor"))
+
+      conn = conn
+      |> get(Routes.student_delivery_path(conn, :index, section.context_id))
+
+      assert html_response(conn, 200) =~ "Not authorized"
     end
 
-    test "handles instructor with no section", %{conn: conn, user: user} do
-      {:ok, _user} = Accounts.update_user(user, %{author_id: 1, roles: "Instructor"})
-      conn = conn
-      |> get(Routes.delivery_path(conn, :index))
 
-      assert html_response(conn, 200) =~ "<h3>Select a Project</h3>"
-    end
-
-    test "handles instructor with section", %{conn: conn, project: project, user: user, publication: publication} do
-      {:ok, _user} = Accounts.update_user(user, %{author_id: 1, roles: "Instructor"})
-      conn = conn
-      |> post(Routes.delivery_path(conn, :create_section, %{ project_id: project.id, publication_id: publication.id }))
-      |> get(Routes.delivery_path(conn, :index))
-
-      assert html_response(conn, 302) =~ "redirect"
-    end
 
   end
 
@@ -75,6 +64,13 @@ defmodule OliWeb.DeliveryControllerTest do
 
     %{ project: project, publication: publication } = project_fixture(author)
 
+    section = section_fixture(%{
+      context_id: "some-context-id",
+      project_id: project.id,
+      publication_id: publication.id,
+      institution_id: institution.id
+    })
+
     conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
       |> put_session(:current_user_id, user.id)
       |> put_session(:lti_params, lti_params)
@@ -86,7 +82,8 @@ defmodule OliWeb.DeliveryControllerTest do
       lti_params: lti_params,
       user: user,
       project: project,
-      publication: publication
+      publication: publication,
+      section: section
     }
   end
 end

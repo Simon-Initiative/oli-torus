@@ -1,0 +1,16 @@
+
+<div class="my-3">
+
+  <div class="alert alert-danger" role="alert">
+    <h4 class="alert-heading">Not authorized</h4>
+    <p>You do not have access to this course section.</p>
+    <hr>
+    <p>If you should have access to this course section, here are a few things that you can try:</p>
+    <ul>
+      <li>Refreshing your browser</li>
+      <li>Returning to your LMS and try accessing OLI again</li>
+      <li>Contacting OLI support for help</li>
+    </ul>
+  </div>
+
+</div>

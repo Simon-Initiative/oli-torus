@@ -1,6 +1,8 @@
 defmodule OliWeb.DeliveryController do
   use OliWeb, :controller
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionRoles
   alias Oli.Publishing
   alias Oli.Accounts
 
@@ -9,23 +11,34 @@ defmodule OliWeb.DeliveryController do
   def index(conn, _params) do
     user = conn.assigns.current_user
     lti_params = get_session(conn, :lti_params)
+
     section = Sections.get_section_by(context_id: lti_params["context_id"])
 
     case {Lti.parse_lti_role(user.roles), user.author, section} do
       {:student, _author, nil} ->
         render(conn, "course_not_configured.html")
+
       {:student, _author, section} ->
-        render(conn, "student_view.html", section: section)
+        redirect(conn, to: Routes.student_delivery_path(conn, :index, section.context_id))
+
       {role, nil, nil} when role == :administrator or role == :instructor ->
         render(conn, "getting_started.html")
+
       {role, author, nil} when role == :administrator or role == :instructor ->
         publications = Publishing.available_publications(author)
-        my_publications = publications |> Enum.filter(fn p -> !p.open_and_free end)
-        open_and_free_publications = publications |> Enum.filter(fn p -> p.open_and_free end)
+        my_publications = publications |> Enum.filter(fn p -> !p.open_and_free && p.published end)
+        open_and_free_publications = publications |> Enum.filter(fn p -> p.open_and_free && p.published end)
         render(conn, "configure_section.html", author: author, my_publications: my_publications, open_and_free_publications: open_and_free_publications)
+
       {role, _author, section} when role == :administrator or role == :instructor ->
-        render(conn, "instructor_view.html", section: section)
+        redirect(conn, to: Routes.instructor_delivery_path(conn, :index, section.context_id))
     end
+
+  end
+
+  def resource(conn, _params) do
+    page = %{}
+    render(conn, "page.html", page: page)
   end
 
   def list_open_and_free(conn, _params) do
@@ -73,7 +86,7 @@ defmodule OliWeb.DeliveryController do
     institution = Accounts.get_institution!(user.institution_id)
     publication = Publishing.get_publication!(publication_id)
 
-    Sections.create_section(%{
+    {:ok, %Section{id: id}} = Sections.create_section(%{
       time_zone: institution.timezone,
       title: lti_params["context_title"],
       context_id: lti_params["context_id"],
@@ -81,6 +94,9 @@ defmodule OliWeb.DeliveryController do
       project_id: publication.project_id,
       publication_id: publication_id,
     })
+
+    # Enroll this user as an instructor
+    Sections.enroll(user.id, id, SectionRoles.get_by_type("instructor").id)
 
     conn
     |> redirect(to: Routes.delivery_path(conn, :index))

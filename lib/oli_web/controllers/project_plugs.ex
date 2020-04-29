@@ -27,4 +27,20 @@ defmodule OliWeb.ProjectPlugs do
     end
   end
 
+  def ensure_context_id_matches(conn, _) do
+
+    lti_params = Plug.Conn.get_session(conn, :lti_params)
+    context_id = lti_params["context_id"]
+
+    # Verify that the context_id found as a parameter in the route
+    # matches the one found in the LTI launch from the session
+    case conn.params do
+      %{"context_id" => ^context_id} -> conn
+      _ -> conn
+        |> Phoenix.Controller.put_view(OliWeb.DeliveryView)
+        |> Phoenix.Controller.render("signin_required.html")
+        |> Plug.Conn.halt()
+    end
+  end
+
 end

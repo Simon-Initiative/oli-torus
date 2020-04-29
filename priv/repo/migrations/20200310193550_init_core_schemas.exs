@@ -179,6 +179,18 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       timestamps(type: :timestamptz)
     end
 
+    create table(:enrollments) do
+      timestamps()
+      add :user_id, references(:user), primary_key: true
+      add :section_id, references(:sections), primary_key: true
+      add :section_role_id, references(:section_roles)
+    end
+
+    create index(:enrollments, [:user_id])
+    create index(:enrollments, [:section_id])
+    create unique_index(:enrollments, [:user_id, :section_id], name: :index_user_section)
+
+
     create table(:authors_sections) do
       timestamps(type: :timestamptz)
       add :author_id, references(:authors), primary_key: true
