@@ -59,7 +59,7 @@ defmodule Oli.Delivery.Page.PageContext do
     activities = ActivityContext.create_context_map(activity_ids, revisions, registrations)
 
     # create a mapping specifically for the objectives
-    objectives = create_objectives_map(objective_ids, revisions)
+    objectives = get_objective_titles(objective_ids, revisions)
 
     %PageContext{
       page: page_revision,
@@ -82,12 +82,8 @@ defmodule Oli.Delivery.Page.PageContext do
     end
   end
 
-  defp create_objectives_map(objective_ids, revisions) do
-    Enum.reduce(objective_ids, %{}, fn id, m ->
-      Map.put(m, id, %{
-        title: Map.get(revisions, id) |> Map.get(:title)
-      })
-    end)
+  defp get_objective_titles(objective_ids, revisions) do
+    Enum.map(objective_ids, fn id -> Map.get(revisions, id).title end)
   end
 
   defp get_referenced_resources(

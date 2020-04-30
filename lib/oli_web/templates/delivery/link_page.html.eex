@@ -1,5 +1,5 @@
-<div href="#" class="my-2 d-flex flex-row">
-  <%= link to: @link do %>
-    <a href="#"><i class="far fa-file"></i> <%= @page.title %></a>
-  <% end %>
+
+<div>
+  <i class="far fa-file"></i> <%= link @page.title, to: @link_help %>
 </div>
+

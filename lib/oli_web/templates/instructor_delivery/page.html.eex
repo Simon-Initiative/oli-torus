@@ -1,0 +1,21 @@
+
+<div class="my-3">
+  <h3><%= @page.title %></h3>
+
+  <%= if length(@objectives) > 0 do %>
+    <h4>Learning Objectives</h4>
+    <ul>
+    <%= for o <- @objectives do %>
+      <li><%= o %></li>
+    <% end %>
+    </ul>
+    <hr class="my-4"/>
+  <% end %>
+
+  <h4>Content</h4>
+
+  <p>To be done later</p>
+
+  <hr class="my-4"/>
+
+</div>

@@ -28,7 +28,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
 
     end
 
-    test "create_context/2 returns the activities mapped correctly", %{section: section, p1: p1, o1: o1, a1: a1, a2: a2} = map do
+    test "create_context/2 returns the activities mapped correctly", %{section: section, p1: p1, a1: a1, a2: a2} = map do
 
       page1 = Map.get(map, :page1)
       page2 = Map.get(map, :page2)
@@ -46,7 +46,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
       assert Map.get(context.activities, a2.resource_id).model == %{"stem" => "3"}
 
       # verify objectives map
-      assert Map.get(context.objectives, o1.resource_id).title == "objective one"
+      assert context.objectives == ["objective one"]
 
       # verify previous and next are correct
       assert context.previous_page.resource_id == page1.id
