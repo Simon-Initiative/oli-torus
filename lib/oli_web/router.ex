@@ -200,7 +200,7 @@ defmodule OliWeb.Router do
     live_dashboard "/dashboard", metrics: OliWeb.Telemetry
   end
 
-  # routes only accessable to developers
+  # routes only accessible to developers
   if Mix.env === :dev or Mix.env === :test do
     scope "/dev", OliWeb do
       pipe_through :browser
