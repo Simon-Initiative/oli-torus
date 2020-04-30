@@ -5,12 +5,13 @@ export const PreviewButton = ({projectSlug, resourceSlug, persistence}:
   const saving = (persistence === 'inflight' || persistence === 'pending');
   return (
     <div className="btn-group btn-group-sm" role="group" aria-label="Preview">
-      <a href={`/project/${projectSlug}/resource/${resourceSlug}/preview`}
+      <button
         role="button"
-        className={`btn btn-sm btn-outline-primary m-2 ${saving ? 'disabled' : ''}`}
-        target="_blank">
+        className="btn btn-sm btn-outline-primary m-2"
+        onClick={() => window.open(`/project/${projectSlug}/resource/${resourceSlug}/preview`, 'page-preview')}
+        disabled={saving}>
         Preview Page
-      </a>
+      </button>
     </div>
   );
 };
