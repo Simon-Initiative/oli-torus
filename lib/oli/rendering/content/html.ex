@@ -125,12 +125,15 @@ defmodule Oli.Rendering.Content.Html do
     escape_xml!(text) |> wrap_with_marks(text_entity)
   end
 
-  def unsupported(%Context{} = _context, %{"type" => type}) do
-    ["<div class=\"unsupported-element\">Element type '", type ,"' is not supported</div>\n"]
-  end
-
-  def invalid(%Context{} = _context, _element) do
-    ["<div class=\"invalid-element\">Element is invalid</div>\n"]
+  def error(%Context{} = _context, element, error) do
+    case error do
+      {:unsupported, error_id, _error_msg} ->
+        ["<div class=\"content unsupported\">Content element type '", element["type"] ,"' is not supported. Please contact support with issue ##{error_id}</div>\n"]
+      {:invalid, error_id, _error_msg} ->
+        ["<div class=\"content invalid\">Content element is invalid. Please contact support with issue ##{error_id}</div>\n"]
+      {_, error_id, _error_msg} ->
+        ["<div class=\"content invalid\">An error occurred while rendering content . Please contact support with issue ##{error_id}</div>\n"]
+    end
   end
 
   def escape_xml!(text) do

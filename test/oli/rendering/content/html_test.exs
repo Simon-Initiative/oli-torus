@@ -6,7 +6,7 @@ defmodule Oli.Content.Content.HtmlTest do
 
   import ExUnit.CaptureLog
 
-  describe "HTML writer" do
+  describe "html content renderer" do
     setup do
       author = author_fixture()
 
@@ -37,8 +37,14 @@ defmodule Oli.Content.Content.HtmlTest do
 
       assert capture_log(fn ->
         rendered_html = Content.render(context, content, Content.Html)
-        _rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
-      end) =~ "Element is invalid"
+        rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
+
+        # ensure malformed content doesnt prevent rendering over other valid content
+        assert rendered_html_string =~ "<h3>Introduction</h3>"
+
+        # render an error message for the malformed content element
+        assert rendered_html_string =~ "<div class=\"content invalid\">Content element is invalid"
+      end) =~ "Content element is invalid"
     end
 
     test "renders unsupported element properly", %{author: author} do
@@ -49,9 +55,12 @@ defmodule Oli.Content.Content.HtmlTest do
         rendered_html = Content.render(context, content, Content.Html)
         rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
 
+        # ensure unsupported content doesnt prevent rendering over other supported content
         assert rendered_html_string =~ "<h3>Introduction</h3>"
-        assert rendered_html_string =~ "<div class=\"unsupported-element\">Element type 'i-am-unsupported' is not supported"
-      end) =~ "Element is not supported"
+
+        # render an error message for the unsupported content element
+        assert rendered_html_string =~ "<div class=\"content unsupported\">Content element type 'i-am-unsupported' is not supported"
+      end) =~ "Content element is not supported"
     end
 
   end
