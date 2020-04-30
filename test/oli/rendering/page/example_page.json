@@ -320,7 +320,7 @@
   ],
   "purpose": "None"
 },{
-  "activitySlug": "activity-1",
+  "activity_id": 1,
   "children": [],
   "id": 4097071352,
   "purpose": "None",
@@ -348,7 +348,7 @@
       ]
     }]
 },{
-  "activitySlug": "activity-2",
+  "activity_id": 2,
   "children": [],
   "id": 4097071353,
   "purpose": "Learn By Doing",

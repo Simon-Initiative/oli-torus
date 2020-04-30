@@ -7,7 +7,7 @@ defmodule Oli.Rendering.Activity do
   @callback activity(%Context{}, %{}) :: [any()]
   @callback error(%Context{}, %{}, {Atom.t, String.t, String.t}) :: [any()]
 
-  def render(%Context{} = context, %{"activitySlug" => _, "purpose" => _} = element, writer) do
+  def render(%Context{} = context, %{"activity_id" => _, "purpose" => _} = element, writer) do
     writer.activity(context, element)
   end
 

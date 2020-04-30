@@ -17,13 +17,13 @@ defmodule Oli.Content.Page.HtmlTest do
       {:ok, page_content} = read_json_file("./test/oli/rendering/page/example_page.json")
 
       activity_map = %{
-        "activity-1" => %{
-          slug: "activity-1",
+        1 => %{
+          id: 1,
           model_json: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
           delivery_element: "oli-multiple-choice-delivery"
         },
-        "activity-2" => %{
-          slug: "activity-2",
+        2 => %{
+          id: 2,
           model_json: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
           delivery_element: "oli-check-all-that-apply-delivery"
         }
@@ -42,8 +42,8 @@ defmodule Oli.Content.Page.HtmlTest do
       invalid_page_content = %{"this-is-not-valid" => "page model should be a list of items"}
 
       activity_map = %{
-        "activity-1" => %{
-          slug: "activity-1",
+        1 => %{
+          id: 1,
           model_json: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
           delivery_element: "oli-multiple-choice-delivery"
         }
@@ -64,8 +64,8 @@ defmodule Oli.Content.Page.HtmlTest do
       {:ok, page_content} = read_json_file("./test/oli/rendering/page/example_malformed_page.json")
 
       activity_map = %{
-        "activity-1" => %{
-          slug: "activity-1",
+        1 => %{
+          id: 1,
           model_json: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
           delivery_element: "oli-multiple-choice-delivery"
         }
