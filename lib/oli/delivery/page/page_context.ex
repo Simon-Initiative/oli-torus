@@ -11,6 +11,7 @@ defmodule Oli.Delivery.Page.PageContext do
   alias Oli.Delivery.Page.PageContext
   alias Oli.Resources.Revision
   alias Oli.Publishing.DeliveryResolver
+  alias Oli.Activities
 
   @doc """
   Creates the page context required to render a page in delivery model, based
@@ -25,6 +26,9 @@ defmodule Oli.Delivery.Page.PageContext do
   """
   @spec create_page_context(String.t, String.t, any) :: %PageContext{}
   def create_page_context(context_id, page_slug, container_id \\ nil) do
+
+    # get a view of all current registered activity types
+    registrations = Activities.list_activity_registrations()
 
     # resolve the page revision per context_id
     page_revision = DeliveryResolver.from_revision_slug(context_id, page_slug)
@@ -48,7 +52,7 @@ defmodule Oli.Delivery.Page.PageContext do
     |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
 
     # create a mapping specifically for the activities
-    activities = ActivityContext.create_context_map(activity_ids, revisions)
+    activities = ActivityContext.create_context_map(activity_ids, revisions, registrations)
 
     # create a mapping specifically for the objectives
     objectives = create_objectives_map(objective_ids, revisions)

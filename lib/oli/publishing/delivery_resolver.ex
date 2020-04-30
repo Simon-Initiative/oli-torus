@@ -20,7 +20,6 @@ defmodule Oli.Publishing.DeliveryResolver do
         join: m in PublishedResource, on: m.publication_id == s.publication_id,
         join: rev in Revision, on: rev.id == m.revision_id,
         where: s.context_id == ^context_id and m.resource_id in ^resource_ids,
-        preload: [activity_type: rev],
         select: rev)
 
       # order them according to the resource_ids
@@ -38,7 +37,6 @@ defmodule Oli.Publishing.DeliveryResolver do
         join: m in PublishedResource, on: m.publication_id == s.publication_id,
         join: rev in Revision, on: rev.id == m.revision_id,
         where: s.context_id == ^context_id and m.resource_id == ^resource_id,
-        preload: [activity_type: rev],
         select: rev)
       end
     |> run() |> emit([:oli, :resolvers, :delivery], :duration)
@@ -54,7 +52,6 @@ defmodule Oli.Publishing.DeliveryResolver do
         join: rev2 in Revision, on: m.revision_id == rev2.id,
         join: s in Section, on: s.publication_id == m.publication_id,
         where: rev.slug == ^revision_slug and s.context_id == ^context_id,
-        preload: [activity_type: rev],
         select: rev2)
     end
     |> run() |> emit([:oli, :resolvers, :delivery], :duration)
