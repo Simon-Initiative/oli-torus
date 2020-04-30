@@ -1,4 +1,7 @@
 defmodule Oli.Rendering.Activity.Html do
+  @moduledoc """
+  Implements the Html writer for Oli activity rendering
+  """
   alias Oli.Utils
   alias Oli.Rendering.Context
 

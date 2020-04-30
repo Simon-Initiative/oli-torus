@@ -1,4 +1,10 @@
 defmodule Oli.Rendering.Content do
+  @moduledoc """
+  This modules defines the rendering functionality for Oli structured content. Rendering is
+  extensibile to any format which implements the behavior defined in this module, then specifying
+  that format at render time. For an example of how exactly to extend this, see `content/html.ex`.
+  """
+
   alias Oli.Rendering.Context
   alias Oli.Utils
 
@@ -33,18 +39,32 @@ defmodule Oli.Rendering.Content do
   @callback a(%Context{}, next, %{}) :: [any()]
   @callback error(%Context{}, %{}, {Atom.t, String.t, String.t}) :: [any()]
 
+  @doc """
+  Renders an Oli content element that contains children.
+  Returns an IO list of raw html strings to be futher processed by Phoenix/BEAM writev.
+  """
   def render(%Context{} = context, %{"type" => "content", "children" => children}, writer) do
     Enum.map(children, fn child -> render(context, child, writer) end)
   end
 
+  @doc """
+  Renders an text content
+  """
   def render(%Context{} = context, %{"text" => _text} = text_element, writer) do
     writer.text(context, text_element)
   end
 
+  @doc """
+  Renders content children
+  """
   def render(%Context{} = context, children, writer) when is_list(children) do
     Enum.map(children, fn child -> render(context, child, writer) end)
   end
 
+  @doc """
+  Renders a content element by calling the provided writer implementation on a
+  supported element type.
+  """
   def render(%Context{render_opts: render_opts} = context, %{"type" => type, "children" => children} = element, writer) do
     next = fn -> render(context, children, writer) end
 
@@ -85,6 +105,10 @@ defmodule Oli.Rendering.Content do
     end
   end
 
+  @doc """
+  Renders an error message if none of the signatures above match. Logging and rendering of errors
+  can be configured using the render_opts in context
+  """
   def render(%Context{render_opts: render_opts} = context, element, writer) do
     error_id = Utils.random_string(8)
     error_msg = "Content element is invalid: #{Kernel.inspect(element)}"
