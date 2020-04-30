@@ -3,6 +3,7 @@ defmodule OliWeb.InstructorDeliveryControllerTest do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionRoles
   alias Oli.Accounts
+  alias Oli.Seeder
 
   describe "instructor_delivery_controller index" do
     setup [:setup_session]
@@ -15,6 +16,26 @@ defmodule OliWeb.InstructorDeliveryControllerTest do
       |> get(Routes.instructor_delivery_path(conn, :index, section.context_id))
 
       assert html_response(conn, 200) =~ "Instructor View"
+    end
+
+
+    test "handles instructor page access by an enrolled instructor", %{conn: conn, revision: revision, user: user, section: section} do
+
+      Sections.enroll(user.id, section.id, SectionRoles.get_by_type("instructor").id)
+
+      conn = conn
+      |> get(Routes.instructor_delivery_path(conn, :page, section.context_id, revision.slug))
+
+      assert html_response(conn, 200) =~ "<h4>Instructor View of Content</h4>"
+    end
+
+
+    test "handles instructor page access by a non enrolled instructor", %{conn: conn, revision: revision, section: section} do
+
+      conn = conn
+      |> get(Routes.instructor_delivery_path(conn, :page, section.context_id, revision.slug))
+
+      assert html_response(conn, 200) =~ "Not authorized"
     end
 
     test "handles student access who is not enrolled", %{conn: conn, section: section} do
@@ -62,28 +83,29 @@ defmodule OliWeb.InstructorDeliveryControllerTest do
       institution_id: institution.id,
     })
 
-    %{ project: project, publication: publication } = project_fixture(author)
+    map = Seeder.base_project_with_resource2()
 
     section = section_fixture(%{
       context_id: "some-context-id",
-      project_id: project.id,
-      publication_id: publication.id,
-      institution_id: institution.id
+      project_id: map.project.id,
+      publication_id: map.publication.id,
+      institution_id: map.institution.id
     })
 
-    conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
+    conn = Plug.Test.init_test_session(conn, current_author_id: map.author.id)
       |> put_session(:current_user_id, user.id)
       |> put_session(:lti_params, lti_params)
 
     {:ok,
       conn: conn,
-      author: author,
-      institution: institution,
+      author: map.author,
+      institution: map.institution,
       lti_params: lti_params,
       user: user,
-      project: project,
-      publication: publication,
-      section: section
+      project: map.project,
+      publication: map.publication,
+      section: section,
+      revision: map.revision1
     }
   end
 end
