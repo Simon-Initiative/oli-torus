@@ -47,7 +47,11 @@ defmodule Oli.Delivery.Page.PageContext do
 
     # resolve all of these references, all at once, storing
     # them in a map based on their resource_id as the key
-    all_resources = objective_ids ++ activity_ids ++ previous_next
+    all_resources =
+      objective_ids ++
+      activity_ids ++
+      Enum.filter(previous_next, fn a -> a != nil end)
+
     revisions = DeliveryResolver.from_resource_id(context_id, all_resources)
     |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
 
@@ -66,11 +70,9 @@ defmodule Oli.Delivery.Page.PageContext do
     }
   end
 
-
-
   defp get_previous_next(%{children: children}, page_resource_id) do
 
-    index = Enum.find_index(children, page_resource_id)
+    index = Enum.find_index(children, fn id -> id == page_resource_id end)
 
     case {index, length(children) - 1} do
       {_, 0} -> [nil, nil]

@@ -5,7 +5,7 @@ defmodule Oli.Delivery.Page.ActivityContextTest do
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Activities
 
-  describe "publications" do
+  describe "activity context" do
 
     setup do
       map = Seeder.base_project_with_resource2()

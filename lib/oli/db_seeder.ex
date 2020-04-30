@@ -119,6 +119,48 @@ defmodule Oli.Seeder do
     %{resource: resource, revision: revision}
   end
 
+  def add_page(map, attrs, tag \\ nil) do
+
+    author = map.author
+    project = map.project
+    publication = map.publication
+
+    {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
+
+    attrs = Map.merge(%{author_id: author.id, objectives: %{ "attached" => []}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"), children: [], content: %{ "model" => []}, deleted: false, title: "title", resource_id: resource.id}, attrs)
+    {:ok, revision} = Oli.Resources.create_revision(attrs)
+
+    {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: resource.id}) |> Repo.insert
+
+    publish_resource(publication, resource, revision)
+
+    case tag do
+      nil -> map
+      t -> Map.put(map, t, revision)
+    end
+  end
+
+  def add_activity(map, attrs, tag \\ nil) do
+
+    author = map.author
+    project = map.project
+    publication = map.publication
+
+    {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
+
+    attrs = Map.merge(%{activity_type_id: 1, author_id: author.id, objectives: %{ "attached" => []}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"), children: [], content: %{}, deleted: false, title: "test", resource_id: resource.id}, attrs)
+
+    {:ok, revision} = Oli.Resources.create_revision(attrs)
+    {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: resource.id}) |> Repo.insert
+
+    publish_resource(publication, resource, revision)
+
+    case tag do
+      nil -> map
+      t -> Map.put(map, t, revision)
+    end
+  end
+
   def create_activity(attrs, publication, project, author) do
 
     {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
@@ -144,7 +186,7 @@ defmodule Oli.Seeder do
     updated
   end
 
-  def add_objective(%{ project: project, publication: publication, author: author} = map, title) do
+  def add_objective(%{ project: project, publication: publication, author: author} = map, title, tag \\ nil) do
 
     {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
     {:ok, revision} = Oli.Resources.create_revision(%{author_id: author.id, objectives: %{}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective"), children: [], content: %{}, deleted: false, title: title, resource_id: resource.id})
@@ -152,7 +194,10 @@ defmodule Oli.Seeder do
 
     publish_resource(publication, resource, revision)
 
-    map
+    case tag do
+      nil -> map
+      t -> Map.put(map, t, revision)
+    end
   end
 
   def add_author(%{ project: project} = map, author, atom) do
