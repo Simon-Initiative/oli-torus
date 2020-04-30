@@ -10,7 +10,7 @@ defmodule Oli.Delivery.Learning.ActivityAccess do
     field :resource_slug, :string
     field :user_id, :string
 
-    belongs :section, Oli.Delivery.Sections.Section
+    belongs_to :section, Oli.Delivery.Sections.Section
     has_one :score, Oli.Delivery.Learning.Score
     has_one :feedback, Oli.Delivery.Learning.Feedback
     has_many :activity_attempts, Oli.Delivery.Learning.ActivityAttempt
