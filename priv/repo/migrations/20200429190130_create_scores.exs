@@ -15,6 +15,7 @@ defmodule Oli.Repo.Migrations.CreateScores do
       add :activity_access_id, references(:activity_access)
       add :activity_attempt_id, references(:activity_attempts)
       add :problem_attempt_id, references(:problem_attempts)
+      add :response_id, references(:responses)
 
       timestamps(type: :timestamptz)
     end
@@ -22,5 +23,6 @@ defmodule Oli.Repo.Migrations.CreateScores do
     create index(:scores, [:activity_access_id])
     create index(:scores, [:activity_attempt_id])
     create index(:scores, [:problem_attempt_id])
+    create index(:scores, [:response_id])
   end
 end

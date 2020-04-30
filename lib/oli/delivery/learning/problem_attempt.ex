@@ -14,6 +14,7 @@ defmodule Oli.Delivery.Learning.ProblemAttempt do
 
     belongs_to :activity_attempt, Oli.Delivery.Learning.ActivityAttempt
     belongs_to :parent, Oli.Delivery.Learning.ProblemAttempt
+    has_many :interactions, Oli.Delivery.Learning.Interaction
 
     timestamps(type: :utc_datetime)
   end

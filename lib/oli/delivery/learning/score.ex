@@ -16,6 +16,7 @@ defmodule Oli.Delivery.Learning.Score do
     belongs_to :activity_access, Oli.Delivery.Learning.ActivityAccess
     belongs_to :activity_attempt, Oli.Delivery.Learning.ActivityAttempt
     belongs_to :problem_attempt, Oli.Delivery.Learning.ProblemAttempt
+    belongs_to :response, Oli.Delivery.Learning.Response
 
     timestamps(type: :utc_datetime)
   end

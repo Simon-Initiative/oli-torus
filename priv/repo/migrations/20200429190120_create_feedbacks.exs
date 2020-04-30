@@ -5,7 +5,7 @@ defmodule Oli.Repo.Migrations.CreateFeedbacks do
     create table(:feedbacks) do
       add :assigned_by, :string
       add :body, :map
-      add :problem_attempt_id, references(:problem_attempts)
+      add :response_id, references(:responses)
       add :activity_access_id, references(:activity_access)
 
       timestamps(type: :timestamptz)
