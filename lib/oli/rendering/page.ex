@@ -1,8 +1,6 @@
 defmodule Oli.Rendering.Page do
   alias Oli.Rendering.Context
 
-  require Logger
-
   @callback content(%Context{}, %{}) :: [any()]
   @callback activity(%Context{}, %{}) :: [any()]
   @callback unsupported(%Context{}, %{}) :: [any()]

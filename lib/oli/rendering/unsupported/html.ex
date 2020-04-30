@@ -5,9 +5,7 @@ defmodule Oli.Rendering.Unsupported.Html do
 
   @behaviour Oli.Rendering.Unsupported
 
-  def unsupported(%Context{} = _context, element) do
-    Logger.warn("Element is not supported: #{Kernel.inspect(element)}")
-
+  def unsupported(%Context{} = _context, _element) do
     ["<div class=\"unsupported-element\">Element is not supported. Please contact support.</div>\n"]
   end
 

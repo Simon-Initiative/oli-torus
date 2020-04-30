@@ -129,6 +129,10 @@ defmodule Oli.Rendering.Content.Html do
     ["<div class=\"unsupported-element\">Element type '", type ,"' is not supported</div>\n"]
   end
 
+  def invalid(%Context{} = _context, _element) do
+    ["<div class=\"invalid-element\">Element is invalid</div>\n"]
+  end
+
   def escape_xml!(text) do
     case HTML.html_escape(text) do
       {:safe, result} -> result

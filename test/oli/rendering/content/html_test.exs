@@ -1,8 +1,8 @@
-defmodule Oli.Content.Writers.HTMLTest do
+defmodule Oli.Content.Content.HtmlTest do
   use Oli.DataCase
 
-  alias Oli.Content.Writers
-  alias Oli.Content.Writers.Writer
+  alias Oli.Rendering.Context
+  alias Oli.Rendering.Content
 
   import ExUnit.CaptureLog
 
@@ -14,10 +14,10 @@ defmodule Oli.Content.Writers.HTMLTest do
     end
 
     test "renders well-formed content properly", %{author: author} do
-      {:ok, content} = read_json_file("./test/oli/content/writers/example_content.json")
-      context = %Writers.Context{user: author}
+      {:ok, content} = read_json_file("./test/oli/rendering/content/example_content.json")
+      context = %Context{user: author}
 
-      rendered_html = Writer.render(context, content, Writers.HTML)
+      rendered_html = Content.render(context, content, Content.Html)
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
 
       assert rendered_html_string =~ "<h3>Introduction</h3>"
@@ -32,24 +32,26 @@ defmodule Oli.Content.Writers.HTMLTest do
     end
 
     test "renders malformed content gracefully", %{author: author} do
-      {:ok, content} = read_json_file("./test/oli/content/writers/example_malformed_content.json")
-      context = %Writers.Context{user: author}
+      {:ok, content} = read_json_file("./test/oli/rendering/content/example_malformed_content.json")
+      context = %Context{user: author}
 
       assert capture_log(fn ->
-        rendered_html = Writer.render(context, content, Writers.HTML)
+        rendered_html = Content.render(context, content, Content.Html)
         _rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
-      end) =~ "Content element is invalid"
+      end) =~ "Element is invalid"
     end
 
     test "renders unsupported element properly", %{author: author} do
-      {:ok, content} = read_json_file("./test/oli/content/writers/example_unsupported_content.json")
-      context = %Writers.Context{user: author}
+      {:ok, content} = read_json_file("./test/oli/rendering/content/example_unsupported_content.json")
+      context = %Context{user: author}
 
-      rendered_html = Writer.render(context, content, Writers.HTML)
-      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
+      assert capture_log(fn ->
+        rendered_html = Content.render(context, content, Content.Html)
+        rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
 
-      assert rendered_html_string =~ "<h3>Introduction</h3>"
-      assert rendered_html_string =~ "<div class=\"unsupported-element\">Element type 'i-am-unsupported' is not supported"
+        assert rendered_html_string =~ "<h3>Introduction</h3>"
+        assert rendered_html_string =~ "<div class=\"unsupported-element\">Element type 'i-am-unsupported' is not supported"
+      end) =~ "Element is not supported"
     end
 
   end
