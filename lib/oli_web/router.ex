@@ -108,6 +108,7 @@ defmodule OliWeb.Router do
 
     # Editors
     get "/:project_id/resource/:revision_slug", ResourceController, :edit
+    get "/:project_id/resource/:revision_slug/preview", ResourceController, :preview
     delete "/:project_id/resource/:revision_slug", ResourceController, :delete
     get "/:project_id/resource/:revision_slug/activity/:activity_slug", ActivityController, :edit
 
