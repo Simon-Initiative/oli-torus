@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>API Reference — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-8d6e045dcb.js"></script>
+    <script src="dist/sidebar_items-582de85576.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -240,21 +240,6 @@ they are stored in the database.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="Oli.Content.Writers.Context.html">Oli.Content.Writers.Context</a>
-  </div>
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="Oli.Content.Writers.HTML.html">Oli.Content.Writers.HTML</a>
-  </div>
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="Oli.Content.Writers.Writer.html">Oli.Content.Writers.Writer</a>
-  </div>
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
     <a href="Oli.Delivery.html">Oli.Delivery</a>
   </div>
 </div>
@@ -416,6 +401,71 @@ they are stored in the database.</p></div>
   <div class="summary-signature">
     <a href="Oli.Registrar.html">Oli.Registrar</a>
   </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Rendering.html">Oli.Rendering</a>
+  </div>
+    <div class="summary-synopsis"><p>Rendering is responsible for transforming raw Oli models into other consumable formats.
+An example of this is HTML rendering which takes a model and produces HTML.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Rendering.Activity.html">Oli.Rendering.Activity</a>
+  </div>
+    <div class="summary-synopsis"><p>This modules defines the rendering functionality for an Oli activity. Rendering is
+extensibile to any format which implements the behavior defined in this module, then specifying
+that format at render time. For an example of how exactly to extend this, see <code class="inline">activity/html.ex</code>.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Rendering.Activity.ActivitySummary.html">Oli.Rendering.Activity.ActivitySummary</a>
+  </div>
+    <div class="summary-synopsis"><p>Defines the struct that contains necessary activity data used by the activity renderer.
+These ActivitySummary structs are given to the renderer via the rendering context as
+a map of activity ids to ActivitySummary called activity_map</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Rendering.Activity.Html.html">Oli.Rendering.Activity.Html</a>
+  </div>
+    <div class="summary-synopsis"><p>Implements the Html writer for Oli activity rendering</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Rendering.Content.html">Oli.Rendering.Content</a>
+  </div>
+    <div class="summary-synopsis"><p>This modules defines the rendering functionality for Oli structured content. Rendering is
+extensibile to any format which implements the behavior defined in this module, then specifying
+that format at render time. For an example of how exactly to extend this, see <code class="inline">content/html.ex</code>.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Rendering.Content.Html.html">Oli.Rendering.Content.Html</a>
+  </div>
+    <div class="summary-synopsis"><p>Implements the Html writer for Oli content rendering</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Rendering.Context.html">Oli.Rendering.Context</a>
+  </div>
+    <div class="summary-synopsis"><p>The context struct that is used by the renderers contains useful
+data that may change the way rendering occurs. It is intended to be read-only
+by the renderers</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Rendering.Page.html">Oli.Rendering.Page</a>
+  </div>
+    <div class="summary-synopsis"><p>This modules defines the rendering functionality for an Oli page. Rendering is
+extensibile to any format which implements the behavior defined in this module, then specifying
+that format at render time. For an example of how exactly to extend this, see <code class="inline">page/html.ex</code>.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Rendering.Page.Html.html">Oli.Rendering.Page.Html</a>
+  </div>
+    <div class="summary-synopsis"><p>Implements the Html writer for Oli page rendering</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
