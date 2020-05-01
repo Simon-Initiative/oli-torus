@@ -6,6 +6,7 @@ defmodule Oli.Seeder do
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
   alias Oli.Authoring.Course.{Project, Family}
   alias Oli.Publishing.Publication
+  alias Oli.Delivery.Sections.Section
 
   def base_project_with_resource2() do
 
@@ -44,6 +45,28 @@ defmodule Oli.Seeder do
       |> Map.put(:page2, page2)
       |> Map.put(:revision1, revision1)
       |> Map.put(:revision2, revision2)
+
+  end
+
+  def create_section(map) do
+
+    params = %{end_date: ~D[2010-04-17],
+      open_and_free: true,
+      registration_open: true,
+      start_date: ~D[2010-04-17],
+      time_zone: "some time_zone",
+      title: "some title",
+      context_id: "context_id",
+      project_id: map.project.id,
+      publication_id: map.publication.id,
+      institution_id: map.institution.id
+    }
+
+    {:ok, section} =
+      Section.changeset(%Section{}, params)
+      |> Repo.insert()
+
+    Map.put(map, :section, section)
 
   end
 
@@ -96,6 +119,62 @@ defmodule Oli.Seeder do
     %{resource: resource, revision: revision}
   end
 
+  def add_page(map, attrs, tag \\ nil) do
+
+    author = map.author
+    project = map.project
+    publication = map.publication
+
+    {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
+
+    attrs = Map.merge(%{author_id: author.id, objectives: %{ "attached" => []}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"), children: [], content: %{ "model" => []}, deleted: false, title: "title", resource_id: resource.id}, attrs)
+    {:ok, revision} = Oli.Resources.create_revision(attrs)
+
+    {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: resource.id}) |> Repo.insert
+
+    publish_resource(publication, resource, revision)
+
+    case tag do
+      nil -> map
+      t -> Map.put(map, t, revision)
+    end
+  end
+
+  def add_activity(map, attrs, tag \\ nil) do
+
+    author = map.author
+    project = map.project
+    publication = map.publication
+
+    {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
+
+    attrs = Map.merge(%{activity_type_id: 1, author_id: author.id, objectives: %{ "attached" => []}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"), children: [], content: %{}, deleted: false, title: "test", resource_id: resource.id}, attrs)
+
+    {:ok, revision} = Oli.Resources.create_revision(attrs)
+    {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: resource.id}) |> Repo.insert
+
+    publish_resource(publication, resource, revision)
+
+    case tag do
+      nil -> map
+      t -> Map.put(map, t, revision)
+    end
+  end
+
+  def create_activity(attrs, publication, project, author) do
+
+    {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
+
+    attrs = Map.merge(%{activity_type_id: 1, author_id: author.id, objectives: %{ "attached" => []}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"), children: [], content: %{}, deleted: false, title: "test", resource_id: resource.id}, attrs)
+
+    {:ok, revision} = Oli.Resources.create_revision(attrs)
+    {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: resource.id}) |> Repo.insert
+
+    publish_resource(publication, resource, revision)
+
+    %{resource: resource, revision: revision}
+  end
+
   def attach_pages_to(resources, container, container_revision, publication) do
 
     children = Enum.map(resources, fn r -> r.id end)
@@ -107,7 +186,7 @@ defmodule Oli.Seeder do
     updated
   end
 
-  def add_objective(%{ project: project, publication: publication, author: author} = map, title) do
+  def add_objective(%{ project: project, publication: publication, author: author} = map, title, tag \\ nil) do
 
     {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
     {:ok, revision} = Oli.Resources.create_revision(%{author_id: author.id, objectives: %{}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective"), children: [], content: %{}, deleted: false, title: title, resource_id: resource.id})
@@ -115,7 +194,10 @@ defmodule Oli.Seeder do
 
     publish_resource(publication, resource, revision)
 
-    map
+    case tag do
+      nil -> map
+      t -> Map.put(map, t, revision)
+    end
   end
 
   def add_author(%{ project: project} = map, author, atom) do
