@@ -87,7 +87,7 @@ defmodule Oli.Repo.Migrations.CreateActivityAccess do
       timestamps(type: :timestamptz)
     end
 
-    create index(:feedbacks, [:problem_attempt_id])
+    create index(:feedbacks, [:response_id])
     create index(:feedbacks, [:activity_access_id])
 
     create table(:scores) do
