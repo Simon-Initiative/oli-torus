@@ -30,7 +30,7 @@ defmodule Oli.Resources.Revision do
     resource_revision
     |> cast(attrs, [:title, :slug, :deleted, :author_id, :resource_id, :previous_revision_id, :resource_type_id, :content, :children, :objectives, :graded, :activity_type_id])
     |> validate_required([:title, :deleted, :author_id, :resource_id, :resource_type_id])
-    |> Slug.maybe_update_slug("revisions")
+    |> Slug.update_on_change("revisions")
   end
 
 end

@@ -92,6 +92,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
       timestamps(type: :timestamptz)
     end
+    create unique_index(:families, [:slug], name: :index_slug_families)
 
     create table(:projects) do
       add :title, :string
@@ -103,6 +104,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
       timestamps(type: :timestamptz)
     end
+    create unique_index(:projects, [:slug], name: :index_slug_projects)
 
     create table(:resources) do
       timestamps(type: :timestamptz)
