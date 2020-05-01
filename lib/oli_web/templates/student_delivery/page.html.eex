@@ -3,21 +3,11 @@
   <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
 <% end %>
 
-<div class="my-3">
-  <h3><%= @title %></h3>
+<h3><%= @title %></h3>
 
-  <%= if length(@objectives) > 0 do %>
-    <h4>Learning Objectives</h4>
-    <ul>
-    <%= for o <- @objectives do %>
-      <li><%= o %></li>
-    <% end %>
-    </ul>
-    <hr class="my-4"/>
-  <% end %>
+<%= render OliWeb.DeliveryView, "_objectives.html", objectives: @objectives %>
 
-  <h4>Content</h4>
+<%= raw(@html) %>
 
-  <%= raw(@html) %>
-
-</div>
+<%= render OliWeb.DeliveryView, "_previous_next_nav.html",
+  conn: @conn, context_id: @context_id, previous_page: @previous_page, next_page: @next_page, linker: &OliWeb.StudentDeliveryView.page_link/3 %>
