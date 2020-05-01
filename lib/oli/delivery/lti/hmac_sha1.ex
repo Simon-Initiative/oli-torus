@@ -1,6 +1,10 @@
 defmodule Oli.Delivery.Lti.HmacSHA1 do
 
-  alias Phoenix.HTML
+  # Some useful docs for signatures:
+  # http://lti.tools/oauth/
+
+  # Some inspiration for encoding:
+  # https://github.com/lexmag/oauther/blob/master/lib/oauther.ex#L176
 
   @spec build_signature(
     String.t,
@@ -26,14 +30,14 @@ defmodule Oli.Delivery.Lti.HmacSHA1 do
 
     [
       String.upcase(method),
-      special_encode(url),
+      encode(url),
       process_params(
         body_params,
         params_str_to_keyword_list(query_params)
       )
     ]
     |> Enum.join("&")
-    |> sign_text(special_encode(consumer_secret), token)
+    |> sign_text(encode(consumer_secret), token)
   end
 
   @spec sign_text(String.t, String.t) :: String.t
@@ -64,14 +68,11 @@ defmodule Oli.Delivery.Lti.HmacSHA1 do
     clean_params(body_params) ++ clean_params(query_params)
     |> Enum.sort
     |> Enum.join("&")
-    |> special_encode
+    |> encode
   end
 
-  defp special_encode(str) do
-    URI.encode_www_form(str)
-    |> String.replace("%2B", "%2520")   # URI.encode_www_form re-encodes + (space) to %2B, we must change this to %2520
-    |> String.replace(~r/[!'()]/, &HTML.javascript_escape(&1))
-    |> String.replace(~r/\*/, "%2A")
+  defp encode(str) do
+    URI.encode(str, &URI.char_unreserved?/1)
   end
 
   @spec clean_params([key: String.t]) :: [String.t]
@@ -83,7 +84,7 @@ defmodule Oli.Delivery.Lti.HmacSHA1 do
 
   @spec stringify_param({String.t, String.t}) :: String.t
   defp stringify_param({key, val}) do
-    "#{key}=#{special_encode(val)}"
+    "#{key}=#{encode(val)}"
   end
 
 end
