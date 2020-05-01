@@ -142,14 +142,23 @@ export const Editor = (props: EditorProps) => {
     return <span {...attributes}>{markup}</span>;
   }, []);
 
+  const onChange = (value: Node[]) => {
+    const { operations } = editor;
+
+    // Determine if this onChange was due to an actual content change
+    if (operations.filter(({ type }) => type !== 'set_selection').length) {
+      props.onEdit(value);
+    }
+  };
+
   return (
     <div>
 
       <Slate
         editor={editor as any}
         value={props.value}
-        onChange={value => props.onEdit(value)}
-      >
+        onChange={onChange}
+        >
         <FixedToolbar toolbarItems={props.toolbarItems} />
 
         <HoveringToolbar />

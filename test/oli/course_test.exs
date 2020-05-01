@@ -6,14 +6,14 @@ defmodule Oli.CourseTest do
 
   describe "projects basic" do
 
-    @valid_attrs %{description: "some description", slug: "some slug", version: "1", title: "some title"}
-    @update_attrs %{description: "some updated description", version: "1", slug: "some updated slug", title: "some updated title"}
+    @valid_attrs %{description: "some description", version: "1", title: "some title"}
+    @update_attrs %{description: "some updated description", version: "1", title: "some updated title"}
     @invalid_attrs %{description: nil, slug: nil, title: nil}
 
     setup do
 
       {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
-      {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
+      {:ok, project} = Project.changeset(%Project{}, %{description: "description", title: "title", version: "1", family_id: family.id}) |> Repo.insert
 
       valid_attrs = Map.put(@valid_attrs, :family_id, family.id)
         |> Map.put(:project_id, project.id)
@@ -49,7 +49,7 @@ defmodule Oli.CourseTest do
     test "update_project/2 with valid data updates the project", %{project: project}  do
       assert {:ok, %Project{} = project} = Course.update_project(project, @update_attrs)
       assert project.description == "some updated description"
-      assert project.slug == "some_updated_title"
+      assert project.slug == "title"   # The slug should never change
       assert project.title == "some updated title"
     end
 

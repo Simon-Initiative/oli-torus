@@ -1,0 +1,17 @@
+
+<%= for script <- @scripts do %>
+  <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
+<% end %>
+
+<div class="alert alert-warning" role="alert">
+  <h4>Instructor View of Content</h4>
+</div>
+
+<h3><%= @title %></h3>
+
+<%= render OliWeb.DeliveryView, "_objectives.html", objectives: @objectives %>
+
+<%= raw(@html) %>
+
+<%= render OliWeb.DeliveryView, "_previous_next_nav.html",
+  conn: @conn, context_id: @context_id, previous_page: @previous_page, next_page: @next_page, linker: &OliWeb.InstructorDeliveryView.page_link/3 %>
