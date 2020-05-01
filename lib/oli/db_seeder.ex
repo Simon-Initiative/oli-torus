@@ -10,8 +10,8 @@ defmodule Oli.Seeder do
 
   def base_project_with_resource2() do
 
-    {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
-    {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
+    {:ok, family} = Family.changeset(%Family{}, %{description: "description", title: "title"}) |> Repo.insert
+    {:ok, project} = Project.changeset(%Project{}, %{description: "description", title: "title", version: "1", family_id: family.id}) |> Repo.insert
     {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
     {:ok, author2} = Author.changeset(%Author{}, %{email: "test2@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
 
@@ -72,8 +72,8 @@ defmodule Oli.Seeder do
 
   def another_project(author, institution) do
 
-    {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
-    {:ok, project} = Project.changeset(%Project{}, %{description: "description", slug: "slug", title: "title", version: "1", family_id: family.id}) |> Repo.insert
+    {:ok, family} = Family.changeset(%Family{}, %{description: "description", title: "title"}) |> Repo.insert
+    {:ok, project} = Project.changeset(%Project{}, %{description: "description", title: "title", version: "1", family_id: family.id}) |> Repo.insert
 
     {:ok, _} = AuthorProject.changeset(%AuthorProject{}, %{author_id: author.id, project_id: project.id, project_role_id: ProjectRole.role_id.owner}) |> Repo.insert
 
