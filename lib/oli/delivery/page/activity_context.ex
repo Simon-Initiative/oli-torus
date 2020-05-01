@@ -52,4 +52,5 @@ defmodule Oli.Delivery.Page.ActivityContext do
     IO.iodata_to_binary(encoded)
   end
 
+
 end

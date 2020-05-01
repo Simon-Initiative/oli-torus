@@ -38,6 +38,7 @@ defmodule OliWeb.InstructorDeliveryController do
       html = Page.render(render_context, page_model, Page.Html)
 
       render(conn, "page.html", %{scripts: get_scripts(), title: context.page.title, html: html, objectives: context.objectives})
+
     else
       render(conn, "not_authorized.html")
     end
