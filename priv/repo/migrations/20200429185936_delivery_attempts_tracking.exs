@@ -4,8 +4,9 @@ defmodule Oli.Repo.Migrations.CreateActivityAccess do
   def change do
     create table(:activity_access) do
       add :user_id, :string
+      add :parent_id, references(:activity_access)
       add :section_id, references(:sections)
-      add :resource_slug, :string
+      add :resource_id, references(:resources)
       add :access_count, :integer
       add :last_accessed, :utc_datetime
       add :date_finished, :utc_datetime
@@ -14,7 +15,9 @@ defmodule Oli.Repo.Migrations.CreateActivityAccess do
       timestamps(type: :timestamptz)
     end
 
+    create index(:activity_access, [:parent_id])
     create index(:activity_access, [:section_id])
+    create index(:activity_access, [:resource_id])
 
     create table(:activity_attempts) do
       add :attempt_number, :integer
@@ -26,11 +29,13 @@ defmodule Oli.Repo.Migrations.CreateActivityAccess do
       add :accepted, :boolean, default: false, null: false
       add :processed_by, :string
       add :date_processed, :utc_datetime
+      add :revision_id, references(:revisions)
       add :activity_access_id, references(:activity_access)
 
       timestamps(type: :timestamptz)
     end
 
+    create index(:activity_attempts, [:revision_id])
     create index(:activity_attempts, [:activity_access_id])
 
     create table(:problem_attempts) do
@@ -107,6 +112,23 @@ defmodule Oli.Repo.Migrations.CreateActivityAccess do
     create index(:scores, [:activity_attempt_id])
     create index(:scores, [:problem_attempt_id])
     create index(:scores, [:response_id])
+
+    create table(:problem_step_rollup) do
+      add :section_slug, :string
+      add :user_id, :string
+      add :resource_slug, :string
+      add :problem_id, :string
+      add :step_id, :string
+      add :opportunity, :integer
+      add :hints, :integer
+      add :errors, :integer
+      add :attempts, :integer
+      add :correct, :integer
+      add :first_attempt_correct, :boolean, default: false, null: false
+      add :date_correct, :utc_datetime
+
+      timestamps(type: :timestamptz)
+    end
 
   end
 end

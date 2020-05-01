@@ -1,4 +1,4 @@
-defmodule Oli.Delivery.Learning.UserActivityOptions do
+defmodule Oli.Delivery.Context.UserActivityOptions do
   use Ecto.Schema
   import Ecto.Changeset
 

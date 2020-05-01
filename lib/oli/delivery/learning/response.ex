@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Learning.Response do
 
   schema "responses" do
     field :current, :boolean, default: false
+    # This represents blob of content from a user input wrapped in json
     field :input_value, :map
 
     belongs_to :interaction, Oli.Delivery.Learning.Interaction

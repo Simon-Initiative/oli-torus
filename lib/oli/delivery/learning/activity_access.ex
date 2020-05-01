@@ -7,9 +7,10 @@ defmodule Oli.Delivery.Learning.ActivityAccess do
     field :date_finished, :utc_datetime
     field :finished_late, :boolean, default: false
     field :last_accessed, :utc_datetime
-    field :resource_slug, :string
     field :user_id, :string
 
+    belongs_to :parent, Oli.Delivery.Learning.ActivityAccess
+    belongs_to :resource, Oli.Resources.Resource
     belongs_to :section, Oli.Delivery.Sections.Section
     has_one :score, Oli.Delivery.Learning.Score
     has_one :feedback, Oli.Delivery.Learning.Feedback
@@ -21,7 +22,7 @@ defmodule Oli.Delivery.Learning.ActivityAccess do
   @doc false
   def changeset(activity_access, attrs) do
     activity_access
-    |> cast(attrs, [:user_id, :section_id, :resource_slug, :access_count, :last_accessed, :date_finished, :finished_late])
+    |> cast(attrs, [:parent_id, :user_id, :section_id, :resource_id, :access_count, :last_accessed, :date_finished, :finished_late])
     |> validate_required([:user_id, :section, :resource_slug, :last_accessed])
   end
 end

@@ -13,6 +13,7 @@ defmodule Oli.Delivery.Learning.ActivityAttempt do
     field :late_submission, :boolean, default: false
     field :processed_by, :string
 
+    belongs_to :revision, Oli.Resources.Revision
     belongs_to :activity_access, Oli.Delivery.Learning.ActivityAccess
     has_one :score, Oli.Delivery.Learning.Score
     has_many :problems, Oli.Delivery.Learning.ProblemAttempt
@@ -23,7 +24,7 @@ defmodule Oli.Delivery.Learning.ActivityAttempt do
   @doc false
   def changeset(activity_attempt, attrs) do
     activity_attempt
-    |> cast(attrs, [:activity_access_id, :attempt_number, :deadline, :last_accessed, :date_completed, :date_submitted, :late_submission, :accepted, :processed_by, :date_processed])
+    |> cast(attrs, [:revision_id, :activity_access_id, :attempt_number, :deadline, :last_accessed, :date_completed, :date_submitted, :late_submission, :accepted, :processed_by, :date_processed])
     |> validate_required([:activity_access_id, :attempt_number, :last_accessed])
   end
 end

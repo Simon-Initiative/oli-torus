@@ -1,4 +1,4 @@
-defmodule Oli.Delivery.Learning.ProblemStepRollup do
+defmodule Oli.Delivery.Learning.Data.ProblemStepRollup do
   use Ecto.Schema
   import Ecto.Changeset
 
