@@ -113,11 +113,11 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def blockquote(%Context{} = _context, next, _) do
-    ["<quote>", next.(), "</quote>\n"]
+    ["<blockquote>", next.(), "</blockquote>\n"]
   end
 
   def a(%Context{} = _context, next, %{"href" => href}) do
-    ["<link href=\"#{escape_xml!(href)}\">", next.(), "</link>\n"]
+    ["<a href=\"#{escape_xml!(href)}\">", next.(), "</a>\n"]
   end
 
   def definition(%Context{} = _context, next, _) do
