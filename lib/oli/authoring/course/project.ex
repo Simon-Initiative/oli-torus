@@ -24,8 +24,8 @@ defmodule Oli.Authoring.Course.Project do
   def changeset(project, attrs \\ %{}) do
     project
       |> cast(attrs, [:title, :slug, :description, :version, :family_id, :project_id])
-      |> validate_required([:title, :slug, :version, :family_id])
-      |> Slug.maybe_update_slug("projects")
+      |> validate_required([:title, :version, :family_id])
+      |> Slug.update_never("projects")
   end
 
 end

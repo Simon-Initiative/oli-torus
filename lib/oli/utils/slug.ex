@@ -2,15 +2,32 @@ defmodule Oli.Utils.Slug do
 
   @chars "abcdefghijklmnopqrstuvwxyz1234567890" |> String.split("")
 
-  def maybe_update_slug(changeset, table) do
+  @doc """
+  Updates the slug from the title for a table if the title has not
+  been set or if it has changed.
+  """
+  def update_on_change(changeset, table) do
     case changeset.valid? do
       true ->
         case Ecto.Changeset.get_change(changeset, :title) do
-          nil -> case Ecto.Changeset.get_field(changeset, :title) do
-            nil -> changeset
-            title -> Ecto.Changeset.put_change(changeset, :slug, generate(table, title))
-          end
+          nil -> changeset
           title -> Ecto.Changeset.put_change(changeset, :slug, generate(table, title))
+        end
+
+      _ -> changeset
+    end
+  end
+
+  @doc """
+  Generates a slug once, but then guarantee that it never changes
+  on future title changes.
+  """
+  def update_never(changeset, table) do
+    case changeset.valid? do
+      true ->
+        case Ecto.Changeset.get_field(changeset, :slug) do
+          nil -> Ecto.Changeset.put_change(changeset, :slug, generate(table, Ecto.Changeset.get_field(changeset, :title)))
+          _ -> changeset
         end
 
       _ -> changeset

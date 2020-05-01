@@ -37,7 +37,15 @@ defmodule OliWeb.InstructorDeliveryController do
       page_model = Map.get(context.page.content, "model")
       html = Page.render(render_context, page_model, Page.Html)
 
-      render(conn, "page.html", %{scripts: get_scripts(), title: context.page.title, html: html, objectives: context.objectives})
+      render(conn, "page.html", %{
+        context_id: context_id,
+        scripts: get_scripts(),
+        previous_page: context.previous_page,
+        next_page: context.next_page,
+        title: context.page.title,
+        html: html,
+        objectives: context.objectives
+      })
 
     else
       render(conn, "not_authorized.html")

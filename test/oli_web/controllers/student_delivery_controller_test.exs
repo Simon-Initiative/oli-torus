@@ -25,7 +25,8 @@ defmodule OliWeb.StudentDeliveryControllerTest do
       conn = conn
       |> get(Routes.student_delivery_path(conn, :page, section.context_id, revision.slug))
 
-      assert html_response(conn, 200) =~ "<h4>Content</h4>"
+      assert html_response(conn, 200) =~ "<h3>"
+      refute html_response(conn, 200) =~ "<h4>Instructor View of Content</h4>"
     end
 
 
