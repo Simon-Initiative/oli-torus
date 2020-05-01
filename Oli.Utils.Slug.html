@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Utils.Slug — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-8fb2380992.js"></script>
+    <script src="dist/sidebar_items-765b3489a2.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -89,13 +89,22 @@ Oli.Utils.Slug          <a href="https://github.com/Simon-Initiative/oli-torus/b
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#maybe_update_slug/2">maybe_update_slug(changeset, table)</a>
+    <a href="#str/1">str(length)</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#str/1">str(length)</a>
+    <a href="#update_never/2">update_never(changeset, table)</a>
   </div>
+    <div class="summary-synopsis"><p>Generates a slug once, but then guarantee that it never changes
+on future title changes.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#update_on_change/2">update_on_change(changeset, table)</a>
+  </div>
+    <div class="summary-synopsis"><p>Updates the slug from the title for a table if the title has not
+been set or if it has changed.</p></div>
 </div>
   </div>
         </section>
@@ -108,21 +117,6 @@ Oli.Utils.Slug          <a href="https://github.com/Simon-Initiative/oli-torus/b
             </a>
 Functions          </h1>
           <div class="functions-list">
-<section class="detail" id="maybe_update_slug/2">
-  <div class="detail-header">
-    <a href="#maybe_update_slug/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">maybe_update_slug(changeset, table)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/slug.ex#L5" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-  </div>
-  <section class="docstring">
-  </section>
-</section>
 <section class="detail" id="str/1">
   <div class="detail-header">
     <a href="#str/1" class="detail-link" title="Link to this function">
@@ -130,12 +124,46 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">str(length)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/slug.ex#L38" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/slug.ex#L55" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
   </div>
   <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="update_never/2">
+  <div class="detail-header">
+    <a href="#update_never/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">update_never(changeset, table)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/slug.ex#L25" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Generates a slug once, but then guarantee that it never changes
+on future title changes.</p>
+  </section>
+</section>
+<section class="detail" id="update_on_change/2">
+  <div class="detail-header">
+    <a href="#update_on_change/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">update_on_change(changeset, table)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/slug.ex#L9" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Updates the slug from the title for a table if the title has not
+been set or if it has changed.</p>
   </section>
 </section>
           </div>
