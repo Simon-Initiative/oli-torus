@@ -25,8 +25,9 @@ defmodule Oli.Rendering.Activity.Html do
         end
       _ ->
         tag = activity_summary.delivery_element
-        model_json = activity_summary.model_json
-        activity_html = ["<#{tag} class=\"activity\" model=\"#{model_json}\"></#{tag}>\n"]
+        slug = activity_summary.slug
+        model_json = activity_summary.model
+        activity_html = ["<#{tag} class=\"activity\" activitySlug=\"#{slug}\" model=\"#{model_json}\"></#{tag}>\n"]
 
         case purpose do
           "None" ->
