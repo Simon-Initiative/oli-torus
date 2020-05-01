@@ -12,6 +12,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Activities
   alias Oli.Accounts
   alias Oli.Repo
+  alias Oli.Rendering
+
   import Ecto.Query, warn: false
 
   @doc """
@@ -158,6 +160,18 @@ defmodule Oli.Authoring.Editing.PageEditor do
          {:ok, activities} <- create_activities_map(publication.id, content)
     do
       {:ok, create(publication.id, revision, project_slug, revision_slug, author, objectives_without_ids, attached_objectives, activities, editor_map)}
+    else
+      _ -> {:error, :not_found}
+    end
+  end
+
+  def render_page_html(project_slug, revision_slug, author) do
+    with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+         {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
+         {:ok, %{content: content} = _revision} <- get_latest_revision(publication, resource) |> trap_nil(),
+         render_context <- %Rendering.Context{user: author}
+    do
+      Rendering.Page.render(render_context, content["model"], Rendering.Page.Html)
     else
       _ -> {:error, :not_found}
     end

@@ -1,5 +1,4 @@
-<div href="#" class="my-2 d-flex flex-row">
-  <%= link to: @link do %>
-    <i class="far fa-edit"></i> <%= @page.title%></a><div class="flex-1"></div><div href="#">22/32 Students</div>
-  <% end %>
+
+<div>
+  <i class="far fa-edit"></i> <%= link @page.title, to: @link_help %>
 </div>

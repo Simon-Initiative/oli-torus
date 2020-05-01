@@ -20,6 +20,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   }
 
   props() : DeliveryElementProps<T> {
+
     const model = JSON.parse(this.getAttribute('model') as any);
     const activitySlug = this.getAttribute('activitySlug') as any;
 

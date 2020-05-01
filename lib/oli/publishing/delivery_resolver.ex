@@ -27,7 +27,7 @@ defmodule Oli.Publishing.DeliveryResolver do
       Enum.map(resource_ids, fn resource_id -> Map.get(map, resource_id) end)
     end
     |> run() |> emit([:oli, :resolvers, :delivery], :duration)
-    end
+  end
 
   @impl Resolver
   def from_resource_id(context_id, resource_id) do
