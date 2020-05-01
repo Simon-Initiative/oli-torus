@@ -1,6 +1,6 @@
 import React from 'react';
 
-export const PreviewButton = ({projectSlug, resourceSlug, persistence}:
+export const PreviewButton = ({ projectSlug, resourceSlug, persistence }:
   {projectSlug: string, resourceSlug: string, persistence: string}) => {
   const saving = (persistence === 'inflight' || persistence === 'pending');
   return (
