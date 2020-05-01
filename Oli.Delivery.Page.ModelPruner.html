@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.21.3">
     <meta name="project" content="OLI Torus v0.1.0">
-    <title>Oli.Publishing.ObjectiveMappingTransfer — OLI Torus v0.1.0</title>
+    <title>Oli.Delivery.Page.ModelPruner — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
     <script src="dist/sidebar_items-d48052f28b.js"></script>
       <script src="docs_config.js"></script>
@@ -67,15 +67,70 @@ OLI Torus      </a>
 
       <h1>
         <small class="app-vsn">OLI Torus v0.1.0</small>
-Oli.Publishing.ObjectiveMappingTransfer          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/mappings/objective_mapping_transfer.ex#L1" title="View Source" class="view-source" rel="help">
+Oli.Delivery.Page.ModelPruner          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/model_pruner.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
       </h1>
 
 
+        <section id="moduledoc">
+<p>Implements adjustments to activity models so that they can
+be safely delivered to a browser in delivery model.</p>
+        </section>
 
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#prune/1">prune(model)</a>
+  </div>
+    <div class="summary-synopsis"><p>Prunes an activity model to remove authoring specific components
+of the model.</p></div>
+</div>
+  </div>
+        </section>
 
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions          </h1>
+          <div class="functions-list">
+<section class="detail" id="prune/1">
+  <div class="detail-header">
+    <a href="#prune/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">prune(model)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/model_pruner.ex#L13" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+      <div class="specs">
+          <pre>prune(%{}) :: %{}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Prunes an activity model to remove authoring specific components
+of the model.</p>
+  </section>
+</section>
+          </div>
+        </section>
       <footer class="footer">
         <p>
           <span class="line">
