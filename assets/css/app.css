@@ -374,3 +374,23 @@ Inlined react-bootstrap-typeahead styles
   border-bottom-right-radius: 0;
 }
 
+.message-enter {
+  height: 0px;
+  opacity: 0;
+}
+
+.message-enter.message-enter-active {
+  height: 40px;
+  opacity: 1;
+  transition: opacity 250ms ease-in;
+}
+
+.message-leave {
+  height: 40px;
+  opacity: 1;
+}
+
+.message-leave.message-leave-active {
+  opacity: 0;
+  transition: opacity 250ms ease-in;
+}

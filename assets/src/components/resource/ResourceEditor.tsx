@@ -18,6 +18,8 @@ import { ProjectSlug, ResourceSlug, ObjectiveSlug } from 'data/types';
 import * as Persistence from 'data/persistence/resource';
 import { UndoableState, processRedo, processUndo, processUpdate, init } from './undo';
 import { releaseLock, acquireLock } from 'data/persistence/lock';
+import { Message, createMessage } from 'data/messages/messages';
+import { Banner } from '../messages/Banner';
 
 export interface ResourceEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap;   // Map of activity types to activity elements
@@ -32,6 +34,7 @@ type Undoable = {
 };
 
 type ResourceEditorState = {
+  messages: Message[],
   undoable: UndoableState<Undoable>,
   allObjectives: Immutable.List<Objective>,
   activities: Immutable.Map<string, Activity>,
@@ -77,6 +80,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     const { title, objectives, allObjectives, content, activities } = props;
 
     this.state = {
+      messages: [],
       editMode: true,
       undoable: init({
         title,
@@ -105,7 +109,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       acquireLock.bind(undefined, projectSlug, resourceSlug),
       releaseLock.bind(undefined, projectSlug, resourceSlug),
       () => {},
-      () => {},
+      failure => this.publishErrorMessage(failure),
       persistence => this.setState({ persistence }),
     ).then((editMode) => {
       this.setState({ editMode });
@@ -120,6 +124,14 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     if (this.windowUnloadListener !== null) {
       unregisterUnload(this.windowUnloadListener);
     }
+  }
+
+  publishErrorMessage(failure: any) {
+    const message = createMessage({
+      canUserDismiss: true,
+      content: 'A problem occurred while saving your changes',
+    });
+    this.setState({ messages: [...this.state.messages, message] });
   }
 
   update(update: Partial<Undoable>) {
@@ -173,6 +185,12 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 
     return (
       <div>
+        <Banner
+          dismissMessage={msg => this.setState(
+            { messages: this.state.messages.filter(m => msg.guid !== m.guid) })}
+          executeAction={() => true}
+          messages={this.state.messages}
+        />
         <TitleBar
           title={state.undoable.current.title}
           onTitleEdit={onTitleEdit}
