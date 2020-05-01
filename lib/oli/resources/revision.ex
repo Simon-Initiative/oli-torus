@@ -12,7 +12,7 @@ defmodule Oli.Resources.Revision do
     field :deleted, :boolean, default: false
     belongs_to :author, Oli.Accounts.Author
     belongs_to :resource, Oli.Resources.Resource
-    belongs_to :previous_revision, Oli.Resources.ResourceRevision
+    belongs_to :previous_revision, Oli.Resources.Revision
     belongs_to :resource_type, Oli.Resources.ResourceType
 
     # fields that apply to only a subset of the types
