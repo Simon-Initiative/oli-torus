@@ -8,6 +8,6 @@
   <hr class="my-4"/>
 
   <h5>Course Outline</h5>
-  <%= render OliWeb.DeliveryView, "_course_outline.html", context_id: @context_id, pages: @pages, conn: @conn, path_route: &OliWeb.InstructorDeliveryView.page_route/3 %>
+  <%= render OliWeb.DeliveryView, "_course_outline.html", context_id: @context_id, pages: @pages, conn: @conn, path_route: &OliWeb.InstructorDeliveryView.page_link/3 %>
   </div>
 </div>
