@@ -6,8 +6,9 @@ defmodule Oli.Repo.Migrations.CreateDefaultActivityOptions do
       add :resource_slug, :string
       add :max_attempts, :integer
       add :recommended_attempts, :integer
-      add :scoring_model, :map
       add :time_limit, :integer
+      add :scoring_model, :map
+      add :launch_attributes, :map
       add :publication_id, references(:publications)
 
       timestamps(type: :timestamptz)
