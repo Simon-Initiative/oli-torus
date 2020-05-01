@@ -19,12 +19,16 @@ defmodule Oli.Content.Page.HtmlTest do
       activity_map = %{
         1 => %{
           id: 1,
-          model_json: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
+          slug: "test",
+          state: "{}",
+          model: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
           delivery_element: "oli-multiple-choice-delivery"
         },
         2 => %{
           id: 2,
-          model_json: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
+          slug: "test",
+          state: "{}",
+          model: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
           delivery_element: "oli-check-all-that-apply-delivery"
         }
       }
@@ -44,7 +48,9 @@ defmodule Oli.Content.Page.HtmlTest do
       activity_map = %{
         1 => %{
           id: 1,
-          model_json: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
+          slug: "test",
+          state: "{}",
+          model: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
           delivery_element: "oli-multiple-choice-delivery"
         }
       }
@@ -66,7 +72,9 @@ defmodule Oli.Content.Page.HtmlTest do
       activity_map = %{
         1 => %{
           id: 1,
-          model_json: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
+          slug: "test",
+          state: "{}",
+          model: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
           delivery_element: "oli-multiple-choice-delivery"
         }
       }

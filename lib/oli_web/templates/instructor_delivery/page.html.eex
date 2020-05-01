@@ -1,6 +1,10 @@
 
+<%= for script <- @scripts do %>
+  <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
+<% end %>
+
 <div class="my-3">
-  <h3><%= @page.title %></h3>
+  <h3><%= @title %></h3>
 
   <%= if length(@objectives) > 0 do %>
     <h4>Learning Objectives</h4>
@@ -14,8 +18,5 @@
 
   <h4>Instructor View of Content</h4>
 
-  <p>To be done later</p>
-
-  <hr class="my-4"/>
-
+  <%= raw(@html) %>
 </div>

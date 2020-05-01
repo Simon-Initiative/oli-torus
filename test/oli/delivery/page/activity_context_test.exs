@@ -32,12 +32,10 @@ defmodule Oli.Delivery.Page.ActivityContextTest do
 
       assert length(Map.keys(m)) == 3
       assert Map.get(m, a1.resource_id).slug == a1.slug
-      assert Map.get(m, a1.resource_id).model == %{ "stem" => "1" }
-      assert Map.get(m, a1.resource_id).state == %{}
-      assert Map.get(m, a1.resource_id).title == a1.title
-      assert Map.get(m, a1.resource_id).element == "oli-multiple-choice-delivery"
+      assert Map.get(m, a1.resource_id).model == "{&quot;stem&quot;:&quot;1&quot;}"
+      assert Map.get(m, a1.resource_id).state == "{&quot;active&quot;:true}"
+      assert Map.get(m, a1.resource_id).delivery_element == "oli-multiple-choice-delivery"
       assert Map.get(m, a1.resource_id).script == "oli_multiple_choice_delivery.js"
-      assert Map.get(m, a1.resource_id).friendly_name == "Multiple Choice"
       assert Map.get(m, a2.resource_id).slug == a2.slug
       assert Map.get(m, a3.resource_id).slug == a3.slug
 

@@ -7,16 +7,19 @@ defmodule Oli.Rendering.Activity.ActivitySummary do
 
   @enforce_keys [
     :id,
-    :model_json,
+    :slug,
+    :script,
+    :state,
+    :model,
     :delivery_element
   ]
   defstruct [
-    # id of the activity
-    :id,
-    # serialized delivery-safe json model for the activity
-    :model_json,
-    # activity element tag for the web component
-    :delivery_element
+    :id,                # id of the activity
+    :slug,              # slug of the activity revision
+    :script,            # path to the script
+    :state,             # already encoded json of the state of the attempt
+    :model,             # already encoded json of the model of the activity
+    :delivery_element   # the webcomponent element
   ]
 
 end
