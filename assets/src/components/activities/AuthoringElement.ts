@@ -23,13 +23,11 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     this.mountPoint = document.createElement('div');
   }
 
-  // Add editMode -> listen, re-render etc
-
   props() : AuthoringElementProps<T> {
 
     const getProp = (key: string) => JSON.parse(this.getAttribute(key) as any);
     const model = getProp('model');
-    const editMode = getProp('editMode') as boolean;
+    const editMode: boolean = getProp('editMode');
 
     const onEdit = (model: any) => {
       this.dispatchEvent(new CustomEvent('modelUpdated', { bubbles: true, detail: { model } }));

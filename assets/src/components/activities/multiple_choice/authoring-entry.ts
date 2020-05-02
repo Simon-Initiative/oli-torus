@@ -20,40 +20,19 @@ export { MultipleChoiceAuthoring } from './MultipleChoiceAuthoring';
 // Registers the creation function:
 import { Manifest, CreationContext } from '../types';
 import { registerCreationFunc } from '../creation';
-import { MultipleChoiceModelSchema, Choice, RichText } from './schema';
-import * as ContentModel from 'data/content/model';
-import guid from 'utils/guid';
+import { MultipleChoiceModelSchema, Choice } from './schema';
+import { feedback, fromText } from './utils';
 const manifest : Manifest = require('./manifest.json');
-
-export function fromText(text: string): { id: number, content: RichText } {
-  return {
-    id: guid(),
-    content: [
-      ContentModel.create<ContentModel.Paragraph>({
-        type: 'p',
-        children: [{ text }],
-        id: guid(),
-      }),
-    ],
-  };
-}
-
-export const feedback = (text: string, match: string | number, score: number = 0) => ({
-  ...fromText(text),
-  match,
-  score,
-});
-
 
 const defaultModel : () => MultipleChoiceModelSchema = () => {
   const choiceA: Choice = fromText('Choice A');
   const choiceB: Choice = fromText('Choice B');
 
-  const feedbackA = feedback('Feedback A', choiceA.id, 1);
-  const feedbackB = feedback('Feedback B', choiceB.id, 0);
+  const feedbackA = feedback('', choiceA.id, 1);
+  const feedbackB = feedback('', choiceB.id, 0);
 
   return {
-    stem: fromText('Question Stem'),
+    stem: fromText(''),
     choices: [
       choiceA,
       choiceB,
@@ -64,9 +43,9 @@ const defaultModel : () => MultipleChoiceModelSchema = () => {
         feedbackB,
       ],
       hints: [
-        fromText('Deer in headlights hint'),
-        fromText('Cognitive hint'),
-        fromText('Bottom out hint'),
+        fromText(''),
+        fromText(''),
+        fromText(''),
       ],
     },
   };

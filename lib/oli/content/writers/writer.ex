@@ -45,10 +45,6 @@ defmodule Oli.Content.Writers.Writer do
     impl.text(context, text_entity)
   end
 
-  def render(%Context{} = context, children, impl) when is_list(children) do
-    Enum.map(children, fn child -> render(context, child, impl) end)
-  end
-
   def render(%Context{} = context, %{"type" => type, "children" => children} = entity, impl) do
     next = fn -> render(context, children, impl) end
 

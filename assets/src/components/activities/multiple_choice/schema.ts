@@ -31,16 +31,10 @@ export interface MultipleChoiceModelSchema extends ActivityModelSchema {
   };
 }
 
-// authoring component -> access through authoring key to get
-// feedback/hints, update puts them back into authoring key
-
-// const model = Object.entries(parsed).reduce((acc: any, [key, value]: [string, any]) => {
-//   if (key === 'authoring') return acc;
-//   acc[key] = value;
-//   return acc;
-// }, {});
-
-
+export interface ModelEditorProps {
+  model: MultipleChoiceModelSchema;
+  editMode: boolean;
+}
 
 // what should it do if a question has no parts?
 // how to specify the parts of the activity
