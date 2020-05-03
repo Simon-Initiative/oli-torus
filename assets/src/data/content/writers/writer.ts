@@ -1,19 +1,45 @@
 import { WriterContext } from './context';
 import { ModelElement } from '../model';
+import { Text } from 'slate';
+import { RichText } from 'components/activities/multiple_choice/schema';
 
-interface TextEntity { text: string; }
 type Next = () => string;
-interface Entity {}
-interface Content { type: 'content'; }
-interface HasChildren { children: ModelElement[]; }
+type ElementWriter = (ctx: WriterContext, next: Next, text: ModelElement) => string;
 
 export interface WriterImpl {
-
-  // text: (ctx: WriterContext, text: TextEntity) => string[];
-  // p: (ctx: WriterContext, next: Next, text: ) => string[];
+  text: (ctx: WriterContext, text: Text) => string;
+  p: ElementWriter;
+  h1: ElementWriter;
+  h2: ElementWriter;
+  h3: ElementWriter;
+  h4: ElementWriter;
+  h5: ElementWriter;
+  h6: ElementWriter;
+  img: ElementWriter;
+  youtube: ElementWriter;
+  audio: ElementWriter;
+  table: ElementWriter;
+  tr: ElementWriter;
+  th: ElementWriter;
+  td: ElementWriter;
+  ol: ElementWriter;
+  ul: ElementWriter;
+  li: ElementWriter;
+  math: ElementWriter;
+  mathLine: ElementWriter;
+  code: ElementWriter;
+  codeLine: ElementWriter;
+  blockquote: ElementWriter;
+  a: ElementWriter;
+  definition: ElementWriter;
 }
 
 export class ContentWriter {
+
+  render(context: WriterContext, content: { content: any }[], impl: WriterImpl): string;
+  render(context: WriterContext, content: RichText, impl: WriterImpl): string;
+  render(context: WriterContext, content: ModelElement, impl: WriterImpl): string;
+  render(context: WriterContext, content: Text, impl: WriterImpl): string;
 
   render(context: any, content: any, impl: any): any {
     if (Array.isArray(content)) {

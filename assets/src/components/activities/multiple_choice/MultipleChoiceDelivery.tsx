@@ -1,12 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
-import { MultipleChoiceModelSchema } from './schema';
+import { MultipleChoiceModelSchema, Stem } from './schema';
 import { Choice } from 'components/activities/multiple_choice/schema';
 import * as ActivityTypes from '../types';
 import { shuffle } from './utils';
-import { ContentWriter } from 'data/content/writers/writer';
-import { impl } from 'data/content/writers/html';
+import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 
 const data = [
   {
@@ -333,13 +332,12 @@ const data = [
   },
 ];
 
-const Html = ({ data } : any) => <div dangerouslySetInnerHTML={{
-  __html: new ContentWriter().render({}, data, impl()),
-}} />;
-
-const Stem = ({ stem }: any) => {
+interface StemProps {
+  stem: Stem;
+}
+const Stem = ({ stem }: StemProps) => {
   return (
-    <Html data={stem.content} />
+    <HtmlContentModelRenderer text={stem.content} />
   );
 };
 
@@ -364,33 +362,32 @@ interface ChoiceProps {
 }
 const Choice = ({ choice, index }: ChoiceProps) => {
   return (
-    <div
-        style={{
+    <div key={choice.id}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'top',
+        borderWidth: '2px 2px 4px',
+        padding: '12px 16px',
+        cursor: 'pointer',
+        borderRadius: '16px',
+        borderStyle: 'solid',
+        transform: 'translateZ(0)',
+        borderColor: '#e5e5e5',
+      }}>
+        <span style={{
           display: 'inline-flex',
-          alignItems: 'top',
-          borderWidth: '2px 2px 4px',
-          padding: '12px 16px',
-          cursor: 'pointer',
-          borderRadius: '16px',
-          borderStyle: 'solid',
-          transform: 'translateZ(0)',
-          borderColor: '#e5e5e5',
-        }}
-        key={choice.id}>
-          <span style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: '2px solid #e5e5e5',
-            borderRadius: '8px',
-            color: '#afafaf',
-            height: '30px',
-            width: '30px',
-            fontWeight: 'bold',
-            marginRight: '16px',
-          }}>{index + 1}</span>
-        <Html data={choice.content} />
-      </div>
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '2px solid #e5e5e5',
+          borderRadius: '8px',
+          color: '#afafaf',
+          height: '30px',
+          width: '30px',
+          fontWeight: 'bold',
+          marginRight: '16px',
+        }}>{index + 1}</span>
+      <HtmlContentModelRenderer text={choice.content} />
+    </div>
   );
 };
 
@@ -424,6 +421,9 @@ const Hints = ({}: HintsProps) => {
 
 const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) => {
   const { stem, choices } = props.model;
+  console.log('choices', choices)
+  console.log(shuffle(choices))
+  console.log(shuffle(choices))
 
   return (
     <div style={{

@@ -15,13 +15,10 @@ export interface Feedback extends Identifiable, HasContent {
   // `match` corresponds to Choice::id. Later, it can be used
   // for a catch-all and non 1:1 choice:feedback mappings
   match: string | number;
-  // Score indicates whether the feedback corresponds to a correct
-  // or incorrect answer. `score == 1` indicates the feedback / matching
-  // choice are correct
+  // `score == 1` indicates the feedback corresponds to a matching choice
   score: number;
 }
 
-// Separate this out into separate schemas for authoring and delivery with `authoring` key?
 export interface MultipleChoiceModelSchema extends ActivityModelSchema {
   stem: Stem;
   choices: Choice[];
@@ -35,6 +32,3 @@ export interface ModelEditorProps {
   model: MultipleChoiceModelSchema;
   editMode: boolean;
 }
-
-// what should it do if a question has no parts?
-// how to specify the parts of the activity
