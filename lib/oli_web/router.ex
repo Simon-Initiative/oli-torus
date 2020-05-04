@@ -6,7 +6,7 @@ defmodule OliWeb.Router do
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
-    plug :fetch_flash
+    plug :fetch_live_flash
     plug Plug.Telemetry, event_prefix: [:oli, :plug]
     # disable protect_from_forgery in development environment
     if Mix.env != :dev, do: plug :protect_from_forgery
@@ -199,6 +199,7 @@ defmodule OliWeb.Router do
   scope "/admin", OliWeb do
     pipe_through [:browser, :protected, :admin]
     live_dashboard "/dashboard", metrics: OliWeb.Telemetry
+    live "/history/:slug", RevisionHistory, layout: {OliWeb.LayoutView, :root}
   end
 
   # routes only accessible to developers

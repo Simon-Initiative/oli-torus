@@ -18,6 +18,7 @@
   "dependencies": {
     "@types/jquery": "^3.3.31",
     "@types/react": "^16.9.2",
+    "@types/react-addons-css-transition-group": "^15.0.5",
     "@types/react-bootstrap-typeahead": "^3.4.5",
     "@types/react-dom": "^16.9.5",
     "@types/react-redux": "^7.1.7",
@@ -30,6 +31,7 @@
     "phoenix_html": "file:../deps/phoenix_html",
     "phoenix_live_view": "file:../deps/phoenix_live_view",
     "react": "^16.9.0",
+    "react-addons-css-transition-group": "^15.6.2",
     "react-bootstrap-typeahead": "^5.0.0-alpha.1",
     "react-dom": "^16.9.0",
     "react-redux": "^7.1.3",

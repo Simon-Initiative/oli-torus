@@ -6,10 +6,18 @@
 .list-group-item:hover .to-show{
   display: flex;
 }
+
+.add-button-item {
+  height: 20px;
+}
+
+.icon-font {
+  font-size: larger;
+}
 </style>
 
 <div class="list-group-item list-group-item-action d-flex  align-items-start" >
-	<div class=" w-100">
+	<div class="w-100">
 	<%= cond do
          @edit == @objective_mapping.revision.slug ->
            route = Routes.objective_path(@conn, :update, @project, @objective_mapping.revision.slug)
@@ -33,16 +41,16 @@
 	</div>
     <div style="min-width: 50px">
     <div class="to-show">
-	<%= button to: Routes.project_path(@conn, :edit_objective, @project, @objective_mapping.revision.slug, :edit_objective), method: :get, class: "add-button" do %>
-	   <i class="material-icons">edit</i>
+	<%= button to: Routes.project_path(@conn, :edit_objective, @project, @objective_mapping.revision.slug, :edit_objective), method: :get, class: "add-button add-button-item" do %>
+	   <i class="material-icons icon-font">edit</i>
 	<% end %>
 	<%= button to: Routes.objective_path(@conn, :delete, @project, @objective_mapping.revision.slug),
-	   data: [confirm: "Are you sure you want to delete that objective?"], method: :delete, class: "add-button" do %>
-       <i class="material-icons">delete</i>
+	   data: [confirm: "Are you sure you want to delete that objective?"], method: :delete, class: "add-button add-button-item" do %>
+       <i class="material-icons icon-font">delete</i>
     <% end %>
     <%= if @depth < 2 do %>
-	<%= button to: Routes.project_path(@conn, :edit_objective, @project, @objective_mapping.revision.slug, :add_sub_objective), method: :get, class: "add-button" do %>
-   	   <i class="material-icons">add</i>
+	<%= button to: Routes.project_path(@conn, :edit_objective, @project, @objective_mapping.revision.slug, :add_sub_objective), method: :get, class: "add-button add-button-item" do %>
+   	   <i class="material-icons icon-font">add</i>
    	<% end %>
    	<% end %>
    	</div>

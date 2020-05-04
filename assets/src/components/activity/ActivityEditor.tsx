@@ -13,6 +13,8 @@ import { releaseLock, acquireLock } from 'data/persistence/lock';
 import * as Persistence from 'data/persistence/activity';
 import { ActivityModelSchema } from 'components/activities/types';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
+import { Message, createMessage } from 'data/messages/messages';
+import { Banner } from '../messages/Banner';
 
 export interface ActivityEditorProps extends ActivityContext {
 
@@ -26,6 +28,7 @@ type Undoable = {
 };
 
 type ActivityEditorState = {
+  messages: Message[],
   undoable: UndoableState<Undoable>,
   allObjectives: Immutable.List<Objective>,
   editMode: boolean,
@@ -63,6 +66,7 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
     const o = Object.keys(objectives).map(o => [o, objectives[o]]);
 
     this.state = {
+      messages: [],
       editMode: true,
       undoable: init({
         title,
@@ -102,7 +106,7 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
       acquireLock.bind(undefined, projectSlug, resourceSlug),
       releaseLock.bind(undefined, projectSlug, resourceSlug),
       () => {},
-      () => {},
+      failure => this.publishErrorMessage(failure),
       persistence => this.setState({ persistence }),
     ).then((editMode) => {
       this.setState({ editMode });
@@ -127,6 +131,14 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
     if (this.windowUnloadListener !== null) {
       unregisterUnload(this.windowUnloadListener);
     }
+  }
+
+  publishErrorMessage(failure: any) {
+    const message = createMessage({
+      canUserDismiss: true,
+      content: 'A problem occurred while saving your changes',
+    });
+    this.setState({ messages: [...this.state.messages, message] });
   }
 
   update(update: Partial<Undoable>) {
@@ -166,6 +178,12 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
 
     return (
       <div style={{ maxWidth: '800px' }}>
+        <Banner
+          dismissMessage={msg => this.setState(
+            { messages: this.state.messages.filter(m => msg.guid !== m.guid) })}
+          executeAction={() => true}
+          messages={this.state.messages}
+        />
         <Navigation {...this.props}/>
         <TitleBar
           title={this.state.undoable.current.title}

@@ -21,6 +21,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined"
       rel="stylesheet">
     <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
+    <%= csrf_meta_tag() %>
   </head>
   <body class="delivery">
     <nav class="navbar navbar-expand-lg navbar-light">
@@ -83,7 +84,7 @@
         <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
       <% end %>
 
-      <%= render @view_module, @view_template, assigns %>
+      <%= @inner_content %>
     </main>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
 

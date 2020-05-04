@@ -8,6 +8,8 @@ defmodule Oli.Application do
   def start(_type, _args) do
     # List all child processes to be supervised
     children = [
+      {Phoenix.PubSub, name: Oli.PubSub},
+
       # Start the Ecto repository
       Oli.Repo,
       # Start the endpoint when the application starts

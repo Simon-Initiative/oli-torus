@@ -14,6 +14,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Repo
   alias Oli.Rendering
 
+  alias Phoenix.PubSub
+
   import Ecto.Query, warn: false
 
   @doc """
@@ -363,6 +365,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
     end
 
     {:ok, updated} = Oli.Resources.update_revision(revision, converted_back_to_ids)
+
+    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id),
+      {:updated, updated}
 
     updated
   end

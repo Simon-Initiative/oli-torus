@@ -23,11 +23,11 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined"
       rel="stylesheet">
     <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
-
+    <%= csrf_meta_tag() %>
   </head>
   <body>
     <div class="container">
-      <%= render @view_module, @view_template, assigns %>
+      <%= @inner_content %>
     </div>
   </body>
 </html>
