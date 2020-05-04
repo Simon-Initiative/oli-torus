@@ -75,7 +75,6 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   end
 
-
   def append_to_container(container_slug, publication, revision_to_attach, author) do
 
     with {:ok, resource} <- Resources.get_resource_from_slug(container_slug) |> trap_nil(),
@@ -110,32 +109,28 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
         |> Enum.map(fn mapping -> mapping.revision.children end)
         |> Enum.reduce(fn(children, acc) -> children ++ acc end)
 
-      # Filter out parent mappings (i.e. objective is a parent if not in children list)
-      parents = Enum.reduce(objective_mappings, [], fn(mapping, acc) ->
-        if Enum.member?(children_list, mapping.revision.id) do
-          acc
+      # Build flat ObjectiveMappingTransfer map for all objectives
+      mapping_obs = objective_mappings |>  Enum.reduce(%{}, fn(mapping, acc) ->
+        Map.merge(acc, %{mapping.resource.id => %ObjectiveMappingTransfer{mapping: mapping, children: []}})
+      end)
+
+      # Build nested tree structure
+      root_parents = Enum.reduce(objective_mappings, [], fn(m, acc) ->
+        a = Map.get(mapping_obs, m.resource.id)
+        a = %{a | children: m.revision.children |> Enum.reduce(a.children,fn(c, mc) ->
+          [Map.get(mapping_obs, c)] ++ mc
+        end)}
+        if !Enum.member?(children_list, m.resource.id) do
+          acc ++ [a]
         else
-          [mapping] ++ acc
+          acc
         end
       end)
 
-      # Build parent/children tree structure
-      parents = parents |> Enum.reduce([], fn(x, acc) ->
-        children = objective_mappings |>  Enum.reduce([], fn(mapping, mapping_acc) ->
-          if Enum.member?(x.revision.children, mapping.revision.id) do
-            [mapping] ++ mapping_acc
-          else
-            mapping_acc
-          end
-        end)
-        [%ObjectiveMappingTransfer{mapping: x, children: children}] ++ acc
-      end)
-
-      %{title: "Objectives", objective_mappings: parents, objective_changeset: changeset, active: :objectives}
+      root_parents = Enum.sort_by(root_parents, &(&1.mapping.revision.title))
+      %{title: "Objectives", objective_mappings: root_parents, objective_changeset: changeset, active: :objectives}
     end
   end
-
-
 
 end
 

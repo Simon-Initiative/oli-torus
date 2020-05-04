@@ -1,7 +1,14 @@
 defmodule OliWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :oli
 
+  @session_options [
+    store: :cookie,
+    key: "_oli_key",
+    signing_salt: "KydU49lB"
+  ]
+
   socket "/live", Phoenix.LiveView.Socket
+   #  websocket: [connect_info: [session: @session_options]]
 
   socket "/socket", OliWeb.UserSocket,
     websocket: true,
@@ -43,11 +50,7 @@ defmodule OliWeb.Endpoint do
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
-  plug Plug.Session,
-    store: :cookie,
-    key: "_oli_key",
-    # extra: "SameSite=None; Secure;",
-    signing_salt: "KydU49lB"
+  plug Plug.Session, @session_options
 
   plug OliWeb.Router
 end

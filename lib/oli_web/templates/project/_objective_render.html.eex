@@ -10,7 +10,7 @@
     <div class="list-group w-100">
        <%=
        Enum.map(@children, fn x ->
-           params = %{conn: @conn, objective_mapping: x, children: [], depth: 2, project: @project, objective_changeset: @objective_changeset}
+           params = %{conn: @conn, objective_mapping: x.mapping, children: [], depth: 2, project: @project, objective_changeset: @objective_changeset}
            if @conn.assigns[:edit] do
               params = Map.merge(params, %{edit: @conn.assigns[:edit]})
               render OliWeb.ProjectView, "_objectives_list.html", params
@@ -29,13 +29,13 @@
                  %{conn: @conn, project: @project, objective_changeset: @objective_changeset, title_value: @title_value,
                   parent_slug_value: @parent_slug_value, route: @route, form_id: @form_id, method: @method,
                   place_holder: @place_holder, phx_disable_with: @phx_disable_with, button_text: @button_text} %>
-     <%= button "Cancel", to: Routes.project_path(@conn, :objectives, @project), method: :get, class: "btn btn-primary btn-primary-mine"%>
+     <%= button "Cancel", to: Routes.project_path(@conn, :objectives, @project), method: :get, class: "btn btn-primary btn-sm btn-primary-mine"%>
   </div>
   <%= if length(@children) != 0 do  %>
   <div class="list-group w-100">
          <%=
          Enum.map(@children, fn x ->
-             params = %{conn: @conn, objective_mapping: x, children: [], depth: 2, project: @project, objective_changeset: @objective_changeset}
+             params = %{conn: @conn, objective_mapping: x.mapping, children: [], depth: 2, project: @project, objective_changeset: @objective_changeset}
              if @conn.assigns[:edit] do
                 params = Map.merge(params, %{edit: @conn.assigns[:edit]})
                 render OliWeb.ProjectView, "_objectives_list.html", params
@@ -53,8 +53,24 @@
                   %{conn: @conn, project: @project, objective_changeset: @objective_changeset, title_value: @title_value,
                   parent_slug_value: @parent_slug_value, route: @route, form_id: @form_id, method: @method,
                   place_holder: @place_holder, phx_disable_with: @phx_disable_with, button_text: @button_text} %>
-      <%= button "Cancel", to: Routes.project_path(@conn, :objectives, @project), method: :get, class: "btn btn-primary btn-primary-mine"%>
+      <%= button "Cancel", to: Routes.project_path(@conn, :objectives, @project), method: :get, class: "btn btn-primary btn-sm btn-primary-mine"%>
    </div>
+   <%= if length(@children) != 0 do  %>
+     <div class="list-group w-100">
+            <%=
+            Enum.map(@children, fn x ->
+                params = %{conn: @conn, objective_mapping: x.mapping, children: [], depth: 2, project: @project, objective_changeset: @objective_changeset}
+                if @conn.assigns[:edit] do
+                   params = Map.merge(params, %{edit: @conn.assigns[:edit]})
+                   render OliWeb.ProjectView, "_objectives_list.html", params
+                else
+                   params = Map.merge(params, %{edit: :none})
+                   render OliWeb.ProjectView, "_objectives_list.html", params
+                end
+            end)
+            %>
+        </div>
+        <% end %>
 <% true -> %>
 <div class="d-flex" >
      <%= render OliWeb.ProjectView, "_objective_form.html",
