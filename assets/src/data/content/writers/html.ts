@@ -1,9 +1,11 @@
 import { WriterImpl } from './writer';
+import { ModelElement } from '../model';
+import { Text } from 'slate';
 
 export class HtmlParser implements WriterImpl {
   private escapeXml = (text: string) => decodeURI(encodeURI(text));
 
-  private wrapWithMarks = (text: any, textEntity: any) => {
+  private wrapWithMarks(text: string, textEntity: Text): string {
     const supportedMarkTags: any = {
       em: 'em',
       strong: 'strong',
@@ -19,7 +21,7 @@ export class HtmlParser implements WriterImpl {
       .map(attr => supportedMarkTags[attr])
       .filter(mark => mark)
       .reverse().reduce((acc, mark) => `<${mark}>${acc}</${mark}>`, text);
-  };
+  }
 
   p = (context: any, next: any, x: any) => `<p>${next()}</p>\n`;
   h1 = (context: any, next: any, x: any) => `<h1>${next()}</h1>\n`;
@@ -68,6 +70,6 @@ export class HtmlParser implements WriterImpl {
   text = (context: any, textEntity: any) =>
     this.wrapWithMarks(this.escapeXml(textEntity.text), textEntity)
 
-  unsupported = (context: any, { type }: any) =>
+  unsupported = (context: any, { type }: ModelElement) =>
     `<div class="unsupported-element">Element type "${type}" is not supported</div>\n`
 }

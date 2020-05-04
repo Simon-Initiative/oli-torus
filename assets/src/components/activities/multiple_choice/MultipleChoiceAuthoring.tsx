@@ -22,7 +22,7 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
 
   const [state, dispatch] = useReducer(reducer, props.model);
 
-  useEffect(() => props.onEdit(state));
+  useEffect(() => props.onEdit(state), [state]);
 
   const sharedProps = {
     model: state,

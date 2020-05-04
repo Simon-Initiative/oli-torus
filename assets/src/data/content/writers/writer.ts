@@ -1,7 +1,6 @@
 import { WriterContext } from './context';
 import { ModelElement } from '../model';
-import { Text } from 'slate';
-import { RichText } from 'components/activities/multiple_choice/schema';
+import { Text, Element } from 'slate';
 
 type Next = () => string;
 type ElementWriter = (ctx: WriterContext, next: Next, text: ModelElement) => string;
@@ -32,33 +31,37 @@ export interface WriterImpl {
   blockquote: ElementWriter;
   a: ElementWriter;
   definition: ElementWriter;
+  unsupported: (ctx: WriterContext, element: ModelElement) => string;
 }
+
+type ContentItem = { type: 'content', children: ModelElement[] };
+function isContentItem(value: any): value is ContentItem {
+  return value && value.type === 'content' && value.children !== undefined;
+}
+
+type ContentTypes = ContentItem[] | ContentItem | ModelElement[] | ModelElement | Text;
 
 export class ContentWriter {
 
-  render(context: WriterContext, content: { content: any }[], impl: WriterImpl): string;
-  render(context: WriterContext, content: RichText, impl: WriterImpl): string;
+  render(context: WriterContext, content: ContentItem[], impl: WriterImpl): string;
+  render(context: WriterContext, content: ContentItem, impl: WriterImpl): string;
+  render(context: WriterContext, content: ModelElement[], impl: WriterImpl): string;
   render(context: WriterContext, content: ModelElement, impl: WriterImpl): string;
   render(context: WriterContext, content: Text, impl: WriterImpl): string;
-
-  render(context: any, content: any, impl: any): any {
+  render(context: WriterContext, content: ContentTypes, impl: WriterImpl): string {
     if (Array.isArray(content)) {
-      return content.map(item => this.render(context, item, impl)).join('');
+      return (content as any).map((item: any) => this.render(context, item, impl)).join('');
     }
 
-    // top-level items are of type 'content'
-    if (content.type === 'content' && content.children !== undefined) {
+    if (isContentItem(content)) {
       return content.children.map((child: any) => this.render(context, child, impl)).join('');
     }
 
-    // content lists consists of items of type 1) { text } or 2) { type }
-    // 1) { text } items
-    if (content.text !== undefined) {
+    if (Text.isText(content)) {
       return impl.text(context, content);
     }
 
-    // 2) { type } items
-    const next = () => this.render(context, content.children, impl);
+    const next = () => this.render(context, content.children as ModelElement[], impl);
 
     switch (content.type) {
       case 'p': return impl.p(context, next, content);
