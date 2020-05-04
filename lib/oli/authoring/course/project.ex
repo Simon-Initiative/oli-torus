@@ -17,15 +17,15 @@ defmodule Oli.Authoring.Course.Project do
     many_to_many :resources, Oli.Resources.Resource, join_through: Oli.Authoring.Course.ProjectResource
     has_many :publications, Oli.Publishing.Publication
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false
   def changeset(project, attrs \\ %{}) do
     project
       |> cast(attrs, [:title, :slug, :description, :version, :family_id, :project_id])
-      |> validate_required([:title, :slug, :version, :family_id])
-      |> Slug.maybe_update_slug("projects")
+      |> validate_required([:title, :version, :family_id])
+      |> Slug.update_never("projects")
   end
 
 end

@@ -1,0 +1,15 @@
+<%= if length(@objectives) > 0 do %>
+
+  <div class="card" style="width: 100%; margin: 20px;">
+    <div class="card-body">
+      <h5 class="card-title">Learning Objectives</h5>
+      <h6 class="card-subtitle mb-2 text-muted">By the end of this page you should be able to:</h6>
+      <ul>
+      <%= for o <- @objectives do %>
+        <li><%= o %></li>
+      <% end %>
+      </ul>
+    </div>
+  </div>
+
+<% end %>

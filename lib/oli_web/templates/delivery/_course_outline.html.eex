@@ -7,39 +7,9 @@
 </style>
 
 <div class="course-outline">
-  <div href="#" class="my-2 d-flex flex-row">
-    <a href="#"><i class="far fa-file"></i> Page 1</a>
-  </div>
-  <div href="#" class="my-2 d-flex flex-row">
-    <a href="#"><i class="far fa-file"></i> Page 2</a>
-  </div>
-  <div href="#" class="my-2 d-flex flex-row">
-    <a href="#"><i class="far fa-file"></i> Page 3</a>
-  </div>
-  <div href="#" class="my-2 d-flex flex-row">
-    <a href="#"><i class="far fa-edit"></i> Assessment 1</a><div class="flex-1"></div><div href="#">27/32 Students</div>
-  </div>
-  <div href="#" class="my-2 d-flex flex-row">
-    <a href="#"><i class="far fa-file"></i> Page 4</a>
-  </div>
-  <div href="#" class="my-2 d-flex flex-row">
-    <a href="#"><i class="far fa-file"></i> Page 5</a>
-  </div>
-  <div href="#" class="my-2 d-flex flex-row">
-    <a href="#"><i class="far fa-file"></i> Page 6</a>
-  </div>
-  <div href="#" class="my-2 d-flex flex-row">
-    <a href="#"><i class="far fa-edit"></i> Assessment 2</a><div class="flex-1"></div><div href="#">22/32 Students</div>
-  </div>
-  <div href="#" class="my-2 d-flex flex-row">
-    <a href="#"><i class="far fa-file"></i> Page 7</a>
-  </div>
-  <div href="#" class="my-2 d-flex flex-row">
-    <a href="#"><i class="far fa-file"></i> Page 8</a>
-  </div>
-  <div href="#" class="my-2 d-flex flex-row">
-    <a href="#"><i class="far fa-file"></i> Page 9</a>
-  </div>
-  <div href="#" class="my-2 d-flex flex-row">
-    <a href="#"><i class="far fa-edit"></i> Assessment 3</a><div class="flex-1"></div><div href="#">3/32 Students</div>
-  </div>
+  <%= for page <- @pages do %>
+    <%= case page.graded do
+      false -> render "link_page.html", page: page, link_help: @path_route.(@conn, @context_id, page.slug)
+      true -> render "link_assessment.html", page: page, link_help: @path_route.(@conn, @context_id, page.slug)
+    end %>
+  <% end %>

@@ -33,7 +33,7 @@ defmodule Oli.MixProject do
   def application do
     [
       mod: {Oli.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :os_mon]
     ]
   end
 
@@ -56,7 +56,7 @@ defmodule Oli.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:poison, "~> 3.1"},
       {:httpoison, "~> 1.6"},
-      {:phoenix_live_dashboard, "~> 0.1"},
+      {:phoenix_live_dashboard, "~> 0.2.1"},
       {:phoenix_html, "~> 2.11"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 0.12.1"},
@@ -73,7 +73,8 @@ defmodule Oli.MixProject do
       {:bcrypt_elixir, "~> 2.2"},
       {:uuid, "~> 1.1" },
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
-      {:ex_doc, "~> 0.21", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.21", only: :dev, runtime: false},
+      {:timex, "~> 3.5"}
     ]
   end
 

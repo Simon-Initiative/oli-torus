@@ -1,8 +1,11 @@
-defmodule Oli.Content.Writers.HTML do
-  alias Oli.Content.Writers.Context
+defmodule Oli.Rendering.Content.Html do
+  @moduledoc """
+  Implements the Html writer for Oli content rendering
+  """
+  alias Oli.Rendering.Context
   alias Phoenix.HTML
 
-  @behaviour Oli.Content.Writers.Writer
+  @behaviour Oli.Rendering.Content
 
   def p(%Context{} = _context, next, _) do
     ["<p>", next.(), "</p>\n"]
@@ -110,11 +113,11 @@ defmodule Oli.Content.Writers.HTML do
   end
 
   def blockquote(%Context{} = _context, next, _) do
-    ["<quote>", next.(), "</quote>\n"]
+    ["<blockquote>", next.(), "</blockquote>\n"]
   end
 
   def a(%Context{} = _context, next, %{"href" => href}) do
-    ["<link href=\"#{escape_xml!(href)}\">", next.(), "</link>\n"]
+    ["<a href=\"#{escape_xml!(href)}\">", next.(), "</a>\n"]
   end
 
   def definition(%Context{} = _context, next, _) do
@@ -125,8 +128,15 @@ defmodule Oli.Content.Writers.HTML do
     escape_xml!(text) |> wrap_with_marks(text_entity)
   end
 
-  def unsupported(%Context{} = _context, %{"type" => type}) do
-    ["<div class=\"unsupported-element\">Element type '", type ,"' is not supported</div>\n"]
+  def error(%Context{} = _context, element, error) do
+    case error do
+      {:unsupported, error_id, _error_msg} ->
+        ["<div class=\"content unsupported\">Content element type '", element["type"] ,"' is not supported. Please contact support with issue ##{error_id}</div>\n"]
+      {:invalid, error_id, _error_msg} ->
+        ["<div class=\"content invalid\">Content element is invalid. Please contact support with issue ##{error_id}</div>\n"]
+      {_, error_id, _error_msg} ->
+        ["<div class=\"content invalid\">An error occurred while rendering content . Please contact support with issue ##{error_id}</div>\n"]
+    end
   end
 
   def escape_xml!(text) do

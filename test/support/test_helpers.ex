@@ -3,10 +3,13 @@ defmodule Oli.TestHelpers do
 
   alias Oli.Repo
   alias Oli.Accounts
+  alias Oli.Accounts.User
+  alias Oli.Accounts.LtiToolConsumer
   alias Oli.Accounts.Author
   alias Oli.Delivery.Lti.HmacSHA1
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
+  alias Oli.Delivery.Sections.Section
   alias Oli.Publishing
 
   def yesterday() do
@@ -17,6 +20,62 @@ defmodule Oli.TestHelpers do
   def now() do
     {:ok, datetime} = DateTime.now("Etc/UTC")
     datetime
+  end
+
+  def section_fixture(attrs \\ %{}) do
+    params =
+      attrs
+      |> Enum.into(%{end_date: ~D[2010-04-17],
+      open_and_free: true,
+      registration_open: true,
+      start_date: ~D[2010-04-17],
+      time_zone: "some time_zone",
+      title: "some title",
+      context_id: "context_id"
+    })
+
+    {:ok, section} =
+      Section.changeset(%Section{}, params)
+      |> Repo.insert()
+
+    section
+  end
+
+  def lti_consumer_fixture(attrs \\ %{}) do
+    params =
+      attrs
+      |> Enum.into(%{
+        info_product_family_code: "code",
+        info_version: "1",
+        instance_contact_email: "example@example.com",
+        instance_guid: "2u9dfh7979hfd",
+        instance_name: "none"
+      })
+
+    {:ok, consumer} =
+      LtiToolConsumer.changeset(%LtiToolConsumer{}, params)
+      |> Repo.insert()
+
+      consumer
+  end
+
+  def user_fixture(attrs \\ %{}) do
+    params =
+      attrs
+      |> Enum.into(%{
+        email: "ironman#{System.unique_integer([:positive])}@example.com",
+        first_name: "Tony",
+        last_name: "Stark",
+        user_id: "2u9dfh7979hfd",
+        user_image: "none",
+        roles: "none"
+      })
+
+    {:ok, user} =
+      User.changeset(%User{}, params)
+      |> Repo.insert()
+
+      user
   end
 
   def author_fixture(attrs \\ %{}) do

@@ -14,8 +14,11 @@ defmodule Oli.Delivery.Sections.Section do
     belongs_to :project, Oli.Authoring.Course.Project
     belongs_to :publication, Oli.Publishing.Publication
 
-    timestamps()
-  end
+    has_many :enrollments, Oli.Delivery.Sections.Enrollment
+
+    timestamps(type: :utc_datetime)
+
+end
 
   @doc false
   def changeset(section, attrs) do

@@ -1,0 +1,4 @@
+
+<div>
+  <i class="far fa-edit"></i> <%= link @page.title, to: @link_help %>
+</div>
