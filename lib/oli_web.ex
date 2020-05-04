@@ -23,6 +23,7 @@ defmodule OliWeb do
 
       import Plug.Conn
       import OliWeb.Gettext
+      import Phoenix.LiveView.Controller
       alias OliWeb.Router.Helpers, as: Routes
     end
   end
@@ -39,6 +40,8 @@ defmodule OliWeb do
       # Use all HTML functionality (forms, tags, etc)
       use Phoenix.HTML
 
+      import Phoenix.LiveView.Helpers
+
       import OliWeb.ErrorHelpers
       import OliWeb.Gettext
       alias OliWeb.Router.Helpers, as: Routes
@@ -53,6 +56,7 @@ defmodule OliWeb do
       use Phoenix.Router
       import Plug.Conn
       import Phoenix.Controller
+      import Phoenix.LiveView.Router
     end
   end
 

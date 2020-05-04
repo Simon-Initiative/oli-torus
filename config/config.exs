@@ -16,7 +16,7 @@ config :oli, OliWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "GE9cpXBwVXNaplyUCYbIWqERmC/OlcR5iVMwLX9/W7gzQRxkD1ETjda9E0jW/BW1",
   render_errors: [view: OliWeb.ErrorView, accepts: ~w(html json)],
-  pubsub: [name: Oli.PubSub, adapter: Phoenix.PubSub.PG2]
+  pubsub_server: Oli.PubSub
 
 # Configures Elixir's Logger
 config :logger, :console,
