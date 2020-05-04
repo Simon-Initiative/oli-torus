@@ -17,7 +17,7 @@
 </style>
 
 <div class="list-group-item list-group-item-action d-flex  align-items-start" >
-	<div class=" w-100">
+	<div class="w-100">
 	<%= cond do
          @edit == @objective_mapping.revision.slug ->
            route = Routes.objective_path(@conn, :update, @project, @objective_mapping.revision.slug)
