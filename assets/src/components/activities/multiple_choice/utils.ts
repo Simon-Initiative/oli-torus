@@ -1,6 +1,33 @@
 import guid from 'utils/guid';
 import * as ContentModel from 'data/content/model';
-import { RichText } from './schema';
+import { RichText, Choice, MultipleChoiceModelSchema } from './schema';
+
+export const defaultMCModel : () => MultipleChoiceModelSchema = () => {
+  const choiceA: Choice = fromText('Choice A');
+  const choiceB: Choice = fromText('Choice B');
+
+  const feedbackA = feedback('', choiceA.id, 1);
+  const feedbackB = feedback('', choiceB.id, 0);
+
+  return {
+    stem: fromText(''),
+    choices: [
+      choiceA,
+      choiceB,
+    ],
+    authoring: {
+      feedback: [
+        feedbackA,
+        feedbackB,
+      ],
+      hints: [
+        fromText(''),
+        fromText(''),
+        fromText(''),
+      ],
+    },
+  };
+};
 
 export function fromText(text: string): { id: number, content: RichText } {
   return {
