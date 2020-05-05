@@ -13,10 +13,12 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
 export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTMLElement {
 
   mountPoint: HTMLDivElement;
+  connected: boolean;
 
   constructor() {
     super();
     this.mountPoint = document.createElement('div');
+    this.connected = false;
   }
 
   props() : DeliveryElementProps<T> {
@@ -35,10 +37,13 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   connectedCallback() {
     this.appendChild(this.mountPoint);
     this.render(this.mountPoint, this.props());
+    this.connected = true;
   }
 
   attributeChangedCallback(name: any, oldValue: any, newValue: any) {
-    this.render(this.mountPoint, this.props());
+    if (this.connected) {
+      this.render(this.mountPoint, this.props());
+    }
   }
 
   static get observedAttributes() { return ['model']; }

@@ -2,12 +2,11 @@ import * as Immutable from 'immutable';
 import React from 'react';
 import { PersistenceStrategy, PersistenceState } from 'data/persistence/PersistenceStrategy';
 import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
-import { ActivityContext, ObjectiveMap } from 'data/content/activity';
+import { ActivityContext } from 'data/content/activity';
 import { Objective } from 'data/content/objective';
 import { TitleBar } from '../content/TitleBar';
 import { UndoRedo } from '../content/UndoRedo';
 import { Navigation } from './Navigation';
-import { Objectives } from '../resource/Objectives';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug, ActivitySlug } from 'data/types';
 import { UndoableState, processRedo, processUndo, processUpdate, init } from '../resource/undo';
 import { releaseLock, acquireLock } from 'data/persistence/lock';
@@ -167,7 +166,6 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
   render() {
 
     const { authoringElement } = this.props;
-    const state = this.state;
 
     const onTitleEdit = (title: string) => {
       this.update({ title });
@@ -175,18 +173,20 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
 
     const webComponentProps = {
       model: JSON.stringify(this.state.undoable.current.content),
+      editMode: this.state.editMode,
     };
 
     return (
-      <div>
+      <div style={{ maxWidth: '800px' }}>
         <Banner
           dismissMessage={msg => this.setState(
             { messages: this.state.messages.filter(m => msg.guid !== m.guid) })}
           executeAction={() => true}
           messages={this.state.messages}
         />
+        <Navigation {...this.props}/>
         <TitleBar
-          title={state.undoable.current.title}
+          title={this.state.undoable.current.title}
           onTitleEdit={onTitleEdit}
           editMode={this.state.editMode}>
           <PersistenceStatus persistence={this.state.persistence}/>
@@ -197,9 +197,6 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
         </TitleBar>
         <div ref={this.ref}>
           {React.createElement(authoringElement, webComponentProps as any)}
-        </div>
-        <div>
-          <Navigation {...this.props}/>
         </div>
       </div>
     );

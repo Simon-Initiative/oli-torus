@@ -23,6 +23,8 @@
     "@types/react-dom": "^16.9.5",
     "@types/react-redux": "^7.1.7",
     "@types/redux-logger": "^3.0.7",
+    "immer": "^6.0.3",
+    "immer-reducer": "^0.7.10",
     "immutable": "^4.0.0-rc.12",
     "jquery": "^3.5.0",
     "phoenix": "file:../deps/phoenix",

@@ -18,24 +18,41 @@ export { MultipleChoiceDelivery } from './MultipleChoiceDelivery';
 export { MultipleChoiceAuthoring } from './MultipleChoiceAuthoring';
 
 // Registers the creation function:
-import { Manifest, ActivityModelSchema, CreationContext } from '../types';
+import { Manifest, CreationContext } from '../types';
 import { registerCreationFunc } from '../creation';
+import { MultipleChoiceModelSchema, Choice } from './schema';
+import { feedback, fromText } from './utils';
 const manifest : Manifest = require('./manifest.json');
 
-interface MultipleChoiceSchema extends ActivityModelSchema {
-  stem: string;
-  choices: string[];
-  feedback: string[];
-}
+const defaultModel : () => MultipleChoiceModelSchema = () => {
+  const choiceA: Choice = fromText('Choice A');
+  const choiceB: Choice = fromText('Choice B');
 
-const model : MultipleChoiceSchema = {
-  stem: '',
-  choices: ['A', 'B', 'C', 'D'],
-  feedback: ['A', 'B', 'C', 'D'],
+  const feedbackA = feedback('', choiceA.id, 1);
+  const feedbackB = feedback('', choiceB.id, 0);
+
+  return {
+    stem: fromText(''),
+    choices: [
+      choiceA,
+      choiceB,
+    ],
+    authoring: {
+      feedback: [
+        feedbackA,
+        feedbackB,
+      ],
+      hints: [
+        fromText(''),
+        fromText(''),
+        fromText(''),
+      ],
+    },
+  };
 };
 
-function createFn(content: CreationContext) : Promise<MultipleChoiceSchema> {
-  return Promise.resolve(Object.assign({}, model));
+function createFn(content: CreationContext) : Promise<MultipleChoiceModelSchema> {
+  return Promise.resolve(Object.assign({}, defaultModel()));
 }
 
 registerCreationFunc(manifest, createFn);

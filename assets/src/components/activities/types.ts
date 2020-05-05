@@ -14,8 +14,9 @@ export type Manifest = {
 };
 
 export interface ActivityModelSchema {
-  delivery?: any;
+  authoring?: any;
 }
+
 
 export interface CreationContext extends ResourceContext {
 
