@@ -24,7 +24,8 @@ export class HtmlParser implements WriterImpl {
       .filter(attr => textEntity[attr] === true)
       .map(attr => supportedMarkTags[attr])
       .filter(mark => mark)
-      .reverse().reduce((acc, mark) => `<${mark}>${acc}</${mark}>`, text);
+      // .reverse()
+      .reduce((acc, mark) => `<${mark}>${acc}</${mark}>`, text);
   }
 
   p = (context: WriterContext, next: Next, x: Paragraph) => `<p>${next()}</p>\n`;
@@ -34,21 +35,21 @@ export class HtmlParser implements WriterImpl {
   h4 = (context: WriterContext, next: Next, x: HeadingFour) => `<h4>${next()}</h4>\n`;
   h5 = (context: WriterContext, next: Next, x: HeadingFive) => `<h5>${next()}</h5>\n`;
   h6 = (context: WriterContext, next: Next, x: HeadingSix) => `<h6>${next()}</h6>\n`;
-  img = (context: WriterContext, next: Next, attrs: Image) =>
-    `<img ${attrs.height && attrs.width && `height="${attrs.height}" width="${attrs.width}"` || ''}
-      style="display: block; max-height: 500px; margin-left: auto; margin-right: auto;"
-      src="${attrs.src}" />\n`
+  img = (context: WriterContext, next: Next, attrs: Image) => {
+    let heightWidth = '';
+    if (attrs.height && attrs.width) {
+      heightWidth = `height="${attrs.height}" width="${attrs.width}`;
+    }
+    return `<img ${heightWidth} style="display: block; max-height: 500px; margin-left: auto; margin-right: auto;" src="${attrs.src}"/>\n`;
+  }
 
-  youtube = (context: any, next: Next, { src }: YouTube) => `
-    <iframe
-      id='${src}'
-      width='640'
-      height='476'
-      src='https://www.youtube.com/embed/${src}'
-      frameBorder='0'
-      style='display: block; margin-left: auto; margin-right: auto;'>
-    </iframe>
-  `
+  youtube = (context: any, next: Next, { src }: YouTube) => `<iframe
+  id="${src}"
+  width="640"
+  height="476"
+  src="https://www.youtube.com/embed/${src}"
+  frameBorder="0"
+  style="display: block; margin-left: auto; margin-right: auto;"></iframe>`
   audio = (context: WriterContext, next: Next, { src }: Audio) => `<audio src="${src}"/>\n`;
   table = (context: WriterContext, next: Next, x: Table) => `<table>${next()}</table>\n`;
   tr = (context: WriterContext, next: Next, x: TableRow) => `<tr>'${next()}</tr>\n`;
@@ -61,15 +62,15 @@ export class HtmlParser implements WriterImpl {
   mathLine = (context: WriterContext, next: Next, x: MathLine) => `${next()}\n`;
   code = (context: WriterContext, next: Next,
     { language, startingLineNumberr, showNumbers }: Code) =>
-    `<pre><code>${next()}</pre></code>\n`
+    `<pre><code>${next()}</code></pre>\n`
   codeLine = (context: WriterContext, next: Next, x: CodeLine) => `${next()}\n`;
   blockquote = (context: WriterContext, next: Next, x: Blockquote) =>
     `<blockquote>${next()}</blockquote>\n`
   a = (context: WriterContext, next: Next,  { href } : Hyperlink) =>
-    `<link href="${this.escapeXml(href)}">${next()}</link>\n`
+    `<a href="${this.escapeXml(href)}">${next()}</a>\n`
   text = (context: WriterContext, textEntity: Text) =>
     this.wrapWithMarks(this.escapeXml(textEntity.text), textEntity)
 
   unsupported = (context: WriterContext, { type }: ModelElement) =>
-    `<div class="unsupported-element">Element type "${type}" is not supported</div>\n`
+    '<div class="content invalid">Content element is invalid</div>\n'
 }

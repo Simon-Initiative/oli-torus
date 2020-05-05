@@ -105,7 +105,7 @@ defmodule Oli.Rendering.Content.Html do
     "startingLineNumber" => _startingLineNumber,
     "showNumbers" => _showNumbers
   }) do
-    ["<pre><code>", next.(), "</pre></code>\n"]
+    ["<pre><code>", next.(), "</code></pre>\n"]
   end
 
   def code_line(%Context{} = _context, next, _) do
