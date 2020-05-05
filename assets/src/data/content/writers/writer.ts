@@ -1,8 +1,8 @@
 import { WriterContext } from './context';
 import { ModelElement } from '../model';
-import { Text, Element } from 'slate';
+import { Text } from 'slate';
 
-type Next = () => string;
+export type Next = () => string;
 type ElementWriter = (ctx: WriterContext, next: Next, text: ModelElement) => string;
 
 export interface WriterImpl {
@@ -30,7 +30,6 @@ export interface WriterImpl {
   codeLine: ElementWriter;
   blockquote: ElementWriter;
   a: ElementWriter;
-  definition: ElementWriter;
   unsupported: (ctx: WriterContext, element: ModelElement) => string;
 }
 
@@ -50,11 +49,12 @@ export class ContentWriter {
   render(context: WriterContext, content: Text, impl: WriterImpl): string;
   render(context: WriterContext, content: ContentTypes, impl: WriterImpl): string {
     if (Array.isArray(content)) {
+      // Typescript seems not to be able to recognize the overloaded function signatures here
       return (content as any).map((item: any) => this.render(context, item, impl)).join('');
     }
 
     if (isContentItem(content)) {
-      return content.children.map((child: any) => this.render(context, child, impl)).join('');
+      return content.children.map(child => this.render(context, child, impl)).join('');
     }
 
     if (Text.isText(content)) {

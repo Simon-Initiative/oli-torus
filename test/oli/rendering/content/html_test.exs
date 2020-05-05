@@ -28,7 +28,7 @@ defmodule Oli.Content.Content.HtmlTest do
       assert rendered_html_string =~ "<ol><li>one</li>\n<li><em>two</em></li>\n<li><em><strong>three</strong></em></li>\n</ol>"
       assert rendered_html_string =~ "<ul><li>alpha</li>\n<li>beta</li>\n<li>gamma</li>\n</ul>"
       assert rendered_html_string =~ "<iframe\n  id=\"fhdCslFcKFU\"\n  width=\"640\"\n  height=\"476\"\n  src=\"https://www.youtube.com/embed/fhdCslFcKFU\"\n  frameBorder=\"0\"\n  style=\"display: block; margin-left: auto; margin-right: auto;\"\n></iframe>"
-      assert rendered_html_string =~ "<pre><code>import fresh-pots\n</pre></code>"
+      assert rendered_html_string =~ "<pre><code>import fresh-pots\n</code></pre>"
     end
 
     test "renders malformed content gracefully", %{author: author} do
