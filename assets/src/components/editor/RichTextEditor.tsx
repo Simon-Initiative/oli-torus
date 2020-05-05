@@ -10,7 +10,6 @@ type RichTextEditorProps = {
 };
 export const RichTextEditor = ({ editMode, text, onEdit, children }:
   React.PropsWithChildren<RichTextEditorProps>) => {
-  // TODO: Figure out why editMode initializes to `null`, remove hardcoded value
   return (
     <React.Fragment>
       {children}
@@ -23,7 +22,7 @@ export const RichTextEditor = ({ editMode, text, onEdit, children }:
         fontSize: '11px',
         margin: '4px 0 10px 0',
       }}>
-        <Editor editMode={true} value={text} onEdit={onEdit}
+        <Editor editMode={editMode} value={text} onEdit={onEdit}
           toolbarItems={getToolbarForResourceType(1)} />
       </div>
     </React.Fragment>

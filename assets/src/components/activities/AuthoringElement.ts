@@ -16,6 +16,7 @@ export interface AuthoringElementProps<T extends ActivityModelSchema> {
 export abstract class AuthoringElement<T extends ActivityModelSchema> extends HTMLElement {
 
   mountPoint: HTMLDivElement;
+  connected: boolean;
 
   constructor() {
     super();
@@ -45,10 +46,13 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
   connectedCallback() {
     this.appendChild(this.mountPoint);
     this.render(this.mountPoint, this.props());
+    this.connected = true;
   }
 
   attributeChangedCallback(name: any, oldValue: any, newValue: any) {
-    this.render(this.mountPoint, this.props());
+    if (this.connected) {
+      this.render(this.mountPoint, this.props());
+    }
   }
 
   static get observedAttributes() { return ['model', 'editMode']; }

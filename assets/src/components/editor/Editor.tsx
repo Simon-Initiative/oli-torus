@@ -46,7 +46,15 @@ const voidOnKeyDown = (editor: ReactEditor, e: KeyboardEvent) => {
   }
 };
 
-export const Editor = (props: EditorProps) => {
+
+function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
+  return prevProps.editMode === nextProps.editMode
+    && prevProps.toolbarItems === nextProps.toolbarItems
+    && prevProps.value === nextProps.value;
+}
+
+
+export const Editor = React.memo((props: EditorProps) => {
 
   const editor = useMemo(() => withReact(createEditor()), []);
 
@@ -173,4 +181,4 @@ export const Editor = (props: EditorProps) => {
       </Slate>
     </div>
   );
-};
+}, areEqual);
