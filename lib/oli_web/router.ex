@@ -7,11 +7,20 @@ defmodule OliWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
-    plug Plug.Telemetry, event_prefix: [:oli, :plug]
-    # disable protect_from_forgery in development environment
-    if Mix.env != :dev, do: plug :protect_from_forgery
+    plug :put_root_layout, {OliWeb.LayoutView, :root}
+    plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug Plug.Telemetry, event_prefix: [:oli, :plug]
     plug Oli.Plugs.SetCurrentUser
+  end
+
+  pipeline :admin_pipeline do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_live_flash
+    plug :put_root_layout, {OliWeb.LayoutView, :root}
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
   end
 
   pipeline :admin do
@@ -40,7 +49,7 @@ defmodule OliWeb.Router do
   pipeline :delivery do
     plug :accepts, ["html"]
     plug :fetch_session
-    plug :fetch_flash
+    plug :fetch_live_flash
     plug Plug.Telemetry, event_prefix: [:oli, :plug]
     # disable protect_from_forgery in development environment
     if Mix.env != :dev, do: plug :protect_from_forgery
@@ -54,6 +63,7 @@ defmodule OliWeb.Router do
 
     plug Oli.Plugs.SetCurrentUser
     plug Oli.Plugs.VerifyUser
+    plug :put_root_layout, {OliWeb.LayoutView, :root}
     plug :put_layout, {OliWeb.LayoutView, :delivery}
   end
 
@@ -199,7 +209,7 @@ defmodule OliWeb.Router do
   scope "/admin", OliWeb do
     pipe_through [:browser, :protected, :admin]
     live_dashboard "/dashboard", metrics: OliWeb.Telemetry
-    live "/history/:slug", RevisionHistory, layout: {OliWeb.LayoutView, :root}
+    live "/history/:slug", RevisionHistory
   end
 
   # routes only accessible to developers
