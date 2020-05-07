@@ -90,7 +90,6 @@ defmodule OliWeb.Router do
     get "/:project_id/objectives/:objective_slug/:action", ProjectController, :edit_objective
     get "/:project_id/publish", ProjectController, :publish
     post "/:project_id/publish", ProjectController, :publish_active
-    get "/:project_id/insights", ProjectController, :insights
 
     # Project
     post "/", ProjectController, :create
@@ -116,6 +115,10 @@ defmodule OliWeb.Router do
     post "/:project_id/collaborators", CollaboratorController, :create
     put "/:project_id/collaborators/:author_email", CollaboratorController, :update
     delete "/:project_id/collaborators/:author_email", CollaboratorController, :delete
+
+    # Insights
+    get "/:project_id/insights", ProjectController, :insights
+    # live "/:project_id/insights", Insights
   end
 
   scope "/api/v1/project", OliWeb do

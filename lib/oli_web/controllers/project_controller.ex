@@ -79,7 +79,6 @@ defmodule OliWeb.ProjectController do
   end
 
   def insights(conn, _project_params) do
-
     render conn, "insights.html", title: "Insights", active: :insights
   end
 
