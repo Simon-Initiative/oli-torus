@@ -76,3 +76,17 @@ jobs:
 
     - name: Test ⚙️
       run: cd assets && npm run test
+
+  package-release:
+    container:
+      image: amazonlinux:2
+      env:
+        NODE_ENV: development
+      ports:
+        - 80
+      volumes:
+        - my_docker_volume:/volume_mount
+
+  deploy:
+
+
