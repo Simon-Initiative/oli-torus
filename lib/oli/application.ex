@@ -12,11 +12,12 @@ defmodule Oli.Application do
 
       # Start the Ecto repository
       Oli.Repo,
-      # Start the endpoint when the application starts
-      OliWeb.Endpoint,
 
       # Starts telemetry
-      OliWeb.Telemetry
+      OliWeb.Telemetry,
+
+      # Start the endpoint when the application starts
+      OliWeb.Endpoint,
 
       # Starts a worker by calling: Oli.Worker.start_link(arg)
       # {Oli.Worker, arg},

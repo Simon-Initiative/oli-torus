@@ -27,6 +27,7 @@
     "immer-reducer": "^0.7.10",
     "immutable": "^4.0.0-rc.12",
     "jquery": "^3.5.0",
+    "nprogress": "^0.2.0",
     "phoenix": "file:../deps/phoenix",
     "phoenix_html": "file:../deps/phoenix_html",
     "phoenix_live_view": "file:../deps/phoenix_live_view",
