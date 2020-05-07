@@ -1,4 +1,4 @@
-dist/search_items-91161552af.js
+dist/search_items-d903136818.js
 dist/app-a225d03098e64fef431a.js
 dist/elixir-0ab8a6a80ebaaa287431.css
 dist/erlang-bd206729da4d0d280293.css
@@ -6,7 +6,7 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/sidebar_items-31d213b675.js
+dist/sidebar_items-8eca24d259.js
 api-reference.html
 readme.html
 license.html
@@ -25,6 +25,13 @@ Oli.Activities.html
 Oli.Activities.ActivityMapEntry.html
 Oli.Activities.Manifest.html
 Oli.Activities.ModeSpecification.html
+Oli.Activities.Model.html
+Oli.Activities.Model.Feedback.html
+Oli.Activities.Model.Hint.html
+Oli.Activities.Model.Part.html
+Oli.Activities.Model.Response.html
+Oli.Activities.Model.Transformation.html
+Oli.Activities.ParseUtils.html
 Oli.Activities.Registration.html
 Oli.Authoring.html
 Oli.Authoring.Authors.AuthorProject.html
@@ -45,7 +52,17 @@ Oli.Authoring.Editing.SiblingActivity.html
 Oli.Authoring.Editing.Utils.html
 Oli.Authoring.Locks.html
 Oli.Delivery.html
+Oli.Delivery.Attempts.PartAttempt.html
+Oli.Delivery.Attempts.ResourceAccess.html
+Oli.Delivery.Attempts.ResourceAttempt.html
+Oli.Delivery.Attempts.Result.html
+Oli.Delivery.Attempts.Snapshot.html
+Oli.Delivery.Attempts.StudentInput.html
 Oli.Delivery.CountryCodes.html
+Oli.Delivery.Evaluation.html
+Oli.Delivery.Evaluation.Evaluator.html
+Oli.Delivery.Evaluation.Numeric.html
+Oli.Delivery.Evaluation.Regex.html
 Oli.Delivery.Instructor.OverviewDesc.html
 Oli.Delivery.Lti.html
 Oli.Delivery.Lti.HmacSHA1.html
@@ -96,6 +113,7 @@ Oli.Resources.Page.html
 Oli.Resources.Resource.html
 Oli.Resources.ResourceType.html
 Oli.Resources.Revision.html
+Oli.Resources.ScoringStrategy.html
 Oli.Resources.Utils.html
 Oli.Seeder.html
 Oli.Timing.html
