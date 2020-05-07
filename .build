@@ -1,4 +1,4 @@
-dist/search_items-9d3a0071c8.js
+dist/search_items-91161552af.js
 dist/app-a225d03098e64fef431a.js
 dist/elixir-0ab8a6a80ebaaa287431.css
 dist/erlang-bd206729da4d0d280293.css
@@ -6,7 +6,7 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/sidebar_items-9048b256c2.js
+dist/sidebar_items-31d213b675.js
 api-reference.html
 readme.html
 license.html
@@ -49,7 +49,6 @@ Oli.Delivery.CountryCodes.html
 Oli.Delivery.Instructor.OverviewDesc.html
 Oli.Delivery.Lti.html
 Oli.Delivery.Lti.HmacSHA1.html
-Oli.Delivery.Lti.LaunchParams.html
 Oli.Delivery.Lti.Nonce.html
 Oli.Delivery.Lti.OAuthParams.html
 Oli.Delivery.Lti.Provider.html

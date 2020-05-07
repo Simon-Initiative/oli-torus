@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>OliWeb.LtiController — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-9048b256c2.js"></script>
+    <script src="dist/sidebar_items-31d213b675.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -91,16 +91,7 @@ OliWeb.LtiController          <a href="https://github.com/Simon-Initiative/oli-t
   <div class="summary-signature">
     <a href="#basic_launch/2">basic_launch(conn, params)</a>
   </div>
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#handle_invalid_request/2">handle_invalid_request(conn, reason)</a>
-  </div>
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#handle_valid_request/2">handle_valid_request(conn, institution)</a>
-  </div>
+    <div class="summary-synopsis"><p>Handles an LTI basic launch</p></div>
 </div>
   </div>
         </section>
@@ -120,42 +111,16 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">basic_launch(conn, params)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L14" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L20" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
   </div>
   <section class="docstring">
-  </section>
-</section>
-<section class="detail" id="handle_invalid_request/2">
-  <div class="detail-header">
-    <a href="#handle_invalid_request/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">handle_invalid_request(conn, reason)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L83" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-  </div>
-  <section class="docstring">
-  </section>
-</section>
-<section class="detail" id="handle_valid_request/2">
-  <div class="detail-header">
-    <a href="#handle_valid_request/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">handle_valid_request(conn, institution)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L36" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-  </div>
-  <section class="docstring">
+<p>Handles an LTI basic launch</p>
+<p>If the LTI launch is valid, this will redirect to the delivery controller, ensuring a user is
+enrolled in the section corresponding to the context_id</p>
+<p>If the LTI Launch is invalid, an invalid lti error page will be displayed</p>
   </section>
 </section>
           </div>
