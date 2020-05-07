@@ -17,6 +17,10 @@ defmodule Oli.Resources.Activity do
     :activity_type_id,
     :inserted_at,
     :updated_at,
+    :max_attempts,
+    :recommended_attempts,
+    :scoring_strategy,
+    :time_limit
   ]
 
   def from_revision(%Oli.Resources.Revision{} = revision) do
@@ -32,6 +36,10 @@ defmodule Oli.Resources.Activity do
       content: revision.content,
       objectives: revision.objectives,
       activity_type_id: revision.activity_type_id,
+      max_attempts: revision.max_attempts,
+      recommended_attempts: revision.recommended_attempts,
+      time_limit: revision.time_limit,
+      scoring_strategy: revision.scoring_strategy,
       inserted_at: revision.inserted_at,
       updated_at: revision.updated_at
     }
