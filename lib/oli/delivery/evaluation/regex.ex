@@ -2,9 +2,11 @@ defmodule Oli.Delivery.Evaluation.Regex do
 
   alias Oli.Delivery.Attempts.{StudentInput, Result}
   alias Oli.Activities.Model.{Part, Response}
+  alias Oli.Delivery.Evaluation.Evaluator
 
   @behaviour Oli.Delivery.Evaluation.Evaluator
 
+  @impl Evaluator
   def evaluate(%Part{} = part, %StudentInput{input: input}) do
 
     case Enum.reduce(part.responses, {input, nil, -1, -1}, &consider_response/2) do
