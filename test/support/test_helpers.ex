@@ -176,7 +176,7 @@ defmodule Oli.TestHelpers do
     oauth_signature = HmacSHA1.build_signature(
       req_url,
       "POST",
-      unsafe_map_to_keyword_list(lti_params),
+      lti_params,
       shared_secret
     )
 

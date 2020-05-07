@@ -9,7 +9,7 @@ defmodule Oli.Delivery.Lti.HmacSHA1 do
   @spec build_signature(
     String.t,
     String.t,
-    [{String.t, String.t}],
+    %{},
     String.t,
     String.t | nil) :: String.t
   def build_signature(
@@ -32,7 +32,7 @@ defmodule Oli.Delivery.Lti.HmacSHA1 do
       String.upcase(method),
       encode(url),
       process_params(
-        body_params,
+        Map.to_list(body_params),
         params_str_to_keyword_list(query_params)
       )
     ]
@@ -78,7 +78,7 @@ defmodule Oli.Delivery.Lti.HmacSHA1 do
   @spec clean_params([key: String.t]) :: [String.t]
   defp clean_params(params) do
     params
-    |> Enum.filter(fn {key, _val} -> key != :oauth_signature end)
+    |> Enum.filter(fn {key, _val} -> key != "oauth_signature" end)
     |> Enum.map(&stringify_param/1)
   end
 

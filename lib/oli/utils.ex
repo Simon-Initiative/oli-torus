@@ -7,16 +7,6 @@ defmodule Oli.Utils do
     :crypto.strong_rand_bytes(length) |> Base.encode16 |> binary_part(0, length)
   end
 
-
-  @doc """
-  Converts a map of LTI parameters to a keyword list.
-  This function is unsafe because it expects an atom to exist for each map key,
-  which makes it only safe for requests with known parameter names that are defined as atoms
-  """
-  def unsafe_map_to_keyword_list(map) do
-    Enum.map(map, fn({key, value}) -> {String.to_atom(key), value} end)
-  end
-
   @doc """
   Returns the specified value if not nil, otherwise returns the default value
   """
