@@ -1,8 +1,6 @@
 # In this file, we load production configuration and secrets
-# from environment variables. You can also hardcode secrets,
-# although such is generally not recommended and you have to
-# remember to add this file to your .gitignore.
-use Mix.Config
+# from environment variables at runtime
+import Config
 
 database_url =
   System.get_env("DATABASE_URL") ||
@@ -14,6 +12,7 @@ database_url =
 config :oli, Oli.Repo,
   # ssl: true,
   url: database_url,
+  database: System.get_env("DB_NAME", "oli"),
   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10")
 
 secret_key_base =
@@ -30,10 +29,19 @@ live_view_salt =
     You can generate one by calling: mix phx.gen.secret
     """
 
+host =
+  System.get_env("HOST") ||
+    raise """
+    environment variable HOST is missing.
+    For example: host.example.com
+    """
+
 config :oli, OliWeb.Endpoint,
-  http: [:inet6, port: String.to_integer(System.get_env("PORT") || "4000")],
+  server: true,
+  http: [:inet6, port: String.to_integer(System.get_env("PORT") || "80")],
+  url: [host: host, port: String.to_integer(System.get_env("PORT") || "80")],
   secret_key_base: secret_key_base,
-  live_view: [signing_salt: live_view_salt],
+  live_view: [signing_salt: live_view_salt]
 
 # ## Using releases (Elixir v1.9+)
 #

@@ -23,7 +23,14 @@ defmodule Oli.MixProject do
         main: "Oli", # The main page in the docs
         logo: "assets/static/images/oli-icon.png",
         extras: ["README.md", "LICENSE.md", "docs/DEVELOPER.md"]
-      ]
+      ],
+      releases: [
+        oli: [
+          include_executables_for: [:unix],
+          applications: [runtime_tools: :permanent]
+        ]
+      ],
+      default_release: :oli
     ]
   end
 

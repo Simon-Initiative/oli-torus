@@ -1,5 +1,8 @@
 use Mix.Config
 
+config :oli,
+  env: :test
+
 # Configure your database
 config :oli, Oli.Repo,
   username: System.get_env("TEST_DB_USER", "postgres"),

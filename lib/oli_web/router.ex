@@ -9,7 +9,7 @@ defmodule OliWeb.Router do
     plug :fetch_live_flash
     plug Plug.Telemetry, event_prefix: [:oli, :plug]
     # disable protect_from_forgery in development environment
-    if Mix.env != :dev, do: plug :protect_from_forgery
+    if Application.fetch_env!(:oli, :env) != :dev, do: plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug Oli.Plugs.SetCurrentUser
   end
@@ -43,7 +43,7 @@ defmodule OliWeb.Router do
     plug :fetch_flash
     plug Plug.Telemetry, event_prefix: [:oli, :plug]
     # disable protect_from_forgery in development environment
-    if Mix.env != :dev, do: plug :protect_from_forgery
+    if Application.fetch_env!(:oli, :env) != :dev, do: plug :protect_from_forgery
 
     # do not change the order of the next two, our Removal
     # plug removes a header that put_secure_browser_headers
@@ -203,7 +203,7 @@ defmodule OliWeb.Router do
   end
 
   # routes only accessible to developers
-  if Mix.env === :dev or Mix.env === :test do
+  if Application.fetch_env!(:oli, :env) == :dev or Application.fetch_env!(:oli, :env) == :test do
     scope "/dev", OliWeb do
       pipe_through :browser
 
