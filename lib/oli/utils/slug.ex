@@ -8,15 +8,55 @@ defmodule Oli.Utils.Slug do
   """
   def update_on_change(changeset, table) do
     case changeset.valid? do
+      # We only have to consider changing the slug if this is a valid changeset
       true ->
         case Ecto.Changeset.get_change(changeset, :title) do
+          # if we aren't changing the title, we don't have to even consider
+          # changing the slug
           nil -> changeset
-          title -> Ecto.Changeset.put_change(changeset, :slug, generate(table, title))
+
+          # if we are changing the title, we need to consider whether or not
+          # this is for a new revision or this is an update for an existing one
+          title -> case Ecto.Changeset.get_change(changeset, :id) do
+
+            # This is a changeset for the creation of a new revision
+            nil -> handle_creation(changeset, table, title)
+
+            # This is a changeset for an update
+            _ -> handle_update(changeset, table, title)
+          end
+
         end
 
       _ -> changeset
     end
   end
+
+  def handle_creation(changeset, table, title) do
+
+    # get the previous revision id out of the changeset
+    case Ecto.Changeset.get_change(changeset, :previous_revision_id) do
+
+      # if there isn't a previous, we must set the slug
+      nil -> Ecto.Changeset.put_change(changeset, :slug, generate(table, title))
+
+      # There is a previous, so fetch it
+      id -> case Ecto.Adapters.SQL.query(
+        Oli.Repo, "SELECT slug, title FROM #{table} WHERE id = $1;", [id]) do
+          # If the previous slug's title matches the current title, we reuse
+          # the slug from that previous
+          {:ok, %{rows: [[slug, ^title]] }} -> Ecto.Changeset.put_change(changeset, :slug, slug)
+          # Otherwise, create a new slug
+          _ -> Ecto.Changeset.put_change(changeset, :slug, generate(table, title))
+      end
+    end
+
+  end
+
+  def handle_update(changeset, table, title) do
+    Ecto.Changeset.put_change(changeset, :slug, generate(table, title))
+  end
+
 
   @doc """
   Generates a slug once, but then guarantee that it never changes
