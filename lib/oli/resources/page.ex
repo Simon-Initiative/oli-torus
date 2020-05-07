@@ -15,6 +15,10 @@ defmodule Oli.Resources.Page do
     :content,
     :objectives,
     :graded,
+    :max_attempts,
+    :recommended_attempts,
+    :time_limit,
+    :scoring_strategy,
     :inserted_at,
     :updated_at,
   ]
@@ -30,8 +34,12 @@ defmodule Oli.Resources.Page do
       author_id: revision.author_id,
       previous_revision_id: revision.previous_revision_id,
       content: revision.content,
-      objectives: Map.get(revision.objectives, revision.resource_id),
+      objectives: Map.get(revision.objectives, "attached"),
       graded: revision.graded,
+      max_attempts: revision.max_attempts,
+      recommended_attempts: revision.recommended_attempts,
+      time_limit: revision.time_limit,
+      scoring_strategy: revision.scoring_strategy,
       inserted_at: revision.inserted_at,
       updated_at: revision.updated_at
     }

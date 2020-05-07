@@ -20,6 +20,10 @@ defmodule Oli.Resources.Revision do
     field :children, {:array, :id}, default: []
     field :objectives, :map, default: %{}
     field :graded, :boolean, default: false
+    field :max_attempts, :integer
+    field :recommended_attempts, :integer
+    field :time_limit, :integer
+    belongs_to :scoring_strategy, Oli.Resources.ScoringStrategy
     belongs_to :activity_type, Oli.Activities.Registration
 
     timestamps(type: :utc_datetime)
@@ -28,7 +32,9 @@ defmodule Oli.Resources.Revision do
   @doc false
   def changeset(resource_revision, attrs \\ %{}) do
     resource_revision
-    |> cast(attrs, [:title, :slug, :deleted, :author_id, :resource_id, :previous_revision_id, :resource_type_id, :content, :children, :objectives, :graded, :activity_type_id])
+    |> cast(attrs, [:title, :slug, :deleted, :author_id, :resource_id,
+      :previous_revision_id, :resource_type_id, :content, :children, :objectives, :graded,
+      :max_attempts, :recommended_attempts, :time_limit, :scoring_strategy_id, :activity_type_id])
     |> validate_required([:title, :deleted, :author_id, :resource_id, :resource_type_id])
     |> Slug.update_on_change("revisions")
   end
