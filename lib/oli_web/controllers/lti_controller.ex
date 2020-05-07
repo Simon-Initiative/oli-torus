@@ -2,7 +2,6 @@ defmodule OliWeb.LtiController do
   use OliWeb, :controller
 
   import Oli.Delivery.Lti.Provider
-  import Oli.Utils
 
   alias Oli.Repo
   alias Oli.Accounts
@@ -10,7 +9,14 @@ defmodule OliWeb.LtiController do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionRoles
 
+  @doc """
+  Handles an LTI basic launch
 
+  If the LTI launch is valid, this will redirect to the delivery controller, ensuring a user is
+  enrolled in the section corresponding to the context_id
+
+  If the LTI Launch is invalid, an invalid lti error page will be displayed
+  """
   def basic_launch(conn, _params) do
     scheme = if conn.scheme == :https, do: "https", else: "http"
     scheme = System.get_env("LTI_PROTOCOL", scheme)
@@ -24,7 +30,7 @@ defmodule OliWeb.LtiController do
         render(conn, "basic_launch_invalid.html", reason: "Institution with consumer_key '#{consumer_key}' does not exist")
       institution ->
         shared_secret = institution.shared_secret
-        case validate_request(url, method, unsafe_map_to_keyword_list(conn.body_params), shared_secret, DateTime.utc_now()) do
+        case validate_request(url, method, conn.body_params, shared_secret, DateTime.utc_now()) do
           { :ok } ->
             handle_valid_request(conn, institution)
           { :invalid, reason } ->
@@ -33,7 +39,7 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  def handle_valid_request(conn, institution) do
+  defp handle_valid_request(conn, institution) do
     case Accounts.insert_or_update_lti_tool_consumer(%{
       info_product_family_code: conn.body_params["tool_consumer_info_product_family_code"],
       info_version: conn.body_params["tool_consumer_info_version"],
@@ -80,7 +86,7 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  def handle_invalid_request(conn, reason) do
+  defp handle_invalid_request(conn, reason) do
     render(conn, "basic_launch_invalid.html", reason: reason)
   end
 

@@ -10,7 +10,7 @@ RUN apt-get install -y inotify-tools curl git npm bash
 ## Hex
 RUN mix local.hex --force
 RUN mix local.rebar --force
-RUN mix archive.install hex phx_new 1.4.13
+RUN mix archive.install hex phx_new 1.5.0
 
 ## NodeJS
 RUN npm install -g n && n 12

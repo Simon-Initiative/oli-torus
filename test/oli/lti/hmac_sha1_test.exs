@@ -14,14 +14,14 @@ defmodule Oli.Lti.HmacSHA1Test do
     end
 
     test "builds the correct signature" do
-      body_params = [
-        oauth_consumer_key: "secret",
-        oauth_nonce: "nonce",
-        oauth_signature_method: "HMAC-SHA1",
-        oauth_timestamp: "0",
-        oauth_version: "1.0",
-        custom_param1: "value1"
-      ]
+      body_params = %{
+        "oauth_consumer_key" => "secret",
+        "oauth_nonce" => "nonce",
+        "oauth_signature_method" => "HMAC-SHA1",
+        "oauth_timestamp" => "0",
+        "oauth_version" => "1.0",
+        "custom_param1" => "value1"
+      }
 
       assert HmacSHA1.build_signature(
         "https://someurl.com/",

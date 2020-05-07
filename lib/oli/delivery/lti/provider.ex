@@ -76,9 +76,9 @@ defmodule Oli.Delivery.Lti.Provider do
 
   def validate_parameters(body_params) do
     # TODO: replace hardcoded supported versions with a configurable variable
-    is_basic_launch = Keyword.get(body_params, :lti_message_type) === "basic-lti-launch-request"
-    is_correct_version = Enum.member?(["LTI-1p0"], Keyword.get(body_params, :lti_version))
-    has_resource_link_id = Keyword.get(body_params, :resource_link_id) !== nil
+    is_basic_launch = body_params["lti_message_type"] == "basic-lti-launch-request"
+    is_correct_version = Enum.member?(["LTI-1p0"], body_params["lti_version"])
+    has_resource_link_id = body_params["resource_link_id"] !== nil
 
     if is_basic_launch && is_correct_version && has_resource_link_id do
       { :ok }
@@ -89,9 +89,9 @@ defmodule Oli.Delivery.Lti.Provider do
 
   @spec validate_oauth(String.t, String.t, lti_message_params, String.t, DateTime.t) :: { :ok } | { :invalid, String.t}
   def validate_oauth(req_url, method, body_params, shared_secret, current_time) do
-    case validate_timestamp(Keyword.get(body_params, :oauth_timestamp), current_time) do
+    case validate_timestamp(body_params["oauth_timestamp"], current_time) do
       { :ok } ->
-        case validate_nonce(Keyword.get(body_params, :oauth_nonce)) do
+        case validate_nonce(body_params["oauth_nonce"]) do
           { :ok } ->
             req_signature = HmacSHA1.build_signature(
               req_url,
@@ -100,7 +100,7 @@ defmodule Oli.Delivery.Lti.Provider do
               shared_secret
             )
 
-            if req_signature == Keyword.get(body_params, :oauth_signature) do
+            if req_signature == body_params["oauth_signature"] do
               { :ok }
             else
               { :invalid, "Invalid OAuth - Signature does not match"}

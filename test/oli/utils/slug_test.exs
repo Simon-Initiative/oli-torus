@@ -6,7 +6,7 @@ defmodule Oli.Utils.SlugTest do
 
   alias Oli.Authoring.Course.Project
   alias Oli.Resources.Revision
-
+  alias Oli.Repo
   alias Ecto.Changeset
 
   describe "resources" do
@@ -18,6 +18,51 @@ defmodule Oli.Utils.SlugTest do
       Seeder.another_project(map.author, map.institution)
 
       map
+    end
+
+    test "update_on_change/2 does not update the slug when the previous revision title matches", %{ revision1: r } do
+
+      {:ok, new_revision} = Revision.changeset(%Revision{}, %{
+        previous_revision_id: r.id,
+        title: r.title,
+        resource_id: r.resource_id,
+        resource_type_id: r.resource_type_id,
+        author_id: r.author_id
+        })
+      |> Repo.insert()
+
+      assert new_revision.slug == r.slug
+
+    end
+
+    test "update_on_change/2 does update the slug when the previous revision title differs", %{ revision1: r } do
+
+      {:ok, new_revision} = Revision.changeset(%Revision{}, %{
+        previous_revision_id: r.id,
+        title: "a different title",
+        resource_id: r.resource_id,
+        resource_type_id: r.resource_type_id,
+        author_id: r.author_id
+        })
+      |> Repo.insert()
+
+      refute new_revision.slug == r.slug
+      assert new_revision.slug == "a_different_title"
+
+    end
+
+    test "update_on_change/2 handles the case when there isn't a previous revision", %{ revision1: r } do
+
+      {:ok, new_revision} = Revision.changeset(%Revision{}, %{
+        title: "a different title",
+        resource_id: r.resource_id,
+        resource_type_id: r.resource_type_id,
+        author_id: r.author_id
+        })
+      |> Repo.insert()
+
+      assert new_revision.slug == "a_different_title"
+
     end
 
     test "update_on_change/2 updates the slug when the title changes", %{ revision1: r } do
@@ -33,9 +78,21 @@ defmodule Oli.Utils.SlugTest do
       |> Changeset.get_change(:slug) == nil
 
       # changing the title
-      refute Revision.changeset(r, %{title: "a changed title"})
+      assert Revision.changeset(r, %{title: "a changed title"})
       |> Slug.update_on_change("revisions")
-      |> Changeset.get_change(:slug) == nil
+      |> Changeset.get_change(:slug) == "a_changed_title"
+
+      Revision.changeset(r, %{title: "a changed title"})
+      |> Repo.update()
+
+      r = Repo.get!(Revision, r.id)
+      assert r.slug == "a_changed_title"
+
+      Revision.changeset(r, %{title: "a changed title"})
+      |> Repo.update()
+
+      r = Repo.get!(Revision, r.id)
+      assert r.slug == "a_changed_title"
 
     end
 
