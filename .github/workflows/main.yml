@@ -142,7 +142,3 @@ jobs:
       #     AWS_REGION: 'us-east-2'
       #     SOURCE_DIR: '_build/prod/rel/oli'
       #     DEST_DIR: ${{ GITHUB_SHA }}
-
-  deploy:
-
-
