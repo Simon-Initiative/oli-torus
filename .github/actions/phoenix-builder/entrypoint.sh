@@ -1,10 +1,10 @@
-#!/bin/sh -l
+#!/bin/sh
 
 mix deps.get --only prod
-mix compile
+MIX_ENV=prod mix compile
 
 npm install --prefix ./assets
 npm run deploy --prefix ./assets
 mix phx.digest
 
-mix release
+MIX_ENV=prod mix release
