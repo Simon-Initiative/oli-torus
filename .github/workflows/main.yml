@@ -91,9 +91,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: 📦 Package release
-        uses: ./.github/actions/phoenix-builder
-        # # Use the prebuilt docker image until github fixes caching across builds
-        # uses: docker://olisimon/amazonlinux-phoenix:1.5.1
+        # uses: ./.github/actions/phoenix-builder
+        # Use the prebuilt docker image until github fixes caching across builds
+        uses: docker://olisimon/amazonlinux-phoenix:1.5.1
 
       - name: 📦⬆️ Upload artifact
         uses: actions/upload-artifact@v2
