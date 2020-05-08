@@ -29,6 +29,10 @@ RUN yum install -y gcc-c++ make
 RUN curl -sL https://rpm.nodesource.com/setup_12.x | bash -
 RUN yum install -y nodejs
 
+# fix elixir encoding warning
+# https://stackoverflow.com/questions/32407164/the-vm-is-running-with-native-name-encoding-of-latin1-which-may-cause-elixir-to
+ENV LANG=C.UTF-8
+
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
