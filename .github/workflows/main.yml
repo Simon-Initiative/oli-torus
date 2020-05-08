@@ -79,6 +79,7 @@ jobs:
       run: cd assets && npm run test
 
   build-release:
+    runs-on: ubuntu-latest
     needs: [elixir-build-test, ts-build-test]
 
     # only run this job if the workflow is running on the master branch
@@ -89,10 +90,6 @@ jobs:
       image: amazonlinux:2
       env:
         MIX_ENV: prod
-      ports:
-        - 80
-      volumes:
-        - my_docker_volume:/volume_mount
 
     steps:
       - name: Checkout 🛎️
@@ -128,7 +125,7 @@ jobs:
 
       - uses: actions/upload-artifact@v2
         with:
-          name: oli-release-${{ GITHUB_SHA }}
+          name: oli-release-$GITHUB_SHA
           path: _build/prod/rel/oli
 
       # - name: Upload release to S3 📦⬆️
