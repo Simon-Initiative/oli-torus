@@ -87,24 +87,13 @@ jobs:
     if: github.ref == 'refs/heads/test-deploy'   # TODO: REPLACE WITH MASTER
 
     container:
-      image: amazonlinux:2
+      image: olisimon/amazonlinux-phoenix
       env:
         MIX_ENV: prod
 
     steps:
-      - name: 🔧 Setup container
-        run: |
-          yum update -y
-          yum install -y tar
-
       - name: 🛎️ Checkout
         uses: actions/checkout@v2
-
-      - name: 🧪 Setup elixir
-        uses: actions/setup-elixir@v1
-        with:
-          elixir-version: 1.10.2 # Define the elixir version [required]
-          otp-version: 22.2 # Define the OTP version [required]
 
       - name: 🔧 Setup node
         uses: actions/setup-node@v1
