@@ -11,7 +11,7 @@ on:
       - master
       - test
       - production
-      - test-deploy
+      - test-deploy   # TODO: REMOVE
 
 jobs:
   elixir-build-test:
@@ -83,7 +83,7 @@ jobs:
 
     # only run this job if the workflow is running on the master branch
     # if: github.ref == 'refs/heads/master'
-    if: github.ref == 'refs/heads/test-deploy'
+    if: github.ref == 'refs/heads/test-deploy'   # TODO: REPLACE WITH MASTER
 
     container:
       image: amazonlinux:2
