@@ -4,7 +4,6 @@ import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { MultipleChoiceModelSchema, Stem } from './schema';
 import { Choice } from 'components/activities/multiple_choice/schema';
 import * as ActivityTypes from '../types';
-import { shuffle } from './utils';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 interface StemProps {
   stem: Stem;
@@ -92,6 +91,7 @@ const Hints = ({}: HintsProps) => {
 
 const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) => {
   const { stem, choices } = props.model;
+  const { state } = props;
 
   return (
     <div style={{
@@ -102,7 +102,7 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
       gridGap: '8px',
     }}>
       <Stem stem={stem} />
-      <Choices choices={shuffle(choices)} />
+      <Choices choices={choices} />
       <Hints />
     </div>
   );

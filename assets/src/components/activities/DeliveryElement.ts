@@ -1,9 +1,10 @@
-import { ActivityModelSchema } from './types';
+import { ActivityModelSchema, ActivityState } from './types';
 import { ActivitySlug } from 'data/types';
 
 export interface DeliveryElementProps<T extends ActivityModelSchema> {
   activitySlug: ActivitySlug;
   model: T;
+  state: ActivityState;
 }
 
 // An abstract delivery web component, designed to delegate to
@@ -24,11 +25,15 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   props() : DeliveryElementProps<T> {
 
     const model = JSON.parse(this.getAttribute('model') as any);
+    const state = JSON.parse(this.getAttribute('state') as any) as ActivityState;
     const activitySlug = this.getAttribute('activitySlug') as any;
+
+    console.log(state);
 
     return {
       model,
       activitySlug,
+      state,
     };
   }
 
@@ -46,5 +51,5 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     }
   }
 
-  static get observedAttributes() { return ['model']; }
+  static get observedAttributes() { return ['model', 'state']; }
 }

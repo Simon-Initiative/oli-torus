@@ -6,12 +6,24 @@ defmodule Oli.Delivery.Attempts do
   alias Oli.Delivery.Attempts.{PartAttempt, ResourceAccess, ResourceAttempt}
 
   @doc """
-  Retrieves the state of active attempts of a collection of activity ids in a given
-  context_id for a given user_id.  Returns them as a two-level map of activity ids to
-  part state map.
+  Retrieves the state of the latest attempts of a collection of activity ids in a given
+  context_id for a given user_id.
+
+  Returns value is a map of activity ids to a two element tuple.  The first
+  element is the latest resource attempt and the second is a map of part ids
+  to their part attempts. As an example:
+
+  %{
+    232 => {%ResourceAttempt{}, %{ 1 => %PartAttempt{}, 2 => %PartAttempt{}}}
+    233 => {%ResourceAttempt{}, %{ 1 => %PartAttempt{}, 2 => %PartAttempt{}}}
+  }
+
+  Activity ids that do not have any resource attempts will be omitted from
+  the top-level map.  Similarly, parts that do not have any part attempts will
+  be omitted from the second-level part attempt map
 
   """
-  def get_latest_part_attempts(activity_ids, context_id, user_id) do
+  def get_latest_attempts(activity_ids, context_id, user_id) do
 
     results = Repo.all(from a in ResourceAccess,
       join: s in Section, on: a.section_id == s.id,
@@ -20,20 +32,22 @@ defmodule Oli.Delivery.Attempts do
       join: pa1 in PartAttempt, on: ra1.id == pa1.resource_attempt_id,
       left_join: pa2 in PartAttempt, on: (ra1.id == pa2.resource_attempt_id and pa1.part_id == pa2.part_id and pa1.id < pa2.id),
       where: a.resource_id in ^activity_ids and s.context_id == ^context_id and a.user_id == ^user_id and is_nil(ra2.id) and is_nil(pa2.id),
-      select: {pa1, a})
+      select: {pa1, a, ra1})
 
-    Enum.reduce(results, %{}, fn {attempt, a}, m ->
+    Enum.reduce(results, %{}, fn {part_attempt, access, resource_attempt}, m ->
 
-      resource_id = a.resource_id
-      part_id = attempt.part_id
+      resource_id = access.resource_id
+      part_id = part_attempt.part_id
 
+      # ensure we have an entry for this resource
       m = case Map.has_key?(m, resource_id) do
         true -> m
-        false -> Map.put(m, resource_id, %{})
+        false -> Map.put(m, resource_id, {resource_attempt, %{}})
       end
 
-      activity_entry = Map.get(m, resource_id)
-      activity_entry = Map.put(activity_entry, part_id, attempt)
+      activity_entry = case Map.get(m, resource_id) do
+        {current_attempt, part_map} -> {current_attempt, Map.put(part_map, part_id, part_attempt)}
+      end
 
       Map.put(m, resource_id, activity_entry)
     end)

@@ -10,8 +10,8 @@ defmodule Oli.Delivery.Attempts.PartAttempt do
     field :out_of, :decimal
     field :response, :map
     field :feedback, :map
-    field :hints, {:array, :id}, default: []
-    field :part_id, :id
+    field :hints, {:array, :string}, default: []
+    field :part_id, :string
 
     belongs_to :resource_attempt, Oli.Delivery.Attempts.ResourceAttempt
 

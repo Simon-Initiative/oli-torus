@@ -12,6 +12,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
       |> Seeder.add_objective("objective one", :o1)
       |> Seeder.add_activity(%{title: "one", content: %{"authoring" => "3"}}, :a1)
       |> Seeder.add_activity(%{title: "two", content: %{"stem" => "3"}}, :a2)
+      |> Seeder.add_user(%{}, :user1)
 
       attrs = %{
         title: "page1",
@@ -28,7 +29,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
 
     end
 
-    test "create_context/2 returns the activities mapped correctly", %{section: section, p1: p1, a1: a1} = map do
+    test "create_context/2 returns the activities mapped correctly", %{section: section, p1: p1, a1: a1, user1: user} = map do
 
       page1 = Map.get(map, :page1)
       page2 = Map.get(map, :page2)
@@ -38,7 +39,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
 
       Seeder.attach_pages_to([page1, %{id: p1.resource_id}, page2], container, container_revision, publication)
 
-      context = PageContext.create_page_context(section.context_id, p1.slug)
+      context = PageContext.create_page_context(section.context_id, p1.slug, user.id)
 
       # verify activities map
       assert Map.get(context.activities, a1.resource_id).slug == a1.slug
@@ -54,17 +55,17 @@ defmodule Oli.Delivery.Page.PageContextTest do
       # verify all other possible variants of prev and next:
 
       Seeder.attach_pages_to([%{id: p1.resource_id}, page2], container, container_revision, publication)
-      context = PageContext.create_page_context(section.context_id, p1.slug)
+      context = PageContext.create_page_context(section.context_id, p1.slug, user.id)
       assert context.previous_page == nil
       assert context.next_page.resource_id == page2.id
 
       Seeder.attach_pages_to([page2, %{id: p1.resource_id}], container, container_revision, publication)
-      context = PageContext.create_page_context(section.context_id, p1.slug)
+      context = PageContext.create_page_context(section.context_id, p1.slug, user.id)
       assert context.previous_page.resource_id == page2.id
       assert context.next_page == nil
 
       Seeder.attach_pages_to([%{id: p1.resource_id}], container, container_revision, publication)
-      context = PageContext.create_page_context(section.context_id, p1.slug)
+      context = PageContext.create_page_context(section.context_id, p1.slug, user.id)
       assert context.previous_page == nil
       assert context.next_page == nil
 

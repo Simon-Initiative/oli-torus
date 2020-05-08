@@ -5,6 +5,7 @@ defmodule Oli.Delivery.Page.ActivityContext do
 
   alias Oli.Delivery.Page.ModelPruner
   alias Oli.Rendering.Activity.ActivitySummary
+  alias Oli.Activities.State
   alias Phoenix.HTML
 
   @doc """
@@ -13,9 +14,11 @@ defmodule Oli.Delivery.Page.ActivityContext do
   resolved revisions.
   """
   @spec create_context_map([number], %{}, [], %{}) :: %{}
-  def create_context_map(activity_ids, revisions, registrations, active_attempt_states) do
+  def create_context_map(activity_ids, revisions, registrations, latest_attempts) do
 
     reg_map = Enum.reduce(registrations, %{}, fn r, m -> Map.put(m, r.id, r) end)
+
+    activity_states = State.from_attempts(activity_ids, revisions, latest_attempts)
 
     Enum.reduce(activity_ids, %{}, fn id, m ->
 
@@ -26,7 +29,7 @@ defmodule Oli.Delivery.Page.ActivityContext do
         id: id,
         slug: Map.get(revisions, id) |> Map.get(:slug),
         model: Map.get(revisions, id) |> prepare_model(),
-        state: Map.get(active_attempt_states, id, %{}) |> prepare_state(),
+        state: Map.get(activity_states, id) |> prepare_state(),
         delivery_element: type.delivery_element,
         script: type.delivery_script
       })
@@ -51,6 +54,5 @@ defmodule Oli.Delivery.Page.ActivityContext do
     {:safe, encoded} = HTML.html_escape(s)
     IO.iodata_to_binary(encoded)
   end
-
 
 end

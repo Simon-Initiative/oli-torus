@@ -272,6 +272,25 @@ defmodule Oli.Seeder do
     %{resource: resource, revision: revision}
   end
 
+  def add_activity(map, attrs, publication_tag, project_tag, author_tag, resource_tag, revision_tag) do
+
+    author = Map.get(map, author_tag)
+    project = Map.get(map, project_tag)
+    publication = Map.get(map, publication_tag)
+
+    {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
+
+    attrs = Map.merge(%{activity_type_id: 1, author_id: author.id, objectives: %{ "attached" => []}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"), children: [], content: %{}, deleted: false, title: "test", resource_id: resource.id}, attrs)
+
+    {:ok, revision} = Oli.Resources.create_revision(attrs)
+    {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: resource.id}) |> Repo.insert
+
+    publish_resource(publication, resource, revision)
+
+    Map.put(map, resource_tag, resource)
+    |> Map.put(revision_tag, revision)
+  end
+
   def attach_pages_to(resources, container, container_revision, publication) do
 
     children = Enum.map(resources, fn r -> r.id end)

@@ -22,7 +22,7 @@ export type MessageAction = {
 };
 
 export type Message = {
-  guid: number;
+  guid: string;
   severity: Severity;
   priority: Priority;
   content: JSX.Element | string;

@@ -1,20 +1,21 @@
 import React from 'react';
 import { Heading } from 'components/misc/Heading';
 import { RichTextEditor } from 'components/editor/RichTextEditor';
-import { ModelEditorProps, RichText } from '../schema';
+import { ModelEditorProps } from '../schema';
+import { RichText } from '../../types';
 import { Description } from 'components/misc/Description';
 import { CloseButton } from 'components/misc/CloseButton';
 
 interface HintsProps extends ModelEditorProps {
   onAddHint: () => void;
-  onEditHint: (id: number, content: RichText) => void;
-  onRemoveHint: (id: number) => void;
+  onEditHint: (id: string, content: RichText) => void;
+  onRemoveHint: (id: string) => void;
 }
 export const Hints = ({ onAddHint, onEditHint, onRemoveHint, model, editMode }: HintsProps) => {
-  const { authoring: { hints } } = model;
-  const deerInHeadlightsHint = hints[0];
-  const bottomOutHint = hints[hints.length - 1];
-  const cognitiveHints = hints.slice(1, hints.length - 1);
+  const { authoring: { parts } } = model;
+  const deerInHeadlightsHint = parts[0].hints[0];
+  const bottomOutHint = parts[0].hints[parts[0].hints.length - 1];
+  const cognitiveHints = parts[0].hints.slice(1, parts[0].hints.length - 1);
 
   return (
     <div style={{ margin: '2rem 0' }}>

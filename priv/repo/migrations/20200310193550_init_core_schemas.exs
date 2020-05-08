@@ -243,7 +243,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :activity_id, references(:resources)
       add :section_id, references(:sections)
       add :resource_id, references(:resources)
-      add :part_id, :id
+      add :part_id, :string
       add :objectives, {:array, :id}
       add :objective_revisions, {:array, :id}
       add :revision_id, references(:revisions)
@@ -298,8 +298,8 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :out_of, :decimal
       add :response, :map
       add :feedback, :map
-      add :hints,  {:array, :id}
-      add :part_id, :id
+      add :hints,  {:array, :string}
+      add :part_id, :string
       add :resource_attempt_id, references(:resource_attempts)
 
     end
