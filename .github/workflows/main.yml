@@ -18,65 +18,65 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 🛎️ Checkout
-      uses: actions/checkout@v2
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v2
 
-    - name: 🔧 Configure
-      run: cp oli.example.env oli.env && cp postgres.example.env postgres.env
+      - name: 🔧 Configure
+        run: cp oli.example.env oli.env && cp postgres.example.env postgres.env
 
-    - name: 🗄 Start test database
-      run: docker-compose up -d postgres
+      - name: 🗄 Start test database
+        run: docker-compose up -d postgres
 
-    - name: 🧪 Setup elixir
-      uses: actions/setup-elixir@v1
-      with:
-        elixir-version: 1.10.2 # Define the elixir version [required]
-        otp-version: 22.2 # Define the OTP version [required]
+      - name: 🧪 Setup elixir
+        uses: actions/setup-elixir@v1
+        with:
+          elixir-version: 1.10.2 # Define the elixir version [required]
+          otp-version: 22.2 # Define the OTP version [required]
 
-    - name: ⬇️ Install elixir dependencies
-      run: mix deps.get
+      - name: ⬇️ Install elixir dependencies
+        run: mix deps.get
 
-    - name: 🔨 Build dependencies
-      run: mix deps.compile
+      - name: 🔨 Build dependencies
+        run: mix deps.compile
 
-    - name: 🔨 Build project
-      run: set -a;source oli.env && mix clean && mix compile --warnings-as-errors
+      - name: 🔨 Build project
+        run: set -a;source oli.env && mix clean && mix compile --warnings-as-errors
 
-    - name: ⚙️ Run tests
-      run: set -a;source oli.env && mix test.coverage
+      - name: ⚙️ Run tests
+        run: set -a;source oli.env && mix test.coverage
 
   ts-build-test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 🛎️ Checkout
-      uses: actions/checkout@v2
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v2
 
-    - name: 🔧 Configure
-      uses: actions/setup-node@v1
-      with:
-        node-version: '12.x'
+      - name: 🔧 Configure
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
 
-    - name: 🧪 Setup elixir
-      uses: actions/setup-elixir@v1
-      with:
-        elixir-version: 1.10.2 # Define the elixir version [required]
-        otp-version: 22.2 # Define the OTP version [required]
+      - name: 🧪 Setup elixir
+        uses: actions/setup-elixir@v1
+        with:
+          elixir-version: 1.10.2 # Define the elixir version [required]
+          otp-version: 22.2 # Define the OTP version [required]
 
-    - name: ⬇️ Install elixir dependencies
-      run: mix deps.get
+      - name: ⬇️ Install elixir dependencies
+        run: mix deps.get
 
-    - name: Install node_module dependencies 📦
-      run: cd assets && npm install
+      - name: Install node_module dependencies 📦
+        run: cd assets && npm install
 
-    - name: 🧹 Lint
-      run: cd assets && npm run lint
+      - name: 🧹 Lint
+        run: cd assets && npm run lint
 
-    - name: 🔨 Build
-      run: cd assets && npm run deploy
+      - name: 🔨 Build
+        run: cd assets && npm run deploy
 
-    - name: ⚙️ Test
-      run: cd assets && npm run test
+      - name: ⚙️ Test
+        run: cd assets && npm run test
 
   build-release:
     runs-on: ubuntu-latest
@@ -129,7 +129,7 @@ jobs:
         run: mix release
 
       - name: 📦⬆️ Upload artifact
-      - uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v2
         with:
           name: oli-release-$GITHUB_SHA
           path: _build/prod/rel/oli
