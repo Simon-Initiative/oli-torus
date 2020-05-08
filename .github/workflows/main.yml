@@ -87,15 +87,16 @@ jobs:
     if: github.ref == 'refs/heads/test-deploy'   # TODO: REPLACE WITH MASTER
 
     container:
-      image: amazonlinux:2
+      # image: amazonlinux:2
+      image: ubuntu
       env:
         MIX_ENV: prod
 
     steps:
-      - name: 🔧 Setup container
-        run: |
-          yum update -y
-          yum install -y tar
+      # - name: 🔧 Setup container
+      #   run: |
+      #     yum update -y
+      #     yum install -y tar
 
       - name: 🛎️ Checkout
         uses: actions/checkout@v2
