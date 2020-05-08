@@ -11,6 +11,7 @@ on:
       - master
       - test
       - production
+      - test-deploy
 
 jobs:
   elixir-build-test:
@@ -77,15 +78,70 @@ jobs:
     - name: Test ⚙️
       run: cd assets && npm run test
 
-  package-release:
+  build-release:
+    needs: [elixir-build-test, ts-build-test]
+
+    # only run this job if the workflow is running on the master branch
+    # if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/test-deploy'
+
     container:
       image: amazonlinux:2
       env:
-        NODE_ENV: development
+        MIX_ENV: prod
       ports:
         - 80
       volumes:
         - my_docker_volume:/volume_mount
+
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v2
+
+      - name: Setup elixir 🧪
+        uses: actions/setup-elixir@v1
+        with:
+          elixir-version: 1.10.2 # Define the elixir version [required]
+          otp-version: 22.2 # Define the OTP version [required]
+
+      - name: Setup node 🔧
+        uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+
+      - name: Install elixir dependencies ⬇️
+        run: mix deps.get --only prod
+
+      - name: Compile elixir 🔨
+        run: mix compile
+
+      - name: Install / update  JavaScript dependencies ⬇️
+        run: npm install --prefix ./assets
+
+      - name: Compile JavaScript assets 🔨
+        run: |
+          npm run deploy --prefix ./assets
+          mix phx.digest
+
+      - name: Package release 📦
+        run: mix release
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: oli-release-${{ GITHUB_SHA }}
+          path: _build/prod/rel/oli
+
+      # - name: Upload release to S3 📦⬆️
+      # - uses: jakejarvis/s3-sync-action@master
+      #   # with:
+      #   #   args: --acl public-read --follow-symlinks --delete
+      #   env:
+      #     AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     AWS_REGION: 'us-east-2'
+      #     SOURCE_DIR: '_build/prod/rel/oli'
+      #     DEST_DIR: ${{ GITHUB_SHA }}
 
   deploy:
 
