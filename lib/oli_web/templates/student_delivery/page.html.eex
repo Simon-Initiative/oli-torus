@@ -7,7 +7,41 @@
 
 <%= render OliWeb.DeliveryView, "_objectives.html", objectives: @objectives %>
 
-<%= raw(@html) %>
+<div id="eventIntercept">
+  <%= raw(@html) %>
+</div>
 
 <%= render OliWeb.DeliveryView, "_previous_next_nav.html",
   conn: @conn, context_id: @context_id, previous_page: @previous_page, next_page: @next_page, linker: &OliWeb.StudentDeliveryView.page_link/3 %>
+
+<script>
+
+  function makeRequest(url, method, body, continuation) {
+    const params = {
+      method,
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body),
+    };
+    window.fetch(url, params)
+      .then(result => continuation(result))
+      .catch(error => continuation(undefined, error));
+  }
+
+  const div = document.getElementById('eventIntercept');
+
+  div.addEventListener('onSave', function (e) {
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const body = {
+      activitySlug: e.detail.activitySlug,
+      resourceSlug: '<%= @revision_slug %>',
+      contextId: '<%= @context_id %>',
+      payload: e.detail.payload,
+    };
+    makeRequest('/api/v1/attempt', 'PATCH', body, e.detail.continuation);
+
+  }, false);
+
+</script>

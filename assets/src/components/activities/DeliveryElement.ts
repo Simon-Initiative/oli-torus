@@ -1,10 +1,21 @@
-import { ActivityModelSchema, ActivityState } from './types';
+import { ActivityModelSchema, ActivityState, StudentResponse } from './types';
 import { ActivitySlug } from 'data/types';
+
+
+export type PartResponse = {
+  partId: string,
+  response: StudentResponse,
+};
 
 export interface DeliveryElementProps<T extends ActivityModelSchema> {
   activitySlug: ActivitySlug;
   model: T;
   state: ActivityState;
+  onRequestHint: (partIds: string[]) => void;
+  onSave: (partResponses: PartResponse[]) => void;
+  onSubmit: (partResponses: PartResponse[]) => void;
+  onResetParts: (partIds: string[]) => void;
+  onReset: () => void;
 }
 
 // An abstract delivery web component, designed to delegate to
@@ -15,11 +26,35 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
 
   mountPoint: HTMLDivElement;
   connected: boolean;
+  onRequestHint: (partIds: string[]) => void;
+  onSave: (partResponses: PartResponse[]) => void;
+  onSubmit: (partResponses: PartResponse[]) => void;
+  onResetParts: (partIds: string[]) => void;
+  onReset: () => void;
 
   constructor() {
     super();
     this.mountPoint = document.createElement('div');
     this.connected = false;
+
+    this.onRequestHint = (partIds: string[]) => this.dispatch('onRequestHint', partIds);
+    this.onSave = (partResponses: PartResponse[]) => this.dispatch('onSave', partResponses);
+    this.onSubmit = (partResponses: PartResponse[]) => this.dispatch('onSubmit', partResponses);
+    this.onResetParts = (partIds: string[]) => this.dispatch('onResetParts', partIds);
+    this.onReset = () => this.dispatch('onReset');
+  }
+
+  dispatch(name: string, payload?: any) {
+    return new Promise((resolve, reject) => {
+      const continuation = (result : any, error : any) => {
+        if (error !== undefined) {
+          reject(error);
+          return;
+        }
+        resolve(result);
+      };
+      this.dispatchEvent(new CustomEvent(name, this.details(continuation, payload)));
+    });
   }
 
   props() : DeliveryElementProps<T> {
@@ -28,12 +63,26 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     const state = JSON.parse(this.getAttribute('state') as any) as ActivityState;
     const activitySlug = this.getAttribute('activitySlug') as any;
 
-    console.log(state);
-
     return {
       model,
       activitySlug,
       state,
+      onRequestHint: this.onRequestHint,
+      onSave: this.onSave,
+      onSubmit: this.onSubmit,
+      onResetParts: this.onResetParts,
+      onReset: this.onReset,
+    };
+  }
+
+  details(continuation: (result: any, error: any) => void, payload? : any) {
+    return {
+      bubbles: true,
+      detail: {
+        activitySlug: this.getAttribute('activitySlug'),
+        payload,
+        continuation,
+      },
     };
   }
 

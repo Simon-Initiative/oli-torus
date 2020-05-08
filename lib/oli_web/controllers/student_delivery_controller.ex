@@ -42,6 +42,7 @@ defmodule OliWeb.StudentDeliveryController do
 
       render(conn, "page.html", %{
         context_id: context_id,
+        revision_slug: context.page.slug,
         scripts: get_scripts(),
         previous_page: context.previous_page,
         next_page: context.next_page,

@@ -7,6 +7,9 @@ export interface HasContent {
   content: RichText;
 }
 
+export interface StudentResponse {
+  input: any;
+}
 
 export type ModeSpecification = {
   element: string,
@@ -73,18 +76,18 @@ export interface Part extends Identifiable {
 }
 
 export enum ScoringStrategy {
-  'average',
-  'best',
-  'most_recent',
+  'average' = 'average',
+  'best' = 'best',
+  'most_recent' = 'most_recent',
 }
 
 export enum EvaluationStrategy {
-  'regex',
-  'numeric',
+  'regex' = 'regex',
+  'numeric' = 'numeric',
 }
 
 export enum Operation {
-  'shuffle',
+  'shuffle' = 'shuffle',
 }
 
 export interface CreationContext extends ResourceContext {

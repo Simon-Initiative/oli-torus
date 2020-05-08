@@ -18,7 +18,7 @@ export const defaultMCModel : () => MultipleChoiceModelSchema = () => {
     ],
     authoring: {
       parts: [{
-        id: guid(),
+        id: '1', // an MCQ only has one part, so it is safe to hardcode the id
         scoringStrategy: ScoringStrategy.average,
         evaluationStrategy: EvaluationStrategy.regex,
         responses: [
