@@ -23,6 +23,7 @@
       body: JSON.stringify(body),
     };
     window.fetch(url, params)
+      .then(response => response.json())
       .then(result => continuation(result))
       .catch(error => continuation(undefined, error));
   }

@@ -1,4 +1,4 @@
-import { ActivityModelSchema, ActivityState, StudentResponse } from './types';
+import { ActivityModelSchema, ActivityState, StudentResponse, Hint, Success } from './types';
 import { ActivitySlug } from 'data/types';
 
 
@@ -11,8 +11,8 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   activitySlug: ActivitySlug;
   model: T;
   state: ActivityState;
-  onRequestHint: (partIds: string[]) => void;
-  onSave: (partResponses: PartResponse[]) => void;
+  onRequestHint: (partIds: string[]) => Promise<Hint>;
+  onSave: (partResponses: PartResponse[]) => Promise<Success>;
   onSubmit: (partResponses: PartResponse[]) => void;
   onResetParts: (partIds: string[]) => void;
   onReset: () => void;
@@ -26,8 +26,8 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
 
   mountPoint: HTMLDivElement;
   connected: boolean;
-  onRequestHint: (partIds: string[]) => void;
-  onSave: (partResponses: PartResponse[]) => void;
+  onRequestHint: (partIds: string[]) => Promise<Hint>;
+  onSave: (partResponses: PartResponse[]) => Promise<Success>;
   onSubmit: (partResponses: PartResponse[]) => void;
   onResetParts: (partIds: string[]) => void;
   onReset: () => void;
@@ -44,7 +44,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     this.onReset = () => this.dispatch('onReset');
   }
 
-  dispatch(name: string, payload?: any) {
+  dispatch(name: string, payload?: any) : Promise<any> {
     return new Promise((resolve, reject) => {
       const continuation = (result : any, error : any) => {
         if (error !== undefined) {

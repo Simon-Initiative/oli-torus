@@ -3,6 +3,10 @@ import { Identifiable, ModelElement } from 'data/content/model';
 
 export type RichText = ModelElement[];
 
+export interface Success {
+  type: 'success';
+}
+
 export interface HasContent {
   content: RichText;
 }

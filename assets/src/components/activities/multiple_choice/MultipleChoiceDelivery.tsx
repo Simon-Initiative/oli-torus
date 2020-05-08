@@ -113,7 +113,11 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
     : Maybe.just<string>(state.parts[0].response.input));
 
   const onSelect = (id: string) => {
+
+    // Update local state
     setSelected(Maybe.just<string>(id));
+
+    // Auto-save our student reponse
     props.onSave([{ partId: '1', response: { input: id } }]);
   };
 
