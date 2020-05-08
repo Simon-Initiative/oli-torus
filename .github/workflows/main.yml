@@ -92,10 +92,10 @@ jobs:
         MIX_ENV: prod
 
     steps:
-      # - name: 🔧 Setup container
-      #   run: |
-      #     yum update -y
-      #     yum install -y tar
+      - name: 🔧 Setup container
+        run: |
+          yum update -y
+          yum install -y tar
 
       - name: 🛎️ Checkout
         uses: actions/checkout@v2
