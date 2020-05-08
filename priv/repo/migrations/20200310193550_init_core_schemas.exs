@@ -259,16 +259,21 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
     create table(:resource_accesses) do
       timestamps(type: :timestamptz)
 
-      add :access_count, :integer
-      add :score, :decimal
-      add :out_of, :decimal
+      add :access_count, :integer, null: true
+      add :score, :decimal, null: true
+      add :out_of, :decimal, null: true
 
       add :user_id, references(:user)
-      add :parent_id, references(:resource_accesses)
       add :section_id, references(:sections)
       add :resource_id, references(:resources)
 
+      add :parent_id, references(:resource_accesses)
+
     end
+    create index(:resource_accesses, [:resource_id])
+    create index(:resource_accesses, [:section_id])
+    create index(:resource_accesses, [:user_id])
+    create unique_index(:resource_accesses, [:resource_id, :user_id, :section_id], name: :resource_accesses_unique_index)
 
     create table(:resource_attempts) do
       timestamps(type: :timestamptz)

@@ -22,5 +22,7 @@ defmodule Oli.Delivery.Attempts.ResourceAccess do
     score
     |> cast(attrs, [:access_count, :score, :out_of, :user_id, :parent_id, :section_id, :resource_id])
     |> validate_required([:access_count, :user_id, :parent_id, :section_id, :resource_id])
+    |> unique_constraint(:entry, name: :resource_accesses_unique_index)
+
   end
 end

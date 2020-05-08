@@ -8,12 +8,12 @@ defmodule Oli.Delivery.Page.ActivityContext do
   alias Phoenix.HTML
 
   @doc """
-  Creates a mapping of activity id to an `%ActivityContext` struct, based
+  Creates a mapping of activity id to an `%ActivitySummary` struct, based
   off of the supplied list of activity ids and a map of resource ids to
   resolved revisions.
   """
-  @spec create_context_map([number], %{}, []) :: %{}
-  def create_context_map(activity_ids, revisions, registrations) do
+  @spec create_context_map([number], %{}, [], %{}) :: %{}
+  def create_context_map(activity_ids, revisions, registrations, active_attempt_states) do
 
     reg_map = Enum.reduce(registrations, %{}, fn r, m -> Map.put(m, r.id, r) end)
 
@@ -26,7 +26,7 @@ defmodule Oli.Delivery.Page.ActivityContext do
         id: id,
         slug: Map.get(revisions, id) |> Map.get(:slug),
         model: Map.get(revisions, id) |> prepare_model(),
-        state: prepare_state(%{"active" => true}),
+        state: Map.get(active_attempt_states, id, %{}) |> prepare_state(),
         delivery_element: type.delivery_element,
         script: type.delivery_script
       })

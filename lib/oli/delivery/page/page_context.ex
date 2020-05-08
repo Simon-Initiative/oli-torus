@@ -55,8 +55,10 @@ defmodule Oli.Delivery.Page.PageContext do
     revisions = DeliveryResolver.from_resource_id(context_id, all_resources)
     |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
 
+    # _active_attempt_states = retrieve_attempt_states(activity_ids, context_id, user_id)
+
     # create a mapping specifically for the activities
-    activities = ActivityContext.create_context_map(activity_ids, revisions, registrations)
+    activities = ActivityContext.create_context_map(activity_ids, revisions, registrations, %{})
 
     # create a mapping specifically for the objectives
     objectives = get_objective_titles(objective_ids, revisions)

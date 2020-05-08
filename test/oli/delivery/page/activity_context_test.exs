@@ -28,7 +28,9 @@ defmodule Oli.Delivery.Page.ActivityContextTest do
       |> Map.put(a2.resource_id, a2)
       |> Map.put(a3.resource_id, a3)
 
-      m = ActivityContext.create_context_map(resource_ids, revisions, registrations)
+      states = Map.put(%{}, a1.resource_id, %{"active" => true})
+
+      m = ActivityContext.create_context_map(resource_ids, revisions, registrations, states)
 
       assert length(Map.keys(m)) == 3
       assert Map.get(m, a1.resource_id).slug == a1.slug
@@ -36,7 +38,9 @@ defmodule Oli.Delivery.Page.ActivityContextTest do
       assert Map.get(m, a1.resource_id).state == "{&quot;active&quot;:true}"
       assert Map.get(m, a1.resource_id).delivery_element == "oli-multiple-choice-delivery"
       assert Map.get(m, a1.resource_id).script == "oli_multiple_choice_delivery.js"
+      assert Map.get(m, a2.resource_id).state == "{}"
       assert Map.get(m, a2.resource_id).slug == a2.slug
+      assert Map.get(m, a3.resource_id).state == "{}"
       assert Map.get(m, a3.resource_id).slug == a3.slug
 
     end
