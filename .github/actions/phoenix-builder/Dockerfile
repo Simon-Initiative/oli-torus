@@ -1,0 +1,30 @@
+FROM amazonlinux:2
+
+RUN yum update -y
+RUN yum install -y tar wget git
+
+RUN yum install ncurses-devel openssl-devel -y
+RUN yum groupinstall "Development Tools" -y
+
+WORKDIR /tmp
+RUN wget "http://erlang.org/download/otp_src_22.2.tar.gz" -O otp22.tar.gz
+RUN tar xfz otp22.tar.gz
+WORKDIR /tmp/otp_src_22.2/
+RUN ./configure
+RUN make && make install
+
+WORKDIR /tmp
+RUN wget "https://github.com/elixir-lang/elixir/archive/v1.10.2.tar.gz"
+RUN tar xfz v1.10.2.tar.gz
+WORKDIR /tmp/elixir-1.10.2/
+ENV PATH="${PATH}:/usr/local/bin"
+RUN make && make install
+
+RUN mix local.hex --force
+RUN mix local.rebar --force
+RUN mix archive.install hex phx_new 1.5.1
+
+# install node
+RUN yum install -y gcc-c++ make
+RUN curl -sL https://rpm.nodesource.com/setup_12.x | sudo -E bash -
+RUN yum install -y nodejs

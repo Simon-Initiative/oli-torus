@@ -1,0 +1,6 @@
+# action.yml
+name: 'Phoenix Builder'
+description: 'Build Phoenix App for Production'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'

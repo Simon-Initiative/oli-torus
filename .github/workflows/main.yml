@@ -79,13 +79,13 @@ jobs:
         run: cd assets && npm run test
 
   build-release:
-    runs-on: ubuntu-latest
     needs: [elixir-build-test, ts-build-test]
 
     # only run this job if the workflow is running on the master branch
     # if: github.ref == 'refs/heads/master'
     if: github.ref == 'refs/heads/test-deploy'   # TODO: REPLACE WITH MASTER
 
+    runs-on: ubuntu-latest
     container:
       image: olisimon/amazonlinux-phoenix
       env:
@@ -95,26 +95,26 @@ jobs:
       - name: 🛎️ Checkout
         uses: actions/checkout@v2
 
-      - name: 🔧 Setup node
-        uses: actions/setup-node@v1
-        with:
-          node-version: '12.x'
-
       - name: ⬇️ Install elixir dependencies
+        uses: ./.github/actions/phoenix-builder
         run: mix deps.get --only prod
 
       - name: 🔨 Compile elixir
+        uses: ./.github/actions/phoenix-builder
         run: mix compile
 
       - name: ⬇️ Install / update  JavaScript dependencies
+        uses: ./.github/actions/phoenix-builder
         run: npm install --prefix ./assets
 
       - name: 🔨 Compile JavaScript assets
+        uses: ./.github/actions/phoenix-builder
         run: |
           npm run deploy --prefix ./assets
           mix phx.digest
 
       - name: 📦 Package release
+        uses: ./.github/actions/phoenix-builder
         run: mix release
 
       - name: 📦⬆️ Upload artifact
