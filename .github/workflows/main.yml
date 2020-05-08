@@ -95,27 +95,8 @@ jobs:
       - name: 🛎️ Checkout
         uses: actions/checkout@v2
 
-      - name: ⬇️ Install elixir dependencies
-        uses: ./.github/actions/phoenix-builder
-        run: mix deps.get --only prod
-
-      - name: 🔨 Compile elixir
-        uses: ./.github/actions/phoenix-builder
-        run: mix compile
-
-      - name: ⬇️ Install / update  JavaScript dependencies
-        uses: ./.github/actions/phoenix-builder
-        run: npm install --prefix ./assets
-
-      - name: 🔨 Compile JavaScript assets
-        uses: ./.github/actions/phoenix-builder
-        run: |
-          npm run deploy --prefix ./assets
-          mix phx.digest
-
       - name: 📦 Package release
         uses: ./.github/actions/phoenix-builder
-        run: mix release
 
       - name: 📦⬆️ Upload artifact
         uses: actions/upload-artifact@v2

@@ -28,3 +28,8 @@ RUN mix archive.install hex phx_new 1.5.1
 RUN yum install -y gcc-c++ make
 RUN curl -sL https://rpm.nodesource.com/setup_12.x | sudo -E bash -
 RUN yum install -y nodejs
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
