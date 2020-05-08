@@ -18,64 +18,64 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout 🛎️
+    - name: 🛎️ Checkout
       uses: actions/checkout@v2
 
-    - name: Configure 🔧
+    - name: 🔧 Configure
       run: cp oli.example.env oli.env && cp postgres.example.env postgres.env
 
-    - name: Start Test Database 🗄
+    - name: 🗄 Start test database
       run: docker-compose up -d postgres
 
-    - name: Setup Elixir 🧪
+    - name: 🧪 Setup elixir
       uses: actions/setup-elixir@v1
       with:
         elixir-version: 1.10.2 # Define the elixir version [required]
         otp-version: 22.2 # Define the OTP version [required]
 
-    - name: Install Elixir Dependencies ⬇️
+    - name: ⬇️ Install elixir dependencies
       run: mix deps.get
 
-    - name: Build Dependencies 🔨📦
+    - name: 🔨 Build dependencies
       run: mix deps.compile
 
-    - name: Build Project 🔨
+    - name: 🔨 Build project
       run: set -a;source oli.env && mix clean && mix compile --warnings-as-errors
 
-    - name: Run Tests ⚙️
+    - name: ⚙️ Run tests
       run: set -a;source oli.env && mix test.coverage
 
   ts-build-test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout 🛎️
+    - name: 🛎️ Checkout
       uses: actions/checkout@v2
 
-    - name: Configure 🔧
+    - name: 🔧 Configure
       uses: actions/setup-node@v1
       with:
         node-version: '12.x'
 
-    - name: Setup Elixir 🧪
+    - name: 🧪 Setup elixir
       uses: actions/setup-elixir@v1
       with:
         elixir-version: 1.10.2 # Define the elixir version [required]
         otp-version: 22.2 # Define the OTP version [required]
 
-    - name: Install Elixir Dependencies ⬇️
+    - name: ⬇️ Install elixir dependencies
       run: mix deps.get
 
-    - name: Install node_module Dependencies 📦
+    - name: Install node_module dependencies 📦
       run: cd assets && npm install
 
-    - name: Lint 🧹
+    - name: 🧹 Lint
       run: cd assets && npm run lint
 
-    - name: Build 🔨
+    - name: 🔨 Build
       run: cd assets && npm run deploy
 
-    - name: Test ⚙️
+    - name: ⚙️ Test
       run: cd assets && npm run test
 
   build-release:
@@ -92,43 +92,49 @@ jobs:
         MIX_ENV: prod
 
     steps:
-      - name: Checkout 🛎️
+      - name: 🔧 Setup container
+        run: |
+          yum update -y
+          yum install -y tar
+
+      - name: 🛎️ Checkout
         uses: actions/checkout@v2
 
-      - name: Setup elixir 🧪
+      - name: 🧪 Setup elixir
         uses: actions/setup-elixir@v1
         with:
           elixir-version: 1.10.2 # Define the elixir version [required]
           otp-version: 22.2 # Define the OTP version [required]
 
-      - name: Setup node 🔧
+      - name: 🔧 Setup node
         uses: actions/setup-node@v1
         with:
           node-version: '12.x'
 
-      - name: Install elixir dependencies ⬇️
+      - name: ⬇️ Install elixir dependencies
         run: mix deps.get --only prod
 
-      - name: Compile elixir 🔨
+      - name: 🔨 Compile elixir
         run: mix compile
 
-      - name: Install / update  JavaScript dependencies ⬇️
+      - name: ⬇️ Install / update  JavaScript dependencies
         run: npm install --prefix ./assets
 
-      - name: Compile JavaScript assets 🔨
+      - name: 🔨 Compile JavaScript assets
         run: |
           npm run deploy --prefix ./assets
           mix phx.digest
 
-      - name: Package release 📦
+      - name: 📦 Package release
         run: mix release
 
+      - name: 📦⬆️ Upload artifact
       - uses: actions/upload-artifact@v2
         with:
           name: oli-release-$GITHUB_SHA
           path: _build/prod/rel/oli
 
-      # - name: Upload release to S3 📦⬆️
+      # - name: 📦⬆️ Upload release to S3
       # - uses: jakejarvis/s3-sync-action@master
       #   # with:
       #   #   args: --acl public-read --follow-symlinks --delete
