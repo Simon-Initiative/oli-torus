@@ -90,6 +90,12 @@ jobs:
       - name: 🛎️ Checkout
         uses: actions/checkout@v2
 
+      - name: Compute short-sha
+        id: vars
+        run: |
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+          echo "::set-output name=app_version::$(mix app.version)"
+
       - name: 📦 Package release
         # uses: ./.github/actions/phoenix-builder
         # Use the prebuilt docker image until github fixes caching across builds
@@ -98,7 +104,7 @@ jobs:
       - name: 📦⬆️ Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: oli-release-$GITHUB_SHA
+          name: oli-release-${{ steps.vars.outputs.app_version }}-${{ steps.vars.outputs.sha_short }}
           path: _build/prod/rel/oli
 
       # - name: 📦⬆️ Upload release to S3
