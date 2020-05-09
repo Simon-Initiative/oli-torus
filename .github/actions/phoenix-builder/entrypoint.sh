@@ -1,5 +1,13 @@
 #!/bin/sh
 
+# DEBUG whats in the directory
+ls
+
+# DEBUG for good measure
+mix local.hex --force
+mix local.rebar --force
+mix archive.install hex phx_new 1.5.1
+
 mix deps.get --only prod
 MIX_ENV=prod mix compile
 
