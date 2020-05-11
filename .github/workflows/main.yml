@@ -123,7 +123,10 @@ jobs:
 
       - name: 🗜️🚢 Zip it & ship it
         run: |
-          zip -r oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip _build/prod/rel/oli
+          pushd _build/prod/rel
+          zip -r oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip oli
+          popd
+          mv _build/prod/rel/oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip ./
           mkdir ~/.ssh
           echo "${{ secrets.SIMON_BOT_PRIVATE_KEY}}" > ~/.ssh/simon-bot
           chmod 600 ~/.ssh/simon-bot
