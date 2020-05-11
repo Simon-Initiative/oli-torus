@@ -5,42 +5,52 @@ defmodule Oli.Delivery.Page.ActivityContext do
 
   alias Oli.Delivery.Page.ModelPruner
   alias Oli.Rendering.Activity.ActivitySummary
+  alias Oli.Delivery.Attempts.ActivityAttempt
+  alias Oli.Activities.State
+  alias Oli.Activities.State.ActivityState
+  alias Oli.Activities
   alias Phoenix.HTML
 
   @doc """
-  Creates a mapping of activity id to an `%ActivityContext` struct, based
+  Creates a mapping of activity id to an `%ActivitySummary` struct, based
   off of the supplied list of activity ids and a map of resource ids to
   resolved revisions.
   """
-  @spec create_context_map([number], %{}, []) :: %{}
-  def create_context_map(activity_ids, revisions, registrations) do
+  @spec create_context_map(%{}) :: %{}
+  def create_context_map(latest_attempts) do
 
+    # get a view of all current registered activity types
+    registrations = Activities.list_activity_registrations()
     reg_map = Enum.reduce(registrations, %{}, fn r, m -> Map.put(m, r.id, r) end)
 
-    Enum.reduce(activity_ids, %{}, fn id, m ->
+    activity_states = State.from_attempts(latest_attempts)
+
+    Enum.map(latest_attempts, fn {id, {%ActivityAttempt{transformed_model: model, revision: revision}, _}} ->
 
       # the activity type this revision pertains to
-      type = Map.get(reg_map, Map.get(revisions, id) |> Map.get(:activity_type_id))
+      type = Map.get(reg_map, revision.activity_type_id)
+      state = Map.get(activity_states, id)
 
-      Map.put(m, id, %ActivitySummary{
+      {id, %ActivitySummary{
         id: id,
-        slug: Map.get(revisions, id) |> Map.get(:slug),
-        model: Map.get(revisions, id) |> prepare_model(),
-        state: prepare_state(%{"active" => true}),
+        model: prepare_model(model),
+        state: prepare_state(state),
         delivery_element: type.delivery_element,
         script: type.delivery_script
-      })
+      }}
     end)
+    |> Map.new
+
   end
 
-  defp prepare_model(%{content: content}) do
-    case ModelPruner.prune(content) |> Jason.encode() do
+  defp prepare_model(model) do
+    case ModelPruner.prune(model) |> Jason.encode() do
       {:ok, s} -> s |> encode()
       {:error, _} -> "{ \"error\": true }" |> encode()
     end
   end
 
-  defp prepare_state(state) do
+  defp prepare_state(%ActivityState{} = state) do
     case Jason.encode(state) do
       {:ok, s} -> s |> encode()
       {:error, _} -> "{ \"error\": true }" |> encode()
@@ -51,6 +61,5 @@ defmodule Oli.Delivery.Page.ActivityContext do
     {:safe, encoded} = HTML.html_escape(s)
     IO.iodata_to_binary(encoded)
   end
-
 
 end

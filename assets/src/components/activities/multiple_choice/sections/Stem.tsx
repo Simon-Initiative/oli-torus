@@ -1,7 +1,8 @@
 import React from 'react';
 import { Heading } from 'components/misc/Heading';
 import { RichTextEditor } from 'components/editor/RichTextEditor';
-import { ModelEditorProps, RichText } from '../schema';
+import { ModelEditorProps } from '../schema';
+import { RichText } from '../../types';
 
 interface StemProps extends ModelEditorProps {
   onEditStem: (stem: RichText) => void;

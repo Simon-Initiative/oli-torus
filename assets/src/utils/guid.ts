@@ -20,14 +20,14 @@ const schedule = () => setTimeout(() => { fillPool(); schedule(); }, 5000);
 schedule();
 
 // Request a guid
-export default function guid() : number {
+export default function guid() : string {
 
   // If we have a guid available, take it
   if (pool.length > 0) {
     hits = hits + 1;
     // pop() is the fastest way to do get an item.
     // It is O(1) relative to the size of the array
-    return pool.pop() as any;
+    return (pool.pop() as any) + '';
   }
 
   // The pool was empty so we need to create one
@@ -35,7 +35,7 @@ export default function guid() : number {
   misses = misses + 1;
   fillPool();
 
-  return pool.pop() as any;
+  return (pool.pop() as any) + '';
 }
 
 function createSome(count: number) {

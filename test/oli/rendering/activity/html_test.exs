@@ -17,7 +17,6 @@ defmodule Oli.Content.Activity.HtmlTest do
       activity_map = %{
         1 => %{
           id: 1,
-          slug: "test",
           state: "{ \"active\": true }",
           model: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
           delivery_element: "oli-multiple-choice-delivery"
@@ -35,7 +34,7 @@ defmodule Oli.Content.Activity.HtmlTest do
       rendered_html = Activity.render(%Context{user: author, activity_map: activity_map}, element, Activity.Html)
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
 
-      assert rendered_html_string =~ "<oli-multiple-choice-delivery class=\"activity\" activitySlug=\"test\" model=\"{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}\""
+      assert rendered_html_string =~ "<oli-multiple-choice-delivery class=\"activity\" state=\"{ \"active\": true }\" model=\"{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}\""
     end
 
     test "renders malformed activity gracefully", %{author: author} do

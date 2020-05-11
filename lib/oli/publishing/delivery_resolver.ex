@@ -52,6 +52,7 @@ defmodule Oli.Publishing.DeliveryResolver do
         join: rev2 in Revision, on: m.revision_id == rev2.id,
         join: s in Section, on: s.publication_id == m.publication_id,
         where: rev.slug == ^revision_slug and s.context_id == ^context_id,
+        limit: 1,
         select: rev2)
     end
     |> run() |> emit([:oli, :resolvers, :delivery], :duration)

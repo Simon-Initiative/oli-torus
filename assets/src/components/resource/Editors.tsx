@@ -20,6 +20,27 @@ export type EditorsProps = {
   resourceSlug: ResourceSlug,
 };
 
+const defaultState = () => {
+  return {
+    attemptNumber: 1,
+    dateEvaluated: null,
+    score: null,
+    outOf: null,
+    hasMoreAttempts: true,
+    parts: [{
+      attemptNumber: 1,
+      dateEvaluated: null,
+      score: null,
+      outOf: null,
+      response: null,
+      feedback: null,
+      hints: [],
+      hasMoreHints: true,
+      hasMoreAttempts: true,
+      partId: '1',
+    }],
+  };
+};
 
 // The list of editors
 export const Editors = (props: EditorsProps) => {
@@ -62,6 +83,8 @@ export const Editors = (props: EditorsProps) => {
 
       props = {
         model: JSON.stringify(activity !== undefined ? activity.model : {}),
+        activitySlug: activity.activitySlug,
+        state: JSON.stringify(defaultState()),
       };
 
     } else {

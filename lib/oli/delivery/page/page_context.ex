@@ -4,14 +4,15 @@ defmodule Oli.Delivery.Page.PageContext do
   Defines the context required to render a page in delivery mode.
   """
 
-  @enforce_keys [:page, :activities, :objectives, :previous_page, :next_page]
-  defstruct [:page, :activities, :objectives, :previous_page, :next_page]
+  @enforce_keys [:page, :progress_state, :activities, :objectives, :previous_page, :next_page]
+  defstruct [:page, :progress_state, :activities, :objectives, :previous_page, :next_page]
 
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Delivery.Page.PageContext
   alias Oli.Resources.Revision
   alias Oli.Publishing.DeliveryResolver
-  alias Oli.Activities
+  alias Oli.Activities.Realizer
+  alias Oli.Delivery.Attempts
 
   @doc """
   Creates the page context required to render a page in delivery model, based
@@ -25,13 +26,45 @@ defmodule Oli.Delivery.Page.PageContext do
   to a renderer.
   """
   @spec create_page_context(String.t, String.t, any) :: %PageContext{}
-  def create_page_context(context_id, page_slug, container_id \\ nil) do
-
-    # get a view of all current registered activity types
-    registrations = Activities.list_activity_registrations()
+  def create_page_context(context_id, page_slug, user_id, container_id \\ nil) do
 
     # resolve the page revision per context_id
     page_revision = DeliveryResolver.from_revision_slug(context_id, page_slug)
+
+    # track access to this resource
+    Attempts.track_access(page_revision.resource_id, context_id, user_id)
+
+    # this realizes and resolves activities that may be present in the page
+    activity_provider = fn revision ->
+      case Realizer.realize(revision) do
+        [] -> []
+        ids -> DeliveryResolver.from_resource_id(context_id, ids)
+      end
+    end
+
+    {progress_state, activities} = case Attempts.determine_resource_attempt_state(page_revision, context_id, user_id, activity_provider) do
+      {:in_progress, {_, latest_attempts}} -> {:in_progress, ActivityContext.create_context_map(latest_attempts)}
+      {:not_started, _} -> {:not_started, nil}
+    end
+
+    {objectives, previous, next} =
+      retrieve_objectives_previous_next(context_id, page_revision, container_id)
+
+    %PageContext{
+      page: page_revision,
+      progress_state: progress_state,
+      activities: activities,
+      objectives: objectives,
+      previous_page: previous,
+      next_page: next
+    }
+  end
+
+  # We combine retrieve objective titles and previous next page
+  # information in one step so that we can do all their revision
+  # resolution in one step.
+  defp retrieve_objectives_previous_next(context_id,
+    %Revision{objectives: %{"attached" => objective_ids}} = page_revision, container_id) do
 
     # if container_id is nil we assume it is the root
     container = case container_id do
@@ -39,38 +72,24 @@ defmodule Oli.Delivery.Page.PageContext do
       id -> DeliveryResolver.from_resource_id(context_id, id)
     end
 
-    # determine previous and next pages, if any
-    previous_next = get_previous_next(container, page_revision.resource_id)
-
-    # collect all the objectives and activities
-    {objective_ids, activity_ids} = get_referenced_resources(page_revision)
+    previous_next = determine_previous_next(container, page_revision.resource_id)
 
     # resolve all of these references, all at once, storing
     # them in a map based on their resource_id as the key
-    all_resources =
-      objective_ids ++
-      activity_ids ++
-      Enum.filter(previous_next, fn a -> a != nil end)
+    all_resources = objective_ids ++ Enum.filter(previous_next, fn a -> a != nil end)
 
     revisions = DeliveryResolver.from_resource_id(context_id, all_resources)
     |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
 
-    # create a mapping specifically for the activities
-    activities = ActivityContext.create_context_map(activity_ids, revisions, registrations)
+    objective_titles = Enum.map(objective_ids, fn id -> Map.get(revisions, id).title end)
 
-    # create a mapping specifically for the objectives
-    objectives = get_objective_titles(objective_ids, revisions)
+    previous = Map.get(revisions, Enum.at(previous_next, 0))
+    next = Map.get(revisions, Enum.at(previous_next, 1))
 
-    %PageContext{
-      page: page_revision,
-      activities: activities,
-      objectives: objectives,
-      previous_page: Map.get(revisions, Enum.at(previous_next, 0)),
-      next_page: Map.get(revisions, Enum.at(previous_next, 1))
-    }
+    {objective_titles, previous, next}
   end
 
-  defp get_previous_next(%{children: children}, page_resource_id) do
+  defp determine_previous_next(%{children: children}, page_resource_id) do
 
     index = Enum.find_index(children, fn id -> id == page_resource_id end)
 
@@ -80,19 +99,6 @@ defmodule Oli.Delivery.Page.PageContext do
       {a, a} -> [Enum.at(children, a - 1), nil]
       {a, _} -> [Enum.at(children, a - 1), Enum.at(children, a + 1)]
     end
-  end
-
-  defp get_objective_titles(objective_ids, revisions) do
-    Enum.map(objective_ids, fn id -> Map.get(revisions, id).title end)
-  end
-
-  defp get_referenced_resources(
-    %Revision{objectives: %{"attached" => objectives}, content: %{"model" => model}}) do
-
-    activities = Enum.filter(model, fn %{"type" => type} -> type == "activity-reference" end)
-      |> Enum.map(fn %{"activity_id" => id} -> id end)
-
-    {objectives, activities}
   end
 
 end

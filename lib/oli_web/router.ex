@@ -20,6 +20,10 @@ defmodule OliWeb.Router do
 
   # piplien for REST api endpoint routes
   pipeline :api do
+    plug :fetch_session
+    plug :fetch_flash
+    plug :put_secure_browser_headers
+    plug Plug.Telemetry, event_prefix: [:oli, :plug]
     plug :accepts, ["json"]
   end
 
@@ -139,6 +143,24 @@ defmodule OliWeb.Router do
 
     post "/:project/lock/:resource", LockController, :acquire
     delete "/:project/lock/:resource", LockController, :release
+
+  end
+
+  scope "/api/v1/attempt", OliWeb do
+    pipe_through [:api, :protected]
+
+    # post to create a new attempt
+    # put to submit a response
+    # patch to save response state
+
+    post "/part/:attempt_guid", AttemptController, :new_part
+    put "/part/:attempt_guid", AttemptController, :submit_part
+    patch "/part/:attempt_guid", AttemptController, :save_part
+    get "/part/:attempt_guid/hint", AttemptController, :get_hint
+
+    post "/activity/:attempt_guid", AttemptController, :new_activity
+    put "/activity/:attempt_guid", AttemptController, :submit_activity
+    patch "/activity/:attempt_guid", AttemptController, :save_activity
 
   end
 

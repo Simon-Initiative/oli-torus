@@ -172,7 +172,7 @@ function handleTermination(editor: SlateEditor, e: KeyboardEvent) {
           Transforms.removeNodes(editor, { at: path });
 
           const p = ContentModel.create<ContentModel.Paragraph>(
-            { type: 'p', children: [{ text: '' }], id: guid() });
+            { type: 'p', children: [{ text: '' }], id: guid() + ''  });
 
           // Insert it ahead of the next node
           Transforms.insertNodes(editor, p, { at: Path.next(parentPath) });

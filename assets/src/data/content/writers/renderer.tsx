@@ -1,6 +1,6 @@
 import { ContentWriter } from './writer';
 import { HtmlParser } from './html';
-import { RichText } from 'components/activities/multiple_choice/schema';
+import { RichText } from 'components/activities/types';
 import { defaultWriterContext } from './context';
 
 interface Props {

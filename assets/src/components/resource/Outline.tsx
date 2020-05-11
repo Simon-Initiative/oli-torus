@@ -21,7 +21,7 @@ type DragPayload = StructuredContent | ActivityPayload | UnknownPayload;
 
 interface ActivityPayload {
   type: 'ActivityPayload';
-  id: number;
+  id: string;
   activity: Activity;
   reference: ActivityReference;
   project: ProjectSlug;
@@ -29,7 +29,7 @@ interface ActivityPayload {
 
 interface UnknownPayload {
   type: 'UnknownPayload';
-  id: number;
+  id: string;
   data: any;
 }
 
