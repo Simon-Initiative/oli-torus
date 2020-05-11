@@ -93,7 +93,7 @@ describe('multiple choice question', () => {
     const firstChoice = model.choices[0];
     const newModel = MCReducer(model, MCActions.removeChoice(firstChoice.id));
     expect(newModel.choices).toHaveLength(1);
-    expect(newModel.authoring.parts[0].responses[0].feedback).toHaveLength(1);
+    expect(newModel.authoring.parts[0].responses).toHaveLength(1);
   });
 
   it('has the same number of responses as choices', () => {
