@@ -17,10 +17,6 @@ defmodule Oli.Delivery.Page.ActivityContext do
   resolved revisions.
   """
   @spec create_context_map(%{}) :: %{}
-  def create_context_map(%{}) do
-    %{}
-  end
-
   def create_context_map(latest_attempts) do
 
     # get a view of all current registered activity types

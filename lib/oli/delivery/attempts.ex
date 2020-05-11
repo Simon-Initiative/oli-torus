@@ -136,7 +136,7 @@ defmodule Oli.Delivery.Attempts do
       revision_id: resource_revision.id
     })
 
-    {resource_attempt, Enum.reduce(activity_revisions, %{}, fn %Revision{resource_id: resource_id, id: id, content: model}, m ->
+    {resource_attempt, Enum.reduce(activity_revisions, %{}, fn %Revision{resource_id: resource_id, id: id, content: model} = revision, m ->
 
         {:ok, parsed_model} = Model.parse(model)
 
@@ -151,6 +151,13 @@ defmodule Oli.Delivery.Attempts do
           resource_id: resource_id,
           transformed_model: transformed_model
         })
+
+        # We simulate the effect of preloading the revision by setting it
+        # after we create the record. This is needed so that this function matches
+        # the contract of get_latest_attempt - namely that the revision association
+        # on activity attempt records is preloaded.
+        activity_attempt = Map.put(activity_attempt, :revision, revision)
+
         part_attempts = create_part_attempts(parsed_model, activity_attempt)
 
         Map.put(m, resource_id, {activity_attempt, part_attempts})
@@ -164,9 +171,9 @@ defmodule Oli.Delivery.Attempts do
         attempt_guid: UUID.uuid4(),
         activity_attempt_id: activity_attempt.id,
         attempt_number: 1,
-        part_id: p.part_id
+        part_id: p.id
       })
-      Map.put(m, p.part_id, part_attempt)
+      Map.put(m, p.id, part_attempt)
     end)
   end
 
@@ -186,7 +193,7 @@ defmodule Oli.Delivery.Attempts do
 
     results = Repo.all(from aa1 in ActivityAttempt,
       join: r in assoc(aa1, :revision),
-      left_join: aa2 in ActivityAttempt, on: (aa2.resource_attempt_id == ^resource_attempt_id and aa1.id < aa2.id),
+      left_join: aa2 in ActivityAttempt, on: (aa1.resource_id == aa2.resource_id and aa1.id < aa2.id),
       join: pa1 in PartAttempt, on: aa1.id == pa1.activity_attempt_id,
       left_join: pa2 in PartAttempt, on: (aa1.id == pa2.activity_attempt_id and pa1.part_id == pa2.part_id and pa1.id < pa2.id),
       where: aa1.resource_attempt_id == ^resource_attempt_id and is_nil(aa2.id) and is_nil(pa2.id),
@@ -195,7 +202,7 @@ defmodule Oli.Delivery.Attempts do
 
     Enum.reduce(results, %{}, fn {part_attempt, activity_attempt}, m ->
 
-      activity_id = activity_attempt.activity_id
+      activity_id = activity_attempt.resource_id
       part_id = part_attempt.part_id
 
       # ensure we have an entry for this resource
@@ -223,13 +230,27 @@ defmodule Oli.Delivery.Attempts do
       join: s in Section, on: a.section_id == s.id,
       join: ra1 in ResourceAttempt, on: a.id == ra1.resource_access_id,
       left_join: ra2 in ResourceAttempt, on: (a.id == ra2.resource_access_id and ra1.id < ra2.id),
-      where: a.user_id == ^user_id and s.context_id == ^context_id and a.resource_id == ^resource_id,
+      where: a.user_id == ^user_id and s.context_id == ^context_id and a.resource_id == ^resource_id and is_nil(ra2),
       select: ra1)
 
   end
 
-  def save_student_input(context_id, user_id, part_responses) do
+  def save_student_input(part_inputs) do
 
+    Repo.transaction(fn ->
+      length = length(part_inputs)
+      case Enum.reduce_while(part_inputs, :ok, fn %{attempt_guid: attempt_guid, response: response}, _ ->
+
+        case Repo.update_all(from(p in PartAttempt, where: p.attempt_guid == ^attempt_guid), set: [response: response]) do
+          nil -> {:halt, :error}
+          _ -> {:cont, :ok}
+        end
+      end) do
+        :error -> Repo.rollback(:error)
+        :ok -> length
+      end
+
+    end)
 
   end
 

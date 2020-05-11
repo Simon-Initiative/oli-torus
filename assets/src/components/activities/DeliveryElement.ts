@@ -1,6 +1,4 @@
 import { ActivityModelSchema, ActivityState, StudentResponse, Hint, Success } from './types';
-import { ActivitySlug } from 'data/types';
-
 
 export type PartResponse = {
   attemptGuid: string,
@@ -10,11 +8,15 @@ export type PartResponse = {
 export interface DeliveryElementProps<T extends ActivityModelSchema> {
   model: T;
   state: ActivityState;
-  onRequestHint: (partIds: string[]) => Promise<Hint>;
-  onSave: (partResponses: PartResponse[]) => Promise<Success>;
-  onSubmit: (partResponses: PartResponse[]) => void;
-  onResetParts: (partIds: string[]) => void;
-  onReset: () => void;
+
+  onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
+  onSubmitActivity: (attemptGuid: string, partResponses: PartResponse[]) => void;
+  onResetActivity: (attemptGuid: string) => void;
+
+  onRequestHint: (attemptGuid: string) => Promise<Hint>;
+  onSavePart: (attemptGuid: string, response: StudentResponse) => Promise<Success>;
+  onSubmitPart: (attemptGuid: string, response: StudentResponse) => void;
+  onResetPart: (attemptGuid: string) => void;
 }
 
 // An abstract delivery web component, designed to delegate to
@@ -25,25 +27,38 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
 
   mountPoint: HTMLDivElement;
   connected: boolean;
-  onRequestHint: (partIds: string[]) => Promise<Hint>;
-  onSave: (partResponses: PartResponse[]) => Promise<Success>;
-  onSubmit: (partResponses: PartResponse[]) => void;
-  onResetParts: (partIds: string[]) => void;
-  onReset: () => void;
+
+  onRequestHint: (attemptGuid: string) => Promise<Hint>;
+
+  onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
+  onSubmitActivity: (attemptGuid: string, partResponses: PartResponse[]) => void;
+  onResetActivity: (attemptGuid: string) => void;
+
+  onSavePart: (attemptGuid: string, response: StudentResponse) => Promise<Success>;
+  onSubmitPart: (attemptGuid: string, response: StudentResponse) => void;
+  onResetPart: (attemptGuid: string) => void;
 
   constructor() {
     super();
     this.mountPoint = document.createElement('div');
     this.connected = false;
 
-    this.onRequestHint = (partIds: string[]) => this.dispatch('onRequestHint', partIds);
-    this.onSave = (partResponses: PartResponse[]) => this.dispatch('onSave', partResponses);
-    this.onSubmit = (partResponses: PartResponse[]) => this.dispatch('onSubmit', partResponses);
-    this.onResetParts = (partIds: string[]) => this.dispatch('onResetParts', partIds);
-    this.onReset = () => this.dispatch('onReset');
+    this.onRequestHint = (attemptGuid: string) => this.dispatch('requestHint', attemptGuid);
+
+    this.onSaveActivity = (attemptGuid: string, partResponses: PartResponse[]) =>
+      this.dispatch('saveActivity', attemptGuid, partResponses);
+    this.onSubmitActivity = (attemptGuid: string, partResponses: PartResponse[]) =>
+      this.dispatch('submitActivity', attemptGuid, partResponses);
+    this.onResetActivity = (attemptGuid: string) => this.dispatch('resetActivity', attemptGuid);
+
+    this.onSavePart = (attemptGuid: string, response: StudentResponse) =>
+      this.dispatch('savePart', attemptGuid, response);
+    this.onSubmitPart = (attemptGuid: string, response: StudentResponse) =>
+      this.dispatch('submitPart', attemptGuid, response);
+    this.onResetPart = (attemptGuid: string) => this.dispatch('resetPart', attemptGuid);
   }
 
-  dispatch(name: string, payload?: any) : Promise<any> {
+  dispatch(name: string, attemptGuid: string, payload?: any) : Promise<any> {
     return new Promise((resolve, reject) => {
       const continuation = (result : any, error : any) => {
         if (error !== undefined) {
@@ -52,7 +67,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
         }
         resolve(result);
       };
-      this.dispatchEvent(new CustomEvent(name, this.details(continuation, payload)));
+      this.dispatchEvent(new CustomEvent(name, this.details(continuation, attemptGuid, payload)));
     });
   }
 
@@ -65,19 +80,21 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       model,
       state,
       onRequestHint: this.onRequestHint,
-      onSave: this.onSave,
-      onSubmit: this.onSubmit,
-      onResetParts: this.onResetParts,
-      onReset: this.onReset,
+      onSavePart: this.onSavePart,
+      onSubmitPart: this.onSubmitPart,
+      onResetPart: this.onResetPart,
+      onSaveActivity: this.onSaveActivity,
+      onSubmitActivity: this.onSubmitActivity,
+      onResetActivity: this.onResetActivity,
     };
   }
 
-  details(continuation: (result: any, error: any) => void, payload? : any) {
+  details(continuation: (result: any, error: any) => void, attemptGuid: string, payload? : any) {
     return {
       bubbles: true,
       detail: {
-        activitySlug: this.getAttribute('activitySlug'),
         payload,
+        attemptGuid,
         continuation,
       },
     };

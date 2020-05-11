@@ -34,6 +34,7 @@ defmodule Oli.Delivery.Page.PageContext do
     # track access to this resource
     Attempts.track_access(page_revision.resource_id, context_id, user_id)
 
+    # this realizes and resolves activities that may be present in the page
     activity_provider = fn revision ->
       case Realizer.realize(revision) do
         [] -> []

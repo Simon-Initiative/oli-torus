@@ -42,7 +42,6 @@ defmodule Oli.Delivery.Page.PageContextTest do
       context = PageContext.create_page_context(section.context_id, p1.slug, user.id)
 
       # verify activities map
-      assert Map.get(context.activities, a1.resource_id).slug == a1.slug
       assert Map.get(context.activities, a1.resource_id).model == "{}"
 
       # verify objectives map

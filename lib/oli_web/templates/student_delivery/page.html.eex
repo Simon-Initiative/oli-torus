@@ -30,10 +30,46 @@
 
   const div = document.getElementById('eventIntercept');
 
-  div.addEventListener('onSave', function (e) {
+  div.addEventListener('saveActivity', function (e) {
     e.preventDefault();
     e.stopPropagation();
-    makeRequest('/api/v1/attempt/', 'PATCH', { payload: e.detail.payload }, e.detail.continuation);
+    makeRequest('/api/v1/attempt/activity/' + e.detail.attemptGuid, 'PATCH', { partInputs: e.detail.payload }, e.detail.continuation);
+  }, false);
+
+  div.addEventListener('submitActivity', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    makeRequest('/api/v1/attempt/activity/' + e.detail.attemptGuid, 'PUT', { partInputs: e.detail.payload }, e.detail.continuation);
+  }, false);
+
+  div.addEventListener('resetActivity', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    makeRequest('/api/v1/attempt/activity/' + e.detail.attemptGuid, 'POST', {}, e.detail.continuation);
+  }, false);
+
+  div.addEventListener('savePart', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    makeRequest('/api/v1/attempt/part/' + e.detail.attemptGuid, 'PATCH', { input: e.detail.payload }, e.detail.continuation);
+  }, false);
+
+  div.addEventListener('submitPart', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    makeRequest('/api/v1/attempt/part/' + e.detail.attemptGuid, 'PUT', { input: e.detail.payload }, e.detail.continuation);
+  }, false);
+
+  div.addEventListener('resetPart', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    makeRequest('/api/v1/attempt/part/' + e.detail.attemptGuid, 'POST', {}, e.detail.continuation);
+  }, false);
+
+  div.addEventListener('requestHint', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    makeRequest('/api/v1/attempt/part/' + e.detail.attemptGuid + '/hint', 'GET', {}, e.detail.continuation);
   }, false);
 
 </script>

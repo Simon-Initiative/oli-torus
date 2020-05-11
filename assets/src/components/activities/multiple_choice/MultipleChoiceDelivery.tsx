@@ -117,7 +117,8 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
     setSelected(Maybe.just<string>(id));
 
     // Auto-save our student reponse
-    props.onSave([{ attemptGuid: state.parts[0].attemptGuid, response: { input: id } }]);
+    props.onSaveActivity(state.attemptGuid,
+      [{ attemptGuid: state.parts[0].attemptGuid, response: { input: id } }]);
   };
 
   return (

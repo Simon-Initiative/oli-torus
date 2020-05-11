@@ -153,7 +153,14 @@ defmodule OliWeb.Router do
     # put to submit a response
     # patch to save response state
 
-    patch "/", AttemptController, :save
+    post "/part/:attempt_guid", AttemptController, :new_part
+    put "/part/:attempt_guid", AttemptController, :submit_part
+    patch "/part/:attempt_guid", AttemptController, :save_part
+    get "/part/:attempt_guid/hint", AttemptController, :get_hint
+
+    post "/activity/:attempt_guid", AttemptController, :new_activity
+    put "/activity/:attempt_guid", AttemptController, :submit_activity
+    patch "/activity/:attempt_guid", AttemptController, :save_activity
 
   end
 
