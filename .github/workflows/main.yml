@@ -147,4 +147,3 @@ jobs:
           host: tokamak.oli.cmu.edu
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
-          args: "-tt"
