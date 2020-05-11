@@ -7,7 +7,7 @@ defmodule Oli.Delivery.Attempts do
   alias Oli.Delivery.Attempts.{PartAttempt, ResourceAccess, ResourceAttempt, ActivityAttempt}
   alias Oli.Resources.{Revision}
   alias Oli.Activities.Model
-
+  alias Oli.Activities.Transformers
 
 
   @doc """
@@ -138,10 +138,9 @@ defmodule Oli.Delivery.Attempts do
 
     {resource_attempt, Enum.reduce(activity_revisions, %{}, fn %Revision{resource_id: resource_id, id: id, content: model} = revision, m ->
 
+        # Todo, handle and propagate upwards failures in parsing and transformation
         {:ok, parsed_model} = Model.parse(model)
-
-        # todo, apply transformations
-        transformed_model = model
+        {:ok, transformed_model} = Transformers.apply_transforms(model)
 
         {:ok, activity_attempt} = create_activity_attempt(%{
           resource_attempt_id: resource_attempt.id,
