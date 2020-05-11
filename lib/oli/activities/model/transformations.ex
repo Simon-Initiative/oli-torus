@@ -11,7 +11,7 @@ defmodule Oli.Activities.Model.Transformation do
           path: path,
           operation: :shuffle
         }}
-      error -> error
+      _ -> {:error, "invalid operation"}
     end
 
   end
