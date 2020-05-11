@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.21.3">
     <meta name="project" content="OLI Torus v0.1.0">
-    <title>OliWeb.WorkspaceView — OLI Torus v0.1.0</title>
+    <title>Oli.Activities.Transformers — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
     <script src="dist/sidebar_items-d973280eb8.js"></script>
       <script src="docs_config.js"></script>
@@ -67,7 +67,7 @@ OLI Torus      </a>
 
       <h1>
         <small class="app-vsn">OLI Torus v0.1.0</small>
-OliWeb.WorkspaceView          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/workspace_view.ex#L1" title="View Source" class="view-source" rel="help">
+Oli.Activities.Transformers          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities/transformers.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -89,23 +89,9 @@ OliWeb.WorkspaceView          <a href="https://github.com/Simon-Initiative/oli-t
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#__resource__/0">__resource__()</a>
+    <a href="#apply_transforms/1">apply_transforms(model)</a>
   </div>
-    <div class="summary-synopsis"><p>The resource name, as an atom, for this view</p></div>
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#render/2">render(template, assigns \\ %{})</a>
-  </div>
-    <div class="summary-synopsis"><p>Renders the given template locally.</p></div>
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#template_not_found/2">template_not_found(template, assigns)</a>
-  </div>
-    <div class="summary-synopsis"><p>Callback invoked when no template is found.
-By default it raises but can be customized
-to render a particular template.</p></div>
+    <div class="summary-synopsis"><p>Transforms an unparsed activity model.</p></div>
 </div>
   </div>
         </section>
@@ -118,58 +104,23 @@ to render a particular template.</p></div>
             </a>
 Functions          </h1>
           <div class="functions-list">
-<section class="detail" id="__resource__/0">
+<section class="detail" id="apply_transforms/1">
   <div class="detail-header">
-    <a href="#__resource__/0" class="detail-link" title="Link to this function">
+    <a href="#apply_transforms/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">__resource__()</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/workspace_view.ex#L2" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-  </div>
-  <section class="docstring">
-<p>The resource name, as an atom, for this view</p>
-  </section>
-</section>
-<section class="detail" id="render/2">
-    <span id="render/1"></span>
-  <div class="detail-header">
-    <a href="#render/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">render(template, assigns \\ %{})</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/workspace_view.ex#L2" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-  </div>
-  <section class="docstring">
-<p>Renders the given template locally.</p>
-  </section>
-</section>
-<section class="detail" id="template_not_found/2">
-  <div class="detail-header">
-    <a href="#template_not_found/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">template_not_found(template, assigns)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/workspace_view.ex#L2" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">apply_transforms(model)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities/transformers.ex#L12" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
       <div class="specs">
-          <pre>template_not_found(<a href="https://hexdocs.pm/phoenix/1.5.1/Phoenix.Template.html#t:name/0">Phoenix.Template.name</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">no_return</a>()</pre>
+          <pre>apply_transforms(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}</pre>
       </div>
   </div>
   <section class="docstring">
-<p>Callback invoked when no template is found.
-By default it raises but can be customized
-to render a particular template.</p>
+<p>Transforms an unparsed activity model.</p>
   </section>
 </section>
           </div>

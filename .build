@@ -1,4 +1,4 @@
-dist/search_items-05c87f74db.js
+dist/search_items-bd08a7cf3e.js
 dist/app-a225d03098e64fef431a.js
 dist/elixir-0ab8a6a80ebaaa287431.css
 dist/erlang-bd206729da4d0d280293.css
@@ -6,7 +6,7 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/sidebar_items-2ca5ebc720.js
+dist/sidebar_items-d973280eb8.js
 api-reference.html
 readme.html
 license.html
@@ -37,6 +37,9 @@ Oli.Activities.Registration.html
 Oli.Activities.State.html
 Oli.Activities.State.ActivityState.html
 Oli.Activities.State.PartState.html
+Oli.Activities.Transformers.html
+Oli.Activities.Transformers.Shuffle.html
+Oli.Activities.Transformers.Transformer.html
 Oli.Authoring.html
 Oli.Authoring.Authors.AuthorProject.html
 Oli.Authoring.Authors.ProjectRole.html
