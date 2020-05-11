@@ -267,8 +267,6 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :section_id, references(:sections)
       add :resource_id, references(:resources)
 
-      add :parent_id, references(:resource_accesses)
-
     end
     create index(:resource_accesses, [:resource_id])
     create index(:resource_accesses, [:section_id])
@@ -278,6 +276,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
     create table(:resource_attempts) do
       timestamps(type: :timestamptz)
 
+      add :attempt_guid, :string
       add :attempt_number, :integer
       add :date_evaluated, :utc_datetime
       add :score, :decimal
@@ -288,10 +287,33 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
     end
 
+    create index(:resource_attempts, [:resource_access_id])
+    create unique_index(:resource_attempts, [:attempt_guid], name: :resource_attempt_guid_index)
+
+
+    create table(:activity_attempts) do
+      timestamps(type: :timestamptz)
+
+      add :attempt_guid, :string
+      add :attempt_number, :integer
+      add :date_evaluated, :utc_datetime
+      add :score, :decimal
+      add :out_of, :decimal
+      add :transformed_model, :map
+
+      add :resource_attempt_id, references(:resource_attempts)
+      add :revision_id, references(:revisions)
+      add :resource_id, references(:resources)
+
+    end
+
+    create unique_index(:activity_attempts, [:attempt_guid], name: :activity_attempt_guid_index)
+    create index(:activity_attempts, [:resource_attempt_id])
 
     create table(:part_attempts) do
       timestamps(type: :timestamptz)
 
+      add :attempt_guid, :string
       add :attempt_number, :integer
       add :date_evaluated, :utc_datetime
       add :score, :decimal
@@ -300,9 +322,12 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :feedback, :map
       add :hints,  {:array, :string}
       add :part_id, :string
-      add :resource_attempt_id, references(:resource_attempts)
+      add :activity_attempt_id, references(:activity_attempts)
 
     end
+
+    create index(:part_attempts, [:activity_attempt_id])
+    create unique_index(:part_attempts, [:attempt_guid], name: :attempt_guid_index)
 
   end
 end

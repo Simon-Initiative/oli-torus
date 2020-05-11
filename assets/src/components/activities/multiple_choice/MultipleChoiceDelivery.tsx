@@ -6,7 +6,6 @@ import { Choice } from 'components/activities/multiple_choice/schema';
 import * as ActivityTypes from '../types';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { Maybe } from 'tsmonad';
-import { processUpdate } from 'components/resource/undo';
 
 interface StemProps {
   stem: Stem;
@@ -118,7 +117,7 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
     setSelected(Maybe.just<string>(id));
 
     // Auto-save our student reponse
-    props.onSave([{ partId: '1', response: { input: id } }]);
+    props.onSave([{ attemptGuid: state.parts[0].attemptGuid, response: { input: id } }]);
   };
 
   return (

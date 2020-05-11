@@ -4,6 +4,7 @@ defmodule Oli.Activities.State.PartState do
   alias Oli.Activities.Model.Part
 
   @enforce_keys [
+    :attemptGuid,
     :attemptNumber,
     :dateEvaluated,
     :score,
@@ -18,6 +19,7 @@ defmodule Oli.Activities.State.PartState do
 
   @derive Jason.Encoder
   defstruct [
+    :attemptGuid,
     :attemptNumber,
     :dateEvaluated,
     :score,
@@ -39,6 +41,7 @@ defmodule Oli.Activities.State.PartState do
       |> Enum.filter(fn id -> !is_nil(id) end)
 
     %Oli.Activities.State.PartState{
+      attemptGuid: attempt.attempt_guid,
       attemptNumber: attempt.attempt_number,
       dateEvaluated: attempt.date_evaluated,
       score: attempt.score,
@@ -53,20 +56,6 @@ defmodule Oli.Activities.State.PartState do
 
   end
 
-  def default_state(%Part{} = part) do
-    %Oli.Activities.State.PartState{
-      attemptNumber: 1,
-      dateEvaluated: nil,
-      score: nil,
-      outOf: nil,
-      response: nil,
-      feedback: nil,
-      hints: [],
-      hasMoreHints: length(part.hints) > 0,
-      hasMoreAttempts: true,
-      partId: part.id
-    }
-  end
 
 end
 

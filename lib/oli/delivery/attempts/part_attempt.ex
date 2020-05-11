@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Attempts.PartAttempt do
 
   schema "part_attempts" do
 
+    field :attempt_guid, :string
     field :attempt_number, :integer
     field :date_evaluated, :utc_datetime
     field :score, :decimal
@@ -13,7 +14,7 @@ defmodule Oli.Delivery.Attempts.PartAttempt do
     field :hints, {:array, :string}, default: []
     field :part_id, :string
 
-    belongs_to :resource_attempt, Oli.Delivery.Attempts.ResourceAttempt
+    belongs_to :activity_attempt, Oli.Delivery.Attempts.ActivityAttempt
 
     timestamps(type: :utc_datetime)
   end
@@ -21,7 +22,7 @@ defmodule Oli.Delivery.Attempts.PartAttempt do
   @doc false
   def changeset(score, attrs) do
     score
-    |> cast(attrs, [:attempt_number, :date_evaluated, :score, :out_of, :response, :feedback, :hints, :part_id, :resource_attempt_id])
-    |> validate_required([:attempt_number, :part_id, :resource_attempt_id])
+    |> cast(attrs, [:attempt_guid, :attempt_number, :date_evaluated, :score, :out_of, :response, :feedback, :hints, :part_id, :activity_attempt_id])
+    |> validate_required([:attempt_guid, :attempt_number, :part_id, :activity_attempt_id])
   end
 end

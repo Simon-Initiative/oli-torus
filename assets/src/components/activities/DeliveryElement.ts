@@ -3,12 +3,11 @@ import { ActivitySlug } from 'data/types';
 
 
 export type PartResponse = {
-  partId: string,
+  attemptGuid: string,
   response: StudentResponse,
 };
 
 export interface DeliveryElementProps<T extends ActivityModelSchema> {
-  activitySlug: ActivitySlug;
   model: T;
   state: ActivityState;
   onRequestHint: (partIds: string[]) => Promise<Hint>;
@@ -61,11 +60,9 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
 
     const model = JSON.parse(this.getAttribute('model') as any);
     const state = JSON.parse(this.getAttribute('state') as any) as ActivityState;
-    const activitySlug = this.getAttribute('activitySlug') as any;
 
     return {
       model,
-      activitySlug,
       state,
       onRequestHint: this.onRequestHint,
       onSave: this.onSave,

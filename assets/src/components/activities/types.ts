@@ -33,6 +33,7 @@ export interface ActivityModelSchema {
 }
 
 export interface PartState {
+  attemptGuid: string;
   attemptNumber: number;
   dateEvaluated: Date | null;
   score: number | null;
@@ -46,6 +47,7 @@ export interface PartState {
 }
 
 export interface ActivityState {
+  attemptGuid: string;
   attemptNumber: number;
   dateEvaluated: Date | null;
   score: number | null;

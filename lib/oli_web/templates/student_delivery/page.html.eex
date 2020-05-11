@@ -31,18 +31,9 @@
   const div = document.getElementById('eventIntercept');
 
   div.addEventListener('onSave', function (e) {
-
     e.preventDefault();
     e.stopPropagation();
-
-    const body = {
-      activitySlug: e.detail.activitySlug,
-      resourceSlug: '<%= @revision_slug %>',
-      contextId: '<%= @context_id %>',
-      payload: e.detail.payload,
-    };
-    makeRequest('/api/v1/attempt', 'PATCH', body, e.detail.continuation);
-
+    makeRequest('/api/v1/attempt/', 'PATCH', { payload: e.detail.payload }, e.detail.continuation);
   }, false);
 
 </script>
