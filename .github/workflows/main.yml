@@ -136,8 +136,9 @@ jobs:
         run: |
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
+          ip addr show
 
-      - name: Deploy via SSH
+      - name: 💰 Deploy via SSH
         uses: fifsky/ssh-action@master
         with:
           command: |
