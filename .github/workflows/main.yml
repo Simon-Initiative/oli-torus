@@ -14,114 +14,114 @@ on:
       - test-deploy   # TODO: REMOVE
 
 jobs:
-  elixir-build-test:
-    runs-on: ubuntu-latest
+  # elixir-build-test:
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: 🛎️ Checkout
-        uses: actions/checkout@v2
+  #   steps:
+  #     - name: 🛎️ Checkout
+  #       uses: actions/checkout@v2
 
-      - name: 🔧 Configure
-        run: cp oli.example.env oli.env && cp postgres.example.env postgres.env
+  #     - name: 🔧 Configure
+  #       run: cp oli.example.env oli.env && cp postgres.example.env postgres.env
 
-      - name: 🗄 Start test database
-        run: docker-compose up -d postgres
+  #     - name: 🗄 Start test database
+  #       run: docker-compose up -d postgres
 
-      - name: 🧪 Setup elixir
-        uses: actions/setup-elixir@v1
-        with:
-          elixir-version: 1.10.2 # Define the elixir version [required]
-          otp-version: 22.2 # Define the OTP version [required]
+  #     - name: 🧪 Setup elixir
+  #       uses: actions/setup-elixir@v1
+  #       with:
+  #         elixir-version: 1.10.2 # Define the elixir version [required]
+  #         otp-version: 22.2 # Define the OTP version [required]
 
-      - name: ⬇️ Install elixir dependencies
-        run: mix deps.get
+  #     - name: ⬇️ Install elixir dependencies
+  #       run: mix deps.get
 
-      - name: 🔨 Build dependencies
-        run: mix deps.compile
+  #     - name: 🔨 Build dependencies
+  #       run: mix deps.compile
 
-      - name: 🔨 Build project
-        run: set -a;source oli.env && mix clean && mix compile --warnings-as-errors
+  #     - name: 🔨 Build project
+  #       run: set -a;source oli.env && mix clean && mix compile --warnings-as-errors
 
-      - name: ⚙️ Run tests
-        run: set -a;source oli.env && mix test.coverage
+  #     - name: ⚙️ Run tests
+  #       run: set -a;source oli.env && mix test.coverage
 
-  ts-build-test:
-    runs-on: ubuntu-latest
+  # ts-build-test:
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: 🛎️ Checkout
-        uses: actions/checkout@v2
+  #   steps:
+  #     - name: 🛎️ Checkout
+  #       uses: actions/checkout@v2
 
-      - name: 🔧 Configure
-        uses: actions/setup-node@v1
-        with:
-          node-version: '12.x'
+  #     - name: 🔧 Configure
+  #       uses: actions/setup-node@v1
+  #       with:
+  #         node-version: '12.x'
 
-      - name: 🧪 Setup elixir
-        uses: actions/setup-elixir@v1
-        with:
-          elixir-version: 1.10.2 # Define the elixir version [required]
-          otp-version: 22.2 # Define the OTP version [required]
+  #     - name: 🧪 Setup elixir
+  #       uses: actions/setup-elixir@v1
+  #       with:
+  #         elixir-version: 1.10.2 # Define the elixir version [required]
+  #         otp-version: 22.2 # Define the OTP version [required]
 
-      - name: ⬇️ Install elixir dependencies
-        run: mix deps.get
+  #     - name: ⬇️ Install elixir dependencies
+  #       run: mix deps.get
 
-      - name: Install node_module dependencies 📦
-        run: cd assets && npm install
+  #     - name: Install node_module dependencies 📦
+  #       run: cd assets && npm install
 
-      - name: 🧹 Lint
-        run: cd assets && npm run lint
+  #     - name: 🧹 Lint
+  #       run: cd assets && npm run lint
 
-      - name: 🔨 Build
-        run: cd assets && npm run deploy
+  #     - name: 🔨 Build
+  #       run: cd assets && npm run deploy
 
-      - name: ⚙️ Test
-        run: cd assets && npm run test
+  #     - name: ⚙️ Test
+  #       run: cd assets && npm run test
 
-  build-release:
-    runs-on: ubuntu-latest
-    # needs: [elixir-build-test, ts-build-test]
+  # build-release:
+  #   runs-on: ubuntu-latest
+  #   # needs: [elixir-build-test, ts-build-test]
 
-    # only run this job if the workflow is running on the master branch
-    # if: github.ref == 'refs/heads/master'
-    if: github.ref == 'refs/heads/test-deploy'   # TODO: REPLACE WITH MASTER
+  #   # only run this job if the workflow is running on the master branch
+  #   # if: github.ref == 'refs/heads/master'
+  #   if: github.ref == 'refs/heads/test-deploy'   # TODO: REPLACE WITH MASTER
 
-    steps:
-      - name: 🛎️ Checkout
-        uses: actions/checkout@v2
+  #   steps:
+  #     - name: 🛎️ Checkout
+  #       uses: actions/checkout@v2
 
-      - name: 🧾 Compute build info
-        id: info
-        run: |
-          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-          echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
+  #     - name: 🧾 Compute build info
+  #       id: info
+  #       run: |
+  #         echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+  #         echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
 
-      - name: 📦 Package release
-        # uses: ./.github/actions/phoenix-builder
-        # Use the prebuilt builder image on dockerhub until github improves caching across builds
-        uses: docker://olisimon/amazonlinux-phoenix:1.5.1
+  #     - name: 📦 Package release
+  #       # uses: ./.github/actions/phoenix-builder
+  #       # Use the prebuilt builder image on dockerhub until github improves caching across builds
+  #       uses: docker://olisimon/amazonlinux-phoenix:1.5.1
 
-      - name: 📦⬆️ Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: oli-release-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}
-          path: _build/prod/rel/oli
+  #     - name: 📦⬆️ Upload artifact
+  #       uses: actions/upload-artifact@v2
+  #       with:
+  #         name: oli-release-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}
+  #         path: _build/prod/rel/oli
 
-      # - name: 📦⬆️ Upload release to S3
-      #   uses: jakejarvis/s3-sync-action@master
-      #   with:
-      #     args: --acl public-read --follow-symlinks --delete
-      #   env:
-      #     AWS_S3_BUCKET: 'oli-torus-releases'
-      #     AWS_ACCESS_KEY_ID: ${{ secrets.SIMON_BOT_AWS_ACCESS_KEY_ID }}
-      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.SIMON_BOT_AWS_SECRET_ACCESS_KEY }}
-      #     AWS_REGION: 'us-east-2'
-      #     SOURCE_DIR: '_build/prod/rel/oli'
-      #     DEST_DIR: ${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}
+  #     # - name: 📦⬆️ Upload release to S3
+  #     #   uses: jakejarvis/s3-sync-action@master
+  #     #   with:
+  #     #     args: --acl public-read --follow-symlinks --delete
+  #     #   env:
+  #     #     AWS_S3_BUCKET: 'oli-torus-releases'
+  #     #     AWS_ACCESS_KEY_ID: ${{ secrets.SIMON_BOT_AWS_ACCESS_KEY_ID }}
+  #     #     AWS_SECRET_ACCESS_KEY: ${{ secrets.SIMON_BOT_AWS_SECRET_ACCESS_KEY }}
+  #     #     AWS_REGION: 'us-east-2'
+  #     #     SOURCE_DIR: '_build/prod/rel/oli'
+  #     #     DEST_DIR: ${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}
 
   deploy:
     runs-on: ubuntu-latest
-    needs: [build-release]
+    # needs: [build-release]
 
     # only run this job if the workflow is running on the test branch
     # if: github.ref == 'refs/heads/test'
@@ -143,6 +143,6 @@ jobs:
           command: |
             cd /torus
             ls -la
-          host: 'tokamak.oli.cmu.edu'
-          user: root
+          host: tokamak.oli.cmu.edu
+          user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
