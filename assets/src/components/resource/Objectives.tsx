@@ -17,7 +17,7 @@ export const Objectives = (props: ObjectivesProps) => {
 
   // Typeahed throws a bunch of warnings if it doesn't contain
   // a unique DOM id.  So we generate one for it.
-  const [id] = useState('' + guid);
+  const [id] = useState(guid());
 
   // Typeahead options MUST contain an 'id' field.  So we add one in, using
   // our slug as its contents.

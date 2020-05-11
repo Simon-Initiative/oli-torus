@@ -3,9 +3,14 @@ defmodule Oli.Seeder do
   alias Oli.Publishing
   alias Oli.Repo
   alias Oli.Accounts.{SystemRole, ProjectRole, Institution, Author}
+  alias Oli.Delivery.Attempts
+  alias Oli.Delivery.Attempts.{ResourceAccess}
+  alias Oli.Activities.Model.Part
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
   alias Oli.Authoring.Course.{Project, Family}
   alias Oli.Publishing.Publication
+  alias Oli.Accounts.LtiToolConsumer
+  alias Oli.Accounts.User
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Attempts.Snapshot
 
@@ -46,6 +51,7 @@ defmodule Oli.Seeder do
       |> Map.put(:page2, page2)
       |> Map.put(:revision1, revision1)
       |> Map.put(:revision2, revision2)
+      |> add_lti_consumer(%{}, :lti_consumer)
 
   end
 
@@ -102,7 +108,70 @@ defmodule Oli.Seeder do
       |> Map.put(:page2, page2)
       |> Map.put(:revision1, revision1)
       |> Map.put(:revision2, revision2)
+      |> add_lti_consumer(%{}, :lti_consumer)
 
+  end
+
+  def create_resource_attempt(map, attrs, user_tag, resource_tag, revision_tag, tag \\ nil) do
+
+    user = Map.get(map, user_tag)
+    resource = Map.get(map, resource_tag)
+    revision = Map.get(map, revision_tag)
+    section = map.section
+
+    %ResourceAccess{id: id} = Attempts.track_access(resource.id, section.context_id, user.id)
+
+    attrs = Map.merge(attrs, %{
+      resource_access_id: id,
+      revision_id: revision.id,
+      attempt_guid: UUID.uuid4()
+    })
+
+    {:ok, attempt} = Attempts.create_resource_attempt(attrs)
+
+    case tag do
+      nil -> map
+      t -> Map.put(map, t, attempt)
+    end
+  end
+
+  def create_activity_attempt(map, attrs, resource_tag, revision_tag, attempt_tag, tag \\ nil) do
+
+    resource_attempt = Map.get(map, attempt_tag)
+    resource = Map.get(map, resource_tag)
+    revision = Map.get(map, revision_tag)
+
+    attrs = Map.merge(attrs, %{
+      resource_attempt_id: resource_attempt.id,
+      revision_id: revision.id,
+      resource_id: resource.id,
+      attempt_guid: UUID.uuid4()
+    })
+
+    {:ok, attempt} = Attempts.create_activity_attempt(attrs)
+
+    case tag do
+      nil -> map
+      t -> Map.put(map, t, attempt)
+    end
+  end
+
+  def create_part_attempt(map, attrs, %Part{} = part, attempt_tag, tag \\ nil) do
+
+    activity_attempt = Map.get(map, attempt_tag)
+
+    attrs = Map.merge(attrs, %{
+      activity_attempt_id: activity_attempt.id,
+      part_id: part.id,
+      attempt_guid: UUID.uuid4()
+    })
+
+    {:ok, attempt} = Attempts.create_part_attempt(attrs)
+
+    case tag do
+      nil -> map
+      t -> Map.put(map, t, attempt)
+    end
   end
 
   defp publish_resource(publication, resource, revision) do
@@ -118,6 +187,57 @@ defmodule Oli.Seeder do
     publish_resource(publication, resource, revision)
 
     %{resource: resource, revision: revision}
+  end
+
+  def add_user(map, attrs, tag \\ nil) do
+
+    consumer = map.lti_consumer
+    institution = map.institution
+
+    params =
+      attrs
+      |> Enum.into(%{
+        email: "ironman#{System.unique_integer([:positive])}@example.com",
+        first_name: "Tony",
+        last_name: "Stark",
+        user_id: "2u9dfh7979hfd",
+        user_image: "none",
+        roles: "none",
+        lti_tool_consumer_id: consumer.id,
+        institution_id: institution.id
+      })
+
+    {:ok, user} =
+      User.changeset(%User{}, params)
+      |> Repo.insert()
+
+    case tag do
+      nil -> map
+      t -> Map.put(map, t, user)
+    end
+  end
+
+  def add_lti_consumer(map, attrs, tag \\ nil) do
+    params =
+      attrs
+      |> Enum.into(%{
+        info_product_family_code: "code",
+        info_version: "1",
+        instance_contact_email: "example@example.com",
+        instance_guid: "2u9dfh7979hfd",
+        instance_name: "none",
+        institution_id: map.institution.id,
+        author_id: map.author.id
+      })
+
+    {:ok, consumer} =
+      LtiToolConsumer.changeset(%LtiToolConsumer{}, params)
+      |> Repo.insert()
+
+    case tag do
+      nil -> map
+      t -> Map.put(map, t, consumer)
+    end
   end
 
   def add_page(map, attrs, tag \\ nil) do
@@ -141,6 +261,22 @@ defmodule Oli.Seeder do
     end
   end
 
+
+
+  def create_activity(attrs, publication, project, author) do
+
+    {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
+
+    attrs = Map.merge(%{activity_type_id: 1, author_id: author.id, objectives: %{ "attached" => []}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"), children: [], content: %{}, deleted: false, title: "test", resource_id: resource.id}, attrs)
+
+    {:ok, revision} = Oli.Resources.create_revision(attrs)
+    {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: resource.id}) |> Repo.insert
+
+    publish_resource(publication, resource, revision)
+
+    %{resource: resource, revision: revision}
+  end
+
   def add_activity(map, attrs, tag \\ nil) do
 
     author = map.author
@@ -162,7 +298,11 @@ defmodule Oli.Seeder do
     end
   end
 
-  def create_activity(attrs, publication, project, author) do
+  def add_activity(map, attrs, publication_tag, project_tag, author_tag, resource_tag, revision_tag) do
+
+    author = Map.get(map, author_tag)
+    project = Map.get(map, project_tag)
+    publication = Map.get(map, publication_tag)
 
     {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
 
@@ -173,7 +313,8 @@ defmodule Oli.Seeder do
 
     publish_resource(publication, resource, revision)
 
-    %{resource: resource, revision: revision}
+    Map.put(map, resource_tag, resource)
+    |> Map.put(revision_tag, revision)
   end
 
   def attach_pages_to(resources, container, container_revision, publication) do

@@ -34,7 +34,7 @@ defmodule OliWeb.StudentDeliveryController do
 
     if Sections.is_enrolled_as?(user.id, context_id, SectionRoles.get_by_type("student")) do
 
-      context = PageContext.create_page_context(context_id, revision_slug)
+      context = PageContext.create_page_context(context_id, revision_slug, user.id)
 
       render_context = %Context{user: user, activity_map: context.activities}
       page_model = Map.get(context.page.content, "model")

@@ -9,6 +9,7 @@ defmodule Oli.Delivery.Evaluation  do
 
   @spec parse_strategy(String.t) :: {:ok, :regex | :numeric} | {:error, :invalid}
   def parse_strategy(strategy) do
+
     if Map.has_key?(@eval_strategies_from_string, strategy) do
       {:ok, Map.get(@eval_strategies_from_string, strategy)}
     else

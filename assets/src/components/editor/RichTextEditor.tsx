@@ -1,5 +1,5 @@
 import React from 'react';
-import { RichText } from 'components/activities/multiple_choice/schema';
+import { RichText } from 'components/activities/types';
 import { Editor } from 'components/editor/Editor';
 import { getToolbarForResourceType } from 'components/resource/toolbar';
 

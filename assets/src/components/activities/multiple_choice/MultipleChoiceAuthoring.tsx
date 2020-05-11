@@ -32,7 +32,7 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
         onEditChoice={(id, content) => dispatch(MCActions.editChoice(id, content))}
         onRemoveChoice={id => dispatch(MCActions.removeChoice(id))} />
       <Feedback {...sharedProps}
-        onEditFeedback={(id, content) => dispatch(MCActions.editFeedback(id, content))} />
+        onEditResponse={(id, content) => dispatch(MCActions.editFeedback(id, content))} />
       <Hints {...sharedProps}
         onAddHint={() => dispatch(MCActions.addHint())}
         onEditHint={(id, content) => dispatch(MCActions.editHint(id, content))}

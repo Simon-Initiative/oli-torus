@@ -1,35 +1,38 @@
 import React from 'react';
 import { Heading } from 'components/misc/Heading';
 import { RichTextEditor } from 'components/editor/RichTextEditor';
-import { ModelEditorProps, RichText } from '../schema';
+import { ModelEditorProps } from '../schema';
+import { RichText } from '../../types';
 import { Description } from 'components/misc/Description';
 import { IconCorrect } from 'components/misc/IconCorrect';
 
 interface FeedbackProps extends ModelEditorProps {
-  onEditFeedback: (id: number, content: RichText) => void;
+  onEditResponse: (id: string, content: RichText) => void;
 }
-export const Feedback = ({ onEditFeedback, model, editMode }: FeedbackProps) => {
-  const { authoring: { feedback } } = model;
+export const Feedback = ({ onEditResponse, model, editMode }: FeedbackProps) => {
 
-  const correctFeedback = feedback.find(f => f.score === 1);
-  if (!correctFeedback) {
-    throw new Error('Correct feedback could not be found:' + JSON.stringify(feedback));
+  const { authoring: { parts } } = model;
+
+  const correctResponse = parts[0].responses.find(r => r.score === 1);
+  if (!correctResponse) {
+    throw new Error('Correct response could not be found:' + JSON.stringify(parts));
   }
-  const incorrectFeedback = feedback.filter(feedback => feedback.id !== correctFeedback.id);
+  const incorrectResponses = parts[0].responses
+    .filter(r => r.id !== correctResponse.id);
 
   return (
     <div style={{ margin: '2rem 0' }}>
       <Heading title="Answer Choice Feedback" subtitle="Providing feedback when a student answers a
         question is one of the best ways to reinforce their understanding." id="feedback" />
-      <React.Fragment key={correctFeedback.id}>
-        <RichTextEditor editMode={editMode} text={correctFeedback.content}
-          onEdit={content => onEditFeedback(correctFeedback.id, content)}>
+      <React.Fragment key={correctResponse.id}>
+        <RichTextEditor editMode={editMode} text={correctResponse.feedback.content}
+          onEdit={content => onEditResponse(correctResponse.id, content)}>
             <Description><IconCorrect /> Feedback for Correct Answer</Description>
         </RichTextEditor>
       </React.Fragment>
-      {incorrectFeedback.map((feedback, index) =>
-        <RichTextEditor key={feedback.id} editMode={editMode} text={feedback.content}
-          onEdit={content => onEditFeedback(feedback.id, content)}>
+      {incorrectResponses.map((response, index) =>
+        <RichTextEditor key={response.id} editMode={editMode} text={response.feedback.content}
+          onEdit={content => onEditResponse(response.id, content)}>
           <Description>Feedback for Common Misconception {index + 1}</Description>
         </RichTextEditor>)}
     </div>

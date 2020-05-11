@@ -9,7 +9,7 @@ defmodule Oli.Delivery.Attempts.Snapshot do
     # The page, activity and part that this snapshot pertains to
     belongs_to :resource, Oli.Resources.Resource
     belongs_to :activity, Oli.Resources.Resource
-    field :part_id, :integer
+    field :part_id, :string
 
     # Which user and section
     belongs_to :user, Oli.Accounts.User

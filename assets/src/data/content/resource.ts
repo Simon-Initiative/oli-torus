@@ -64,14 +64,14 @@ export const createDefaultStructuredContent = () => {
 
 export interface StructuredContent {
   type: 'content';
-  id: number;
+  id: string;
   children: ModelElement[];
   purpose: ContentPurpose;
 }
 
 export interface ActivityReference {
   type: 'activity-reference';
-  id: number;
+  id: string;
   activitySlug: ActivitySlug;
   purpose: ActivityPurpose;
   children: [];
