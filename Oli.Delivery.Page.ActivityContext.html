@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Delivery.Page.ActivityContext — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-f12d656db2.js"></script>
+    <script src="dist/sidebar_items-2ca5ebc720.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -92,9 +92,9 @@ Oli.Delivery.Page.ActivityContext          <a href="https://github.com/Simon-Ini
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#create_context_map/3">create_context_map(activity_ids, revisions, registrations)</a>
+    <a href="#create_context_map/1">create_context_map(latest_attempts)</a>
   </div>
-    <div class="summary-synopsis"><p>Creates a mapping of activity id to an <code class="inline">%ActivityContext</code> struct, based
+    <div class="summary-synopsis"><p>Creates a mapping of activity id to an <code class="inline">%ActivitySummary</code> struct, based
 off of the supplied list of activity ids and a map of resource ids to
 resolved revisions.</p></div>
 </div>
@@ -109,23 +109,23 @@ resolved revisions.</p></div>
             </a>
 Functions          </h1>
           <div class="functions-list">
-<section class="detail" id="create_context_map/3">
+<section class="detail" id="create_context_map/1">
   <div class="detail-header">
-    <a href="#create_context_map/3" class="detail-link" title="Link to this function">
+    <a href="#create_context_map/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">create_context_map(activity_ids, revisions, registrations)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/activity_context.ex#L16" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">create_context_map(latest_attempts)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/activity_context.ex#L20" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
       <div class="specs">
-          <pre>create_context_map([<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()], %{}, []) :: %{}</pre>
+          <pre>create_context_map(%{}) :: %{}</pre>
       </div>
   </div>
   <section class="docstring">
-<p>Creates a mapping of activity id to an <code class="inline">%ActivityContext</code> struct, based
+<p>Creates a mapping of activity id to an <code class="inline">%ActivitySummary</code> struct, based
 off of the supplied list of activity ids and a map of resource ids to
 resolved revisions.</p>
   </section>

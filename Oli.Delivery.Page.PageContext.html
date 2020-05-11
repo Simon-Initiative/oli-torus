@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Delivery.Page.PageContext — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-f12d656db2.js"></script>
+    <script src="dist/sidebar_items-2ca5ebc720.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -92,7 +92,7 @@ Oli.Delivery.Page.PageContext          <a href="https://github.com/Simon-Initiat
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#create_page_context/3">create_page_context(context_id, page_slug, container_id \\ nil)</a>
+    <a href="#create_page_context/4">create_page_context(context_id, page_slug, user_id, container_id \\ nil)</a>
   </div>
     <div class="summary-synopsis"><p>Creates the page context required to render a page in delivery model, based
 off of the section context id, the slug of the page to render, and an
@@ -110,28 +110,18 @@ specified, the container is assumed to be the root resource of the publication.<
             </a>
 Functions          </h1>
           <div class="functions-list">
-<section class="detail" id="create_page_context/3">
-    <span id="create_page_context/2"></span>
+<section class="detail" id="create_page_context/4">
+    <span id="create_page_context/3"></span>
   <div class="detail-header">
-    <a href="#create_page_context/3" class="detail-link" title="Link to this function">
+    <a href="#create_page_context/4" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">create_page_context(context_id, page_slug, container_id \\ nil)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L28" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">create_page_context(context_id, page_slug, user_id, container_id \\ nil)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L29" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
-      <div class="specs">
-          <pre>create_page_context(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()) ::
-  %Oli.Delivery.Page.PageContext{
-    activities: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    next_page: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    objectives: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    page: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    previous_page: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
-  }</pre>
-      </div>
   </div>
   <section class="docstring">
 <p>Creates the page context required to render a page in delivery model, based

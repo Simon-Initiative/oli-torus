@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.21.3">
+    <meta name="project" content="OLI Torus v0.1.0">
+    <title>Oli.Delivery.Attempts — OLI Torus v0.1.0</title>
+    <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
+    <script src="dist/sidebar_items-2ca5ebc720.js"></script>
+      <script src="docs_config.js"></script>
+    <script async src="dist/app-a225d03098e64fef431a.js"></script>
+  </head>
+  <body data-type="modules">
+    <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+<div class="main">
+
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" title="Collapse/expand sidebar"></span>
+</button>
+
+<section class="sidebar">
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button">
+      <span class="icon-search" aria-hidden="true"></span>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button">
+      <span class="icon-cross" title="Cancel search"></span>
+    </button>
+    <label class="search-label">
+      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Search" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectDetails">
+      <a href="http://oli.cmu.edu" class="sidebar-projectName">
+OLI Torus      </a>
+      <h2 class="sidebar-projectVersion">
+        v0.1.0
+      </h2>
+    </div>
+      <a href="http://oli.cmu.edu">
+        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
+      </a>
+  </div>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list" href="#full-list">Modules</a></li>
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+      <h1>
+        <small class="app-vsn">OLI Torus v0.1.0</small>
+Oli.Delivery.Attempts          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+      </h1>
+
+
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create_activity_attempt/1">create_activity_attempt(attrs \\ %{})</a>
+  </div>
+    <div class="summary-synopsis"><p>Creates an activity attempt.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create_new_attempt_tree/5">create_new_attempt_tree(old_resource_attempt, resource_revision, context_id, user_id, activity_provider)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create_part_attempt/1">create_part_attempt(attrs \\ %{})</a>
+  </div>
+    <div class="summary-synopsis"><p>Creates a part attempt.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create_resource_attempt/1">create_resource_attempt(attrs \\ %{})</a>
+  </div>
+    <div class="summary-synopsis"><p>Creates a resource attempt.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#determine_resource_attempt_state/4">determine_resource_attempt_state(resource_revision, context_id, user_id, activity_provider)</a>
+  </div>
+    <div class="summary-synopsis"><p>Determine the attempt state of this resource, that has a given set of activities
+and activity revisions present.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_graded_resource_state/5">get_graded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_latest_attempts/1">get_latest_attempts(resource_attempt_id)</a>
+  </div>
+    <div class="summary-synopsis"><p>Retrieves the state of the latest attempts for a given resource attempt id.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_latest_resource_attempt/3">get_latest_resource_attempt(resource_id, context_id, user_id)</a>
+  </div>
+    <div class="summary-synopsis"><p>Retrieves the latest resource attempt for a given resource id,
+context id and user id.  If no attempts exist, returns nil.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_resource_access/3">get_resource_access(resource_id, context_id, user_id)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_resource_attempt_history/3">get_resource_attempt_history(resource_id, context_id, user_id)</a>
+  </div>
+    <div class="summary-synopsis"><p>Retrieves the resource access record and all (if any) attempts related to it
+in a two element tuple of the form</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_resource_state/5">get_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_ungraded_resource_state/5">get_ungraded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#save_student_input/1">save_student_input(part_inputs)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#track_access/3">track_access(resource_id, context_id, user_id)</a>
+  </div>
+    <div class="summary-synopsis"><p>Creates or updates an access record for a given resource, section context id and user. When
+created the access count is set to 1, otherwise on updates the
+access count is incremented.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#update_activity_attempt/2">update_activity_attempt(activity_attempt, attrs)</a>
+  </div>
+    <div class="summary-synopsis"><p>Updates an activity attempt.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#update_part_attempt/2">update_part_attempt(part_attempt, attrs)</a>
+  </div>
+    <div class="summary-synopsis"><p>Updates a part attempt.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#update_resource_attempt/2">update_resource_attempt(resource_attempt, attrs)</a>
+  </div>
+    <div class="summary-synopsis"><p>Updates a resource attempt.</p></div>
+</div>
+  </div>
+        </section>
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions          </h1>
+          <div class="functions-list">
+<section class="detail" id="create_activity_attempt/1">
+    <span id="create_activity_attempt/0"></span>
+  <div class="detail-header">
+    <a href="#create_activity_attempt/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create_activity_attempt(attrs \\ %{})</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L341" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Creates an activity attempt.</p>
+<h2 id="create_activity_attempt/1-examples" class="section-heading">
+  <a href="#create_activity_attempt/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_activity_attempt</span><span class="p" data-group-id="5654002286-1">(</span><span class="p" data-group-id="5654002286-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="5654002286-2">}</span><span class="p" data-group-id="5654002286-1">)</span><span class="w">
+</span><span class="p" data-group-id="5654002286-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5654002286-4">%</span><span class="nc" data-group-id="5654002286-4">ActivityAttempt</span><span class="p" data-group-id="5654002286-4">{</span><span class="p" data-group-id="5654002286-4">}</span><span class="p" data-group-id="5654002286-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_activity_attempt</span><span class="p" data-group-id="5654002286-5">(</span><span class="p" data-group-id="5654002286-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="5654002286-6">}</span><span class="p" data-group-id="5654002286-5">)</span><span class="w">
+</span><span class="p" data-group-id="5654002286-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5654002286-8">%</span><span class="nc" data-group-id="5654002286-8">Ecto.Changeset</span><span class="p" data-group-id="5654002286-8">{</span><span class="p" data-group-id="5654002286-8">}</span><span class="p" data-group-id="5654002286-7">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="create_new_attempt_tree/5">
+  <div class="detail-header">
+    <a href="#create_new_attempt_tree/5" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create_new_attempt_tree(old_resource_attempt, resource_revision, context_id, user_id, activity_provider)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L123" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="create_part_attempt/1">
+    <span id="create_part_attempt/0"></span>
+  <div class="detail-header">
+    <a href="#create_part_attempt/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create_part_attempt(attrs \\ %{})</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L287" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Creates a part attempt.</p>
+<h2 id="create_part_attempt/1-examples" class="section-heading">
+  <a href="#create_part_attempt/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_part_attempt</span><span class="p" data-group-id="8564580576-1">(</span><span class="p" data-group-id="8564580576-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="8564580576-2">}</span><span class="p" data-group-id="8564580576-1">)</span><span class="w">
+</span><span class="p" data-group-id="8564580576-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8564580576-4">%</span><span class="nc" data-group-id="8564580576-4">PartAttempt</span><span class="p" data-group-id="8564580576-4">{</span><span class="p" data-group-id="8564580576-4">}</span><span class="p" data-group-id="8564580576-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_part_attempt</span><span class="p" data-group-id="8564580576-5">(</span><span class="p" data-group-id="8564580576-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="8564580576-6">}</span><span class="p" data-group-id="8564580576-5">)</span><span class="w">
+</span><span class="p" data-group-id="8564580576-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8564580576-8">%</span><span class="nc" data-group-id="8564580576-8">Ecto.Changeset</span><span class="p" data-group-id="8564580576-8">{</span><span class="p" data-group-id="8564580576-8">}</span><span class="p" data-group-id="8564580576-7">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="create_resource_attempt/1">
+    <span id="create_resource_attempt/0"></span>
+  <div class="detail-header">
+    <a href="#create_resource_attempt/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create_resource_attempt(attrs \\ %{})</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L314" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Creates a resource attempt.</p>
+<h2 id="create_resource_attempt/1-examples" class="section-heading">
+  <a href="#create_resource_attempt/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_resource_attempt</span><span class="p" data-group-id="6157582367-1">(</span><span class="p" data-group-id="6157582367-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="6157582367-2">}</span><span class="p" data-group-id="6157582367-1">)</span><span class="w">
+</span><span class="p" data-group-id="6157582367-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6157582367-4">%</span><span class="nc" data-group-id="6157582367-4">ResourceAttempt</span><span class="p" data-group-id="6157582367-4">{</span><span class="p" data-group-id="6157582367-4">}</span><span class="p" data-group-id="6157582367-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_resource_attempt</span><span class="p" data-group-id="6157582367-5">(</span><span class="p" data-group-id="6157582367-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="6157582367-6">}</span><span class="p" data-group-id="6157582367-5">)</span><span class="w">
+</span><span class="p" data-group-id="6157582367-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6157582367-8">%</span><span class="nc" data-group-id="6157582367-8">Ecto.Changeset</span><span class="p" data-group-id="6157582367-8">{</span><span class="p" data-group-id="6157582367-8">}</span><span class="p" data-group-id="6157582367-7">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="determine_resource_attempt_state/4">
+  <div class="detail-header">
+    <a href="#determine_resource_attempt_state/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">determine_resource_attempt_state(resource_revision, context_id, user_id, activity_provider)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L35" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+      <div class="specs">
+          <pre>determine_resource_attempt_state(
+  %Oli.Resources.Revision{
+    __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_type: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_type_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    author: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    author_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    children: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    content: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    deleted: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    graded: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    inserted_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    max_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    objectives: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    previous_revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    previous_revision_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    recommended_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    resource_type: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    resource_type_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    scoring_strategy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    scoring_strategy_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    time_limit: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    title: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+  },
+  <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()
+) ::
+  {:in_progress,
+   {%Oli.Delivery.Attempts.ResourceAttempt{
+      __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      activity_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      attempt_guid: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      attempt_number: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      date_evaluated: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      inserted_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      out_of: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      resource_access: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      resource_access_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      revision_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      score: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+    }, %{}}}
+  | {:not_started,
+     {%Oli.Delivery.Attempts.ResourceAccess{
+        __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+        access_count: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+        id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+        inserted_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+        out_of: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+        resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+        resource_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+        resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+        score: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+        section: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+        section_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+        updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+        user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+        user_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+      },
+      [
+        %Oli.Delivery.Attempts.ResourceAttempt{
+          __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+          activity_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+          attempt_guid: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+          attempt_number: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+          date_evaluated: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+          id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+          inserted_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+          out_of: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+          resource_access: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+          resource_access_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+          revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+          revision_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+          score: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+          updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+        }
+      ]}}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Determine the attempt state of this resource, that has a given set of activities
+and activity revisions present.</p>
+<p>Note that this method will create attempts. If a resource attempt can be started
+without student intervention (aka an ungraded page) attempts for the resource and all
+activities and all parts will be created. Transformations are applied at activity attempt creation time, and stored on the
+the activity.</p>
+<p>If a resource attempt is in progress, returns a tuple of the form:</p>
+<p><code class="inline">{:in_progress, {%ResourceAttempt{}, ActivityAttemptMap}}</code></p>
+<p>Where <code class="inline">%ResourceAttempt{}</code> is the in progress attempt and ActivityAttemptMap is a map
+of activity ids to tuples of activity attempts to part maps. See <code class="inline">get_latest_attempts</code>
+for more details on this map structure.</p>
+<p>If the attempt has not started, returns a tuple of the form:</p>
+<p><code class="inline">{:not_started, {%ResourceAccess{}, [%ResourceAttempt{}]}</code></p>
+  </section>
+</section>
+<section class="detail" id="get_graded_resource_state/5">
+  <div class="detail-header">
+    <a href="#get_graded_resource_state/5" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_graded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L62" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="get_latest_attempts/1">
+  <div class="detail-header">
+    <a href="#get_latest_attempts/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_latest_attempts(resource_attempt_id)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L192" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Retrieves the state of the latest attempts for a given resource attempt id.</p>
+<p>Return value is a map of activity ids to a two element tuple.  The first
+element is the latest activity attempt and the second is a map of part ids
+to their part attempts. As an example:</p>
+<p>%{
+  232 =&gt; {%ActivityAttempt{}, %{ &quot;1&quot; =&gt; %PartAttempt{}, &quot;2&quot; =&gt; %PartAttempt{}}}
+  233 =&gt; {%ActivityAttempt{}, %{ &quot;1&quot; =&gt; %PartAttempt{}, &quot;2&quot; =&gt; %PartAttempt{}}}
+}</p>
+  </section>
+</section>
+<section class="detail" id="get_latest_resource_attempt/3">
+  <div class="detail-header">
+    <a href="#get_latest_resource_attempt/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_latest_resource_attempt(resource_id, context_id, user_id)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L227" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Retrieves the latest resource attempt for a given resource id,
+context id and user id.  If no attempts exist, returns nil.</p>
+  </section>
+</section>
+<section class="detail" id="get_resource_access/3">
+  <div class="detail-header">
+    <a href="#get_resource_access/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_resource_access(resource_id, context_id, user_id)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L116" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="get_resource_attempt_history/3">
+  <div class="detail-header">
+    <a href="#get_resource_attempt_history/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_resource_attempt_history(resource_id, context_id, user_id)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L98" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Retrieves the resource access record and all (if any) attempts related to it
+in a two element tuple of the form:</p>
+<p><code class="inline">{%ResourceAccess, [%ResourceAttempt{}]}</code></p>
+<p>The empty list <code class="inline">[]</code> will be present if there are no resource attempts.</p>
+  </section>
+</section>
+<section class="detail" id="get_resource_state/5">
+  <div class="detail-header">
+    <a href="#get_resource_state/5" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L44" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="get_ungraded_resource_state/5">
+  <div class="detail-header">
+    <a href="#get_ungraded_resource_state/5" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_ungraded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L53" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="save_student_input/1">
+  <div class="detail-header">
+    <a href="#save_student_input/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">save_student_input(part_inputs)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L238" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="track_access/3">
+  <div class="detail-header">
+    <a href="#track_access/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">track_access(resource_id, context_id, user_id)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L268" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Creates or updates an access record for a given resource, section context id and user. When
+created the access count is set to 1, otherwise on updates the
+access count is incremented.</p>
+<h2 id="track_access/3-examples" class="section-heading">
+  <a href="#track_access/3-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">track_access</span><span class="p" data-group-id="0567423280-1">(</span><span class="n">resource_id</span><span class="p">,</span><span class="w"> </span><span class="n">context_id</span><span class="p">,</span><span class="w"> </span><span class="n">user_id</span><span class="p" data-group-id="0567423280-1">)</span><span class="w">
+</span><span class="p" data-group-id="0567423280-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0567423280-3">%</span><span class="nc" data-group-id="0567423280-3">ResourceAccess</span><span class="p" data-group-id="0567423280-3">{</span><span class="p" data-group-id="0567423280-3">}</span><span class="p" data-group-id="0567423280-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">track_access</span><span class="p" data-group-id="0567423280-4">(</span><span class="n">resource_id</span><span class="p">,</span><span class="w"> </span><span class="n">context_id</span><span class="p">,</span><span class="w"> </span><span class="n">user_id</span><span class="p" data-group-id="0567423280-4">)</span><span class="w">
+</span><span class="p" data-group-id="0567423280-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0567423280-6">%</span><span class="nc" data-group-id="0567423280-6">Ecto.Changeset</span><span class="p" data-group-id="0567423280-6">{</span><span class="p" data-group-id="0567423280-6">}</span><span class="p" data-group-id="0567423280-5">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="update_activity_attempt/2">
+  <div class="detail-header">
+    <a href="#update_activity_attempt/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">update_activity_attempt(activity_attempt, attrs)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L328" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Updates an activity attempt.</p>
+<h2 id="update_activity_attempt/2-examples" class="section-heading">
+  <a href="#update_activity_attempt/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_activity_attempt</span><span class="p" data-group-id="0589382910-1">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0589382910-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="0589382910-2">}</span><span class="p" data-group-id="0589382910-1">)</span><span class="w">
+</span><span class="p" data-group-id="0589382910-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0589382910-4">%</span><span class="nc" data-group-id="0589382910-4">ActivityAttempt</span><span class="p" data-group-id="0589382910-4">{</span><span class="p" data-group-id="0589382910-4">}</span><span class="p" data-group-id="0589382910-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_activity_attempt</span><span class="p" data-group-id="0589382910-5">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0589382910-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="0589382910-6">}</span><span class="p" data-group-id="0589382910-5">)</span><span class="w">
+</span><span class="p" data-group-id="0589382910-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0589382910-8">%</span><span class="nc" data-group-id="0589382910-8">Ecto.Changeset</span><span class="p" data-group-id="0589382910-8">{</span><span class="p" data-group-id="0589382910-8">}</span><span class="p" data-group-id="0589382910-7">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="update_part_attempt/2">
+  <div class="detail-header">
+    <a href="#update_part_attempt/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">update_part_attempt(part_attempt, attrs)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L301" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Updates a part attempt.</p>
+<h2 id="update_part_attempt/2-examples" class="section-heading">
+  <a href="#update_part_attempt/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_part_attempt</span><span class="p" data-group-id="7359773207-1">(</span><span class="n">part_attempt</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7359773207-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="7359773207-2">}</span><span class="p" data-group-id="7359773207-1">)</span><span class="w">
+</span><span class="p" data-group-id="7359773207-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7359773207-4">%</span><span class="nc" data-group-id="7359773207-4">PartAttempt</span><span class="p" data-group-id="7359773207-4">{</span><span class="p" data-group-id="7359773207-4">}</span><span class="p" data-group-id="7359773207-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_part_attempt</span><span class="p" data-group-id="7359773207-5">(</span><span class="n">part_attempt</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7359773207-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7359773207-6">}</span><span class="p" data-group-id="7359773207-5">)</span><span class="w">
+</span><span class="p" data-group-id="7359773207-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7359773207-8">%</span><span class="nc" data-group-id="7359773207-8">Ecto.Changeset</span><span class="p" data-group-id="7359773207-8">{</span><span class="p" data-group-id="7359773207-8">}</span><span class="p" data-group-id="7359773207-7">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="update_resource_attempt/2">
+  <div class="detail-header">
+    <a href="#update_resource_attempt/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">update_resource_attempt(resource_attempt, attrs)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L355" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Updates a resource attempt.</p>
+<h2 id="update_resource_attempt/2-examples" class="section-heading">
+  <a href="#update_resource_attempt/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_resource_attempt</span><span class="p" data-group-id="9464284627-1">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9464284627-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="9464284627-2">}</span><span class="p" data-group-id="9464284627-1">)</span><span class="w">
+</span><span class="p" data-group-id="9464284627-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9464284627-4">%</span><span class="nc" data-group-id="9464284627-4">ResourceAttempt</span><span class="p" data-group-id="9464284627-4">{</span><span class="p" data-group-id="9464284627-4">}</span><span class="p" data-group-id="9464284627-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_resource_attempt</span><span class="p" data-group-id="9464284627-5">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9464284627-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9464284627-6">}</span><span class="p" data-group-id="9464284627-5">)</span><span class="w">
+</span><span class="p" data-group-id="9464284627-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9464284627-8">%</span><span class="nc" data-group-id="9464284627-8">Ecto.Changeset</span><span class="p" data-group-id="9464284627-8">{</span><span class="p" data-group-id="9464284627-8">}</span><span class="p" data-group-id="9464284627-7">}</span></code></pre>
+  </section>
+</section>
+          </div>
+        </section>
+      <footer class="footer">
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.21.3),
+          </span>
+          <span class="line">
+            designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+          </span>
+        </p>
+        <p>
+          <button class="line footer-button display-shortcuts-help">
+            Display keyboard shortcuts
+          </button>
+          <button class="line footer-button night-mode-toggle">
+            Toggle night mode
+          </button>
+          <button class="line footer-button display-quick-switch">
+            Go to a HexDocs package
+          </button>
+          <button class="line footer-button tooltips-toggle">
+            <span class="tooltips-option-disable">Disable tooltips</span>
+            <span class="tooltips-option-enable">Enable tooltips</span>
+          </button>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+  </body>
+</html>

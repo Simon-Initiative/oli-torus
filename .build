@@ -1,4 +1,4 @@
-dist/search_items-d92f99b7bb.js
+dist/search_items-05c87f74db.js
 dist/app-a225d03098e64fef431a.js
 dist/elixir-0ab8a6a80ebaaa287431.css
 dist/erlang-bd206729da4d0d280293.css
@@ -6,7 +6,7 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/sidebar_items-f12d656db2.js
+dist/sidebar_items-2ca5ebc720.js
 api-reference.html
 readme.html
 license.html
@@ -32,7 +32,11 @@ Oli.Activities.Model.Part.html
 Oli.Activities.Model.Response.html
 Oli.Activities.Model.Transformation.html
 Oli.Activities.ParseUtils.html
+Oli.Activities.Realizer.html
 Oli.Activities.Registration.html
+Oli.Activities.State.html
+Oli.Activities.State.ActivityState.html
+Oli.Activities.State.PartState.html
 Oli.Authoring.html
 Oli.Authoring.Authors.AuthorProject.html
 Oli.Authoring.Authors.ProjectRole.html
@@ -52,6 +56,8 @@ Oli.Authoring.Editing.SiblingActivity.html
 Oli.Authoring.Editing.Utils.html
 Oli.Authoring.Locks.html
 Oli.Delivery.html
+Oli.Delivery.Attempts.html
+Oli.Delivery.Attempts.ActivityAttempt.html
 Oli.Delivery.Attempts.PartAttempt.html
 Oli.Delivery.Attempts.ResourceAccess.html
 Oli.Delivery.Attempts.ResourceAttempt.html
@@ -123,6 +129,7 @@ Oli.Utils.Time.html
 OliWeb.html
 OliWeb.ActivityController.html
 OliWeb.ActivityView.html
+OliWeb.AttemptController.html
 OliWeb.AuthController.html
 OliWeb.AuthView.html
 OliWeb.CollaboratorController.html
