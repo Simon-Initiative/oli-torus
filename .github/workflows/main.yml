@@ -78,12 +78,13 @@ jobs:
   #     - name: ⚙️ Test
   #       run: cd assets && npm run test
 
-  build-release:
+  build-deploy-release:
     runs-on: ubuntu-latest
     # needs: [elixir-build-test, ts-build-test]  # TODO: UNCOMMENT
 
-    # only run this job if the workflow is running on the master branch
-    # if: github.ref == 'refs/heads/master'
+    # only run this job if the workflow is running on the test branch
+    # TODO: add support for production deployments
+    # if: github.ref == 'refs/heads/test'
     if: github.ref == 'refs/heads/test-deploy'   # TODO: REPLACE WITH MASTER
 
     steps:
@@ -107,7 +108,7 @@ jobs:
           name: oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}
           path: _build/prod/rel/oli
 
-      # - name: 📦⬆️ Upload release to S3
+      # - name: 📦⬆️ Upload release to S3 archive
       #   uses: jakejarvis/s3-sync-action@master
       #   with:
       #     args: --acl public-read --follow-symlinks --delete
@@ -118,34 +119,11 @@ jobs:
       #     AWS_REGION: 'us-east-2'
       #     SOURCE_DIR: 'oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}'
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: [build-release]
-
-    # only run this job if the workflow is running on the test branch
-    # if: github.ref == 'refs/heads/test'
-    if: github.ref == 'refs/heads/test-deploy'   # TODO: REPLACE WITH TEST
-
-    steps:
-      - name: 🛎️ Checkout
-        uses: actions/checkout@v2
-
-      - name: 🧾 Compute build info
-        id: info
+      - name: 🗜️💽🚢 Zip it & ship it via SFTP
         run: |
-          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-          echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
-
-      - uses: actions/download-artifact@v2
-        with:
-          name: oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}
-          path: oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}
-
-      - name: 🗜️➡️ Zip it up and ship it out via sftp
-        run: |
-          zip -r oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}
+          zip -r oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip _build/prod/rel/oli
           mkdir ~/.ssh
-          printf "%s" "${{ secrets.SIMON_BOT_PRIVATE_KEY}}" > ~/.ssh/simon-bot
+          echo "${{ secrets.SIMON_BOT_PRIVATE_KEY}}" > ~/.ssh/simon-bot
           chmod 600 ~/.ssh/simon-bot
           sftp -i ~/.ssh/simon-bot -o StrictHostKeyChecking=no simon-bot@tokamak.oli.cmu.edu  <<< $'put oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip'
 
