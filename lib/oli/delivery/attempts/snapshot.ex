@@ -17,11 +17,11 @@ defmodule Oli.Delivery.Attempts.Snapshot do
 
     # At the time of the attempt which objectives and their revisions
     # that were attached to this part
-    field :objectives, {:array, :id}
-    field :objective_revisions, {:array, :id}
+    belongs_to :objective, Oli.Resources.Resource
+    belongs_to :objective_revision, Oli.Resources.Revision
 
     # The exact revision of the activity at the time of this attempt
-    belongs_to :revision, Oli.Resources.Revision
+    belongs_to :activity_revision, Oli.Resources.Revision
 
     # A reference to the type of the activity
     field :activity_type_id, :id

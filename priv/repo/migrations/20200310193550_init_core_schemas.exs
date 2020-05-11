@@ -244,9 +244,9 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :section_id, references(:sections)
       add :resource_id, references(:resources)
       add :part_id, :id
-      add :objectives, {:array, :id}
-      add :objective_revisions, {:array, :id}
-      add :revision_id, references(:revisions)
+      add :objective_id, references(:resources)
+      add :objective_revision_id, references(:revisions)
+      add :activity_revision_id, references(:revisions)
       add :activity_type_id, references(:activity_registrations)
       add :attempt_number, :integer
       add :correct, :boolean

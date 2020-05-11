@@ -7,6 +7,7 @@ defmodule Oli.Seeder do
   alias Oli.Authoring.Course.{Project, Family}
   alias Oli.Publishing.Publication
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Attempts.Snapshot
 
   def base_project_with_resource2() do
 
@@ -203,6 +204,31 @@ defmodule Oli.Seeder do
   def add_author(%{ project: project} = map, author, atom) do
     {:ok, _} = AuthorProject.changeset(%AuthorProject{}, %{author_id: author.id, project_id: project.id, project_role_id: ProjectRole.role_id.owner}) |> Repo.insert
     Map.put(map, atom, author)
+  end
+
+  def add_activity_snapshot(%{ resource: resource, activity: activity, user: user, section: section,
+  objective: objective, objective_revision: objective_revision, activity_revision: activity_revision } = map,
+  attempt_number, correct, score, out_of, hints, atom) do
+    {:ok, snapshot} = Snapshot.changeset(%Snapshot{},
+    %{
+      resource_id: resource.id,
+      activity_id: activity.id,
+      part_id: 1,
+      user_id: user.id,
+      section_id: section.id,
+      objective_id: objective.id,
+      objective_revision_id: objective_revision.id,
+      activity_revision_id: activity_revision.id,
+      activity_type_id: 1,
+      attempt_number: attempt_number,
+      correct: correct,
+      score: score,
+      out_of: out_of,
+      hints: hints
+    }) |> Repo.insert()
+
+    map
+    |> Map.put(atom, snapshot)
   end
 
 end
