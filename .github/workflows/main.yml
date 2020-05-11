@@ -119,30 +119,30 @@ jobs:
       #     SOURCE_DIR: '_build/prod/rel/oli'
       #     DEST_DIR: ${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}
 
-  # deploy:
-  #   runs-on: ubuntu-latest
-  #   needs: [build-release]
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build-release]
 
-  #   # only run this job if the workflow is running on the test branch
-  #   # if: github.ref == 'refs/heads/test'
-  #   if: github.ref == 'refs/heads/test-deploy'   # TODO: REPLACE WITH TEST
+    # only run this job if the workflow is running on the test branch
+    # if: github.ref == 'refs/heads/test'
+    if: github.ref == 'refs/heads/test-deploy'   # TODO: REPLACE WITH TEST
 
-  #   steps:
-  #     - name: 🛎️ Checkout
-  #       uses: actions/checkout@v2
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v2
 
-  #     - name: 🧾 Compute build info
-  #       id: info
-  #       run: |
-  #         echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-  #         echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
+      - name: 🧾 Compute build info
+        id: info
+        run: |
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+          echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
 
-  #     - name: Deploy via SSH
-  #       uses: fifsky/ssh-action@master
-  #       with:
-  #         command: |
-  #           cd /tmp
-  #           ls -a
-  #         host: ${{ secrets.HOST }}
-  #         user: root
-  #         key: ${{ secrets.PRIVATE_KEY}}
+      - name: Deploy via SSH
+        uses: fifsky/ssh-action@master
+        with:
+          command: |
+            cd /torus
+            ls -la
+          host: 'tokamak.oli.cmu.edu'
+          user: root
+          key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
