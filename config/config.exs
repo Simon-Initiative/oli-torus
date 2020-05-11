@@ -8,7 +8,13 @@
 use Mix.Config
 
 config :oli,
-  ecto_repos: [Oli.Repo]
+  ecto_repos: [Oli.Repo],
+  build: %{
+    version: Mix.Project.config[:version],
+    sha: System.get_env("SHA", "UNKNOWN"),
+    date: DateTime.now!("Etc/UTC"),
+    env: Mix.env,
+  }
 
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,

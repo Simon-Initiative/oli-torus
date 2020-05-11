@@ -101,6 +101,8 @@ jobs:
         # uses: ./.github/actions/phoenix-builder
         # Use the prebuilt builder image on dockerhub until github improves caching across builds
         uses: docker://olisimon/amazonlinux-phoenix:1.5.1
+        with:
+          build-sha: ${{ steps.info.outputs.sha_short }}
 
       - name: 💽⬆️ Upload artifact
         uses: actions/upload-artifact@v2

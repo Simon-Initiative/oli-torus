@@ -1,5 +1,9 @@
 name: 'Phoenix Builder'
 description: 'Build Phoenix App for Production'
+inputs:
+  build-sha:
+    description: 'SHA of the build commit'
+    required: true
 runs:
   using: 'docker'
   image: 'Dockerfile'
