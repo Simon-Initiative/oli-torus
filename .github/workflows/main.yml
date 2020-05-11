@@ -125,7 +125,7 @@ jobs:
           mkdir ~/.ssh
           echo "${{ secrets.SIMON_BOT_PRIVATE_KEY}}" > ~/.ssh/simon-bot
           chmod 600 ~/.ssh/simon-bot
-          sftp -i ~/.ssh/simon-bot -o StrictHostKeyChecking=no simon-bot@tokamak.oli.cmu.edu  <<< $'put oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip'
+          sftp -i ~/.ssh/simon-bot -o StrictHostKeyChecking=no simon-bot@tokamak.oli.cmu.edu  <<< $'cd /torus; put oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip'
 
       - name: 💰 Deploy using SSH
         uses: fifsky/ssh-action@master
