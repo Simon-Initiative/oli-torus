@@ -253,6 +253,57 @@ defmodule Oli.Delivery.Attempts do
 
   end
 
+  def submit_part_evaluations(activity_attempt_guid, part_inputs, evaluations) do
+
+    now = DateTime.utc_now()
+
+    # get the latest and see how many remain to be evaluated
+
+    # if this eval completes the activity_attempt, chain it
+    next = case will_complete_activity_attempt do
+      true -> rollup_part_attempt_evaluations(
+      false ->
+    end
+
+    Repo.transaction(fn ->
+      length = length(part_inputs)
+      case Enum.zip(part_inputs, evaluations) |> Enum.reduce_while(:ok, fn {%{attempt_guid: attempt_guid, response: response}, %{score: score, out_of: out_of}}, _ ->
+
+        case Repo.update_all(from(p in PartAttempt, where: p.attempt_guid == ^attempt_guid and is_nil(p.date_evaluated)),
+          set: [response: response, date_evaluated: now, score: score, out_of: out_of]) do
+          nil -> {:halt, :error}
+          {1, _} -> {:cont, :ok}
+          _ -> {:halt, :error}
+        end
+      end) do
+        :error -> Repo.rollback(:error)
+        :ok -> length
+      end
+
+    end)
+
+  end
+
+  def rollup_part_attempt_evaluations(activity_attempt_guid) do
+
+    # find the latest part attempts
+    part_attempts = Repo.all(from pa1 in PartAttempt,
+      join: aa in ActivityAttempt, on: aa.attempt_guid
+      left_join: pa2 in PartAttempt, on: (pa1.id == pa2.resource_access_id and ra1.id < ra2.id),
+      where: a.user_id == ^user_id and s.context_id == ^context_id and a.resource_id == ^resource_id and is_nil(ra2),
+      select: ra1)
+
+    # apply the scoring strategy and set the evaluation on the activity
+
+    # return the finalized activity attempt
+
+  end
+
+  def rollup_activity_attempt_evaluations(resource_attempt_guid) do
+
+  end
+
+
 
   @doc """
   Creates or updates an access record for a given resource, section context id and user. When

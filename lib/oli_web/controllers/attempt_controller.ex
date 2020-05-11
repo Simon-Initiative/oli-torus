@@ -3,31 +3,31 @@ defmodule OliWeb.AttemptController do
 
   alias Oli.Delivery.Attempts
 
-  def save_part(conn, %{"attempt_guid" => attempt_guid, "response" => response}) do
+  def save_part(conn, %{"activity_attempt_guid" => _attempt_guid, "part_attempt_guid" => part_attempt_guid, "response" => response}) do
 
-    case Attempts.save_student_input([%{attempt_guid: attempt_guid, response: response}]) do
+    case Attempts.save_student_input([%{attempt_guid: part_attempt_guid, response: response}]) do
       {:ok, _} -> json conn, %{ "type" => "success"}
       {:error, _} -> json conn, %{ "type" => "failure"}
     end
 
   end
 
-  def submit_part(conn, %{"attempt_guid" => _attempt_guid, "input" => _input}) do
+  def submit_part(conn, %{"activity_attempt_guid" => _, "part_attempt_guid" => _attempt_guid, "input" => _input}) do
 
     json conn, %{ "type" => "success"}
   end
 
-  def new_part(conn, %{"attempt_guid" => _attempt_guid}) do
+  def new_part(conn, %{"activity_attempt_guid" => _, "part_attempt_guid" => _attempt_guid}) do
 
     json conn, %{ "type" => "success"}
   end
 
-  def get_hint(conn, %{"attempt_guid" => _attempt_guid}) do
+  def get_hint(conn, %{"activity_attempt_guid" => _, "part_attempt_guid" => _attempt_guid}) do
 
     json conn, %{ "type" => "success"}
   end
 
-  def save_activity(conn, %{"attempt_guid" => _attempt_guid, "partInputs" => part_inputs}) do
+  def save_activity(conn, %{"activity_attempt_guid" => _attempt_guid, "partInputs" => part_inputs}) do
 
     parsed = Enum.map(part_inputs, fn %{"attemptGuid" => attempt_guid, "response" => response} ->
       %{attempt_guid: attempt_guid, response: response} end)
@@ -39,12 +39,12 @@ defmodule OliWeb.AttemptController do
 
   end
 
-  def submit_activity(conn, %{"attempt_guid" => _attempt_guid, "partInputs" => _part_inputs}) do
+  def submit_activity(conn, %{"activity_attempt_guid" => _attempt_guid, "partInputs" => _part_inputs}) do
 
     json conn, %{ "type" => "success"}
   end
 
-  def new_activity(conn, %{"attempt_guid" => _attempt_guid}) do
+  def new_activity(conn, %{"activity_attempt_guid" => _attempt_guid}) do
 
     json conn, %{ "type" => "success"}
   end

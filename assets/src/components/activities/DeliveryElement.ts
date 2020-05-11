@@ -13,10 +13,11 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   onSubmitActivity: (attemptGuid: string, partResponses: PartResponse[]) => void;
   onResetActivity: (attemptGuid: string) => void;
 
-  onRequestHint: (attemptGuid: string) => Promise<Hint>;
-  onSavePart: (attemptGuid: string, response: StudentResponse) => Promise<Success>;
-  onSubmitPart: (attemptGuid: string, response: StudentResponse) => void;
-  onResetPart: (attemptGuid: string) => void;
+  onRequestHint: (attemptGuid: string, partAttemptGuid: string) => Promise<Hint>;
+  onSavePart: (attemptGuid: string, partAttemptGuid: string,
+    response: StudentResponse) => Promise<Success>;
+  onSubmitPart: (attemptGuid: string, partAttemptGuid: string, response: StudentResponse) => void;
+  onResetPart: (attemptGuid: string, partAttemptGuid: string) => void;
 }
 
 // An abstract delivery web component, designed to delegate to
@@ -28,37 +29,41 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   mountPoint: HTMLDivElement;
   connected: boolean;
 
-  onRequestHint: (attemptGuid: string) => Promise<Hint>;
+  onRequestHint: (attemptGuid: string, partAttemptGuid: string) => Promise<Hint>;
 
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
   onSubmitActivity: (attemptGuid: string, partResponses: PartResponse[]) => void;
   onResetActivity: (attemptGuid: string) => void;
 
-  onSavePart: (attemptGuid: string, response: StudentResponse) => Promise<Success>;
-  onSubmitPart: (attemptGuid: string, response: StudentResponse) => void;
-  onResetPart: (attemptGuid: string) => void;
+  onSavePart: (attemptGuid: string, partAttemptGuid: string,
+    response: StudentResponse) => Promise<Success>;
+  onSubmitPart: (attemptGuid: string, partAttemptGuid: string, response: StudentResponse) => void;
+  onResetPart: (attemptGuid: string, partAttemptGuid: string) => void;
 
   constructor() {
     super();
     this.mountPoint = document.createElement('div');
     this.connected = false;
 
-    this.onRequestHint = (attemptGuid: string) => this.dispatch('requestHint', attemptGuid);
+    this.onRequestHint = (attemptGuid: string, partAttemptGuid: string) => this.dispatch('requestHint', attemptGuid, partAttemptGuid);
 
     this.onSaveActivity = (attemptGuid: string, partResponses: PartResponse[]) =>
-      this.dispatch('saveActivity', attemptGuid, partResponses);
+      this.dispatch('saveActivity', attemptGuid, undefined, partResponses);
     this.onSubmitActivity = (attemptGuid: string, partResponses: PartResponse[]) =>
-      this.dispatch('submitActivity', attemptGuid, partResponses);
-    this.onResetActivity = (attemptGuid: string) => this.dispatch('resetActivity', attemptGuid);
+      this.dispatch('submitActivity', attemptGuid, undefined, partResponses);
+    this.onResetActivity = (attemptGuid: string) =>
+      this.dispatch('resetActivity', attemptGuid, undefined);
 
-    this.onSavePart = (attemptGuid: string, response: StudentResponse) =>
-      this.dispatch('savePart', attemptGuid, response);
-    this.onSubmitPart = (attemptGuid: string, response: StudentResponse) =>
-      this.dispatch('submitPart', attemptGuid, response);
-    this.onResetPart = (attemptGuid: string) => this.dispatch('resetPart', attemptGuid);
+    this.onSavePart = (attemptGuid: string, partAttemptGuid: string, response: StudentResponse) =>
+      this.dispatch('savePart', attemptGuid, partAttemptGuid, response);
+    this.onSubmitPart = (attemptGuid: string, partAttemptGuid: string, response: StudentResponse) =>
+      this.dispatch('submitPart', attemptGuid, partAttemptGuid, response);
+    this.onResetPart = (attemptGuid: string, partAttemptGuid: string) =>
+      this.dispatch('resetPart', attemptGuid, partAttemptGuid);
   }
 
-  dispatch(name: string, attemptGuid: string, payload?: any) : Promise<any> {
+  dispatch(name: string, attemptGuid: string,
+    partAttemptGuid: string | undefined, payload?: any) : Promise<any> {
     return new Promise((resolve, reject) => {
       const continuation = (result : any, error : any) => {
         if (error !== undefined) {
@@ -67,7 +72,8 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
         }
         resolve(result);
       };
-      this.dispatchEvent(new CustomEvent(name, this.details(continuation, attemptGuid, payload)));
+      this.dispatchEvent(new CustomEvent(
+        name, this.details(continuation, attemptGuid, partAttemptGuid, payload)));
     });
   }
 
@@ -89,12 +95,14 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     };
   }
 
-  details(continuation: (result: any, error: any) => void, attemptGuid: string, payload? : any) {
+  details(continuation: (result: any, error: any) => void,
+    attemptGuid: string, partAttemptGuid: string | undefined, payload? : any) {
     return {
       bubbles: true,
       detail: {
         payload,
         attemptGuid,
+        partAttemptGuid,
         continuation,
       },
     };
