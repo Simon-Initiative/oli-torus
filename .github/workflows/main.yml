@@ -11,6 +11,7 @@ on:
       - master
       - test
       - production
+      - test-deploy  # TODO: REMOVE
 
 jobs:
   elixir-build-test:
@@ -83,7 +84,8 @@ jobs:
 
     # only release and deploy if the workflow is running on the test branch
     # TODO: add support for production deployments
-    if: github.ref == 'refs/heads/test'
+    # if: github.ref == 'refs/heads/test'
+    if: github.ref == 'refs/heads/test-deploy'
 
     steps:
       - name: 🛎️ Checkout
