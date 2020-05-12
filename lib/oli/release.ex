@@ -8,6 +8,13 @@ defmodule Oli.ReleaseTasks do
     seed()
   end
 
+  def reset(%{ force: true }) do
+    drop(%{ force: true })
+    create()
+    migrate()
+    seed()
+  end
+
   def setup() do
     create()
     migrate()
@@ -19,17 +26,21 @@ defmodule Oli.ReleaseTasks do
     confirm = IO.gets "Are you sure you want to continue? (Enter YES to continue): "
 
     if String.upcase(confirm) == "YES\n" do
-      load_app()
-
-      for repo <- repos() do
-        {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, all: true))
-      end
-
-      IO.puts "database repos dropped."
+      drop(%{ force: true })
     else
       IO.puts "drop operation cancelled by user."
       :init.stop()
     end
+  end
+
+  def drop(%{ force: true }) do
+    load_app()
+
+    for repo <- repos() do
+      {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, all: true))
+    end
+
+    IO.puts "database repos dropped."
   end
 
   def create do
@@ -89,12 +100,6 @@ defmodule Oli.ReleaseTasks do
     Application.load(@app)
   end
 
-  # defp start_deps(apps) do
-  #   IO.puts "Starting dependencies.."
-  #   # Start apps necessary for executing migrations
-  #   Enum.each(apps, &Application.ensure_all_started/1)
-  # end
-
   defp start_repos() do
     # Start the Repo(s) for app
     IO.puts "Starting repos.."
@@ -102,7 +107,6 @@ defmodule Oli.ReleaseTasks do
   end
 
   defp priv_dir(app), do: "#{:code.priv_dir(app)}"
-  # defp migrations_path(app), do: Path.join([priv_dir(app), "repo", "migrations"])
   defp seed_path(app), do: Path.join([priv_dir(app), "repo", "seeds.exs"])
 
 end
