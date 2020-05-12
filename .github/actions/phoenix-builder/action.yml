@@ -6,6 +6,8 @@ inputs:
     required: true
 runs:
   using: 'docker'
-  image: 'Dockerfile'
+  # image: 'Dockerfile'
+  ## Use the prebuilt builder image on docker hub until github improves caching across builds
+  image: olisimon/amazonlinux-phoenix:1.5.1
   args:
     - ${{ inputs.build-sha }}

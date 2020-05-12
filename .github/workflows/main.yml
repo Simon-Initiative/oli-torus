@@ -98,9 +98,7 @@ jobs:
           echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
 
       - name: 📦💽 Package release
-        # uses: ./.github/actions/phoenix-builder
-        # Use the prebuilt builder image on dockerhub until github improves caching across builds
-        uses: docker://olisimon/amazonlinux-phoenix:1.5.1
+        uses: ./.github/actions/phoenix-builder
         with:
           build-sha: ${{ steps.info.outputs.sha_short }}
 
