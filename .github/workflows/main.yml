@@ -11,6 +11,7 @@ on:
       - master
       - test
       - production
+      - test-deploy  # TODO: REMOVE
 
 jobs:
   # elixir-build-test:
