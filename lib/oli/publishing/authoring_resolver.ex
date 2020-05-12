@@ -59,6 +59,7 @@ defmodule Oli.Publishing.AuthoringResolver do
         join: p in Publication, on: p.id == m.publication_id,
         join: c in Project, on: p.project_id == c.id,
         where: p.published == false and rev.slug == ^revision_slug and c.slug == ^project_slug,
+        limit: 1,
         select: rev2)
     end
     |> run() |> emit([:oli, :resolvers, :authoring], :duration)

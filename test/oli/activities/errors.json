@@ -1,0 +1,77 @@
+{
+  "stem": {
+    "content": []
+  },
+  "choices": [{"content": [], "id": 99}, {"content": [], "id": 100}],
+  "authoring": {
+    "transformations": [
+      { "id": 554, "path": "choices", "operation": "shuffle"}
+    ],
+    "parts": [
+      {
+        "id": 2,
+        "scoringStrategy": "average",
+        "evaluationStrategy": "strcmp",
+        "responses": [
+          {
+            "id": 3,
+            "match": "test",
+            "feedback": {
+              "id": 4,
+              "content": []
+            }
+          },
+          {
+            "id": 5,
+            "match": "*",
+            "feedback": {
+              "id": 6,
+              "content": []
+            }
+          }
+        ],
+        "hints": [
+          {
+            "id": 13,
+            "content": []
+          },
+          {
+            "id": 15,
+            "content": []
+          }
+        ]
+      },
+      {
+        "id": 23,
+        "scoringStrategy": "average",
+        "evaluationStrategy": "strcmp",
+        "responses": [
+          {
+            "id": 33,
+            "match": "test",
+            "feedback": {
+              "id": 43,
+              "content": []
+            }
+          },
+          {
+            "id": 53,
+            "match": "*",
+            "feedback": {
+              "id": 6,
+              "content": []
+            }
+          }
+        ],
+        "hints": [
+          {
+            "content": []
+          },
+          {
+            "content": []
+          }
+        ]
+      }
+    ]
+  }
+}

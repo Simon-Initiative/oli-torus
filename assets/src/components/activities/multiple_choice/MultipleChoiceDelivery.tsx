@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { MultipleChoiceModelSchema, Stem } from './schema';
 import { Choice } from 'components/activities/multiple_choice/schema';
 import * as ActivityTypes from '../types';
-import { shuffle } from './utils';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
+import { Maybe } from 'tsmonad';
+
 interface StemProps {
   stem: Stem;
 }
@@ -17,15 +18,22 @@ const Stem = ({ stem }: StemProps) => {
 
 interface ChoicesProps {
   choices: Choice[];
+  selected: Maybe<string>;
+  onSelect: (id: string) => void;
 }
-const Choices = ({ choices }: ChoicesProps) => {
+const Choices = ({ choices, selected, onSelect }: ChoicesProps) => {
   return (
     <div style={{
       display: 'grid',
       gridGap: '8px',
       gridTemplateColumns: '1fr',
     }}>
-    {choices.map((choice, index) => <Choice choice={choice} index={index} />)}
+    {choices.map((choice, index) =>
+      <Choice
+        onClick={() => onSelect(choice.id)}
+        selected={selected.valueOr('') === choice.id}
+        choice={choice}
+        index={index} />)}
     </div>
   );
 };
@@ -33,10 +41,13 @@ const Choices = ({ choices }: ChoicesProps) => {
 interface ChoiceProps {
   choice: Choice;
   index: number;
+  selected: boolean;
+  onClick: () => void;
 }
-const Choice = ({ choice, index }: ChoiceProps) => {
+const Choice = ({ choice, index, selected, onClick }: ChoiceProps) => {
   return (
     <div key={choice.id}
+      onClick={onClick}
       style={{
         display: 'inline-flex',
         alignItems: 'top',
@@ -46,6 +57,7 @@ const Choice = ({ choice, index }: ChoiceProps) => {
         borderRadius: '16px',
         borderStyle: 'solid',
         borderColor: '#e5e5e5',
+        backgroundColor: selected ? 'lightblue' : 'transparent',
       }}>
         <span style={{
           display: 'inline-flex',
@@ -92,6 +104,22 @@ const Hints = ({}: HintsProps) => {
 
 const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) => {
   const { stem, choices } = props.model;
+  const { state } = props;
+
+  const [selected, setSelected] = useState(
+    state.parts[0].response === null
+    ? Maybe.nothing<string>()
+    : Maybe.just<string>(state.parts[0].response.input));
+
+  const onSelect = (id: string) => {
+
+    // Update local state
+    setSelected(Maybe.just<string>(id));
+
+    // Auto-save our student reponse
+    props.onSaveActivity(state.attemptGuid,
+      [{ attemptGuid: state.parts[0].attemptGuid, response: { input: id } }]);
+  };
 
   return (
     <div style={{
@@ -102,7 +130,7 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
       gridGap: '8px',
     }}>
       <Stem stem={stem} />
-      <Choices choices={shuffle(choices)} />
+      <Choices choices={choices} selected={selected} onSelect={onSelect}/>
       <Hints />
     </div>
   );

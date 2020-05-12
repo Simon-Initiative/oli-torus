@@ -7,7 +7,6 @@ defmodule Oli.Rendering.Activity.ActivitySummary do
 
   @enforce_keys [
     :id,
-    :slug,
     :script,
     :state,
     :model,
@@ -15,7 +14,6 @@ defmodule Oli.Rendering.Activity.ActivitySummary do
   ]
   defstruct [
     :id,                # id of the activity
-    :slug,              # slug of the activity revision
     :script,            # path to the script
     :state,             # already encoded json of the state of the attempt
     :model,             # already encoded json of the model of the activity

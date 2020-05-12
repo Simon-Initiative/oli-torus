@@ -3,6 +3,11 @@ defmodule OliWeb.Router do
 
   import Phoenix.LiveDashboard.Router
 
+  # We have only three "base" pipelines:   :browser, :api, and :lti
+  # All of the other pipelines are to be used as additions onto
+  # one of these three base pipelines
+
+  # pipeline for all browser based routes
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -10,27 +15,22 @@ defmodule OliWeb.Router do
     plug Plug.Telemetry, event_prefix: [:oli, :plug]
     # disable protect_from_forgery in development environment
     if Application.fetch_env!(:oli, :env) != :dev, do: plug :protect_from_forgery
+    plug :put_root_layout, {OliWeb.LayoutView, :root}
     plug :put_secure_browser_headers
+    plug Plug.Telemetry, event_prefix: [:oli, :plug]
     plug Oli.Plugs.SetCurrentUser
   end
 
-  pipeline :admin do
-    plug Oli.Plugs.EnsureAdmin
-  end
-
-  pipeline :protected do
-    plug Oli.Plugs.Protect
-  end
-
-  pipeline :authoring do
-    plug Oli.Plugs.NoCache
-  end
-
-
+  # piplien for REST api endpoint routes
   pipeline :api do
+    plug :fetch_session
+    plug :fetch_flash
+    plug :put_secure_browser_headers
+    plug Plug.Telemetry, event_prefix: [:oli, :plug]
     plug :accepts, ["json"]
   end
 
+  # pipeline for LTI launch endpoints
   pipeline :lti do
     plug :fetch_session
     plug :fetch_flash
@@ -45,36 +45,61 @@ defmodule OliWeb.Router do
     # disable protect_from_forgery in development environment
     if Application.fetch_env!(:oli, :env) != :dev, do: plug :protect_from_forgery
 
-    # do not change the order of the next two, our Removal
-    # plug removes a header that put_secure_browser_headers
-    # adds which prevents an LMS from displaying our site
-    # within an iframe
-    plug :put_secure_browser_headers
-    plug Oli.Plugs.RemoveXFrameOptions
+  # Pipeline extensions:
 
-    plug Oli.Plugs.SetCurrentUser
+  # Extends the browser pipeline for delivery specific routes
+  pipeline :delivery do
+    plug Oli.Plugs.RemoveXFrameOptions
     plug Oli.Plugs.VerifyUser
     plug :put_layout, {OliWeb.LayoutView, :delivery}
   end
 
+  # Ensure that we always do csrf
+  pipeline :csrf_always do
+    plug :protect_from_forgery
+  end
+
+  # Do not include csrf protection in development mode. Certain
+  # LTI launch routes break in dev with csrf in place
+  pipeline :csrf_in_prod do
+    if Mix.env != :dev, do: plug :protect_from_forgery
+  end
+
+  # Ensure that the user logged in is an admin user
+  pipeline :admin do
+    plug Oli.Plugs.EnsureAdmin
+  end
+
+  # Ensure that we have a logged in user
+  pipeline :protected do
+    plug Oli.Plugs.Protect
+  end
+
+  # Disable caching of resources in authoring
+  pipeline :authoring do
+    plug Oli.Plugs.NoCache
+  end
+
+  # parse url encoded forms
   pipeline :www_url_form do
     plug Plug.Parsers, parsers: [:urlencoded]
   end
 
+  # set the layout to be workspace
   pipeline :workspace_layout do
     plug :put_layout, {OliWeb.LayoutView, "workspace.html"}
   end
 
   # open access routes
   scope "/", OliWeb do
-    pipe_through :browser
+    pipe_through [:browser, :csrf_always]
 
     get "/", StaticPageController, :index
   end
 
   # authorization protected routes
   scope "/", OliWeb do
-    pipe_through [:browser, :protected, :workspace_layout, :authoring]
+    pipe_through [:browser, :csrf_always, :protected, :workspace_layout, :authoring]
 
     get "/projects", WorkspaceController, :projects
     get "/account", WorkspaceController, :account
@@ -82,7 +107,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/project", OliWeb do
-    pipe_through [:browser, :protected, :workspace_layout, :authoring]
+    pipe_through [:browser, :csrf_always, :protected, :workspace_layout, :authoring]
 
     # Project display pages
     get "/:project_id", ProjectController, :overview
@@ -132,9 +157,27 @@ defmodule OliWeb.Router do
 
   end
 
+  scope "/api/v1/attempt", OliWeb do
+    pipe_through [:api, :protected]
+
+    # post to create a new attempt
+    # put to submit a response
+    # patch to save response state
+
+    post "/part/:attempt_guid", AttemptController, :new_part
+    put "/part/:attempt_guid", AttemptController, :submit_part
+    patch "/part/:attempt_guid", AttemptController, :save_part
+    get "/part/:attempt_guid/hint", AttemptController, :get_hint
+
+    post "/activity/:attempt_guid", AttemptController, :new_activity
+    put "/activity/:attempt_guid", AttemptController, :submit_activity
+    patch "/activity/:attempt_guid", AttemptController, :save_activity
+
+  end
+
   # auth routes, only accessable to guest users who are not logged in
   scope "/auth", OliWeb do
-    pipe_through [:browser, OliWeb.Plugs.Guest]
+    pipe_through [:browser, :csrf_always, OliWeb.Plugs.Guest]
 
     get "/signin", AuthController, :signin
 
@@ -144,7 +187,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/auth", OliWeb do
-    pipe_through [:browser]
+    pipe_through [:browser, :csrf_in_prod]
 
     get "/signout", AuthController, :signout
 
@@ -161,7 +204,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/course", OliWeb do
-    pipe_through [:delivery]
+    pipe_through [:browser, :csrf_always, :delivery]
 
     get "/", DeliveryController, :index
 
@@ -179,7 +222,7 @@ defmodule OliWeb.Router do
   scope "/delivery", OliWeb do
 
     scope "/course" do
-      pipe_through [:delivery]
+      pipe_through [:browser, :csrf_always, :delivery]
 
       get "/:context_id/page/:revision_slug", StudentDeliveryController, :page
       get "/:context_id", StudentDeliveryController, :index
@@ -187,7 +230,7 @@ defmodule OliWeb.Router do
     end
 
     scope "/section" do
-      pipe_through [:delivery]
+      pipe_through [:browser, :csrf_always, :delivery]
 
       get "/:context_id", InstructorDeliveryController, :index
       get "/:context_id/page/:revision_slug", InstructorDeliveryController, :page
@@ -197,21 +240,21 @@ defmodule OliWeb.Router do
   end
 
   scope "/admin", OliWeb do
-    pipe_through [:browser, :protected, :admin]
+    pipe_through [:browser, :csrf_always, :protected, :admin]
     live_dashboard "/dashboard", metrics: OliWeb.Telemetry
-    live "/history/:slug", RevisionHistory, layout: {OliWeb.LayoutView, :root}
+    live "/history/:slug", RevisionHistory
   end
 
   # routes only accessible to developers
   if Application.fetch_env!(:oli, :env) == :dev or Application.fetch_env!(:oli, :env) == :test do
     scope "/dev", OliWeb do
-      pipe_through :browser
+      pipe_through [:browser, :csrf_always]
 
       get "/uipalette", UIPaletteController, :index
     end
 
     scope "/test", OliWeb do
-      pipe_through :browser
+      pipe_through [:browser, :csrf_always]
 
       get "/editor", EditorTestController, :index
 
