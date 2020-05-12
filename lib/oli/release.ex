@@ -19,10 +19,6 @@ defmodule Oli.ReleaseTasks do
     confirm = IO.gets "Are you sure you want to continue? (Enter YES to continue): "
 
     if String.upcase(confirm) == "YES\n" do
-      # start_repos(repos())
-
-      # Ecto.Migrator.run(Oli.Repo, Application.app_dir(:oli, migrations_path(:oli)), :down, [all: true])
-
       load_app()
 
       for repo <- repos() do
@@ -93,11 +89,11 @@ defmodule Oli.ReleaseTasks do
     Application.load(@app)
   end
 
-  defp start_deps(apps) do
-    IO.puts "Starting dependencies.."
-    # Start apps necessary for executing migrations
-    Enum.each(apps, &Application.ensure_all_started/1)
-  end
+  # defp start_deps(apps) do
+  #   IO.puts "Starting dependencies.."
+  #   # Start apps necessary for executing migrations
+  #   Enum.each(apps, &Application.ensure_all_started/1)
+  # end
 
   defp start_repos() do
     # Start the Repo(s) for app
@@ -106,7 +102,7 @@ defmodule Oli.ReleaseTasks do
   end
 
   defp priv_dir(app), do: "#{:code.priv_dir(app)}"
-  defp migrations_path(app), do: Path.join([priv_dir(app), "repo", "migrations"])
+  # defp migrations_path(app), do: Path.join([priv_dir(app), "repo", "migrations"])
   defp seed_path(app), do: Path.join([priv_dir(app), "repo", "seeds.exs"])
 
 end
