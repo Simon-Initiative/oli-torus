@@ -1,23 +1,49 @@
-defmodule Oli.Release do
+defmodule Oli.ReleaseTasks do
   @app :oli
 
-  def create_and_migrate() do
-    createdb()
+  def reset() do
+    drop()
+    create()
     migrate()
+    seed()
   end
 
-  def createdb do
-    # Start postgrex and ecto
-    IO.puts "Starting dependencies..."
+  def setup() do
+    create()
+    migrate()
+    seed()
+  end
 
-    # Start apps necessary for executing migrations
-    Enum.each([@app, :postgrex, :ecto, :ecto_sql], &Application.ensure_all_started/1)
+  def drop do
+    IO.puts "WARNING! This will completely erase all data from the database."
+    confirm = IO.gets "Are you sure you want to continue? (Enter YES to continue): "
+
+    if String.upcase(confirm) == "YES\n" do
+      # start_repos(repos())
+
+      # Ecto.Migrator.run(Oli.Repo, Application.app_dir(:oli, migrations_path(:oli)), :down, [all: true])
+
+      load_app()
+
+      for repo <- repos() do
+        {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, all: true))
+      end
+
+      IO.puts "database repos dropped."
+    else
+      IO.puts "drop operation cancelled by user."
+      :init.stop()
+    end
+  end
+
+  def create do
+    load_app()
 
     for repo <- repos() do
       :ok = ensure_repo_created(repo)
     end
 
-    IO.puts "createdb complete!"
+    IO.puts "database repos created."
   end
 
   defp ensure_repo_created(repo) do
@@ -35,8 +61,23 @@ defmodule Oli.Release do
     for repo <- repos() do
       {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
     end
+  end
 
-    IO.puts "migrate complete!"
+  def seed do
+    load_app()
+    start_repos()
+
+    # Run the seed script if it exists
+    seed_script = seed_path(:oli)
+    if File.exists?(seed_script) do
+      IO.puts "Running seed script.."
+      Code.eval_file(seed_script)
+
+      IO.puts "seed complete."
+    else
+      IO.puts :stderr, "seed script does not exist."
+    end
+
   end
 
   def rollback(repo, version) do
@@ -51,4 +92,21 @@ defmodule Oli.Release do
   defp load_app do
     Application.load(@app)
   end
+
+  defp start_deps(apps) do
+    IO.puts "Starting dependencies.."
+    # Start apps necessary for executing migrations
+    Enum.each(apps, &Application.ensure_all_started/1)
+  end
+
+  defp start_repos() do
+    # Start the Repo(s) for app
+    IO.puts "Starting repos.."
+    Enum.each(repos(), &(&1.start_link(pool_size: 1)))
+  end
+
+  defp priv_dir(app), do: "#{:code.priv_dir(app)}"
+  defp migrations_path(app), do: Path.join([priv_dir(app), "repo", "migrations"])
+  defp seed_path(app), do: Path.join([priv_dir(app), "repo", "seeds.exs"])
+
 end
