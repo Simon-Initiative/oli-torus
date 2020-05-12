@@ -46,7 +46,7 @@ echo "## "
 echo "## Use the command 'exit' to leave anytime."
 echo "## To get started, run 'mix phx.server'"
 
-ALIASES="alias dc=docker-compose;"
+ALIASES="alias dc=docker-compose; alias reload-env='set -a;source oli.env;';"
 FUNCTIONS="cd() { builtin cd \"\$@\" && ls; };"
 PROMPT="PS1=\"\n\[🚧\] oli-dev \[\033[0;34m\][\w]\[\033[0;37m\] $ \";"
 
