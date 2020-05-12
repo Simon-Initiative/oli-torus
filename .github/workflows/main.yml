@@ -123,10 +123,7 @@ jobs:
 
       - name: 🗜️🚢 Zip it & ship it
         run: |
-          cd _build/prod/rel
-          zip -r oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip oli
-          cd ../../../
-          mv _build/prod/rel/oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip ./
+          zip -r oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip _build/prod/rel/oli
           mkdir ~/.ssh
           echo "${{ secrets.SIMON_BOT_PRIVATE_KEY}}" > ~/.ssh/simon-bot
           chmod 600 ~/.ssh/simon-bot
@@ -137,7 +134,7 @@ jobs:
         with:
           command: |
             cd /torus
-            ./deploy.sh ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }}
+            sh deploy.sh ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }}
           host: tokamak.oli.cmu.edu
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
