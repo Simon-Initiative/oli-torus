@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
-import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
+import { DeliveryElement, DeliveryElementProps, EvaluationResponse, ResetActivityResponse } from '../DeliveryElement';
 import { MultipleChoiceModelSchema, Stem } from './schema';
 import { Choice } from 'components/activities/multiple_choice/schema';
 import * as ActivityTypes from '../types';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { Maybe } from 'tsmonad';
+
+type Evaluation = {
+  score: number,
+  outOf: number,
+  feedback: ActivityTypes.RichText,
+};
 
 interface StemProps {
   stem: Stem;
@@ -20,8 +26,9 @@ interface ChoicesProps {
   choices: Choice[];
   selected: Maybe<string>;
   onSelect: (id: string) => void;
+  isEvaluated: boolean;
 }
-const Choices = ({ choices, selected, onSelect }: ChoicesProps) => {
+const Choices = ({ choices, selected, onSelect, isEvaluated }: ChoicesProps) => {
   return (
     <div style={{
       display: 'grid',
@@ -33,6 +40,7 @@ const Choices = ({ choices, selected, onSelect }: ChoicesProps) => {
         onClick={() => onSelect(choice.id)}
         selected={selected.valueOr('') === choice.id}
         choice={choice}
+        isEvaluated={isEvaluated}
         index={index} />)}
     </div>
   );
@@ -43,17 +51,18 @@ interface ChoiceProps {
   index: number;
   selected: boolean;
   onClick: () => void;
+  isEvaluated: boolean;
 }
-const Choice = ({ choice, index, selected, onClick }: ChoiceProps) => {
+const Choice = ({ choice, index, selected, onClick, isEvaluated }: ChoiceProps) => {
   return (
     <div key={choice.id}
-      onClick={onClick}
+      onClick={isEvaluated ? undefined : onClick}
       style={{
         display: 'inline-flex',
         alignItems: 'top',
         borderWidth: '2px 2px 4px',
         padding: '12px 16px',
-        cursor: 'pointer',
+        cursor: isEvaluated ? 'arrow' : 'pointer',
         borderRadius: '16px',
         borderStyle: 'solid',
         borderColor: '#e5e5e5',
@@ -77,9 +86,9 @@ const Choice = ({ choice, index, selected, onClick }: ChoiceProps) => {
 };
 
 interface HintsProps {
-
+  isEvaluated: boolean;
 }
-const Hints = ({}: HintsProps) => {
+const Hints = (props: HintsProps) => {
   return (
     <div className="question-hints" style={{
       padding: '16px',
@@ -97,41 +106,117 @@ const Hints = ({}: HintsProps) => {
         width: '100%',
       }}></div>
         <h6><b>Hints</b></h6>
-        <button className="btn btn-primary muted">Request Hint</button>
+        <button disabled={props.isEvaluated} className="btn btn-primary muted">Request Hint</button>
     </div>
   );
 };
 
+const Evaluation = ({ attemptState } : { attemptState : ActivityTypes.ActivityState}) => {
+
+  const { score, outOf, parts } = attemptState;
+  const feedback = parts[0].feedback.content;
+
+  let backgroundColor = '#f0b4b4';
+  if (score === outOf) {
+    backgroundColor = '#a7e695';
+  } else if ((score as number) > 0) {
+    backgroundColor = '#f0e8b4';
+  }
+
+  return (
+    <div key="evaluation"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'top',
+        borderWidth: '2px 2px 4px',
+        padding: '12px 16px',
+        borderRadius: '2px',
+        borderStyle: 'none',
+        backgroundColor,
+      }}>
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '2px solid #e5e5e5',
+          borderRadius: '8px',
+          color: '#afafaf',
+          height: '30px',
+          width: '60px',
+          fontWeight: 'bold',
+          marginRight: '16px',
+        }}>{score + ' / ' + outOf}</span>
+      <HtmlContentModelRenderer text={feedback} />
+    </div>
+  );
+
+};
+
+const Reset = ({ onClick } : { onClick : () => void}) =>
+  <button onClick={onClick} className="btn btn-primary muted">Retry</button>;
+
 const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) => {
-  const { stem, choices } = props.model;
-  const { state } = props;
+
+  const [model, setModel] = useState(props.model);
+
+  const [attemptState, setAttemptState] = useState(props.state);
 
   const [selected, setSelected] = useState(
-    state.parts[0].response === null
+    props.state.parts[0].response === null
     ? Maybe.nothing<string>()
-    : Maybe.just<string>(state.parts[0].response.input));
+    : Maybe.just<string>(props.state.parts[0].response.input));
+
+  const { stem, choices } = model;
+
+  const isEvaluated = attemptState.score !== null;
 
   const onSelect = (id: string) => {
 
     // Update local state
     setSelected(Maybe.just<string>(id));
 
-    // Auto-save our student reponse
-    props.onSaveActivity(state.attemptGuid,
-      [{ attemptGuid: state.parts[0].attemptGuid, response: { input: id } }]);
+    // Auto-submit our student reponse
+    props.onSubmitActivity(attemptState.attemptGuid,
+      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: id } }])
+      .then((response: EvaluationResponse) => {
+        if (response.evaluations.length > 0) {
+          const { score, out_of, feedback } = response.evaluations[0];
+          const parts = [Object.assign({}, attemptState.parts[0], { feedback })];
+          const updated = Object.assign({}, attemptState, { score, outOf: out_of, parts });
+          setAttemptState(updated);
+        }
+      });
   };
 
+
+  const onReset = () => {
+    props.onResetActivity(attemptState.attemptGuid)
+    .then((state: ResetActivityResponse) => {
+      setSelected(Maybe.nothing<string>());
+      setAttemptState(state.attemptState);
+      setModel(state.model as MultipleChoiceModelSchema);
+    });
+  };
+
+  const evaluationSummary = isEvaluated ? <Evaluation attemptState={attemptState}/> : null;
+  const reset = isEvaluated ? <div className="float-right"><Reset onClick={onReset} /></div> : null;
+
   return (
-    <div style={{
-      display: 'grid',
-      flex: '1',
-      alignItems: 'center',
-      gridTemplateRows: 'min-content 1fr',
-      gridGap: '8px',
-    }}>
-      <Stem stem={stem} />
-      <Choices choices={choices} selected={selected} onSelect={onSelect}/>
-      <Hints />
+    <div>
+      <div style={{
+        display: 'grid',
+        flex: '1',
+        alignItems: 'center',
+        gridTemplateRows: 'min-content 1fr',
+        gridGap: '8px',
+      }}>
+        <Stem stem={stem} />
+        <Choices choices={choices} selected={selected}
+          onSelect={onSelect} isEvaluated={isEvaluated}/>
+        {evaluationSummary}
+        <Hints isEvaluated={isEvaluated}/>
+      </div>
+      {reset}
     </div>
   );
 };

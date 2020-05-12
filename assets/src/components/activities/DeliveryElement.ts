@@ -1,23 +1,47 @@
-import { ActivityModelSchema, ActivityState, StudentResponse, Hint, Success } from './types';
+import { ActivityModelSchema, ActivityState, StudentResponse, Hint, Success, PartState } from './types';
 
 export type PartResponse = {
   attemptGuid: string,
   response: StudentResponse,
 };
 
+export interface EvaluatedPart {
+  type: 'EvaluatedPart';
+  attempt_guid: string;
+  out_of: number;
+  score: number;
+  feedback: any;
+}
+
+export interface EvaluationResponse extends Success {
+  evaluations: EvaluatedPart[];
+}
+
+export interface ResetActivityResponse extends Success {
+  attemptState: ActivityState;
+  model: ActivityModelSchema;
+}
+
+
+export interface PartActivityResponse extends Success {
+  attemptState: PartState;
+}
+
 export interface DeliveryElementProps<T extends ActivityModelSchema> {
   model: T;
   state: ActivityState;
 
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
-  onSubmitActivity: (attemptGuid: string, partResponses: PartResponse[]) => void;
-  onResetActivity: (attemptGuid: string) => void;
+  onSubmitActivity: (attemptGuid: string,
+    partResponses: PartResponse[]) => Promise<EvaluationResponse>;
+  onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>;
 
   onRequestHint: (attemptGuid: string, partAttemptGuid: string) => Promise<Hint>;
   onSavePart: (attemptGuid: string, partAttemptGuid: string,
     response: StudentResponse) => Promise<Success>;
-  onSubmitPart: (attemptGuid: string, partAttemptGuid: string, response: StudentResponse) => void;
-  onResetPart: (attemptGuid: string, partAttemptGuid: string) => void;
+  onSubmitPart: (attemptGuid: string, partAttemptGuid: string,
+    response: StudentResponse) => Promise<EvaluationResponse>;
+  onResetPart: (attemptGuid: string, partAttemptGuid: string) => Promise<PartActivityResponse>;
 }
 
 // An abstract delivery web component, designed to delegate to
@@ -32,13 +56,15 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   onRequestHint: (attemptGuid: string, partAttemptGuid: string) => Promise<Hint>;
 
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
-  onSubmitActivity: (attemptGuid: string, partResponses: PartResponse[]) => void;
-  onResetActivity: (attemptGuid: string) => void;
+  onSubmitActivity: (attemptGuid: string,
+    partResponses: PartResponse[]) => Promise<EvaluationResponse>;
+  onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>;
 
   onSavePart: (attemptGuid: string, partAttemptGuid: string,
     response: StudentResponse) => Promise<Success>;
-  onSubmitPart: (attemptGuid: string, partAttemptGuid: string, response: StudentResponse) => void;
-  onResetPart: (attemptGuid: string, partAttemptGuid: string) => void;
+  onSubmitPart: (attemptGuid: string, partAttemptGuid: string,
+    response: StudentResponse) => Promise<EvaluationResponse>;
+  onResetPart: (attemptGuid: string, partAttemptGuid: string) => Promise<PartActivityResponse>;
 
   constructor() {
     super();

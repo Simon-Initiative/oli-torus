@@ -147,7 +147,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/api/v1/attempt", OliWeb do
-    pipe_through [:api, :protected]
+    pipe_through [:api]
 
     # post to create a new attempt
     # put to submit a response

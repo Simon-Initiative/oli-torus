@@ -5,12 +5,56 @@ defmodule Oli.Delivery.Attempts do
   alias Oli.Delivery.Sections.{Section}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.{PartAttempt, ResourceAccess, ResourceAttempt, ActivityAttempt}
+  alias Oli.Activities.State.ActivityState
   alias Oli.Resources.{Revision}
   alias Oli.Activities.Model
   alias Oli.Activities.Model.Feedback
   alias Oli.Activities.Transformers
   alias Oli.Delivery.Attempts.Result
+  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Delivery.Page.ModelPruner
 
+
+  def reset_activity(context_id, activity_attempt_guid) do
+
+    activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+
+    if (activity_attempt == nil) do
+      {:error, :not_found}
+    else
+      activity_attempt = activity_attempt |> Repo.preload([:part_attempts])
+
+      # Resolve the revision to pick up the latest
+      revision = DeliveryResolver.from_resource_id(context_id, activity_attempt.resource_id)
+
+      # parse and transform
+      {:ok, model} = Model.parse(revision.content)
+      {:ok, transformed_model} = Transformers.apply_transforms(revision.content)
+
+      {:ok, new_activity_attempt} = create_activity_attempt(%{
+        attempt_guid: UUID.uuid4(),
+        attempt_number: activity_attempt.attempt_number + 1,
+        transformed_model: transformed_model,
+        resource_id: activity_attempt.resource_id,
+        revision_id: revision.id,
+        resource_attempt_id: activity_attempt.resource_attempt_id
+      })
+
+      new_part_attempts = Enum.map(activity_attempt.part_attempts, fn p ->
+        {:ok, part_attempt} = create_part_attempt(%{
+          attempt_guid: UUID.uuid4(),
+          attempt_number: 1,
+          part_id: p.part_id,
+          activity_attempt_id: new_activity_attempt.id
+        })
+        part_attempt
+      end)
+
+      {:ok, ActivityState.from_attempt(new_activity_attempt, new_part_attempts, model),
+        ModelPruner.prune(transformed_model)}
+    end
+
+  end
 
   @doc """
   Determine the attempt state of this resource, that has a given set of activities
