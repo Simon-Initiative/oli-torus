@@ -7,11 +7,12 @@
 # General application configuration
 use Mix.Config
 
+default_sha = if Mix.env == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 config :oli,
   ecto_repos: [Oli.Repo],
   build: %{
     version: Mix.Project.config[:version],
-    sha: System.get_env("SHA", "UNKNOWN"),
+    sha: System.get_env("SHA", default_sha),
     date: DateTime.now!("Etc/UTC"),
     env: Mix.env,
   }

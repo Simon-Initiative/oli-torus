@@ -44,6 +44,7 @@ defmodule OliWeb.Router do
     plug Plug.Telemetry, event_prefix: [:oli, :plug]
     # disable protect_from_forgery in development environment
     if Application.fetch_env!(:oli, :env) != :dev, do: plug :protect_from_forgery
+  end
 
   # Pipeline extensions:
 
