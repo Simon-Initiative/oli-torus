@@ -12,9 +12,6 @@ defmodule OliWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
-    plug Plug.Telemetry, event_prefix: [:oli, :plug]
-    # disable protect_from_forgery in development environment
-    if Application.fetch_env!(:oli, :env) != :dev, do: plug :protect_from_forgery
     plug :put_root_layout, {OliWeb.LayoutView, :root}
     plug :put_secure_browser_headers
     plug Plug.Telemetry, event_prefix: [:oli, :plug]
@@ -35,15 +32,6 @@ defmodule OliWeb.Router do
     plug :fetch_session
     plug :fetch_flash
     plug Oli.Plugs.SetCurrentUser
-  end
-
-  pipeline :delivery do
-    plug :accepts, ["html"]
-    plug :fetch_session
-    plug :fetch_flash
-    plug Plug.Telemetry, event_prefix: [:oli, :plug]
-    # disable protect_from_forgery in development environment
-    if Application.fetch_env!(:oli, :env) != :dev, do: plug :protect_from_forgery
   end
 
   # Pipeline extensions:
