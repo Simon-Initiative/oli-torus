@@ -13,4 +13,4 @@ npm install --prefix ./assets
 npm run deploy --prefix ./assets
 mix phx.digest
 
-MIX_ENV=prod mix release
+MIX_ENV=prod SHA=$RELEASE_SHA mix release
