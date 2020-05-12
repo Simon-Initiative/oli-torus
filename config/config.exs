@@ -15,7 +15,8 @@ config :oli,
     sha: System.get_env("SHA", default_sha),
     date: DateTime.now!("Etc/UTC"),
     env: Mix.env,
-  }
+  },
+  local_activity_manifests: Path.wildcard(File.cwd! <> "/assets/src/components/activities/*/manifest.json")
 
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,
