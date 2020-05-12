@@ -7,8 +7,8 @@ defmodule Oli.Delivery.Attempts.ResourceAttempt do
     field :attempt_guid, :string
     field :attempt_number, :integer
     field :date_evaluated, :utc_datetime
-    field :score, :decimal
-    field :out_of, :decimal
+    field :score, :float
+    field :out_of, :float
 
     belongs_to :resource_access, Oli.Delivery.Attempts.ResourceAccess
     belongs_to :revision, Oli.Resources.Revision

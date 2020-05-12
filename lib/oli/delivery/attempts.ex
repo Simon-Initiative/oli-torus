@@ -7,7 +7,9 @@ defmodule Oli.Delivery.Attempts do
   alias Oli.Delivery.Attempts.{PartAttempt, ResourceAccess, ResourceAttempt, ActivityAttempt}
   alias Oli.Resources.{Revision}
   alias Oli.Activities.Model
+  alias Oli.Activities.Model.Feedback
   alias Oli.Activities.Transformers
+  alias Oli.Delivery.Attempts.Result
 
 
   @doc """
@@ -41,7 +43,7 @@ defmodule Oli.Delivery.Attempts do
   end
 
 
-  def get_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
+  defp get_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
 
     case resource_revision.graded do
       true -> get_graded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider)
@@ -50,7 +52,7 @@ defmodule Oli.Delivery.Attempts do
 
   end
 
-  def get_ungraded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
+  defp get_ungraded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
 
     if is_nil(resource_attempt) or resource_attempt.revision_id != resource_revision.id do
       {:in_progress, create_new_attempt_tree(resource_attempt, resource_revision, context_id, user_id, activity_provider)}
@@ -59,7 +61,7 @@ defmodule Oli.Delivery.Attempts do
     end
   end
 
-  def get_graded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
+  defp get_graded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
 
     if is_nil(resource_attempt) or !is_nil(resource_attempt.date_evalulated) do
       {:not_started, get_resource_attempt_history(resource_revision.resource_id, context_id, user_id)}
@@ -113,7 +115,7 @@ defmodule Oli.Delivery.Attempts do
     {access, attempt_representation}
   end
 
-  def get_resource_access(resource_id, context_id, user_id) do
+  defp get_resource_access(resource_id, context_id, user_id) do
     Repo.one(from a in ResourceAccess,
       join: s in Section, on: a.section_id == s.id,
       where: a.user_id == ^user_id and s.context_id == ^context_id and a.resource_id == ^resource_id,
@@ -234,10 +236,16 @@ defmodule Oli.Delivery.Attempts do
 
   end
 
+  @doc """
+  Processes a list of part inputs and saves the response to the corresponding
+  part attempt record.
+
+  On success returns a tuple of the form `{:ok, count}`
+  """
   def save_student_input(part_inputs) do
 
     Repo.transaction(fn ->
-      length = length(part_inputs)
+      count = length(part_inputs)
       case Enum.reduce_while(part_inputs, :ok, fn %{attempt_guid: attempt_guid, response: response}, _ ->
 
         case Repo.update_all(from(p in PartAttempt, where: p.attempt_guid == ^attempt_guid), set: [response: response]) do
@@ -246,64 +254,179 @@ defmodule Oli.Delivery.Attempts do
         end
       end) do
         :error -> Repo.rollback(:error)
-        :ok -> length
+        :ok -> {:ok, count}
       end
 
     end)
 
   end
 
-  def submit_part_evaluations(activity_attempt_guid, part_inputs, evaluations) do
+  # Evaluate a list of part_input submissions for a matching list of part_attempt records
+  defp evaluate_submissions(_, [], _), do: {:error, "nothing to process"}
+  defp evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts) do
+
+    %ActivityAttempt{transformed_model: transformed_model} = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+    {:ok, %Model{parts: parts}} = Model.parse(transformed_model)
+
+    # We need to tie the attempt_guid from the part_inputs to the attempt_guid
+    # from the %PartAttempt, and then the part id from the %PartAttempt to the
+    # part id in the parsed model.
+    part_map = Enum.reduce(parts, %{}, fn p, m -> Map.put(m, p.id, p) end)
+    attempt_map = Enum.reduce(part_attempts, %{}, fn p, m -> Map.put(m, p.attempt_guid, p) end)
+
+    evaluations = Enum.map(part_inputs, fn %{attempt_guid: attempt_guid, input: input} ->
+
+      attempt = Map.get(attempt_map, attempt_guid)
+      part = Map.get(part_map, attempt.part_id)
+
+      Oli.Delivery.Evaluation.Evaluator.evaluate(part, input)
+    end)
+
+    {:ok, evaluations}
+  end
+
+  # Persist the result of a single evaluation for a single part_input submission.
+  defp persist_single_evaluation({_, {:error, error}}, _), do: {:halt, {:error, error}}
+  defp persist_single_evaluation({%{attempt_guid: attempt_guid, input: input},
+    {:ok,  {%Feedback{} = feedback, %Result{out_of: out_of, score: score}}}}, {:ok, results}) do
 
     now = DateTime.utc_now()
 
-    # get the latest and see how many remain to be evaluated
-
-    # if this eval completes the activity_attempt, chain it
-    next = case will_complete_activity_attempt do
-      true -> rollup_part_attempt_evaluations(
-      false ->
+    case Repo.update_all(from(p in PartAttempt, where: p.attempt_guid == ^attempt_guid and is_nil(p.date_evaluated)),
+      set: [response: input, date_evaluated: now, score: score, out_of: out_of, feedback: feedback]) do
+      nil -> {:halt, :error}
+      {1, _} -> {:cont, {:ok, results ++ [%{attempt_guid: attempt_guid, feedback: feedback, score: score, out_of: out_of}]}}
+      _ -> {:halt, :error}
     end
 
+  end
+
+  # Given a list of evaluations that match a list of part_input submissions,
+  # persist the results of each evaluation to the corresponding part_attempt record
+  # On success, continue persistence by calling a roll_up function that will may or
+  # not roll up the results of the these part_attempts to the activity attempt
+  #
+  # The return value here is {:ok, [%{}]}, where the maps in the array are the
+  # evaluation result that will be sent back to the client
+  defp persist_evaluations({:error, error}, _, _), do: {:error, error}
+  defp persist_evaluations({:ok, evaluations}, part_inputs, roll_up_fn) do
+
+    evaluated_inputs = Enum.zip(part_inputs, evaluations)
+
     Repo.transaction(fn ->
-      length = length(part_inputs)
-      case Enum.zip(part_inputs, evaluations) |> Enum.reduce_while(:ok, fn {%{attempt_guid: attempt_guid, response: response}, %{score: score, out_of: out_of}}, _ ->
-
-        case Repo.update_all(from(p in PartAttempt, where: p.attempt_guid == ^attempt_guid and is_nil(p.date_evaluated)),
-          set: [response: response, date_evaluated: now, score: score, out_of: out_of]) do
-          nil -> {:halt, :error}
-          {1, _} -> {:cont, :ok}
-          _ -> {:halt, :error}
-        end
-      end) do
-        :error -> Repo.rollback(:error)
-        :ok -> length
+      case Enum.reduce_while(evaluated_inputs, {:ok, []}, &persist_single_evaluation/2) do
+        {:error, error} -> Repo.rollback(error)
+        {:ok, results} -> roll_up_fn.({:ok, results})
       end
-
     end)
+  end
+
+  # Filters out part_inputs whose attempts are already submitted.  This step
+  # simply lowers the burden on an activity client for having to manage this - as
+  # they now can instead just choose to always submit all parts.  Also
+  # returns a boolean indicated whether this filtered collection of submissions
+  # will complete the activity attempt.
+  defp filter_already_submitted(part_inputs, part_attempts) do
+
+    # filter the part_inputs that have already been evaluated
+    already_evaluated = Enum.filter(part_attempts, fn p -> p.date_evaluated != nil end)
+    |> Enum.map(fn e -> e.attempt_guid end)
+    |> MapSet.new()
+
+    part_inputs = Enum.filter(part_inputs, fn %{attempt_guid: attempt_guid} -> !MapSet.member?(already_evaluated, attempt_guid) end)
+
+    # Check to see if this would complete the activity submidssion
+    yet_to_be_evaluated = Enum.filter(part_attempts, fn p -> p.date_evaluated == nil end)
+    |> Enum.map(fn e -> e.attempt_guid end)
+    |> MapSet.new()
+
+    to_be_evaluated = Enum.map(part_inputs, fn e -> e.attempt_guid end)
+    |> MapSet.new()
+
+    {MapSet.equal?(yet_to_be_evaluated, to_be_evaluated), part_inputs}
+  end
+
+  @doc """
+  Processes a student submission for some number of parts for the given
+  activity attempt guid.  If this collection of part attempts completes the activity
+  the results of the part evalutions (including ones already having been evaluated)
+  will be rolled up to the activity attempt record.
+
+  On success returns an `{:ok, results}` tuple where results in an array of maps.  Each
+  map instance contains the result of one of the evaluations in the form:
+
+  `${score: score, out_of: out_of, feedback: feedback, attempt_guid, attempt_guid}`
+
+  There can be less items in the results list than there are items in the input part_inputs
+  as logic here will not evaluate part_input instances whose part attempt has already
+  been evaluated.
+
+  On failure returns `{:error, error}`
+  """
+  @spec submit_part_evaluations(String.t, [map()]) :: {:ok, [map()]} | {:error, any}
+  def submit_part_evaluations(activity_attempt_guid, part_inputs) do
+
+    part_attempts = get_latest_part_attempts(activity_attempt_guid)
+
+    roll_up = fn result ->
+      rollup_part_attempt_evaluations(activity_attempt_guid)
+      result
+    end
+
+    no_roll_up = fn result -> result end
+
+    {roll_up_fn, part_inputs} = case filter_already_submitted(part_inputs, part_attempts) do
+      {true, part_inputs} -> {roll_up, part_inputs}
+      {false, part_inputs} -> {no_roll_up, part_inputs}
+    end
+
+    case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
+    |> persist_evaluations(part_inputs, roll_up_fn) do
+
+      {:ok, results} -> results
+      error -> error
+    end
 
   end
+
+  @doc """
+  Gets an activity attempt by a clause.
+  ## Examples
+      iex> get_activity_attempt_by(attempt_guid: "123")
+      {:ok, %Section{}}
+      iex> get_activity_attempt_by(attempt_guid: "111")
+      { :error, changeset }
+  """
+  def get_activity_attempt_by(clauses), do: Repo.get_by(ActivityAttempt, clauses) |> Repo.preload([:revision])
 
   def rollup_part_attempt_evaluations(activity_attempt_guid) do
 
     # find the latest part attempts
-    part_attempts = Repo.all(from pa1 in PartAttempt,
-      join: aa in ActivityAttempt, on: aa.attempt_guid
-      left_join: pa2 in PartAttempt, on: (pa1.id == pa2.resource_access_id and ra1.id < ra2.id),
-      where: a.user_id == ^user_id and s.context_id == ^context_id and a.resource_id == ^resource_id and is_nil(ra2),
-      select: ra1)
+    part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
     # apply the scoring strategy and set the evaluation on the activity
+    activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
 
-    # return the finalized activity attempt
+    # TODO: implement other scoring strategies. But for right now total makes sense
+    {score, out_of} = Enum.reduce(part_attempts, {0, 0}, fn p, {score, out_of} ->
+      {score + p.score, out_of + p.out_of}
+    end)
+
+    update_activity_attempt(activity_attempt, %{
+      score: score,
+      out_of: out_of,
+      date_evaluated: DateTime.utc_now()
+    })
 
   end
 
-  def rollup_activity_attempt_evaluations(resource_attempt_guid) do
-
+  defp get_latest_part_attempts(activity_attempt_guid) do
+    Repo.all(from pa1 in PartAttempt,
+      left_join: pa2 in PartAttempt, on: (pa1.part_id == pa2.part_id and pa1.id < pa2.id),
+      join: aa in ActivityAttempt, on: aa.id == pa1.activity_attempt_id,
+      where: aa.attempt_guid == ^activity_attempt_guid and is_nil(pa2),
+      select: pa1)
   end
-
-
 
   @doc """
   Creates or updates an access record for a given resource, section context id and user. When

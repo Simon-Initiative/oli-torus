@@ -64,6 +64,14 @@ if !Oli.Repo.get_by(Oli.Resources.ResourceType, id: 1) do
 
 end
 
+# create scoring strategy types
+if !Oli.Repo.get_by(Oli.Resources.ScoringStrategy, id: 1) do
+
+  Oli.Resources.ScoringStrategy.get_types()
+  |> Enum.map(&Oli.Resources.create_scoring_strategy/1)
+
+end
+
 # Seed the database with the locally implemented activity types
 if Enum.empty?(Oli.Activities.list_activity_registrations()) do
   Oli.Registrar.register_local_activities()

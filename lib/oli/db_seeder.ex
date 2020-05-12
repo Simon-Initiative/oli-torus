@@ -260,6 +260,25 @@ defmodule Oli.Seeder do
     end
   end
 
+  def add_page(map, attrs, resource_tag, revision_tag) do
+
+    author = map.author
+    project = map.project
+    publication = map.publication
+
+    {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
+
+    attrs = Map.merge(%{author_id: author.id, objectives: %{ "attached" => []}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"), children: [], content: %{ "model" => []}, deleted: false, title: "title", resource_id: resource.id}, attrs)
+    {:ok, revision} = Oli.Resources.create_revision(attrs)
+
+    {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: resource.id}) |> Repo.insert
+
+    publish_resource(publication, resource, revision)
+
+    Map.put(map, resource_tag, resource)
+    |> Map.put(revision_tag, revision)
+  end
+
 
 
   def create_activity(attrs, publication, project, author) do
