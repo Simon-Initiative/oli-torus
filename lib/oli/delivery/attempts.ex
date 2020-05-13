@@ -15,6 +15,14 @@ defmodule Oli.Delivery.Attempts do
   alias Oli.Delivery.Page.ModelPruner
 
 
+  @doc """
+  Resets a current activity attempt, creating a new activity attempt and
+  new part attempts.
+
+  The return value is of the form:
+
+  `{:ok, %ActivityState, model}` where model is potentially a new model of the activity
+  """
   def reset_activity(context_id, activity_attempt_guid) do
 
     activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
@@ -52,6 +60,50 @@ defmodule Oli.Delivery.Attempts do
 
       {:ok, ActivityState.from_attempt(new_activity_attempt, new_part_attempts, model),
         ModelPruner.prune(transformed_model)}
+    end
+
+  end
+
+  @doc """
+  Retrieve a hint for an attempt.
+
+  Return value is `{:ok, %Hint{}, boolean}` where the boolean is an indication as
+  to whether there are more hints.
+
+  If there is not a hint available to fulfill this request, this function returns:
+  `{:error, {:no_more_hints}}`
+
+  If the part attempt can not be found this function returns:
+  `{:error, {:not_found}}`
+
+  If the attept record cannot be updated to track the new hint request, returns:
+  `{:error, %Changeset{}}`
+  """
+  def request_hint(activity_attempt_guid, part_attempt_guid) do
+
+    # get both the activity and part attempt records
+
+    with {:ok, activity_attempt} <- get_activity_attempt_by(attempt_guid: activity_attempt_guid) |> Oli.Utils.trap_nil(:not_found),
+      {:ok, part_attempt} <- get_part_attempt_by(attempt_guid: part_attempt_guid) |> Oli.Utils.trap_nil(:not_found),
+      {:ok, model} <- Model.parse(activity_attempt.transformed_model),
+      {:ok, part} <- Enum.find(model.parts, fn p -> p.id == part_attempt.part_id end) |> Oli.Utils.trap_nil(:not_found)
+    do
+      shown_hints = length(part_attempt.hints)
+      all_hints = length(part.hints)
+
+      if all_hints > shown_hints do
+
+        hint = Enum.at(part.hints, shown_hints)
+        case update_part_attempt(part_attempt, %{hints: part_attempt.hints ++ [hint.id]}) do
+          {:ok, _} -> {:ok, hint, all_hints > shown_hints + 1}
+          error -> error
+        end
+
+      else
+        {:error, {:no_more_hints}}
+      end
+    else
+      error -> error
     end
 
   end
@@ -437,11 +489,21 @@ defmodule Oli.Delivery.Attempts do
   Gets an activity attempt by a clause.
   ## Examples
       iex> get_activity_attempt_by(attempt_guid: "123")
-      {:ok, %Section{}}
+      %ActivityAttempt
       iex> get_activity_attempt_by(attempt_guid: "111")
-      { :error, changeset }
+      nil
   """
   def get_activity_attempt_by(clauses), do: Repo.get_by(ActivityAttempt, clauses) |> Repo.preload([:revision])
+
+  @doc """
+  Gets a part attempt by a clause.
+  ## Examples
+      iex> get_part_attempt_by(attempt_guid: "123")
+      %PartAttempt{}
+      iex> get_part_attempt_by(attempt_guid: "111")
+      nil
+  """
+  def get_part_attempt_by(clauses), do: Repo.get_by(PartAttempt, clauses)
 
   def rollup_part_attempt_evaluations(activity_attempt_guid) do
 

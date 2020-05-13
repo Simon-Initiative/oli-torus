@@ -17,6 +17,15 @@ export interface EvaluationResponse extends Success {
   evaluations: EvaluatedPart[];
 }
 
+// Notice that the hint attribute here is optional.  If a
+// client requests a hint and there are no more, the platform
+// will return an instance of this interface with hasMoreHints set to false
+// and the hint attribute missing.
+export interface RequestHintResponse extends Success {
+  hint?: Hint;
+  hasMoreHints: boolean;
+}
+
 export interface ResetActivityResponse extends Success {
   attemptState: ActivityState;
   model: ActivityModelSchema;
@@ -36,7 +45,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
     partResponses: PartResponse[]) => Promise<EvaluationResponse>;
   onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>;
 
-  onRequestHint: (attemptGuid: string, partAttemptGuid: string) => Promise<Hint>;
+  onRequestHint: (attemptGuid: string, partAttemptGuid: string) => Promise<RequestHintResponse>;
   onSavePart: (attemptGuid: string, partAttemptGuid: string,
     response: StudentResponse) => Promise<Success>;
   onSubmitPart: (attemptGuid: string, partAttemptGuid: string,
@@ -53,7 +62,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   mountPoint: HTMLDivElement;
   connected: boolean;
 
-  onRequestHint: (attemptGuid: string, partAttemptGuid: string) => Promise<Hint>;
+  onRequestHint: (attemptGuid: string, partAttemptGuid: string) => Promise<RequestHintResponse>;
 
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
   onSubmitActivity: (attemptGuid: string,

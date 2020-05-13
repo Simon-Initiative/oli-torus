@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
-import { DeliveryElement, DeliveryElementProps, EvaluationResponse, ResetActivityResponse } from '../DeliveryElement';
+import { DeliveryElement, DeliveryElementProps,
+  EvaluationResponse, ResetActivityResponse, RequestHintResponse } from '../DeliveryElement';
 import { MultipleChoiceModelSchema, Stem } from './schema';
 import { Choice } from 'components/activities/multiple_choice/schema';
 import * as ActivityTypes from '../types';
@@ -85,8 +86,34 @@ const Choice = ({ choice, index, selected, onClick, isEvaluated }: ChoiceProps) 
   );
 };
 
+interface DisplayedHintProps {
+  hint: ActivityTypes.Hint;
+}
+
+const DisplayedHint = ({ hint }: DisplayedHintProps) => {
+  return (
+    <div key={hint.id}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'top',
+        borderWidth: '2px 2px 4px',
+        padding: '12px 16px',
+        borderRadius: '16px',
+        borderStyle: 'solid',
+        borderColor: '#e5e5e5',
+        backgroundColor: 'transparent',
+      }}>
+      <HtmlContentModelRenderer text={hint.content} />
+    </div>
+  );
+};
+
+
 interface HintsProps {
   isEvaluated: boolean;
+  hints: ActivityTypes.Hint[];
+  hasMoreHints: boolean;
+  onClick: () => void;
 }
 const Hints = (props: HintsProps) => {
   return (
@@ -106,7 +133,19 @@ const Hints = (props: HintsProps) => {
         width: '100%',
       }}></div>
         <h6><b>Hints</b></h6>
-        <button disabled={props.isEvaluated} className="btn btn-primary muted">Request Hint</button>
+        <div style={{
+          display: 'grid',
+          flex: '1',
+          alignItems: 'center',
+          gridTemplateRows: 'min-content 1fr',
+          gridGap: '8px',
+        }}>
+          {props.hints.map(hint => <DisplayedHint hint={hint}/>)}
+        </div>
+        <button
+          onClick={props.onClick}
+          disabled={props.isEvaluated || !props.hasMoreHints}
+          className="btn btn-primary muted">Request Hint</button>
     </div>
   );
 };
@@ -158,9 +197,9 @@ const Reset = ({ onClick } : { onClick : () => void}) =>
 const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) => {
 
   const [model, setModel] = useState(props.model);
-
   const [attemptState, setAttemptState] = useState(props.state);
-
+  const [hints, setHints] = useState(props.state.parts[0].hints);
+  const [hasMoreHints, setHasMoreHints] = useState(props.state.parts[0].hasMoreHints);
   const [selected, setSelected] = useState(
     props.state.parts[0].response === null
     ? Maybe.nothing<string>()
@@ -188,6 +227,15 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
       });
   };
 
+  const onRequestHint = () => {
+    props.onRequestHint(attemptState.attemptGuid, attemptState.parts[0].attemptGuid)
+    .then((state: RequestHintResponse) => {
+      if (state.hint !== undefined) {
+        setHints([...hints, state.hint] as any);
+      }
+      setHasMoreHints(state.hasMoreHints);
+    });
+  };
 
   const onReset = () => {
     props.onResetActivity(attemptState.attemptGuid)
@@ -195,6 +243,8 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
       setSelected(Maybe.nothing<string>());
       setAttemptState(state.attemptState);
       setModel(state.model as MultipleChoiceModelSchema);
+      setHints([]);
+      setHasMoreHints(props.state.parts[0].hasMoreHints);
     });
   };
 
@@ -214,7 +264,8 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
         <Choices choices={choices} selected={selected}
           onSelect={onSelect} isEvaluated={isEvaluated}/>
         {evaluationSummary}
-        <Hints isEvaluated={isEvaluated}/>
+        <Hints onClick={onRequestHint} hints={hints}
+          hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>
       </div>
       {reset}
     </div>
