@@ -8,6 +8,7 @@ defmodule Oli.Activities do
 
   alias Oli.Activities.Manifest
   alias Oli.Activities.Registration
+  alias Oli.Resources.Resource
 
   def register_activity(%Manifest{} = manifest) do
     create_registration(%{

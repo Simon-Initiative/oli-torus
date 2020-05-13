@@ -4,7 +4,7 @@ defmodule OliWeb.Insights.TableRow do
   def render(assigns) do
     # content is a page, activity, or skill
     %{
-      content: content,
+      activity: activity,
       number_of_attempts: number_of_attempts,
       relative_difficulty: relative_difficulty,
       eventually_correct: eventually_correct,
@@ -13,7 +13,7 @@ defmodule OliWeb.Insights.TableRow do
 
     ~L"""
     <tr>
-      <th scope="row"><a href="#"><%= content %></a></th>
+      <th scope="row"><a href="#"><%= activity %></a></th>
       <td><%= number_of_attempts %></td>
       <td><%= relative_difficulty %></td>
       <td><%= eventually_correct %></td>

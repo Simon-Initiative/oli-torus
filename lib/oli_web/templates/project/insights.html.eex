@@ -8,7 +8,7 @@ analyses on the skills covered by each question to find areas where students are
   </div>
   <div class="row">
     <div class="col-sm-12">
-      <%= live_render @conn, OliWeb.Insights %>
+      <%= live_render @conn, OliWeb.Insights, session: %{ "project_id" => @project.id } %>
     </div>
   </div>
 </div>

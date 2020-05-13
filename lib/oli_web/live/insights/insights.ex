@@ -8,31 +8,7 @@ defmodule OliWeb.Insights do
   alias Oli.Delivery.Attempts.Snapshot
   alias OliWeb.Insights.TableRow
 
-  def mount(params, _, socket) do
-
-    # from rev in Revision,
-    #   distinct: rev.resource_id,
-    #   where: rev.slug == ^slug,
-    #   select: {rev.resource_id})
-
-    # eventually_correct = Repo.all(
-    #   from snapshot in Snapshot,
-    #   group_by: [:student, :resource, :activity],
-    #   select: fragment("any((select ))")
-    # )
-
-    # by_resource = Repo.all(from snapshot in Snapshot,
-    #   group_by: :resource,
-    #   select: %{
-    #     resource: snapshot.resource,
-    #     num_attempts: count(snapshot.id),
-    #     relative_difficulty:
-    #       sum(
-    #         snapshot.hints +
-    #         fragment("if ? is false then 1 else 0 end if", snapshot.correct))
-    #       / count(snapshot.id),
-    #     eventually_correct: nil
-    #   })
+  def mount(_params, %{ "project_id" => project_id } = _session, socket) do
 
     # PubSub.subscribe Oli.PubSub, "resource:" <> Integer.to_string(resource_id)
 
@@ -103,47 +79,15 @@ defmodule OliWeb.Insights do
 
     # by activity
 
-
-
-    # activity_is_first_try_correct = from snapshot in Snapshot,
-    #   group_by: [:activity, :user],
-    #   select: %{
-    #     activity: snapshot.activity,
-    #     is_first_try_correct: fragment("bool_or(? is true and ? == 1)", snapshot.correct, snapshot.attempt_number)
-    #   }
-
-    # activity_first_try_correct_ratio = from tries in activity_is_first_try_correct,
-    #   group_by: [:activity],
-    #   select: %{
-    #     activity: tries.activity,
-    #     first_try_correct_ratio: sum(fragment("if ? is true then 1 else 0 end if", tries.is_first_try_correct))
-    #       / count(tries.user)
-    #   }
-
-    # by_activity_snapshots = Repo.all(
-    #   # from a in activity_num_attempts_rel_difficulty,
-    #   # join: b in activity_correctness_ratio,
-    #   # on: a.activity == b.activity,
-    #     # join: c in assoc(activity_first_try_correct_ratio, :activity),
-    #   # on: a.activity == b.activity,
-    #   # and a.activity.id == c.activity.id,
-    #   select: %{
-    #     content: a.activity,
-    #     number_of_attempts: a.number_of_attempts,
-    #     relative_difficulty: a.relative_difficulty,
-    #     eventually_correct: b.eventually_correct_ratio,
-    #     first_try_correct: c.first_try_correct_ratio
-    #   })
-
     by_page_snapshots = []
     by_skill_snapshots = []
-    by_activity_snapshots = []
+    by_activity_snapshots = Oli.Analytics.ByActivity.combined_query(project_id)
 
     {:ok, assign(socket,
       by_page_rows: by_page_snapshots,
       by_activity_rows: by_activity_snapshots,
       by_skill_rows: by_skill_snapshots,
-      selected: :by_page
+      selected: :by_activity
     )}
   end
 
