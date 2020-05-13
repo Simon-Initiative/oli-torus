@@ -6,6 +6,7 @@ defmodule Oli.Resources do
   # should not have a dependency on a Project or Publication
   # or Page or Container or any other higher level construct
   alias Oli.Resources.Resource
+  alias Oli.Resources.ScoringStrategy
   alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
 
@@ -162,6 +163,21 @@ defmodule Oli.Resources do
     |> ResourceType.changeset(attrs)
     |> Repo.insert()
   end
+
+  @doc """
+  Creates a scoring strategy.
+  ## Examples
+      iex> create_scoring_strategy(%{field: value})
+      {:ok, %ScoringStrategy{}}
+      iex> create_scoring_strategy(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_scoring_strategy(attrs \\ %{}) do
+    %ScoringStrategy{}
+    |> ScoringStrategy.changeset(attrs)
+    |> Repo.insert()
+  end
+
 
   @doc """
   Updates a resource_type.

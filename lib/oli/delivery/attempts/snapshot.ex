@@ -35,8 +35,8 @@ defmodule Oli.Delivery.Attempts.Snapshot do
     field :correct, :boolean
 
     # The raw score and out of points
-    field :score, :decimal
-    field :out_of, :decimal
+    field :score, :float
+    field :out_of, :float
 
     # Count of the number of hints received during this attempt
     field :hints, :integer

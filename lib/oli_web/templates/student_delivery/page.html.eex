@@ -20,7 +20,7 @@
     const params = {
       method,
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(body),
+      body: body === undefined ? undefined : JSON.stringify(body),
     };
     window.fetch(url, params)
       .then(response => response.json())
@@ -51,25 +51,25 @@
   div.addEventListener('savePart', function (e) {
     e.preventDefault();
     e.stopPropagation();
-    makeRequest('/api/v1/attempt/part/' + e.detail.attemptGuid, 'PATCH', { input: e.detail.payload }, e.detail.continuation);
+    makeRequest('/api/v1/attempt/activity/' + e.detail.attemptGuid + '/part/' + e.detail.partAttemptGuid, 'PATCH', { input: e.detail.payload }, e.detail.continuation);
   }, false);
 
   div.addEventListener('submitPart', function (e) {
     e.preventDefault();
     e.stopPropagation();
-    makeRequest('/api/v1/attempt/part/' + e.detail.attemptGuid, 'PUT', { input: e.detail.payload }, e.detail.continuation);
+    makeRequest('/api/v1/attempt/activity/' + e.detail.attemptGuid + '/part/' + e.detail.partAttemptGuid, 'PUT', { input: e.detail.payload }, e.detail.continuation);
   }, false);
 
   div.addEventListener('resetPart', function (e) {
     e.preventDefault();
     e.stopPropagation();
-    makeRequest('/api/v1/attempt/part/' + e.detail.attemptGuid, 'POST', {}, e.detail.continuation);
+    makeRequest('/api/v1/attempt/activity/' + e.detail.attemptGuid + '/part/' + e.detail.partAttemptGuid, 'POST', {}, e.detail.continuation);
   }, false);
 
   div.addEventListener('requestHint', function (e) {
     e.preventDefault();
     e.stopPropagation();
-    makeRequest('/api/v1/attempt/part/' + e.detail.attemptGuid + '/hint', 'GET', {}, e.detail.continuation);
+    makeRequest('/api/v1/attempt/activity/' + e.detail.attemptGuid + '/part/' + e.detail.partAttemptGuid + '/hint', 'GET', undefined, e.detail.continuation);
   }, false);
 
 </script>

@@ -1,5 +1,6 @@
 defmodule Oli.Activities.Model.Feedback do
 
+  @derive Jason.Encoder
   defstruct [:id, :content]
 
   def parse(%{"id" => id, "content" => content }) do
