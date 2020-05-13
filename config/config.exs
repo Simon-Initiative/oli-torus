@@ -17,6 +17,7 @@ config :oli,
     env: Mix.env,
   },
   local_activity_manifests: Path.wildcard(File.cwd! <> "/assets/src/components/activities/*/manifest.json")
+    |> Enum.map(&File.read!/1)
 
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,
