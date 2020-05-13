@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.21.3">
     <meta name="project" content="OLI Torus v0.1.0">
-    <title>OliWeb.AuthController — OLI Torus v0.1.0</title>
+    <title>Oli.ReleaseTasks — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
     <script src="dist/sidebar_items-912f02c7c3.js"></script>
       <script src="docs_config.js"></script>
@@ -68,7 +68,7 @@ OLI Torus      </a>
 
       <h1>
         <small class="app-vsn">OLI Torus v0.1.0</small>
-OliWeb.AuthController          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L1" title="View Source" class="view-source" rel="help">
+Oli.ReleaseTasks          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/release.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -90,47 +90,47 @@ OliWeb.AuthController          <a href="https://github.com/Simon-Initiative/oli-
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#callback/2">callback(conn, params)</a>
+    <a href="#create/0">create()</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#identity_callback/2">identity_callback(conn, params)</a>
+    <a href="#drop/0">drop()</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#link_account_callback/2">link_account_callback(conn, author)</a>
+    <a href="#drop/1">drop(map)</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#register/2">register(conn, params)</a>
+    <a href="#migrate/0">migrate()</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#register_email_form/2">register_email_form(conn, arg2)</a>
+    <a href="#reset/0">reset()</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#register_email_submit/2">register_email_submit(conn, params)</a>
+    <a href="#reset/1">reset(map)</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#signin/2">signin(conn, params)</a>
+    <a href="#rollback/2">rollback(repo, version)</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#signin_callback/2">signin_callback(conn, author)</a>
+    <a href="#seed/0">seed()</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#signout/2">signout(conn, params)</a>
+    <a href="#setup/0">setup()</a>
   </div>
 </div>
   </div>
@@ -144,14 +144,14 @@ OliWeb.AuthController          <a href="https://github.com/Simon-Initiative/oli-
             </a>
 Functions          </h1>
           <div class="functions-list">
-<section class="detail" id="callback/2">
+<section class="detail" id="create/0">
   <div class="detail-header">
-    <a href="#callback/2" class="detail-link" title="Link to this function">
+    <a href="#create/0" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">callback(conn, params)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L96" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">create()</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/release.ex#L46" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -159,14 +159,14 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="identity_callback/2">
+<section class="detail" id="drop/0">
   <div class="detail-header">
-    <a href="#identity_callback/2" class="detail-link" title="Link to this function">
+    <a href="#drop/0" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">identity_callback(conn, params)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L143" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">drop()</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/release.ex#L24" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -174,14 +174,14 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="link_account_callback/2">
+<section class="detail" id="drop/1">
   <div class="detail-header">
-    <a href="#link_account_callback/2" class="detail-link" title="Link to this function">
+    <a href="#drop/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">link_account_callback(conn, author)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L180" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">drop(map)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/release.ex#L36" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -189,14 +189,14 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="register/2">
+<section class="detail" id="migrate/0">
   <div class="detail-header">
-    <a href="#register/2" class="detail-link" title="Link to this function">
+    <a href="#migrate/0" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">register(conn, params)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L25" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">migrate()</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/release.ex#L65" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -204,14 +204,14 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="register_email_form/2">
+<section class="detail" id="reset/0">
   <div class="detail-header">
-    <a href="#register_email_form/2" class="detail-link" title="Link to this function">
+    <a href="#reset/0" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">register_email_form(conn, arg2)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L34" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">reset()</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/release.ex#L4" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -219,14 +219,14 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="register_email_submit/2">
+<section class="detail" id="reset/1">
   <div class="detail-header">
-    <a href="#register_email_submit/2" class="detail-link" title="Link to this function">
+    <a href="#reset/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">register_email_submit(conn, params)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L52" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">reset(map)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/release.ex#L11" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -234,14 +234,14 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="signin/2">
+<section class="detail" id="rollback/2">
   <div class="detail-header">
-    <a href="#signin/2" class="detail-link" title="Link to this function">
+    <a href="#rollback/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">signin(conn, params)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L10" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">rollback(repo, version)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/release.ex#L90" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -249,14 +249,14 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="signin_callback/2">
+<section class="detail" id="seed/0">
   <div class="detail-header">
-    <a href="#signin_callback/2" class="detail-link" title="Link to this function">
+    <a href="#seed/0" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">signin_callback(conn, author)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L173" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">seed()</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/release.ex#L73" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -264,14 +264,14 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="signout/2">
+<section class="detail" id="setup/0">
   <div class="detail-header">
-    <a href="#signout/2" class="detail-link" title="Link to this function">
+    <a href="#setup/0" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">signout(conn, params)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L19" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">setup()</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/release.ex#L18" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
