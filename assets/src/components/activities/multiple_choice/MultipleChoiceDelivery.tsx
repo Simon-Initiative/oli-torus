@@ -191,8 +191,9 @@ const Evaluation = ({ attemptState } : { attemptState : ActivityTypes.ActivitySt
 
 };
 
-const Reset = ({ onClick } : { onClick : () => void}) =>
-  <button onClick={onClick} className="btn btn-primary muted">Retry</button>;
+const Reset = ({ onClick, hasMoreAttempts } : { onClick : () => void, hasMoreAttempts: boolean}) =>
+  <button disabled={!hasMoreAttempts} onClick={onClick}
+    className="btn btn-primary muted">Retry</button>;
 
 const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) => {
 
@@ -249,7 +250,12 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
   };
 
   const evaluationSummary = isEvaluated ? <Evaluation attemptState={attemptState}/> : null;
-  const reset = isEvaluated ? <div className="float-right"><Reset onClick={onReset} /></div> : null;
+  const reset = isEvaluated
+    ? (<div className="float-right">
+        <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
+      </div>
+    )
+    : null;
 
   return (
     <div>

@@ -27,7 +27,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       map = Seeder.base_project_with_resource2()
       |> Seeder.create_section()
       |> Seeder.add_objective("objective one", :o1)
-      |> Seeder.add_activity(%{title: "one", content: content}, :publication, :project, :author, :activity_resource, :activity_revision)
+      |> Seeder.add_activity(%{title: "one", max_attempts: 2, content: content}, :publication, :project, :author, :activity_resource, :activity_revision)
       |> Seeder.add_user(%{}, :user1)
 
       attrs = %{
@@ -77,6 +77,34 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert attempt_state.score == nil
       assert attempt_state.outOf == nil
       assert length(attempt_state.parts) == 1
+      assert attempt_state.hasMoreAttempts == false
+
+      # now try to reset when there are no more attempts
+      assert {:error, {:no_more_attempts}} == Attempts.reset_activity(section.context_id, attempt_state.attemptGuid)
+
+    end
+
+    # This test case ensures that the following scenario works correctly:
+    #
+    # 1. Student opens a resource with an activity that has a maximum of TWO attempts in window tab A.
+    # 2. Student submits a response (exhausting attempt 1).
+    # 3. Student opens a new window tab B with the same resource. This generates a new activity attempt (attempt 2)
+    # 4. Student submits a response for tab B. (exhausting attempt 2)
+    # 5. Student clicks "Reset" in tab A.  This should be rejected.
+    test "handling concurrent reset attempts", %{ part1_attempt1: part_attempt, section: section, activity_attempt1: activity_attempt} do
+
+      # Submit in tab A:
+      part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
+      {:ok, _} = Attempts.submit_part_evaluations(activity_attempt.attempt_guid, part_inputs)
+
+      # now reset the activity, this is a simulation of the student
+      # opening the resource in tab B.
+      {:ok, attempt_state, _} = Attempts.reset_activity(section.context_id, activity_attempt.attempt_guid)
+      assert attempt_state.hasMoreAttempts == false
+
+      # now try to reset the guid from the first attempt, simulating the
+      # student clicking 'Reset' in tab A.
+      assert {:error, {:no_more_attempts}} == Attempts.reset_activity(section.context_id, activity_attempt.attempt_guid)
 
     end
 

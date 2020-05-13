@@ -22,47 +22,82 @@ defmodule Oli.Delivery.Attempts do
   The return value is of the form:
 
   `{:ok, %ActivityState, model}` where model is potentially a new model of the activity
+
+  If all attempts have been exhausted:
+
+  `{:error, {:no_more_attempts}}`
+
+  If the activity attempt cannot be found:
+
+  `{:error, {:not_found}}`
   """
   def reset_activity(context_id, activity_attempt_guid) do
 
     activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
 
     if (activity_attempt == nil) do
-      {:error, :not_found}
+      {:error, {:not_found}}
     else
-      activity_attempt = activity_attempt |> Repo.preload([:part_attempts])
 
-      # Resolve the revision to pick up the latest
-      revision = DeliveryResolver.from_resource_id(context_id, activity_attempt.resource_id)
+      # We cannot rely on the attempt number from the supplied activity attempt
+      # to determine the total number of attempts - or the next attempt number, since
+      # a client could be resetting an attempt that is not the latest attempt (e.g. from multiple
+      # browser windows).
+      # Instead we will query to determine the count of attempts. This is likely an
+      # area where we want locking in place to ensure that we can never get into a state
+      # where two attempts are generated with the same number
 
-      # parse and transform
-      {:ok, model} = Model.parse(revision.content)
-      {:ok, transformed_model} = Transformers.apply_transforms(revision.content)
+      attempt_count = count_activity_attempts(activity_attempt.resource_attempt_id, activity_attempt.resource_id)
 
-      {:ok, new_activity_attempt} = create_activity_attempt(%{
-        attempt_guid: UUID.uuid4(),
-        attempt_number: activity_attempt.attempt_number + 1,
-        transformed_model: transformed_model,
-        resource_id: activity_attempt.resource_id,
-        revision_id: revision.id,
-        resource_attempt_id: activity_attempt.resource_attempt_id
-      })
+      if activity_attempt.revision.max_attempts <= attempt_count do
+        {:error, {:no_more_attempts}}
+      else
+        activity_attempt = activity_attempt |> Repo.preload([:part_attempts])
 
-      new_part_attempts = Enum.map(activity_attempt.part_attempts, fn p ->
-        {:ok, part_attempt} = create_part_attempt(%{
+        # Resolve the revision to pick up the latest
+        revision = DeliveryResolver.from_resource_id(context_id, activity_attempt.resource_id)
+
+        # parse and transform
+        {:ok, model} = Model.parse(revision.content)
+        {:ok, transformed_model} = Transformers.apply_transforms(revision.content)
+
+        {:ok, new_activity_attempt} = create_activity_attempt(%{
           attempt_guid: UUID.uuid4(),
-          attempt_number: 1,
-          part_id: p.part_id,
-          activity_attempt_id: new_activity_attempt.id
+          attempt_number: attempt_count + 1,
+          transformed_model: transformed_model,
+          resource_id: activity_attempt.resource_id,
+          revision_id: revision.id,
+          resource_attempt_id: activity_attempt.resource_attempt_id
         })
-        part_attempt
-      end)
 
-      {:ok, ActivityState.from_attempt(new_activity_attempt, new_part_attempts, model),
-        ModelPruner.prune(transformed_model)}
+        # simulate preloading of the revision
+        new_activity_attempt = Map.put(new_activity_attempt, :revision, revision)
+
+        new_part_attempts = Enum.map(activity_attempt.part_attempts, fn p ->
+          {:ok, part_attempt} = create_part_attempt(%{
+            attempt_guid: UUID.uuid4(),
+            attempt_number: 1,
+            part_id: p.part_id,
+            activity_attempt_id: new_activity_attempt.id
+          })
+          part_attempt
+        end)
+
+        {:ok, ActivityState.from_attempt(new_activity_attempt, new_part_attempts, model),
+          ModelPruner.prune(transformed_model)}
+      end
     end
 
   end
+
+  defp count_activity_attempts(resource_attempt_id, resource_id) do
+    {count} = Repo.one(from(p in ActivityAttempt,
+      where: p.resource_attempt_id == ^resource_attempt_id and p.resource_id == ^resource_id,
+      select: {count(p.id)}))
+
+    count
+  end
+
 
   @doc """
   Retrieve a hint for an attempt.
@@ -164,7 +199,7 @@ defmodule Oli.Delivery.Attempts do
     else
       if resource_attempt.revision_id != resource_revision.id do
 
-        # At some point we can optimize this case to allow curernt attempts for
+        # At some point we can optimize this case to allow current attempts for
         # activities within this resource attempt whose activity revisions haven't
         # changed to be pull forward to this new resource attempt.  This would allow
         # a use case where - live during an exam - an instructor deletes an activity. Students
