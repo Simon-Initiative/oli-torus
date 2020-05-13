@@ -7,8 +7,17 @@
 # General application configuration
 use Mix.Config
 
+default_sha = if Mix.env == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 config :oli,
-  ecto_repos: [Oli.Repo]
+  ecto_repos: [Oli.Repo],
+  build: %{
+    version: Mix.Project.config[:version],
+    sha: System.get_env("SHA", default_sha),
+    date: DateTime.now!("Etc/UTC"),
+    env: Mix.env,
+  },
+  local_activity_manifests: Path.wildcard(File.cwd! <> "/assets/src/components/activities/*/manifest.json")
+    |> Enum.map(&File.read!/1)
 
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,

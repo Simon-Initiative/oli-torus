@@ -70,7 +70,7 @@ if Enum.empty?(Oli.Activities.list_activity_registrations()) do
 end
 
 # only seed with sample data if in development mode
-if Mix.env == :dev do
+if Application.fetch_env!(:oli, :env) == :dev do
   # create an example institution
   if !Oli.Repo.get_by(Oli.Accounts.Institution, id: 1) do
     {:ok, _institution} = Oli.Accounts.create_institution(%{
