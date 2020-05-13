@@ -4,19 +4,14 @@ defmodule Oli.Registrar do
   alias Oli.Activities.Manifest
 
   def register_local_activities() do
-    read_local_manifests()
-      |> Enum.map(fn m -> Activities.register_activity(m) end)
-  end
-
-  defp read_local_manifests() do
-    Path.wildcard(File.cwd! <> "/assets/src/components/activities/*/manifest.json")
-      |> Enum.map(&read_manifest/1)
+    Application.fetch_env!(:oli, :local_activity_manifests)
+      |> Enum.map(fn body ->
+        case Jason.decode(body) do
+          {:ok, json} -> json
+        end
+      end)
       |> Enum.map(&Manifest.parse/1)
-  end
-
-  defp read_manifest(filename) do
-    with {:ok, body} <- File.read(filename),
-          {:ok, json} <- Jason.decode(body), do: json
+      |> Enum.map(fn m -> Activities.register_activity(m) end)
   end
 
 end

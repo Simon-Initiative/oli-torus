@@ -17,8 +17,8 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   def evaluate(%Part{evaluation_strategy: evaluation_strategy} = part, %StudentInput{} = input) do
 
     case evaluation_strategy do
-      :regex -> Numeric.evaluate(part, input)
-      :numeric -> Regex.evaluate(part, input)
+      :regex -> Regex.evaluate(part, input)
+      :numeric -> Numeric.evaluate(part, input)
     end
   end
 

@@ -195,6 +195,7 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
             canUndo={this.state.undoable.undoStack.size > 0}
             onUndo={this.undo} onRedo={this.redo}/>
         </TitleBar>
+
         <div ref={this.ref}>
           {React.createElement(authoringElement, webComponentProps as any)}
         </div>

@@ -250,8 +250,8 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :activity_type_id, references(:activity_registrations)
       add :attempt_number, :integer
       add :correct, :boolean
-      add :score, :decimal
-      add :out_of, :decimal
+      add :score, :float
+      add :out_of, :float
       add :hints, :integer
 
     end
@@ -260,8 +260,8 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       timestamps(type: :timestamptz)
 
       add :access_count, :integer, null: true
-      add :score, :decimal, null: true
-      add :out_of, :decimal, null: true
+      add :score, :float, null: true
+      add :out_of, :float, null: true
 
       add :user_id, references(:user)
       add :section_id, references(:sections)
@@ -279,8 +279,8 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :attempt_guid, :string
       add :attempt_number, :integer
       add :date_evaluated, :utc_datetime
-      add :score, :decimal
-      add :out_of, :decimal
+      add :score, :float
+      add :out_of, :float
 
       add :resource_access_id, references(:resource_accesses)
       add :revision_id, references(:revisions)
@@ -297,8 +297,8 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :attempt_guid, :string
       add :attempt_number, :integer
       add :date_evaluated, :utc_datetime
-      add :score, :decimal
-      add :out_of, :decimal
+      add :score, :float
+      add :out_of, :float
       add :transformed_model, :map
 
       add :resource_attempt_id, references(:resource_attempts)
@@ -316,8 +316,8 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :attempt_guid, :string
       add :attempt_number, :integer
       add :date_evaluated, :utc_datetime
-      add :score, :decimal
-      add :out_of, :decimal
+      add :score, :float
+      add :out_of, :float
       add :response, :map
       add :feedback, :map
       add :hints,  {:array, :string}

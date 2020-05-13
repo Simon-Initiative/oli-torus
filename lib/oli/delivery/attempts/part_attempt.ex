@@ -7,8 +7,8 @@ defmodule Oli.Delivery.Attempts.PartAttempt do
     field :attempt_guid, :string
     field :attempt_number, :integer
     field :date_evaluated, :utc_datetime
-    field :score, :decimal
-    field :out_of, :decimal
+    field :score, :float
+    field :out_of, :float
     field :response, :map
     field :feedback, :map
     field :hints, {:array, :string}, default: []

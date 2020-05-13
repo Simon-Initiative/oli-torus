@@ -20,9 +20,9 @@ defmodule Oli.Resources.Revision do
     field :children, {:array, :id}, default: []
     field :objectives, :map, default: %{}
     field :graded, :boolean, default: false
-    field :max_attempts, :integer
-    field :recommended_attempts, :integer
-    field :time_limit, :integer
+    field :max_attempts, :integer, default: 0
+    field :recommended_attempts, :integer, default: 0
+    field :time_limit, :integer, default: 0
     belongs_to :scoring_strategy, Oli.Resources.ScoringStrategy
     belongs_to :activity_type, Oli.Activities.Registration
 

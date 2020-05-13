@@ -34,13 +34,18 @@ defmodule Oli.Activities.State.ActivityState do
     attempt_map = Enum.reduce(part_attempts, %{}, fn p, m -> Map.put(m, p.part_id, p) end)
     parts = Enum.map(model.parts, fn part -> Map.get(attempt_map, part.id) |> PartState.from_attempt(part) end)
 
+    has_more_attempts = case attempt.revision.max_attempts do
+      0 -> true
+      max -> attempt.attempt_number < max
+    end
+
     %Oli.Activities.State.ActivityState{
       attemptGuid: attempt.attempt_guid,
       attemptNumber: attempt.attempt_number,
       dateEvaluated: attempt.date_evaluated,
       score: attempt.score,
       outOf: attempt.out_of,
-      hasMoreAttempts: true,
+      hasMoreAttempts: has_more_attempts,
       parts: parts
     }
 
