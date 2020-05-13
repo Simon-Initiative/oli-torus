@@ -15,7 +15,10 @@ defmodule OliWeb.AttemptController do
 
   def submit_part(conn, %{"activity_attempt_guid" => activity_attempt_guid, "part_attempt_guid" => attempt_guid, "input" => input}) do
 
-    case Attempts.submit_part_evaluations(activity_attempt_guid, [%{attempt_guid: attempt_guid, input: input}]) do
+    lti_params = Plug.Conn.get_session(conn, :lti_params)
+    context_id = lti_params["context_id"]
+
+    case Attempts.submit_part_evaluations(context_id, activity_attempt_guid, [%{attempt_guid: attempt_guid, input: input}]) do
       {:ok, evaluations} -> json conn, %{ "type" => "success", "evaluations" => evaluations}
       {:error, _} -> error(conn, 500, "server error")
     end
@@ -52,10 +55,13 @@ defmodule OliWeb.AttemptController do
 
   def submit_activity(conn, %{"activity_attempt_guid" => activity_attempt_guid, "partInputs" => part_inputs}) do
 
+    lti_params = Plug.Conn.get_session(conn, :lti_params)
+    context_id = lti_params["context_id"]
+
     parsed = Enum.map(part_inputs, fn %{"attemptGuid" => attempt_guid, "response" => input} ->
       %{attempt_guid: attempt_guid, input: %StudentInput{input: Map.get(input, "input")}} end)
 
-    case Attempts.submit_part_evaluations(activity_attempt_guid, parsed) do
+    case Attempts.submit_part_evaluations(context_id, activity_attempt_guid, parsed) do
       {:ok, evaluations} -> json conn, %{ "type" => "success", "evaluations" => evaluations}
       {:error, _} -> error(conn, 500, "server error")
     end

@@ -4,7 +4,7 @@ defmodule Oli.Delivery.Attempts do
   alias Oli.Repo
   alias Oli.Delivery.Sections.{Section}
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Attempts.{PartAttempt, ResourceAccess, ResourceAttempt, ActivityAttempt}
+  alias Oli.Delivery.Attempts.{PartAttempt, ResourceAccess, ResourceAttempt, ActivityAttempt, Snapshot}
   alias Oli.Activities.State.ActivityState
   alias Oli.Resources.{Revision}
   alias Oli.Activities.Model
@@ -494,8 +494,8 @@ defmodule Oli.Delivery.Attempts do
 
   On failure returns `{:error, error}`
   """
-  @spec submit_part_evaluations(String.t, [map()]) :: {:ok, [map()]} | {:error, any}
-  def submit_part_evaluations(activity_attempt_guid, part_inputs) do
+  @spec submit_part_evaluations(String.t, String.t, [map()]) :: {:ok, [map()]} | {:error, any}
+  def submit_part_evaluations(context_id, activity_attempt_guid, part_inputs) do
 
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
@@ -512,12 +512,76 @@ defmodule Oli.Delivery.Attempts do
     end
 
     case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
-    |> persist_evaluations(part_inputs, roll_up_fn) do
+    |> persist_evaluations(part_inputs, roll_up_fn)
+    |> generate_snapshots(context_id, part_inputs) do
 
       {:ok, results} -> results
       error -> error
     end
 
+  end
+
+  defp generate_snapshots(previous_results, context_id, part_inputs) do
+
+    part_attempt_guids = Enum.map(part_inputs, fn %{attempt_guid: attempt_guid} -> attempt_guid end)
+
+    results = Repo.all(from pa in PartAttempt,
+      join: aa in ActivityAttempt, on: pa.activity_attempt_id == aa.id,
+      join: ra in ResourceAttempt, on: aa.resource_attempt_id == ra.id,
+      join: a in ResourceAccess, on: ra.resource_access_id == a.id,
+      join: r1 in Revision, on: ra.revision_id == r1.id,
+      join: r2 in Revision, on: aa.revision_id == r2.id,
+      where: pa.attempt_guid in ^part_attempt_guids,
+      select: {pa, aa, ra, a, r1, r2})
+
+
+    # determine all referenced objective ids by the parts that we find
+    objective_ids = Enum.reduce(results, MapSet.new([]),
+      fn {pa, _, _, _, _, r}, m -> Enum.reduce(Map.get(r.objectives, pa.part_id), m, fn id, n -> MapSet.put(n, id) end) end)
+
+    objective_revisions_by_id = DeliveryResolver.from_resource_id(context_id, objective_ids)
+    |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.resource_id, e.id) end)
+
+    # Now for each part attempt that we evaluated:
+    Enum.each(results, fn {part_attempt, _, _, _, _, activity_revision} = result ->
+
+      # Look at the attached objectives for that part for that revision
+      attached_objectives = Map.get(activity_revision.objectives, part_attempt.part_id)
+
+      case attached_objectives do
+        # If there are no attached objectives, create one record recoring nils for the objectives
+        [] -> create_individual_snapshot(result, nil, nil)
+
+        # Otherwise create one record for each objective
+        objective_ids -> Enum.each(objective_ids, fn id -> create_individual_snapshot(result, id, Map.get(objective_revisions_by_id, id)) end)
+      end
+    end)
+
+    previous_results
+
+  end
+
+  defp create_individual_snapshot({part_attempt, activity_attempt, resource_attempt, resource_access, resource_revision, activity_revision}, objective_id, revision_id) do
+    create_snapshot(%{
+      resource_id: resource_access.resource_id,
+      user_id: resource_access.user_id,
+      section_id: resource_access.section_id,
+      resource_attempt_number: resource_attempt.attempt_number,
+      graded: resource_revision.graded,
+      activity_id: activity_attempt.resource_id,
+      revision_id: activity_attempt.revision_id,
+      activity_type_id: activity_revision.activity_type_id,
+      attempt_number: activity_revision.attempt_number,
+      part_id: part_attempt.part_id,
+      correct: part_attempt.score == part_attempt.out_of,
+      score: part_attempt.score,
+      out_of: part_attempt.out_of,
+      hints: length(part_attempt.hints),
+      part_attempt_number: part_attempt.attempt_number,
+      part_attempt_id: part_attempt.id,
+      objective_id: objective_id,
+      objective_revision_id: revision_id
+    })
   end
 
   @doc """
@@ -669,5 +733,19 @@ defmodule Oli.Delivery.Attempts do
   def update_resource_attempt(resource_attempt, attrs) do
     ResourceAttempt.changeset(resource_attempt, attrs)
     |> Repo.update()
+  end
+
+    @doc """
+  Creates a part attempt snapshot.
+  ## Examples
+      iex> create_snapshot(%{field: value})
+      {:ok, %Snapshot{}}
+      iex> create_snapshot(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_snapshot(attrs \\ %{}) do
+    %Snapshot{}
+    |> Snapshot.changeset(attrs)
+    |> Repo.insert()
   end
 end
