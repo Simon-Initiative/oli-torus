@@ -294,7 +294,7 @@ defmodule Oli.Seeder do
 
     case tag do
       nil -> map
-      t -> Map.put(map, t, revision)
+      t -> Map.put(map, t, %{ revision: revision, resource: resource })
     end
   end
 
@@ -338,7 +338,7 @@ defmodule Oli.Seeder do
 
     case tag do
       nil -> map
-      t -> Map.put(map, t, revision)
+      t -> Map.put(map, t, %{ revision: revision, resource: resource })
     end
   end
 
@@ -347,29 +347,29 @@ defmodule Oli.Seeder do
     Map.put(map, atom, author)
   end
 
-  def add_activity_snapshot(%{ resource: resource, activity: activity, user: user, section: section,
-  objective: objective, objective_revision: objective_revision, activity_revision: activity_revision } = map,
-  attempt_number, correct, score, out_of, hints, atom) do
+  def add_activity_snapshot(map, attrs, tag) do
     {:ok, snapshot} = Snapshot.changeset(%Snapshot{},
     %{
-      resource_id: resource.id,
-      activity_id: activity.id,
+      resource_id: Map.get(attrs, :resource, map.page1).id,
       part_id: 1,
-      user_id: user.id,
-      section_id: section.id,
-      objective_id: objective.id,
-      objective_revision_id: objective_revision.id,
-      activity_revision_id: activity_revision.id,
       activity_type_id: 1,
-      attempt_number: attempt_number,
-      correct: correct,
-      score: score,
-      out_of: out_of,
-      hints: hints
+      section_id: Map.get(attrs, :section, map.section).id,
+
+      user_id: Map.get(map, attrs.user_tag, map.author).id,
+      activity_id: Map.get(map, attrs.activity_tag).resource.id,
+      activity_revision_id: Map.get(map, attrs.activity_tag).revision.id,
+      objective_id: Map.get(map, attrs.objective_tag).resource.id,
+      objective_revision_id: Map.get(map, attrs.objective_tag).revision.id,
+
+      attempt_number: Map.get(attrs, :attempt_number),
+      correct: Map.get(attrs, :correct),
+      score: Map.get(attrs, :score),
+      out_of: Map.get(attrs, :out_of),
+      hints: Map.get(attrs, :hints)
     }) |> Repo.insert()
 
     map
-    |> Map.put(atom, snapshot)
+    |> Map.put(tag, snapshot)
   end
 
 end

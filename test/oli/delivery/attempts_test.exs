@@ -45,7 +45,7 @@ defmodule Oli.Delivery.AttemptsTest do
             %{"type" => "activity-reference", "activity_id" => Map.get(map, :a2).resource_id}
           ]
         },
-        objectives: %{"attached" => [Map.get(map, :o1).resource_id]}
+        objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
       }
 
       Seeder.add_page(map, attrs, :p1)

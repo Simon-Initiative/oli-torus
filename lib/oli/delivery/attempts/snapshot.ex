@@ -9,7 +9,7 @@ defmodule Oli.Delivery.Attempts.Snapshot do
     # The page, activity and part that this snapshot pertains to
     belongs_to :resource, Oli.Resources.Resource
     belongs_to :activity, Oli.Resources.Resource
-    field :part_id, :string
+    field :part_id, :id
 
     # Which user and section
     belongs_to :user, Oli.Accounts.User
@@ -49,9 +49,9 @@ defmodule Oli.Delivery.Attempts.Snapshot do
     problem_step_rollup
     |> cast(attrs, [:resource_id, :activity_id, :part_id, :user_id, :section_id,
       :score, :out_of,
-      :objectives, :objective_revisions, :revision_id, :activity_type_id, :attempt_number, :correct, :hints])
+      :objective_id, :objective_revision_id, :activity_revision_id, :activity_type_id, :attempt_number, :correct, :hints])
     |> validate_required([:resource_id, :activity_id, :part_id, :user_id, :section_id,
       :score, :out_of,
-      :objectives, :objective_revisions, :revision_id, :activity_type_id, :attempt_number, :correct, :hints])
+      :objective_id, :objective_revision_id, :activity_revision_id, :activity_type_id, :attempt_number, :correct, :hints])
   end
 end
