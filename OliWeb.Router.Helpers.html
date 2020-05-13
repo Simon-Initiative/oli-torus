@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>OliWeb.Router.Helpers — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-912f02c7c3.js"></script>
+    <script src="dist/sidebar_items-f87b452838.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -123,22 +123,32 @@ OliWeb.Router.Helpers          <a href="https://github.com/Simon-Initiative/oli-
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#attempt_path/3">attempt_path(conn_or_endpoint, action, attempt_guid)</a>
+    <a href="#attempt_path/3">attempt_path(conn_or_endpoint, action, activity_attempt_guid)</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#attempt_path/4">attempt_path(conn_or_endpoint, action, attempt_guid, params)</a>
+    <a href="#attempt_path/4">attempt_path(conn_or_endpoint, action, activity_attempt_guid, params)</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#attempt_url/3">attempt_url(conn_or_endpoint, action, attempt_guid)</a>
+    <a href="#attempt_path/5">attempt_path(conn_or_endpoint, action, activity_attempt_guid, part_attempt_guid, params)</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#attempt_url/4">attempt_url(conn_or_endpoint, action, attempt_guid, params)</a>
+    <a href="#attempt_url/3">attempt_url(conn_or_endpoint, action, activity_attempt_guid)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#attempt_url/4">attempt_url(conn_or_endpoint, action, activity_attempt_guid, params)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#attempt_url/5">attempt_url(conn_or_endpoint, action, activity_attempt_guid, part_attempt_guid, params)</a>
   </div>
 </div>
 <div class="summary-row">
@@ -758,7 +768,7 @@ Functions          </h1>
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">attempt_path(conn_or_endpoint, action, attempt_guid)</h1>
+    <h1 class="signature">attempt_path(conn_or_endpoint, action, activity_attempt_guid)</h1>
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
@@ -773,7 +783,22 @@ Functions          </h1>
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">attempt_path(conn_or_endpoint, action, attempt_guid, params)</h1>
+    <h1 class="signature">attempt_path(conn_or_endpoint, action, activity_attempt_guid, params)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="attempt_path/5">
+  <div class="detail-header">
+    <a href="#attempt_path/5" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">attempt_path(conn_or_endpoint, action, activity_attempt_guid, part_attempt_guid, params)</h1>
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
@@ -788,7 +813,7 @@ Functions          </h1>
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">attempt_url(conn_or_endpoint, action, attempt_guid)</h1>
+    <h1 class="signature">attempt_url(conn_or_endpoint, action, activity_attempt_guid)</h1>
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
@@ -803,7 +828,22 @@ Functions          </h1>
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">attempt_url(conn_or_endpoint, action, attempt_guid, params)</h1>
+    <h1 class="signature">attempt_url(conn_or_endpoint, action, activity_attempt_guid, params)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="attempt_url/5">
+  <div class="detail-header">
+    <a href="#attempt_url/5" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">attempt_url(conn_or_endpoint, action, activity_attempt_guid, part_attempt_guid, params)</h1>
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
