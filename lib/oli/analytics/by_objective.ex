@@ -1,48 +1,36 @@
-defmodule Oli.Analytics.Common do
-
-  # Analytics:
-  # 1) Number of attempts
-  #      sum(attempts)
-  # 2) Relative difficulty
-  #      sum(hints + incorrect) / sum(attempts)
-  # 3) Eventually correct
-  #      sum(users with correct attempt) / sum(users)
-  # 4) First try correct
-  #      sum(users with attempt1 == correct) / sum(users)
+defmodule Oli.Analytics.ByObjective do
 
   import Ecto.Query, warn: false
   alias Oli.Delivery.Attempts.Snapshot
   alias Oli.Repo
 
-  def query_against_project_id(project_id, x) do
-
-    # x = :objective_id || :resource_id || :activity_id
-    activity_num_attempts_rel_difficulty = from snapshot in Snapshot,
-      group_by: :activity_id,
+  def query_against_project_id(project_id) do
+    objective_num_attempts_rel_difficulty = from snapshot in Snapshot,
+      group_by: :objective_id,
       select: %{
-        activity_id: snapshot.activity_id,
+        objective_id: snapshot.objective_id,
         number_of_attempts: count(snapshot.id),
         relative_difficulty: fragment("sum(? + case when ? is false then 1 else 0 end)::float / count(?)",
           snapshot.hints, snapshot.correct, snapshot.id)
       }
 
   # users who eventually got the activity correct
-  # activity1 user1
-    activity_correctness = from snapshot in Snapshot,
-      group_by: [snapshot.activity_id, snapshot.user_id],
+  # obj1 user1
+    objective_correctness = from snapshot in Snapshot,
+      group_by: [snapshot.objective_id, snapshot.user_id],
       select: %{
-        activity_id: snapshot.activity_id,
+        objective_id: snapshot.objective_id,
         user_id: snapshot.user_id,
         is_eventually_correct: fragment("bool_or(?)", snapshot.correct),
         is_first_try_correct: fragment("bool_or(? is true and ? = 1)", snapshot.correct, snapshot.attempt_number)
       }
 
-  # activity1 .95 .87
-  # activity2 1 .95
-    corrections = from correctness in subquery(activity_correctness),
-      group_by: [correctness.activity_id],
+  # obj1 .95 .87
+  # obj2 1 .95
+    corrections = from correctness in subquery(objective_correctness),
+      group_by: [correctness.objective_id],
       select: %{
-        activity_id: correctness.activity_id,
+        objective_id: correctness.objective_id,
         eventually_correct_ratio: sum(fragment("(case when ? is true then 1 else 0 end)::float", correctness.is_eventually_correct))
           / count(correctness.user_id),
         first_try_correct_ratio: sum(fragment("(case when ? is true then 1 else 0 end)::float", correctness.is_first_try_correct))
@@ -55,26 +43,26 @@ defmodule Oli.Analytics.Common do
     # join with latest revision
     # filter to activity
 
-    activity = Oli.Resources.ResourceType.get_id_by_type("activity")
-    all_activities = from mapping in Oli.Publishing.PublishedResource,
+    objective = Oli.Resources.ResourceType.get_id_by_type("objective")
+    all_objectives = from mapping in Oli.Publishing.PublishedResource,
       join: publication in Oli.Publishing.Publication,
       join: rev in Oli.Resources.Revision,
       on: mapping.publication_id == publication.id,
       on: mapping.revision_id == rev.id,
       where: publication.project_id == ^project_id
         and publication.published
-        and rev.resource_type_id == ^activity,
+        and rev.resource_type_id == ^objective,
       select: rev
 
     # IO.inspect Repo.all(all_activities), label: "All revisions"
 
-    Repo.all(from activity in subquery(all_activities),
+    Repo.all(from objective in subquery(all_objectives),
       left_join: a in subquery(corrections),
-      on: activity.id == a.activity_id,
-      left_join: b in subquery(activity_num_attempts_rel_difficulty),
-      on: a.activity_id == b.activity_id,
+      on: objective.id == a.objective_id,
+      left_join: b in subquery(objective_num_attempts_rel_difficulty),
+      on: a.objective_id == b.objective_id,
       select: %{
-        activity: activity,
+        slice: objective,
         eventually_correct: a.eventually_correct_ratio,
         first_try_correct: a.first_try_correct_ratio,
         number_of_attempts: b.number_of_attempts,
@@ -82,6 +70,5 @@ defmodule Oli.Analytics.Common do
       })
 
   end
-
 
 end
