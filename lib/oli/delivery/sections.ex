@@ -15,6 +15,7 @@ defmodule Oli.Delivery.Sections do
 
   """
   def enroll(user_id, section_id, section_role_id) do
+  
     case Repo.one(from(e in Enrollment, where: e.user_id == ^user_id and e.section_id == ^section_id, select: e)) do
 
       # Enrollment doesn't exist, we are creating it
