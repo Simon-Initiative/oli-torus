@@ -326,17 +326,12 @@ defmodule Oli.Authoring.Editing.PageEditor do
   # Creates a new resource revision and updates the publication mapping
   def create_new_revision(previous, publication, resource, author_id) do
 
-    {:ok, revision} = Resources.create_revision(%{
-      content: previous.content,
-      objectives: previous.objectives,
-      deleted: previous.deleted,
-      slug: previous.slug,
-      title: previous.title,
-      author_id: author_id,
-      resource_id: previous.resource_id,
-      previous_revision_id: previous.id,
-      resource_type_id: previous.resource_type_id,
-    })
+    # Copy the state of the previous revision, except for author and id
+    attrs = Map.from_struct(previous)
+    |> Map.merge(%{author_id: author_id})
+    |> Map.delete(:id)
+
+    {:ok, revision} = Resources.create_revision(attrs)
 
     mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
     {:ok, _mapping} = Publishing.update_resource_mapping(mapping, %{ revision_id: revision.id })

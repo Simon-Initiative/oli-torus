@@ -2,6 +2,7 @@ defmodule OliWeb.CurriculumController do
   use OliWeb, :controller
   import OliWeb.ProjectPlugs
   alias Oli.Authoring.Editing.ContainerEditor
+  alias Oli.Resources.ScoringStrategy
 
   plug :fetch_project
   plug :authorize_project
@@ -15,14 +16,21 @@ defmodule OliWeb.CurriculumController do
   def create(conn, %{"type" => type}) do
     %{ project: project, current_author: author } = conn.assigns
 
+    IO.inspect type
+
     attrs = %{
       objectives: %{ "attached" => []},
       children: [],
       content: %{ "model" => []},
       title: "New Page",
       graded: type == "Scored",
+      max_attempts: if type == "Scored" do 5 else 0 end,
+      recommended_attempts: if type == "Scored" do 5 else 0 end,
+      scoring_strategy_id: ScoringStrategy.get_id_by_type("best"),
       resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page")
     }
+
+    IO.inspect attrs
 
     case ContainerEditor.add_new(attrs, author, project) do
 

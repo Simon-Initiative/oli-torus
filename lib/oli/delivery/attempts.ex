@@ -184,7 +184,6 @@ defmodule Oli.Delivery.Attempts do
   end
 
   defp get_ungraded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
-
     if is_nil(resource_attempt) or resource_attempt.revision_id != resource_revision.id do
       {:in_progress, create_new_attempt_tree(resource_attempt, resource_revision, context_id, user_id, activity_provider)}
     else
@@ -194,7 +193,7 @@ defmodule Oli.Delivery.Attempts do
 
   defp get_graded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
 
-    if is_nil(resource_attempt) or !is_nil(resource_attempt.date_evalulated) do
+    if is_nil(resource_attempt) or !is_nil(resource_attempt.date_evaluated) do
       {:not_started, get_resource_attempt_history(resource_revision.resource_id, context_id, user_id)}
     else
       if resource_attempt.revision_id != resource_revision.id do
@@ -208,7 +207,7 @@ defmodule Oli.Delivery.Attempts do
         {:in_progress, create_new_attempt_tree(resource_attempt, resource_revision, context_id, user_id, activity_provider)}
       else
 
-        # Bonus optimizastion at some point: look at each activity attempt, if any are
+        # Bonus optimization at some point: look at each activity attempt, if any are
         # for an activity revision that differs from the
         # the current activity revision - create a new attempt
         # for that activity. This allows a use case where an instructor live publishes
@@ -260,7 +259,7 @@ defmodule Oli.Delivery.Attempts do
       attempt -> {attempt.resource_access_id, attempt.attempt_number + 1}
     end
 
-    activity_revisions = activity_provider.(resource_revision)
+    activity_revisions = activity_provider.(context_id, resource_revision)
 
     {:ok, resource_attempt} = create_resource_attempt(%{
       attempt_guid: UUID.uuid4(),
@@ -365,6 +364,39 @@ defmodule Oli.Delivery.Attempts do
       where: a.user_id == ^user_id and s.context_id == ^context_id and a.resource_id == ^resource_id and is_nil(ra2),
       select: ra1)
 
+  end
+
+  @doc """
+  Create a new resource attempt in an active state for the given page revision slug
+  in the specified context_id and for a specific user.
+
+  On success returns:
+  `{:ok, {%{ResourceAttempt}, ActivityAttemptMap}}`
+
+  Possible failure returns are:
+  `{:error, {:not_found}}` if the revision slug cannot be resolved
+  `{:error, {:active_attempt_present}}` if an active resource attempt is present
+  `{:error, {:no_more_attempts}}` if no more attempts are present
+
+  """
+  def start_resource_attempt(revision_slug, context_id, user_id, activity_provider) do
+
+    with {:ok, revision} <- DeliveryResolver.from_revision_slug(context_id, revision_slug) |> Oli.Utils.trap_nil(:not_found),
+      {access, resource_attempts} <- get_resource_attempt_history(revision.resource_id, context_id, user_id)
+    do
+      case {revision.max_attempts > length(resource_attempts), has_any_active_attempts?(resource_attempts)} do
+        {true, false} -> {:ok, create_new_attempt_tree(nil, revision, context_id, user_id, activity_provider)}
+        {true, true} -> {:error, {:active_attempt_present}}
+        {false, _} -> {:error, {:no_more_attempts}}
+      end
+    else
+      error -> error
+    end
+
+  end
+
+  defp has_any_active_attempts?(resource_attempts) do
+    Enum.any?(resource_attempts, fn r -> r.date_evaluated == nil end)
   end
 
   @doc """

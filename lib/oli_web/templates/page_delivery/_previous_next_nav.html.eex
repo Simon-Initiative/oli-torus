@@ -2,7 +2,7 @@
 
   <%= if @previous_page != nil do %>
   <li class="nav-item">
-    <%= link "<< " <> @previous_page.title, to: Routes.page_delivery_path(@conn, :page, @context_id, @previous_slug.slug), class: "nav-link" %>
+    <%= link "<< " <> @previous_page.title, to: Routes.page_delivery_path(@conn, :page, @context_id, @previous_page.slug), class: "nav-link" %>
   </li>
   <% end %>
 
