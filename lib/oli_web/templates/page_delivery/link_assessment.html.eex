@@ -1,0 +1,3 @@
+<div>
+  <i class="far fa-edit"></i> <%= link @page.title, to: Routes.page_delivery_path(@conn, :page, @context_id, @page.slug) %>
+</div>

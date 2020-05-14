@@ -36,6 +36,7 @@ defmodule Oli.Delivery.Page.PageContext do
 
     # this realizes and resolves activities that may be present in the page
     activity_provider = fn revision ->
+
       case Realizer.realize(revision) do
         [] -> []
         ids -> DeliveryResolver.from_resource_id(context_id, ids)

@@ -631,9 +631,9 @@ defmodule Oli.Delivery.Attempts do
   end
 
   defp get_latest_part_attempts(activity_attempt_guid) do
-    Repo.all(from pa1 in PartAttempt,
-      left_join: pa2 in PartAttempt, on: (pa1.part_id == pa2.part_id and pa1.id < pa2.id),
-      join: aa in ActivityAttempt, on: aa.id == pa1.activity_attempt_id,
+    Repo.all(from aa in ActivityAttempt,
+      join: pa1 in PartAttempt, on: aa.id == pa1.activity_attempt_id,
+      left_join: pa2 in PartAttempt, on: (aa.id == pa2.activity_attempt_id and pa1.part_id == pa2.part_id and pa1.id < pa2.id),
       where: aa.attempt_guid == ^activity_attempt_guid and is_nil(pa2),
       select: pa1)
   end

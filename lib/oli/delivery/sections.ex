@@ -45,6 +45,22 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Determines if a particular user is enrolled in a section.
+
+  """
+  def is_enrolled?(user_id, context_id) do
+    query = from(
+      e in Enrollment,
+      join: s in Section, on: e.section_id == s.id,
+      where: e.user_id == ^user_id and s.context_id == ^context_id)
+
+    case Repo.one(query) do
+      nil -> false
+      _ -> true
+    end
+  end
+
+  @doc """
   Returns a listing of all enrollments for a given section context_id.
 
   """

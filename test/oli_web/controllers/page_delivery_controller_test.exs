@@ -1,11 +1,11 @@
-defmodule OliWeb.StudentDeliveryControllerTest do
+defmodule OliWeb.PageDeliveryControllerTest do
   use OliWeb.ConnCase
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionRoles
   alias Oli.Accounts
   alias Oli.Seeder
 
-  describe "delivery_controller index" do
+  describe "page_delivery_controller index" do
     setup [:setup_session]
 
     test "handles student access by an enrolled student", %{conn: conn, user: user, section: section} do
@@ -13,9 +13,9 @@ defmodule OliWeb.StudentDeliveryControllerTest do
       Sections.enroll(user.id, section.id, SectionRoles.get_by_type("student").id)
 
       conn = conn
-      |> get(Routes.student_delivery_path(conn, :index, section.context_id))
+      |> get(Routes.page_delivery_path(conn, :index, section.context_id))
 
-      assert html_response(conn, 200) =~ "Student View"
+      assert html_response(conn, 200) =~ "<h3>"
     end
 
     test "handles student page access by an enrolled student", %{conn: conn, revision: revision, user: user, section: section} do
@@ -23,38 +23,26 @@ defmodule OliWeb.StudentDeliveryControllerTest do
       Sections.enroll(user.id, section.id, SectionRoles.get_by_type("student").id)
 
       conn = conn
-      |> get(Routes.student_delivery_path(conn, :page, section.context_id, revision.slug))
+      |> get(Routes.page_delivery_path(conn, :page, section.context_id, revision.slug))
 
       assert html_response(conn, 200) =~ "<h3>"
-      refute html_response(conn, 200) =~ "<h4>Instructor View of Content</h4>"
     end
 
 
     test "handles student page access by a non enrolled student", %{conn: conn, revision: revision, section: section} do
 
       conn = conn
-      |> get(Routes.student_delivery_path(conn, :page, section.context_id, revision.slug))
+      |> get(Routes.page_delivery_path(conn, :page, section.context_id, revision.slug))
 
       assert html_response(conn, 200) =~ "Not authorized"
     end
 
     test "handles student access who is not enrolled", %{conn: conn, section: section} do
       conn = conn
-      |> get(Routes.student_delivery_path(conn, :index, section.context_id))
+      |> get(Routes.page_delivery_path(conn, :index, section.context_id))
 
       assert html_response(conn, 200) =~ "Not authorized"
     end
-
-    test "handles student access by an instructor", %{conn: conn, user: user, section: section} do
-
-      Sections.enroll(user.id, section.id, SectionRoles.get_by_type("instructor"))
-
-      conn = conn
-      |> get(Routes.student_delivery_path(conn, :index, section.context_id))
-
-      assert html_response(conn, 200) =~ "Not authorized"
-    end
-
 
 
   end

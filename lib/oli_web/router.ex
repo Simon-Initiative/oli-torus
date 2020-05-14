@@ -18,7 +18,7 @@ defmodule OliWeb.Router do
     plug Oli.Plugs.SetCurrentUser
   end
 
-  # piplien for REST api endpoint routes
+  # pipline for REST api endpoint routes
   pipeline :api do
     plug :fetch_session
     plug :fetch_flash
@@ -203,28 +203,8 @@ defmodule OliWeb.Router do
     get "/signout", DeliveryController, :signout
     get "/open_and_free", DeliveryController, :list_open_and_free
 
-  end
-
-  # A student's view of a delivered course section goes thru
-  # the "/delivery/course" prefix, while an instructor's view
-  # goes thru the "/delivery/section" prefix.
-  scope "/delivery", OliWeb do
-
-    scope "/course" do
-      pipe_through [:browser, :csrf_always, :delivery]
-
-      get "/:context_id/page/:revision_slug", StudentDeliveryController, :page
-      get "/:context_id", StudentDeliveryController, :index
-
-    end
-
-    scope "/section" do
-      pipe_through [:browser, :csrf_always, :delivery]
-
-      get "/:context_id", InstructorDeliveryController, :index
-      get "/:context_id/page/:revision_slug", InstructorDeliveryController, :page
-
-    end
+    get "/:context_id/page/:revision_slug", PageDeliveryController, :page
+    get "/:context_id/page", PageDeliveryController, :index
 
   end
 

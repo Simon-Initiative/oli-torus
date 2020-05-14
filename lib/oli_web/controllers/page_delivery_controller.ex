@@ -1,10 +1,9 @@
-defmodule OliWeb.StudentDeliveryController do
+defmodule OliWeb.PageDeliveryController do
   use OliWeb, :controller
   import OliWeb.ProjectPlugs
   alias Oli.Delivery.Student.OverviewDesc
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.SectionRoles
   alias Oli.Rendering.Context
   alias Oli.Rendering.Page
   alias Oli.Activities
@@ -15,7 +14,7 @@ defmodule OliWeb.StudentDeliveryController do
 
     user = conn.assigns.current_user
 
-    if Sections.is_enrolled_as?(user.id, context_id, SectionRoles.get_by_type("student")) do
+    if Sections.is_enrolled?(user.id, context_id) do
 
       case OverviewDesc.get_overview_desc(context_id, user) do
         {:ok, overview} -> render(conn, "index.html",
@@ -32,7 +31,7 @@ defmodule OliWeb.StudentDeliveryController do
 
     user = conn.assigns.current_user
 
-    if Sections.is_enrolled_as?(user.id, context_id, SectionRoles.get_by_type("student")) do
+    if Sections.is_enrolled?(user.id, context_id) do
 
       context = PageContext.create_page_context(context_id, revision_slug, user.id)
 

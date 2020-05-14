@@ -1,0 +1,14 @@
+<ul class="nav justify-content-end">
+
+  <%= if @previous_page != nil do %>
+  <li class="nav-item">
+    <%= link "<< " <> @previous_page.title, to: Routes.page_delivery_path(@conn, :page, @context_id, @previous_slug.slug), class: "nav-link" %>
+  </li>
+  <% end %>
+
+  <%= if @next_page != nil do %>
+  <li class="nav-item">
+    <%= link @next_page.title <> " >>", to: Routes.page_delivery_path(@conn, :page, @context_id, @next_page.slug), class: "nav-link" %>
+  </li>
+  <% end %>
+</ul>

@@ -5,14 +5,14 @@
 
 <h3><%= @title %></h3>
 
-<%= render OliWeb.DeliveryView, "_objectives.html", objectives: @objectives %>
+<%= render "_objectives.html", objectives: @objectives %>
 
 <div id="eventIntercept">
   <%= raw(@html) %>
 </div>
 
-<%= render OliWeb.DeliveryView, "_previous_next_nav.html",
-  conn: @conn, context_id: @context_id, previous_page: @previous_page, next_page: @next_page, linker: &OliWeb.StudentDeliveryView.page_link/3 %>
+<%= render "_previous_next_nav.html",
+  conn: @conn, context_id: @context_id, previous_page: @previous_page, next_page: @next_page %>
 
 <script>
 
