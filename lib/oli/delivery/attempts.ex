@@ -246,6 +246,18 @@ defmodule Oli.Delivery.Attempts do
     {access, attempt_representation}
   end
 
+  @doc """
+  Retrieves all resource access records for a given resource and context
+
+  `[%ResourceAccess{}, ...]`
+  """
+  def get_resource_access_for_context(resource_id, context_id) do
+    Repo.one(from a in ResourceAccess,
+      join: s in Section, on: a.section_id == s.id,
+      where: s.context_id == ^context_id and a.resource_id == ^resource_id,
+      select: a)
+  end
+
   defp get_resource_access(resource_id, context_id, user_id) do
     Repo.one(from a in ResourceAccess,
       join: s in Section, on: a.section_id == s.id,

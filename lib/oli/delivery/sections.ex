@@ -80,6 +80,17 @@ defmodule Oli.Delivery.Sections do
   def get_section!(id), do: Repo.get!(Section, id)
 
   @doc """
+  Gets a section's publication
+  Raises `Ecto.NoResultsError` if the Section does not exist.
+  ## Examples
+      iex> get_section_publication!(123)
+      %Publication{}
+      iex> get_section_publication!(456)
+      ** (Ecto.NoResultsError)
+  """
+  def get_section_publication!(id), do: (Repo.get!(Section, id) |> Repo.preload([:publication])).publication
+
+  @doc """
   Gets a single section by query parameter
   ## Examples
       iex> get_section_by(context_id: "123")
