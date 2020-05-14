@@ -98,8 +98,6 @@ defmodule Oli.ActivityEditingTest do
       assert context.resourceSlug == revision_slug
       assert context.authorEmail == author.email
       assert length(context.allObjectives) == 2
-      assert hd(context.allObjectives).title == "objective 1"
-      assert hd(context.allObjectives).slug == "objective_1"
 
     end
 

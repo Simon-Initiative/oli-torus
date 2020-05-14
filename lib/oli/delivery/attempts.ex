@@ -10,7 +10,7 @@ defmodule Oli.Delivery.Attempts do
   alias Oli.Activities.Model
   alias Oli.Activities.Model.Feedback
   alias Oli.Activities.Transformers
-  alias Oli.Delivery.Attempts.Result
+  alias Oli.Delivery.Attempts.{StudentInput, Result}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Page.ModelPruner
 
@@ -553,6 +553,96 @@ defmodule Oli.Delivery.Attempts do
 
   end
 
+  def submit_graded_page(role, context_id, resource_attempt_guid) do
+
+    # get the resource attempt record, ensure it isn't already evaluated
+    resource_attempt = get_resource_attempt_by(attempt_guid: resource_attempt_guid)
+
+    if resource_attempt.date_evaluated == nil do
+
+      Enum.each(resource_attempt.activity_attempts, fn a ->
+        submit_graded_page_activity(role, context_id, a.attempt_guid)
+      end)
+
+      case roll_up_activities_to_resource_attempt(resource_attempt_guid) do
+        {:ok, _} -> roll_up_resource_attempts_to_access(context_id, resource_attempt.resource_access_id)
+        e -> e
+      end
+
+    else
+      {:error, {:already_submitted}}
+    end
+
+  end
+
+  defp roll_up_activities_to_resource_attempt(resource_attempt_guid) do
+
+    resource_attempt = get_resource_attempt_by(attempt_guid: resource_attempt_guid)
+
+    if resource_attempt.date_evaluated == nil do
+
+      {score, out_of} = Enum.reduce(resource_attempt.activity_attempts, {0, 0}, fn p, {score, out_of} ->
+        {score + p.score, out_of + p.out_of}
+      end)
+
+      update_resource_attempt(resource_attempt, %{
+        score: score,
+        out_of: out_of,
+        date_evaluated: DateTime.utc_now()
+      })
+
+    else
+      {:error, {:already_submitted}}
+    end
+
+  end
+
+  defp roll_up_resource_attempts_to_access(context_id, resource_access_id) do
+
+    access = Oli.Repo.get(ResourceAccess, resource_access_id) |> Repo.preload([:resource_attempts])
+    %{scoring_strategy_id: _} = DeliveryResolver.from_resource_id(context_id, access.resource_id)
+
+    # hardcoded to best for now
+    {score, out_of, _} = Enum.reduce(access.resource_attempts, {0, 0, 0.0}, fn p, {score, out_of, percentage} ->
+      this_percentage = p.score / p.out_of
+      if this_percentage > percentage do
+        {p.score, p.out_of, this_percentage}
+      else
+        {score, out_of, percentage}
+      end
+    end)
+
+    update_resource_access(access, %{
+      score: score,
+      out_of: out_of,
+      date_evaluated: DateTime.utc_now()
+    })
+
+  end
+
+  defp submit_graded_page_activity(role, context_id, activity_attempt_guid) do
+
+    part_attempts = get_latest_part_attempts(activity_attempt_guid)
+
+    roll_up_fn = fn result ->
+      rollup_part_attempt_evaluations(activity_attempt_guid)
+      result
+    end
+
+    # derive the part_attempts from the currently saved state that we expect
+    # to find in the part_attempts
+    part_inputs = Enum.map(part_attempts, fn p -> %{attempt_guid: p.attempt_guid, input: %StudentInput{input: Map.get(p.response, "input")}} end)
+
+    case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
+    |> persist_evaluations(part_inputs, roll_up_fn)
+    |> generate_snapshots(role, context_id, part_inputs) do
+
+      {:ok, results} -> results
+      error -> error
+    end
+
+  end
+
 
   def generate_snapshots({:ok, _} = previous_in_pipline, :student, context_id, part_inputs) do
 
@@ -640,6 +730,16 @@ defmodule Oli.Delivery.Attempts do
       nil
   """
   def get_part_attempt_by(clauses), do: Repo.get_by(PartAttempt, clauses)
+
+  @doc """
+  Gets a resource attempt by a clause.
+  ## Examples
+      iex> get_resource_attempt_by(attempt_guid: "123")
+      %ResourceAttempt{}
+      iex> get_resource_attempt_by(attempt_guid: "111")
+      nil
+  """
+  def get_resource_attempt_by(clauses), do: Repo.get_by(ResourceAttempt, clauses) |> Repo.preload([:activity_attempts])
 
   def rollup_part_attempt_evaluations(activity_attempt_guid) do
 
@@ -742,6 +842,19 @@ defmodule Oli.Delivery.Attempts do
   """
   def update_activity_attempt(activity_attempt, attrs) do
     ActivityAttempt.changeset(activity_attempt, attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Updates an resource access.
+  ## Examples
+      iex> update_resource_access(revision, %{field: new_value})
+      {:ok, %ResourceAccess{}}
+      iex> update_resource_access(revision, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def update_resource_access(activity_attempt, attrs) do
+    ResourceAccess.changeset(activity_attempt, attrs)
     |> Repo.update()
   end
 

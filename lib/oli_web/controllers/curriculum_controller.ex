@@ -16,8 +16,6 @@ defmodule OliWeb.CurriculumController do
   def create(conn, %{"type" => type}) do
     %{ project: project, current_author: author } = conn.assigns
 
-    IO.inspect type
-
     attrs = %{
       objectives: %{ "attached" => []},
       children: [],
@@ -29,8 +27,6 @@ defmodule OliWeb.CurriculumController do
       scoring_strategy_id: ScoringStrategy.get_id_by_type("best"),
       resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page")
     }
-
-    IO.inspect attrs
 
     case ContainerEditor.add_new(attrs, author, project) do
 

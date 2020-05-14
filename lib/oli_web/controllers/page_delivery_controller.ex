@@ -72,8 +72,11 @@ defmodule OliWeb.PageDeliveryController do
       previous_page: context.previous_page,
       next_page: context.next_page,
       title: context.page.title,
+      graded: context.page.graded,
       html: html,
-      objectives: context.objectives
+      objectives: context.objectives,
+      slug: context.page.slug,
+      attempt_guid: hd(context.resource_attempts).attempt_guid
     })
   end
 
@@ -95,6 +98,47 @@ defmodule OliWeb.PageDeliveryController do
     else
       render(conn, "not_authorized.html")
     end
+
+  end
+
+  def finalize_attempt(conn, %{"revision_slug" => revision_slug, "attempt_guid" => attempt_guid}) do
+
+    user = conn.assigns.current_user
+
+    lti_params = Plug.Conn.get_session(conn, :lti_params)
+    context_id = lti_params["context_id"]
+    role = Oli.Delivery.Lti.parse_lti_role(lti_params["roles"])
+
+    if Sections.is_enrolled?(user.id, context_id) do
+
+      case Attempts.submit_graded_page(role, context_id, attempt_guid) do
+        {:ok, _} -> after_finalized(conn, context_id, revision_slug, user.id)
+        {:error, {:active_attempt_present}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
+        {:error, {:no_more_attempts}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
+        {:error, {:not_found}} -> render(conn, "error.html")
+      end
+
+    else
+      render(conn, "not_authorized.html")
+    end
+
+  end
+
+  def after_finalized(conn, context_id, revision_slug, user_id) do
+
+    context = PageContext.create_page_context(context_id, revision_slug, user_id)
+
+    attempts_taken = length(context.resource_attempts)
+    attempts_remaining = context.page.max_attempts - attempts_taken
+
+    render(conn, "after_finalized.html",
+      context_id: context_id,
+      previous_page: context.previous_page,
+      next_page: context.next_page,
+      title: context.page.title,
+      attempts_taken: attempts_taken,
+      attempts_remaining: attempts_remaining,
+      slug: context.page.slug)
 
   end
 

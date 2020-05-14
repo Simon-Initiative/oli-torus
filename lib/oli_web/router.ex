@@ -205,7 +205,8 @@ defmodule OliWeb.Router do
 
     get "/:context_id/page/:revision_slug", PageDeliveryController, :page
     get "/:context_id/page", PageDeliveryController, :index
-    get "/:context_id/page/:revision_slug/start", PageDeliveryController, :start_attempt
+    get "/:context_id/page/:revision_slug/attempt", PageDeliveryController, :start_attempt
+    get "/:context_id/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt
 
   end
 

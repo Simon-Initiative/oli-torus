@@ -26,8 +26,10 @@ defmodule Oli.Rendering.Activity.Html do
       _ ->
         tag = activity_summary.delivery_element
         state = activity_summary.state
+        graded = activity_summary.graded
         model_json = activity_summary.model
-        activity_html = ["<#{tag} class=\"activity\" state=\"#{state}\" model=\"#{model_json}\"></#{tag}>\n"]
+
+        activity_html = ["<#{tag} class=\"activity\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{model_json}\"></#{tag}>\n"]
 
         case purpose do
           "None" ->

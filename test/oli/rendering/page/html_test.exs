@@ -19,6 +19,7 @@ defmodule Oli.Content.Page.HtmlTest do
       activity_map = %{
         1 => %{
           id: 1,
+          graded: false,
           slug: "test",
           state: "{}",
           model: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
@@ -26,6 +27,7 @@ defmodule Oli.Content.Page.HtmlTest do
         },
         2 => %{
           id: 2,
+          graded: false,
           slug: "test",
           state: "{}",
           model: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
@@ -48,6 +50,7 @@ defmodule Oli.Content.Page.HtmlTest do
       activity_map = %{
         1 => %{
           id: 1,
+          graded: false,
           slug: "test",
           state: "{}",
           model: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
@@ -72,6 +75,7 @@ defmodule Oli.Content.Page.HtmlTest do
       activity_map = %{
         1 => %{
           id: 1,
+          graded: false,
           slug: "test",
           state: "{}",
           model: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
