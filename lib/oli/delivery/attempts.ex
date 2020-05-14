@@ -49,7 +49,7 @@ defmodule Oli.Delivery.Attempts do
 
       attempt_count = count_activity_attempts(activity_attempt.resource_attempt_id, activity_attempt.resource_id)
 
-      if activity_attempt.revision.max_attempts <= attempt_count do
+      if activity_attempt.revision.max_attempts > 0 and activity_attempt.revision.max_attempts <= attempt_count do
         {:error, {:no_more_attempts}}
       else
         activity_attempt = activity_attempt |> Repo.preload([:part_attempts])
