@@ -235,27 +235,6 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
     create index(:projects_resources, [:project_id])
     create unique_index(:projects_resources, [:resource_id, :project_id], name: :index_project_resource)
 
-
-    create table(:snapshots) do
-      timestamps(type: :timestamptz)
-
-      add :user_id, references(:user)
-      add :activity_id, references(:resources)
-      add :section_id, references(:sections)
-      add :resource_id, references(:resources)
-      add :part_id, :id
-      add :objective_id, references(:resources)
-      add :objective_revision_id, references(:revisions)
-      add :activity_revision_id, references(:revisions)
-      add :activity_type_id, references(:activity_registrations)
-      add :attempt_number, :integer
-      add :correct, :boolean
-      add :score, :float
-      add :out_of, :float
-      add :hints, :integer
-
-    end
-
     create table(:resource_accesses) do
       timestamps(type: :timestamptz)
 
@@ -329,5 +308,39 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
     create index(:part_attempts, [:activity_attempt_id])
     create unique_index(:part_attempts, [:attempt_guid], name: :attempt_guid_index)
 
+
+    create table(:snapshots) do
+      timestamps(type: :timestamptz)
+
+      add :resource_id, references(:resources)
+      add :activity_id, references(:resources)
+      add :part_id, :string
+      add :part_attempt_id, references(:part_attempts)
+      add :user_id, references(:user)
+      add :section_id, references(:sections)
+      add :objective_id, references(:resources)
+      add :objective_revision_id, references(:revisions)
+      add :revision_id, references(:revisions)
+      add :activity_type_id, references(:activity_registrations)
+      add :attempt_number, :integer
+      add :part_attempt_number, :integer
+      add :resource_attempt_number, :integer
+      add :correct, :boolean
+      add :graded, :boolean
+      add :score, :float
+      add :out_of, :float
+      add :hints, :integer
+
+    end
+
+    create index(:snapshots, [:objective_id])
+    create index(:snapshots, [:activity_id])
+    create index(:snapshots, [:section_id])
+
+    create unique_index(:snapshots, [:part_attempt_id, :objective_id], name: :snapshot_unique_part)
+
   end
+
+
+
 end
