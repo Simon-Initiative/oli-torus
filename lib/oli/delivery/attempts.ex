@@ -494,8 +494,8 @@ defmodule Oli.Delivery.Attempts do
 
   On failure returns `{:error, error}`
   """
-  @spec submit_part_evaluations(String.t, String.t, [map()]) :: {:ok, [map()]} | {:error, any}
-  def submit_part_evaluations(context_id, activity_attempt_guid, part_inputs) do
+  @spec submit_part_evaluations(atom(), String.t, String.t, [map()]) :: {:ok, [map()]} | {:error, any}
+  def submit_part_evaluations(role, context_id, activity_attempt_guid, part_inputs) do
 
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
@@ -513,7 +513,7 @@ defmodule Oli.Delivery.Attempts do
 
     case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
     |> persist_evaluations(part_inputs, roll_up_fn)
-    |> generate_snapshots(context_id, part_inputs) do
+    |> generate_snapshots(role, context_id, part_inputs) do
 
       {:ok, results} -> results
       error -> error
@@ -521,7 +521,8 @@ defmodule Oli.Delivery.Attempts do
 
   end
 
-  defp generate_snapshots(previous_results, context_id, part_inputs) do
+
+  def generate_snapshots({:ok, _} = previous_in_pipline, :student, context_id, part_inputs) do
 
     part_attempt_guids = Enum.map(part_inputs, fn %{attempt_guid: attempt_guid} -> attempt_guid end)
 
@@ -534,10 +535,12 @@ defmodule Oli.Delivery.Attempts do
       where: pa.attempt_guid in ^part_attempt_guids,
       select: {pa, aa, ra, a, r1, r2})
 
-
     # determine all referenced objective ids by the parts that we find
     objective_ids = Enum.reduce(results, MapSet.new([]),
-      fn {pa, _, _, _, _, r}, m -> Enum.reduce(Map.get(r.objectives, pa.part_id), m, fn id, n -> MapSet.put(n, id) end) end)
+      fn {pa, _, _, _, _, r}, m ->
+        Enum.reduce(Map.get(r.objectives, pa.part_id, []), m, fn id, n -> MapSet.put(n, id) end)
+      end)
+      |> MapSet.to_list()
 
     objective_revisions_by_id = DeliveryResolver.from_resource_id(context_id, objective_ids)
     |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.resource_id, e.id) end)
@@ -546,7 +549,7 @@ defmodule Oli.Delivery.Attempts do
     Enum.each(results, fn {part_attempt, _, _, _, _, activity_revision} = result ->
 
       # Look at the attached objectives for that part for that revision
-      attached_objectives = Map.get(activity_revision.objectives, part_attempt.part_id)
+      attached_objectives = Map.get(activity_revision.objectives, part_attempt.part_id, [])
 
       case attached_objectives do
         # If there are no attached objectives, create one record recoring nils for the objectives
@@ -557,12 +560,14 @@ defmodule Oli.Delivery.Attempts do
       end
     end)
 
-    previous_results
-
+    previous_in_pipline
   end
 
+  def generate_snapshots(previous, _, _, _), do: previous
+
   defp create_individual_snapshot({part_attempt, activity_attempt, resource_attempt, resource_access, resource_revision, activity_revision}, objective_id, revision_id) do
-    create_snapshot(%{
+
+    {:ok, _} = create_snapshot(%{
       resource_id: resource_access.resource_id,
       user_id: resource_access.user_id,
       section_id: resource_access.section_id,
@@ -571,7 +576,7 @@ defmodule Oli.Delivery.Attempts do
       activity_id: activity_attempt.resource_id,
       revision_id: activity_attempt.revision_id,
       activity_type_id: activity_revision.activity_type_id,
-      attempt_number: activity_revision.attempt_number,
+      attempt_number: activity_attempt.attempt_number,
       part_id: part_attempt.part_id,
       correct: part_attempt.score == part_attempt.out_of,
       score: part_attempt.score,

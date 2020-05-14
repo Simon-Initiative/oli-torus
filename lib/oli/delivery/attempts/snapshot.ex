@@ -53,11 +53,11 @@ defmodule Oli.Delivery.Attempts.Snapshot do
   @doc false
   def changeset(problem_step_rollup, attrs) do
     problem_step_rollup
-    |> cast(attrs, [:resource_id, :activity_id, :part_id, :user_id, :section_id,
+    |> cast(attrs, [:resource_id, :activity_id, :part_id, :user_id, :section_id, :graded,
       :score, :out_of, :part_attempt_id, :part_attempt_number, :resource_attempt_number,
       :objective_id, :objective_revision_id, :revision_id, :activity_type_id, :attempt_number, :correct, :hints])
     |> validate_required([:resource_id, :activity_id, :part_id, :user_id, :section_id,
       :score, :out_of, :part_attempt_id, :part_attempt_number, :resource_attempt_number,
-      :objective_id, :objective_revision_id, :revision_id, :activity_type_id, :attempt_number, :correct, :hints])
+      :revision_id, :activity_type_id, :attempt_number, :correct, :hints])
   end
 end
