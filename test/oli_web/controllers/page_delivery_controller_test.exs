@@ -4,6 +4,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   alias Oli.Delivery.Sections.SectionRoles
   alias Oli.Accounts
   alias Oli.Seeder
+  alias Oli.Delivery.Attempts.{ResourceAttempt, PartAttempt, ResourceAccess}
 
   describe "page_delivery_controller index" do
     setup [:setup_session]
@@ -44,6 +45,47 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Not authorized"
     end
 
+    test "shows the prologue page on an assessment", %{user: user, conn: conn, section: section, page_revision: page_revision} do
+
+      Sections.enroll(user.id, section.id, SectionRoles.get_by_type("student").id)
+
+      conn = conn
+      |> get(Routes.page_delivery_path(conn, :page, section.context_id, page_revision.slug))
+
+      assert html_response(conn, 200) =~ "When you are ready to begin, click"
+
+      # now start the attempt
+      conn = conn
+      |> get(Routes.page_delivery_path(conn, :start_attempt, section.context_id, page_revision.slug))
+
+      # verify the redirection
+      assert html_response(conn, 302) =~ "redirected"
+      redir_path = redirected_to(conn, 302)
+
+      # and then the rendering of teh page, which should contain a button
+      # that says 'Submit Assessment'
+      conn = get(recycle(conn), redir_path)
+      assert html_response(conn, 200) =~  "Submit Assessment"
+
+      # fetch the resource attempt and part attempt that will have been created
+      [attempt] = Oli.Repo.all(ResourceAttempt)
+      [part_attempt] = Oli.Repo.all(PartAttempt)
+
+      # simulate an interaction
+      Oli.Delivery.Attempts.update_part_attempt(part_attempt, %{
+        response: %{"input" => "a"}
+      })
+
+      # Submit the assessment and verify we see the summary view
+      conn
+      |> get(Routes.page_delivery_path(conn, :finalize_attempt, section.context_id, page_revision.slug, attempt.attempt_guid))
+
+      # fetch the resource id record and verify the grade rolled up
+      [access] = Oli.Repo.all(ResourceAccess)
+      assert access.score == 10
+      assert access.out_of == 11
+
+    end
 
   end
 
@@ -71,7 +113,38 @@ defmodule OliWeb.PageDeliveryControllerTest do
       institution_id: institution.id,
     })
 
+    content = %{
+      "stem" => "1",
+      "authoring" => %{
+        "parts" => [
+          %{"id" => "1", "responses" => [
+            %{"match" => "a", "score" => 10, "id" => "r1", "feedback" => %{"id" => "1", "content" => "yes"}},
+            %{"match" => "b", "score" => 11, "id" => "r2", "feedback" => %{"id" => "2", "content" => "almost"}},
+            %{"match" => "c", "score" => 0, "id" => "r3", "feedback" => %{"id" => "3", "content" => "no"}}
+          ], "scoringStrategy" => "best", "evaluationStrategy" => "regex"}
+        ]
+      }
+    }
+
     map = Seeder.base_project_with_resource2()
+    |> Seeder.add_objective("objective one", :o1)
+    |> Seeder.add_activity(%{title: "one", max_attempts: 2, content: content}, :publication, :project, :author, :activity_resource, :activity_revision)
+
+    attrs = %{
+      graded: true,
+      max_attempts: 2,
+      title: "page1",
+      content: %{
+        "model" => [
+          %{"type" => "activity-reference", "purpose" => "None", "activity_id" => Map.get(map, :activity_revision).resource_id}
+        ]
+      },
+      objectives: %{"attached" => [Map.get(map, :o1).resource_id]}
+    }
+
+    map = Seeder.add_page(map, attrs, :page_resource, :page_revision)
+
+    Seeder.attach_pages_to([map.page1, map.page2, map.page_resource], map.container_resource, map.container_revision, map.publication)
 
     section = section_fixture(%{
       context_id: "some-context-id",
@@ -86,6 +159,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     {:ok,
       conn: conn,
+      map: map,
       author: map.author,
       institution: map.institution,
       lti_params: lti_params,
@@ -93,7 +167,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
       project: map.project,
       publication: map.publication,
       section: section,
-      revision: map.revision1
+      revision: map.revision1,
+      page_revision: map.page_revision
     }
   end
 end

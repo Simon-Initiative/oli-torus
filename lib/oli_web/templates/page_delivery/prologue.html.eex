@@ -7,7 +7,7 @@
 
   <div class="jumbotron">
     <h3 class="display-4"><%= @title %></h3>
-    <p class="lead">This is a <strong>graded assessment</strong></p>
+    <p class="lead" style="color: darkred;">This is a <strong>graded assessment</strong></p>
     <p>You have <%= @attempts_remaining %> attempts remaining out of <%= (@attempts_taken + @attempts_remaining) %> total attempts.</p>
     <hr class="my-4">
     <p>When you are ready to begin, click:</p>
