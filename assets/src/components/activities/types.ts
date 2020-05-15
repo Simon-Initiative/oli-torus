@@ -20,6 +20,11 @@ export type ModeSpecification = {
   entry: string,
 };
 
+export type PartResponse = {
+  attemptGuid: string,
+  response: StudentResponse,
+};
+
 export type Manifest = {
   id: string,
   friendlyName: string,
@@ -44,6 +49,7 @@ export interface PartState {
   partId: number;
   hasMoreAttempts: boolean;
   hasMoreHints: boolean;
+  error?: string;
 }
 
 export interface ActivityState {

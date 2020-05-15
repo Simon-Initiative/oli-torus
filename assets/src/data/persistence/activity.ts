@@ -1,6 +1,6 @@
 import * as Immutable from 'immutable';
 import { ProjectSlug, ActivityTypeSlug, ActivitySlug, ObjectiveSlug, ResourceSlug } from 'data/types';
-import { ActivityModelSchema } from 'components/activities/types';
+import { ActivityModelSchema, PartResponse } from 'components/activities/types';
 import { makeRequest } from './common';
 
 export type ActivityUpdate = {
@@ -9,7 +9,23 @@ export type ActivityUpdate = {
   content: ActivityModelSchema,
 };
 
-export type Created = { type: 'success', revisionSlug: string };
+export type Created = {
+  type: 'success',
+  revisionSlug: string,
+  transformed: null | ActivityModelSchema,
+};
+
+export type Transformed = {
+  type: 'success',
+  transformed: null | ActivityModelSchema,
+};
+
+export type Evaluated = {
+  type: 'success',
+  evaluations: any,
+};
+
+
 export type Edited = { type: 'success', revisionSlug: string };
 
 export function create(
@@ -35,4 +51,27 @@ export function edit(
   };
 
   return makeRequest<Created>(params);
+}
+
+export function transform(model: ActivityModelSchema) {
+
+  const params = {
+    method: 'PUT',
+    body: JSON.stringify({ model }),
+    url: '/project/test/transform',
+  };
+
+  return makeRequest<Transformed>(params);
+}
+
+
+export function evaluate(model: ActivityModelSchema, partResponses: PartResponse[]) {
+
+  const params = {
+    method: 'PUT',
+    body: JSON.stringify({ model, partResponses }),
+    url: '/project/test/evaluate',
+  };
+
+  return makeRequest<Evaluated>(params);
 }

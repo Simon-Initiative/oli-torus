@@ -16,13 +16,13 @@ defmodule Oli.ActivityEditingTest do
     test "create/4 creates an activity revision", %{author: author, project: project } do
 
       content = %{ "stem" => "Hey there" }
-      {:ok, revision} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content)
+      {:ok, {revision, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content)
       assert revision.content == %{ "stem" => "Hey there" }
     end
 
     test "can create and attach an activity to a resource", %{author: author, project: project, revision1: revision } do
       content = %{ "stem" => "Hey there" }
-      {:ok, %{slug: slug, resource_id: activity_id}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content)
+      {:ok, {%{slug: slug, resource_id: activity_id}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content)
 
       # Verify that we can issue a resource edit that attaches the activity
       update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug, "purpose" => "none"}]}}
@@ -53,7 +53,7 @@ defmodule Oli.ActivityEditingTest do
     test "can repeatedly edit an activity", %{author: author, project: project, revision1: revision } do
 
       content = %{ "stem" => "Hey there" }
-      {:ok, %{slug: slug}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content)
+      {:ok, {%{slug: slug}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content)
 
       # Verify that we can issue a resource edit that attaches the activity
       update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug, "purpose" => "none"}]}}
@@ -77,7 +77,7 @@ defmodule Oli.ActivityEditingTest do
 
     test "activity context creation", %{author: author, project: project, revision1: revision } do
 
-      {:ok, %{slug: slug_1}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, %{ "stem" => "one" })
+      {:ok, {%{slug: slug_1}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, %{ "stem" => "one" })
 
       # attach the activity
       update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug_1, "purpose" => "none"}]}}
@@ -103,9 +103,9 @@ defmodule Oli.ActivityEditingTest do
 
     test "activity context previous and next siblings", %{author: author, project: project, revision1: revision } do
 
-      {:ok, %{slug: slug_1}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, %{ "stem" => "one" })
-      {:ok, %{slug: slug_2}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, %{ "stem" => "two" })
-      {:ok, %{slug: slug_3}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, %{ "stem" => "three" })
+      {:ok, {%{slug: slug_1}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, %{ "stem" => "one" })
+      {:ok, {%{slug: slug_2}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, %{ "stem" => "two" })
+      {:ok, {%{slug: slug_3}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, %{ "stem" => "three" })
 
       # attach just one activity
       update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug_1, "purpose" => "none"}]}}

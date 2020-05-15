@@ -7,6 +7,7 @@ import { Choice } from 'components/activities/multiple_choice/schema';
 import * as ActivityTypes from '../types';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { Maybe } from 'tsmonad';
+import { fromText } from './utils';
 
 type Evaluation = {
   score: number,
@@ -153,10 +154,15 @@ const Hints = (props: HintsProps) => {
 const Evaluation = ({ attemptState } : { attemptState : ActivityTypes.ActivityState}) => {
 
   const { score, outOf, parts } = attemptState;
+  const error = parts[0].error;
   const feedback = parts[0].feedback.content;
 
+  const errorText = fromText('There was an error processing this response');
+
   let backgroundColor = '#f0b4b4';
-  if (score === outOf) {
+  if (error !== undefined) {
+    backgroundColor = 'orange';
+  } else if (score === outOf) {
     backgroundColor = '#a7e695';
   } else if ((score as number) > 0) {
     backgroundColor = '#f0e8b4';
@@ -185,7 +191,7 @@ const Evaluation = ({ attemptState } : { attemptState : ActivityTypes.ActivitySt
           fontWeight: 'bold',
           marginRight: '16px',
         }}>{score + ' / ' + outOf}</span>
-      <HtmlContentModelRenderer text={feedback} />
+      <HtmlContentModelRenderer text={error ? errorText : feedback} />
     </div>
   );
 
@@ -228,8 +234,8 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
         [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: id } }])
         .then((response: EvaluationResponse) => {
           if (response.evaluations.length > 0) {
-            const { score, out_of, feedback } = response.evaluations[0];
-            const parts = [Object.assign({}, attemptState.parts[0], { feedback })];
+            const { score, out_of, feedback, error } = response.evaluations[0];
+            const parts = [Object.assign({}, attemptState.parts[0], { feedback, error })];
             const updated = Object.assign({}, attemptState, { score, outOf: out_of, parts });
             setAttemptState(updated);
           }
