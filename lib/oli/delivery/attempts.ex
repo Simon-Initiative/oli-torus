@@ -251,7 +251,7 @@ defmodule Oli.Delivery.Attempts do
   `[%ResourceAccess{}, ...]`
   """
   def get_resource_access_for_context(resource_id, context_id) do
-    Repo.one(from a in ResourceAccess,
+    Repo.all(from a in ResourceAccess,
       join: s in Section, on: a.section_id == s.id,
       where: s.context_id == ^context_id and a.resource_id == ^resource_id,
       select: a)

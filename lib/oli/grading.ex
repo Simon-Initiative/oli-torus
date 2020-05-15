@@ -41,34 +41,39 @@ defmodule Oli.Grading do
 
     # create a map of all resource accesses, keyed off resource id
     resource_accesses = Enum.reduce(graded_pages, %{}, fn revision, acc ->
-      Map.put_new acc, revision.resource_id, Attempts.get_resource_access_for_context(revision.resource_id, section.context_id)
+      user_resource_access_map = Attempts.get_resource_access_for_context(revision.resource_id, section.context_id)
+        |> Enum.reduce(%{}, fn resource_access, acc -> Map.put(acc, resource_access.user_id, resource_access) end)
+      Map.put_new acc, revision.resource_id, user_resource_access_map
     end)
-
-    IO.inspect resource_accesses, label: "resource_accesses"
 
     # build gradebook map - for each user in the section, create a gradebook row. Using
     # resource_accesses, create a list of gradebook scores leaving scores null if they do not exist
-    gradebook = Enum.map(students, fn student ->
+    gradebook = Enum.map(students, fn %{id: user_id} ->
       scores = Enum.reduce(Enum.reverse(graded_pages), [], fn revision, acc ->
         score = case resource_accesses[revision.resource_id] do
-          %ResourceAccess{score: score, out_of: out_of} ->
-            %GradebookScore{
-              resource_id: revision.resource_id,
-              label: revision.title,
-              score: score,
-              out_of: out_of
-            }
+          %{^user_id => student_resource_accesses} ->
+            case student_resource_accesses do
+              %ResourceAccess{score: score, out_of: out_of} ->
+                %GradebookScore{
+                  resource_id: revision.resource_id,
+                  label: revision.title,
+                  score: score,
+                  out_of: out_of
+                }
+              _ -> nil
+            end
           _ -> nil
         end
 
         [score | acc]
       end)
 
-      %GradebookRow{user_id: student.id, scores: scores}
+      %GradebookRow{user_id: user_id, scores: scores}
     end)
 
 
     # return gradebook
-    {gradebook, nil}
+    column_labels = Enum.map graded_pages, fn revision -> revision.title end
+    {gradebook, column_labels}
   end
 end

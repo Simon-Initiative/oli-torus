@@ -34,13 +34,13 @@ defmodule Oli.GradingTest do
         revision1: [12, 20, 19],
         revision2: [0, 3, 5],
       }
-      users = [map.user1, map.user2, map.user2]
+      users = [map.user1, map.user2, map.user3]
 
       # create accesses for resource 1
       users
       |> Enum.with_index
       |> Enum.each(fn {user, i} ->
-        IO.inspect %ResourceAccess{}
+        %ResourceAccess{}
         |> ResourceAccess.changeset(%{
           access_count: 1,
           score: Enum.at(scores.revision1, i),
@@ -56,7 +56,7 @@ defmodule Oli.GradingTest do
       users
       |> Enum.with_index
       |> Enum.each(fn {user, i} ->
-        IO.inspect %ResourceAccess{}
+        %ResourceAccess{}
         |> ResourceAccess.changeset(%{
           access_count: 1,
           score: Enum.at(scores.revision2, i),
@@ -67,8 +67,6 @@ defmodule Oli.GradingTest do
         })
         |> Repo.insert()
       end)
-
-      IO.inspect Repo.all(ResourceAccess), label: "all ResourceAccess"
 
       Map.put(map, :scores, scores)
     end
@@ -82,10 +80,64 @@ defmodule Oli.GradingTest do
       |> create_resource_accesses
     end
 
-    test "returns valid gradebook for section", %{section: section} do
+    test "returns valid gradebook for section", %{section: section, revision1: revision1, revision2: revision2, user1: user1, user2: user2, user3: user3} do
       {gradebook, columns} = Grading.generate_gradebook_for_section(section)
 
-      IO.inspect {gradebook, columns}
+      expected_gradebook = [
+      %Grading.GradebookRow{
+        scores: [
+          %Grading.GradebookScore{
+            label: "Page one",
+            out_of: 20,
+            resource_id: revision1.resource_id,
+            score: 12
+          },
+          %Grading.GradebookScore{
+            label: "Page two",
+            out_of: 5,
+            resource_id: revision2.resource_id,
+            score: 0
+          }
+        ],
+        user_id: user1.id
+      },
+      %Grading.GradebookRow{
+        scores: [
+          %Grading.GradebookScore{
+            label: "Page one",
+            out_of: 20,
+            resource_id: revision1.resource_id,
+            score: 20
+          },
+          %Grading.GradebookScore{
+            label: "Page two",
+            out_of: 5,
+            resource_id: revision2.resource_id,
+            score: 3
+          }
+        ],
+        user_id: user2.id
+      },
+      %Grading.GradebookRow{
+        scores: [
+          %Grading.GradebookScore{
+            label: "Page one",
+            out_of: 20,
+            resource_id: revision1.resource_id,
+            score: 19
+          },
+          %Grading.GradebookScore{
+            label: "Page two",
+            out_of: 5,
+            resource_id: revision2.resource_id,
+            score: 5
+          }
+        ],
+        user_id: user3.id
+      }]
+      expected_column_labels = ["Page one", "Page two"]
+
+      assert {expected_gradebook, expected_column_labels} == {gradebook, columns}
     end
   end
 
