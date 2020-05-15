@@ -139,10 +139,14 @@ defmodule OliWeb.Router do
 
     post "/:project/activity/:activity_type", ActivityController, :create
     put "/:project/resource/:resource/activity/:activity", ActivityController, :update
+    put "/test/evaluate", ActivityController, :evaluate
+    put "/test/transform", ActivityController, :transform
+
     delete "/:project/resource/:resource/activity", ActivityController, :delete
 
     post "/:project/lock/:resource", LockController, :acquire
     delete "/:project/lock/:resource", LockController, :release
+
 
   end
 

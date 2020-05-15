@@ -20,6 +20,11 @@ export type ModeSpecification = {
   entry: string,
 };
 
+export type PartResponse = {
+  attemptGuid: string,
+  response: StudentResponse,
+};
+
 export type Manifest = {
   id: string,
   friendlyName: string,

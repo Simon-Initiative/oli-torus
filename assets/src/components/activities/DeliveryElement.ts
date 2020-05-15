@@ -1,9 +1,6 @@
-import { ActivityModelSchema, ActivityState, StudentResponse, Hint, Success, PartState } from './types';
+import { ActivityModelSchema, ActivityState, PartResponse,
+  StudentResponse, Hint, Success, PartState } from './types';
 
-export type PartResponse = {
-  attemptGuid: string,
-  response: StudentResponse,
-};
 
 export interface EvaluatedPart {
   type: 'EvaluatedPart';

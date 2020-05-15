@@ -2,6 +2,8 @@ defmodule OliWeb.ActivityController do
   use OliWeb, :controller
 
   alias Oli.Authoring.Editing.ActivityEditor
+  alias Oli.Delivery.Attempts
+  alias Oli.Delivery.Attempts.StudentInput
 
   import OliWeb.ProjectPlugs
 
@@ -22,7 +24,7 @@ defmodule OliWeb.ActivityController do
     author = conn.assigns[:current_author]
 
     case ActivityEditor.create(project_slug, activity_type_slug, author, model) do
-      {:ok, %{slug: slug}} -> json conn, %{ "type" => "success", "revisionSlug" => slug}
+      {:ok, {%{slug: slug}, transformed}} -> json conn, %{ "type" => "success", "revisionSlug" => slug, "transformed" => transformed}
       {:error, {:not_found}} -> error(conn, 404, "not found")
       {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
       _ -> error(conn, 500, "server error")
@@ -38,6 +40,24 @@ defmodule OliWeb.ActivityController do
       {:error, {:not_found}} -> error(conn, 404, "not found")
       {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
       _ -> error(conn, 500, "server error")
+    end
+  end
+
+  # endpoint for test mode evaluation
+  def evaluate(conn, %{"model" => model, "partResponses" => part_inputs}) do
+    parsed = Enum.map(part_inputs, fn %{"attemptGuid" => part_id, "response" => input} ->
+      %{part_id: part_id, input: %StudentInput{input: Map.get(input, "input")}} end)
+
+    case Attempts.perform_test_evaluation(model, parsed) do
+      {:ok, evaluations} -> json conn, %{ "type" => "success", "evaluations" => evaluations}
+      {:error, _} -> error(conn, 500, "server error")
+    end
+  end
+
+  def transform(conn, %{"model" => model}) do
+    case Attempts.perform_test_transformation(model) do
+      {:ok, transformed} -> json conn, %{ "type" => "success", "transformed" => transformed}
+      {:error, _} -> error(conn, 500, "server error")
     end
   end
 

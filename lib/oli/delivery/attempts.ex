@@ -509,6 +509,45 @@ defmodule Oli.Delivery.Attempts do
     {MapSet.equal?(yet_to_be_evaluated, to_be_evaluated), part_inputs}
   end
 
+
+  @doc """
+  Processes a test mode evaulation.
+  """
+  @spec perform_test_evaluation(map(), [map()]) :: {:ok, [map()]} | {:error, any}
+  def perform_test_evaluation(model, part_inputs) do
+
+    {:ok, %Model{parts: parts}} = Model.parse(model)
+
+    # We need to tie the attempt_guid from the part_inputs to the attempt_guid
+    # from the %PartAttempt, and then the part id from the %PartAttempt to the
+    # part id in the parsed model.
+    part_map = Enum.reduce(parts, %{}, fn p, m -> Map.put(m, p.id, p) end)
+
+    evaluations = Enum.map(part_inputs, fn %{part_id: part_id, input: input} ->
+
+      part = Map.get(part_map, part_id)
+      Oli.Delivery.Evaluation.Evaluator.evaluate(part, input)
+    end)
+    |> Enum.map(fn e ->
+      case e do
+        {:ok, {feedback, result}} -> %{feedback: feedback, result: result}
+        {:error, _} -> "error in evaluation"
+      end
+    end)
+
+    evaluations = Enum.zip(evaluations, part_inputs)
+    |> Enum.map(fn {e, %{part_id: part_id}} -> Map.put(e, :part_id, part_id) end)
+
+    {:ok, evaluations}
+  end
+
+  @doc """
+  Performs activity model transformation for test mode.
+  """
+  def perform_test_transformation(model) do
+    Transformers.apply_transforms(model)
+  end
+
   @doc """
   Processes a student submission for some number of parts for the given
   activity attempt guid.  If this collection of part attempts completes the activity
