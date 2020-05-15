@@ -37,6 +37,7 @@ export interface PartActivityResponse extends Success {
 }
 
 export interface DeliveryElementProps<T extends ActivityModelSchema> {
+  graded: boolean;
   model: T;
   state: ActivityState;
 
@@ -115,9 +116,11 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   props() : DeliveryElementProps<T> {
 
     const model = JSON.parse(this.getAttribute('model') as any);
+    const graded = JSON.parse(this.getAttribute('graded') as any);
     const state = JSON.parse(this.getAttribute('state') as any) as ActivityState;
 
     return {
+      graded,
       model,
       state,
       onRequestHint: this.onRequestHint,

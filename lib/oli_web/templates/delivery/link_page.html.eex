@@ -1,5 +1,0 @@
-
-<div>
-  <i class="far fa-file"></i> <%= link @page.title, to: @link_help %>
-</div>
-

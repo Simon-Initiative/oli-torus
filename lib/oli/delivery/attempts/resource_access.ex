@@ -5,8 +5,8 @@ defmodule Oli.Delivery.Attempts.ResourceAccess do
   schema "resource_accesses" do
 
     field :access_count, :integer
-    field :score, :decimal
-    field :out_of, :decimal
+    field :score, :float
+    field :out_of, :float
 
     belongs_to :user, Oli.Accounts.User
     belongs_to :section, Oli.Delivery.Sections.Section

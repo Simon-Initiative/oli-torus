@@ -4,8 +4,6 @@ defmodule Oli.Delivery.AttemptsTest do
 
   alias Oli.Delivery.Attempts
   alias Oli.Activities.Model.Part
-  alias Oli.Publishing.DeliveryResolver
-  alias Oli.Activities.Realizer
 
   describe "creating the attempt tree" do
 
@@ -56,12 +54,7 @@ defmodule Oli.Delivery.AttemptsTest do
 
       Attempts.track_access(p1.resource_id, section.context_id, user.id)
 
-      activity_provider = fn revision ->
-        case Realizer.realize(revision) do
-          [] -> []
-          ids -> DeliveryResolver.from_resource_id(section.context_id, ids)
-        end
-      end
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
       # verify that creating the attempt tree returns both activity attempts
       {resource_attempt, attempts} = Attempts.create_new_attempt_tree(nil, p1, section.context_id, user.id, activity_provider)
