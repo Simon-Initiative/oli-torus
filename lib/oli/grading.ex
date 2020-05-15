@@ -9,9 +9,9 @@ defmodule Oli.Grading do
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Attempts.ResourceAccess
   alias Oli.Publishing
-  alias Oli.Accounts
   alias Oli.Grading.GradebookRow
   alias Oli.Grading.GradebookScore
+  alias Oli.Delivery.Sections.SectionRoles
 
   def export_csv() do
 
@@ -29,19 +29,22 @@ defmodule Oli.Grading do
 
     # get publication page resources, filtered by graded: true
     graded_pages = Publishing.get_resource_revisions_for_publication(publication)
+      |> Map.values
       |> Enum.filter(fn {_resource, revision} -> revision.graded == true end)
       |> Enum.map(fn {_resource, revision} -> revision end)
 
     # get students enrolled in the section, filter by role: student
     students = Sections.list_enrollments(section.context_id)
       |> Oli.Repo.preload([:user])
-      |> Enum.filter(fn e -> Accounts.get_user_role(e.user) == :student end)
+      |> Enum.filter(fn e -> e.section_role_id == SectionRoles.get_by_type("student").id end)
       |> Enum.map(fn e -> e.user end)
 
     # create a map of all resource accesses, keyed off resource id
     resource_accesses = Enum.reduce(graded_pages, %{}, fn revision, acc ->
       Map.put_new acc, revision.resource_id, Attempts.get_resource_access_for_context(revision.resource_id, section.context_id)
     end)
+
+    IO.inspect resource_accesses, label: "resource_accesses"
 
     # build gradebook map - for each user in the section, create a gradebook row. Using
     # resource_accesses, create a list of gradebook scores leaving scores null if they do not exist
@@ -66,6 +69,6 @@ defmodule Oli.Grading do
 
 
     # return gradebook
-    gradebook
+    {gradebook, nil}
   end
 end

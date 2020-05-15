@@ -3,22 +3,7 @@ defmodule Oli.Accounts do
   import Ecto.Query, warn: false
 
   alias Oli.Repo
-  alias Oli.Delivery.Lti
   alias Oli.Accounts.{User, Author, Institution, LtiToolConsumer}
-
-  @type user_role :: :student | :instructor | :administrator
-
-  @doc """
-  Returns the role of a user. If a user has more than one role, the role
-  with higher precedence will be returned: administrator > instructor > student
-  ## Examples
-      iex> get_user_role(user)
-      :student
-  """
-  @spec get_user_role(User) :: user_role
-  def get_user_role(user) do
-    Lti.parse_lti_role(user.roles)
-  end
 
   @doc """
   Returns the list of users.
