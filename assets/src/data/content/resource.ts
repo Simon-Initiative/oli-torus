@@ -82,6 +82,7 @@ export interface Activity {
   activitySlug: ActivitySlug;
   typeSlug: ActivityTypeSlug;
   model: ActivityModelSchema;
+  transformed: ActivityModelSchema | null;
 }
 
 export interface ActivityMap {

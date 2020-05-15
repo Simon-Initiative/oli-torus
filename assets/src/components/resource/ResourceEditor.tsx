@@ -2,7 +2,7 @@ import * as Immutable from 'immutable';
 import React from 'react';
 import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
-import { ResourceContent, ResourceContext, PageContent,
+import { ResourceContent, ResourceContext,
   Activity, ActivityMap, createDefaultStructuredContent } from 'data/content/resource';
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';

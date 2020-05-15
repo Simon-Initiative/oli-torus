@@ -16,8 +16,8 @@ defmodule Oli.Delivery.Page.ActivityContext do
   off of the supplied list of activity ids and a map of resource ids to
   resolved revisions.
   """
-  @spec create_context_map(%{}) :: %{}
-  def create_context_map(latest_attempts) do
+  @spec create_context_map(boolean(), %{}) :: %{}
+  def create_context_map(graded, latest_attempts) do
 
     # get a view of all current registered activity types
     registrations = Activities.list_activity_registrations()
@@ -36,7 +36,8 @@ defmodule Oli.Delivery.Page.ActivityContext do
         model: prepare_model(model),
         state: prepare_state(state),
         delivery_element: type.delivery_element,
-        script: type.delivery_script
+        script: type.delivery_script,
+        graded: graded
       }}
     end)
     |> Map.new

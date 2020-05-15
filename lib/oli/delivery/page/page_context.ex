@@ -4,14 +4,13 @@ defmodule Oli.Delivery.Page.PageContext do
   Defines the context required to render a page in delivery mode.
   """
 
-  @enforce_keys [:page, :progress_state, :activities, :objectives, :previous_page, :next_page]
-  defstruct [:page, :progress_state, :activities, :objectives, :previous_page, :next_page]
+  @enforce_keys [:page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page]
+  defstruct [:page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page]
 
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Delivery.Page.PageContext
   alias Oli.Resources.Revision
   alias Oli.Publishing.DeliveryResolver
-  alias Oli.Activities.Realizer
   alias Oli.Delivery.Attempts
 
   @doc """
@@ -34,17 +33,11 @@ defmodule Oli.Delivery.Page.PageContext do
     # track access to this resource
     Attempts.track_access(page_revision.resource_id, context_id, user_id)
 
-    # this realizes and resolves activities that may be present in the page
-    activity_provider = fn revision ->
-      case Realizer.realize(revision) do
-        [] -> []
-        ids -> DeliveryResolver.from_resource_id(context_id, ids)
-      end
-    end
+    activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
-    {progress_state, activities} = case Attempts.determine_resource_attempt_state(page_revision, context_id, user_id, activity_provider) do
-      {:in_progress, {_, latest_attempts}} -> {:in_progress, ActivityContext.create_context_map(latest_attempts)}
-      {:not_started, _} -> {:not_started, nil}
+    {progress_state, resource_attempts, activities} = case Attempts.determine_resource_attempt_state(page_revision, context_id, user_id, activity_provider) do
+      {:in_progress, {resource_attempt, latest_attempts}} -> {:in_progress, [resource_attempt], ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
+      {:not_started, {_, resource_attempts}} -> {:not_started, resource_attempts, nil}
     end
 
     {objectives, previous, next} =
@@ -53,6 +46,7 @@ defmodule Oli.Delivery.Page.PageContext do
     %PageContext{
       page: page_revision,
       progress_state: progress_state,
+      resource_attempts: resource_attempts,
       activities: activities,
       objectives: objectives,
       previous_page: previous,

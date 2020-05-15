@@ -4,13 +4,13 @@ defmodule Oli.Delivery.Attempts do
   alias Oli.Repo
   alias Oli.Delivery.Sections.{Section}
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Attempts.{PartAttempt, ResourceAccess, ResourceAttempt, ActivityAttempt}
+  alias Oli.Delivery.Attempts.{PartAttempt, ResourceAccess, ResourceAttempt, ActivityAttempt, Snapshot}
   alias Oli.Activities.State.ActivityState
   alias Oli.Resources.{Revision}
   alias Oli.Activities.Model
   alias Oli.Activities.Model.Feedback
   alias Oli.Activities.Transformers
-  alias Oli.Delivery.Attempts.Result
+  alias Oli.Delivery.Attempts.{StudentInput, Result}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Page.ModelPruner
 
@@ -49,7 +49,7 @@ defmodule Oli.Delivery.Attempts do
 
       attempt_count = count_activity_attempts(activity_attempt.resource_attempt_id, activity_attempt.resource_id)
 
-      if activity_attempt.revision.max_attempts <= attempt_count do
+      if activity_attempt.revision.max_attempts > 0 and activity_attempt.revision.max_attempts <= attempt_count do
         {:error, {:no_more_attempts}}
       else
         activity_attempt = activity_attempt |> Repo.preload([:part_attempts])
@@ -184,7 +184,6 @@ defmodule Oli.Delivery.Attempts do
   end
 
   defp get_ungraded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
-
     if is_nil(resource_attempt) or resource_attempt.revision_id != resource_revision.id do
       {:in_progress, create_new_attempt_tree(resource_attempt, resource_revision, context_id, user_id, activity_provider)}
     else
@@ -194,7 +193,7 @@ defmodule Oli.Delivery.Attempts do
 
   defp get_graded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
 
-    if is_nil(resource_attempt) or !is_nil(resource_attempt.date_evalulated) do
+    if is_nil(resource_attempt) or !is_nil(resource_attempt.date_evaluated) do
       {:not_started, get_resource_attempt_history(resource_revision.resource_id, context_id, user_id)}
     else
       if resource_attempt.revision_id != resource_revision.id do
@@ -208,7 +207,7 @@ defmodule Oli.Delivery.Attempts do
         {:in_progress, create_new_attempt_tree(resource_attempt, resource_revision, context_id, user_id, activity_provider)}
       else
 
-        # Bonus optimizastion at some point: look at each activity attempt, if any are
+        # Bonus optimization at some point: look at each activity attempt, if any are
         # for an activity revision that differs from the
         # the current activity revision - create a new attempt
         # for that activity. This allows a use case where an instructor live publishes
@@ -272,7 +271,7 @@ defmodule Oli.Delivery.Attempts do
       attempt -> {attempt.resource_access_id, attempt.attempt_number + 1}
     end
 
-    activity_revisions = activity_provider.(resource_revision)
+    activity_revisions = activity_provider.(context_id, resource_revision)
 
     {:ok, resource_attempt} = create_resource_attempt(%{
       attempt_guid: UUID.uuid4(),
@@ -377,6 +376,39 @@ defmodule Oli.Delivery.Attempts do
       where: a.user_id == ^user_id and s.context_id == ^context_id and a.resource_id == ^resource_id and is_nil(ra2),
       select: ra1)
 
+  end
+
+  @doc """
+  Create a new resource attempt in an active state for the given page revision slug
+  in the specified context_id and for a specific user.
+
+  On success returns:
+  `{:ok, {%{ResourceAttempt}, ActivityAttemptMap}}`
+
+  Possible failure returns are:
+  `{:error, {:not_found}}` if the revision slug cannot be resolved
+  `{:error, {:active_attempt_present}}` if an active resource attempt is present
+  `{:error, {:no_more_attempts}}` if no more attempts are present
+
+  """
+  def start_resource_attempt(revision_slug, context_id, user_id, activity_provider) do
+
+    with {:ok, revision} <- DeliveryResolver.from_revision_slug(context_id, revision_slug) |> Oli.Utils.trap_nil(:not_found),
+      {_, resource_attempts} <- get_resource_attempt_history(revision.resource_id, context_id, user_id)
+    do
+      case {revision.max_attempts > length(resource_attempts), has_any_active_attempts?(resource_attempts)} do
+        {true, false} -> {:ok, create_new_attempt_tree(nil, revision, context_id, user_id, activity_provider)}
+        {true, true} -> {:error, {:active_attempt_present}}
+        {false, _} -> {:error, {:no_more_attempts}}
+      end
+    else
+      error -> error
+    end
+
+  end
+
+  defp has_any_active_attempts?(resource_attempts) do
+    Enum.any?(resource_attempts, fn r -> r.date_evaluated == nil end)
   end
 
   @doc """
@@ -489,6 +521,45 @@ defmodule Oli.Delivery.Attempts do
     {MapSet.equal?(yet_to_be_evaluated, to_be_evaluated), part_inputs}
   end
 
+
+  @doc """
+  Processes a test mode evaulation.
+  """
+  @spec perform_test_evaluation(map(), [map()]) :: {:ok, [map()]} | {:error, any}
+  def perform_test_evaluation(model, part_inputs) do
+
+    {:ok, %Model{parts: parts}} = Model.parse(model)
+
+    # We need to tie the attempt_guid from the part_inputs to the attempt_guid
+    # from the %PartAttempt, and then the part id from the %PartAttempt to the
+    # part id in the parsed model.
+    part_map = Enum.reduce(parts, %{}, fn p, m -> Map.put(m, p.id, p) end)
+
+    evaluations = Enum.map(part_inputs, fn %{part_id: part_id, input: input} ->
+
+      part = Map.get(part_map, part_id)
+      Oli.Delivery.Evaluation.Evaluator.evaluate(part, input)
+    end)
+    |> Enum.map(fn e ->
+      case e do
+        {:ok, {feedback, result}} -> %{feedback: feedback, result: result}
+        {:error, _} -> %{error: "error in evaluation"}
+      end
+    end)
+
+    evaluations = Enum.zip(evaluations, part_inputs)
+    |> Enum.map(fn {e, %{part_id: part_id}} -> Map.put(e, :part_id, part_id) end)
+
+    {:ok, evaluations}
+  end
+
+  @doc """
+  Performs activity model transformation for test mode.
+  """
+  def perform_test_transformation(model) do
+    Transformers.apply_transforms(model)
+  end
+
   @doc """
   Processes a student submission for some number of parts for the given
   activity attempt guid.  If this collection of part attempts completes the activity
@@ -506,8 +577,8 @@ defmodule Oli.Delivery.Attempts do
 
   On failure returns `{:error, error}`
   """
-  @spec submit_part_evaluations(String.t, [map()]) :: {:ok, [map()]} | {:error, any}
-  def submit_part_evaluations(activity_attempt_guid, part_inputs) do
+  @spec submit_part_evaluations(atom(), String.t, String.t, [map()]) :: {:ok, [map()]} | {:error, any}
+  def submit_part_evaluations(role, context_id, activity_attempt_guid, part_inputs) do
 
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
@@ -524,12 +595,171 @@ defmodule Oli.Delivery.Attempts do
     end
 
     case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
-    |> persist_evaluations(part_inputs, roll_up_fn) do
+    |> persist_evaluations(part_inputs, roll_up_fn)
+    |> generate_snapshots(role, context_id, part_inputs) do
 
       {:ok, results} -> results
       error -> error
     end
 
+  end
+
+  def submit_graded_page(role, context_id, resource_attempt_guid) do
+
+    # get the resource attempt record, ensure it isn't already evaluated
+    resource_attempt = get_resource_attempt_by(attempt_guid: resource_attempt_guid)
+
+    if resource_attempt.date_evaluated == nil do
+
+      Enum.each(resource_attempt.activity_attempts, fn a ->
+        submit_graded_page_activity(role, context_id, a.attempt_guid)
+      end)
+
+      case roll_up_activities_to_resource_attempt(resource_attempt_guid) do
+        {:ok, _} -> roll_up_resource_attempts_to_access(context_id, resource_attempt.resource_access_id)
+        e -> e
+      end
+
+    else
+      {:error, {:already_submitted}}
+    end
+
+  end
+
+  defp roll_up_activities_to_resource_attempt(resource_attempt_guid) do
+
+    resource_attempt = get_resource_attempt_by(attempt_guid: resource_attempt_guid)
+
+    if resource_attempt.date_evaluated == nil do
+
+      {score, out_of} = Enum.reduce(resource_attempt.activity_attempts, {0, 0}, fn p, {score, out_of} ->
+        {score + p.score, out_of + p.out_of}
+      end)
+
+      update_resource_attempt(resource_attempt, %{
+        score: score,
+        out_of: out_of,
+        date_evaluated: DateTime.utc_now()
+      })
+
+    else
+      {:error, {:already_submitted}}
+    end
+
+  end
+
+  defp roll_up_resource_attempts_to_access(context_id, resource_access_id) do
+
+    access = Oli.Repo.get(ResourceAccess, resource_access_id) |> Repo.preload([:resource_attempts])
+    %{scoring_strategy_id: _} = DeliveryResolver.from_resource_id(context_id, access.resource_id)
+
+    # hardcoded to best for now
+    {score, out_of, _} = Enum.reduce(access.resource_attempts, {0, 0, 0.0}, fn p, {score, out_of, percentage} ->
+      this_percentage = p.score / p.out_of
+      if this_percentage > percentage do
+        {p.score, p.out_of, this_percentage}
+      else
+        {score, out_of, percentage}
+      end
+    end)
+
+    update_resource_access(access, %{
+      score: score,
+      out_of: out_of,
+      date_evaluated: DateTime.utc_now()
+    })
+
+  end
+
+  defp submit_graded_page_activity(role, context_id, activity_attempt_guid) do
+
+    part_attempts = get_latest_part_attempts(activity_attempt_guid)
+
+    roll_up_fn = fn result ->
+      rollup_part_attempt_evaluations(activity_attempt_guid)
+      result
+    end
+
+    # derive the part_attempts from the currently saved state that we expect
+    # to find in the part_attempts
+    part_inputs = Enum.map(part_attempts, fn p -> %{attempt_guid: p.attempt_guid, input: %StudentInput{input: Map.get(p.response, "input")}} end)
+
+    case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
+    |> persist_evaluations(part_inputs, roll_up_fn)
+    |> generate_snapshots(role, context_id, part_inputs) do
+
+      {:ok, results} -> results
+      error -> error
+    end
+
+  end
+
+
+  def generate_snapshots({:ok, _} = previous_in_pipline, :student, context_id, part_inputs) do
+
+    part_attempt_guids = Enum.map(part_inputs, fn %{attempt_guid: attempt_guid} -> attempt_guid end)
+
+    results = Repo.all(from pa in PartAttempt,
+      join: aa in ActivityAttempt, on: pa.activity_attempt_id == aa.id,
+      join: ra in ResourceAttempt, on: aa.resource_attempt_id == ra.id,
+      join: a in ResourceAccess, on: ra.resource_access_id == a.id,
+      join: r1 in Revision, on: ra.revision_id == r1.id,
+      join: r2 in Revision, on: aa.revision_id == r2.id,
+      where: pa.attempt_guid in ^part_attempt_guids,
+      select: {pa, aa, ra, a, r1, r2})
+
+    # determine all referenced objective ids by the parts that we find
+    objective_ids = Enum.reduce(results, MapSet.new([]),
+      fn {pa, _, _, _, _, r}, m ->
+        Enum.reduce(Map.get(r.objectives, pa.part_id, []), m, fn id, n -> MapSet.put(n, id) end)
+      end)
+      |> MapSet.to_list()
+
+    objective_revisions_by_id = DeliveryResolver.from_resource_id(context_id, objective_ids)
+    |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.resource_id, e.id) end)
+
+    # Now for each part attempt that we evaluated:
+    Enum.each(results, fn {part_attempt, _, _, _, _, activity_revision} = result ->
+
+      # Look at the attached objectives for that part for that revision
+      attached_objectives = Map.get(activity_revision.objectives, part_attempt.part_id, [])
+
+      case attached_objectives do
+        # If there are no attached objectives, create one record recoring nils for the objectives
+        [] -> create_individual_snapshot(result, nil, nil)
+
+        # Otherwise create one record for each objective
+        objective_ids -> Enum.each(objective_ids, fn id -> create_individual_snapshot(result, id, Map.get(objective_revisions_by_id, id)) end)
+      end
+    end)
+
+    previous_in_pipline
+  end
+
+  def generate_snapshots(previous, _, _, _), do: previous
+
+  defp create_individual_snapshot({part_attempt, activity_attempt, resource_attempt, resource_access, resource_revision, activity_revision}, objective_id, revision_id) do
+
+    {:ok, _} = create_snapshot(%{
+      resource_id: resource_access.resource_id,
+      user_id: resource_access.user_id,
+      section_id: resource_access.section_id,
+      resource_attempt_number: resource_attempt.attempt_number,
+      graded: resource_revision.graded,
+      activity_id: activity_attempt.resource_id,
+      revision_id: activity_attempt.revision_id,
+      activity_type_id: activity_revision.activity_type_id,
+      attempt_number: activity_attempt.attempt_number,
+      part_id: part_attempt.part_id,
+      correct: part_attempt.score == part_attempt.out_of,
+      score: part_attempt.score,
+      out_of: part_attempt.out_of,
+      hints: length(part_attempt.hints),
+      part_attempt_number: part_attempt.attempt_number,
+      part_attempt_id: part_attempt.id,
+      objective_id: objective_id,
+      objective_revision_id: revision_id
+    })
   end
 
   @doc """
@@ -551,6 +781,16 @@ defmodule Oli.Delivery.Attempts do
       nil
   """
   def get_part_attempt_by(clauses), do: Repo.get_by(PartAttempt, clauses)
+
+  @doc """
+  Gets a resource attempt by a clause.
+  ## Examples
+      iex> get_resource_attempt_by(attempt_guid: "123")
+      %ResourceAttempt{}
+      iex> get_resource_attempt_by(attempt_guid: "111")
+      nil
+  """
+  def get_resource_attempt_by(clauses), do: Repo.get_by(ResourceAttempt, clauses) |> Repo.preload([:activity_attempts])
 
   def rollup_part_attempt_evaluations(activity_attempt_guid) do
 
@@ -574,9 +814,9 @@ defmodule Oli.Delivery.Attempts do
   end
 
   defp get_latest_part_attempts(activity_attempt_guid) do
-    Repo.all(from pa1 in PartAttempt,
-      left_join: pa2 in PartAttempt, on: (pa1.part_id == pa2.part_id and pa1.id < pa2.id),
-      join: aa in ActivityAttempt, on: aa.id == pa1.activity_attempt_id,
+    Repo.all(from aa in ActivityAttempt,
+      join: pa1 in PartAttempt, on: aa.id == pa1.activity_attempt_id,
+      left_join: pa2 in PartAttempt, on: (aa.id == pa2.activity_attempt_id and pa1.part_id == pa2.part_id and pa1.id < pa2.id),
       where: aa.attempt_guid == ^activity_attempt_guid and is_nil(pa2),
       select: pa1)
   end
@@ -657,6 +897,19 @@ defmodule Oli.Delivery.Attempts do
   end
 
   @doc """
+  Updates an resource access.
+  ## Examples
+      iex> update_resource_access(revision, %{field: new_value})
+      {:ok, %ResourceAccess{}}
+      iex> update_resource_access(revision, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def update_resource_access(activity_attempt, attrs) do
+    ResourceAccess.changeset(activity_attempt, attrs)
+    |> Repo.update()
+  end
+
+  @doc """
   Creates an activity attempt.
   ## Examples
       iex> create_activity_attempt(%{field: value})
@@ -681,5 +934,19 @@ defmodule Oli.Delivery.Attempts do
   def update_resource_attempt(resource_attempt, attrs) do
     ResourceAttempt.changeset(resource_attempt, attrs)
     |> Repo.update()
+  end
+
+    @doc """
+  Creates a part attempt snapshot.
+  ## Examples
+      iex> create_snapshot(%{field: value})
+      {:ok, %Snapshot{}}
+      iex> create_snapshot(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_snapshot(attrs \\ %{}) do
+    %Snapshot{}
+    |> Snapshot.changeset(attrs)
+    |> Repo.insert()
   end
 end

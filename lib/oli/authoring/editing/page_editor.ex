@@ -13,6 +13,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Accounts
   alias Oli.Repo
   alias Oli.Rendering
+  alias Oli.Activities.Transformers
 
   alias Phoenix.PubSub
 
@@ -196,7 +197,24 @@ defmodule Oli.Authoring.Editing.PageEditor do
       # find the published revisions for these activities, and convert them
       # to a form suitable for front-end consumption
       {:ok, Publishing.get_published_activity_revisions(publication_id, found_activities)
-        |> Enum.map(fn %Revision{activity_type_id: activity_type_id, slug: slug, content: content} -> %{ type: "activity", typeSlug: Map.get(id_to_slug, activity_type_id), activitySlug: slug, model: content} end)
+        |> Enum.map(fn %Revision{activity_type_id: activity_type_id, slug: slug, content: content} ->
+
+          # To support 'test mode' in the editor, we give the editor an initial transormed
+          # version of the model that it can immediately use for display purposes. If it fails
+          # to transform, nil will be handled by the client and the raw model will be used
+          # instead
+          transformed = case Transformers.apply_transforms(content) do
+            {:ok, t} -> t
+            _ -> nil
+          end
+
+          %{
+          type: "activity",
+          typeSlug: Map.get(id_to_slug, activity_type_id),
+          activitySlug: slug,
+          model: content,
+          transformed: transformed
+        } end)
         |> Enum.reduce(%{}, fn e, m -> Map.put(m, Map.get(e, :activitySlug), e) end)}
     else
       {:ok, %{}}
@@ -326,17 +344,12 @@ defmodule Oli.Authoring.Editing.PageEditor do
   # Creates a new resource revision and updates the publication mapping
   def create_new_revision(previous, publication, resource, author_id) do
 
-    {:ok, revision} = Resources.create_revision(%{
-      content: previous.content,
-      objectives: previous.objectives,
-      deleted: previous.deleted,
-      slug: previous.slug,
-      title: previous.title,
-      author_id: author_id,
-      resource_id: previous.resource_id,
-      previous_revision_id: previous.id,
-      resource_type_id: previous.resource_type_id,
-    })
+    # Copy the state of the previous revision, except for author and id
+    attrs = Map.from_struct(previous)
+    |> Map.merge(%{author_id: author_id})
+    |> Map.delete(:id)
+
+    {:ok, revision} = Resources.create_revision(attrs)
 
     mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
     {:ok, _mapping} = Publishing.update_resource_mapping(mapping, %{ revision_id: revision.id })

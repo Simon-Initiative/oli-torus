@@ -33,8 +33,8 @@ defmodule Oli.Delivery.Page.ActivityContextTest do
 
     test "create_context_map/2 returns the activities mapped correctly", %{attempt1: attempt1, a1: a1} do
 
-      m = Attempts.get_latest_attempts(attempt1.id)
-      |> ActivityContext.create_context_map()
+      latest_attempts = Attempts.get_latest_attempts(attempt1.id)
+      m = ActivityContext.create_context_map(false, latest_attempts)
 
       assert length(Map.keys(m)) == 1
       assert Map.get(m, a1.resource_id).model == "{&quot;stem&quot;:&quot;1&quot;}"

@@ -39,6 +39,7 @@ export const AddResourceContent = (
           activitySlug: result.revisionSlug,
           typeSlug: editorDesc.slug,
           model,
+          transformed: result.transformed,
         };
 
         onAddItem(resourceContent, activity);
