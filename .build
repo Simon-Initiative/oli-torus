@@ -1,4 +1,4 @@
-dist/search_items-76d72e4264.js
+dist/search_items-40550470e6.js
 dist/app-a225d03098e64fef431a.js
 dist/elixir-0ab8a6a80ebaaa287431.css
 dist/erlang-bd206729da4d0d280293.css
@@ -6,7 +6,7 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/sidebar_items-c69a47ad48.js
+dist/sidebar_items-6c67a21b2f.js
 api-reference.html
 readme.html
 license.html
@@ -59,6 +59,7 @@ Oli.Authoring.Editing.SiblingActivity.html
 Oli.Authoring.Editing.Utils.html
 Oli.Authoring.Locks.html
 Oli.Delivery.html
+Oli.Delivery.ActivityProvider.html
 Oli.Delivery.Attempts.html
 Oli.Delivery.Attempts.ActivityAttempt.html
 Oli.Delivery.Attempts.PartAttempt.html
@@ -149,14 +150,14 @@ OliWeb.ErrorView.html
 OliWeb.Gettext.html
 OliWeb.InstitutionController.html
 OliWeb.InstitutionView.html
-OliWeb.InstructorDeliveryController.html
-OliWeb.InstructorDeliveryView.html
 OliWeb.LayoutView.html
 OliWeb.LockController.html
 OliWeb.LtiController.html
 OliWeb.LtiView.html
 OliWeb.ObjectiveController.html
 OliWeb.ObjectiveView.html
+OliWeb.PageDeliveryController.html
+OliWeb.PageDeliveryView.html
 OliWeb.Plugs.Guest.html
 OliWeb.ProjectController.html
 OliWeb.ProjectPlugs.html
@@ -173,8 +174,6 @@ OliWeb.Router.Helpers.html
 OliWeb.SharedView.html
 OliWeb.StaticPageController.html
 OliWeb.StaticPageView.html
-OliWeb.StudentDeliveryController.html
-OliWeb.StudentDeliveryView.html
 OliWeb.Telemetry.html
 OliWeb.UIPaletteController.html
 OliWeb.UIPaletteView.html

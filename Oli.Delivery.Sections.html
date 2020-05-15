@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Delivery.Sections — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-c69a47ad48.js"></script>
+    <script src="dist/sidebar_items-6c67a21b2f.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -142,6 +142,12 @@ Raises <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.NoResultsError.html"><code cl
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#is_enrolled?/2">is_enrolled?(user_id, context_id)</a>
+  </div>
+    <div class="summary-synopsis"><p>Determines if a particular user is enrolled in a section.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#is_enrolled_as?/3">is_enrolled_as?(user_id, context_id, section_role)</a>
   </div>
     <div class="summary-synopsis"><p>Determines if a particular user is enrolled in a section with a given role.</p></div>
@@ -182,7 +188,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">change_section(section)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L170" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L186" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -194,8 +200,8 @@ Functions          </h1>
   Examples
 </h2>
 
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_section</span><span class="p" data-group-id="2550798020-1">(</span><span class="n">section</span><span class="p" data-group-id="2550798020-1">)</span><span class="w">
-</span><span class="p" data-group-id="2550798020-2">%</span><span class="nc" data-group-id="2550798020-2">Ecto.Changeset</span><span class="p" data-group-id="2550798020-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="2550798020-3">%</span><span class="nc" data-group-id="2550798020-3">Section</span><span class="p" data-group-id="2550798020-3">{</span><span class="p" data-group-id="2550798020-3">}</span><span class="p" data-group-id="2550798020-2">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_section</span><span class="p" data-group-id="8055391975-1">(</span><span class="n">section</span><span class="p" data-group-id="8055391975-1">)</span><span class="w">
+</span><span class="p" data-group-id="8055391975-2">%</span><span class="nc" data-group-id="8055391975-2">Ecto.Changeset</span><span class="p" data-group-id="8055391975-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="8055391975-3">%</span><span class="nc" data-group-id="8055391975-3">Section</span><span class="p" data-group-id="8055391975-3">{</span><span class="p" data-group-id="8055391975-3">}</span><span class="p" data-group-id="8055391975-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_section/1">
@@ -206,7 +212,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">create_section(attrs \\ %{})</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L132" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L148" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -218,10 +224,10 @@ Functions          </h1>
   Examples
 </h2>
 
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_section</span><span class="p" data-group-id="8992359278-1">(</span><span class="p" data-group-id="8992359278-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="8992359278-2">}</span><span class="p" data-group-id="8992359278-1">)</span><span class="w">
-</span><span class="p" data-group-id="8992359278-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8992359278-4">%</span><span class="nc" data-group-id="8992359278-4">Section</span><span class="p" data-group-id="8992359278-4">{</span><span class="p" data-group-id="8992359278-4">}</span><span class="p" data-group-id="8992359278-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_section</span><span class="p" data-group-id="8992359278-5">(</span><span class="p" data-group-id="8992359278-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="8992359278-6">}</span><span class="p" data-group-id="8992359278-5">)</span><span class="w">
-</span><span class="p" data-group-id="8992359278-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8992359278-8">%</span><span class="nc" data-group-id="8992359278-8">Ecto.Changeset</span><span class="p" data-group-id="8992359278-8">{</span><span class="p" data-group-id="8992359278-8">}</span><span class="p" data-group-id="8992359278-7">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_section</span><span class="p" data-group-id="7459197207-1">(</span><span class="p" data-group-id="7459197207-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="7459197207-2">}</span><span class="p" data-group-id="7459197207-1">)</span><span class="w">
+</span><span class="p" data-group-id="7459197207-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7459197207-4">%</span><span class="nc" data-group-id="7459197207-4">Section</span><span class="p" data-group-id="7459197207-4">{</span><span class="p" data-group-id="7459197207-4">}</span><span class="p" data-group-id="7459197207-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_section</span><span class="p" data-group-id="7459197207-5">(</span><span class="p" data-group-id="7459197207-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7459197207-6">}</span><span class="p" data-group-id="7459197207-5">)</span><span class="w">
+</span><span class="p" data-group-id="7459197207-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7459197207-8">%</span><span class="nc" data-group-id="7459197207-8">Ecto.Changeset</span><span class="p" data-group-id="7459197207-8">{</span><span class="p" data-group-id="7459197207-8">}</span><span class="p" data-group-id="7459197207-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_section/1">
@@ -231,7 +237,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">delete_section(section)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L160" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L176" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -243,10 +249,10 @@ Functions          </h1>
   Examples
 </h2>
 
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_section</span><span class="p" data-group-id="1920328741-1">(</span><span class="n">section</span><span class="p" data-group-id="1920328741-1">)</span><span class="w">
-</span><span class="p" data-group-id="1920328741-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1920328741-3">%</span><span class="nc" data-group-id="1920328741-3">Section</span><span class="p" data-group-id="1920328741-3">{</span><span class="p" data-group-id="1920328741-3">}</span><span class="p" data-group-id="1920328741-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_section</span><span class="p" data-group-id="1920328741-4">(</span><span class="n">section</span><span class="p" data-group-id="1920328741-4">)</span><span class="w">
-</span><span class="p" data-group-id="1920328741-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1920328741-6">%</span><span class="nc" data-group-id="1920328741-6">Ecto.Changeset</span><span class="p" data-group-id="1920328741-6">{</span><span class="p" data-group-id="1920328741-6">}</span><span class="p" data-group-id="1920328741-5">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_section</span><span class="p" data-group-id="6717547667-1">(</span><span class="n">section</span><span class="p" data-group-id="6717547667-1">)</span><span class="w">
+</span><span class="p" data-group-id="6717547667-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6717547667-3">%</span><span class="nc" data-group-id="6717547667-3">Section</span><span class="p" data-group-id="6717547667-3">{</span><span class="p" data-group-id="6717547667-3">}</span><span class="p" data-group-id="6717547667-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_section</span><span class="p" data-group-id="6717547667-4">(</span><span class="n">section</span><span class="p" data-group-id="6717547667-4">)</span><span class="w">
+</span><span class="p" data-group-id="6717547667-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6717547667-6">%</span><span class="nc" data-group-id="6717547667-6">Ecto.Changeset</span><span class="p" data-group-id="6717547667-6">{</span><span class="p" data-group-id="6717547667-6">}</span><span class="p" data-group-id="6717547667-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="enroll/3">
@@ -272,7 +278,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_section!(id)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L80" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L96" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -285,9 +291,9 @@ Raises <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.NoResultsError.html"><code cl
   Examples
 </h2>
 
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_section!</span><span class="p" data-group-id="9184950946-1">(</span><span class="mi">123</span><span class="p" data-group-id="9184950946-1">)</span><span class="w">
-</span><span class="p" data-group-id="9184950946-2">%</span><span class="nc" data-group-id="9184950946-2">Section</span><span class="p" data-group-id="9184950946-2">{</span><span class="p" data-group-id="9184950946-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_section!</span><span class="p" data-group-id="9184950946-3">(</span><span class="mi">456</span><span class="p" data-group-id="9184950946-3">)</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_section!</span><span class="p" data-group-id="1742178738-1">(</span><span class="mi">123</span><span class="p" data-group-id="1742178738-1">)</span><span class="w">
+</span><span class="p" data-group-id="1742178738-2">%</span><span class="nc" data-group-id="1742178738-2">Section</span><span class="p" data-group-id="1742178738-2">{</span><span class="p" data-group-id="1742178738-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_section!</span><span class="p" data-group-id="1742178738-3">(</span><span class="mi">456</span><span class="p" data-group-id="1742178738-3">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -298,7 +304,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.NoResultsError.html"><code cl
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_section_by(clauses)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L90" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L106" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -310,10 +316,10 @@ Raises <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.NoResultsError.html"><code cl
   Examples
 </h2>
 
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_section_by</span><span class="p" data-group-id="3907648309-1">(</span><span class="ss">context_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="3907648309-1">)</span><span class="w">
-</span><span class="p" data-group-id="3907648309-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3907648309-3">%</span><span class="nc" data-group-id="3907648309-3">Section</span><span class="p" data-group-id="3907648309-3">{</span><span class="p" data-group-id="3907648309-3">}</span><span class="p" data-group-id="3907648309-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_section_by</span><span class="p" data-group-id="3907648309-4">(</span><span class="ss">context_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;111&quot;</span><span class="p" data-group-id="3907648309-4">)</span><span class="w">
-</span><span class="p" data-group-id="3907648309-5">{</span><span class="w"> </span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">changeset</span><span class="w"> </span><span class="p" data-group-id="3907648309-5">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_section_by</span><span class="p" data-group-id="0445992178-1">(</span><span class="ss">context_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="0445992178-1">)</span><span class="w">
+</span><span class="p" data-group-id="0445992178-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0445992178-3">%</span><span class="nc" data-group-id="0445992178-3">Section</span><span class="p" data-group-id="0445992178-3">{</span><span class="p" data-group-id="0445992178-3">}</span><span class="p" data-group-id="0445992178-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_section_by</span><span class="p" data-group-id="0445992178-4">(</span><span class="ss">context_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;111&quot;</span><span class="p" data-group-id="0445992178-4">)</span><span class="w">
+</span><span class="p" data-group-id="0445992178-5">{</span><span class="w"> </span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">changeset</span><span class="w"> </span><span class="p" data-group-id="0445992178-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="get_sections_by_project/1">
@@ -323,7 +329,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.NoResultsError.html"><code cl
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_sections_by_project(project)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L120" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L136" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -335,10 +341,10 @@ Raises <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.NoResultsError.html"><code cl
   Examples
 </h2>
 
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_sections_by_project</span><span class="p" data-group-id="4424709390-1">(</span><span class="n">project</span><span class="p" data-group-id="4424709390-1">)</span><span class="w">
-</span><span class="p" data-group-id="4424709390-2">[</span><span class="p" data-group-id="4424709390-3">%</span><span class="nc" data-group-id="4424709390-3">Section</span><span class="p" data-group-id="4424709390-3">{</span><span class="p" data-group-id="4424709390-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="4424709390-2">]</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_sections_by_project</span><span class="p" data-group-id="1924612934-1">(</span><span class="n">project</span><span class="p" data-group-id="1924612934-1">)</span><span class="w">
+</span><span class="p" data-group-id="1924612934-2">[</span><span class="p" data-group-id="1924612934-3">%</span><span class="nc" data-group-id="1924612934-3">Section</span><span class="p" data-group-id="1924612934-3">{</span><span class="p" data-group-id="1924612934-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="1924612934-2">]</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_sections_by_project</span><span class="p" data-group-id="4424709390-4">(</span><span class="n">invalid_project</span><span class="p" data-group-id="4424709390-4">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_sections_by_project</span><span class="p" data-group-id="1924612934-4">(</span><span class="n">invalid_project</span><span class="p" data-group-id="1924612934-4">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -349,7 +355,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.NoResultsError.html"><code cl
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_sections_by_publication(publication)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L104" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L120" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -361,11 +367,27 @@ Raises <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.NoResultsError.html"><code cl
   Examples
 </h2>
 
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_sections_by_publication</span><span class="p" data-group-id="3287174574-1">(</span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="3287174574-1">)</span><span class="w">
-</span><span class="p" data-group-id="3287174574-2">[</span><span class="p" data-group-id="3287174574-3">%</span><span class="nc" data-group-id="3287174574-3">Section</span><span class="p" data-group-id="3287174574-3">{</span><span class="p" data-group-id="3287174574-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="3287174574-2">]</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_sections_by_publication</span><span class="p" data-group-id="2779562966-1">(</span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="2779562966-1">)</span><span class="w">
+</span><span class="p" data-group-id="2779562966-2">[</span><span class="p" data-group-id="2779562966-3">%</span><span class="nc" data-group-id="2779562966-3">Section</span><span class="p" data-group-id="2779562966-3">{</span><span class="p" data-group-id="2779562966-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="2779562966-2">]</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_sections_by_publication</span><span class="p" data-group-id="3287174574-4">(</span><span class="s">&quot;456&quot;</span><span class="p" data-group-id="3287174574-4">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_sections_by_publication</span><span class="p" data-group-id="2779562966-4">(</span><span class="s">&quot;456&quot;</span><span class="p" data-group-id="2779562966-4">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="is_enrolled?/2">
+  <div class="detail-header">
+    <a href="#is_enrolled?/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">is_enrolled?(user_id, context_id)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L51" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Determines if a particular user is enrolled in a section.</p>
   </section>
 </section>
 <section class="detail" id="is_enrolled_as?/3">
@@ -391,7 +413,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.NoResultsError.html"><code cl
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">list_enrollments(context_id)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L51" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L67" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -407,7 +429,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.NoResultsError.html"><code cl
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">list_sections()</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L67" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L83" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -419,8 +441,8 @@ Raises <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.NoResultsError.html"><code cl
   Examples
 </h2>
 
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_sections</span><span class="p" data-group-id="2136644468-1">(</span><span class="p" data-group-id="2136644468-1">)</span><span class="w">
-</span><span class="p" data-group-id="2136644468-2">[</span><span class="p" data-group-id="2136644468-3">%</span><span class="nc" data-group-id="2136644468-3">Section</span><span class="p" data-group-id="2136644468-3">{</span><span class="p" data-group-id="2136644468-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="2136644468-2">]</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_sections</span><span class="p" data-group-id="5023247522-1">(</span><span class="p" data-group-id="5023247522-1">)</span><span class="w">
+</span><span class="p" data-group-id="5023247522-2">[</span><span class="p" data-group-id="5023247522-3">%</span><span class="nc" data-group-id="5023247522-3">Section</span><span class="p" data-group-id="5023247522-3">{</span><span class="p" data-group-id="5023247522-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="5023247522-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_section/2">
@@ -430,7 +452,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.NoResultsError.html"><code cl
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">update_section(section, attrs)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L146" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections.ex#L162" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -442,10 +464,10 @@ Raises <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.NoResultsError.html"><code cl
   Examples
 </h2>
 
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_section</span><span class="p" data-group-id="7090447524-1">(</span><span class="n">section</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7090447524-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="7090447524-2">}</span><span class="p" data-group-id="7090447524-1">)</span><span class="w">
-</span><span class="p" data-group-id="7090447524-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7090447524-4">%</span><span class="nc" data-group-id="7090447524-4">Section</span><span class="p" data-group-id="7090447524-4">{</span><span class="p" data-group-id="7090447524-4">}</span><span class="p" data-group-id="7090447524-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_section</span><span class="p" data-group-id="7090447524-5">(</span><span class="n">section</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7090447524-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7090447524-6">}</span><span class="p" data-group-id="7090447524-5">)</span><span class="w">
-</span><span class="p" data-group-id="7090447524-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7090447524-8">%</span><span class="nc" data-group-id="7090447524-8">Ecto.Changeset</span><span class="p" data-group-id="7090447524-8">{</span><span class="p" data-group-id="7090447524-8">}</span><span class="p" data-group-id="7090447524-7">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_section</span><span class="p" data-group-id="9656245421-1">(</span><span class="n">section</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9656245421-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="9656245421-2">}</span><span class="p" data-group-id="9656245421-1">)</span><span class="w">
+</span><span class="p" data-group-id="9656245421-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9656245421-4">%</span><span class="nc" data-group-id="9656245421-4">Section</span><span class="p" data-group-id="9656245421-4">{</span><span class="p" data-group-id="9656245421-4">}</span><span class="p" data-group-id="9656245421-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_section</span><span class="p" data-group-id="9656245421-5">(</span><span class="n">section</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9656245421-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9656245421-6">}</span><span class="p" data-group-id="9656245421-5">)</span><span class="w">
+</span><span class="p" data-group-id="9656245421-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9656245421-8">%</span><span class="nc" data-group-id="9656245421-8">Ecto.Changeset</span><span class="p" data-group-id="9656245421-8">{</span><span class="p" data-group-id="9656245421-8">}</span><span class="p" data-group-id="9656245421-7">}</span></code></pre>
   </section>
 </section>
           </div>

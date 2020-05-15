@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.21.3">
     <meta name="project" content="OLI Torus v0.1.0">
-    <title>OliWeb.ProjectView — OLI Torus v0.1.0</title>
+    <title>OliWeb.PageDeliveryController — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
     <script src="dist/sidebar_items-6c67a21b2f.js"></script>
       <script src="docs_config.js"></script>
@@ -68,7 +68,7 @@ OLI Torus      </a>
 
       <h1>
         <small class="app-vsn">OLI Torus v0.1.0</small>
-OliWeb.ProjectView          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/project_view.ex#L1" title="View Source" class="view-source" rel="help">
+OliWeb.PageDeliveryController          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -90,23 +90,28 @@ OliWeb.ProjectView          <a href="https://github.com/Simon-Initiative/oli-tor
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#__resource__/0">__resource__()</a>
+    <a href="#after_finalized/4">after_finalized(conn, context_id, revision_slug, user_id)</a>
   </div>
-    <div class="summary-synopsis"><p>The resource name, as an atom, for this view</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#render/2">render(template, assigns \\ %{})</a>
+    <a href="#finalize_attempt/2">finalize_attempt(conn, map)</a>
   </div>
-    <div class="summary-synopsis"><p>Renders the given template locally.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#template_not_found/2">template_not_found(template, assigns)</a>
+    <a href="#index/2">index(conn, map)</a>
   </div>
-    <div class="summary-synopsis"><p>Callback invoked when no template is found.
-By default it raises but can be customized
-to render a particular template.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#page/2">page(conn, map)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#start_attempt/2">start_attempt(conn, map)</a>
+  </div>
 </div>
   </div>
         </section>
@@ -119,58 +124,79 @@ to render a particular template.</p></div>
             </a>
 Functions          </h1>
           <div class="functions-list">
-<section class="detail" id="__resource__/0">
+<section class="detail" id="after_finalized/4">
   <div class="detail-header">
-    <a href="#__resource__/0" class="detail-link" title="Link to this function">
+    <a href="#after_finalized/4" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">__resource__()</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/project_view.ex#L2" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">after_finalized(conn, context_id, revision_slug, user_id)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L127" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
   </div>
   <section class="docstring">
-<p>The resource name, as an atom, for this view</p>
   </section>
 </section>
-<section class="detail" id="render/2">
-    <span id="render/1"></span>
+<section class="detail" id="finalize_attempt/2">
   <div class="detail-header">
-    <a href="#render/2" class="detail-link" title="Link to this function">
+    <a href="#finalize_attempt/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">render(template, assigns \\ %{})</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/project_view.ex#L2" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">finalize_attempt(conn, map)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L104" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
   </div>
   <section class="docstring">
-<p>Renders the given template locally.</p>
   </section>
 </section>
-<section class="detail" id="template_not_found/2">
+<section class="detail" id="index/2">
   <div class="detail-header">
-    <a href="#template_not_found/2" class="detail-link" title="Link to this function">
+    <a href="#index/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">template_not_found(template, assigns)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/project_view.ex#L2" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">index(conn, map)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L14" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
-      <div class="specs">
-          <pre>template_not_found(<a href="https://hexdocs.pm/phoenix/1.5.1/Phoenix.Template.html#t:name/0">Phoenix.Template.name</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">no_return</a>()</pre>
-      </div>
   </div>
   <section class="docstring">
-<p>Callback invoked when no template is found.
-By default it raises but can be customized
-to render a particular template.</p>
+  </section>
+</section>
+<section class="detail" id="page/2">
+  <div class="detail-header">
+    <a href="#page/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">page(conn, map)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L31" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="start_attempt/2">
+  <div class="detail-header">
+    <a href="#start_attempt/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">start_attempt(conn, map)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L83" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
   </section>
 </section>
           </div>
