@@ -85,6 +85,13 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert access.score == 10
       assert access.out_of == 11
 
+      # now visit the page again, verifying that we see the prologue, but this time it
+      # does not allow us to start a new attempt
+      conn = conn
+      |> get(Routes.page_delivery_path(conn, :page, section.context_id, page_revision.slug))
+
+      assert html_response(conn, 200) =~ "You have used 1 out of 1 attempts"
+
     end
 
   end
@@ -132,7 +139,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     attrs = %{
       graded: true,
-      max_attempts: 2,
+      max_attempts: 1,
       title: "page1",
       content: %{
         "model" => [

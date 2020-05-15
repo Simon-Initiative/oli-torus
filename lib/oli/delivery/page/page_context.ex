@@ -11,7 +11,6 @@ defmodule Oli.Delivery.Page.PageContext do
   alias Oli.Delivery.Page.PageContext
   alias Oli.Resources.Revision
   alias Oli.Publishing.DeliveryResolver
-  alias Oli.Activities.Realizer
   alias Oli.Delivery.Attempts
 
   @doc """
