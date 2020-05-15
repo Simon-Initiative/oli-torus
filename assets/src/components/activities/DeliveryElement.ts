@@ -8,6 +8,7 @@ export interface EvaluatedPart {
   out_of: number;
   score: number;
   feedback: any;
+  error?: string;
 }
 
 export interface EvaluationResponse extends Success {

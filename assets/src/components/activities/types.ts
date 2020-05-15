@@ -49,6 +49,7 @@ export interface PartState {
   partId: number;
   hasMoreAttempts: boolean;
   hasMoreHints: boolean;
+  error?: string;
 }
 
 export interface ActivityState {

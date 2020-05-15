@@ -1,7 +1,7 @@
 import React from 'react';
 import { ActivityModelSchema, PartResponse } from 'components/activities/types';
 import * as Persistence from 'data/persistence/activity';
-import { RequestHintResponse, EvaluationResponse, EvaluatedPart } from 'components/activities/DeliveryElement';
+import { RequestHintResponse } from 'components/activities/DeliveryElement';
 import produce from 'immer';
 
 
@@ -100,15 +100,17 @@ export class TestModeHandler extends React.Component<TestModelHandlerProps, Test
     Persistence.evaluate(this.state.model, partInputs)
     .then((result: Persistence.Evaluated) => {
 
-      const evaluations = result.evaluations.map((e : any) => {
-        return {
-          type: 'EvaluatedPart',
-          attempt_guid: e.part_id,
-          out_of: e.result.out_of,
-          score: e.result.score,
-          feedback: e.feedback,
-        };
-      });
+      const evaluations = result.evaluations
+        .map((e : any) => {
+          return {
+            type: 'EvaluatedPart',
+            error: e.error,
+            attempt_guid: e.part_id,
+            out_of: e.result.out_of,
+            score: e.result.score,
+            feedback: e.feedback,
+          };
+        });
 
       continuation({ type: 'success', evaluations }, undefined);
     });

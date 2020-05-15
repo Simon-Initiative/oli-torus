@@ -531,7 +531,7 @@ defmodule Oli.Delivery.Attempts do
     |> Enum.map(fn e ->
       case e do
         {:ok, {feedback, result}} -> %{feedback: feedback, result: result}
-        {:error, _} -> "error in evaluation"
+        {:error, _} -> %{error: "error in evaluation"}
       end
     end)
 
