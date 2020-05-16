@@ -69,7 +69,7 @@ defmodule Oli.Delivery.Sections do
       e in Enrollment,
       join: s in Section, on: e.section_id == s.id,
       where: s.context_id == ^context_id,
-      preload: [user: e],
+      preload: [:user],
       select: e)
     Repo.all(query)
   end

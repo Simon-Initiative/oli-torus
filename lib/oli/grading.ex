@@ -13,15 +13,52 @@ defmodule Oli.Grading do
   alias Oli.Grading.GradebookScore
   alias Oli.Delivery.Sections.SectionRoles
 
-  def export_csv() do
+  @doc """
+  Exports the gradebook for the provided section in CVS format
 
+  Returns a Stream which can be written to a file or other IO
+  """
+  def export_csv(%Section{} = section) do
+    {gradebook, column_labels} = generate_gradebook_for_section(section)
+
+    table_data = gradebook
+      |> Enum.map(fn %GradebookRow{user: user, scores: scores} ->
+        [
+          "#{user.first_name} #{user.last_name} (#{user.email})"
+          | Enum.map(scores, fn %GradebookScore{score: score} -> score end)
+        ]
+      end)
+
+    # unfortunately we must go through every score to ensure out_of has been found for a column
+    # TODO: optimize this logic to bail out once an out_of has been discovered for every column
+    points_possible = gradebook
+      |> Enum.reduce([], fn %GradebookRow{scores: scores}, acc ->
+        scores
+        |> Enum.with_index
+        |> Enum.map(fn {%GradebookScore{out_of: out_of}, i} ->
+          case out_of do
+            nil ->
+              # use existing value for column
+              Enum.at(acc, i)
+            out_of ->
+              # replace value of existing column
+              out_of
+          end
+        end)
+      end)
+
+    points_possible = [["    Points Possible" | points_possible]]
+    column_labels = [["Student" | column_labels]]
+
+    column_labels ++ points_possible ++ table_data
+    |> CSV.encode
   end
 
   @doc """
   Returns a tuple containing a list of GradebookRow for every enrolled user
   and an ordered list of column labels
 
-  `{[%GradebookRow{user_id: 123, scores: [%GradebookScore{}, ...]}, ...], ["Quiz 1", "Quiz 2"]}`
+  `{[%GradebookRow{user: %User{}, scores: [%GradebookScore{}, ...]}, ...], ["Quiz 1", "Quiz 2"]}`
   """
   def generate_gradebook_for_section(%Section{} = section) do
     # get publication for the section
@@ -35,7 +72,6 @@ defmodule Oli.Grading do
 
     # get students enrolled in the section, filter by role: student
     students = Sections.list_enrollments(section.context_id)
-      |> Oli.Repo.preload([:user])
       |> Enum.filter(fn e -> e.section_role_id == SectionRoles.get_by_type("student").id end)
       |> Enum.map(fn e -> e.user end)
 
@@ -48,7 +84,7 @@ defmodule Oli.Grading do
 
     # build gradebook map - for each user in the section, create a gradebook row. Using
     # resource_accesses, create a list of gradebook scores leaving scores null if they do not exist
-    gradebook = Enum.map(students, fn %{id: user_id} ->
+    gradebook = Enum.map(students, fn (%{id: user_id} = student) ->
       scores = Enum.reduce(Enum.reverse(graded_pages), [], fn revision, acc ->
         score = case resource_accesses[revision.resource_id] do
           %{^user_id => student_resource_accesses} ->
@@ -68,7 +104,7 @@ defmodule Oli.Grading do
         [score | acc]
       end)
 
-      %GradebookRow{user_id: user_id, scores: scores}
+      %GradebookRow{user: student, scores: scores}
     end)
 
 

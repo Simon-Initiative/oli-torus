@@ -17,9 +17,9 @@ defmodule Oli.GradingTest do
     end
 
     defp create_users(%{section: section} = map) do
-      map = Oli.Seeder.add_user(map, %{user_id: "user1"}, :user1)
-      map = Oli.Seeder.add_user(map, %{user_id: "user2"}, :user2)
-      map = Oli.Seeder.add_user(map, %{user_id: "user3"}, :user3)
+      map = Oli.Seeder.add_user(map, %{user_id: "user1", first_name: "Tony", last_name: "Stark", email: "t.stark@avengers.com"}, :user1)
+      map = Oli.Seeder.add_user(map, %{user_id: "user2", first_name: "Luke", last_name: "Charles", email: "l.charles@avengers.com"}, :user2)
+      map = Oli.Seeder.add_user(map, %{user_id: "user3", first_name: "Steve", last_name: "Rogers", email: "s.rogers@avengers.com"}, :user3)
 
       # enroll users
       Sections.enroll(map.user1.id, section.id, 2)
@@ -99,7 +99,7 @@ defmodule Oli.GradingTest do
             score: 0
           }
         ],
-        user_id: user1.id
+        user: user1
       },
       %Grading.GradebookRow{
         scores: [
@@ -116,7 +116,7 @@ defmodule Oli.GradingTest do
             score: 3
           }
         ],
-        user_id: user2.id
+        user: user2
       },
       %Grading.GradebookRow{
         scores: [
@@ -133,11 +133,25 @@ defmodule Oli.GradingTest do
             score: 5
           }
         ],
-        user_id: user3.id
+        user: user3
       }]
       expected_column_labels = ["Page one", "Page two"]
 
       assert {expected_gradebook, expected_column_labels} == {gradebook, columns}
+    end
+
+    test "exports gradebook as CSV", %{section: section} do
+      expected_csv = """
+        Student,Page one,Page two\r
+            Points Possible,20.0,5.0\r
+        Tony Stark (t.stark@avengers.com),12.0,0.0\r
+        Luke Charles (l.charles@avengers.com),20.0,3.0\r
+        Steve Rogers (s.rogers@avengers.com),19.0,5.0\r
+        """
+
+      csv = Grading.export_csv(section) |> Enum.join("")
+
+      assert expected_csv == csv
     end
   end
 
