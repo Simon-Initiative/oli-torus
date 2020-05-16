@@ -1,9 +1,5 @@
 defmodule OliWeb.Insights do
   use Phoenix.LiveView
-
-  import Ecto.Query, warn: false
-
-  alias Phoenix.PubSub
   alias OliWeb.Insights.TableRow
 
   def mount(_params, %{ "project_id" => project_id } = _session, socket) do
@@ -14,9 +10,8 @@ defmodule OliWeb.Insights do
     #   What should links point to for each of the rows? For an activity, what do we link to?
     #      A page with the activity in edit mode?
 
-
     {:ok, assign(socket,
-      by_page_rows: [],
+      by_page_rows: Oli.Analytics.ByPage.query_against_project_id(project_id),
       by_activity_rows: Oli.Analytics.ByActivity.query_against_project_id(project_id),
       by_objective_rows: Oli.Analytics.ByObjective.query_against_project_id(project_id),
       selected: :by_activity,
@@ -142,6 +137,8 @@ defmodule OliWeb.Insights do
     {:noreply, assign(socket, sort_by: column)}
   end
 
+  defp sort(rows, "title", :asc), do: rows |> Enum.sort(& &1.slice.title > &2.slice.title)
+  defp sort(rows, "title", :desc), do: rows |> Enum.sort(& &1.slice.title <= &2.slice.title)
   defp sort(rows, sort_by, :asc), do: rows |> Enum.sort(& &1[sort_by] > &2[sort_by] )
   defp sort(rows, sort_by, :desc), do: rows |> Enum.sort(& &1[sort_by] <= &2[sort_by])
 

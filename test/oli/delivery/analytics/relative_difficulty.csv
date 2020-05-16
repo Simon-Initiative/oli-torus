@@ -1,0 +1,15 @@
+resource_tag,activity_tag,part_id,part_attempt_tag,user_tag,section_tag,objective_tag,activity_type_id,attempt_number,part_attempt_number,resource_attempt_number,correct,graded,score,out_of,hints
+resource1,activity_no_hints,p1,pa1,user1,section1,o1,1,1,1,1,FALSE,FALSE,0,1,0
+resource1,activity_no_hints,p1,pa2,user1,section1,o1,1,2,2,2,FALSE,FALSE,0,1,0
+resource1,activity_no_hints,p1,pa3,user1,section1,o1,1,3,3,3,TRUE,FALSE,1,1,0
+resource1,activity_no_hints,p1,pa4,user2,section1,o1,1,1,1,1,TRUE,FALSE,1,1,0
+resource1,activity_no_incorrect_no_hints,p1,pa5,user1,section1,o1,1,1,1,1,TRUE,FALSE,1,1,0
+resource1,activity_no_incorrect_no_hints,p1,pa6,user2,section1,o1,1,1,1,1,TRUE,FALSE,1,1,0
+resource1,activity_no_incorrect,p1,pa7,user2,section1,o1,1,1,1,1,TRUE,FALSE,1,1,1
+resource1,activity_no_incorrect,p1,pa8,user1,section1,o1,1,1,1,1,TRUE,FALSE,1,1,3
+resource1,activity_one_user_hints_and_incorrect,p1,pa9,user1,section1,o1,1,1,1,1,FALSE,FALSE,0,1,2
+resource1,activity_one_user_hints_and_incorrect,p1,Pa10,user1,section1,o1,1,2,2,2,TRUE,FALSE,1,1,1
+resource1,activity_mult_users_hints_and_incorrect,p1,pa11,user1,section1,o1,1,1,1,1,FALSE,FALSE,0,1,2
+resource1,activity_mult_users_hints_and_incorrect,p1,pa12,user1,section1,o1,1,2,2,2,TRUE,FALSE,1,1,1
+resource1,activity_mult_users_hints_and_incorrect,p1,pa13,user2,section1,o1,1,1,1,1,FALSE,FALSE,0,1,3
+resource1,activity_mult_users_hints_and_incorrect,p1,pa14,user2,section1,o1,1,2,2,2,TRUE,FALSE,1,1,0

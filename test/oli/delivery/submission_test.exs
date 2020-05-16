@@ -27,27 +27,27 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       map = Seeder.base_project_with_resource2()
       |> Seeder.create_section()
       |> Seeder.add_objective("objective one", :o1)
-      |> Seeder.add_activity(%{title: "one", max_attempts: 2, content: content}, :publication, :project, :author, :activity_resource, :activity_revision)
+      |> Seeder.add_activity(%{title: "one", max_attempts: 2, content: content}, :activity)
       |> Seeder.add_user(%{}, :user1)
 
       attrs = %{
         title: "page1",
         content: %{
           "model" => [
-            %{"type" => "activity-reference", "activity_id" => Map.get(map, :activity_revision).resource_id}
+            %{"type" => "activity-reference", "activity_id" => Map.get(map, :activity).revision.resource_id}
           ]
         },
-        objectives: %{"attached" => [Map.get(map, :o1).resource_id]}
+        objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
       }
 
       Seeder.add_page(map, attrs, :page_resource, :page_revision)
       |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :page_resource, :page_revision, :attempt1)
-      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: content}, :activity_resource, :activity_revision, :attempt1, :activity_attempt1)
+      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: content}, :activity, :attempt1, :activity_attempt1)
       |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :activity_attempt1, :part1_attempt1)
 
     end
 
-    test "processing a submission", %{ activity_revision: activity_revision, page_revision: page_revision, user1: user,
+    test "processing a submission", %{ activity: %{ revision: activity_revision }, page_revision: page_revision, user1: user,
       part1_attempt1: part_attempt, section: section, activity_attempt1: activity_attempt} do
 
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
@@ -149,22 +149,22 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       map = Seeder.base_project_with_resource2()
       |> Seeder.create_section()
       |> Seeder.add_objective("objective one", :o1)
-      |> Seeder.add_activity(%{title: "one", content: content}, :publication, :project, :author, :activity_resource, :activity_revision)
+      |> Seeder.add_activity(%{title: "one", content: content}, :activity)
       |> Seeder.add_user(%{}, :user1)
 
       attrs = %{
         title: "page1",
         content: %{
           "model" => [
-            %{"type" => "activity-reference", "activity_id" => Map.get(map, :activity_revision).resource_id}
+            %{"type" => "activity-reference", "activity_id" => Map.get(map, :activity).revision.resource_id}
           ]
         },
-        objectives: %{"attached" => [Map.get(map, :o1).resource_id]}
+        objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
       }
 
       Seeder.add_page(map, attrs, :page_resource, :page_revision)
       |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :page_resource, :page_revision, :attempt1)
-      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: content}, :activity_resource, :activity_revision, :attempt1, :activity_attempt1)
+      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: content}, :activity, :attempt1, :activity_attempt1)
       |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :activity_attempt1, :part1_attempt1)
 
     end
@@ -242,22 +242,22 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       map = Seeder.base_project_with_resource2()
       |> Seeder.create_section()
       |> Seeder.add_objective("objective one", :o1)
-      |> Seeder.add_activity(%{title: "one", content: content}, :publication, :project, :author, :activity_resource, :activity_revision)
+      |> Seeder.add_activity(%{title: "one", content: content}, :publication, :project, :author, :activity)
       |> Seeder.add_user(%{}, :user1)
 
       attrs = %{
         title: "page1",
         content: %{
           "model" => [
-            %{"type" => "activity-reference", "activity_id" => Map.get(map, :activity_revision).resource_id}
+            %{"type" => "activity-reference", "activity_id" => Map.get(map, :activity).revision.resource_id}
           ]
         },
-        objectives: %{"attached" => [Map.get(map, :o1).resource_id]}
+        objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
       }
 
       Seeder.add_page(map, attrs, :page_resource, :page_revision)
       |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :page_resource, :page_revision, :attempt1)
-      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: content}, :activity_resource, :activity_revision, :attempt1, :activity_attempt1)
+      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: content}, :activity, :attempt1, :activity_attempt1)
       |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :activity_attempt1, :part1_attempt1)
       |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "2", responses: [], hints: []}, :activity_attempt1, :part2_attempt1)
 

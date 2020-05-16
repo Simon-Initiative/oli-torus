@@ -18,8 +18,8 @@ defmodule Oli.Delivery.Page.PageContextTest do
         title: "page1",
         content: %{
           "model" => [
-            %{"type" => "activity-reference", "activity_id" => Map.get(map, :a1).resource_id},
-            %{"type" => "activity-reference", "activity_id" => Map.get(map, :a2).resource_id}
+            %{"type" => "activity-reference", "activity_id" => Map.get(map, :a1).resource.id},
+            %{"type" => "activity-reference", "activity_id" => Map.get(map, :a2).resource.id}
           ]
         },
         objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
@@ -42,7 +42,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
       context = PageContext.create_page_context(section.context_id, p1.slug, user.id)
 
       # verify activities map
-      assert Map.get(context.activities, a1.resource_id).model == "{}"
+      assert Map.get(context.activities, a1.resource.id).model == "{}"
 
       # verify objectives map
       assert context.objectives == ["objective one"]

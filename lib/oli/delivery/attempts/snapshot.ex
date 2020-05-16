@@ -22,7 +22,7 @@ defmodule Oli.Delivery.Attempts.Snapshot do
     belongs_to :objective_revision, Oli.Resources.Revision
 
     # The exact revision of the activity at the time of this attempt
-    belongs_to :activity_revision, Oli.Resources.Revision
+    belongs_to :revision, Oli.Resources.Revision
 
     # A reference to the type of the activity
     field :activity_type_id, :id

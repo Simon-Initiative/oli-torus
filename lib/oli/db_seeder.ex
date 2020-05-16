@@ -112,7 +112,28 @@ defmodule Oli.Seeder do
 
   end
 
-  def create_resource_attempt(map, attrs, user_tag, resource_tag, revision_tag, tag \\ nil) do
+  def create_resource_attempt(map, attrs, user_tag, resource_tag, tag) do
+    user = Map.get(map, user_tag)
+    resource = Map.get(map, resource_tag).resource
+    revision = Map.get(map, resource_tag).revision
+    section = map.section
+
+    %ResourceAccess{id: id} = Attempts.track_access(resource.id, section.context_id, user.id)
+
+    attrs = Map.merge(attrs, %{
+      resource_access_id: id,
+      revision_id: revision.id,
+      attempt_guid: UUID.uuid4()
+    })
+
+    {:ok, attempt} = Attempts.create_resource_attempt(attrs)
+
+    case tag do
+      nil -> map
+      t -> Map.put(map, t, attempt)
+    end
+  end
+  def create_resource_attempt(map, attrs, user_tag, resource_tag, revision_tag, tag) do
 
     user = Map.get(map, user_tag)
     resource = Map.get(map, resource_tag)
@@ -135,11 +156,10 @@ defmodule Oli.Seeder do
     end
   end
 
-  def create_activity_attempt(map, attrs, resource_tag, revision_tag, attempt_tag, tag \\ nil) do
-
+  def create_activity_attempt(map, attrs, activity_tag, attempt_tag, tag \\ nil) do
     resource_attempt = Map.get(map, attempt_tag)
-    resource = Map.get(map, resource_tag)
-    revision = Map.get(map, revision_tag)
+    resource = Map.get(map, activity_tag).resource
+    revision = Map.get(map, activity_tag).revision
 
     attrs = Map.merge(attrs, %{
       resource_attempt_id: resource_attempt.id,
@@ -257,7 +277,7 @@ defmodule Oli.Seeder do
 
     case tag do
       nil -> map
-      t -> Map.put(map, t, revision)
+      t -> Map.put(map, t, %{ revision: revision, resource: resource })
     end
   end
 
@@ -317,7 +337,7 @@ defmodule Oli.Seeder do
     end
   end
 
-  def add_activity(map, attrs, publication_tag, project_tag, author_tag, resource_tag, revision_tag) do
+  def add_activity(map, attrs, publication_tag, project_tag, author_tag, activity_tag) do
 
     author = Map.get(map, author_tag)
     project = Map.get(map, project_tag)
@@ -331,9 +351,8 @@ defmodule Oli.Seeder do
     {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: resource.id}) |> Repo.insert
 
     publish_resource(publication, resource, revision)
-
-    Map.put(map, resource_tag, resource)
-    |> Map.put(revision_tag, revision)
+    map
+    |> Map.put(activity_tag, %{ resource: resource, revision: revision })
   end
 
   def attach_pages_to(resources, container, container_revision, publication) do
@@ -367,28 +386,8 @@ defmodule Oli.Seeder do
   end
 
   def add_activity_snapshot(map, attrs, tag) do
-    {:ok, snapshot} = Snapshot.changeset(%Snapshot{},
-    %{
-      resource_id: Map.get(attrs, :resource, map.page1).id,
-      part_id: 1,
-      activity_type_id: 1,
-      section_id: Map.get(attrs, :section, map.section).id,
-
-      user_id: Map.get(map, attrs.user_tag, map.author).id,
-      activity_id: Map.get(map, attrs.activity_tag).resource.id,
-      activity_revision_id: Map.get(map, attrs.activity_tag).revision.id,
-      objective_id: Map.get(map, attrs.objective_tag).resource.id,
-      objective_revision_id: Map.get(map, attrs.objective_tag).revision.id,
-
-      attempt_number: Map.get(attrs, :attempt_number),
-      correct: Map.get(attrs, :correct),
-      score: Map.get(attrs, :score),
-      out_of: Map.get(attrs, :out_of),
-      hints: Map.get(attrs, :hints)
-    }) |> Repo.insert()
-
-    map
-    |> Map.put(tag, snapshot)
+    {:ok, snapshot} = Snapshot.changeset(%Snapshot{}, attrs) |> Repo.insert()
+    Map.put(map, tag, snapshot)
   end
 
 end

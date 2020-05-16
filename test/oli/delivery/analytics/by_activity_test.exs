@@ -2,139 +2,37 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
 
   use Oli.DataCase
 
-  alias Oli.Delivery.Attempts.Snapshot
   alias Oli.Analytics.ByActivity
+  alias Oli.Activities.Model.Part
+
+  def seed_snapshots(context) do
+    seeds = Seeder.base_project_with_resource2()
+    |> Seeder.create_section()
+    |> Seeder.add_activity(%{title: "Activity with with no attempts"}, :activity_no_attempts)
+    |> setup_csv(context.path)
+
+    Oli.Publishing.publish_project(seeds.project)
+    {:ok, %{ seeds: seeds, results: ByActivity.query_against_project_id(seeds.project.id) }}
+  end
 
   describe "number of attempts" do
-    setup do
-      seeds = Seeder.base_project_with_resource2()
-      |> Seeder.create_section()
-      |> Seeder.add_objective("objective one", :o1)
-      |> Seeder.add_activity(%{title: "Activity with no attempts"}, :activity_no_attempts)
-      |> Seeder.add_activity(%{title: "Activity with attempts from user 1"}, :activity_user1)
-      |> Seeder.add_activity(%{title: "Activity with attempts from user 2"}, :activity_user2)
-      |> Seeder.add_activity(%{title: "Activity with attempts from both users"}, :activity_user1_user2)
-      |> Seeder.add_user(%{}, :user1)
-      |> Seeder.add_user(%{}, :user2)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_user1,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 1,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss1)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_user1,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 2,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 1
-      }, :ss1)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_user1,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 3,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 0
-      }, :ss3)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_user2,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 1,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 1
-      }, :ss4)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_user2,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 2,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 0
-      }, :ss5)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_user1_user2,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 1,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss6)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_user1_user2,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 2,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 1
-      }, :ss7)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_user1_user2,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 3,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 0
-      }, :ss8)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_user1_user2,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 1,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 1
-      }, :ss9)
-      Oli.Publishing.publish_project(seeds.project)
-      results = ByActivity.query_against_project_id(seeds.project.id)
-      {:ok, %{ seeds: seeds, results: results }}
-    end
+    setup do: %{ path: "./number_of_attempts.csv" }
+    setup :seed_snapshots
 
     test "activity with no attempts", %{ results: results, seeds: seeds } do
       # activities should still be queried even with no attempts against them
-
-      activity_no_attempts = seeds.activity_no_attempts.resource
-      activity_results = Enum.find(results, & &1.activity.id == activity_no_attempts.id)
+      activity_no_attempts = seeds.activity_no_attempts.revision
+      activity_results = Enum.find(results, & &1.slice.id == activity_no_attempts.id)
       assert activity_results.number_of_attempts == nil
     end
 
     test "activity with attempts from 1 user", %{ results: results, seeds: seeds } do
       # test a couple activities with different users attempting them
-      activity_user1 = seeds.activity_user1.resource
-      activity1_results = Enum.find(results, & &1.activity.id == activity_user1.id)
+      activity_user1 = seeds.activity_user1.revision
+      activity1_results = Enum.find(results, & &1.slice.id == activity_user1.id)
 
-      activity_user2 = seeds.activity_user2.resource
-      activity2_results = Enum.find(results, & &1.activity.id == activity_user2.id)
+      activity_user2 = seeds.activity_user2.revision
+      activity2_results = Enum.find(results, & &1.slice.id == activity_user2.id)
 
       assert activity1_results.number_of_attempts == 3
       assert activity2_results.number_of_attempts == 2
@@ -142,13 +40,13 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
 
     test "activity with attempts from multiple users", %{ results: results, seeds: seeds } do
       # test an activity with multiple users attempting it
-      activity_user1_user2 = seeds.activity_user1_user2.resource
-      activity_results = Enum.find(results, & &1.activity.id == activity_user1_user2.id)
+      activity_user1_user2 = seeds.activity_user1_user2.revision
+      activity_results = Enum.find(results, & &1.slice.id == activity_user1_user2.id)
 
       assert activity_results.number_of_attempts == 4
     end
 
-    test "multiple activities", %{ results: results, seeds: seeds } do
+    test "multiple activities", %{ results: results, seeds: _seeds } do
       # query results should have 4 activities
       assert (length results) == 4
     end
@@ -157,183 +55,8 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
 
   # Relative difficulty = (# hints requested + # incorrect answers) / total attempts
   describe "relative difficulty" do
-
-    setup do
-      seeds = Seeder.base_project_with_resource2()
-      |> Seeder.create_section()
-      |> Seeder.add_objective("objective one", :o1)
-      |> Seeder.add_activity(%{title: "Activity with no hints"}, :activity_no_hints)
-      |> Seeder.add_activity(%{title: "Activity with with no incorrect and no hints"}, :activity_no_incorrect_no_hints)
-      |> Seeder.add_activity(%{title: "Activity with with no incorrect but with hints"}, :activity_no_incorrect)
-      |> Seeder.add_activity(%{title: "Activity with with no attempts"}, :activity_no_attempts)
-      |> Seeder.add_activity(%{title: "Activity with hints/correct attempts from one user"}, :activity_one_user_hints_and_incorrect)
-      |> Seeder.add_activity(%{title: "Activity with hints/correct attempts from both users"}, :activity_mult_users_hints_and_incorrect)
-      |> Seeder.add_user(%{}, :user1)
-      |> Seeder.add_user(%{}, :user2)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_no_hints,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 1,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss1)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_no_hints,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 2,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss1)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_no_hints,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 3,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 0
-      }, :ss3)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_no_hints,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 1,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 0
-      }, :ss4)
-
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_no_incorrect_no_hints,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 1,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 0
-      }, :ss5)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_no_incorrect_no_hints,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 1,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 0
-      }, :ss6)
-
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_no_incorrect,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 1,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 1
-      }, :ss7)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_no_incorrect,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 1,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 3
-      }, :ss8)
-
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_one_user_hints_and_incorrect,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 1,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 2
-      }, :ss9)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_one_user_hints_and_incorrect,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 2,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 1
-      }, :ss10)
-
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_mult_users_hints_and_incorrect,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 1,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 2
-      }, :ss11)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_mult_users_hints_and_incorrect,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 2,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 1
-      }, :ss12)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_mult_users_hints_and_incorrect,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 1,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 3
-      }, :ss13)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_mult_users_hints_and_incorrect,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 2,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 0
-      }, :ss14)
-
-      Oli.Publishing.publish_project(seeds.project)
-      results = ByActivity.query_against_project_id(seeds.project.id)
-
-      {:ok, %{ seeds: seeds, results: results }}
-    end
+    setup do: %{ path: "./relative_difficulty.csv" }
+    setup :seed_snapshots
 
     test "no incorrect answers and no hints", %{ results: results, seeds: seeds } do
       # attempts from two users:
@@ -342,8 +65,8 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
       # 0 incorrect attempts
       # relative difficulty = (0 + 0) / 2 = 0
 
-      activity_no_incorrect_no_hints = seeds.activity_no_incorrect_no_hints.resource
-      activity_results = Enum.find(results, & &1.activity.id == activity_no_incorrect_no_hints.id)
+      activity_no_incorrect_no_hints = seeds.activity_no_incorrect_no_hints.revision
+      activity_results = Enum.find(results, & &1.slice.id == activity_no_incorrect_no_hints.id)
 
       assert activity_results.relative_difficulty == 0
 
@@ -356,8 +79,8 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
       # 0 incorrect attempts
       # relative difficulty = (0 + 4) / 2 = 2
 
-      activity_no_incorrect = seeds.activity_no_incorrect.resource
-      activity_results = Enum.find(results, & &1.activity.id == activity_no_incorrect.id)
+      activity_no_incorrect = seeds.activity_no_incorrect.revision
+      activity_results = Enum.find(results, & &1.slice.id == activity_no_incorrect.id)
 
       assert activity_results.relative_difficulty == 2
 
@@ -366,8 +89,8 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
     test "no attempts", %{ results: results, seeds: seeds } do
       # activities should still be queried even with no attempts against them
 
-      no_attempt_activity = seeds.activity_no_attempts.resource
-      activity_results = Enum.find(results, & &1.activity.id == no_attempt_activity.id)
+      no_attempt_activity = seeds.activity_no_attempts.revision
+      activity_results = Enum.find(results, & &1.slice.id == no_attempt_activity.id)
       assert activity_results.number_of_attempts == nil
     end
 
@@ -377,8 +100,8 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
       # 0 hints requested
       # 2 incorrect attempts
       # relative difficulty = (0 + 2) / 4 = .5
-      activity_no_hints = seeds.activity_no_hints.resource
-      activity_results = Enum.find(results, & &1.activity.id == activity_no_hints.id)
+      activity_no_hints = seeds.activity_no_hints.revision
+      activity_results = Enum.find(results, & &1.slice.id == activity_no_hints.id)
 
       assert activity_results.relative_difficulty == 0.5
     end
@@ -389,8 +112,8 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
       # 3 hints requested
       # 1 incorrect attempt
       # relative difficulty = (1 + 3) / 2 = 2
-      activity_one_user_hints_and_incorrect = seeds.activity_one_user_hints_and_incorrect.resource
-      activity_results = Enum.find(results, & &1.activity.id == activity_one_user_hints_and_incorrect.id)
+      activity_one_user_hints_and_incorrect = seeds.activity_one_user_hints_and_incorrect.revision
+      activity_results = Enum.find(results, & &1.slice.id == activity_one_user_hints_and_incorrect.id)
 
       assert activity_results.relative_difficulty == 2
     end
@@ -402,8 +125,8 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
       # 2 incorrect attempts (1 from user1, 1 from user2)
       # relative difficulty = (6 + 2) / 4 = 2
 
-      activity_mult_users_hints_and_incorrect = seeds.activity_mult_users_hints_and_incorrect.resource
-      activity_results = Enum.find(results, & &1.activity.id == activity_mult_users_hints_and_incorrect.id)
+      activity_mult_users_hints_and_incorrect = seeds.activity_mult_users_hints_and_incorrect.revision
+      activity_results = Enum.find(results, & &1.slice.id == activity_mult_users_hints_and_incorrect.id)
 
       assert activity_results.relative_difficulty == 2
     end
@@ -412,190 +135,8 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
   # eventually correct = sum(students with any correct response)
   #                     / sum(total students with attempts)
   describe "eventually correct" do
-
-    setup do
-      seeds = Seeder.base_project_with_resource2()
-      |> Seeder.create_section()
-      |> Seeder.add_objective("objective one", :o1)
-      |> Seeder.add_activity(%{title: "Activity with no correct answers"}, :activity_no_correct)
-      |> Seeder.add_activity(%{title: "Activity with with no attempts"}, :activity_no_attempts)
-      |> Seeder.add_activity(%{title: "Activity with correct attempts from both users"}, :activity_mult_users_correct)
-      |> Seeder.add_activity(%{title: "Activity with correct attempts from only one user"}, :activity_mult_users_correct_incorrect)
-      |> Seeder.add_user(%{}, :user1)
-      |> Seeder.add_user(%{}, :user2)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_no_correct,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 1,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss1)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_no_correct,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 2,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss2)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_no_correct,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 1,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss3)
-
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_mult_users_correct,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 1,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss4)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_mult_users_correct,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 2,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss5)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_mult_users_correct,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 3,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 0
-      }, :ss6)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_mult_users_correct,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 1,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss7)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_mult_users_correct,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 2,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss8)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_mult_users_correct,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 3,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 0
-      }, :ss9)
-
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_mult_users_correct_incorrect,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 1,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss10)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_mult_users_correct_incorrect,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 2,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss11)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_mult_users_correct_incorrect,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 3,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss12)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_mult_users_correct_incorrect,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 1,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss13)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_mult_users_correct_incorrect,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 2,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss14)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_mult_users_correct_incorrect,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 3,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 0
-      }, :ss15)
-
-      Oli.Publishing.publish_project(seeds.project)
-      results = IO.inspect ByActivity.query_against_project_id(seeds.project.id)
-
-      {:ok, %{ seeds: seeds, results: results }}
-    end
+    setup do: %{ path: "./eventually_correct.csv" }
+    setup :seed_snapshots
 
     # eventually correct = sum(students with any correct response)
     #                     / sum(total students with attempts)
@@ -604,8 +145,8 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
       # 2 attempts from user1 (both incorrect)
       # 1 attempt from user2 (incorrect)
       # eventually_correct = 0 / 2 = 0
-      activity_no_correct = seeds.activity_no_correct.resource
-      activity_results = Enum.find(results, & &1.activity.id == activity_no_correct.id)
+      activity_no_correct = seeds.activity_no_correct.revision
+      activity_results = Enum.find(results, & &1.slice.id == activity_no_correct.id)
 
       assert activity_results.eventually_correct == 0
     end
@@ -613,8 +154,8 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
     test "no attempts", %{ results: results, seeds: seeds } do
       # activities should still be queried even with no attempts against them
 
-      no_attempt_activity = seeds.activity_no_attempts.resource
-      activity_results = Enum.find(results, & &1.activity.id == no_attempt_activity.id)
+      no_attempt_activity = seeds.activity_no_attempts.revision
+      activity_results = Enum.find(results, & &1.slice.id == no_attempt_activity.id)
       assert activity_results.eventually_correct == nil
     end
 
@@ -623,8 +164,8 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
       # 2 correct attempts
       # eventually_correct = 2 / 2 = 1
 
-      activity_mult_users_correct = seeds.activity_mult_users_correct.resource
-      activity_results = Enum.find(results, & &1.activity.id == activity_mult_users_correct.id)
+      activity_mult_users_correct = seeds.activity_mult_users_correct.revision
+      activity_results = Enum.find(results, & &1.slice.id == activity_mult_users_correct.id)
       assert activity_results.eventually_correct == 1
     end
 
@@ -632,185 +173,25 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
       # this activity has 6 attempts from 2 users (3 each)
       # 1 correct attempts, so other user never gets it right
 
-      activity_mult_users_correct_incorrect = seeds.activity_mult_users_correct_incorrect.resource
-      activity_results = Enum.find(results, & &1.activity.id == activity_mult_users_correct_incorrect.id)
+      activity_mult_users_correct_incorrect = seeds.activity_mult_users_correct_incorrect.revision
+      activity_results = Enum.find(results, & &1.slice.id == activity_mult_users_correct_incorrect.id)
       assert activity_results.eventually_correct == 0.5
     end
   end
 
   # first attempt correct = sum(students with attempt 1 correct)
   #                         / sum(total students with attempts)
-  describe "first attempt correct" do
-
-    setup do
-      seeds = Seeder.base_project_with_resource2()
-      |> Seeder.create_section()
-      |> Seeder.add_objective("objective one", :o1)
-      |> Seeder.add_activity(%{title: "Activity with no correct answers"}, :activity_no_correct)
-      |> Seeder.add_activity(%{title: "Activity with with no attempts"}, :activity_no_attempts)
-      |> Seeder.add_activity(%{title: "Activity with first correct attempts from both users"}, :activity_all_correct)
-      |> Seeder.add_activity(%{title: "Activity with first correct attempts from only one user"}, :activity_some_correct)
-      |> Seeder.add_user(%{}, :user1)
-      |> Seeder.add_user(%{}, :user2)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_no_correct,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 1,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss1)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_no_correct,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 2,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss2)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_no_correct,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 1,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss3)
-
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_all_correct,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 1,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 0
-      }, :ss4)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_all_correct,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 2,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss5)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_all_correct,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 1,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 0
-      }, :ss6)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_all_correct,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 2,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss7)
-
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_some_correct,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 1,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss10)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_some_correct,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 2,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss11)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_some_correct,
-        objective_tag: :o1,
-        user_tag: :user1,
-
-        attempt_number: 3,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 0
-      }, :ss12)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_some_correct,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 1,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 0
-      }, :ss13)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_some_correct,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 2,
-        correct: false,
-        score: 0,
-        out_of: 1,
-        hints: 0
-      }, :ss14)
-      |> Seeder.add_activity_snapshot(%{
-        activity_tag: :activity_some_correct,
-        objective_tag: :o1,
-        user_tag: :user2,
-
-        attempt_number: 3,
-        correct: true,
-        score: 1,
-        out_of: 1,
-        hints: 0
-      }, :ss15)
-
-      Oli.Publishing.publish_project(seeds.project)
-      results = IO.inspect ByActivity.query_against_project_id(seeds.project.id)
-
-      {:ok, %{ seeds: seeds, results: results }}
-    end
+  describe "first try correct" do
+    setup do: %{ path: "./first_try_correct.csv" }
+    setup :seed_snapshots
 
     test "no correct responses", %{ results: results, seeds: seeds } do
       # this activity has attempts from two users:
       # 2 attempts from user1 (both incorrect)
       # 1 attempt from user2 (incorrect)
       # first_try_correct = 0 / 2 = 0
-      activity_no_correct = seeds.activity_no_correct.resource
-      activity_results = Enum.find(results, & &1.activity.id == activity_no_correct.id)
+      activity_no_correct = seeds.activity_no_correct.revision
+      activity_results = Enum.find(results, & &1.slice.id == activity_no_correct.id)
 
       assert activity_results.first_try_correct == 0
     end
@@ -818,8 +199,8 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
     test "no attempts", %{ results: results, seeds: seeds } do
       # activities should still be queried even with no attempts against them
 
-      no_attempt_activity = seeds.activity_no_attempts.resource
-      activity_results = Enum.find(results, & &1.activity.id == no_attempt_activity.id)
+      no_attempt_activity = seeds.activity_no_attempts.revision
+      activity_results = Enum.find(results, & &1.slice.id == no_attempt_activity.id)
       assert activity_results.first_try_correct == nil
     end
 
@@ -828,8 +209,8 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
       # both are correct on first attempt
       # first_try_correct = 2 / 2 = 1
 
-      activity_all_correct = seeds.activity_all_correct.resource
-      activity_results = Enum.find(results, & &1.activity.id == activity_all_correct.id)
+      activity_all_correct = seeds.activity_all_correct.revision
+      activity_results = Enum.find(results, & &1.slice.id == activity_all_correct.id)
       assert activity_results.first_try_correct == 1
     end
 
@@ -838,10 +219,103 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
       # one is correct on first attempt
       # first_try_correct = 1 / 2 = 0.5
 
-      activity_some_correct = seeds.activity_some_correct.resource
-      activity_results = Enum.find(results, & &1.activity.id == activity_some_correct.id)
+      activity_some_correct = seeds.activity_some_correct.revision
+      activity_results = Enum.find(results, & &1.slice.id == activity_some_correct.id)
       assert activity_results.first_try_correct == 0.5
     end
   end
 
+  defp get_csv_headers(path) do
+    [ok: headers] = path
+    |> Path.expand(__DIR__)
+    |> File.stream!
+    |> CSV.decode
+    |> Enum.take(1)
+
+    headers
+    |> Enum.map(&String.to_atom/1)
+  end
+
+  defp get_csv_snapshots(path) do
+    path
+    |> Path.expand(__DIR__)
+    |> File.stream!
+    |> CSV.decode(headers: get_csv_headers(path))
+    |> Enum.drop(1)
+  end
+
+  defp parse_row({:ok, snapshot}) do
+    %{
+      activity_tag: String.to_atom(snapshot.activity_tag),
+      activity_type_id: elem(Integer.parse(snapshot.activity_type_id), 0),
+      attempt_number: elem(Integer.parse(snapshot.attempt_number), 0),
+      correct: to_bool(snapshot.correct),
+      graded: to_bool(snapshot.graded),
+      hints: elem(Integer.parse(snapshot.hints), 0),
+      objective_tag: String.to_atom(snapshot.objective_tag),
+      out_of: elem(Integer.parse(snapshot.out_of), 0),
+      part_attempt_tag: String.to_atom(snapshot.part_attempt_tag),
+      part_attempt_number: elem(Integer.parse(snapshot.part_attempt_number), 0),
+      part_id: snapshot.part_id,
+      resource_attempt_number: elem(Integer.parse(snapshot.resource_attempt_number), 0),
+      resource_tag: String.to_atom(snapshot.resource_tag),
+      score: elem(Integer.parse(snapshot.score), 0),
+      section_tag: String.to_atom(snapshot.section_tag),
+      user_tag: String.to_atom(snapshot.user_tag)
+    }
+  end
+
+  defp create_if_necessary(map, key, creation_fn) do
+    case map[key] do
+      nil -> creation_fn.(map)
+      _ -> map
+    end
+  end
+
+  defp to_bool("TRUE"), do: true
+  defp to_bool("FALSE"), do: false
+
+  def setup_csv(map, path) do
+
+    get_csv_snapshots(path)
+    |> Enum.map(&parse_row/1)
+    |> Enum.reduce(map, fn (%{
+      activity_tag: activity_tag,
+      objective_tag: objective_tag,
+      part_attempt_tag: part_attempt_tag,
+      resource_tag: resource_tag,
+      section_tag: _section_tag,
+      user_tag: user_tag } = snapshot, map) ->
+
+      # Create linkages if necessary. These are not used for analytics queries but are
+      # required to satisfy database constraints
+      map = map
+      |> create_if_necessary(user_tag,
+        fn map -> Seeder.add_user(map, %{}, user_tag) end)
+      |> create_if_necessary(resource_tag,
+        fn map -> Seeder.add_page(map, %{title: Atom.to_string(resource_tag)}, resource_tag) end)
+      |> create_if_necessary(objective_tag,
+        fn map -> Seeder.add_objective(map, Atom.to_string(objective_tag), objective_tag) end)
+      |> create_if_necessary(activity_tag,
+        fn map -> Seeder.add_activity(map, %{title: Atom.to_string(activity_tag)}, activity_tag) end)
+      |> create_if_necessary(:ra1,
+        fn map -> Seeder.create_resource_attempt(map, %{attempt_number: 1}, user_tag, resource_tag, :attempt1) end)
+      |> create_if_necessary(:aa1,
+        fn map -> Seeder.create_activity_attempt(map, %{attempt_number: 1, transformed_model: %{}}, activity_tag, :attempt1, :activity_attempt1) end)
+      |> create_if_necessary(part_attempt_tag,
+        fn map -> Seeder.create_part_attempt(map, %{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :activity_attempt1, part_attempt_tag) end)
+
+      # Create the activity snapshot using the new map with required linkages
+      Seeder.add_activity_snapshot(map, Map.merge(snapshot, %{
+        resource_id: map[resource_tag].resource.id,
+        activity_id: map[activity_tag].resource.id,
+        part_attempt_id: map[part_attempt_tag].id,
+        user_id: map[user_tag].id,
+        section_id: map.section.id,
+        objective_id: map[objective_tag].resource.id,
+        objective_revision_id: map[objective_tag].revision.id,
+        revision_id: map[activity_tag].revision.id,
+      }), Ecto.UUID.generate())
+      end)
+  end
 end

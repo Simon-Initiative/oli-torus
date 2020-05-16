@@ -2,7 +2,7 @@ defmodule OliWeb.Insights.TableRow do
   use Phoenix.LiveComponent
 
   def render(assigns) do
-    # content is a page, activity, or skill
+    # slice is a page, activity, or objective
     %{
       slice: slice,
       number_of_attempts: number_of_attempts,
@@ -10,7 +10,6 @@ defmodule OliWeb.Insights.TableRow do
       eventually_correct: eventually_correct,
       first_try_correct: first_try_correct
     } = assigns.row
-    # IO.inspect(assigns.row)
 
     ~L"""
     <tr>

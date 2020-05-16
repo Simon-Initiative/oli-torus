@@ -22,11 +22,11 @@ defmodule Oli.Delivery.Page.ActivityContextTest do
       Seeder.base_project_with_resource2()
       |> Seeder.create_section()
       |> Seeder.add_user(%{}, :user1)
-      |> Seeder.add_activity(%{ content: content}, :publication, :project, :author, :resource_a, :a1)
-      |> Seeder.add_activity(%{ content: %{ "stem" => "2"}}, :publication, :project, :author, :resource_b, :a2)
-      |> Seeder.add_activity(%{ content: %{ "stem" => "3"}}, :publication, :project, :author, :resource_c, :a3)
+      |> Seeder.add_activity(%{ content: content}, :publication, :project, :author, :a1)
+      |> Seeder.add_activity(%{ content: %{ "stem" => "2"}}, :publication, :project, :author, :a2)
+      |> Seeder.add_activity(%{ content: %{ "stem" => "3"}}, :publication, :project, :author, :a3)
       |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :page1, :revision1, :attempt1)
-      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: %{ "stem" => "1"}}, :resource_a, :a1, :attempt1, :activity_attempt1)
+      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: %{ "stem" => "1"}}, :a1, :attempt1, :activity_attempt1)
       |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :activity_attempt1, :part1_attempt1)
 
     end
@@ -37,9 +37,9 @@ defmodule Oli.Delivery.Page.ActivityContextTest do
       |> ActivityContext.create_context_map()
 
       assert length(Map.keys(m)) == 1
-      assert Map.get(m, a1.resource_id).model == "{&quot;stem&quot;:&quot;1&quot;}"
-      assert Map.get(m, a1.resource_id).delivery_element == "oli-multiple-choice-delivery"
-      assert Map.get(m, a1.resource_id).script == "oli_multiple_choice_delivery.js"
+      assert Map.get(m, a1.resource.id).model == "{&quot;stem&quot;:&quot;1&quot;}"
+      assert Map.get(m, a1.resource.id).delivery_element == "oli-multiple-choice-delivery"
+      assert Map.get(m, a1.resource.id).script == "oli_multiple_choice_delivery.js"
 
     end
 
