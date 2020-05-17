@@ -34,7 +34,7 @@ defmodule OliWeb.AttemptController do
   def get_hint(conn, %{"activity_attempt_guid" => activity_attempt_guid, "part_attempt_guid" => part_attempt_guid}) do
 
     case Attempts.request_hint(activity_attempt_guid, part_attempt_guid) do
-      {:ok, hint, has_more_hints} -> json conn, %{ "type" => "success", "hint" => hint, "hasMoreHints" => has_more_hints}
+      {:ok, {hint, has_more_hints}} -> json conn, %{ "type" => "success", "hint" => hint, "hasMoreHints" => has_more_hints}
       {:error, {:not_found}} -> error(conn, 404, "not found")
       {:error, {:no_more_hints}} -> json conn, %{ "type" => "success", "hasMoreHints" => false}
       {:error, _} -> error(conn, 500, "server error")
@@ -75,7 +75,7 @@ defmodule OliWeb.AttemptController do
     context_id = lti_params["context_id"]
 
     case Attempts.reset_activity(context_id, attempt_guid) do
-      {:ok, attempt_state, model} -> json conn, %{ "type" => "success", "attemptState" => attempt_state, "model" => model}
+      {:ok, {attempt_state, model}} -> json conn, %{ "type" => "success", "attemptState" => attempt_state, "model" => model}
       {:error, _} -> error(conn, 500, "server error")
     end
 
