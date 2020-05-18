@@ -15,9 +15,8 @@ import { ActivityModelSchema } from 'components/activities/types';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { Message, createMessage } from 'data/messages/messages';
 import { Banner } from '../messages/Banner';
-import {Objectives} from "components/resource/Objectives";
-import {PartObjectives} from "components/activity/PartObjectives";
-import {valueOr} from "utils/common";
+import { PartObjectives } from 'components/activity/PartObjectives';
+import { valueOr } from 'utils/common';
 
 export interface ActivityEditorProps extends ActivityContext {
 
