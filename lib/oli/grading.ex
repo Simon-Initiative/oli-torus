@@ -85,11 +85,15 @@ defmodule Oli.Grading do
       |> Enum.map(fn e -> e.user end)
 
     # create a map of all resource accesses, keyed off resource id
-    resource_accesses = Enum.reduce(graded_pages, %{}, fn revision, acc ->
-      user_resource_access_map = Attempts.get_resource_access_for_context(revision.resource_id, section.context_id)
-        |> Enum.reduce(%{}, fn resource_access, acc -> Map.put(acc, resource_access.user_id, resource_access) end)
-      Map.put_new acc, revision.resource_id, user_resource_access_map
-    end)
+    resource_accesses = Attempts.get_all_graded_resource_access_for_context(section.context_id)
+      |> Enum.reduce(%{}, fn resource_access, acc ->
+        case acc[resource_access.resource_id] do
+          nil ->
+            Map.put_new(acc, resource_access.resource_id, Map.put_new(%{}, resource_access.user_id, resource_access))
+          resource_accesses ->
+            Map.put(acc, resource_access.resource_id, Map.put_new(resource_accesses, resource_access.user_id, resource_access))
+        end
+      end)
 
     # build gradebook map - for each user in the section, create a gradebook row. Using
     # resource_accesses, create a list of gradebook scores leaving scores null if they do not exist
