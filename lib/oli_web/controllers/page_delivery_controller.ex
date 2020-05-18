@@ -8,6 +8,10 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Rendering.Page
   alias Oli.Activities
   alias Oli.Delivery.Attempts
+  alias Oli.Grading
+  alias Oli.Utils.Slug
+  alias Oli.Utils.Time
+  alias Oli.Delivery.Lti
 
   plug :ensure_context_id_matches
 
@@ -152,5 +156,23 @@ defmodule OliWeb.PageDeliveryController do
       |> Enum.map(fn r -> Map.get(r, :authoring_script) end)
   end
 
+  def export_gradebook(conn, %{"context_id" => context_id}) do
+    user = conn.assigns.current_user
+    case {Sections.is_enrolled?(user.id, context_id), Lti.parse_lti_role(user.roles)} do
+      {true, role} when role == :administrator or role == :instructor ->
+        section = Sections.get_section_by(context_id: context_id)
+
+        gradebook_csv = Grading.export_csv(section) |> Enum.join("")
+        filename = "#{Slug.slugify(section.title)}-#{Timex.format!(Time.now(), "{YYYY}-{M}-{D}")}.csv"
+
+        conn
+        |> put_resp_content_type("text/csv")
+        |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
+        |> send_resp(200, gradebook_csv)
+
+      _ ->
+        render(conn, "not_authorized.html")
+    end
+  end
 
 end

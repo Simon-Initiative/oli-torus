@@ -11,7 +11,7 @@ defmodule Oli.Delivery.Attempts do
   alias Oli.Activities.Model.Feedback
   alias Oli.Activities.Transformers
   alias Oli.Delivery.Attempts.{StudentInput, Result}
-  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Publishing.{PublishedResource, DeliveryResolver}
   alias Oli.Delivery.Page.ModelPruner
 
 
@@ -277,6 +277,20 @@ defmodule Oli.Delivery.Attempts do
     end
 
     {access, attempt_representation}
+  end
+
+  @doc """
+  Retrieves all graded resource access for a given context
+
+  `[%ResourceAccess{}, ...]`
+  """
+  def get_graded_resource_access_for_context(context_id) do
+    Repo.all(from a in ResourceAccess,
+      join: s in Section, on: a.section_id == s.id,
+      join: p in PublishedResource, on: s.publication_id == p.publication_id,
+      join: r in Revision, on: p.revision_id == r.id,
+      where: s.context_id == ^context_id and r.graded == true,
+      select: a)
   end
 
   defp get_resource_access(resource_id, context_id, user_id) do

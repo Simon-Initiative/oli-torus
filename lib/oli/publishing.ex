@@ -464,7 +464,14 @@ defmodule Oli.Publishing do
     |> Enum.filter(& !&1.deleted)
   end
 
-  defp get_resource_revisions_for_publication(publication) do
+  @doc """
+  Returns a list of {resource, revision} tuples for a publication
+
+  ## Examples
+      iex> get_resource_revisions_for_publication(123)
+      [{%Resource{}, %Revision{}}, ...]
+  """
+  def get_resource_revisions_for_publication(publication) do
     resource_mappings = get_resource_mappings_by_publication(publication.id)
 
     # filter out revisions that are marked as deleted, then convert
