@@ -9,12 +9,11 @@ export type PartObjectivesProps = {
   partIds: Immutable.List<string>,
   objectives: Immutable.Map<string, Immutable.List<ObjectiveSlug>>,
   allObjectives: Immutable.List<Objective>,
-  editMode: boolean, // Whether or not the user is editing
+  editMode: boolean,
   onEdit: (objectives: Immutable.Map<string, Immutable.List<ObjectiveSlug>>) => void;
 };
 
-// Part to Objective component that allows attaching and removal of objectives to parts
-// any collection of child components
+// PartObjective component that allows attaching and removal of objectives to activity parts
 export const PartObjectives = (props: PartObjectivesProps) => {
 
   const {partIds, objectives, allObjectives, editMode, onEdit} = props;
