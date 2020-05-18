@@ -45,6 +45,10 @@ defmodule Oli.Delivery.Page.PageContextTest do
       # verify objectives map
       assert context.objectives == ["objective one"]
 
+      IO.inspect(context, label: :context)
+      IO.inspect(page1, label: :page1)
+      IO.inspect(page2, label: :page2)
+
       # verify previous and next are correct
       assert context.previous_page.resource_id == page1.id
       assert context.next_page.resource_id == page2.id

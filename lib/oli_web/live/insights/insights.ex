@@ -28,10 +28,10 @@ defmodule OliWeb.Insights do
       <div class="card-header">
         <ul class="nav nav-tabs card-header-tabs">
           <li class="nav-item">
-            <button <%= is_disabled(@selected, :by_page) %> class="btn btn-primary" phx-click="by-page">By Page</button>
+            <button <%= is_disabled(@selected, :by_activity) %> class="btn btn-primary" phx-click="by-activity">By Activity</button>
           </li>
           <li class="nav-item">
-            <button <%= is_disabled(@selected, :by_activity) %> class="btn btn-primary" phx-click="by-activity">By Activity</button>
+            <button <%= is_disabled(@selected, :by_page) %> class="btn btn-primary" phx-click="by-page">By Page</button>
           </li>
           <li class="nav-item">
             <button <%= is_disabled(@selected, :by_objective) %> class="btn btn-primary" phx-click="by-objective">By Objective</button>
@@ -150,7 +150,7 @@ defmodule OliWeb.Insights do
 
   defp sort(rows, "title", :asc), do: rows |> Enum.sort(& &1.slice.title > &2.slice.title)
   defp sort(rows, "title", :desc), do: rows |> Enum.sort(& &1.slice.title <= &2.slice.title)
-  defp sort(rows, sort_by, :asc), do: rows |> Enum.sort(& &1[sort_by] > &2[sort_by] )
+  defp sort(rows, sort_by, :asc), do: rows |> Enum.sort(& &1[sort_by] > &2[sort_by])
   defp sort(rows, sort_by, :desc), do: rows |> Enum.sort(& &1[sort_by] <= &2[sort_by])
 
   defp sort_order_icon(column, sort_by, :asc) when column == sort_by, do: "▲"

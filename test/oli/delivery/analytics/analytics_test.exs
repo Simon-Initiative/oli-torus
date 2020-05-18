@@ -1,4 +1,4 @@
-defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
+defmodule Oli.Delivery.Analytics.AnalyticsTest do
 
   use Oli.DataCase
 

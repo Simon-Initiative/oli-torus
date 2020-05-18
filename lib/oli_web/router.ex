@@ -132,6 +132,9 @@ defmodule OliWeb.Router do
 
     # Insights
     get "/:project_id/insights", ProjectController, :insights
+    # Ideally, analytics should be live-routed to preserve forward/back button when toggling
+    # between analytics groupings and sorting. I could not get it to run through the project authorization
+    # plugs when live-routing, however.
     # live "/:project_id/insights", Insights
   end
 

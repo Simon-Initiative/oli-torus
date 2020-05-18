@@ -33,7 +33,6 @@ defmodule OliWeb.Insights.TableRow do
     end
   end
 
-
   defp link_url(slice) do
     objective_id = Oli.Resources.ResourceType.get_id_by_type("objective")
     activity_id = Oli.Resources.ResourceType.get_id_by_type("activity")
