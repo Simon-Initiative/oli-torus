@@ -18,8 +18,6 @@ import { Banner } from '../messages/Banner';
 import {Objectives} from "components/resource/Objectives";
 import {PartObjectives} from "components/activity/PartObjectives";
 import {valueOr} from "utils/common";
-import {Maybe} from "tsmonad";
-// import {List} from "immutable";
 
 export interface ActivityEditorProps extends ActivityContext {
 
@@ -69,6 +67,8 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
     const { title, objectives, allObjectives, model } = props;
 
     const o = Object.keys(objectives).map(o => [o, objectives[o]]);
+
+    console.log(Immutable.Map<string, Immutable.List<ObjectiveSlug>>(o as any));
 
     this.state = {
       messages: [],
@@ -149,24 +149,24 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
   update(update: Partial<Undoable>) {
     this.setState(
       { undoable: processUpdate(this.state.undoable, update) },
-      () => this.preSave());
+      () => this.save());
   }
 
-  preSave(){
-    const parts = valueOr(this.state.undoable.current.content.authoring.parts, [])
-    const partIds = parts.map((p: any)  => valueOr(p.id, ""));
-    let objs = this.state.undoable.current.objectives;
-    const keys = objs.keySeq().toArray();
-    keys.forEach((pId: string)  => {
-      if(!partIds.has(pId)){
-        objs = objs.delete(pId);
-      }
-    });
-
-    this.setState(
-        { undoable: processUpdate(this.state.undoable, objs) },
-        () => this.save());
-  }
+  // preSave(){
+  //   const parts = valueOr(this.state.undoable.current.content.authoring.parts, [])
+  //   const partIds = parts.map((p: any)  => valueOr(p.id, ""));
+  //   let objs = this.state.undoable.current.objectives;
+  //   const keys = objs.keySeq().toArray();
+  //   keys.forEach((pId: string)  => {
+  //     if(!partIds.has(pId)){
+  //       objs = objs.delete(pId);
+  //     }
+  //   });
+  //
+  //   this.setState(
+  //       { undoable: processUpdate(this.state.undoable, objs) },
+  //       () => this.save());
+  // }
 
   save() {
     const { projectSlug, resourceSlug, activitySlug } = this.props;

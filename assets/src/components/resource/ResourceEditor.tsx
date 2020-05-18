@@ -211,6 +211,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
             resourceContext={props}
           />
         </TitleBar>
+        <div className="learning-objectives-label">Learning Objectives</div>
         <Objectives
           editMode={this.state.editMode}
           selected={this.state.undoable.current.objectives}

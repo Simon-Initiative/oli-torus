@@ -168,11 +168,11 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
     with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
-         {:ok, objectives} <- Publishing.get_published_objective_details(publication.id) |> trap_nil(),
-         {:ok, objectives_without_ids} <- PageEditor.strip_ids(objectives) |> trap_nil(),
+         {:ok, all_objectives} <- Publishing.get_published_objective_details(publication.id) |> trap_nil(),
+         {:ok, objectives_without_ids} <- PageEditor.strip_ids(all_objectives) |> trap_nil(),
          {:ok, %{content: content}} <- PageEditor.get_latest_revision(publication, resource) |> trap_nil(),
          {:ok, %{id: activity_id}} <- Resources.get_resource_from_slug(activity_slug) |> trap_nil(),
-         {:ok, %{activity_type: activity_type, content: model, title: title}} <- get_latest_revision(publication.id, activity_id) |> trap_nil()
+         {:ok, %{activity_type: activity_type, content: model, title: title, objectives: objectives}} <- get_latest_revision(publication.id, activity_id) |> trap_nil()
     do
 
       {previous, next} = find_sibling_activities(activity_id, content, publication.id)
@@ -188,7 +188,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         activitySlug: activity_slug,
         title: title,
         model: model,
-        objectives: %{},
+        objectives: objectives,
         allObjectives: objectives_without_ids,
         previousActivity: previous,
         nextActivity: next
