@@ -152,7 +152,7 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
       () => this.save());
   }
 
-  // preSave(){
+  // postUpdate(){
   //   const parts = valueOr(this.state.undoable.current.content.authoring.parts, [])
   //   const partIds = parts.map((p: any)  => valueOr(p.id, ""));
   //   let objs = this.state.undoable.current.objectives;

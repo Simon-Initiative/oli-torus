@@ -20,11 +20,15 @@ export const PartObjectives = (props: PartObjectivesProps) => {
   const {partIds, objectives, allObjectives, editMode, onEdit} = props;
 
   return (
+    <div>
     <div className="d-flex flex-row align-items-baseline">
-      <div className="flex-grow-1 p-4 pl-5">
+      <div className="flex-grow-1 p-0 pl-5">Learner Input Objectives</div>
+    </div>
+    <div className="d-flex flex-row align-items-baseline">
+      <div className="flex-grow-1 p-1 pl-5">
         {partIds.toArray().map(id => (
-          <div>
-            <span>Part {id}:</span>
+          <div className="d-flex flex-row align-items-baseline">
+            <div>Input {id}:</div>
             <Objectives
               editMode={editMode}
               selected={Immutable.List<ObjectiveSlug>(valueOr(objectives.get(id), Immutable.List<ObjectiveSlug>()))}
@@ -33,6 +37,7 @@ export const PartObjectives = (props: PartObjectivesProps) => {
           </div>
         ))}
       </div>
+    </div>
     </div>
   );
 };
