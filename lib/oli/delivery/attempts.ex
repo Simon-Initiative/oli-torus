@@ -33,60 +33,74 @@ defmodule Oli.Delivery.Attempts do
   """
   def reset_activity(context_id, activity_attempt_guid) do
 
-    activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+    Repo.transaction(fn ->
 
-    if (activity_attempt == nil) do
-      {:error, {:not_found}}
-    else
+      activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
 
-      # We cannot rely on the attempt number from the supplied activity attempt
-      # to determine the total number of attempts - or the next attempt number, since
-      # a client could be resetting an attempt that is not the latest attempt (e.g. from multiple
-      # browser windows).
-      # Instead we will query to determine the count of attempts. This is likely an
-      # area where we want locking in place to ensure that we can never get into a state
-      # where two attempts are generated with the same number
-
-      attempt_count = count_activity_attempts(activity_attempt.resource_attempt_id, activity_attempt.resource_id)
-
-      if activity_attempt.revision.max_attempts > 0 and activity_attempt.revision.max_attempts <= attempt_count do
-        {:error, {:no_more_attempts}}
+      if (activity_attempt == nil) do
+        Repo.rollback({:not_found})
       else
-        activity_attempt = activity_attempt |> Repo.preload([:part_attempts])
 
-        # Resolve the revision to pick up the latest
-        revision = DeliveryResolver.from_resource_id(context_id, activity_attempt.resource_id)
+        # We cannot rely on the attempt number from the supplied activity attempt
+        # to determine the total number of attempts - or the next attempt number, since
+        # a client could be resetting an attempt that is not the latest attempt (e.g. from multiple
+        # browser windows).
+        # Instead we will query to determine the count of attempts. This is likely an
+        # area where we want locking in place to ensure that we can never get into a state
+        # where two attempts are generated with the same number
 
-        # parse and transform
-        {:ok, model} = Model.parse(revision.content)
-        {:ok, transformed_model} = Transformers.apply_transforms(revision.content)
+        attempt_count = count_activity_attempts(activity_attempt.resource_attempt_id, activity_attempt.resource_id)
 
-        {:ok, new_activity_attempt} = create_activity_attempt(%{
-          attempt_guid: UUID.uuid4(),
-          attempt_number: attempt_count + 1,
-          transformed_model: transformed_model,
-          resource_id: activity_attempt.resource_id,
-          revision_id: revision.id,
-          resource_attempt_id: activity_attempt.resource_attempt_id
-        })
+        if activity_attempt.revision.max_attempts > 0 and activity_attempt.revision.max_attempts <= attempt_count do
+          Repo.rollback({:no_more_attempts})
+        else
+          activity_attempt = activity_attempt |> Repo.preload([:part_attempts])
 
-        # simulate preloading of the revision
-        new_activity_attempt = Map.put(new_activity_attempt, :revision, revision)
+          # Resolve the revision to pick up the latest
+          revision = DeliveryResolver.from_resource_id(context_id, activity_attempt.resource_id)
 
-        new_part_attempts = Enum.map(activity_attempt.part_attempts, fn p ->
-          {:ok, part_attempt} = create_part_attempt(%{
-            attempt_guid: UUID.uuid4(),
-            attempt_number: 1,
-            part_id: p.part_id,
-            activity_attempt_id: new_activity_attempt.id
-          })
-          part_attempt
-        end)
+          # parse and transform
+          with {:ok, model} <- Model.parse(revision.content),
+            {:ok, transformed_model} <- Transformers.apply_transforms(revision.content),
+            {:ok, new_activity_attempt} <- create_activity_attempt(%{
+              attempt_guid: UUID.uuid4(),
+              attempt_number: attempt_count + 1,
+              transformed_model: transformed_model,
+              resource_id: activity_attempt.resource_id,
+              revision_id: revision.id,
+              resource_attempt_id: activity_attempt.resource_attempt_id
+            })
+          do
+            # simulate preloading of the revision
+            new_activity_attempt = Map.put(new_activity_attempt, :revision, revision)
 
-        {:ok, ActivityState.from_attempt(new_activity_attempt, new_part_attempts, model),
-          ModelPruner.prune(transformed_model)}
+            new_part_attempts = case Enum.reduce_while(activity_attempt.part_attempts, {:ok, []}, fn (p, {:ok, acc}) ->
+
+              case create_part_attempt(%{
+                attempt_guid: UUID.uuid4(),
+                attempt_number: 1,
+                part_id: p.part_id,
+                activity_attempt_id: new_activity_attempt.id
+              }) do
+                {:ok, part_attempt} -> {:cont, {:ok, acc ++ [part_attempt]}}
+                {:error, changeset} -> {:halt, {:error, changeset}}
+              end
+
+            end) do
+              {:ok, new_part_attempts} -> new_part_attempts
+              {:error, error} -> Repo.rollback(error)
+            end
+
+            {ActivityState.from_attempt(new_activity_attempt, new_part_attempts, model),
+              ModelPruner.prune(transformed_model)}
+
+          else
+            {:error, error} -> Repo.rollback(error)
+          end
+        end
       end
-    end
+
+    end)
 
   end
 
@@ -117,29 +131,32 @@ defmodule Oli.Delivery.Attempts do
   def request_hint(activity_attempt_guid, part_attempt_guid) do
 
     # get both the activity and part attempt records
+    Repo.transaction(fn ->
 
-    with {:ok, activity_attempt} <- get_activity_attempt_by(attempt_guid: activity_attempt_guid) |> Oli.Utils.trap_nil(:not_found),
-      {:ok, part_attempt} <- get_part_attempt_by(attempt_guid: part_attempt_guid) |> Oli.Utils.trap_nil(:not_found),
-      {:ok, model} <- Model.parse(activity_attempt.transformed_model),
-      {:ok, part} <- Enum.find(model.parts, fn p -> p.id == part_attempt.part_id end) |> Oli.Utils.trap_nil(:not_found)
-    do
-      shown_hints = length(part_attempt.hints)
-      all_hints = length(part.hints)
+      with {:ok, activity_attempt} <- get_activity_attempt_by(attempt_guid: activity_attempt_guid) |> Oli.Utils.trap_nil(:not_found),
+        {:ok, part_attempt} <- get_part_attempt_by(attempt_guid: part_attempt_guid) |> Oli.Utils.trap_nil(:not_found),
+        {:ok, model} <- Model.parse(activity_attempt.transformed_model),
+        {:ok, part} <- Enum.find(model.parts, fn p -> p.id == part_attempt.part_id end) |> Oli.Utils.trap_nil(:not_found)
+      do
+        shown_hints = length(part_attempt.hints)
+        all_hints = length(part.hints)
 
-      if all_hints > shown_hints do
+        if all_hints > shown_hints do
 
-        hint = Enum.at(part.hints, shown_hints)
-        case update_part_attempt(part_attempt, %{hints: part_attempt.hints ++ [hint.id]}) do
-          {:ok, _} -> {:ok, hint, all_hints > shown_hints + 1}
-          error -> error
+          hint = Enum.at(part.hints, shown_hints)
+          case update_part_attempt(part_attempt, %{hints: part_attempt.hints ++ [hint.id]}) do
+            {:ok, _} -> {hint, all_hints > shown_hints + 1}
+            {:error, error} -> Repo.rollback(error)
+          end
+
+        else
+          Repo.rollback({:no_more_hints})
         end
-
       else
-        {:error, {:no_more_hints}}
+        {:error, error} -> Repo.rollback(error)
       end
-    else
-      error -> error
-    end
+
+    end)
 
   end
 
@@ -154,7 +171,7 @@ defmodule Oli.Delivery.Attempts do
 
   If a resource attempt is in progress, returns a tuple of the form:
 
-  `{:in_progress, {%ResourceAttempt{}, ActivityAttemptMap}}`
+  `{:ok, {:in_progress, {%ResourceAttempt{}, ActivityAttemptMap}}}`
 
   Where `%ResourceAttempt{}` is the in progress attempt and ActivityAttemptMap is a map
   of activity ids to tuples of activity attempts to part maps. See `get_latest_attempts`
@@ -162,14 +179,22 @@ defmodule Oli.Delivery.Attempts do
 
   If the attempt has not started, returns a tuple of the form:
 
-  `{:not_started, {%ResourceAccess{}, [%ResourceAttempt{}]}`
+  `{:ok, {:not_started, {%ResourceAccess{}, [%ResourceAttempt{}]}}`
   """
-  @spec determine_resource_attempt_state(%Revision{}, String.t, number(), any) :: {:in_progress, {%ResourceAttempt{}, %{}}} | {:not_started, {%ResourceAccess{}, [%ResourceAttempt{}]}}
+  @spec determine_resource_attempt_state(%Revision{}, String.t, number(), any) :: {:ok, {:in_progress, {%ResourceAttempt{}, map() }}} | {:ok, {:not_started, {%ResourceAccess{}, [%ResourceAttempt{}]}}} | {:error, any}
   def determine_resource_attempt_state(resource_revision, context_id, user_id, activity_provider) do
 
     # determine latest resource attempt and then derive the current resource state
-    get_latest_resource_attempt(resource_revision.resource_id, context_id, user_id)
-    |> get_resource_state(resource_revision, context_id, user_id, activity_provider)
+    Repo.transaction(fn ->
+
+      case get_latest_resource_attempt(resource_revision.resource_id, context_id, user_id)
+      |> get_resource_state(resource_revision, context_id, user_id, activity_provider) do
+
+        {:ok, results} -> results
+        {:error, error} -> Repo.rollback(error)
+      end
+
+    end)
 
   end
 
@@ -185,16 +210,21 @@ defmodule Oli.Delivery.Attempts do
 
   defp get_ungraded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
     if is_nil(resource_attempt) or resource_attempt.revision_id != resource_revision.id do
-      {:in_progress, create_new_attempt_tree(resource_attempt, resource_revision, context_id, user_id, activity_provider)}
+
+      case create_new_attempt_tree(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
+        {:ok, results} -> {:ok, {:in_progress, results}}
+        error -> error
+      end
+
     else
-      {:in_progress, {resource_attempt, get_latest_attempts(resource_attempt.id)}}
+      {:ok, {:in_progress, {resource_attempt, get_latest_attempts(resource_attempt.id)}}}
     end
   end
 
   defp get_graded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
 
     if is_nil(resource_attempt) or !is_nil(resource_attempt.date_evaluated) do
-      {:not_started, get_resource_attempt_history(resource_revision.resource_id, context_id, user_id)}
+      {:ok, {:not_started, get_resource_attempt_history(resource_revision.resource_id, context_id, user_id)}}
     else
       if resource_attempt.revision_id != resource_revision.id do
 
@@ -204,7 +234,11 @@ defmodule Oli.Delivery.Attempts do
         # a use case where - live during an exam - an instructor deletes an activity. Students
         # would need to create a new resource attempt, but their exist work could be pulled
         # forward.
-        {:in_progress, create_new_attempt_tree(resource_attempt, resource_revision, context_id, user_id, activity_provider)}
+        case create_new_attempt_tree(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
+          {:ok, results} -> {:ok, {:in_progress, results}}
+          error -> error
+        end
+
       else
 
         # Bonus optimization at some point: look at each activity attempt, if any are
@@ -213,7 +247,7 @@ defmodule Oli.Delivery.Attempts do
         # for that activity. This allows a use case where an instructor live publishes
         # during the middle of a student resource attempt a fix for one specific activity.
 
-        {:in_progress, {resource_attempt, get_latest_attempts(resource_attempt.id)}}
+        {:ok, {:in_progress, {resource_attempt, get_latest_attempts(resource_attempt.id)}}}
       end
     end
 
@@ -261,50 +295,62 @@ defmodule Oli.Delivery.Attempts do
 
     activity_revisions = activity_provider.(context_id, resource_revision)
 
-    {:ok, resource_attempt} = create_resource_attempt(%{
+    case create_resource_attempt(%{
       attempt_guid: UUID.uuid4(),
       resource_access_id: resource_access_id,
       attempt_number: next_attempt_number,
       revision_id: resource_revision.id
-    })
+    }) do
+      {:ok, resource_attempt} ->
+        {:ok, {resource_attempt, Enum.reduce(activity_revisions, %{}, fn revision, m ->
 
-    {resource_attempt, Enum.reduce(activity_revisions, %{}, fn %Revision{resource_id: resource_id, id: id, content: model} = revision, m ->
+          case create_full_activity_attempt(resource_attempt, revision) do
+            {:ok, {activity_attempt, part_attempts}} -> Map.put(m, revision.resource_id, {activity_attempt, part_attempts})
+            e -> Map.put(m, revision.resource_id, e)
+          end
 
-        # Todo, handle and propagate upwards failures in parsing and transformation
-        {:ok, parsed_model} = Model.parse(model)
-        {:ok, transformed_model} = Transformers.apply_transforms(model)
+        end)}}
+      error -> error
+    end
 
-        {:ok, activity_attempt} = create_activity_attempt(%{
-          resource_attempt_id: resource_attempt.id,
-          attempt_guid: UUID.uuid4(),
-          attempt_number: 1,
-          revision_id: id,
-          resource_id: resource_id,
-          transformed_model: transformed_model
-        })
+  end
 
-        # We simulate the effect of preloading the revision by setting it
-        # after we create the record. This is needed so that this function matches
-        # the contract of get_latest_attempt - namely that the revision association
-        # on activity attempt records is preloaded.
-        activity_attempt = Map.put(activity_attempt, :revision, revision)
+  defp create_full_activity_attempt(resource_attempt, %Revision{resource_id: resource_id, id: id, content: model} = revision) do
 
-        part_attempts = create_part_attempts(parsed_model, activity_attempt)
+    with {:ok, parsed_model} <- Model.parse(model),
+      {:ok, transformed_model} <- Transformers.apply_transforms(model),
+      {:ok, activity_attempt} <- create_activity_attempt(%{
+        resource_attempt_id: resource_attempt.id,
+        attempt_guid: UUID.uuid4(),
+        attempt_number: 1,
+        revision_id: id,
+        resource_id: resource_id,
+        transformed_model: transformed_model
+      }),
+      {:ok, part_attempts} <- create_part_attempts(parsed_model, activity_attempt)
+    do
+      # We simulate the effect of preloading the revision by setting it
+      # after we create the record. This is needed so that this function matches
+      # the contract of get_latest_attempt - namely that the revision association
+      # on activity attempt records is preloaded.
 
-        Map.put(m, resource_id, {activity_attempt, part_attempts})
-    end)}
+      {:ok, {Map.put(activity_attempt, :revision, revision), part_attempts}}
+    end
 
   end
 
   defp create_part_attempts(parsed_model, activity_attempt) do
-    Enum.reduce(parsed_model.parts, %{}, fn p, m ->
-      {:ok, part_attempt} = create_part_attempt(%{
+    Enum.reduce_while(parsed_model.parts, {:ok, %{}}, fn p, {:ok, m} ->
+      case create_part_attempt(%{
         attempt_guid: UUID.uuid4(),
         activity_attempt_id: activity_attempt.id,
         attempt_number: 1,
         part_id: p.id
-      })
-      Map.put(m, p.id, part_attempt)
+      }) do
+        {:ok, part_attempt} -> {:cont, {:ok, Map.put(m, p.id, part_attempt)}}
+        e -> {:halt, e}
+      end
+
     end)
   end
 
@@ -381,17 +427,24 @@ defmodule Oli.Delivery.Attempts do
   """
   def start_resource_attempt(revision_slug, context_id, user_id, activity_provider) do
 
-    with {:ok, revision} <- DeliveryResolver.from_revision_slug(context_id, revision_slug) |> Oli.Utils.trap_nil(:not_found),
-      {_, resource_attempts} <- get_resource_attempt_history(revision.resource_id, context_id, user_id)
-    do
-      case {revision.max_attempts > length(resource_attempts), has_any_active_attempts?(resource_attempts)} do
-        {true, false} -> {:ok, create_new_attempt_tree(nil, revision, context_id, user_id, activity_provider)}
-        {true, true} -> {:error, {:active_attempt_present}}
-        {false, _} -> {:error, {:no_more_attempts}}
+    Repo.transaction(fn ->
+
+      with {:ok, revision} <- DeliveryResolver.from_revision_slug(context_id, revision_slug) |> Oli.Utils.trap_nil(:not_found),
+        {_, resource_attempts} <- get_resource_attempt_history(revision.resource_id, context_id, user_id)
+      do
+        case {revision.max_attempts > length(resource_attempts), has_any_active_attempts?(resource_attempts)} do
+          {true, false} -> case create_new_attempt_tree(nil, revision, context_id, user_id, activity_provider) do
+            {:ok, results} -> results
+            {:error, error} -> Repo.rollback(error)
+          end
+          {true, true} -> Repo.rollback({:active_attempt_present})
+          {false, _} -> Repo.rollback({:no_more_attempts})
+        end
+      else
+        {:error, error} -> Repo.rollback(error)
       end
-    else
-      error -> error
-    end
+
+    end)
 
   end
 
@@ -476,12 +529,11 @@ defmodule Oli.Delivery.Attempts do
 
     evaluated_inputs = Enum.zip(part_inputs, evaluations)
 
-    Repo.transaction(fn ->
-      case Enum.reduce_while(evaluated_inputs, {:ok, []}, &persist_single_evaluation/2) do
-        {:error, error} -> Repo.rollback(error)
-        {:ok, results} -> roll_up_fn.({:ok, results})
-      end
-    end)
+    case Enum.reduce_while(evaluated_inputs, {:ok, []}, &persist_single_evaluation/2) do
+      {:ok, results} -> roll_up_fn.({:ok, results})
+      error -> error
+    end
+
   end
 
   # Filters out part_inputs whose attempts are already submitted.  This step
@@ -568,49 +620,59 @@ defmodule Oli.Delivery.Attempts do
   @spec submit_part_evaluations(atom(), String.t, String.t, [map()]) :: {:ok, [map()]} | {:error, any}
   def submit_part_evaluations(role, context_id, activity_attempt_guid, part_inputs) do
 
-    part_attempts = get_latest_part_attempts(activity_attempt_guid)
+    Repo.transaction(fn ->
 
-    roll_up = fn result ->
-      rollup_part_attempt_evaluations(activity_attempt_guid)
-      result
-    end
+      part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
-    no_roll_up = fn result -> result end
+      roll_up = fn result ->
+        rollup_part_attempt_evaluations(activity_attempt_guid)
+        result
+      end
+      no_roll_up = fn result -> result end
 
-    {roll_up_fn, part_inputs} = case filter_already_submitted(part_inputs, part_attempts) do
-      {true, part_inputs} -> {roll_up, part_inputs}
-      {false, part_inputs} -> {no_roll_up, part_inputs}
-    end
+      {roll_up_fn, part_inputs} = case filter_already_submitted(part_inputs, part_attempts) do
+        {true, part_inputs} -> {roll_up, part_inputs}
+        {false, part_inputs} -> {no_roll_up, part_inputs}
+      end
 
-    case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
-    |> persist_evaluations(part_inputs, roll_up_fn)
-    |> generate_snapshots(role, context_id, part_inputs) do
+      case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
+      |> persist_evaluations(part_inputs, roll_up_fn)
+      |> generate_snapshots(role, context_id, part_inputs) do
 
-      {:ok, results} -> results
-      error -> error
-    end
+        {:ok, results} -> results
+        {:error, error} -> Repo.rollback(error)
+      end
+
+    end)
 
   end
 
   def submit_graded_page(role, context_id, resource_attempt_guid) do
 
-    # get the resource attempt record, ensure it isn't already evaluated
-    resource_attempt = get_resource_attempt_by(attempt_guid: resource_attempt_guid)
+    Repo.transaction(fn ->
 
-    if resource_attempt.date_evaluated == nil do
+      # get the resource attempt record, ensure it isn't already evaluated
+      resource_attempt = get_resource_attempt_by(attempt_guid: resource_attempt_guid)
 
-      Enum.each(resource_attempt.activity_attempts, fn a ->
-        submit_graded_page_activity(role, context_id, a.attempt_guid)
-      end)
+      if resource_attempt.date_evaluated == nil do
 
-      case roll_up_activities_to_resource_attempt(resource_attempt_guid) do
-        {:ok, _} -> roll_up_resource_attempts_to_access(context_id, resource_attempt.resource_access_id)
-        e -> e
+        Enum.each(resource_attempt.activity_attempts, fn a ->
+          submit_graded_page_activity(role, context_id, a.attempt_guid)
+        end)
+
+        case roll_up_activities_to_resource_attempt(resource_attempt_guid) do
+          {:ok, _} -> case roll_up_resource_attempts_to_access(context_id, resource_attempt.resource_access_id) do
+            {:ok, results} -> results
+            {:error, error} -> Repo.rollback(error)
+          end
+          {:error, error} -> Repo.rollback(error)
+        end
+
+      else
+        Repo.rollback({:already_submitted})
       end
 
-    else
-      {:error, {:already_submitted}}
-    end
+    end)
 
   end
 
@@ -661,24 +723,28 @@ defmodule Oli.Delivery.Attempts do
 
   defp submit_graded_page_activity(role, context_id, activity_attempt_guid) do
 
-    part_attempts = get_latest_part_attempts(activity_attempt_guid)
+    Repo.transaction(fn ->
 
-    roll_up_fn = fn result ->
-      rollup_part_attempt_evaluations(activity_attempt_guid)
-      result
-    end
+      part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
-    # derive the part_attempts from the currently saved state that we expect
-    # to find in the part_attempts
-    part_inputs = Enum.map(part_attempts, fn p -> %{attempt_guid: p.attempt_guid, input: %StudentInput{input: Map.get(p.response, "input")}} end)
+      roll_up_fn = fn result ->
+        rollup_part_attempt_evaluations(activity_attempt_guid)
+        result
+      end
 
-    case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
-    |> persist_evaluations(part_inputs, roll_up_fn)
-    |> generate_snapshots(role, context_id, part_inputs) do
+      # derive the part_attempts from the currently saved state that we expect
+      # to find in the part_attempts
+      part_inputs = Enum.map(part_attempts, fn p -> %{attempt_guid: p.attempt_guid, input: %StudentInput{input: Map.get(p.response, "input")}} end)
 
-      {:ok, results} -> results
-      error -> error
-    end
+      case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
+      |> persist_evaluations(part_inputs, roll_up_fn)
+      |> generate_snapshots(role, context_id, part_inputs) do
+
+        {:ok, results} -> results
+        {:error, error} -> Repo.rollback(error)
+      end
+
+    end)
 
   end
 

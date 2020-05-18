@@ -36,8 +36,9 @@ defmodule Oli.Delivery.Page.PageContext do
     activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
     {progress_state, resource_attempts, activities} = case Attempts.determine_resource_attempt_state(page_revision, context_id, user_id, activity_provider) do
-      {:in_progress, {resource_attempt, latest_attempts}} -> {:in_progress, [resource_attempt], ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
-      {:not_started, {_, resource_attempts}} -> {:not_started, resource_attempts, nil}
+      {:ok, {:in_progress, {resource_attempt, latest_attempts}}} -> {:in_progress, [resource_attempt], ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
+      {:ok, {:not_started, {_, resource_attempts}}} -> {:not_started, resource_attempts, nil}
+      {:error, _} -> {:error, [], %{}}
     end
 
     {objectives, previous, next} =

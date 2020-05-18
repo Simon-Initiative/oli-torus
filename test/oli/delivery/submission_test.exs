@@ -74,7 +74,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       refute updated_attempt.date_evaluated == nil
 
       # now reset the activity
-      {:ok, attempt_state, _} = Attempts.reset_activity(section.context_id, activity_attempt.attempt_guid)
+      {:ok, {attempt_state, _}} = Attempts.reset_activity(section.context_id, activity_attempt.attempt_guid)
 
       assert attempt_state.dateEvaluated == nil
       assert attempt_state.score == nil
@@ -118,7 +118,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # now reset the activity, this is a simulation of the student
       # opening the resource in tab B.
-      {:ok, attempt_state, _} = Attempts.reset_activity(section.context_id, activity_attempt.attempt_guid)
+      {:ok, {attempt_state, _}} = Attempts.reset_activity(section.context_id, activity_attempt.attempt_guid)
       assert attempt_state.hasMoreAttempts == false
 
       # now try to reset the guid from the first attempt, simulating the

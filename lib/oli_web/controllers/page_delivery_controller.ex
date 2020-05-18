@@ -43,6 +43,7 @@ defmodule OliWeb.PageDeliveryController do
 
   end
 
+
   defp render_page(%PageContext{progress_state: :not_started, page: page, resource_attempts: resource_attempts} = context,
     conn, context_id, _) do
 
@@ -78,6 +79,10 @@ defmodule OliWeb.PageDeliveryController do
       slug: context.page.slug,
       attempt_guid: hd(context.resource_attempts).attempt_guid
     })
+  end
+
+  defp render_page(%PageContext{progress_state: :error}, conn, _, _) do
+    render(conn, "error.html")
   end
 
   def start_attempt(conn, %{"context_id" => context_id, "revision_slug" => revision_slug}) do

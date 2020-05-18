@@ -51,13 +51,13 @@ defmodule Oli.Delivery.HintsTest do
 
     test "exhaust all three hints", %{ part1_attempt1: part_attempt, activity_attempt1: activity_attempt} do
 
-      assert {:ok, %Hint{id: "h1", content: [%{"type" => "p", "children" => [%{"text" => "hint one"}]}]}, true}
+      assert {:ok, {%Hint{id: "h1", content: [%{"type" => "p", "children" => [%{"text" => "hint one"}]}]}, true}}
         == Attempts.request_hint(activity_attempt.attempt_guid, part_attempt.attempt_guid)
 
-      assert {:ok, %Hint{id: "h2", content: [%{"type" => "p", "children" => [%{"text" => "hint two"}]}]}, true}
+      assert {:ok, {%Hint{id: "h2", content: [%{"type" => "p", "children" => [%{"text" => "hint two"}]}]}, true}}
         == Attempts.request_hint(activity_attempt.attempt_guid, part_attempt.attempt_guid)
 
-      assert {:ok, %Hint{id: "h3", content: [%{"type" => "p", "children" => [%{"text" => "hint three"}]}]}, false}
+      assert {:ok, {%Hint{id: "h3", content: [%{"type" => "p", "children" => [%{"text" => "hint three"}]}]}, false}}
         == Attempts.request_hint(activity_attempt.attempt_guid, part_attempt.attempt_guid)
 
       assert {:error, {:no_more_hints}}
