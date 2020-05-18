@@ -1,4 +1,4 @@
-dist/search_items-caacfeb5e3.js
+dist/search_items-7998953bdd.js
 dist/app-a225d03098e64fef431a.js
 dist/elixir-0ab8a6a80ebaaa287431.css
 dist/erlang-bd206729da4d0d280293.css
@@ -6,7 +6,7 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/sidebar_items-6cab15647c.js
+dist/sidebar_items-fc727b0d5e.js
 api-reference.html
 readme.html
 license.html
@@ -90,6 +90,9 @@ Oli.Delivery.Sections.SectionRole.html
 Oli.Delivery.Sections.SectionRoles.html
 Oli.Delivery.Student.OverviewDesc.html
 Oli.Delivery.Timezones.html
+Oli.Grading.html
+Oli.Grading.GradebookRow.html
+Oli.Grading.GradebookScore.html
 Oli.Plugs.EnsureAdmin.html
 Oli.Plugs.NoCache.html
 Oli.Plugs.Protect.html

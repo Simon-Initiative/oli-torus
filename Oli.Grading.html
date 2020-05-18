@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.21.3">
     <meta name="project" content="OLI Torus v0.1.0">
-    <title>OliWeb.ProjectPlugs — OLI Torus v0.1.0</title>
+    <title>Oli.Grading — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
     <script src="dist/sidebar_items-fc727b0d5e.js"></script>
       <script src="docs_config.js"></script>
@@ -68,13 +68,17 @@ OLI Torus      </a>
 
       <h1>
         <small class="app-vsn">OLI Torus v0.1.0</small>
-OliWeb.ProjectPlugs          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/project_plugs.ex#L1" title="View Source" class="view-source" rel="help">
+Oli.Grading          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
       </h1>
 
 
+        <section id="moduledoc">
+<p>Grading is responsible for compiling attempts into usable gradebook representation
+consumable by various tools such as Excel (CSV) or an LMS API</p>
+        </section>
 
         <section id="summary" class="details-list">
           <h1 class="section-heading">
@@ -90,18 +94,16 @@ OliWeb.ProjectPlugs          <a href="https://github.com/Simon-Initiative/oli-to
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#authorize_project/2">authorize_project(conn, _)</a>
+    <a href="#export_csv/1">export_csv(section)</a>
   </div>
+    <div class="summary-synopsis"><p>Exports the gradebook for the provided section in CVS format</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#ensure_context_id_matches/2">ensure_context_id_matches(conn, _)</a>
+    <a href="#generate_gradebook_for_section/1">generate_gradebook_for_section(section)</a>
   </div>
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#fetch_project/2">fetch_project(conn, _)</a>
-  </div>
+    <div class="summary-synopsis"><p>Returns a tuple containing a list of GradebookRow for every enrolled user
+and an ordered list of column labels</p></div>
 </div>
   </div>
         </section>
@@ -114,49 +116,39 @@ OliWeb.ProjectPlugs          <a href="https://github.com/Simon-Initiative/oli-to
             </a>
 Functions          </h1>
           <div class="functions-list">
-<section class="detail" id="authorize_project/2">
+<section class="detail" id="export_csv/1">
   <div class="detail-header">
-    <a href="#authorize_project/2" class="detail-link" title="Link to this function">
+    <a href="#export_csv/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">authorize_project(conn, _)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/project_plugs.ex#L19" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">export_csv(section)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L21" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
   </div>
   <section class="docstring">
+<p>Exports the gradebook for the provided section in CVS format</p>
+<p>Returns a Stream which can be written to a file or other IO</p>
   </section>
 </section>
-<section class="detail" id="ensure_context_id_matches/2">
+<section class="detail" id="generate_gradebook_for_section/1">
   <div class="detail-header">
-    <a href="#ensure_context_id_matches/2" class="detail-link" title="Link to this function">
+    <a href="#generate_gradebook_for_section/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">ensure_context_id_matches(conn, _)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/project_plugs.ex#L30" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">generate_gradebook_for_section(section)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L72" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
   </div>
   <section class="docstring">
-  </section>
-</section>
-<section class="detail" id="fetch_project/2">
-  <div class="detail-header">
-    <a href="#fetch_project/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">fetch_project(conn, _)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/project_plugs.ex#L7" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-  </div>
-  <section class="docstring">
+<p>Returns a tuple containing a list of GradebookRow for every enrolled user
+and an ordered list of column labels</p>
+<p><code class="inline">{[%GradebookRow{user: %User{}, scores: [%GradebookScore{}, ...]}, ...], [&quot;Quiz 1&quot;, &quot;Quiz 2&quot;]}</code></p>
   </section>
 </section>
           </div>

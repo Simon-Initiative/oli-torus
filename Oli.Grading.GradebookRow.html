@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.21.3">
     <meta name="project" content="OLI Torus v0.1.0">
-    <title>OliWeb.ProjectPlugs — OLI Torus v0.1.0</title>
+    <title>Oli.Grading.GradebookRow — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
     <script src="dist/sidebar_items-fc727b0d5e.js"></script>
       <script src="docs_config.js"></script>
@@ -68,7 +68,7 @@ OLI Torus      </a>
 
       <h1>
         <small class="app-vsn">OLI Torus v0.1.0</small>
-OliWeb.ProjectPlugs          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/project_plugs.ex#L1" title="View Source" class="view-source" rel="help">
+Oli.Grading.GradebookRow          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading/gradebook_row.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -84,77 +84,50 @@ OliWeb.ProjectPlugs          <a href="https://github.com/Simon-Initiative/oli-to
             </a>
             Summary
           </h1>
-  <div class="summary-functions summary">
+  <div class="summary-types summary">
     <h2>
-      <a href="#functions">Functions</a>
+      <a href="#types">Types</a>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#authorize_project/2">authorize_project(conn, _)</a>
-  </div>
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#ensure_context_id_matches/2">ensure_context_id_matches(conn, _)</a>
-  </div>
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#fetch_project/2">fetch_project(conn, _)</a>
+    <a href="#t:t/0">t()</a>
   </div>
 </div>
   </div>
         </section>
 
-        <section id="functions" class="details-list">
+        <section id="types" class="details-list">
           <h1 class="section-heading">
-            <a class="hover-link" href="#functions">
+            <a class="hover-link" href="#types">
               <span class="icon-link" aria-hidden="true"></span>
               <span class="sr-only">Link to this section</span>
             </a>
-Functions          </h1>
-          <div class="functions-list">
-<section class="detail" id="authorize_project/2">
+Types          </h1>
+          <div class="types-list">
+<section class="detail" id="t:t/0">
   <div class="detail-header">
-    <a href="#authorize_project/2" class="detail-link" title="Link to this function">
+    <a href="#t:t/0" class="detail-link" title="Link to this type">
       <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
+      <span class="sr-only">Link to this type</span>
     </a>
-    <h1 class="signature">authorize_project(conn, _)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/project_plugs.ex#L19" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">t()</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading/gradebook_row.ex#L7" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
-  </div>
-  <section class="docstring">
-  </section>
-</section>
-<section class="detail" id="ensure_context_id_matches/2">
-  <div class="detail-header">
-    <a href="#ensure_context_id_matches/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">ensure_context_id_matches(conn, _)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/project_plugs.ex#L30" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-  </div>
-  <section class="docstring">
-  </section>
-</section>
-<section class="detail" id="fetch_project/2">
-  <div class="detail-header">
-    <a href="#fetch_project/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">fetch_project(conn, _)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/project_plugs.ex#L7" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
+      <div class="specs">
+          <pre>t() :: %Oli.Grading.GradebookRow{
+  scores: [
+    %Oli.Grading.GradebookScore{
+      label: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      out_of: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      score: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+    }
+  ],
+  user: User.t()
+}</pre>
+      </div>
   </div>
   <section class="docstring">
   </section>
