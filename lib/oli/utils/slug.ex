@@ -98,6 +98,15 @@ defmodule Oli.Utils.Slug do
     end) |> Enum.join(""))
   end
 
+  def slugify(nil), do: ""
+  def slugify(title) do
+    String.downcase(title, :default)
+      |> String.trim()
+      |> String.replace(" ", "_")
+      |> URI.encode_www_form()
+      |> String.slice(0, 30)
+  end
+
   defp unique_slug(_table, "", _suffixes), do: ""
   defp unique_slug(table, title, [suffix | remaining]) do
     candidate = title <> suffix.()
@@ -112,12 +121,4 @@ defmodule Oli.Utils.Slug do
   end
   defp unique_slug(_table, _, []) do "" end
 
-  defp slugify(nil), do: ""
-  defp slugify(title) do
-    String.downcase(title, :default)
-      |> String.trim()
-      |> String.replace(" ", "_")
-      |> URI.encode_www_form()
-      |> String.slice(0, 30)
-  end
 end

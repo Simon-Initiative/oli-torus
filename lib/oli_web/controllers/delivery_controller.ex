@@ -5,7 +5,6 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Delivery.Sections.SectionRoles
   alias Oli.Publishing
   alias Oli.Accounts
-
   alias Oli.Delivery.Lti
 
   def index(conn, _params) do

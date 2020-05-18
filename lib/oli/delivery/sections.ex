@@ -110,9 +110,9 @@ defmodule Oli.Delivery.Sections do
   Gets a single section by query parameter
   ## Examples
       iex> get_section_by(context_id: "123")
-      {:ok, %Section{}}
+      %Section{}
       iex> get_section_by(context_id: "111")
-      { :error, changeset }
+      nil
   """
   def get_section_by(clauses), do: Repo.get_by(Section, clauses) |> Repo.preload([:publication, :project])
 

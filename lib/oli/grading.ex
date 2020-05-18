@@ -22,10 +22,17 @@ defmodule Oli.Grading do
     {gradebook, column_labels} = generate_gradebook_for_section(section)
 
     table_data = gradebook
+      |> IO.inspect
       |> Enum.map(fn %GradebookRow{user: user, scores: scores} ->
         [
           "#{user.first_name} #{user.last_name} (#{user.email})"
-          | Enum.map(scores, fn %GradebookScore{score: score} -> score end)
+          | Enum.map(scores, fn gradebook_score ->
+            case gradebook_score do
+              nil -> nil
+              %GradebookScore{score: score} ->
+                score
+            end
+          end)
         ]
       end)
 
@@ -35,12 +42,15 @@ defmodule Oli.Grading do
       |> Enum.reduce([], fn %GradebookRow{scores: scores}, acc ->
         scores
         |> Enum.with_index
-        |> Enum.map(fn {%GradebookScore{out_of: out_of}, i} ->
-          case out_of do
+        |> Enum.map(fn {gradebook_score, i} ->
+          case gradebook_score do
             nil ->
               # use existing value for column
               Enum.at(acc, i)
-            out_of ->
+            %GradebookScore{out_of: nil} ->
+              # use existing value for column
+              Enum.at(acc, i)
+            %GradebookScore{out_of: out_of} ->
               # replace value of existing column
               out_of
           end

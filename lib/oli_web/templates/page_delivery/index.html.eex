@@ -10,6 +10,15 @@
   <h3><%= @title %></h3>
   <p class="text-secondary"><%= @description %></p>
 
+  <%= if is_instructor?(@conn) do %>
+  <div class="d-flex flex-row">
+    <div class="flex-1"></div>
+    <div>
+      <%= link "Download Gradebook (.csv)", to: Routes.page_delivery_path(@conn, :export_gradebook, @context_id), class: "btn btn-link btn-sm" %>
+    </div>
+  </div>
+  <% end %>
+
   <h5>Course Outline</h5>
 
   <div class="course-outline">
