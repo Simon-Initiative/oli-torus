@@ -34,7 +34,7 @@ export const PartObjectives = (props: PartObjectivesProps) => {
                 Immutable.List<ObjectiveSlug>()))}
               objectives={allObjectives}
               onEdit={objectives => onEdit(Immutable.Map<string,
-                Immutable.List<ObjectiveSlug>>({ [id]: objectives} as any)) }/>
+                Immutable.List<ObjectiveSlug>>({ [id]: objectives } as any))}/>
           </div>
         ))}
       </div>
