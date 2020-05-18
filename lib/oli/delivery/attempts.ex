@@ -250,7 +250,7 @@ defmodule Oli.Delivery.Attempts do
 
   `[%ResourceAccess{}, ...]`
   """
-  def get_resource_access_for_context(context_id) do
+  def get_graded_resource_access_for_context(context_id) do
     Repo.all(from a in ResourceAccess,
       join: s in Section, on: a.section_id == s.id,
       join: p in PublishedResource, on: s.publication_id == p.publication_id,

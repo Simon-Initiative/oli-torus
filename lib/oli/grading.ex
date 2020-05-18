@@ -85,7 +85,7 @@ defmodule Oli.Grading do
       |> Enum.map(fn e -> e.user end)
 
     # create a map of all resource accesses, keyed off resource id
-    resource_accesses = Attempts.get_resource_access_for_context(section.context_id)
+    resource_accesses = Attempts.get_graded_resource_access_for_context(section.context_id)
       |> Enum.reduce(%{}, fn resource_access, acc ->
         case acc[resource_access.resource_id] do
           nil ->
