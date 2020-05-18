@@ -5,25 +5,25 @@
   padding: 24px;
   border-right: 1px solid rgba(51, 51, 51, .15);
 }
-a {
+#sidebar a {
   display: flex;
   flex-direction: columns;
   color: black;
   margin: 20px 0;
 }
-.user {
+#sidebar .user {
   margin-bottom: 40px;
 }
-.category {
+#sidebar .category {
   font-size: 12px;
   color: #b3b3b3;
   user-select: none;
   margin-top: 20px;
 }
-.active {
+#sidebar .active {
   font-weight: bold;
 }
-.account-link {
+#sidebar .account-link {
   margin: 0;
 }
 </style>

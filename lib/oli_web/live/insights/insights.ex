@@ -28,16 +28,27 @@ defmodule OliWeb.Insights do
       <div class="card-header">
         <ul class="nav nav-tabs card-header-tabs">
           <li class="nav-item">
-            <button class="btn btn-primary" phx-click="by-page">By Page</button>
+            <button <%= is_disabled(@selected, :by_page) %> class="btn btn-primary" phx-click="by-page">By Page</button>
           </li>
           <li class="nav-item">
-            <button class="btn btn-primary" phx-click="by-activity">By Activity</button>
+            <button <%= is_disabled(@selected, :by_activity) %> class="btn btn-primary" phx-click="by-activity">By Activity</button>
           </li>
           <li class="nav-item">
-            <button class="btn btn-primary" phx-click="by-objective">By Objective</button>
+            <button <%= is_disabled(@selected, :by_objective) %> class="btn btn-primary" phx-click="by-objective">By Objective</button>
           </li>
         </ul>
-        <form phx-change="search"><input type="text" name="query" value="<%= @query %>" placeholder="Search by title..." /></form>
+        <form phx-change="search">
+          <input type="text" name="query" value="<%= @query %>" placeholder="Search by title..."
+            style="font-size: 14px;
+            border: 3px solid black;
+            border-radius: 8px;
+            padding: 16px;
+            width: 100%;
+            flex-grow: 1;
+            height: 48px;
+            margin: 10px 0;"
+          />
+        </form>
       </div>
       <div class="card-body">
         <h5 class="card-title">
@@ -145,5 +156,9 @@ defmodule OliWeb.Insights do
   defp sort_order_icon(column, sort_by, :asc) when column == sort_by, do: "▲"
   defp sort_order_icon(column, sort_by, :desc) when column == sort_by, do: "▼"
   defp sort_order_icon(_, _, _), do: ""
+
+  defp is_disabled(selected, title) do
+    if selected == title do "disabled" else "" end
+  end
 
 end

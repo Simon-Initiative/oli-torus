@@ -14,8 +14,6 @@ defmodule Oli.Analytics.ByObjective do
           snapshot.hints, snapshot.correct, snapshot.id)
       }
 
-  # users who eventually got the activity correct
-  # obj1 user1
     objective_correctness = from snapshot in Snapshot,
       group_by: [snapshot.objective_id, snapshot.user_id],
       select: %{
@@ -25,8 +23,6 @@ defmodule Oli.Analytics.ByObjective do
         is_first_try_correct: fragment("bool_or(? is true and ? = 1)", snapshot.correct, snapshot.attempt_number)
       }
 
-  # obj1 .95 .87
-  # obj2 1 .95
     corrections = from correctness in subquery(objective_correctness),
       group_by: [correctness.objective_id],
       select: %{
@@ -37,24 +33,17 @@ defmodule Oli.Analytics.ByObjective do
           / count(correctness.user_id)
       }
 
-    # all published publications for project
-    # all published resources for those publications
-    # get unique resource ids
-    # join with latest revision
-    # filter to activity
-
     objective = Oli.Resources.ResourceType.get_id_by_type("objective")
     all_objectives = from mapping in Oli.Publishing.PublishedResource,
       join: publication in Oli.Publishing.Publication,
-      join: rev in Oli.Resources.Revision,
       on: mapping.publication_id == publication.id,
+      join: rev in Oli.Resources.Revision,
       on: mapping.revision_id == rev.id,
+      distinct: rev.resource_id,
       where: publication.project_id == ^project_id
         and publication.published
         and rev.resource_type_id == ^objective,
       select: rev
-
-    # IO.inspect Repo.all(all_activities), label: "All revisions"
 
     Repo.all(from objective in subquery(all_objectives),
       left_join: a in subquery(corrections),
@@ -67,7 +56,8 @@ defmodule Oli.Analytics.ByObjective do
         first_try_correct: a.first_try_correct_ratio,
         number_of_attempts: b.number_of_attempts,
         relative_difficulty: b.relative_difficulty,
-      })
+      },
+      preload: [:resource_type])
 
   end
 

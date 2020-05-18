@@ -3,20 +3,24 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
   use Oli.DataCase
 
   alias Oli.Analytics.ByActivity
-  alias Oli.Activities.Model.Part
+  alias Oli.Snapshots.SnapshotSeeder
+
+  defp to_path(path) do
+    Path.expand(__DIR__) <> path
+  end
 
   def seed_snapshots(context) do
     seeds = Seeder.base_project_with_resource2()
     |> Seeder.create_section()
     |> Seeder.add_activity(%{title: "Activity with with no attempts"}, :activity_no_attempts)
-    |> setup_csv(context.path)
+    |> SnapshotSeeder.setup_csv(context.path)
 
     Oli.Publishing.publish_project(seeds.project)
     {:ok, %{ seeds: seeds, results: ByActivity.query_against_project_id(seeds.project.id) }}
   end
 
   describe "number of attempts" do
-    setup do: %{ path: "./number_of_attempts.csv" }
+    setup do: %{ path: to_path("/csv/number_of_attempts.csv") }
     setup :seed_snapshots
 
     test "activity with no attempts", %{ results: results, seeds: seeds } do
@@ -55,7 +59,7 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
 
   # Relative difficulty = (# hints requested + # incorrect answers) / total attempts
   describe "relative difficulty" do
-    setup do: %{ path: "./relative_difficulty.csv" }
+    setup do: %{ path: to_path("/csv/relative_difficulty.csv") }
     setup :seed_snapshots
 
     test "no incorrect answers and no hints", %{ results: results, seeds: seeds } do
@@ -135,7 +139,7 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
   # eventually correct = sum(students with any correct response)
   #                     / sum(total students with attempts)
   describe "eventually correct" do
-    setup do: %{ path: "./eventually_correct.csv" }
+    setup do: %{ path: to_path("/csv/eventually_correct.csv") }
     setup :seed_snapshots
 
     # eventually correct = sum(students with any correct response)
@@ -182,7 +186,7 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
   # first attempt correct = sum(students with attempt 1 correct)
   #                         / sum(total students with attempts)
   describe "first try correct" do
-    setup do: %{ path: "./first_try_correct.csv" }
+    setup do: %{ path: to_path("/csv/first_try_correct.csv") }
     setup :seed_snapshots
 
     test "no correct responses", %{ results: results, seeds: seeds } do
@@ -223,99 +227,5 @@ defmodule Oli.Delivery.Analytics.ByAnalyticsTest do
       activity_results = Enum.find(results, & &1.slice.id == activity_some_correct.id)
       assert activity_results.first_try_correct == 0.5
     end
-  end
-
-  defp get_csv_headers(path) do
-    [ok: headers] = path
-    |> Path.expand(__DIR__)
-    |> File.stream!
-    |> CSV.decode
-    |> Enum.take(1)
-
-    headers
-    |> Enum.map(&String.to_atom/1)
-  end
-
-  defp get_csv_snapshots(path) do
-    path
-    |> Path.expand(__DIR__)
-    |> File.stream!
-    |> CSV.decode(headers: get_csv_headers(path))
-    |> Enum.drop(1)
-  end
-
-  defp parse_row({:ok, snapshot}) do
-    %{
-      activity_tag: String.to_atom(snapshot.activity_tag),
-      activity_type_id: elem(Integer.parse(snapshot.activity_type_id), 0),
-      attempt_number: elem(Integer.parse(snapshot.attempt_number), 0),
-      correct: to_bool(snapshot.correct),
-      graded: to_bool(snapshot.graded),
-      hints: elem(Integer.parse(snapshot.hints), 0),
-      objective_tag: String.to_atom(snapshot.objective_tag),
-      out_of: elem(Integer.parse(snapshot.out_of), 0),
-      part_attempt_tag: String.to_atom(snapshot.part_attempt_tag),
-      part_attempt_number: elem(Integer.parse(snapshot.part_attempt_number), 0),
-      part_id: snapshot.part_id,
-      resource_attempt_number: elem(Integer.parse(snapshot.resource_attempt_number), 0),
-      resource_tag: String.to_atom(snapshot.resource_tag),
-      score: elem(Integer.parse(snapshot.score), 0),
-      section_tag: String.to_atom(snapshot.section_tag),
-      user_tag: String.to_atom(snapshot.user_tag)
-    }
-  end
-
-  defp create_if_necessary(map, key, creation_fn) do
-    case map[key] do
-      nil -> creation_fn.(map)
-      _ -> map
-    end
-  end
-
-  defp to_bool("TRUE"), do: true
-  defp to_bool("FALSE"), do: false
-
-  def setup_csv(map, path) do
-
-    get_csv_snapshots(path)
-    |> Enum.map(&parse_row/1)
-    |> Enum.reduce(map, fn (%{
-      activity_tag: activity_tag,
-      objective_tag: objective_tag,
-      part_attempt_tag: part_attempt_tag,
-      resource_tag: resource_tag,
-      section_tag: _section_tag,
-      user_tag: user_tag } = snapshot, map) ->
-
-      # Create linkages if necessary. These are not used for analytics queries but are
-      # required to satisfy database constraints
-      map = map
-      |> create_if_necessary(user_tag,
-        fn map -> Seeder.add_user(map, %{}, user_tag) end)
-      |> create_if_necessary(resource_tag,
-        fn map -> Seeder.add_page(map, %{title: Atom.to_string(resource_tag)}, resource_tag) end)
-      |> create_if_necessary(objective_tag,
-        fn map -> Seeder.add_objective(map, Atom.to_string(objective_tag), objective_tag) end)
-      |> create_if_necessary(activity_tag,
-        fn map -> Seeder.add_activity(map, %{title: Atom.to_string(activity_tag)}, activity_tag) end)
-      |> create_if_necessary(:ra1,
-        fn map -> Seeder.create_resource_attempt(map, %{attempt_number: 1}, user_tag, resource_tag, :attempt1) end)
-      |> create_if_necessary(:aa1,
-        fn map -> Seeder.create_activity_attempt(map, %{attempt_number: 1, transformed_model: %{}}, activity_tag, :attempt1, :activity_attempt1) end)
-      |> create_if_necessary(part_attempt_tag,
-        fn map -> Seeder.create_part_attempt(map, %{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :activity_attempt1, part_attempt_tag) end)
-
-      # Create the activity snapshot using the new map with required linkages
-      Seeder.add_activity_snapshot(map, Map.merge(snapshot, %{
-        resource_id: map[resource_tag].resource.id,
-        activity_id: map[activity_tag].resource.id,
-        part_attempt_id: map[part_attempt_tag].id,
-        user_id: map[user_tag].id,
-        section_id: map.section.id,
-        objective_id: map[objective_tag].resource.id,
-        objective_revision_id: map[objective_tag].revision.id,
-        revision_id: map[activity_tag].revision.id,
-      }), Ecto.UUID.generate())
-      end)
   end
 end

@@ -54,7 +54,7 @@ defmodule Oli.Delivery.AttemptsTest do
 
     test "create the attempt tree", %{ p1: p1, user1: user, section: section, a1: a1, a2: a2} do
 
-      Attempts.track_access(p1.resource_id, section.context_id, user.id)
+      Attempts.track_access(p1.resource.id, section.context_id, user.id)
 
       activity_provider = fn revision ->
         case Realizer.realize(revision) do
@@ -64,7 +64,7 @@ defmodule Oli.Delivery.AttemptsTest do
       end
 
       # verify that creating the attempt tree returns both activity attempts
-      {resource_attempt, attempts} = Attempts.create_new_attempt_tree(nil, p1, section.context_id, user.id, activity_provider)
+      {resource_attempt, attempts} = Attempts.create_new_attempt_tree(nil, p1.revision, section.context_id, user.id, activity_provider)
       assert Map.has_key?(attempts, a1.resource.id)
       assert Map.has_key?(attempts, a2.resource.id)
 
