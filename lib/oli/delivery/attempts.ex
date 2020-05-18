@@ -250,24 +250,12 @@ defmodule Oli.Delivery.Attempts do
 
   `[%ResourceAccess{}, ...]`
   """
-  def get_all_graded_resource_access_for_context(context_id) do
+  def get_resource_access_for_context(context_id) do
     Repo.all(from a in ResourceAccess,
       join: s in Section, on: a.section_id == s.id,
       join: p in PublishedResource, on: s.publication_id == p.publication_id,
       join: r in Revision, on: p.revision_id == r.id,
       where: s.context_id == ^context_id and r.graded == true,
-      select: a)
-  end
-
-  @doc """
-  Retrieves all resource access records for a given resource and context
-
-  `[%ResourceAccess{}, ...]`
-  """
-  def get_resource_access_for_context(resource_id, context_id) do
-    Repo.all(from a in ResourceAccess,
-      join: s in Section, on: a.section_id == s.id,
-      where: s.context_id == ^context_id and a.resource_id == ^resource_id,
       select: a)
   end
 
