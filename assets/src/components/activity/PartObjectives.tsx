@@ -27,7 +27,7 @@ export const PartObjectives = (props: PartObjectivesProps) => {
       <div className="flex-grow-1 p-1 pl-5">
         {partIds.toArray().map(id => (
           <div className="d-flex flex-row align-items-baseline">
-            <div>Input {id}:</div>
+            <div className="flex-grow-1">Input-{id}:</div>
             <Objectives
               editMode={editMode}
               selected={Immutable.List<ObjectiveSlug>(valueOr(objectives.get(id),
