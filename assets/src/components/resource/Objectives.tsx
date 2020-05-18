@@ -26,7 +26,6 @@ export const Objectives = (props: ObjectivesProps) => {
   // The current 'selected' state of Typeahead must be the same shape as
   // the options objects. So we look up from our list of slugs those objects.
   const map = Immutable.Map<ObjectiveSlug, Objective>(withIds.toArray().map(o => [o.slug, o]));
-  console.log("selected " + selected);
   const asObjectives = selected.toArray().map(s => map.get(s) as Objective);
 
   return (

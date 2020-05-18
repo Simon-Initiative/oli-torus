@@ -68,8 +68,6 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
 
     const o = Object.keys(objectives).map(o => [o, objectives[o]]);
 
-    console.log(Immutable.Map<string, Immutable.List<ObjectiveSlug>>(o as any));
-
     this.state = {
       messages: [],
       editMode: true,
