@@ -15,6 +15,8 @@ import { ActivityModelSchema } from 'components/activities/types';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { Message, createMessage } from 'data/messages/messages';
 import { Banner } from '../messages/Banner';
+import { PartObjectives } from 'components/activity/PartObjectives';
+import { valueOr } from 'utils/common';
 
 export interface ActivityEditorProps extends ActivityContext {
 
@@ -147,6 +149,22 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
       () => this.save());
   }
 
+  // postUpdate(){
+  //   const parts = valueOr(this.state.undoable.current.content.authoring.parts, [])
+  //   const partIds = parts.map((p: any)  => valueOr(p.id, ""));
+  //   let objs = this.state.undoable.current.objectives;
+  //   const keys = objs.keySeq().toArray();
+  //   keys.forEach((pId: string)  => {
+  //     if(!partIds.has(pId)){
+  //       objs = objs.delete(pId);
+  //     }
+  //   });
+  //
+  //   this.setState(
+  //       { undoable: processUpdate(this.state.undoable, objs) },
+  //       () => this.save());
+  // }
+
   save() {
     const { projectSlug, resourceSlug, activitySlug } = this.props;
     this.persistence.save(
@@ -176,6 +194,9 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
       editMode: this.state.editMode,
     };
 
+    const parts = valueOr(this.state.undoable.current.content.authoring.parts, []);
+    const partIds = parts.map((p: any) => p.id);
+
     return (
       <div style={{ maxWidth: '800px' }}>
         <Banner
@@ -195,7 +216,12 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
             canUndo={this.state.undoable.undoStack.size > 0}
             onUndo={this.undo} onRedo={this.redo}/>
         </TitleBar>
-
+        <PartObjectives
+            partIds={Immutable.List(partIds)}
+            editMode={this.state.editMode}
+            objectives={this.state.undoable.current.objectives}
+            allObjectives={this.state.allObjectives}
+            onEdit={objectives => this.update({ objectives })} />
         <div ref={this.ref}>
           {React.createElement(authoringElement, webComponentProps as any)}
         </div>

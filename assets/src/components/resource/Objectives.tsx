@@ -30,7 +30,6 @@ export const Objectives = (props: ObjectivesProps) => {
 
   return (
     <div className="objectives-editor">
-      <div className="learning-objectives-label">Learning Objectives</div>
       <Typeahead
         id={id}
         multiple={true}
