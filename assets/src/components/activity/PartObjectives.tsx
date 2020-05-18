@@ -16,7 +16,7 @@ export type PartObjectivesProps = {
 // PartObjective component that allows attaching and removal of objectives to activity parts
 export const PartObjectives = (props: PartObjectivesProps) => {
 
-  const {partIds, objectives, allObjectives, editMode, onEdit} = props;
+  const { partIds, objectives, allObjectives, editMode, onEdit } = props;
 
   return (
     <div>
@@ -34,7 +34,7 @@ export const PartObjectives = (props: PartObjectivesProps) => {
                 Immutable.List<ObjectiveSlug>()))}
               objectives={allObjectives}
               onEdit={objectives => onEdit(Immutable.Map<string,
-                Immutable.List<ObjectiveSlug>>({[id]: objectives} as any))}/>
+                Immutable.List<ObjectiveSlug>>({ [id]: objectives} as any)) }/>
           </div>
         ))}
       </div>

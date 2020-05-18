@@ -194,7 +194,7 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
       editMode: this.state.editMode,
     };
 
-    const parts = valueOr(this.state.undoable.current.content.authoring.parts, [])
+    const parts = valueOr(this.state.undoable.current.content.authoring.parts, []);
     const partIds = parts.map((p: any) => p.id);
 
     return (
