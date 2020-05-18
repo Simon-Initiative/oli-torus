@@ -22,7 +22,6 @@ defmodule Oli.Grading do
     {gradebook, column_labels} = generate_gradebook_for_section(section)
 
     table_data = gradebook
-      |> IO.inspect
       |> Enum.map(fn %GradebookRow{user: user, scores: scores} ->
         [
           "#{user.first_name} #{user.last_name} (#{user.email})"
