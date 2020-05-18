@@ -335,12 +335,20 @@ defmodule Oli.Seeder do
   end
 
   def attach_pages_to(resources, container, container_revision, publication) do
+    new_children = Enum.map(resources, fn r -> r.id end)
+    set_container_children(container_revision.children ++ new_children, container, container_revision, publication)
+  end
 
+  def replace_pages_with(resources, container, container_revision, publication) do
     children = Enum.map(resources, fn r -> r.id end)
-    {:ok, updated} = Oli.Resources.update_revision(container_revision, %{children: container_revision.children ++ children})
+    set_container_children(children, container, container_revision, publication)
+  end
+
+  defp set_container_children(children, container, container_revision, publication) do
+    {:ok, updated} = Oli.Resources.update_revision(container_revision, %{children: children})
 
     Publishing.get_resource_mapping!(publication.id, container.id)
-      |> Publishing.update_resource_mapping(%{revision_id: updated.id})
+    |> Publishing.update_resource_mapping(%{revision_id: updated.id})
 
     updated
   end

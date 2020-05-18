@@ -35,7 +35,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
       page2 = Map.get(map, :page2)
       publication = Map.get(map, :publication)
 
-      Seeder.attach_pages_to([page1, %{id: p1.resource.id}, page2], container_resource, container_revision, publication)
+      Seeder.replace_pages_with([page1, %{id: p1.resource.id}, page2], container_resource, container_revision, publication)
 
       context = PageContext.create_page_context(section.context_id, p1.revision.slug, user.id)
 
@@ -45,27 +45,23 @@ defmodule Oli.Delivery.Page.PageContextTest do
       # verify objectives map
       assert context.objectives == ["objective one"]
 
-      IO.inspect(context, label: :context)
-      IO.inspect(page1, label: :page1)
-      IO.inspect(page2, label: :page2)
-
       # verify previous and next are correct
       assert context.previous_page.resource_id == page1.id
       assert context.next_page.resource_id == page2.id
 
       # verify all other possible variants of prev and next:
 
-      Seeder.attach_pages_to([p1.resource, page2], container_resource, container_revision, publication)
+      Seeder.replace_pages_with([p1.resource, page2], container_resource, container_revision, publication)
       context = PageContext.create_page_context(section.context_id, p1.revision.slug, user.id)
       assert context.previous_page == nil
       assert context.next_page.resource_id == page2.id
 
-      Seeder.attach_pages_to([page2, p1.resource], container_resource, container_revision, publication)
+      Seeder.replace_pages_with([page2, p1.resource], container_resource, container_revision, publication)
       context = PageContext.create_page_context(section.context_id, p1.revision.slug, user.id)
       assert context.previous_page.resource_id == page2.id
       assert context.next_page == nil
 
-      Seeder.attach_pages_to([p1.resource], container_resource, container_revision, publication)
+      Seeder.replace_pages_with([p1.resource], container_resource, container_revision, publication)
       context = PageContext.create_page_context(section.context_id, p1.revision.slug, user.id)
       assert context.previous_page == nil
       assert context.next_page == nil
