@@ -5,7 +5,6 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Delivery.Sections.SectionRoles
   alias Oli.Publishing
   alias Oli.Accounts
-
   alias Oli.Delivery.Lti
 
   def index(conn, _params) do
@@ -19,7 +18,7 @@ defmodule OliWeb.DeliveryController do
         render(conn, "course_not_configured.html")
 
       {:student, _author, section} ->
-        redirect(conn, to: Routes.student_delivery_path(conn, :index, section.context_id))
+        redirect(conn, to: Routes.page_delivery_path(conn, :index, section.context_id))
 
       {role, nil, nil} when role == :administrator or role == :instructor ->
         render(conn, "getting_started.html")
@@ -31,14 +30,9 @@ defmodule OliWeb.DeliveryController do
         render(conn, "configure_section.html", author: author, my_publications: my_publications, open_and_free_publications: open_and_free_publications)
 
       {role, _author, section} when role == :administrator or role == :instructor ->
-        redirect(conn, to: Routes.instructor_delivery_path(conn, :index, section.context_id))
+        redirect(conn, to: Routes.page_delivery_path(conn, :index, section.context_id))
     end
 
-  end
-
-  def resource(conn, _params) do
-    page = %{}
-    render(conn, "page.html", page: page)
   end
 
   def list_open_and_free(conn, _params) do

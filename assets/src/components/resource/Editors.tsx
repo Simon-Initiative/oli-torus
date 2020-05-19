@@ -7,7 +7,7 @@ import { getToolbarForResourceType } from './toolbar';
 import { StructuredContentEditor } from 'components/content/StructuredContentEditor';
 import { ResourceContentFrame } from 'components/content/ResourceContentFrame';
 import { ProjectSlug, ResourceSlug } from 'data/types';
-
+import { TestModeHandler, defaultState } from './TestModeHandler';
 
 export type EditorsProps = {
   editMode: boolean,              // Whether or not we can edit
@@ -20,27 +20,7 @@ export type EditorsProps = {
   resourceSlug: ResourceSlug,
 };
 
-const defaultState = () => {
-  return {
-    attemptNumber: 1,
-    dateEvaluated: null,
-    score: null,
-    outOf: null,
-    hasMoreAttempts: true,
-    parts: [{
-      attemptNumber: 1,
-      dateEvaluated: null,
-      score: null,
-      outOf: null,
-      response: null,
-      feedback: null,
-      hints: [],
-      hasMoreHints: true,
-      hasMoreAttempts: true,
-      partId: '1',
-    }],
-  };
-};
+
 
 // The list of editors
 export const Editors = (props: EditorsProps) => {
@@ -77,23 +57,37 @@ export const Editors = (props: EditorsProps) => {
     const activity = activities.get(content.activitySlug);
     let editor;
     let props;
+
     if (activity !== undefined) {
+
       editor = editorMap[activity.typeSlug]
         ? editorMap[activity.typeSlug] : unsupported;
 
+      // Test mode is supported by giving the delivery component a transformed
+      // instance of the activity model.  Recognizing that we are in an editing mode
+      // we make this robust to problems with transormation so we fallback to the raw
+      // model if the transformed model is null (which results from failure to transform)
+      const model = activity.transformed === null ? activity.model : activity.transformed;
+
       props = {
-        model: JSON.stringify(activity !== undefined ? activity.model : {}),
+        model: JSON.stringify(model),
         activitySlug: activity.activitySlug,
-        state: JSON.stringify(defaultState()),
+        state: JSON.stringify(
+          defaultState(activity.transformed === null ? model : activity.transformed)),
+        graded: false,
       };
 
-    } else {
-      editor = unsupported;
-      props = {};
+      const testModeEnabledComponent = (
+        <TestModeHandler model={model}>
+          {React.createElement(editor.deliveryElement, props as any)}
+        </TestModeHandler>
+      );
+
+      return [testModeEnabledComponent, editor.friendlyName];
+
     }
 
-    return [React.createElement(editor.deliveryElement,
-      props as any), editor.friendlyName];
+    return [React.createElement(unsupported.deliveryElement), unsupported.friendlyName];
 
   };
 

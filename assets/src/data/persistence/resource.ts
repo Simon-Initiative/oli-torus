@@ -1,4 +1,3 @@
-import * as Immutable from 'immutable';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug } from 'data/types';
 import { makeRequest } from './common';
 import { PageContent, AttachedObjectives } from '../content/resource';

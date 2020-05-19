@@ -1,0 +1,26 @@
+
+
+<%= render "_previous_next_nav.html",
+  conn: @conn, context_id: @context_id, previous_page: @previous_page, next_page: @next_page %>
+
+<%= if @attempts_remaining > 0 do %>
+
+  <div class="jumbotron">
+    <h3 class="display-4"><%= @title %></h3>
+    <p class="lead" style="color: darkred;">This is a <strong>graded assessment</strong></p>
+    <p>You have <%= @attempts_remaining %> attempts remaining out of <%= (@attempts_taken + @attempts_remaining) %> total attempts.</p>
+    <hr class="my-4">
+    <p>When you are ready to begin, click:</p>
+    <p class="lead">
+      <%= link "Start Attempt", class: "btn btn-primary btn-lg", to: Routes.page_delivery_path(@conn, :start_attempt, @context_id, @slug) %>
+    </p>
+  </div>
+
+<% else %>
+
+  <div class="jumbotron">
+    <h3 class="display-4"><%= @title %></h3>
+    <p class="lead">You have used <%= @attempts_taken %> out of <%= @attempts_taken %> attempts</p>
+  </div>
+
+<% end %>

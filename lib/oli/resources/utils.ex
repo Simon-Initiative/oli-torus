@@ -120,5 +120,4 @@ defmodule Oli.Resources.Utils do
     Enum.map(revisions, &to_wrapper/1)
   end
 
-
 end

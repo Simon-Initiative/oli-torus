@@ -2,6 +2,7 @@ defmodule OliWeb.CurriculumController do
   use OliWeb, :controller
   import OliWeb.ProjectPlugs
   alias Oli.Authoring.Editing.ContainerEditor
+  alias Oli.Resources.ScoringStrategy
 
   plug :fetch_project
   plug :authorize_project
@@ -21,6 +22,9 @@ defmodule OliWeb.CurriculumController do
       content: %{ "model" => []},
       title: "New Page",
       graded: type == "Scored",
+      max_attempts: if type == "Scored" do 5 else 0 end,
+      recommended_attempts: if type == "Scored" do 5 else 0 end,
+      scoring_strategy_id: ScoringStrategy.get_id_by_type("best"),
       resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page")
     }
 

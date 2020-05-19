@@ -45,6 +45,22 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Determines if a particular user is enrolled in a section.
+
+  """
+  def is_enrolled?(user_id, context_id) do
+    query = from(
+      e in Enrollment,
+      join: s in Section, on: e.section_id == s.id,
+      where: e.user_id == ^user_id and s.context_id == ^context_id)
+
+    case Repo.one(query) do
+      nil -> false
+      _ -> true
+    end
+  end
+
+  @doc """
   Returns a listing of all enrollments for a given section context_id.
 
   """
@@ -53,7 +69,7 @@ defmodule Oli.Delivery.Sections do
       e in Enrollment,
       join: s in Section, on: e.section_id == s.id,
       where: s.context_id == ^context_id,
-      preload: [user: e],
+      preload: [:user],
       select: e)
     Repo.all(query)
   end
@@ -80,12 +96,23 @@ defmodule Oli.Delivery.Sections do
   def get_section!(id), do: Repo.get!(Section, id)
 
   @doc """
+  Gets a section's publication
+  Raises `Ecto.NoResultsError` if the Section does not exist.
+  ## Examples
+      iex> get_section_publication!(123)
+      %Publication{}
+      iex> get_section_publication!(456)
+      ** (Ecto.NoResultsError)
+  """
+  def get_section_publication!(id), do: (Repo.get!(Section, id) |> Repo.preload([:publication])).publication
+
+  @doc """
   Gets a single section by query parameter
   ## Examples
       iex> get_section_by(context_id: "123")
-      {:ok, %Section{}}
+      %Section{}
       iex> get_section_by(context_id: "111")
-      { :error, changeset }
+      nil
   """
   def get_section_by(clauses), do: Repo.get_by(Section, clauses) |> Repo.preload([:publication, :project])
 

@@ -1,9 +1,6 @@
-import { ActivityModelSchema, ActivityState, StudentResponse, Hint, Success, PartState } from './types';
+import { ActivityModelSchema, ActivityState, PartResponse,
+  StudentResponse, Hint, Success, PartState } from './types';
 
-export type PartResponse = {
-  attemptGuid: string,
-  response: StudentResponse,
-};
 
 export interface EvaluatedPart {
   type: 'EvaluatedPart';
@@ -11,6 +8,7 @@ export interface EvaluatedPart {
   out_of: number;
   score: number;
   feedback: any;
+  error?: string;
 }
 
 export interface EvaluationResponse extends Success {
@@ -37,6 +35,7 @@ export interface PartActivityResponse extends Success {
 }
 
 export interface DeliveryElementProps<T extends ActivityModelSchema> {
+  graded: boolean;
   model: T;
   state: ActivityState;
 
@@ -115,9 +114,11 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   props() : DeliveryElementProps<T> {
 
     const model = JSON.parse(this.getAttribute('model') as any);
+    const graded = JSON.parse(this.getAttribute('graded') as any);
     const state = JSON.parse(this.getAttribute('state') as any) as ActivityState;
 
     return {
+      graded,
       model,
       state,
       onRequestHint: this.onRequestHint,

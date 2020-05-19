@@ -1,8 +1,8 @@
 defmodule Oli.Accounts do
 
   import Ecto.Query, warn: false
-  alias Oli.Repo
 
+  alias Oli.Repo
   alias Oli.Accounts.{User, Author, Institution, LtiToolConsumer}
 
   @doc """

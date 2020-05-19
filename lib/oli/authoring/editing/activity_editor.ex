@@ -18,6 +18,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Authoring.Locks
+  alias Oli.Activities.Transformers
 
   @doc """
   Attempts to process an edit for an activity specified by a given
@@ -140,11 +141,14 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          {:ok} <- authorize_user(author, project),
          {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, activity_type} <- Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
-         {:ok, activity} <- Activity.create_new(%{title: activity_type.title, scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"), objectives: %{}, author_id: author.id, content: model, activity_type_id: activity_type.id}),
+         {:ok, %{content: content} = activity} <- Activity.create_new(%{title: activity_type.title, scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"), objectives: %{}, author_id: author.id, content: model, activity_type_id: activity_type.id}),
          {:ok, _} <- Course.create_project_resource(%{ project_id: project.id, resource_id: activity.resource_id}) |> trap_nil(),
          {:ok, _mapping} <- Publishing.create_resource_mapping(%{publication_id: publication.id, resource_id: activity.resource_id, revision_id: activity.id})
       do
-        activity
+        case Transformers.apply_transforms(content) do
+          {:ok, transformed} -> {activity, transformed}
+          _ -> {activity, nil}
+        end
       else
         error -> Repo.rollback(error)
       end
@@ -164,11 +168,11 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
     with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
-         {:ok, objectives} <- Publishing.get_published_objective_details(publication.id) |> trap_nil(),
-         {:ok, objectives_without_ids} <- PageEditor.strip_ids(objectives) |> trap_nil(),
+         {:ok, all_objectives} <- Publishing.get_published_objective_details(publication.id) |> trap_nil(),
+         {:ok, objectives_without_ids} <- PageEditor.strip_ids(all_objectives) |> trap_nil(),
          {:ok, %{content: content}} <- PageEditor.get_latest_revision(publication, resource) |> trap_nil(),
          {:ok, %{id: activity_id}} <- Resources.get_resource_from_slug(activity_slug) |> trap_nil(),
-         {:ok, %{activity_type: activity_type, content: model, title: title}} <- get_latest_revision(publication.id, activity_id) |> trap_nil()
+         {:ok, %{activity_type: activity_type, content: model, title: title, objectives: objectives}} <- get_latest_revision(publication.id, activity_id) |> trap_nil()
     do
 
       {previous, next} = find_sibling_activities(activity_id, content, publication.id)
@@ -184,7 +188,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         activitySlug: activity_slug,
         title: title,
         model: model,
-        objectives: %{},
+        objectives: objectives,
         allObjectives: objectives_without_ids,
         previousActivity: previous,
         nextActivity: next

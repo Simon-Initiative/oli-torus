@@ -7,6 +7,7 @@ import { Choice } from 'components/activities/multiple_choice/schema';
 import * as ActivityTypes from '../types';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { Maybe } from 'tsmonad';
+import { fromText } from './utils';
 
 type Evaluation = {
   score: number,
@@ -153,10 +154,15 @@ const Hints = (props: HintsProps) => {
 const Evaluation = ({ attemptState } : { attemptState : ActivityTypes.ActivityState}) => {
 
   const { score, outOf, parts } = attemptState;
+  const error = parts[0].error;
   const feedback = parts[0].feedback.content;
 
+  const errorText = fromText('There was an error processing this response');
+
   let backgroundColor = '#f0b4b4';
-  if (score === outOf) {
+  if (error !== undefined) {
+    backgroundColor = 'orange';
+  } else if (score === outOf) {
     backgroundColor = '#a7e695';
   } else if ((score as number) > 0) {
     backgroundColor = '#f0e8b4';
@@ -185,7 +191,7 @@ const Evaluation = ({ attemptState } : { attemptState : ActivityTypes.ActivitySt
           fontWeight: 'bold',
           marginRight: '16px',
         }}>{score + ' / ' + outOf}</span>
-      <HtmlContentModelRenderer text={feedback} />
+      <HtmlContentModelRenderer text={error ? errorText : feedback} />
     </div>
   );
 
@@ -215,17 +221,26 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
     // Update local state
     setSelected(Maybe.just<string>(id));
 
-    // Auto-submit our student reponse
-    props.onSubmitActivity(attemptState.attemptGuid,
-      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: id } }])
-      .then((response: EvaluationResponse) => {
-        if (response.evaluations.length > 0) {
-          const { score, out_of, feedback } = response.evaluations[0];
-          const parts = [Object.assign({}, attemptState.parts[0], { feedback })];
-          const updated = Object.assign({}, attemptState, { score, outOf: out_of, parts });
-          setAttemptState(updated);
-        }
-      });
+    if (props.graded) {
+
+      // In summative context, post the student response to save it
+      props.onSaveActivity(attemptState.attemptGuid,
+        [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: id } }]);
+
+    } else {
+
+      // Auto-submit our student reponse in formative context
+      props.onSubmitActivity(attemptState.attemptGuid,
+        [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: id } }])
+        .then((response: EvaluationResponse) => {
+          if (response.evaluations.length > 0) {
+            const { score, out_of, feedback, error } = response.evaluations[0];
+            const parts = [Object.assign({}, attemptState.parts[0], { feedback, error })];
+            const updated = Object.assign({}, attemptState, { score, outOf: out_of, parts });
+            setAttemptState(updated);
+          }
+        });
+    }
   };
 
   const onRequestHint = () => {
@@ -250,12 +265,17 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
   };
 
   const evaluationSummary = isEvaluated ? <Evaluation attemptState={attemptState}/> : null;
-  const reset = isEvaluated
+  const reset = isEvaluated && !props.graded
     ? (<div className="float-right">
         <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
       </div>
     )
     : null;
+
+  const ungradedDetails = props.graded ? null : [
+    evaluationSummary,
+    <Hints onClick={onRequestHint} hints={hints}
+      hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>];
 
   return (
     <div>
@@ -269,9 +289,7 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
         <Stem stem={stem} />
         <Choices choices={choices} selected={selected}
           onSelect={onSelect} isEvaluated={isEvaluated}/>
-        {evaluationSummary}
-        <Hints onClick={onRequestHint} hints={hints}
-          hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>
+        {ungradedDetails}
       </div>
       {reset}
     </div>
