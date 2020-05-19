@@ -10,6 +10,10 @@
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
 
+alias Oli.Seeder
+alias Oli.Snapshots.SnapshotSeeder
+alias Oli.Authoring.Collaborators
+
 # create system roles
 if !Oli.Repo.get_by(Oli.Accounts.SystemRole, id: 1) do
   Oli.Repo.insert! %Oli.Accounts.SystemRole{
@@ -107,6 +111,12 @@ if Application.fetch_env!(:oli, :env) == :dev do
   admin_author = Oli.Accounts.get_author_by_email(System.get_env("ADMIN_EMAIL", "admin@oli.cmu.edu"))
   _test_author = Oli.Accounts.get_author_by_email("test@oli.cmu.edu")
 
-  {:ok, _project} = Oli.Authoring.Course.create_project("Example Open and Free Course", admin_author)
+  seeds = Seeder.base_project_with_resource2()
+  |> Seeder.create_section()
+  |> Seeder.add_activity(%{title: "Activity with with no attempts"}, :activity_no_attempts)
+  |> SnapshotSeeder.setup_csv(Path.expand(__DIR__) <> "/test_snapshots.csv")
+  Collaborators.add_collaborator(admin_author, seeds.project)
+
+  Oli.Publishing.publish_project(seeds.project)
 
 end

@@ -39,11 +39,11 @@ defmodule Oli.Delivery.AttemptsTest do
         title: "page1",
         content: %{
           "model" => [
-            %{"type" => "activity-reference", "activity_id" => Map.get(map, :a1).resource_id},
-            %{"type" => "activity-reference", "activity_id" => Map.get(map, :a2).resource_id}
+            %{"type" => "activity-reference", "activity_id" => Map.get(map, :a1).resource.id},
+            %{"type" => "activity-reference", "activity_id" => Map.get(map, :a2).resource.id}
           ]
         },
-        objectives: %{"attached" => [Map.get(map, :o1).resource_id]}
+        objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
       }
 
       Seeder.add_page(map, attrs, :p1)
@@ -52,20 +52,21 @@ defmodule Oli.Delivery.AttemptsTest do
 
     test "create the attempt tree", %{ p1: p1, user1: user, section: section, a1: a1, a2: a2} do
 
-      Attempts.track_access(p1.resource_id, section.context_id, user.id)
+      Attempts.track_access(p1.resource.id, section.context_id, user.id)
 
       activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
       # verify that creating the attempt tree returns both activity attempts
-      {:ok, {resource_attempt, attempts}} = Attempts.create_new_attempt_tree(nil, p1, section.context_id, user.id, activity_provider)
-      assert Map.has_key?(attempts, a1.resource_id)
-      assert Map.has_key?(attempts, a2.resource_id)
+      {:ok, {resource_attempt, attempts}} = Attempts.create_new_attempt_tree(nil, p1.revision, section.context_id, user.id, activity_provider)
+
+      assert Map.has_key?(attempts, a1.resource.id)
+      assert Map.has_key?(attempts, a2.resource.id)
 
       # verify that reading the latest attempts back from the db gives us
       # the same results
       attempts = Attempts.get_latest_attempts(resource_attempt.id)
-      assert Map.has_key?(attempts, a1.resource_id)
-      assert Map.has_key?(attempts, a2.resource_id)
+      assert Map.has_key?(attempts, a1.resource.id)
+      assert Map.has_key?(attempts, a2.resource.id)
 
     end
 
@@ -78,14 +79,14 @@ defmodule Oli.Delivery.AttemptsTest do
       |> Seeder.create_section()
       |> Seeder.add_user(%{}, :user1)
       |> Seeder.add_user(%{}, :user2)
-      |> Seeder.add_activity(%{}, :publication, :project, :author, :activity_a, :revision_a)
+      |> Seeder.add_activity(%{}, :publication, :project, :author, :activity_a)
 
       |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :page1, :revision1, :attempt1)
-      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: %{}}, :activity_a, :revision_a, :attempt1, :activity_attempt1)
+      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: %{}}, :activity_a, :attempt1, :activity_attempt1)
       |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :activity_attempt1, :part1_attempt1)
 
       |> Seeder.create_resource_attempt(%{attempt_number: 2}, :user1, :page1, :revision1, :attempt2)
-      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: %{}}, :activity_a, :revision_a, :attempt2, :activity_attempt2)
+      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: %{}}, :activity_a, :attempt2, :activity_attempt2)
       |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :activity_attempt2, :part1_attempt1)
       |> Seeder.create_part_attempt(%{attempt_number: 2}, %Part{id: "1", responses: [], hints: []}, :activity_attempt2, :part1_attempt2)
       |> Seeder.create_part_attempt(%{attempt_number: 3}, %Part{id: "1", responses: [], hints: []}, :activity_attempt2, :part1_attempt3)
@@ -115,21 +116,21 @@ defmodule Oli.Delivery.AttemptsTest do
       results = Attempts.get_latest_attempts(attempt2.id)
 
       assert length(Map.keys(results)) == 1
-      assert Map.has_key?(results, activity_a.id)
+      assert Map.has_key?(results, activity_a.resource.id)
 
       id = activity_attempt2.id
 
-      case results[activity_a.id] do
+      case results[activity_a.resource.id] do
         {%{id: ^id}, map} -> assert map["1"].attempt_number == 3
         _ -> assert false
       end
 
-      case results[activity_a.id] do
+      case results[activity_a.resource.id] do
         {%{id: ^id}, map} -> assert map["2"].attempt_number == 1
         _ -> assert false
       end
 
-      case results[activity_a.id] do
+      case results[activity_a.resource.id] do
         {%{id: ^id}, map} -> assert map["3"].attempt_number == 2
         _ -> assert false
       end
