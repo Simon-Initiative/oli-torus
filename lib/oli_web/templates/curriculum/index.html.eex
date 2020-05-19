@@ -141,7 +141,7 @@ li.page:last-child:hover{
   }
 
   function triggerReorderOnServer(project_slug, sourceSlug, index) {
-    const url = `/project/${project_slug}/curriculum`
+    const url = `/api/v1/project/${project_slug}/curriculum`
     const params = {
       method: 'PUT',
       headers: {'Content-Type': 'application/json'},
