@@ -135,7 +135,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     map = Seeder.base_project_with_resource2()
     |> Seeder.add_objective("objective one", :o1)
-    |> Seeder.add_activity(%{title: "one", max_attempts: 2, content: content}, :publication, :project, :author, :activity_resource, :activity_revision)
+    |> Seeder.add_activity(%{title: "one", max_attempts: 2, content: content}, :publication, :project, :author, :activity)
 
     attrs = %{
       graded: true,
@@ -143,15 +143,15 @@ defmodule OliWeb.PageDeliveryControllerTest do
       title: "page1",
       content: %{
         "model" => [
-          %{"type" => "activity-reference", "purpose" => "None", "activity_id" => Map.get(map, :activity_revision).resource_id}
+          %{"type" => "activity-reference", "purpose" => "None", "activity_id" => Map.get(map, :activity).resource.id}
         ]
       },
-      objectives: %{"attached" => [Map.get(map, :o1).resource_id]}
+      objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
     }
 
-    map = Seeder.add_page(map, attrs, :page_resource, :page_revision)
+    map = Seeder.add_page(map, attrs, :page)
 
-    Seeder.attach_pages_to([map.page1, map.page2, map.page_resource], map.container_resource, map.container_revision, map.publication)
+    Seeder.attach_pages_to([map.page1, map.page2, map.page.resource], map.container.resource, map.container.revision, map.publication)
 
     section = section_fixture(%{
       context_id: "some-context-id",
@@ -175,7 +175,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       publication: map.publication,
       section: section,
       revision: map.revision1,
-      page_revision: map.page_revision
+      page_revision: map.page.revision
     }
   end
 end
