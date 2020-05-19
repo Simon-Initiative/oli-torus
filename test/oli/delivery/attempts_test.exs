@@ -57,7 +57,8 @@ defmodule Oli.Delivery.AttemptsTest do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
       # verify that creating the attempt tree returns both activity attempts
-      {resource_attempt, attempts} = Attempts.create_new_attempt_tree(nil, p1.revision, section.context_id, user.id, activity_provider)
+      {:ok, {resource_attempt, attempts}} = Attempts.create_new_attempt_tree(nil, p1.revision, section.context_id, user.id, activity_provider)
+
       assert Map.has_key?(attempts, a1.resource.id)
       assert Map.has_key?(attempts, a2.resource.id)
 
