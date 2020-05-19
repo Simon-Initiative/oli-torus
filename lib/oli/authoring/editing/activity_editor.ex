@@ -101,6 +101,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   end
 
+  defp translate_objective_slugs_to_ids(update), do: update
+
   defp translate_ids_to_slugs(project_slug, objectives) do
 
     all = Map.values(objectives)
