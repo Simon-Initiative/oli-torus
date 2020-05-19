@@ -19,6 +19,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   alias Oli.Accounts
   alias Oli.Authoring.Locks
   alias Oli.Activities.Transformers
+  alias Oli.Publishing.AuthoringResolver
 
   @doc """
   Attempts to process an edit for an activity specified by a given
@@ -54,6 +55,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     do
       Repo.transaction(fn ->
 
+        update = translate_objective_slugs_to_ids(update)
+
         case Locks.update(publication.id, resource.id, author.id) do
 
           # If we acquired the lock, we must first create a new revision
@@ -78,6 +81,41 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     else
       error -> error
     end
+
+  end
+
+  defp translate_objective_slugs_to_ids(%{"objectives" => objectives} = update) do
+
+    map = Map.values(objectives)
+    |> Enum.reduce([], fn slugs, list -> list ++ slugs end)
+    |> Oli.Resources.map_resource_ids_from_slugs()
+    |> Enum.reduce(%{}, fn e, m -> Map.put(m, Map.get(e, :slug), Map.get(e, :resource_id)) end)
+
+    objectives = Map.keys(objectives)
+    |> Enum.reduce(%{}, fn key, m ->
+      translated = Map.get(objectives, key) |> Enum.map(fn slug -> Map.get(map, slug) end)
+      Map.put(m, key, translated)
+    end)
+
+    Map.put(update, "objectives", objectives)
+
+  end
+
+  defp translate_ids_to_slugs(project_slug, objectives) do
+
+    all = Map.values(objectives)
+    |> Enum.reduce([], fn ids, list -> list ++ ids end)
+
+    map = AuthoringResolver.from_resource_id(project_slug, all)
+    |> Enum.map(fn r -> r.slug end)
+    |> Enum.zip(all)
+    |> Enum.reduce(%{}, fn {slug, id}, m -> Map.put(m, id, slug) end)
+
+    Map.keys(objectives)
+    |> Enum.reduce(%{}, fn key, m ->
+      translated = Map.get(objectives, key) |> Enum.map(fn id -> Map.get(map, id) end)
+      Map.put(m, key, translated)
+    end)
 
   end
 
@@ -188,7 +226,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         activitySlug: activity_slug,
         title: title,
         model: model,
-        objectives: objectives,
+        objectives: translate_ids_to_slugs(project_slug, objectives),
         allObjectives: objectives_without_ids,
         previousActivity: previous,
         nextActivity: next
