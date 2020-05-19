@@ -117,7 +117,7 @@ defmodule OliWeb.Router do
 
     # Curriculum
     resources "/:project_id/curriculum", CurriculumController, only: [:index, :create, :delete]
-    put "/:project_id/curriculum", CurriculumController, :update
+
 
     # Editors
     get "/:project_id/resource/:revision_slug", ResourceController, :edit
@@ -140,7 +140,7 @@ defmodule OliWeb.Router do
 
   scope "/api/v1/project", OliWeb do
     pipe_through [:api, :protected]
-
+    put "/:project_id/curriculum", CurriculumController, :update
     put "/:project/resource/:resource", ResourceController, :update
 
     post "/:project/activity/:activity_type", ActivityController, :create
