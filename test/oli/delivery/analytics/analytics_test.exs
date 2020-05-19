@@ -13,14 +13,15 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
     seeds = Seeder.base_project_with_resource2()
     |> Seeder.create_section()
     |> Seeder.add_activity(%{title: "Activity with with no attempts"}, :activity_no_attempts)
+    |> Seeder.add_objective("not used in any seeds", :obj_not_used)
     |> SnapshotSeeder.setup_csv(context.path)
 
     Oli.Publishing.publish_project(seeds.project)
     {:ok, %{
       seeds: seeds,
       activity_query: ByActivity.query_against_project_id(seeds.project.id),
-      objective_query: ByObjective.query_against_project_id(seeds.project_id),
-      page_query: ByPage.query_against_project_id(seeds.project_id)
+      objective_query: ByObjective.query_against_project_id(seeds.project.id),
+      page_query: ByPage.query_against_project_id(seeds.project.id)
     }}
   end
 
@@ -28,19 +29,22 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
     setup do: %{ path: to_path("/csv/number_of_attempts.csv") }
     setup :seed_snapshots
 
-    test "with no attempts", %{ activity_query: activity_query, page_query: page_query, seeds: seeds } do
-      # activities should still be queried even with no attempts against them
+    test "with no attempts", %{ activity_query: activity_query, page_query: page_query, objective_query: objective_query, seeds: seeds } do
+      # activities/pages should still be queried even with no attempts against them
       activity_no_attempts = seeds.activity_no_attempts.revision
       activity_results = Enum.find(activity_query, & &1.slice.id == activity_no_attempts.id)
       assert activity_results.number_of_attempts == nil
 
-      # same for pages, objecti
-      page_no_attempts = seeds.page1.revision
+      page_no_attempts = seeds.revision1
       page_results = Enum.find(page_query, & &1.slice.id == page_no_attempts.id)
       assert page_results.number_of_attempts == nil
+
+      objective_no_attempts = seeds.obj_not_used.revision
+      obj_results = Enum.find(objective_query, & &1.slice.id == objective_no_attempts.id)
+      assert obj_results.number_of_attempts == nil
     end
 
-    test "activity with attempts from 1 user", %{ activity_query: activity_query, seeds: seeds } do
+    test "with attempts from 1 user", %{ activity_query: activity_query, seeds: seeds } do
       # test a couple activities with different users attempting them
       activity_user1 = seeds.activity_user1.revision
       activity1_results = Enum.find(activity_query, & &1.slice.id == activity_user1.id)
@@ -52,7 +56,7 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
       assert activity2_results.number_of_attempts == 2
     end
 
-    test "activity with attempts from multiple users", %{ activity_query: activity_query, seeds: seeds } do
+    test "with attempts from multiple users", %{ activity_query: activity_query, seeds: seeds } do
       # test an activity with multiple users attempting it
       activity_user1_user2 = seeds.activity_user1_user2.revision
       activity_results = Enum.find(activity_query, & &1.slice.id == activity_user1_user2.id)
@@ -60,9 +64,10 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
       assert activity_results.number_of_attempts == 4
     end
 
-    test "multiple activities", %{ activity_query: activity_query, seeds: _seeds } do
-      # query results should have 4 activities
+    test "multiple resouces", %{ activity_query: activity_query, page_query: page_query, objective_query: objective_query } do
       assert (length activity_query) == 4
+      assert (length objective_query) == 4
+      assert (length page_query) == 5
     end
 
   end

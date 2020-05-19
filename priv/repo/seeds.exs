@@ -116,7 +116,6 @@ if Application.fetch_env!(:oli, :env) == :dev do
   |> Seeder.add_activity(%{title: "Activity with with no attempts"}, :activity_no_attempts)
   |> SnapshotSeeder.setup_csv(Path.expand(__DIR__) <> "/test_snapshots.csv")
   Collaborators.add_collaborator(admin_author, seeds.project)
-  IO.inspect(seeds)
 
   Oli.Publishing.publish_project(seeds.project)
 

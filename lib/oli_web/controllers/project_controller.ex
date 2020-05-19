@@ -32,7 +32,6 @@ defmodule OliWeb.ProjectController do
   def edit_objective(conn, request_params) do
     project = conn.assigns.project
     params = Oli.Authoring.Editing.ObjectiveEditor.fetch_objective_mappings_params(project)
-#    IO.inspect request_params
     case Map.get(request_params, "action") do
       "edit_objective" ->
         params = Map.merge(params, %{edit: Map.get(request_params, "objective_slug")})

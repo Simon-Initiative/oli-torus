@@ -18,6 +18,9 @@ defmodule OliWeb.Insights.TableRow do
           <%= slice.title %>
         </a>
       </th>
+      <%= if !is_nil(Map.get(@row, :activity)) do %>
+        <td><%= @row.activity.title %></td>
+      <% end %>
       <td><%= if number_of_attempts == nil do "No attempts" else number_of_attempts end %></td>
       <td><%= relative_difficulty %></td>
       <td><%= format_percent(eventually_correct) %></td>
@@ -26,21 +29,16 @@ defmodule OliWeb.Insights.TableRow do
     """
   end
 
-  defp format_percent(float_or_nil) do
-    if is_nil(float_or_nil)
-    do float_or_nil
-    else "#{100 * float_or_nil |> Decimal.from_float() |> Decimal.round(0) }%"
-    end
-  end
+  defp format_percent(float_or_nil) when is_nil(float_or_nil), do: nil
+  defp format_percent(float_or_nil) when is_float(float_or_nil), do: "#{round(100 * float_or_nil)}%"
 
+  # TODO: Link activity to resource
   defp link_url(slice) do
-    objective_id = Oli.Resources.ResourceType.get_id_by_type("objective")
-    activity_id = Oli.Resources.ResourceType.get_id_by_type("activity")
-    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    import Oli.Resources.ResourceType, only: [get_id_by_type: 1]
     cond do
-      slice.resource_type.id == objective_id -> "objectives"
-      slice.resource_type.id == page_id -> "resource/#{slice.slug}"
-      slice.resource_type.id == activity_id -> ""
+      slice.resource_type.id == get_id_by_type("objective") -> "objectives"
+      slice.resource_type.id == get_id_by_type("page") -> "resource/#{slice.slug}"
+      slice.resource_type.id == get_id_by_type("activity") -> ""
     end
   end
 
