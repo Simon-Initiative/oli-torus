@@ -211,8 +211,10 @@ defmodule Oli.Authoring.MediaLibrary do
 
     path = project_slug <> "/" <> file_name
 
-    case upload_file("torus-media", path, file_contents) do
-      {:ok, %{status_code: 200}} -> {:ok, "https://torus-media.s3.amazonaws.com/#{path}"}
+    bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
+
+    case upload_file(bucket_name, path, file_contents) do
+      {:ok, %{status_code: 200}} -> {:ok, "https://#{bucket_name}.s3.amazonaws.com/#{path}"}
       _ -> {:error, {:persistence}}
     end
   end
