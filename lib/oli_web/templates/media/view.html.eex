@@ -1,0 +1,76 @@
+
+<input
+  id="test"
+  accept="*.jpg"
+  multiple="true"
+  onChange="uploadFiles(this.files)"
+  type="file" />
+
+<img src="https://torus-media.s3.amazonaws.com/example_open_and_free_course/tupelo_liquorguns.jpg">
+
+<script>
+
+  function makeRequest(url, method, body) {
+    const params = {
+      method,
+      headers: {"content-type": "application/json"},
+      body: body === undefined ? undefined : JSON.stringify(body),
+    };
+    return window.fetch(url, params)
+      .then(response => response.json());
+  }
+
+  function uploadFiles(files) {
+   console.log(files[0]);
+   upload(files[0])
+  }
+
+  function upload(file) {
+    const body = new FormData();
+    // Lowercase file extension. File.name is read only, so we need to create a new file from the
+    // contents of the file blob.
+    const blob = file.slice(0, -1, file.type);
+    const fileNameWithDot = file.name.slice(
+      0, file.name.indexOf('.') !== -1
+        ? file.name.indexOf('.') + 1
+        : file.name.length);
+    const extension = file.name.indexOf('.') !== -1
+      ? file.name.substr(file.name.indexOf('.') + 1).toLowerCase()
+      : '';
+
+    let newFile;
+    // detect if not Edge
+    if (!navigator.msSaveBlob) {
+      newFile = new File([blob], fileNameWithDot + extension, { type: file.type });
+    } else {
+      // use IE/Edge workaround
+      newFile = new Blob([blob], { type: file.type });
+      newFile = blobToFile(newFile, fileNameWithDot + extension);
+    }
+    console.log(newFile)
+    body.append('file', newFile, fileNameWithDot + extension);
+
+    const reader = new FileReader();
+
+    reader.addEventListener("load", function () {
+      // convert image file to base64 string
+      //preview.src = reader.result;
+
+      console.log(reader.result);
+      const body = {
+        file: reader.result.substr(reader.result.indexOf(',') + 1),
+        name: fileNameWithDot + extension
+      }
+
+      makeRequest("/api/v1/project/example_open_and_free_course/media", "POST", body);
+
+    }, false);
+
+    if (file) {
+      reader.readAsDataURL(file);
+    }
+
+
+  }
+
+</script>

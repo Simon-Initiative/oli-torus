@@ -27,6 +27,10 @@ config :oli, OliWeb.Endpoint,
   render_errors: [view: OliWeb.ErrorView, accepts: ~w(html json)],
   pubsub_server: Oli.PubSub
 
+config :ex_aws,
+  access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, :instance_role],
+  secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, :instance_role]
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
