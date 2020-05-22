@@ -101,8 +101,8 @@ defmodule Oli.Authoring.MediaLibrary do
   an example, if a client made a paged request for the first fifty items in a media
   library containing two-hundred items this count will read `200`.
   """
-  @spec items(String.t, %ItemOptions{} | nil) :: {:ok, {[%MediaItem{}], number()}} | {:error, {:not_found}}
-  def items(project_slug, options \\ ItemOptions.default()) do
+  @spec items(String.t, %ItemOptions{}) :: {:ok, {[%MediaItem{}], number()}} | {:error, {:not_found}}
+  def items(project_slug, options) do
 
     base_query = MediaItem
     |> join(:inner, [item], assoc(item, :project), as: :project)
@@ -140,28 +140,28 @@ defmodule Oli.Authoring.MediaLibrary do
   defp items_order_by(query, %ItemOptions{order_field: nil}),
     do: order_by(query, [i,_], desc: i.file_name)
 
-  defp items_order_by(query, %ItemOptions{order_field: "file_size", order: "asc"}),
+  defp items_order_by(query, %ItemOptions{order_field: "fileSize", order: "asc"}),
     do: order_by(query, [i,_], asc: i.file_size)
 
-  defp items_order_by(query, %ItemOptions{order_field: "file_size"}),
+  defp items_order_by(query, %ItemOptions{order_field: "fileSize"}),
     do: order_by(query, [i,_], desc: i.file_size)
 
-  defp items_order_by(query, %ItemOptions{order_field: "mime_type", order: "asc"}),
+  defp items_order_by(query, %ItemOptions{order_field: "mimeType", order: "asc"}),
     do: order_by(query, [i,_], asc: i.mime_type)
 
-  defp items_order_by(query, %ItemOptions{order_field: "mime_type"}),
+  defp items_order_by(query, %ItemOptions{order_field: "mimeType"}),
     do: order_by(query, [i,_], desc: i.mime_type)
 
-  defp items_order_by(query, %ItemOptions{order_field: "created", order: "asc"}),
+  defp items_order_by(query, %ItemOptions{order_field: "dateCreated", order: "asc"}),
     do: order_by(query, [i,_], asc: i.inserted_at)
 
-  defp items_order_by(query, %ItemOptions{order_field: "created"}),
+  defp items_order_by(query, %ItemOptions{order_field: "dateCreated"}),
     do: order_by(query, [i,_], desc: i.inserted_at)
 
-  defp items_order_by(query, %ItemOptions{order_field: "file_name", order: "asc"}),
+  defp items_order_by(query, %ItemOptions{order_field: "fileName", order: "asc"}),
     do: order_by(query, [i,_], asc: i.file_name)
 
-  defp items_order_by(query, %ItemOptions{order_field: "file_name"}),
+  defp items_order_by(query, %ItemOptions{order_field: "fileName"}),
     do: order_by(query, [i,_], desc: i.file_name)
 
 
@@ -174,11 +174,17 @@ defmodule Oli.Authoring.MediaLibrary do
       {:mime_filter, nil}, dynamic ->
         dynamic
 
+      {:url_filter, nil}, dynamic ->
+        dynamic
+
       {:search_text, nil}, dynamic ->
         dynamic
 
       {:mime_filter, value}, dynamic ->
-        dynamic([p], ^dynamic and p.mime_type == ^value)
+        dynamic([p], ^dynamic and p.mime_type in ^value)
+
+      {:url_filter, value}, dynamic ->
+          dynamic([p], ^dynamic and p.url == ^value)
 
       {:search_text, value}, dynamic ->
         dynamic([p], ^dynamic and ilike(p.file_name, ^"%#{value}%"))

@@ -30,7 +30,7 @@ export function createToggleFormatCommand(icon: string, mark: Mark, description:
     icon,
     description,
     command: {
-      execute: (editor: ReactEditor) => toggleMark(editor, mark),
+      execute: (context, editor: ReactEditor) => toggleMark(editor, mark),
       precondition: (editor: ReactEditor) => {
         return true;
       },

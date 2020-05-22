@@ -130,8 +130,6 @@ defmodule OliWeb.Router do
     put "/:project_id/collaborators/:author_email", CollaboratorController, :update
     delete "/:project_id/collaborators/:author_email", CollaboratorController, :delete
 
-    get "/:project_id/media", MediaController, :view
-
     # Insights
     get "/:project_id/insights", ProjectController, :insights
     # Ideally, analytics should be live-routed to preserve forward/back button when toggling
@@ -156,6 +154,7 @@ defmodule OliWeb.Router do
     delete "/:project/lock/:resource", LockController, :release
 
     post "/:project/media", MediaController, :create
+    get "/:project/media", MediaController, :index
   end
 
   scope "/api/v1/attempt", OliWeb do

@@ -68,27 +68,17 @@ defmodule Oli.Authoring.MediaLibraryTest do
       assert item.file_name == "9"
     end
 
-    test "items/2 returns all when no options specified", %{project1: project1, project2: project2} do
-
-      {:ok, {items, 9}} = MediaLibrary.items(project1.slug)
-      assert length(items) == 9
-
-      {:ok, {items, 2}} = MediaLibrary.items(project2.slug)
-      assert length(items) == 2
-
-    end
-
     test "items/2 limits and offsets correctly", %{project1: project1} do
 
-      {:ok, {items, 9}} = MediaLibrary.items(project1.slug, %ItemOptions{limit: 2, offset: 1, order_field: "file_size"})
+      {:ok, {items, 9}} = MediaLibrary.items(project1.slug, %ItemOptions{limit: 2, offset: 1, order_field: "fileSize"})
       assert length(items) == 2
       assert hd(items).url == "9"
 
-      {:ok, {items, 9}} = MediaLibrary.items(project1.slug, %ItemOptions{limit: 2, offset: 3, order_field: "file_size"})
+      {:ok, {items, 9}} = MediaLibrary.items(project1.slug, %ItemOptions{limit: 2, offset: 3, order_field: "fileSize"})
       assert length(items) == 2
       assert hd(items).url == "7"
 
-      {:ok, {items, 9}} = MediaLibrary.items(project1.slug, %ItemOptions{limit: 100, offset: 3, order_field: "file_size"})
+      {:ok, {items, 9}} = MediaLibrary.items(project1.slug, %ItemOptions{limit: 100, offset: 3, order_field: "fileSize"})
       assert length(items) == 6
       assert hd(items).url == "7"
 
@@ -96,39 +86,39 @@ defmodule Oli.Authoring.MediaLibraryTest do
 
     test "items/2 filters correctly", %{project1: project1} do
 
-      {:ok, {items, 2}} = MediaLibrary.items(project1.slug, %ItemOptions{mime_filter: "2", order_field: "file_size"})
+      {:ok, {items, 2}} = MediaLibrary.items(project1.slug, %ItemOptions{mime_filter: ["2"], order_field: "fileSize"})
       assert length(items) == 2
 
-      {:ok, {items, 2}} = MediaLibrary.items(project1.slug, %ItemOptions{search_text: "this", order_field: "file_size"})
+      {:ok, {items, 2}} = MediaLibrary.items(project1.slug, %ItemOptions{search_text: "this", order_field: "fileSize"})
       assert length(items) == 2
 
-      {:ok, {items, 1}} = MediaLibrary.items(project1.slug, %ItemOptions{mime_filter: "8", search_text: "this", order_field: "file_size"})
+      {:ok, {items, 1}} = MediaLibrary.items(project1.slug, %ItemOptions{mime_filter: ["8"], search_text: "this", order_field: "fileSize"})
       assert length(items) == 1
 
     end
 
     test "items/2 orders correctly", %{project1: project1} do
 
-      {:ok, {items, 9}} = MediaLibrary.items(project1.slug, %ItemOptions{order_field: "file_name", order: "asc"})
+      {:ok, {items, 9}} = MediaLibrary.items(project1.slug, %ItemOptions{order_field: "fileName", order: "asc"})
       assert hd(items).file_name == "10"
 
-      {:ok, {items, 9}} = MediaLibrary.items(project1.slug, %ItemOptions{order_field: "file_name", order: "desc"})
+      {:ok, {items, 9}} = MediaLibrary.items(project1.slug, %ItemOptions{order_field: "fileName", order: "desc"})
       assert hd(items).file_name == "find_this_name2"
 
-      {:ok, {items, 9}} = MediaLibrary.items(project1.slug, %ItemOptions{order_field: "mime_type", order: "asc"})
+      {:ok, {items, 9}} = MediaLibrary.items(project1.slug, %ItemOptions{order_field: "mimeType", order: "asc"})
       assert hd(items).file_name == "10"
 
-      {:ok, {items, 9}} = MediaLibrary.items(project1.slug, %ItemOptions{order_field: "mime_type", order: "desc"})
+      {:ok, {items, 9}} = MediaLibrary.items(project1.slug, %ItemOptions{order_field: "mimeType", order: "desc"})
       assert hd(items).file_name == "9"
 
-      {:ok, {items, 9}} = MediaLibrary.items(project1.slug, %ItemOptions{order_field: "created", order: "asc"})
+      {:ok, {items, 9}} = MediaLibrary.items(project1.slug, %ItemOptions{order_field: "dateCreated", order: "asc"})
       assert hd(items).file_name == "2"
 
       :timer.sleep(1000);
 
       media_item_fixture(project1.id, "100")
 
-      {:ok, {items, 10}} = MediaLibrary.items(project1.slug, %ItemOptions{order_field: "created", order: "desc"})
+      {:ok, {items, 10}} = MediaLibrary.items(project1.slug, %ItemOptions{order_field: "dateCreated", order: "desc"})
       assert hd(items).file_name == "100"
 
     end

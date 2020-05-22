@@ -8,7 +8,7 @@ import guid from 'utils/guid';
 
 
 const command: Command = {
-  execute: (editor: ReactEditor) => {
+  execute: (context, editor: ReactEditor) => {
     const quote = ContentModel.create<ContentModel.Blockquote>(
       { type: 'blockquote', children: [{ text: '' }], id: guid() });
     Transforms.insertNodes(editor, quote);

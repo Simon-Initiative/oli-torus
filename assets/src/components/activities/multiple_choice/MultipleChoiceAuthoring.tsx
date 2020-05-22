@@ -12,6 +12,7 @@ import { MCReducer, MCActions } from './reducer';
 
 const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>) => {
   const [state, dispatch] = useReducer(MCReducer, props.model);
+  const { projectSlug } = props;
 
   useEffect(() => {
     props.onEdit(state);
@@ -20,6 +21,7 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
   const sharedProps = {
     model: state,
     editMode: props.editMode,
+    projectSlug,
   };
 
   return (
