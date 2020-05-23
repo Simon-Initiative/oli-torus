@@ -192,6 +192,7 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
     const webComponentProps = {
       model: JSON.stringify(this.state.undoable.current.content),
       editMode: this.state.editMode,
+      projectSlug: this.props.projectSlug,
     };
 
     const parts = valueOr(this.state.undoable.current.content.authoring.parts, []);

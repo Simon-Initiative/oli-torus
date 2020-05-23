@@ -15,7 +15,7 @@ export const Stem = ({ model, onEditStem, editMode, projectSlug }: StemProps) =>
       <Heading title="Stem" subtitle="If students have learned the skills you're targeting,
         they should be able to answer this question:" id="stem" />
       <RichTextEditor
-       projectSlug={projectSlug}
+        projectSlug={projectSlug}
         editMode={editMode}
         text={model.stem.content}
         onEdit={onEditStem}

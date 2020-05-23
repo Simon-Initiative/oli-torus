@@ -31,7 +31,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     const getProp = (key: string) => JSON.parse(this.getAttribute(key) as any);
     const model = getProp('model');
     const editMode: boolean = getProp('editMode');
-    const projectSlug: ProjectSlug = getProp('projectSlug');
+    const projectSlug: ProjectSlug = this.getAttribute('projectSlug') as string;
 
     const onEdit = (model: any) => {
       this.dispatchEvent(new CustomEvent('modelUpdated', { bubbles: true, detail: { model } }));

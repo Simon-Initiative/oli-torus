@@ -9,6 +9,11 @@ import { Choices } from './sections/Choices';
 import { Feedback } from './sections/Feedback';
 import { Hints } from './sections/Hints';
 import { MCReducer, MCActions } from './reducer';
+import { ModalDisplay } from 'components/modal/ModalDisplay';
+import { Provider } from 'react-redux';
+import { configureStore } from 'state/store';
+
+const store = configureStore();
 
 const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>) => {
   const [state, dispatch] = useReducer(MCReducer, props.model);
@@ -45,7 +50,13 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
 
 export class MultipleChoiceAuthoring extends AuthoringElement<MultipleChoiceModelSchema> {
   render(mountPoint: HTMLDivElement, props: AuthoringElementProps<MultipleChoiceModelSchema>) {
-    ReactDOM.render(<MultipleChoice {...props} />, mountPoint);
+    ReactDOM.render(
+      <Provider store={store}>
+        <MultipleChoice {...props} />
+        <ModalDisplay/>
+      </Provider>,
+      mountPoint,
+    );
   }
 }
 
