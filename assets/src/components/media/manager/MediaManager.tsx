@@ -482,37 +482,6 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
                   <b>Size:</b> {convert.toByteNotation(selectedItem.fileSize)}
                 </div>
               </div>
-              <div className="details-page-refs">
-                <div>
-                  <b>References:</b> {
-                    mediaItemRefs.get(selectedItem.guid)
-                      ? (
-                        (mediaItemRefs.get(selectedItem.guid) as any).size
-                      )
-                      : (
-                        <i className="fas fa-circle-notch fa-spin fa-1x fa-fw" />
-                      )
-                  }
-                </div>
-                <div>
-                  {mediaItemRefs.get(selectedItem.guid)
-                    && (mediaItemRefs.get(selectedItem.guid) as any).map((ref : any, i : any) => (
-                      <span key={ref.guid}>
-                        <a href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            // viewActions.viewDocument(
-                            //  ref.resourceId, courseModel.idvers, Maybe.nothing());
-                          }}
-                          target="_blank">
-                          None
-                        </a>
-                        {i < (mediaItemRefs.get(selectedItem.guid) as any).size - 1 ? ', ' : ''}
-                      </span>
-                    ))
-                  }
-                </div>
-              </div>
             </div>
           }
         </div>
