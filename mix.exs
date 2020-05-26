@@ -53,6 +53,8 @@ defmodule Oli.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:ex_aws, "~> 2.1"},
+      {:ex_aws_s3, "~> 2.0"},
       {:bcrypt_elixir, "~> 2.2"},
       {:credo, "~> 1.1.0", only: [:dev, :test], runtime: true},
       {:csv, "~> 2.3"},
@@ -61,8 +63,10 @@ defmodule Oli.MixProject do
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
       {:floki, "~> 0.23.0"},
       {:gettext, "~> 0.11"},
+      {:hackney, "~> 1.9"},
       {:httpoison, "~> 1.6"},
       {:jason, "~> 1.0"},
+      {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:phoenix, "~> 1.5.1"},
       {:phoenix_ecto, "~> 4.0"},

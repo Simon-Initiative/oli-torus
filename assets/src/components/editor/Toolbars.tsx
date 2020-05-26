@@ -3,7 +3,7 @@ import * as ReactDOM from 'react-dom';
 import { ReactEditor, useSlate } from 'slate-react';
 import { Editor as SlateEditor, Node, Range, Transforms } from 'slate';
 import { hoverMenuCommands } from './editors';
-import { ToolbarItem, gutterWidth } from './interfaces';
+import { ToolbarItem, gutterWidth, CommandContext } from './interfaces';
 import { getRootOfText } from './utils';
 
 const parentTextTypes = {
@@ -48,7 +48,11 @@ function shouldHideToolbar(editor: ReactEditor) {
 }
 
 
-export const HoveringToolbar = () => {
+type HoveringToolbarProps = {
+  commandContext: CommandContext;
+};
+
+export const HoveringToolbar = (props: HoveringToolbarProps) => {
   const ref = useRef();
   const editor = useSlate();
 
@@ -80,7 +84,8 @@ export const HoveringToolbar = () => {
     <div ref={(ref as any)} style={{ visibility: 'hidden', position: 'relative' }}>
       <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>
         {hoverMenuCommands.map(b =>
-          <ToolbarButton style="btn-secondary" key={b.icon} icon={b.icon} command={b.command} />)}
+          <ToolbarButton style="btn-secondary" key={b.icon}
+          icon={b.icon} command={b.command} context={props.commandContext} />)}
       </div>
     </div>, document.body,
   );
@@ -96,6 +101,7 @@ function shouldHideFixedToolbar(editor: ReactEditor) {
 
 type FixedToolbarProps = {
   toolbarItems: ToolbarItem[];
+  commandContext: CommandContext;
 };
 
 export const FixedToolbar = (props: FixedToolbarProps) => {
@@ -134,10 +140,11 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
     : [<TextFormatter key="text"/>, ...toolbarItems.map((t, i) => {
       if (t.type === 'CommandDesc' && t.command.obtainParameters === undefined) {
         return <ToolbarButton
-          style="" key={t.icon} icon={t.icon} command={t.command} />;
+          style="" key={t.icon} icon={t.icon} command={t.command} context={props.commandContext} />;
       }
       if (t.type === 'CommandDesc' && t.command.obtainParameters !== undefined) {
-        return <DropdownToolbarButton style="" key={t.icon} icon={t.icon} command={t.command} />;
+        return <DropdownToolbarButton style="" key={t.icon} icon={t.icon}
+          command={t.command} context={props.commandContext}/>;
       }
       return <Spacer key={'spacer-' + i} />;
     })];
@@ -207,14 +214,14 @@ const TextFormatter = () => {
   );
 };
 
-const ToolbarButton = ({ icon, command, style }: any) => {
+const ToolbarButton = ({ icon, command, style, context }: any) => {
   const editor = useSlate();
   return (
     <button
       className={`btn btn-sm ${style}`}
       onMouseDown={(event) => {
         event.preventDefault();
-        command.execute(editor);
+        command.execute(context, editor);
       }}
     >
       <i className={icon}></i>
@@ -222,7 +229,7 @@ const ToolbarButton = ({ icon, command, style }: any) => {
   );
 };
 
-const DropdownToolbarButton = ({ icon, command, style }: any) => {
+const DropdownToolbarButton = ({ icon, command, style, context }: any) => {
   const editor = useSlate();
 
   const ref = useRef();
@@ -233,7 +240,7 @@ const DropdownToolbarButton = ({ icon, command, style }: any) => {
     }
   });
 
-  const onDone = (params: any) => command.execute(editor, params);
+  const onDone = (params: any) => command.execute(context, editor, params);
   const onCancel = () => {};
 
   return (

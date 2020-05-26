@@ -7,9 +7,13 @@ export type CommandDesc = {
   description: string,
 };
 
+export interface CommandContext {
+  projectSlug: string;
+}
+
 export type Command = {
   precondition: (editor: ReactEditor) => void,
-  execute: (editor: ReactEditor, params?: Object) => void,
+  execute: (context: CommandContext, editor: ReactEditor, params?: Object) => void,
   obtainParameters?: (
     editor: ReactEditor, onDone: (params: any) => void, onCancel: () => void) => JSX.Element,
 };

@@ -1,7 +1,7 @@
 import { ReactEditor } from 'slate-react';
 import { Transforms, Range, Node, Point, Path, Editor as SlateEditor } from 'slate';
 import * as ContentModel from 'data/content/model';
-import { Command, CommandDesc } from '../interfaces';
+import { Command, CommandDesc, CommandContext } from '../interfaces';
 import guid from 'utils/guid';
 import { KeyboardEvent } from 'react';
 
@@ -16,7 +16,7 @@ const ul = () => ContentModel.create<ContentModel.UnorderedList>(
 
 const listCommandMaker = (listFactory: any) => {
   return {
-    execute: (editor: ReactEditor) => {
+    execute: (context: CommandContext, editor: ReactEditor) => {
 
       // Wrap the blocks in an active selection as a list
       const selection = editor.selection;

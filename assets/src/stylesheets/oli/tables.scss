@@ -1,0 +1,21 @@
+@import 'oli/colors';
+
+.table {
+  thead {
+    th {
+      font-weight: 200;
+      font-size: 16px;
+      color: black;
+      min-height: 30px;
+    }
+  }
+
+  td {
+    vertical-align: middle;
+    border-top: 0;
+  }
+
+  th {
+    vertical-align: middle;
+  }
+}

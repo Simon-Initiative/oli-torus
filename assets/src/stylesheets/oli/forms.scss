@@ -1,0 +1,89 @@
+/** Form Styles */
+@import 'oli/colors';
+
+.form {
+	.has-warning {
+		.help-block,
+		.control-label,
+		.radio,
+		.checkbox,
+		.radio-inline,
+		.checkbox-inline,
+		&.radio label,
+		&.checkbox label,
+		&.radio-inline label,
+		&.checkbox-inline label,
+		.form-control-feedback {
+			color: $warning;
+		}
+
+		.form-control,
+		.form-control:focus,
+		.input-group-addon {
+			border: 1px solid $warning;
+		}
+	}
+
+	.has-error {
+		.help-block,
+		.control-label,
+		.radio,
+		.checkbox,
+		.radio-inline,
+		.checkbox-inline,
+		&.radio label,
+		&.checkbox label,
+		&.radio-inline label,
+		&.checkbox-inline label,
+		.form-control-feedback {
+			color: $danger;
+		}
+
+		.form-control,
+		.form-control:focus,
+		.input-group-addon {
+			border: 1px solid $danger;
+		}
+	}
+
+	.has-success {
+		.help-block,
+		.control-label,
+		.radio,
+		.checkbox,
+		.radio-inline,
+		.checkbox-inline,
+		&.radio label,
+		&.checkbox label,
+		&.radio-inline label,
+		&.checkbox-inline label,
+		.form-control-feedback {
+			color: $success;
+		}
+
+		.form-control,
+		.form-control:focus,
+		.input-group-addon {
+			border: 1px solid $success;
+		}
+	}
+
+	.form-inline.InputForm-right {
+		margin-bottom: 0px;
+	}
+}
+
+.form-control-sm {
+	font-size: .8rem;
+}
+
+input::placeholder {
+  color: $gray-light;
+}
+
+.textarea, .text-input {
+	border: 1px solid #ced4da;
+	padding: 5px;
+	border-radius: 4px;
+	background-color: white;
+}

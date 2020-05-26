@@ -37,10 +37,21 @@ defmodule Oli.ReleaseTasks do
     load_app()
 
     for repo <- repos() do
-      {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, all: true))
+      drop_database(repo)
     end
+  end
 
-    IO.puts "database repos dropped."
+  defp drop_database(repo) do
+    case repo.__adapter__.storage_down(repo.config) do
+      :ok ->
+        IO.puts "The database for #{inspect repo} has been dropped"
+      {:error, :already_down} ->
+        IO.puts "The database for #{inspect repo} has already been dropped"
+      {:error, term} when is_binary(term) ->
+        IO.puts :stderr, "The database for #{inspect repo} couldn't be dropped: #{term}"
+      {:error, term} ->
+        IO.puts :stderr, "The database for #{inspect repo} couldn't be dropped: #{inspect term}"
+    end
   end
 
   def create do
@@ -49,16 +60,19 @@ defmodule Oli.ReleaseTasks do
     for repo <- repos() do
       :ok = ensure_repo_created(repo)
     end
-
-    IO.puts "database repos created."
   end
 
   defp ensure_repo_created(repo) do
-    IO.puts "create #{inspect repo} database if it doesn't exist"
     case repo.__adapter__.storage_up(repo.config) do
-      :ok -> :ok
-      {:error, :already_up} -> :ok
-      {:error, term} -> {:error, term}
+      :ok ->
+        IO.puts "The database for #{inspect repo} has been created"
+        :ok
+      {:error, :already_up} ->
+        IO.puts "The database for #{inspect repo} already exists"
+        :ok
+      {:error, term} ->
+        IO.puts :stderr, "The database for #{inspect repo} couldn't be created: #{term}"
+        {:error, term}
     end
   end
 

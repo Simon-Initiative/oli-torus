@@ -71,9 +71,11 @@ module.exports = (env, options) => ({
     // Add webpack aliases for top level imports
     alias: {
       components: path.resolve(__dirname, 'src/components'),
+      actions: path.resolve(__dirname, 'src/actions'),
       data: path.resolve(__dirname, 'src/data'),
       state: path.resolve(__dirname, 'src/state'),
       utils: path.resolve(__dirname, 'src/utils'),
+      stylesheets: path.resolve(__dirname, 'src/stylesheets'),
     },
   },
   module: {
@@ -86,8 +88,24 @@ module.exports = (env, options) => ({
         }
       },
       {
-        test: /\.css$/,
-        use: [MiniCssExtractPlugin.loader, 'css-loader']
+        test: /\.[s]?css$/,
+        use: [
+          MiniCssExtractPlugin.loader,
+          {
+            loader: 'css-loader'
+          },
+          {
+              loader: 'sass-loader',
+              options: {
+                sassOptions: {
+                  includePaths: [
+                      path.join(__dirname, 'src/stylesheets'),
+                  ],
+                },
+                sourceMap: true
+              }
+          }
+        ],
       },
       {
         test: /\.jsx$/,
@@ -118,7 +136,7 @@ module.exports = (env, options) => ({
     new webpack.ProvidePlugin({
       React: 'react',
     }),
-    new MiniCssExtractPlugin({ filename: '../css/app.css' }),
+    new MiniCssExtractPlugin({ filename: '../css/[name].css' }),
     new CopyWebpackPlugin([{ from: 'static/', to: '../' }]),
   ]
 });

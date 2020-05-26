@@ -1,0 +1,24 @@
+@import 'oli/colors';
+
+.modal-dialog {
+  overflow-y: initial;
+
+  .modal-body {
+    overflow-y: auto;
+    max-height: 600px;
+  }
+
+  &.modal-xlg {
+    max-width: 1000px;
+  }
+
+  button.close {
+    &:focus {
+      outline: none;
+    }
+
+    &:active {
+      color: $remove;
+    }
+  }
+}

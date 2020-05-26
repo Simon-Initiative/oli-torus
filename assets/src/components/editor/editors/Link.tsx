@@ -14,7 +14,7 @@ const wrapLink = (editor: ReactEditor, link: ContentModel.Hyperlink) => {
 };
 
 const command: Command = {
-  execute: (editor: ReactEditor) => {
+  execute: (context, editor: ReactEditor) => {
     const href = window.prompt('Enter the URL of the link:');
     if (!href) return;
 
