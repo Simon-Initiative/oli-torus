@@ -1,4 +1,4 @@
-dist/search_items-5777384b27.js
+dist/search_items-513f6b74ca.js
 dist/app-a225d03098e64fef431a.js
 dist/elixir-0ab8a6a80ebaaa287431.css
 dist/erlang-bd206729da4d0d280293.css
@@ -6,7 +6,7 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/sidebar_items-d30121b6a1.js
+dist/sidebar_items-bba1738b64.js
 api-reference.html
 readme.html
 license.html
@@ -62,6 +62,9 @@ Oli.Authoring.Editing.ResourceContext.html
 Oli.Authoring.Editing.SiblingActivity.html
 Oli.Authoring.Editing.Utils.html
 Oli.Authoring.Locks.html
+Oli.Authoring.MediaLibrary.html
+Oli.Authoring.MediaLibrary.ItemOptions.html
+Oli.Authoring.MediaLibrary.MediaItem.html
 Oli.Delivery.html
 Oli.Delivery.ActivityProvider.html
 Oli.Delivery.Attempts.html
@@ -165,6 +168,8 @@ OliWeb.LayoutView.html
 OliWeb.LockController.html
 OliWeb.LtiController.html
 OliWeb.LtiView.html
+OliWeb.MediaController.html
+OliWeb.MediaView.html
 OliWeb.ObjectiveController.html
 OliWeb.ObjectiveView.html
 OliWeb.PageDeliveryController.html
