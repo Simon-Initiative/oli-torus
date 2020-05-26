@@ -1,20 +1,22 @@
 import React from 'react';
 import { Heading } from 'components/misc/Heading';
 import { RichTextEditor } from 'components/editor/RichTextEditor';
-import { ModelEditorProps } from '../schema';
-import { RichText } from '../../types';
+import { ModelEditorProps } from '../multiple_choice/schema';
+import { RichText, Stem as StemType } from '../types';
 
-interface StemProps extends ModelEditorProps {
+interface StemProps {
   onEditStem: (stem: RichText) => void;
+  stem: StemType;
+  editMode: boolean;
 }
-export const Stem = ({ model, onEditStem, editMode }: StemProps) => {
+export const Stem = ({ stem, onEditStem, editMode }: StemProps) => {
   return (
     <div style={{ margin: '2rem 0' }}>
       <Heading title="Stem" subtitle="If students have learned the skills you're targeting,
         they should be able to answer this question:" id="stem" />
       <RichTextEditor
         editMode={editMode}
-        text={model.stem.content}
+        text={stem.content}
         onEdit={onEditStem}
       />
     </div>

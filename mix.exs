@@ -64,6 +64,7 @@ defmodule Oli.MixProject do
       {:httpoison, "~> 1.6"},
       {:jason, "~> 1.0"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
+      {:nimble_parsec, "~> 0.5"},
       {:phoenix, "~> 1.5.1"},
       {:phoenix_ecto, "~> 4.0"},
       {:phoenix_html, "~> 2.11"},

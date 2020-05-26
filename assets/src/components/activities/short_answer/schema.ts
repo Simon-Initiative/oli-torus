@@ -2,11 +2,8 @@
 import { HasContent, Part, Transformation, ActivityModelSchema, Stem } from '../types';
 import { Identifiable } from 'data/content/model';
 
-export interface Choice extends Identifiable, HasContent {}
-
-export interface MultipleChoiceModelSchema extends ActivityModelSchema {
+export interface ShortAnswerModelSchema extends ActivityModelSchema {
   stem: Stem;
-  choices: Choice[];
   authoring: {
     parts: Part[];
     transformations: Transformation[];
@@ -14,6 +11,6 @@ export interface MultipleChoiceModelSchema extends ActivityModelSchema {
 }
 
 export interface ModelEditorProps {
-  model: MultipleChoiceModelSchema;
+  model: ShortAnswerModelSchema;
   editMode: boolean;
 }
