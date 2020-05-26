@@ -36,7 +36,7 @@ defmodule Oli.Authoring.MediaLibrary do
   The other supplied parameters are the file name, including extension
   and the contents of the file as a bitstring.
 
-  An example of the format of the `file_name` param: `untitlted.jpg`
+  An example of the format of the `file_name` param: `untitled.jpg`
 
   Returns `{:ok, %MediaItem{}}` on success where `%MediaItem{}` is the
   meta data entry that was created.
