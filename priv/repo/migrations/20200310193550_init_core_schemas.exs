@@ -339,6 +339,25 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
     create unique_index(:snapshots, [:part_attempt_id, :objective_id], name: :snapshot_unique_part)
 
+
+    create table(:media_items) do
+      timestamps(type: :timestamptz)
+
+      add :url, :string
+      add :file_name, :string
+      add :mime_type, :string
+      add :file_size, :integer
+      add :md5_hash, :string
+      add :deleted, :boolean, default: false, null: false
+      add :project_id, references(:projects)
+
+    end
+
+    create index(:media_items, [:file_name])
+    create index(:media_items, [:file_size])
+    create index(:media_items, [:md5_hash])
+
+
   end
 
 

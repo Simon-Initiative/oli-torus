@@ -153,7 +153,8 @@ defmodule OliWeb.Router do
     post "/:project/lock/:resource", LockController, :acquire
     delete "/:project/lock/:resource", LockController, :release
 
-
+    post "/:project/media", MediaController, :create
+    get "/:project/media", MediaController, :index
   end
 
   scope "/api/v1/attempt", OliWeb do

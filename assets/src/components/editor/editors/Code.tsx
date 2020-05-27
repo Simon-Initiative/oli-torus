@@ -15,7 +15,7 @@ const languages = Object
   .sort();
 
 const command: Command = {
-  execute: (editor: ReactEditor) => {
+  execute: (context, editor: ReactEditor) => {
 
     const Code = ContentModel.create<ContentModel.Code>(
       {

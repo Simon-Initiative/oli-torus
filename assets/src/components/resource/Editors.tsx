@@ -41,6 +41,7 @@ export const Editors = (props: EditorsProps) => {
         editMode={editMode}
         content={content}
         onEdit={onEdit}
+        projectSlug={projectSlug}
         toolbarItems={getToolbarForResourceType(
           graded ? ResourceType.assessment : ResourceType.page)}/>, 'Content'];
     }

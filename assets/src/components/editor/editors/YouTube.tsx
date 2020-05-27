@@ -10,7 +10,7 @@ import { LabelledTextEditor } from 'components/TextEditor';
 
 
 const command: Command = {
-  execute: (editor: ReactEditor) => {
+  execute: (context, editor: ReactEditor) => {
     let src = window.prompt('Enter the id of the YouTube video:');
     if (!src) return;
 
