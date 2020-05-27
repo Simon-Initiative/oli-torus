@@ -56,6 +56,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       Repo.transaction(fn ->
 
         update = translate_objective_slugs_to_ids(update)
+        update = sync_objectives_to_parts(update)
 
         case Locks.update(publication.id, resource.id, author.id) do
 
@@ -119,6 +120,19 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       Map.put(m, key, translated)
     end)
 
+  end
+
+  # Removes objectives mapped to deleted parts
+  defp sync_objectives_to_parts(%{"objectives" => objectives} = update) do
+    parts = update["content"]["authoring"]["parts"]
+    objectives = objectives |> Enum.reduce(%{}, fn({part_id, list}, accumulator) ->
+      if Enum.any?(parts, fn x -> x["id"] == part_id end) do
+        accumulator |> Map.put(part_id, list)
+      else
+        accumulator
+      end
+    end)
+    Map.put(update, "objectives", objectives)
   end
 
   # Creates a new activity revision and updates the publication mapping
