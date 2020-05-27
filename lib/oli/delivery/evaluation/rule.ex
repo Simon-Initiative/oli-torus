@@ -1,87 +1,78 @@
 defmodule Oli.Delivery.Evaluation.Rule do
 
-  import NimbleParsec
+  alias Oli.Delivery.Evaluation.EvaluationContext
 
-  not_ = string("!") |> replace(:!) |> label("!")
-  and_ = string("&&") |> optional(string(" ")) |> replace(:&&) |> label("&&")
-  or_ = string("||") |> optional(string(" ")) |> replace(:||) |> label("||")
-  lparen = ascii_char([?(]) |> label("(")
-  rparen = ascii_char([?)]) |> optional(string(" ")) |> label(")")
-  lbrace = ascii_char([?{]) |> label("{")
-  rbrace = ascii_char([?}]) |> optional(string(" ")) |> label("}")
-  op_lt = ascii_char([?<]) |> optional(string(" ")) |> replace(:lt) |> label("<")
-  op_gt = ascii_char([?>]) |> optional(string(" ")) |> replace(:gt) |>label(">")
-  op_eq = ascii_char([?=]) |> optional(string(" ")) |> replace(:eq) |>label("=")
+  @doc """
+  Parses a rule and returns `{:ok, tree}` when succesful, where `tree`
+  is a series of nested tuples representing the parsed clauses in prefix notation, where
+  the first tuple entry is the operation, the second is the left hand side
+  operand and the third is the right hand side operand. An example:
 
-  # <check> :== <function> "{" <input> "}"
+  {:&&, {:gt, :attempt_number, "1"}, {:like, :input, "some string here"}}
 
-  numeric_ = string("numeric") |> replace(:numeric) |> label("numeric")
-  length_ = string("length") |> replace(:length) |> label("length")
-  regex_ = string("regex") |> replace(:regex) |> label("regex")
+  Returns `{:error, reason}` when it fails to parse
+  """
+  @spec parse(binary) :: {:error, <<_::64, _::_*8>>} | {:ok, any}
+  def parse(rule_as_string), do: Oli.Delivery.Evaluation.Parser.rule(rule_as_string) |> unwrap()
 
-
-  defcombinatorp :string_until_rbrace,
-            repeat(
-              lookahead_not(ascii_char([?}]))
-              |> utf8_char([])
-            )
-            |> reduce({List, :to_string, []})
-
-  defcombinatorp(:function, choice([numeric_, length_, regex_]))
-
-  defcombinatorp(:operands, ignore(lbrace) |> parsec(:string_until_rbrace) |> ignore(rbrace))
+  defp unwrap({:ok, [acc], "", _, _, _}), do: {:ok, acc}
+  defp unwrap({:ok, _, rest, _, _, _}), do: {:error, "could not parse" <> rest}
+  defp unwrap({:error, reason, _rest, _, _, _}), do: {:error, reason}
 
 
-  defcombinatorp(:check, parsec(:function)
-  |> parsec(:operands)
-  |> reduce(:fold_infixl))
 
-
-  # <component> :== "attemptNumber" | "input"
-  attempt_number_ = string("attemptNumber") |> optional(string(" ")) |> replace(:attempt_number) |> label("attemptNumber")
-  input_ = string("input") |> optional(string(" ")) |> replace(:input) |> label("input")
-  defcombinatorp(:component, choice([attempt_number_, input_]))
-
-  # <operator> :== "<" | ">" | "="
-  defcombinatorp(:operator, choice([op_lt, op_gt, op_eq]))
-
-  # <criterion> :== <component> <operator> <check>
-  defcombinatorp(
-    :criterion,
-    parsec(:component)
-    |> parsec(:operator)
-    |> parsec(:check)
-    |> reduce(:fold_infixl)
-  )
-
-  # <clause> :== <not> <clause> | "(" <rule> ")" | <criterion>
-  negation = not_ |> ignore |> parsec(:clause) |> tag(:!)
-  grouping = ignore(lparen) |> parsec(:rule) |> ignore(rparen)
-  criterion_ = parsec(:criterion)
-  defcombinatorp(:clause, choice([negation, grouping, criterion_]))
-
-  # <expression> :== <clause> {<and> <clause>}
-  defcombinatorp(
-    :expression,
-    parsec(:clause)
-    |> repeat(and_ |> parsec(:clause))
-    |> reduce(:fold_infixl)
-  )
-
-  # <rule> :== <expression> {<or> <expression>}
-  defparsec(
-    :rule,
-    parsec(:expression)
-    |> repeat(or_ |> parsec(:expression))
-    |> reduce(:fold_infixl)
-  )
-
-  defp fold_infixl(acc) do
-    case acc do
-      [lhs, op, rhs] -> {op, lhs, rhs}
-      [f, o] -> {:eval, f, o}
-      [!: [negated]] -> {:!, negated}
-      [item] -> item
+  def evaluate(tree, %EvaluationContext{} = context) do
+    try do
+      {:ok, eval(tree, context)}
+    rescue
+      e -> {:error, e}
     end
   end
+
+  defp eval({:&&, lhs, rhs}, context), do: eval(lhs, context) and eval(rhs, context)
+  defp eval({:||, lhs, rhs}, context), do: eval(lhs, context) or eval(rhs, context)
+  defp eval({:!, rhs}, context), do: !eval(rhs, context)
+  defp eval({:like, lhs, rhs}, context) do
+    {:ok, regex} = Regex.compile(rhs)
+    String.match?(eval(lhs, context), regex)
+  end
+  defp eval(:attempt_number, context), do: context.activity_attempt_number |> Integer.to_string()
+  defp eval(:input, context), do: context.input
+  defp eval(:input_length, context), do: String.length(context.input) |> Integer.to_string()
+
+  defp eval({:lt, lhs, rhs}, context) do
+    {left, _} = eval(lhs, context) |> Float.parse()
+    {right, _} = eval(rhs, context) |> Float.parse()
+
+    left < right
+  end
+
+  defp eval({:gt, lhs, rhs}, context) do
+    {left, _} = eval(lhs, context) |> Float.parse()
+    {right, _} = eval(rhs, context) |> Float.parse()
+
+    left > right
+  end
+
+  defp eval({:eq, lhs, rhs}, context) do
+
+    left = eval(lhs, context)
+    right = eval(lhs, context)
+
+    if is_float?(left) or is_float?(right) do
+      {left, _} = Float.parse(left)
+      {right, _} = Float.parse(right)
+
+      abs(abs(left) - abs(right)) < 0.00001
+    else
+      eval(lhs, context) |> String.to_integer() ==
+        eval(rhs, context) |> String.to_integer()
+    end
+  end
+
+  defp eval(value, _) when is_binary(value), do: value
+
+  defp is_float?(str), do: String.contains?(str, ".")
+
 end
+
