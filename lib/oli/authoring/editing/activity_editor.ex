@@ -165,7 +165,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     updated
   end
 
-  defp sync_objectives_to_parts(objectives, update, nil), do: update
+  defp sync_objectives_to_parts(_objectives, update, nil), do: update
   defp sync_objectives_to_parts(objectives, update, parts) do
     objectives = objectives |> Enum.reduce(%{}, fn({part_id, list}, accumulator) ->
       if Enum.any?(parts, fn x -> x["id"] == part_id end) do
