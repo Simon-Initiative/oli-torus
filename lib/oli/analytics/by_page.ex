@@ -4,8 +4,9 @@ defmodule Oli.Analytics.ByPage do
   alias Oli.Delivery.Attempts.Snapshot
   alias Oli.Repo
   alias Oli.Analytics.Common
+  alias Oli.Publishing
 
-  def query_against_project_id(project_id) do
+  def query_against_project_slug(project_slug) do
     activity_pages = from snapshot in Snapshot,
       group_by: [snapshot.activity_id, snapshot.resource_id],
       select: %{
@@ -14,10 +15,10 @@ defmodule Oli.Analytics.ByPage do
       }
 
     Repo.all(
-      from page in subquery(Common.all_published_resources(project_id, "page")),
+      from page in subquery(Publishing.get_unpublished_revisions_by_type(project_slug, "page")),
       left_join: pairing in subquery(activity_pages),
       on: page.resource_id == pairing.page_id,
-      left_join: activity in subquery(Common.all_published_resources(project_id, "activity")),
+      left_join: activity in subquery(Publishing.get_unpublished_revisions_by_type(project_slug, "activity")),
       on: pairing.activity_id == activity.resource_id,
       left_join: analytics in subquery(Common.analytics_by_activity()),
       on: pairing.activity_id == analytics.activity_id,

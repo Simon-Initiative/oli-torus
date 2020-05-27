@@ -6,7 +6,28 @@ defmodule Oli.Publishing do
   alias Oli.Authoring.Course.Project
   alias Oli.Accounts.Author
   alias Oli.Delivery.Sections
-  alias Oli.Publishing.{Publication, PublishedResource}
+  alias Oli.Resources.{Revision, ResourceType}
+  alias Oli.Publishing.{Publication, PublishedResource, QaReviewWarning}
+
+  def get_unpublished_revisions_by_type(project_slug, type) do
+    # get_resource_revisions_for_publication()
+    # latest_published_publication =
+      # active_publication = Publishing.
+      # get_resource_revisions_for_publication(p1)
+      # get_latest_published_publication_by_slug!(project_slug).id
+
+    publication_id = get_unpublished_publication_by_slug!(project_slug).id
+    resource_type_id = ResourceType.get_id_by_type(type)
+
+    from mapping in PublishedResource,
+      where: mapping.publication_id == ^publication_id,
+      join: rev in Revision,
+      on: mapping.revision_id == rev.id,
+      distinct: rev.resource_id,
+      where: rev.resource_type_id == ^resource_type_id
+        and rev.deleted == false,
+      select: rev
+  end
 
   @doc """
   Returns the activity revisions for a list of activity ids
@@ -14,10 +35,10 @@ defmodule Oli.Publishing do
   """
   def get_published_activity_revisions(publication_id, activity_ids) do
 
-    activity = Oli.Resources.ResourceType.get_id_by_type("activity")
+    activity = ResourceType.get_id_by_type("activity")
 
     Repo.all(from mapping in PublishedResource,
-      join: rev in Oli.Resources.Revision, on: mapping.revision_id == rev.id,
+      join: rev in Revision, on: mapping.revision_id == rev.id,
       where: rev.resource_type_id == ^activity and mapping.publication_id == ^publication_id and mapping.resource_id in ^activity_ids,
       select: rev) |> Repo.preload(:activity_type)
   end
@@ -29,7 +50,7 @@ defmodule Oli.Publishing do
     project_id = project.id
 
     revisions = Repo.all(from m in Oli.Publishing.PublishedResource,
-      join: rev in Oli.Resources.Revision, on: rev.id == m.revision_id,
+      join: rev in Revision, on: rev.id == m.revision_id,
       join: p in Oli.Publishing.Publication, on: p.id == m.publication_id,
       where: p.published == false and m.resource_id in ^resource_ids and p.project_id == ^project_id,
       select: rev)
@@ -212,10 +233,10 @@ defmodule Oli.Publishing do
 
   def get_published_objective_details(publication_id) do
 
-    objective = Oli.Resources.ResourceType.get_id_by_type("objective")
+    objective = ResourceType.get_id_by_type("objective")
 
     Repo.all from mapping in PublishedResource,
-      join: rev in Oli.Resources.Revision, on: mapping.revision_id == rev.id,
+      join: rev in Revision, on: mapping.revision_id == rev.id,
       where: rev.deleted == false and rev.resource_type_id == ^objective and mapping.publication_id == ^publication_id,
       select: map(rev, [:slug, :title, :resource_id])
   end
@@ -257,10 +278,10 @@ defmodule Oli.Publishing do
 
   def get_objective_mappings_by_publication(publication_id) do
 
-    objective = Oli.Resources.ResourceType.get_id_by_type("objective")
+    objective = ResourceType.get_id_by_type("objective")
 
     Repo.all(from mapping in PublishedResource,
-      join: rev in Oli.Resources.Revision, on: mapping.revision_id == rev.id,
+      join: rev in Revision, on: mapping.revision_id == rev.id,
       where: rev.deleted == false and rev.resource_type_id == ^objective and mapping.publication_id == ^publication_id,
       select: mapping,
       preload: [:resource, :revision])
@@ -364,7 +385,7 @@ defmodule Oli.Publishing do
   """
   def get_published_revision(publication_id, resource_id) do
     Repo.one from mapping in PublishedResource,
-      join: rev in Oli.Resources.Revision, on: mapping.revision_id == rev.id,
+      join: rev in Revision, on: mapping.revision_id == rev.id,
       where: mapping.resource_id == ^resource_id and mapping.publication_id == ^publication_id,
       select: rev
   end
@@ -480,4 +501,142 @@ defmodule Oli.Publishing do
     |> Enum.filter(fn mapping -> mapping.revision.deleted == false end)
     |> Enum.reduce(%{}, fn m, acc -> Map.put_new(acc, m.resource_id, {m.resource, m.revision}) end)
   end
+
+  def query(conn, id, item) do
+    # sql =
+    #   """
+    #   SELECT id, title, jsonb_path_query(content, '$.** ? (@.type == "#{item}")') FROM activities WHERE package_id = $1;
+    #   """
+
+    # {:ok, %{rows: results }} = Ecto.Adapters.SQL.query(
+    #     Oli.Repo, sql, [id])
+
+    # results = Enum.take_every(results, 2)
+
+    # Enum.map(results, fn r -> %{ status: true, id: Enum.at(r, 0), title: Enum.at(r, 1), raw: Enum.at(r, 2), element: HTML.to_html(context, Enum.at(r, 2))} end)
+  end
+
+  # def links(conn, package) do
+  #   results = query(conn, package.id, "link")
+  #     |> Hyperlink.validate_links
+
+  #   render(conn, "links.html", package: package, results: results)
+  # end
+
+  # def images(conn, package) do
+  #   results = query(conn, package.id, "image")
+
+  #   render(conn, "images.html", package: package, results: results)
+  # end
+
+
+  def review_project(project_slug) do
+
+    # Error vs warning
+    # what are errors?
+    # what are warnings?
+
+    # learn jsonb path query language
+    # see how proving-ground runs link fetch requests in parallel
+    # use Task for each section, group them all and return at end
+
+    # Images / Video without Alt text
+      # jsonb path query through each page's content
+      # return if missing alt text
+    all_pages = get_unpublished_revisions_by_type(project_slug, "page")
+    IO.inspect(Repo.all(all_pages))
+    # |> Enum.map(& &1.content)
+
+
+    images = "$.model[*].children[*]"
+
+
+    IO.inspect(
+      Repo.all(
+        from page in subquery(all_pages),
+        where: fragment(~s|jsonb_path_query(content, "$.** ? (@.type == 'img')")|, "??"))
+    )
+
+    # where model.children[*] has type == 'img' and missing alt“
+
+
+    # Broken hyperlinks
+      # jsonb query, find links, fetch head in parallel
+    # Activities with no attached skills
+      # for all activities in all pages,
+      # check if attached skills > 0
+    all_activities = Repo.all(get_unpublished_revisions_by_type(project_slug, "page"))
+    |> Enum.filter(& !Enum.empty(&1.objectives.attached))
+    # Pages without practice
+      # how to get activities linked to the page?
+
+    # Broken links
+      # how to do a jsonb path query to look for links and return the resource with the link
+      # then run the links in parallel?
+    # Missing alt text for images
+
+    # return list of errors:
+    # %{ type: error | warning, description: HTML with error message, resource, dismissed: boolean }
+
+    # replace all existing warnings for the project with the new ones
+  end
+
+  def list_qa_review_warnings(project_id) do
+    Repo.all(
+      from warning in QaReviewWarning,
+      where: warning.project_id == ^project_id
+    )
+  end
+
+  @doc """
+  Creates a qa_review_warning.
+  ## Examples
+      iex> create_qa_review_warning(%{field: value})
+      {:ok, %ResourceMapping{}}
+      iex> create_qa_review_warning(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_qa_review_warning(attrs \\ %{}) do
+    %QaReviewWarning{}
+    |> QaReviewWarning.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a qa_review_warning.
+  ## Examples
+      iex> update_qa_review_warning(qa_review_warning, %{field: new_value})
+      {:ok, %ResourceMapping{}}
+      iex> update_qa_review_warning(qa_review_warning, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def update_qa_review_warning(%QaReviewWarning{} = qa_review_warning, attrs) do
+    qa_review_warning
+    |> QaReviewWarning.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking qa_review_warning changes.
+  ## Examples
+      iex> change_qa_review_warning(qa_review_warning)
+      %Ecto.Changeset{source: %ResourceMapping{}}
+  """
+  def change_qa_review_warning(%QaReviewWarning{} = qa_review_warning) do
+    QaReviewWarning.changeset(qa_review_warning, %{})
+  end
+
+  @doc """
+  Deletes a qa_review_warning.
+  ## Examples
+      iex> delete_qa_review_warning(qa_review_warning)
+      {:ok, %ResourceMapping{}}
+      iex> delete_qa_review_warning(qa_review_warning)
+      {:error, %Ecto.Changeset{}}
+  """
+  def delete_qa_review_warning(%QaReviewWarning{} = qa_review_warning) do
+    Repo.delete(qa_review_warning)
+  end
+
+
 end

@@ -122,7 +122,9 @@ body footer {
   padding: 48px;
 }
 #right h1 {
-  display: inline-block;
+  font-size: 16px;
+}
+#right h2 {
   font-size: 14px;
 }
 #right small {
@@ -136,7 +138,6 @@ body footer {
   margin-top: 10px;
   color: #b3b3b3;
 }
-
 #right ul {
   padding-left: 16px;
 }

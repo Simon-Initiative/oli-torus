@@ -55,6 +55,8 @@ defmodule OliWeb.ProjectController do
     latest_published_publication = Publishing.get_latest_published_publication_by_slug!(project.slug)
     active_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
 
+    qa_review_warnings = Publishing.list_qa_review_warnings(project.id)
+
     {has_changes, active_publication_changes} = case latest_published_publication do
       nil -> {true, nil}
       _ ->
@@ -65,7 +67,21 @@ defmodule OliWeb.ProjectController do
         {has_changes, changes}
       end
 
-    render conn, "publish.html", title: "Publish", active: :publish, latest_published_publication: latest_published_publication, active_publication_changes: active_publication_changes, has_changes: has_changes
+    render conn, "publish.html",
+      title: "Publish",
+      active: :publish,
+      latest_published_publication: latest_published_publication,
+      active_publication_changes: active_publication_changes,
+      has_changes: has_changes,
+      qa_review_warnings: qa_review_warnings
+  end
+
+  def review_project(conn, _params) do
+    project = conn.assigns.project
+    Publishing.review_project(project.slug)
+
+    conn
+    |> redirect(to: Routes.project_path(conn, :publish, project))
   end
 
   def publish_active(conn, _params) do

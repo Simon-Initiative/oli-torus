@@ -104,6 +104,7 @@ defmodule OliWeb.Router do
     get "/:project_id/objectives/:objective_slug/:action", ProjectController, :edit_objective
     get "/:project_id/publish", ProjectController, :publish
     post "/:project_id/publish", ProjectController, :publish_active
+    post "/:project_id/review", ProjectController, :review_project
 
     # Project
     post "/", ProjectController, :create
