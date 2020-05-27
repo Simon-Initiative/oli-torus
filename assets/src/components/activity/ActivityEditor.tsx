@@ -149,14 +149,14 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
       () => this.postUpdate());
   }
 
-  postUpdate(){
+  postUpdate() {
     // Sync objective list to potential changes in number of parts
-    const parts = valueOr(this.state.undoable.current.content.authoring.parts, [])
-    const partIds = parts.map((p: any)  => valueOr(p.id, ""));
+    const parts = valueOr(this.state.undoable.current.content.authoring.parts, []);
+    const partIds = parts.map((p: any)  => valueOr(p.id, ''));
     let objectives = this.state.undoable.current.objectives;
     const keys = objectives.keySeq().toArray();
     keys.forEach((pId: string)  => {
-      if(partIds.indexOf(pId.toString()) < 0){
+      if (partIds.indexOf(pId.toString()) < 0) {
         objectives = objectives.delete(pId);
       }
     });
