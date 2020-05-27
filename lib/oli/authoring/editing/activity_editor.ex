@@ -55,8 +55,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     do
       Repo.transaction(fn ->
 
+#        update = sync_objectives_to_parts(update)
         update = translate_objective_slugs_to_ids(update)
-        update = sync_objectives_to_parts(update)
 
         case Locks.update(publication.id, resource.id, author.id) do
 
@@ -122,19 +122,6 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   end
 
-  # Removes objectives mapped to deleted parts
-  defp sync_objectives_to_parts(%{"objectives" => objectives} = update) do
-    parts = update["content"]["authoring"]["parts"]
-    objectives = objectives |> Enum.reduce(%{}, fn({part_id, list}, accumulator) ->
-      if Enum.any?(parts, fn x -> x["id"] == part_id end) do
-        accumulator |> Map.put(part_id, list)
-      else
-        accumulator
-      end
-    end)
-    Map.put(update, "objectives", objectives)
-  end
-
   # Creates a new activity revision and updates the publication mapping
   defp create_new_revision(previous, publication, activity, author_id) do
 
@@ -171,8 +158,23 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   # Applies the update to the revision, converting any objective slugs back to ids
   defp update_revision(revision, update) do
+    objectives = if Map.has_key?(update, "objectives"), do: Map.get(update, "objectives"), else: revision.objectives
+    parts = update["content"]["authoring"]["parts"]
+    update = sync_objectives_to_parts(objectives, update, parts)
     {:ok, updated} = Resources.update_revision(revision, update)
     updated
+  end
+
+  defp sync_objectives_to_parts(objectives, update, nil), do: update
+  defp sync_objectives_to_parts(objectives, update, parts) do
+    objectives = objectives |> Enum.reduce(%{}, fn({part_id, list}, accumulator) ->
+      if Enum.any?(parts, fn x -> x["id"] == part_id end) do
+        accumulator |> Map.put(part_id, list)
+      else
+        accumulator
+      end
+    end)
+    Map.put(update, "objectives", objectives)
   end
 
   @doc """
@@ -210,8 +212,6 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end)
 
   end
-
-
 
   @doc """
   Creates the context necessary to power a client side activity editor,
