@@ -125,9 +125,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
       "authoring" => %{
         "parts" => [
           %{"id" => "1", "responses" => [
-            %{"match" => "a", "score" => 10, "id" => "r1", "feedback" => %{"id" => "1", "content" => "yes"}},
-            %{"match" => "b", "score" => 11, "id" => "r2", "feedback" => %{"id" => "2", "content" => "almost"}},
-            %{"match" => "c", "score" => 0, "id" => "r3", "feedback" => %{"id" => "3", "content" => "no"}}
+            %{"rule" => "input like {a}", "score" => 10, "id" => "r1", "feedback" => %{"id" => "1", "content" => "yes"}},
+            %{"rule" => "input like {b}", "score" => 11, "id" => "r2", "feedback" => %{"id" => "2", "content" => "almost"}},
+            %{"rule" => "input like {c}", "score" => 0, "id" => "r3", "feedback" => %{"id" => "3", "content" => "no"}}
           ], "scoringStrategy" => "best", "evaluationStrategy" => "regex"}
         ]
       }

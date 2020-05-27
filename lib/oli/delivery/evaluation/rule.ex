@@ -2,6 +2,15 @@ defmodule Oli.Delivery.Evaluation.Rule do
 
   alias Oli.Delivery.Evaluation.EvaluationContext
 
+
+  def parse_and_evaluate(rule_as_string, %EvaluationContext{} = context) do
+    with {:ok, tree} <- parse(rule_as_string),
+      {:ok, result} <- evaluate(tree, context)
+    do
+      {:ok, result}
+    end
+  end
+
   @doc """
   Parses a rule and returns `{:ok, tree}` when succesful, where `tree`
   is a series of nested tuples representing the parsed clauses in prefix notation, where

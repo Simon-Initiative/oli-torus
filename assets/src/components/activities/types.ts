@@ -72,9 +72,9 @@ export interface Transformation extends Identifiable {
 }
 
 export interface Response extends Identifiable {
-  // `match` corresponds to Choice::id. Later, it can be used
-  // for a catch-all and non 1:1 choice:feedback mappings
-  match: string | number;
+
+  rule: string;
+
   // `score == 1` indicates the feedback corresponds to a matching choice
   score: number;
 

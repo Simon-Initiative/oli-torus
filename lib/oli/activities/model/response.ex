@@ -1,13 +1,13 @@
 defmodule Oli.Activities.Model.Response do
 
-  defstruct [:id, :match, :score, :feedback]
+  defstruct [:id, :rule, :score, :feedback]
 
-  def parse(%{"id" => id, "match" => match, "score" => score, "feedback" => feedback }) do
+  def parse(%{"id" => id, "rule" => rule, "score" => score, "feedback" => feedback }) do
 
     case Oli.Activities.Model.Feedback.parse(feedback) do
       {:ok, feedback} -> {:ok, %Oli.Activities.Model.Response{
         id: id,
-        match: match,
+        rule: rule,
         score: score,
         feedback: feedback
       }}

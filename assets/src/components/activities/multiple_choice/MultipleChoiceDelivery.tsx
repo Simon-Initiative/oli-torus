@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { DeliveryElement, DeliveryElementProps,
   EvaluationResponse, ResetActivityResponse, RequestHintResponse } from '../DeliveryElement';
-import { MultipleChoiceModelSchema, Stem } from './schema';
+import { MultipleChoiceModelSchema } from './schema';
 import { Choice } from 'components/activities/multiple_choice/schema';
 import * as ActivityTypes from '../types';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
@@ -16,7 +16,7 @@ type Evaluation = {
 };
 
 interface StemProps {
-  stem: Stem;
+  stem: ActivityTypes.Stem;
 }
 const Stem = ({ stem }: StemProps) => {
   return (

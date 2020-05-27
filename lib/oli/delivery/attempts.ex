@@ -5,6 +5,7 @@ defmodule Oli.Delivery.Attempts do
   alias Oli.Delivery.Sections.{Section}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.{PartAttempt, ResourceAccess, ResourceAttempt, ActivityAttempt, Snapshot}
+  alias Oli.Delivery.Evaluation.{EvaluationContext, Evaluator}
   alias Oli.Activities.State.ActivityState
   alias Oli.Resources.{Revision}
   alias Oli.Activities.Model
@@ -495,7 +496,9 @@ defmodule Oli.Delivery.Attempts do
   defp evaluate_submissions(_, [], _), do: {:error, "nothing to process"}
   defp evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts) do
 
-    %ActivityAttempt{transformed_model: transformed_model} = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+    %ActivityAttempt{transformed_model: transformed_model, attempt_number: attempt_number, resource_attempt: resource_attempt}
+      = get_activity_attempt_by(attempt_guid: activity_attempt_guid) |> Repo.preload([:resource_attempt])
+
     {:ok, %Model{parts: parts}} = Model.parse(transformed_model)
 
     # We need to tie the attempt_guid from the part_inputs to the attempt_guid
@@ -509,7 +512,14 @@ defmodule Oli.Delivery.Attempts do
       attempt = Map.get(attempt_map, attempt_guid)
       part = Map.get(part_map, attempt.part_id)
 
-      Oli.Delivery.Evaluation.Evaluator.evaluate(part, input)
+      context = %EvaluationContext{
+        resource_attempt_number: resource_attempt.attempt_number,
+        activity_attempt_number: attempt_number,
+        part_attempt_number: attempt.attempt_number,
+        input: input.input
+      }
+
+      Oli.Delivery.Evaluation.Evaluator.evaluate(part, context)
     end)
 
     {:ok, evaluations}
@@ -592,7 +602,18 @@ defmodule Oli.Delivery.Attempts do
     evaluations = Enum.map(part_inputs, fn %{part_id: part_id, input: input} ->
 
       part = Map.get(part_map, part_id)
-      Oli.Delivery.Evaluation.Evaluator.evaluate(part, input)
+
+      # we should eventually support test evals that can pass to the server the
+      # full context, but for now we hardcode all of the context except the input
+      context = %EvaluationContext{
+        resource_attempt_number: 1,
+        activity_attempt_number: 1,
+        part_attempt_number: 1,
+        input: input.input
+      }
+
+      Oli.Delivery.Evaluation.Evaluator.evaluate(part, context)
+
     end)
     |> Enum.map(fn e ->
       case e do

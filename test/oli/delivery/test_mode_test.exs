@@ -20,14 +20,14 @@ defmodule Oli.Delivery.TestModeTest do
         "authoring" => %{
           "parts" => [
             %{"id" => "1", "responses" => [
-              %{"match" => "a", "score" => 10, "id" => "r1", "feedback" => %{"id" => "1", "content" => "yes"}},
-              %{"match" => "b", "score" => 1, "id" => "r2", "feedback" => %{"id" => "2", "content" => "almost"}},
-              %{"match" => "c", "score" => 0, "id" => "r3", "feedback" => %{"id" => "3", "content" => "no"}}
+              %{"rule" => "input like {a}", "score" => 10, "id" => "r1", "feedback" => %{"id" => "1", "content" => "yes"}},
+              %{"rule" => "input like {b}", "score" => 1, "id" => "r2", "feedback" => %{"id" => "2", "content" => "almost"}},
+              %{"rule" => "input like {c}", "score" => 0, "id" => "r3", "feedback" => %{"id" => "3", "content" => "no"}}
             ], "scoringStrategy" => "best", "evaluationStrategy" => "regex"},
             %{"id" => "2", "responses" => [
-              %{"match" => "a", "score" => 2, "id" => "r1", "feedback" => %{"id" => "4", "content" => "yes"}},
-              %{"match" => "b", "score" => 1, "id" => "r2", "feedback" => %{"id" => "5", "content" => "almost"}},
-              %{"match" => "c", "score" => 0, "id" => "r3", "feedback" => %{"id" => "6", "content" => "no"}}
+              %{"rule" => "input like {a}", "score" => 2, "id" => "r1", "feedback" => %{"id" => "4", "content" => "yes"}},
+              %{"rule" => "input like {b}", "score" => 1, "id" => "r2", "feedback" => %{"id" => "5", "content" => "almost"}},
+              %{"rule" => "input like {c}", "score" => 0, "id" => "r3", "feedback" => %{"id" => "6", "content" => "no"}}
             ], "scoringStrategy" => "best", "evaluationStrategy" => "regex"}
           ],
           "transformations" => [
