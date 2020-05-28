@@ -3,6 +3,12 @@ defmodule Oli.Delivery.Evaluation.Rule do
   alias Oli.Delivery.Evaluation.EvaluationContext
 
 
+  @doc """
+  Parses and evaluates a rule and returns `{:ok, result}` when succesful, where `result`
+  is is a boolean true or false indicating if the rule matched or not.
+
+  Returns `{:error, reason}` when it fails to parse or evaluate
+  """
   def parse_and_evaluate(rule_as_string, %EvaluationContext{} = context) do
     with {:ok, tree} <- parse(rule_as_string),
       {:ok, result} <- evaluate(tree, context)
