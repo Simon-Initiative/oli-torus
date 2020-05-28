@@ -1,6 +1,9 @@
+
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/activityeditor.js") %>"></script>
+<link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/resourceeditor.css") %>"/>
 
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> @script) %>"></script>
+
 
 <div id="editor"/>
 

@@ -3,7 +3,7 @@ import { Slate, Editable, withReact, ReactEditor } from 'slate-react';
 import { createEditor, Node, NodeEntry, Range, Editor as SlateEditor, Transforms, Path } from 'slate';
 import { create, Mark, ModelElement, schema, Paragraph, SchemaConfig } from 'data/content/model';
 import { editorFor, markFor } from './editors';
-import { ToolbarItem } from './interfaces';
+import { ToolbarItem, CommandContext } from './interfaces';
 import { FixedToolbar, HoveringToolbar } from './Toolbars';
 import { onKeyDown as listOnKeyDown } from './editors/Lists';
 import { onKeyDown as quoteOnKeyDown } from './editors/Blockquote';
@@ -23,6 +23,8 @@ export type EditorProps = {
 
   // Whether or not editing is allowed
   editMode: boolean;
+
+  commandContext: CommandContext;
 };
 
 // Pressing the Enter key on any void block should insert an empty
@@ -167,9 +169,9 @@ export const Editor = React.memo((props: EditorProps) => {
         value={props.value}
         onChange={onChange}
         >
-        <FixedToolbar toolbarItems={props.toolbarItems} />
+        <FixedToolbar toolbarItems={props.toolbarItems} commandContext={props.commandContext} />
 
-        <HoveringToolbar />
+        <HoveringToolbar commandContext={props.commandContext}/>
 
         <Editable
           readOnly={!props.editMode}

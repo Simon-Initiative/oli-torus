@@ -53,6 +53,7 @@ export const TestEditor = () => {
 
       <p><b>Question Stem:</b></p>
       <Editor
+        commandContext={ { projectSlug: '' }}
         editMode={true}
         value={stem}
         onEdit={(value) => {
