@@ -22,7 +22,7 @@ export const defaultMCModel : () => MultipleChoiceModelSchema = () => {
         scoringStrategy: ScoringStrategy.average,
         responses: [
           makeResponse(`input like {${choiceA.id}}`, 1, ''),
-          makeResponse(`input like {${choiceA.id}}`, 0, ''),
+          makeResponse(`input like {${choiceB.id}}`, 0, ''),
         ],
         hints: [
           fromText(''),
