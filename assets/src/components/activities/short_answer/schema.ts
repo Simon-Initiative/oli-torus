@@ -1,9 +1,11 @@
 
-import { HasContent, Part, Transformation, ActivityModelSchema, Stem } from '../types';
-import { Identifiable } from 'data/content/model';
+import { Part, Transformation, ActivityModelSchema, Stem } from '../types';
+
+export type InputType = 'text' | 'numeric' | 'textarea';
 
 export interface ShortAnswerModelSchema extends ActivityModelSchema {
   stem: Stem;
+  inputType: InputType;
   authoring: {
     parts: Part[];
     transformations: Transformation[];

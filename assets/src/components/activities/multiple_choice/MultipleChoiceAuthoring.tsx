@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { MultipleChoiceModelSchema } from './schema';
 import * as ActivityTypes from '../types';
-import { QuestionTypeDropdown } from '../QuestionTypeDropdown';
 import { Stem } from '../common/Stem';
 import { Choices } from './sections/Choices';
 import { Feedback } from './sections/Feedback';
@@ -24,7 +23,6 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
 
   return (
     <div className="p-4 pl-5">
-      <QuestionTypeDropdown {...sharedProps} />
       <Stem
         editMode={props.editMode}
         stem={state.stem}

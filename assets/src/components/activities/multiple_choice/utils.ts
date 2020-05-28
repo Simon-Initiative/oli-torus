@@ -20,7 +20,6 @@ export const defaultMCModel : () => MultipleChoiceModelSchema = () => {
       parts: [{
         id: '1', // an MCQ only has one part, so it is safe to hardcode the id
         scoringStrategy: ScoringStrategy.average,
-        evaluationStrategy: EvaluationStrategy.regex,
         responses: [
           makeResponse(`input like {${choiceA.id}}`, 1, ''),
           makeResponse(`input like {${choiceA.id}}`, 0, ''),

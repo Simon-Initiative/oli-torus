@@ -1,7 +1,7 @@
 import { MCActions, MCReducer } from 'components/activities/multiple_choice/reducer';
 import * as ContentModel from 'data/content/model';
 import { MultipleChoiceModelSchema, Choice } from 'components/activities/multiple_choice/schema';
-import { EvaluationStrategy, ScoringStrategy } from 'components/activities/types';
+import { ScoringStrategy } from 'components/activities/types';
 
 function testFromText(text: string) {
   return {
@@ -16,11 +16,11 @@ function testFromText(text: string) {
   };
 }
 
-function testResponse(text: string, match: string | number, score: number = 0) {
+function testResponse(text: string, rule: string, score: number = 0) {
   return {
     id: Math.random() + '',
     feedback: testFromText(text),
-    match,
+    rule,
     score,
   };
 }
@@ -29,8 +29,8 @@ function testDefaultModel(): MultipleChoiceModelSchema {
   const choiceA: Choice = testFromText('Choice A');
   const choiceB: Choice = testFromText('Choice B');
 
-  const responseA = testResponse('', choiceA.id, 1);
-  const responseB = testResponse('', choiceB.id, 0);
+  const responseA = testResponse('', `input like {${choiceA.id}}`, 1);
+  const responseB = testResponse('', `input like {${choiceB.id}}`, 0);
 
   return {
     stem: testFromText(''),
@@ -42,7 +42,6 @@ function testDefaultModel(): MultipleChoiceModelSchema {
       parts: [
         {
           id: Math.random() + '',
-          evaluationStrategy: EvaluationStrategy.regex,
           scoringStrategy: ScoringStrategy.average,
           responses: [responseA, responseB],
           hints: [
@@ -112,8 +111,7 @@ describe('multiple choice question', () => {
     expect(model.authoring.parts[0].hints.length).toBeGreaterThanOrEqual(3);
   });
 
-  // Creating guids causes failures
-  xit('can add a cognitive hint before the end of the array', () => {
+  it('can add a cognitive hint before the end of the array', () => {
     expect(MCReducer(model, MCActions.addHint()).authoring.parts[0].hints.length)
       .toBeGreaterThan(model.authoring.parts[0].hints.length);
   });

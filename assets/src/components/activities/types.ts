@@ -85,7 +85,6 @@ export interface Part extends Identifiable {
   responses: Response[];
   hints: Hint[];
   scoringStrategy: ScoringStrategy;
-  evaluationStrategy: EvaluationStrategy;
 }
 
 export enum ScoringStrategy {
