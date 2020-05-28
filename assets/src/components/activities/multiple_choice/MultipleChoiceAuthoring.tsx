@@ -31,6 +31,7 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
   return (
     <div className="p-4 pl-5">
       <Stem
+        projectSlug={props.projectSlug}
         editMode={props.editMode}
         stem={state.stem}
         onEditStem={content => dispatch(MCActions.editStem(content))} />
@@ -41,6 +42,7 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
       <Feedback {...sharedProps}
         onEditResponse={(id, content) => dispatch(MCActions.editFeedback(id, content))} />
       <Hints
+        projectSlug={props.projectSlug}
         hints={state.authoring.parts[0].hints}
         editMode={props.editMode}
         onAddHint={() => dispatch(MCActions.addHint())}

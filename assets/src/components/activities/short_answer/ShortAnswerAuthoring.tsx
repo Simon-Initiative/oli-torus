@@ -61,15 +61,18 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
         inputType={props.model.inputType}
         onChange={inputType => dispatch(ShortAnswerActions.setInputType(inputType))}/>
       <Stem
+        projectSlug={props.projectSlug}
         editMode={props.editMode}
         stem={state.stem}
         onEditStem={content => dispatch(ShortAnswerActions.editStem(content))} />
       <Feedback {...sharedProps}
+        projectSlug={props.projectSlug}
         onAddResponse={() => dispatch(ShortAnswerActions.addResponse())}
         onRemoveResponse={id => dispatch(ShortAnswerActions.removeReponse(id))}
         onEditResponseRule={(id, rule) => dispatch(ShortAnswerActions.editRule(id, rule))}
         onEditResponse={(id, content) => dispatch(ShortAnswerActions.editFeedback(id, content))} />
       <Hints
+        projectSlug={props.projectSlug}
         hints={state.authoring.parts[0].hints}
         editMode={props.editMode}
         onAddHint={() => dispatch(ShortAnswerActions.addHint())}

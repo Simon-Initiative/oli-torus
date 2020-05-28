@@ -6,12 +6,14 @@ import { RichText, Response } from '../../types';
 import { Description } from 'components/misc/Description';
 import { IconCorrect } from 'components/misc/IconCorrect';
 import { parseInputFromRule } from '../utils';
+import { ProjectSlug } from 'data/types';
 
 interface FeedbackProps extends ModelEditorProps {
   onEditResponse: (id: string, content: RichText) => void;
   onRemoveResponse: (id: string) => void;
   onAddResponse: () => void;
   onEditResponseRule: (id: string, rule: string) => void;
+  projectSlug: ProjectSlug;
 }
 
 interface ItemProps extends FeedbackProps {
@@ -79,6 +81,7 @@ export const Item = (props: ItemProps) => {
   return (
     <React.Fragment key={response.id}>
       <RichTextEditor
+        projectSlug={props.projectSlug}
         editMode={editMode}
         text={response.feedback.content}
         onEdit={content => onEditResponse(response.id, content)}>
