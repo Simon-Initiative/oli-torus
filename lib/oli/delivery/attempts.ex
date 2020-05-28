@@ -5,7 +5,7 @@ defmodule Oli.Delivery.Attempts do
   alias Oli.Delivery.Sections.{Section}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.{PartAttempt, ResourceAccess, ResourceAttempt, ActivityAttempt, Snapshot}
-  alias Oli.Delivery.Evaluation.{EvaluationContext, Evaluator}
+  alias Oli.Delivery.Evaluation.{EvaluationContext}
   alias Oli.Activities.State.ActivityState
   alias Oli.Resources.{Revision}
   alias Oli.Activities.Model
