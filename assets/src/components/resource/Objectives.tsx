@@ -29,7 +29,7 @@ export const Objectives = (props: ObjectivesProps) => {
   const asObjectives = selected.toArray().map(s => map.get(s) as Objective);
 
   return (
-    <div className="objectives-editor">
+    <div className="flex-grow-1 objectives-editor">
       <Typeahead
         id={id}
         multiple={true}
