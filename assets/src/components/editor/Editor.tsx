@@ -52,8 +52,7 @@ const voidOnKeyDown = (editor: ReactEditor, e: KeyboardEvent) => {
 function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
   return prevProps.editMode === nextProps.editMode
     && prevProps.toolbarItems === nextProps.toolbarItems
-    && prevProps.value === nextProps.value
-    && prevProps.onEdit === nextProps.onEdit;
+    && prevProps.value === nextProps.value;
 }
 
 

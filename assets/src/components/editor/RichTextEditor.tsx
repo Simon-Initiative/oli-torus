@@ -12,6 +12,9 @@ type RichTextEditorProps = {
 };
 export const RichTextEditor = ({ editMode, text, onEdit, children, projectSlug }:
   React.PropsWithChildren<RichTextEditorProps>) => {
+
+  const cached = React.useCallback(onEdit, []);
+
   return (
     <React.Fragment>
       {children}
@@ -24,7 +27,7 @@ export const RichTextEditor = ({ editMode, text, onEdit, children, projectSlug }
         fontSize: '11px',
         margin: '4px 0 10px 0',
       }}>
-        <Editor commandContext={{ projectSlug }} editMode={editMode} value={text} onEdit={onEdit}
+        <Editor commandContext={{ projectSlug }} editMode={editMode} value={text} onEdit={cached}
           toolbarItems={getToolbarForResourceType(1)} />
       </div>
     </React.Fragment>
