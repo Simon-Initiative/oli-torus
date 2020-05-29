@@ -1,4 +1,6 @@
 defmodule Oli.Grading.LtiGradeService do
+  alias Oli.Delivery.Lti.Provider
+
   @moduledoc """
   Defines the behavior for an LMS adapter required to perform grade services
   """
@@ -9,10 +11,11 @@ defmodule Oli.Grading.LtiGradeService do
   # If we need to capture LMS specific information when a basic launch is performed
   # we would do it by calling this callback on launch for the relavant adapter.
   # If an adapter does not need this then it should just be implemented as a no-op.
-  @callback basic_launch() :: any()
+  @callback basic_launch(Provider.lti_message_params) :: any()
 
   @type context_id :: String.t()
   @type lineitem_id :: String.t()
+  @type query_params ::%{optional(String.t()) => String.t() | integer()}
 
   @typedoc """
   %{
@@ -44,7 +47,7 @@ defmodule Oli.Grading.LtiGradeService do
       "endDateTime" => String.t(),
   }
   """
-  @type lineitem_json :: %{required(String.t()) => String.t() | float()}
+  @type lineitem :: %{required(String.t()) => String.t() | float()}
 
   @typedoc """
   %{
@@ -73,44 +76,30 @@ defmodule Oli.Grading.LtiGradeService do
     "gradingProgress" => String.t(),
   }
   """
-  @type score_json :: %{required(String.t()) => String.t()}
+  @type score :: %{required(String.t()) => String.t()}
 
-  @callback get_lineitems(context_id()) :: any()
-  @callback add_lineitem(context_id(), lineitem_json()) :: any()
+  @callback get_lineitems(context_id(), query_params()) :: any()
+  @callback add_lineitem(context_id(), lineitem()) :: any()
   @callback get_lineitem(context_id(), lineitem_id()) :: any()
-  @callback change_lineitem(context_id(), lineitem_json()) :: any()
+  @callback change_lineitem(context_id(), lineitem_id(), lineitem()) :: any()
   @callback remove_lineitem(context_id(), lineitem_id()) :: any()
-  @callback get_lineitem_results(context_id(), lineitem_id()) :: any()
-  @callback add_lineitem_score(context_id(), lineitem_id(), score_json()) :: any()
-
-  @type http_method :: String.t
-  @type url :: String.t
-  @type body :: String.t
-  @type headers :: %{optional(String.t) => String.t}
-  @spec authenticated_fetch(http_method, url, body, headers) :: any()
-  def authenticated_fetch(http_method, url, body, headers) do
-    # TODO: implement me
-  end
-
-  @spec refresh_api_token() :: any()
-  def refresh_api_token() do
-    # TODO: implement me
-  end
+  @callback get_lineitem_results(context_id(), lineitem_id(), query_params()) :: any()
+  @callback add_lineitem_score(context_id(), lineitem_id(), score()) :: any()
 
   def get_lineitems(context_id, adapter) do
     adapter.get_lineitems(context_id)
   end
 
-  def add_lineitem(context_id, lineitem_json, adapter) do
-    adapter.add_lineitem(context_id, lineitem_json)
+  def add_lineitem(context_id, lineitem, adapter) do
+    adapter.add_lineitem(context_id, lineitem)
   end
 
   def get_lineitem(context_id, lineitem_id, adapter) do
     adapter.get_lineitem(context_id, lineitem_id)
   end
 
-  def change_lineitem(context_id, lineitem, adapter) do
-    adapter.change_lineitem(context_id, lineitem)
+  def change_lineitem(context_id, lineitem_id, lineitem, adapter) do
+    adapter.change_lineitem(context_id, lineitem_id, lineitem)
   end
 
   def remove_lineitem(context_id, lineitem_id, adapter) do
@@ -121,7 +110,7 @@ defmodule Oli.Grading.LtiGradeService do
     adapter.get_lineitem_results(context_id, lineitem_id)
   end
 
-  def add_lineitem_score(context_id, lineitem_id, score_json, adapter) do
-    adapter.add_lineitem_score(context_id, lineitem_id, score_json)
+  def add_lineitem_score(context_id, lineitem_id, score, adapter) do
+    adapter.add_lineitem_score(context_id, lineitem_id, score)
   end
 end

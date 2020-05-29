@@ -9,6 +9,8 @@ defmodule Oli.Delivery.Sections.Section do
     field :time_zone, :string
     field :title, :string
     field :context_id, :string
+    field :lti_lineitems_url, :string
+    field :lti_lineitems_token, :string
 
     belongs_to :institution, Oli.Accounts.Institution
     belongs_to :project, Oli.Authoring.Course.Project
@@ -23,7 +25,7 @@ end
   @doc false
   def changeset(section, attrs) do
     section
-    |> cast(attrs, [:title, :start_date, :end_date, :time_zone, :registration_open, :context_id, :institution_id, :project_id, :publication_id])
+    |> cast(attrs, [:title, :start_date, :end_date, :time_zone, :registration_open, :context_id, :lti_lineitems_url, :institution_id, :project_id, :publication_id])
     |> validate_required([:title, :time_zone, :registration_open, :context_id, :institution_id, :project_id, :publication_id])
   end
 end

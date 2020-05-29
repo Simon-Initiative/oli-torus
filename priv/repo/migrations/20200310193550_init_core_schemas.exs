@@ -132,6 +132,8 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :open_and_free, :boolean, default: false, null: false
       add :registration_open, :boolean, default: false, null: false
       add :context_id, :string
+      add :lti_lineitems_url, :string
+      add :lti_lineitems_token, :string
 
       add :institution_id, references(:institutions)
       add :project_id, references(:projects)
