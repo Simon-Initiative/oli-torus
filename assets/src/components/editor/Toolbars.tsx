@@ -52,7 +52,11 @@ type HoveringToolbarProps = {
   commandContext: CommandContext;
 };
 
-export const HoveringToolbar = (props: HoveringToolbarProps) => {
+function hoveringAreEqual(prevProps: HoveringToolbarProps, nextProps: HoveringToolbarProps) {
+  return prevProps.commandContext === nextProps.commandContext;
+}
+
+export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
   const ref = useRef();
   const editor = useSlate();
 
@@ -89,7 +93,7 @@ export const HoveringToolbar = (props: HoveringToolbarProps) => {
       </div>
     </div>, document.body,
   );
-};
+}, hoveringAreEqual);
 
 function showToolbar(el: HTMLElement) {
   el.style.visibility = 'visible';
@@ -104,7 +108,12 @@ type FixedToolbarProps = {
   commandContext: CommandContext;
 };
 
-export const FixedToolbar = (props: FixedToolbarProps) => {
+function fixedAreEqual(prevProps: FixedToolbarProps, nextProps: FixedToolbarProps) {
+  return prevProps.commandContext === nextProps.commandContext
+    && prevProps.toolbarItems === nextProps.toolbarItems;
+}
+
+export const FixedToolbar = React.memo((props: FixedToolbarProps) => {
   const { toolbarItems } = props;
   const [collapsed, setCollapsed] = useState(false);
   const ref = useRef();
@@ -167,7 +176,7 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
       </div>
     </div>
   );
-};
+}, fixedAreEqual);
 
 const Spacer = () => {
   return (
