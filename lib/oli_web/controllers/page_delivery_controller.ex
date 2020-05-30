@@ -65,7 +65,12 @@ defmodule OliWeb.PageDeliveryController do
     })
   end
 
-  defp render_page(%PageContext{progress_state: :in_progress} = context, conn, context_id, user) do
+  defp render_page(%PageContext{progress_state: :error}, conn, _, _) do
+    render(conn, "error.html")
+  end
+
+  # This case handles :in_progress and :revised progress states
+  defp render_page(%PageContext{} = context, conn, context_id, user) do
 
     render_context = %Context{user: user, activity_map: context.activities}
     page_model = Map.get(context.page.content, "model")
@@ -83,10 +88,6 @@ defmodule OliWeb.PageDeliveryController do
       slug: context.page.slug,
       attempt_guid: hd(context.resource_attempts).attempt_guid
     })
-  end
-
-  defp render_page(%PageContext{progress_state: :error}, conn, _, _) do
-    render(conn, "error.html")
   end
 
   def start_attempt(conn, %{"context_id" => context_id, "revision_slug" => revision_slug}) do
