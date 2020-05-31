@@ -105,6 +105,7 @@ defmodule OliWeb.Router do
     get "/:project_id/publish", ProjectController, :publish
     post "/:project_id/publish", ProjectController, :publish_active
     post "/:project_id/review", ProjectController, :review_project
+    delete "/:project_id/review", ProjectController, :dismiss_warning
 
     # Project
     post "/", ProjectController, :create
@@ -118,7 +119,6 @@ defmodule OliWeb.Router do
 
     # Curriculum
     resources "/:project_id/curriculum", CurriculumController, only: [:index, :create, :delete]
-
 
     # Editors
     get "/:project_id/resource/:revision_slug", ResourceController, :edit

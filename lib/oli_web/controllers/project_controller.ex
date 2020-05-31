@@ -6,6 +6,7 @@ defmodule OliWeb.ProjectController do
   alias Oli.Authoring.{Course}
   alias Oli.Authoring.Course.Project
   alias Oli.Publishing
+  alias Oli.Qa
 
   plug :fetch_project when action not in [:create]
   plug :authorize_project when action not in [:create]
@@ -50,13 +51,25 @@ defmodule OliWeb.ProjectController do
     render conn, "resource_editor.html", title: "Resource Editor", active: :resource_editor
   end
 
-  def publish(conn, _project_params) do
+  def publish(conn, project_params) do
+    IO.inspect(project_params, label: "project_params")
+
     project = conn.assigns.project
     latest_published_publication = Publishing.get_latest_published_publication_by_slug!(project.slug)
     active_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
 
-    qa_review_warnings = Publishing.list_qa_review_warnings(project.id)
+    # review
+    qa_reviews = Qa.list_qa_reviews(project.id)
+    |> Enum.sort_by(& {&1.type, &1.subtype})
 
+    warnings_by_type = qa_reviews
+    |> Enum.group_by(& &1.type)
+
+    activity_to_page_slug_map = Qa.activity_to_page_slug_map(project.slug)
+
+    warning_types = Map.keys(warnings_by_type)
+
+    # publish
     {has_changes, active_publication_changes} = case latest_published_publication do
       nil -> {true, nil}
       _ ->
@@ -68,20 +81,43 @@ defmodule OliWeb.ProjectController do
       end
 
     render conn, "publish.html",
+      # page
       title: "Publish",
       active: :publish,
+
+      # review
+      hide_reviews: project_params["hide_reviews"],
+      warnings_by_type: warnings_by_type,
+      warning_types: warning_types,
+      qa_reviews: qa_reviews,
+      activity_to_page_slug_map: activity_to_page_slug_map,
+      selected_review: project_params["selected"],
+
+      # publish
       latest_published_publication: latest_published_publication,
       active_publication_changes: active_publication_changes,
-      has_changes: has_changes,
-      qa_review_warnings: qa_review_warnings
+      has_changes: has_changes
+
   end
 
   def review_project(conn, _params) do
     project = conn.assigns.project
-    Publishing.review_project(project.slug)
+    Qa.review_project(project.slug)
 
     conn
     |> redirect(to: Routes.project_path(conn, :publish, project))
+  end
+
+  def dismiss_warning(conn, %{"warning_id" => warning_id} = params) do
+    project = conn.assigns.project
+    new_params = %{ params | selected: nil }
+
+    case Qa.dismiss_warning(warning_id) do
+      {:ok, _} -> redirect conn, to: Routes.project_path(conn, :publish, project)
+      {:error, _changeset} -> conn
+        |> put_flash(:error, "Could not dismiss warning. Please try again")
+        |> redirect(to: Routes.project_path(conn, :publish, project))
+    end
   end
 
   def publish_active(conn, _params) do

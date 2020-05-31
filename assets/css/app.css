@@ -138,19 +138,16 @@ body footer {
   margin-top: 10px;
   color: #b3b3b3;
 }
-#right ul {
-  padding-left: 16px;
-}
-#right li {
-  padding-left: 10px;
-  margin-bottom: 16px;
-}
 #right li:last-of-type {
   margin-bottom: 0;
 }
 #right li small {
   font-size: inherit;
   color: #b3b3b3;
+}
+
+p:last-of-type {
+  margin: 0;
 }
 
 .add-button {
