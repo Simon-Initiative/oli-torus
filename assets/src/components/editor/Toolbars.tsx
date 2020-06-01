@@ -188,13 +188,13 @@ const textOptions = [
 const TextFormatter = () => {
   const editor = useSlate();
   const selected = getRootOfText(editor).caseOf({
-    just: n => (parentTextTypes as any)[n.type] ? n.type : 'p',
+    just: n => (parentTextTypes as any)[n.type as string] ? n.type : 'p',
     nothing: () => 'p',
   });
 
   const onChange = (e: any) => {
     getRootOfText(editor).lift((n: Node) => {
-      if ((parentTextTypes as any)[n.type]) {
+      if ((parentTextTypes as any)[n.type as string]) {
         const path = ReactEditor.findPath(editor, n);
         const type = e.target.value;
         Transforms.setNodes(editor, { type }, { at: path });
@@ -206,7 +206,7 @@ const TextFormatter = () => {
   return (
     <select
       onChange={onChange}
-      value={selected}
+      value={selected  as string}
       className="custom-select custom-select-sm">
       {textOptions.map(o =>
         <option key={o.value} value={o.value}>{o.text}</option>)}

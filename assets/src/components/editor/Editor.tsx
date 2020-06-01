@@ -36,7 +36,7 @@ const voidOnKeyDown = (editor: ReactEditor, e: KeyboardEvent) => {
 
       getRootOfText(editor).lift((node: Node) => {
 
-        if ((schema as any)[node.type].isVoid) {
+        if ((schema as any)[node.type as string].isVoid) {
           const path = ReactEditor.findPath(editor, node);
           Transforms.insertNodes(editor, create<Paragraph>(
             { type: 'p', children: [{ text: '' }], id: guid() }),
@@ -64,7 +64,7 @@ export const Editor = React.memo((props: EditorProps) => {
   // elements are void
   editor.isVoid = (element) => {
     try {
-      const result = (schema as any)[element.type].isVoid;
+      const result = (schema as any)[element.type as string].isVoid;
       return result;
     } catch (e) {
       return false;
@@ -74,7 +74,7 @@ export const Editor = React.memo((props: EditorProps) => {
 
   editor.isInline = (element) => {
     try {
-      const result = (schema as any)[element.type].isBlock;
+      const result = (schema as any)[element.type as string].isBlock;
       return !result;
     } catch (e) {
       return false;
@@ -107,8 +107,8 @@ export const Editor = React.memo((props: EditorProps) => {
       if (SlateEditor.isBlock(editor, node)) {
         const [parent] = SlateEditor.parent(editor, path);
         if (!SlateEditor.isEditor(parent)) {
-          const config : SchemaConfig = (schema as any)[parent.type];
-          if (!(config.validChildren as any)[node.type]) {
+          const config : SchemaConfig = (schema as any)[parent.type as string];
+          if (!(config.validChildren as any)[node.type as string]) {
             Transforms.removeNodes(editor, { at: path });
             return; // Return here is necessary to enable multi-pass normalization
           }
@@ -117,7 +117,7 @@ export const Editor = React.memo((props: EditorProps) => {
       }
 
       // Check the top-level constraints
-      if (SlateEditor.isBlock(editor, node) && !(schema as any)[node.type].isTopLevel) {
+      if (SlateEditor.isBlock(editor, node) && !(schema as any)[node.type as string].isTopLevel) {
         const [parent] = SlateEditor.parent(editor, path);
         if (SlateEditor.isEditor(parent)) {
           Transforms.removeNodes(editor, { at: path });
