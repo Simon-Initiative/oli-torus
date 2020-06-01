@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.21.3">
     <meta name="project" content="OLI Torus v0.1.0">
-    <title>Oli.Grading — OLI Torus v0.1.0</title>
+    <title>Oli.Delivery.Evaluation.Parser — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
     <script src="dist/sidebar_items-640e3dea6b.js"></script>
       <script src="docs_config.js"></script>
@@ -68,7 +68,7 @@ OLI Torus      </a>
 
       <h1>
         <small class="app-vsn">OLI Torus v0.1.0</small>
-Oli.Grading          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L1" title="View Source" class="view-source" rel="help">
+Oli.Delivery.Evaluation.Parser          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/evaluation/parser.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -76,9 +76,20 @@ Oli.Grading          <a href="https://github.com/Simon-Initiative/oli-torus/blob
 
 
         <section id="moduledoc">
-<p>Grading is responsible for compiling attempts into usable gradebook representation
-consumable by various tools such as Excel (CSV) or an LMS API</p>
-        </section>
+<p>A parser for evaluation rules.</p>
+<p>The macros present here end up defining a single public function
+<code class="inline">rule</code> in this module that takes a string input and attempts to parse
+the following grammar:</p>
+<rule> :== <expression> {<or> <expression>}
+<expression> :== <clause> {<and> <clause>}
+<clause> :== <not> <clause> | "(" <rule> ")” | <criterion>
+<criterion> :== <component> <operator> <value>
+<component> :== "attemptNumber” | "input” | "length(input)"
+<operator> :== "<” | ">” | "=" | "like"
+<value> :== { string }
+<not> :== "!"
+<and> :== "&&"
+<or>  :== "||"        </section>
 
         <section id="summary" class="details-list">
           <h1 class="section-heading">
@@ -94,16 +105,9 @@ consumable by various tools such as Excel (CSV) or an LMS API</p>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#export_csv/1">export_csv(section)</a>
+    <a href="#rule/2">rule(binary, opts \\ [])</a>
   </div>
-    <div class="summary-synopsis"><p>Exports the gradebook for the provided section in CVS format</p></div>
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#generate_gradebook_for_section/1">generate_gradebook_for_section(section)</a>
-  </div>
-    <div class="summary-synopsis"><p>Returns a tuple containing a list of GradebookRow for every enrolled user
-and an ordered list of column labels</p></div>
+    <div class="summary-synopsis"><p>Parses the given <code class="inline">binary</code> as rule.</p></div>
 </div>
   </div>
         </section>
@@ -116,39 +120,48 @@ and an ordered list of column labels</p></div>
             </a>
 Functions          </h1>
           <div class="functions-list">
-<section class="detail" id="export_csv/1">
+<section class="detail" id="rule/2">
+    <span id="rule/1"></span>
   <div class="detail-header">
-    <a href="#export_csv/1" class="detail-link" title="Link to this function">
+    <a href="#rule/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">export_csv(section)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L21" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">rule(binary, opts \\ [])</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/evaluation/parser.ex#L81" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+      <div class="specs">
+          <pre>rule(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">keyword</a>()) ::
+  {:ok, [<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()], rest, context, line, byte_offset}
+  | {:error, reason, rest, context, line, byte_offset}
+when line: {<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>(), byte_offset},
+     byte_offset: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">pos_integer</a>(),
+     rest: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+     reason: <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
+     context: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()</pre>
+      </div>
   </div>
   <section class="docstring">
-<p>Exports the gradebook for the provided section in CVS format</p>
-<p>Returns a Stream which can be written to a file or other IO</p>
-  </section>
-</section>
-<section class="detail" id="generate_gradebook_for_section/1">
-  <div class="detail-header">
-    <a href="#generate_gradebook_for_section/1" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">generate_gradebook_for_section(section)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L72" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-  </div>
-  <section class="docstring">
-<p>Returns a tuple containing a list of GradebookRow for every enrolled user
-and an ordered list of column labels</p>
-<p><code class="inline">{[%GradebookRow{user: %User{}, scores: [%GradebookScore{}, ...]}, ...], [&quot;Quiz 1&quot;, &quot;Quiz 2&quot;]}</code></p>
+<p>Parses the given <code class="inline">binary</code> as rule.</p>
+<p>Returns <code class="inline">{:ok, [token], rest, context, position, byte_offset}</code> or
+<code class="inline">{:error, reason, rest, context, line, byte_offset}</code> where <code class="inline">position</code>
+describes the location of the rule (start position) as <code class="inline">{line, column_on_line}</code>.</p>
+<h2 id="rule/2-options" class="section-heading">
+  <a href="#rule/2-options" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Options
+</h2>
+
+<ul>
+<li><code class="inline">:line</code> - the initial line, defaults to 1
+</li>
+<li><code class="inline">:byte_offset</code> - the initial byte offset, defaults to 0
+</li>
+<li><code class="inline">:context</code> - the initial context value. It will be converted
+to a map
+</li>
+</ul>
   </section>
 </section>
           </div>

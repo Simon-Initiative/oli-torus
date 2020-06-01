@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Delivery.Evaluation.Evaluator — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-bba1738b64.js"></script>
+    <script src="dist/sidebar_items-640e3dea6b.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -68,7 +68,7 @@ OLI Torus      </a>
 
       <h1>
         <small class="app-vsn">OLI Torus v0.1.0</small>
-Oli.Delivery.Evaluation.Evaluator <small>behaviour</small>          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/evaluation/evaluator.ex#L1" title="View Source" class="view-source" rel="help">
+Oli.Delivery.Evaluation.Evaluator          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/evaluation/evaluator.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -90,20 +90,10 @@ Oli.Delivery.Evaluation.Evaluator <small>behaviour</small>          <a href="htt
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#evaluate/2">evaluate(part, input)</a>
+    <a href="#evaluate/2">evaluate(part, context)</a>
   </div>
     <div class="summary-synopsis"><p>Evaluates a student input for a given activity part.  In a successful
 evaluation, returns the feedback and a scoring result.</p></div>
-</div>
-  </div>
-  <div class="summary-callbacks summary">
-    <h2>
-      <a href="#callbacks">Callbacks</a>
-    </h2>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#c:evaluate/2">evaluate(%Oli.Activities.Model.Part{}, %Oli.Delivery.Attempts.StudentInput{})</a>
-  </div>
 </div>
   </div>
         </section>
@@ -122,74 +112,15 @@ Functions          </h1>
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">evaluate(part, input)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/evaluation/evaluator.ex#L17" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">evaluate(part, context)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/evaluation/evaluator.ex#L12" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
-      <div class="specs">
-          <pre>evaluate(
-  %Oli.Activities.Model.Part{
-    evaluation_strategy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    hints: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    parts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    responses: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    scoring_strategy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
-  },
-  %Oli.Delivery.Attempts.StudentInput{input: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}
-) ::
-  {:ok,
-   {%Oli.Activities.Model.Feedback{content: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(), id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()},
-    %Oli.Delivery.Attempts.Result{out_of: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(), score: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}}}
-  | {:error, <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()}</pre>
-      </div>
   </div>
   <section class="docstring">
 <p>Evaluates a student input for a given activity part.  In a successful
 evaluation, returns the feedback and a scoring result.</p>
-  </section>
-</section>
-          </div>
-        </section>
-        <section id="callbacks" class="details-list">
-          <h1 class="section-heading">
-            <a class="hover-link" href="#callbacks">
-              <span class="icon-link" aria-hidden="true"></span>
-              <span class="sr-only">Link to this section</span>
-            </a>
-Callbacks          </h1>
-          <div class="callbacks-list">
-<section class="detail" id="c:evaluate/2">
-  <div class="detail-header">
-    <a href="#c:evaluate/2" class="detail-link" title="Link to this callback">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this callback</span>
-    </a>
-    <h1 class="signature">evaluate(%Oli.Activities.Model.Part{}, %Oli.Delivery.Attempts.StudentInput{})</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/evaluation/evaluator.ex#L10" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-      <div class="specs">
-          <pre>evaluate(
-  %Oli.Activities.Model.Part{
-    evaluation_strategy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    hints: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    parts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    responses: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    scoring_strategy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
-  },
-  %Oli.Delivery.Attempts.StudentInput{input: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}
-) ::
-  {:ok,
-   {%Oli.Activities.Model.Feedback{content: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(), id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()},
-    %Oli.Delivery.Attempts.Result{out_of: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(), score: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}}}
-  | {:error, <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()}</pre>
-      </div>
-  </div>
-  <section class="docstring">
   </section>
 </section>
           </div>

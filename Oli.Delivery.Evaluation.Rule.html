@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.21.3">
     <meta name="project" content="OLI Torus v0.1.0">
-    <title>Oli.Grading — OLI Torus v0.1.0</title>
+    <title>Oli.Delivery.Evaluation.Rule — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
     <script src="dist/sidebar_items-640e3dea6b.js"></script>
       <script src="docs_config.js"></script>
@@ -68,17 +68,13 @@ OLI Torus      </a>
 
       <h1>
         <small class="app-vsn">OLI Torus v0.1.0</small>
-Oli.Grading          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L1" title="View Source" class="view-source" rel="help">
+Oli.Delivery.Evaluation.Rule          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/evaluation/rule.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
       </h1>
 
 
-        <section id="moduledoc">
-<p>Grading is responsible for compiling attempts into usable gradebook representation
-consumable by various tools such as Excel (CSV) or an LMS API</p>
-        </section>
 
         <section id="summary" class="details-list">
           <h1 class="section-heading">
@@ -94,16 +90,24 @@ consumable by various tools such as Excel (CSV) or an LMS API</p>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#export_csv/1">export_csv(section)</a>
+    <a href="#evaluate/2">evaluate(tree, context)</a>
   </div>
-    <div class="summary-synopsis"><p>Exports the gradebook for the provided section in CVS format</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#generate_gradebook_for_section/1">generate_gradebook_for_section(section)</a>
+    <a href="#parse/1">parse(rule_as_string)</a>
   </div>
-    <div class="summary-synopsis"><p>Returns a tuple containing a list of GradebookRow for every enrolled user
-and an ordered list of column labels</p></div>
+    <div class="summary-synopsis"><p>Parses a rule and returns <code class="inline">{:ok, tree}</code> when succesful, where <code class="inline">tree</code>
+is a series of nested tuples representing the parsed clauses in prefix notation, where
+the first tuple entry is the operation, the second is the left hand side
+operand and the third is the right hand side operand. An example</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#parse_and_evaluate/2">parse_and_evaluate(rule_as_string, context)</a>
+  </div>
+    <div class="summary-synopsis"><p>Parses and evaluates a rule and returns <code class="inline">{:ok, result}</code> when succesful, where <code class="inline">result</code>
+is is a boolean true or false indicating if the rule matched or not.</p></div>
 </div>
   </div>
         </section>
@@ -116,39 +120,61 @@ and an ordered list of column labels</p></div>
             </a>
 Functions          </h1>
           <div class="functions-list">
-<section class="detail" id="export_csv/1">
+<section class="detail" id="evaluate/2">
   <div class="detail-header">
-    <a href="#export_csv/1" class="detail-link" title="Link to this function">
+    <a href="#evaluate/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">export_csv(section)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L21" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">evaluate(tree, context)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/evaluation/rule.ex#L39" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
   </div>
   <section class="docstring">
-<p>Exports the gradebook for the provided section in CVS format</p>
-<p>Returns a Stream which can be written to a file or other IO</p>
   </section>
 </section>
-<section class="detail" id="generate_gradebook_for_section/1">
+<section class="detail" id="parse/1">
   <div class="detail-header">
-    <a href="#generate_gradebook_for_section/1" class="detail-link" title="Link to this function">
+    <a href="#parse/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">generate_gradebook_for_section(section)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L72" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">parse(rule_as_string)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/evaluation/rule.ex#L31" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+      <div class="specs">
+          <pre>parse(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) :: {:error, <<_::64, _::_*8>>} | {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Parses a rule and returns <code class="inline">{:ok, tree}</code> when succesful, where <code class="inline">tree</code>
+is a series of nested tuples representing the parsed clauses in prefix notation, where
+the first tuple entry is the operation, the second is the left hand side
+operand and the third is the right hand side operand. An example:</p>
+<p>{:&amp;&amp;, {:gt, :attempt_number, &quot;1&quot;}, {:like, :input, &quot;some string here&quot;}}</p>
+<p>Returns <code class="inline">{:error, reason}</code> when it fails to parse</p>
+  </section>
+</section>
+<section class="detail" id="parse_and_evaluate/2">
+  <div class="detail-header">
+    <a href="#parse_and_evaluate/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">parse_and_evaluate(rule_as_string, context)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/evaluation/rule.ex#L12" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
   </div>
   <section class="docstring">
-<p>Returns a tuple containing a list of GradebookRow for every enrolled user
-and an ordered list of column labels</p>
-<p><code class="inline">{[%GradebookRow{user: %User{}, scores: [%GradebookScore{}, ...]}, ...], [&quot;Quiz 1&quot;, &quot;Quiz 2&quot;]}</code></p>
+<p>Parses and evaluates a rule and returns <code class="inline">{:ok, result}</code> when succesful, where <code class="inline">result</code>
+is is a boolean true or false indicating if the rule matched or not.</p>
+<p>Returns <code class="inline">{:error, reason}</code> when it fails to parse or evaluate</p>
   </section>
 </section>
           </div>
