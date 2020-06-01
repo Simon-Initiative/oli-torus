@@ -178,11 +178,16 @@ defmodule Oli.Delivery.Attempts do
   of activity ids to tuples of activity attempts to part maps. See `get_latest_attempts`
   for more details on this map structure.
 
+  If a resource attempt is in progress and the revision of the resource pertaining to that attempt
+  has changed compared to the supplied resource_revision, returns a tuple of the form:
+
+  `{:ok, {:revised, {%ResourceAttempt{}, ActivityAttemptMap}}}`
+
   If the attempt has not started, returns a tuple of the form:
 
   `{:ok, {:not_started, {%ResourceAccess{}, [%ResourceAttempt{}]}}`
   """
-  @spec determine_resource_attempt_state(%Revision{}, String.t, number(), any) :: {:ok, {:in_progress, {%ResourceAttempt{}, map() }}} | {:ok, {:not_started, {%ResourceAccess{}, [%ResourceAttempt{}]}}} | {:error, any}
+  @spec determine_resource_attempt_state(%Revision{}, String.t, number(), any) :: {:ok, {:in_progress, {%ResourceAttempt{}, map() }}} | {:ok, {:revised, {%ResourceAttempt{}, map() }}} | {:ok, {:not_started, {%ResourceAccess{}, [%ResourceAttempt{}]}}} | {:error, any}
   def determine_resource_attempt_state(resource_revision, context_id, user_id, activity_provider) do
 
     # determine latest resource attempt and then derive the current resource state
@@ -210,6 +215,10 @@ defmodule Oli.Delivery.Attempts do
   end
 
   defp get_ungraded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
+
+    # For ungraded pages we can safely throw away an existing resource attempt and create a new one
+    # in the case that the attempt was pinned to an older revision of the resource. This allows newly published
+    # changes to the resource to be seen after a user has visited the resource previously
     if is_nil(resource_attempt) or resource_attempt.revision_id != resource_revision.id do
 
       case create_new_attempt_tree(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
@@ -222,34 +231,21 @@ defmodule Oli.Delivery.Attempts do
     end
   end
 
-  defp get_graded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
+  defp get_graded_resource_state(resource_attempt, resource_revision, context_id, user_id, _) do
 
     if is_nil(resource_attempt) or !is_nil(resource_attempt.date_evaluated) do
       {:ok, {:not_started, get_resource_attempt_history(resource_revision.resource_id, context_id, user_id)}}
     else
-      if resource_attempt.revision_id != resource_revision.id do
 
-        # At some point we can optimize this case to allow current attempts for
-        # activities within this resource attempt whose activity revisions haven't
-        # changed to be pull forward to this new resource attempt.  This would allow
-        # a use case where - live during an exam - an instructor deletes an activity. Students
-        # would need to create a new resource attempt, but their exist work could be pulled
-        # forward.
-        case create_new_attempt_tree(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
-          {:ok, results} -> {:ok, {:in_progress, results}}
-          error -> error
-        end
-
+      # Unlike ungraded pages, for graded pages we do not throw away attempts and create anew in the case
+      # where the resource revision has changed.  Instead we return back the existing attempt tree and force
+      # the page renderer to resolve this discrepancy by indicating the "revised" state.
+      if resource_revision.id !== resource_attempt.revision_id do
+        {:ok, {:revised, {resource_attempt, get_latest_attempts(resource_attempt.id)}}}
       else
-
-        # Bonus optimization at some point: look at each activity attempt, if any are
-        # for an activity revision that differs from the
-        # the current activity revision - create a new attempt
-        # for that activity. This allows a use case where an instructor live publishes
-        # during the middle of a student resource attempt a fix for one specific activity.
-
         {:ok, {:in_progress, {resource_attempt, get_latest_attempts(resource_attempt.id)}}}
       end
+
     end
 
   end
