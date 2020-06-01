@@ -111,31 +111,7 @@ a.review-dismiss:hover {
   color: #212529;
   cursor: pointer;
 }
-
 </style>
-
-<%#
-TESTS!!
-
-FILTERS
-  Each filter is de-selectable to filter out those results
-
-TASKS
-  split queries out into separate tasks
-
-NEW TABLE
-  Add review table to hold all of the data related to a single review processing request
-  Done flag for when all queries are complete
-  Stores the progress of each of the completed tasks
-  !Add UI to show progress of checks
-
-rename current review table to qa warnings
-
-REFACTOR
-  add tsv support for columns?
-  etc.
-%>
-
 
 <div class="row">
   <div class="section-header">
@@ -159,7 +135,6 @@ REFACTOR
       it found <strong><%= length @warnings %></strong> potential improvement opportunities<%= if (length @warnings) == 1 do "" else "s" end %>:
     </p>
   </div>
-
 
   <h5>Filters</h5>
   <div class="d-flex">

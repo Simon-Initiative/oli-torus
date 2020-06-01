@@ -22,16 +22,6 @@ defmodule Oli.Publishing do
         and rev.deleted == false,
       select: rev,
       preload: [:resource_type]
-
-    # from mapping in PublishedResource,
-    #   where: mapping.publication_id == ^publication_id,
-    #   join: rev in Revision,
-    #   on: mapping.revision_id == rev.id,
-    #   distinct: rev.resource_id,
-    #   where: rev.resource_type_id == ^resource_type_id
-    #     and rev.deleted == false,
-    #   select: rev,
-    #   preload: [:resource_type]
   end
 
   @doc """
