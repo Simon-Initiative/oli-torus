@@ -17,25 +17,38 @@ const ul = () => ContentModel.create<ContentModel.UnorderedList>(
 
 const toggleList = (editor: ReactEditor, listType: string) => {
 
-  const isActive = isActiveList(editor);
+  try {
 
-  (editor as any).suspendNormalization = true;
+    // The edits here result in intermediate states that normalization
+    // would seek to correct.  So to allow this operation to succeed,
+    // we instruct our editor instance to suspend normalization.
+    (editor as any).suspendNormalization = true;
 
-  Transforms.unwrapNodes(editor, {
-    match: n => n.type === 'ul' || n.type === 'ol',
-    split: true,
-  });
+    const isActive = isActiveList(editor);
 
-  Transforms.setNodes(editor, {
-    type: isActive ? 'p' : 'li',
-  });
+    Transforms.unwrapNodes(editor, {
+      match: n => n.type === 'ul' || n.type === 'ol',
+      split: true,
+    });
 
-  if (!isActive) {
-    const block = { type: listType, children: [] };
-    Transforms.wrapNodes(editor, block);
+    Transforms.setNodes(editor, {
+      type: isActive ? 'p' : 'li',
+    });
+
+    if (!isActive) {
+      const block = { type: listType, children: [] };
+      Transforms.wrapNodes(editor, block);
+    }
+  } catch (error) {
+    // tslint:disable-next-line
+    console.log(error);
+
+  } finally {
+    // Whether the operation succeeded or failed, we restore
+    // normalization
+    (editor as any).suspendNormalization = false;
   }
 
-  (editor as any).suspendNormalization = false;
 };
 
 const isActiveList = (editor: ReactEditor) => {
