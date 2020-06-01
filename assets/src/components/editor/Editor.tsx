@@ -84,6 +84,10 @@ export const Editor = React.memo((props: EditorProps) => {
   const { normalizeNode } = editor;
   editor.normalizeNode = (entry: NodeEntry<Node>) => {
 
+    if ((editor as any).suspendNormalization) {
+      normalizeNode(entry);
+      return;
+    }
 
     try {
       const [node, path] = entry;
@@ -131,6 +135,7 @@ export const Editor = React.memo((props: EditorProps) => {
     }
 
     normalizeNode(entry);
+
   };
 
   const renderElement = useCallback((props) => {

@@ -19,6 +19,8 @@ const toggleList = (editor: ReactEditor, listType: string) => {
 
   const isActive = isActiveList(editor);
 
+  (editor as any).suspendNormalization = true;
+
   Transforms.unwrapNodes(editor, {
     match: n => n.type === 'ul' || n.type === 'ol',
     split: true,
@@ -28,8 +30,12 @@ const toggleList = (editor: ReactEditor, listType: string) => {
     type: isActive ? 'p' : 'li',
   });
 
-  const block = { type: listType, children: [] };
-  Transforms.wrapNodes(editor, block);
+  if (!isActive) {
+    const block = { type: listType, children: [] };
+    Transforms.wrapNodes(editor, block);
+  }
+
+  (editor as any).suspendNormalization = false;
 };
 
 const isActiveList = (editor: ReactEditor) => {
