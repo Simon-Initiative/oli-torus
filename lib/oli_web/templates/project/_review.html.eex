@@ -115,6 +115,7 @@ a.review-dismiss:hover {
 </style>
 
 <%#
+TESTS!!
 
 FILTERS
   Each filter is de-selectable to filter out those results
@@ -126,14 +127,13 @@ NEW TABLE
   Add review table to hold all of the data related to a single review processing request
   Done flag for when all queries are complete
   Stores the progress of each of the completed tasks
-  Add UI to show progress of checks
+  !Add UI to show progress of checks
 
 rename current review table to qa warnings
 
 REFACTOR
   add tsv support for columns?
   etc.
-
 %>
 
 
@@ -156,7 +156,7 @@ REFACTOR
   <div class="row">
     <p>
       When the review was run <%= (hd @qa_reviews).inserted_at |> Timex.format!("{relative}", :relative) %>,
-      it found <strong><%= length @qa_reviews %></strong> potential improvement opportunities<%= if (length @qa_reviews) == 1 do "" else "s" end %>:
+      it found <strong><%= length @warnings %></strong> potential improvement opportunities<%= if (length @warnings) == 1 do "" else "s" end %>:
     </p>
   </div>
 
@@ -188,11 +188,11 @@ REFACTOR
 
   <div class="reviews">
     <ul class="review-links">
-      <%= for {warning, index} <- Enum.with_index(@qa_reviews) do %>
+      <%= for {warning, index} <- Enum.with_index(@warnings) do %>
         <li class="review-link <%= warning_selected?(@selected_review, warning, index) %>">
           <%= link to: Routes.project_path(@conn, :publish, @project, selected: warning.id) do %>
             <span class="review-link-header">
-              <%= warning_icon(warning.type) %> <%= title_case(warning.subtype) %>
+              <%= warning_icon(warning.review.type) %> <%= title_case(warning.subtype) %>
             </span>
             <span class="d-flex justify-content-between review-link-subheader">
               <%= warning.revision.title %>
@@ -202,7 +202,7 @@ REFACTOR
       <% end %>
     </ul>
     <div class="review-cards">
-      <%= for {warning, index} <- Enum.with_index(@qa_reviews) do %>
+      <%= for {warning, index} <- Enum.with_index(@warnings) do %>
         <div class="review-card<%= warning_selected?(@selected_review, warning, index) %>" id="<%= warning.id %>">
           <h5>
             <%= link to: Routes.project_path(@conn, :dismiss_warning, @project, warning_id: warning.id), class: "review-dismiss", method: :delete do %>

@@ -52,22 +52,18 @@ defmodule OliWeb.ProjectController do
   end
 
   def publish(conn, project_params) do
-    IO.inspect(project_params, label: "project_params")
-
     project = conn.assigns.project
     latest_published_publication = Publishing.get_latest_published_publication_by_slug!(project.slug)
     active_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
 
     # review
-    qa_reviews = Qa.list_qa_reviews(project.id)
-    |> Enum.sort_by(& {&1.type, &1.subtype})
-
-    warnings_by_type = qa_reviews
-    |> Enum.group_by(& &1.type)
-
-    activity_to_page_slug_map = Qa.activity_to_page_slug_map(project.slug)
-
+    warnings = Qa.Warnings.list_active_warnings(project.id)
+    |> Enum.sort_by(& {&1.review.type, &1.subtype})
+    warnings_by_type = warnings
+    |> Enum.group_by(& &1.review.type)
     warning_types = Map.keys(warnings_by_type)
+    activity_to_page_slug_map = Qa.Utils.activity_to_page_slug_map(project.slug)
+    qa_reviews = Qa.Reviews.list_reviews(project.id)
 
     # publish
     {has_changes, active_publication_changes} = case latest_published_publication do
@@ -86,12 +82,14 @@ defmodule OliWeb.ProjectController do
       active: :publish,
 
       # review
-      hide_reviews: project_params["hide_reviews"],
+      qa_reviews: qa_reviews,
+      warnings: warnings,
       warnings_by_type: warnings_by_type,
       warning_types: warning_types,
-      qa_reviews: qa_reviews,
       activity_to_page_slug_map: activity_to_page_slug_map,
+
       selected_review: project_params["selected"],
+      hide_reviews: project_params["hide_reviews"],
 
       # publish
       latest_published_publication: latest_published_publication,
@@ -108,11 +106,11 @@ defmodule OliWeb.ProjectController do
     |> redirect(to: Routes.project_path(conn, :publish, project))
   end
 
-  def dismiss_warning(conn, %{"warning_id" => warning_id} = params) do
+  def dismiss_warning(conn, %{"warning_id" => warning_id} = _params) do
     project = conn.assigns.project
-    new_params = %{ params | selected: nil }
+    # new_params = %{ params | selected: nil }
 
-    case Qa.dismiss_warning(warning_id) do
+    case Qa.Warnings.dismiss_warning(warning_id) do
       {:ok, _} -> redirect conn, to: Routes.project_path(conn, :publish, project)
       {:error, _changeset} -> conn
         |> put_flash(:error, "Could not dismiss warning. Please try again")

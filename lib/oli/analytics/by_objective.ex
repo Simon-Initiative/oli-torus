@@ -29,8 +29,7 @@ defmodule Oli.Analytics.ByObjective do
         first_try_correct: analytics.first_try_correct,
         number_of_attempts: analytics.number_of_attempts,
         relative_difficulty: analytics.relative_difficulty,
-      },
-      preload: [:resource_type])
+      })
   end
 
 end

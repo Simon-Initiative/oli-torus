@@ -33,7 +33,7 @@ defmodule OliWeb.ProjectView do
     end
   end
 
-  def type_selected?(type, params) do
+  def type_selected?(_type, _params) do
     # add filter logic from params
   end
 

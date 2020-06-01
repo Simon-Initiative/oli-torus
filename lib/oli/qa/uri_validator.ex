@@ -4,40 +4,60 @@ defmodule Oli.Qa.UriValidator do
 
   It is currently set up just for QA reviews, but could be easily changed to add support for
   raw uris or maps with a uri value.
+
+  This logic could be extended to validate mime types / etc rather than just fetching the resource.
   """
 
+  # returns only valid uris
+  def valid_uris(elements) when is_list(elements) do
+    elements
+    |> validate_uris
+    |> Map.get(:ok)
+  end
 
+  # returns only invalid uris
+  def invalid_uris(elements) when is_list(elements) do
+    elements
+    |> validate_uris
+    |> Map.get(:error)
+  end
 
-  def validate_uris(link_reviews) when is_list(link_reviews) do
-    results = link_reviews
+  # returns all uris as a map of lists grouped by :ok (valid), :error (invalid)
+  # elements are of type %{ id, content }
+  def validate_uris(elements) when is_list(elements) do
+    IO.inspect(elements
     |> Task.async_stream(&fetch/1)
-    |> Stream.map(fn {:ok, review} -> review end)
-    |> Stream.filter(fn result ->
-      case result do
-        {:ok, review} -> false
-        {:error, review} -> true
-      end
-    end)
-    |> Stream.map(fn {_, review} -> review end)
-    |> Enum.to_list()
-
-    IO.inspect(results, label: "results")
+    |> Stream.map(&extract_stream_result/1)
+    |> Stream.map(&prettified_type/1)
+    |> Enum.group_by(&get_status/1, &get_value/1), label: "validated")
   end
 
-  defp fetch(link_review) do
-    content = link_review.content
-    case HTTPoison.head(get_uri(content)) do
-      {:ok, _} -> {:ok, link_review}
-      _ -> {:error, link_review}
+  defp prettified_type({status, value}) do
+    type = case Map.get(value, :type) do
+      "img" -> "image"
+      "href" -> "link"
+      _ -> "remote resource"
+    end
+
+    {status, Map.put(value, :prettified_type, type)}
+  end
+
+  defp fetch(%{ content: content } = element) do
+    result = content
+    |> get_uri
+    |> HTTPoison.head
+
+    case result do
+      {:ok, _} -> {:ok, element}
+      _ -> {:error, element}
     end
   end
 
-  defp invalid?(%{ content: content } = _link_review) do
-    case HTTPoison.head(get_uri(content)) do
-      {:ok, _} -> false
-      _ -> true
-    end
-  end
+  # async stream tasks emit {:ok, value} tuples upon successful completion
+  defp extract_stream_result({:ok, value}), do: value
+
+  defp get_status(tuple), do: elem(tuple, 0)
+  defp get_value(tuple), do: elem(tuple, 1)
 
   defp get_uri(%{"href" => href}), do: href
   defp get_uri(%{"src" => src}), do: src

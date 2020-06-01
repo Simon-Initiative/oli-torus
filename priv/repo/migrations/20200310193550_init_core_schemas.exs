@@ -339,21 +339,29 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
     create unique_index(:snapshots, [:part_attempt_id, :objective_id], name: :snapshot_unique_part)
 
-    create table(:qa_reviews) do
+    create table(:reviews) do
       timestamps(type: :timestamptz)
 
       add :project_id, references(:projects)
-      add :revision_id, references(:revisions), null: true
       add :type, :string, null: false
+      add :done, :boolean, default: false
+    end
+
+    create index(:reviews, :project_id)
+
+    create table(:warnings) do
+      timestamps(type: :timestamptz)
+
+      add :review_id, references(:reviews, on_delete: :delete_all)
+      add :revision_id, references(:revisions), null: true
       add :subtype, :string
       add :content, :map
       add :requires_fix, :boolean, default: false
       add :is_dismissed, :boolean, default: false
     end
 
-    create index(:qa_reviews, :project_id)
+    create index(:warnings, [:review_id])
+    create index(:warnings, [:revision_id])
+
   end
-
-
-
 end

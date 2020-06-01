@@ -13,14 +13,25 @@ defmodule Oli.Publishing do
     publication_id = get_unpublished_publication_by_slug!(project_slug).id
     resource_type_id = ResourceType.get_id_by_type(type)
 
-    from mapping in PublishedResource,
-      where: mapping.publication_id == ^publication_id,
-      join: rev in Revision,
+    from rev in Revision,
+      join: mapping in PublishedResource,
       on: mapping.revision_id == rev.id,
       distinct: rev.resource_id,
-      where: rev.resource_type_id == ^resource_type_id
+      where: mapping.publication_id == ^publication_id
+        and rev.resource_type_id == ^resource_type_id
         and rev.deleted == false,
-      select: rev
+      select: rev,
+      preload: [:resource_type]
+
+    # from mapping in PublishedResource,
+    #   where: mapping.publication_id == ^publication_id,
+    #   join: rev in Revision,
+    #   on: mapping.revision_id == rev.id,
+    #   distinct: rev.resource_id,
+    #   where: rev.resource_type_id == ^resource_type_id
+    #     and rev.deleted == false,
+    #   select: rev,
+    #   preload: [:resource_type]
   end
 
   @doc """
