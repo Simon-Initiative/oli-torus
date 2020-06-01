@@ -12,14 +12,14 @@ import { TestModeHandler, defaultState } from './TestModeHandler';
 export type EditorsProps = {
   editMode: boolean,              // Whether or not we can edit
   content: Immutable.List<ResourceContent>,     // Content of the resource
-  onEdit: (content: Immutable.List<ResourceContent>) => void,
+  onEdit: (content: ResourceContent, index: number) => void,
+  onRemove: (index: number) => void,
   editorMap: ActivityEditorMap,   // Map of activity types to activity elements
   graded: boolean,
   activities: Immutable.Map<string, Activity>,
   projectSlug: ProjectSlug,
   resourceSlug: ResourceSlug,
 };
-
 
 
 // The list of editors
@@ -92,10 +92,11 @@ export const Editors = (props: EditorsProps) => {
 
   };
 
+
   const editors = content.map((c, index) => {
 
-    const onEdit = (u : ResourceContent) => props.onEdit(content.set(index, u));
-    const onRemove = () => props.onEdit(content.remove(index));
+    const onEdit = (u : ResourceContent) => props.onEdit(u, index);
+    const onRemove = () => props.onRemove(index);
 
     const [editor, label] = createEditor(c, onEdit);
 

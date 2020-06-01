@@ -220,10 +220,14 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
         <div className="d-flex flex-row align-items-start">
           <Outline {...props} editMode={this.state.editMode}
             activities={this.state.activities}
-            onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
+            onEdit={c => onEdit(c)} content={this.state.undoable.current.content}/>
           <Editors {...props} editMode={this.state.editMode}
             activities={this.state.activities}
-            onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
+            onRemove={index => onEdit(this.state.undoable.current.content.delete(index))}
+            onEdit={(c, index) => {
+              onEdit(this.state.undoable.current.content.set(index, c));
+            }}
+            content={this.state.undoable.current.content}/>
         </div>
       </div>
     );
