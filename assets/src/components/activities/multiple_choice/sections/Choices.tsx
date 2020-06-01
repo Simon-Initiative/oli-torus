@@ -23,7 +23,7 @@ export const Choices = ({ onAddChoice, onEditChoice, onRemoveChoice, editMode, m
   const correctChoice = choices.reduce((correct, choice) => {
 
     const responseMatchesChoice = (response: Response, choice: Choice) =>
-      response.match === choice.id;
+      response.rule === `input like {${choice.id}}`;
     if (correct) return correct;
 
     if (parts[0].responses.find(response =>

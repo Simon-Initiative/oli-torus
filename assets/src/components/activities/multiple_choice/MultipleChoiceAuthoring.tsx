@@ -3,11 +3,10 @@ import ReactDOM from 'react-dom';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { MultipleChoiceModelSchema } from './schema';
 import * as ActivityTypes from '../types';
-import { QuestionTypeDropdown } from '../QuestionTypeDropdown';
-import { Stem } from './sections/Stem';
+import { Stem } from '../common/Stem';
 import { Choices } from './sections/Choices';
 import { Feedback } from './sections/Feedback';
-import { Hints } from './sections/Hints';
+import { Hints } from '../common/Hints';
 import { MCReducer, MCActions } from './reducer';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
@@ -31,8 +30,10 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
 
   return (
     <div className="p-4 pl-5">
-      <QuestionTypeDropdown {...sharedProps} />
-      <Stem {...sharedProps}
+      <Stem
+        projectSlug={props.projectSlug}
+        editMode={props.editMode}
+        stem={state.stem}
         onEditStem={content => dispatch(MCActions.editStem(content))} />
       <Choices {...sharedProps}
         onAddChoice={() => dispatch(MCActions.addChoice())}
@@ -40,7 +41,10 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
         onRemoveChoice={id => dispatch(MCActions.removeChoice(id))} />
       <Feedback {...sharedProps}
         onEditResponse={(id, content) => dispatch(MCActions.editFeedback(id, content))} />
-      <Hints {...sharedProps}
+      <Hints
+        projectSlug={props.projectSlug}
+        hints={state.authoring.parts[0].hints}
+        editMode={props.editMode}
         onAddHint={() => dispatch(MCActions.addHint())}
         onEditHint={(id, content) => dispatch(MCActions.editHint(id, content))}
         onRemoveHint={id => dispatch(MCActions.removeHint(id))} />

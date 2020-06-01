@@ -14,7 +14,7 @@ defmodule Oli.Delivery.HintsTest do
         "authoring" => %{
           "parts" => [
             %{"id" => "1", "responses" => [
-              %{"match" => "a", "score" => 10, "id" => "r1", "feedback" => %{"id" => "1", "content" => "yes"}}
+              %{"rule" => "input like {a}", "score" => 10, "id" => "r1", "feedback" => %{"id" => "1", "content" => "yes"}}
             ],
             "hints" => [
               %{"id" => "h1", "content" => [%{"type" => "p", "children" => [%{"text" => "hint one"}]}]},
