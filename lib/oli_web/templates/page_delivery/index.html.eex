@@ -15,6 +15,7 @@
     <div class="flex-1"></div>
     <div>
       <%= link "Download Gradebook (.csv)", to: Routes.page_delivery_path(@conn, :export_gradebook, @context_id), class: "btn btn-link btn-sm" %>
+      <%= link "Sync Grades", to: Routes.page_delivery_path(@conn, :sync_gradebook, @context_id), class: "btn btn-warning btn-sm" %>
     </div>
   </div>
   <% end %>

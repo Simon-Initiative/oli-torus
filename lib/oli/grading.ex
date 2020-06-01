@@ -11,7 +11,21 @@ defmodule Oli.Grading do
   alias Oli.Publishing
   alias Oli.Grading.GradebookRow
   alias Oli.Grading.GradebookScore
+  alias Oli.Grading.Adapters
+  alias Oli.Grading.LtiGradeService
   alias Oli.Delivery.Sections.SectionRoles
+
+  def sync_grades(%Section{} = section) do
+    {gradebook, column_labels} = generate_gradebook_for_section(section)
+
+    # TODO: look up adapter type by section or institution, default to lti
+    grade_service = LtiGradeService
+    adapter = Adapters.LtiV2GradeServices
+
+    {:ok, %HTTPoison.Response{} = response} = grade_service.get_lineitems(section.context_id, adapter)
+
+    IO.inspect response, label: "lineitems"
+  end
 
   @doc """
   Exports the gradebook for the provided section in CVS format

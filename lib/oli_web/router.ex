@@ -219,6 +219,7 @@ defmodule OliWeb.Router do
     get "/:context_id/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt
 
     get "/:context_id/grades/export", PageDeliveryController, :export_gradebook
+    get "/:context_id/grades/sync", PageDeliveryController, :sync_gradebook
   end
 
   scope "/admin", OliWeb do

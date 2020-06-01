@@ -175,4 +175,23 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
+  def sync_gradebook(conn, %{"context_id" => context_id}) do
+    user = conn.assigns.current_user
+    case {Sections.is_enrolled?(user.id, context_id), Lti.parse_lti_role(user.roles)} do
+      {true, role} when role == :administrator or role == :instructor ->
+        section = Sections.get_section_by(context_id: context_id)
+
+        # TODO case _ do handle error
+        Grading.sync_grades(section)
+
+        # conn
+        # |> send_resp(200)
+
+        redirect(conn, to: Routes.page_delivery_path(conn, :index, context_id))
+
+      _ ->
+        render(conn, "not_authorized.html")
+    end
+  end
+
 end
