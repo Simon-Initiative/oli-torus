@@ -3,8 +3,8 @@ import * as ContentModel from 'data/content/model';
 import { Choice, MultipleChoiceModelSchema } from './schema';
 import { RichText, Operation, ScoringStrategy, EvaluationStrategy } from '../types';
 
-export const makeResponse = (match: string, score: number, text: '') =>
-  ({ id: guid(), match, score, feedback: fromText(text) });
+export const makeResponse = (rule: string, score: number, text: '') =>
+  ({ id: guid(), rule, score, feedback: fromText(text) });
 
 export const defaultMCModel : () => MultipleChoiceModelSchema = () => {
   const choiceA: Choice = fromText('Choice A');
@@ -20,10 +20,9 @@ export const defaultMCModel : () => MultipleChoiceModelSchema = () => {
       parts: [{
         id: '1', // an MCQ only has one part, so it is safe to hardcode the id
         scoringStrategy: ScoringStrategy.average,
-        evaluationStrategy: EvaluationStrategy.regex,
         responses: [
-          makeResponse(choiceA.id, 1, ''),
-          makeResponse(choiceB.id, 0, ''),
+          makeResponse(`input like {${choiceA.id}}`, 1, ''),
+          makeResponse(`input like {${choiceB.id}}`, 0, ''),
         ],
         hints: [
           fromText(''),

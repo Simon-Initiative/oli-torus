@@ -22,7 +22,8 @@ class Reducer extends ImmerReducer<MultipleChoiceModelSchema> {
   addChoice() {
     const newChoice: ChoiceType = fromText('');
     this.draftState.choices.push(newChoice);
-    this.draftState.authoring.parts[0].responses.push(makeResponse(newChoice.id, 0, ''));
+    this.draftState.authoring.parts[0].responses.push(
+      makeResponse(`input like {${newChoice.id}}`, 0, ''));
   }
 
   editChoice(id: string, content: RichText) {
@@ -32,7 +33,7 @@ class Reducer extends ImmerReducer<MultipleChoiceModelSchema> {
   removeChoice(id: string) {
     this.draftState.choices = this.draftState.choices.filter(c => c.id !== id);
     this.draftState.authoring.parts[0].responses = this.draftState.authoring.parts[0].responses
-      .filter(r => r.match !== id);
+      .filter(r => r.rule !== `input like {${id}}`);
   }
 
   editFeedback(id: string, content: RichText) {

@@ -1,0 +1,145 @@
+import { ShortAnswerActions, ShortAnswerReducer } from 'components/activities/short_answer/reducer';
+import * as ContentModel from 'data/content/model';
+import { ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
+import { ScoringStrategy } from 'components/activities/types';
+
+function testFromText(text: string) {
+  return {
+    id: Math.random() + '',
+    content: [
+      ContentModel.create<ContentModel.Paragraph>({
+        type: 'p',
+        children: [{ text }],
+        id: Math.random() + '',
+      }),
+    ],
+  };
+}
+
+function testResponse(text: string, rule: string, score: number = 0) {
+  return {
+    id: Math.random() + '',
+    feedback: testFromText(text),
+    rule,
+    score,
+  };
+}
+
+function testDefaultModel(): ShortAnswerModelSchema {
+
+  const responseA = testResponse('', 'input like {answer}', 1);
+  const responseB = testResponse('', 'input like {.*}', 0);
+
+  return {
+    stem: testFromText(''),
+    inputType: 'text',
+    authoring: {
+      parts: [
+        {
+          id: Math.random() + '',
+          scoringStrategy: ScoringStrategy.average,
+          responses: [responseA, responseB],
+          hints: [
+            testFromText(''),
+            testFromText(''),
+            testFromText(''),
+          ],
+        },
+      ],
+      transformations: [],
+    },
+  };
+}
+
+describe('multiple choice question', () => {
+  const model = testDefaultModel();
+
+  it('has a stem', () => {
+    expect(model).toHaveProperty('stem');
+  });
+
+  it('can edit stem', () => {
+    const newStemContent = testFromText('new content').content;
+    expect(ShortAnswerReducer(model,
+      ShortAnswerActions.editStem(newStemContent)).stem).toMatchObject({
+        content: newStemContent,
+      });
+  });
+
+  it('has input type', () => {
+    expect(model).toHaveProperty('inputType');
+  });
+
+  it('can edit feedback', () => {
+    const newFeedbackContent = testFromText('new content').content;
+    const firstFeedback = model.authoring.parts[0].responses[0];
+    expect(ShortAnswerReducer(model,
+      ShortAnswerActions.editFeedback(firstFeedback.id, newFeedbackContent))
+      .authoring.parts[0].responses[0].feedback)
+      .toHaveProperty('content', newFeedbackContent);
+  });
+
+  it('has at least 3 hints', () => {
+    expect(model.authoring.parts[0].hints.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('can edit a rule', () => {
+    const newRule = 'input like {new answer}';
+    const response = model.authoring.parts[0].responses[0];
+    expect(ShortAnswerReducer(model,
+      ShortAnswerActions.editRule(response.id, newRule)).authoring.parts[0].responses[0])
+    .toHaveProperty('rule', newRule);
+  });
+
+  it('can add and remove a response in text mode', () => {
+
+    const updated = ShortAnswerReducer(model, ShortAnswerActions.addResponse());
+    expect(updated.authoring.parts[0].responses[0].score).toBe(1);
+    expect(updated.authoring.parts[0].responses[1].score).toBe(0);
+    expect(updated.authoring.parts[0].responses[2].score).toBe(0);
+    expect(updated.authoring.parts[0].responses[0].rule).toBe('input like {answer}');
+    expect(updated.authoring.parts[0].responses[1].rule).toBe('input like {another answer}');
+    expect(updated.authoring.parts[0].responses[2].rule).toBe('input like {.*}');
+
+    expect(ShortAnswerReducer(updated,
+      ShortAnswerActions.removeReponse(
+        updated.authoring.parts[0].responses[1].id)).authoring.parts[0].responses).toHaveLength(2);
+  });
+
+  it('can add and remove a response in numeric mode', () => {
+
+    let updated = ShortAnswerReducer(model, ShortAnswerActions.setInputType('numeric'));
+
+    updated = ShortAnswerReducer(updated, ShortAnswerActions.addResponse());
+    expect(updated.authoring.parts[0].responses[0].score).toBe(1);
+    expect(updated.authoring.parts[0].responses[1].score).toBe(0);
+    expect(updated.authoring.parts[0].responses[2].score).toBe(0);
+    expect(updated.authoring.parts[0].responses[0].rule).toBe('input = {1}');
+    expect(updated.authoring.parts[0].responses[1].rule).toBe('input = {1}');
+    expect(updated.authoring.parts[0].responses[2].rule).toBe('input like {.*}');
+
+    expect(ShortAnswerReducer(updated,
+      ShortAnswerActions.removeReponse(
+        updated.authoring.parts[0].responses[1].id)).authoring.parts[0].responses).toHaveLength(2);
+  });
+
+  // Creating guids causes failures
+  xit('can add a cognitive hint before the end of the array', () => {
+    expect(ShortAnswerReducer(model, ShortAnswerActions.addHint()).authoring.parts[0].hints.length)
+      .toBeGreaterThan(model.authoring.parts[0].hints.length);
+  });
+
+  it('can edit a hint', () => {
+    const newHintContent = testFromText('new content').content;
+    const firstHint = model.authoring.parts[0].hints[0];
+    expect(ShortAnswerReducer(model,
+      ShortAnswerActions.editHint(firstHint.id, newHintContent)).authoring.parts[0].hints[0])
+    .toHaveProperty('content', newHintContent);
+  });
+
+  it('can remove a hint', () => {
+    const firstHint = model.authoring.parts[0].hints[0];
+    expect(ShortAnswerReducer(model,
+      ShortAnswerActions.removeHint(firstHint.id)).authoring.parts[0].hints).toHaveLength(2);
+  });
+});

@@ -22,7 +22,7 @@ const table = (children: ContentModel.TableRow[]) => ContentModel.create<Content
 
 // The UI command for creating tables
 const command: Command = {
-  execute: (editor: ReactEditor, params: any) => {
+  execute: (context: any, editor: ReactEditor, params: any) => {
 
     const rows: any = [];
 

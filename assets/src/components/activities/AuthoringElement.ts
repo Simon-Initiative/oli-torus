@@ -1,9 +1,11 @@
 import { ActivityModelSchema } from './types';
+import { ProjectSlug } from 'data/types';
 
 export interface AuthoringElementProps<T extends ActivityModelSchema> {
   model: T;
   onEdit: (model: T) => void;
   editMode: boolean;
+  projectSlug: ProjectSlug;
 }
 
 // An abstract authoring web component, designed to delegate to
@@ -29,6 +31,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     const getProp = (key: string) => JSON.parse(this.getAttribute(key) as any);
     const model = getProp('model');
     const editMode: boolean = getProp('editMode');
+    const projectSlug: ProjectSlug = this.getAttribute('projectSlug') as string;
 
     const onEdit = (model: any) => {
       this.dispatchEvent(new CustomEvent('modelUpdated', { bubbles: true, detail: { model } }));
@@ -38,6 +41,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
       onEdit,
       model,
       editMode,
+      projectSlug,
     };
   }
 

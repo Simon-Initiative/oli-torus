@@ -467,3 +467,26 @@ Inlined react-bootstrap-typeahead styles
   opacity: 0;
   transition: opacity 250ms ease-in;
 }
+
+
+.LoadingSpinner {
+  text-align: center;
+  color: gray;
+}
+.LoadingSpinner i {
+  margin: '0 5px';
+  animation-duration: '1s';
+  -webkit-animation-duration: '1s';
+}
+
+.sizeSmall {
+  font-size: 0.8em;
+}
+.sizeNormal {
+  font-size: 1em;
+}
+.sizeLarge {
+  font-size: 1.2em;
+}
+
+

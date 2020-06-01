@@ -1,8 +1,7 @@
 
-import { HasContent, Part, Transformation, ActivityModelSchema } from '../types';
+import { HasContent, Part, Transformation, ActivityModelSchema, Stem } from '../types';
 import { Identifiable } from 'data/content/model';
 
-export interface Stem extends HasContent {}
 export interface Choice extends Identifiable, HasContent {}
 
 export interface MultipleChoiceModelSchema extends ActivityModelSchema {

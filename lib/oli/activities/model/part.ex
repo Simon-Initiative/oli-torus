@@ -1,14 +1,10 @@
 defmodule Oli.Activities.Model.Part do
 
-  alias Oli.Delivery.Evaluation
-
-  defstruct [:id, :scoring_strategy, :evaluation_strategy, :responses, :hints, :parts]
-
+  defstruct [:id, :scoring_strategy, :responses, :hints, :parts]
 
   def parse(%{
     "id" => id,
     "scoringStrategy" => scoring_strategy,
-    "evaluationStrategy" => evaluation_strategy_str,
     "responses" => responses,
   } = part) do
 
@@ -17,16 +13,14 @@ defmodule Oli.Activities.Model.Part do
 
     with {:ok, responses} <- Oli.Activities.Model.Response.parse(responses),
       {:ok, hints} <- Oli.Activities.Model.Hint.parse(hints),
-      {:ok, parts} <- Oli.Activities.Model.Part.parse(parts),
-      {:ok, evaluation_strategy} <- Evaluation.parse_strategy(evaluation_strategy_str)
+      {:ok, parts} <- Oli.Activities.Model.Part.parse(parts)
     do
       {:ok, %Oli.Activities.Model.Part{
         responses: responses,
         hints: hints,
         parts: parts,
         id: id,
-        scoring_strategy: scoring_strategy,
-        evaluation_strategy: evaluation_strategy
+        scoring_strategy: scoring_strategy
       }}
     else
       error -> error

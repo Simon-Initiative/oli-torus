@@ -63,6 +63,7 @@ export interface ActivityState {
   hasMoreHints: boolean;
 }
 
+export interface Stem extends Identifiable, HasContent {}
 export interface Hint extends Identifiable, HasContent {}
 export interface Feedback extends Identifiable, HasContent {}
 export interface Transformation extends Identifiable {
@@ -71,9 +72,9 @@ export interface Transformation extends Identifiable {
 }
 
 export interface Response extends Identifiable {
-  // `match` corresponds to Choice::id. Later, it can be used
-  // for a catch-all and non 1:1 choice:feedback mappings
-  match: string | number;
+
+  rule: string;
+
   // `score == 1` indicates the feedback corresponds to a matching choice
   score: number;
 
@@ -84,7 +85,6 @@ export interface Part extends Identifiable {
   responses: Response[];
   hints: Hint[];
   scoringStrategy: ScoringStrategy;
-  evaluationStrategy: EvaluationStrategy;
 }
 
 export enum ScoringStrategy {
@@ -96,6 +96,7 @@ export enum ScoringStrategy {
 export enum EvaluationStrategy {
   'regex' = 'regex',
   'numeric' = 'numeric',
+  'none' = 'none',
 }
 
 export enum Operation {
