@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>OliWeb.ProjectView — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-640e3dea6b.js"></script>
+    <script src="dist/sidebar_items-996558bf10.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -96,9 +96,29 @@ OliWeb.ProjectView          <a href="https://github.com/Simon-Initiative/oli-tor
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#action_item/1">action_item(subtype)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#explanatory_text/1">explanatory_text(subtype)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#icon/1">icon(arg)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#render/2">render(template, assigns \\ %{})</a>
   </div>
     <div class="summary-synopsis"><p>Renders the given template locally.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#resource_link/5">resource_link(activity_map, slug, title, conn, project)</a>
+  </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
@@ -107,6 +127,26 @@ OliWeb.ProjectView          <a href="https://github.com/Simon-Initiative/oli-tor
     <div class="summary-synopsis"><p>Callback invoked when no template is found.
 By default it raises but can be customized
 to render a particular template.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#title_case/1">title_case(string)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#type_selected?/2">type_selected?(type, params)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#warning_icon/1">warning_icon(type)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#warning_selected?/3">warning_selected?(selected, warning, index)</a>
+  </div>
 </div>
   </div>
         </section>
@@ -135,6 +175,51 @@ Functions          </h1>
 <p>The resource name, as an atom, for this view</p>
   </section>
 </section>
+<section class="detail" id="action_item/1">
+  <div class="detail-header">
+    <a href="#action_item/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">action_item(subtype)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/project_view.ex#L109" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="explanatory_text/1">
+  <div class="detail-header">
+    <a href="#explanatory_text/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">explanatory_text(subtype)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/project_view.ex#L48" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="icon/1">
+  <div class="detail-header">
+    <a href="#icon/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">icon(arg)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/project_view.ex#L15" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
 <section class="detail" id="render/2">
     <span id="render/1"></span>
   <div class="detail-header">
@@ -150,6 +235,21 @@ Functions          </h1>
   </div>
   <section class="docstring">
 <p>Renders the given template locally.</p>
+  </section>
+</section>
+<section class="detail" id="resource_link/5">
+  <div class="detail-header">
+    <a href="#resource_link/5" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">resource_link(activity_map, slug, title, conn, project)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/project_view.ex#L28" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
   </section>
 </section>
 <section class="detail" id="template_not_found/2">
@@ -171,6 +271,66 @@ Functions          </h1>
 <p>Callback invoked when no template is found.
 By default it raises but can be customized
 to render a particular template.</p>
+  </section>
+</section>
+<section class="detail" id="title_case/1">
+  <div class="detail-header">
+    <a href="#title_case/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">title_case(string)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/project_view.ex#L19" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="type_selected?/2">
+  <div class="detail-header">
+    <a href="#type_selected?/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">type_selected?(type, params)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/project_view.ex#L36" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="warning_icon/1">
+  <div class="detail-header">
+    <a href="#warning_icon/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">warning_icon(type)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/project_view.ex#L4" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="warning_selected?/3">
+  <div class="detail-header">
+    <a href="#warning_selected?/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">warning_selected?(selected, warning, index)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/project_view.ex#L40" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
   </section>
 </section>
           </div>

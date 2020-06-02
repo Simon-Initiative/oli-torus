@@ -1,4 +1,4 @@
-dist/search_items-48c0270372.js
+dist/search_items-738083f2a3.js
 dist/app-a225d03098e64fef431a.js
 dist/elixir-0ab8a6a80ebaaa287431.css
 dist/erlang-bd206729da4d0d280293.css
@@ -6,7 +6,7 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/sidebar_items-640e3dea6b.js
+dist/sidebar_items-996558bf10.js
 api-reference.html
 readme.html
 license.html
@@ -115,6 +115,16 @@ Oli.Publishing.ObjectiveMappingTransfer.html
 Oli.Publishing.Publication.html
 Oli.Publishing.PublishedResource.html
 Oli.Publishing.Resolver.html
+Oli.Qa.html
+Oli.Qa.Review.html
+Oli.Qa.Reviewers.Accessibility.html
+Oli.Qa.Reviewers.Content.html
+Oli.Qa.Reviewers.Pedagogy.html
+Oli.Qa.Reviews.html
+Oli.Qa.UriValidator.html
+Oli.Qa.Utils.html
+Oli.Qa.Warning.html
+Oli.Qa.Warnings.html
 Oli.Registrar.html
 Oli.ReleaseTasks.html
 Oli.Rendering.html
