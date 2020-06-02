@@ -49,7 +49,7 @@ export const Item = (props: ItemProps) => {
         <IconCorrect /> Feedback for Correct Answer:
         <input type={props.model.inputType === 'numeric' ? 'number' : 'text'}
           className="form-control"
-          onChange={(e: any) => setValue(e.target.value)}
+          onChange={(e: any) => onEditRule(e.target.value)}
           value={value}
           style={style} />
       </React.Fragment>
