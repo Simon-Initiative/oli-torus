@@ -12,6 +12,7 @@ type RichTextEditorProps = {
 };
 export const RichTextEditor = ({ editMode, text, onEdit, children, projectSlug }:
   React.PropsWithChildren<RichTextEditorProps>) => {
+
   return (
     <React.Fragment>
       {children}

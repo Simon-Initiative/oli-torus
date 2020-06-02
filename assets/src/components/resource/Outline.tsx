@@ -105,8 +105,8 @@ const OutlineEntry = (props: OutlineEntryProps) => {
 
     dt.setData('CodeEditors', resource);
     dt.setData('application/x-oli-resource-content', JSON.stringify(dragPayload));
-    dt.setData('text/html', toSimpleText(content));
-    dt.setData('text/plain', toSimpleText(content));
+    dt.setData('text/html', toSimpleText(content as any));
+    dt.setData('text/plain', toSimpleText(content as any));
     dt.effectAllowed = 'move';
 
   };
