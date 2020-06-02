@@ -149,10 +149,12 @@ export const FixedToolbar = React.memo((props: FixedToolbarProps) => {
     : [<TextFormatter key="text"/>, ...toolbarItems.map((t, i) => {
       if (t.type === 'CommandDesc' && t.command.obtainParameters === undefined) {
         return <ToolbarButton
+          tooltip={t.description}
           style="" key={t.icon} icon={t.icon} command={t.command} context={props.commandContext} />;
       }
       if (t.type === 'CommandDesc' && t.command.obtainParameters !== undefined) {
         return <DropdownToolbarButton style="" key={t.icon} icon={t.icon}
+          tooltip={t.description}
           command={t.command} context={props.commandContext}/>;
       }
       return <Spacer key={'spacer-' + i} />;
@@ -223,10 +225,11 @@ const TextFormatter = () => {
   );
 };
 
-const ToolbarButton = ({ icon, command, style, context }: any) => {
+const ToolbarButton = ({ icon, command, style, context, tooltip }: any) => {
   const editor = useSlate();
   return (
     <button
+      data-toggle="tooltip" data-placement="top" title={tooltip}
       className={`btn btn-sm ${style}`}
       onMouseDown={(event) => {
         event.preventDefault();
@@ -238,7 +241,7 @@ const ToolbarButton = ({ icon, command, style, context }: any) => {
   );
 };
 
-const DropdownToolbarButton = ({ icon, command, style, context }: any) => {
+const DropdownToolbarButton = ({ icon, command, style, context, tooltip }: any) => {
   const editor = useSlate();
 
   const ref = useRef();
@@ -253,11 +256,12 @@ const DropdownToolbarButton = ({ icon, command, style, context }: any) => {
   const onCancel = () => {};
 
   return (
-    <div ref={ref as any} className="dropdown">
+    <div ref={ref as any} className="dropdown"
+      data-toggle="tooltip" data-placement="top" title={tooltip}>
       <button
-          className={`btn btn-sm dropdown-toggle ${style}`}
-          data-toggle={'dropdown'}
-          type="button">
+        className={`btn btn-sm dropdown-toggle ${style}`}
+        data-toggle={'dropdown'}
+        type="button">
         <i className={icon}></i>
       </button>
       <div className="dropdown-menu dropdown-menu-right">
