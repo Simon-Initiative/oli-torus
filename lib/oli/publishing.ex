@@ -9,7 +9,7 @@ defmodule Oli.Publishing do
   alias Oli.Resources.{Revision, ResourceType}
   alias Oli.Publishing.{Publication, PublishedResource}
 
-  def get_unpublished_revisions_by_type(project_slug, type) do
+  def query_unpublished_revisions_by_type(project_slug, type) do
     publication_id = get_unpublished_publication_by_slug!(project_slug).id
     resource_type_id = ResourceType.get_id_by_type(type)
 
@@ -20,8 +20,12 @@ defmodule Oli.Publishing do
       where: mapping.publication_id == ^publication_id
         and rev.resource_type_id == ^resource_type_id
         and rev.deleted == false,
-      select: rev,
-      preload: [:resource_type]
+      select: rev
+  end
+
+  def get_unpublished_revisions_by_type(project_slug, type) do
+    Repo.all(query_unpublished_revisions_by_type(project_slug, type))
+    |> Repo.preload(:resource_type)
   end
 
   @doc """

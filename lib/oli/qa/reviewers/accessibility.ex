@@ -15,7 +15,7 @@ defmodule Oli.Qa.Reviewers.Accessibility do
     project_slug
   end
 
-  defp missing_alt_text(review) do
+  def missing_alt_text(review) do
     [ "img", "youtube" ]
     |> elements_of_type(review)
     |> Enum.filter(&no_alt_text?/1)
@@ -49,7 +49,7 @@ defmodule Oli.Qa.Reviewers.Accessibility do
 
   defp nondescriptive?(_element) do
     # match with ["link", "click", "click here", "more", empty, single word, only images, etc]
-    # link_text = ?? How to get raw link text
+    # Write a recursive descent text parser
     false
   end
 end

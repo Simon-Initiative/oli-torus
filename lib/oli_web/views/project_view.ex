@@ -19,7 +19,7 @@ defmodule OliWeb.ProjectView do
   def title_case(string) do
     String.capitalize(string)
 
-    # Capitalize first word or title case heading?
+    # Unsure whether it's better to titlecase or capitalize
     # |> String.split(" ")
     # |> Enum.map(& String.capitalize(&1))
     # |> Enum.join(" ")
@@ -34,7 +34,7 @@ defmodule OliWeb.ProjectView do
   end
 
   def type_selected?(_type, _params) do
-    # add filter logic from params
+    # Placeholder for where the logic for filtering reviews of a certain type will go
   end
 
   def warning_selected?(selected, warning, index) do

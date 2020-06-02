@@ -12,24 +12,24 @@ defmodule Oli.Qa.UriValidator do
   def valid_uris(elements) when is_list(elements) do
     elements
     |> validate_uris
-    |> Map.get(:ok)
+    |> Map.get(:ok, [])
   end
 
   # returns only invalid uris
   def invalid_uris(elements) when is_list(elements) do
     elements
     |> validate_uris
-    |> Map.get(:error)
+    |> Map.get(:error, [])
   end
 
   # returns all uris as a map of lists grouped by :ok (valid), :error (invalid)
   # elements are of type %{ id, content }
   def validate_uris(elements) when is_list(elements) do
-    IO.inspect(elements
+    elements
     |> Task.async_stream(&fetch/1)
     |> Stream.map(&extract_stream_result/1)
     |> Stream.map(&prettified_type/1)
-    |> Enum.group_by(&get_status/1, &get_value/1), label: "validated")
+    |> Enum.group_by(&get_status/1, &get_value/1)
   end
 
   defp prettified_type({status, value}) do

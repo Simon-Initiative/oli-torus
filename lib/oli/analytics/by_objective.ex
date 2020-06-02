@@ -15,10 +15,10 @@ defmodule Oli.Analytics.ByObjective do
       }
 
     Repo.all(
-      from objective in subquery(Publishing.get_unpublished_revisions_by_type(project_slug, "objective")),
+      from objective in subquery(Publishing.query_unpublished_revisions_by_type(project_slug, "objective")),
       left_join: pairing in subquery(activity_objectives),
       on: objective.resource_id == pairing.objective_id,
-      left_join: activity in subquery(Publishing.get_unpublished_revisions_by_type(project_slug, "activity")),
+      left_join: activity in subquery(Publishing.query_unpublished_revisions_by_type(project_slug, "activity")),
       on: pairing.activity_id == activity.resource_id,
       left_join: analytics in subquery(Common.analytics_by_activity()),
       on: pairing.activity_id == analytics.activity_id,
@@ -29,7 +29,8 @@ defmodule Oli.Analytics.ByObjective do
         first_try_correct: analytics.first_try_correct,
         number_of_attempts: analytics.number_of_attempts,
         relative_difficulty: analytics.relative_difficulty,
-      })
+      },
+      preload: [:resource_type])
   end
 
 end

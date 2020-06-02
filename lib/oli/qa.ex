@@ -21,22 +21,6 @@ defmodule Oli.Qa do
         Many warnings of subtype "broken link," "no attached objectives," etc.
         A warning usually has some content that contains the issue (like the json for the broken link).
         It also maps to a description and an action item in the `ProjectView`.
-
-
-  TODO:
-    TESTS
-    UI
-      Filters
-        Each filter should be de-selectable to filter out those results
-        Warning count badges should match warning icon colors
-      Add progress bar for incomplete reviews from reviews table
-      Selecting a warning refreshes the page and loses scroll position
-    EFFICIENCY
-      split reviewers/queries out into parallel tasks
-      tsv support for columns?
-    REFACTOR
-      Reviewer modules use implicitly shared interface, should be explicit
-      _review.html template is rough, should be refactored
   """
 
   alias Oli.Authoring.Course
@@ -52,8 +36,6 @@ defmodule Oli.Qa do
     |> Accessibility.review
     |> Content.review
     |> Pedagogy.review
-
-    # use Task for each section, group them all and return at end
   end
 
 end

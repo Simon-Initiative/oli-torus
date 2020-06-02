@@ -14,7 +14,7 @@ defmodule Oli.Qa.Reviewers.Content do
     project_slug
   end
 
-  defp broken_uris(review) do
+  def broken_uris(review) do
     ["a", "img"]
     |> elements_of_type(review)
     |> UriValidator.invalid_uris

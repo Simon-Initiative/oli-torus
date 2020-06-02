@@ -1,6 +1,5 @@
 defmodule Oli.Qa.Utils do
   import Ecto.Query, warn: false
-  alias Oli.Repo
   alias Oli.Resources
   alias Oli.Resources.{ResourceType}
   alias Oli.Authoring.Course
@@ -43,7 +42,7 @@ defmodule Oli.Qa.Utils do
 
   # Creates a map of activity slugs to the containing page revision slugs
   def activity_to_page_slug_map(project_slug) do
-    Repo.all(Publishing.get_unpublished_revisions_by_type(project_slug, "page"))
+    Publishing.get_unpublished_revisions_by_type(project_slug, "page")
     |> Enum.reduce(%{}, fn page, acc ->
       Resources.activity_references(page)
       |> Enum.reduce(acc,
