@@ -44,10 +44,8 @@ defmodule Oli.Qa.UriValidator do
 
   defp fetch(%{ content: content } = element) do
 
-    IO.inspect content
-
     uri = get_uri(content)
-    IO.inspect uri
+
     if !valid_uri?(uri)
     do {:error, element}
     else
