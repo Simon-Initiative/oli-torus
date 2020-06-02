@@ -45,7 +45,7 @@ defmodule Oli.Qa.ContentTest do
                     %{"text" => " "},
                     %{
                       "children" => [%{"text" => "link"}],
-                      "href" => "www.google.com",
+                      "href" => "https://www.google.com",
                       "id" => "1914651063",
                       "target" => "self",
                       "type" => "a"
@@ -71,9 +71,9 @@ defmodule Oli.Qa.ContentTest do
       warnings = Warnings.list_active_warnings(project.id)
 
       # valid link
-      assert Enum.find(warnings, & &1.revision.id == page_invalid_link.revision.id)
-      # invalid link
       assert !Enum.find(warnings, & &1.revision.id == page_valid_link.revision.id)
+      # invalid link
+      assert Enum.find(warnings, & &1.revision.id == page_invalid_link.revision.id)
     end
 
   end

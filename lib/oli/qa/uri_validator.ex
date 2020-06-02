@@ -43,14 +43,25 @@ defmodule Oli.Qa.UriValidator do
   end
 
   defp fetch(%{ content: content } = element) do
-    result = content
-    |> get_uri
-    |> HTTPoison.head
+    uri = get_uri(content)
 
-    case result do
-      {:ok, _} -> {:ok, element}
-      _ -> {:error, element}
+    if !valid_uri?(uri)
+    do {:error, element}
+    else
+      try do
+        case HTTPoison.head(uri) do
+          {:ok, _} -> {:ok, element}
+          _ -> {:error, element}
+        end
+      rescue
+        _ -> {:error, element}
+      end
     end
+  end
+
+  def valid_uri?(uri) do
+    uri = URI.parse(uri)
+    uri.scheme != nil && uri.host =~ "."
   end
 
   # async stream tasks emit {:ok, value} tuples upon successful completion
