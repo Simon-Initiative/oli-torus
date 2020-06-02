@@ -7,7 +7,11 @@ import { Stem } from '../common/Stem';
 import { Feedback } from './sections/Feedback';
 import { Hints } from '../common/Hints';
 import { ShortAnswerActions, ShortAnswerReducer } from './reducer';
+import { ModalDisplay } from 'components/modal/ModalDisplay';
+import { Provider } from 'react-redux';
+import { configureStore } from 'state/store';
 
+const store = configureStore();
 
 const inputs: { value: string, displayValue: string}[] = [
   { value: 'numeric', displayValue: 'Numeric' },
@@ -82,11 +86,19 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
   );
 };
 
+
 export class ShortAnswerAuthoring extends AuthoringElement<ShortAnswerModelSchema> {
   render(mountPoint: HTMLDivElement, props: AuthoringElementProps<ShortAnswerModelSchema>) {
-    ReactDOM.render(<ShortAnswer {...props} />, mountPoint);
+    ReactDOM.render(
+      <Provider store={store}>
+        <ShortAnswer {...props} />
+        <ModalDisplay/>
+      </Provider>,
+      mountPoint,
+    );
   }
 }
+
 
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
 window.customElements.define(manifest.authoring.element, ShortAnswerAuthoring);
