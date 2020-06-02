@@ -41,9 +41,30 @@ function hideToolbar(el: HTMLElement) {
 
 function shouldHideToolbar(editor: ReactEditor) {
   const { selection } = editor;
+
+  // Hide the toolbar where there is either:
+  // 1. No selection
+  // 2. The editor is not currently in focus
+  // 3. The selection range is collapsed
+  // 4. The selection range spans more than one block
+  // 5. The selection current text is the empty string
+
+  const spansMultipleBlocks = (selection: Range) => {
+    if (selection.anchor.path.length === selection.focus.path.length) {
+      for (let i = 0; i < selection.anchor.path.length; i += 1) {
+        if (selection.anchor.path[i] !== selection.focus.path[i]) {
+          return true;
+        }
+      }
+      return false;
+    }
+    return true;
+  };
+
   return !selection ||
     !ReactEditor.isFocused(editor) ||
     Range.isCollapsed(selection) ||
+    spansMultipleBlocks(selection) ||
     SlateEditor.string(editor, selection) === '';
 }
 
