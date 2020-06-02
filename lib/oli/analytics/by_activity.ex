@@ -3,10 +3,11 @@ defmodule Oli.Analytics.ByActivity do
   import Ecto.Query, warn: false
   alias Oli.Repo
   alias Oli.Analytics.Common
+  alias Oli.Publishing
 
-  def query_against_project_id(project_id) do
+  def query_against_project_slug(project_slug) do
     Repo.all(
-      from activity in subquery(Common.all_published_resources(project_id, "activity")),
+      from activity in subquery(Publishing.query_unpublished_revisions_by_type(project_slug, "activity")),
       left_join: analytics in subquery(Common.analytics_by_activity()),
       on: activity.resource_id == analytics.activity_id,
       select: %{

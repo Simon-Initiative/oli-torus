@@ -6,7 +6,27 @@ defmodule Oli.Publishing do
   alias Oli.Authoring.Course.Project
   alias Oli.Accounts.Author
   alias Oli.Delivery.Sections
+  alias Oli.Resources.{Revision, ResourceType}
   alias Oli.Publishing.{Publication, PublishedResource}
+
+  def query_unpublished_revisions_by_type(project_slug, type) do
+    publication_id = get_unpublished_publication_by_slug!(project_slug).id
+    resource_type_id = ResourceType.get_id_by_type(type)
+
+    from rev in Revision,
+      join: mapping in PublishedResource,
+      on: mapping.revision_id == rev.id,
+      distinct: rev.resource_id,
+      where: mapping.publication_id == ^publication_id
+        and rev.resource_type_id == ^resource_type_id
+        and rev.deleted == false,
+      select: rev
+  end
+
+  def get_unpublished_revisions_by_type(project_slug, type) do
+    Repo.all(query_unpublished_revisions_by_type(project_slug, type))
+    |> Repo.preload(:resource_type)
+  end
 
   @doc """
   Returns the activity revisions for a list of activity ids
@@ -14,10 +34,10 @@ defmodule Oli.Publishing do
   """
   def get_published_activity_revisions(publication_id, activity_ids) do
 
-    activity = Oli.Resources.ResourceType.get_id_by_type("activity")
+    activity = ResourceType.get_id_by_type("activity")
 
     Repo.all(from mapping in PublishedResource,
-      join: rev in Oli.Resources.Revision, on: mapping.revision_id == rev.id,
+      join: rev in Revision, on: mapping.revision_id == rev.id,
       where: rev.resource_type_id == ^activity and mapping.publication_id == ^publication_id and mapping.resource_id in ^activity_ids,
       select: rev) |> Repo.preload(:activity_type)
   end
@@ -29,7 +49,7 @@ defmodule Oli.Publishing do
     project_id = project.id
 
     revisions = Repo.all(from m in Oli.Publishing.PublishedResource,
-      join: rev in Oli.Resources.Revision, on: rev.id == m.revision_id,
+      join: rev in Revision, on: rev.id == m.revision_id,
       join: p in Oli.Publishing.Publication, on: p.id == m.publication_id,
       where: p.published == false and m.resource_id in ^resource_ids and p.project_id == ^project_id,
       select: rev)
@@ -223,10 +243,10 @@ defmodule Oli.Publishing do
 
   def get_published_objective_details(publication_id) do
 
-    objective = Oli.Resources.ResourceType.get_id_by_type("objective")
+    objective = ResourceType.get_id_by_type("objective")
 
     Repo.all from mapping in PublishedResource,
-      join: rev in Oli.Resources.Revision, on: mapping.revision_id == rev.id,
+      join: rev in Revision, on: mapping.revision_id == rev.id,
       where: rev.deleted == false and rev.resource_type_id == ^objective and mapping.publication_id == ^publication_id,
       select: map(rev, [:slug, :title, :resource_id])
   end
@@ -268,10 +288,10 @@ defmodule Oli.Publishing do
 
   def get_objective_mappings_by_publication(publication_id) do
 
-    objective = Oli.Resources.ResourceType.get_id_by_type("objective")
+    objective = ResourceType.get_id_by_type("objective")
 
     Repo.all(from mapping in PublishedResource,
-      join: rev in Oli.Resources.Revision, on: mapping.revision_id == rev.id,
+      join: rev in Revision, on: mapping.revision_id == rev.id,
       where: rev.deleted == false and rev.resource_type_id == ^objective and mapping.publication_id == ^publication_id,
       select: mapping,
       preload: [:resource, :revision])
@@ -375,7 +395,7 @@ defmodule Oli.Publishing do
   """
   def get_published_revision(publication_id, resource_id) do
     Repo.one from mapping in PublishedResource,
-      join: rev in Oli.Resources.Revision, on: mapping.revision_id == rev.id,
+      join: rev in Revision, on: mapping.revision_id == rev.id,
       where: mapping.resource_id == ^resource_id and mapping.publication_id == ^publication_id,
       select: rev
   end
@@ -491,4 +511,5 @@ defmodule Oli.Publishing do
     |> Enum.filter(fn mapping -> mapping.revision.deleted == false end)
     |> Enum.reduce(%{}, fn m, acc -> Map.put_new(acc, m.resource_id, {m.resource, m.revision}) end)
   end
+
 end
