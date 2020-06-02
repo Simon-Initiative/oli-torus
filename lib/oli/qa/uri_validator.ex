@@ -43,6 +43,7 @@ defmodule Oli.Qa.UriValidator do
   end
 
   defp fetch(%{ content: content } = element) do
+
     uri = get_uri(content)
 
     if !valid_uri?(uri)
@@ -60,8 +61,12 @@ defmodule Oli.Qa.UriValidator do
   end
 
   def valid_uri?(uri) do
-    uri = URI.parse(uri)
-    uri.scheme != nil && uri.host =~ "."
+    try do
+      uri = URI.parse(uri)
+      uri.scheme != nil && uri.host =~ "."
+    rescue
+      _ -> false
+    end
   end
 
   # async stream tasks emit {:ok, value} tuples upon successful completion
