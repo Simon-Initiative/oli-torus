@@ -107,7 +107,7 @@ defmodule OliWeb.ProjectView do
   end
 
   def action_item(subtype) do
-    action = case subtype do
+    case subtype do
       "missing alt text" ->
         """
         <p>Add alternative text to this content</p>
