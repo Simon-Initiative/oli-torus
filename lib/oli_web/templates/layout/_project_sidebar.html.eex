@@ -35,7 +35,8 @@
   <p class="category">Build</p>
   <%= sidebar_link @conn, :overview, "Overview" %>
   <%= sidebar_link @conn, :objectives, "Objectives" %>
-  <%= link "Curriculum", to: Routes.curriculum_path(@conn, :index, @project) %>
+  <%= link "Curriculum", to:  Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, @project.slug)  %>
+
   <%= sidebar_link @conn, :publish, "Publish" %>
   <hr>
   <p class="category">Improve</p>

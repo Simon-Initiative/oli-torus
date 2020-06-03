@@ -119,7 +119,6 @@ body footer {
   flex-grow: 1;
   flex-wrap: wrap;
   margin: 0;
-  padding: 48px;
 }
 #right h1 {
   font-size: 16px;
@@ -127,10 +126,7 @@ body footer {
 #right h2 {
   font-size: 14px;
 }
-#right small {
-  font-size: 14px;
-  color: #b3b3b3;
-}
+
 #right .row {
   margin: 0 0 20px 0;
 }
@@ -212,6 +208,14 @@ nav.navbar .user img {
   background-repeat: repeat;
   background-size: 4px 4px;
 }
+.dragHandleGrab .gripactive {
+  width: 12px;
+  height: 100%;
+  background-image: -webkit-repeating-radial-gradient(center center, rgba(255,255,255,0.7), rgba(255,255,255,0.9) 1px, transparent 1px, transparent 100%);
+  background-repeat: repeat;
+  background-size: 4px 4px;
+}
+
 
 .dragHandleGrab:active {
   cursor: -webkit-grabbing;

@@ -30,7 +30,7 @@
   </head>
   <body>
 
-    <%= @inner_content %>
+    <%= Map.get(assigns, :inner_layout) %>
 
     <script>
     window.$ = $;

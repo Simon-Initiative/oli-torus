@@ -1,4 +1,6 @@
 
+<%= render_layout "common.html", assigns do %>
+
 <nav class="navbar navbar-expand-lg navbar-light">
   <div class="container">
     <a class="navbar-brand" href="<%= Routes.delivery_path(@conn, :index) %>">
@@ -70,3 +72,5 @@
     }
   })
 </script>
+
+<% end %>

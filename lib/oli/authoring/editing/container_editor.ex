@@ -16,6 +16,28 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Repo
 
+
+  def edit_page(%Project{} = project, revision_slug, change) do
+
+    # safe guard that we do never allow content or title or objective changes
+    change = Map.delete(change, :content)
+    |> Map.delete(:title)
+    |> Map.delete(:objectives)
+
+    Repo.transaction(fn ->
+
+      revision = AuthoringResolver.from_revision_slug(project.slug, revision_slug)
+
+      case Resources.update_revision(revision, change) do
+        {:ok, revision} -> revision
+        {:error, changelist} -> Repo.rollback(changelist)
+      end
+
+    end)
+
+  end
+
+
   @doc """
   Lists all top level resource revisions contained in a container.
   """

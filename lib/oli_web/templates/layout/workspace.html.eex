@@ -1,4 +1,6 @@
 
+<%= render_layout "common.html", assigns do %>
+
 <div id="wrapper">
   <div id="left">
     <%= render OliWeb.LayoutView, "_#{if @conn.params["project_id"] do "project" else "workspace" end}_sidebar.html", assigns %>
@@ -22,3 +24,5 @@
     </main>
   </div>
 </div>
+
+<% end %>
