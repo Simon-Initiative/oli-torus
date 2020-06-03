@@ -1,0 +1,204 @@
+<style>
+.reviews {
+  display: flex;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  height: 400px;
+}
+
+.reviews .review-links {
+  padding-top: 6px;
+  padding-right: 8px;
+  padding-left: 8px;
+  display: flex;
+  flex-direction: column;
+  flex-basis: 200px;
+  overflow: auto;
+  border-right: 1px solid #e6e6e6;
+  margin: 0;
+}
+
+.reviews .review-links ul {
+  margin: 0;
+}
+
+.reviews .review-links .review-link {
+  padding: 4px 4px 4px 8px;
+  list-style-type: none;
+  border-bottom: 1px solid #ebecf0;
+  border-radius: 3px;
+  font-size: 12px;
+}
+.reviews .review-link:last-child {
+  border-bottom: none;
+}
+
+.reviews .review-links .review-link .review-link-header {
+  font-weight: bold;
+  color: #5e6c84;
+  display: flex;
+  align-items: center;
+}
+
+.reviews .review-links .review-link .review-link-subheader {
+  color: #091e42;
+  display: flex;
+  align-items: center;
+}
+
+.reviews .review-links .review-link a {
+  text-decoration: none;
+}
+
+.reviews .review-links .review-link a i:not([data-dismiss]) {
+  margin-right: 4px;
+  font-size: 16px;
+}
+.reviews .review-links .review-link span[data-dismiss] {
+  display: none;
+}
+.reviews .review-links .review-link:hover span[data-dismiss] {
+  display: flex;
+}
+.reviews .review-links .review-link span[data-dismiss] i {
+  font-size: 1em;
+}
+
+.reviews .review-links .review-link.active {
+  background-color: #eee;
+}
+
+.reviews .review-cards {
+  display: flex;
+  flex: 1;
+}
+
+.reviews .review-card {
+  overflow: auto;
+  flex: 1;
+  padding: 16px 16px 0 16px;
+  display: none;
+}
+.reviews .review-card p {
+  font-size: 12px;
+}
+
+.reviews .review-card.active {
+  display: flex;
+  flex-direction: column;
+}
+
+.bd-callout {
+  padding: 1.25rem;
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid #eee;
+  border-left-width: .25rem;
+  border-radius: .25rem;
+}
+
+.bd-callout-info {
+  border-left-color: #5bc0de;
+}
+
+.review-dismiss {
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+}
+a.review-dismiss,
+a.review-dismiss:hover {
+  text-decoration: none;
+  color: #212529;
+  cursor: pointer;
+}
+</style>
+
+<div class="row">
+  <div class="section-header">
+    <h2>Review</h1>
+    <small>Before you publish, let's look through your project for broken links and other issues that are easy to miss.</small>
+  </div>
+</div>
+
+<div class="row">
+  <%= form_for @conn, Routes.project_path(@conn, :review_project, @project), fn _ -> %>
+    <%= submit "Run Review",
+      id: "button-publish",
+      class: "btn btn-primary",
+      phx_disable_with: "Reviewing..." %>
+  <% end %>
+</div>
+<%= if !Enum.empty?(@warnings_by_type) do %>
+  <div class="row">
+    <p>
+      When the review was run <%= (hd @qa_reviews).inserted_at |> Timex.format!("{relative}", :relative) %>,
+      it found <strong><%= length @warnings %></strong> potential improvement <%= if (length @warnings) == 1 do "opportunity" else "opportunities" end %>:
+    </p>
+  </div>
+
+  <h5>Filters</h5>
+  <div class="d-flex">
+    <%= for type <- @warning_types do %>
+      <div class="mr-2">
+        <div class="input-group mb-3 w-0">
+          <div class="input-group-prepend">
+            <div class="input-group-text">
+              <input class="warning-filter"
+                disabled
+                id="filter-<%= type %>"
+                <%= "checked" %>
+                type="checkbox"
+                style="width: 20px; height: 20px;"
+                aria-label="Checkbox for <%= type %>">
+            </div>
+          </div>
+          <span class="form-control d-flex align-items-center">
+            <span class="badge badge-info"><%= length(Map.get(@warnings_by_type, type)) %></span>&nbsp;
+            <%= title_case(type) %>
+          </span>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="reviews">
+    <ul class="review-links">
+      <%= for {warning, index} <- Enum.with_index(@warnings) do %>
+        <li class="review-link <%= warning_selected?(@selected_review, warning, index) %>">
+          <%= link to: Routes.project_path(@conn, :publish, @project, selected: warning.id) do %>
+            <span class="review-link-header">
+              <%= warning_icon(warning.review.type) %> <%= title_case(warning.subtype) %>
+            </span>
+            <span class="d-flex justify-content-between review-link-subheader">
+              <%= warning.revision.title %>
+            </span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+    <div class="review-cards">
+      <%= for {warning, index} <- Enum.with_index(@warnings) do %>
+        <div class="review-card<%= warning_selected?(@selected_review, warning, index) %>" id="<%= warning.id %>">
+          <h5>
+            <%= link to: Routes.project_path(@conn, :dismiss_warning, @project, warning_id: warning.id), class: "review-dismiss", method: :delete do %>
+              <span data-dismiss class="review-dismiss badge badge-light">
+                Dismiss <i class="material-icons-outlined icon">close</i>
+              </span>
+            <% end %>
+            Improvement opportunity on <%= resource_link(@activity_to_page_slug_map, warning.revision.slug, warning.revision.title, @conn, @project) %>
+          </h5>
+          <div class="bd-callout bd-callout-info">
+            <h6><%= title_case(warning.subtype) %> on <%= warning.revision.resource_type.type %></h6>
+            <%= explanatory_text(warning.subtype) %>
+          </div>
+          <div class="alert alert-info">
+            <strong>Action item</strong> <%= action_item(warning.subtype) %>
+            <%= if warning.content do %>
+              <%= Phoenix.HTML.raw(Oli.Rendering.Content.render(%Oli.Rendering.Context{user: @current_author}, warning.content, Oli.Rendering.Content.Html)) %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

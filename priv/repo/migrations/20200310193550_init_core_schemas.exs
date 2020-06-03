@@ -341,8 +341,45 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
     create unique_index(:snapshots, [:part_attempt_id, :objective_id], name: :snapshot_unique_part)
 
+    create table(:media_items) do
+      timestamps(type: :timestamptz)
+
+      add :url, :string
+      add :file_name, :string
+      add :mime_type, :string
+      add :file_size, :integer
+      add :md5_hash, :string
+      add :deleted, :boolean, default: false, null: false
+      add :project_id, references(:projects)
+    end
+
+    create index(:media_items, [:file_name])
+    create index(:media_items, [:file_size])
+    create index(:media_items, [:md5_hash])
+
+    create table(:reviews) do
+      timestamps(type: :timestamptz)
+
+      add :project_id, references(:projects)
+      add :type, :string, null: false
+      add :done, :boolean, default: false
+    end
+
+    create index(:reviews, :project_id)
+
+    create table(:warnings) do
+      timestamps(type: :timestamptz)
+
+      add :review_id, references(:reviews, on_delete: :delete_all)
+      add :revision_id, references(:revisions), null: true
+      add :subtype, :string
+      add :content, :map
+      add :requires_fix, :boolean, default: false
+      add :is_dismissed, :boolean, default: false
+    end
+
+    create index(:warnings, [:review_id])
+    create index(:warnings, [:revision_id])
+
   end
-
-
-
 end

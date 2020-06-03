@@ -8,20 +8,56 @@ import { Command, CommandDesc } from '../interfaces';
 import { EditorProps } from './interfaces';
 import guid from 'utils/guid';
 import { LabelledTextEditor } from 'components/TextEditor';
+import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
+import ModalSelection from 'components/modal/ModalSelection';
+import { MediaManager } from 'components/media/manager/MediaManager.controller';
+import { modalActions } from 'actions/modal';
+import { MediaItem } from 'types/media';
 
 interface ImageSize {
   width: string;
   height: string;
 }
 
-const command: Command = {
-  execute: (editor: ReactEditor) => {
-    const src = window.prompt('Enter the URL of the image:');
-    if (!src) return;
+const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
+const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
 
+export function selectImage(projectSlug: string,
+  model: ContentModel.Image): Promise<ContentModel.Image> {
+
+  return new Promise((resolve, reject) => {
+
+    const selected = { img: null };
+
+    const mediaLibrary =
+      <ModalSelection title="Select an image"
+        onInsert={() => { dismiss(); resolve(selected.img as any); }}
+        onCancel={() => dismiss()}>
+        <MediaManager model={model}
+          projectSlug={projectSlug}
+          onEdit={() => { }}
+          mimeFilter={MIMETYPE_FILTERS.IMAGE}
+          selectionType={SELECTION_TYPES.SINGLE}
+          initialSelectionPaths={[model.src]}
+          onSelectionChange={(images: MediaItem[]) => {
+            const first : ContentModel.Image = { type: 'img', src: images[0].url,
+              children: [{ text: '' }], id: guid() };
+            (selected as any).img = first;
+          }} />
+      </ModalSelection>;
+
+    display(mediaLibrary);
+  });
+}
+
+const command: Command = {
+  execute: (context, editor: ReactEditor) => {
     const image = ContentModel.create<ContentModel.Image>(
-      { type: 'img', src, children: [{ text: '' }], id: guid() });
-    Transforms.insertNodes(editor, image);
+      { type: 'img', src: '', children: [{ text: '' }], id: guid() });
+    selectImage(context.projectSlug, image)
+    .then((img) => {
+      Transforms.insertNodes(editor, img);
+    });
   },
   precondition: (editor: ReactEditor) => {
 

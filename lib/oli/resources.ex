@@ -104,6 +104,13 @@ defmodule Oli.Resources do
 
   end
 
+  # returns a list of resource ids that refer to activity references in a page
+  def activity_references(%Revision{content: %{ "model" => model}} = _page) do
+    model
+    |> Enum.filter(& &1["type"] == "activity-reference")
+    |> Enum.map(& &1["activity_id"])
+  end
+
 
   @doc """
   Updates a resource.

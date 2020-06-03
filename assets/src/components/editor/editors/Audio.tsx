@@ -8,15 +8,51 @@ import { EditorProps } from './interfaces';
 import guid from 'utils/guid';
 import { LabelledTextEditor } from 'components/TextEditor';
 
+import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
+import ModalSelection from 'components/modal/ModalSelection';
+import { MediaManager } from 'components/media/manager/MediaManager.controller';
+import { modalActions } from 'actions/modal';
+import { MediaItem } from 'types/media';
+
+const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
+const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
+
+export function selectAudio(projectSlug: string,
+  model: ContentModel.Audio): Promise<ContentModel.Audio> {
+
+  return new Promise((resolve, reject) => {
+
+    const selected = { img: null };
+
+    const mediaLibrary =
+      <ModalSelection title="Select audio"
+        onInsert={() => { dismiss(); resolve(selected.img as any); }}
+        onCancel={() => dismiss()}>
+        <MediaManager model={model}
+          projectSlug={projectSlug}
+          onEdit={() => { }}
+          mimeFilter={MIMETYPE_FILTERS.AUDIO}
+          selectionType={SELECTION_TYPES.SINGLE}
+          initialSelectionPaths={[model.src]}
+          onSelectionChange={(images: MediaItem[]) => {
+            const first : ContentModel.Audio = { type: 'audio', src: images[0].url,
+              children: [{ text: '' }], id: guid() };
+            (selected as any).img = first;
+          }} />
+      </ModalSelection>;
+
+    display(mediaLibrary);
+  });
+}
 
 const command: Command = {
-  execute: (editor: ReactEditor) => {
-    const src = window.prompt('Enter the URL of the audio file:');
-    if (!src) return;
-
+  execute: (context, editor: ReactEditor) => {
     const audio = ContentModel.create<ContentModel.Audio>(
-      { type: 'audio', src, children: [{ text: '' }], id: guid() });
-    Transforms.insertNodes(editor, audio);
+      { type: 'audio', src: '', children: [{ text: '' }], id: guid() });
+    selectAudio(context.projectSlug, audio)
+    .then((img) => {
+      Transforms.insertNodes(editor, img);
+    });
   },
   precondition: (editor: ReactEditor) => {
 

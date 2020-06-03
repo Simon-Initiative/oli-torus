@@ -45,19 +45,4 @@ defmodule Oli.Analytics.Common do
       }
   end
 
-  def all_published_resources(project_id, type) do
-    resource_type_id = Oli.Resources.ResourceType.get_id_by_type(type)
-
-    from mapping in Oli.Publishing.PublishedResource,
-      join: publication in Oli.Publishing.Publication,
-      on: mapping.publication_id == publication.id,
-      join: rev in Oli.Resources.Revision,
-      on: mapping.revision_id == rev.id,
-      distinct: rev.resource_id,
-      where: publication.project_id == ^project_id
-        and publication.published
-        and rev.resource_type_id == ^resource_type_id,
-      select: rev
-  end
-
 end

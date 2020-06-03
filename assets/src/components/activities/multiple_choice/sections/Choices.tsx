@@ -6,13 +6,15 @@ import { Response, RichText } from '../../types';
 import { Description } from 'components/misc/Description';
 import { IconCorrect } from 'components/misc/IconCorrect';
 import { CloseButton } from 'components/misc/CloseButton';
+import { ProjectSlug } from 'data/types';
 
 interface ChoicesProps extends ModelEditorProps {
   onAddChoice: () => void;
   onEditChoice: (id: string, content: RichText) => void;
   onRemoveChoice: (id: string) => void;
+  projectSlug: ProjectSlug;
 }
-export const Choices = ({ onAddChoice, onEditChoice, onRemoveChoice, editMode, model }:
+export const Choices = ({ onAddChoice, onEditChoice, onRemoveChoice, editMode, model, projectSlug }:
   ChoicesProps) => {
 
   const { authoring: { parts }, choices } = model;
@@ -21,7 +23,7 @@ export const Choices = ({ onAddChoice, onEditChoice, onRemoveChoice, editMode, m
   const correctChoice = choices.reduce((correct, choice) => {
 
     const responseMatchesChoice = (response: Response, choice: Choice) =>
-      response.match === choice.id;
+      response.rule === `input like {${choice.id}}`;
     if (correct) return correct;
 
     if (parts[0].responses.find(response =>
@@ -37,12 +39,16 @@ export const Choices = ({ onAddChoice, onEditChoice, onRemoveChoice, editMode, m
     <div style={{ margin: '2rem 0' }}>
       <Heading title="Answer Choices"
         subtitle="One correct answer choice and as many incorrect answer choices as you like." id="choices" />
-      <RichTextEditor key="correct" editMode={editMode} text={correctChoice.content}
+      <RichTextEditor
+        projectSlug={projectSlug}
+        key="correct" editMode={editMode} text={correctChoice.content}
         onEdit={content => onEditChoice(correctChoice.id, content)}>
         <Description><IconCorrect /> Correct Answer</Description>
       </RichTextEditor>
       {incorrectChoices.map((choice, index) =>
-        <RichTextEditor key={choice.id} editMode={editMode} text={choice.content}
+        <RichTextEditor
+          projectSlug={projectSlug}
+          key={choice.id} editMode={editMode} text={choice.content}
           onEdit={content => onEditChoice(choice.id, content)}>
           <Description>
             <CloseButton onClick={() => onRemoveChoice(choice.id)}

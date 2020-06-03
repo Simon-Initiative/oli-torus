@@ -3,8 +3,6 @@ import * as ReactDOM from 'react-dom';
 
 import { Provider } from 'react-redux';
 import { Maybe, maybe } from 'tsmonad';
-import { CountDisplay } from 'components/CountDisplay';
-import { CounterButtons } from 'components/CounterButtons';
 import { Editor } from 'components/editor/Editor';
 import { configureStore } from 'state/store';
 import { TestEditor } from 'components/editor/EditorTest';
@@ -12,8 +10,6 @@ import { ResourceEditor } from 'components/resource/ResourceEditor';
 import { ActivityEditor } from 'components/activity/ActivityEditor';
 
 export const registry = {
-  CountDisplay,
-  CounterButtons,
   Editor,
   TestEditor,
   ResourceEditor,

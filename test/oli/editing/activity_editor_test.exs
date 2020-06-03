@@ -1,7 +1,7 @@
 defmodule Oli.ActivityEditingTest do
   use Oli.DataCase
 
-  alias Oli.Authoring.Editing.{ResourceContext, PageEditor, ActivityEditor}
+  alias Oli.Authoring.Editing.{ResourceContext, PageEditor, ActivityEditor, ObjectiveEditor}
   alias Oli.Resources
 
   describe "activity editing" do
@@ -217,6 +217,25 @@ defmodule Oli.ActivityEditingTest do
       update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => "missing", "purpose" => "none"}]}}
       assert {:error, :not_found} =  PageEditor.edit(project.slug, revision.slug, author.email, update)
 
+    end
+
+    test "can sync objectives to parts", %{author: author, project: project } do
+      {:ok, {:ok, %{revision: ob1}}} = ObjectiveEditor.add_new(%{title: "this is an objective"}, author, project)
+      {:ok, {:ok, %{revision: ob2}}}  = ObjectiveEditor.add_new(%{title: "this is another objective"}, author, project)
+
+      # Create a two part activity where each part is tied to one of the objectives above
+      content = %{ "objectives" => %{ "1" => [ ob1.slug ], "2" => [ ob2.slug ]  },
+        "content" => %{"authoring" => %{"parts" => [%{"id" => "1" }, %{"id" => "2" }]}}}
+      {:ok, {revision, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content)
+      assert revision.content["objectives"] == %{ "1" => [ ob1.slug ], "2" => [ ob2.slug ]  }
+
+      # Delete one of the activity parts
+      update = %{ "objectives" => %{ "1" => [ ob1.slug ], "2" => [ ob2.slug ]  },
+        "content" => %{"authoring" => %{"parts" => [%{"id" => "1" }]}}}
+      {:ok, updated} = ActivityEditor.edit(project.slug, revision.slug, revision.slug, author.email, update)
+
+      # Verify that the objective tied to that part has been removed as well
+      assert updated.objectives == %{ "1" => [ ob1.resource_id ] }
     end
 
   end

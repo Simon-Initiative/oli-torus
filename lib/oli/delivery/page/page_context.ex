@@ -36,13 +36,21 @@ defmodule Oli.Delivery.Page.PageContext do
     activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
     {progress_state, resource_attempts, activities} = case Attempts.determine_resource_attempt_state(page_revision, context_id, user_id, activity_provider) do
-      {:ok, {:in_progress, {resource_attempt, latest_attempts}}} -> {:in_progress, [resource_attempt], ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
       {:ok, {:not_started, {_, resource_attempts}}} -> {:not_started, resource_attempts, nil}
+      {:ok, {state, {resource_attempt, latest_attempts}}} -> {state, [resource_attempt], ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
       {:error, _} -> {:error, [], %{}}
     end
 
-    {objectives, previous, next} =
-      retrieve_objectives_previous_next(context_id, page_revision, container_id)
+    # Fetch the revision pinned to the resource attempt if it was revised since this attempt began. This
+    # is what enables existing attempts that are being revisited after a change was published to the page
+    # to display the old content
+    page_revision = if progress_state == :revised do
+      Oli.Resources.get_revision!(hd(resource_attempts).revision_id)
+    else
+      page_revision
+    end
+
+    {objectives, previous, next} = retrieve_objectives_previous_next(context_id, page_revision, container_id)
 
     %PageContext{
       page: page_revision,

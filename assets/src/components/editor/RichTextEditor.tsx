@@ -2,14 +2,17 @@ import React from 'react';
 import { RichText } from 'components/activities/types';
 import { Editor } from 'components/editor/Editor';
 import { getToolbarForResourceType } from 'components/resource/toolbar';
+import { ProjectSlug } from 'data/types';
 
 type RichTextEditorProps = {
+  projectSlug: ProjectSlug;
   editMode: boolean;
   text: RichText;
   onEdit: (text: RichText) => void;
 };
-export const RichTextEditor = ({ editMode, text, onEdit, children }:
+export const RichTextEditor = ({ editMode, text, onEdit, children, projectSlug }:
   React.PropsWithChildren<RichTextEditorProps>) => {
+
   return (
     <React.Fragment>
       {children}
@@ -22,7 +25,7 @@ export const RichTextEditor = ({ editMode, text, onEdit, children }:
         fontSize: '11px',
         margin: '4px 0 10px 0',
       }}>
-        <Editor editMode={editMode} value={text} onEdit={onEdit}
+        <Editor commandContext={{ projectSlug }} editMode={editMode} value={text} onEdit={onEdit}
           toolbarItems={getToolbarForResourceType(1)} />
       </div>
     </React.Fragment>

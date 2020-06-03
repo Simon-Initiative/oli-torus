@@ -26,6 +26,8 @@ defmodule Oli.Resources.Revision do
     belongs_to :scoring_strategy, Oli.Resources.ScoringStrategy
     belongs_to :activity_type, Oli.Activities.Registration
 
+    has_many :warnings, Oli.Qa.Warning
+
     timestamps(type: :utc_datetime)
   end
 

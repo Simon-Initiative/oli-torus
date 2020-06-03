@@ -40,8 +40,19 @@ export default function guid() : string {
 
 function createSome(count: number) {
   const array = new Uint32Array(count);
-  window.crypto.getRandomValues(array);
+
+  if (window.crypto !== undefined) {
+    window.crypto.getRandomValues(array);
+  } else {
+    // This clause allows guid to operate in headless testing environments
+    // where window.crypto may be undefined
+    for (let i = 0; i < count; i += 1) {
+      array[i] = Math.floor(Math.random() * Math.floor(Math.pow(2, 32) - 1));
+    }
+  }
+
   return array;
+
 }
 
 (window as any).guid = guid;

@@ -2,11 +2,11 @@ defmodule OliWeb.Insights do
   use Phoenix.LiveView
   alias OliWeb.Insights.{TableHeader, TableRow}
 
-  def mount(_params, %{ "project_id" => project_id } = _session, socket) do
+  def mount(_params, %{ "project_slug" => project_slug } = _session, socket) do
     {:ok, assign(socket,
-      by_page_rows: Oli.Analytics.ByPage.query_against_project_id(project_id),
-      by_activity_rows: Oli.Analytics.ByActivity.query_against_project_id(project_id),
-      by_objective_rows: Oli.Analytics.ByObjective.query_against_project_id(project_id),
+      by_page_rows: Oli.Analytics.ByPage.query_against_project_slug(project_slug),
+      by_activity_rows: Oli.Analytics.ByActivity.query_against_project_slug(project_slug),
+      by_objective_rows: Oli.Analytics.ByObjective.query_against_project_slug(project_slug),
       selected: :by_activity,
       query: "",
       sort_by: "title",

@@ -122,7 +122,9 @@ body footer {
   padding: 48px;
 }
 #right h1 {
-  display: inline-block;
+  font-size: 16px;
+}
+#right h2 {
   font-size: 14px;
 }
 #right small {
@@ -136,20 +138,16 @@ body footer {
   margin-top: 10px;
   color: #b3b3b3;
 }
-
-#right ul {
-  padding-left: 16px;
-}
-#right li {
-  padding-left: 10px;
-  margin-bottom: 16px;
-}
 #right li:last-of-type {
   margin-bottom: 0;
 }
 #right li small {
   font-size: inherit;
   color: #b3b3b3;
+}
+
+p:last-of-type {
+  margin: 0;
 }
 
 .add-button {
@@ -469,3 +467,26 @@ Inlined react-bootstrap-typeahead styles
   opacity: 0;
   transition: opacity 250ms ease-in;
 }
+
+
+.LoadingSpinner {
+  text-align: center;
+  color: gray;
+}
+.LoadingSpinner i {
+  margin: '0 5px';
+  animation-duration: '1s';
+  -webkit-animation-duration: '1s';
+}
+
+.sizeSmall {
+  font-size: 0.8em;
+}
+.sizeNormal {
+  font-size: 1em;
+}
+.sizeLarge {
+  font-size: 1.2em;
+}
+
+

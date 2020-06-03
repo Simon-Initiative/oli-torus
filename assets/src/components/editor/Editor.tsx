@@ -3,7 +3,7 @@ import { Slate, Editable, withReact, ReactEditor } from 'slate-react';
 import { createEditor, Node, NodeEntry, Range, Editor as SlateEditor, Transforms, Path } from 'slate';
 import { create, Mark, ModelElement, schema, Paragraph, SchemaConfig } from 'data/content/model';
 import { editorFor, markFor } from './editors';
-import { ToolbarItem } from './interfaces';
+import { ToolbarItem, CommandContext } from './interfaces';
 import { FixedToolbar, HoveringToolbar } from './Toolbars';
 import { onKeyDown as listOnKeyDown } from './editors/Lists';
 import { onKeyDown as quoteOnKeyDown } from './editors/Blockquote';
@@ -23,6 +23,8 @@ export type EditorProps = {
 
   // Whether or not editing is allowed
   editMode: boolean;
+
+  commandContext: CommandContext;
 };
 
 // Pressing the Enter key on any void block should insert an empty
@@ -34,7 +36,7 @@ const voidOnKeyDown = (editor: ReactEditor, e: KeyboardEvent) => {
 
       getRootOfText(editor).lift((node: Node) => {
 
-        if ((schema as any)[node.type].isVoid) {
+        if ((schema as any)[node.type as string].isVoid) {
           const path = ReactEditor.findPath(editor, node);
           Transforms.insertNodes(editor, create<Paragraph>(
             { type: 'p', children: [{ text: '' }], id: guid() }),
@@ -62,7 +64,7 @@ export const Editor = React.memo((props: EditorProps) => {
   // elements are void
   editor.isVoid = (element) => {
     try {
-      const result = (schema as any)[element.type].isVoid;
+      const result = (schema as any)[element.type as string].isVoid;
       return result;
     } catch (e) {
       return false;
@@ -72,7 +74,7 @@ export const Editor = React.memo((props: EditorProps) => {
 
   editor.isInline = (element) => {
     try {
-      const result = (schema as any)[element.type].isBlock;
+      const result = (schema as any)[element.type as string].isBlock;
       return !result;
     } catch (e) {
       return false;
@@ -82,6 +84,10 @@ export const Editor = React.memo((props: EditorProps) => {
   const { normalizeNode } = editor;
   editor.normalizeNode = (entry: NodeEntry<Node>) => {
 
+    if ((editor as any).suspendNormalization) {
+      normalizeNode(entry);
+      return;
+    }
 
     try {
       const [node, path] = entry;
@@ -105,8 +111,8 @@ export const Editor = React.memo((props: EditorProps) => {
       if (SlateEditor.isBlock(editor, node)) {
         const [parent] = SlateEditor.parent(editor, path);
         if (!SlateEditor.isEditor(parent)) {
-          const config : SchemaConfig = (schema as any)[parent.type];
-          if (!(config.validChildren as any)[node.type]) {
+          const config : SchemaConfig = (schema as any)[parent.type as string];
+          if (!(config.validChildren as any)[node.type as string]) {
             Transforms.removeNodes(editor, { at: path });
             return; // Return here is necessary to enable multi-pass normalization
           }
@@ -115,7 +121,7 @@ export const Editor = React.memo((props: EditorProps) => {
       }
 
       // Check the top-level constraints
-      if (SlateEditor.isBlock(editor, node) && !(schema as any)[node.type].isTopLevel) {
+      if (SlateEditor.isBlock(editor, node) && !(schema as any)[node.type as string].isTopLevel) {
         const [parent] = SlateEditor.parent(editor, path);
         if (SlateEditor.isEditor(parent)) {
           Transforms.removeNodes(editor, { at: path });
@@ -129,6 +135,7 @@ export const Editor = React.memo((props: EditorProps) => {
     }
 
     normalizeNode(entry);
+
   };
 
   const renderElement = useCallback((props) => {
@@ -167,9 +174,9 @@ export const Editor = React.memo((props: EditorProps) => {
         value={props.value}
         onChange={onChange}
         >
-        <FixedToolbar toolbarItems={props.toolbarItems} />
+        <FixedToolbar toolbarItems={props.toolbarItems} commandContext={props.commandContext} />
 
-        <HoveringToolbar />
+        <HoveringToolbar commandContext={props.commandContext}/>
 
         <Editable
           readOnly={!props.editMode}

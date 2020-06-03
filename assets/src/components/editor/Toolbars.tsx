@@ -3,7 +3,7 @@ import * as ReactDOM from 'react-dom';
 import { ReactEditor, useSlate } from 'slate-react';
 import { Editor as SlateEditor, Node, Range, Transforms } from 'slate';
 import { hoverMenuCommands } from './editors';
-import { ToolbarItem, gutterWidth } from './interfaces';
+import { ToolbarItem, gutterWidth, CommandContext } from './interfaces';
 import { getRootOfText } from './utils';
 
 const parentTextTypes = {
@@ -41,14 +41,43 @@ function hideToolbar(el: HTMLElement) {
 
 function shouldHideToolbar(editor: ReactEditor) {
   const { selection } = editor;
+
+  // Hide the toolbar where there is either:
+  // 1. No selection
+  // 2. The editor is not currently in focus
+  // 3. The selection range is collapsed
+  // 4. The selection range spans more than one block
+  // 5. The selection current text is the empty string
+
+  const spansMultipleBlocks = (selection: Range) => {
+    if (selection.anchor.path.length === selection.focus.path.length) {
+      for (let i = 0; i < selection.anchor.path.length; i += 1) {
+        if (selection.anchor.path[i] !== selection.focus.path[i]) {
+          return true;
+        }
+      }
+      return false;
+    }
+    return true;
+  };
+
   return !selection ||
     !ReactEditor.isFocused(editor) ||
     Range.isCollapsed(selection) ||
+    spansMultipleBlocks(selection) ||
     SlateEditor.string(editor, selection) === '';
 }
 
 
-export const HoveringToolbar = () => {
+type HoveringToolbarProps = {
+  commandContext: CommandContext;
+};
+
+function hoveringAreEqual(prevProps: HoveringToolbarProps, nextProps: HoveringToolbarProps) {
+  return prevProps.commandContext === nextProps.commandContext;
+}
+
+export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
   const ref = useRef();
   const editor = useSlate();
 
@@ -80,11 +109,12 @@ export const HoveringToolbar = () => {
     <div ref={(ref as any)} style={{ visibility: 'hidden', position: 'relative' }}>
       <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>
         {hoverMenuCommands.map(b =>
-          <ToolbarButton style="btn-secondary" key={b.icon} icon={b.icon} command={b.command} />)}
+          <ToolbarButton style="btn-secondary" key={b.icon}
+          icon={b.icon} command={b.command} context={props.commandContext} />)}
       </div>
     </div>, document.body,
   );
-};
+}, hoveringAreEqual);
 
 function showToolbar(el: HTMLElement) {
   el.style.visibility = 'visible';
@@ -96,9 +126,15 @@ function shouldHideFixedToolbar(editor: ReactEditor) {
 
 type FixedToolbarProps = {
   toolbarItems: ToolbarItem[];
+  commandContext: CommandContext;
 };
 
-export const FixedToolbar = (props: FixedToolbarProps) => {
+function fixedAreEqual(prevProps: FixedToolbarProps, nextProps: FixedToolbarProps) {
+  return prevProps.commandContext === nextProps.commandContext
+    && prevProps.toolbarItems === nextProps.toolbarItems;
+}
+
+export const FixedToolbar = React.memo((props: FixedToolbarProps) => {
   const { toolbarItems } = props;
   const [collapsed, setCollapsed] = useState(false);
   const ref = useRef();
@@ -134,10 +170,13 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
     : [<TextFormatter key="text"/>, ...toolbarItems.map((t, i) => {
       if (t.type === 'CommandDesc' && t.command.obtainParameters === undefined) {
         return <ToolbarButton
-          style="" key={t.icon} icon={t.icon} command={t.command} />;
+          tooltip={t.description}
+          style="" key={t.icon} icon={t.icon} command={t.command} context={props.commandContext} />;
       }
       if (t.type === 'CommandDesc' && t.command.obtainParameters !== undefined) {
-        return <DropdownToolbarButton style="" key={t.icon} icon={t.icon} command={t.command} />;
+        return <DropdownToolbarButton style="" key={t.icon} icon={t.icon}
+          tooltip={t.description}
+          command={t.command} context={props.commandContext}/>;
       }
       return <Spacer key={'spacer-' + i} />;
     })];
@@ -160,7 +199,7 @@ export const FixedToolbar = (props: FixedToolbarProps) => {
       </div>
     </div>
   );
-};
+}, fixedAreEqual);
 
 const Spacer = () => {
   return (
@@ -181,13 +220,13 @@ const textOptions = [
 const TextFormatter = () => {
   const editor = useSlate();
   const selected = getRootOfText(editor).caseOf({
-    just: n => (parentTextTypes as any)[n.type] ? n.type : 'p',
+    just: n => (parentTextTypes as any)[n.type as string] ? n.type : 'p',
     nothing: () => 'p',
   });
 
   const onChange = (e: any) => {
     getRootOfText(editor).lift((n: Node) => {
-      if ((parentTextTypes as any)[n.type]) {
+      if ((parentTextTypes as any)[n.type as string]) {
         const path = ReactEditor.findPath(editor, n);
         const type = e.target.value;
         Transforms.setNodes(editor, { type }, { at: path });
@@ -199,7 +238,7 @@ const TextFormatter = () => {
   return (
     <select
       onChange={onChange}
-      value={selected}
+      value={selected  as string}
       className="custom-select custom-select-sm">
       {textOptions.map(o =>
         <option key={o.value} value={o.value}>{o.text}</option>)}
@@ -207,14 +246,15 @@ const TextFormatter = () => {
   );
 };
 
-const ToolbarButton = ({ icon, command, style }: any) => {
+const ToolbarButton = ({ icon, command, style, context, tooltip }: any) => {
   const editor = useSlate();
   return (
     <button
+      data-toggle="tooltip" data-placement="top" title={tooltip}
       className={`btn btn-sm ${style}`}
       onMouseDown={(event) => {
         event.preventDefault();
-        command.execute(editor);
+        command.execute(context, editor);
       }}
     >
       <i className={icon}></i>
@@ -222,7 +262,7 @@ const ToolbarButton = ({ icon, command, style }: any) => {
   );
 };
 
-const DropdownToolbarButton = ({ icon, command, style }: any) => {
+const DropdownToolbarButton = ({ icon, command, style, context, tooltip }: any) => {
   const editor = useSlate();
 
   const ref = useRef();
@@ -233,15 +273,16 @@ const DropdownToolbarButton = ({ icon, command, style }: any) => {
     }
   });
 
-  const onDone = (params: any) => command.execute(editor, params);
+  const onDone = (params: any) => command.execute(context, editor, params);
   const onCancel = () => {};
 
   return (
-    <div ref={ref as any} className="dropdown">
+    <div ref={ref as any} className="dropdown"
+      data-toggle="tooltip" data-placement="top" title={tooltip}>
       <button
-          className={`btn btn-sm dropdown-toggle ${style}`}
-          data-toggle={'dropdown'}
-          type="button">
+        className={`btn btn-sm dropdown-toggle ${style}`}
+        data-toggle={'dropdown'}
+        type="button">
         <i className={icon}></i>
       </button>
       <div className="dropdown-menu dropdown-menu-right">
