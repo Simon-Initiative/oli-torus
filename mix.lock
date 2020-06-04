@@ -62,4 +62,5 @@
   "ueberauth_identity": {:hex, :ueberauth_identity, "0.3.0", "bdd2697a69e4ced44f24809930d57d9d9a7834bbd1e7260947a1bbae42a4c2f9", [:mix], [{:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: false]}, {:ueberauth, "~> 0.6", [hex: :ueberauth, repo: "hexpm", optional: false]}], "hexpm", "f502f5974b52805449551177441207b25d8535a1812eb87e8c88afc73dce9a5a"},
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.4.1", "d869e4c68901dd9531385bb0c8c40444ebf624e60b6962d95952775cac5e90cd", [:rebar3], [], "hexpm", "1d1848c40487cdb0b30e8ed975e34e025860c02e419cb615d255849f3427439d"},
   "uuid": {:hex, :uuid, "1.1.8", "e22fc04499de0de3ed1116b770c7737779f226ceefa0badb3592e64d5cfb4eb9", [:mix], [], "hexpm", "c790593b4c3b601f5dc2378baae7efaf5b3d73c4c6456ba85759905be792f2ac"},
+  "xml_builder": {:hex, :xml_builder, "2.1.2", "90cb9ad382958934c78c6ddfbe6d385a8ce147d84b61cbfa83ec93a169d0feab", [:mix], [], "hexpm", "b89046041da2fbc1d51d31493ba31b9d5fc6223c93384bf513a1a9e1df9ec081"},
 }
