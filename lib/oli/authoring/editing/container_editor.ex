@@ -32,9 +32,6 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       case Resources.update_revision(revision, change) do
         {:ok, revision} ->
 
-          IO.inspect "broadcast"
-          IO.inspect "resource:" <> Integer.to_string(revision.resource_id) <> ":project:" <> project.slug
-
           PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id),
             {:updated, revision, project.slug}
           PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id) <> ":project:" <> project.slug,
@@ -87,27 +84,38 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
     # We want to ensure that the creation and attachment either
     # all succeeds or all fails
-    Repo.transaction(fn ->
+    result = Repo.transaction(fn ->
 
       with {:ok, %{revision: revision}} <- Oli.Authoring.Course.create_and_attach_resource(project, attrs),
           {:ok, _} <- ChangeTracker.track_revision(project.slug, revision),
           {:ok, _} <- append_to_container(container, project.slug, revision, author)
       do
-
-        updated_container = Oli.Repo.get(Oli.Resources.Revision, container.id)
-
-        PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(container.resource_id),
-          {:updated, updated_container, project.slug}
-        PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(container.resource_id) <> ":project:" <> project.slug,
-          {:updated, updated_container, project.slug}
-
         revision
       else
         {:error, e} -> Repo.rollback(e)
       end
 
     end)
+
+    {status, _} = result
+    if (status == :ok) do
+      broadcast_update(container.resource_id, project.slug)
+    end
+
+    result
+
   end
+
+  def broadcast_update(resource_id, project_slug) do
+
+    updated_container = AuthoringResolver.from_resource_id(project_slug, resource_id)
+
+    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(resource_id),
+      {:updated, updated_container, project_slug}
+    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(resource_id) <> ":project:" <> project_slug,
+      {:updated, updated_container, project_slug}
+  end
+
 
   @doc """
   Removes a child from a container, and marks that child as deleted.
@@ -138,7 +146,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       }
 
       # Atomically apply the changes
-      Repo.transaction(fn ->
+      result = Repo.transaction(fn ->
 
         # It is important to edit the page via PageEditor, since it will ensure
         # that a lock can be acquired before editing. This will not allow the deletion
@@ -149,14 +157,6 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
         with {:ok, _} <- PageEditor.edit(project.slug, revision_slug, author.email, deletion),
          {:ok, revision} = ChangeTracker.track_revision(project.slug, container, removal)
         do
-
-          updated_container = Oli.Repo.get(Oli.Resources.Revision, container.id)
-
-          PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(updated_container.resource_id),
-            {:updated, updated_container, project.slug}
-          PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(updated_container.resource_id) <> ":project:" <> project.slug,
-            {:updated, updated_container, project.slug}
-
           revision
         else
           {:error, e} -> Repo.rollback(e)
@@ -164,9 +164,17 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
       end)
 
+      {status, _} = result
+      if (status == :ok) do
+        broadcast_update(container.resource_id, project.slug)
+      end
+
+      result
+
     else
       _ -> {:error, :not_found}
     end
+
 
   end
 
