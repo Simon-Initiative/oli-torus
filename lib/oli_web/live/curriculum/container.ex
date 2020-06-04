@@ -4,6 +4,7 @@ defmodule OliWeb.Curriculum.Container do
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Authoring.Course
   alias OliWeb.Curriculum.Entry
+  alias OliWeb.Curriculum.DropTarget
   alias OliWeb.Curriculum.Settings
   alias Oli.Resources.ScoringStrategy
   alias Oli.Resources
@@ -36,10 +37,12 @@ defmodule OliWeb.Curriculum.Container do
         <div class="row">
           <div class="col-12 col-md-8">
 
-            <div class="list-group">
+            <div>
               <%= for {page, index} <- Enum.with_index(@pages) do %>
-              <%= live_component @socket, Entry, selected: page == @selected, page: page, index: index, project: @project %>
+                <%= live_component @socket, DropTarget, index: index %>
+                <%= live_component @socket, Entry, selected: page == @selected, page: page, index: index, project: @project %>
               <% end %>
+              <%= live_component @socket, DropTarget, index: length(@pages) %>
             </div>
 
             <div class="dropdown mt-5">
@@ -83,11 +86,12 @@ defmodule OliWeb.Curriculum.Container do
 
     {:noreply, socket}
   end
-  
-  def handle_event("key", params, socket) do
 
-    socket = case ContainerEditor.edit_page(socket.assigns.project, socket.assigns.selected.slug, params) do
-      {:ok, page} -> replace_page_revision(socket, page)
+  def handle_event("reorder", %{"sourceIndex" => source_index, "dropIndex" => index}, socket) do
+    source = Enum.at(socket.assigns.pages, String.to_integer(source_index))
+
+    socket = case ContainerEditor.reorder_child(socket.assigns.project, socket.assigns.author, source.slug, String.to_integer(index)) do
+      {:ok, _} -> all_pages(socket)
       {:error, _} -> socket
       |> put_flash(:error, "Could not edit page")
     end
@@ -141,6 +145,18 @@ defmodule OliWeb.Curriculum.Container do
 
     assign(socket, :pages, pages)
     |> assign(:selected, revision)
+  end
+
+  defp all_pages(socket) do
+    pages = ContainerEditor.list_all_pages(socket.assigns.project)
+
+    selected = case socket.assigns.selected do
+      nil -> nil
+      s -> Enum.find(pages, fn p -> p.resource_id == s.resource_id end)
+    end
+
+    assign(socket, :pages, pages)
+    |> assign(:selected, selected)
   end
 
   defp remove_selected(socket, revision) do

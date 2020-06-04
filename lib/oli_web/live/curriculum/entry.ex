@@ -5,26 +5,27 @@ defmodule OliWeb.Curriculum.Entry do
 
   def render(assigns) do
 
-    active = if assigns.selected do "active" else "" end
+    active = if assigns.selected do "#eeeeee" else "transparent" end
     type = if assigns.page.graded do "Assessment" else "Page" end
-    link_style = if assigns.selected do "color: white" else "" end
     muted = if assigns.selected do "" else "text-muted" end
 
     ~L"""
     <div
-      style="cursor: pointer;"
+      draggable="true"
+      style="cursor: pointer; background-color: <%= active %>;"
       phx-click="select"
       phx-value-slug="<%= @page.slug %>"
-      class="list-group-item list-group-item-action d-flex justify-content-start <%= active %> ">
+      phx-hook="DragSource"
+      data-drag-index="<%= assigns.index %>"
+      class="p-1 d-flex justify-content-start">
 
       <div class="dragHandleGrab">
-        <div class="grip<%=active%>"></div>
+        <div class="grip"></div>
       </div>
 
       <div class="m-2 text-truncate" style="width: 100%;">
         <div class="d-flex justify-content-between">
           <a
-            style="<%=link_style%>"
             onClick="event.stopPropagation();"
             href="<%= Routes.resource_path(OliWeb.Endpoint, :edit, @project.slug, @page.slug) %>"><%= @index + 1 %>. <%= @page.title %>
           </a>

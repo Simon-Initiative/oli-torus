@@ -18,10 +18,10 @@ defmodule OliWeb.Curriculum.Settings do
 
       <select class="custom-select" name="graded">
         <option <%= selected_attr(@page.graded, true) %> value="true">Graded Assessment</option>
-        <option <%= selected_attr(@page.graded, false) %> value="false">Ungraded Page</option>
+        <option <%= selected_attr(@page.graded, false) %> value="false">Ungraded Practice Page</option>
       </select>
       <small class="text-muted">
-      Graded assessments will report a grade to gradebook, while practice pages do not.
+      Graded assessments report a grade to the gradebook, while practice pages do not.
       </small>
 
       <div class="mt-4">Number of Attempts:</div>
@@ -34,8 +34,8 @@ defmodule OliWeb.Curriculum.Settings do
         <option <%= selected_attr(@page.max_attempts, 0) %> value="0">Unlimited</option>
       </select>
       <small class="text-muted">
-      Graded assessments allow a maximum number of students attempts.  Ungraded pages
-      can only have unlimited attempts.
+      Graded assessments allow a configurable number of attempts, while practice pages
+      offer unlimited attempts.
       </small>
 
       <div class="mt-4">Scoring Strategy</div>
@@ -48,7 +48,7 @@ defmodule OliWeb.Curriculum.Settings do
       </select>
       <small class="text-muted">
       The scoring strategy determines how to calculate the final gradebook score across
-      all of the students attempts.
+      all attempts.
       </small>
 
     </form>
