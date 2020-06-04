@@ -1,4 +1,4 @@
-dist/search_items-ea9d5a1f8c.js
+dist/search_items-1f10090472.js
 dist/app-a225d03098e64fef431a.js
 dist/elixir-0ab8a6a80ebaaa287431.css
 dist/erlang-bd206729da4d0d280293.css
@@ -6,7 +6,7 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/sidebar_items-f83ba9fb86.js
+dist/sidebar_items-9e0e1e3e79.js
 api-reference.html
 readme.html
 license.html
@@ -101,6 +101,7 @@ Oli.Delivery.Timezones.html
 Oli.Grading.html
 Oli.Grading.GradebookRow.html
 Oli.Grading.GradebookScore.html
+Oli.Plugs.AuthorizeProject.html
 Oli.Plugs.EnsureAdmin.html
 Oli.Plugs.NoCache.html
 Oli.Plugs.Protect.html
@@ -160,8 +161,11 @@ OliWeb.AttemptController.html
 OliWeb.AuthController.html
 OliWeb.AuthView.html
 OliWeb.CollaboratorController.html
-OliWeb.CurriculumController.html
-OliWeb.CurriculumView.html
+OliWeb.Common.MaterialIcon.html
+OliWeb.Curriculum.Container.html
+OliWeb.Curriculum.DropTarget.html
+OliWeb.Curriculum.Entry.html
+OliWeb.Curriculum.Settings.html
 OliWeb.DeliveryController.html
 OliWeb.DeliveryView.html
 OliWeb.EditorTestController.html
