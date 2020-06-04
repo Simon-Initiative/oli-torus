@@ -25,6 +25,12 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     |> Map.delete(:title)
     |> Map.delete(:objectives)
 
+    # ensure that changing a page to practice resets the max attempts to 0
+    change = case Map.get(change, "graded", "true") do
+      "false" -> Map.put(change, "max_attempts", 0)
+      _ -> change
+    end
+
     Repo.transaction(fn ->
 
       revision = AuthoringResolver.from_revision_slug(project.slug, revision_slug)
