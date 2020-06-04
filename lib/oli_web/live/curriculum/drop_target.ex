@@ -1,4 +1,9 @@
 defmodule OliWeb.Curriculum.DropTarget do
+
+  @moduledoc """
+  Drop target component.
+  """
+
   use Phoenix.LiveComponent
 
   def render(assigns) do

@@ -61,7 +61,7 @@ defmodule Oli.MixProject do
       {:dialyxir, "~> 0.5.0", only: [:dev], runtime: true},
       {:ecto_sql, "~> 3.1"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
-      {:floki, "~> 0.23.0"},
+      {:floki, ">= 0.26.0", only: :test},
       {:gettext, "~> 0.11"},
       {:hackney, "~> 1.9"},
       {:httpoison, "~> 1.6"},

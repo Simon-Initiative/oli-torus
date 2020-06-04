@@ -1,1 +1,1 @@
-declare module "phoenix_live_view"
+declare module 'phoenix_live_view';

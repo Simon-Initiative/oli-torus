@@ -45,5 +45,5 @@ export const GraphNavigation = {
       lastY = null;
     });
 
-  }
+  },
 };

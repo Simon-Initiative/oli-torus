@@ -1,4 +1,9 @@
 defmodule OliWeb.Curriculum.Settings do
+
+  @moduledoc """
+  Selected curriculum item settings editing component.
+  """
+
   use Phoenix.LiveComponent
   use Phoenix.HTML
   alias Oli.Resources.ScoringStrategy

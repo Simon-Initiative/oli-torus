@@ -1,4 +1,9 @@
 defmodule OliWeb.Curriculum.Entry do
+
+  @moduledoc """
+  Curriculum item entry component.
+  """
+
   use Phoenix.LiveComponent
 
   alias OliWeb.Router.Helpers, as: Routes
@@ -11,6 +16,7 @@ defmodule OliWeb.Curriculum.Entry do
 
     ~L"""
     <div
+      id="<%= @page.resource_id %>"
       draggable="true"
       style="cursor: pointer; <%= active %>"
       phx-click="select"

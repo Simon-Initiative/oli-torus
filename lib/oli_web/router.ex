@@ -101,6 +101,11 @@ defmodule OliWeb.Router do
   end
 
   scope "/project", OliWeb do
+    pipe_through [:browser, :csrf_always, :protected, :workspace_layout, :authoring]
+    post "/", ProjectController, :create
+  end
+
+  scope "/project", OliWeb do
     pipe_through [:browser, :csrf_always, :protected, :workspace_layout, :authoring, :authorize_project]
 
     # Project display pages
@@ -113,7 +118,6 @@ defmodule OliWeb.Router do
     delete "/:project_id/review", ProjectController, :dismiss_warning
 
     # Project
-    post "/", ProjectController, :create
     put "/:project_id", ProjectController, :update
     delete "/:project_id", ProjectController, :delete
 

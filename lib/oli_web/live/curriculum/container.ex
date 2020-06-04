@@ -1,5 +1,15 @@
 defmodule OliWeb.Curriculum.Container do
+
+  @moduledoc """
+  LiveView implementation of a container editor. Given that we only
+  support one fixed top-level container this view ultimately is the
+  entire Curriculum editor.  At some point in the future this implementation
+  can be generalized a bit further to allow it to operate as an editor
+  for any container - not just the root container.
+  """
+
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+
 
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Authoring.Course
@@ -84,7 +94,8 @@ defmodule OliWeb.Curriculum.Container do
     """
   end
 
-  def subscribe(root_resource, pages, project_slug) do
+  # spin up subscriptions for the container and for all of its pages
+  defp subscribe(root_resource, pages, project_slug) do
 
     ids = [root_resource.resource_id] ++ Enum.map(pages, fn p -> p.resource_id end)
     Enum.each(ids, fn id -> PubSub.subscribe(Oli.PubSub, "resource:" <> Integer.to_string(id) <> ":project:" <> project_slug) end)
@@ -92,7 +103,8 @@ defmodule OliWeb.Curriculum.Container do
     ids
   end
 
-  def unsubscribe(ids, project_slug) do
+  # release a collection of subscriptions
+  defp unsubscribe(ids, project_slug) do
     Enum.each(ids, fn id -> PubSub.unsubscribe(Oli.PubSub, "resource:" <> Integer.to_string(id) <> ":project:" <> project_slug) end)
   end
 
@@ -100,13 +112,15 @@ defmodule OliWeb.Curriculum.Container do
     Enum.at(pages, index + direction)
   end
 
+  # handle change of selection
   def handle_event("select", %{ "slug" => slug}, socket) do
     selected = Enum.find(socket.assigns.pages, fn r -> r.slug == slug end)
     {:noreply, assign(socket, :selected, selected)}
   end
 
+  # process form submission to save page settings
   def handle_event("save", params, socket) do
-    IO.inspect "save"
+
     socket = case ContainerEditor.edit_page(socket.assigns.project, socket.assigns.selected.slug, params) do
       {:ok, _} -> socket
       {:error, _} -> socket
@@ -116,6 +130,7 @@ defmodule OliWeb.Curriculum.Container do
     {:noreply, socket}
   end
 
+  # allow key up and down to change the selected item
   def handle_event("keydown", %{"key" => key}, socket) do
 
     index = Enum.find_index(socket.assigns.pages, fn p -> p == socket.assigns.selected end)
@@ -132,6 +147,7 @@ defmodule OliWeb.Curriculum.Container do
 
   end
 
+  # handle reordering event
   def handle_event("reorder", %{"sourceIndex" => source_index, "dropIndex" => index}, socket) do
     source = Enum.at(socket.assigns.pages, String.to_integer(source_index))
 
@@ -144,6 +160,7 @@ defmodule OliWeb.Curriculum.Container do
     {:noreply, socket}
   end
 
+  # handle processing deletion of currently selected item
   def handle_event("delete", _, socket) do
 
     socket = case ContainerEditor.remove_child(socket.assigns.project, socket.assigns.author, socket.assigns.selected.slug) do
@@ -155,6 +172,7 @@ defmodule OliWeb.Curriculum.Container do
     {:noreply, socket}
   end
 
+  # handle clicking of the "Add Graded Assessment" or "Add Practice Page" buttons
   def handle_event("add", %{ "type" => type}, socket) do
 
     attrs = %{
@@ -181,6 +199,8 @@ defmodule OliWeb.Curriculum.Container do
     {:noreply, socket}
   end
 
+  # Here are listening for subscription notifications for edits made
+  # to the container or to its child pages
   def handle_info({:updated, revision, _}, socket) do
 
     id = revision.resource_id
