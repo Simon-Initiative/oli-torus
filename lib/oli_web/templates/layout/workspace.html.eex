@@ -1,4 +1,6 @@
 
+<%= render_layout "common.html", assigns do %>
+
 <div id="wrapper">
   <div id="left">
     <%= render OliWeb.LayoutView, "_#{if @conn.params["project_id"] do "project" else "workspace" end}_sidebar.html", assigns %>
@@ -9,16 +11,9 @@
       if @title == "Projects" do "workspace" else "account" end end}_header.html", assigns %>
 
     <main role="main">
-
-      <%= if get_flash(@conn, :info) do %>
-          <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
-      <% end %>
-      <%= if get_flash(@conn, :error) do %>
-          <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
-      <% end %>
-
       <%= @inner_content %>
-
     </main>
   </div>
 </div>
+
+<% end %>
