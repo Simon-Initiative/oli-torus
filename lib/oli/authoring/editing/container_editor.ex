@@ -204,7 +204,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
   defp append_to_container(container, project_slug, revision_to_attach, author) do
     append = %{
-      children: [revision_to_attach.resource_id | container.children],
+      children: container.children ++ [revision_to_attach.resource_id],
       author_id: author.id
     }
     ChangeTracker.track_revision(project_slug, container, append)

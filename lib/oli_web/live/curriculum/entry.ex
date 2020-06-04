@@ -30,8 +30,6 @@ defmodule OliWeb.Curriculum.Entry do
           </a>
           <small class="<%= muted %>"><%= type %></small>
         </div>
-
-        <small class="<%= muted %>">You are currently editing this page</small>
       </div>
 
     </div>

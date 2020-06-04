@@ -12,7 +12,7 @@ defmodule OliWeb.Common.MaterialIcon do
     end
 
     ~L"""
-    <i style="width: <%= width %>px;" class='material-icons<%= category %> icon'><%= icon %></i>
+    <i style="width: <%= width %>;" class='material-icons<%= category %> icon'><%= icon %></i>
     """
 
   end

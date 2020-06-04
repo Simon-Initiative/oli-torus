@@ -12,7 +12,7 @@ defmodule OliWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
-    plug :put_root_layout, {OliWeb.LayoutView, :root}
+    plug :put_root_layout, {OliWeb.LayoutView, :delivery}
     plug :put_layout, {OliWeb.LayoutView, :app}
     plug :put_secure_browser_headers
     plug Plug.Telemetry, event_prefix: [:oli, :plug]
@@ -123,8 +123,6 @@ defmodule OliWeb.Router do
     delete "/:project_id/objectives/:objective_slug", ObjectiveController, :delete
 
     # Curriculum
-    # resources "/:project_id/curriculum", CurriculumController, only: [:index, :create, :delete]
-
     live "/:project_id/curriculum", Curriculum.Container
 
     # Editors
@@ -148,7 +146,7 @@ defmodule OliWeb.Router do
 
   scope "/api/v1/project", OliWeb do
     pipe_through [:api, :protected]
-    put "/:project_id/curriculum", CurriculumController, :update
+
     put "/:project/resource/:resource", ResourceController, :update
 
     post "/:project/activity/:activity_type", ActivityController, :create
