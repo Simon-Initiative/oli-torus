@@ -5,19 +5,19 @@ defmodule OliWeb.Curriculum.Entry do
 
   def render(assigns) do
 
-    active = if assigns.selected do "#eeeeee" else "transparent" end
+    active = if assigns.selected do "background-color: #dddddd;" else "" end
     type = if assigns.page.graded do "Assessment" else "Page" end
     muted = if assigns.selected do "" else "text-muted" end
 
     ~L"""
     <div
       draggable="true"
-      style="cursor: pointer; background-color: <%= active %>;"
+      style="cursor: pointer; <%= active %>"
       phx-click="select"
       phx-value-slug="<%= @page.slug %>"
       phx-hook="DragSource"
       data-drag-index="<%= assigns.index %>"
-      class="p-1 d-flex justify-content-start">
+      class="p-1 d-flex justify-content-start curriculum-entry">
 
       <div class="dragHandleGrab">
         <div class="grip"></div>

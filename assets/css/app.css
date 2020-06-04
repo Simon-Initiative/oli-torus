@@ -247,6 +247,9 @@ nav.navbar .user img {
   text-transform: uppercase;
 }
 
+.curriculum-entry:hover {
+  background-color: #eeeeee;
+}
 
 /*
 Inlined react-bootstrap-typeahead styles

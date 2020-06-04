@@ -9,6 +9,7 @@ defmodule OliWeb.Curriculum.Container do
   alias Oli.Resources.ScoringStrategy
   alias Oli.Resources
   alias Oli.Resources.Revision
+  alias Oli.Publishing.AuthoringResolver
   alias Oli.Accounts.Author
   alias Oli.Repo
   alias Phoenix.PubSub
@@ -17,12 +18,18 @@ defmodule OliWeb.Curriculum.Container do
 
     author = Repo.get(Author, author_id)
     project = Course.get_project_by_slug(Map.get(params, "project_id"))
+    pages = ContainerEditor.list_all_pages(project)
+
+    root_resource = AuthoringResolver.root_resource(project.slug)
+    subscriptions = subscribe(root_resource, pages, project.slug)
 
     {:ok, assign(socket,
-      pages: ContainerEditor.list_all_pages(project),
+      pages: pages,
       title: "Curriculum",
       changeset: Resources.change_revision(%Revision{}),
+      root_resource: root_resource,
       project: project,
+      subscriptions: subscriptions,
       author: author,
       selected: nil)
     }
@@ -35,9 +42,16 @@ defmodule OliWeb.Curriculum.Container do
 
       <div class="container">
         <div class="row">
+          <div class="col-12">
+            <small class="text-muted">
+              Create and configure the curriculum items for your course.
+            </small>
+          </div>
+        </div>
+        <div class="row" phx-window-keydown="keydown">
           <div class="col-12 col-md-8">
 
-            <div>
+            <div class="curriculum-entries">
               <%= for {page, index} <- Enum.with_index(@pages) do %>
                 <%= live_component @socket, DropTarget, index: index %>
                 <%= live_component @socket, Entry, selected: page == @selected, page: page, index: index, project: @project %>
@@ -45,15 +59,14 @@ defmodule OliWeb.Curriculum.Container do
               <%= live_component @socket, DropTarget, index: length(@pages) %>
             </div>
 
-            <div class="dropdown mt-5">
-              <button class="btn btn-secondary dropdown-toggle" type="button"
-                id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Add new
+            <div class="mt-5">
+              Add new:
+              <button phx-click="add" phx-value-type="Unscored" class="btn btn-sm btn-secondary-outline ml-2" type="button">
+                Practice Page
               </button>
-              <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                <a class="dropdown-item" href="#" phx-click="add" phx-value-type="Unscored">Ungraded Practice Page</a>
-                <a class="dropdown-item" href="#" phx-click="add" phx-value-type="Scored">Graded Assessment</a>
-              </div>
+              <button phx-click="add" phx-value-type="Scored" class="btn btn-sm btn-secondary-outline ml-2" type="button">
+                Graded Assessment
+              </button>
             </div>
 
           </div>
@@ -71,15 +84,31 @@ defmodule OliWeb.Curriculum.Container do
     """
   end
 
+  def subscribe(root_resource, pages, project_slug) do
+
+    ids = [root_resource.resource_id] ++ Enum.map(pages, fn p -> p.resource_id end)
+    Enum.each(ids, fn id -> PubSub.subscribe(Oli.PubSub, "resource:" <> Integer.to_string(id) <> ":project:" <> project_slug) end)
+
+    ids
+  end
+
+  def unsubscribe(ids, project_slug) do
+    Enum.each(ids, fn id -> PubSub.unsubscribe(Oli.PubSub, "resource:" <> Integer.to_string(id) <> ":project:" <> project_slug) end)
+  end
+
+  defp move_selection(pages, index, direction) do
+    Enum.at(pages, index + direction)
+  end
+
   def handle_event("select", %{ "slug" => slug}, socket) do
     selected = Enum.find(socket.assigns.pages, fn r -> r.slug == slug end)
     {:noreply, assign(socket, :selected, selected)}
   end
 
   def handle_event("save", params, socket) do
-
+    IO.inspect "save"
     socket = case ContainerEditor.edit_page(socket.assigns.project, socket.assigns.selected.slug, params) do
-      {:ok, page} -> replace_page_revision(socket, page)
+      {:ok, _} -> socket
       {:error, _} -> socket
       |> put_flash(:error, "Could not edit page")
     end
@@ -87,11 +116,27 @@ defmodule OliWeb.Curriculum.Container do
     {:noreply, socket}
   end
 
+  def handle_event("keydown", %{"key" => key}, socket) do
+
+    index = Enum.find_index(socket.assigns.pages, fn p -> p == socket.assigns.selected end)
+    last_index = length(socket.assigns.pages) - 1
+    pages = socket.assigns.pages
+
+    case {index, key} do
+      {nil, _} -> {:noreply, socket}
+      {^last_index, "ArrowDown"} -> {:noreply, socket}
+      {0, "ArrowUp"} -> {:noreply, socket}
+      {index, "ArrowUp"} -> {:noreply, assign(socket, :selected, move_selection(pages, index, -1))}
+      {index, "ArrowDown"} -> {:noreply, assign(socket, :selected, move_selection(pages, index, 1))}
+    end
+
+  end
+
   def handle_event("reorder", %{"sourceIndex" => source_index, "dropIndex" => index}, socket) do
     source = Enum.at(socket.assigns.pages, String.to_integer(source_index))
 
     socket = case ContainerEditor.reorder_child(socket.assigns.project, socket.assigns.author, source.slug, String.to_integer(index)) do
-      {:ok, _} -> all_pages(socket)
+      {:ok, _} -> socket
       {:error, _} -> socket
       |> put_flash(:error, "Could not edit page")
     end
@@ -102,7 +147,7 @@ defmodule OliWeb.Curriculum.Container do
   def handle_event("delete", _, socket) do
 
     socket = case ContainerEditor.remove_child(socket.assigns.project, socket.assigns.author, socket.assigns.selected.slug) do
-      {:ok, _} -> remove_selected(socket, socket.assigns.selected)
+      {:ok, _} -> socket
       {:error, _} -> socket
       |> put_flash(:error, "Could not remove page")
     end
@@ -126,9 +171,7 @@ defmodule OliWeb.Curriculum.Container do
 
     socket = case ContainerEditor.add_new(attrs, socket.assigns.author, socket.assigns.project) do
 
-      {:ok, _} ->
-        assign(socket, :pages, ContainerEditor.list_all_pages(socket.assigns.project))
-        |> put_flash(:info, "Page created")
+      {:ok, _} -> socket
 
       {:error, %Ecto.Changeset{} = _changeset} ->
         socket
@@ -138,54 +181,39 @@ defmodule OliWeb.Curriculum.Container do
     {:noreply, socket}
   end
 
+  def handle_info({:updated, revision, _}, socket) do
 
-  defp replace_page_revision(socket, revision) do
-    index = Enum.find_index(socket.assigns.pages, fn p -> p.resource_id == revision.resource_id end)
-    pages = List.replace_at(socket.assigns.pages, index, revision)
+    id = revision.resource_id
 
-    assign(socket, :pages, pages)
-    |> assign(:selected, revision)
-  end
+    # now determine if the change was to the container or to one of the pages itself
+    {pages, root_resource} = if (socket.assigns.root_resource.resource_id == id) do
 
-  defp all_pages(socket) do
-    pages = ContainerEditor.list_all_pages(socket.assigns.project)
+      # in the case of a change to the container, we simplify by just pulling a new view of
+      # the container and its contents. This handles addition, removal, reordering from the
+      # local user as well as a collaborator
+      pages = ContainerEditor.list_all_pages(socket.assigns.project)
+      {pages, revision}
+    else
 
+      # on just a page change, we splice that page into its location
+      pages = case Enum.find_index(socket.assigns.pages, fn p -> p.resource_id == id end) do
+        nil -> socket.assigns.pages
+        index -> List.replace_at(socket.assigns.pages, index, revision)
+      end
+      {pages, socket.assigns.root_resource}
+    end
+
+    # update our selection to reflect the latest model
     selected = case socket.assigns.selected do
       nil -> nil
-      s -> Enum.find(pages, fn p -> p.resource_id == s.resource_id end)
+      s -> Enum.find(pages, fn r -> r.resource_id == s.resource_id end)
     end
 
-    assign(socket, :pages, pages)
-    |> assign(:selected, selected)
-  end
+    # redo all subscriptions
+    unsubscribe(socket.assigns.subscriptions, socket.assigns.project.slug)
+    subscriptions = subscribe(root_resource, pages, socket.assigns.project.slug)
 
-  defp remove_selected(socket, revision) do
-    index = Enum.find_index(socket.assigns.pages, fn p -> p.resource_id == revision.resource_id end)
-    pages = List.delete_at(socket.assigns.pages, index)
-
-    selected = cond do
-      length(pages) == 0 -> nil
-      length(pages) == index -> Enum.at(pages, index - 1)
-      true -> Enum.at(pages, index)
-    end
-
-    assign(socket, :pages, pages)
-    |> assign(:selected, selected)
-  end
-
-  def handle_info({:updated, revision}, socket) do
-
-    id = revision.id
-
-    revisions = case socket.assigns.revisions do
-      [] -> [revision]
-      [%{id: ^id} | rest] -> [revision] ++ rest
-      list -> [revision] ++ list
-    end
-
-    selected = Enum.find(revisions, fn r -> r.id == socket.assigns.selected.id end)
-
-    {:noreply, assign(socket, selected: selected, revisions: revisions)}
+    {:noreply, assign(socket, selected: selected, pages: pages, root_resource: root_resource, subscriptions: subscriptions)}
   end
 
 

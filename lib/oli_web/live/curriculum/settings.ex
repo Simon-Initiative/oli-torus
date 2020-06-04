@@ -14,7 +14,7 @@ defmodule OliWeb.Curriculum.Settings do
     ~L"""
     <%= _ = form_for @changeset, "#", [phx_change: :save] %>
 
-    <div>Grading Type:</div>
+      <div><small>Grading Type:</small></div>
 
       <select class="custom-select" name="graded">
         <option <%= selected_attr(@page.graded, true) %> value="true">Graded Assessment</option>
@@ -24,7 +24,7 @@ defmodule OliWeb.Curriculum.Settings do
       Graded assessments report a grade to the gradebook, while practice pages do not.
       </small>
 
-      <div class="mt-4">Number of Attempts:</div>
+      <div class="mt-4"><small>Number of Attempts:</small></div>
       <select <%= disabled_attr(@page.graded) %> class="custom-select" name="max_attempts">
         <%= for c <- 1..10 do %>
         <option value="<%= c %>" <%= selected_attr(@page.max_attempts, c) %>>
@@ -38,7 +38,7 @@ defmodule OliWeb.Curriculum.Settings do
       offer unlimited attempts.
       </small>
 
-      <div class="mt-4">Scoring Strategy</div>
+      <div class="mt-4"><small>Scoring Strategy</small></div>
       <select <%= disabled_attr(@page.graded) %> class="custom-select" name="scoring_strategy_id">
         <%= for %{id: id, type: type} <- ScoringStrategy.get_types() do %>
           <option value="<%= id %>" <%= selected_attr(@page.scoring_strategy_id, id) %>>
@@ -71,7 +71,8 @@ defmodule OliWeb.Curriculum.Settings do
             </button>
           </div>
           <div class="modal-body">
-            Are you sure you want to delete this curriculum item?  This is an operation that cannot be undone.
+            <p>Are you sure you want to delete this curriculum item?</p>
+            <p>This is an operation that cannot be undone.</p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>

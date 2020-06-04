@@ -15,8 +15,9 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   alias Oli.Publishing.ChangeTracker
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Repo
+  alias Phoenix.PubSub
 
-
+  @spec edit_page(Oli.Authoring.Course.Project.t(), any, map) :: any
   def edit_page(%Project{} = project, revision_slug, change) do
 
     # safe guard that we do never allow content or title or objective changes
@@ -29,7 +30,18 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       revision = AuthoringResolver.from_revision_slug(project.slug, revision_slug)
 
       case Resources.update_revision(revision, change) do
-        {:ok, revision} -> revision
+        {:ok, revision} ->
+
+          IO.inspect "broadcast"
+          IO.inspect "resource:" <> Integer.to_string(revision.resource_id) <> ":project:" <> project.slug
+
+          PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id),
+            {:updated, revision, project.slug}
+          PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id) <> ":project:" <> project.slug,
+            {:updated, revision, project.slug}
+
+          revision
+
         {:error, changelist} -> Repo.rollback(changelist)
       end
 
@@ -81,6 +93,14 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
           {:ok, _} <- ChangeTracker.track_revision(project.slug, revision),
           {:ok, _} <- append_to_container(container, project.slug, revision, author)
       do
+
+        updated_container = Oli.Repo.get(Oli.Resources.Revision, container.id)
+
+        PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(container.resource_id),
+          {:updated, updated_container, project.slug}
+        PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(container.resource_id) <> ":project:" <> project.slug,
+          {:updated, updated_container, project.slug}
+
         revision
       else
         {:error, e} -> Repo.rollback(e)
@@ -129,6 +149,14 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
         with {:ok, _} <- PageEditor.edit(project.slug, revision_slug, author.email, deletion),
          {:ok, revision} = ChangeTracker.track_revision(project.slug, container, removal)
         do
+
+          updated_container = Oli.Repo.get(Oli.Resources.Revision, container.id)
+
+          PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(updated_container.resource_id),
+            {:updated, updated_container, project.slug}
+          PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(updated_container.resource_id) <> ":project:" <> project.slug,
+            {:updated, updated_container, project.slug}
+
           revision
         else
           {:error, e} -> Repo.rollback(e)
@@ -194,7 +222,16 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       }
 
       # Apply that change to the container, generating a new revision
-      ChangeTracker.track_revision(project.slug, container, reordering)
+      result = ChangeTracker.track_revision(project.slug, container, reordering)
+
+      updated_container = Oli.Repo.get(Oli.Resources.Revision, container.id)
+
+      PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(container.resource_id),
+        {:updated, updated_container, project.slug}
+      PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(container.resource_id) <> ":project:" <> project.slug,
+        {:updated, updated_container, project.slug}
+
+      result
 
     else
       _ -> {:error, :not_found}
