@@ -19,6 +19,7 @@ import { Socket } from 'phoenix';
 import NProgress from 'nprogress';
 import { LiveSocket } from 'phoenix_live_view';
 import { Hooks } from 'hooks';
+import { initActivityBridge } from './activity_bridge';
 
 const csrfToken
   = (document as any).querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -28,6 +29,13 @@ const liveSocket
 // Show progress bar on live navigation and form submits
 window.addEventListener('phx:page-loading-start', info => NProgress.start());
 window.addEventListener('phx:page-loading-stop', info => NProgress.done());
+
+(window as any).initActivityBridge = initActivityBridge;
+
+// Global functions and objects:
+(window as any).OLI = {
+  initActivityBridge,
+};
 
 // connect if there are any LiveViews on the page
 liveSocket.connect();
