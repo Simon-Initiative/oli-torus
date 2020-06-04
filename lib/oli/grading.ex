@@ -20,11 +20,16 @@ defmodule Oli.Grading do
 
     # TODO: look up adapter type by section or institution, default to lti
     grade_service = LtiGradeService
-    adapter = Adapters.LtiV2GradeServices
+    adapter = Adapters.Canvas
 
-    {:ok, %HTTPoison.Response{} = response} = grade_service.get_lineitems(section.context_id, adapter)
+    lineitem = %{"label" => "test column"}
+    IO.inspect grade_service.add_lineitem(section.context_id, lineitem, adapter)
 
-    IO.inspect response, label: "lineitems"
+    lineitems = grade_service.get_lineitems(section.context_id, adapter)
+
+    IO.inspect lineitems, label: "lineitems"
+
+
   end
 
   @doc """

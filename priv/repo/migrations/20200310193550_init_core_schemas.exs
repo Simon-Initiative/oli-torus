@@ -134,6 +134,9 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :context_id, :string
       add :lti_lineitems_url, :string
       add :lti_lineitems_token, :string
+      add :api_url, :string
+      add :api_token, :string
+      add :api_id, :string
 
       add :institution_id, references(:institutions)
       add :project_id, references(:projects)

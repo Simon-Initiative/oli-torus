@@ -8,6 +8,8 @@ defmodule OliWeb.LtiController do
   alias Oli.Accounts.Institution
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionRoles
+  alias Oli.Grading.Adapters
+  alias Oli.Grading.LtiGradeService
 
   @doc """
   Handles an LTI basic launch
@@ -71,6 +73,10 @@ defmodule OliWeb.LtiController do
             else
               conn
             end
+
+            # TODO: look up adapter type by section or institution, default to lti
+            adapter = Adapters.Canvas
+            adapter.basic_launch(conn.body_params)
 
             # sign current user in and redirect to home page
             conn
