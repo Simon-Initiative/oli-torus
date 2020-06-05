@@ -77,6 +77,12 @@ defmodule Oli.Delivery.Attempts.Scoring do
     }
   end
 
+  # Instead of failing at runtime if there is ever a strategy passed in that
+  # we do not handle, we default to the "average" strategy.
+  def calculate_score(_, items) do
+    calculate_score("average", items)
+  end
+
   defp safe_percentage(score, out_of) do
     case out_of do
       nil -> 0.0
