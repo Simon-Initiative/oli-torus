@@ -82,7 +82,7 @@ defmodule Oli.Grading do
     end)
 
     # submit grades
-    grade_data = gradebook
+    gradebook
       |> Enum.each(fn row ->
         Enum.each(row.scores, fn score ->
           case score do
