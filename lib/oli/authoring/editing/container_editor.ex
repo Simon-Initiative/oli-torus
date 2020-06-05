@@ -15,6 +15,43 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   alias Oli.Publishing.ChangeTracker
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Repo
+  alias Phoenix.PubSub
+
+  @spec edit_page(Oli.Authoring.Course.Project.t(), any, map) :: any
+  def edit_page(%Project{} = project, revision_slug, change) do
+
+    # safe guard that we do never allow content or title or objective changes
+    change = Map.delete(change, :content)
+    |> Map.delete(:title)
+    |> Map.delete(:objectives)
+
+    # ensure that changing a page to practice resets the max attempts to 0
+    change = case Map.get(change, "graded", "true") do
+      "false" -> Map.put(change, "max_attempts", 0)
+      _ -> change
+    end
+
+    Repo.transaction(fn ->
+
+      revision = AuthoringResolver.from_revision_slug(project.slug, revision_slug)
+
+      case Resources.update_revision(revision, change) do
+        {:ok, revision} ->
+
+          PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id),
+            {:updated, revision, project.slug}
+          PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id) <> ":project:" <> project.slug,
+            {:updated, revision, project.slug}
+
+          revision
+
+        {:error, changelist} -> Repo.rollback(changelist)
+      end
+
+    end)
+
+  end
+
 
   @doc """
   Lists all top level resource revisions contained in a container.
@@ -53,7 +90,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
     # We want to ensure that the creation and attachment either
     # all succeeds or all fails
-    Repo.transaction(fn ->
+    result = Repo.transaction(fn ->
 
       with {:ok, %{revision: revision}} <- Oli.Authoring.Course.create_and_attach_resource(project, attrs),
           {:ok, _} <- ChangeTracker.track_revision(project.slug, revision),
@@ -65,7 +102,26 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       end
 
     end)
+
+    {status, _} = result
+    if (status == :ok) do
+      broadcast_update(container.resource_id, project.slug)
+    end
+
+    result
+
   end
+
+  def broadcast_update(resource_id, project_slug) do
+
+    updated_container = AuthoringResolver.from_resource_id(project_slug, resource_id)
+
+    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(resource_id),
+      {:updated, updated_container, project_slug}
+    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(resource_id) <> ":project:" <> project_slug,
+      {:updated, updated_container, project_slug}
+  end
+
 
   @doc """
   Removes a child from a container, and marks that child as deleted.
@@ -96,7 +152,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       }
 
       # Atomically apply the changes
-      Repo.transaction(fn ->
+      result = Repo.transaction(fn ->
 
         # It is important to edit the page via PageEditor, since it will ensure
         # that a lock can be acquired before editing. This will not allow the deletion
@@ -114,9 +170,17 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
       end)
 
+      {status, _} = result
+      if (status == :ok) do
+        broadcast_update(container.resource_id, project.slug)
+      end
+
+      result
+
     else
       _ -> {:error, :not_found}
     end
+
 
   end
 
@@ -172,7 +236,16 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       }
 
       # Apply that change to the container, generating a new revision
-      ChangeTracker.track_revision(project.slug, container, reordering)
+      result = ChangeTracker.track_revision(project.slug, container, reordering)
+
+      updated_container = Oli.Repo.get(Oli.Resources.Revision, container.id)
+
+      PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(container.resource_id),
+        {:updated, updated_container, project.slug}
+      PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(container.resource_id) <> ":project:" <> project.slug,
+        {:updated, updated_container, project.slug}
+
+      result
 
     else
       _ -> {:error, :not_found}
@@ -182,7 +255,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
   defp append_to_container(container, project_slug, revision_to_attach, author) do
     append = %{
-      children: [revision_to_attach.resource_id | container.children],
+      children: container.children ++ [revision_to_attach.resource_id],
       author_id: author.id
     }
     ChangeTracker.track_revision(project_slug, container, append)
