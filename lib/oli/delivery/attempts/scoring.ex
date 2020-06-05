@@ -29,7 +29,7 @@ defmodule Oli.Delivery.Attempts.Scoring do
   def calculate_score("average", items) do
 
     {total, max_out_of} = Enum.reduce(items, {0, 0}, fn p, {total, max_out_of} ->
-      {total + (p.score / p.out_of), if max_out_of < p.out_of do p.out_of else max_out_of end}
+      {total + safe_percentage(p.score, p.out_of), if max_out_of < p.out_of do p.out_of else max_out_of end}
     end)
 
     %Result{
@@ -43,8 +43,8 @@ defmodule Oli.Delivery.Attempts.Scoring do
   def calculate_score("best", items) do
 
     {score, out_of, _} = Enum.reduce(items, {0, 0, 0.0}, fn p, {score, out_of, best} ->
-      if p.score / p.out_of > best do
-        {p.score, p.out_of, p.score / p.out_of}
+      if safe_percentage(p.score, p.out_of) > best do
+        {p.score, p.out_of, safe_percentage(p.score, p.out_of)}
       else
         {score, out_of, best}
       end
@@ -75,6 +75,15 @@ defmodule Oli.Delivery.Attempts.Scoring do
       score: score,
       out_of: out_of
     }
+  end
+
+  defp safe_percentage(score, out_of) do
+    case out_of do
+      nil -> 0.0
+      0.0 -> 0.0
+      0 -> 0.0
+      _ -> score / out_of
+    end
   end
 
 end
