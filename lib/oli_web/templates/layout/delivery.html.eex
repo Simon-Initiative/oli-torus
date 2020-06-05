@@ -1,4 +1,6 @@
 
+<%= render_layout "common.html", assigns do %>
+
 <nav class="navbar navbar-expand-lg navbar-light">
   <div class="container">
     <a class="navbar-brand" href="<%= Routes.delivery_path(@conn, :index) %>">
@@ -52,13 +54,6 @@
 </nav>
 
 <main role="main" class="container">
-  <%= if get_flash(@conn, :info) do %>
-    <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
-  <% end %>
-  <%= if get_flash(@conn, :error) do %>
-    <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
-  <% end %>
-
   <%= @inner_content %>
 </main>
 
@@ -70,3 +65,5 @@
     }
   })
 </script>
+
+<% end %>

@@ -49,3 +49,4 @@ postgres.env
 .DS_Store
 /amisc/
 /docker-compose-dev.yml
+assets/yarn.lock

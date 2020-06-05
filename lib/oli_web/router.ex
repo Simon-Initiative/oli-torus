@@ -12,7 +12,8 @@ defmodule OliWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
-    plug :put_root_layout, {OliWeb.LayoutView, :root}
+    plug :put_root_layout, {OliWeb.LayoutView, :delivery}
+    plug :put_layout, {OliWeb.LayoutView, :app}
     plug :put_secure_browser_headers
     plug Plug.Telemetry, event_prefix: [:oli, :plug]
     plug Oli.Plugs.SetCurrentUser
@@ -46,7 +47,7 @@ defmodule OliWeb.Router do
   pipeline :delivery do
     plug Oli.Plugs.RemoveXFrameOptions
     plug Oli.Plugs.VerifyUser
-    plug :put_layout, {OliWeb.LayoutView, :delivery}
+    plug :put_root_layout, {OliWeb.LayoutView, :delivery}
   end
 
   # Ensure that we always do csrf
@@ -82,7 +83,11 @@ defmodule OliWeb.Router do
 
   # set the layout to be workspace
   pipeline :workspace_layout do
-    plug :put_layout, {OliWeb.LayoutView, "workspace.html"}
+    plug :put_root_layout, {OliWeb.LayoutView, "workspace.html"}
+  end
+
+  pipeline :authorize_project do
+    plug Oli.Plugs.AuthorizeProject
   end
 
   # open access routes
@@ -103,6 +108,11 @@ defmodule OliWeb.Router do
 
   scope "/project", OliWeb do
     pipe_through [:browser, :csrf_always, :protected, :workspace_layout, :authoring]
+    post "/", ProjectController, :create
+  end
+
+  scope "/project", OliWeb do
+    pipe_through [:browser, :csrf_always, :protected, :workspace_layout, :authoring, :authorize_project]
 
     # Project display pages
     get "/:project_id", ProjectController, :overview
@@ -114,7 +124,6 @@ defmodule OliWeb.Router do
     delete "/:project_id/review", ProjectController, :dismiss_warning
 
     # Project
-    post "/", ProjectController, :create
     put "/:project_id", ProjectController, :update
     delete "/:project_id", ProjectController, :delete
 
@@ -124,7 +133,7 @@ defmodule OliWeb.Router do
     delete "/:project_id/objectives/:objective_slug", ObjectiveController, :delete
 
     # Curriculum
-    resources "/:project_id/curriculum", CurriculumController, only: [:index, :create, :delete]
+    live "/:project_id/curriculum", Curriculum.Container
 
     # Editors
     get "/:project_id/resource/:revision_slug", ResourceController, :edit
@@ -147,7 +156,7 @@ defmodule OliWeb.Router do
 
   scope "/api/v1/project", OliWeb do
     pipe_through [:api, :protected]
-    put "/:project_id/curriculum", CurriculumController, :update
+
     put "/:project/resource/:resource", ResourceController, :update
 
     post "/:project/activity/:activity_type", ActivityController, :create

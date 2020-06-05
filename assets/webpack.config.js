@@ -12,7 +12,7 @@ const populateEntries = () => {
 
   // These are the non-activity bundles
   const initialEntries = {
-    app: ['./js/app.js'],
+    app: ['./src/phoenix/app.ts'],
     components: ['./src/components.tsx'],
     resourceeditor: ['./src/components/resource/ResourceEditorApp.tsx'],
     activityeditor: ['./src/components/activity/ActivityEditorApp.tsx'],
@@ -71,6 +71,7 @@ module.exports = (env, options) => ({
     // Add webpack aliases for top level imports
     alias: {
       components: path.resolve(__dirname, 'src/components'),
+      hooks: path.resolve(__dirname, 'src/hooks'),
       actions: path.resolve(__dirname, 'src/actions'),
       data: path.resolve(__dirname, 'src/data'),
       state: path.resolve(__dirname, 'src/state'),

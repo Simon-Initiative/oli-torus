@@ -18,6 +18,12 @@ defmodule Oli.Utils do
     end
   end
 
+  def snake_case_to_friendly(snake_input) do
+    String.split(snake_input, "_")
+    |> Enum.map(fn word -> String.capitalize(word) end)
+    |> Enum.join(" ")
+  end
+
   def format_datetime(datetime) do
     ampm = if datetime.hour < 13, do: "AM", else: "PM"
     hour = if datetime.hour < 13, do: datetime.hour, else: datetime.hour - 12

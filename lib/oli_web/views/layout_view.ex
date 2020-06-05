@@ -22,4 +22,8 @@ defmodule OliWeb.LayoutView do
     link full_name, to: Routes.workspace_path(conn, :account),
     class: "#{active_class(active_or_nil(assigns), :account)} account-link"
   end
+
+  def render_layout(layout, assigns, do: content) do
+    render(layout, Map.put(assigns, :inner_layout, content))
+  end
 end
