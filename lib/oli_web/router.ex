@@ -34,6 +34,12 @@ defmodule OliWeb.Router do
     plug Oli.Plugs.SetCurrentUser
   end
 
+  pipeline :set_user do
+    plug :fetch_session
+    plug Oli.Plugs.SetCurrentUser
+    plug :accepts, ["json"]
+  end
+
   # Pipeline extensions:
 
   # Extends the browser pipeline for delivery specific routes
@@ -223,8 +229,9 @@ defmodule OliWeb.Router do
     get "/:context_id/grades/export", PageDeliveryController, :export_gradebook
   end
 
-  scope "/api/v1/project", OliWeb do
-    pipe_through [:api, :protected, Oli.Plugs.SetCurrentUser]
+  scope "/api/v1/course", OliWeb do
+    # pipe_through [:api, :protected, Oli.Plugs.SetCurrentUser]
+    pipe_through [:set_user]
 
     post "/:context_id/grades/sync", PageDeliveryController, :sync_gradebook
     put "/:context_id/grades/canvas_token", PageDeliveryController, :update_canvas_token

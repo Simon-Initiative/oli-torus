@@ -38,7 +38,7 @@
               <div class="input-group-prepend">
                 <span class="input-group-text" id="basic-addon3">Token</span>
               </div>
-              <input type="text" class="form-control" id="token">
+              <input id="token" type="text" class="form-control">
             </div>
           </div>
           <div class="modal-footer">
@@ -58,7 +58,7 @@
           })
         })
         $('#save-token').on('click', function() {
-          token = $('token').text
+          token = $('#token').val()
           url = '<%= Routes.page_delivery_path(@conn, :update_canvas_token, @context_id) %>'
           fetch(url, {
             method: 'PUT',
