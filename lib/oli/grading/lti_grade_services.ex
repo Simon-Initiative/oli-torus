@@ -1,30 +1,76 @@
-defmodule Oli.Grading.Adapters.LtiV2GradeServices do
-  @behaviour Oli.Grading.LtiGradeService
+defmodule Oli.Grading.LtiGradeServices do
+  @moduledoc """
+  Implements LTI 1.3 Grade Services
+  """
 
   alias Oli.Delivery.Sections
 
-  def product_family_code() do
-    # this adapter is not associated with any particular platform product family
-    "any"
-  end
+  @type context_id :: String.t()
+  @type lineitem_id :: String.t()
+  @type query_params ::%{optional(String.t()) => String.t() | integer()}
 
-  def supported_methods() do
-    [
-      "get_lineitems",
-      "add_lineitem",
-      "get_lineitem",
-      "change_lineitem",
-      "remove_lineitem",
-      "get_lineitem_results",
-      "add_lineitem_score",
-    ]
-  end
+  @typedoc """
+  %{
+    # Lineitem unique identifier
+    "id" => String.t(),
 
-  def basic_launch(_lti_params) do
-    # this adapter doesnt require any additional information from launch, do nothing
-    nil
-  end
+    # Maximum possible score
+    "scoreMaximum" => float(),
 
+    # Label to use in the Tool Consumer UI (Gradebook)
+    "label" => String.t(),
+
+    # Additional information about the line item; may be used by the tool to identify line items
+    # attached to the same resource or resource link (example: grade, originality, participation)
+    # maxLength: 256
+    "tag" => String.t(),
+
+    # Tool resource identifier for which this line item is receiving scores from
+    "resourceId" => String.t(),
+
+    # Id of the tool platform's resource link to which this line item is attached to
+    "resourceLinkId" => String.t(),
+
+    "submission" => %{
+      # Date and time in ISO 8601 format when a submission can start being submitted by learner
+      "startDateTime" => String.t(),
+
+      # Date and time in ISO 8601 format when a submission can last be submitted by learner
+      "endDateTime" => String.t(),
+  }
+  """
+  @type lineitem :: %{required(String.t()) => String.t() | float()}
+
+  @typedoc """
+  %{
+    # Recipient of the score, usually a student. Must be present when publishing a score update
+    # through Scores.POST operation.
+    "userId" => String.t(),
+
+    # Current score received in the tool for this line item and user, in scale with scoreMaximum
+    "scoreGiven" => String.t(),
+
+    # Maximum possible score for this result; It must be present if scoreGiven is present.
+    "scoreMaximum" => String.t(),
+
+    # Comment visible to the student about this score.
+    "comment" => String.t(),
+
+    # Date and time in ISO 8601 format when the score was modified in the tool. Should use subsecond precision.
+    "timestamp" => String.t(),
+
+    # Indicate to the tool platform the status of the user towards the activity's completion.
+    "activityProgress" => String.t(),
+
+    # Indicate to the platform the status of the grading process, including allowing to inform when
+    # human intervention is needed. A value other than FullyGraded may cause the tool platform to
+    # ignore the scoreGiven value if present.
+    "gradingProgress" => String.t(),
+  }
+  """
+  @type score :: %{required(String.t()) => String.t()}
+
+  @spec get_lineitems(context_id(), query_params()) :: any()
   def get_lineitems(context_id, query_params \\ %{}) do
     {lineitems_url, token} = get_lineitems_url_and_token(context_id)
     url = url_with_query("#{lineitems_url}", query_params)
@@ -32,6 +78,7 @@ defmodule Oli.Grading.Adapters.LtiV2GradeServices do
     authenticated_fetch(:get, token, url)
   end
 
+  @spec add_lineitem(context_id(), lineitem()) :: any()
   def add_lineitem(context_id, lineitem) do
     {lineitems_url, token} = get_lineitems_url_and_token(context_id)
     body = Jason.encode!(lineitem)
@@ -39,6 +86,7 @@ defmodule Oli.Grading.Adapters.LtiV2GradeServices do
     authenticated_fetch(:post, token, lineitems_url, body)
   end
 
+  @spec get_lineitem(context_id(), lineitem_id()) :: any()
   def get_lineitem(context_id, lineitem_id) do
     {lineitems_url, token} = get_lineitems_url_and_token(context_id)
     url = "#{lineitems_url}/#{lineitem_id}"
@@ -46,6 +94,7 @@ defmodule Oli.Grading.Adapters.LtiV2GradeServices do
     authenticated_fetch(:get, token, url)
   end
 
+  @spec change_lineitem(context_id(), lineitem_id(), lineitem()) :: any()
   def change_lineitem(context_id, lineitem_id, lineitem) do
     {lineitems_url, token} = get_lineitems_url_and_token(context_id)
     url = "#{lineitems_url}/#{lineitem_id}"
@@ -54,6 +103,7 @@ defmodule Oli.Grading.Adapters.LtiV2GradeServices do
     authenticated_fetch(:put, token, url, body)
   end
 
+  @spec remove_lineitem(context_id(), lineitem_id()) :: any()
   def remove_lineitem(context_id, lineitem_id) do
     {lineitems_url, token} = get_lineitems_url_and_token(context_id)
     url = "#{lineitems_url}/#{lineitem_id}"
@@ -61,6 +111,7 @@ defmodule Oli.Grading.Adapters.LtiV2GradeServices do
     authenticated_fetch(:delete, token, url)
   end
 
+  @spec get_lineitem_results(context_id(), lineitem_id(), query_params()) :: any()
   def get_lineitem_results(context_id, lineitem_id, query_params \\ %{}) do
     {lineitems_url, token} = get_lineitems_url_and_token(context_id)
     url = url_with_query("#{lineitems_url}/#{lineitem_id}/results", query_params)
@@ -68,6 +119,7 @@ defmodule Oli.Grading.Adapters.LtiV2GradeServices do
     authenticated_fetch(:get, token, url)
   end
 
+  @spec add_lineitem_score(context_id(), lineitem_id(), score()) :: any()
   def add_lineitem_score(context_id, lineitem_id, score) do
     {lineitems_url, token} = get_lineitems_url_and_token(context_id)
     url = "#{lineitems_url}/#{lineitem_id}/scores"

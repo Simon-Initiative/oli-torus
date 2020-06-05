@@ -11,23 +11,28 @@ defmodule Oli.Grading do
   alias Oli.Publishing
   alias Oli.Grading.GradebookRow
   alias Oli.Grading.GradebookScore
-  alias Oli.Grading.Adapters
-  alias Oli.Grading.LtiGradeService
+  alias Oli.Grading.CanvasApi
   alias Oli.Delivery.Sections.SectionRoles
 
   def sync_grades(%Section{} = section) do
     {gradebook, column_labels} = generate_gradebook_for_section(section)
 
-    # TODO: look up adapter type by section or institution, default to lti
-    grade_service = LtiGradeService
-    adapter = Adapters.Canvas
+    assignment = %{
+      # "id" => ,
+      "name" => "test assignment",
+      "submission_types" => [
+        "external_tool"
+      ],
+      # "points_possible" => ,
+      "grading_type" => "points",
+      "published" => "true"
+    }
 
-    lineitem = %{"label" => "test column"}
-    IO.inspect grade_service.add_lineitem(section.context_id, lineitem, adapter)
+    IO.inspect CanvasApi.create_assignment(section, assignment), label: "create assignment"
 
-    lineitems = grade_service.get_lineitems(section.context_id, adapter)
+    assignments = CanvasApi.get_assignments(section)
 
-    IO.inspect lineitems, label: "lineitems"
+    IO.inspect assignments, label: "assignments"
 
 
   end

@@ -185,13 +185,24 @@ defmodule OliWeb.PageDeliveryController do
         # TODO case _ do handle error
         Grading.sync_grades(section)
 
-        # conn
-        # |> send_resp(200)
+      _ ->
+        conn
+        |> put_status(403)
+    end
+  end
 
-        redirect(conn, to: Routes.page_delivery_path(conn, :index, context_id))
+  def update_canvas_token(conn, %{"context_id" => context_id}) do
+    user = conn.assigns.current_user
+    case {Sections.is_enrolled?(user.id, context_id), Lti.parse_lti_role(user.roles)} do
+      {true, role} when role == :administrator or role == :instructor ->
+        section = Sections.get_section_by(context_id: context_id)
+
+        token = conn.body_params["token"]
+        Sections.update_section(section, %{canvas_token: token})
 
       _ ->
-        render(conn, "not_authorized.html")
+        conn
+        |> put_status(403)
     end
   end
 

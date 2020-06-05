@@ -14,11 +14,11 @@ defmodule Oli.Delivery.Sections.Section do
     field :lti_lineitems_url, :string
     field :lti_lineitems_token, :string
 
-    # these fields are available to be set by an LMS adapter for alternative
-    # grade passback or custom API actions
-    field :api_url, :string
-    field :api_token, :string
-    field :api_id, :string
+    # TODO: Remove when LTI 1.3 GS replaces canvas api for grade passback
+    # these fields are used by canvas specific grade passback
+    field :canvas_url, :string
+    field :canvas_token, :string
+    field :canvas_id, :string
 
     belongs_to :institution, Oli.Accounts.Institution
     belongs_to :project, Oli.Authoring.Course.Project
@@ -27,13 +27,12 @@ defmodule Oli.Delivery.Sections.Section do
     has_many :enrollments, Oli.Delivery.Sections.Enrollment
 
     timestamps(type: :utc_datetime)
-
-end
+  end
 
   @doc false
   def changeset(section, attrs) do
     section
-    |> cast(attrs, [:title, :start_date, :end_date, :time_zone, :registration_open, :context_id, :lti_lineitems_url, :api_url, :api_token, :api_id, :institution_id, :project_id, :publication_id])
+    |> cast(attrs, [:title, :start_date, :end_date, :time_zone, :registration_open, :context_id, :lti_lineitems_url, :canvas_url, :canvas_token, :canvas_id, :institution_id, :project_id, :publication_id])
     |> validate_required([:title, :time_zone, :registration_open, :context_id, :institution_id, :project_id, :publication_id])
   end
 end
