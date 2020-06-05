@@ -23,24 +23,39 @@ defmodule Oli.Grading.CanvasApi do
   end
 
   def get_assignments(section) do
-    %{canvas_url: canvas_url, canvas_token: canvas_token, canvas_id: canvas_id} = section
-    url = "#{canvas_url}/api/v1/courses/#{canvas_id}/assignments"
+    %{canvas_url: url, canvas_token: token, canvas_id: canvas_id} = section
+    url = "#{url}/api/v1/courses/#{canvas_id}/assignments"
 
-    fetch_all_pages(url, canvas_token)
+    fetch_all_pages(url, token)
   end
 
   def create_assignment(section, assignment) do
-    %{canvas_url: canvas_url, canvas_token: canvas_token, canvas_id: canvas_id} = section
-    url = "#{canvas_url}/api/v1/courses/#{canvas_id}/assignments"
+    %{canvas_url: url, canvas_token: token, canvas_id: canvas_id} = section
+    url = "#{url}/api/v1/courses/#{canvas_id}/assignments"
     body = Jason.encode!(%{"assignment" => assignment})
 
-    authenticated_fetch(:post, canvas_token, url, body, ["content-type": "application/json; charset=utf-8"])
+    authenticated_fetch(:post, token, url, body, ["content-type": "application/json; charset=utf-8"])
+  end
+
+  def delete_assignment(section, assignment_id) do
+    %{canvas_url: url, canvas_token: token, canvas_id: course_id} = section
+    url = "#{url}/api/v1/courses/#{course_id}/assignments/#{assignment_id}"
+
+    authenticated_fetch(:delete, token, url)
   end
 
   def submit_score(section, assignment_id, user_id, score) do
     %{canvas_url: url, canvas_token: token, canvas_id: course_id} = section
     url = "#{url}/api/v1/courses/#{course_id}/assignments/#{assignment_id}/submissions/#{user_id}"
     body = Jason.encode!(%{"submission" => %{ "posted_grade" => score}})
+
+    authenticated_fetch(:put, token, url, body, ["content-type": "application/json; charset=utf-8"])
+  end
+
+  def submit_grade_data(section, grade_data) do
+    %{canvas_url: url, canvas_token: token, canvas_id: course_id} = section
+    url = "#{url}/api/v1/courses/#{course_id}/submissions/update_grades"
+    body = Jason.encode!(%{"grade_data" => grade_data})
 
     authenticated_fetch(:put, token, url, body, ["content-type": "application/json; charset=utf-8"])
   end
@@ -64,6 +79,8 @@ defmodule Oli.Grading.CanvasApi do
         HTTPoison.post(url, body, full_headers)
       :put ->
         HTTPoison.put(url, body, full_headers)
+      :delete ->
+        HTTPoison.delete(url, full_headers)
     end
 
     case result do

@@ -14,27 +14,86 @@ defmodule Oli.Grading do
   alias Oli.Grading.CanvasApi
   alias Oli.Delivery.Sections.SectionRoles
 
-  def sync_grades(%Section{} = section) do
-    {gradebook, column_labels} = generate_gradebook_for_section(section)
+  @doc """
+  Sync all scores from the gradebook with LMS
 
-    assignment = %{
-      # "id" => ,
-      "name" => "test assignment",
-      "submission_types" => [
-        "external_tool"
-      ],
-      # "points_possible" => ,
-      "grading_type" => "points",
-      "published" => "true"
-    }
+  This function currently uses the Canvas API and only supports canvas. This will later
+  be replaced with an LTI 1.3 GS implementation
+  """
+  def sync_grades(%Section{} = section, opts \\ []) do
+    {gradebook, _labels} = generate_gradebook_for_section(section)
 
-    IO.inspect CanvasApi.create_assignment(section, assignment), label: "create assignment"
+    gradebook_columns = gradebook
+      |> Enum.reduce(%{}, fn row, acc ->
+        Enum.reduce(row.scores, acc, fn score, acc ->
+          case score do
+            nil -> acc
+            score ->
+              Map.put_new(acc, "#{score.resource_id}", %{
+                label: score.label,
+                resource_id: score.resource_id,
+                out_of: score.out_of,
+              })
+          end
+        end)
+      end)
 
+    # delete all assignments if option is specified
+    if Keyword.has_key?(opts, :delete_all_assignments) do
+      CanvasApi.get_assignments(section)
+      |> Enum.each(fn assignment -> CanvasApi.delete_assignment(section, assignment["id"]) end)
+    end
+
+    # get current canvas assignments
     assignments = CanvasApi.get_assignments(section)
+    current_columns_map = assignments
+      |> Enum.filter(fn assignment -> assignment["integration_id"] != nil end)
+      |> Enum.reduce(%{}, fn assignment, acc ->
+        Map.put(acc, assignment["integration_id"], %{
+          label: assignment["name"],
+          resource_id: assignment["integration_id"],
+          out_of: assignment["points_possible"],
+        })
+      end)
 
-    IO.inspect assignments, label: "assignments"
+    # determine what columns need to be created from what already exist
+    columns_to_create = gradebook_columns
+      |> Enum.filter(fn {id, _} -> !Map.has_key?(current_columns_map, id) end)
 
+    # create columns
+    columns_to_create
+      |> Enum.each(fn {_id, r} -> CanvasApi.create_assignment(section, %{
+        "integration_id" => r.resource_id,
+        "name" => r.label,
+        "submission_types" => [
+          "external_tool"
+        ],
+        "points_possible" => r.out_of,
+        "grading_type" => "points",
+        "published" => "true"
+      }) end)
 
+    # get all assignments including new created columns,
+    # create a map from resource id to assignment
+    assignments_by_resource_id = CanvasApi.get_assignments(section)
+    |> Enum.filter(fn assignment -> assignment["integration_id"] != nil end)
+    |> Enum.reduce(%{}, fn assignment, acc ->
+      Map.put(acc, assignment["integration_id"], assignment)
+    end)
+
+    # submit grades
+    grade_data = gradebook
+      |> Enum.each(fn row ->
+        Enum.each(row.scores, fn score ->
+          case score do
+            nil -> nil
+            score ->
+              assignment_id = assignments_by_resource_id["#{score.resource_id}"]["id"]
+              user_id = row.user.canvas_id
+              CanvasApi.submit_score(section, assignment_id, user_id, score.score)
+          end
+        end)
+      end)
   end
 
   @doc """

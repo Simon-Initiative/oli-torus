@@ -54,7 +54,10 @@
         $('#sync-grades').on('click', function() {
           url = '<%= Routes.page_delivery_path(@conn, :sync_gradebook, @context_id) %>'
           fetch(url, {
-            method: 'POST'
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
           })
         })
         $('#save-token').on('click', function() {
@@ -62,7 +65,10 @@
           url = '<%= Routes.page_delivery_path(@conn, :update_canvas_token, @context_id) %>'
           fetch(url, {
             method: 'PUT',
-            body: JSON.stringify({ token: token })
+            body: JSON.stringify({ token: token }),
+            headers: {
+              'Content-Type': 'application/json',
+            },
           })
 
           $('#configure-token-modal').modal('hide')
