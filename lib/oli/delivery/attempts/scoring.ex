@@ -6,16 +6,28 @@ defmodule Oli.Delivery.Attempts.Scoring do
   @doc """
   Calculates a result from a list of maps that contain a score and out_of.
 
+  This can be used either by passing in the strategy id or directly passing
+  in the scoring strategy string id.
+
+  A key aspect of the implmementations here is that they are correct in the
+  face of attempts that might have different `out_of` values. This situation
+  can occur when attempts are simply pinned to different revisions of a resource
+  that have a different number of activities.
+
   Returns a `%Result{}` struct with the calculated score.
   """
   def calculate_score(strategy_id, items) when is_number(strategy_id) do
     calculate_score(ScoringStrategy.get_type_by_id(strategy_id), items)
   end
 
+  # The average calculated here is normalized out of 100%, but then
+  # reported back as a score out of the maximum possible of
+  # any attempt. So an average of two attempts with 5/10 on one and 10/20 on
+  # another would result in a 10/20 result. This approach allows the
+  # correct handling of cases where attempts are pinned to different revisions
+  # of a resource with a possibly different number of activities
   def calculate_score("average", items) do
-    # the average calculated is normalized, but then
-    # reported back as a score out of the maximum possible of
-    # any attempt.
+
     {total, max_out_of} = Enum.reduce(items, {0, 0}, fn p, {total, max_out_of} ->
       {total + (p.score / p.out_of), if max_out_of < p.out_of do p.out_of else max_out_of end}
     end)
@@ -26,7 +38,10 @@ defmodule Oli.Delivery.Attempts.Scoring do
     }
   end
 
+  # The 'best' score is the attempt with the highest percentage correct,
+  # not the highest raw score.
   def calculate_score("best", items) do
+
     {score, out_of, _} = Enum.reduce(items, {0, 0, 0.0}, fn p, {score, out_of, best} ->
       if p.score / p.out_of > best do
         {p.score, p.out_of, p.score / p.out_of}
@@ -41,6 +56,7 @@ defmodule Oli.Delivery.Attempts.Scoring do
     }
   end
 
+  # The most recent is assumed to be the last item in the list
   def calculate_score("most_recent", items) do
     most_recent = Enum.reverse(items) |> hd
 
@@ -50,6 +66,7 @@ defmodule Oli.Delivery.Attempts.Scoring do
     }
   end
 
+  # The total strategy simply adds up the scores and adds up the out_of
   def calculate_score("total", items) do
     {score, out_of} = Enum.reduce(items, {0, 0}, fn p, {score, out_of} ->
       {score + p.score, out_of + p.out_of}
