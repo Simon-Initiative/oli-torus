@@ -47,11 +47,11 @@ defmodule Oli.Grading do
     # get current canvas assignments
     assignments = CanvasApi.get_assignments(section)
     current_columns_map = assignments
-      |> Enum.filter(fn assignment -> assignment["integration_id"] != nil end)
+      |> Enum.filter(fn assignment -> is_torus?(assignment) end)
       |> Enum.reduce(%{}, fn assignment, acc ->
-        Map.put(acc, assignment["integration_id"], %{
+        Map.put(acc, get_torus(assignment), %{
           label: assignment["name"],
-          resource_id: assignment["integration_id"],
+          resource_id: get_torus(assignment),
           out_of: assignment["points_possible"],
         })
       end)
@@ -63,7 +63,7 @@ defmodule Oli.Grading do
     # create columns
     columns_to_create
       |> Enum.each(fn {_id, r} -> CanvasApi.create_assignment(section, %{
-        "integration_id" => r.resource_id,
+        "external_tool_tag_attributes" => %{ "url" => "https://torus/#{r.resource_id}"},
         "name" => r.label,
         "submission_types" => [
           "external_tool"
@@ -76,9 +76,9 @@ defmodule Oli.Grading do
     # get all assignments including new created columns,
     # create a map from resource id to assignment
     assignments_by_resource_id = CanvasApi.get_assignments(section)
-    |> Enum.filter(fn assignment -> assignment["integration_id"] != nil end)
+    |> Enum.filter(fn assignment -> is_torus?(assignment) end)
     |> Enum.reduce(%{}, fn assignment, acc ->
-      Map.put(acc, assignment["integration_id"], assignment)
+      Map.put(acc, get_torus(assignment), assignment)
     end)
 
     # submit grades
@@ -94,6 +94,20 @@ defmodule Oli.Grading do
           end
         end)
       end)
+  end
+
+  defp is_torus?(assignment) do
+    case assignment["external_tool_tag_attributes"] do
+      %{"url" => url} -> String.contains?(url, "torus")
+      _ -> false
+    end
+  end
+
+  defp get_torus(assignment) do
+    case assignment["external_tool_tag_attributes"] do
+      %{"url" => "https://torus/" <> id} -> id
+      _ -> nil
+    end
   end
 
   @doc """
