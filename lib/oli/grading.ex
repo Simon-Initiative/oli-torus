@@ -97,7 +97,7 @@ defmodule Oli.Grading do
   end
 
   @doc """
-  Exports the gradebook for the provided section in CVS format
+  Exports the gradebook for the provided section in CSV format
 
   Returns a Stream which can be written to a file or other IO
   """
