@@ -443,7 +443,9 @@ defmodule Oli.Delivery.Attempts do
       with {:ok, revision} <- DeliveryResolver.from_revision_slug(context_id, revision_slug) |> Oli.Utils.trap_nil(:not_found),
         {_, resource_attempts} <- get_resource_attempt_history(revision.resource_id, context_id, user_id)
       do
-        case {revision.max_attempts > length(resource_attempts), has_any_active_attempts?(resource_attempts)} do
+        case {revision.max_attempts > length(resource_attempts) or revision.max_attempts == 0,
+          has_any_active_attempts?(resource_attempts)} do
+
           {true, false} -> case create_new_attempt_tree(nil, revision, context_id, user_id, activity_provider) do
             {:ok, results} -> results
             {:error, error} -> Repo.rollback(error)
