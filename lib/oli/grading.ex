@@ -13,6 +13,7 @@ defmodule Oli.Grading do
   alias Oli.Grading.GradebookScore
   alias Oli.Grading.CanvasApi
   alias Oli.Delivery.Sections.SectionRoles
+  alias Oli.Utils.Common
 
   @doc """
   Sync all scores from the gradebook with LMS
@@ -49,9 +50,9 @@ defmodule Oli.Grading do
     current_columns_map = assignments
       |> Enum.filter(fn assignment -> is_torus?(assignment) end)
       |> Enum.reduce(%{}, fn assignment, acc ->
-        Map.put(acc, get_torus(assignment), %{
+        Map.put(acc, get_grading_id(assignment), %{
           label: assignment["name"],
-          resource_id: get_torus(assignment),
+          resource_id: get_grading_id(assignment),
           out_of: assignment["points_possible"],
         })
       end)
@@ -63,7 +64,7 @@ defmodule Oli.Grading do
     # create columns
     columns_to_create
       |> Enum.each(fn {_id, r} -> CanvasApi.create_assignment(section, %{
-        "external_tool_tag_attributes" => %{ "url" => "https://torus/#{r.resource_id}"},
+        "external_tool_tag_attributes" => %{"url" => "#{Common.get_base_url}/course/#{section.context_id}/page/#{Publishing.get_published_revision(section.publication_id, r.resource_id).slug}?grading_id=#{r.resource_id}"},
         "name" => r.label,
         "submission_types" => [
           "external_tool"
@@ -78,7 +79,7 @@ defmodule Oli.Grading do
     assignments_by_resource_id = CanvasApi.get_assignments(section)
     |> Enum.filter(fn assignment -> is_torus?(assignment) end)
     |> Enum.reduce(%{}, fn assignment, acc ->
-      Map.put(acc, get_torus(assignment), assignment)
+      Map.put(acc, get_grading_id(assignment), assignment)
     end)
 
     # submit grades
@@ -98,14 +99,20 @@ defmodule Oli.Grading do
 
   defp is_torus?(assignment) do
     case assignment["external_tool_tag_attributes"] do
-      %{"url" => url} -> String.contains?(url, "torus")
+      %{"url" => url} -> String.contains?(url, Common.get_base_url)
       _ -> false
     end
   end
 
-  defp get_torus(assignment) do
+  defp get_grading_id(assignment) do
     case assignment["external_tool_tag_attributes"] do
-      %{"url" => "https://torus/" <> id} -> id
+      %{"url" => url} ->
+        case Regex.named_captures(~r/grading_id=(?<grading_id>[^&]+)/, url) do
+          %{"grading_id" => grading_id} ->
+            grading_id
+          _ ->
+            nil
+        end
       _ -> nil
     end
   end
