@@ -1,4 +1,4 @@
-dist/search_items-50259536c1.js
+dist/search_items-d6865fd57a.js
 dist/app-a225d03098e64fef431a.js
 dist/elixir-0ab8a6a80ebaaa287431.css
 dist/erlang-bd206729da4d0d280293.css
@@ -6,7 +6,7 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/sidebar_items-0ee9470cc6.js
+dist/sidebar_items-7af6f597bb.js
 api-reference.html
 readme.html
 license.html
@@ -100,8 +100,10 @@ Oli.Delivery.Sections.SectionRoles.html
 Oli.Delivery.Student.OverviewDesc.html
 Oli.Delivery.Timezones.html
 Oli.Grading.html
+Oli.Grading.CanvasApi.html
 Oli.Grading.GradebookRow.html
 Oli.Grading.GradebookScore.html
+Oli.Grading.LtiGradeServices.html
 Oli.Plugs.AuthorizeProject.html
 Oli.Plugs.EnsureAdmin.html
 Oli.Plugs.NoCache.html
@@ -153,6 +155,7 @@ Oli.Seeder.html
 Oli.Snapshots.SnapshotSeeder.html
 Oli.Timing.html
 Oli.Utils.html
+Oli.Utils.Common.html
 Oli.Utils.Slug.html
 Oli.Utils.Time.html
 OliWeb.html

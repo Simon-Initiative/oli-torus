@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Grading — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-0ee9470cc6.js"></script>
+    <script src="dist/sidebar_items-7af6f597bb.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -96,7 +96,7 @@ consumable by various tools such as Excel (CSV) or an LMS API</p>
   <div class="summary-signature">
     <a href="#export_csv/1">export_csv(section)</a>
   </div>
-    <div class="summary-synopsis"><p>Exports the gradebook for the provided section in CVS format</p></div>
+    <div class="summary-synopsis"><p>Exports the gradebook for the provided section in CSV format</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
@@ -104,6 +104,12 @@ consumable by various tools such as Excel (CSV) or an LMS API</p>
   </div>
     <div class="summary-synopsis"><p>Returns a tuple containing a list of GradebookRow for every enrolled user
 and an ordered list of column labels</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#sync_grades/2">sync_grades(section, opts \\ [])</a>
+  </div>
+    <div class="summary-synopsis"><p>Sync all scores from the gradebook with LMS</p></div>
 </div>
   </div>
         </section>
@@ -123,13 +129,13 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">export_csv(section)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L21" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L125" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
   </div>
   <section class="docstring">
-<p>Exports the gradebook for the provided section in CVS format</p>
+<p>Exports the gradebook for the provided section in CSV format</p>
 <p>Returns a Stream which can be written to a file or other IO</p>
   </section>
 </section>
@@ -140,7 +146,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">generate_gradebook_for_section(section)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L72" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L176" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -149,6 +155,25 @@ Functions          </h1>
 <p>Returns a tuple containing a list of GradebookRow for every enrolled user
 and an ordered list of column labels</p>
 <p><code class="inline">{[%GradebookRow{user: %User{}, scores: [%GradebookScore{}, ...]}, ...], [&quot;Quiz 1&quot;, &quot;Quiz 2&quot;]}</code></p>
+  </section>
+</section>
+<section class="detail" id="sync_grades/2">
+    <span id="sync_grades/1"></span>
+  <div class="detail-header">
+    <a href="#sync_grades/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">sync_grades(section, opts \\ [])</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L24" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Sync all scores from the gradebook with LMS</p>
+<p>This function currently uses the Canvas API and only supports canvas. This will later
+be replaced with an LTI 1.3 GS implementation</p>
   </section>
 </section>
           </div>
