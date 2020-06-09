@@ -322,9 +322,10 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       refute updated_attempt.date_evaluated == nil
 
       # verify that the submission did roll up to the activity attempt
+      # with the fact that the scoring strategy defaults to best
       updated_attempt = Oli.Repo.get!(ActivityAttempt, activity_attempt.id)
-      assert updated_attempt.score == 12
-      assert updated_attempt.out_of == 12
+      assert updated_attempt.score == 10
+      assert updated_attempt.out_of == 10
       refute updated_attempt.date_evaluated == nil
 
     end
