@@ -251,6 +251,30 @@ nav.navbar .user img {
   background-color: #eeeeee;
 }
 
+.activity-purpose {
+  text-transform: uppercase;
+  background-color: orangered;
+  color: white;
+}
+
+.content-purpose-label {
+  text-transform: uppercase;
+  float: right;
+}
+
+.content-example {
+  border: 1px solid #e0e0e0;
+  padding: 20px;
+  margin: 10px;
+}
+
+.content-learn-more {
+  border: 1px solid #e0e0e0;
+  padding: 20px;
+  margin: 10px;
+}
+
+
 /*
 Inlined react-bootstrap-typeahead styles
 */
