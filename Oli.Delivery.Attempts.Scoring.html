@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.21.3">
     <meta name="project" content="OLI Torus v0.1.0">
-    <title>Oli.Delivery.Lti.Nonce — OLI Torus v0.1.0</title>
+    <title>Oli.Delivery.Attempts.Scoring — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
     <script src="dist/sidebar_items-0ee9470cc6.js"></script>
       <script src="docs_config.js"></script>
@@ -68,7 +68,7 @@ OLI Torus      </a>
 
       <h1>
         <small class="app-vsn">OLI Torus v0.1.0</small>
-Oli.Delivery.Lti.Nonce          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/lti/nonce.ex#L1" title="View Source" class="view-source" rel="help">
+Oli.Delivery.Attempts.Scoring          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/scoring.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -76,7 +76,60 @@ Oli.Delivery.Lti.Nonce          <a href="https://github.com/Simon-Initiative/oli
 
 
 
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#calculate_score/2">calculate_score(strategy_id, items)</a>
+  </div>
+    <div class="summary-synopsis"><p>Calculates a result from a list of maps that contain a score and out_of.</p></div>
+</div>
+  </div>
+        </section>
 
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions          </h1>
+          <div class="functions-list">
+<section class="detail" id="calculate_score/2">
+  <div class="detail-header">
+    <a href="#calculate_score/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">calculate_score(strategy_id, items)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/scoring.ex#L19" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Calculates a result from a list of maps that contain a score and out_of.</p>
+<p>This can be used either by passing in the strategy id or directly passing
+in the scoring strategy string id.</p>
+<p>A key aspect of the implmementations here is that they are correct in the
+face of attempts that might have different <code class="inline">out_of</code> values. This situation
+can occur when attempts are simply pinned to different revisions of a resource
+that have a different number of activities.</p>
+<p>Returns a <code class="inline">%Result{}</code> struct with the calculated score.</p>
+  </section>
+</section>
+          </div>
+        </section>
       <footer class="footer">
         <p>
           <span class="line">
