@@ -1,6 +1,6 @@
 import * as Immutable from 'immutable';
 import React from 'react';
-import { ResourceContent, Activity, ResourceType } from 'data/content/resource';
+import { ResourceContent, Activity, ResourceType, ActivityPurposes, ContentPurposes } from 'data/content/resource';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { UnsupportedActivity } from './UnsupportedActivity';
 import { getToolbarForResourceType } from './toolbar';
@@ -103,13 +103,22 @@ export const Editors = (props: EditorsProps) => {
     const editingLink = c.type === 'activity-reference'
       ? `/project/${projectSlug}/resource/${resourceSlug}/activity/${c.activitySlug}` : undefined;
 
+    const purposes = c.type === 'activity-reference'
+      ? ActivityPurposes : ContentPurposes;
+
     return (
       <ResourceContentFrame
         key={c.id}
         allowRemoval={content.size > 1}
         editMode={editMode}
         label={label}
+        purpose={c.purpose}
+        purposes={purposes}
         editingLink={editingLink}
+        onEditPurpose={(purpose: string) => {
+          const u = Object.assign(c, { purpose });
+          props.onEdit(u, index);
+        }}
         onRemove={onRemove}>
 
         {editor}

@@ -1,5 +1,5 @@
 import React from 'react';
-
+import { Purpose } from './Purpose';
 import { CloseButton } from '../misc/CloseButton';
 
 export type ResourceContentFrameProps = {
@@ -7,14 +7,18 @@ export type ResourceContentFrameProps = {
   allowRemoval: boolean,          // Whether or not this item can be removed
   label: string,                  // The content label
   onRemove: () => void,           // Callback for removal
+  onEditPurpose: (purpose: string) => void,
   children: any,
   editingLink?: string,
+  purpose: any,
+  purposes: any,
 };
 
 // Provides a common frame around any resource content editor
 export const ResourceContentFrame = (props: ResourceContentFrameProps) => {
 
-  const { label, onRemove, allowRemoval, children, editingLink } = props;
+  const { label, onRemove, allowRemoval, children, onEditPurpose,
+    editingLink, editMode, purpose, purposes } = props;
   const style = { background: 'transparent', padding: 0, margin: 0, marginRight: '8px', border: 0 };
   const link = editingLink !== undefined
     ? (
@@ -33,6 +37,8 @@ export const ResourceContentFrame = (props: ResourceContentFrameProps) => {
           <div className="flex-grow-1">
             {label}
           </div>
+          <Purpose purpose={purpose} purposes={purposes}
+            editMode={editMode} onEdit={p => onEditPurpose(p)}/>
           {link}
           <CloseButton editMode={allowRemoval} onClick={onRemove}/>
         </div>
