@@ -83,6 +83,10 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :user_id, :string
       add :user_image, :string
       add :roles, :string
+
+      # TODO: Remove when LTI 1.3 GS replaces canvas api for grade passback
+      add :canvas_id, :string
+
       add :author_id, references(:authors)
       add :lti_tool_consumer_id, references(:lti_tool_consumers)
       add :institution_id, references(:institutions)
@@ -132,6 +136,13 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :open_and_free, :boolean, default: false, null: false
       add :registration_open, :boolean, default: false, null: false
       add :context_id, :string
+      add :lti_lineitems_url, :string
+      add :lti_lineitems_token, :string
+
+      # TODO: Remove when LTI 1.3 GS replaces canvas api for grade passback
+      add :canvas_url, :string
+      add :canvas_token, :string
+      add :canvas_id, :string
 
       add :institution_id, references(:institutions)
       add :project_id, references(:projects)

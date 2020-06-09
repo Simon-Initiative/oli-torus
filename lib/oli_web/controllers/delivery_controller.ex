@@ -87,6 +87,7 @@ defmodule OliWeb.DeliveryController do
       institution_id: user.institution_id,
       project_id: publication.project_id,
       publication_id: publication_id,
+      lti_lineitems_url: parse_lti_lineitems_url_from_lti_params(lti_params),
     })
 
     # Enroll this user as an instructor
@@ -102,4 +103,28 @@ defmodule OliWeb.DeliveryController do
     |> redirect(to: Routes.delivery_path(conn, :index))
   end
 
+  # This is a helper function to try and determine the lti lineitems url for the given
+  # section using the lti_params. The LTI spec specifies that this url should be provided as
+  # part of the parameters, but this may be only applicable for LTI version 2.0 or some other
+  # method of fetching this information that we dont know about. For now, we will manually
+  # spec out the path for each LMS we plan to support
+  defp parse_lti_lineitems_url_from_lti_params(lti_params) do
+    context_id = lti_params["context_id"]
+    launch_presentation_return_url = lti_params["launch_presentation_return_url"]
+
+    # for now, we simply hard code the lti lineitems path prefix for all supported LMSs
+    lineitems_api_path = case lti_params["tool_consumer_info_product_family_code"] do
+      "canvas" -> "/api/lti/courses"
+      _ -> "/"
+    end
+
+    case Regex.named_captures(~r/(?<protocol>https?)?[:\/\/]*(?<host>[^\/]+)/, launch_presentation_return_url) do
+      %{"protocol" => protocol,"host" => host} ->
+       "#{protocol}://#{host}#{lineitems_api_path}/#{context_id}/lineitems"
+      %{"host" => host} ->
+       "#{host}#{lineitems_api_path}/#{context_id}/lineitems"
+      _ ->
+       nil
+    end
+  end
 end
