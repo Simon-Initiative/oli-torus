@@ -1,4 +1,3 @@
-
 <%= if get_flash(@conn, :info) do %>
   <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
 <% end %>
@@ -6,4 +5,12 @@
   <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
 <% end %>
 
-<%= @inner_content %>
+<%= render OliWeb.LayoutView, "_header.html", assigns %>
+
+<main role="main">
+
+  <%= @inner_content %>
+
+</main>
+
+<%= render OliWeb.LayoutView, "_footer.html", assigns %>

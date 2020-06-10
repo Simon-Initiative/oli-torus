@@ -12,7 +12,7 @@
 
   <%= if is_instructor?(@conn) do %>
   <div class="d-flex flex-row">
-    <div class="flex-1"></div>
+    <div class="flex-fill"></div>
     <div>
       <%= link "Download Gradebook (.csv)", to: Routes.page_delivery_path(@conn, :export_gradebook, @context_id), class: "btn btn-link btn-sm" %>
     </div>

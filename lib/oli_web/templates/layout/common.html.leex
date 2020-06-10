@@ -4,9 +4,16 @@
     <meta charset="utf-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Open Learning Initiative</title>
-    <!-- Bootstrap CSS -->
+    <%= live_title_tag assigns[:page_title] || "Open Learning Initiative", suffix: "" %>
+
+    <!-- Bootstrap CSS (serves as backup styling if the theme cannot be loaded or is invalid) -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+    <!-- Theme CSS (contains all bootstrap styles as well as custom styles for a specific theme) -->
+    <link id="authoring-theme" rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/authoring_theme.css") %>"/>
+    <link id="delivery-theme" rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/delivery_theme.css") %>"/>
+    <%# <link href="https://stackpath.bootstrapcdn.com/bootswatch/4.5.0/flatly/bootstrap.min.css" rel="stylesheet" integrity="sha384-mhpbKVUOPCSocLzx2ElRISIORFRwr1ZbO9bAlowgM5kO7hnpRBe+brVj8NNPUiFs" crossorigin="anonymous"> %>
+    <%# <link href="https://stackpath.bootstrapcdn.com/bootswatch/4.5.0/darkly/bootstrap.min.css" rel="stylesheet" integrity="sha384-Bo21yfmmZuXwcN/9vKrA5jPUMhr7znVBBeLxT9MA4r2BchhusfJ6+n8TLGUcRAtL" crossorigin="anonymous"> %>
 
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
@@ -24,31 +31,15 @@
       rel="stylesheet">
 
     <%= csrf_meta_tag() %>
-    <%= live_title_tag assigns[:page_title] || "OLI", suffix: "" %>
-    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
   </head>
   <body>
 
-    <%= Map.get(assigns, :inner_layout) %>
+    <%= @inner_content %>
 
     <script>
     window.$ = $;
     $('.dropdown-toggle').dropdown();
     </script>
-
-    <footer>
-      <div class="container">
-        <div class="row">
-          <div class="col-sm text-left">
-          </div>
-          <div class="col-sm text-center">
-          </div>
-          <div class="col-sm text-right">
-            OLI Torus <%= Application.fetch_env!(:oli, :build).version %> (<%= Application.fetch_env!(:oli, :build).sha |> String.upcase %>) <%= Timex.format!(Application.fetch_env!(:oli, :build).date, "%m/%d/%Y", :strftime) %>
-          </div>
-        </div>
-      </div>
-    </footer>
   </body>
 </html>

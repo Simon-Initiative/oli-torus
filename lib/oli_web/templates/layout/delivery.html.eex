@@ -1,7 +1,4 @@
-
-<%= render_layout "common.html", assigns do %>
-
-<nav class="navbar navbar-expand-lg navbar-light">
+<nav class="navbar navbar-expand navbar-light">
   <div class="container">
     <a class="navbar-brand" href="<%= Routes.delivery_path(@conn, :index) %>">
       <img src="/images/oli-icon.png" width="30" height="30" class="d-inline-block align-top mr-2" alt="">
@@ -65,5 +62,3 @@
     }
   })
 </script>
-
-<% end %>

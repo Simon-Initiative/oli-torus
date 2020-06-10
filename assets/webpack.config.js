@@ -16,6 +16,8 @@ const populateEntries = () => {
     components: ['./src/components.tsx'],
     resourceeditor: ['./src/components/resource/ResourceEditorApp.tsx'],
     activityeditor: ['./src/components/activity/ActivityEditorApp.tsx'],
+    authoring_theme: ['./styles/authoring.scss'],
+    delivery_theme: ['./styles/delivery.scss'],
   };
 
   const manifests = glob.sync("./src/components/activities/*/manifest.json", {});
@@ -67,7 +69,7 @@ module.exports = (env, options) => ({
     path: path.resolve(__dirname, '../priv/static/js')
   },
   resolve: {
-    extensions: ['.ts', '.tsx', '.js', '.jsx'],
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.scss'],
     // Add webpack aliases for top level imports
     alias: {
       components: path.resolve(__dirname, 'src/components'),
@@ -76,7 +78,7 @@ module.exports = (env, options) => ({
       data: path.resolve(__dirname, 'src/data'),
       state: path.resolve(__dirname, 'src/state'),
       utils: path.resolve(__dirname, 'src/utils'),
-      stylesheets: path.resolve(__dirname, 'src/stylesheets'),
+      styles: path.resolve(__dirname, 'styles'),
     },
   },
   module: {
@@ -100,7 +102,7 @@ module.exports = (env, options) => ({
               options: {
                 sassOptions: {
                   includePaths: [
-                      path.join(__dirname, 'src/stylesheets'),
+                      path.join(__dirname, 'styles'),
                   ],
                 },
                 sourceMap: true

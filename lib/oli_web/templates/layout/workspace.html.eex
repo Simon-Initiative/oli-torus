@@ -1,19 +1,18 @@
 
-<%= render_layout "common.html", assigns do %>
+  <div id="wrapper">
+    <div id="left">
+      <%= render OliWeb.LayoutView, "_#{if @conn.params["project_id"] do "project" else "workspace" end}_sidebar.html", assigns %>
+    </div>
 
-<div id="wrapper">
-  <div id="left">
-    <%= render OliWeb.LayoutView, "_#{if @conn.params["project_id"] do "project" else "workspace" end}_sidebar.html", assigns %>
+    <div id="right">
+      <%= render OliWeb.LayoutView, "_#{if @conn.params["project_id"] do "project" else
+        if @title == "Projects" do "workspace" else "account" end end}_header.html", assigns %>
+
+      <main role="main">
+        <%= @inner_content %>
+      </main>
+
+      <%= render OliWeb.LayoutView, "_footer.html", assigns %>
+    </div>
   </div>
 
-  <div id="right">
-    <%= render OliWeb.LayoutView, "_#{if @conn.params["project_id"] do "project" else
-      if @title == "Projects" do "workspace" else "account" end end}_header.html", assigns %>
-
-    <main role="main">
-      <%= @inner_content %>
-    </main>
-  </div>
-</div>
-
-<% end %>

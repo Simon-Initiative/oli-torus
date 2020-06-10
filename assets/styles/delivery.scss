@@ -1,0 +1,60 @@
+/*
+ * Default delivery theme - built on top of Bootstrap 4 (https://getbootstrap.com)
+ */
+
+@import 'delivery/variables';
+@import 'delivery/mixins';
+@import '../node_modules/bootstrap/scss/bootstrap';
+
+/** Delivery Styles **/
+
+body.delivery nav .nav-item a.user {
+  color: inherit;
+  display: flex;
+}
+
+body.delivery nav .nav-item a.user .role {
+  color: #888;
+  font-size: .8em;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+body.delivery nav .nav-item a.user .user-icon,
+body.delivery nav .nav-item a.user::after {
+  align-self: center;
+}
+
+body.delivery nav .nav-item a.user::after {
+  margin-left: 10px;
+}
+
+@media (max-width: 767.98px) {
+  body.delivery nav .nav-item a.user .username,
+  body.delivery nav .nav-item a.user .role {
+    display: none;
+  }
+}
+
+body.app nav.navbar {
+  border-bottom: 2px solid #eee;
+}
+
+nav.navbar a.user {
+  display: flex;
+  flex-direction: row;
+  height: 50px;
+}
+
+nav.navbar .user::after {
+  margin: 14px 0 14px 10px;
+}
+
+nav.navbar .user img {
+  width: 30px;
+  height: 30px;
+  border: 2px solid white;
+  -webkit-box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.75);
+  -moz-box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.75);
+  box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.75);
+}
