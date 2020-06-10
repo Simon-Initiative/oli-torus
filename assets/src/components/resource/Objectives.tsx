@@ -3,6 +3,7 @@ import * as Immutable from 'immutable';
 import { Typeahead } from 'react-bootstrap-typeahead';
 import { Objective, ObjectiveSlug } from 'data/content/objective';
 import guid from 'utils/guid';
+import "./Objectives.scss";
 
 export type ObjectivesProps = {
   objectives: Immutable.List<Objective>;
@@ -29,7 +30,7 @@ export const Objectives = (props: ObjectivesProps) => {
   const asObjectives = selected.toArray().map(s => map.get(s) as Objective);
 
   return (
-    <div className="flex-grow-1 objectives-editor">
+    <div className="flex-grow-1 objectives">
       <Typeahead
         id={id}
         multiple={true}

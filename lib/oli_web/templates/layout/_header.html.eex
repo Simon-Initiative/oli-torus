@@ -1,7 +1,19 @@
-<nav class="navbar navbar-expand navbar-light">
+<nav class="navbar navbar-expand">
   <div class="container">
     <a class="navbar-brand" href="<%= Routes.delivery_path(@conn, :index) %>">
       <img src="/images/oli-icon.png" width="30" height="30" class="d-inline-block align-top mr-2" alt="">
       Open Learning <span style="font-weight: 200">Initiative</span>
     </a>
+
+
+    <%= if author_signed_in?(@conn) do %>
+      <div>
+        <%= link "My Projects", to: Routes.workspace_path(@conn, :projects), class: "btn btn-primary" %>
+        <%= link "Sign out", to: Routes.auth_path(@conn, :signout) %>
+      <div>
+    <% else %>
+      <%= if @conn.request_path == "/" do %>
+        <a href="/auth/signin" class="btn btn-dark my-2 my-sm-0">Sign in</a>
+      <% end %>
+    <% end %>
 </nav>

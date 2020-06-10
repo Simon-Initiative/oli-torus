@@ -8,7 +8,7 @@ defmodule OliWeb.Curriculum.Container do
   for any container - not just the root container.
   """
 
-  use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Phoenix.LiveView, layout: {OliWeb.LayoutView, "workspace_live.html"}
 
 
   alias Oli.Authoring.Editing.ContainerEditor
@@ -34,6 +34,7 @@ defmodule OliWeb.Curriculum.Container do
     subscriptions = subscribe(root_resource, pages, project.slug)
 
     {:ok, assign(socket,
+      conn: socket,
       pages: pages,
       title: "Curriculum",
       changeset: Resources.change_revision(%Revision{}),

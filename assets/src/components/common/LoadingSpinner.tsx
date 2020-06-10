@@ -1,4 +1,5 @@
 import * as React from 'react';
+import "./LoadingSpinner.scss";
 
 export enum LoadingSpinnerSize {
   Small,
@@ -31,10 +32,10 @@ export class LoadingSpinner
     const { message, failed, children, size } = this.props;
 
     const sizeClass = size === LoadingSpinnerSize.Small
-      ? 'sizeSmall'
+      ? 'ls-small'
       : size === LoadingSpinnerSize.Large
-      ? 'sizeLarge'
-      : 'sizeNormal';
+      ? 'ls-large'
+      : 'ls-normal';
 
     return (
       <div className={'LoadingSpinner ' + sizeClass}>

@@ -1,0 +1,44 @@
+.workspace {
+  flex: 1;
+  display: flex;
+
+  #left {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #right {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+
+    /* padding-bottom must match height in footer */
+    padding-bottom: 40px;
+  }
+
+  #right h1 {
+    font-size: 16px;
+  }
+
+  #right h2 {
+    font-size: 14px;
+  }
+
+  #right .row {
+    margin: 0 0 20px 0;
+  }
+
+  #right .page-header p {
+    margin-top: 10px;
+    color: #b3b3b3;
+  }
+
+  #right li:last-of-type {
+    margin-bottom: 0;
+  }
+
+  #right li small {
+    font-size: inherit;
+    color: #b3b3b3;
+  }
+}
