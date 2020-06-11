@@ -47,7 +47,8 @@ function shouldHideToolbar(editor: ReactEditor) {
   // 2. The editor is not currently in focus
   // 3. The selection range is collapsed
   // 4. The selection range spans more than one block
-  // 5. The selection current text is the empty string
+  // 5. The selection current text is only whitespace or
+  //    is the empty string
 
   const spansMultipleBlocks = (selection: Range) => {
     if (selection.anchor.path.length === selection.focus.path.length) {
@@ -65,7 +66,7 @@ function shouldHideToolbar(editor: ReactEditor) {
     !ReactEditor.isFocused(editor) ||
     Range.isCollapsed(selection) ||
     spansMultipleBlocks(selection) ||
-    SlateEditor.string(editor, selection) === '';
+    SlateEditor.string(editor, selection).trim() === '';
 }
 
 
