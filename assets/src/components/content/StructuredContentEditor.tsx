@@ -3,7 +3,7 @@ import { StructuredContent } from 'data/content/resource';
 import { Editor } from 'components/editor/Editor';
 import { ToolbarItem } from 'components/resource/toolbar';
 import { ProjectSlug } from 'data/types';
-import { EditorErrorBoundary } from 'components/editor/EditorErrorBoundary';
+import { ErrorBoundary } from 'components/common/ErrorBoundary';
 
 export type StructuredContentEditor = {
   editMode: boolean,              // Whether or not we can edit
@@ -23,13 +23,13 @@ export const StructuredContentEditor = (props: StructuredContentEditor) => {
     props.onEdit(updated);
   };
   return (
-    <EditorErrorBoundary>
+    <ErrorBoundary>
       <Editor
         commandContext={{ projectSlug }}
         editMode={editMode}
         value={content.children}
         onEdit={onEdit}
         toolbarItems={toolbarItems} />
-    </EditorErrorBoundary>
+    </ErrorBoundary>
   );
 };

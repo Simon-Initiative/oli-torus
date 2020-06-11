@@ -2,7 +2,7 @@ import React from 'react';
 import guid from 'utils/guid';
 import { Collapse } from 'components/common/Collapse';
 
-export class EditorErrorBoundary extends React.Component<any,
+export class ErrorBoundary extends React.Component<any,
   { hasError: boolean, error: any, info: any, id: string }> {
   constructor(props: any) {
     super(props);

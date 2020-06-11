@@ -3,7 +3,7 @@ import { RichText } from 'components/activities/types';
 import { Editor } from 'components/editor/Editor';
 import { getToolbarForResourceType } from 'components/resource/toolbar';
 import { ProjectSlug } from 'data/types';
-import { EditorErrorBoundary } from 'components/editor/EditorErrorBoundary';
+import { ErrorBoundary } from 'components/common/ErrorBoundary';
 
 type RichTextEditorProps = {
   projectSlug: ProjectSlug;
@@ -26,10 +26,10 @@ export const RichTextEditor = ({ editMode, text, onEdit, children, projectSlug }
         fontSize: '11px',
         margin: '4px 0 10px 0',
       }}>
-        <EditorErrorBoundary>
+        <ErrorBoundary>
           <Editor commandContext={{ projectSlug }} editMode={editMode} value={text} onEdit={onEdit}
             toolbarItems={getToolbarForResourceType(1)} />
-        </EditorErrorBoundary>
+        </ErrorBoundary>
       </div>
     </React.Fragment>
   );
