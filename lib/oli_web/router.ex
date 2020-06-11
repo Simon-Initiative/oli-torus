@@ -141,6 +141,9 @@ defmodule OliWeb.Router do
     delete "/:project_id/resource/:revision_slug", ResourceController, :delete
     get "/:project_id/resource/:revision_slug/activity/:activity_slug", ActivityController, :edit
 
+    # Links
+    get "/link/:revision_slug", ResourceController, :link
+
     # Collaborators
     post "/:project_id/collaborators", CollaboratorController, :create
     put "/:project_id/collaborators/:author_email", CollaboratorController, :update
@@ -158,6 +161,7 @@ defmodule OliWeb.Router do
     pipe_through [:api, :protected]
 
     put "/:project/resource/:resource", ResourceController, :update
+    get "/:project/link", ResourceController, :index
 
     post "/:project/activity/:activity_type", ActivityController, :create
     put "/:project/resource/:resource/activity/:activity", ActivityController, :update
