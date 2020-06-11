@@ -6,14 +6,4 @@
   <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
 <% end %>
 
-<div class="main">
-  <%= render OliWeb.LayoutView, "_header.html", assigns %>
-
-  <main role="main" class="authoring">
-
-    <%= @inner_content %>
-
-  </main>
-
-  <%= render OliWeb.LayoutView, "_footer.html", assigns %>
-</div>
+<%= @inner_content %>

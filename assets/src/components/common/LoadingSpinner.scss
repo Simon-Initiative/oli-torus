@@ -1,7 +1,8 @@
+@import 'authoring';
 
 .LoadingSpinner {
   text-align: center;
-  color: gray;
+  color: $gray-500;
 
   & i {
     margin: "0 5px";

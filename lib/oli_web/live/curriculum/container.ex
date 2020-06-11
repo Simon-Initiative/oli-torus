@@ -8,7 +8,7 @@ defmodule OliWeb.Curriculum.Container do
   for any container - not just the root container.
   """
 
-  use Phoenix.LiveView, layout: {OliWeb.LayoutView, "workspace_live.html"}
+  use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
 
 
   alias Oli.Authoring.Editing.ContainerEditor
