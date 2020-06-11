@@ -1,40 +1,4 @@
-<style>
-  #header {
-    height: 62px;
-    border-bottom: 1px solid rgba(51, 51, 51, .15);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 0 0 48px;
-    font-size: 14px;
-  }
-
-  #header .title {
-    font-weight: bold;
-  }
-
-  #header .project {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-  }
-
-  #header .preview {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    background-color: black;
-    height: 100%;
-    width: 62px;
-    user-select: none;
-    cursor: pointer;
-  }
-</style>
-
-<div id="header">
-  <span class="title"><%= @title %></span>
-  <span class="project"><%= @project.title %> <i class="material-icons">arrow_drop_down</i></span>
-  <span class="preview"><i class="material-icons">ondemand_video</i></span>
+<div class="workspace-header">
+  <div class="page-title"><%= @title %></div>
+  <div class="project-title"><%= @project.title %></div>
 </div>

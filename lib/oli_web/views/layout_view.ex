@@ -8,12 +8,12 @@ defmodule OliWeb.LayoutView do
   end
 
   def active_class(active, path) do
+    IO.inspect {active, path}
     if active == path do :active else nil end
   end
 
-  def sidebar_link(%{:assigns => assigns} = conn, path, text) do
-    link text, to: Routes.project_path(conn, path, assigns.project),
-    class: active_class(active_or_nil(assigns), path)
+  def sidebar_link(%{:assigns => assigns} = _conn, text, path, [to: route]) do
+    link text, to: route, class: active_class(active_or_nil(assigns), path)
   end
 
   def account_link(%{:assigns => assigns} = conn) do

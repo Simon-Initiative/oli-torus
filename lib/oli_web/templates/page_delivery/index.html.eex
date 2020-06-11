@@ -1,6 +1,5 @@
 <style>
 .course-outline {
-  background-color: #fefefe;
   border: 1px solid #ddd;
   padding: 8px 12px;
 }

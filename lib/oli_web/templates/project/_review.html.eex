@@ -115,8 +115,8 @@ a.review-dismiss:hover {
 
 <div class="row">
   <div class="section-header">
-    <h2>Review</h1>
-    <small>Before you publish, let's look through your project for broken links and other issues that are easy to miss.</small>
+    <h2>Review</h2>
+    <p>Before you publish, let's look through your project for broken links and other issues that are easy to miss.</p>
   </div>
 </div>
 

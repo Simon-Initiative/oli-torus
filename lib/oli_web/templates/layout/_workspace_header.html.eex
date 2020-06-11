@@ -1,31 +1,4 @@
 <style>
-  #header {
-    height: 62px;
-    border-bottom: 1px solid rgba(51, 51, 51, .15);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 48px;
-    font-size: 14px;
-  }
-
-  #header .title {
-    font-weight: bold;
-  }
-
-  #header .inline-button {
-    border: none;
-    background: none;
-    cursor: pointer;
-    user-select: none;
-    display: flex;
-    line-height: 24px;
-    padding: 6px 10px;
-  }
-  #header .inline-button .material-icons {
-    padding-right: 10px;
-  }
-
   .new-project-modal {
     margin-top: 72px;
     margin-right: 48px;
@@ -140,9 +113,10 @@
   </div>
 </div>
 
-<div id="header">
-  <span class="title"><%= @title %></span>
-  <button class="inline-button" id="button-new-project"><i class="material-icons">add</i>New Project</span>
+<div class="workspace-header">
+  <div class="page-title"><%= @title %></div>
+  <div class="flex-fill"></div>
+  <button id="button-new-project" class="btn btn-sm btn-primary"><i class="fa fa-plus"></i> New Project</span>
 </div>
 
 <script>

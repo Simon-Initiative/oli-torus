@@ -1,0 +1,22 @@
+footer {
+  display: flex;
+  flex-direction: row;
+
+  /* height must match padding-bottom in parent */
+  height: 40px;
+  line-height: 40px;
+
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  font-size: 0.8em;
+
+  .container {
+    padding: 0;
+
+    .row {
+      margin: 0px !important;
+    }
+  }
+}

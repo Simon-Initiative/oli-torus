@@ -2,43 +2,102 @@
   flex: 1;
   display: flex;
 
-  #left {
+  h1 {
+    font-size: 2em;
+  }
+
+  h2 {
+    font-size: 1.5em;
+  }
+
+  h3 {
+    font-size: 1.17em;
+  }
+
+  h4 {
+    font-size: 1em;
+  }
+
+  h5 {
+    font-size: .83em;
+  }
+
+  h6 {
+    font-size: .67em;
+  }
+
+  .workspace-left {
     display: flex;
     flex-direction: column;
   }
 
-  #right {
+  .workspace-right {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
+    position: relative;
 
     /* padding-bottom must match height in footer */
     padding-bottom: 40px;
+
+    main {
+      padding: 20px;
+    }
   }
 
-  #right h1 {
-    font-size: 16px;
+  .workspace-header {
+    display: flex;
+    flex-direction: row;
+    border-bottom: 1px solid $gray-400;
+    padding: 20px 20px 20px 100px;
+    position: relative;
+
+    .page-title {
+      font-weight: bold;
+      position: absolute;
+      left: 20px;
+      top: 24px;
+    }
+
+    .project-title {
+      flex: 1;
+      text-align: center;
+    }
+
   }
 
-  #right h2 {
-    font-size: 14px;
-  }
+  .workspace-sidebar {
+    flex: 1;
+    width: 200px;
+    padding: 24px;
+    border-right: 1px solid $gray-400;
 
-  #right .row {
-    margin: 0 0 20px 0;
-  }
+    a {
+      display: flex;
+      flex-direction: columns;
+      margin: 20px 0;
+      color: $body-color;
+    }
 
-  #right .page-header p {
-    margin-top: 10px;
-    color: #b3b3b3;
-  }
+    .user {
+      margin-bottom: 40px;
+    }
 
-  #right li:last-of-type {
-    margin-bottom: 0;
-  }
+    .category {
+      font-size: 12px;
+      color: $gray-400;
+      user-select: none;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
 
-  #right li small {
-    font-size: inherit;
-    color: #b3b3b3;
+    .active {
+      font-weight: bold;
+      color: $link-color;
+    }
+
+    .account-link {
+      margin: 0;
+    }
   }
 }

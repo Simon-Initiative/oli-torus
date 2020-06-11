@@ -5,8 +5,4 @@
 @import 'authoring/variables';
 @import 'authoring/mixins';
 @import '../node_modules/bootstrap/scss/bootstrap';
-@import 'authoring/main';
-@import 'authoring/controls';
-@import 'authoring/layout/workspace';
-@import 'authoring/static_page/index';
-@import 'authoring/custom';
+@import 'authoring/**/*.scss';

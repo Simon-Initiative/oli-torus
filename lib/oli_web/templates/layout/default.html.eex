@@ -1,10 +1,10 @@
 
 <%= render_layout "authoring.html", assigns do %>
 
-<div class="main">
+<div>
   <%= render OliWeb.LayoutView, "_header.html", assigns %>
 
-  <main role="main" class="authoring">
+  <main role="main">
 
     <%= @inner_content %>
 

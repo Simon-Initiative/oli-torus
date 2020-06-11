@@ -2,15 +2,15 @@
 <%= render_layout "authoring.html", assigns do %>
 
 <div class="workspace">
-  <div id="left">
+  <div class="workspace-left">
     <%= render OliWeb.LayoutView, "_#{if @conn.params["project_id"] do "project" else "workspace" end}_sidebar.html", assigns %>
   </div>
 
-  <div id="right">
+  <div class="workspace-right">
     <%= render OliWeb.LayoutView, "_#{if @conn.params["project_id"] do "project" else
       if @title == "Projects" do "workspace" else "account" end end}_header.html", assigns %>
 
-    <main role="main" class="authoring">
+    <main role="main">
       <%= @inner_content %>
     </main>
 

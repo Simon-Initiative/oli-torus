@@ -1,1 +1,6 @@
-<%= link "Back to workspace", to: Routes.workspace_path(@conn, :projects), class: "btn btn-primary" %>
+
+<div class="container">
+
+  <%= link "My Institutions", to: Routes.institution_path(@conn, :index), class: "btn btn-md btn-outline-primary ml-4" %>
+
+</div>

@@ -5,6 +5,4 @@
 @import 'delivery/variables';
 @import 'delivery/mixins';
 @import '../node_modules/bootstrap/scss/bootstrap';
-@import 'delivery/main';
-@import 'delivery/layout/delivery';
-@import 'delivery/custom';
+@import 'delivery/**/*.scss';

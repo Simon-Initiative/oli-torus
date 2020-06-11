@@ -2,6 +2,7 @@ const webpack = require('webpack');
 const path = require('path');
 const glob = require('glob');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const globImporter = require('node-sass-glob-importer');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
@@ -104,6 +105,7 @@ module.exports = (env, options) => ({
                   includePaths: [
                       path.join(__dirname, 'styles'),
                   ],
+                  importer: globImporter(),
                 },
                 sourceMap: true
               }

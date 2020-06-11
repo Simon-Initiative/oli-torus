@@ -11,17 +11,17 @@ defmodule OliWeb.WorkspaceController do
         Map.put(project, :author_count, Accounts.project_author_count(project)) end)
     params = %{
       title: "Projects",
+      active: :projects,
       changeset: Project.changeset(%Project{
         title: params["project_title"] || ""
       }),
-      active: :nil,
       author: current_author,
       projects: projects
     }
-    render %{conn | assigns: Map.merge(conn.assigns, params)}, "projects.html"
+    render %{conn | assigns: (Map.merge(conn.assigns, params) |> Map.put(:page_title, "Projects - "))}, "projects.html"
   end
 
   def account(conn, _params) do
-    render conn, "account.html", title: "Account", active: :account
+    render conn, "account.html", title: "Account", active: :account, page_title: "Account - "
   end
 end

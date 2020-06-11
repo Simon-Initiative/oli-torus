@@ -34,8 +34,8 @@ defmodule OliWeb.Curriculum.Container do
     subscriptions = subscribe(root_resource, pages, project.slug)
 
     {:ok, assign(socket,
-      conn: socket,
       pages: pages,
+      active: :curriculum,
       title: "Curriculum",
       changeset: Resources.change_revision(%Revision{}),
       root_resource: root_resource,

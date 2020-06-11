@@ -1,0 +1,5 @@
+<tr>
+  <td><%= "#{@collaborator.first_name} #{@collaborator.last_name}"%></td>
+  <td><%= "#{@collaborator.email}" %></td>
+  <td><%= link "Remove", to: Routes.collaborator_path(@conn, :delete, @project, @collaborator.email), method: :delete, class: "text-danger" %></td>
+</tr>
