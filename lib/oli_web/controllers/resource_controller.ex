@@ -8,7 +8,7 @@ defmodule OliWeb.ResourceController do
 
   plug :fetch_project when action not in [:view, :update]
   plug :authorize_project when action not in [:view, :update]
-  plug :put_layout, {OliWeb.LayoutView, "preview.html"} when action in [:preview]
+  plug :put_root_layout, {OliWeb.LayoutView, "preview.html"} when action in [:preview]
 
   def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
 

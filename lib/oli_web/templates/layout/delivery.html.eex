@@ -9,9 +9,6 @@
     <!-- Theme CSS (contains all bootstrap styles as well as custom styles for a specific theme) -->
     <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/delivery_theme.css") %>"/>
 
-    <link id="theme" href="https://stackpath.bootstrapcdn.com/bootswatch/4.5.0flatly/bootstrap.min/.css" rel="stylesheet" integrity="sha384-mhpbKVUOPCSocLzx2ElRISIORFRwr1ZbO9bAlowgM5kO7hnpRBe+brVj8NNPUiFs" crossorigin="anonymous">
-    <%# <link id="theme" href="https://stackpath.bootstrapcdn.com/bootswatch/4.5.0/darkly/bootstrap.min.css" rel="stylesheet" integrity="sha384-Bo21yfmmZuXwcN/9vKrA5jPUMhr7znVBBeLxT9MA4r2BchhusfJ6+n8TLGUcRAtL" crossorigin="anonymous"> %>
-
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
@@ -54,7 +51,9 @@
                   <span class="block lg:inline-block lg:mt-0 text-grey-darkest no-underline hover:underline my-1 mr-3">
                     <%= "#{@current_user.first_name} #{@current_user.last_name}" %>
                   </span>
-                  <img src="<%= @current_user.user_image%>" class="rounded-circle" />
+                  <div class="user-icon">
+                    <img src="<%= @current_user.user_image%>" class="rounded-circle" />
+                  </div>
                 </a>
                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
                   <%= link "Sign out", to: Routes.delivery_path(@conn, :signout), id: "signout-link", class: "dropdown-item btn" %>
