@@ -5,7 +5,7 @@
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> @script) %>"></script>
 
 
-<div id="editor"/>
+<div id="editor" class="container"/>
 
 <script>
   window.oliMountApplication(document.getElementById('editor'), <%= raw(@context) %>);

@@ -2,9 +2,6 @@
 // You can find them in node_modules/bootstrap/scss/_variables.scss
 // Copy the variables you need into this file, don't modify files under node_modules/
 
-// Changing the border radius of buttons
-// $border-radius: 20px;
-
 $white:    #fff;
 $gray-100: #f8f9fa;
 $gray-200: #ecf0f1;
@@ -46,7 +43,8 @@ $body-color:                $gray-900;
 
 // Links
 
-$link-color:                $success;
+// $link-color:                $green;
+$link-color:                #1abc9c;
 
 // Fonts
 
@@ -115,13 +113,23 @@ $list-group-disabled-bg:            $gray-200;
 $close-color:                       $body-color;
 $close-text-shadow:                 none;
 
-// Action specific colors
+// Changing the border radius of buttons
+// $border-radius: 20px;
+
+
+/** OLI specific varaibles **/
+
 $remove: $danger;
 $add: darken($primary, 10%);
 
 $selection: $primary;
 $hover: darken($primary, 10%);
 $active: darken($primary, 15%);
+
+$workspace-header-bg:  $white;
+$workspace-sidebar-bg: #2C3E50;
+$workspace-sidebar-link-color:  $white;
+$workspace-bg:  $white;
 
 // Master z-index list
 // Because of the inherent global nature of z-index, all z-indexes used should be defined and

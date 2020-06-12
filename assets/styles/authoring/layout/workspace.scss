@@ -1,6 +1,7 @@
 .workspace {
   flex: 1;
   display: flex;
+  background-color: $workspace-bg;
 
   .workspace-left {
     display: flex;
@@ -27,6 +28,7 @@
     border-bottom: 1px solid $gray-400;
     padding: 20px;
     position: relative;
+    background-color: $workspace-header-bg;
 
     .page-title {
       font-weight: bold;
@@ -52,11 +54,13 @@
     width: 200px;
     padding: 24px;
     border-right: 1px solid $gray-400;
+    background-color: $workspace-sidebar-bg;
 
     a {
       display: flex;
       flex-direction: columns;
       margin: 20px 0;
+      color: $workspace-sidebar-link-color;
     }
 
     .user {
