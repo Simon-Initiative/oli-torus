@@ -40,7 +40,7 @@
         </tbody>
       </table>
 
-      <hr class="my-4" />
+      <hr class="my-4 mt-5" />
       <h2>Details</h2>
 
       <%= form_for @changeset, Routes.project_path(@conn, :update, @project), fn f -> %>

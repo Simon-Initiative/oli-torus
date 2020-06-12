@@ -2,30 +2,6 @@
   flex: 1;
   display: flex;
 
-  h1 {
-    font-size: 2em;
-  }
-
-  h2 {
-    font-size: 1.5em;
-  }
-
-  h3 {
-    font-size: 1.17em;
-  }
-
-  h4 {
-    font-size: 1em;
-  }
-
-  h5 {
-    font-size: .83em;
-  }
-
-  h6 {
-    font-size: .67em;
-  }
-
   .workspace-left {
     display: flex;
     flex-direction: column;
@@ -49,20 +25,25 @@
     display: flex;
     flex-direction: row;
     border-bottom: 1px solid $gray-400;
-    padding: 20px 100px;
+    padding: 20px;
     position: relative;
 
     .page-title {
       font-weight: bold;
-      position: absolute;
-      left: 20px;
-      top: 24px;
+      width: 150px;
+    }
+
+    .page-controls {
+      width: 150px;
+      display: flex;
+      flex-direction: row-reverse;
     }
 
     .project-title {
       flex: 1;
       text-align: center;
     }
+
 
   }
 
@@ -76,7 +57,6 @@
       display: flex;
       flex-direction: columns;
       margin: 20px 0;
-      color: $body-color;
     }
 
     .user {
@@ -85,7 +65,7 @@
 
     .category {
       font-size: 12px;
-      color: $gray-400;
+      color: $gray-500;
       user-select: none;
       margin-top: 20px;
       margin-bottom: 10px;

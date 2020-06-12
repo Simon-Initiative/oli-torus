@@ -2,12 +2,12 @@
   <h2>Course Objectives</h2>
   <p class="text-secondary">
     Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies.
-    <br />
-    <a href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">Learn more</a> about course design best practices.
+    Visit the <a href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">CMU Eberly Center guide on learning objectives</a> to learn more about the importance of attaching learning objectives to pages and activities.
   </p>
 
   <div class="row my-3">
     <div class="col-12">
+      <h4>Create a new objective</h4>
       <%= label "create-objective", "At the end of this course, students should be able to...", class: "control-label" %>
       <%=
         route = Routes.objective_path(@conn, :create, @project)
@@ -29,6 +29,7 @@
   <% else %>
     <div class="row my-3">
       <div class="col-12">
+        <h4>Manage objectives</h4>
         <div class="list-group w-100">
           <%=
           Enum.map(@objective_mappings, fn x ->

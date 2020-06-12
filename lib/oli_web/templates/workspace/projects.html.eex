@@ -1,6 +1,7 @@
 <style>
 .project-cards {
   display: flex;
+  flex-wrap: wrap;
 }
 </style>
 
