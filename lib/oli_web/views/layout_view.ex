@@ -8,7 +8,6 @@ defmodule OliWeb.LayoutView do
   end
 
   def active_class(active, path) do
-    IO.inspect {active, path}
     if active == path do :active else nil end
   end
 

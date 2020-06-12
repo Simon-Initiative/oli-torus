@@ -49,14 +49,13 @@ defmodule OliWeb.Curriculum.Container do
   def render(assigns) do
 
     ~L"""
-    <div style="margin: 20px;">
-
       <div class="container">
+        <h2>Course Curriculum</h2>
         <div class="row">
           <div class="col-12">
-            <small class="text-muted">
-              Create and configure the curriculum items for your course.
-            </small>
+            <p class="text-secondary">
+              Create and arrange items to form your course curriculum. Select an item to configure it.
+            </p>
           </div>
         </div>
         <div class="row" phx-window-keydown="keydown">
@@ -71,11 +70,11 @@ defmodule OliWeb.Curriculum.Container do
             </div>
 
             <div class="mt-5">
-              Add new:
-              <button phx-click="add" phx-value-type="Unscored" class="btn btn-sm btn-secondary-outline ml-2" type="button">
+              Add new
+              <button phx-click="add" phx-value-type="Unscored" class="btn btn-sm btn-outline-primary ml-2" type="button">
                 Practice Page
               </button>
-              <button phx-click="add" phx-value-type="Scored" class="btn btn-sm btn-secondary-outline ml-2" type="button">
+              <button phx-click="add" phx-value-type="Scored" class="btn btn-sm btn-outline-primary ml-2" type="button">
                 Graded Assessment
               </button>
             </div>
@@ -90,8 +89,6 @@ defmodule OliWeb.Curriculum.Container do
         </div>
 
       </div>
-
-    </div>
     """
   end
 

@@ -6,7 +6,7 @@
 
       <%= form_for @conn, Routes.collaborator_path(@conn, :create, @project), [id: "form-add-collaborator"], fn f -> %>
         <div class="form-group">
-          <%= label f, :email, "Invite collaborators to contribute to your course", class: "control-label" %>
+          <%= label f, :email, "Invite others to collaborate on your course", class: "control-label" %>
           <div class="input-group mb-3">
           <%= text_input f,
             :email,
@@ -29,13 +29,19 @@
 
       <table class="table table-sm">
         <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th></th>
+        </tr>
         </thead>
         <tbody>
           <%= render_many @collaborators, OliWeb.ProjectView, "_tr_collaborator.html", %{conn: @conn, as: :collaborator, project: @project} %>
         </tbody>
       </table>
 
-      <h2 class="mt-5">Details</h2>
+      <hr class="my-4" />
+      <h2>Details</h2>
 
       <%= form_for @changeset, Routes.project_path(@conn, :update, @project), fn f -> %>
         <div class="form-label-group">

@@ -1,46 +1,51 @@
-<style>
-  .objective h1 {
-    line-height: 30px;
-    margin-right: 8px;
-  }
-</style>
+<div class="objectives container">
+  <h2>Course Objectives</h2>
+  <p class="text-secondary">
+    Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies.
+    <br />
+    <a href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">Learn more</a> about course design best practices.
+  </p>
 
-<div class="objective container">
-  <div class="row">
-    <div class="page-header" style="width: 100%">
-        <small>At the end of the course my students should be able to...</small>
-    <%=
-    route = Routes.objective_path(@conn, :create, @project)
-    render OliWeb.ProjectView, "_objective_render.html",
-     %{conn: @conn, project: @project, objective_changeset: @objective_changeset, title_value: "", parent_slug_value: "",
-     form_id: "create-objective", method: "post", route: route, place_holder: "New Learning Objective",
-     phx_disable_with: "Adding Objective...", button_text: "Create", mode: :new_objectve} %>
+  <div class="row my-3">
+    <div class="col-12">
+      <%= label "create-objective", "At the end of this course, students should be able to...", class: "control-label" %>
+      <%=
+        route = Routes.objective_path(@conn, :create, @project)
+        render OliWeb.ProjectView, "_objective_render.html",
+        %{conn: @conn, project: @project, objective_changeset: @objective_changeset, title_value: "", parent_slug_value: "",
+        form_id: "create-objective", method: "post", route: route, place_holder: "e.g. Recognize the structures of amino acids, carbohydrates, lipids, and nucleic acids",
+        phx_disable_with: "Adding Objective...", button_text: "Create", mode: :new_objectve} %>
     </div>
   </div>
-<%= if Enum.count(@objective_mappings) == 0 do %>
-<div class="row">
-  <div class="my-5 text-center">
-    No objectives
-  </div>
-  </div>
-<% else %>
-<div class="row">
-  <div class="list-group w-100">
-     <%=
-     Enum.map(@objective_mappings, fn x ->
-         params = %{conn: @conn, objective_mapping: x.mapping, children: x.children, depth: 1, project: @project, objective_changeset: @objective_changeset}
-         if assigns[:edit] do
-            params = Map.merge(params, %{edit: @edit})
-            render OliWeb.ProjectView, "_objectives_list.html", params
-         else
-            params = Map.merge(params, %{edit: :none})
-            render OliWeb.ProjectView, "_objectives_list.html", params
-         end
-     end)
-     %>
- </div>
-</div>
-<% end %>
+
+  <%= if Enum.count(@objective_mappings) == 0 do %>
+    <div class="row my-3">
+      <div class="col-12">
+        <div class="text-center">
+          No objectives
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <div class="row my-3">
+      <div class="col-12">
+        <div class="list-group w-100">
+          <%=
+          Enum.map(@objective_mappings, fn x ->
+              params = %{conn: @conn, objective_mapping: x.mapping, children: x.children, depth: 1, project: @project, objective_changeset: @objective_changeset}
+              if assigns[:edit] do
+                  params = Map.merge(params, %{edit: @edit})
+                  render OliWeb.ProjectView, "_objectives_list.html", params
+              else
+                  params = Map.merge(params, %{edit: :none})
+                  render OliWeb.ProjectView, "_objectives_list.html", params
+              end
+          end)
+          %>
+        </div>
+      </div>
+    </div>
+  <% end %>
 </div>
 
 <script>

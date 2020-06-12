@@ -22,6 +22,7 @@ defmodule OliWeb.WorkspaceController do
   end
 
   def account(conn, _params) do
-    render conn, "account.html", title: "Account", active: :account, page_title: "Account - "
+    institutions = Accounts.list_institutions() |> Enum.filter(fn i -> i.author_id == conn.assigns.current_author.id end)
+    render conn, "account.html", title: "Account", active: :account, institutions: institutions, page_title: "Account - "
   end
 end

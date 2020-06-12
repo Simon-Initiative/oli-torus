@@ -3,16 +3,12 @@
     display: none;
 }
 
+.to-show button {
+  white-space: nowrap;
+}
+
 .list-group-item:hover .to-show{
   display: flex;
-}
-
-.add-button-item {
-  height: 20px;
-}
-
-.icon-font {
-  font-size: larger;
 }
 </style>
 
@@ -39,20 +35,22 @@
             objective_changeset: @objective_changeset, children: @children, mode: :show}
          end %>
 	</div>
-    <div style="min-width: 50px">
+  <%= if @edit == :none do %>
+  <div>
     <div class="to-show">
-	<%= button to: Routes.project_path(@conn, :edit_objective, @project, @objective_mapping.revision.slug, :edit_objective), method: :get, class: "add-button add-button-item" do %>
-	   <i class="material-icons icon-font">edit</i>
-	<% end %>
-	<%= button to: Routes.objective_path(@conn, :delete, @project, @objective_mapping.revision.slug),
-	   data: [confirm: "Are you sure you want to delete that objective?"], method: :delete, class: "add-button add-button-item" do %>
-       <i class="material-icons icon-font">delete</i>
-    <% end %>
-    <%= if @depth < 2 do %>
-	<%= button to: Routes.project_path(@conn, :edit_objective, @project, @objective_mapping.revision.slug, :add_sub_objective), method: :get, class: "add-button add-button-item" do %>
-   	   <i class="material-icons icon-font">add</i>
-   	<% end %>
-   	<% end %>
+      <%= button to: Routes.project_path(@conn, :edit_objective, @project, @objective_mapping.revision.slug, :edit_objective), method: :get, class: "btn btn-sm btn-link" do %>
+        <i class="fa fa-edit"></i> Edit
+      <% end %>
+      <%= if @depth < 2 do %>
+        <%= button to: Routes.project_path(@conn, :edit_objective, @project, @objective_mapping.revision.slug, :add_sub_objective), method: :get, class: "btn btn-sm btn-link" do %>
+          <i class="fa fa-plus"></i> Sub-Objective
+        <% end %>
+      <% end %>
+      <%= button to: Routes.objective_path(@conn, :delete, @project, @objective_mapping.revision.slug),
+      data: [confirm: "Are you sure you want to delete that objective?"], method: :delete, class: "btn btn-sm btn-link text-danger" do %>
+        <i class="fa fa-trash"></i> Delete
+      <% end %>
    	</div>
 	</div>
+  <% end %>
 </div>

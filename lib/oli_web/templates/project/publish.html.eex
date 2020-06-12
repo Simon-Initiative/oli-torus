@@ -1,6 +1,8 @@
 <div class="publish container">
 
   <%= render OliWeb.ProjectView, "_review.html", assigns %>
-  <hr />
+
+  <hr class="my-4" />
+
   <%= render OliWeb.ProjectView, "_publish.html", assigns %>
 </div>

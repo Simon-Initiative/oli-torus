@@ -6,7 +6,6 @@
   }
 
   .modal {
-    font-family: Muli, sans-serif;
     overflow: auto;
     position: fixed;
     z-index: 1;
