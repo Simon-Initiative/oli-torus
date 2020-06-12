@@ -1,10 +1,3 @@
-<style>
-.course-outline {
-  border: 1px solid #ddd;
-  padding: 8px 12px;
-}
-</style>
-
 <div class="my-3">
   <h3><%= @title %></h3>
   <p class="text-secondary"><%= @description %></p>
@@ -20,12 +13,12 @@
 
   <h5>Course Outline</h5>
 
-  <div class="course-outline">
+  <ul class="course-outline list-group">
     <%= for page <- @pages do %>
       <%= case page.graded do
         false -> render "link_page.html", page: page, conn: @conn, context_id: @context_id
         true -> render "link_assessment.html", page: page, conn: @conn, context_id: @context_id
       end %>
     <% end %>
-  </div>
+  </ul>
 </div>

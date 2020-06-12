@@ -26,11 +26,7 @@ interface ChoicesProps {
 }
 const Choices = ({ choices, selected, onSelect, isEvaluated }: ChoicesProps) => {
   return (
-    <div style={{
-      display: 'grid',
-      gridGap: '8px',
-      gridTemplateColumns: '1fr',
-    }}>
+    <div className="choices">
     {choices.map((choice, index) =>
       <Choice
         onClick={() => onSelect(choice.id)}
@@ -125,7 +121,8 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
 
   const evaluationSummary = isEvaluated ? <Evaluation attemptState={attemptState}/> : null;
   const reset = isEvaluated && !props.graded
-    ? (<div className="float-right my-3">
+    ? (<div className="d-flex my-3">
+        <div className="flex-fill"></div>
         <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
       </div>
     )

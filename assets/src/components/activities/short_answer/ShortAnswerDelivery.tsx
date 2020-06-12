@@ -104,7 +104,8 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
 
   const evaluationSummary = isEvaluated ? <Evaluation attemptState={attemptState}/> : null;
   const reset = isEvaluated && !props.graded
-    ? (<div className="float-right">
+    ? (<div className="d-flex">
+        <div className="flex-fill"></div>
         <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
       </div>
     )

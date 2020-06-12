@@ -202,32 +202,34 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
     const partIds = parts.map((p: any) => p.id);
 
     return (
-      <div className="activity-editor">
-        <Banner
-          dismissMessage={msg => this.setState(
-            { messages: this.state.messages.filter(m => msg.guid !== m.guid) })}
-          executeAction={() => true}
-          messages={this.state.messages}
-        />
-        <Navigation {...this.props}/>
-        <TitleBar
-          title={this.state.undoable.current.title}
-          onTitleEdit={onTitleEdit}
-          editMode={this.state.editMode}>
-          <PersistenceStatus persistence={this.state.persistence}/>
-          <UndoRedo
-            canRedo={this.state.undoable.redoStack.size > 0}
-            canUndo={this.state.undoable.undoStack.size > 0}
-            onUndo={this.undo} onRedo={this.redo}/>
-        </TitleBar>
-        <PartObjectives
-            partIds={Immutable.List(partIds)}
-            editMode={this.state.editMode}
-            objectives={this.state.undoable.current.objectives}
-            allObjectives={this.state.allObjectives}
-            onEdit={objectives => this.update({ objectives })} />
-        <div ref={this.ref}>
-          {React.createElement(authoringElement, webComponentProps as any)}
+      <div className="col-12">
+        <div className="activity-editor">
+          <Banner
+            dismissMessage={msg => this.setState(
+              { messages: this.state.messages.filter(m => msg.guid !== m.guid) })}
+            executeAction={() => true}
+            messages={this.state.messages} />
+          <Navigation {...this.props}/>
+          <TitleBar
+            className="mb-4"
+            title={this.state.undoable.current.title}
+            onTitleEdit={onTitleEdit}
+            editMode={this.state.editMode}>
+            <PersistenceStatus persistence={this.state.persistence}/>
+            <UndoRedo
+              canRedo={this.state.undoable.redoStack.size > 0}
+              canUndo={this.state.undoable.undoStack.size > 0}
+              onUndo={this.undo} onRedo={this.redo}/>
+          </TitleBar>
+          <PartObjectives
+              partIds={Immutable.List(partIds)}
+              editMode={this.state.editMode}
+              objectives={this.state.undoable.current.objectives}
+              allObjectives={this.state.allObjectives}
+              onEdit={objectives => this.update({ objectives })} />
+          <div ref={this.ref}>
+            {React.createElement(authoringElement, webComponentProps as any)}
+          </div>
         </div>
       </div>
     );

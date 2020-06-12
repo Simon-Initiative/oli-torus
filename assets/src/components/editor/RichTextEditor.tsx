@@ -3,31 +3,22 @@ import { RichText } from 'components/activities/types';
 import { Editor } from 'components/editor/Editor';
 import { getToolbarForResourceType } from 'components/resource/toolbar';
 import { ProjectSlug } from 'data/types';
+import { classNames } from 'utils/classNames';
 
 type RichTextEditorProps = {
   projectSlug: ProjectSlug;
   editMode: boolean;
+  className?: string,
   text: RichText;
   onEdit: (text: RichText) => void;
 };
-export const RichTextEditor = ({ editMode, text, onEdit, children, projectSlug }:
+export const RichTextEditor = ({ editMode, className, text, onEdit, projectSlug }:
   React.PropsWithChildren<RichTextEditorProps>) => {
 
   return (
-    <React.Fragment>
-      {children}
-      <div style={{
-        border: '1px solid #e5e5e5',
-        borderRadius: '2px',
-        color: '#666',
-        padding: '10px',
-        fontFamily: 'Inter',
-        fontSize: '11px',
-        margin: '4px 0 10px 0',
-      }}>
-        <Editor commandContext={{ projectSlug }} editMode={editMode} value={text} onEdit={onEdit}
-          toolbarItems={getToolbarForResourceType(1)} />
-      </div>
-    </React.Fragment>
+    <div className={classNames(['rich-text-editor', className])}>
+      <Editor commandContext={{ projectSlug }} editMode={editMode} value={text} onEdit={onEdit}
+        toolbarItems={getToolbarForResourceType(1)} />
+    </div>
   );
 };

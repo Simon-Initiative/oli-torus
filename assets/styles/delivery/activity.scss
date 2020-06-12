@@ -1,4 +1,5 @@
 .activity {
+  margin: 20px 0;
 
   &.evaluated {
     .choice {
@@ -20,6 +21,12 @@
     align-items: center;
     grid-template-rows: min-content 1fr;
     grid-gap: 8px;
+  }
+
+  .choices {
+    display: grid;
+    grid-gap: 8px;
+    grid-template-columns: 1fr;
   }
 
   .choice {

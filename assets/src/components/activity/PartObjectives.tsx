@@ -20,25 +20,36 @@ export const PartObjectives = (props: PartObjectivesProps) => {
 
   return (
     <div>
-    <div className="d-flex flex-row align-items-baseline">
-      <div className="flex-grow-1 p-0 pl-5">Learner Input Objectives</div>
-    </div>
-    <div className="d-flex flex-row align-items-baseline">
-      <div className="flex-grow-1 p-1 pl-5">
-        {partIds.toArray().map(id => (
-          <div key={id} className="d-flex flex-row align-items-baseline">
-            <div>Input-{id}:</div>
-            <Objectives
-              editMode={editMode}
-              selected={Immutable.List<ObjectiveSlug>(valueOr(objectives.get(id),
-                Immutable.List<ObjectiveSlug>()))}
-              objectives={allObjectives}
-              onEdit={objectives => onEdit(Immutable.Map<string,
-                Immutable.List<ObjectiveSlug>>({ [id]: objectives } as any))}/>
-          </div>
-        ))}
+      <h4>Learning Objectives</h4>
+      <div className="d-flex flex-row align-items-baseline">
+        <div className="flex-grow-1">
+          {partIds.size > 1
+            ? (partIds.toArray().map(id => (
+              <div key={id} className="d-flex flex-row align-items-baseline">
+                <div>Part {id}</div>
+                <Objectives
+                  editMode={editMode}
+                  selected={Immutable.List<ObjectiveSlug>(valueOr(objectives.get(id),
+                    Immutable.List<ObjectiveSlug>()))}
+                  objectives={allObjectives}
+                  onEdit={objectives => onEdit(Immutable.Map<string,
+                    Immutable.List<ObjectiveSlug>>({ [id]: objectives } as any))}/>
+              </div>
+            )))
+            : (
+              <div className="d-flex flex-row">
+                <Objectives
+                  editMode={editMode}
+                  selected={Immutable.List<ObjectiveSlug>(valueOr(objectives.get(partIds.first()),
+                    Immutable.List<ObjectiveSlug>()))}
+                  objectives={allObjectives}
+                  onEdit={objectives => onEdit(Immutable.Map<string,
+                    Immutable.List<ObjectiveSlug>>({ [partIds.first() as string]: objectives } as any))}/>
+              </div>
+            )
+          }
+        </div>
       </div>
-    </div>
     </div>
   );
 };

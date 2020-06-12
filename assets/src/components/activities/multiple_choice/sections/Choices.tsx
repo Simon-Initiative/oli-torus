@@ -36,30 +36,39 @@ export const Choices = ({ onAddChoice, onEditChoice, onRemoveChoice, editMode, m
   const incorrectChoices = choices.filter(choice => choice.id !== correctChoice.id);
 
   return (
-    <div style={{ margin: '2rem 0' }}>
+    <div className="my-4">
       <Heading title="Answer Choices"
         subtitle="One correct answer choice and as many incorrect answer choices as you like." id="choices" />
+      <Description>
+        <i className="fa fa-check text-success mr-1"></i>Correct Choice
+      </Description>
       <RichTextEditor
+        className="mb-3"
         projectSlug={projectSlug}
         key="correct" editMode={editMode} text={correctChoice.content}
-        onEdit={content => onEditChoice(correctChoice.id, content)}>
-        <Description><IconCorrect /> Correct Answer</Description>
-      </RichTextEditor>
+        onEdit={content => onEditChoice(correctChoice.id, content)} />
       {incorrectChoices.map((choice, index) =>
-        <RichTextEditor
-          projectSlug={projectSlug}
-          key={choice.id} editMode={editMode} text={choice.content}
-          onEdit={content => onEditChoice(choice.id, content)}>
+        <React.Fragment>
           <Description>
-            <CloseButton onClick={() => onRemoveChoice(choice.id)}
-              editMode={editMode} />
-            Common Misconception {index + 1}
+            <i className="fa fa-times text-danger mr-1"></i>Incorrect Choice {index + 1}
           </Description>
-        </RichTextEditor>)}
+          <div className="d-flex mb-3">
+            <RichTextEditor
+              className="flex-fill"
+              projectSlug={projectSlug}
+              key={choice.id} editMode={editMode} text={choice.content}
+              onEdit={content => onEditChoice(choice.id, content)}/>
+            <CloseButton
+              className="pl-3 pr-1"
+              onClick={() => onRemoveChoice(choice.id)}
+              editMode={editMode} />
+          </div>
+        </React.Fragment>
+      )}
       <button
+        className="btn btn-sm btn-primary my-2"
         disabled={!editMode}
-        onClick={onAddChoice}
-        className="btn btn-primary">Add incorrect answer choice
+        onClick={onAddChoice}>Add incorrect answer choice
       </button>
     </div>
   );
