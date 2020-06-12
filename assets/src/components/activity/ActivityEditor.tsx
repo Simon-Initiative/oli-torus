@@ -18,6 +18,8 @@ import { Banner } from '../messages/Banner';
 import { PartObjectives } from 'components/activity/PartObjectives';
 import { valueOr } from 'utils/common';
 
+import "./ActivityEditor.scss";
+
 export interface ActivityEditorProps extends ActivityContext {
 
 }
@@ -200,7 +202,7 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
     const partIds = parts.map((p: any) => p.id);
 
     return (
-      <div style={{ maxWidth: '800px' }}>
+      <div className="activity-editor">
         <Banner
           dismissMessage={msg => this.setState(
             { messages: this.state.messages.filter(m => msg.guid !== m.guid) })}

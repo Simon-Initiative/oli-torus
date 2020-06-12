@@ -2,7 +2,7 @@
 
   <%= render OliWeb.ProjectView, "_review.html", assigns %>
 
-  <hr class="my-4" />
+  <hr class="my-5" />
 
   <%= render OliWeb.ProjectView, "_publish.html", assigns %>
 </div>

@@ -14,7 +14,7 @@
             placeholder: "collaborator@example.edu",
             id: "input-title",
             required: true,
-            autofocus: focusHelper(f, :email, default: true) %>
+            autofocus: focusHelper(f, :email, default: false) %>
           <%= error_tag f, :email %>
             <div class="input-group-append">
               <%= submit "Send Invite",
@@ -28,12 +28,12 @@
       <% end %>
 
       <table class="table table-sm">
-        <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th></th>
-        </tr>
+        <thead class="thead-light">
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th></th>
+          </tr>
         </thead>
         <tbody>
           <%= render_many @collaborators, OliWeb.ProjectView, "_tr_collaborator.html", %{conn: @conn, as: :collaborator, project: @project} %>

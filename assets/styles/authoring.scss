@@ -2,7 +2,14 @@
  * Default authoring theme - built on top of Bootstrap 4 (https://getbootstrap.com)
  */
 
-@import 'authoring/variables';
-@import 'authoring/mixins';
-@import '../node_modules/bootstrap/scss/bootstrap';
-@import 'authoring/**/*.scss';
+ html {
+  height: 100vh;
+}
+
+.authoring {
+  @import 'authoring/variables';
+  @import 'authoring/mixins';
+  @import '../node_modules/bootstrap/scss/bootstrap';
+  @import 'authoring/**/*.scss';
+}
+

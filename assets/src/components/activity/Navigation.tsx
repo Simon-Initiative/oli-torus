@@ -1,14 +1,14 @@
 import { ProjectSlug, ResourceSlug } from 'data/types';
 import { SiblingActivity, ActivityContext } from 'data/content/activity';
 
-const Sibling = ({ sibling, prefix, projectSlug, resourceSlug }
-  : { sibling: SiblingActivity | null, prefix: string,
+const Sibling = ({ sibling, children, projectSlug, resourceSlug }
+  : { sibling: SiblingActivity | null, children: any,
     projectSlug: ProjectSlug, resourceSlug: ResourceSlug }) => {
 
   if (sibling === null) {
     return (
       <li className="page-item disabled">
-        <a className="page-link" href="#">{prefix}</a>
+        <a className="page-link" href="#">{children}</a>
       </li>
     );
   }
@@ -16,7 +16,7 @@ const Sibling = ({ sibling, prefix, projectSlug, resourceSlug }
     <li className="page-item">
       <a className="page-link"
         href={`/project/${projectSlug}/resource/${resourceSlug}/activity/${sibling.activitySlug}`}>
-        {prefix}
+        {children}
       </a>
     </li>
   );
@@ -28,13 +28,13 @@ export const Navigation = (props: ActivityContext) => {
   const { projectSlug, resourceSlug, previousActivity, nextActivity } = props;
 
   return (
-    <div className="d-flex justify-content-between" style={ { paddingRight: '20px' } }>
+    <div className="d-flex justify-content-between">
       <nav aria-label="navigation">
         <ul className="pagination">
           <li className="page-item">
-            <a className="page-link"
+            <a className="btn btn-outline-primary"
               href={`/project/${projectSlug}/resource/${resourceSlug}`}>
-              &lt;&lt; Back to Page
+              <i className="fas fa-arrow-left"></i> Return to Page
             </a>
           </li>
         </ul>
@@ -42,9 +42,13 @@ export const Navigation = (props: ActivityContext) => {
       <nav aria-label="navigation">
         <ul className="pagination">
           <Sibling projectSlug={projectSlug} resourceSlug={resourceSlug}
-            sibling={previousActivity} prefix="< Previous Activity"/>
+            sibling={previousActivity}>
+            <i className="fas fa-arrow-circle-left"></i> Previous Activity
+          </Sibling>
           <Sibling projectSlug={projectSlug} resourceSlug={resourceSlug}
-            sibling={nextActivity} prefix="Next Activity >"/>
+            sibling={nextActivity}>
+            Next Activity <i className="fas fa-arrow-circle-right"></i>
+          </Sibling>
         </ul>
       </nav>
     </div>

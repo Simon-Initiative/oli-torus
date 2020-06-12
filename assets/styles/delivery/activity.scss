@@ -1,0 +1,155 @@
+.activity {
+
+  &.evaluated {
+    .choice {
+      cursor: default;
+
+      &:hover {
+        background-color: initial;
+
+        &.selected {
+          background-color: $choice-selected-bg;
+        }
+      }
+    }
+  }
+
+  .activity-content {
+    display: grid;
+    flex: 1;
+    align-items: center;
+    grid-template-rows: min-content 1fr;
+    grid-gap: 8px;
+  }
+
+  .choice {
+    display: inline-flex;
+    align-items: top;
+    border-width: 1px 2px 3px 1px;
+    padding: 12px 16px;
+    border-style: solid;
+    border-color: #e5e5e5;
+    cursor: pointer;
+
+    &:hover {
+      background-color: lighten($choice-selected-bg, 3%);
+    }
+
+    &.selected {
+      color: $choice-selected-color;
+      background-color: $choice-selected-bg;
+      border-color: $choice-selected-border-color;
+
+      .choice-index {
+        border: 2px solid $choice-selected-color;
+        background-color: $choice-selected-color;
+        color: $white;
+      }
+    }
+
+    .choice-index {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #e5e5e5;
+      color: #afafaf;
+      height: 30px;
+      width: 30px;
+      font-weight: bold;
+      margin-right: 16px;
+    }
+
+  }
+
+  .feedback {
+    display: inline-flex;
+    border-width: 2px 2px 4px;
+    padding: 12px 16px;
+    border-style: none;
+
+    &.correct {
+      background-color: $feedback-correct-bg;
+
+      .result {
+        border-color: $feedback-correct-color;
+        color: $feedback-correct-color;
+
+        .score {
+          color: $feedback-correct-color;
+        }
+      }
+    }
+
+    &.incorrect {
+      background-color: $feedback-incorrect-bg;
+
+      .result {
+        border-color: $feedback-incorrect-color;
+        color: $feedback-incorrect-color;
+
+        .score {
+          color: $feedback-incorrect-color;
+        }
+      }
+    }
+
+    &.error {
+      background-color: $feedback-error-bg;
+    }
+
+    .result {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid $gray-500;
+      border-radius: 2px;
+      color: $gray-600;
+      height: 24px;
+      width: 50px;
+      margin-right: 16px;
+      font-weight: bold;
+
+      .score {
+        margin-right: 3px;
+      }
+    }
+  }
+
+  .hints {
+    padding: 16px;
+    border: 1px solid $gray-400;
+    border-radius: 5px;
+    box-shadow: 0 1px 2px 0 $gray-400;
+    position: relative;
+
+    .hints-adornment {
+      position: absolute;
+      left: 0;
+      bottom: -3px;
+      border-top: 1px solid $gray-400;
+      height: 6px;
+      width: 100%;
+    }
+
+    h6 {
+      font-weight: 600;
+    }
+
+    .hints-list {
+      display: block;
+    }
+
+    .hint {
+      padding: 12px 16px;
+      border: 1px solid $hint-border-color;
+      border-radius: 4px;
+      background-color: $hint-bg;
+
+      i {
+        color: $hint-border-color;
+        font-weight: 600;
+        font-size: 1.3em;
+      }
+    }
+  }
+}

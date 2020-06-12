@@ -2,7 +2,13 @@
  * Default delivery theme - built on top of Bootstrap 4 (https://getbootstrap.com)
  */
 
-@import 'delivery/variables';
-@import 'delivery/mixins';
-@import '../node_modules/bootstrap/scss/bootstrap';
-@import 'delivery/**/*.scss';
+html {
+  height: 100vh;
+}
+
+.delivery {
+  @import 'delivery/variables';
+  @import 'delivery/mixins';
+  @import '../node_modules/bootstrap/scss/bootstrap';
+  @import 'delivery/**/*.scss';
+}

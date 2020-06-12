@@ -150,7 +150,7 @@ export class TestModeHandler extends React.Component<TestModelHandlerProps, Test
 
   render() {
     return (
-      <div ref={this.ref}>
+      <div className="delivery" ref={this.ref}>
         {this.props.children}
       </div>
     );

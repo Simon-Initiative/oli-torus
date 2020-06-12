@@ -1,4 +1,5 @@
-@import 'authoring';
+@import 'authoring/mixins';
+@import 'authoring/variables';
 
 .LoadingSpinner {
   text-align: center;

@@ -17,12 +17,11 @@
   <div class="row mt-4">
     <div class="col-12">
       <p class="mb-3">
-        Last Reviewed: <%= (hd @qa_reviews).inserted_at |> Timex.format!("{relative}", :relative) %>
-        <br />
+        Last reviewed <strong><%= (hd @qa_reviews).inserted_at |> Timex.format!("{relative}", :relative) %></strong>.
         Review found <strong><%= length @warnings %></strong> potential improvement <%= if (length @warnings) == 1 do "opportunity" else "opportunities" end %>.
       </p>
 
-      <h5>Filters</h5>
+      <h3>Filters</h3>
       <div class="d-flex">
         <%= for type <- @warning_types do %>
           <div class="mr-2">
@@ -65,16 +64,17 @@
         <div class="review-cards">
           <%= for {warning, index} <- Enum.with_index(@warnings) do %>
             <div class="review-card<%= warning_selected?(@selected_review, warning, index) %>" id="<%= warning.id %>">
-              <h5>
-                <%= link to: Routes.project_path(@conn, :dismiss_warning, @project, warning_id: warning.id), class: "review-dismiss", method: :delete do %>
-                  <span data-dismiss class="review-dismiss badge badge-light">
-                    Dismiss <i class="material-icons-outlined icon">close</i>
-                  </span>
+              <h4 class="d-flex">
+                <div>
+                  Improvement opportunity on <%= resource_link(@activity_to_page_slug_map, warning.revision.slug, warning.revision.title, @conn, @project) %>
+                </div>
+                <div class="flex-fill"></div>
+                <%= link to: Routes.project_path(@conn, :dismiss_warning, @project, warning_id: warning.id), class: "btn btn-sm btn-secondary", method: :delete do %>
+                    <i class="fa fa-times"></i> Dismiss
                 <% end %>
-                Improvement opportunity on <%= resource_link(@activity_to_page_slug_map, warning.revision.slug, warning.revision.title, @conn, @project) %>
-              </h5>
+              </h4>
               <div class="bd-callout bd-callout-info">
-                <h6><%= title_case(warning.subtype) %> on <%= warning.revision.resource_type.type %></h6>
+                <h5><%= title_case(warning.subtype) %> on <%= warning.revision.resource_type.type %></h5>
                 <%= explanatory_text(warning.subtype) %>
               </div>
               <div class="alert alert-info">
