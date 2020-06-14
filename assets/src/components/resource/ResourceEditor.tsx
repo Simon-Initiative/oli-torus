@@ -197,19 +197,14 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
             onTitleEdit={onTitleEdit}
             editMode={this.state.editMode}>
             <PersistenceStatus persistence={this.state.persistence}/>
-            <UndoRedo
-              canRedo={this.state.undoable.redoStack.size > 0}
-              canUndo={this.state.undoable.undoStack.size > 0}
-              onUndo={this.undo} onRedo={this.redo}/>
-            <AddResourceContent
-              editMode={this.state.editMode}
-              onAddItem={onAddItem}
-              editorMap={props.editorMap}
-              resourceContext={props} />
             <PreviewButton
               projectSlug={props.projectSlug}
               resourceSlug={props.resourceSlug}
               persistence={this.state.persistence} />
+            <UndoRedo
+              canRedo={this.state.undoable.redoStack.size > 0}
+              canUndo={this.state.undoable.undoStack.size > 0}
+              onUndo={this.undo} onRedo={this.redo}/>
           </TitleBar>
           <div className="learning-objectives-label">Learning Objectives</div>
           <Objectives
@@ -218,9 +213,16 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
             objectives={this.state.allObjectives}
             onEdit={objectives => this.update({ objectives })} />
           <div className="d-flex flex-row align-items-start">
-            <Outline {...props} editMode={this.state.editMode}
-              activities={this.state.activities}
-              onEdit={c => onEdit(c)} content={this.state.undoable.current.content}/>
+            <div className="d-flex flex-column">
+              <Outline {...props} editMode={this.state.editMode}
+                activities={this.state.activities}
+                onEdit={c => onEdit(c)} content={this.state.undoable.current.content}/>
+              <AddResourceContent
+                editMode={this.state.editMode}
+                onAddItem={onAddItem}
+                editorMap={props.editorMap}
+                resourceContext={props} />
+            </div>
             <Editors {...props} editMode={this.state.editMode}
               activities={this.state.activities}
               onRemove={index => onEdit(this.state.undoable.current.content.delete(index))}

@@ -4,7 +4,7 @@ import { RichTextEditor } from 'components/editor/RichTextEditor';
 import { ModelEditorProps, Choice } from '../schema';
 import { Response, RichText } from '../../types';
 import { Description } from 'components/misc/Description';
-import { IconCorrect } from 'components/misc/IconCorrect';
+import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 import { CloseButton } from 'components/misc/CloseButton';
 import { ProjectSlug } from 'data/types';
 
@@ -40,7 +40,7 @@ export const Choices = ({ onAddChoice, onEditChoice, onRemoveChoice, editMode, m
       <Heading title="Answer Choices"
         subtitle="One correct answer choice and as many incorrect answer choices as you like." id="choices" />
       <Description>
-        <i className="fa fa-check text-success mr-1"></i>Correct Choice
+        <IconCorrect /> Correct Choice
       </Description>
       <RichTextEditor
         className="mb-3"
@@ -50,7 +50,7 @@ export const Choices = ({ onAddChoice, onEditChoice, onRemoveChoice, editMode, m
       {incorrectChoices.map((choice, index) =>
         <React.Fragment>
           <Description>
-            <i className="fa fa-times text-danger mr-1"></i>Incorrect Choice {index + 1}
+            <IconIncorrect /> Incorrect Choice {index + 1}
           </Description>
           <div className="d-flex mb-3">
             <RichTextEditor

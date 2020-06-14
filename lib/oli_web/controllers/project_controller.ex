@@ -45,7 +45,7 @@ defmodule OliWeb.ProjectController do
   def unpublished(pub), do: pub.published == false
 
   def resource_editor(conn, _project_params) do
-    render conn, "resource_editor.html", title: "Page Editor", active: :resource_editor
+    render conn, "resource_editor.html", title: "Editor", active: :resource_editor
   end
 
   def publish(conn, project_params) do

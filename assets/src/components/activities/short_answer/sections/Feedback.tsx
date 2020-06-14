@@ -4,7 +4,7 @@ import { RichTextEditor } from 'components/editor/RichTextEditor';
 import { ModelEditorProps } from '../schema';
 import { RichText, Response } from '../../types';
 import { Description } from 'components/misc/Description';
-import { IconCorrect } from 'components/misc/IconCorrect';
+import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 import { parseInputFromRule } from '../utils';
 import { ProjectSlug } from 'data/types';
 
@@ -23,7 +23,6 @@ interface ItemProps extends FeedbackProps {
 export const Item = (props: ItemProps) => {
 
   const { response, editMode, onEditResponse } = props;
-  const style = { marginTop: '5px', width: '90%', display: 'inline' };
   let details;
   const [value, setValue] = useState(parseInputFromRule(response.rule));
 
@@ -45,50 +44,48 @@ export const Item = (props: ItemProps) => {
 
   if (response.score === 1) {
     details = (
-      <React.Fragment>
+      <div className="my-2">
         <IconCorrect /> Feedback for Correct Answer:
         <input type={props.model.inputType === 'numeric' ? 'number' : 'text'}
-          className="form-control"
+          className="form-control my-2"
+          placeholder="Enter correct answer..."
           onChange={(e: any) => onEditRule(e.target.value)}
-          value={value}
-          style={style} />
-      </React.Fragment>
+          value={value} />
+      </div>
     );
   } else if (value === '.*') {
     details = (
-      <React.Fragment>
-        Feedback for any other Incorrect Answer
-      </React.Fragment>
+      <div className="my-2">
+        <IconIncorrect /> Feedback for any other Incorrect Answer
+      </div>
     );
   } else {
     details = (
-      <React.Fragment>
+      <div className="my-2">
         Feedback for Incorrect Answer:
         <input type={props.model.inputType === 'numeric' ? 'number' : 'text'}
           className="form-control"
           onChange={(e: any) => onEditRule(e.target.value)}
-          value={value}
-          style={style} />
+          value={value} />
         <button className="btn btn-sm" onClick={() => props.onRemoveResponse(response.id)}>
           <i style={{ color: '#55C273' }} className="material-icons-outlined icon">
             delete-forever
           </i>
         </button>
-      </React.Fragment>
+      </div>
     );
   }
 
   return (
     <React.Fragment key={response.id}>
+      <Description>
+        {details}
+      </Description>
       <RichTextEditor
         projectSlug={props.projectSlug}
         editMode={editMode}
         text={response.feedback.content}
-        onEdit={content => onEditResponse(response.id, content)}>
-          <Description>
-            {details}
-          </Description>
-      </RichTextEditor>
+        onEdit={content => onEditResponse(response.id, content)}/>
     </React.Fragment>
   );
 };
@@ -99,14 +96,14 @@ export const Feedback = (props: FeedbackProps) => {
   const { authoring: { parts } } = model;
 
   return (
-    <div style={{ margin: '2rem 0' }}>
+    <div className="my-3">
       <Heading title="Feedback" subtitle="Providing feedback when a student answers a
         question is one of the best ways to reinforce their understanding." id="feedback" />
 
       {parts[0].responses.map((response: Response) =>
         <Item key={response.id} {...props} response={response} />)}
 
-      <button className="btn btn-primary" disabled={!editMode} onClick={onAddResponse}>
+      <button className="btn btn-sm btn-primary my-2" disabled={!editMode} onClick={onAddResponse}>
         Add Feedback
       </button>
     </div>

@@ -4,7 +4,7 @@ import { RichTextEditor } from 'components/editor/RichTextEditor';
 import { ModelEditorProps } from '../schema';
 import { RichText } from '../../types';
 import { Description } from 'components/misc/Description';
-import { IconCorrect } from 'components/misc/IconCorrect';
+import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 import { ProjectSlug } from 'data/types';
 import { classNames } from 'utils/classNames'
 
@@ -29,7 +29,7 @@ export const Feedback = ({ onEditResponse, model, editMode, projectSlug }: Feedb
         question is one of the best ways to reinforce their understanding." id="feedback" />
       <div className="mb-3" key={correctResponse.id}>
         <Description>
-          <i className="fa fa-check text-success mr-1"></i>Feedback for Correct Choice
+          <IconCorrect /> Feedback for Correct Choice
         </Description>
         <RichTextEditor projectSlug={projectSlug}
           editMode={editMode} text={correctResponse.feedback.content}
@@ -38,7 +38,7 @@ export const Feedback = ({ onEditResponse, model, editMode, projectSlug }: Feedb
       {incorrectResponses.map((response, index) =>
         <div className="mb-3">
           <Description>
-            <i className="fa fa-times text-danger mr-1"></i>Feedback for Incorrect Choice {index + 1}
+            <IconIncorrect /> Feedback for Incorrect Choice {index + 1}
           </Description>
           <RichTextEditor projectSlug={projectSlug}
             key={response.id} editMode={editMode} text={response.feedback.content}
