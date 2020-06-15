@@ -10,8 +10,7 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 
     <!-- Theme CSS (contains all bootstrap styles as well as custom styles for a specific theme) -->
-
-    <link id="delivery-theme" rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/authoring_theme.css") %>"/>
+    <link id="authoring-theme" rel="stylesheet" href="<%= get_theme(@conn) %>"/>
     <link id="delivery-theme" rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/delivery_theme.css") %>"/>
 
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
