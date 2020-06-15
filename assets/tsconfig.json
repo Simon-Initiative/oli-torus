@@ -21,7 +21,8 @@
       },
       "types": [
         "node",
-        "jest"
+        "jest",
+        "jquery"
       ]
   },
   "include": [

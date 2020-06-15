@@ -1,43 +1,15 @@
-<style>
-#sidebar {
-  flex: 1;
-  width: 160px;
-  padding: 24px;
-  border-right: 1px solid rgba(51, 51, 51, .15);
-}
-#sidebar a {
-  display: flex;
-  flex-direction: columns;
-  color: black;
-  margin: 20px 0;
-}
-#sidebar .user {
-  margin-bottom: 40px;
-}
-#sidebar .category {
-  font-size: 12px;
-  color: #b3b3b3;
-  user-select: none;
-  margin-top: 20px;
-}
-#sidebar .active {
-  font-weight: bold;
-}
-#sidebar .account-link {
-  margin: 0;
-}
-</style>
-
-<div id="sidebar">
+<div class="workspace-sidebar">
   <div class="user">
     <%= account_link @conn %>
+    <%= sidebar_link @conn, "Projects", :projects, to: Routes.workspace_path(@conn, :projects) %>
   </div>
-  <p class="category">Build</p>
-  <%= sidebar_link @conn, :overview, "Overview" %>
-  <%= sidebar_link @conn, :objectives, "Objectives" %>
-  <%= link "Curriculum", to: Routes.curriculum_path(@conn, :index, @project) %>
-  <%= sidebar_link @conn, :publish, "Publish" %>
+  <p class="category">Create</p>
+  <%= sidebar_link @conn, "Overview", :overview, to: Routes.project_path(@conn, :overview, @project) %>
+  <%= sidebar_link @conn, "Objectives", :objectives, to: Routes.project_path(@conn, :objectives, @project) %>
+  <%= sidebar_link @conn, "Curriculum", :curriculum, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, @project.slug) %>
+
+  <%= sidebar_link @conn, "Publish", :publish, to: Routes.project_path(@conn, :publish, @project) %>
   <hr>
   <p class="category">Improve</p>
-  <%= sidebar_link @conn, :insights, "Insights" %>
+  <%= sidebar_link @conn, "Insights", :insights, to: Routes.project_path(@conn, :insights, @project) %>
 </div>

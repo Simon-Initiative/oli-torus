@@ -2,6 +2,7 @@ const webpack = require('webpack');
 const path = require('path');
 const glob = require('glob');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const globImporter = require('node-sass-glob-importer');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
@@ -12,10 +13,12 @@ const populateEntries = () => {
 
   // These are the non-activity bundles
   const initialEntries = {
-    app: ['./js/app.js'],
+    app: ['./src/phoenix/app.ts'],
     components: ['./src/components.tsx'],
     resourceeditor: ['./src/components/resource/ResourceEditorApp.tsx'],
     activityeditor: ['./src/components/activity/ActivityEditorApp.tsx'],
+    authoring_theme: ['./styles/authoring.scss'],
+    delivery_theme: ['./styles/delivery.scss'],
   };
 
   const manifests = glob.sync("./src/components/activities/*/manifest.json", {});
@@ -67,13 +70,16 @@ module.exports = (env, options) => ({
     path: path.resolve(__dirname, '../priv/static/js')
   },
   resolve: {
-    extensions: ['.ts', '.tsx', '.js', '.jsx'],
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.scss'],
     // Add webpack aliases for top level imports
     alias: {
       components: path.resolve(__dirname, 'src/components'),
+      hooks: path.resolve(__dirname, 'src/hooks'),
+      actions: path.resolve(__dirname, 'src/actions'),
       data: path.resolve(__dirname, 'src/data'),
       state: path.resolve(__dirname, 'src/state'),
       utils: path.resolve(__dirname, 'src/utils'),
+      styles: path.resolve(__dirname, 'styles'),
     },
   },
   module: {
@@ -86,8 +92,25 @@ module.exports = (env, options) => ({
         }
       },
       {
-        test: /\.css$/,
-        use: [MiniCssExtractPlugin.loader, 'css-loader']
+        test: /\.[s]?css$/,
+        use: [
+          MiniCssExtractPlugin.loader,
+          {
+            loader: 'css-loader'
+          },
+          {
+              loader: 'sass-loader',
+              options: {
+                sassOptions: {
+                  includePaths: [
+                      path.join(__dirname, 'styles'),
+                  ],
+                  importer: globImporter(),
+                },
+                sourceMap: true
+              }
+          }
+        ],
       },
       {
         test: /\.jsx$/,
@@ -118,7 +141,7 @@ module.exports = (env, options) => ({
     new webpack.ProvidePlugin({
       React: 'react',
     }),
-    new MiniCssExtractPlugin({ filename: '../css/app.css' }),
+    new MiniCssExtractPlugin({ filename: '../css/[name].css' }),
     new CopyWebpackPlugin([{ from: 'static/', to: '../' }]),
   ]
 });

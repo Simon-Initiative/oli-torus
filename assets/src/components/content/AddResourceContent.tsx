@@ -1,11 +1,13 @@
 import React from 'react';
 import { ResourceContent, Activity, ResourceContext, ActivityReference,
-  ActivityPurpose, createDefaultStructuredContent } from 'data/content/resource';
+  createDefaultStructuredContent } from 'data/content/resource';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { ActivityModelSchema } from 'components/activities/types';
 import { invokeCreationFunc } from 'components/activities/creation';
 import * as Persistence from 'data/persistence/activity';
 import guid from 'utils/guid';
+
+import './AddResourceContent.scss';
 
 type AddCallback = (content: ResourceContent, a? : Activity) => void;
 
@@ -30,7 +32,7 @@ export const AddResourceContent = (
           type: 'activity-reference',
           id: guid(),
           activitySlug: result.revisionSlug,
-          purpose: ActivityPurpose.none,
+          purpose: 'none',
           children: [],
         };
 
@@ -64,10 +66,10 @@ export const AddResourceContent = (
     });
 
   return (
-    <div className="dropdown">
-      <button className={`btn dropdown-toggle ${editMode ? '' : 'disabled'}`} type="button"
+    <div className="add-resource-content dropdown mx-1">
+      <button className={`btn btn-light dropdown-toggle ${editMode ? '' : 'disabled'}`} type="button"
         id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        +
+        <i className="fa fa-plus"></i> Add
       </button>
       <div className="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
         {[content, ...activityEntries]}

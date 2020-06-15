@@ -1,0 +1,17 @@
+{
+  "id": "oli_short_answer",
+  "friendlyName": "Single Response",
+  "description": "A question with a single response input following the stem",
+  "delivery": {
+    "element": "oli-short-answer-delivery",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "oli-short-answer-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "schemaPruning": {
+    "type": "keys",
+    "keys": ["feedback"]
+  }
+}

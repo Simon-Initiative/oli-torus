@@ -1,6 +1,6 @@
 import * as Immutable from 'immutable';
 import React from 'react';
-import { ResourceContent, Activity, ResourceType } from 'data/content/resource';
+import { ResourceContent, Activity, ResourceType, ActivityPurposes, ContentPurposes } from 'data/content/resource';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { UnsupportedActivity } from './UnsupportedActivity';
 import { getToolbarForResourceType } from './toolbar';
@@ -12,14 +12,14 @@ import { TestModeHandler, defaultState } from './TestModeHandler';
 export type EditorsProps = {
   editMode: boolean,              // Whether or not we can edit
   content: Immutable.List<ResourceContent>,     // Content of the resource
-  onEdit: (content: Immutable.List<ResourceContent>) => void,
+  onEdit: (content: ResourceContent, index: number) => void,
+  onRemove: (index: number) => void,
   editorMap: ActivityEditorMap,   // Map of activity types to activity elements
   graded: boolean,
   activities: Immutable.Map<string, Activity>,
   projectSlug: ProjectSlug,
   resourceSlug: ResourceSlug,
 };
-
 
 
 // The list of editors
@@ -41,6 +41,7 @@ export const Editors = (props: EditorsProps) => {
         editMode={editMode}
         content={content}
         onEdit={onEdit}
+        projectSlug={projectSlug}
         toolbarItems={getToolbarForResourceType(
           graded ? ResourceType.assessment : ResourceType.page)}/>, 'Content'];
     }
@@ -91,15 +92,19 @@ export const Editors = (props: EditorsProps) => {
 
   };
 
+
   const editors = content.map((c, index) => {
 
-    const onEdit = (u : ResourceContent) => props.onEdit(content.set(index, u));
-    const onRemove = () => props.onEdit(content.remove(index));
+    const onEdit = (u : ResourceContent) => props.onEdit(u, index);
+    const onRemove = () => props.onRemove(index);
 
     const [editor, label] = createEditor(c, onEdit);
 
     const editingLink = c.type === 'activity-reference'
       ? `/project/${projectSlug}/resource/${resourceSlug}/activity/${c.activitySlug}` : undefined;
+
+    const purposes = c.type === 'activity-reference'
+      ? ActivityPurposes : ContentPurposes;
 
     return (
       <ResourceContentFrame
@@ -107,7 +112,13 @@ export const Editors = (props: EditorsProps) => {
         allowRemoval={content.size > 1}
         editMode={editMode}
         label={label}
+        purpose={c.purpose}
+        purposes={purposes}
         editingLink={editingLink}
+        onEditPurpose={(purpose: string) => {
+          const u = Object.assign(c, { purpose });
+          props.onEdit(u, index);
+        }}
         onRemove={onRemove}>
 
         {editor}

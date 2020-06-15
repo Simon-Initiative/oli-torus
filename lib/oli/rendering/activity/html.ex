@@ -32,10 +32,10 @@ defmodule Oli.Rendering.Activity.Html do
         activity_html = ["<#{tag} class=\"activity\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{model_json}\"></#{tag}>\n"]
 
         case purpose do
-          "None" ->
+          "none" ->
             activity_html
           _ ->
-            ["<h4 class=\"activity-purpose\">", purpose, "</h4>", activity_html]
+            ["<h4 class=\"activity-purpose\">", Oli.Utils.Purposes.label_for(purpose), "</h4>", activity_html]
         end
     end
   end

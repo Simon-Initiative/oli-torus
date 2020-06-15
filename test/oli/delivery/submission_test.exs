@@ -16,9 +16,9 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         "authoring" => %{
           "parts" => [
             %{"id" => "1", "responses" => [
-              %{"match" => "a", "score" => 10, "id" => "r1", "feedback" => %{"id" => "1", "content" => "yes"}},
-              %{"match" => "b", "score" => 1, "id" => "r2", "feedback" => %{"id" => "2", "content" => "almost"}},
-              %{"match" => "c", "score" => 0, "id" => "r3", "feedback" => %{"id" => "3", "content" => "no"}}
+              %{"rule" => "input like {a}", "score" => 10, "id" => "r1", "feedback" => %{"id" => "1", "content" => "yes"}},
+              %{"rule" => "input like {b}", "score" => 1, "id" => "r2", "feedback" => %{"id" => "2", "content" => "almost"}},
+              %{"rule" => "input like {c}", "score" => 0, "id" => "r3", "feedback" => %{"id" => "3", "content" => "no"}}
             ], "scoringStrategy" => "best", "evaluationStrategy" => "regex"}
           ]
         }
@@ -138,9 +138,9 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         "authoring" => %{
           "parts" => [
             %{"id" => "1", "responses" => [
-              %{"match" => "a", "score" => 10, "id" => "r1", "feedback" => %{"id" => "1", "content" => "yes"}},
-              %{"match" => "b", "score" => 1, "id" => "r2", "feedback" => %{"id" => "2", "content" => "almost"}},
-              %{"match" => "c", "score" => 0, "id" => "r3", "feedback" => %{"id" => "3", "content" => "no"}}
+              %{"rule" => "input like {a}", "score" => 10, "id" => "r1", "feedback" => %{"id" => "1", "content" => "yes"}},
+              %{"rule" => "input like {b}", "score" => 1, "id" => "r2", "feedback" => %{"id" => "2", "content" => "almost"}},
+              %{"rule" => "input like {c}", "score" => 0, "id" => "r3", "feedback" => %{"id" => "3", "content" => "no"}}
             ], "scoringStrategy" => "best", "evaluationStrategy" => "regex"}
           ]
         }
@@ -226,14 +226,14 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         "authoring" => %{
           "parts" => [
             %{"id" => "1", "responses" => [
-              %{"match" => "a", "score" => 10, "id" => "r1", "feedback" => %{"id" => "1", "content" => "yes"}},
-              %{"match" => "b", "score" => 1, "id" => "r2", "feedback" => %{"id" => "2", "content" => "almost"}},
-              %{"match" => "c", "score" => 0, "id" => "r3", "feedback" => %{"id" => "3", "content" => "no"}}
+              %{"rule" => "input like {a}", "score" => 10, "id" => "r1", "feedback" => %{"id" => "1", "content" => "yes"}},
+              %{"rule" => "input like {b}", "score" => 1, "id" => "r2", "feedback" => %{"id" => "2", "content" => "almost"}},
+              %{"rule" => "input like {c}", "score" => 0, "id" => "r3", "feedback" => %{"id" => "3", "content" => "no"}}
             ], "scoringStrategy" => "best", "evaluationStrategy" => "regex"},
             %{"id" => "2", "responses" => [
-              %{"match" => "a", "score" => 2, "id" => "r1", "feedback" => %{"id" => "4", "content" => "yes"}},
-              %{"match" => "b", "score" => 1, "id" => "r2", "feedback" => %{"id" => "5", "content" => "almost"}},
-              %{"match" => "c", "score" => 0, "id" => "r3", "feedback" => %{"id" => "6", "content" => "no"}}
+              %{"rule" => "input like {a}", "score" => 2, "id" => "r1", "feedback" => %{"id" => "4", "content" => "yes"}},
+              %{"rule" => "input like {b}", "score" => 1, "id" => "r2", "feedback" => %{"id" => "5", "content" => "almost"}},
+              %{"rule" => "input like {c}", "score" => 0, "id" => "r3", "feedback" => %{"id" => "6", "content" => "no"}}
             ], "scoringStrategy" => "best", "evaluationStrategy" => "regex"}
           ]
         }
@@ -322,9 +322,10 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       refute updated_attempt.date_evaluated == nil
 
       # verify that the submission did roll up to the activity attempt
+      # with the fact that the scoring strategy defaults to best
       updated_attempt = Oli.Repo.get!(ActivityAttempt, activity_attempt.id)
-      assert updated_attempt.score == 12
-      assert updated_attempt.out_of == 12
+      assert updated_attempt.score == 10
+      assert updated_attempt.out_of == 10
       refute updated_attempt.date_evaluated == nil
 
     end

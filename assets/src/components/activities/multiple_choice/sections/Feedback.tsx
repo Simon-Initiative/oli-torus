@@ -4,12 +4,15 @@ import { RichTextEditor } from 'components/editor/RichTextEditor';
 import { ModelEditorProps } from '../schema';
 import { RichText } from '../../types';
 import { Description } from 'components/misc/Description';
-import { IconCorrect } from 'components/misc/IconCorrect';
+import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
+import { ProjectSlug } from 'data/types';
+import { classNames } from 'utils/classNames';
 
 interface FeedbackProps extends ModelEditorProps {
   onEditResponse: (id: string, content: RichText) => void;
+  projectSlug: ProjectSlug;
 }
-export const Feedback = ({ onEditResponse, model, editMode }: FeedbackProps) => {
+export const Feedback = ({ onEditResponse, model, editMode, projectSlug }: FeedbackProps) => {
 
   const { authoring: { parts } } = model;
 
@@ -21,20 +24,26 @@ export const Feedback = ({ onEditResponse, model, editMode }: FeedbackProps) => 
     .filter(r => r.id !== correctResponse.id);
 
   return (
-    <div style={{ margin: '2rem 0' }}>
+    <div className={classNames(['feedback'])}>
       <Heading title="Answer Choice Feedback" subtitle="Providing feedback when a student answers a
         question is one of the best ways to reinforce their understanding." id="feedback" />
-      <React.Fragment key={correctResponse.id}>
-        <RichTextEditor editMode={editMode} text={correctResponse.feedback.content}
-          onEdit={content => onEditResponse(correctResponse.id, content)}>
-            <Description><IconCorrect /> Feedback for Correct Answer</Description>
-        </RichTextEditor>
-      </React.Fragment>
+      <div className="mb-3" key={correctResponse.id}>
+        <Description>
+          <IconCorrect /> Feedback for Correct Choice
+        </Description>
+        <RichTextEditor projectSlug={projectSlug}
+          editMode={editMode} text={correctResponse.feedback.content}
+          onEdit={content => onEditResponse(correctResponse.id, content)}/>
+      </div>
       {incorrectResponses.map((response, index) =>
-        <RichTextEditor key={response.id} editMode={editMode} text={response.feedback.content}
-          onEdit={content => onEditResponse(response.id, content)}>
-          <Description>Feedback for Common Misconception {index + 1}</Description>
-        </RichTextEditor>)}
+        <div className="mb-3">
+          <Description>
+            <IconIncorrect /> Feedback for Incorrect Choice {index + 1}
+          </Description>
+          <RichTextEditor projectSlug={projectSlug}
+            key={response.id} editMode={editMode} text={response.feedback.content}
+            onEdit={content => onEditResponse(response.id, content)}/>
+        </div>)}
     </div>
   );
 };

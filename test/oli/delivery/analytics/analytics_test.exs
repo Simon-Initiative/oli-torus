@@ -19,9 +19,9 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
     Oli.Publishing.publish_project(seeds.project)
     {:ok, %{
       seeds: seeds,
-      activity_query: ByActivity.query_against_project_id(seeds.project.id),
-      objective_query: ByObjective.query_against_project_id(seeds.project.id),
-      page_query: ByPage.query_against_project_id(seeds.project.id)
+      activity_query: ByActivity.query_against_project_slug(seeds.project.slug),
+      objective_query: ByObjective.query_against_project_slug(seeds.project.slug),
+      page_query: ByPage.query_against_project_slug(seeds.project.slug)
     }}
   end
 

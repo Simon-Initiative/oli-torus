@@ -13,6 +13,8 @@ defmodule Oli.Rendering.Content do
   @type next :: (() -> String.t())
   @type children :: [%{}]
 
+  @callback example(%Context{}, next, %{}) :: [any()]
+  @callback learn_more(%Context{}, next, %{}) :: [any()]
   @callback text(%Context{}, %{}) :: [any()]
   @callback p(%Context{}, next, %{}) :: [any()]
   @callback h1(%Context{}, next, %{}) :: [any()]
@@ -43,6 +45,16 @@ defmodule Oli.Rendering.Content do
   Renders an Oli content element that contains children.
   Returns an IO list of raw html strings to be futher processed by Phoenix/BEAM writev.
   """
+  def render(%Context{} = context, %{"type" => "content", "children" => children, "purpose" => "example"} = element, writer) do
+    next = fn -> Enum.map(children, fn child -> render(context, child, writer) end) end
+    writer.example(context, next, element)
+  end
+
+  def render(%Context{} = context, %{"type" => "content", "children" => children, "purpose" => "learnmore"} = element, writer) do
+    next = fn -> Enum.map(children, fn child -> render(context, child, writer) end) end
+    writer.learn_more(context, next, element)
+  end
+
   def render(%Context{} = context, %{"type" => "content", "children" => children}, writer) do
     Enum.map(children, fn child -> render(context, child, writer) end)
   end

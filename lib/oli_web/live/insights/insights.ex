@@ -2,11 +2,11 @@ defmodule OliWeb.Insights do
   use Phoenix.LiveView
   alias OliWeb.Insights.{TableHeader, TableRow}
 
-  def mount(_params, %{ "project_id" => project_id } = _session, socket) do
+  def mount(_params, %{ "project_slug" => project_slug } = _session, socket) do
     {:ok, assign(socket,
-      by_page_rows: Oli.Analytics.ByPage.query_against_project_id(project_id),
-      by_activity_rows: Oli.Analytics.ByActivity.query_against_project_id(project_id),
-      by_objective_rows: Oli.Analytics.ByObjective.query_against_project_id(project_id),
+      by_page_rows: Oli.Analytics.ByPage.query_against_project_slug(project_slug),
+      by_activity_rows: Oli.Analytics.ByActivity.query_against_project_slug(project_slug),
+      by_objective_rows: Oli.Analytics.ByObjective.query_against_project_slug(project_slug),
       selected: :by_activity,
       query: "",
       sort_by: "title",
@@ -16,30 +16,21 @@ defmodule OliWeb.Insights do
 
   def render(assigns) do
     ~L"""
+    <ul class="nav nav-pills">
+      <li class="nav-item my-2 mr-2">
+        <button <%= is_disabled(@selected, :by_activity) %> class="btn btn-primary" phx-click="by-activity">By Activity</button>
+      </li>
+      <li class="nav-item my-2 mr-2">
+        <button <%= is_disabled(@selected, :by_page) %> class="btn btn-primary" phx-click="by-page">By Page</button>
+      </li>
+      <li class="nav-item my-2 mr-2">
+        <button <%= is_disabled(@selected, :by_objective) %> class="btn btn-primary" phx-click="by-objective">By Objective</button>
+      </li>
+    </ul>
     <div class="card text-center">
       <div class="card-header">
-        <ul class="nav nav-tabs card-header-tabs">
-          <li class="nav-item">
-            <button <%= is_disabled(@selected, :by_activity) %> class="btn btn-primary" phx-click="by-activity">By Activity</button>
-          </li>
-          <li class="nav-item">
-            <button <%= is_disabled(@selected, :by_page) %> class="btn btn-primary" phx-click="by-page">By Page</button>
-          </li>
-          <li class="nav-item">
-            <button <%= is_disabled(@selected, :by_objective) %> class="btn btn-primary" phx-click="by-objective">By Objective</button>
-          </li>
-        </ul>
         <form phx-change="search">
-          <input type="text" name="query" value="<%= @query %>" placeholder="Search by title..."
-            style="font-size: 14px;
-            border: 3px solid black;
-            border-radius: 8px;
-            padding: 16px;
-            width: 100%;
-            flex-grow: 1;
-            height: 48px;
-            margin: 10px 0;"
-          />
+          <input type="text" class="form-control" name="query" value="<%= @query %>" placeholder="Search by title..." />
         </form>
       </div>
       <div class="card-body">

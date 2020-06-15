@@ -38,6 +38,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :password_hash, :string
       add :email_verified, :boolean
       add :system_role_id, references(:system_roles)
+      add :preferences, :map
 
       timestamps(type: :timestamptz)
     end
@@ -83,6 +84,10 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :user_id, :string
       add :user_image, :string
       add :roles, :string
+
+      # TODO: Remove when LTI 1.3 GS replaces canvas api for grade passback
+      add :canvas_id, :string
+
       add :author_id, references(:authors)
       add :lti_tool_consumer_id, references(:lti_tool_consumers)
       add :institution_id, references(:institutions)
@@ -132,6 +137,13 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :open_and_free, :boolean, default: false, null: false
       add :registration_open, :boolean, default: false, null: false
       add :context_id, :string
+      add :lti_lineitems_url, :string
+      add :lti_lineitems_token, :string
+
+      # TODO: Remove when LTI 1.3 GS replaces canvas api for grade passback
+      add :canvas_url, :string
+      add :canvas_token, :string
+      add :canvas_id, :string
 
       add :institution_id, references(:institutions)
       add :project_id, references(:projects)
@@ -339,8 +351,53 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
     create unique_index(:snapshots, [:part_attempt_id, :objective_id], name: :snapshot_unique_part)
 
+    create table(:media_items) do
+      timestamps(type: :timestamptz)
+
+      add :url, :string
+      add :file_name, :string
+      add :mime_type, :string
+      add :file_size, :integer
+      add :md5_hash, :string
+      add :deleted, :boolean, default: false, null: false
+      add :project_id, references(:projects)
+    end
+
+    create index(:media_items, [:file_name])
+    create index(:media_items, [:file_size])
+    create index(:media_items, [:md5_hash])
+
+    create table(:reviews) do
+      timestamps(type: :timestamptz)
+
+      add :project_id, references(:projects)
+      add :type, :string, null: false
+      add :done, :boolean, default: false
+    end
+
+    create index(:reviews, :project_id)
+
+    create table(:warnings) do
+      timestamps(type: :timestamptz)
+
+      add :review_id, references(:reviews, on_delete: :delete_all)
+      add :revision_id, references(:revisions), null: true
+      add :subtype, :string
+      add :content, :map
+      add :requires_fix, :boolean, default: false
+      add :is_dismissed, :boolean, default: false
+    end
+
+    create index(:warnings, [:review_id])
+    create index(:warnings, [:revision_id])
+
+
+    create table(:themes) do
+      timestamps(type: :timestamptz)
+
+      add :name, :string
+      add :url, :string
+      add :default, :boolean, default: false
+    end
   end
-
-
-
 end

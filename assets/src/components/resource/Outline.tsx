@@ -7,6 +7,7 @@ import { toSimpleText } from '../editor/utils';
 import { DragHandle } from './DragHandle';
 import { getContentDescription } from 'data/content/utils';
 import * as Persistence from 'data/persistence/activity';
+import './Outline.scss';
 
 export type OutlineProps = {
   projectSlug: ProjectSlug,
@@ -105,8 +106,8 @@ const OutlineEntry = (props: OutlineEntryProps) => {
 
     dt.setData('CodeEditors', resource);
     dt.setData('application/x-oli-resource-content', JSON.stringify(dragPayload));
-    dt.setData('text/html', toSimpleText(content));
-    dt.setData('text/plain', toSimpleText(content));
+    dt.setData('text/html', toSimpleText(content as any));
+    dt.setData('text/plain', toSimpleText(content as any));
     dt.effectAllowed = 'move';
 
   };
@@ -296,7 +297,7 @@ export const Outline = (props: OutlineProps) => {
   });
 
   return (
-    <div style={ { width: '150px' } } role="listbox">
+    <div className="outline" style={ { width: '150px' } } role="listbox">
       <span aria-live="assertive" className="assistive-text">
         {assisstive}
       </span>

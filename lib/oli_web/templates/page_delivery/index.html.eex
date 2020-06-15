@@ -1,32 +1,83 @@
-<style>
-.course-outline {
-  background-color: #fefefe;
-  border: 1px solid #ddd;
-  padding: 8px 12px;
-}
-</style>
-
 <div class="my-3">
   <h3><%= @title %></h3>
   <p class="text-secondary"><%= @description %></p>
 
   <%= if is_instructor?(@conn) do %>
   <div class="d-flex flex-row">
-    <div class="flex-1"></div>
+    <div class="flex-fill"></div>
     <div>
       <%= link "Download Gradebook (.csv)", to: Routes.page_delivery_path(@conn, :export_gradebook, @context_id), class: "btn btn-link btn-sm" %>
+
+      <div class="btn-group">
+        <button id="sync-grades" type="button" class="btn btn-warning btn-sm">Sync Grades</button>
+        <button id="configure-token" type="button" class="btn btn-outline-warning btn-sm" data-toggle="modal" data-target="#configure-token-modal">
+          <i class="fas fa-key"></i>
+        </button>
+      </div>
     </div>
+
+    <div class="modal fade" id="configure-token-modal" data-backdrop="static" tabindex="-1">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="staticBackdropLabel">Update Token</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="input-group mb-3">
+              <div class="input-group-prepend">
+                <span class="input-group-text" id="basic-addon3">Token</span>
+              </div>
+              <input id="token" type="text" class="form-control">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            <button id="save-token" type="button" class="btn btn-primary">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      $(function() {
+        $('#sync-grades').on('click', function() {
+          url = '<%= Routes.page_delivery_path(@conn, :sync_gradebook, @context_id) %>'
+          fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          })
+        })
+        $('#save-token').on('click', function() {
+          token = $('#token').val()
+          url = '<%= Routes.page_delivery_path(@conn, :update_canvas_token, @context_id) %>'
+          fetch(url, {
+            method: 'PUT',
+            body: JSON.stringify({ token: token }),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          })
+
+          $('#configure-token-modal').modal('hide')
+        })
+      })
+    </script>
   </div>
   <% end %>
 
   <h5>Course Outline</h5>
 
-  <div class="course-outline">
+  <ul class="course-outline list-group">
     <%= for page <- @pages do %>
       <%= case page.graded do
         false -> render "link_page.html", page: page, conn: @conn, context_id: @context_id
         true -> render "link_assessment.html", page: page, conn: @conn, context_id: @context_id
       end %>
     <% end %>
-  </div>
+  </ul>
 </div>

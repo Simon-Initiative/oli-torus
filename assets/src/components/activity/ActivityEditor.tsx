@@ -18,6 +18,8 @@ import { Banner } from '../messages/Banner';
 import { PartObjectives } from 'components/activity/PartObjectives';
 import { valueOr } from 'utils/common';
 
+import './ActivityEditor.scss';
+
 export interface ActivityEditorProps extends ActivityContext {
 
 }
@@ -146,24 +148,25 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
   update(update: Partial<Undoable>) {
     this.setState(
       { undoable: processUpdate(this.state.undoable, update) },
-      () => this.save());
+      () => this.postUpdate());
   }
 
-  // postUpdate(){
-  //   const parts = valueOr(this.state.undoable.current.content.authoring.parts, [])
-  //   const partIds = parts.map((p: any)  => valueOr(p.id, ""));
-  //   let objs = this.state.undoable.current.objectives;
-  //   const keys = objs.keySeq().toArray();
-  //   keys.forEach((pId: string)  => {
-  //     if(!partIds.has(pId)){
-  //       objs = objs.delete(pId);
-  //     }
-  //   });
-  //
-  //   this.setState(
-  //       { undoable: processUpdate(this.state.undoable, objs) },
-  //       () => this.save());
-  // }
+  postUpdate() {
+    // Sync objective list to potential changes in number of parts
+    const parts = valueOr(this.state.undoable.current.content.authoring.parts, []);
+    const partIds = parts.map((p: any)  => valueOr(p.id, ''));
+    let objectives = this.state.undoable.current.objectives;
+    const keys = objectives.keySeq().toArray();
+    keys.forEach((pId: string)  => {
+      if (partIds.indexOf(pId.toString()) < 0) {
+        objectives = objectives.delete(pId);
+      }
+    });
+
+    this.setState(
+        { undoable: processUpdate(this.state.undoable, { objectives }) },
+        () => this.save());
+  }
 
   save() {
     const { projectSlug, resourceSlug, activitySlug } = this.props;
@@ -192,38 +195,41 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
     const webComponentProps = {
       model: JSON.stringify(this.state.undoable.current.content),
       editMode: this.state.editMode,
+      projectSlug: this.props.projectSlug,
     };
 
     const parts = valueOr(this.state.undoable.current.content.authoring.parts, []);
     const partIds = parts.map((p: any) => p.id);
 
     return (
-      <div style={{ maxWidth: '800px' }}>
-        <Banner
-          dismissMessage={msg => this.setState(
-            { messages: this.state.messages.filter(m => msg.guid !== m.guid) })}
-          executeAction={() => true}
-          messages={this.state.messages}
-        />
-        <Navigation {...this.props}/>
-        <TitleBar
-          title={this.state.undoable.current.title}
-          onTitleEdit={onTitleEdit}
-          editMode={this.state.editMode}>
-          <PersistenceStatus persistence={this.state.persistence}/>
-          <UndoRedo
-            canRedo={this.state.undoable.redoStack.size > 0}
-            canUndo={this.state.undoable.undoStack.size > 0}
-            onUndo={this.undo} onRedo={this.redo}/>
-        </TitleBar>
-        <PartObjectives
-            partIds={Immutable.List(partIds)}
-            editMode={this.state.editMode}
-            objectives={this.state.undoable.current.objectives}
-            allObjectives={this.state.allObjectives}
-            onEdit={objectives => this.update({ objectives })} />
-        <div ref={this.ref}>
-          {React.createElement(authoringElement, webComponentProps as any)}
+      <div className="col-12">
+        <div className="activity-editor">
+          <Banner
+            dismissMessage={msg => this.setState(
+              { messages: this.state.messages.filter(m => msg.guid !== m.guid) })}
+            executeAction={() => true}
+            messages={this.state.messages} />
+          <Navigation {...this.props}/>
+          <TitleBar
+            className="mb-4"
+            title={this.state.undoable.current.title}
+            onTitleEdit={onTitleEdit}
+            editMode={this.state.editMode}>
+            <PersistenceStatus persistence={this.state.persistence}/>
+            <UndoRedo
+              canRedo={this.state.undoable.redoStack.size > 0}
+              canUndo={this.state.undoable.undoStack.size > 0}
+              onUndo={this.undo} onRedo={this.redo}/>
+          </TitleBar>
+          <PartObjectives
+              partIds={Immutable.List(partIds)}
+              editMode={this.state.editMode}
+              objectives={this.state.undoable.current.objectives}
+              allObjectives={this.state.allObjectives}
+              onEdit={objectives => this.update({ objectives })} />
+          <div ref={this.ref}>
+            {React.createElement(authoringElement, webComponentProps as any)}
+          </div>
         </div>
       </div>
     );

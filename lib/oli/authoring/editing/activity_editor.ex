@@ -55,6 +55,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     do
       Repo.transaction(fn ->
 
+#        update = sync_objectives_to_parts(update)
         update = translate_objective_slugs_to_ids(update)
 
         case Locks.update(publication.id, resource.id, author.id) do
@@ -157,8 +158,23 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   # Applies the update to the revision, converting any objective slugs back to ids
   defp update_revision(revision, update) do
+    objectives = if Map.has_key?(update, "objectives"), do: Map.get(update, "objectives"), else: revision.objectives
+    parts = update["content"]["authoring"]["parts"]
+    update = sync_objectives_to_parts(objectives, update, parts)
     {:ok, updated} = Resources.update_revision(revision, update)
     updated
+  end
+
+  defp sync_objectives_to_parts(_objectives, update, nil), do: update
+  defp sync_objectives_to_parts(objectives, update, parts) do
+    objectives = objectives |> Enum.reduce(%{}, fn({part_id, list}, accumulator) ->
+      if Enum.any?(parts, fn x -> x["id"] == part_id end) do
+        accumulator |> Map.put(part_id, list)
+      else
+        accumulator
+      end
+    end)
+    Map.put(update, "objectives", objectives)
   end
 
   @doc """
@@ -181,7 +197,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          {:ok} <- authorize_user(author, project),
          {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, activity_type} <- Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
-         {:ok, %{content: content} = activity} <- Activity.create_new(%{title: activity_type.title, scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"), objectives: %{}, author_id: author.id, content: model, activity_type_id: activity_type.id}),
+         {:ok, %{content: content} = activity} <- Activity.create_new(%{title: activity_type.title, scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"), objectives: %{}, author_id: author.id, content: model, activity_type_id: activity_type.id}),
          {:ok, _} <- Course.create_project_resource(%{ project_id: project.id, resource_id: activity.resource_id}) |> trap_nil(),
          {:ok, _mapping} <- Publishing.create_resource_mapping(%{publication_id: publication.id, resource_id: activity.resource_id, revision_id: activity.id})
       do
@@ -196,8 +212,6 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end)
 
   end
-
-
 
   @doc """
   Creates the context necessary to power a client side activity editor,

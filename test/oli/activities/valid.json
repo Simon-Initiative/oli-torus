@@ -11,11 +11,10 @@
       {
         "id": 2,
         "scoringStrategy": "average",
-        "evaluationStrategy": "regex",
         "responses": [
           {
             "id": 3,
-            "match": "test",
+            "rule": "input like {test}",
             "score": 3,
             "feedback": {
               "id": 4,
@@ -24,7 +23,7 @@
           },
           {
             "id": 5,
-            "match": "*",
+            "rule": "input like {.*}",
             "score": 0,
             "feedback": {
               "id": 6,
@@ -46,11 +45,10 @@
       {
         "id": 23,
         "scoringStrategy": "average",
-        "evaluationStrategy": "regex",
         "responses": [
           {
             "id": 33,
-            "match": "test",
+            "rule": "input like {test}",
             "score": 3,
             "feedback": {
               "id": 43,
@@ -59,7 +57,7 @@
           },
           {
             "id": 53,
-            "match": "*",
+            "rule": "input like {.*}",
             "score": 0,
             "feedback": {
               "id": 6,

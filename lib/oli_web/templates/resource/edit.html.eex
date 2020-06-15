@@ -1,10 +1,11 @@
+<link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/resourceeditor.css") %>"/>
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/resourceeditor.js") %>"></script>
 
 <%= for script <- @scripts do %>
   <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
 <% end %>
 
-<div id="editor"/>
+<div id="editor" class="container"/>
 
 <script>
   window.oliMountApplication(document.getElementById('editor'), <%= raw(@context) %>);

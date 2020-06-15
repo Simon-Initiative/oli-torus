@@ -184,46 +184,53 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     };
 
     return (
-      <div>
-        <Banner
-          dismissMessage={msg => this.setState(
-            { messages: this.state.messages.filter(m => msg.guid !== m.guid) })}
-          executeAction={() => true}
-          messages={this.state.messages}
-        />
-        <TitleBar
-          title={state.undoable.current.title}
-          onTitleEdit={onTitleEdit}
-          editMode={this.state.editMode}>
-          <PersistenceStatus persistence={this.state.persistence}/>
-          <PreviewButton
-            projectSlug={props.projectSlug}
-            resourceSlug={props.resourceSlug}
-            persistence={this.state.persistence} />
-          <UndoRedo
-            canRedo={this.state.undoable.redoStack.size > 0}
-            canUndo={this.state.undoable.undoStack.size > 0}
-            onUndo={this.undo} onRedo={this.redo}/>
-          <AddResourceContent
-            editMode={this.state.editMode}
-            onAddItem={onAddItem}
-            editorMap={props.editorMap}
-            resourceContext={props}
+      <div className="row">
+        <div className="col-12">
+          <Banner
+            dismissMessage={msg => this.setState(
+              { messages: this.state.messages.filter(m => msg.guid !== m.guid) })}
+            executeAction={() => true}
+            messages={this.state.messages}
           />
-        </TitleBar>
-        <div className="learning-objectives-label">Learning Objectives</div>
-        <Objectives
-          editMode={this.state.editMode}
-          selected={this.state.undoable.current.objectives}
-          objectives={this.state.allObjectives}
-          onEdit={objectives => this.update({ objectives })} />
-        <div className="d-flex flex-row align-items-start">
-          <Outline {...props} editMode={this.state.editMode}
-            activities={this.state.activities}
-            onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
-          <Editors {...props} editMode={this.state.editMode}
-            activities={this.state.activities}
-            onEdit={c => onEdit(c)} content={state.undoable.current.content}/>
+          <TitleBar
+            title={state.undoable.current.title}
+            onTitleEdit={onTitleEdit}
+            editMode={this.state.editMode}>
+            <PersistenceStatus persistence={this.state.persistence}/>
+            <PreviewButton
+              projectSlug={props.projectSlug}
+              resourceSlug={props.resourceSlug}
+              persistence={this.state.persistence} />
+            <UndoRedo
+              canRedo={this.state.undoable.redoStack.size > 0}
+              canUndo={this.state.undoable.undoStack.size > 0}
+              onUndo={this.undo} onRedo={this.redo}/>
+          </TitleBar>
+          <div className="learning-objectives-label">Learning Objectives</div>
+          <Objectives
+            editMode={this.state.editMode}
+            selected={this.state.undoable.current.objectives}
+            objectives={this.state.allObjectives}
+            onEdit={objectives => this.update({ objectives })} />
+          <div className="d-flex flex-row align-items-start">
+            <div className="d-flex flex-column">
+              <Outline {...props} editMode={this.state.editMode}
+                activities={this.state.activities}
+                onEdit={c => onEdit(c)} content={this.state.undoable.current.content}/>
+              <AddResourceContent
+                editMode={this.state.editMode}
+                onAddItem={onAddItem}
+                editorMap={props.editorMap}
+                resourceContext={props} />
+            </div>
+            <Editors {...props} editMode={this.state.editMode}
+              activities={this.state.activities}
+              onRemove={index => onEdit(this.state.undoable.current.content.delete(index))}
+              onEdit={(c, index) => {
+                onEdit(this.state.undoable.current.content.set(index, c));
+              }}
+              content={this.state.undoable.current.content}/>
+          </div>
         </div>
       </div>
     );

@@ -13,6 +13,7 @@ defmodule Oli.Seeder do
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Attempts.Snapshot
+  alias Oli.Qa.Reviews
 
   def base_project_with_resource2() do
 
@@ -200,7 +201,7 @@ defmodule Oli.Seeder do
   def create_page(title, publication, project, author) do
 
     {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
-    {:ok, revision} = Oli.Resources.create_revision(%{author_id: author.id, objectives: %{ "attached" => []}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"), children: [], content: %{ "model" => []}, deleted: false, title: title, resource_id: resource.id})
+    {:ok, revision} = Oli.Resources.create_revision(%{author_id: author.id, objectives: %{ "attached" => []}, scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"), resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"), children: [], content: %{ "model" => []}, deleted: false, title: title, resource_id: resource.id})
     {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: resource.id}) |> Repo.insert
 
     publish_resource(publication, resource, revision)
@@ -267,7 +268,7 @@ defmodule Oli.Seeder do
 
     {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
 
-    attrs = Map.merge(%{author_id: author.id, objectives: %{ "attached" => []}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"), children: [], content: %{ "model" => []}, deleted: false, title: "title", resource_id: resource.id}, attrs)
+    attrs = Map.merge(%{author_id: author.id, objectives: %{ "attached" => []}, scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("best"), resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"), children: [], content: %{ "model" => []}, deleted: false, title: "title", resource_id: resource.id}, attrs)
     {:ok, revision} = Oli.Resources.create_revision(attrs)
 
     {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: resource.id}) |> Repo.insert
@@ -285,7 +286,7 @@ defmodule Oli.Seeder do
 
     {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
 
-    attrs = Map.merge(%{activity_type_id: 1, author_id: author.id, objectives: %{ "attached" => []}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"), children: [], content: %{}, deleted: false, title: "test", resource_id: resource.id}, attrs)
+    attrs = Map.merge(%{activity_type_id: 1, author_id: author.id, objectives: %{ "attached" => []}, scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("best"), resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"), children: [], content: %{}, deleted: false, title: "test", resource_id: resource.id}, attrs)
 
     {:ok, revision} = Oli.Resources.create_revision(attrs)
     {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: resource.id}) |> Repo.insert
@@ -303,7 +304,7 @@ defmodule Oli.Seeder do
 
     {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
 
-    attrs = Map.merge(%{activity_type_id: 1, author_id: author.id, objectives: %{ "attached" => []}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"), children: [], content: %{}, deleted: false, title: "test", resource_id: resource.id}, attrs)
+    attrs = Map.merge(%{activity_type_id: 1, author_id: author.id, objectives: %{}, scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("best"), resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"), children: [], content: %{}, deleted: false, title: "test", resource_id: resource.id}, attrs)
 
     {:ok, revision} = Oli.Resources.create_revision(attrs)
     {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: resource.id}) |> Repo.insert
@@ -324,7 +325,7 @@ defmodule Oli.Seeder do
 
     {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
 
-    attrs = Map.merge(%{activity_type_id: 1, author_id: author.id, objectives: %{ "attached" => []}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"), children: [], content: %{}, deleted: false, title: "test", resource_id: resource.id}, attrs)
+    attrs = Map.merge(%{activity_type_id: 1, author_id: author.id, objectives: %{ "attached" => []}, scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("best"), resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"), children: [], content: %{}, deleted: false, title: "test", resource_id: resource.id}, attrs)
 
     {:ok, revision} = Oli.Resources.create_revision(attrs)
     {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: resource.id}) |> Repo.insert
@@ -375,6 +376,12 @@ defmodule Oli.Seeder do
   def add_activity_snapshot(map, attrs, tag) do
     {:ok, snapshot} = Snapshot.changeset(%Snapshot{}, attrs) |> Repo.insert()
     Map.put(map, tag, snapshot)
+  end
+
+  def add_review(map, type, tag) do
+    {:ok, review} = Reviews.create_review(Map.get(map, :project), type)
+    map
+    |> Map.put(tag, review)
   end
 
 end

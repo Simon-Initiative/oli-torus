@@ -1,7 +1,7 @@
 import { ReactEditor } from 'slate-react';
 import { Transforms, Range, Node, Point, Path, Editor as SlateEditor } from 'slate';
 import * as ContentModel from 'data/content/model';
-import { Command, CommandDesc } from '../interfaces';
+import { Command, CommandDesc, CommandContext } from '../interfaces';
 import guid from 'utils/guid';
 import { KeyboardEvent } from 'react';
 
@@ -14,25 +14,55 @@ const ol = () => ContentModel.create<ContentModel.OrderedList>(
 const ul = () => ContentModel.create<ContentModel.UnorderedList>(
   { type: 'ul', children: [li()], id: guid() });
 
-const listCommandMaker = (listFactory: any) => {
+
+const toggleList = (editor: ReactEditor, listType: string) => {
+
+  try {
+
+    // The edits here result in intermediate states that normalization
+    // would seek to correct.  So to allow this operation to succeed,
+    // we instruct our editor instance to suspend normalization.
+    (editor as any).suspendNormalization = true;
+
+    const isActive = isActiveList(editor);
+
+    Transforms.unwrapNodes(editor, {
+      match: n => n.type === 'ul' || n.type === 'ol',
+      split: true,
+    });
+
+    Transforms.setNodes(editor, {
+      type: isActive ? 'p' : 'li',
+    });
+
+    if (!isActive) {
+      const block = { type: listType, children: [] };
+      Transforms.wrapNodes(editor, block);
+    }
+  } catch (error) {
+    // tslint:disable-next-line
+    console.log(error);
+
+  } finally {
+    // Whether the operation succeeded or failed, we restore
+    // normalization
+    (editor as any).suspendNormalization = false;
+  }
+
+};
+
+const isActiveList = (editor: ReactEditor) => {
+  const [match] = SlateEditor.nodes(editor, {
+    match: n => n.type === 'ul' || n.type === 'ol',
+  });
+
+  return !!match;
+};
+
+const listCommandMaker = (listType: string) => {
   return {
-    execute: (editor: ReactEditor) => {
-
-      // Wrap the blocks in an active selection as a list
-      const selection = editor.selection;
-      if (selection !== null && !Range.isCollapsed(selection)) {
-
-        Transforms.setNodes(editor, { type: 'li' }, { at: selection });
-        Transforms.select(editor, selection);
-        if (editor.selection !== null) {
-          Transforms.wrapNodes(editor, listFactory(), { at: editor.selection });
-        }
-
-      } else {
-        // Otherwise just create an empty list
-        Transforms.insertNodes(editor, listFactory());
-      }
-
+    execute: (context: CommandContext, editor: ReactEditor) => {
+      toggleList(editor, listType);
     },
     precondition: (editor: ReactEditor) => {
       return true;
@@ -40,8 +70,8 @@ const listCommandMaker = (listFactory: any) => {
   };
 };
 
-const ulCommand: Command = listCommandMaker(ul);
-const olCommand: Command = listCommandMaker(ol);
+const ulCommand: Command = listCommandMaker('ul');
+const olCommand: Command = listCommandMaker('ol');
 
 export const ulCommanDesc: CommandDesc = {
   type: 'CommandDesc',
@@ -156,7 +186,8 @@ function handleTermination(editor: SlateEditor, e: KeyboardEvent) {
 
     if (match) {
       const [node, path] = match;
-      if (node.children.length === 1 && node.children[0].text === '') {
+
+      if ((node.children as any).length === 1 && (node.children as any)[0].text === '') {
 
         const parentMatch = SlateEditor.parent(editor, path);
         const [parent, parentPath] = parentMatch;

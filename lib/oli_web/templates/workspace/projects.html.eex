@@ -1,13 +1,14 @@
 <style>
 .project-cards {
   display: flex;
+  flex-wrap: wrap;
 }
 </style>
 
 <div class="container">
   <div class="row">
-    <div class="page-header">
-      <h1>My Projects</h1>
+    <div class="col-12">
+      <h2>My Projects</h2>
       <%= if length(@projects) == 0 do %>
         <small>No projects yet</small>
         <p>Create a new project to get started, or ask a friend to invite you to their project.</p>
@@ -20,10 +21,10 @@
 
     </div>
   </div>
-  <div class="row">
-   <div class="page-header">
-      <h1>Model Projects</h1>
-      <small>These proven projects are built with best practices in mind</small>
+  <div class="row my-5">
+    <div class="col-12">
+      <h2>Model Projects</h2>
+      <p>These proven projects are built with best practices in mind</p>
     </div>
   </div>
 </div>

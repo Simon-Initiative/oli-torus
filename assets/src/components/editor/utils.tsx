@@ -15,7 +15,7 @@ export function toSimpleText(node: Node): string {
 
 function toSimpleTextHelper(node: Node, text: string): string {
 
-  return node.children.reduce((p: string, c: any) => {
+  return (node.children as any).reduce((p: string, c: any) => {
     let updatedText = p;
     if (c.text) {
       updatedText += c.text;
@@ -38,8 +38,8 @@ export const getRootOfText = (editor: ReactEditor): Maybe<Node> => {
 
       if (node.text === undefined) {
         if (node.type !== undefined) {
-          if ((schema as any)[node.type] !== undefined) {
-            if ((schema as any)[node.type].isBlock) {
+          if ((schema as any)[node.type as string] !== undefined) {
+            if ((schema as any)[node.type as string].isBlock) {
               return Maybe.just(node);
             }
             if (Editor.isEditor(node)) {
