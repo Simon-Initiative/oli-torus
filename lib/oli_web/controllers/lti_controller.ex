@@ -8,6 +8,7 @@ defmodule OliWeb.LtiController do
   alias Oli.Accounts.Institution
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionRoles
+  alias Oli.Grading.CanvasApi
 
   @doc """
   Handles an LTI basic launch
@@ -71,6 +72,10 @@ defmodule OliWeb.LtiController do
             else
               conn
             end
+
+            # TODO: Remove when LTI 1.3 GS replaces canvas api for grade passback
+            # For now, we must capture some canvas specific information for grade passback
+            CanvasApi.handle_basic_launch(conn.body_params, user)
 
             # sign current user in and redirect to home page
             conn

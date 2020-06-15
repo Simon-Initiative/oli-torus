@@ -28,6 +28,16 @@ defmodule Oli.Accounts do
   def get_user!(id), do: Repo.get!(User, id)
 
   @doc """
+  Gets a single user by query parameter
+  ## Examples
+      iex> get_user_by(user_id: "123")
+      %User{}
+      iex> get_user_by(user_id: "111")
+      nil
+  """
+  def get_user_by(clauses), do: Repo.get_by(User, clauses)
+
+  @doc """
   Creates a user.
   ## Examples
       iex> create_user(%{field: value})
