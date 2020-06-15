@@ -6,12 +6,18 @@ export const UndoRedo = ({ canUndo, canRedo, onUndo, onRedo }
   : {canUndo: boolean, canRedo: boolean, onUndo: () => void, onRedo: () => void}) => {
 
   return (
-    <div className="btn-group btn-group-sm" role="group" aria-label="Undo redo creation">
-      <button className={`btn ${canUndo ? '' : 'disabled'}`} type="button" onClick={onUndo}>
-        <span><i className="fas fa-undo"></i></span>
+    <div className="btn-group btn-group-sm ml-3" role="group" aria-label="Undo redo creation">
+      <button className={'btn btn-sm btn-secondary'}
+        disabled={!canUndo}
+        type="button"
+        onClick={onUndo}>
+        <span><i className="fas fa-undo"></i> Undo</span>
       </button>
-      <button className={`btn ${canRedo ? '' : 'disabled'}`} type="button" onClick={onRedo}>
-      <span><i className="fas fa-redo"></i></span>
+      <button className={'btn btn-sm btn-secondary'}
+        disabled={!canRedo}
+        type="button"
+        onClick={onRedo}>
+      <span>Redo <i className="fas fa-redo"></i></span>
       </button>
     </div>
   );

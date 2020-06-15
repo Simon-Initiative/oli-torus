@@ -1,8 +1,6 @@
+<%= render_layout "delivery.html", assigns do %>
 
-<%= render_layout "common.html", assigns do %>
-
-<div class="container">
   <%= @inner_content %>
-</div>
 
 <% end %>
+

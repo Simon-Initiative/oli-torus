@@ -104,7 +104,8 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
 
   const evaluationSummary = isEvaluated ? <Evaluation attemptState={attemptState}/> : null;
   const reset = isEvaluated && !props.graded
-    ? (<div className="float-right">
+    ? (<div className="d-flex">
+        <div className="flex-fill"></div>
         <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
       </div>
     )
@@ -116,23 +117,18 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
       hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>];
 
   return (
-    <div>
-      <div style={{
-        display: 'grid',
-        flex: '1',
-        alignItems: 'center',
-        gridTemplateRows: 'min-content 1fr',
-        gridGap: '8px',
-      }}>
+    <div className="activity short-answer-activity">
+      <div className="activity-content">
         <Stem stem={stem} />
 
-        <Input inputType={model.inputType} input={input} onChange={onInputChange}/>
+        <div className="">
+          <Input inputType={model.inputType} input={input} onChange={onInputChange}/>
 
-        <button
-          style={ { width: '75px' } }
-          className="btn btn-primary" disabled={isEvaluated} onClick={onSubmit}>
-          Submit
-        </button>
+          <button
+            className="btn btn-primary mt-2" disabled={isEvaluated} onClick={onSubmit}>
+            Submit
+          </button>
+        </div>
 
         {ungradedDetails}
       </div>

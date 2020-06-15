@@ -31,7 +31,7 @@ export const InputTypeDropdown = ({ onChange, editMode, inputType }: InputTypeDr
   };
 
   return (
-    <div>
+    <div className="mb-3">
       <label htmlFor="question-type">Input Type</label>
       <select style={{ width: '200px' }}
         disabled={!editMode} className="form-control" value={inputType}
@@ -59,7 +59,7 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
   };
 
   return (
-    <div className="p-4 pl-5">
+    <div>
       <InputTypeDropdown
         editMode={props.editMode}
         inputType={props.model.inputType}

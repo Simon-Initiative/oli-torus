@@ -26,11 +26,7 @@ interface ChoicesProps {
 }
 const Choices = ({ choices, selected, onSelect, isEvaluated }: ChoicesProps) => {
   return (
-    <div style={{
-      display: 'grid',
-      gridGap: '8px',
-      gridTemplateColumns: '1fr',
-    }}>
+    <div className="choices">
     {choices.map((choice, index) =>
       <Choice
         onClick={() => onSelect(choice.id)}
@@ -53,29 +49,8 @@ const Choice = ({ choice, index, selected, onClick, isEvaluated }: ChoiceProps) 
   return (
     <div key={choice.id}
       onClick={isEvaluated ? undefined : onClick}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'top',
-        borderWidth: '2px 2px 4px',
-        padding: '12px 16px',
-        cursor: isEvaluated ? 'arrow' : 'pointer',
-        borderRadius: '16px',
-        borderStyle: 'solid',
-        borderColor: '#e5e5e5',
-        backgroundColor: selected ? 'lightblue' : 'transparent',
-      }}>
-        <span style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: '2px solid #e5e5e5',
-          borderRadius: '8px',
-          color: '#afafaf',
-          height: '30px',
-          width: '30px',
-          fontWeight: 'bold',
-          marginRight: '16px',
-        }}>{index + 1}</span>
+      className={`choice ${selected ? 'selected' : ''}`}>
+        <span className="choice-index">{index + 1}</span>
       <HtmlContentModelRenderer text={choice.content} />
     </div>
   );
@@ -146,7 +121,8 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
 
   const evaluationSummary = isEvaluated ? <Evaluation attemptState={attemptState}/> : null;
   const reset = isEvaluated && !props.graded
-    ? (<div className="float-right">
+    ? (<div className="d-flex my-3">
+        <div className="flex-fill"></div>
         <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
       </div>
     )
@@ -158,14 +134,8 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
       hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>];
 
   return (
-    <div>
-      <div style={{
-        display: 'grid',
-        flex: '1',
-        alignItems: 'center',
-        gridTemplateRows: 'min-content 1fr',
-        gridGap: '8px',
-      }}>
+    <div className={`activity multiple-choice-activity ${isEvaluated ? 'evaluated' : ''}`}>
+      <div className="activity-content">
         <Stem stem={stem} />
         <Choices choices={choices} selected={selected}
           onSelect={onSelect} isEvaluated={isEvaluated}/>

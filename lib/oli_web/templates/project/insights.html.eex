@@ -1,13 +1,15 @@
 <div class="insights container">
   <div class="row">
-    <div class="page-header">
-      <h1 style="display: block;">Insights</h1>
-      <small>As students work through your course, our analytics engine automatically performs statistical
-analyses on the skills covered by each question to find areas where students are struggling.</small>
+    <div class="col-12">
+      <h2>Insights</h1>
+      <p class="text-secondary">
+      Insights can help you improve your course by providing a statistical analysis of
+      the skills covered by each question to find areas where students are struggling.
+      </p>
     </div>
   </div>
-  <div class="row">
-    <div class="col-sm-12">
+  <div class="row mt-4">
+    <div class="col-12">
       <%= live_render @conn, OliWeb.Insights, session: %{ "project_slug" => @project.slug } %>
     </div>
   </div>

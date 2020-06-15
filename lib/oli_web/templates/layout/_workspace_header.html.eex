@@ -1,188 +1,57 @@
-<style>
-  #header {
-    height: 62px;
-    border-bottom: 1px solid rgba(51, 51, 51, .15);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 48px;
-    font-size: 14px;
-  }
-
-  #header .title {
-    font-weight: bold;
-  }
-
-  #header .inline-button {
-    border: none;
-    background: none;
-    cursor: pointer;
-    user-select: none;
-    display: flex;
-    line-height: 24px;
-    padding: 6px 10px;
-  }
-  #header .inline-button .material-icons {
-    padding-right: 10px;
-  }
-
-  .new-project-modal {
-    margin-top: 72px;
-    margin-right: 48px;
-    box-shadow: 0 0 4px rgba(0,0,0,.25);
-  }
-
-  .modal {
-    font-family: Muli, sans-serif;
-    overflow: auto;
-    position: fixed;
-    z-index: 1;
-    border: none;
-    margin: auto;
-    margin-top: 72px;
-    margin-right: 48px;
-    box-shadow: 0 0 4px rgba(0, 0, 0, .25);
-    width: 360px;
-    height: 260px;
-  }
-  .modal .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    height: 60px;
-    padding: 0 15px 0 30px;
-    background-color: black;
-    color: white;
-    font-weight: bold;
-    font-size: 18px;
-  }
-
-  .modal .modal-body {
-    background: white;
-    height: calc(100% - 60px);
-    padding: 30px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .modal .btn.btn-primary {
-    width: 100%;
-    height: 50px;
-    font-size: 18px;
-  }
-  .modal .btn.btn-primary:disabled,
-  .btn.btn-primary:disabled:hover {
-    background-color: black;
-    border: none;
-  }
-
-  .modal-close {
-    font-size: 28px;
-    cursor: pointer;
-  }
-
-  .modal form {
-    width: 100%;
-  }
-
-  input.input-bold {
-    font-size: 14px;
-    border: 3px solid black;
-    border-radius: 8px;
-    padding: 16px;
-    width: 100%;
-    flex-grow: 1;
-    height: 48px;
-    outline: none;
-  }
-
-  .modal-body .form-label-group {
-    margin-bottom: 20px;
-  }
-
-  input.input-bold:hover {
-    border: 3px solid black;
-    border-radius: 8px;
-  }
-
-  label.input-bold {
-    color: #b3b3b3;
-    margin: 5px 0;
-  }
-</style>
-
-<%# The `display: none` MUST be set in-line to allow access to its value %>
-<div class="modal" id="modal-new-project">
-  <div class="modal-header">
-    <span class="modal-title">Enter Project Title</span>
-    <span class="modal-close"><i class="material-icons">close</i></span>
-  </div>
-  <div class="modal-body">
-    <%= form_for @changeset, Routes.project_path(@conn, :create), [id: "form-create-project"], fn f -> %>
-      <div class="form-label-group">
-        <%= text_input f,
-          :title,
-          class: "form-control input-bold " <> error_class(f, :title, "is-invalid"),
-          placeholder: "Introduction to Psychology",
-          id: "input-title",
-          required: true,
-          autofocus: focusHelper(f, :title, default: true) %>
-        <%= label f, :title, "This can be changed later", class: "control-label input-bold" %>
-        <%= error_tag f, :title %>
+<div class="modal fade" id="modal-new-project" tabindex="-1" role="dialog" aria-labelledby="new-project-modal" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Create Project</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
-      <%= submit "Create Project",
-        id: "button-create-project",
-        class: "btn btn-primary",
-        phx_disable_with: "Creating Project...",
-        form: f.id %>
-    <% end %>
+      <%= form_for @changeset, Routes.project_path(@conn, :create), [id: "form-create-project"], fn f -> %>
+        <div class="modal-body">
+            <div class="form-label-group">
+              <%= text_input f,
+                :title,
+                class: "form-control input-bold " <> error_class(f, :title, "is-invalid"),
+                placeholder: "Introduction to Psychology",
+                id: "input-title",
+                required: true,
+                autofocus: focusHelper(f, :title, default: true) %>
+              <%= label f, :title, "This can be changed later", class: "control-label text-secondary" %>
+              <%= error_tag f, :title %>
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Cancel</button>
+          <%= submit "Create Project",
+            id: "button-create-project",
+            class: "btn btn-primary",
+            phx_disable_with: "Creating Project..." %>
+        </div>
+      <% end %>
+    </div>
   </div>
 </div>
 
-<div id="header">
-  <span class="title"><%= @title %></span>
-  <button class="inline-button" id="button-new-project"><i class="material-icons">add</i>New Project</span>
+<div class="workspace-header">
+  <div class="page-title"><%= @title %></div>
+  <div class="flex-fill"></div>
+  <div class="page-controls">
+    <button id="button-new-project"
+      class="btn btn-sm btn-primary"
+      data-toggle="modal"
+      data-target="#modal-new-project">
+      <i class="fa fa-plus"></i> New Project
+    </button>
+  </div>
 </div>
 
 <script>
-  // modal
-  const modal = document.getElementById("modal-new-project");
-  modal.style.display = "none";
-  const openButton = document.getElementById("button-new-project");
-  const closeButton = document.getElementsByClassName("modal-close")[0];
-
-  const isModalDisplayed = (modal) => modal.style.display === "block";
-  const displayModal = (e) => {
-    modal.style.display = "block";
-    e.stopPropagation();
-  }
-  const hideModal = () => modal.style.display = "none";
-  const closeModalOnClickOutside = (e) =>
-    e.target !== modal && !modal.contains(e.target) && hideModal();
-
-  closeButton.onclick = hideModal;
-  openButton.onclick = (e) => {
-    if (isModalDisplayed(modal)) {
-      hideModal();
-      return;
-    }
-    displayModal(e);
-    document.getElementsByTagName("body")[0].onclick = closeModalOnClickOutside;
-  };
-
-  // create project
   const createProjectButton = document.getElementById("button-create-project")
   const titleInput = document.getElementById("input-title")
   createProjectButton.disabled = !titleInput.value || titleInput.value.length === 0
-  const form = document.getElementById("form-create-project")
   titleInput.addEventListener('input', () => titleInput.value.length > 0
     ? createProjectButton.disabled = false
     : createProjectButton.disabled = true)
-  createProjectButton.addEventListener('click', () => {
-    if (!createProjectButton.disabled) {
-      form.submit();
-    }
-  })
 
 </script>

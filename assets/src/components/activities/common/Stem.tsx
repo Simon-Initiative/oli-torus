@@ -13,8 +13,8 @@ interface StemProps {
 
 export const Stem = ({ stem, onEditStem, editMode, projectSlug }: StemProps) => {
   return (
-    <div style={{ margin: '2rem 0' }}>
-      <Heading title="Stem" subtitle="If students have learned the skills you're targeting,
+    <div>
+      <Heading title="Question Stem" subtitle="If students have learned the skills you're targeting,
         they should be able to answer this question:" id="stem" />
       <RichTextEditor
         projectSlug={projectSlug}

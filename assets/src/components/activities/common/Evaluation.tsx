@@ -11,38 +11,22 @@ export const Evaluation = ({ attemptState } : { attemptState : ActivityTypes.Act
 
   const errorText = fromText('There was an error processing this response');
 
-  let backgroundColor = '#f0b4b4';
+  let resultClass = 'incorrect';
   if (error !== undefined) {
-    backgroundColor = 'orange';
+    resultClass = 'error';
   } else if (score === outOf) {
-    backgroundColor = '#a7e695';
+    resultClass = 'correct';
   } else if ((score as number) > 0) {
-    backgroundColor = '#f0e8b4';
+    resultClass = 'incorrect';
   }
 
   return (
     <div key="evaluation"
-      style={{
-        display: 'inline-flex',
-        alignItems: 'top',
-        borderWidth: '2px 2px 4px',
-        padding: '12px 16px',
-        borderRadius: '2px',
-        borderStyle: 'none',
-        backgroundColor,
-      }}>
-        <span style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: '2px solid #e5e5e5',
-          borderRadius: '8px',
-          color: '#afafaf',
-          height: '30px',
-          width: '60px',
-          fontWeight: 'bold',
-          marginRight: '16px',
-        }}>{score + ' / ' + outOf}</span>
+      className={`evaluation feedback ${resultClass} my-1`}>
+        <div className="result">
+          <span className="score">{score}</span>
+          <span className="out-of">{` / ${outOf}`}</span>
+        </div>
       <HtmlContentModelRenderer text={error ? errorText : feedback} />
     </div>
   );
