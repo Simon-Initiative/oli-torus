@@ -54,4 +54,24 @@
     box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.75);
   }
 
+  .configure-section {
+    text-align: center;
+
+    .btn-card {
+      cursor: pointer;
+      color: inherit;
+      user-select: none;
+    }
+
+    .btn-card:hover {
+      border: 1px solid #007bff;
+      text-decoration: none;
+      color: inherit;
+      -webkit-box-shadow: 0px 0px 4px 0px rgba(0,123,255,1);
+      -moz-box-shadow: 0px 0px 4px 0px rgba(0,123,255,1);
+      box-shadow: 0px 0px 4px 0px rgba(0,123,255,1);
+    }
+  }
+
+
 }

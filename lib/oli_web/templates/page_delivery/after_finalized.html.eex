@@ -1,10 +1,9 @@
 
-
 <div class="alert alert-success" role="alert">
   <h4 class="alert-heading">Attempt Submitted</h4>
   <p>You've succesffully completed this graded assessment attempt. </p>
   <hr>
-  <p class="mb-0">You have <%= @attempts_remaining %> more attempts remaining out of <%= (@attempts_taken + @attempts_remaining) %> total attempts.</p>
+  <p class="mb-0"><%= @message %></p>
  </div>
 
 <%= render "_previous_next_nav.html",
