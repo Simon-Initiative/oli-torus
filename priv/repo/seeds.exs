@@ -86,7 +86,7 @@ if !Oli.Repo.get_by(Oli.Authoring.Theme, id: 1) do
   Oli.Repo.insert! %Oli.Authoring.Theme{
     id: 1,
     name: "Light",
-    url: "/css/oli-authoring-light.css",
+    url: "/css/authoring_theme.css",
     default: true
   }
 
