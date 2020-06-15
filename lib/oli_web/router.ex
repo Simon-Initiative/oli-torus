@@ -142,9 +142,6 @@ defmodule OliWeb.Router do
     delete "/:project_id/resource/:revision_slug", ResourceController, :delete
     get "/:project_id/resource/:revision_slug/activity/:activity_slug", ActivityController, :edit
 
-    # Links
-    get "/link/:revision_slug", ResourceController, :link
-
     # Collaborators
     post "/:project_id/collaborators", CollaboratorController, :create
     put "/:project_id/collaborators/:author_email", CollaboratorController, :update
@@ -234,6 +231,9 @@ defmodule OliWeb.Router do
     post "/section", DeliveryController, :create_section
     get "/signout", DeliveryController, :signout
     get "/open_and_free", DeliveryController, :list_open_and_free
+
+    # course link resolver
+    get "/link/:revision_slug", PageDeliveryController, :link
 
     get "/:context_id/page/:revision_slug", PageDeliveryController, :page
     get "/:context_id/page", PageDeliveryController, :index

@@ -39,16 +39,6 @@ defmodule OliWeb.ResourceController do
 
   end
 
-  # Handles in course page links, redirecting to
-  # the appropriate section resource
-  def link(conn, %{"revision_slug" => revision_slug}) do
-
-    lti_params = Plug.Conn.get_session(conn, :lti_params)
-    context_id = lti_params["context_id"]
-
-    redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
-  end
-
   def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
 
     case PageEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do

@@ -133,7 +133,7 @@ const ExistingLink = (props: ExistingLinkProps) => {
   });
 
   // Helper function to turn a Page into a link url
-  const toLink = (p : any) => `/project/link/${p.id}`;
+  const toLink = (p : any) => `/course/link/${p.id}`;
 
   let input = null;
 
