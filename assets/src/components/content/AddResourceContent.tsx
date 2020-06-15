@@ -1,6 +1,6 @@
 import React from 'react';
 import { ResourceContent, Activity, ResourceContext, ActivityReference,
-  ActivityPurpose, createDefaultStructuredContent } from 'data/content/resource';
+  createDefaultStructuredContent } from 'data/content/resource';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { ActivityModelSchema } from 'components/activities/types';
 import { invokeCreationFunc } from 'components/activities/creation';
@@ -32,7 +32,7 @@ export const AddResourceContent = (
           type: 'activity-reference',
           id: guid(),
           activitySlug: result.revisionSlug,
-          purpose: ActivityPurpose.none,
+          purpose: 'none',
           children: [],
         };
 

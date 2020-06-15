@@ -27,7 +27,7 @@ defmodule OliWeb.ResourceController do
 
     case PageEditor.create_context(project_slug, revision_slug, author) do
       {:ok, context} ->
-        render(conn, "page_preview.html", content_html: PageEditor.render_page_html(project_slug, revision_slug, author), context: context)
+        render(conn, "page_preview.html", title: "Preview", content_html: PageEditor.render_page_html(project_slug, revision_slug, author), context: context)
       {:error, :not_found} ->
         conn
         |> put_view(OliWeb.SharedView)

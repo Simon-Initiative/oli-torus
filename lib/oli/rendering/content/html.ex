@@ -7,6 +7,14 @@ defmodule Oli.Rendering.Content.Html do
 
   @behaviour Oli.Rendering.Content
 
+  def example(%Context{} = _context, next, _) do
+    ["<div class=\"content-example\"><div class=\"content-purpose-label\">Example</div>", next.(), "</div>\n"]
+  end
+
+  def learn_more(%Context{} = _context, next, _) do
+    ["<div class=\"content-learn-more\"><div class=\"content-purpose-label\">Learn more</div>", next.(), "</div>\n"]
+  end
+
   def p(%Context{} = _context, next, _) do
     ["<p>", next.(), "</p>\n"]
   end
