@@ -1,0 +1,26 @@
+@import 'authoring/mixins';
+@import 'authoring/variables';
+
+.LoadingSpinner {
+  text-align: center;
+  color: $gray-500;
+
+  & i {
+    margin: "0 5px";
+    animation-duration: "1s";
+    -webkit-animation-duration: "1s";
+  }
+
+  &.ls-small {
+    font-size: 0.8em;
+  }
+
+  &.ls-normal {
+    font-size: 1em;
+  }
+
+  &.ls-large {
+    font-size: 1.2em;
+  }
+
+}

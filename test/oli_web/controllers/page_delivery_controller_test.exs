@@ -90,7 +90,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn = conn
       |> get(Routes.page_delivery_path(conn, :page, section.context_id, page_revision.slug))
 
-      assert html_response(conn, 200) =~ "You have used 1 out of 1 attempts"
+      assert html_response(conn, 200) =~ "You have 0 attempts remaining out of 1 total attempt"
 
     end
 

@@ -1,14 +1,22 @@
-<ul class="nav justify-content-end">
 
-  <%= if @previous_page != nil do %>
-  <li class="nav-item">
-    <%= link "<< " <> @previous_page.title, to: Routes.page_delivery_path(@conn, :page, @context_id, @previous_page.slug), class: "nav-link" %>
-  </li>
-  <% end %>
 
-  <%= if @next_page != nil do %>
-  <li class="nav-item">
-    <%= link @next_page.title <> " >>", to: Routes.page_delivery_path(@conn, :page, @context_id, @next_page.slug), class: "nav-link" %>
-  </li>
-  <% end %>
-</ul>
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center my-5">
+
+    <%= if @previous_page != nil do %>
+    <li class="page-item">
+      <%= link to: Routes.page_delivery_path(@conn, :page, @context_id, @previous_page.slug), class: "page-link" do %>
+        <i class="fas fa-arrow-left"></i> <%= @previous_page.title %>
+      <% end %>
+    </li>
+    <% end %>
+
+    <%= if @next_page != nil do %>
+    <li class="page-item">
+      <%= link to: Routes.page_delivery_path(@conn, :page, @context_id, @next_page.slug), class: "page-link" do %>
+        <%= @next_page.title %> <i class="fas fa-arrow-right"></i>
+      <% end %>
+    </li>
+    <% end %>
+  </ul>
+</nav>

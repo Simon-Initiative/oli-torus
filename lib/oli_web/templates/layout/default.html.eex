@@ -1,0 +1,16 @@
+
+<%= render_layout "authoring.html", assigns do %>
+
+<div>
+  <%= render OliWeb.LayoutView, "_header.html", assigns %>
+
+  <main role="main">
+
+    <%= @inner_content %>
+
+  </main>
+
+  <%= render OliWeb.LayoutView, "_footer.html", assigns %>
+</div>
+
+<% end %>

@@ -1,8 +1,9 @@
 <style>
-.btn-primary-mine {
-    margin-left: 4px;
+.btn-cancel {
+   height: 36.5px;
 }
 </style>
+
 <%= cond do %>
 <% @mode == :show -> %>
   <div class="mb-1"><%= "#{@objective_mapping.revision.title}" %></div>
@@ -29,7 +30,7 @@
                  %{conn: @conn, project: @project, objective_changeset: @objective_changeset, title_value: @title_value,
                   parent_slug_value: @parent_slug_value, route: @route, form_id: @form_id, method: @method,
                   place_holder: @place_holder, phx_disable_with: @phx_disable_with, button_text: @button_text} %>
-     <%= button "Cancel", to: Routes.project_path(@conn, :objectives, @project), method: :get, class: "btn btn-primary btn-sm btn-primary-mine"%>
+     <%= button "Cancel", to: Routes.project_path(@conn, :objectives, @project), method: :get, class: "btn btn-secondary btn-sm btn-cancel"%>
   </div>
   <%= if length(@children) != 0 do  %>
   <div class="list-group w-100">
@@ -53,7 +54,7 @@
                   %{conn: @conn, project: @project, objective_changeset: @objective_changeset, title_value: @title_value,
                   parent_slug_value: @parent_slug_value, route: @route, form_id: @form_id, method: @method,
                   place_holder: @place_holder, phx_disable_with: @phx_disable_with, button_text: @button_text} %>
-      <%= button "Cancel", to: Routes.project_path(@conn, :objectives, @project), method: :get, class: "btn btn-primary btn-sm btn-primary-mine"%>
+      <%= button "Cancel", to: Routes.project_path(@conn, :objectives, @project), method: :get, class: "btn btn-sm btn-secondary btn-cancel ml-2"%>
    </div>
    <%= if length(@children) != 0 do  %>
      <div class="list-group w-100">
