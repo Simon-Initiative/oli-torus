@@ -1,32 +1,36 @@
 <div class="row">
-  <div class="section-header">
+  <div class="col-12">
     <h2>Publish</h1>
-    <small>Is your course ready for the world?</small>
-  </div>
-</div>
+    <p class="text-secondary">When you are satisfied with your course, publish it to give students and instructors access to the latest changes.</p>
 
-<%= case {@has_changes, @active_publication_changes} do %>
-  <% {true, nil} -> %>
-    This project has not been published yet
-  <% {false, _} -> %>
-    <div class="my-2">Last Published: <%= @latest_published_publication.updated_at |> Timex.format!("{relative}", :relative) %></div>
-    <div class="my-2">No changes since last publish.</div>
-  <% {true, changes} -> %>
-    <div class="my-2">Last Published: <%= @latest_published_publication.updated_at |> Timex.format!("{relative}", :relative) %></div>
-    <div class="my-2">Changes since last publish:</div>
-    <%= for {status, %{revision: revision}}  <- Map.values(changes) |> Enum.filter(fn {status, _} -> status != :identical end) do %>
-      <p>
-        <span class="badge badge-secondary badge-<%= status %>"><%= status %></span> <%= revision.title %> <span class="text-slug">(<%= revision.slug %>)</span>
-      </p>
-  <% end %>
-<% end %>
-<div class="my-4">
-  <%= form_for @conn, Routes.project_path(@conn, :publish_active, @project), fn _ -> %>
-    <%# <%= hidden_input f, "project_", value: "" %>
-    <%= submit "Publish",
-      id: "button-publish",
-      class: "btn btn-primary",
-      disabled: !@has_changes,
-      phx_disable_with: "Publishing..." %>
-  <% end %>
+    <%= case {@has_changes, @active_publication_changes} do %>
+      <% {true, nil} -> %>
+        This project has not been published yet
+      <% {false, _} -> %>
+        <div class="my-3">
+        Last published <strong><%= @latest_published_publication.updated_at |> Timex.format!("{relative}", :relative) %></strong>.
+        There are <strong>no changes</strong> since last publish.
+        </div>
+      <% {true, changes} -> %>
+        <div class="my-3">Last published <strong><%= @latest_published_publication.updated_at |> Timex.format!("{relative}", :relative) %></strong>.
+        <% change_count =  Map.values(changes) |> Enum.filter(fn {status, _} -> status != :identical end) |> Enum.count %>
+        There are <strong><%= change_count %></strong> <%= if change_count == 1 do "change" else "changes" end %> since last publish.</div>
+        <%= for {status, %{revision: revision}}  <- Map.values(changes) |> Enum.filter(fn {status, _} -> status != :identical end) do %>
+          <p>
+            <span class="badge badge-secondary badge-<%= status %>"><%= status %></span> <%= revision.title %> <%= link "(#{revision.slug})", to: Routes.resource_path(@conn, :edit, @project, revision.slug) %>
+          </p>
+      <% end %>
+    <% end %>
+    <div class="my-4">
+      <%= form_for @conn, Routes.project_path(@conn, :publish_active, @project), fn _ -> %>
+        <%# <%= hidden_input f, "project_", value: "" %>
+        <%= submit "Publish",
+          id: "button-publish",
+          class: "btn btn-primary",
+          disabled: !@has_changes,
+          phx_disable_with: "Publishing..." %>
+      <% end %>
+    </div>
+
+  </div>
 </div>

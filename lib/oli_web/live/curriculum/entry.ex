@@ -25,7 +25,7 @@ defmodule OliWeb.Curriculum.Entry do
       data-drag-index="<%= assigns.index %>"
       class="p-1 d-flex justify-content-start curriculum-entry">
 
-      <div class="dragHandleGrab">
+      <div class="drag-handle">
         <div class="grip"></div>
       </div>
 

@@ -1,0 +1,11 @@
+@import "delivery/variables.scss";
+
+.resource-content-frame {
+  width: 100%;
+
+  .delivery {
+    padding: 10px;
+    color: $body-color;
+    background-color: $body-bg;
+  }
+}

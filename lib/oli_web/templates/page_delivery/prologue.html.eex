@@ -1,8 +1,4 @@
 
-
-<%= render "_previous_next_nav.html",
-  conn: @conn, context_id: @context_id, previous_page: @previous_page, next_page: @next_page %>
-
 <%= if @attempts_remaining > 0 do %>
 
   <div class="jumbotron">
@@ -24,3 +20,6 @@
   </div>
 
 <% end %>
+
+<%= render "_previous_next_nav.html",
+  conn: @conn, context_id: @context_id, previous_page: @previous_page, next_page: @next_page %>

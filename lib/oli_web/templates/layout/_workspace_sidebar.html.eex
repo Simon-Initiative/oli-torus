@@ -1,14 +1,6 @@
-<style>
-#sidebar {
-  flex: 1;
-  width: 160px;
-  padding: 24px;
-  border-right: 1px solid rgba(51, 51, 51, .15);
-}
-</style>
-
-<div id="sidebar">
+<div class="workspace-sidebar">
   <div class="user">
     <%= account_link @conn %>
+    <%= sidebar_link @conn, "Projects", :projects, to: Routes.workspace_path(@conn, :projects) %>
   </div>
 </div>

@@ -1,37 +1,8 @@
-<style>
-  .badge-identical {
-    background-color: #95a5a6;
-  }
-  .badge-added {
-    background-color: #27ae60;
-  }
-  .badge-deleted {
-    background-color: #c0392b;
-  }
-  .badge-changed {
-    background-color: #f1c40f;
-  }
-  .text-slug {
-    color: #bdc3c7;
-  }
-
-  .publish iframe,
-  .publish image {
-    display: inline-block;
-    margin: 0 !important;
-  }
-</style>
 <div class="publish container">
 
-  <div class="row">
-    <div class="page-header">
-      <h1>Review and Publish</h1>
-      <small>Is your course ready for the world?</small>
-    </div>
-  </div>
-
-  <hr />
   <%= render OliWeb.ProjectView, "_review.html", assigns %>
-  <hr />
+
+  <hr class="my-5" />
+
   <%= render OliWeb.ProjectView, "_publish.html", assigns %>
 </div>
