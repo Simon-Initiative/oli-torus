@@ -1,0 +1,137 @@
+// Overwrite Bootstrap's variables here
+// You can find them in node_modules/bootstrap/scss/_variables.scss
+// Copy the variables you need into this file, don't modify files under node_modules/
+
+$white:    #fff;
+$gray-100: #f8f9fa;
+$gray-200: #ecf0f1;
+$gray-300: #dee2e6;
+$gray-400: #ced4da;
+$gray-500: #b4bcc2;
+$gray-600: #95a5a6;
+$gray-700: #7b8a8b;
+$gray-800: #343a40;
+$gray-900: #212529;
+$black:    #000;
+
+$blue:    #2C3E50;
+$indigo:  #6610f2;
+$purple:  #6f42c1;
+$pink:    #e83e8c;
+$red:     #E74C3C;
+$orange:  #fd7e14;
+$yellow:  #F39C12;
+$green:   #18BC9C;
+$teal:    #20c997;
+$cyan:    #3498DB;
+
+$primary:       $blue;
+$secondary:     $gray-700;
+$success:       $green;
+$info:          $cyan;
+$warning:       $yellow;
+$danger:        $red;
+$light:         $gray-200;
+$dark:          $gray-700;
+
+$yiq-contrasted-threshold:  175;
+
+
+// Body
+$body-bg:                   $white;
+$body-color:                $gray-900;
+
+// Links
+
+$link-color:                #1abc9c;
+
+// Fonts
+
+$font-family-sans-serif:      "Lato", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+
+$font-size-base:              0.9375rem;
+
+$h1-font-size:                2em;
+$h2-font-size:                1.5em;
+$h3-font-size:                1.17em;
+$h4-font-size:                1em;
+$h5-font-size:                .83em;
+$h6-font-size:                .67em;
+
+// Tables
+
+$table-accent-bg:             $gray-200;
+
+// Dropdowns
+
+$dropdown-link-color:               $gray-700;
+$dropdown-link-hover-color:         $white;
+$dropdown-link-hover-bg:            $primary;
+
+// Navs
+
+$nav-link-padding-y:                .5rem !default;
+$nav-link-padding-x:                2rem;
+$nav-link-disabled-color:           $gray-600 !default;
+
+$nav-tabs-border-color:             $gray-200;
+
+// Navbar
+
+$navbar-padding-y:                  1rem;
+
+$navbar-dark-color:                 $white;
+$navbar-dark-hover-color:           $success;
+
+// Pagination
+
+// $pagination-color:                  $white;
+// $pagination-bg:                     $success;
+// $pagination-border-width:           0;
+// $pagination-border-color:           transparent;
+
+// $pagination-hover-color:            $white;
+// $pagination-hover-bg:               darken($success, 15%);
+// $pagination-hover-border-color:     transparent;
+
+// $pagination-active-bg:              $pagination-hover-bg;
+// $pagination-active-border-color:    transparent;
+
+// $pagination-disabled-color:         $gray-200;
+// $pagination-disabled-bg:            lighten($success, 15%);
+// $pagination-disabled-border-color:  transparent;
+
+// List group
+
+$list-group-hover-bg:               $gray-200;
+
+$list-group-disabled-bg:            $gray-200;
+
+// Close
+
+$close-color:                       $body-color;
+$close-text-shadow:                 none;
+
+// Changing the border radius of buttons
+// $border-radius: 20px;
+
+
+/** OLI specific varaibles **/
+
+$remove: $danger;
+$add: darken($primary, 10%);
+
+$selection: $primary;
+$hover: darken($primary, 10%);
+$active: darken($primary, 15%);
+
+$workspace-header-bg:  $white;
+$workspace-sidebar-bg: #2C3E50;
+$workspace-sidebar-link-color:  $white;
+$workspace-bg:  $white;
+
+// Master z-index list
+// Because of the inherent global nature of z-index, all z-indexes used should be defined and
+// referenced as variables from this file.
+$reposition-target: 999;
+$dropdown-menu: 999;

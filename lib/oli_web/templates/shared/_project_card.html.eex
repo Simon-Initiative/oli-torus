@@ -1,47 +1,5 @@
-<style>
-.hero-unit.project-card {
-  width: 270px;
-  height: 150px;
-  margin-right: 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  border-radius: 6px;
-  border: 1px solid #b3b3b3;
-  box-shadow: 0px 0px 1px rgba(0,0,0, .15);
-  padding: 24px;
-}
-.hero-unit.project-card h1 {
-  font-size: 14px;
-  font-weight: bold;
-  color: #000;
-}
-.hero-unit.project-card p {
-  font-size: 11px;
-  font-weight: normal;
-  color: #b3b3b3;
-}
-.hero-unit.project-card p:last-of-type {
-  margin: 0;
-}
-
-.hero-unit.project-card i {
-  font-size: 18px;
-}
-.hero-unit.project-card .authors {
-  display: flex;
-  justify-content: center;
-  position: absolute;
-  font-size: 13px;
-  left: 12px;
-  bottom: 12px;
-  color: #b3b3b3;
-}
-</style>
-<%= link to: Routes.project_path(@conn, :overview, @project) do %>
-  <div class="hero-unit project-card">
+<%= link to: Routes.project_path(@conn, :overview, @project), class: "project-card-link" do %>
+  <div class="project-card">
     <h1><%= @project.title  %></h1>
     <p><%= @project.description %></p>
     <span class="authors"><%= @project.author_count %> <i class="material-icons-outlined">person</i>

@@ -1,0 +1,63 @@
+
+.project-card {
+  width: 270px;
+  height: 150px;
+  margin-right: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: 6px;
+  border: 1px solid #b3b3b3;
+  box-shadow: 0px 0px 1px rgba(0,0,0, .15);
+  padding: 24px;
+
+  h1 {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: $body-color;
+  }
+
+  p {
+    font-size: 11px;
+    font-weight: normal;
+    color: $secondary;
+  }
+
+  &:hover {
+    h1 {
+      color: $link-color;
+    }
+
+    p {
+      color: $link-color;
+    }
+  }
+
+  .project-card-link:hover {
+    text-decoration: none;
+  }
+
+  p:last-of-type {
+    margin: 0;
+  }
+
+  i {
+    font-size: 18px;
+  }
+
+  .authors {
+    display: flex;
+    justify-content: center;
+    position: absolute;
+    font-size: 13px;
+    left: 12px;
+    bottom: 12px;
+  }
+}
+
+a:hover {
+  text-decoration: none;
+}

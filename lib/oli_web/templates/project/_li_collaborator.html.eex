@@ -1,6 +1,0 @@
-<li>
-  <%= "#{@collaborator.first_name} #{@collaborator.last_name}, "%>
-  <small>
-    <%= "#{@collaborator.email}" %> <%= link "Delete", to: Routes.collaborator_path(@conn, :delete, @project, @collaborator.email), method: :delete %>
-  </small>
-</li>

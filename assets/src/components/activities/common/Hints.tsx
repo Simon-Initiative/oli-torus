@@ -23,47 +23,56 @@ export const Hints = ({ onAddHint, onEditHint,
   const cognitiveHints = hints.slice(1, hints.length - 1);
 
   return (
-    <div style={{ margin: '2rem 0' }}>
+    <div>
       <Heading title="Hints" subtitle="The best hints follow a pattern:" id="hints" />
 
       {/* Deer in headlights hint */}
-      <RichTextEditor editMode={editMode} text={deerInHeadlightsHint.content}
+      <Description>
+        "Deer in headlights" hint - restate the problem for students who are totally confused
+      </Description>
+      <RichTextEditor className="mb-3" editMode={editMode} text={deerInHeadlightsHint.content}
         projectSlug={projectSlug}
-        onEdit={content => onEditHint(deerInHeadlightsHint.id, content)}>
-          <Description>
-            "Deer in headlights" hint - restate the problem for students who are totally confused
-          </Description>
-      </RichTextEditor>
+        onEdit={content => onEditHint(deerInHeadlightsHint.id, content)}/>
 
       {/* Cognitive hints */}
-      <Description>One or more "Cognitive" hints - explain how to solve the problem</Description>
+      <div className="mb-2">
+        <Description>One or more "Cognitive" hints - explain how to solve the problem</Description>
+      </div>
       {cognitiveHints.map((hint, index) => (
         <React.Fragment key={hint.id}>
-          <RichTextEditor editMode={editMode} text={hint.content} projectSlug={projectSlug}
-            onEdit={content => onEditHint(hint.id, content)}>
-            <Description>
-              {index > 0 && <CloseButton editMode={editMode}
-                onClick={() => onRemoveHint(hint.id)} />}
-              Cognitive Hint {index + 1}
-            </Description>
-          </RichTextEditor>
+          <Description>
+            <i className="fa fa-lightbulb text-warning mr-1"></i>Cognitive Hint {index + 1}
+          </Description>
+          <div className="d-flex mb-3">
+            <RichTextEditor editMode={editMode} text={hint.content} projectSlug={projectSlug}
+              onEdit={content => onEditHint(hint.id, content)}/>
+            {index > 0 &&
+              <CloseButton
+              className="pl-3 pr-1"
+              onClick={() => onRemoveHint(hint.id)}
+              editMode={editMode} />
+            }
+          </div>
         </React.Fragment>
       ))}
-      <button disabled={!editMode} onClick={onAddHint}
-        className="btn btn-primary">
-        Add cognitive hint
-      </button>
 
       {/* Bottom-out hint */}
+      <Description>
+        "Bottom out" hint - explain the answer for students who are still lost
+      </Description>
       <RichTextEditor
+        className="mb-3"
         projectSlug={projectSlug}
         editMode={editMode}
         text={bottomOutHint.content}
-        onEdit={content => onEditHint(bottomOutHint.id, content)}>
-        <Description>
-          "Bottom out" hint - explain the answer for students who are still lost
-        </Description>
-      </RichTextEditor>
+        onEdit={content => onEditHint(bottomOutHint.id, content)}/>
+
+        <div>
+          <button disabled={!editMode} onClick={onAddHint}
+            className="btn btn-sm btn-primary">
+            Add cognitive hint
+          </button>
+        </div>
     </div>
   );
 };

@@ -1,6 +1,9 @@
 import React from 'react';
 import { Purpose } from './Purpose';
-import { CloseButton } from '../misc/CloseButton';
+import { DeleteButton } from '../misc/DeleteButton';
+import { EditLink } from '../misc/EditLink';
+
+import './ResourceContentFrame.scss';
 
 export type ResourceContentFrameProps = {
   editMode: boolean,              // Whether or not we can edit
@@ -22,16 +25,12 @@ export const ResourceContentFrame = (props: ResourceContentFrameProps) => {
   const style = { background: 'transparent', padding: 0, margin: 0, marginRight: '8px', border: 0 };
   const link = editingLink !== undefined
     ? (
-        <a
-          style={style}
-          href={editingLink}>
-          <span><i className="fas fa-edit"></i></span>
-        </a>
+        <EditLink href={editingLink}/>
       )
     : null;
 
   return (
-    <div className="card" style={ { width: '100%' } }>
+    <div className="resource-content-frame card mb-3">
       <div className="card-header">
         <div className="d-flex flex-row align-items-baseline">
           <div className="flex-grow-1">
@@ -40,7 +39,7 @@ export const ResourceContentFrame = (props: ResourceContentFrameProps) => {
           <Purpose purpose={purpose} purposes={purposes}
             editMode={editMode} onEdit={p => onEditPurpose(p)}/>
           {link}
-          <CloseButton editMode={allowRemoval} onClick={onRemove}/>
+          <DeleteButton editMode={allowRemoval} onClick={onRemove}/>
         </div>
       </div>
       <div className="card-body">

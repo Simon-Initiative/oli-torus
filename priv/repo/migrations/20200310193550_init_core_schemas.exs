@@ -38,6 +38,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :password_hash, :string
       add :email_verified, :boolean
       add :system_role_id, references(:system_roles)
+      add :preferences, :map
 
       timestamps(type: :timestamptz)
     end
@@ -390,5 +391,13 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
     create index(:warnings, [:review_id])
     create index(:warnings, [:revision_id])
 
+
+    create table(:themes) do
+      timestamps(type: :timestamptz)
+
+      add :name, :string
+      add :url, :string
+      add :default, :boolean, default: false
+    end
   end
 end
