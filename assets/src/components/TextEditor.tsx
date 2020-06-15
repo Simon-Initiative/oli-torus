@@ -112,7 +112,6 @@ export const TextEditor = (props: TextEditorProps) => {
       display: 'inline-block',
       whiteSpace: 'normal',
       textAlign: 'left',
-      color: 'black',
       fontWeight: 'normal',
       fontSize: props.size === 'large' ? '18pt' : '12pt',
     };

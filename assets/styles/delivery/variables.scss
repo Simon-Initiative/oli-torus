@@ -36,6 +36,9 @@ $danger:        $red !default;
 $light:         $gray-100 !default;
 $dark:          $gray-800 !default;
 
+$body-bg:                   $white;
+$body-color:                $gray-900;
+
 /** OLI specific variables **/
 $choice-selected-bg:                lighten($primary, 42%);
 $choice-selected-color:             $primary;

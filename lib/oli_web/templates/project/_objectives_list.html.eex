@@ -1,6 +1,6 @@
 <style>
 .to-show {
-    display: none;
+  display: none;
 }
 
 .to-show button {

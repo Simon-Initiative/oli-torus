@@ -3,6 +3,8 @@ import React from 'react';
 import { DeleteButton } from '../misc/DeleteButton';
 import { EditLink } from '../misc/EditLink';
 
+import "./ResourceContentFrame.scss";
+
 export type ResourceContentFrameProps = {
   editMode: boolean,              // Whether or not we can edit
   allowRemoval: boolean,          // Whether or not this item can be removed
@@ -24,7 +26,7 @@ export const ResourceContentFrame = (props: ResourceContentFrameProps) => {
     : null;
 
   return (
-    <div className="card mb-3" style={ { width: '100%' } }>
+    <div className="resource-content-frame card mb-3">
       <div className="card-header">
         <div className="d-flex flex-row align-items-baseline">
           <div className="flex-grow-1">
