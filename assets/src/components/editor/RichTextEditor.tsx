@@ -3,6 +3,7 @@ import { RichText } from 'components/activities/types';
 import { Editor } from 'components/editor/Editor';
 import { getToolbarForResourceType } from 'components/resource/toolbar';
 import { ProjectSlug } from 'data/types';
+import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import { classNames } from 'utils/classNames';
 
 type RichTextEditorProps = {
@@ -17,8 +18,10 @@ export const RichTextEditor = ({ editMode, className, text, onEdit, projectSlug 
 
   return (
     <div className={classNames(['rich-text-editor', className])}>
-      <Editor commandContext={{ projectSlug }} editMode={editMode} value={text} onEdit={onEdit}
-        toolbarItems={getToolbarForResourceType(1)} />
+      <ErrorBoundary>
+        <Editor commandContext={{ projectSlug }} editMode={editMode} value={text} onEdit={onEdit}
+          toolbarItems={getToolbarForResourceType(1)} />
+      </ErrorBoundary>
     </div>
   );
 };

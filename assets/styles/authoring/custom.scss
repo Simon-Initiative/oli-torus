@@ -20,3 +20,12 @@ i.unicode-icon {
   white-space: nowrap;
   flex-flow: row nowrap;
 }
+
+/* fix dropdown menu */
+a:not([href]) {
+  cursor: pointer;
+
+  &:hover {
+    color: $white;
+  }
+}

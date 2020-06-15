@@ -4,13 +4,4 @@
   button.dropdown-toggle {
     width: 100%;
   }
-
-  /* fix dropdown menu */
-  a:not([href]) {
-    cursor: pointer;
-
-    &:hover {
-      color: $white;
-    }
-  }
 }
