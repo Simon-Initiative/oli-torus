@@ -1,34 +1,7 @@
-<style>
-  #header {
-    height: 62px;
-    border-bottom: 1px solid rgba(51, 51, 51, .15);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 48px;
-    font-size: 14px;
-  }
-
-  #header .title {
-    font-weight: bold;
-  }
-
-  #header .inline-button {
-    border: none;
-    background: none;
-    cursor: pointer;
-    user-select: none;
-    display: flex;
-    line-height: 24px;
-    padding: 6px 10px;
-  }
-  #header .inline-button .material-icons {
-    padding-right: 10px;
-  }
-
-</style>
-
-<div id="header">
-  <span class="title"><%= @title %></span>
-  <%= link "Sign out", to: Routes.auth_path(@conn, :signout), class: "btn btn-primary" %>
+<div class="workspace-header">
+  <div class="page-title"><%= @title %></div>
+  <div class="flex-fill"></div>
+  <div class="page-controls">
+    <%= link "Sign out", to: Routes.auth_path(@conn, :signout), class: "btn btn-sm btn-primary" %>
+  </div>
 </div>

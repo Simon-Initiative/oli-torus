@@ -31,7 +31,6 @@ defmodule Oli.Resources do
   """
   def get_resource!(id), do: Repo.get!(Resource, id)
 
-
   @doc """
   Gets a single resource, based on a revision  slug.
   """

@@ -198,4 +198,41 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
+  def sync_gradebook(conn, %{"context_id" => context_id}) do
+    user = conn.assigns.current_user
+    case {Sections.is_enrolled?(user.id, context_id), Lti.parse_lti_role(user.roles)} do
+      {true, role} when role == :administrator or role == :instructor ->
+        section = Sections.get_section_by(context_id: context_id)
+
+        # TODO case _ do handle error
+        Grading.sync_grades(section)
+
+        conn
+        |> send_resp(200, "sync complete")
+
+      _ ->
+        conn
+        |> send_resp(403, "Must be an administrator or instructor to perform this action")
+    end
+  end
+
+  def update_canvas_token(conn, %{"context_id" => context_id}) do
+    user = conn.assigns.current_user
+    case {Sections.is_enrolled?(user.id, context_id), Lti.parse_lti_role(user.roles)} do
+      {true, role} when role == :administrator or role == :instructor ->
+        section = Sections.get_section_by(context_id: context_id)
+        token = conn.params["token"]
+
+        IO.inspect conn
+        Sections.update_section(section, %{canvas_token: token})
+
+        conn
+        |> send_resp(200, "token updated")
+
+      _ ->
+        conn
+        |> send_resp(403, "Must be an administrator or instructor to perform this action")
+    end
+  end
+
 end

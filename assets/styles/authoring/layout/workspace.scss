@@ -1,0 +1,87 @@
+.workspace {
+  flex: 1;
+  display: flex;
+  background-color: $workspace-bg;
+
+  .workspace-left {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .workspace-right {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    position: relative;
+
+    /* padding-bottom must match height in footer */
+    padding-bottom: 40px;
+
+    main {
+      padding: 20px;
+    }
+  }
+
+  .workspace-header {
+    display: flex;
+    flex-direction: row;
+    border-bottom: 1px solid $gray-400;
+    padding: 20px;
+    position: relative;
+    background-color: $workspace-header-bg;
+
+    .page-title {
+      font-weight: bold;
+      width: 150px;
+    }
+
+    .page-controls {
+      width: 150px;
+      display: flex;
+      flex-direction: row-reverse;
+    }
+
+    .project-title {
+      flex: 1;
+      text-align: center;
+    }
+
+
+  }
+
+  .workspace-sidebar {
+    flex: 1;
+    width: 200px;
+    padding: 24px;
+    border-right: 1px solid $gray-400;
+    background-color: $workspace-sidebar-bg;
+
+    a {
+      display: flex;
+      flex-direction: columns;
+      margin: 20px 0;
+      color: $workspace-sidebar-link-color;
+    }
+
+    .user {
+      margin-bottom: 40px;
+    }
+
+    .category {
+      font-size: 12px;
+      color: $gray-500;
+      user-select: none;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+
+    .active {
+      font-weight: bold;
+      color: $link-color;
+    }
+
+    .account-link {
+      margin: 0;
+    }
+  }
+}

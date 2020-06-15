@@ -1,0 +1,22 @@
+/** Custom theme-specific styles for authoring **/
+
+p:last-of-type {
+  margin: 0;
+}
+
+form .form-label-group .help-block {
+  color: #dc3545;
+}
+
+i.unicode-icon {
+  font-style: normal;
+  font-family: serif;
+  font-weight: 700;
+}
+
+.ellipsize-overflow {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-flow: row nowrap;
+}

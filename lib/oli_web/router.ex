@@ -12,8 +12,8 @@ defmodule OliWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
-    plug :put_root_layout, {OliWeb.LayoutView, :delivery}
-    plug :put_layout, {OliWeb.LayoutView, :app}
+    plug :put_root_layout, {OliWeb.LayoutView, "default.html"}
+    plug :put_layout, {OliWeb.LayoutView, "app.html"}
     plug :put_secure_browser_headers
     plug Plug.Telemetry, event_prefix: [:oli, :plug]
     plug Oli.Plugs.SetCurrentUser
@@ -35,13 +35,24 @@ defmodule OliWeb.Router do
     plug Oli.Plugs.SetCurrentUser
   end
 
+  pipeline :set_user do
+    plug :fetch_session
+    plug Oli.Plugs.SetCurrentUser
+    plug :accepts, ["json"]
+  end
+
   # Pipeline extensions:
 
   # Extends the browser pipeline for delivery specific routes
   pipeline :delivery do
     plug Oli.Plugs.RemoveXFrameOptions
     plug Oli.Plugs.VerifyUser
-    plug :put_root_layout, {OliWeb.LayoutView, :delivery}
+    plug :put_root_layout, {OliWeb.LayoutView, "delivery.html"}
+  end
+
+  # set the layout to be workspace
+  pipeline :workspace do
+    plug :put_root_layout, {OliWeb.LayoutView, "workspace.html"}
   end
 
   # Ensure that we always do csrf
@@ -75,11 +86,6 @@ defmodule OliWeb.Router do
     plug Plug.Parsers, parsers: [:urlencoded]
   end
 
-  # set the layout to be workspace
-  pipeline :workspace_layout do
-    plug :put_root_layout, {OliWeb.LayoutView, "workspace.html"}
-  end
-
   pipeline :authorize_project do
     plug Oli.Plugs.AuthorizeProject
   end
@@ -93,20 +99,21 @@ defmodule OliWeb.Router do
 
   # authorization protected routes
   scope "/", OliWeb do
-    pipe_through [:browser, :csrf_always, :protected, :workspace_layout, :authoring]
+    pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring]
 
     get "/projects", WorkspaceController, :projects
     get "/account", WorkspaceController, :account
+    post "/account/theme", WorkspaceController, :update_theme
     resources "/institutions", InstitutionController
   end
 
   scope "/project", OliWeb do
-    pipe_through [:browser, :csrf_always, :protected, :workspace_layout, :authoring]
+    pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring]
     post "/", ProjectController, :create
   end
 
   scope "/project", OliWeb do
-    pipe_through [:browser, :csrf_always, :protected, :workspace_layout, :authoring, :authorize_project]
+    pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring, :authorize_project]
 
     # Project display pages
     get "/:project_id", ProjectController, :overview
@@ -230,6 +237,14 @@ defmodule OliWeb.Router do
     get "/:context_id/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt
 
     get "/:context_id/grades/export", PageDeliveryController, :export_gradebook
+  end
+
+  scope "/api/v1/course", OliWeb do
+    # pipe_through [:api, :protected, Oli.Plugs.SetCurrentUser]
+    pipe_through [:set_user]
+
+    post "/:context_id/grades/sync", PageDeliveryController, :sync_gradebook
+    put "/:context_id/grades/canvas_token", PageDeliveryController, :update_canvas_token
   end
 
   scope "/admin", OliWeb do

@@ -1,0 +1,15 @@
+@import "authoring/variables";
+
+.objectives {
+  color: $gray-800;
+  padding-top: 10px;
+  padding-bottom: 20px;
+
+  .learning-objectives-label {
+    margin-top: 10px;
+    margin-bottom: 4px;
+    font-size: 0.8em;
+    text-transform: uppercase;
+  }
+
+}

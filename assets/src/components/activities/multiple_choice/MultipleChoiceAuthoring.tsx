@@ -29,7 +29,7 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
   };
 
   return (
-    <div className="p-4 pl-5">
+    <div>
       <Stem
         projectSlug={props.projectSlug}
         editMode={props.editMode}

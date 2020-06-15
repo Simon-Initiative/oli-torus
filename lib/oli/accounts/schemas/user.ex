@@ -9,6 +9,10 @@ defmodule Oli.Accounts.User do
     field :user_id, :string
     field :user_image, :string
     field :roles, :string
+
+    # TODO: Remove when LTI 1.3 GS replaces canvas api for grade passback
+    field :canvas_id, :string
+
     belongs_to :author, Oli.Accounts.Author
     belongs_to :lti_tool_consumer, Oli.Accounts.LtiToolConsumer
     belongs_to :institution, Oli.Accounts.Institution
@@ -19,7 +23,7 @@ defmodule Oli.Accounts.User do
   @doc false
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:email, :first_name, :last_name, :user_id, :user_image, :roles, :lti_tool_consumer_id, :institution_id, :author_id])
+    |> cast(attrs, [:email, :first_name, :last_name, :user_id, :user_image, :roles, :canvas_id, :lti_tool_consumer_id, :institution_id, :author_id])
     |> validate_required([:user_id, :user_image, :roles, :lti_tool_consumer_id])
     |> validate_not_nil([:email, :first_name, :last_name])
   end

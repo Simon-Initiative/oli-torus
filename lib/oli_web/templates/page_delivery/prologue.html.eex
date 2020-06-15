@@ -1,6 +1,3 @@
-<%= render "_previous_next_nav.html",
-  conn: @conn, context_id: @context_id, previous_page: @previous_page, next_page: @next_page %>
-
 <div class="jumbotron">
   <h3 class="display-4"><%= @title %></h3>
   <p class="lead" style="color: darkred;">This is a <strong>graded assessment</strong></p>
@@ -17,3 +14,6 @@
 
   <% end  %>
 </div>
+
+<%= render "_previous_next_nav.html",
+  conn: @conn, context_id: @context_id, previous_page: @previous_page, next_page: @next_page %>
