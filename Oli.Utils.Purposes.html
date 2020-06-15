@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.21.3">
     <meta name="project" content="OLI Torus v0.1.0">
-    <title>Oli.Qa — OLI Torus v0.1.0</title>
+    <title>Oli.Utils.Purposes — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
     <script src="dist/sidebar_items-adcefc9b87.js"></script>
       <script src="docs_config.js"></script>
@@ -68,33 +68,13 @@ OLI Torus      </a>
 
       <h1>
         <small class="app-vsn">OLI Torus v0.1.0</small>
-Oli.Qa          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/qa.ex#L1" title="View Source" class="view-source" rel="help">
+Oli.Utils.Purposes          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/purposes.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
       </h1>
 
 
-        <section id="moduledoc">
-<p>Qa uses two tables:
-  1) Reviews
-  2) Warnings</p>
-<p>The reviews table links a project to a high-level review &quot;type,&quot; for example accessibility, content, or pedagogy.
-Reviews are marked completed when all of the warnings for that type are finished processing and created.
-Reviews are used in the UI to keep track of the progress of course reviews: some reviews may take longer to
-run than others, for example if they are resolving remote URLs or doing complex parsing logic across many resources.</p>
-<p>The warnings table links a review to specific action item a author can take to improve their project.
-Each warning has a subtype which indicates what explanation and action item should be shown to the author.
-Warnings are directly shown in the UI as a list of dismissable action items.</p>
-<p>For example, the structure looks something like this:
-  Project -&gt;</p>
-<pre><code class="nohighlight makeup elixir"><span class="nc">Many</span><span class="w"> </span><span class="n">reviews</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="s">&quot;accessibility,&quot;</span><span class="w"> </span><span class="s">&quot;pedagogy,&quot;</span><span class="w"> </span><span class="n">etc</span><span class="o">.</span><span class="w">
-</span><span class="nc">A</span><span class="w"> </span><span class="n">review</span><span class="w"> </span><span class="n">may</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">completed</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">still</span><span class="w"> </span><span class="n">processing</span><span class="w">
-</span><span class="nc">Review</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
-  </span><span class="nc">Many</span><span class="w"> </span><span class="n">warnings</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">subtype</span><span class="w"> </span><span class="s">&quot;broken link,&quot;</span><span class="w"> </span><span class="s">&quot;no attached objectives,&quot;</span><span class="w"> </span><span class="n">etc</span><span class="o">.</span><span class="w">
-  </span><span class="nc">A</span><span class="w"> </span><span class="n">warning</span><span class="w"> </span><span class="n">usually</span><span class="w"> </span><span class="n">has</span><span class="w"> </span><span class="n">some</span><span class="w"> </span><span class="n">content</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">contains</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">issue</span><span class="w"> </span><span class="p" data-group-id="5088085154-1">(</span><span class="n">like</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">json</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">broken</span><span class="w"> </span><span class="n">link</span><span class="p" data-group-id="5088085154-1">)</span><span class="o">.</span><span class="w">
-  </span><span class="nc">It</span><span class="w"> </span><span class="n">also</span><span class="w"> </span><span class="n">maps</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">description</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">action</span><span class="w"> </span><span class="n">item</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="err">`</span><span class="nc">ProjectView</span><span class="err">`</span><span class="o">.</span></code></pre>
-        </section>
 
         <section id="summary" class="details-list">
           <h1 class="section-heading">
@@ -110,7 +90,7 @@ Warnings are directly shown in the UI as a list of dismissable action items.</p>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#review_project/1">review_project(project_slug)</a>
+    <a href="#label_for/1">label_for(purpose)</a>
   </div>
 </div>
   </div>
@@ -124,14 +104,14 @@ Warnings are directly shown in the UI as a list of dismissable action items.</p>
             </a>
 Functions          </h1>
           <div class="functions-list">
-<section class="detail" id="review_project/1">
+<section class="detail" id="label_for/1">
   <div class="detail-header">
-    <a href="#review_project/1" class="detail-link" title="Link to this function">
+    <a href="#label_for/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">review_project(project_slug)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/qa.ex#L30" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">label_for(purpose)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/purposes.ex#L3" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
