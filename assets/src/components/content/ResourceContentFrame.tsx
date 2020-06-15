@@ -3,7 +3,7 @@ import React from 'react';
 import { DeleteButton } from '../misc/DeleteButton';
 import { EditLink } from '../misc/EditLink';
 
-import "./ResourceContentFrame.scss";
+import './ResourceContentFrame.scss';
 
 export type ResourceContentFrameProps = {
   editMode: boolean,              // Whether or not we can edit

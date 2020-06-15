@@ -43,8 +43,11 @@ export const PartObjectives = (props: PartObjectivesProps) => {
                   selected={Immutable.List<ObjectiveSlug>(valueOr(objectives.get(partIds.first()),
                     Immutable.List<ObjectiveSlug>()))}
                   objectives={allObjectives}
-                  onEdit={objectives => onEdit(Immutable.Map<string,
-                    Immutable.List<ObjectiveSlug>>({ [partIds.first() as string]: objectives } as any))}/>
+                  onEdit={objectives => onEdit(
+                    Immutable.Map<string,
+                    Immutable.List<ObjectiveSlug>>({
+                      [partIds.first() as string]: objectives,
+                    } as any))}/>
               </div>
             )
           }

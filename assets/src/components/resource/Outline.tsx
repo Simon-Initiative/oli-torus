@@ -7,7 +7,7 @@ import { toSimpleText } from '../editor/utils';
 import { DragHandle } from './DragHandle';
 import { getContentDescription } from 'data/content/utils';
 import * as Persistence from 'data/persistence/activity';
-import "./Outline.scss";
+import './Outline.scss';
 
 export type OutlineProps = {
   projectSlug: ProjectSlug,

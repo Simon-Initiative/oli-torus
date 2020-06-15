@@ -1,5 +1,5 @@
 import * as React from 'react';
-import "./LoadingSpinner.scss";
+import './LoadingSpinner.scss';
 
 export enum LoadingSpinnerSize {
   Small,

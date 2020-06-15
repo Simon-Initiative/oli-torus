@@ -63,7 +63,7 @@ export const Choices = ({ onAddChoice, onEditChoice, onRemoveChoice, editMode, m
               onClick={() => onRemoveChoice(choice.id)}
               editMode={editMode} />
           </div>
-        </React.Fragment>
+        </React.Fragment>,
       )}
       <button
         className="btn btn-sm btn-primary my-2"

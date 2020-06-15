@@ -7,7 +7,7 @@ import { invokeCreationFunc } from 'components/activities/creation';
 import * as Persistence from 'data/persistence/activity';
 import guid from 'utils/guid';
 
-import "./AddResourceContent.scss";
+import './AddResourceContent.scss';
 
 type AddCallback = (content: ResourceContent, a? : Activity) => void;
 

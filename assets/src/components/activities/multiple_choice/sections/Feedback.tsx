@@ -6,7 +6,7 @@ import { RichText } from '../../types';
 import { Description } from 'components/misc/Description';
 import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 import { ProjectSlug } from 'data/types';
-import { classNames } from 'utils/classNames'
+import { classNames } from 'utils/classNames';
 
 interface FeedbackProps extends ModelEditorProps {
   onEditResponse: (id: string, content: RichText) => void;

@@ -35,7 +35,7 @@ defmodule OliWeb.WorkspaceController do
     render conn, "account.html", title: "Account", active: :account, institutions: institutions, themes: themes, active_theme: active_theme, page_title: "Account - "
   end
 
-  def update_theme(conn, %{"id" => theme_id} = params) do
+  def update_theme(conn, %{"id" => theme_id} = _params) do
     author = conn.assigns.current_author
     theme = Authoring.get_theme!(String.to_integer(theme_id))
 

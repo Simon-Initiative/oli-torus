@@ -11,7 +11,7 @@ export const Evaluation = ({ attemptState } : { attemptState : ActivityTypes.Act
 
   const errorText = fromText('There was an error processing this response');
 
-  let resultClass = "incorrect";
+  let resultClass = 'incorrect';
   if (error !== undefined) {
     resultClass = 'error';
   } else if (score === outOf) {

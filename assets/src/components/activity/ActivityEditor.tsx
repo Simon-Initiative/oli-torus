@@ -18,7 +18,7 @@ import { Banner } from '../messages/Banner';
 import { PartObjectives } from 'components/activity/PartObjectives';
 import { valueOr } from 'utils/common';
 
-import "./ActivityEditor.scss";
+import './ActivityEditor.scss';
 
 export interface ActivityEditorProps extends ActivityContext {
 
