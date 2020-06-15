@@ -13,7 +13,6 @@ defmodule OliWeb.ResourceController do
   plug :authorize_project when action not in [:view, :update, :index]
   plug :put_layout, {OliWeb.LayoutView, "preview.html"} when action in [:preview]
 
-
   def index(conn, %{"project" => project_slug }) do
 
     case Course.get_project_by_slug(project_slug) do
