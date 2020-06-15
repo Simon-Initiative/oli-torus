@@ -81,6 +81,22 @@ if Enum.empty?(Oli.Activities.list_activity_registrations()) do
   Oli.Registrar.register_local_activities()
 end
 
+# create themes
+if !Oli.Repo.get_by(Oli.Authoring.Theme, id: 1) do
+  Oli.Repo.insert! %Oli.Authoring.Theme{
+    id: 1,
+    name: "Light",
+    url: "/css/oli-authoring-light.css",
+    default: true
+  }
+
+  Oli.Repo.insert! %Oli.Authoring.Theme{
+    id: 2,
+    name: "Dark",
+    url: "/css/oli-authoring-dark.css",
+  }
+end
+
 # only seed with sample data if in development mode
 if Application.fetch_env!(:oli, :env) == :dev do
   # create an example institution

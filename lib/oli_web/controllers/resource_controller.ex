@@ -13,7 +13,7 @@ defmodule OliWeb.ResourceController do
   def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
 
     case PageEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
-      {:ok, context} -> render(conn, "edit.html", title: "Editor", context: Jason.encode!(context), scripts: get_scripts(), project_slug: project_slug, revision_slug: revision_slug)
+      {:ok, context} -> render(conn, "edit.html", title: "Page Editor", context: Jason.encode!(context), scripts: get_scripts(), project_slug: project_slug, revision_slug: revision_slug)
       {:error, :not_found} ->
         conn
         |> put_view(OliWeb.SharedView)

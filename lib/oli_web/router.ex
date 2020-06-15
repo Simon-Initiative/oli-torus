@@ -97,6 +97,7 @@ defmodule OliWeb.Router do
 
     get "/projects", WorkspaceController, :projects
     get "/account", WorkspaceController, :account
+    post "/account/theme", WorkspaceController, :update_theme
     resources "/institutions", InstitutionController
   end
 

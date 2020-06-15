@@ -2,6 +2,7 @@ defmodule OliWeb.LayoutView do
   use OliWeb, :view
 
   import OliWeb.DeliveryView, only: [user_role: 1, user_role_text: 1, user_role_color: 1, account_linked?: 1]
+  alias Oli.Authoring
 
   def active_or_nil(assigns) do
     get_in(assigns, [Access.key(:active, nil)])
@@ -24,5 +25,16 @@ defmodule OliWeb.LayoutView do
 
   def render_layout(layout, assigns, do: content) do
     render(layout, Map.put(assigns, :inner_layout, content))
+  end
+
+  def get_theme(%{:assigns => assigns} = conn) do
+    current_author = assigns.current_author
+
+    case current_author.preferences do
+      nil ->
+        Authoring.get_default_theme!().url
+      %{theme: url} ->
+        url
+    end
   end
 end
