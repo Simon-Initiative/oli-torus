@@ -159,6 +159,7 @@ defmodule OliWeb.Router do
     pipe_through [:api, :protected]
 
     put "/:project/resource/:resource", ResourceController, :update
+    get "/:project/link", ResourceController, :index
 
     post "/:project/activity/:activity_type", ActivityController, :create
     put "/:project/resource/:resource/activity/:activity", ActivityController, :update
@@ -230,6 +231,9 @@ defmodule OliWeb.Router do
     post "/section", DeliveryController, :create_section
     get "/signout", DeliveryController, :signout
     get "/open_and_free", DeliveryController, :list_open_and_free
+
+    # course link resolver
+    get "/link/:revision_slug", PageDeliveryController, :link
 
     get "/:context_id/page/:revision_slug", PageDeliveryController, :page
     get "/:context_id/page", PageDeliveryController, :index

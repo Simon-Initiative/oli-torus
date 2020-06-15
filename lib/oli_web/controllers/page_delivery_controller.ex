@@ -13,7 +13,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Utils.Time
   alias Oli.Delivery.Lti
 
-  plug :ensure_context_id_matches
+  plug :ensure_context_id_matches when action not in [:link]
 
   def index(conn, %{"context_id" => context_id}) do
 
@@ -47,6 +47,15 @@ defmodule OliWeb.PageDeliveryController do
 
   end
 
+  # Handles in course page links, redirecting to
+  # the appropriate section resource
+  def link(conn, %{"revision_slug" => revision_slug}) do
+
+    lti_params = Plug.Conn.get_session(conn, :lti_params)
+    context_id = lti_params["context_id"]
+
+    redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
+  end
 
   defp render_page(%PageContext{progress_state: :not_started, page: page, resource_attempts: resource_attempts} = context,
     conn, context_id, _) do
