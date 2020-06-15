@@ -8,7 +8,7 @@ import { Command, CommandDesc } from '../interfaces';
 import { updateModel } from './utils';
 import * as Persistence from 'data/persistence/resource';
 
-import "./Link.scss";
+import './Link.scss';
 
 import guid from 'utils/guid';
 
