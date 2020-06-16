@@ -78,10 +78,10 @@ export const TextEditor = (props: TextEditorProps) => {
 
     const validity = !allowEmpty && !isValid(value) ? 'is-invalid' : '';
     const size = props.size === 'large' ? 'form-control-lg' : '';
-    const inputClass = `form-control ${validity} ${size}`;
+    const inputClass = `form-control ${validity} ${size} flex-fill`;
 
     return (
-      <div data-slate-editor style={{ display: 'inline' }}>
+      <div data-slate-editor className="d-flex">
         <input type="text"
           className={inputClass}
           onKeyUp={onKeyUp}
@@ -93,14 +93,14 @@ export const TextEditor = (props: TextEditorProps) => {
           onClick={onSave}
           type="button"
           disabled={!allowEmpty && !isValid(value)}
-          className="btn btn-link btn-sm">
-          Done
+          className="btn btn-primary btn-sm my-2 ml-2">
+          Save
         </button>
         <button
           key="cancel"
           onClick={onCancel}
           type="button"
-          className="btn btn-link btn-sm">
+          className="btn btn-outline-secondary btn-sm my-2 ml-2">
           Cancel
         </button>
       </div>
@@ -112,7 +112,6 @@ export const TextEditor = (props: TextEditorProps) => {
       display: 'inline-block',
       whiteSpace: 'normal',
       textAlign: 'left',
-      color: 'black',
       fontWeight: 'normal',
       fontSize: props.size === 'large' ? '18pt' : '12pt',
     };

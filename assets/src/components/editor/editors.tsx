@@ -11,9 +11,13 @@ import { CodeEditor, CodeBlockLine } from './editors/Code';
 import * as Table from './editors/Table';
 import { EditorProps } from './editors/interfaces';
 import { createToggleFormatCommand as format } from './commands';
+import { CommandContext } from './interfaces';
 
 export function editorFor(
-  element: ContentModel.ModelElement, props: any, editor: any): JSX.Element {
+  element: ContentModel.ModelElement,
+  props: any,
+  editor: any,
+  commandContext: CommandContext): JSX.Element {
 
   const { attributes, children } = props;
 
@@ -22,6 +26,7 @@ export function editorFor(
     editor,
     attributes,
     children,
+    commandContext,
   };
 
   switch (element.type) {

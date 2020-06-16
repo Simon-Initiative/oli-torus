@@ -58,6 +58,8 @@ function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
 
 export const Editor = React.memo((props: EditorProps) => {
 
+  const commandContext = props.commandContext;
+
   const editor = useMemo(() => withReact(createEditor()), []);
 
   // Override isVoid to incorporate our schema's opinion on which
@@ -140,7 +142,8 @@ export const Editor = React.memo((props: EditorProps) => {
 
   const renderElement = useCallback((props) => {
     const model = props.element as ModelElement;
-    return editorFor(model, props, editor);
+
+    return editorFor(model, props, editor, commandContext);
   }, []);
 
   const onKeyDown = useCallback((e: KeyboardEvent) => {

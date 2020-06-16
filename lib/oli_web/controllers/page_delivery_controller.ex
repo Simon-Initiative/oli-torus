@@ -13,7 +13,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Utils.Time
   alias Oli.Delivery.Lti
 
-  plug :ensure_context_id_matches
+  plug :ensure_context_id_matches when action not in [:link]
 
   def index(conn, %{"context_id" => context_id}) do
 
@@ -47,20 +47,40 @@ defmodule OliWeb.PageDeliveryController do
 
   end
 
+  # Handles in course page links, redirecting to
+  # the appropriate section resource
+  def link(conn, %{"revision_slug" => revision_slug}) do
+
+    lti_params = Plug.Conn.get_session(conn, :lti_params)
+    context_id = lti_params["context_id"]
+
+    redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
+  end
 
   defp render_page(%PageContext{progress_state: :not_started, page: page, resource_attempts: resource_attempts} = context,
     conn, context_id, _) do
 
     attempts_taken = length(resource_attempts)
-    attempts_remaining = page.max_attempts - attempts_taken
+
+    # The call to "max" here accounts for the possibility that a publication could reduce the
+    # number of attempts after a student has exhausted all attempts
+    attempts_remaining = max(page.max_attempts - attempts_taken, 0)
+
+    allow_attempt? = attempts_remaining > 0 or page.max_attempts == 0
+    message = if page.max_attempts == 0 do
+      "You can take this assessment an unlimited number of times"
+    else
+
+      "You have #{attempts_remaining} attempt#{plural(attempts_remaining)} remaining out of #{page.max_attempts} total attempt#{plural(page.max_attempts)}."
+    end
 
     render(conn, "prologue.html", %{
       context_id: context_id,
       previous_page: context.previous_page,
       next_page: context.next_page,
       title: context.page.title,
-      attempts_taken: attempts_taken,
-      attempts_remaining: attempts_remaining,
+      allow_attempt?: allow_attempt?,
+      message: message,
       slug: context.page.slug
     })
   end
@@ -123,6 +143,7 @@ defmodule OliWeb.PageDeliveryController do
 
       case Attempts.submit_graded_page(role, context_id, attempt_guid) do
         {:ok, _} -> after_finalized(conn, context_id, revision_slug, user.id)
+        {:error, {:already_submitted}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
         {:error, {:active_attempt_present}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
         {:error, {:no_more_attempts}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
         {:error, {:not_found}} -> render(conn, "error.html")
@@ -138,16 +159,22 @@ defmodule OliWeb.PageDeliveryController do
 
     context = PageContext.create_page_context(context_id, revision_slug, user_id)
 
-    attempts_taken = length(context.resource_attempts)
-    attempts_remaining = context.page.max_attempts - attempts_taken
+    message = if context.page.max_attempts == 0 do
+      "You have an unlimited number of attempts remaining"
+    else
+
+      taken = length(context.resource_attempts)
+      remaining = max(context.page.max_attempts - taken, 0)
+
+      "You have taken #{taken} attempt#{plural(taken)} and have #{remaining} more attempt#{plural(remaining)} remaining"
+    end
 
     render(conn, "after_finalized.html",
       context_id: context_id,
       previous_page: context.previous_page,
       next_page: context.next_page,
       title: context.page.title,
-      attempts_taken: attempts_taken,
-      attempts_remaining: attempts_remaining,
+      message: message,
       slug: context.page.slug)
 
   end
@@ -155,6 +182,10 @@ defmodule OliWeb.PageDeliveryController do
   defp get_scripts() do
     Activities.list_activity_registrations()
       |> Enum.map(fn r -> Map.get(r, :authoring_script) end)
+  end
+
+  defp plural(num) do
+    if num == 1 do "" else "s" end
   end
 
   def export_gradebook(conn, %{"context_id" => context_id}) do

@@ -35,21 +35,27 @@ export enum ResourceType {
   'assessment',
 }
 
-export enum ContentPurpose {
-  'none' = 'None',
-  'example' = 'Example',
-  'learnmore' = 'Learn more',
-}
+export type Purpose = {
+  value: string,
+  label: string,
+};
 
-export enum ActivityPurpose {
-  'none' = 'None',
-  'learnbydoing' = 'Learn by doing',
-  'didigetthis' = 'Did I get this?',
-  'lab' = 'Lab',
-  'manystudentswonder' = 'Many students wonder',
-  'simulation' = 'Simulation',
-  'walkthrough' = 'Walkthrough',
-}
+export const ActivityPurposes: Purpose[] = [
+  { value: 'none', label: 'None' },
+  { value: 'checkpoint', label: 'Checkpoint' },
+  { value: 'didigetthis', label: 'Did I get this?' },
+  { value: 'learnbydoing', label: 'Learn by doing' },
+  { value: 'manystudentswonder', label: 'Many students wonder' },
+];
+
+export const ContentPurposes: Purpose[] = [
+  { value: 'none', label: 'None' },
+  { value: 'example', label: 'Example' },
+  { value: 'learnmore', label: 'Learn more' },
+];
+
+
+
 
 export const createDefaultStructuredContent = () => {
   return {
@@ -58,7 +64,7 @@ export const createDefaultStructuredContent = () => {
     children: [
       { type: 'p', id: guid(), children: [{ text: ' ' }] },
     ],
-    purpose: ContentPurpose.none,
+    purpose: 'none',
   } as StructuredContent;
 };
 
@@ -66,14 +72,14 @@ export interface StructuredContent {
   type: 'content';
   id: string;
   children: ModelElement[];
-  purpose: ContentPurpose;
+  purpose: string;
 }
 
 export interface ActivityReference {
   type: 'activity-reference';
   id: string;
   activitySlug: ActivitySlug;
-  purpose: ActivityPurpose;
+  purpose: string;
   children: [];
 }
 

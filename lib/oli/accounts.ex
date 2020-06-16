@@ -125,6 +125,20 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  Updates an author.
+  ## Examples
+      iex> update_author(author, %{field: new_value})
+      {:ok, %Author{}}
+      iex> update_author(author, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def update_author(%Author{} = author, attrs) do
+    author
+    |> Author.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
   Creates and returns a new author
   ## Examples
       iex> create_author(%{field: value})

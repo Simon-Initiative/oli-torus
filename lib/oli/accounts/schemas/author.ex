@@ -13,6 +13,7 @@ defmodule Oli.Accounts.Author do
     field :password_confirmation, :string, virtual: true
     field :password_hash, :string
     field :email_verified, :boolean, default: false
+    embeds_one :preferences, Oli.Accounts.AuthorPreferences
     belongs_to :system_role, Oli.Accounts.SystemRole
     has_many :institutions, Oli.Accounts.Institution
     has_many :users, Oli.Accounts.User
@@ -40,6 +41,7 @@ defmodule Oli.Accounts.Author do
       :email_verified,
       :system_role_id
     ])
+    |> cast_embed(:preferences)
     |> validate_required(
       [:email, :first_name, :last_name, :provider, :system_role_id]
       |> filter_ignored_fields(ignore_required)
