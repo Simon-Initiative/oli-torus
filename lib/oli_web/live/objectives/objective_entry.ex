@@ -8,7 +8,6 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
   use Phoenix.HTML
 
   alias OliWeb.Objectives.ObjectiveRender
-  alias OliWeb.Router.Helpers, as: Routes
 
   def render(assigns) do
 

@@ -10,8 +10,6 @@ defmodule OliWeb.Objectives.ObjectiveRender do
   alias OliWeb.Objectives.ObjectiveForm
   alias OliWeb.Objectives.ObjectiveEntry
 
-  alias OliWeb.Router.Helpers, as: Routes
-
   def render(assigns) do
 
     ~L"""

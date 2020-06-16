@@ -7,8 +7,6 @@ defmodule OliWeb.Objectives.ObjectiveForm do
   use Phoenix.LiveComponent
   use Phoenix.HTML
 
-  alias OliWeb.Router.Helpers, as: Routes
-
   def render(assigns) do
 
     ~L"""

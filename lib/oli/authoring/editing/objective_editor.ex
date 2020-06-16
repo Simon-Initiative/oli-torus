@@ -155,15 +155,5 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     end
   end
 
-  def broadcast_update(resource_id, project_slug) do
-
-    updated_container = AuthoringResolver.from_resource_id(project_slug, resource_id)
-
-    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(resource_id),
-                     {:updated, updated_container, project_slug}
-    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(resource_id) <> ":project:" <> project_slug,
-                     {:updated, updated_container, project_slug}
-  end
-
 end
 
