@@ -27,10 +27,8 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
           {:ok, mapping} <- Publishing.upsert_published_resource(publication, revision),
           {:ok, container} <- maybe_append_to_container(container_slug, publication, revision, author)
       do
-        PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id),
-                         {:updated, revision, project.slug}
-        PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id) <> ":project:" <> project.slug,
-                         {:updated, revision, project.slug}
+        PubSub.broadcast Oli.PubSub, "resource_type:" <> Integer.to_string(revision.resource_type_id) <> ":project:" <> project.slug,
+                         {:added, revision, project.slug}
         {:ok,
           %{
             resource: resource,
@@ -110,6 +108,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   end
 
   def fetch_objective_mappings(project) do
+
     publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
     Publishing.get_objective_mappings_by_publication(publication.id)
   end

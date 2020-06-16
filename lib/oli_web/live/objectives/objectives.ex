@@ -14,6 +14,7 @@ defmodule OliWeb.Objectives.Objectives do
 
   alias Oli.Resources
   alias Oli.Resources.Revision
+  alias Oli.Resources.ResourceType
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Accounts.Author
   alias Oli.Repo
@@ -116,11 +117,12 @@ defmodule OliWeb.Objectives.Objectives do
     end
   end
 
-  # spin up subscriptions for the container and for all of its pages
+  # spin up subscriptions for the container and for all of its objectives
   defp subscribe(root_resource, objective_mappings, project_slug) do
     ids = [root_resource.resource_id] ++ Enum.map(objective_mappings, fn p -> p.resource.id end)
     Enum.each(ids, fn id -> PubSub.subscribe(Oli.PubSub, "resource:" <> Integer.to_string(id) <> ":project:" <> project_slug) end)
-    ids
+    PubSub.subscribe(Oli.PubSub, "resource_type:" <> Integer.to_string(ResourceType.get_id_by_type("objective")) <> ":project:" <> project_slug)
+    [Oli.Resources.ResourceType.get_id_by_type("objective")] ++ ids
   end
 
   # release a collection of subscriptions
@@ -180,6 +182,15 @@ defmodule OliWeb.Objectives.Objectives do
 
   # Here are listening for subscription notifications for edits made
   # to the container or to its child pages
+  def handle_info({:added, revision, project_slug}, socket) do
+    if revision.resource_type_id == ResourceType.get_id_by_type("objective")
+      && project_slug == socket.assigns.project.slug do
+      process_info({:added, revision}, socket)
+    else
+      {:noreply, socket}
+    end
+  end
+
   def handle_info({:deleted, revision, _}, socket) do
     process_info({:deleted, revision}, socket)
   end
@@ -189,11 +200,11 @@ defmodule OliWeb.Objectives.Objectives do
   end
 
   defp process_info({_any, revision}, socket) do
-    IO.inspect("type of broadcast action #{_any}")
     id = revision.resource_id
 
     # now determine if the change was to the container or to one of the objectives itself
-    {objective_mappings, root_resource} = if (socket.assigns.root_resource.resource_id == id) do
+    {objective_mappings, root_resource} = if (socket.assigns.root_resource.resource_id == id)
+      || _any == :added do
       # in the case of a change to the container, we simplify by just pulling a new view of
       # the container and its contents.
       objective_mappings = ObjectiveEditor.fetch_objective_mappings(socket.assigns.project)
