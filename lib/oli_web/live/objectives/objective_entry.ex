@@ -52,28 +52,28 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
       <div class="to-show">
         <button
           id=<%= "edit_#{@objective_mapping.resource.id}" %>
-          class="add-button add-button-item"
+          class="btn btn-sm"
           phx-click="modify"
           phx-value-slug="<%= @objective_mapping.revision.slug %>"
          >
-         <i class="material-icons icon-font">edit</i>
+         <i class="fas fa-pencil-alt">edit</i>
         </button>
         <button
           id=<%= "delete_#{@objective_mapping.resource.id}" %>
-          class="add-button add-button-item"
+          class="btn btn-sm"
           phx-click="delete"
           phx-value-slug="<%= @objective_mapping.revision.slug %>"
          >
-         <i class="material-icons icon-font">delete</i>
+         <i class="fas fa-trash">delete</i>
         </button>
         <%= if @depth < 2 do %>
        <button
           id=<%= "add_#{@objective_mapping.resource.id}" %>
-          class="add-button add-button-item"
+          class="btn btn-sm"
           phx-click="modify"
           phx-value-slug=<%= "add_sub_#{@objective_mapping.revision.slug}" %>
          >
-         <i class="material-icons icon-font">add</i>
+         <i class="fas fa-plus">add</i>
         </button>
         <% end %>
       </div>
