@@ -9,9 +9,9 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   alias Oli.Accounts.Author
   alias Oli.Authoring.Course.Project
   alias Oli.Repo
+  alias Phoenix.PubSub
 
   import Oli.Utils
-
 
   def add_new(attrs, %Author{} = author, %Project{} = project, container_slug \\ nil) do
 
@@ -27,6 +27,10 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
           {:ok, mapping} <- Publishing.upsert_published_resource(publication, revision),
           {:ok, container} <- maybe_append_to_container(container_slug, publication, revision, author)
       do
+        PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id),
+                         {:updated, revision, project.slug}
+        PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id) <> ":project:" <> project.slug,
+                         {:updated, revision, project.slug}
         {:ok,
           %{
             resource: resource,
@@ -57,6 +61,16 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
           {:ok, new_revision} <- Resources.create_revision_from_previous(revision, attrs),
           {:ok, _} <- Publishing.upsert_published_resource(publication, new_revision)
       do
+        action = cond do
+          Map.has_key?(attrs, :deleted) -> :deleted
+          true -> :updated
+        end
+
+        PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(new_revision.resource_id),
+                         {action, new_revision, project.slug}
+        PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(new_revision.resource_id) <> ":project:" <> project.slug,
+                         {action, new_revision, project.slug}
+
         {:ok, new_revision}
       else
         error -> Repo.rollback(error)
@@ -95,6 +109,11 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   end
 
+  def fetch_objective_mappings(project) do
+    publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+    Publishing.get_objective_mappings_by_publication(publication.id)
+  end
+
   def fetch_objective_mappings_params(project) do
 
     publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
@@ -118,7 +137,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
       root_parents = Enum.reduce(objective_mappings, [], fn(m, acc) ->
         a = Map.get(mapping_obs, m.resource.id)
         a = %{a | children: m.revision.children |> Enum.reduce(a.children,fn(c, mc) ->
-          [Map.get(mapping_obs, c)] ++ mc
+          val = Map.get(mapping_obs, c)
+          if is_nil(val) do
+            mc
+          else
+            [val] ++ mc
+          end
         end)}
         if !Enum.member?(children_list, m.resource.id) do
           acc ++ [a]
@@ -130,6 +154,16 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
       root_parents = Enum.sort_by(root_parents, &(&1.mapping.revision.title))
       %{title: "Objectives", objective_mappings: root_parents, objective_changeset: changeset, active: :objectives}
     end
+  end
+
+  def broadcast_update(resource_id, project_slug) do
+
+    updated_container = AuthoringResolver.from_resource_id(project_slug, resource_id)
+
+    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(resource_id),
+                     {:updated, updated_container, project_slug}
+    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(resource_id) <> ":project:" <> project_slug,
+                     {:updated, updated_container, project_slug}
   end
 
 end
