@@ -24,9 +24,9 @@ defmodule OliWeb.ObjectivesLiveTest do
       assert view |> element("##{Integer.to_string(objective2.resource.id)}") |> has_element?()
 
       # delete the selected objective
-      val = view
+      view
        |> element("#delete_#{Integer.to_string(objective1.resource.id)}")
-            |> render_click()
+       |> render_click()
 
       refute view |> element("##{Integer.to_string(objective1.resource.id)}") |> has_element?()
       assert view |> element("##{Integer.to_string(objective2.resource.id)}") |> has_element?()
