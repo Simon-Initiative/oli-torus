@@ -199,12 +199,12 @@ defmodule OliWeb.Objectives.Objectives do
     process_info({:updated, revision}, socket)
   end
 
-  defp process_info({_any, revision}, socket) do
+  defp process_info({any, revision}, socket) do
     id = revision.resource_id
 
     # now determine if the change was to the container or to one of the objectives itself
     {objective_mappings, root_resource} = if (socket.assigns.root_resource.resource_id == id)
-      || _any == :added do
+      || any == :added do
       # in the case of a change to the container, we simplify by just pulling a new view of
       # the container and its contents.
       objective_mappings = ObjectiveEditor.fetch_objective_mappings(socket.assigns.project)
@@ -214,10 +214,10 @@ defmodule OliWeb.Objectives.Objectives do
       objective_mappings = case Enum.find_index(socket.assigns.objective_mappings, fn p -> p.resource.id == id end) do
         nil -> socket.assigns.objective_mappings
         index -> cond  do
-                   _any == :updated ->
+                   any == :updated ->
                      mapping = %{Enum.at(socket.assigns.objective_mappings, index) | revision: revision}
                      List.replace_at(socket.assigns.objective_mappings, index, mapping)
-                   _any == :deleted -> List.delete_at(socket.assigns.objective_mappings, index)
+                   any == :deleted -> List.delete_at(socket.assigns.objective_mappings, index)
                    true -> socket.assigns.objective_mappings
                  end
       end

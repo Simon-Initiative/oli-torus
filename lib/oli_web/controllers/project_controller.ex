@@ -21,27 +21,6 @@ defmodule OliWeb.ProjectController do
     render %{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html"
   end
 
-  def objectives(conn, _request_params) do
-    project = conn.assigns.project
-    params = Oli.Authoring.Editing.ObjectiveEditor.fetch_objective_mappings_params(project)
-    render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
-  end
-
-  def edit_objective(conn, request_params) do
-    project = conn.assigns.project
-    params = Oli.Authoring.Editing.ObjectiveEditor.fetch_objective_mappings_params(project)
-    case Map.get(request_params, "action") do
-      "edit_objective" ->
-        params = Map.merge(params, %{edit: Map.get(request_params, "objective_slug")})
-        render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
-      "add_sub_objective" ->
-        params = Map.merge(params, %{edit: "add_sub_"<>Map.get(request_params, "objective_slug")})
-        render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
-      nil ->
-        render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
-    end
-  end
-
   def unpublished(pub), do: pub.published == false
 
   def resource_editor(conn, _project_params) do
