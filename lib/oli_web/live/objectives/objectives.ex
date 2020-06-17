@@ -50,10 +50,13 @@ defmodule OliWeb.Objectives.Objectives do
 
     ~L"""
     <div style="margin: 20px;">
-      <div class="objective container">
+      <div class="container">
+      <div class="row">
+      <h2>Course Objectives</h2>
+      </div>
         <div class="row">
           <div class="page-header" style="width: 100%">
-            <small>At the end of the course my students should be able to...</small>
+            <p class="text-secondary">At the end of the course my students should be able to...</p>
               <%= live_component @socket, ObjectiveRender, changeset: @changeset, project: @project, form_id: "create-objective",
             place_holder: "New Learning Objective", title_value: "", slug_value: "", parent_slug_value: "",
             edit: @edit, method: "new", mode: :new_objective, phx_disable_with: "Adding Objective...", button_text: "Create" %>
