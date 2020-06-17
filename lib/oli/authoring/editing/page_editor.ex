@@ -172,8 +172,10 @@ defmodule Oli.Authoring.Editing.PageEditor do
     with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
          {:ok, %{content: content} = _revision} <- get_latest_revision(publication, resource) |> trap_nil(),
-         render_context <- %Rendering.Context{user: author}
+         {:ok, activities} <- create_activities_map(publication.id, content),
+         render_context <- %Rendering.Context{user: author, activity_map: activities}
     do
+      IO.inspect activities
       Rendering.Page.render(render_context, content["model"], Rendering.Page.Html)
     else
       _ -> {:error, :not_found}

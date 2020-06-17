@@ -98,7 +98,7 @@ defmodule OliWeb.PageDeliveryController do
 
     render(conn, "page.html", %{
       context_id: context_id,
-      scripts: get_scripts(),
+      scripts: Activities.get_activity_scripts(),
       previous_page: context.previous_page,
       next_page: context.next_page,
       title: context.page.title,
@@ -177,11 +177,6 @@ defmodule OliWeb.PageDeliveryController do
       message: message,
       slug: context.page.slug)
 
-  end
-
-  defp get_scripts() do
-    Activities.list_activity_registrations()
-      |> Enum.map(fn r -> Map.get(r, :authoring_script) end)
   end
 
   defp plural(num) do

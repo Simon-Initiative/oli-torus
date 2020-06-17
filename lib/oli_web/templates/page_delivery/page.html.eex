@@ -3,7 +3,7 @@
   <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
 <% end %>
 
-<h3><%= @title %></h3>
+<h1><%= @title %></h1>
 
 <%= render "_objectives.html", objectives: @objectives %>
 

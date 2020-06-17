@@ -11,7 +11,7 @@ defmodule OliWeb.ResourceController do
 
   plug :fetch_project when action not in [:view, :update, :index]
   plug :authorize_project when action not in [:view, :update, :index]
-  plug :put_layout, {OliWeb.LayoutView, "preview.html"} when action in [:preview]
+  plug :put_root_layout, {OliWeb.LayoutView, "preview.html"} when action in [:preview]
 
   def index(conn, %{"project" => project_slug }) do
 
@@ -42,7 +42,7 @@ defmodule OliWeb.ResourceController do
   def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
 
     case PageEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
-      {:ok, context} -> render(conn, "edit.html", title: "Page Editor", context: Jason.encode!(context), scripts: get_scripts(), project_slug: project_slug, revision_slug: revision_slug)
+      {:ok, context} -> render(conn, "edit.html", title: "Page Editor", context: Jason.encode!(context), scripts: Activities.get_activity_scripts(), project_slug: project_slug, revision_slug: revision_slug)
       {:error, :not_found} ->
         conn
         |> put_view(OliWeb.SharedView)
@@ -56,17 +56,22 @@ defmodule OliWeb.ResourceController do
 
     case PageEditor.create_context(project_slug, revision_slug, author) do
       {:ok, context} ->
-        render(conn, "page_preview.html", title: "Preview", content_html: PageEditor.render_page_html(project_slug, revision_slug, author), context: context)
+
+        IO.inspect context, label: "context"
+
+        render(conn, "page_preview.html",
+          title: "Preview - #{context.title}",
+          # content_html: PageEditor.render_page_html(project_slug, revision_slug, author, PageEditor.create_activities_map(publication_id, map)),
+          content_html: PageEditor.render_page_html(project_slug, revision_slug, author),
+          context: context,
+          scripts: Activities.get_activity_scripts(),
+          preview_mode: true,
+        )
       {:error, :not_found} ->
         conn
         |> put_view(OliWeb.SharedView)
         |> render("_not_found.html", title: "Not Found")
     end
-  end
-
-  defp get_scripts() do
-    Activities.list_activity_registrations()
-      |> Enum.map(fn r -> Map.get(r, :authoring_script) end)
   end
 
   def update(conn, %{"project" => project_slug, "resource" => resource_slug, "update" => update }) do
