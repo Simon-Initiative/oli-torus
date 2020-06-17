@@ -175,7 +175,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
          {:ok, activities} <- create_activities_map(publication.id, content),
          render_context <- %Rendering.Context{user: author, activity_map: activities}
     do
-      IO.inspect activities
       Rendering.Page.render(render_context, content["model"], Rendering.Page.Html)
     else
       _ -> {:error, :not_found}

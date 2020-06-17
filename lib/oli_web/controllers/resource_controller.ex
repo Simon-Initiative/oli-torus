@@ -56,9 +56,6 @@ defmodule OliWeb.ResourceController do
 
     case PageEditor.create_context(project_slug, revision_slug, author) do
       {:ok, context} ->
-
-        IO.inspect context, label: "context"
-
         render(conn, "page_preview.html",
           title: "Preview - #{context.title}",
           # content_html: PageEditor.render_page_html(project_slug, revision_slug, author, PageEditor.create_activities_map(publication_id, map)),
