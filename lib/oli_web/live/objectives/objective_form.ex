@@ -15,7 +15,7 @@ defmodule OliWeb.Objectives.ObjectiveForm do
     flex-grow: 1;
     }
     </style>
-    <%= f = form_for @changeset, "#", [phx_submit: @method, id: "form-" <> @form_id, class: "form-inline form-grow"] %>
+    <%= f = form_for @changeset, "#", [phx_submit: @method, id: "form-" <> @form_id, class: "my-1 form-inline form-grow"] %>
     <%= text_input f,
       :title,
       value: @title_value,

@@ -31,7 +31,7 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
     </style>
     <div
       id="<%= @objective_mapping.resource.id %>"
-      class="list-group-item list-group-item-action d-flex align-items-start"
+      class="rounded my-1 list-group-item list-group-item-action d-flex align-items-start"
       >
     <div class="w-100">
     <%= cond do
