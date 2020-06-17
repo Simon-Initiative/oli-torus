@@ -15,7 +15,8 @@ defmodule OliWeb.Objectives.ObjectiveForm do
     flex-grow: 1;
     }
     </style>
-    <%= f = form_for @changeset, "#", [phx_submit: @method, id: "form-" <> @form_id, class: "my-1 form-inline form-grow"] %>
+    <div class="d-flex form-grow" >
+    <%= f = form_for @changeset, "#", [phx_submit: @method, id: "form-" <> @form_id, class: "form-inline form-grow"] %>
     <%= text_input f,
       :title,
       value: @title_value,
@@ -37,9 +38,10 @@ defmodule OliWeb.Objectives.ObjectiveForm do
     <%= if @button_text != "Create" do %>
     <button
       phx-click="cancel"
-      class = "mx-1 btn btn-primary ob-form-button btn-sm"
+      class = "mx-1 btn btn-primary btn-sm"
      >Cancel</button>
       <% end %>
+      </div>
     """
   end
 end

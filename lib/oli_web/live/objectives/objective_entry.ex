@@ -13,32 +13,23 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
 
     ~L"""
     <style>
-    .to-show {
-    display: none;
-    }
+      .to-show {
+        display: none;
+      }
 
-    .list-group-item:hover .to-show{
-    display: flex;
-    }
-
-    .add-button-item {
-    height: 20px;
-    }
-
-    .icon-font {
-    font-size: larger;
-    }
+      .list-group-item:hover .to-show{
+         display: flex;
+      }
     </style>
     <div
       id="<%= @objective_mapping.resource.id %>"
-      class="rounded my-1 list-group-item list-group-item-action d-flex align-items-start"
-      >
+      class="my-1 list-group-item list-group-item-action d-flex align-items-start">
     <div class="w-100">
     <%= cond do
          @edit == @objective_mapping.revision.slug ->
            live_component @socket, ObjectiveRender, changeset: @changeset, objective_mapping: @objective_mapping, children: @children,
             project: @project, form_id: "edit-objective", place_holder: @objective_mapping.revision.title,
-            phx_disable_with: "Updating Objective...", button_text: "Reword", parent_slug_value: "", title_value: @objective_mapping.revision.title, edit: @edit, method: "edit", mode: :edit
+            phx_disable_with: "Updating Objective...", button_text: "Save", parent_slug_value: "", title_value: @objective_mapping.revision.title, edit: @edit, method: "edit", mode: :edit
          @edit == "add_sub_" <> @objective_mapping.revision.slug ->
             live_component @socket, ObjectiveRender, changeset: @changeset, objective_mapping: @objective_mapping, children: @children,
             project: @project, form_id: "create-sub-objective", place_holder: "New Sub-Objective", title_value: "",
