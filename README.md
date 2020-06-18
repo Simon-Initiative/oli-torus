@@ -33,7 +33,7 @@
 1. Install dependencies:
     - [Docker](https://www.docker.com/) and docker-compose
     - [Elixir](https://elixir-lang.org/) (`$ brew install elixir`)
-    - [Phoenix](https://www.phoenixframework.org/) (`$ mix archive.install hex phx_new 1.4.10`)
+    - [Phoenix](https://www.phoenixframework.org/) (`$ mix archive.install hex phx_new 1.5.3`)
 
 1. Optionally, use the provided `devmode.sh` script to automatically run all the following steps and get started
    ```
