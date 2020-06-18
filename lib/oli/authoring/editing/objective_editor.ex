@@ -113,47 +113,5 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     Publishing.get_objective_mappings_by_publication(publication.id)
   end
 
-  def fetch_objective_mappings_params(project) do
-
-    publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
-    objective_mappings = Publishing.get_objective_mappings_by_publication(publication.id)
-    changeset = Oli.Resources.change_revision(%Oli.Resources.Revision{})
-
-    if Enum.empty?(objective_mappings) do
-      %{title: "Objectives", objective_mappings: [], objective_changeset: changeset, active: :objectives}
-    else
-      # Extract all children references from objectives
-      children_list = objective_mappings
-        |> Enum.map(fn mapping -> mapping.revision.children end)
-        |> Enum.reduce(fn(children, acc) -> children ++ acc end)
-
-      # Build flat ObjectiveMappingTransfer map for all objectives
-      mapping_obs = objective_mappings |>  Enum.reduce(%{}, fn(mapping, acc) ->
-        Map.merge(acc, %{mapping.resource.id => %ObjectiveMappingTransfer{mapping: mapping, children: []}})
-      end)
-
-      # Build nested tree structure
-      root_parents = Enum.reduce(objective_mappings, [], fn(m, acc) ->
-        a = Map.get(mapping_obs, m.resource.id)
-        a = %{a | children: m.revision.children |> Enum.reduce(a.children,fn(c, mc) ->
-          val = Map.get(mapping_obs, c)
-          if is_nil(val) do
-            mc
-          else
-            [val] ++ mc
-          end
-        end)}
-        if !Enum.member?(children_list, m.resource.id) do
-          acc ++ [a]
-        else
-          acc
-        end
-      end)
-
-      root_parents = Enum.sort_by(root_parents, &(&1.mapping.revision.title))
-      %{title: "Objectives", objective_mappings: root_parents, objective_changeset: changeset, active: :objectives}
-    end
-  end
-
 end
 
