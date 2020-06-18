@@ -4,7 +4,6 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   alias Oli.Repo
   alias Oli.Resources
-  alias Oli.Publishing.ObjectiveMappingTransfer
   alias Oli.Publishing
   alias Oli.Accounts.Author
   alias Oli.Authoring.Course.Project
