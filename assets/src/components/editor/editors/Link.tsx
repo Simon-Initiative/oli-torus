@@ -306,7 +306,15 @@ export const LinkEditor = (props: LinkProps) => {
   };
 
   const onCopy = (href: string) => {
-    navigator.clipboard.writeText(href);
+
+    if (isInternalLink(href)) {
+      navigator.clipboard.writeText(
+        window.location.protocol + '//' + window.location.host + '/' +
+        translateDeliveryToAuthoring(href, props.commandContext.projectSlug));
+    } else {
+      navigator.clipboard.writeText(href);
+    }
+
   };
 
   const onRemove = () => {
