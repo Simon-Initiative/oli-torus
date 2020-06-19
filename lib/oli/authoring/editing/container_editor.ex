@@ -154,11 +154,14 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
         # this current user is editing this page (like in another tab). This is due
         # to the re-entrant natures of our locks.
 
-        with {:ok, _} <- PageEditor.edit(project.slug, revision_slug, author.email, deletion),
+        with {:acquired} <- PageEditor.acquire_lock(project.slug, revision_slug, author.email),
+          {:ok, _} <- PageEditor.edit(project.slug, revision_slug, author.email, deletion),
+          _ <- PageEditor.release_lock(project.slug, revision_slug, author.email),
          {:ok, revision} = ChangeTracker.track_revision(project.slug, container, removal)
         do
           revision
         else
+          {:lock_not_acquired, value} -> Repo.rollback({:lock_not_acquired, value})
           {:error, e} -> Repo.rollback(e)
         end
 

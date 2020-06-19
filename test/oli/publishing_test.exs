@@ -69,6 +69,7 @@ defmodule Oli.PublishingTest do
 
       # further edits to the locked resource should occur in a new revision
       content = %{"model" => [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }] }
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
       {:ok, updated_revision} = PageEditor.edit(project.slug, revision.slug, author.email, %{ content: content })
       assert revision.id != updated_revision.id
 
@@ -138,6 +139,7 @@ defmodule Oli.PublishingTest do
 
         # make some edits
         content = %{"model" => [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }]}
+        PageEditor.acquire_lock(project.slug, revision.slug, author.email)
         {:ok, _updated_revision} = PageEditor.edit(project.slug, revision.slug, author.email, %{content: content})
 
         # add another resource
@@ -153,6 +155,7 @@ defmodule Oli.PublishingTest do
         Publishing.upsert_published_resource(p2, r4_revision)
 
         # delete a resource
+        PageEditor.acquire_lock(project.slug, r3_revision.slug, author.email)
         {:ok, _updated_revision} = PageEditor.edit(project.slug, r3_revision.slug, author.email, %{deleted: true})
 
         # generate diff
