@@ -4,6 +4,7 @@ defmodule OliWeb.ResourceController do
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Authoring.Course
+  alias Oli.Accounts
   alias Oli.Activities
   alias Oli.Publishing.AuthoringResolver
 
@@ -41,8 +42,11 @@ defmodule OliWeb.ResourceController do
 
   def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
 
-    case PageEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
-      {:ok, context} -> render(conn, "edit.html", title: "Page Editor", context: Jason.encode!(context), scripts: get_scripts(), project_slug: project_slug, revision_slug: revision_slug)
+    author = conn.assigns[:current_author]
+    is_admin? = Accounts.is_admin?(author)
+
+    case PageEditor.create_context(project_slug, revision_slug, author) do
+      {:ok, context} -> render(conn, "edit.html", title: "Page Editor", is_admin?: is_admin?, context: Jason.encode!(context), scripts: get_scripts(), project_slug: project_slug, revision_slug: revision_slug)
       {:error, :not_found} ->
         conn
         |> put_view(OliWeb.SharedView)

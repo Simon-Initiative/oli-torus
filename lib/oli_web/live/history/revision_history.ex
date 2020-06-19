@@ -5,13 +5,17 @@ defmodule OliWeb.RevisionHistory do
 
   alias Oli.Repo
   alias Oli.Resources.Revision
+  alias Oli.Resources
+  alias Oli.Publishing
   alias Phoenix.PubSub
 
   alias OliWeb.RevisionHistory.Details
   alias OliWeb.RevisionHistory.Graph
   alias OliWeb.RevisionHistory.Table
 
-  def mount(%{ "slug" => slug}, _, socket) do
+  alias Oli.Publishing.AuthoringResolver
+
+  def mount(%{ "slug" => slug, "project_id" => project_slug}, _, socket) do
 
     [{resource_id}] = Repo.all(from rev in Revision,
       distinct: rev.resource_id,
@@ -28,9 +32,12 @@ defmodule OliWeb.RevisionHistory do
     selected = hd(revisions)
 
     {:ok, assign(socket,
+      title: "Revision History",
+      view: "table",
       resource_id: resource_id,
       revisions: revisions,
       selected: selected,
+      project_slug: project_slug,
       initial_size: length(revisions))
     }
   end
@@ -47,29 +54,43 @@ defmodule OliWeb.RevisionHistory do
       <div class="col-sm-12">
         <div class="card">
           <div class="card-header">
-            Revision Graph
+            Revisions
+
+            <div class="btn-group btn-group-toggle" data-toggle="buttons"  style="float: right;">
+              <label phx-click="table" class="btn btn-sm btn-secondary <%= if @view == "table" do "active" else "" end %>">
+                <input type="radio" name="options" id="option1"
+                  <%= if @view == "table" do "checked" else "" end %>
+                > <span><i class="fas fa-table"></i></span>
+              </label>
+              <label phx-click="graph" class="btn btn-sm btn-secondary <%= if @view == "graph" do "active" else "" end %>">
+                <input type="radio" name="options" id="option2"
+                  <%= if @view == "graph" do "checked" else "" end %>
+                > <span><i class="fas fa-project-diagram"></i></span>
+              </label>
+            </div>
+
+            </span>
           </div>
           <div class="card-body">
-            <%= live_component @socket, Graph, revisions: reversed, selected: @selected, initial_size: @initial_size %>
+            <%= if @view == "graph" do %>
+              <%= live_component @socket, Graph, revisions: reversed, selected: @selected, initial_size: @initial_size %>
+            <% else %>
+              <%= live_component @socket, Table, revisions: @revisions, selected: @selected %>
+            <% end %>
           </div>
         </div>
       </div>
     </div>
     <div class="row">
-      <div class="col-sm-6">
-        <div class="card">
-          <div class="card-header">
-            Tabular Display
-          </div>
-          <div class="card-body">
-            <%= live_component @socket, Table, revisions: @revisions, selected: @selected %>
-          </div>
-        </div>
-      </div>
-      <div class="col-sm-6">
+      <div class="col-sm-12">
         <div class="card">
           <div class="card-header">
             Selected Revision Details
+            <div style="float: right;">
+              <button type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal" data-target="#restoreModal">
+                Restore
+              </button>
+            </div>
           </div>
           <div class="card-body">
             <%= live_component @socket, Details, revision: @selected %>
@@ -77,7 +98,67 @@ defmodule OliWeb.RevisionHistory do
         </div>
       </div>
     </div>
+
+    <div class="modal fade" id="restoreModal" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLongTitle">Restore this Revision</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p clsas="mb-4">Are you sure you want to restore this revision?</p>
+            <p>This will end any active editing session for other users and will create a new revision to restore the title, content and objectives and other settings of this selected revision.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-danger" data-dismiss="modal" phx-click="restore">Proceed</button>
+          </div>
+        </div>
+      </div>
+    </div>
     """
+  end
+
+  # creates a new revision by restoring the state of the selected revision
+  def handle_event("restore", _, socket) do
+
+    project_slug = socket.assigns.project_slug
+    resource_id = socket.assigns.resource_id
+
+    # First clear any lock that might be present on this resource.  Clearing the lock
+    # is necessary to prevent an active editing session from stomping on what is about
+    # to be restored
+    publication = AuthoringResolver.publication(project_slug)
+    Publishing.get_resource_mapping!(publication.id, resource_id)
+    |> Publishing.update_resource_mapping(%{ lock_updated_at: nil, locked_by_id: nil })
+
+    # Now create and track the new revision, based on the current head for this project but
+    # restoring the content, title and objectives and other settigns from the selected revision
+    %Revision{content: content,
+      title: title,
+      objectives: objectives,
+      scoring_strategy_id: scoring_strategy_id,
+      graded: graded,
+      max_attempts: max_attempts,
+      author_id: author_id} = socket.assigns.selected
+
+    {:ok, revision} = AuthoringResolver.from_resource_id(project_slug, resource_id)
+    |> Resources.create_revision_from_previous(
+      %{author_id: author_id, content: content, title: title, objectives: objectives,
+        scoring_strategy_id: scoring_strategy_id, graded: graded, max_attempts: max_attempts })
+
+    Oli.Publishing.ChangeTracker.track_revision(project_slug, revision)
+
+    # Broadcast this revision creation
+    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id),
+      {:updated, revision, project_slug}
+    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id) <> ":project:" <> project_slug,
+      {:updated, revision, project_slug}
+
+    {:noreply, socket}
   end
 
   def handle_event("select", %{ "rev" => str}, socket) do
@@ -87,7 +168,15 @@ defmodule OliWeb.RevisionHistory do
     {:noreply, assign(socket, :selected, selected)}
   end
 
-  def handle_info({:updated, revision}, socket) do
+  def handle_event("table", _, socket) do
+    {:noreply, assign(socket, :view, "table")}
+  end
+
+  def handle_event("graph", _, socket) do
+    {:noreply, assign(socket, :view, "graph")}
+  end
+
+  def handle_info({:updated, revision, _}, socket) do
 
     id = revision.id
 

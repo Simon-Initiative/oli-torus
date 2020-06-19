@@ -3,7 +3,7 @@ defmodule Oli.Accounts do
   import Ecto.Query, warn: false
 
   alias Oli.Repo
-  alias Oli.Accounts.{User, Author, Institution, LtiToolConsumer}
+  alias Oli.Accounts.{User, Author, Institution, LtiToolConsumer, SystemRole}
 
   @doc """
   Returns the list of users.
@@ -102,10 +102,18 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Returns true if a author is signed in
+  Returns true if an author is signed in
   """
   def user_signed_in?(conn) do
     conn.assigns[:current_user]
+  end
+
+
+  @doc """
+  Returns true if an author is an administrator.
+  """
+  def is_admin?(%Author{system_role_id: system_role_id}) do
+    SystemRole.role_id.admin == system_role_id
   end
 
   @doc """
