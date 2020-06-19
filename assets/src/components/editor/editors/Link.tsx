@@ -147,7 +147,7 @@ const ExistingLink = (props: ExistingLinkProps) => {
       props.onEdit(href.trim());
     }}
     disabled={disabled}
-    className="btn btn-primary">Apply</button>;
+    className="btn btn-primary ml-1">Apply</button>;
 
     // For external URL entry we simply show a text input
     if (isURL) {
@@ -165,7 +165,7 @@ const ExistingLink = (props: ExistingLinkProps) => {
             style={ { display: 'inline ', width: '300px' }}/>
           {applyButton(!valid)}
           { valid ? null :
-          <div className="invalid-feedback">
+          <div className="invalid-feedback" style={ { display: 'block' } }>
             Valid links should start with http:// or https://
           </div>}
         </form>
