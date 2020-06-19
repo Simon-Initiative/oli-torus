@@ -42,6 +42,7 @@ defmodule OliWeb.Objectives.Objectives do
       project: project,
       subscriptions: subscriptions,
       author: author,
+      selected: nil,
       edit: :none)
     }
   end
@@ -75,9 +76,29 @@ defmodule OliWeb.Objectives.Objectives do
           <div class="border border-light list-group list-group-flush w-100">
               <%= for {objective_tree, index} <- Enum.with_index(@objectives_tree) do %>
                 <%= live_component @socket, ObjectiveEntry, changeset: @changeset, objective_mapping: objective_tree.mapping,
-                    children: objective_tree.children, depth: 1, index: index, project: @project, edit: @edit %>
+                    children: objective_tree.children, depth: 1, index: index, project: @project, selected: @selected, edit: @edit %>
               <% end %>
           </div>
+      <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLongTitle">Delete Objective</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to delete this objective?</p>
+            <p>This is an operation that cannot be undone.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-danger" data-dismiss="modal" phx-click="delete">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
         </div>
         <% end %>
         </div>
@@ -135,6 +156,11 @@ defmodule OliWeb.Objectives.Objectives do
     Enum.each(ids, fn id -> PubSub.unsubscribe(Oli.PubSub, "resource:" <> Integer.to_string(id) <> ":project:" <> project_slug) end)
   end
 
+  # handle change of selection
+  def handle_event("select", %{ "slug" => slug}, socket) do
+    {:noreply, assign(socket, :selected, slug)}
+  end
+
   # handle change of edit
   def handle_event("modify", %{ "slug" => slug}, socket) do
     {:noreply, assign(socket, :edit, slug)}
@@ -158,8 +184,8 @@ defmodule OliWeb.Objectives.Objectives do
   end
 
   # handle processing deletion of item
-  def handle_event("delete", %{ "slug" => slug}, socket) do
-    socket = case ObjectiveEditor.edit(slug, %{ deleted: true }, socket.assigns.author, socket.assigns.project) do
+  def handle_event("delete", _, socket) do
+    socket = case ObjectiveEditor.edit(socket.assigns.selected, %{ deleted: true }, socket.assigns.author, socket.assigns.project) do
       {:ok, _} -> socket
       {:error, _} -> socket
       |> put_flash(:error, "Could not remove objective")
