@@ -2,7 +2,7 @@ defmodule Oli.Delivery.Attempts do
 
   import Ecto.Query, warn: false
   alias Oli.Repo
-  alias Oli.Delivery.Sections.{Section}
+  alias Oli.Delivery.Sections.{Section, SectionRoles, Enrollment}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.{PartAttempt, ResourceAccess, ResourceAttempt, ActivityAttempt, Snapshot}
   alias Oli.Delivery.Evaluation.{EvaluationContext}
@@ -295,6 +295,34 @@ defmodule Oli.Delivery.Attempts do
       join: s in Section, on: a.section_id == s.id,
       where: a.user_id == ^user_id and s.context_id == ^context_id and a.resource_id == ^resource_id,
       select: a)
+  end
+
+  def get_snapshots_for_publication(publication_id) do
+    Repo.all(from snapshot in Snapshot,
+      join: section in Section, on: snapshot.section_id == section.id,
+      where: section.publication_id == ^publication_id,
+      select: snapshot,
+      preload: [:part_attempt, :user]
+    )
+  end
+
+  def get_part_attempts_and_users_for_publication(publication_id) do
+    student_role_id = SectionRoles.get_by_type("student").id
+    Repo.all(
+      from section in Section,
+      join: enrollment in Enrollment, on: enrollment.section_id == section.id,
+      join: user in Oli.Accounts.User, on: enrollment.user_id == user.id,
+      join: raccess in ResourceAccess, on: section.id == raccess.section_id,
+      join: rattempt in ResourceAttempt, on: raccess.id == rattempt.resource_access_id,
+      join: aattempt in ActivityAttempt, on: rattempt.id == aattempt.resource_attempt_id,
+      join: pattempt in PartAttempt, on: aattempt.id == pattempt.activity_attempt_id,
+      where: section.publication_id == ^publication_id,
+      where: enrollment.section_role_id == ^student_role_id,
+      select: %{ part_attempt: pattempt, user: user })
+      # select: %{ activity_attempt: aattempt, user: user })
+      # TODO: This should be done in the query, but can't get the syntax right
+      # |> Enum.map(& %{ user: &1.user, activity_attempt: Repo.preload(&1.activity_attempt, [:revision, :part_attempts])})
+    |> Enum.map(& %{ user: &1.user, part_attempt: Repo.preload(&1.part_attempt, [activity_attempt: [:revision, revision: :activity_type]]) })
   end
 
   def create_new_attempt_tree(old_resource_attempt, resource_revision, context_id, user_id, activity_provider) do

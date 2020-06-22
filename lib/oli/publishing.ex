@@ -131,11 +131,6 @@ defmodule Oli.Publishing do
           resource_id: resource.id,
           revision_id: resource_revision.id,
         })
-        # {:ok, objective_mapping} <- create_objective_mapping(%{
-        #   publication_id: publication.id,
-        #   objective_id: objective.id,
-        #   revision_id: objective_revision.id,
-        # })
       do
         %{}
         |> Map.put(:publication, publication)
