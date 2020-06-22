@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.21.3">
     <meta name="project" content="OLI Torus v0.1.0">
-    <title>Oli.Delivery.Evaluation — OLI Torus v0.1.0</title>
+    <title>Oli.Authoring.Broadcaster — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
     <script src="dist/sidebar_items-5b4876d36c.js"></script>
       <script src="docs_config.js"></script>
@@ -68,15 +68,89 @@ OLI Torus      </a>
 
       <h1>
         <small class="app-vsn">OLI Torus v0.1.0</small>
-Oli.Delivery.Evaluation          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/evaluation.ex#L1" title="View Source" class="view-source" rel="help">
+Oli.Authoring.Broadcaster          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/broadcaster.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
       </h1>
 
 
+        <section id="moduledoc">
+<p>This module encapsulates all broadcasting functionality for authoring events.</p>
+<p>For some broadcast functions in this module, more than one actual PubSub broadcast is performed
+to allow clients to opt-in to receiving updates for a specific context, whether
+that is a specific project or a specific resource type.</p>
+        </section>
 
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#broadcast_resource/2">broadcast_resource(revision, project_slug)</a>
+  </div>
+    <div class="summary-synopsis"><p>Broadcasts that a new resource has been created.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#broadcast_revision/2">broadcast_revision(revision, project_slug)</a>
+  </div>
+    <div class="summary-synopsis"><p>Broadcasts that a revision for an existing resource has changed or been created.</p></div>
+</div>
+  </div>
+        </section>
 
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions          </h1>
+          <div class="functions-list">
+<section class="detail" id="broadcast_resource/2">
+  <div class="detail-header">
+    <a href="#broadcast_resource/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">broadcast_resource(revision, project_slug)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/broadcaster.ex#L28" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Broadcasts that a new resource has been created.</p>
+  </section>
+</section>
+<section class="detail" id="broadcast_revision/2">
+  <div class="detail-header">
+    <a href="#broadcast_revision/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">broadcast_revision(revision, project_slug)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/broadcaster.ex#L18" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Broadcasts that a revision for an existing resource has changed or been created.</p>
+  </section>
+</section>
+          </div>
+        </section>
       <footer class="footer">
         <p>
           <span class="line">
