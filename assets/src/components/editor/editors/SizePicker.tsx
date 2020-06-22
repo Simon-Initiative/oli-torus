@@ -78,16 +78,14 @@ export const SizePicker = (props: SizePickerProps) => {
   const gridStyle = {
     height,
     width,
-    paddingLeft: '10px',
-    zIndex: 999,
-    opacity: .99,
+    paddingLeft: '5px',
+    backgroundColor: '#f0f0f0',
   } as any;
 
   const labelStyle = {
     width,
-    color: '#DDDDDD',
+    color: '#808080',
     textAlign: 'center',
-
   } as any;
 
 
