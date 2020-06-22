@@ -8,7 +8,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   alias Oli.Accounts.Author
   alias Oli.Authoring.Course.Project
   alias Oli.Repo
-  alias Phoenix.PubSub
+  alias Oli.Authoring.Broadcaster
 
   import Oli.Utils
 
@@ -26,8 +26,9 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
           {:ok, mapping} <- Publishing.upsert_published_resource(publication, revision),
           {:ok, container} <- maybe_append_to_container(container_slug, publication, revision, project.slug, author)
       do
-        PubSub.broadcast Oli.PubSub, "resource_type:" <> Integer.to_string(revision.resource_type_id) <> ":project:" <> project.slug,
-                         {:added, revision, project.slug}
+
+        Broadcaster.broadcast_resource(revision, project.slug)
+
         {:ok,
           %{
             resource: resource,
@@ -59,10 +60,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
           {:ok, _} <- Publishing.upsert_published_resource(publication, new_revision)
       do
 
-        PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(new_revision.resource_id),
-                         {:updated, new_revision, project.slug}
-        PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(new_revision.resource_id) <> ":project:" <> project.slug,
-                         {:updated, new_revision, project.slug}
+        Broadcaster.broadcast_revision(new_revision, project.slug)
 
         {:ok, new_revision}
       else
@@ -95,10 +93,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
       {:ok, next} = Oli.Resources.create_revision_from_previous(revision, attrs)
       {:ok, _} = Publishing.upsert_published_resource(publication, next)
 
-      PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(next.resource_id),
-                        {:updated, next, project_slug}
-      PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(next.resource_id) <> ":project:" <> project_slug,
-                        {:updated, next, project_slug}
+      Broadcaster.broadcast_revision(next, project_slug)
 
       {:ok, next}
     else
