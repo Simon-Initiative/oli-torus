@@ -1,6 +1,8 @@
 defmodule OliWeb.ResourceControllerTest do
   use OliWeb.ConnCase
 
+  alias Oli.Authoring.Editing.PageEditor
+
   setup [:project_seed]
 
   describe "edit" do
@@ -17,7 +19,9 @@ defmodule OliWeb.ResourceControllerTest do
   end
 
   describe "update resource" do
-    test "valid response on valid update", %{conn: conn, project: project, revision1: revision} do
+    test "valid response on valid update", %{conn: conn, project: project, revision1: revision, author: author} do
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
       conn = put(conn, Routes.resource_path(conn, :update, project.slug, revision.slug, %{ "update" => %{"title" => "new title" }}))
       assert %{ "type" => "success" } = json_response(conn, 200)
     end

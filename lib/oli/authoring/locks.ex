@@ -114,13 +114,13 @@ defmodule Oli.Authoring.Locks do
       # otherwise, simply update it
       %{locked_by_id: ^user_id} = mapping -> lock_action(mapping, user_id, &expired_or_empty?/1, {:acquired}, {:updated}, now())
 
-      # Acquire the lock if no user has this mapping locked
-      %{locked_by_id: nil} = mapping -> lock_action(mapping, user_id, &always?/1, {:acquired}, {:acquired}, now())
-
-      # Otherwise, another user may have this locked, acquire it if
-      # the lock is expired, otherwise report lock not acquired
-      %{ locked_by_id: other_user_id, lock_updated_at: lock_updated_at} = mapping ->
-        lock_action(mapping, user_id, &expired?/1, {:acquired}, {:lock_not_acquired, {other_user_id, lock_updated_at}}, now())
+      # Otherwise, another user may have this locked, or it was locked by this
+      # user and it expired and an interleaving lock, redit, release by another user
+      # has taken place.  We must not acquire here since this could lead to lost changes as
+      # the client has a copy of content in client-side memory and is seeking to update this
+      # revision.
+      %{ locked_by_id: other_user_id, lock_updated_at: lock_updated_at} ->
+        {:lock_not_acquired, {other_user_id, lock_updated_at}}
     end
   end
 

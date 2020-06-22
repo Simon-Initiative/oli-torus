@@ -26,6 +26,7 @@ defmodule Oli.ActivityEditingTest do
 
       # Verify that we can issue a resource edit that attaches the activity
       update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug, "purpose" => "none"}]}}
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
       assert {:ok, updated_revision} =  PageEditor.edit(project.slug, revision.slug, author.email, update)
 
       # Verify that the slug was translated to the correct activity id
@@ -57,6 +58,7 @@ defmodule Oli.ActivityEditingTest do
 
       # Verify that we can issue a resource edit that attaches the activity
       update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug, "purpose" => "none"}]}}
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
       assert {:ok, _} =  PageEditor.edit(project.slug, revision.slug, author.email, update)
 
       update = %{ "title" => "edited title"}
@@ -81,6 +83,7 @@ defmodule Oli.ActivityEditingTest do
 
       # attach the activity
       update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug_1, "purpose" => "none"}]}}
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
       assert {:ok, %{slug: revision_slug}} =  PageEditor.edit(project.slug, revision.slug, author.email, update)
 
       # create the activity context
@@ -109,6 +112,7 @@ defmodule Oli.ActivityEditingTest do
 
       # attach just one activity
       update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug_1, "purpose" => "none"}]}}
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
       assert {:ok, _} =  PageEditor.edit(project.slug, revision.slug, author.email, update)
 
       # create the activity context
@@ -215,6 +219,7 @@ defmodule Oli.ActivityEditingTest do
     test "attaching an unknown activity to a resource fails", %{author: author, project: project, revision1: revision } do
 
       update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => "missing", "purpose" => "none"}]}}
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
       assert {:error, :not_found} =  PageEditor.edit(project.slug, revision.slug, author.email, update)
 
     end
@@ -232,6 +237,7 @@ defmodule Oli.ActivityEditingTest do
       # Delete one of the activity parts
       update = %{ "objectives" => %{ "1" => [ ob1.slug ], "2" => [ ob2.slug ]  },
         "content" => %{"authoring" => %{"parts" => [%{"id" => "1" }]}}}
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
       {:ok, updated} = ActivityEditor.edit(project.slug, revision.slug, revision.slug, author.email, update)
 
       # Verify that the objective tied to that part has been removed as well

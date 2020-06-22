@@ -14,8 +14,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Repo
   alias Oli.Rendering
   alias Oli.Activities.Transformers
-
-  alias Phoenix.PubSub
+  alias Oli.Authoring.Broadcaster
 
   import Ecto.Query, warn: false
 
@@ -344,12 +343,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
   # Creates a new resource revision and updates the publication mapping
   def create_new_revision(previous, publication, resource, author_id) do
 
-    # Copy the state of the previous revision, except for author and id
-    attrs = Map.from_struct(previous)
-    |> Map.merge(%{author_id: author_id})
-    |> Map.delete(:id)
-
-    {:ok, revision} = Resources.create_revision(attrs)
+    attrs = %{author_id: author_id}
+    {:ok, revision} = Resources.create_revision_from_previous(previous, attrs)
 
     mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
     {:ok, _mapping} = Publishing.update_resource_mapping(mapping, %{ revision_id: revision.id })
@@ -379,10 +374,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
     {:ok, updated} = Oli.Resources.update_revision(revision, converted_back_to_ids)
 
-    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id),
-      {:updated, updated, project_slug}
-    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id) <> ":project:" <> project_slug,
-      {:updated, updated, project_slug}
+    Broadcaster.broadcast_revision(revision, project_slug)
 
     updated
   end

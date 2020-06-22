@@ -144,7 +144,7 @@ defmodule OliWeb.Objectives.Objectives do
     ids = Enum.map(objective_mappings, fn p -> p.resource.id end)
     Enum.each(ids, fn id -> PubSub.subscribe(Oli.PubSub, "resource:" <> Integer.to_string(id) <> ":project:" <> project_slug) end)
 
-    PubSub.subscribe(Oli.PubSub, "resource_type:" <> Integer.to_string(ResourceType.get_id_by_type("objective")) <> ":project:" <> project_slug)
+    PubSub.subscribe(Oli.PubSub, "new_resource:resource_type:" <> Integer.to_string(ResourceType.get_id_by_type("objective")) <> ":project:" <> project_slug)
 
     ids
   end
@@ -152,7 +152,7 @@ defmodule OliWeb.Objectives.Objectives do
   # release a collection of subscriptions
   defp unsubscribe(ids, project_slug) do
     Enum.each(ids, fn id -> PubSub.unsubscribe(Oli.PubSub, "resource:" <> Integer.to_string(id) <> ":project:" <> project_slug) end)
-    PubSub.unsubscribe(Oli.PubSub, "resource_type:" <> Integer.to_string(ResourceType.get_id_by_type("objective")) <> ":project:" <> project_slug)
+    PubSub.unsubscribe(Oli.PubSub, "new_resource:resource_type:" <> Integer.to_string(ResourceType.get_id_by_type("objective")) <> ":project:" <> project_slug)
   end
 
   # handle change of selection
@@ -211,7 +211,7 @@ defmodule OliWeb.Objectives.Objectives do
   end
 
   # Here are listening for subscription notifications for newly created resources
-  def handle_info({:added, revision, _}, socket) do
+  def handle_info({:new_resource, revision, _}, socket) do
     process_info({:added, revision}, socket)
   end
 
