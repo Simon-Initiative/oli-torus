@@ -20,7 +20,7 @@ defmodule OliWeb.Objectives.ObjectiveRender do
     <div class="list-group list-group-flush w-100">
        <%= for child <- @children do %>
           <%= live_component @socket, ObjectiveEntry, changeset: @changeset, objective_mapping: child.mapping,
-                children: [], depth: 2, project: @project, edit: @edit %>
+                children: [], depth: 2, project: @project, selected: @selected, edit: @edit %>
        <% end %>
     </div>
     <% end %>
@@ -33,7 +33,7 @@ defmodule OliWeb.Objectives.ObjectiveRender do
     <div class="list-group list-group-flush w-100">
          <%= for child <- @children do %>
           <%= live_component @socket, ObjectiveEntry, changeset: @changeset,objective_mapping: child.mapping,
-               children: [], depth: 2, project: @project, edit: @edit %>
+               children: [], depth: 2, project: @project, selected: @selected, edit: @edit %>
        <% end %>
      </div>
      <% end %>
@@ -45,7 +45,7 @@ defmodule OliWeb.Objectives.ObjectiveRender do
      <div class="list-group list-group-flush w-100">
         <%= for child <- @children do %>
           <%= live_component @socket, ObjectiveEntry, changeset: @changeset, objective_mapping: child.mapping, children: [], depth: 2,
-                 project: @project, edit: @edit %>
+                 project: @project, selected: @selected, edit: @edit %>
        <% end %>
      </div>
     <% end %>
