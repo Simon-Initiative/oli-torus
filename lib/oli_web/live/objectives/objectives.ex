@@ -11,12 +11,11 @@ defmodule OliWeb.Objectives.Objectives do
   alias OliWeb.Objectives.ObjectiveRender
   alias Oli.Publishing.ObjectiveMappingTransfer
   alias Oli.Authoring.Course
+  alias Oli.Accounts.Author
 
   alias Oli.Resources
   alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
-  alias Oli.Publishing.AuthoringResolver
-  alias Oli.Accounts.Author
   alias Oli.Repo
   alias Phoenix.PubSub
 
@@ -27,9 +26,7 @@ defmodule OliWeb.Objectives.Objectives do
 
     objective_mappings = ObjectiveEditor.fetch_objective_mappings(project)
 
-    root_resource = AuthoringResolver.root_resource(project.slug)
-
-    subscriptions = subscribe(root_resource, objective_mappings, project.slug)
+    subscriptions = subscribe(objective_mappings, project.slug)
 
     objectives_tree = to_objective_tree(objective_mappings)
 
@@ -38,7 +35,6 @@ defmodule OliWeb.Objectives.Objectives do
       objectives_tree: objectives_tree,
       title: "Objectives",
       changeset: Resources.change_revision(%Revision{}),
-      root_resource: root_resource,
       project: project,
       subscriptions: subscriptions,
       author: author,
@@ -144,16 +140,19 @@ defmodule OliWeb.Objectives.Objectives do
   end
 
   # spin up subscriptions for the container and for all of its objectives
-  defp subscribe(root_resource, objective_mappings, project_slug) do
-    ids = [root_resource.resource_id] ++ Enum.map(objective_mappings, fn p -> p.resource.id end)
+  defp subscribe(objective_mappings, project_slug) do
+    ids = Enum.map(objective_mappings, fn p -> p.resource.id end)
     Enum.each(ids, fn id -> PubSub.subscribe(Oli.PubSub, "resource:" <> Integer.to_string(id) <> ":project:" <> project_slug) end)
+
     PubSub.subscribe(Oli.PubSub, "resource_type:" <> Integer.to_string(ResourceType.get_id_by_type("objective")) <> ":project:" <> project_slug)
-    [Oli.Resources.ResourceType.get_id_by_type("objective")] ++ ids
+
+    ids
   end
 
   # release a collection of subscriptions
   defp unsubscribe(ids, project_slug) do
     Enum.each(ids, fn id -> PubSub.unsubscribe(Oli.PubSub, "resource:" <> Integer.to_string(id) <> ":project:" <> project_slug) end)
+    PubSub.unsubscribe(Oli.PubSub, "resource_type:" <> Integer.to_string(ResourceType.get_id_by_type("objective")) <> ":project:" <> project_slug)
   end
 
   # handle change of selection
@@ -194,7 +193,7 @@ defmodule OliWeb.Objectives.Objectives do
     {:noreply, socket}
   end
 
-  # handle clicking of the "Add Graded Assessment" or "Add Practice Page" buttons
+  # handle clicking of the add objective
   def handle_event("new", %{ "revision" => objective_params}, socket) do
     with_atom_keys = Map.keys(objective_params)
                      |> Enum.reduce(%{}, fn k, m -> Map.put(m, String.to_atom(k), Map.get(objective_params, k)) end)
@@ -211,21 +210,12 @@ defmodule OliWeb.Objectives.Objectives do
     {:noreply, socket}
   end
 
-  # Here are listening for subscription notifications for edits made
-  # to the container or to its child pages
-  def handle_info({:added, revision, project_slug}, socket) do
-    if revision.resource_type_id == ResourceType.get_id_by_type("objective")
-      && project_slug == socket.assigns.project.slug do
-      process_info({:added, revision}, socket)
-    else
-      {:noreply, socket}
-    end
+  # Here are listening for subscription notifications for newly created resources
+  def handle_info({:added, revision, _}, socket) do
+    process_info({:added, revision}, socket)
   end
 
-  def handle_info({:deleted, revision, _}, socket) do
-    process_info({:deleted, revision}, socket)
-  end
-
+  # Listener for edits to existing resources
   def handle_info({:updated, revision, _}, socket) do
     process_info({:updated, revision}, socket)
   end
@@ -233,34 +223,31 @@ defmodule OliWeb.Objectives.Objectives do
   defp process_info({any, revision}, socket) do
     id = revision.resource_id
 
-    # now determine if the change was to the container or to one of the objectives itself
-    {objective_mappings, root_resource} = if (socket.assigns.root_resource.resource_id == id)
-      || any == :added do
-      # in the case of a change to the container, we simplify by just pulling a new view of
-      # the container and its contents.
-      objective_mappings = ObjectiveEditor.fetch_objective_mappings(socket.assigns.project)
-      {objective_mappings, revision}
+    # For a completely new resource, we simply pull a new view of the objective mappings
+    objective_mappings = if any == :added do
+      ObjectiveEditor.fetch_objective_mappings(socket.assigns.project)
+
     else
-      # on just an objective change, updated the revision in place
-      objective_mappings = case Enum.find_index(socket.assigns.objective_mappings, fn p -> p.resource.id == id end) do
+      # on just an objective change, update the revision in place
+      case Enum.find_index(socket.assigns.objective_mappings, fn p -> p.resource.id == id end) do
         nil -> socket.assigns.objective_mappings
-        index -> cond  do
-                   any == :updated ->
-                     mapping = %{Enum.at(socket.assigns.objective_mappings, index) | revision: revision}
-                     List.replace_at(socket.assigns.objective_mappings, index, mapping)
-                   any == :deleted -> List.delete_at(socket.assigns.objective_mappings, index)
-                   true -> socket.assigns.objective_mappings
-                 end
+        index -> case revision.deleted do
+          false ->
+            mapping = %{Enum.at(socket.assigns.objective_mappings, index) | revision: revision}
+            List.replace_at(socket.assigns.objective_mappings, index, mapping)
+          true ->
+            List.delete_at(socket.assigns.objective_mappings, index)
+        end
       end
-      {objective_mappings, socket.assigns.root_resource}
     end
 
     # redo all subscriptions
     unsubscribe(socket.assigns.subscriptions, socket.assigns.project.slug)
-    subscriptions = subscribe(root_resource, objective_mappings, socket.assigns.project.slug)
+    subscriptions = subscribe(objective_mappings, socket.assigns.project.slug)
 
     objectives_tree = to_objective_tree(objective_mappings)
+
     {:noreply, assign(socket, objective_mappings: objective_mappings, objectives_tree: objectives_tree,
-      root_resource: root_resource, subscriptions: subscriptions)}
+      subscriptions: subscriptions)}
   end
 end

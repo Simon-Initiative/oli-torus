@@ -24,7 +24,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
       with {:ok, %{resource: resource, revision: revision}} <- Oli.Authoring.Course.create_and_attach_resource(project, attrs),
           publication <- Publishing.get_unpublished_publication_by_slug!(project.slug),
           {:ok, mapping} <- Publishing.upsert_published_resource(publication, revision),
-          {:ok, container} <- maybe_append_to_container(container_slug, publication, revision, author)
+          {:ok, container} <- maybe_append_to_container(container_slug, publication, revision, project.slug, author)
       do
         PubSub.broadcast Oli.PubSub, "resource_type:" <> Integer.to_string(revision.resource_type_id) <> ":project:" <> project.slug,
                          {:added, revision, project.slug}
@@ -58,15 +58,11 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
           {:ok, new_revision} <- Resources.create_revision_from_previous(revision, attrs),
           {:ok, _} <- Publishing.upsert_published_resource(publication, new_revision)
       do
-        action = cond do
-          Map.has_key?(attrs, :deleted) -> :deleted
-          true -> :updated
-        end
 
         PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(new_revision.resource_id),
-                         {action, new_revision, project.slug}
+                         {:updated, new_revision, project.slug}
         PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(new_revision.resource_id) <> ":project:" <> project.slug,
-                         {action, new_revision, project.slug}
+                         {:updated, new_revision, project.slug}
 
         {:ok, new_revision}
       else
@@ -76,17 +72,17 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     end)
   end
 
-  def maybe_append_to_container(container_slug, publication, revision_to_attach, author) do
+  def maybe_append_to_container(container_slug, publication, revision_to_attach, project_slug, author) do
 
     case container_slug do
       nil -> {:ok, nil}
       "" -> {:ok, nil}
-      slug -> append_to_container(slug, publication, revision_to_attach, author)
+      slug -> append_to_container(slug, publication, revision_to_attach, project_slug, author)
     end
 
   end
 
-  def append_to_container(container_slug, publication, revision_to_attach, author) do
+  def append_to_container(container_slug, publication, revision_to_attach, project_slug, author) do
 
     with {:ok, resource} <- Resources.get_resource_from_slug(container_slug) |> trap_nil(),
         {:ok, revision} <- Publishing.get_published_revision(publication.id, resource.id) |> trap_nil()
@@ -98,6 +94,11 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
       }
       {:ok, next} = Oli.Resources.create_revision_from_previous(revision, attrs)
       {:ok, _} = Publishing.upsert_published_resource(publication, next)
+
+      PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(next.resource_id),
+                        {:updated, next, project_slug}
+      PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(next.resource_id) <> ":project:" <> project_slug,
+                        {:updated, next, project_slug}
 
       {:ok, next}
     else
