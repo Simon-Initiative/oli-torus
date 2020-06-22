@@ -12,6 +12,18 @@ import './Link.scss';
 
 import guid from 'utils/guid';
 
+const internalLinkPrefix = '/course/link';
+
+const isInternalLink = (href: string) => href.startsWith(internalLinkPrefix);
+
+// Takes a delivery oriented internal link and translates it to
+// a link that will resolve at authoring time. This allows
+// authors to use the 'Open Link' function and visit the linked course
+// page.
+const translateDeliveryToAuthoring = (href: string, projectSlug: string) => {
+  return `/project/${projectSlug}/resource/` + href.substr(href.lastIndexOf('/') + 1);
+};
+
 const wrapLink = (editor: ReactEditor, link: ContentModel.Hyperlink) => {
   Transforms.wrapNodes(editor, link, { split: true });
   Transforms.collapse(editor, { edge: 'end' });
@@ -133,7 +145,7 @@ const ExistingLink = (props: ExistingLinkProps) => {
   });
 
   // Helper function to turn a Page into a link url
-  const toLink = (p : any) => `/course/link/${p.id}`;
+  const toLink = (p : any) => `${internalLinkPrefix}/${p.id}`;
 
   let input = null;
 
@@ -147,7 +159,7 @@ const ExistingLink = (props: ExistingLinkProps) => {
       props.onEdit(href.trim());
     }}
     disabled={disabled}
-    className="btn btn-primary">Apply</button>;
+    className="btn btn-primary ml-1">Apply</button>;
 
     // For external URL entry we simply show a text input
     if (isURL) {
@@ -165,7 +177,7 @@ const ExistingLink = (props: ExistingLinkProps) => {
             style={ { display: 'inline ', width: '300px' }}/>
           {applyButton(!valid)}
           { valid ? null :
-          <div className="invalid-feedback">
+          <div className="invalid-feedback" style={ { display: 'block' } }>
             Valid links should start with http:// or https://
           </div>}
         </form>
@@ -283,11 +295,26 @@ export const LinkEditor = (props: LinkProps) => {
   };
 
   const onVisit = (href: string) => {
-    window.open(href, '_blank');
+
+    if (isInternalLink(href)) {
+      window.open(translateDeliveryToAuthoring(
+        href, props.commandContext.projectSlug), '_blank');
+    } else {
+      window.open(href, '_blank');
+    }
+
   };
 
   const onCopy = (href: string) => {
-    navigator.clipboard.writeText(href);
+
+    if (isInternalLink(href)) {
+      navigator.clipboard.writeText(
+        window.location.protocol + '//' + window.location.host + '/' +
+        translateDeliveryToAuthoring(href, props.commandContext.projectSlug));
+    } else {
+      navigator.clipboard.writeText(href);
+    }
+
   };
 
   const onRemove = () => {

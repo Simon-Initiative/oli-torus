@@ -117,8 +117,6 @@ defmodule OliWeb.Router do
 
     # Project display pages
     get "/:project_id", ProjectController, :overview
-    get "/:project_id/objectives", ProjectController, :objectives
-    get "/:project_id/objectives/:objective_slug/:action", ProjectController, :edit_objective
     get "/:project_id/publish", ProjectController, :publish
     post "/:project_id/publish", ProjectController, :publish_active
     post "/:project_id/review", ProjectController, :review_project
@@ -129,9 +127,7 @@ defmodule OliWeb.Router do
     delete "/:project_id", ProjectController, :delete
 
     # Objectives
-    post "/:project_id/objectives", ObjectiveController, :create
-    put "/:project_id/objectives/:objective_slug", ObjectiveController, :update
-    delete "/:project_id/objectives/:objective_slug", ObjectiveController, :delete
+    live "/:project_id/objectives", Objectives.Objectives
 
     # Curriculum
     live "/:project_id/curriculum", Curriculum.Container
