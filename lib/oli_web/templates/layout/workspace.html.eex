@@ -1,3 +1,6 @@
+<a id='skip-nav' class='screenreader-text' href='#main-content'>
+  Skip Navigation
+</a>
 
 <%= render_layout "authoring.html", assigns do %>
 
@@ -10,7 +13,7 @@
     <%= render OliWeb.LayoutView, "_#{if @conn.params["project_id"] do "project" else
       if @title == "Projects" do "workspace" else "account" end end}_header.html", assigns %>
 
-    <main role="main">
+    <main role="main" id="main-content">
       <%= @inner_content %>
     </main>
 

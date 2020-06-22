@@ -111,7 +111,7 @@ defmodule OliWeb.Curriculum.Container do
   end
 
   # handle change of selection
-  def handle_event("select", %{ "slug" => slug}, socket) do
+  def handle_event("select", %{"slug" => slug}, socket) do
     selected = Enum.find(socket.assigns.pages, fn r -> r.slug == slug end)
     {:noreply, assign(socket, :selected, selected)}
   end
@@ -129,24 +129,57 @@ defmodule OliWeb.Curriculum.Container do
   end
 
   # allow key up and down to change the selected item
-  def handle_event("keydown", %{"key" => key}, socket) do
+  def handle_event("keydown", %{"key" => key, "shiftKey" => shiftKey} = params, socket) do
+    # selected_index = Enum.find_index(socket.assigns.pages, fn p -> p == socket.assigns.selected end)
 
-    index = Enum.find_index(socket.assigns.pages, fn p -> p == socket.assigns.selected end)
+    # index = case params["index"] do
+      #   nil -> selected_index
+      #   string -> case Integer.parse(params["index"]) do
+        #     {int, _rest} -> int
+        #     _ -> selected_index
+        #   end
+        # end
+
+    focused_index = case params["index"] do
+      nil -> nil
+      stringIndex -> String.to_integer(stringIndex)
+    end
     last_index = length(socket.assigns.pages) - 1
     pages = socket.assigns.pages
+    IO.inspect(shiftKey, label: "shiftKey")
+    IO.inspect(key, label: "key")
+    IO.inspect(focused_index, label: "index")
 
-    case {index, key} do
+    case {focused_index, key} do
       {nil, _} -> {:noreply, socket}
       {^last_index, "ArrowDown"} -> {:noreply, socket}
       {0, "ArrowUp"} -> {:noreply, socket}
-      {index, "ArrowUp"} -> {:noreply, assign(socket, :selected, move_selection(pages, index, -1))}
-      {index, "ArrowDown"} -> {:noreply, assign(socket, :selected, move_selection(pages, index, 1))}
+
+      # change these to reorder item above or below.
+      # {index, "ArrowUp"} -> {:noreply, assign(socket, :selected, move_selection(pages, index, -1))}
+      # {index, "ArrowDown"} -> {:noreply, assign(socket, :selected, move_selection(pages, index, 1))}
+      {focused_index, "ArrowDown"} -> if shiftKey
+        do
+          handle_event("reorder", %{"sourceIndex" => Integer.to_string(focused_index), "dropIndex" => Integer.to_string(focused_index + 2)}, socket)
+        else {:noreply, socket}
+        end
+      {focused_index, "ArrowUp"} -> if shiftKey
+        do
+          handle_event("reorder", %{"sourceIndex" => Integer.to_string(focused_index), "dropIndex" => Integer.to_string(focused_index - 1)}, socket)
+        else {:noreply, socket}
+        end
+
+      {focused_index, "Enter"} -> {:noreply, assign(socket, :selected, Enum.at(pages, focused_index))}
+      {_, _} -> {:noreply, socket}
     end
 
   end
 
   # handle reordering event
   def handle_event("reorder", %{"sourceIndex" => source_index, "dropIndex" => index}, socket) do
+    IO.inspect("Handling reordering")
+    IO.inspect(source_index, label: "source index")
+    IO.inspect(index, label: "drop index")
     source = Enum.at(socket.assigns.pages, String.to_integer(source_index))
 
     socket = case ContainerEditor.reorder_child(socket.assigns.project, socket.assigns.author, source.slug, String.to_integer(index)) do
