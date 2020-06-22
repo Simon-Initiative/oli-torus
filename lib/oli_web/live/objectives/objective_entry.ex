@@ -13,7 +13,9 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
 
     ~L"""
     <div
+      tabindex="0"
       id="<%= @objective_mapping.resource.id %>"
+      phx-keydown="keydown"
       phx-click="select"
       phx-value-slug="<%= @objective_mapping.revision.slug %>"
       class="my-1 list-group-item d-flex align-items-start
