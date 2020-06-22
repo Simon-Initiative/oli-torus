@@ -106,10 +106,6 @@ defmodule OliWeb.Curriculum.Container do
     Enum.each(ids, fn id -> PubSub.unsubscribe(Oli.PubSub, "resource:" <> Integer.to_string(id) <> ":project:" <> project_slug) end)
   end
 
-  defp move_selection(pages, index, direction) do
-    Enum.at(pages, index + direction)
-  end
-
   # handle change of selection
   def handle_event("select", %{"slug" => slug}, socket) do
     selected = Enum.find(socket.assigns.pages, fn r -> r.slug == slug end)
