@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Authoring.Editing.ObjectiveEditor — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-71364c3a85.js"></script>
+    <script src="dist/sidebar_items-c4c84de717.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -95,7 +95,7 @@ Oli.Authoring.Editing.ObjectiveEditor          <a href="https://github.com/Simon
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#append_to_container/4">append_to_container(container_slug, publication, revision_to_attach, author)</a>
+    <a href="#append_to_container/5">append_to_container(container_slug, publication, revision_to_attach, project_slug, author)</a>
   </div>
 </div>
 <div class="summary-row">
@@ -105,12 +105,12 @@ Oli.Authoring.Editing.ObjectiveEditor          <a href="https://github.com/Simon
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#fetch_objective_mappings_params/1">fetch_objective_mappings_params(project)</a>
+    <a href="#fetch_objective_mappings/1">fetch_objective_mappings(project)</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#maybe_append_to_container/4">maybe_append_to_container(container_slug, publication, revision_to_attach, author)</a>
+    <a href="#maybe_append_to_container/5">maybe_append_to_container(container_slug, publication, revision_to_attach, project_slug, author)</a>
   </div>
 </div>
   </div>
@@ -132,7 +132,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">add_new(attrs, author, project, container_slug \\ nil)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L16" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L15" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -140,14 +140,14 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="append_to_container/4">
+<section class="detail" id="append_to_container/5">
   <div class="detail-header">
-    <a href="#append_to_container/4" class="detail-link" title="Link to this function">
+    <a href="#append_to_container/5" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">append_to_container(container_slug, publication, revision_to_attach, author)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L78" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">append_to_container(container_slug, publication, revision_to_attach, project_slug, author)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L85" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -162,7 +162,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">edit(revision_slug, attrs, author, project)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L46" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L47" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -170,14 +170,14 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="fetch_objective_mappings_params/1">
+<section class="detail" id="fetch_objective_mappings/1">
   <div class="detail-header">
-    <a href="#fetch_objective_mappings_params/1" class="detail-link" title="Link to this function">
+    <a href="#fetch_objective_mappings/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">fetch_objective_mappings_params(project)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L98" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">fetch_objective_mappings(project)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L110" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -185,14 +185,14 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="maybe_append_to_container/4">
+<section class="detail" id="maybe_append_to_container/5">
   <div class="detail-header">
-    <a href="#maybe_append_to_container/4" class="detail-link" title="Link to this function">
+    <a href="#maybe_append_to_container/5" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">maybe_append_to_container(container_slug, publication, revision_to_attach, author)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L68" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">maybe_append_to_container(container_slug, publication, revision_to_attach, project_slug, author)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L75" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

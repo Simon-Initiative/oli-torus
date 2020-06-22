@@ -1,4 +1,4 @@
-dist/search_items-8ae182e6b2.js
+dist/search_items-b35ec4ccad.js
 dist/app-a225d03098e64fef431a.js
 dist/elixir-0ab8a6a80ebaaa287431.css
 dist/erlang-bd206729da4d0d280293.css
@@ -6,7 +6,7 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/sidebar_items-71364c3a85.js
+dist/sidebar_items-c4c84de717.js
 api-reference.html
 readme.html
 license.html
@@ -192,8 +192,10 @@ OliWeb.LtiController.html
 OliWeb.LtiView.html
 OliWeb.MediaController.html
 OliWeb.MediaView.html
-OliWeb.ObjectiveController.html
-OliWeb.ObjectiveView.html
+OliWeb.Objectives.ObjectiveEntry.html
+OliWeb.Objectives.ObjectiveForm.html
+OliWeb.Objectives.ObjectiveRender.html
+OliWeb.Objectives.Objectives.html
 OliWeb.PageDeliveryController.html
 OliWeb.PageDeliveryView.html
 OliWeb.Plugs.Guest.html
