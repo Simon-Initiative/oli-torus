@@ -8,6 +8,7 @@ import { EditorProps } from './interfaces';
 import guid from 'utils/guid';
 import { LabelledTextEditor } from 'components/TextEditor';
 import { SizePicker } from './SizePicker';
+import Popover from 'react-tiny-popover';
 
 // Helper functions for creating tables and its parts
 const td = (text: string) => ContentModel.create<ContentModel.TableData>(
@@ -44,6 +45,7 @@ const command: Command = {
 
   obtainParameters: (editor: ReactEditor,
     onDone: (params: any) => void, onCancel: () => void) => {
+
     return <SizePicker onHide={onCancel}
       onTableCreate={(rows, columns) => onDone({ rows, columns })} />;
   },
