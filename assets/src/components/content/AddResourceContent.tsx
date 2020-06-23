@@ -51,7 +51,7 @@ export const AddResourceContent = (
       });
   };
 
-  const content = <a className="dropdown-item" key="content"
+  const content = <a className="dropdown-item" key="content" href="#"
     onClick={() => onAddItem(createDefaultStructuredContent())}>Content</a>;
 
   const activityEntries = Object
@@ -60,6 +60,7 @@ export const AddResourceContent = (
       const editorDesc : EditorDesc = editorMap[k];
       return (
         <a className="dropdown-item"
+          href="#"
           key={editorDesc.slug}
           onClick={handleAdd.bind(this, editorDesc)}>{editorDesc.friendlyName}</a>
       );
@@ -68,10 +69,10 @@ export const AddResourceContent = (
   return (
     <div className="add-resource-content dropdown mx-1">
       <button className={`btn btn-light dropdown-toggle ${editMode ? '' : 'disabled'}`} type="button"
-        id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        id="addResourceContent" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         <i className="fa fa-plus"></i> Add
       </button>
-      <div className="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+      <div className="dropdown-menu dropdown-menu-right" aria-labelledby="addResourceContent">
         {[content, ...activityEntries]}
       </div>
     </div>
