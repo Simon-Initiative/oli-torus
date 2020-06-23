@@ -1,0 +1,19 @@
+/*
+ * Default delivery theme - built on top of Bootstrap 4 (https://getbootstrap.com)
+ */
+
+html {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  overflow: auto;
+}
+
+.delivery {
+  @import 'delivery/variables';
+  @import 'delivery/mixins';
+  @import '../node_modules/bootstrap/scss/bootstrap';
+  @import 'delivery/**/*.scss';
+}

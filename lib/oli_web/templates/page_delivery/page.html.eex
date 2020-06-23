@@ -5,8 +5,6 @@
 
 <h3><%= @title %></h3>
 
-<%= render "_objectives.html", objectives: @objectives %>
-
 <%= if @graded do %>
   <%= link "Submit Assessment", to: Routes.page_delivery_path(@conn, :finalize_attempt, @context_id, @slug, @attempt_guid), class: "btn btn-primary btn-lg" %>
 <% end %>
@@ -19,61 +17,5 @@
   conn: @conn, context_id: @context_id, previous_page: @previous_page, next_page: @next_page %>
 
 <script>
-
-  function makeRequest(url, method, body, continuation) {
-    const params = {
-      method,
-      headers: {'Content-Type': 'application/json'},
-      body: body === undefined ? undefined : JSON.stringify(body),
-    };
-    window.fetch(url, params)
-      .then(response => response.json())
-      .then(result => continuation(result))
-      .catch(error => continuation(undefined, error));
-  }
-
-  const div = document.getElementById('eventIntercept');
-
-  div.addEventListener('saveActivity', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    makeRequest('/api/v1/attempt/activity/' + e.detail.attemptGuid, 'PATCH', { partInputs: e.detail.payload }, e.detail.continuation);
-  }, false);
-
-  div.addEventListener('submitActivity', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    makeRequest('/api/v1/attempt/activity/' + e.detail.attemptGuid, 'PUT', { partInputs: e.detail.payload }, e.detail.continuation);
-  }, false);
-
-  div.addEventListener('resetActivity', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    makeRequest('/api/v1/attempt/activity/' + e.detail.attemptGuid, 'POST', {}, e.detail.continuation);
-  }, false);
-
-  div.addEventListener('savePart', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    makeRequest('/api/v1/attempt/activity/' + e.detail.attemptGuid + '/part/' + e.detail.partAttemptGuid, 'PATCH', { input: e.detail.payload }, e.detail.continuation);
-  }, false);
-
-  div.addEventListener('submitPart', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    makeRequest('/api/v1/attempt/activity/' + e.detail.attemptGuid + '/part/' + e.detail.partAttemptGuid, 'PUT', { input: e.detail.payload }, e.detail.continuation);
-  }, false);
-
-  div.addEventListener('resetPart', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    makeRequest('/api/v1/attempt/activity/' + e.detail.attemptGuid + '/part/' + e.detail.partAttemptGuid, 'POST', {}, e.detail.continuation);
-  }, false);
-
-  div.addEventListener('requestHint', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    makeRequest('/api/v1/attempt/activity/' + e.detail.attemptGuid + '/part/' + e.detail.partAttemptGuid + '/hint', 'GET', undefined, e.detail.continuation);
-  }, false);
-
+  OLI.initActivityBridge('eventIntercept');
 </script>

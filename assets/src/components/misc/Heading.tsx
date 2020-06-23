@@ -7,13 +7,13 @@ export type HeadingProps = {
 };
 export const Heading = ({ title, subtitle, id }: HeadingProps) => {
   return (
-    <React.Fragment>
-      <h6 id={id}>
+    <div className="mb-2">
+      <h3 id={id}>
         {title}
-      </h6>
-      <small style={{ display: 'inline-block', marginBottom: '10px' }}>
+      </h3>
+      <p className="text-secondary">
         {subtitle}
-      </small>
-    </React.Fragment>
+      </p>
+    </div>
   );
 };

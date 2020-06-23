@@ -2,6 +2,8 @@ defmodule OliWeb.LayoutView do
   use OliWeb, :view
 
   import OliWeb.DeliveryView, only: [user_role: 1, user_role_text: 1, user_role_color: 1, account_linked?: 1]
+  alias Oli.Authoring
+  alias Oli.Accounts.AuthorPreferences
 
   def active_or_nil(assigns) do
     get_in(assigns, [Access.key(:active, nil)])
@@ -11,9 +13,8 @@ defmodule OliWeb.LayoutView do
     if active == path do :active else nil end
   end
 
-  def sidebar_link(%{:assigns => assigns} = conn, path, text) do
-    link text, to: Routes.project_path(conn, path, assigns.project),
-    class: active_class(active_or_nil(assigns), path)
+  def sidebar_link(%{:assigns => assigns} = _conn, text, path, [to: route]) do
+    link text, to: route, class: active_class(active_or_nil(assigns), path)
   end
 
   def account_link(%{:assigns => assigns} = conn) do
@@ -21,5 +22,24 @@ defmodule OliWeb.LayoutView do
     full_name = "#{current_author.first_name} #{current_author.last_name}"
     link full_name, to: Routes.workspace_path(conn, :account),
     class: "#{active_class(active_or_nil(assigns), :account)} account-link"
+  end
+
+  def render_layout(layout, assigns, do: content) do
+    render(layout, Map.put(assigns, :inner_layout, content))
+  end
+
+  def authoring_theme_url(%{:assigns => assigns} = _conn) do
+    case assigns do
+      %{current_author: current_author} ->
+        case current_author do
+          %{preferences: %AuthorPreferences{theme: url}} ->
+            url
+          _ ->
+            Authoring.get_default_theme!().url
+        end
+
+      _ ->
+        Authoring.get_default_theme!().url
+    end
   end
 end

@@ -11,7 +11,7 @@ defmodule Oli.Delivery.Attempts do
   alias Oli.Activities.Model
   alias Oli.Activities.Model.Feedback
   alias Oli.Activities.Transformers
-  alias Oli.Delivery.Attempts.{StudentInput, Result}
+  alias Oli.Delivery.Attempts.{StudentInput, Result, Scoring}
   alias Oli.Publishing.{PublishedResource, DeliveryResolver}
   alias Oli.Delivery.Page.ModelPruner
 
@@ -471,7 +471,9 @@ defmodule Oli.Delivery.Attempts do
       with {:ok, revision} <- DeliveryResolver.from_revision_slug(context_id, revision_slug) |> Oli.Utils.trap_nil(:not_found),
         {_, resource_attempts} <- get_resource_attempt_history(revision.resource_id, context_id, user_id)
       do
-        case {revision.max_attempts > length(resource_attempts), has_any_active_attempts?(resource_attempts)} do
+        case {revision.max_attempts > length(resource_attempts) or revision.max_attempts == 0,
+          has_any_active_attempts?(resource_attempts)} do
+
           {true, false} -> case create_new_attempt_tree(nil, revision, context_id, user_id, activity_provider) do
             {:ok, results} -> results
             {:error, error} -> Repo.rollback(error)
@@ -741,6 +743,8 @@ defmodule Oli.Delivery.Attempts do
 
     if resource_attempt.date_evaluated == nil do
 
+      # Leaving this hardcoded to 'total' seems to make sense, but perhaps in the
+      # future we do allow this to be configured
       {score, out_of} = Enum.reduce(resource_attempt.activity_attempts, {0, 0}, fn p, {score, out_of} ->
         {score + p.score, out_of + p.out_of}
       end)
@@ -760,17 +764,10 @@ defmodule Oli.Delivery.Attempts do
   defp roll_up_resource_attempts_to_access(context_id, resource_access_id) do
 
     access = Oli.Repo.get(ResourceAccess, resource_access_id) |> Repo.preload([:resource_attempts])
-    %{scoring_strategy_id: _} = DeliveryResolver.from_resource_id(context_id, access.resource_id)
+    %{scoring_strategy_id: strategy_id} = DeliveryResolver.from_resource_id(context_id, access.resource_id)
 
-    # hardcoded to best for now
-    {score, out_of, _} = Enum.reduce(access.resource_attempts, {0, 0, 0.0}, fn p, {score, out_of, percentage} ->
-      this_percentage = p.score / p.out_of
-      if this_percentage > percentage do
-        {p.score, p.out_of, this_percentage}
-      else
-        {score, out_of, percentage}
-      end
-    end)
+    %Result{score: score, out_of: out_of} =
+      Scoring.calculate_score(strategy_id, access.resource_attempts)
 
     update_resource_access(access, %{
       score: score,
@@ -913,10 +910,8 @@ defmodule Oli.Delivery.Attempts do
     # apply the scoring strategy and set the evaluation on the activity
     activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
 
-    # TODO: implement other scoring strategies. But for right now total makes sense
-    {score, out_of} = Enum.reduce(part_attempts, {0, 0}, fn p, {score, out_of} ->
-      {score + p.score, out_of + p.out_of}
-    end)
+    %Result{score: score, out_of: out_of}
+      = Scoring.calculate_score(activity_attempt.revision.scoring_strategy_id, part_attempts)
 
     update_activity_attempt(activity_attempt, %{
       score: score,

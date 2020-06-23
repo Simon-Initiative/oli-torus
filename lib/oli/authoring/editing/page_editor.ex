@@ -58,12 +58,12 @@ defmodule Oli.Authoring.Editing.PageEditor do
           # If we acquired the lock, we must first create a new revision
           {:acquired} -> get_latest_revision(publication, resource)
             |> create_new_revision(publication, resource, author.id)
-            |> update_revision(converted_update)
+            |> update_revision(converted_update, project.slug)
 
           # A successful lock update means we can safely edit the existing revision
           {:updated} -> get_latest_revision(publication, resource)
             |> maybe_create_new_revision(publication, resource, author.id, converted_update)
-            |> update_revision(converted_update)
+            |> update_revision(converted_update, project.slug)
 
           # error or not able to lock results in a failed edit
           result -> Repo.rollback(result)
@@ -369,7 +369,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   end
 
   # Applies the update to the revision, converting any objective slugs back to ids
-  defp update_revision(revision, update) do
+  defp update_revision(revision, update, project_slug) do
 
     converted_back_to_ids = case Map.get(update, "objectives") do
       nil -> update
@@ -380,7 +380,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
     {:ok, updated} = Oli.Resources.update_revision(revision, converted_back_to_ids)
 
     PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id),
-      {:updated, updated}
+      {:updated, updated, project_slug}
+    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id) <> ":project:" <> project_slug,
+      {:updated, updated, project_slug}
 
     updated
   end

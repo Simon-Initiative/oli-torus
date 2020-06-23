@@ -41,7 +41,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       # Ensure that the edit has inserted the new page reference
       # first in the collection
       assert length(container.children) == 3
-      assert Enum.find_index(container.children, fn c -> revision.resource_id == c end) == 0
+      assert Enum.find_index(container.children, fn c -> revision.resource_id == c end) == 2
 
     end
 
@@ -101,7 +101,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       {:ok, _} = ContainerEditor.reorder_child(project, author, revision.slug, 2)
       container = AuthoringResolver.root_resource(project.slug)
       assert length(container.children) == 3
-      assert Enum.find_index(container.children, fn c -> revision.resource_id == c end) == 1
+      assert Enum.find_index(container.children, fn c -> revision.resource_id == c end) == 2
 
       {:ok, _} = ContainerEditor.reorder_child(project, author, revision.slug, 3)
       container = AuthoringResolver.root_resource(project.slug)

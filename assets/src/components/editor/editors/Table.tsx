@@ -157,7 +157,7 @@ const DropdownMenu = (props: any) => {
   };
 
   return (
-    <div ref={ref as any} className="dropdown" style={style}>
+    <div ref={ref as any} className="dropdown" style={style} contentEditable={false}>
       <button type="button"
         style={buttonStyle}
         className="dropdown-toggle"
@@ -253,11 +253,11 @@ export const TableEditor = (props: TableProps) => {
   // events.
 
   return (
-    <div {...attributes} style={{ margin: '20px' }}>
+    <div style={{ margin: '20px' }}>
 
       <div>
         <table className="table table-bordered">
-          <tbody>
+          <tbody {...attributes} >
             {children}
           </tbody>
         </table>

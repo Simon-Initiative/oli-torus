@@ -1,15 +1,12 @@
 defmodule OliWeb.ProjectController do
   use OliWeb, :controller
-  import OliWeb.ProjectPlugs
+
   alias Oli.Accounts
   alias Oli.Utils
   alias Oli.Authoring.{Course}
   alias Oli.Authoring.Course.Project
   alias Oli.Publishing
   alias Oli.Qa
-
-  plug :fetch_project when action not in [:create]
-  plug :authorize_project when action not in [:create]
 
   def overview(conn, project_params) do
     project = conn.assigns.project
@@ -22,27 +19,6 @@ defmodule OliWeb.ProjectController do
         Project.changeset(project)),
     }
     render %{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html"
-  end
-
-  def objectives(conn, _request_params) do
-    project = conn.assigns.project
-    params = Oli.Authoring.Editing.ObjectiveEditor.fetch_objective_mappings_params(project)
-    render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
-  end
-
-  def edit_objective(conn, request_params) do
-    project = conn.assigns.project
-    params = Oli.Authoring.Editing.ObjectiveEditor.fetch_objective_mappings_params(project)
-    case Map.get(request_params, "action") do
-      "edit_objective" ->
-        params = Map.merge(params, %{edit: Map.get(request_params, "objective_slug")})
-        render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
-      "add_sub_objective" ->
-        params = Map.merge(params, %{edit: "add_sub_"<>Map.get(request_params, "objective_slug")})
-        render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
-      nil ->
-        render %{conn | assigns: Map.merge(conn.assigns, params)}, "objectives.html"
-    end
   end
 
   def unpublished(pub), do: pub.published == false
@@ -132,14 +108,14 @@ defmodule OliWeb.ProjectController do
   end
 
   def create(conn, %{"project" => %{"title" => title} = _project_params}) do
-      case Course.create_project(title, conn.assigns.current_author) do
-        {:ok, %{project: project}} ->
-          redirect conn, to: Routes.project_path(conn, :overview, project)
-        {:error, _changeset} ->
-          conn
-            |> put_flash(:error, "Could not create project. Please try again")
-            |> redirect(to: Routes.workspace_path(conn, :projects, project_title: title))
-      end
+    case Course.create_project(title, conn.assigns.current_author) do
+      {:ok, %{project: project}} ->
+        redirect conn, to: Routes.project_path(conn, :overview, project)
+      {:error, _changeset} ->
+        conn
+          |> put_flash(:error, "Could not create project. Please try again")
+          |> redirect(to: Routes.workspace_path(conn, :projects, project_title: title))
+    end
   end
 
   def update(conn, %{"project" => project_params}) do

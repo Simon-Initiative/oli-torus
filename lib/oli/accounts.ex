@@ -28,6 +28,16 @@ defmodule Oli.Accounts do
   def get_user!(id), do: Repo.get!(User, id)
 
   @doc """
+  Gets a single user by query parameter
+  ## Examples
+      iex> get_user_by(user_id: "123")
+      %User{}
+      iex> get_user_by(user_id: "111")
+      nil
+  """
+  def get_user_by(clauses), do: Repo.get_by(User, clauses)
+
+  @doc """
   Creates a user.
   ## Examples
       iex> create_user(%{field: value})
@@ -112,6 +122,20 @@ defmodule Oli.Accounts do
     end
     |> Author.changeset(changes)
     |> Repo.insert_or_update
+  end
+
+  @doc """
+  Updates an author.
+  ## Examples
+      iex> update_author(author, %{field: new_value})
+      {:ok, %Author{}}
+      iex> update_author(author, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def update_author(%Author{} = author, attrs) do
+    author
+    |> Author.changeset(attrs)
+    |> Repo.update()
   end
 
   @doc """
