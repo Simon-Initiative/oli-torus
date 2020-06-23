@@ -56,11 +56,13 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
           # If we acquired the lock, we must first create a new revision
           {:acquired} -> get_latest_revision(publication, resource)
+            |> resurrect_or_delete_activity_references(converted_update, project.slug)
             |> create_new_revision(publication, resource, author.id)
             |> update_revision(converted_update, project.slug)
 
           # A successful lock update means we can safely edit the existing revision
           {:updated} -> get_latest_revision(publication, resource)
+            |> resurrect_or_delete_activity_references(converted_update, project.slug)
             |> maybe_create_new_revision(publication, resource, author.id, converted_update)
             |> update_revision(converted_update, project.slug)
 
@@ -217,6 +219,38 @@ defmodule Oli.Authoring.Editing.PageEditor do
         |> Enum.reduce(%{}, fn e, m -> Map.put(m, Map.get(e, :activitySlug), e) end)}
     else
       {:ok, %{}}
+    end
+
+  end
+
+  # Look to see what activity references this change would add or remove and
+  # ensure that the revision backing that activity has its 'deleted' flag
+  # set appropriately.  This allows the client to insert an activity reference,
+  # and remove it, then bring it back using 'Undo' - all while keeping the
+  # deleted state of the activity revision correct.
+  defp resurrect_or_delete_activity_references(revision, change, project_slug) do
+
+    # First caculate the difference, if any, between the current revision and the
+    # change that we are about to commit
+    content1 = Map.get(revision.content, "model")
+    content2 = Map.get(change, "content") |> Map.get("model")
+
+    {additions, deletions} = diff_activity_references(content1, content2)
+
+    # If there are activity-reference changes, resolve those activity ids to
+    # revisions and set their deleted flag appropriately
+    case MapSet.union(additions, deletions) |> MapSet.to_list() do
+
+      [] -> revision
+
+      activity_ids ->
+        AuthoringResolver.from_resource_id(project_slug, activity_ids)
+        |> Enum.each(fn revision ->
+          {:ok, updated} = Oli.Resources.update_revision(revision, %{deleted: MapSet.member?(deletions, revision.resource_id)})
+          Broadcaster.broadcast_revision(updated, project_slug)
+        end)
+
+        revision
     end
 
   end
