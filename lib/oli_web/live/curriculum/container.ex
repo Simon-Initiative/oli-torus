@@ -106,12 +106,8 @@ defmodule OliWeb.Curriculum.Container do
     Enum.each(ids, fn id -> PubSub.unsubscribe(Oli.PubSub, "resource:" <> Integer.to_string(id) <> ":project:" <> project_slug) end)
   end
 
-  defp move_selection(pages, index, direction) do
-    Enum.at(pages, index + direction)
-  end
-
   # handle change of selection
-  def handle_event("select", %{ "slug" => slug}, socket) do
+  def handle_event("select", %{"slug" => slug}, socket) do
     selected = Enum.find(socket.assigns.pages, fn r -> r.slug == slug end)
     {:noreply, assign(socket, :selected, selected)}
   end
@@ -128,19 +124,27 @@ defmodule OliWeb.Curriculum.Container do
     {:noreply, socket}
   end
 
-  # allow key up and down to change the selected item
-  def handle_event("keydown", %{"key" => key}, socket) do
-
-    index = Enum.find_index(socket.assigns.pages, fn p -> p == socket.assigns.selected end)
+  def handle_event("keydown", %{"key" => key, "shiftKey" => shiftKeyPressed?} = params, socket) do
+    focused_index = case params["index"] do
+      nil -> nil
+      stringIndex -> String.to_integer(stringIndex)
+    end
     last_index = length(socket.assigns.pages) - 1
     pages = socket.assigns.pages
 
-    case {index, key} do
-      {nil, _} -> {:noreply, socket}
-      {^last_index, "ArrowDown"} -> {:noreply, socket}
-      {0, "ArrowUp"} -> {:noreply, socket}
-      {index, "ArrowUp"} -> {:noreply, assign(socket, :selected, move_selection(pages, index, -1))}
-      {index, "ArrowDown"} -> {:noreply, assign(socket, :selected, move_selection(pages, index, 1))}
+    case {focused_index, key, shiftKeyPressed?} do
+      {nil, _, _} -> {:noreply, socket}
+      {^last_index, "ArrowDown", _} -> {:noreply, socket}
+      {0, "ArrowUp", _} -> {:noreply, socket}
+      # Each drop target has a corresponding entry after it with a matching index.
+      # That means that the "drop index" is the index of where you'd like to place the item AHEAD OF
+      # So to reorder an item below its current position, we add +2 ->
+      # +1 would mean insert it BEFORE the next item, but +2 means insert it before the item after the next item.
+      # See the logic in container editor that does the adjustment based on the positions of the drop targets.
+      {focused_index, "ArrowDown", true} -> handle_event("reorder", %{"sourceIndex" => Integer.to_string(focused_index), "dropIndex" => Integer.to_string(focused_index + 2)}, socket)
+      {focused_index, "ArrowUp", true} -> handle_event("reorder", %{"sourceIndex" => Integer.to_string(focused_index), "dropIndex" => Integer.to_string(focused_index - 1)}, socket)
+      {focused_index, "Enter", _} -> {:noreply, assign(socket, :selected, Enum.at(pages, focused_index))}
+      {_, _, _} -> {:noreply, socket}
     end
 
   end

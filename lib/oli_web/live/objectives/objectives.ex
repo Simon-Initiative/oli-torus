@@ -155,13 +155,20 @@ defmodule OliWeb.Objectives.Objectives do
     PubSub.unsubscribe(Oli.PubSub, "new_resource:resource_type:" <> Integer.to_string(ResourceType.get_id_by_type("objective")) <> ":project:" <> project_slug)
   end
 
+  def handle_event("keydown", %{"slug" => slug, "key" => key}, socket) do
+    case key do
+      "Enter" -> handle_event("select", %{"slug" => slug}, socket)
+      _ -> {:noreply, socket}
+    end
+  end
+
   # handle change of selection
-  def handle_event("select", %{ "slug" => slug}, socket) do
+  def handle_event("select", %{"slug" => slug}, socket) do
     {:noreply, assign(socket, :selected, slug)}
   end
 
   # handle change of edit
-  def handle_event("modify", %{ "slug" => slug}, socket) do
+  def handle_event("modify", %{"slug" => slug}, socket) do
     {:noreply, assign(socket, :edit, slug)}
   end
 
@@ -170,7 +177,7 @@ defmodule OliWeb.Objectives.Objectives do
   end
 
   # process form submission to save page settings
-  def handle_event("edit", %{ "revision" => objective_params}, socket) do
+  def handle_event("edit", %{"revision" => objective_params}, socket) do
     with_atom_keys = Map.keys(objective_params)
                      |> Enum.reduce(%{}, fn k, m -> Map.put(m, String.to_atom(k), Map.get(objective_params, k)) end)
     socket = case ObjectiveEditor.edit(Map.get(with_atom_keys,:slug), with_atom_keys, socket.assigns.author, socket.assigns.project) do
@@ -194,7 +201,7 @@ defmodule OliWeb.Objectives.Objectives do
   end
 
   # handle clicking of the add objective
-  def handle_event("new", %{ "revision" => objective_params}, socket) do
+  def handle_event("new", %{"revision" => objective_params}, socket) do
     with_atom_keys = Map.keys(objective_params)
                      |> Enum.reduce(%{}, fn k, m -> Map.put(m, String.to_atom(k), Map.get(objective_params, k)) end)
 
