@@ -230,28 +230,37 @@ defmodule Oli.Authoring.Editing.PageEditor do
   # deleted state of the activity revision correct.
   defp resurrect_or_delete_activity_references(revision, change, project_slug) do
 
-    # First caculate the difference, if any, between the current revision and the
-    # change that we are about to commit
-    content1 = Map.get(revision.content, "model")
-    content2 = Map.get(change, "content") |> Map.get("model")
+    # Handle the case where this change does not include content
+    case Map.get(change, "content") do
 
-    {additions, deletions} = diff_activity_references(content1, content2)
+      nil -> revision
 
-    # If there are activity-reference changes, resolve those activity ids to
-    # revisions and set their deleted flag appropriately
-    case MapSet.union(additions, deletions) |> MapSet.to_list() do
+      map ->
 
-      [] -> revision
+        # First caculate the difference, if any, between the current revision and the
+        # change that we are about to commit
+        content1 = Map.get(revision.content, "model")
+        content2 = Map.get(map, "model")
 
-      activity_ids ->
-        AuthoringResolver.from_resource_id(project_slug, activity_ids)
-        |> Enum.each(fn revision ->
-          {:ok, updated} = Oli.Resources.update_revision(revision, %{deleted: MapSet.member?(deletions, revision.resource_id)})
-          Broadcaster.broadcast_revision(updated, project_slug)
-        end)
+        {additions, deletions} = diff_activity_references(content1, content2)
 
-        revision
+        # If there are activity-reference changes, resolve those activity ids to
+        # revisions and set their deleted flag appropriately
+        case MapSet.union(additions, deletions) |> MapSet.to_list() do
+
+          [] -> revision
+
+          activity_ids ->
+            AuthoringResolver.from_resource_id(project_slug, activity_ids)
+            |> Enum.each(fn revision ->
+              {:ok, updated} = Oli.Resources.update_revision(revision, %{deleted: MapSet.member?(deletions, revision.resource_id)})
+              Broadcaster.broadcast_revision(updated, project_slug)
+            end)
+
+            revision
+        end
     end
+
 
   end
 
