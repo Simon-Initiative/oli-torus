@@ -62,7 +62,7 @@ defmodule OliWeb.ResourceController do
           content_html: PageEditor.render_page_html(project_slug, revision_slug, author),
           context: context,
           scripts: Activities.get_activity_scripts(),
-          preview_mode: true,
+          preview_mode: true
         )
       {:error, :not_found} ->
         conn
