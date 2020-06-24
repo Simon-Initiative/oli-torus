@@ -512,4 +512,40 @@ defmodule Oli.Publishing do
     |> Enum.reduce(%{}, fn m, acc -> Map.put_new(acc, m.resource_id, {m.resource, m.revision}) end)
   end
 
+
+  def find_objective_attachments(resource_id, publication_id) do
+
+    page_id = ResourceType.get_id_by_type("page")
+    activity_id = ResourceType.get_id_by_type("activity")
+
+    sql =
+      """
+      select
+        revisions.id, revisions.resource_id, revisions.title, revisions.slug, part
+      FROM revisions, jsonb_object_keys(revisions.objectives) p(part)
+      WHERE
+        revisions.id IN (SELECT revision_id
+        FROM published_resources
+         WHERE publication_id = #{publication_id})
+         AND (
+           (revisions.resource_type_id = #{activity_id} AND revisions.objectives->part @> '[#{resource_id}]')
+           OR
+           (revisions.resource_type_id = #{page_id} AND revisions.objectives->'attached' @> '[#{resource_id}]')
+         )
+      """
+
+    {:ok, %{rows: results }} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    results
+    |> Enum.map(fn [id, resource_id, title, slug, part] ->
+      %{
+        id: id,
+        resource_id: resource_id,
+        title: title,
+        slug: slug,
+        part: part
+      }
+    end)
+  end
+
 end

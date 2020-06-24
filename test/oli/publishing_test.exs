@@ -8,6 +8,34 @@ defmodule Oli.PublishingTest do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Editing.PageEditor
+  alias Oli.Authoring.Editing.ObjectiveEditor
+  alias Oli.Authoring.Editing.ActivityEditor
+
+
+  def create_activity(parts, author, project, page_revision, obj_slug) do
+
+    # Create a two part activity where each part is tied to one of the objectives above
+
+    objectives = Enum.reduce(parts, %{}, fn {part_id, slugs}, m ->
+      Map.put(m, part_id, slugs)
+    end)
+
+    parts = Enum.map(parts, fn {part_id, _} -> part_id end)
+    content = %{ "content" => %{"authoring" => %{"parts" => parts}}}
+
+    {:ok, {revision, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content)
+
+    # attach just one activity
+    update = %{ "objectives" => %{ "attached" => [obj_slug]}, "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => revision.slug, "purpose" => "none"}]}}
+    PageEditor.acquire_lock(project.slug, page_revision.slug, author.email)
+    assert {:ok, _} =  PageEditor.edit(project.slug, page_revision.slug, author.email, update)
+
+    update = %{ "objectives" => objectives }
+    {:ok, revision} = ActivityEditor.edit(project.slug, page_revision.slug, revision.slug, author.email, update)
+
+    revision
+
+  end
 
   describe "publications" do
 
@@ -15,7 +43,33 @@ defmodule Oli.PublishingTest do
       Seeder.base_project_with_resource2()
     end
 
-    test "get_published_objectives/1 returns the objective revisions", _ do
+    test "find_objective_attachments/2 returns the objective revisions", %{author: author, project: project, publication: publication, revision1: revision} do
+
+      {:ok, {:ok, %{revision: obj1}}} = ObjectiveEditor.add_new(%{title: "one"}, author, project)
+      {:ok, {:ok, %{revision: obj2}}}  = ObjectiveEditor.add_new(%{title: "two"}, author, project)
+      {:ok, {:ok, %{revision: obj3}}}  = ObjectiveEditor.add_new(%{title: "three"}, author, project)
+
+      activity1 = create_activity([{"1", [obj1.slug]}, {"2", []}], author, project, revision, obj1.slug)
+      activity2 = create_activity([{"1", [obj1.slug]}, {"2", [obj1.slug]}], author, project, revision, obj1.slug)
+      activity3 = create_activity([{"1", [obj1.slug]}, {"2", [obj2.slug]}], author, project, revision, obj1.slug)
+      activity4 = create_activity([{"1", [obj2.slug]}, {"2", [obj3.slug]}], author, project, revision, obj1.slug)
+
+      results = Publishing.find_objective_attachments(obj1.resource_id, publication.id)
+
+      assert length(results) == 5
+
+      # activity 2 should appear twice since it has the objective attached in multiple parts
+      assert (Enum.filter(results, fn r -> r.id == activity2.id end) |> length) == 2
+
+      # the next two have it in only one part
+      assert (Enum.filter(results, fn r -> r.id == activity1.id end) |> length) == 1
+      assert (Enum.filter(results, fn r -> r.id == activity3.id end) |> length) == 1
+
+      # this activity does not have this objective attached at all
+      assert (Enum.filter(results, fn r -> r.id == activity4.id end) |> length) == 0
+
+      # the page has it attached as well
+      assert (Enum.filter(results, fn r -> r.resource_id == revision.resource_id end) |> length) == 1
 
     end
 
