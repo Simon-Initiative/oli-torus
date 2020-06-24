@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - test
-      # - production
+      - production
     tags:
       - deploy-test
 
@@ -26,6 +26,7 @@ jobs:
         run: |
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
+          echo "::set-output name=deploy_host::$(if [[ ${GITHUB_REF##*/} == "production"  ]] ; then echo proton.oli.cmu.edu ; else echo tokamak.oli.cmu.edu ; fi)"
 
       - name: 📦💽 Package release
         uses: ./.github/actions/phoenix-builder
@@ -56,7 +57,7 @@ jobs:
           mkdir ~/.ssh
           echo "${{ secrets.SIMON_BOT_PRIVATE_KEY}}" > ~/.ssh/simon-bot
           chmod 600 ~/.ssh/simon-bot
-          sftp -i ~/.ssh/simon-bot -o StrictHostKeyChecking=no simon-bot@tokamak.oli.cmu.edu  <<< $'cd /torus\n put oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip'
+          sftp -i ~/.ssh/simon-bot -o StrictHostKeyChecking=no simon-bot@${{ steps.info.outputs.deploy_host }}  <<< $'cd /torus\n put oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip'
 
       - name: 💰 Deploy using SSH
         uses: fifsky/ssh-action@master
@@ -64,6 +65,6 @@ jobs:
           command: |
             cd /torus
             sh deploy.sh ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }}
-          host: tokamak.oli.cmu.edu
+          host: ${{ steps.info.outputs.deploy_host }}
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
