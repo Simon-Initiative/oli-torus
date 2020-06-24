@@ -12,10 +12,9 @@ jobs:
   package-and-deploy:
     runs-on: ubuntu-latest
 
-    # only release and deploy if the workflow is running on the test branch
+    # only release and deploy if the workflow is running on the test branch, production branch,
     # or a commit is tagged with 'deploy-test'
-    # TODO: add support for production deployments
-    if: github.ref == 'refs/heads/test' || github.ref == 'refs/tags/deploy-test'
+    if: github.ref == 'refs/heads/test' || 'refs/heads/production' || github.ref == 'refs/tags/deploy-test'
 
     steps:
       - name: 🛎️ Checkout
