@@ -12,8 +12,11 @@ defmodule OliWeb.RevisionHistory do
   alias OliWeb.RevisionHistory.Details
   alias OliWeb.RevisionHistory.Graph
   alias OliWeb.RevisionHistory.Table
-
+  alias OliWeb.RevisionHistory.Pagination
+  alias Oli.Authoring.Broadcaster
   alias Oli.Publishing.AuthoringResolver
+
+  @page_size 15
 
   def mount(%{ "slug" => slug, "project_id" => project_slug}, _, socket) do
 
@@ -38,6 +41,7 @@ defmodule OliWeb.RevisionHistory do
       revisions: revisions,
       selected: selected,
       project_slug: project_slug,
+      page_offset: 0,
       initial_size: length(revisions))
     }
   end
@@ -45,6 +49,7 @@ defmodule OliWeb.RevisionHistory do
   def render(assigns) do
 
     reversed = Enum.reverse(assigns.revisions)
+    size = @page_size
 
     ~L"""
     <h2>Revision History<h2>
@@ -75,7 +80,8 @@ defmodule OliWeb.RevisionHistory do
             <%= if @view == "graph" do %>
               <%= live_component @socket, Graph, revisions: reversed, selected: @selected, initial_size: @initial_size %>
             <% else %>
-              <%= live_component @socket, Table, revisions: @revisions, selected: @selected %>
+              <%= live_component @socket, Pagination, revisions: @revisions, page_offset: @page_offset, page_size: size %>
+              <%= live_component @socket, Table, revisions: @revisions, selected: @selected, page_offset: @page_offset, page_size: size %>
             <% end %>
           </div>
         </div>
@@ -152,11 +158,7 @@ defmodule OliWeb.RevisionHistory do
 
     Oli.Publishing.ChangeTracker.track_revision(project_slug, revision)
 
-    # Broadcast this revision creation
-    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id),
-      {:updated, revision, project_slug}
-    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id) <> ":project:" <> project_slug,
-      {:updated, revision, project_slug}
+    Broadcaster.broadcast_revision(revision, project_slug)
 
     {:noreply, socket}
   end
@@ -174,6 +176,11 @@ defmodule OliWeb.RevisionHistory do
 
   def handle_event("graph", _, socket) do
     {:noreply, assign(socket, :view, "graph")}
+  end
+
+  def handle_event("page", %{ "ordinal" => ordinal}, socket) do
+    page_offset = (String.to_integer(ordinal) - 1) * @page_size
+    {:noreply, assign(socket, :page_offset, page_offset)}
   end
 
   def handle_info({:updated, revision, _}, socket) do
