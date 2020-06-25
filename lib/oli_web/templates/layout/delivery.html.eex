@@ -37,25 +37,22 @@
       <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
     <% end %>
 
-    <div class="delivery">
+    <%= render OliWeb.LayoutView, "_delivery_header.html", assigns %>
 
-      <%= render OliWeb.LayoutView, "_delivery_header.html", assigns %>
+    <main role="main" class="container">
 
-      <main role="main" class="container">
+    <%= Map.get(assigns, :inner_layout) || @inner_content %>
 
-      <%= Map.get(assigns, :inner_layout) || @inner_content %>
+    </main>
 
-      </main>
-
-      <script>
-        // disable sign out if inside an iframe
-        $(function() {
-          if (window.location !== window.parent.location) {
-            $('#signout-link').addClass('disabled');
-          }
-        })
-      </script>
-    </div>
+    <script>
+      // disable sign out if inside an iframe
+      $(function() {
+        if (window.location !== window.parent.location) {
+          $('#signout-link').addClass('disabled');
+        }
+      })
+    </script>
 
     <script>
     window.$ = $;

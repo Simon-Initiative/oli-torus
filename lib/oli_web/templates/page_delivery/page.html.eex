@@ -4,58 +4,120 @@
 <% end %>
 
 <style>
-.wrapper {
-    display: flex;
-    width: 100%;
-    align-items: stretch;
+#wrapper {
+  display: flex;
+  width: 100%;
+  position: relative;
 }
 
 #sidebar {
-    min-width: 250px;
-    max-width: 250px;
-    min-height: 100vh;
+  width: 250px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  padding-top: 50px;
+  background: #efefef;
+  border-radius: 5px;
+  transition: all 0.3s;
 }
 
-#sidebar.active {
-    margin-left: -250px;
+#content {
+  flex: 1;
+  padding: 0 20px;
+  margin-left: 250px;
+  transition: all 0.3s;
+}
+
+#toggle-sidebar {
+  position: absolute;
+  top: 10px;
+  left: 200px;
+  transition: all 0.3s;
+}
+
+#wrapper.hide-sidebar #sidebar {
+  margin-left: -250px;
+  opacity: 0;
+}
+
+#wrapper.hide-sidebar #content {
+  margin-left: 50px;
+}
+
+#wrapper.hide-sidebar #toggle-sidebar {
+  left: 0px;
 }
 
 @media (max-width: 768px) {
-    #sidebar {
-        margin-left: -250px;
-    }
-    #sidebar.active {
-        margin-left: 0;
-    }
+  #sidebar {
+    margin-left: -250px;
+  }
+  #wrapper.hide-sidebar #sidebar {
+    margin-left: 0;
+  }
 }
+
+.page-scrolled #toggle-sidebar {
+  position: fixed;
+}
+
+#top-of-site-pixel-anchor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  top: 500px;
+  left: 0;
+}
+
 </style>
 
-<div class="wrapper">
+<script>
+$(document).ready(function () {
 
+  $('#toggle-sidebar').on('click', function () {
+      $('#wrapper').toggleClass('hide-sidebar');
+  });
+
+  if (
+    "IntersectionObserver" in window &&
+    "IntersectionObserverEntry" in window &&
+    "intersectionRatio" in window.IntersectionObserverEntry.prototype
+  ) {
+    let observer = new IntersectionObserver(entries => {
+      if (entries[0].boundingClientRect.y < 66) {
+        document.body.classList.add("page-scrolled");
+      } else {
+        document.body.classList.remove("page-scrolled");
+      }
+    });
+
+    observer.observe(document.querySelector("#top-of-site-pixel-anchor"));
+  }
+
+});
+</script>
+
+<div id="wrapper">
     <!-- Sidebar -->
     <nav id="sidebar">
-        <div class="sidebar-header">
-            <h3>Bootstrap Sidebar</h3>
-        </div>
-
-        <ul class="list-unstyled components">
-            <p>Dummy Heading</p>
-            <li class="active">
-                <a href="#">Home</a>
-            </li>
-            <li>
-                <a href="#">About</a>
-            </li>
-            <li>
-                <a href="#">Pages</a>
-            </li>
-            <li>
-                <a href="#">Portfolio</a>
-            </li>
-            <li>
-                <a href="#">Contact</a>
-            </li>
-        </ul>
+      <ul class="list-unstyled components">
+        <li class="active">
+          <a href="#">Home</a>
+        </li>
+        <li>
+          <a href="#">About</a>
+        </li>
+        <li>
+          <a href="#">Pages</a>
+        </li>
+        <li>
+          <a href="#">Portfolio</a>
+        </li>
+        <li>
+          <a href="#">Contact</a>
+        </li>
+      </ul>
     </nav>
 
     <!-- Page Content -->
@@ -82,7 +144,14 @@
 
     </div>
 
+
+    <button type="button" id="toggle-sidebar" class="btn btn-light">
+      <i class="fa fa-bars" aria-hidden="true"></i>
+    </button>
+
 </div>
+
+<div id="top-of-site-pixel-anchor"></div>
 
 <script>
   OLI.initActivityBridge('eventIntercept');

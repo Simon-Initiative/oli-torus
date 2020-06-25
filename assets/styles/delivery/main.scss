@@ -1,5 +1,12 @@
 /** Delivery Styles **/
 
+body {
+  flex: 1;
+  position: relative;
+  font-family: $font-family-sans-serif;
+  font-size: $font-size-base;
+}
+
 .oli-logo {
   font-family: 'Open Sans', sans-serif;
 }
