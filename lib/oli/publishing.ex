@@ -513,10 +513,30 @@ defmodule Oli.Publishing do
   end
 
 
+  @doc """
+  For a given objective resource id and a given project's publication id,
+  this function will find all pages and activities that have the objective
+  attached to it.
+
+  This function will return an activity more than once if that activity
+  contains multiple parts with the objective attached to it.
+
+  The return value is a list of maps of the following format:
+  %{
+    id: the revision id
+    resource_id: the resource id
+    title: the title of the resource
+    slug: the slug of the revision
+    part: the part name, or "attached" if pertaining to a page
+  }
+  """
   def find_objective_attachments(resource_id, publication_id) do
 
     page_id = ResourceType.get_id_by_type("page")
     activity_id = ResourceType.get_id_by_type("activity")
+
+    IO.puts "RESOURCE ID find obj"
+    IO.inspect resource_id
 
     sql =
       """
@@ -546,6 +566,54 @@ defmodule Oli.Publishing do
         part: part
       }
     end)
+  end
+
+  @doc """
+  For a given list of resource ids and a given project publication id,
+  retrieve the corresponding published resource record, preloading the
+  locked_by_id to allow access to the user that might have the resource locked.
+  """
+  def retrieve_lock_info(resource_ids, publication_id) do
+
+    mappings = Repo.all(from mapping in PublishedResource,
+      where: mapping.publication_id == ^publication_id and mapping.resource_id in ^resource_ids,
+      select: mapping,
+      preload: [:author])
+
+    Enum.reduce(%{}, mappings, fn e, m -> Map.put(m, e.resource_id, e) end)
+
+  end
+
+  @doc """
+  For a given list of activity resource ids and a given project publication id,
+  find and retrieve all revisions for the pages that contain the activities.
+
+  Returns a map of activity_ids to the page revision ids that contains the activity
+  """
+  def determine_parent_pages(activity_resource_ids, publication_id) do
+
+    page_id = ResourceType.get_id_by_type("page")
+
+    activities = MapSet.new(activity_resource_ids)
+
+    sql =
+      """
+      select
+        rev.id,
+        jsonb_path_query(content, '$.model[*] ? (@.type == "activity-reference")')
+      from published_resources as mapping
+      join revisions as rev
+      on mapping.revision_id = rev.id
+      where mapping.publication_id = #{publication_id}
+        and rev.resource_type_id = #{page_id}
+        and rev.deleted is false
+      """
+
+    {:ok, %{rows: results }} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    Enum.filter(results, fn [_, %{"activity_id" => activity_id}] -> MapSet.member?(activities, activity_id) end)
+    |> Enum.reduce(%{}, fn [id, %{"activity_id" => activity_id}], map -> Map.put(map, activity_id, id) end)
+
   end
 
 end

@@ -175,7 +175,7 @@ defmodule Oli.Authoring.Locks do
     NaiveDateTime.diff(now(), to_use) > @ttl
   end
 
-  defp expired_or_empty?(%{ lock_updated_at: lock_updated_at} = mapping) do
+  def expired_or_empty?(%{ lock_updated_at: lock_updated_at} = mapping) do
     lock_updated_at == nil or expired?(mapping)
   end
 

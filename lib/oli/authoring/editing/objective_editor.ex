@@ -9,6 +9,9 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   alias Oli.Authoring.Course.Project
   alias Oli.Repo
   alias Oli.Authoring.Broadcaster
+  alias Oli.Authoring.Editing.PageEditor
+  alias Oli.Authoring.Editing.ActivityEditor
+  alias Oli.Publishing.AuthoringResolver
 
   import Oli.Utils
 
@@ -70,7 +73,148 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     end)
   end
 
-  def maybe_append_to_container(container_slug, publication, revision_to_attach, project_slug, author) do
+
+  def detach_objective(revision_slug, %Project{} = project, author_email) do
+
+    case preview_objective_detatchment(revision_slug, project) do
+      %{attachments: {[], []}} -> []
+
+      %{attachments: {pages, activities}, locked_by: locked_by, parent_pages: parent_pages} ->
+
+        resource = Resources.get_resource_from_slug(revision_slug)
+
+        # detach from all non-locked pages
+        Enum.filter(pages, fn %{resource_id: resource_id} -> !Map.has_key?(locked_by, resource_id) end)
+        |> Enum.each(fn %{slug: slug} ->
+          detach_from_page(resource.slug, slug, project.slug, author_email)
+        end)
+
+        # detach from all non-locked activities. Locked activities are those activities
+        # whose parent page is locked
+        Enum.filter(activities, fn %{resource_id: resource_id} -> !Map.has_key?(locked_by, Map.get(parent_pages, resource_id)) end)
+        |> Enum.each(fn %{slug: slug, resource_id: resource_id} ->
+          page = AuthoringResolver.from_resource_id(project.slug, Map.get(parent_pages, resource_id))
+          detach_from_activity(resource.slug, page.slug, slug, project.slug, author_email)
+        end)
+
+    end
+
+  end
+
+  defp detach_from_page(objective_slug, page_slug, project_slug, author_email) do
+
+    case PageEditor.acquire_lock(project_slug, page_slug, author_email) do
+      {:acquired} ->
+        page = AuthoringResolver.from_revision_slug(project_slug, page_slug)
+        update = %{"attached" => Enum.filter(Map.get(page.objectives, "attached"), fn s -> s != objective_slug end)}
+        case PageEditor.edit(project_slug, page_slug, author_email, update) do
+          {:ok, _} ->
+            PageEditor.release_lock(project_slug, page_slug, author_email)
+            true
+
+          _ -> false
+        end
+
+      _ -> false
+    end
+
+  end
+
+  defp detach_from_activity(objective_slug, page_slug, activity_slug, project_slug, author_email) do
+
+    case PageEditor.acquire_lock(project_slug, page_slug, author_email) do
+      {:acquired} ->
+        activity = AuthoringResolver.from_revision_slug(project_slug, activity_slug)
+
+        update = Enum.reduce(%{}, activity.objectives, fn {p, a}, m ->
+          Map.put(m, p, Enum.filter(a, fn s -> s != objective_slug end))
+        end)
+
+        ActivityEditor.edit(project_slug, page_slug, activity_slug, author_email, update)
+        PageEditor.release_lock(project_slug, page_slug, author_email)
+    end
+
+  end
+
+  def preview_objective_detatchment(revision_slug, %Project{} = project) do
+
+    resource = Resources.get_resource_from_slug(revision_slug)
+    publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+
+    # find all attachments
+    case Publishing.find_objective_attachments(resource.id, publication.id) do
+
+      # if no attachments
+      [] -> %{attachments: {[], []}, locked_by: %{}, parent_pages: %{}}
+
+      # otherwise we need to see which attachments are currently locked for edit
+      attachments ->
+
+        # partition the attachments between pages and activities
+        {pages, activities} = partition_attachments(attachments)
+
+        # activites can be duplicatd if more than one part has an attachment, so
+        # dedupe for the purposes of detachment
+        distinct_activities = dedupe_activities(activities)
+
+        IO.inspect distinct_activities
+
+        # for those activities, determine which pages they exist in and combine
+        # that set of pages with the set of pages that contain the objective
+        # directly attached to it
+        {parent_pages, unified_pages} = case distinct_activities do
+          [] -> {%{}, pages}
+          a ->
+            parent_pages = Publishing.determine_parent_pages(Enum.map(a, fn a -> a.resource_id end), publication.id)
+            unified_pages = unify_pages(parent_pages, pages)
+            {parent_pages, unified_pages}
+        end
+
+
+
+        # now we can determine for all pages, which users might be currently editing
+        locked_by = Publishing.retrieve_lock_info(Enum.map(unified_pages, fn a -> a.resource_id end), publication.id)
+        |> Enum.reduce(%{}, fn mapping, m ->
+          case Oli.Authoring.Locks.expired_or_empty?(mapping) do
+            true -> m
+            false -> Map.put(m, mapping.resource_id, mapping)
+          end
+        end)
+
+        %{attachments: {pages, distinct_activities}, locked_by: locked_by, parent_pages: parent_pages}
+
+    end
+
+  end
+
+  defp partition_attachments(attachments) do
+    Enum.reduce(attachments, {[], []}, fn e, {p, a} ->
+      case e.part do
+        "attached" -> {p ++ [e], a}
+        _ -> {p, a ++ [e]}
+      end
+    end)
+  end
+
+  defp dedupe_activities(activities) do
+    {deduped, _} = Enum.reduce(activities, {[], MapSet.new()}, fn e, {a, m} ->
+      case MapSet.member?(m, e.resource_id) do
+        true -> {a, m}
+        false -> {a ++ [e], MapSet.put(m, e.resource_ied)}
+      end
+    end)
+    deduped
+  end
+
+  defp unify_pages(parent_pages, pages) do
+    Enum.map(parent_pages, fn {_, id} -> id end)
+    |> MapSet.new()
+    |> MapSet.union(MapSet.new(Enum.map(pages, fn p -> p.resource_id end)))
+  end
+
+  @spec maybe_append_to_container(nil | binary, any, any, any, any) ::
+          {:error, {any}} | {:ok, atom | %{id: any, resource_id: integer}}
+  defp maybe_append_to_container(container_slug, publication, revision_to_attach, project_slug, author) do
 
     case container_slug do
       nil -> {:ok, nil}
@@ -80,7 +224,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   end
 
-  def append_to_container(container_slug, publication, revision_to_attach, project_slug, author) do
+  defp append_to_container(container_slug, publication, revision_to_attach, project_slug, author) do
 
     with {:ok, resource} <- Resources.get_resource_from_slug(container_slug) |> trap_nil(),
         {:ok, revision} <- Publishing.get_published_revision(publication.id, resource.id) |> trap_nil()

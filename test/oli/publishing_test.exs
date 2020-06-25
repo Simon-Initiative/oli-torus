@@ -71,6 +71,9 @@ defmodule Oli.PublishingTest do
       # the page has it attached as well
       assert (Enum.filter(results, fn r -> r.resource_id == revision.resource_id end) |> length) == 1
 
+      parent_pages = Publishing.determine_parent_pages([activity4.resource_id], publication.id)
+      assert Map.has_key?(parent_pages, activity4.resource_id)
+
     end
 
   end
