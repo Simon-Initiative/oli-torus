@@ -5,7 +5,7 @@
   </div>
   <p class="category">Create</p>
   <%= sidebar_link @conn, "Overview", :overview, to: Routes.project_path(@conn, :overview, @project) %>
-  <%= sidebar_link @conn, "Objectives", :objectives, to: Routes.project_path(@conn, :objectives, @project) %>
+  <%= sidebar_link @conn, "Objectives", :objectives, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Objectives.Objectives, @project.slug) %>
   <%= sidebar_link @conn, "Curriculum", :curriculum, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, @project.slug) %>
 
   <%= sidebar_link @conn, "Publish", :publish, to: Routes.project_path(@conn, :publish, @project) %>

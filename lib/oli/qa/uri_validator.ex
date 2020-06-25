@@ -8,25 +8,33 @@ defmodule Oli.Qa.UriValidator do
   This logic could be extended to validate mime types / etc rather than just fetching the resource.
   """
 
+  alias Oli.Publishing.AuthoringResolver
+  alias Oli.Resources.Revision
+
+  @internal_link_prefix "/course/link/"
+
   # returns only valid uris
-  def valid_uris(elements) when is_list(elements) do
+  def valid_uris(elements, project_slug) when is_list(elements) do
     elements
-    |> validate_uris
+    |> validate_uris(project_slug)
     |> Map.get(:ok, [])
   end
 
   # returns only invalid uris
-  def invalid_uris(elements) when is_list(elements) do
+  def invalid_uris(elements, project_slug) when is_list(elements) do
     elements
-    |> validate_uris
+    |> validate_uris(project_slug)
     |> Map.get(:error, [])
   end
 
   # returns all uris as a map of lists grouped by :ok (valid), :error (invalid)
   # elements are of type %{ id, content }
-  def validate_uris(elements) when is_list(elements) do
+  def validate_uris(elements, project_slug) when is_list(elements) do
+
+    verify_with_slug = fn e -> verify_link(e, project_slug) end
+
     elements
-    |> Task.async_stream(&fetch/1)
+    |> Task.async_stream(verify_with_slug)
     |> Stream.map(&extract_stream_result/1)
     |> Stream.map(&prettified_type/1)
     |> Enum.group_by(&get_status/1, &get_value/1)
@@ -42,10 +50,26 @@ defmodule Oli.Qa.UriValidator do
     {status, Map.put(value, :prettified_type, type)}
   end
 
-  defp fetch(%{ content: content } = element) do
+  defp verify_link(%{ content: content } = element, project_slug) do
 
-    uri = get_uri(content)
+    case get_uri(content) do
+      @internal_link_prefix <> resource_slug -> verify_internal_link(element, resource_slug, project_slug)
+      uri -> verify_external_link(element, uri)
+    end
 
+  end
+
+  # we verify internal links by resolving the resource slug to see if
+  # it actually resolves and that it resolves to a non-deleted revision
+  defp verify_internal_link(element, resource_slug, project_slug) do
+    case AuthoringResolver.from_revision_slug(project_slug, resource_slug) do
+      nil -> {:error, element}
+      %Revision{deleted: true} -> {:error, element}
+      _ -> {:ok, element}
+    end
+  end
+
+  defp verify_external_link(element, uri) do
     if !valid_uri?(uri)
     do {:error, element}
     else

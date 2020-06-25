@@ -15,7 +15,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   alias Oli.Publishing.ChangeTracker
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Repo
-  alias Phoenix.PubSub
+  alias Oli.Authoring.Broadcaster
 
   @spec edit_page(Oli.Authoring.Course.Project.t(), any, map) :: any
   def edit_page(%Project{} = project, revision_slug, change) do
@@ -38,10 +38,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       case Resources.update_revision(revision, change) do
         {:ok, revision} ->
 
-          PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id),
-            {:updated, revision, project.slug}
-          PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id) <> ":project:" <> project.slug,
-            {:updated, revision, project.slug}
+          Broadcaster.broadcast_revision(revision, project.slug)
 
           revision
 
@@ -115,11 +112,8 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   def broadcast_update(resource_id, project_slug) do
 
     updated_container = AuthoringResolver.from_resource_id(project_slug, resource_id)
+    Broadcaster.broadcast_revision(updated_container, project_slug)
 
-    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(resource_id),
-      {:updated, updated_container, project_slug}
-    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(resource_id) <> ":project:" <> project_slug,
-      {:updated, updated_container, project_slug}
   end
 
 
@@ -160,11 +154,14 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
         # this current user is editing this page (like in another tab). This is due
         # to the re-entrant natures of our locks.
 
-        with {:ok, _} <- PageEditor.edit(project.slug, revision_slug, author.email, deletion),
+        with {:acquired} <- PageEditor.acquire_lock(project.slug, revision_slug, author.email),
+          {:ok, _} <- PageEditor.edit(project.slug, revision_slug, author.email, deletion),
+          _ <- PageEditor.release_lock(project.slug, revision_slug, author.email),
          {:ok, revision} = ChangeTracker.track_revision(project.slug, container, removal)
         do
           revision
         else
+          {:lock_not_acquired, value} -> Repo.rollback({:lock_not_acquired, value})
           {:error, e} -> Repo.rollback(e)
         end
 
@@ -240,10 +237,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
       updated_container = Oli.Repo.get(Oli.Resources.Revision, container.id)
 
-      PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(container.resource_id),
-        {:updated, updated_container, project.slug}
-      PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(container.resource_id) <> ":project:" <> project.slug,
-        {:updated, updated_container, project.slug}
+      Broadcaster.broadcast_revision(updated_container, project.slug)
 
       result
 

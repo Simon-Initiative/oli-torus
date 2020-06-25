@@ -14,8 +14,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Repo
   alias Oli.Rendering
   alias Oli.Activities.Transformers
-
-  alias Phoenix.PubSub
+  alias Oli.Authoring.Broadcaster
 
   import Ecto.Query, warn: false
 
@@ -57,11 +56,13 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
           # If we acquired the lock, we must first create a new revision
           {:acquired} -> get_latest_revision(publication, resource)
+            |> resurrect_or_delete_activity_references(converted_update, project.slug)
             |> create_new_revision(publication, resource, author.id)
             |> update_revision(converted_update, project.slug)
 
           # A successful lock update means we can safely edit the existing revision
           {:updated} -> get_latest_revision(publication, resource)
+            |> resurrect_or_delete_activity_references(converted_update, project.slug)
             |> maybe_create_new_revision(publication, resource, author.id, converted_update)
             |> update_revision(converted_update, project.slug)
 
@@ -223,6 +224,47 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
   end
 
+  # Look to see what activity references this change would add or remove and
+  # ensure that the revision backing that activity has its 'deleted' flag
+  # set appropriately.  This allows the client to insert an activity reference,
+  # and remove it, then bring it back using 'Undo' - all while keeping the
+  # deleted state of the activity revision correct.
+  defp resurrect_or_delete_activity_references(revision, change, project_slug) do
+
+    # Handle the case where this change does not include content
+    case Map.get(change, "content") do
+
+      nil -> revision
+
+      map ->
+
+        # First caculate the difference, if any, between the current revision and the
+        # change that we are about to commit
+        content1 = Map.get(revision.content, "model")
+        content2 = Map.get(map, "model")
+
+        {additions, deletions} = diff_activity_references(content1, content2)
+
+        # If there are activity-reference changes, resolve those activity ids to
+        # revisions and set their deleted flag appropriately
+        case MapSet.union(additions, deletions) |> MapSet.to_list() do
+
+          [] -> revision
+
+          activity_ids ->
+            AuthoringResolver.from_resource_id(project_slug, activity_ids)
+            |> Enum.each(fn revision ->
+              {:ok, updated} = Oli.Resources.update_revision(revision, %{deleted: MapSet.member?(deletions, revision.resource_id)})
+              Broadcaster.broadcast_revision(updated, project_slug)
+            end)
+
+            revision
+        end
+    end
+
+
+  end
+
   # Reverse references found in a resource update for activites. They will
   # come from the client as activity revision slugs, we store them internally
   # as activity ids.
@@ -345,12 +387,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
   # Creates a new resource revision and updates the publication mapping
   def create_new_revision(previous, publication, resource, author_id) do
 
-    # Copy the state of the previous revision, except for author and id
-    attrs = Map.from_struct(previous)
-    |> Map.merge(%{author_id: author_id})
-    |> Map.delete(:id)
-
-    {:ok, revision} = Resources.create_revision(attrs)
+    attrs = %{author_id: author_id}
+    {:ok, revision} = Resources.create_revision_from_previous(previous, attrs)
 
     mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
     {:ok, _mapping} = Publishing.update_resource_mapping(mapping, %{ revision_id: revision.id })
@@ -380,10 +418,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
     {:ok, updated} = Oli.Resources.update_revision(revision, converted_back_to_ids)
 
-    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id),
-      {:updated, updated, project_slug}
-    PubSub.broadcast Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id) <> ":project:" <> project_slug,
-      {:updated, updated, project_slug}
+    Broadcaster.broadcast_revision(revision, project_slug)
 
     updated
   end

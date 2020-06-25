@@ -5,8 +5,6 @@
 
 <h1><%= @title %></h1>
 
-<%= render "_objectives.html", objectives: @objectives %>
-
 <%= if @graded do %>
   <%= link "Submit Assessment", to: Routes.page_delivery_path(@conn, :finalize_attempt, @context_id, @slug, @attempt_guid), class: "btn btn-primary btn-lg" %>
 <% end %>
