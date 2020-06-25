@@ -232,7 +232,6 @@ defmodule OliWeb.PageDeliveryController do
         section = Sections.get_section_by(context_id: context_id)
         token = conn.params["token"]
 
-        IO.inspect conn
         Sections.update_section(section, %{canvas_token: token})
 
         conn

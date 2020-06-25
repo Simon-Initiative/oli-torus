@@ -11,6 +11,7 @@ defmodule Oli.Seeder do
   alias Oli.Publishing.Publication
   alias Oli.Accounts.LtiToolConsumer
   alias Oli.Accounts.User
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Attempts.Snapshot
   alias Oli.Qa.Reviews
@@ -237,6 +238,25 @@ defmodule Oli.Seeder do
     end
   end
 
+  def add_users_to_section(map, section_tag, user_tags) do
+    # Make users
+    map = user_tags
+    |> Enum.with_index
+    |> Enum.reduce(map,
+      fn {tag, index}, acc -> add_user(acc, %{
+          user_id: Atom.to_string(tag),
+          first_name: "Tony",
+          last_name: "Stark",
+          email: "t.stark+#{index}@avengers.com"},
+        tag) end)
+
+    # Enroll users
+    user_tags
+    |> Enum.each(fn user_tag -> Sections.enroll(map[user_tag].id, map[section_tag].id, 2) end)
+
+    map
+  end
+
   def add_lti_consumer(map, attrs, tag \\ nil) do
     params =
       attrs
@@ -382,6 +402,32 @@ defmodule Oli.Seeder do
     {:ok, review} = Reviews.create_review(Map.get(map, :project), type)
     map
     |> Map.put(tag, review)
+  end
+
+  def add_resource_accesses(map, section_tag, score_map) do
+    # Effectful. Adds resource accesses with scores to DB, but does not add to map.
+    score_map
+    |> Map.to_list
+    |> Enum.each(fn {revision_tag, %{out_of: out_of, scores: scores}} ->
+      scores
+      |> Map.to_list
+      |> Enum.each(fn {user_tag, score} ->
+        %ResourceAccess{}
+        |> ResourceAccess.changeset(%{
+          access_count: 1,
+          score: score,
+          out_of: out_of,
+          user_id: map[user_tag].id,
+          section_id: map[section_tag].id,
+          # Revision tag is used some places as the real revision tag in the map, other times it's the
+          # tag that points to the {resource, revision} pair
+          resource_id: try do map[revision_tag].resource_id rescue _e -> map[revision_tag].resource.id end,
+        })
+        |> Repo.insert()
+      end)
+    end)
+
+    map
   end
 
 end

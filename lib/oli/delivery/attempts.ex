@@ -312,16 +312,14 @@ defmodule Oli.Delivery.Attempts do
       from section in Section,
       join: enrollment in Enrollment, on: enrollment.section_id == section.id,
       join: user in Oli.Accounts.User, on: enrollment.user_id == user.id,
-      join: raccess in ResourceAccess, on: section.id == raccess.section_id,
+      join: raccess in ResourceAccess, on: user.id == raccess.user_id,
       join: rattempt in ResourceAttempt, on: raccess.id == rattempt.resource_access_id,
       join: aattempt in ActivityAttempt, on: rattempt.id == aattempt.resource_attempt_id,
       join: pattempt in PartAttempt, on: aattempt.id == pattempt.activity_attempt_id,
       where: section.publication_id == ^publication_id,
       where: enrollment.section_role_id == ^student_role_id,
       select: %{ part_attempt: pattempt, user: user })
-      # select: %{ activity_attempt: aattempt, user: user })
       # TODO: This should be done in the query, but can't get the syntax right
-      # |> Enum.map(& %{ user: &1.user, activity_attempt: Repo.preload(&1.activity_attempt, [:revision, :part_attempts])})
     |> Enum.map(& %{ user: &1.user, part_attempt: Repo.preload(&1.part_attempt, [activity_attempt: [:revision, revision: :activity_type]]) })
   end
 

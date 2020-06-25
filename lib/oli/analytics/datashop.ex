@@ -13,10 +13,21 @@ defmodule Oli.Analytics.Datashop do
   alias Oli.Delivery.Attempts
   alias Oli.Publishing.AuthoringResolver
 
+  alias Oli.Rendering.Context
+  alias Oli.Rendering.Content
+
+  defp parse_content(content) do
+    # The XML library supports cdata elements so we can directly inject the parsed html
+    {:cdata, Content.render(%Context{}, content, Content.Html)
+    |> Phoenix.HTML.raw
+    |> Phoenix.HTML.safe_to_string
+    |> String.trim}
+  end
+
   def export(project_id) do
     project_id
-    |> elements
-    |> tutor_related_message_sequence
+    |> create_messages
+    |> wrap_with_tutor_related_message
     |> document
     |> generate
     |> write_file
@@ -29,10 +40,11 @@ defmodule Oli.Analytics.Datashop do
     File.write(path <> file_name, xml)
   end
 
-  def elements(project_id) do
+  defp create_messages(project_id) do
     project = Course.get_project!(project_id)
     pub = Publishing.get_latest_published_publication_by_slug!(project.slug)
-    Attempts.get_part_attempts_and_users_for_publication(pub.id)
+
+    x = Attempts.get_part_attempts_and_users_for_publication(pub.id)
     |> Enum.group_by(
       & {&1.user.email, &1.part_attempt.activity_attempt.revision.slug, &1.part_attempt.part_id},
       & &1.part_attempt)
@@ -48,10 +60,11 @@ defmodule Oli.Analytics.Datashop do
       # meta element must be present on all tutor/tool messages even if it's present in the context message
       meta_element = element(:meta, %{}, [
         element(:user_id, email),
-        element(:session_id, email <> time),
+        element(:session_id, email <> " " <> time),
         element(:time, time),
         element(:time_zone, "GMT")
       ])
+
 
       # context message. skills should be present in tutor message, unused in context message
       # <context_message context_message_id="mary-smith-MAJOR-ARC-BFD-2-0" name="START_PROBLEM">
@@ -120,17 +133,13 @@ defmodule Oli.Analytics.Datashop do
             fn {hint_id, i} ->
               # transaction id connects tool and tutor messages
               {:ok, uuid} = ShortUUID.encode(UUID.uuid4())
-              transaction_id = context_message_id <> uuid
+              transaction_id = context_message_id <> "-" <> uuid
 
               hint_text = try do
-                part.hints
-                |> Enum.find(& &1.id == hint_id)
-                # Need a way to extract raw text from the slate data model here. This is just a heuristic
+                part["hints"]
+                |> Enum.find(& &1["id"] == hint_id)
                 |> Map.get("content")
-                |> hd
-                |> Map.get("children")
-                |> hd
-                |> Map.get("text")
+                |> parse_content
               rescue _e -> "Unknown hint text"
               end
 
@@ -195,7 +204,7 @@ defmodule Oli.Analytics.Datashop do
                 element(:semantic_event, %{transaction_id: transaction_id, name: "HINT_MSG"}),
                 # Could add an event_descriptor here with the student's current answer input, but not sure that will be helpful
                 element(:action_evaluation,
-                  %{current_hint_number: i,
+                  %{current_hint_number: i + 1,
                     total_hints_available:
                       case total_hints_available do
                         {:ok, num} -> num
@@ -203,8 +212,7 @@ defmodule Oli.Analytics.Datashop do
                       end
                   }, "HINT"),
                 element(:tutor_advice, hint_text)
-                ++ make_skills(project.slug, skill_ids)
-              ])
+              ] ++ make_skills(project.slug, skill_ids))
 
               [hint_tool_message, hint_tutor_message]
             end)
@@ -236,7 +244,7 @@ defmodule Oli.Analytics.Datashop do
             element(:event_descriptor, [
               element(:selection, problem_name),
               element(:action, get_action(part_attempt)),
-              element(:input, Poison.encode!(get_input(part_attempt)))
+              element(:input, get_input(part_attempt))
             ])
           ])
 
@@ -268,7 +276,7 @@ defmodule Oli.Analytics.Datashop do
             element(:event_descriptor, [
               element(:selection, problem_name),
               element(:action, get_action(part_attempt)),
-              element(:input, Poison.encode!(part_attempt.feedback))
+              element(:input, parse_content(part_attempt.feedback["content"]))
             ]),
             element(:action_evaluation, correctness(part_attempt))]
             ++ make_skills(project.slug, skill_ids))
@@ -312,7 +320,7 @@ defmodule Oli.Analytics.Datashop do
       # for short answer questions, the input is the text the student entered in the field
       "oli_short_answer" -> input
       # for multiple choice questions, the input is a string id that refers to the selected choice
-      "oli_multiple_choice" -> Enum.find(choices, & &1["id"] == input)["content"]
+      "oli_multiple_choice" -> parse_content(Enum.find(choices, & &1["id"] == input)["content"])
       _unregistered -> "Input in unregistered activity type"
     end
   end
@@ -399,7 +407,7 @@ defmodule Oli.Analytics.Datashop do
     {...children}
   </tutor_related_message_sequence>
   """
-  def tutor_related_message_sequence(children) do
+  def wrap_with_tutor_related_message(children) do
     element(:tutor_related_message_sequence,
       %{
         "xmlns:xsi" => "http://www.w3.org/2001/XMLSchema-instance",

@@ -3,8 +3,6 @@ defmodule Oli.GradingTest do
 
   alias Oli.Repo
   alias Oli.Grading
-  alias Oli.Delivery.Attempts.ResourceAccess
-  alias Oli.Delivery.Sections
 
   describe "grading" do
     defp set_resources_as_graded(%{revision1: revision1, revision2: revision2} = map) do
@@ -16,68 +14,30 @@ defmodule Oli.GradingTest do
       map
     end
 
-    defp create_users(%{section: section} = map) do
-      map = Oli.Seeder.add_user(map, %{user_id: "user1", first_name: "Tony", last_name: "Stark", email: "t.stark@avengers.com"}, :user1)
-      map = Oli.Seeder.add_user(map, %{user_id: "user2", first_name: "Luke", last_name: "Charles", email: "l.charles@avengers.com"}, :user2)
-      map = Oli.Seeder.add_user(map, %{user_id: "user3", first_name: "Steve", last_name: "Rogers", email: "s.rogers@avengers.com"}, :user3)
-
-      # enroll users
-      Sections.enroll(map.user1.id, section.id, 2)
-      Sections.enroll(map.user2.id, section.id, 2)
-      Sections.enroll(map.user3.id, section.id, 2)
-
-      map
-    end
-
-    defp create_resource_accesses(%{revision1: revision1, revision2: revision2, section: section} = map) do
-      scores = %{
-        revision1: [12, 20, 19],
-        revision2: [0, 3, 5],
-      }
-      users = [map.user1, map.user2, map.user3]
-
-      # create accesses for resource 1
-      users
-      |> Enum.with_index
-      |> Enum.each(fn {user, i} ->
-        %ResourceAccess{}
-        |> ResourceAccess.changeset(%{
-          access_count: 1,
-          score: Enum.at(scores.revision1, i),
-          out_of: 20,
-          user_id: user.id,
-          section_id: section.id,
-          resource_id: revision1.resource_id,
-        })
-        |> Repo.insert()
-      end)
-
-      # create accesses for resource 2
-      users
-      |> Enum.with_index
-      |> Enum.each(fn {user, i} ->
-        %ResourceAccess{}
-        |> ResourceAccess.changeset(%{
-          access_count: 1,
-          score: Enum.at(scores.revision2, i),
-          out_of: 5,
-          user_id: user.id,
-          section_id: section.id,
-          resource_id: revision2.resource_id,
-        })
-        |> Repo.insert()
-      end)
-
-      Map.put(map, :scores, scores)
-    end
-
     setup do
       Oli.Seeder.base_project_with_resource2()
       |> set_resources_as_graded
       |> Oli.Seeder.create_section
       |> Oli.Seeder.add_lti_consumer(%{}, :lti_consumer)
-      |> create_users
-      |> create_resource_accesses
+      |> Oli.Seeder.add_users_to_section(:section, [:user1, :user2, :user3])
+      |> Oli.Seeder.add_resource_accesses(:section, %{
+        revision1: %{
+          out_of: 20,
+          scores: %{
+            user1: 12,
+            user2: 20,
+            user3: 19
+          }
+        },
+        revision2: %{
+          out_of: 5,
+          scores: %{
+            user1: 0,
+            user2: 3,
+            user3: 5
+          }
+        }
+      })
     end
 
     test "returns valid gradebook for section", %{section: section, revision1: revision1, revision2: revision2, user1: user1, user2: user2, user3: user3} do
@@ -144,9 +104,9 @@ defmodule Oli.GradingTest do
       expected_csv = """
         Student,Page one,Page two\r
             Points Possible,20.0,5.0\r
-        Tony Stark (t.stark@avengers.com),12.0,0.0\r
-        Luke Charles (l.charles@avengers.com),20.0,3.0\r
-        Steve Rogers (s.rogers@avengers.com),19.0,5.0\r
+        Tony Stark (t.stark+0@avengers.com),12.0,0.0\r
+        Tony Stark (t.stark+1@avengers.com),20.0,3.0\r
+        Tony Stark (t.stark+2@avengers.com),19.0,5.0\r
         """
 
       csv = Grading.export_csv(section) |> Enum.join("")
