@@ -3,18 +3,86 @@
   <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
 <% end %>
 
-<h1><%= @title %></h1>
+<style>
+.wrapper {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
+}
 
-<%= if @graded do %>
-  <%= link "Submit Assessment", to: Routes.page_delivery_path(@conn, :finalize_attempt, @context_id, @slug, @attempt_guid), class: "btn btn-primary btn-lg" %>
-<% end %>
+#sidebar {
+    min-width: 250px;
+    max-width: 250px;
+    min-height: 100vh;
+}
 
-<div id="eventIntercept">
-  <%= raw(@html) %>
+#sidebar.active {
+    margin-left: -250px;
+}
+
+@media (max-width: 768px) {
+    #sidebar {
+        margin-left: -250px;
+    }
+    #sidebar.active {
+        margin-left: 0;
+    }
+}
+</style>
+
+<div class="wrapper">
+
+    <!-- Sidebar -->
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <h3>Bootstrap Sidebar</h3>
+        </div>
+
+        <ul class="list-unstyled components">
+            <p>Dummy Heading</p>
+            <li class="active">
+                <a href="#">Home</a>
+            </li>
+            <li>
+                <a href="#">About</a>
+            </li>
+            <li>
+                <a href="#">Pages</a>
+            </li>
+            <li>
+                <a href="#">Portfolio</a>
+            </li>
+            <li>
+                <a href="#">Contact</a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Page Content -->
+    <div id="content">
+
+      <h1><%= @title %></h1>
+
+      <%= render "_objectives.html", objectives: @objectives %>
+
+      <%= if @graded do %>
+        <%= link "Submit Assessment", to: Routes.page_delivery_path(@conn, :finalize_attempt, @context_id, @slug, @attempt_guid), class: "btn btn-primary btn-lg" %>
+      <% end %>
+
+      <div id="eventIntercept">
+        <%= raw(@html) %>
+      </div>
+
+      <%= if @graded do %>
+        <%= link "Submit Assessment", to: Routes.page_delivery_path(@conn, :finalize_attempt, @context_id, @slug, @attempt_guid), class: "btn btn-primary btn-lg" %>
+      <% end %>
+
+      <%= render "_previous_next_nav.html",
+        conn: @conn, context_id: @context_id, previous_page: @previous_page, next_page: @next_page %>
+
+    </div>
+
 </div>
-
-<%= render "_previous_next_nav.html",
-  conn: @conn, context_id: @context_id, previous_page: @previous_page, next_page: @next_page %>
 
 <script>
   OLI.initActivityBridge('eventIntercept');
