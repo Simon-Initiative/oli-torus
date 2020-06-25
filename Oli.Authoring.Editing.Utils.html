@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Authoring.Editing.Utils — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-a43b113c12.js"></script>
+    <script src="dist/sidebar_items-589377fccc.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -95,6 +95,13 @@ Oli.Authoring.Editing.Utils          <a href="https://github.com/Simon-Initiativ
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#diff_activity_references/2">diff_activity_references(content1, content2)</a>
+  </div>
+    <div class="summary-synopsis"><p>Calculates the difference in the activities references between
+two pieces of content.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#trap_nil/1">trap_nil(result)</a>
   </div>
 </div>
@@ -122,6 +129,27 @@ Functions          </h1>
      </a>
   </div>
   <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="diff_activity_references/2">
+  <div class="detail-header">
+    <a href="#diff_activity_references/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">diff_activity_references(content1, content2)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/util.ex#L28" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Calculates the difference in the activities references between
+two pieces of content.</p>
+<p>Returns a two element tuple, the first element being a mapset of
+the resource ids of activities are present in content2 but were
+not found in content1, and the second being a mapset of the resource
+ids of activities not found in content2 but there were found in content1</p>
   </section>
 </section>
 <section class="detail" id="trap_nil/1">
