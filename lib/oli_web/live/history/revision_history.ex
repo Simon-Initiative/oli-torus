@@ -31,7 +31,8 @@ defmodule OliWeb.RevisionHistory do
     revisions = Repo.all(from rev in Revision,
       where: rev.resource_id == ^resource_id,
       order_by: [desc: rev.inserted_at],
-      select: rev)
+      select: rev,
+      preload: [:author])
 
     mappings = Publishing.get_all_mappings_for_resource(resource_id, project_slug)
     mappings_by_revision = Enum.reduce(mappings, %{}, fn mapping, m -> Map.put(m, mapping.revision_id, mapping) end)
@@ -206,6 +207,8 @@ defmodule OliWeb.RevisionHistory do
   def handle_info({:updated, revision, _}, socket) do
 
     id = revision.id
+
+    Repo.preload(revision, :author)
 
     revisions = case socket.assigns.revisions do
       [] -> [revision]
