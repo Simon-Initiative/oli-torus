@@ -2,13 +2,17 @@ defmodule OliWeb.RevisionHistory.Table do
   use Phoenix.LiveComponent
 
   def render(assigns) do
+
+    range = Range.new(assigns.page_offset, assigns.page_offset + assigns.page_size)
+    to_display = Enum.slice(assigns.revisions, range)
+
     ~L"""
     <table class="table table-hover table-bordered table-sm">
       <thead class="thead-dark">
         <tr><th>Id</th><th>Created</th><th>Updated</th><th>Author</th><th>Graded</th><th>Attempts</th><th>Slug</th></tr>
       </thead>
-      <tbody id="revisions" phx-update="prepend">
-      <%= for rev <- @revisions do %>
+      <tbody id="revisions">
+      <%= for rev <- to_display do %>
         <%= if rev == @selected do %>
         <tr id="<%= rev.id %>" class="table-active">
         <% else %>

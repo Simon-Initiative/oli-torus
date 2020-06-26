@@ -1,6 +1,6 @@
 defmodule Oli.Delivery.Evaluation.RuleEvalTest do
 
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   alias Oli.Delivery.Evaluation.Rule
   alias Oli.Delivery.Evaluation.EvaluationContext
