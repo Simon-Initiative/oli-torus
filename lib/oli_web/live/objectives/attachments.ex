@@ -15,6 +15,9 @@ defmodule OliWeb.Objectives.Attachments do
     if Map.get(r, :part) == "attached" do "Page" else "Activity" end
   end
 
+  # Helper to formulate link to edit a resource. It is intentional that
+  # activities link to the parent page.  That is how the user will gain
+  # a lock to be able to then edit an activity.
   defp link_route(project_slug, parent_pages, id, revision_slug) do
     case Map.get(parent_pages, id) do
       nil -> Routes.resource_path(OliWeb.Endpoint, :edit, project_slug, revision_slug)

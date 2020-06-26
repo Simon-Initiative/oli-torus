@@ -18,6 +18,7 @@ defmodule Oli.EditingTest do
     test "edit/4 creates a new revision when no lock in place", %{author: author, revision1: revision1, project: project } do
 
       content = %{ "model" => [%{"type" => "p", children: [%{ "text" => "A paragraph."}] }]}
+
       PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
       {:ok, updated_revision} = PageEditor.edit(project.slug, revision1.slug, author.email, %{ "content" => content })
 
@@ -70,7 +71,7 @@ defmodule Oli.EditingTest do
       |> Publishing.update_resource_mapping(%{lock_updated_at: yesterday(), locked_by_id: author.id})
 
       content = %{ "model" => [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }] }
-      PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+
       {:ok, updated_revision} = PageEditor.edit(project.slug, revision1.slug, author.email, %{ "content" => content })
 
       assert revision1.id != updated_revision.id

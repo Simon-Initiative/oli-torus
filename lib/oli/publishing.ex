@@ -535,9 +535,6 @@ defmodule Oli.Publishing do
     page_id = ResourceType.get_id_by_type("page")
     activity_id = ResourceType.get_id_by_type("activity")
 
-    IO.puts "RESOURCE ID find obj"
-    IO.inspect resource_id
-
     sql =
       """
       select

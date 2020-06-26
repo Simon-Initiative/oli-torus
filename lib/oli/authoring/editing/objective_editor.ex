@@ -32,15 +32,14 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
         Broadcaster.broadcast_resource(revision, project.slug)
 
-        {:ok,
-          %{
-            resource: resource,
-            revision: revision,
-            project: project,
-            mapping: mapping,
-            container: container
-          }
+        %{
+          resource: resource,
+          revision: revision,
+          project: project,
+          mapping: mapping,
+          container: container
         }
+
       else
         error -> Repo.rollback(error)
       end
@@ -65,7 +64,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
         Broadcaster.broadcast_revision(new_revision, project.slug)
 
-        {:ok, new_revision}
+        new_revision
       else
         error -> Repo.rollback(error)
       end
@@ -281,7 +280,6 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   end
 
   defp append_to_container(container_slug, publication, revision_to_attach, project_slug, author) do
-
     with {:ok, resource} <- Resources.get_resource_from_slug(container_slug) |> trap_nil(),
         {:ok, revision} <- Publishing.get_published_revision(publication.id, resource.id) |> trap_nil()
     do

@@ -45,9 +45,9 @@ defmodule Oli.PublishingTest do
 
     test "find_objective_attachments/2 returns the objective revisions", %{author: author, project: project, publication: publication, revision1: revision} do
 
-      {:ok, {:ok, %{revision: obj1}}} = ObjectiveEditor.add_new(%{title: "one"}, author, project)
-      {:ok, {:ok, %{revision: obj2}}}  = ObjectiveEditor.add_new(%{title: "two"}, author, project)
-      {:ok, {:ok, %{revision: obj3}}}  = ObjectiveEditor.add_new(%{title: "three"}, author, project)
+      {:ok, %{revision: obj1}} = ObjectiveEditor.add_new(%{title: "one"}, author, project)
+      {:ok, %{revision: obj2}}  = ObjectiveEditor.add_new(%{title: "two"}, author, project)
+      {:ok, %{revision: obj3}}  = ObjectiveEditor.add_new(%{title: "three"}, author, project)
 
       activity1 = create_activity([{"1", [obj1.slug]}, {"2", []}], author, project, revision, obj1.slug)
       activity2 = create_activity([{"1", [obj1.slug]}, {"2", [obj1.slug]}], author, project, revision, obj1.slug)
