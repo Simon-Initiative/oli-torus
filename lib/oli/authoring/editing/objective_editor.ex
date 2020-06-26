@@ -106,8 +106,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
         {:ok, %{objectives: objectives}} = PageEditor.create_context(project_slug, page_slug, author)
 
+        # it is important to resolve the latest objective, so that we get the correct
+        # slug that the PageEditor will give us.
+        objective = AuthoringResolver.from_revision_slug(project_slug, objective_slug)
+
         update = %{"objectives" =>
-          %{"attached" => Enum.filter(Map.get(objectives, :attached), fn s -> s != objective_slug end)}}
+          %{"attached" => Enum.filter(Map.get(objectives, :attached), fn s -> s != objective.slug end)}}
 
         case PageEditor.edit(project_slug, page_slug, author.email, update) do
           {:ok, _} ->
@@ -128,6 +132,8 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
       {:acquired} ->
         {:ok, %{objectives: objectives}} = ActivityEditor.create_context(project_slug, page_slug, activity_slug, author)
 
+        # it is important to resolve the latest objective, so that we get the correct
+        # slug that the ActivityEditor will give us.
         objective = AuthoringResolver.from_revision_slug(project_slug, objective_slug)
 
         update = %{"objectives" => Enum.reduce(objectives, %{}, fn {p, a}, m ->
