@@ -1,0 +1,41 @@
+#wrapper {
+  display: flex;
+  width: 100%;
+  position: relative;
+}
+
+#sidebar {
+  width: 250px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: all 0.3s;
+}
+
+#sidebar .header {
+  height: 50px;
+}
+
+#content {
+  flex: 1;
+  padding: 0 30px;
+  margin-left: 250px;
+  transition: all 0.3s;
+}
+
+@media (max-width: 768px) {
+  #sidebar {
+    display: none;
+  }
+
+  #content {
+    margin-left: 0px;
+  }
+}
+
+.course-btn {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

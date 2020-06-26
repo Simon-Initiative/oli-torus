@@ -72,12 +72,7 @@
 
   <h5>Course Outline</h5>
 
-  <ul class="course-outline list-group">
-    <%= for page <- @pages do %>
-      <%= case page.graded do
-        false -> render "_link_page.html", page: page, conn: @conn, context_id: @context_id
-        true -> render "_link_assessment.html", page: page, conn: @conn, context_id: @context_id
-      end %>
-    <% end %>
-  </ul>
+  <div class="course-outline list-group">
+    <%= render "_outline.html", conn: @conn, context_id: @context_id, pages: @pages, active_page: nil %>
+  </div>
 </div>

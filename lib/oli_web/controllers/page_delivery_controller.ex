@@ -1,7 +1,7 @@
 defmodule OliWeb.PageDeliveryController do
   use OliWeb, :controller
   import OliWeb.ProjectPlugs
-  alias Oli.Delivery.Student.OverviewDesc
+  alias Oli.Delivery.Student.Summary
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Sections
   alias Oli.Rendering.Context
@@ -21,9 +21,9 @@ defmodule OliWeb.PageDeliveryController do
 
     if Sections.is_enrolled?(user.id, context_id) do
 
-      case OverviewDesc.get_overview_desc(context_id, user) do
-        {:ok, overview} -> render(conn, "index.html",
-          context_id: context_id, pages: overview.pages, title: overview.title, description: overview.description)
+      case Summary.get_summary(context_id, user) do
+        {:ok, summary} -> render(conn, "index.html",
+          context_id: context_id, pages: summary.pages, title: summary.title, description: summary.description)
         {:error, _} -> render(conn, "error.html")
       end
     else
@@ -38,7 +38,7 @@ defmodule OliWeb.PageDeliveryController do
 
     if Sections.is_enrolled?(user.id, context_id) do
 
-      PageContext.create_page_context(context_id, revision_slug, user.id)
+      PageContext.create_page_context(context_id, revision_slug, user)
       |> render_page(conn, context_id, user)
 
     else
@@ -57,7 +57,7 @@ defmodule OliWeb.PageDeliveryController do
     redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
   end
 
-  defp render_page(%PageContext{progress_state: :not_started, page: page, resource_attempts: resource_attempts} = context,
+  defp render_page(%PageContext{summary: summary, progress_state: :not_started, page: page, resource_attempts: resource_attempts} = context,
     conn, context_id, _) do
 
     attempts_taken = length(resource_attempts)
@@ -76,6 +76,7 @@ defmodule OliWeb.PageDeliveryController do
 
     render(conn, "prologue.html", %{
       context_id: context_id,
+      summary: summary,
       previous_page: context.previous_page,
       next_page: context.next_page,
       title: context.page.title,
@@ -99,6 +100,7 @@ defmodule OliWeb.PageDeliveryController do
     render(conn, "page.html", %{
       context_id: context_id,
       scripts: Activities.get_activity_scripts(),
+      summary: context.summary,
       previous_page: context.previous_page,
       next_page: context.next_page,
       title: context.page.title,
@@ -142,7 +144,7 @@ defmodule OliWeb.PageDeliveryController do
     if Sections.is_enrolled?(user.id, context_id) do
 
       case Attempts.submit_graded_page(role, context_id, attempt_guid) do
-        {:ok, _} -> after_finalized(conn, context_id, revision_slug, user.id)
+        {:ok, _} -> after_finalized(conn, context_id, revision_slug, user)
         {:error, {:already_submitted}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
         {:error, {:active_attempt_present}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
         {:error, {:no_more_attempts}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
@@ -155,9 +157,9 @@ defmodule OliWeb.PageDeliveryController do
 
   end
 
-  def after_finalized(conn, context_id, revision_slug, user_id) do
+  def after_finalized(conn, context_id, revision_slug, user) do
 
-    context = PageContext.create_page_context(context_id, revision_slug, user_id)
+    context = PageContext.create_page_context(context_id, revision_slug, user)
 
     message = if context.page.max_attempts == 0 do
       "You have an unlimited number of attempts remaining"
