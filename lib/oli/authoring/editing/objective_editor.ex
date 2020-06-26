@@ -74,6 +74,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   end
 
 
+  @doc """
+  Detaches an objective from all unlocked pages and activites that currently reference it.
+
+  Takes the objective revision slug, the project and the author that will be
+  commiting the changes as arguments.
+  """
   def detach_objective(revision_slug, %Project{} = project, author) do
 
     case preview_objective_detatchment(revision_slug, project) do
@@ -89,9 +95,9 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
         # detach from all non-locked activities. Locked activities are those activities
         # whose parent page is locked
-        Enum.filter(activities, fn %{resource_id: resource_id} -> !Map.has_key?(locked_by, Map.get(parent_pages, resource_id)) end)
+        Enum.filter(activities, fn %{resource_id: resource_id} -> !Map.has_key?(locked_by, Map.get(parent_pages, resource_id).id) end)
         |> Enum.each(fn %{slug: slug, resource_id: resource_id} ->
-          page = AuthoringResolver.from_resource_id(project.slug, Map.get(parent_pages, resource_id))
+          page = AuthoringResolver.from_resource_id(project.slug, Map.get(parent_pages, resource_id).id)
           detach_from_activity(revision_slug, page.slug, slug, project.slug, author)
         end)
 
@@ -99,17 +105,23 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   end
 
+  # Specialized handling of detaching an objective from a page. The detachment
+  # goes through the `PageEditor` so that locking and all other aspects of
+  # manual detachment are simulated.
   defp detach_from_page(objective_slug, page_slug, project_slug, author) do
 
     case PageEditor.acquire_lock(project_slug, page_slug, author.email) do
       {:acquired} ->
 
+        # We need to create the context so that we get a client-side view of the
+        # current objectives as slugs and not as ids
         {:ok, %{objectives: objectives}} = PageEditor.create_context(project_slug, page_slug, author)
 
-        # it is important to resolve the latest objective, so that we get the correct
+        # It is important to resolve the latest objective, so that we get the correct
         # slug that the PageEditor will give us.
         objective = AuthoringResolver.from_revision_slug(project_slug, objective_slug)
 
+        # Construct the update that will filter out the objective
         update = %{"objectives" =>
           %{"attached" => Enum.filter(Map.get(objectives, :attached), fn s -> s != objective.slug end)}}
 
@@ -126,6 +138,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   end
 
+  # Detach an objective from all parts of an activity, using the `ActivityEditor` logic.
   defp detach_from_activity(objective_slug, page_slug, activity_slug, project_slug, author) do
 
     case PageEditor.acquire_lock(project_slug, page_slug, author.email) do
@@ -147,10 +160,33 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   end
 
-  @spec preview_objective_detatchment(binary, Oli.Authoring.Course.Project.t()) :: %{
+  @doc """
+  Previews an objective detachment, returning back references to the pages and
+  activities that the objective is attached to (if any).  These references are in
+  the form of a map of key-values:
+
+  %{
+    resource_id: the resource id of the attaching resource
+    title: the title of the resource
+    slug: the slug
+    part: either 'attached' for pages, or the part id for activities for where
+          the objective is attached.
+  }
+
+  The return value of this function is:
+
+  %{
+    attachments: {page_references[], activity_references[]},
+    parent_pages: map of the activity reference resource ids to their parent page resource ids
+    locked_by: map of page resource ids to publish resource records for those pages that are
+       currently locked for editing
+  }
+
+  """
+  @spec preview_objective_detatchment(String.t, Oli.Authoring.Course.Project.t()) :: %{
           attachments: {any, any},
-          locked_by: any,
-          parent_pages: any
+          locked_by: map(),
+          parent_pages: map()
         }
   def preview_objective_detatchment(revision_slug, %Project{} = project) do
 
@@ -201,6 +237,8 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   end
 
+  # split the found attachments into separate lists for pages and activies, returning them
+  # as a two element tuple
   defp partition_attachments(attachments) do
     Enum.reduce(attachments, {[], []}, fn e, {p, a} ->
       case e.part do
@@ -210,6 +248,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     end)
   end
 
+  # For a list of activity attachment references, dedupe them.
   defp dedupe_activities(activities) do
     {deduped, _} = Enum.reduce(activities, {[], MapSet.new()}, fn e, {a, m} ->
       case MapSet.member?(m, e.resource_id) do
@@ -220,8 +259,11 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     deduped
   end
 
+  # For the pages that directly attach an objective, and the pages that
+  # reference an activity that attaches an objective, create a unified MapSet of
+  # all their resource ids
   defp unify_pages(parent_pages, pages) do
-    Enum.map(parent_pages, fn {_, id} -> id end)
+    Enum.map(parent_pages, fn {_, %{id: id}} -> id end)
     |> MapSet.new()
     |> MapSet.union(MapSet.new(Enum.map(pages, fn p -> p.resource_id end)))
   end

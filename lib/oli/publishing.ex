@@ -588,7 +588,8 @@ defmodule Oli.Publishing do
   For a given list of activity resource ids and a given project publication id,
   find and retrieve all revisions for the pages that contain the activities.
 
-  Returns a map of activity_ids to the page revision ids that contains the activity
+  Returns a map of activity_ids to a map containing the slug and resource id of the
+  page that encloses it
   """
   def determine_parent_pages(activity_resource_ids, publication_id) do
 
@@ -600,6 +601,7 @@ defmodule Oli.Publishing do
       """
       select
         rev.resource_id,
+        rev.slug,
         jsonb_path_query(content, '$.model[*] ? (@.type == "activity-reference")')
       from published_resources as mapping
       join revisions as rev
@@ -611,8 +613,8 @@ defmodule Oli.Publishing do
 
     {:ok, %{rows: results }} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
-    Enum.filter(results, fn [_, %{"activity_id" => activity_id}] -> MapSet.member?(activities, activity_id) end)
-    |> Enum.reduce(%{}, fn [id, %{"activity_id" => activity_id}], map -> Map.put(map, activity_id, id) end)
+    Enum.filter(results, fn [_, _, %{"activity_id" => activity_id}] -> MapSet.member?(activities, activity_id) end)
+    |> Enum.reduce(%{}, fn [id, slug, %{"activity_id" => activity_id}], map -> Map.put(map, activity_id, %{slug: slug, id: id}) end)
 
   end
 
