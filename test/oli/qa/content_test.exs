@@ -67,7 +67,7 @@ defmodule Oli.Qa.ContentTest do
 
     test "validates uris", %{project: project, review: review, page_invalid_link: page_invalid_link, page_valid_link: page_valid_link} do
 
-      Content.broken_uris(review)
+      Content.broken_uris(review, project.slug)
       warnings = Warnings.list_active_warnings(project.id)
 
       # valid link

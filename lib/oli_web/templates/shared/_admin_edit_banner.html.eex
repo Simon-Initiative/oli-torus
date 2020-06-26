@@ -1,0 +1,17 @@
+
+<%= if @is_admin? do %>
+  <div class="alert alert-warning alert-dismissible fade show" style="position: sticky; top: 0px; z-index: 900;" role="alert">
+  <strong>You are editing as an administrator</strong>
+
+  <span style="float: right;">
+    <%= link class: "toolbar-link", to: Routes.live_path(OliWeb.Endpoint, OliWeb.RevisionHistory, @project_slug,@revision_slug) do %>
+      <span><i class="fas fa-history"></i></span> View History
+    <% end %>
+  </span>
+
+  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+
+</div>
+<% end %>

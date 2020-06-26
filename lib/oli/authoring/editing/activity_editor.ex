@@ -20,6 +20,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   alias Oli.Authoring.Locks
   alias Oli.Activities.Transformers
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.Authoring.Broadcaster
 
   @doc """
   Attempts to process an edit for an activity specified by a given
@@ -63,7 +64,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           # If we acquired the lock, we must first create a new revision
           {:acquired} -> get_latest_revision(publication.id, activity.id)
             |> create_new_revision(publication, activity, author.id)
-            |> update_revision(update)
+            |> update_revision(update, project.slug)
 
           # A successful lock update means we can safely edit the existing revision
           # unless, that is, if the update would change the corresponding slug.
@@ -71,7 +72,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           # to resolve this activity via the historical slugs would fail.
           {:updated} -> get_latest_revision(publication.id, activity.id)
             |> maybe_create_new_revision(publication, activity, author.id, update)
-            |> update_revision(update)
+            |> update_revision(update, project.slug)
 
           # error or not able to lock results in a failed edit
           result -> Repo.rollback(result)
@@ -157,11 +158,15 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   # Applies the update to the revision, converting any objective slugs back to ids
-  defp update_revision(revision, update) do
+  defp update_revision(revision, update, project_slug) do
     objectives = if Map.has_key?(update, "objectives"), do: Map.get(update, "objectives"), else: revision.objectives
     parts = update["content"]["authoring"]["parts"]
     update = sync_objectives_to_parts(objectives, update, parts)
     {:ok, updated} = Resources.update_revision(revision, update)
+
+    # Broadcast this revision creation
+    Broadcaster.broadcast_revision(updated, project_slug)
+
     updated
   end
 
