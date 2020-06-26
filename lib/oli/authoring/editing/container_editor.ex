@@ -17,6 +17,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   alias Oli.Repo
   alias Oli.Authoring.Broadcaster
 
+
   @spec edit_page(Oli.Authoring.Course.Project.t(), any, map) :: any
   def edit_page(%Project{} = project, revision_slug, change) do
 
@@ -26,8 +27,8 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     |> Map.delete(:objectives)
 
     # ensure that changing a page to practice resets the max attempts to 0
-    change = case Map.get(change, "graded", "true") do
-      "false" -> Map.put(change, "max_attempts", 0)
+    change = case Map.get(change, :graded, "true") do
+      "false" -> Map.put(change, :max_attempts, 0)
       _ -> change
     end
 
@@ -35,9 +36,10 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
       revision = AuthoringResolver.from_revision_slug(project.slug, revision_slug)
 
-      case Resources.update_revision(revision, change) do
-        {:ok, revision} ->
+      case ChangeTracker.track_revision(project.slug, revision, change) do
+        {:ok, _} ->
 
+          revision = AuthoringResolver.from_revision_slug(project.slug, revision_slug)
           Broadcaster.broadcast_revision(revision, project.slug)
 
           revision

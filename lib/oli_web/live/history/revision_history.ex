@@ -26,11 +26,15 @@ defmodule OliWeb.RevisionHistory do
       select: {rev.resource_id})
 
     PubSub.subscribe Oli.PubSub, "resource:" <> Integer.to_string(resource_id)
+    PubSub.subscribe Oli.PubSub, "new_publication:project:" <> project_slug
 
     revisions = Repo.all(from rev in Revision,
       where: rev.resource_id == ^resource_id,
       order_by: [desc: rev.inserted_at],
       select: rev)
+
+    mappings = Publishing.get_all_mappings_for_resource(resource_id, project_slug)
+    mappings_by_revision = Enum.reduce(mappings, %{}, fn mapping, m -> Map.put(m, mapping.revision_id, mapping) end)
 
     selected = hd(revisions)
 
@@ -38,12 +42,28 @@ defmodule OliWeb.RevisionHistory do
       title: "Revision History",
       view: "table",
       resource_id: resource_id,
+      mappings: mappings_by_revision,
+      publication: determine_most_recent_published(mappings),
       revisions: revisions,
       selected: selected,
       project_slug: project_slug,
       page_offset: 0,
       initial_size: length(revisions))
     }
+  end
+
+
+  defp determine_most_recent_published(mappings) do
+
+    all = Enum.reduce(mappings, MapSet.new(), fn mapping, m -> MapSet.put(m, mapping.publication) end)
+    |> MapSet.to_list()
+    |> Enum.sort(&(&1.inserted_at >= &2.inserted_at))
+
+    case length(all) do
+      1 -> nil
+      _ -> Enum.at(all, 1)
+    end
+
   end
 
   def render(assigns) do
@@ -81,7 +101,7 @@ defmodule OliWeb.RevisionHistory do
               <%= live_component @socket, Graph, revisions: reversed, selected: @selected, initial_size: @initial_size %>
             <% else %>
               <%= live_component @socket, Pagination, revisions: @revisions, page_offset: @page_offset, page_size: size %>
-              <%= live_component @socket, Table, revisions: @revisions, selected: @selected, page_offset: @page_offset, page_size: size %>
+              <%= live_component @socket, Table, publication: @publication, mappings: @mappings, revisions: @revisions, selected: @selected, page_offset: @page_offset, page_size: size %>
             <% end %>
           </div>
         </div>
@@ -196,6 +216,14 @@ defmodule OliWeb.RevisionHistory do
     selected = Enum.find(revisions, fn r -> r.id == socket.assigns.selected.id end)
 
     {:noreply, assign(socket, selected: selected, revisions: revisions)}
+  end
+
+  def handle_info({:new_publication, _, _}, socket) do
+
+    mappings = Publishing.get_all_mappings_for_resource(socket.assigns.resource_id, socket.assigns.project_slug)
+    mappings_by_revision = Enum.reduce(mappings, %{}, fn mapping, m -> Map.put(m, mapping.revision_id, mapping) end)
+
+    {:noreply, assign(socket, mappings: mappings_by_revision, publication: determine_most_recent_published(mappings))}
   end
 
 

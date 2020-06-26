@@ -417,7 +417,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
     {:ok, updated} = Oli.Resources.update_revision(revision, converted_back_to_ids)
 
-    Broadcaster.broadcast_revision(revision, project_slug)
+    Broadcaster.broadcast_revision(updated, project_slug)
 
     updated
   end
