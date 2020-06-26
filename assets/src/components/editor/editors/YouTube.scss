@@ -1,0 +1,15 @@
+@use 'delivery/variables' as delivery;
+
+.youtube-editor-wrapper {
+  padding: 5px;
+
+  .youtube-editor {
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    height: 340px;
+    width: 400px;
+    padding: 10px;
+    box-shadow: 2px 3px #d0d0d0;
+  }
+}

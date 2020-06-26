@@ -6,6 +6,7 @@ import { Transforms } from 'slate';
 import { EditorProps, CommandContext } from './interfaces';
 import { Command, CommandDesc } from '../interfaces';
 import { updateModel } from './utils';
+import { Action } from './Action';
 import * as Persistence from 'data/persistence/resource';
 
 import './Link.scss';
@@ -74,16 +75,7 @@ interface Uninitialized {
 
 type LinkablePages = Uninitialized | Waiting | Persistence.PagesReceived;
 
-// Component for rendering a small action icon with tooltip.  Used for
-// the "copy", "open", and "remove" operations
-const Action = ({ icon, onClick, tooltip, id }: any) => {
-  return (
-    <span id={id} data-toggle="tooltip" data-placement="top" title={tooltip}
-      style={ { cursor: 'pointer ' }}>
-      <i onClick={onClick} className={icon + ' mr-2'}></i>
-    </span>
-  );
-};
+
 
 const ExistingLink = (props: ExistingLinkProps) => {
 
