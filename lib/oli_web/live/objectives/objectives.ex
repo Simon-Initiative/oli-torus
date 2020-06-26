@@ -195,10 +195,16 @@ defmodule OliWeb.Objectives.Objectives do
 
   # handle processing deletion of item
   def handle_event("delete", _, socket) do
-    socket = case ObjectiveEditor.edit(socket.assigns.selected, %{ deleted: true }, socket.assigns.author, socket.assigns.project) do
-      {:ok, _} -> socket
-      {:error, _} -> socket
-      |> put_flash(:error, "Could not remove objective")
+
+    ObjectiveEditor.detach_objective(socket.assigns.selected, socket.assigns.project, socket.assigns.author)
+
+    socket = case ObjectiveEditor.preview_objective_detatchment(socket.assigns.selected, socket.assigns.project) do
+      %{attachments: {[], []}} -> case ObjectiveEditor.edit(socket.assigns.selected, %{ deleted: true }, socket.assigns.author, socket.assigns.project) do
+        {:ok, _} -> socket
+        {:error, _} -> socket
+        |> put_flash(:error, "Could not remove objective")
+      end
+      _ -> socket
     end
 
     {:noreply, assign(socket, modal_shown: false)}

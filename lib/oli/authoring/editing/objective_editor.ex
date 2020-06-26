@@ -74,19 +74,17 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   end
 
 
-  def detach_objective(revision_slug, %Project{} = project, author_email) do
+  def detach_objective(revision_slug, %Project{} = project, author) do
 
     case preview_objective_detatchment(revision_slug, project) do
       %{attachments: {[], []}} -> []
 
       %{attachments: {pages, activities}, locked_by: locked_by, parent_pages: parent_pages} ->
 
-        resource = Resources.get_resource_from_slug(revision_slug)
-
         # detach from all non-locked pages
         Enum.filter(pages, fn %{resource_id: resource_id} -> !Map.has_key?(locked_by, resource_id) end)
         |> Enum.each(fn %{slug: slug} ->
-          detach_from_page(resource.slug, slug, project.slug, author_email)
+          detach_from_page(revision_slug, slug, project.slug, author)
         end)
 
         # detach from all non-locked activities. Locked activities are those activities
@@ -94,22 +92,26 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
         Enum.filter(activities, fn %{resource_id: resource_id} -> !Map.has_key?(locked_by, Map.get(parent_pages, resource_id)) end)
         |> Enum.each(fn %{slug: slug, resource_id: resource_id} ->
           page = AuthoringResolver.from_resource_id(project.slug, Map.get(parent_pages, resource_id))
-          detach_from_activity(resource.slug, page.slug, slug, project.slug, author_email)
+          detach_from_activity(revision_slug, page.slug, slug, project.slug, author)
         end)
 
     end
 
   end
 
-  defp detach_from_page(objective_slug, page_slug, project_slug, author_email) do
+  defp detach_from_page(objective_slug, page_slug, project_slug, author) do
 
-    case PageEditor.acquire_lock(project_slug, page_slug, author_email) do
+    case PageEditor.acquire_lock(project_slug, page_slug, author.email) do
       {:acquired} ->
-        page = AuthoringResolver.from_revision_slug(project_slug, page_slug)
-        update = %{"attached" => Enum.filter(Map.get(page.objectives, "attached"), fn s -> s != objective_slug end)}
-        case PageEditor.edit(project_slug, page_slug, author_email, update) do
+
+        {:ok, %{objectives: objectives}} = PageEditor.create_context(project_slug, page_slug, author)
+
+        update = %{"objectives" =>
+          %{"attached" => Enum.filter(Map.get(objectives, :attached), fn s -> s != objective_slug end)}}
+
+        case PageEditor.edit(project_slug, page_slug, author.email, update) do
           {:ok, _} ->
-            PageEditor.release_lock(project_slug, page_slug, author_email)
+            PageEditor.release_lock(project_slug, page_slug, author.email)
             true
 
           _ -> false
@@ -120,22 +122,30 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   end
 
-  defp detach_from_activity(objective_slug, page_slug, activity_slug, project_slug, author_email) do
+  defp detach_from_activity(objective_slug, page_slug, activity_slug, project_slug, author) do
 
-    case PageEditor.acquire_lock(project_slug, page_slug, author_email) do
+    case PageEditor.acquire_lock(project_slug, page_slug, author.email) do
       {:acquired} ->
-        activity = AuthoringResolver.from_revision_slug(project_slug, activity_slug)
+        {:ok, %{objectives: objectives}} = ActivityEditor.create_context(project_slug, page_slug, activity_slug, author)
 
-        update = Enum.reduce(%{}, activity.objectives, fn {p, a}, m ->
-          Map.put(m, p, Enum.filter(a, fn s -> s != objective_slug end))
-        end)
+        objective = AuthoringResolver.from_revision_slug(project_slug, objective_slug)
 
-        ActivityEditor.edit(project_slug, page_slug, activity_slug, author_email, update)
-        PageEditor.release_lock(project_slug, page_slug, author_email)
+        update = %{"objectives" => Enum.reduce(objectives, %{}, fn {p, a}, m ->
+            Map.put(m, p, Enum.filter(a, fn s -> s != objective.slug end))
+          end)
+        }
+
+        ActivityEditor.edit(project_slug, page_slug, activity_slug, author.email, update)
+        PageEditor.release_lock(project_slug, page_slug, author.email)
     end
 
   end
 
+  @spec preview_objective_detatchment(binary, Oli.Authoring.Course.Project.t()) :: %{
+          attachments: {any, any},
+          locked_by: any,
+          parent_pages: any
+        }
   def preview_objective_detatchment(revision_slug, %Project{} = project) do
 
     resource = Resources.get_resource_from_slug(revision_slug)
@@ -157,23 +167,21 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
         # dedupe for the purposes of detachment
         distinct_activities = dedupe_activities(activities)
 
-        IO.inspect distinct_activities
-
         # for those activities, determine which pages they exist in and combine
         # that set of pages with the set of pages that contain the objective
         # directly attached to it
         {parent_pages, unified_pages} = case distinct_activities do
-          [] -> {%{}, pages}
+          [] -> {%{}, MapSet.new(Enum.map(pages, fn p -> p.resource_id end))}
           a ->
-            parent_pages = Publishing.determine_parent_pages(Enum.map(a, fn a -> a.resource_id end), publication.id)
+
+            activity_ids = Enum.map(a, fn e -> Map.get(e, :resource_id) end)
+            parent_pages = Publishing.determine_parent_pages(activity_ids, publication.id)
             unified_pages = unify_pages(parent_pages, pages)
             {parent_pages, unified_pages}
         end
 
-
-
         # now we can determine for all pages, which users might be currently editing
-        locked_by = Publishing.retrieve_lock_info(Enum.map(unified_pages, fn a -> a.resource_id end), publication.id)
+        locked_by = Publishing.retrieve_lock_info(MapSet.to_list(unified_pages), publication.id)
         |> Enum.reduce(%{}, fn mapping, m ->
           case Oli.Authoring.Locks.expired_or_empty?(mapping) do
             true -> m
@@ -200,7 +208,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     {deduped, _} = Enum.reduce(activities, {[], MapSet.new()}, fn e, {a, m} ->
       case MapSet.member?(m, e.resource_id) do
         true -> {a, m}
-        false -> {a ++ [e], MapSet.put(m, e.resource_ied)}
+        false -> {a ++ [e], MapSet.put(m, e.resource_id)}
       end
     end)
     deduped

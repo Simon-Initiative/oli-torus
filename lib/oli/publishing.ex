@@ -599,7 +599,7 @@ defmodule Oli.Publishing do
     sql =
       """
       select
-        rev.id,
+        rev.resource_id,
         jsonb_path_query(content, '$.model[*] ? (@.type == "activity-reference")')
       from published_resources as mapping
       join revisions as rev
