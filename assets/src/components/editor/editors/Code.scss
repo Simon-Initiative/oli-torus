@@ -1,0 +1,8 @@
+@use 'delivery/variables' as delivery;
+
+.code-editor {
+  padding: 9px;
+  border: 1px solid #eeeeee;
+  border-left: 2px solid delivery.$primary;
+  background-color: delivery.$light;
+}

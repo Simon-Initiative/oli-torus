@@ -6,10 +6,11 @@ import { Transforms } from 'slate';
 import { EditorProps, CommandContext } from './interfaces';
 import { Command, CommandDesc } from '../interfaces';
 import { updateModel } from './utils';
-import { Action } from './Action';
+import { Action } from './Settings';
 import * as Persistence from 'data/persistence/resource';
 
 import './Link.scss';
+import './Settings.scss';
 
 import guid from 'utils/guid';
 
@@ -236,8 +237,8 @@ const ExistingLink = (props: ExistingLinkProps) => {
       </React.Fragment>;
 
   return (
-    <div className="link-editor-wrapper">
-      <div className="link-editor" ref={ref as any}>
+    <div className="settings-editor-wrapper">
+      <div className="settings-editor" ref={ref as any}>
 
           <div className="d-flex justify-content-between mb-2">
             <div>

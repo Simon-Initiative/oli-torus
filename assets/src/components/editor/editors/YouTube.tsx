@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ReactEditor } from 'slate-react';
 import { Transforms } from 'slate';
-import Popover from 'react-tiny-popover';
+
 import { updateModel, getEditMode } from './utils';
 import * as ContentModel from 'data/content/model';
 import { Command, CommandDesc } from '../interfaces';
 import { EditorProps, CommandContext } from './interfaces';
 import guid from 'utils/guid';
-import { Action } from './Action';
-import './YouTube.scss';
+import * as Settings from './Settings';
+import './Settings.scss';
 
 
 const command: Command = {
@@ -84,8 +84,8 @@ const YouTubeSettings = (props: YouTubeSettingsProps) => {
   className="btn btn-primary ml-1">Apply</button>;
 
   return (
-    <div className="youtube-editor-wrapper">
-      <div className="youtube-editor" ref={ref as any}>
+    <div className="settings-editor-wrapper">
+      <div className="settings-editor" ref={ref as any}>
 
         <div className="d-flex justify-content-between mb-2">
           <div>
@@ -93,13 +93,13 @@ const YouTubeSettings = (props: YouTubeSettingsProps) => {
           </div>
 
           <div>
-            <Action icon="fab fa-youtube" tooltip="Open YouTube to Find a Video"
+            <Settings.Action icon="fab fa-youtube" tooltip="Open YouTube to Find a Video"
               onClick={() => onVisit('https://www.youtube.com')}/>
-            <Action icon="fas fa-external-link-alt" tooltip="Open link"
+            <Settings.Action icon="fas fa-external-link-alt" tooltip="Open link"
               onClick={() => onVisit(toLink(model.src))}/>
-            <Action icon="far fa-copy" tooltip="Copy link"
+            <Settings.Action icon="far fa-copy" tooltip="Copy link"
               onClick={() => onCopy(toLink(model.src))}/>
-            <Action icon="fas fa-times-circle" tooltip="Remove YouTube Video" id="remove-button"
+            <Settings.Action icon="fas fa-times-circle" tooltip="Remove YouTube Video" id="remove-button"
               onClick={() => props.onRemove()}/>
           </div>
         </div>
@@ -131,7 +131,6 @@ const YouTubeSettings = (props: YouTubeSettingsProps) => {
 export const YouTubeEditor = (props: YouTubeProps) => {
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-
   const { attributes, children, editor, model } = props;
 
   const editMode = getEditMode(editor);
@@ -159,41 +158,27 @@ export const YouTubeEditor = (props: YouTubeProps) => {
     setIsPopoverOpen(false);
   };
 
-
-  const controls = (
-    <div style={ { position: 'relative', top: '-40px', left: '10px' } }>
-      <button onClick={() => setIsPopoverOpen(true)}
-        className="btn btn-primary">
-        <Popover
-          onClickOutside={() => {
-            setIsPopoverOpen(false);
-          }}
-          isOpen={isPopoverOpen}
-          padding={25}
-          position={['bottom', 'top', 'left', 'right']}
-          content={() => <YouTubeSettings
-            model={model}
-            editMode={editMode}
-            commandContext={props.commandContext}
-            onRemove={onRemove}
-            onEdit={onEdit}/>}>
-          {ref => <span ref={ref}><i className="fas fa-wrench"></i></span>}
-        </Popover>
-      </button>
-    </div>
-  );
+  const contentFn = () => <YouTubeSettings
+    model={model}
+    editMode={editMode}
+    commandContext={props.commandContext}
+    onRemove={onRemove}
+    onEdit={onEdit}/>;
 
   return (
     <div {...attributes}>
 
       <div contentEditable={false} style={{ userSelect: 'none' }} className="youtube-editor">
 
-        <div className="embed-responsive embed-responsive-16by9">
+        <div className="embed-responsive embed-responsive-16by9 img-thumbnail">
           <iframe className="embed-responsive-item"
             src={fullSrc} allowFullScreen></iframe>
         </div>
-        {controls}
-        <p className="text-muted">{model.caption}</p>
+        <Settings.ToolPopupButton
+          contentFn={contentFn}
+          setIsPopoverOpen={setIsPopoverOpen}
+          isPopoverOpen={isPopoverOpen} />
+        <Settings.Caption caption={model.caption}/>
 
       </div>
 
