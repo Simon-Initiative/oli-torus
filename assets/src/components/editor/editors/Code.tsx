@@ -93,11 +93,11 @@ const CodeSettings = (props: CodeSettingsProps) => {
 
         <div className="d-flex justify-content-between mb-2">
           <div>
-            &nbsp;
+            Source Code
           </div>
 
           <div>
-            <Settings.Action icon="fas fa-times-circle" tooltip="Remove Code Block" id="remove-button"
+            <Settings.Action icon="fas fa-trash" tooltip="Remove Code Block" id="remove-button"
               onClick={() => props.onRemove()}/>
           </div>
         </div>
@@ -160,7 +160,7 @@ export const CodeEditor = (props: CodeProps) => {
     onEdit={onEdit}/>;
 
   return (
-    <div {...props.attributes}>
+    <div {...props.attributes} className="ml-4 mr-4">
       <div className="code-editor">
         <pre style={{ fontFamily: 'Menlo, Monaco, Courier New, monospace' }} >
           <code>{props.children}</code>

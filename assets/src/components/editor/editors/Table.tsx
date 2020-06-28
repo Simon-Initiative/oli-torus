@@ -282,11 +282,11 @@ const TableSettings = (props: TableSettingsProps) => {
 
         <div className="d-flex justify-content-between mb-2">
           <div>
-            &nbsp;
+            Table
           </div>
 
           <div>
-            <Settings.Action icon="fas fa-times-circle" tooltip="Remove Table" id="remove-button"
+            <Settings.Action icon="fas fa-trash" tooltip="Remove Table" id="remove-button"
               onClick={() => props.onRemove()}/>
           </div>
         </div>
@@ -342,7 +342,7 @@ export const TableEditor = (props: TableProps) => {
   // events.
 
   return (
-    <div className="ml-4">
+    <div className="ml-4 mr-4">
 
       <div>
         <table className="table table-bordered">

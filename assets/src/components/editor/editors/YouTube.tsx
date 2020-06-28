@@ -89,7 +89,7 @@ const YouTubeSettings = (props: YouTubeSettingsProps) => {
 
         <div className="d-flex justify-content-between mb-2">
           <div>
-            &nbsp;
+            YouTube
           </div>
 
           <div>
@@ -99,7 +99,7 @@ const YouTubeSettings = (props: YouTubeSettingsProps) => {
               onClick={() => onVisit(toLink(model.src))}/>
             <Settings.Action icon="far fa-copy" tooltip="Copy link"
               onClick={() => onCopy(toLink(model.src))}/>
-            <Settings.Action icon="fas fa-times-circle" tooltip="Remove YouTube Video" id="remove-button"
+            <Settings.Action icon="fas fa-trash" tooltip="Remove YouTube Video" id="remove-button"
               onClick={() => props.onRemove()}/>
           </div>
         </div>
@@ -166,7 +166,7 @@ export const YouTubeEditor = (props: YouTubeProps) => {
     onEdit={onEdit}/>;
 
   return (
-    <div {...attributes}>
+    <div {...attributes} className="ml-4 mr-4">
 
       <div contentEditable={false} style={{ userSelect: 'none' }} className="youtube-editor">
 

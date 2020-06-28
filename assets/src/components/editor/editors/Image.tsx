@@ -112,17 +112,17 @@ const ImageSettings = (props: ImageSettingsProps) => {
 
         <div className="d-flex justify-content-between mb-2">
           <div>
-            &nbsp;
+            Image
           </div>
 
           <div>
-            <Settings.Action icon="fas fa-times-circle" tooltip="Remove Image" id="remove-button"
+            <Settings.Action icon="fas fa-trash" tooltip="Remove Image" id="remove-button"
               onClick={() => props.onRemove()}/>
           </div>
         </div>
 
         <form className="form">
-          <label>Image</label>
+          <label>File</label>
           <div className="input-group mb-3 mr-sm-2">
             <input type="text" readOnly value={fileName} className="form-control"/>
             <div className="input-group-append">
@@ -189,10 +189,10 @@ export const ImageEditor = (props: ImageProps) => {
   // events.
 
   return (
-    <div {...attributes}>
+    <div {...attributes} className="ml-4 mr-4">
 
       <div contentEditable={false} style={{ userSelect: 'none' }}>
-        <div className="ml-5 mr-5">
+        <div className="ml-4 mr-4">
           <img
             className="img-fluid img-thumbnail"
             src={model.src}

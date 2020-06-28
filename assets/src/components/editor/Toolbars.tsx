@@ -253,7 +253,7 @@ const ToolbarButton = ({ icon, command, style, context, tooltip }: any) => {
   return (
     <button
       data-toggle="tooltip" data-placement="top" title={tooltip}
-      className={`btn btn-sm ${style}`}
+      className={`btn btn-sm btn-light ${style}`}
       onMouseDown={(event) => {
         event.preventDefault();
         command.execute(context, editor);
@@ -288,7 +288,7 @@ const DropdownToolbarButton = ({ icon, command, style, context, tooltip }: any) 
       {ref => <button
         ref={ref}
         data-toggle="tooltip" data-placement="top" title={tooltip}
-        className={`btn btn-sm ${style}`}
+        className={`btn btn-sm btn-light ${style}`}
         onClick={() => setIsPopoverOpen(!isPopoverOpen)}
         type="button">
         <i className={icon}></i>

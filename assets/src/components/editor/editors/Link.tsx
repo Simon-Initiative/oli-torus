@@ -250,7 +250,7 @@ const ExistingLink = (props: ExistingLinkProps) => {
                 onClick={() => props.onVisit(href)}/>
               <Action icon="far fa-copy" tooltip="Copy link"
                 onClick={() => props.onCopy(href)}/>
-              <Action icon="fas fa-times-circle" tooltip="Remove link" id="remove-button"
+              <Action icon="fas fa-trash" tooltip="Remove link" id="remove-button"
                 onClick={() => props.onRemove()}/>
             </div>
           </div>

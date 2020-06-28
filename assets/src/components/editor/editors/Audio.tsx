@@ -112,17 +112,17 @@ const AudioSettings = (props: AudioSettingsProps) => {
 
         <div className="d-flex justify-content-between mb-2">
           <div>
-            &nbsp;
+            Audio
           </div>
 
           <div>
-            <Settings.Action icon="fas fa-times-circle" tooltip="Remove YouTube Video" id="remove-button"
+            <Settings.Action icon="fas fa-trash" tooltip="Remove YouTube Video" id="remove-button"
               onClick={() => props.onRemove()}/>
           </div>
         </div>
 
         <form className="form">
-        <label>Audio</label>
+        <label>File</label>
           <div className="input-group mb-3 mr-sm-2">
             <input type="text" readOnly value={fileName} className="form-control"/>
             <div className="input-group-append">
@@ -189,7 +189,7 @@ export const AudioEditor = (props: AudioProps) => {
     onEdit={onEdit}/>;
 
   return (
-    <div {...attributes}>
+    <div {...attributes} className="ml-4 mr-4">
 
       <div contentEditable={false} style={{ userSelect: 'none' }}>
 

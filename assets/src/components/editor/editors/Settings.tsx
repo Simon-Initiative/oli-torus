@@ -29,7 +29,7 @@ export const ToolPopupButton = ({
   return (
     <div style={ { float: 'right' } }>
       <button onClick={() => setIsPopoverOpen(true)}
-        className="btn btn-primary mr-2">
+        className="btn btn-light btn-sm mt-1">
         <Popover
           onClickOutside={() => {
             setIsPopoverOpen(false);
