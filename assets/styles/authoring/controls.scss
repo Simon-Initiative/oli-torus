@@ -50,3 +50,9 @@
   border: 1px solid $gray-400;
   border-radius: 0.25rem;
 }
+
+.table-dropdown {
+  .dropdown-item {
+    cursor: pointer;
+  }
+}

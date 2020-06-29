@@ -154,10 +154,11 @@ const DropdownMenu = (props: any) => {
   const buttonStyle = {
     border: 'none',
     outline: 'none',
+
   };
 
   return (
-    <div ref={ref as any} className="dropdown" style={style} contentEditable={false}>
+    <div ref={ref as any} className="dropdown table-dropdown" style={style} contentEditable={false}>
       <button type="button"
         style={buttonStyle}
         className="dropdown-toggle btn"
@@ -167,19 +168,19 @@ const DropdownMenu = (props: any) => {
       </button>
       <div className="dropdown-menu">
         <h6 className="dropdown-header">Insert</h6>
-        <a href="#" className="dropdown-item" onClick={onAddRowBefore}>Row before</a>
-        <a href="#" className="dropdown-item" onClick={onAddRowAfter}>Row after</a>
-        <a href="#" className="dropdown-item" onClick={onAddColumnBefore}>Column before</a>
-        <a href="#" className="dropdown-item" onClick={onAddColumnAfter}>Column after</a>
+        <div className="dropdown-item" onClick={onAddRowBefore}>Row before</div>
+        <div className="dropdown-item" onClick={onAddRowAfter}>Row after</div>
+        <div className="dropdown-item" onClick={onAddColumnBefore}>Column before</div>
+        <div className="dropdown-item" onClick={onAddColumnAfter}>Column after</div>
 
         <div className="dropdown-divider"></div>
 
         <h6 className="dropdown-header">Delete</h6>
-        <a href="#" className="dropdown-item" onClick={onDeleteRow}>Row</a>
-        <a href="#" className="dropdown-item" onClick={onDeleteColumn}>Column</a>
+        <div className="dropdown-item" onClick={onDeleteRow}>Row</div>
+        <div className="dropdown-item" onClick={onDeleteColumn}>Column</div>
 
         <div className="dropdown-divider"></div>
-        <a href="#" className="dropdown-item" onClick={onToggleHeader}>Toggle Header</a>
+        <div className="dropdown-item" onClick={onToggleHeader}>Toggle Header</div>
       </div>
     </div>
   );
