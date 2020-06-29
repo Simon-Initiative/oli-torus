@@ -2,7 +2,7 @@
 <%= link to: Routes.page_delivery_path(@conn, :page, @context_id, @page.slug), class: link_class do %>
   <div class="d-flex w-100 justify-content-between">
     <span class="page-title">
-      <i class="fa fa-edit" aria-hidden="true"></i> <%= @page.title %>
+      <i class="far fa-check-circle mr-2"></i> <%= @page.title %>
     </span>
     <%= if Map.has_key?(@summary.access_map, @page.resource_id) do %>
       <small class="text-secondary"><%= calculate_score_percentage(Map.get(@summary.access_map, @page.resource_id)) %></small>

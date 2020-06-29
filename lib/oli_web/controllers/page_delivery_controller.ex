@@ -14,7 +14,6 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Delivery.Lti
 
   plug :ensure_context_id_matches when action not in [:link]
-  plug :put_root_layout, {OliWeb.LayoutView, "page.html"} when action not in [:index]
 
   def index(conn, %{"context_id" => context_id}) do
 
@@ -27,7 +26,7 @@ defmodule OliWeb.PageDeliveryController do
         {:error, _} -> render(conn, "error.html")
       end
     else
-      render(conn, "not_authorized.html")
+      render conn, "not_authorized.html"
     end
 
   end
@@ -42,7 +41,7 @@ defmodule OliWeb.PageDeliveryController do
       |> render_page(conn, context_id, user)
 
     else
-      render(conn, "not_authorized.html")
+      render conn, "not_authorized.html"
     end
 
   end
@@ -74,6 +73,7 @@ defmodule OliWeb.PageDeliveryController do
       "You have #{attempts_remaining} attempt#{plural(attempts_remaining)} remaining out of #{page.max_attempts} total attempt#{plural(page.max_attempts)}."
     end
 
+    conn = put_root_layout conn, {OliWeb.LayoutView, "page.html"}
     render(conn, "prologue.html", %{
       context_id: context_id,
       scripts: Activities.get_activity_scripts(),
@@ -88,7 +88,7 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp render_page(%PageContext{progress_state: :error}, conn, _, _) do
-    render(conn, "error.html")
+    render conn, "error.html"
   end
 
   # This case handles :in_progress and :revised progress states
@@ -98,6 +98,7 @@ defmodule OliWeb.PageDeliveryController do
     page_model = Map.get(context.page.content, "model")
     html = Page.render(render_context, page_model, Page.Html)
 
+    conn = put_root_layout conn, {OliWeb.LayoutView, "page.html"}
     render(conn, "page.html", %{
       context_id: context_id,
       scripts: Activities.get_activity_scripts(),
@@ -129,7 +130,7 @@ defmodule OliWeb.PageDeliveryController do
       end
 
     else
-      render(conn, "not_authorized.html")
+      render conn, "not_authorized.html"
     end
 
   end
@@ -153,7 +154,7 @@ defmodule OliWeb.PageDeliveryController do
       end
 
     else
-      render(conn, "not_authorized.html")
+      render conn, "not_authorized.html"
     end
 
   end
@@ -203,7 +204,7 @@ defmodule OliWeb.PageDeliveryController do
         |> send_resp(200, gradebook_csv)
 
       _ ->
-        render(conn, "not_authorized.html")
+        render conn, "not_authorized.html"
     end
   end
 
