@@ -1,4 +1,5 @@
-<div class="jumbotron prologue">
+<% prologue_class = "jumbotron prologue " <> if @allow_attempt?, do: "allow-attempt", else: "" %>
+<div class="<%= prologue_class %>">
   <h3 class="display-4"><%= @title %></h3>
   <p class="lead" style="color: darkred;">This is a <strong>graded assessment</strong></p>
 
@@ -14,6 +15,3 @@
 
   <% end  %>
 </div>
-
-<%= render "_previous_next_nav.html",
-  conn: @conn, context_id: @context_id, summary: @summary, previous_page: @previous_page, next_page: @next_page %>

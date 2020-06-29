@@ -14,6 +14,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Delivery.Lti
 
   plug :ensure_context_id_matches when action not in [:link]
+  plug :put_root_layout, {OliWeb.LayoutView, "page.html"} when action not in [:index]
 
   def index(conn, %{"context_id" => context_id}) do
 
@@ -75,6 +76,7 @@ defmodule OliWeb.PageDeliveryController do
 
     render(conn, "prologue.html", %{
       context_id: context_id,
+      scripts: Activities.get_activity_scripts(),
       summary: summary,
       previous_page: context.previous_page,
       next_page: context.next_page,
@@ -172,6 +174,7 @@ defmodule OliWeb.PageDeliveryController do
 
     render(conn, "after_finalized.html",
       context_id: context_id,
+      scripts: Activities.get_activity_scripts(),
       summary: context.summary,
       previous_page: context.previous_page,
       next_page: context.next_page,

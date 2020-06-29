@@ -1,10 +1,7 @@
 
-<div class="alert alert-success" role="alert">
+<div class="alert alert-success after-finalized" role="alert">
   <h4 class="alert-heading">Attempt Submitted</h4>
   <p>You've succesffully completed this graded assessment attempt. </p>
   <hr>
   <p class="mb-0"><%= @message %></p>
  </div>
-
-<%= render "_previous_next_nav.html",
-  conn: @conn, context_id: @context_id, summary: @summary, previous_page: @previous_page, next_page: @next_page %>

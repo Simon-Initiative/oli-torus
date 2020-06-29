@@ -5,7 +5,7 @@
       <i class="far fa-file mr-2"></i> <%= @page.title %>
     </span>
     <%= if Map.has_key?(@summary.access_map, @page.resource_id) do %>
-      <small class="text-secondary">Viewed</small>
+      <small class="text-secondary"><i class="fa fa-check"></i></small>
     <% end %>
   </div>
 <% end %>
