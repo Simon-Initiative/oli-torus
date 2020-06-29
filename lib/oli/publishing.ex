@@ -81,8 +81,21 @@ defmodule Oli.Publishing do
       [%Publication{}, ...]
   """
   def available_publications() do
-    Repo.all(Publication, open_and_free: true) |> Repo.preload([:project])
+    subquery = from t in Publication,
+      select: %{project_id: t.project_id, max_date: max(t.updated_at)},
+      where: t.published == true,
+      group_by: t.project_id
+
+    query = from pub in Publication,
+      join: u in subquery(subquery), on: pub.project_id == u.project_id and u.max_date == pub.updated_at,
+      join: proj in Project, on: pub.project_id == proj.id,
+      where: pub.open_and_free == true,
+      preload: [:project],
+      select: pub
+
+    Repo.all(query)
   end
+
   @spec available_publications(Oli.Accounts.Author.t()) :: any
   def available_publications(%Author{} = author) do
 
