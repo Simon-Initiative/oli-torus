@@ -152,8 +152,6 @@ const DropdownMenu = (props: any) => {
   } as any;
 
   const buttonStyle = {
-    height: 20,
-    width: 20,
     border: 'none',
     outline: 'none',
   };
@@ -162,26 +160,26 @@ const DropdownMenu = (props: any) => {
     <div ref={ref as any} className="dropdown" style={style} contentEditable={false}>
       <button type="button"
         style={buttonStyle}
-        className="dropdown-toggle"
+        className="dropdown-toggle btn"
         data-reference="parent"
         data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         <span className="sr-only">Toggle Dropdown</span>
       </button>
       <div className="dropdown-menu">
         <h6 className="dropdown-header">Insert</h6>
-        <a className="dropdown-item" onClick={onAddRowBefore}>Row before</a>
-        <a className="dropdown-item" onClick={onAddRowAfter}>Row after</a>
-        <a className="dropdown-item" onClick={onAddColumnBefore}>Column before</a>
-        <a className="dropdown-item" onClick={onAddColumnAfter}>Column after</a>
+        <a href="#" className="dropdown-item" onClick={onAddRowBefore}>Row before</a>
+        <a href="#" className="dropdown-item" onClick={onAddRowAfter}>Row after</a>
+        <a href="#" className="dropdown-item" onClick={onAddColumnBefore}>Column before</a>
+        <a href="#" className="dropdown-item" onClick={onAddColumnAfter}>Column after</a>
 
         <div className="dropdown-divider"></div>
 
         <h6 className="dropdown-header">Delete</h6>
-        <a className="dropdown-item" onClick={onDeleteRow}>Row</a>
-        <a className="dropdown-item" onClick={onDeleteColumn}>Column</a>
+        <a href="#" className="dropdown-item" onClick={onDeleteRow}>Row</a>
+        <a href="#" className="dropdown-item" onClick={onDeleteColumn}>Column</a>
 
         <div className="dropdown-divider"></div>
-        <a className="dropdown-item" onClick={onToggleHeader}>Toggle Header</a>
+        <a href="#" className="dropdown-item" onClick={onToggleHeader}>Toggle Header</a>
       </div>
     </div>
   );
