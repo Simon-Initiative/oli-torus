@@ -1,5 +1,6 @@
 import React from 'react';
 import Popover from 'react-tiny-popover';
+import { AnyAaaaRecord } from 'dns';
 
 // Reusable components for settings UIs
 
@@ -28,8 +29,6 @@ export const ToolPopupButton = ({
 
   return (
     <div style={ { float: 'right' } }>
-      <button onClick={() => setIsPopoverOpen(true)}
-        className="btn btn-light btn-sm mt-1">
         <Popover
           onClickOutside={() => {
             setIsPopoverOpen(false);
@@ -38,9 +37,10 @@ export const ToolPopupButton = ({
           padding={25}
           position={['bottom', 'top', 'left', 'right']}
           content={contentFn}>
-          {ref => <span ref={ref}><i className="fas fa-cog"></i></span>}
+          <button onClick={() => setIsPopoverOpen(true)} className="btn btn-light btn-sm mt-1">
+              <i className="fas fa-cog"></i>
+          </button>
         </Popover>
-      </button>
     </div>
   );
 };
