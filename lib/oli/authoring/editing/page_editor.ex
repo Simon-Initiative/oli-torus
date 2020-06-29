@@ -43,7 +43,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
     :: {:ok, %Revision{}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:lock_not_acquired}} | {:error, {:not_authorized}}
   def edit(project_slug, revision_slug, author_email, update) do
 
-    with {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
+    result = with {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
          {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
@@ -60,6 +60,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
             |> create_new_revision(publication, resource, author.id)
             |> update_revision(converted_update, project.slug)
 
+
           # A successful lock update means we can safely edit the existing revision
           {:updated} -> get_latest_revision(publication, resource)
             |> resurrect_or_delete_activity_references(converted_update, project.slug)
@@ -74,6 +75,14 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
     else
       error -> error
+    end
+
+    case result do
+      {:ok, {revision, activity_revisions}} ->
+        Enum.each(activity_revisions ++ [revision], fn r -> Broadcaster.broadcast_revision(r, project_slug) end)
+        {:ok, revision}
+      e -> e
+
     end
 
   end
@@ -233,7 +242,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
     # Handle the case where this change does not include content
     case Map.get(change, "content") do
 
-      nil -> revision
+      nil -> {revision, []}
 
       map ->
 
@@ -248,16 +257,16 @@ defmodule Oli.Authoring.Editing.PageEditor do
         # revisions and set their deleted flag appropriately
         case MapSet.union(additions, deletions) |> MapSet.to_list() do
 
-          [] -> revision
+          [] -> {revision, []}
 
           activity_ids ->
-            AuthoringResolver.from_resource_id(project_slug, activity_ids)
-            |> Enum.each(fn revision ->
+            activity_revisions = AuthoringResolver.from_resource_id(project_slug, activity_ids)
+            |> Enum.map(fn revision ->
               {:ok, updated} = Oli.Resources.update_revision(revision, %{deleted: MapSet.member?(deletions, revision.resource_id)})
-              Broadcaster.broadcast_revision(updated, project_slug)
+              updated
             end)
 
-            revision
+            {revision, activity_revisions}
         end
     end
 
@@ -372,19 +381,19 @@ defmodule Oli.Authoring.Editing.PageEditor do
   end
 
   # create a new revision only if the slug will change due to this update
-  defp maybe_create_new_revision(previous, publication, resource, author_id, update) do
+  defp maybe_create_new_revision({previous, changed_activity_revisions}, publication, resource, author_id, update) do
 
     title = Map.get(update, "title", previous.title)
 
     if (title != previous.title) do
       create_new_revision(previous, publication, resource, author_id)
     else
-      previous
+      {previous, changed_activity_revisions}
     end
   end
 
   # Creates a new resource revision and updates the publication mapping
-  def create_new_revision(previous, publication, resource, author_id) do
+  def create_new_revision({previous, changed_activity_revisions}, publication, resource, author_id) do
 
     attrs = %{author_id: author_id}
     {:ok, revision} = Resources.create_revision_from_previous(previous, attrs)
@@ -392,7 +401,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
     mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
     {:ok, _mapping} = Publishing.update_resource_mapping(mapping, %{ revision_id: revision.id })
 
-    revision
+    {revision, changed_activity_revisions}
   end
 
   defp get_ids_from_objective_slugs(slugs) do
@@ -407,7 +416,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   end
 
   # Applies the update to the revision, converting any objective slugs back to ids
-  defp update_revision(revision, update, project_slug) do
+  defp update_revision({revision, activity_revisions}, update, _) do
 
     converted_back_to_ids = case Map.get(update, "objectives") do
       nil -> update
@@ -417,10 +426,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
     {:ok, updated} = Oli.Resources.update_revision(revision, converted_back_to_ids)
 
-    Broadcaster.broadcast_revision(updated, project_slug)
-
-    updated
+    {updated, activity_revisions}
   end
 
 end
-

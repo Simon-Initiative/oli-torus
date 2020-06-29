@@ -19,15 +19,13 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
       resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective")
     })
 
-    Repo.transaction(fn ->
+    result = Repo.transaction(fn ->
 
       with {:ok, %{resource: resource, revision: revision}} <- Oli.Authoring.Course.create_and_attach_resource(project, attrs),
           publication <- Publishing.get_unpublished_publication_by_slug!(project.slug),
           {:ok, mapping} <- Publishing.upsert_published_resource(publication, revision),
           {:ok, container} <- maybe_append_to_container(container_slug, publication, revision, project.slug, author)
       do
-
-        Broadcaster.broadcast_resource(revision, project.slug)
 
         {:ok,
           %{
@@ -43,6 +41,19 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
       end
 
     end)
+
+    case result do
+      {:ok, %{revision: revision, container: nil} = full_result} ->
+        Broadcaster.broadcast_resource(revision, project.slug)
+        {:ok, full_result}
+
+      {:ok, %{revision: revision, container: container} = full_result} ->
+        Broadcaster.broadcast_resource(revision, project.slug)
+        Broadcaster.broadcast_resource(container, project.slug)
+        {:ok, full_result}
+      e -> e
+    end
+
   end
 
   def edit(revision_slug, attrs, %Author{} = author, %Project{} = project) do
@@ -51,7 +62,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
       author_id: author.id,
     })
 
-    Repo.transaction(fn ->
+    result = Repo.transaction(fn ->
 
       with {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
           publication <- Publishing.get_unpublished_publication_by_slug!(project.slug),
@@ -59,15 +70,19 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
           {:ok, new_revision} <- Resources.create_revision_from_previous(revision, attrs),
           {:ok, _} <- Publishing.upsert_published_resource(publication, new_revision)
       do
-
-        Broadcaster.broadcast_revision(new_revision, project.slug)
-
-        {:ok, new_revision}
+        new_revision
       else
         error -> Repo.rollback(error)
       end
 
     end)
+
+    case result do
+      {:ok, revision} ->
+        Broadcaster.broadcast_resource(revision, project.slug)
+        {:ok, revision}
+      e -> e
+    end
   end
 
   def maybe_append_to_container(container_slug, publication, revision_to_attach, project_slug, author) do
@@ -80,7 +95,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   end
 
-  def append_to_container(container_slug, publication, revision_to_attach, project_slug, author) do
+  def append_to_container(container_slug, publication, revision_to_attach, _, author) do
 
     with {:ok, resource} <- Resources.get_resource_from_slug(container_slug) |> trap_nil(),
         {:ok, revision} <- Publishing.get_published_revision(publication.id, resource.id) |> trap_nil()
@@ -92,9 +107,6 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
       }
       {:ok, next} = Oli.Resources.create_revision_from_previous(revision, attrs)
       {:ok, _} = Publishing.upsert_published_resource(publication, next)
-
-      Broadcaster.broadcast_revision(next, project_slug)
-
       {:ok, next}
     else
       error -> error
@@ -109,4 +121,3 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   end
 
 end
-
