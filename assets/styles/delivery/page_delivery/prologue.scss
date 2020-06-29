@@ -1,0 +1,13 @@
+@import "delivery/variables";
+
+.prologue {
+  &.jumbotron {
+    background: $gray-200;
+    margin-top: 50px;
+  }
+
+  &.allow-attempt {
+    background: rgb(228,237,254);
+    background: linear-gradient(135deg, lighten($primary, 45%) 0%, lighten($primary, 55%) 60%, lighten($primary, 50%) 70%, lighten($primary, 55%) 82%, lighten($primary, 45%) 100%);
+  }
+}

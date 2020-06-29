@@ -1,21 +1,16 @@
 
-<%= for script <- @scripts do %>
-  <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
-<% end %>
+<h1><%= @title %></h1>
 
-<h3><%= @title %></h3>
-
-<%= if @graded do %>
-  <%= link "Submit Assessment", to: Routes.page_delivery_path(@conn, :finalize_attempt, @context_id, @slug, @attempt_guid), class: "btn btn-primary btn-lg" %>
-<% end %>
+<%= render "_objectives.html", objectives: @objectives %>
 
 <div id="eventIntercept">
   <%= raw(@html) %>
 </div>
 
-<%= render "_previous_next_nav.html",
-  conn: @conn, context_id: @context_id, previous_page: @previous_page, next_page: @next_page %>
-
 <script>
   OLI.initActivityBridge('eventIntercept');
 </script>
+
+<%= if @graded do %>
+  <%= link "Submit Assessment", to: Routes.page_delivery_path(@conn, :finalize_attempt, @context_id, @slug, @attempt_guid), class: "btn btn-primary btn-lg" %>
+<% end %>

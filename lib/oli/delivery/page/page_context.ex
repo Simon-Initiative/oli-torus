@@ -4,14 +4,15 @@ defmodule Oli.Delivery.Page.PageContext do
   Defines the context required to render a page in delivery mode.
   """
 
-  @enforce_keys [:page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page]
-  defstruct [:page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page]
+  @enforce_keys [:summary, :page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page]
+  defstruct [:summary, :page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page]
 
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Delivery.Page.PageContext
   alias Oli.Resources.Revision
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Attempts
+  alias Oli.Delivery.Student.Summary
 
   @doc """
   Creates the page context required to render a page in delivery model, based
@@ -24,18 +25,18 @@ defmodule Oli.Delivery.Page.PageContext do
   information is collected and then assembled in a fashion that can be given
   to a renderer.
   """
-  @spec create_page_context(String.t, String.t, any) :: %PageContext{}
-  def create_page_context(context_id, page_slug, user_id, container_id \\ nil) do
+  @spec create_page_context(String.t, String.t, Oli.Accounts.User) :: %PageContext{}
+  def create_page_context(context_id, page_slug, user, container_id \\ nil) do
 
     # resolve the page revision per context_id
     page_revision = DeliveryResolver.from_revision_slug(context_id, page_slug)
 
     # track access to this resource
-    Attempts.track_access(page_revision.resource_id, context_id, user_id)
+    Attempts.track_access(page_revision.resource_id, context_id, user.id)
 
     activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
-    {progress_state, resource_attempts, activities} = case Attempts.determine_resource_attempt_state(page_revision, context_id, user_id, activity_provider) do
+    {progress_state, resource_attempts, activities} = case Attempts.determine_resource_attempt_state(page_revision, context_id, user.id, activity_provider) do
       {:ok, {:not_started, {_, resource_attempts}}} -> {:not_started, resource_attempts, nil}
       {:ok, {state, {resource_attempt, latest_attempts}}} -> {state, [resource_attempt], ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
       {:error, _} -> {:error, [], %{}}
@@ -52,7 +53,10 @@ defmodule Oli.Delivery.Page.PageContext do
 
     {objectives, previous, next} = retrieve_objectives_previous_next(context_id, page_revision, container_id)
 
+    {:ok, summary} = Summary.get_summary(context_id, user)
+
     %PageContext{
+      summary: summary,
       page: page_revision,
       progress_state: progress_state,
       resource_attempts: resource_attempts,
