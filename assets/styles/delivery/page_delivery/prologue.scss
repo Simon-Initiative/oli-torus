@@ -1,3 +1,5 @@
+@import "delivery/variables";
+
 .prologue {
   &.jumbotron {
     background: $gray-200;
@@ -6,6 +8,6 @@
 
   &.allow-attempt {
     background: rgb(228,237,254);
-    background: linear-gradient(135deg, rgba(228,237,254,1) 0%, rgba(252,252,252,1) 60%, rgba(233,241,255,1) 70%, rgba(252,252,252,1) 82%, rgba(239,245,255,1) 100%);
+    background: linear-gradient(135deg, lighten($primary, 45%) 0%, lighten($primary, 55%) 60%, lighten($primary, 50%) 70%, lighten($primary, 55%) 82%, lighten($primary, 45%) 100%);
   }
 }
