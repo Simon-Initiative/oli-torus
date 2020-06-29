@@ -1,5 +1,4 @@
-<div class="workspace-header">
+<div class="workspace-header d-flex justify-content-between">
   <div class="page-title"><%= @title %></div>
   <div class="project-title"><%= @project.title %></div>
-  <div class="page-controls"></div>
 </div>

@@ -1,6 +1,5 @@
-<div class="workspace-header">
+<div class="workspace-header d-flex justify-content-between">
   <div class="page-title"><%= @title %></div>
-  <div class="flex-fill"></div>
   <div class="page-controls">
     <%= link "Sign out", to: Routes.auth_path(@conn, :signout), class: "btn btn-sm btn-primary" %>
   </div>
