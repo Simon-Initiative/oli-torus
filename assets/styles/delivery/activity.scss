@@ -1,3 +1,5 @@
+@import "delivery/variables";
+
 .activity {
   margin-top: 1em;
   margin-bottom: 4em;
@@ -40,7 +42,11 @@
     cursor: pointer;
 
     &:hover {
-      background-color: lighten($choice-selected-bg, 3%);
+      background-color: lighten($choice-selected-bg, 5%);
+
+      .choice-index {
+        background-color: $white;
+      }
     }
 
     &.selected {
