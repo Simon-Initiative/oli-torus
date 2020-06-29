@@ -1,4 +1,4 @@
-<div class="my-3">
+<div class="px-3 my-3">
   <h3><%= @summary.title %></h3>
   <p class="text-secondary"><%= @summary.description %></p>
 

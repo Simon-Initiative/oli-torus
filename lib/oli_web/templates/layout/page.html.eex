@@ -29,9 +29,5 @@
       </div>
   </div>
 
-  <script>
-    OLI.initActivityBridge('eventIntercept');
-  </script>
-
 <% end %>
 

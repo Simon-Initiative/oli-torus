@@ -173,6 +173,7 @@ defmodule OliWeb.PageDeliveryController do
       "You have taken #{taken} attempt#{plural(taken)} and have #{remaining} more attempt#{plural(remaining)} remaining"
     end
 
+    conn = put_root_layout conn, {OliWeb.LayoutView, "page.html"}
     render(conn, "after_finalized.html",
       context_id: context_id,
       scripts: Activities.get_activity_scripts(),
