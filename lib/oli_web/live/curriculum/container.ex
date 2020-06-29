@@ -121,7 +121,6 @@ defmodule OliWeb.Curriculum.Container do
         false -> Map.put(m, String.to_atom(k), v)
       end
     end)
-    IO.inspect params
 
     socket = case ContainerEditor.edit_page(socket.assigns.project, socket.assigns.selected.slug, params) do
       {:ok, _} -> socket

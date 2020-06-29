@@ -32,22 +32,24 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       _ -> change
     end
 
-    Repo.transaction(fn ->
+    result = Repo.transaction(fn ->
 
       revision = AuthoringResolver.from_revision_slug(project.slug, revision_slug)
 
       case ChangeTracker.track_revision(project.slug, revision, change) do
-        {:ok, _} ->
-
-          revision = AuthoringResolver.from_revision_slug(project.slug, revision_slug)
-          Broadcaster.broadcast_revision(revision, project.slug)
-
-          revision
-
+        {:ok, _} -> AuthoringResolver.from_revision_slug(project.slug, revision_slug)
         {:error, changelist} -> Repo.rollback(changelist)
       end
 
     end)
+
+    case result do
+      {:ok, revision} ->
+        Broadcaster.broadcast_revision(revision, project.slug)
+        {:ok, revision}
+
+      e -> e
+    end
 
   end
 

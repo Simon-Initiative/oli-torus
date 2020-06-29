@@ -208,7 +208,7 @@ defmodule OliWeb.RevisionHistory do
 
     id = revision.id
 
-    Repo.preload(revision, :author)
+    revision = Oli.Resources.get_revision!(id) |>  Repo.preload(:author)
 
     revisions = case socket.assigns.revisions do
       [] -> [revision]
