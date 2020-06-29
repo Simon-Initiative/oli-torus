@@ -301,6 +301,7 @@ defmodule Oli.Delivery.Attempts do
       join: p in PublishedResource, on: s.publication_id == p.publication_id,
       join: r in Revision, on: p.revision_id == r.id,
       where: s.context_id == ^context_id and a.user_id == ^user_id,
+      distinct: a.id,
       select: a)
   end
 

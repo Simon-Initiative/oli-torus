@@ -1,46 +1,53 @@
+@import "delivery/variables";
 
-.nav-label {
-  display: none;
-}
-
-.nav-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100px;
-  margin: 0 5px;
-}
-
-@media (min-width: 768px) {
-  li.page-item {
-    width: 40%;
-  }
-
-  a.page-link {
-    padding: 16px;
-  }
+.previous-next-nav {
+  margin-top: 3rem;
+  border-top: 1px solid $gray-400;
 
   .nav-label {
-    font-size: .8em;
-    margin-bottom: 4px;
-    display: unset;
+    display: none;
   }
 
   .nav-title {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    margin: 0;
-    max-width: unset;
+    max-width: 100px;
+    margin: 0 5px;
   }
 
-  .nav-icon {
-    font-size: 1.8em;
-    font-weight: 600;
-    margin: 6px 0;
+  @media (min-width: 768px) {
+    li.page-item {
+      width: 40%;
+    }
+
+    a.page-link {
+      padding: 16px;
+    }
+
+    .nav-label {
+      font-size: .8em;
+      margin-bottom: 4px;
+      display: unset;
+    }
+
+    .nav-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin: 0;
+      max-width: unset;
+    }
+
+    .nav-icon {
+      font-size: 1.8em;
+      font-weight: 600;
+      margin: 6px 0;
+    }
+
+    .flex-ellipsize-fix {
+      min-width: 0;
+    }
   }
 
-  .flex-ellipsize-fix {
-    min-width: 0;
-  }
 }

@@ -10,6 +10,13 @@
   top: 0;
   left: 0;
   transition: all 0.3s;
+
+  .page-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 10px;
+  }
 }
 
 #sidebar .header {
@@ -20,10 +27,10 @@
   flex: 1;
   padding: 0 30px;
   margin-left: 250px;
-  transition: all 0.3s;
 }
 
-@media (max-width: 768px) {
+/** override styles for devices medium-sized and smaller */
+@include media-breakpoint-down(md) {
   #sidebar {
     display: none;
   }

@@ -22,8 +22,7 @@ defmodule OliWeb.PageDeliveryController do
     if Sections.is_enrolled?(user.id, context_id) do
 
       case Summary.get_summary(context_id, user) do
-        {:ok, summary} -> render(conn, "index.html",
-          context_id: context_id, pages: summary.pages, title: summary.title, description: summary.description)
+        {:ok, summary} -> render(conn, "index.html", context_id: context_id, summary: summary)
         {:error, _} -> render(conn, "error.html")
       end
     else
@@ -173,6 +172,7 @@ defmodule OliWeb.PageDeliveryController do
 
     render(conn, "after_finalized.html",
       context_id: context_id,
+      summary: context.summary,
       previous_page: context.previous_page,
       next_page: context.next_page,
       title: context.page.title,

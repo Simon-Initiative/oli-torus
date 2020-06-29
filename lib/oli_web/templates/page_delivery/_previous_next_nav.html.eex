@@ -1,4 +1,4 @@
-<nav aria-label="Page navigation">
+<nav class="previous-next-nav" aria-label="Page navigation">
   <ul class="pagination justify-content-center my-5">
 
     <%= if @previous_page != nil do %>
@@ -37,7 +37,7 @@
         <div class="d-flex flex-row">
           <div class="d-flex flex-column flex-fill flex-ellipsize-fix">
             <div class="text-secondary text-left nav-label">Complete</div>
-            <div class="nav-title"><%= @title %></div>
+            <div class="nav-title"><%= @summary.title %></div>
           </div>
           <div>
             <i class="fas fa-check nav-icon"></i>

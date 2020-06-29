@@ -73,7 +73,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def table(%Context{} = _context, next, _) do
-    ["<table class=\"table\">", next.(), "</table>\n"]
+    ["<table class=\"table table-bordered\">", next.(), "</table>\n"]
   end
 
   def tr(%Context{} = _context, next, _) do
