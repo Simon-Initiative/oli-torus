@@ -30,18 +30,11 @@
   </head>
   <body>
 
-    <%= if get_flash(@conn, :info) do %>
-      <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
-    <% end %>
-    <%= if get_flash(@conn, :error) do %>
-      <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
-    <% end %>
-
     <%= render OliWeb.LayoutView, "_delivery_header.html", assigns %>
 
     <main role="main" class="container">
 
-    <%= Map.get(assigns, :inner_layout) || @inner_content %>
+      <%= Map.get(assigns, :inner_layout) || @inner_content %>
 
     </main>
 

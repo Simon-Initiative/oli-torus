@@ -766,9 +766,9 @@ defmodule Oli.Delivery.Attempts do
 
   defp submit_graded_page_activity(role, context_id, activity_attempt_guid) do
 
-    Repo.transaction(fn ->
+    part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
-      part_attempts = get_latest_part_attempts(activity_attempt_guid)
+    if Enum.all?(part_attempts, fn pa -> pa.response != nil end) do
 
       roll_up_fn = fn result ->
         rollup_part_attempt_evaluations(activity_attempt_guid)
@@ -787,7 +787,10 @@ defmodule Oli.Delivery.Attempts do
         {:error, error} -> Repo.rollback(error)
       end
 
-    end)
+    else
+      Repo.rollback({:not_all_answered})
+    end
+
 
   end
 

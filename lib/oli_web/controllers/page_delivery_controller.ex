@@ -147,6 +147,9 @@ defmodule OliWeb.PageDeliveryController do
 
       case Attempts.submit_graded_page(role, context_id, attempt_guid) do
         {:ok, _} -> after_finalized(conn, context_id, revision_slug, user)
+        {:error, {:not_all_answered}} ->
+          put_flash(conn, :error, "You have not answered all questions")
+          |> redirect(to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
         {:error, {:already_submitted}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
         {:error, {:active_attempt_present}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
         {:error, {:no_more_attempts}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
