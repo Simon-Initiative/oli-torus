@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Authoring.Editing.ObjectiveEditor — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-589377fccc.js"></script>
+    <script src="dist/sidebar_items-ddd4a66f21.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -95,8 +95,9 @@ Oli.Authoring.Editing.ObjectiveEditor          <a href="https://github.com/Simon
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#append_to_container/5">append_to_container(container_slug, publication, revision_to_attach, project_slug, author)</a>
+    <a href="#detach_objective/3">detach_objective(revision_slug, project, author)</a>
   </div>
+    <div class="summary-synopsis"><p>Detaches an objective from all unlocked pages and activites that currently reference it.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
@@ -110,8 +111,11 @@ Oli.Authoring.Editing.ObjectiveEditor          <a href="https://github.com/Simon
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#maybe_append_to_container/5">maybe_append_to_container(container_slug, publication, revision_to_attach, project_slug, author)</a>
+    <a href="#preview_objective_detatchment/2">preview_objective_detatchment(revision_slug, project)</a>
   </div>
+    <div class="summary-synopsis"><p>Previews an objective detachment, returning back references to the pages and
+activities that the objective is attached to (if any).  These references are in
+the form of a map of key-values</p></div>
 </div>
   </div>
         </section>
@@ -132,7 +136,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">add_new(attrs, author, project, container_slug \\ nil)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L15" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L18" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -140,19 +144,22 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="append_to_container/5">
+<section class="detail" id="detach_objective/3">
   <div class="detail-header">
-    <a href="#append_to_container/5" class="detail-link" title="Link to this function">
+    <a href="#detach_objective/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">append_to_container(container_slug, publication, revision_to_attach, project_slug, author)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L83" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">detach_objective(revision_slug, project, author)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L82" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
   </div>
   <section class="docstring">
+<p>Detaches an objective from all unlocked pages and activites that currently reference it.</p>
+<p>Takes the objective revision slug, the project and the author that will be
+commiting the changes as arguments.</p>
   </section>
 </section>
 <section class="detail" id="edit/4">
@@ -162,7 +169,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">edit(revision_slug, attrs, author, project)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L48" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L50" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -177,7 +184,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">fetch_objective_mappings(project)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L105" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L303" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -185,19 +192,40 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="maybe_append_to_container/5">
+<section class="detail" id="preview_objective_detatchment/2">
   <div class="detail-header">
-    <a href="#maybe_append_to_container/5" class="detail-link" title="Link to this function">
+    <a href="#preview_objective_detatchment/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">maybe_append_to_container(container_slug, publication, revision_to_attach, project_slug, author)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L73" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">preview_objective_detatchment(revision_slug, project)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L190" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+      <div class="specs">
+          <pre>preview_objective_detatchment(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="Oli.Authoring.Course.Project.html#t:t/0">Oli.Authoring.Course.Project.t</a>()) ::
+  %{attachments: {<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}, locked_by: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(), parent_pages: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()}</pre>
+      </div>
   </div>
   <section class="docstring">
+<p>Previews an objective detachment, returning back references to the pages and
+activities that the objective is attached to (if any).  These references are in
+the form of a map of key-values:</p>
+<p>%{
+  resource_id: the resource id of the attaching resource
+  title: the title of the resource
+  slug: the slug
+  part: either &#39;attached&#39; for pages, or the part id for activities for where</p>
+<pre><code class="nohighlight makeup elixir"><span class="w">    </span><span class="n">the</span><span class="w"> </span><span class="n">objective</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">attached</span><span class="o">.</span></code></pre>
+<p>}</p>
+<p>The return value of this function is:</p>
+<p>%{
+  attachments: {page_references[], activity_references[]},
+  parent_pages: map of the activity reference resource ids to their parent page resource ids
+  locked_by: map of page resource ids to publish resource records for those pages that are</p>
+<pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="n">currently</span><span class="w"> </span><span class="n">locked</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">editing</span></code></pre>
+<p>}</p>
   </section>
 </section>
           </div>
