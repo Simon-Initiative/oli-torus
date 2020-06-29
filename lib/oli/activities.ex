@@ -32,7 +32,6 @@ defmodule Oli.Activities do
     Repo.one(from p in Registration, where: p.slug == ^slug)
   end
 
-
   @doc """
   Returns the list of activity_registrations.
 
@@ -44,6 +43,14 @@ defmodule Oli.Activities do
   """
   def list_activity_registrations do
     Repo.all(Registration)
+  end
+
+  @doc """
+  Returns a list of script urls for all registered activities
+  """
+  def get_activity_scripts() do
+    list_activity_registrations()
+      |> Enum.map(fn r -> Map.get(r, :authoring_script) end)
   end
 
   @doc """
@@ -128,4 +135,5 @@ defmodule Oli.Activities do
   def change_registration(%Registration{} = registration) do
     Registration.changeset(registration, %{})
   end
+
 end

@@ -290,6 +290,21 @@ defmodule Oli.Delivery.Attempts do
       select: a)
   end
 
+  @doc """
+  Retrieves all resource accesses for a given context and user
+
+  `[%ResourceAccess{}, ...]`
+  """
+  def get_user_resource_accesses_for_context(context_id, user_id) do
+    Repo.all(from a in ResourceAccess,
+      join: s in Section, on: a.section_id == s.id,
+      join: p in PublishedResource, on: s.publication_id == p.publication_id,
+      join: r in Revision, on: p.revision_id == r.id,
+      where: s.context_id == ^context_id and a.user_id == ^user_id,
+      distinct: a.id,
+      select: a)
+  end
+
   defp get_resource_access(resource_id, context_id, user_id) do
     Repo.one(from a in ResourceAccess,
       join: s in Section, on: a.section_id == s.id,

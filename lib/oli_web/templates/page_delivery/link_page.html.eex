@@ -1,4 +1,0 @@
-<%= link to: Routes.page_delivery_path(@conn, :page, @context_id, @page.slug), class: "list-group-item list-group-item-action" do %>
-  <i class="far fa-file mr-2"></i> <%= @page.title %>
-<% end %>
-

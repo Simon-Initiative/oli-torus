@@ -1,8 +1,8 @@
+<%= render_layout "authoring.html", assigns do %>
+
 <a id='skip-nav' class='screenreader-text' href='#main-content'>
   Skip Navigation
 </a>
-
-<%= render_layout "authoring.html", assigns do %>
 
 <div>
   <%= render OliWeb.LayoutView, "_header.html", assigns %>

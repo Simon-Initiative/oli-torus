@@ -12,6 +12,7 @@ defmodule OliWeb.RevisionHistory do
   alias OliWeb.RevisionHistory.Details
   alias OliWeb.RevisionHistory.Graph
   alias OliWeb.RevisionHistory.Table
+  alias OliWeb.Common.Modal
   alias OliWeb.RevisionHistory.Pagination
   alias Oli.Authoring.Broadcaster
   alias Oli.Publishing.AuthoringResolver
@@ -26,11 +27,16 @@ defmodule OliWeb.RevisionHistory do
       select: {rev.resource_id})
 
     PubSub.subscribe Oli.PubSub, "resource:" <> Integer.to_string(resource_id)
+    PubSub.subscribe Oli.PubSub, "new_publication:project:" <> project_slug
 
     revisions = Repo.all(from rev in Revision,
       where: rev.resource_id == ^resource_id,
       order_by: [desc: rev.inserted_at],
-      select: rev)
+      select: rev,
+      preload: [:author])
+
+    mappings = Publishing.get_all_mappings_for_resource(resource_id, project_slug)
+    mappings_by_revision = Enum.reduce(mappings, %{}, fn mapping, m -> Map.put(m, mapping.revision_id, mapping) end)
 
     selected = hd(revisions)
 
@@ -38,12 +44,28 @@ defmodule OliWeb.RevisionHistory do
       title: "Revision History",
       view: "table",
       resource_id: resource_id,
+      mappings: mappings_by_revision,
+      publication: determine_most_recent_published(mappings),
       revisions: revisions,
       selected: selected,
       project_slug: project_slug,
       page_offset: 0,
       initial_size: length(revisions))
     }
+  end
+
+
+  defp determine_most_recent_published(mappings) do
+
+    all = Enum.reduce(mappings, MapSet.new(), fn mapping, m -> MapSet.put(m, mapping.publication) end)
+    |> MapSet.to_list()
+    |> Enum.sort(&(&1.inserted_at >= &2.inserted_at))
+
+    case length(all) do
+      1 -> nil
+      _ -> Enum.at(all, 1)
+    end
+
   end
 
   def render(assigns) do
@@ -81,7 +103,7 @@ defmodule OliWeb.RevisionHistory do
               <%= live_component @socket, Graph, revisions: reversed, selected: @selected, initial_size: @initial_size %>
             <% else %>
               <%= live_component @socket, Pagination, revisions: @revisions, page_offset: @page_offset, page_size: size %>
-              <%= live_component @socket, Table, revisions: @revisions, selected: @selected, page_offset: @page_offset, page_size: size %>
+              <%= live_component @socket, Table, publication: @publication, mappings: @mappings, revisions: @revisions, selected: @selected, page_offset: @page_offset, page_size: size %>
             <% end %>
           </div>
         </div>
@@ -105,26 +127,13 @@ defmodule OliWeb.RevisionHistory do
       </div>
     </div>
 
-    <div class="modal fade" id="restoreModal" tabindex="-1" role="dialog" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLongTitle">Restore this Revision</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <p clsas="mb-4">Are you sure you want to restore this revision?</p>
-            <p>This will end any active editing session for other users and will create a new revision to restore the title, content and objectives and other settings of this selected revision.</p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-danger" data-dismiss="modal" phx-click="restore">Proceed</button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <%= live_component @socket, Modal, title: "Restore this Revision", modal_id: "restoreModal", ok_action: "restore", ok_label: "Proceed", ok_style: "btn-danger" do %>
+      <p class="mb-4">Are you sure you want to restore this revision?</p>
+
+      <p>This will end any active editing session for other users and will create a
+         new revision to restore the title, content and objectives and other settings
+         of this selected revision.</p>
+    <% end %>
     """
   end
 
@@ -187,6 +196,8 @@ defmodule OliWeb.RevisionHistory do
 
     id = revision.id
 
+    revision = Oli.Resources.get_revision!(id) |>  Repo.preload(:author)
+
     revisions = case socket.assigns.revisions do
       [] -> [revision]
       [%{id: ^id} | rest] -> [revision] ++ rest
@@ -196,6 +207,14 @@ defmodule OliWeb.RevisionHistory do
     selected = Enum.find(revisions, fn r -> r.id == socket.assigns.selected.id end)
 
     {:noreply, assign(socket, selected: selected, revisions: revisions)}
+  end
+
+  def handle_info({:new_publication, _, _}, socket) do
+
+    mappings = Publishing.get_all_mappings_for_resource(socket.assigns.resource_id, socket.assigns.project_slug)
+    mappings_by_revision = Enum.reduce(mappings, %{}, fn mapping, m -> Map.put(m, mapping.revision_id, mapping) end)
+
+    {:noreply, assign(socket, mappings: mappings_by_revision, publication: determine_most_recent_published(mappings))}
   end
 
 

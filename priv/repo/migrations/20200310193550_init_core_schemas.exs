@@ -69,15 +69,15 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       timestamps(type: :timestamptz)
     end
 
-    create table(:nonce_store) do
+    create table(:nonces) do
       add :value, :string
 
       timestamps(type: :timestamptz)
     end
 
-    create unique_index(:nonce_store, [:value])
+    create unique_index(:nonces, [:value])
 
-    create table(:user) do
+    create table(:users) do
       add :email, :string
       add :first_name, :string
       add :last_name, :string
@@ -204,7 +204,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
     create table(:enrollments) do
       timestamps()
-      add :user_id, references(:user), primary_key: true
+      add :user_id, references(:users), primary_key: true
       add :section_id, references(:sections), primary_key: true
       add :section_role_id, references(:section_roles)
     end
@@ -254,7 +254,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :score, :float, null: true
       add :out_of, :float, null: true
 
-      add :user_id, references(:user)
+      add :user_id, references(:users)
       add :section_id, references(:sections)
       add :resource_id, references(:resources)
 
@@ -328,7 +328,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :activity_id, references(:resources)
       add :part_id, :string
       add :part_attempt_id, references(:part_attempts)
-      add :user_id, references(:user)
+      add :user_id, references(:users)
       add :section_id, references(:sections)
       add :objective_id, references(:resources)
       add :objective_revision_id, references(:revisions)

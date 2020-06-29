@@ -225,8 +225,8 @@ defmodule Oli.ActivityEditingTest do
     end
 
     test "can sync objectives to parts", %{author: author, project: project } do
-      {:ok, {:ok, %{revision: ob1}}} = ObjectiveEditor.add_new(%{title: "this is an objective"}, author, project)
-      {:ok, {:ok, %{revision: ob2}}}  = ObjectiveEditor.add_new(%{title: "this is another objective"}, author, project)
+      {:ok, %{revision: ob1}} = ObjectiveEditor.add_new(%{title: "this is an objective"}, author, project)
+      {:ok, %{revision: ob2}}  = ObjectiveEditor.add_new(%{title: "this is another objective"}, author, project)
 
       # Create a two part activity where each part is tied to one of the objectives above
       content = %{ "objectives" => %{ "1" => [ ob1.slug ], "2" => [ ob2.slug ]  },

@@ -1,7 +1,7 @@
 defmodule OliWeb.PageDeliveryController do
   use OliWeb, :controller
   import OliWeb.ProjectPlugs
-  alias Oli.Delivery.Student.OverviewDesc
+  alias Oli.Delivery.Student.Summary
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Sections
   alias Oli.Rendering.Context
@@ -21,13 +21,12 @@ defmodule OliWeb.PageDeliveryController do
 
     if Sections.is_enrolled?(user.id, context_id) do
 
-      case OverviewDesc.get_overview_desc(context_id, user) do
-        {:ok, overview} -> render(conn, "index.html",
-          context_id: context_id, pages: overview.pages, title: overview.title, description: overview.description)
+      case Summary.get_summary(context_id, user) do
+        {:ok, summary} -> render(conn, "index.html", context_id: context_id, summary: summary)
         {:error, _} -> render(conn, "error.html")
       end
     else
-      render(conn, "not_authorized.html")
+      render conn, "not_authorized.html"
     end
 
   end
@@ -38,11 +37,11 @@ defmodule OliWeb.PageDeliveryController do
 
     if Sections.is_enrolled?(user.id, context_id) do
 
-      PageContext.create_page_context(context_id, revision_slug, user.id)
+      PageContext.create_page_context(context_id, revision_slug, user)
       |> render_page(conn, context_id, user)
 
     else
-      render(conn, "not_authorized.html")
+      render conn, "not_authorized.html"
     end
 
   end
@@ -57,7 +56,7 @@ defmodule OliWeb.PageDeliveryController do
     redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
   end
 
-  defp render_page(%PageContext{progress_state: :not_started, page: page, resource_attempts: resource_attempts} = context,
+  defp render_page(%PageContext{summary: summary, progress_state: :not_started, page: page, resource_attempts: resource_attempts} = context,
     conn, context_id, _) do
 
     attempts_taken = length(resource_attempts)
@@ -74,8 +73,11 @@ defmodule OliWeb.PageDeliveryController do
       "You have #{attempts_remaining} attempt#{plural(attempts_remaining)} remaining out of #{page.max_attempts} total attempt#{plural(page.max_attempts)}."
     end
 
+    conn = put_root_layout conn, {OliWeb.LayoutView, "page.html"}
     render(conn, "prologue.html", %{
       context_id: context_id,
+      scripts: Activities.get_activity_scripts(),
+      summary: summary,
       previous_page: context.previous_page,
       next_page: context.next_page,
       title: context.page.title,
@@ -86,7 +88,7 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp render_page(%PageContext{progress_state: :error}, conn, _, _) do
-    render(conn, "error.html")
+    render conn, "error.html"
   end
 
   # This case handles :in_progress and :revised progress states
@@ -96,9 +98,11 @@ defmodule OliWeb.PageDeliveryController do
     page_model = Map.get(context.page.content, "model")
     html = Page.render(render_context, page_model, Page.Html)
 
+    conn = put_root_layout conn, {OliWeb.LayoutView, "page.html"}
     render(conn, "page.html", %{
       context_id: context_id,
-      scripts: get_scripts(),
+      scripts: Activities.get_activity_scripts(),
+      summary: context.summary,
       previous_page: context.previous_page,
       next_page: context.next_page,
       title: context.page.title,
@@ -126,7 +130,7 @@ defmodule OliWeb.PageDeliveryController do
       end
 
     else
-      render(conn, "not_authorized.html")
+      render conn, "not_authorized.html"
     end
 
   end
@@ -142,7 +146,7 @@ defmodule OliWeb.PageDeliveryController do
     if Sections.is_enrolled?(user.id, context_id) do
 
       case Attempts.submit_graded_page(role, context_id, attempt_guid) do
-        {:ok, _} -> after_finalized(conn, context_id, revision_slug, user.id)
+        {:ok, _} -> after_finalized(conn, context_id, revision_slug, user)
         {:error, {:not_all_answered}} ->
           put_flash(conn, :error, "You have not answered all questions")
           |> redirect(to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
@@ -153,14 +157,14 @@ defmodule OliWeb.PageDeliveryController do
       end
 
     else
-      render(conn, "not_authorized.html")
+      render conn, "not_authorized.html"
     end
 
   end
 
-  def after_finalized(conn, context_id, revision_slug, user_id) do
+  def after_finalized(conn, context_id, revision_slug, user) do
 
-    context = PageContext.create_page_context(context_id, revision_slug, user_id)
+    context = PageContext.create_page_context(context_id, revision_slug, user)
 
     message = if context.page.max_attempts == 0 do
       "You have an unlimited number of attempts remaining"
@@ -172,19 +176,17 @@ defmodule OliWeb.PageDeliveryController do
       "You have taken #{taken} attempt#{plural(taken)} and have #{remaining} more attempt#{plural(remaining)} remaining"
     end
 
+    conn = put_root_layout conn, {OliWeb.LayoutView, "page.html"}
     render(conn, "after_finalized.html",
       context_id: context_id,
+      scripts: Activities.get_activity_scripts(),
+      summary: context.summary,
       previous_page: context.previous_page,
       next_page: context.next_page,
       title: context.page.title,
       message: message,
       slug: context.page.slug)
 
-  end
-
-  defp get_scripts() do
-    Activities.list_activity_registrations()
-      |> Enum.map(fn r -> Map.get(r, :authoring_script) end)
   end
 
   defp plural(num) do
@@ -206,7 +208,7 @@ defmodule OliWeb.PageDeliveryController do
         |> send_resp(200, gradebook_csv)
 
       _ ->
-        render(conn, "not_authorized.html")
+        render conn, "not_authorized.html"
     end
   end
 
@@ -235,7 +237,6 @@ defmodule OliWeb.PageDeliveryController do
         section = Sections.get_section_by(context_id: context_id)
         token = conn.params["token"]
 
-        IO.inspect conn
         Sections.update_section(section, %{canvas_token: token})
 
         conn

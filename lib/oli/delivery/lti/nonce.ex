@@ -2,7 +2,7 @@ defmodule Oli.Delivery.Lti.Nonce do
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "nonce_store" do
+  schema "nonces" do
     field :value, :string
 
     timestamps(type: :utc_datetime)
