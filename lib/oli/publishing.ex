@@ -436,7 +436,20 @@ defmodule Oli.Publishing do
     # push forward all existing sections to this newly published publication
     update_all_section_publications(project, active_publication)
 
+    Oli.Authoring.Broadcaster.broadcase_publication(result, project.slug)
+
     result
+  end
+
+  def get_all_mappings_for_resource(resource_id, project_slug) do
+
+    Repo.all(from mapping in PublishedResource,
+      join: p in Publication, on: mapping.publication_id == p.id,
+      join: project in Project, on: p.project_id == project.id,
+      where: mapping.resource_id == ^resource_id and project.slug == ^project_slug,
+      select: mapping,
+      preload: [:publication, :revision])
+
   end
 
   defp copy_mapping_for_publication(%PublishedResource{} = resource_mapping, publication) do
@@ -496,11 +509,11 @@ defmodule Oli.Publishing do
   end
 
   @doc """
-  Returns a list of {resource, revision} tuples for a publication
+  Returns a map of resource ids to {resource, revision} tuples for a publication
 
   ## Examples
       iex> get_resource_revisions_for_publication(123)
-      [{%Resource{}, %Revision{}}, ...]
+      %{124 => [{%Resource{}, %Revision{}}], ...}
   """
   def get_resource_revisions_for_publication(publication) do
     resource_mappings = get_resource_mappings_by_publication(publication.id)

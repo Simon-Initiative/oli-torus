@@ -115,6 +115,13 @@ defmodule OliWeb.Curriculum.Container do
   # process form submission to save page settings
   def handle_event("save", params, socket) do
 
+    params = Enum.reduce(params, %{}, fn {k, v}, m ->
+      case MapSet.member?(MapSet.new(["_csrf_token", "_target"]), k) do
+        true -> m
+        false -> Map.put(m, String.to_atom(k), v)
+      end
+    end)
+
     socket = case ContainerEditor.edit_page(socket.assigns.project, socket.assigns.selected.slug, params) do
       {:ok, _} -> socket
       {:error, _} -> socket
