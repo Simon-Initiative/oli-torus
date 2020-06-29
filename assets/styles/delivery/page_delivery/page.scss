@@ -54,3 +54,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+#content {
+  /** images should scale to available width if larger than available width */
+  img {
+    max-width: 100%;
+  }
+}
