@@ -1,4 +1,5 @@
 /** Delivery Styles **/
+@import "delivery/variables";
 
 body {
   flex: 1;
@@ -17,20 +18,82 @@ body {
   color: white;
 }
 
-.content-purpose-label {
-  text-transform: uppercase;
-  float: right;
+.content-purpose {
+  .content-purpose-label {
+    text-transform: uppercase;
+    padding: 4px;
+  }
+
+  .content-purpose-content {
+    padding: 20px;
+  }
+
+  &.example {
+    border: 1px solid $content-purpose-example-color;
+    margin-bottom: 1rem;
+
+    .content-purpose-label {
+      background-color: $content-purpose-example-color;
+      color: $white;
+    }
+  }
+
+  &.learn-more {
+    border: 1px solid $content-purpose-learn-more-color;
+    margin-bottom: 1rem;
+
+    .content-purpose-label {
+      background-color: $content-purpose-learn-more-color;
+      color: $white;
+    }
+  }
 }
 
-.content-example {
-  border: 1px solid #e0e0e0;
-  padding: 20px;
-  margin: 10px;
-}
+.activity-purpose {
+  padding: 4px 8px;
+  font-weight: 300;
 
-.content-learn-more {
-  border: 1px solid #e0e0e0;
-  padding: 20px;
-  margin: 10px;
-}
+  &.checkpoint {
+    background-color: $activity-purpose-checkpoint-color;
 
+    &::before {
+      font-family: 'Line Awesome Free';
+      font-weight: 900;
+      margin-right: 8px;
+      content: '\f46c';
+    }
+  }
+
+  &.didigetthis {
+    background-color: $activity-purpose-didigetthis-color;
+
+    &::before {
+      font-family: 'Line Awesome Free';
+      font-weight: 900;
+      margin-right: 8px;
+      content: '\f256';
+    }
+  }
+
+  &.learnbydoing {
+    background-color: $activity-purpose-learnbydoing-color;
+
+    &::before {
+      font-family: 'Line Awesome Free';
+      font-weight: 900;
+      margin-right: 8px;
+      content: '\f51c';
+    }
+  }
+
+  &.manystudentswonder {
+    background-color: $activity-purpose-manystudentswonder-color;
+
+    &::before {
+      font-family: 'Line Awesome Free';
+      font-weight: 900;
+      margin-right: 8px;
+      content: '\f5da';
+    }
+  }
+}

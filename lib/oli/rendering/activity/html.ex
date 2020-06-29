@@ -35,7 +35,7 @@ defmodule Oli.Rendering.Activity.Html do
           "none" ->
             activity_html
           _ ->
-            ["<h4 class=\"activity-purpose\">", Oli.Utils.Purposes.label_for(purpose), "</h4>", activity_html]
+            ["<h4 class=\"activity-purpose ", Oli.Utils.Slug.slugify(purpose), "\">", Oli.Utils.Purposes.label_for(purpose), "</h4>", activity_html]
         end
     end
   end

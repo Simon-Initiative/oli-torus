@@ -16,7 +16,7 @@ $gray-800: #343a40 !default;
 $gray-900: #212529 !default;
 $black:    #000 !default;
 
-$blue:    #2C67C4;
+$blue:    #0d6efd;
 $indigo:  #6610f2;
 $purple:  #6f42c1;
 $pink:    #d63384;
@@ -27,7 +27,7 @@ $green:   #28a745;
 $teal:    #20c997;
 $cyan:    #17a2b8;
 
-$primary:       $blue !default;
+$primary:       #2C67C4 !default;
 $secondary:     $gray-600 !default;
 $success:       $green !default;
 $info:          $cyan !default;
@@ -53,3 +53,10 @@ $feedback-error-color: $orange;
 
 $hint-bg: lighten($yellow, 45%);
 $hint-border-color: $yellow;
+
+$content-purpose-example-color: lighten($blue, 20%);
+$content-purpose-learn-more-color: lighten($yellow, 20%);
+$activity-purpose-checkpoint-color: lighten($blue, 10%);
+$activity-purpose-didigetthis-color: lighten($purple, 10%);
+$activity-purpose-learnbydoing-color: lighten($green, 10%);
+$activity-purpose-manystudentswonder-color: lighten($cyan, 10%);
