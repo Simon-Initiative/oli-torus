@@ -31,6 +31,7 @@ defmodule OliWeb.Objectives.Objectives do
     objectives_tree = to_objective_tree(objective_mappings)
 
     {:ok, assign(socket,
+      active: :objectives,
       objective_mappings: objective_mappings,
       objectives_tree: objectives_tree,
       title: "Objectives",

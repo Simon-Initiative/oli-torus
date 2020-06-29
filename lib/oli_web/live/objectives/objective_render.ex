@@ -15,7 +15,7 @@ defmodule OliWeb.Objectives.ObjectiveRender do
     ~L"""
     <%= cond do %>
     <% @mode == :show -> %>
-    <div class="pt-1 mb-1"><span class="mr-1"><i class="fas fa-crosshairs fa-lg"></i></span><%= @objective_mapping.revision.title %></div>
+    <div class="pt-1 mb-1"><%= @objective_mapping.revision.title %></div>
     <%= if length(@children) != 0 do  %>
     <div class="list-group list-group-flush w-100">
        <%= for child <- @children do %>
