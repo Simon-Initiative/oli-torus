@@ -54,7 +54,7 @@ export function getContentDescription(content: StructuredContent) : JSX.Element 
         case 'h6':
         case 'p':
         case 'blockquote':
-          const simpleText = toSimpleText(item);
+          const simpleText = toSimpleText(item).trim();
           if (simpleText !== '') {
             return <span>{simpleText}</span>;
           }
