@@ -1,3 +1,5 @@
+@import "delivery/variables";
+
 #wrapper {
   display: flex;
   width: 100%;
@@ -16,6 +18,12 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     margin-right: 10px;
+  }
+
+  &.outline {
+    .list-group-item.list-group-item-action.active .text-secondary {
+      color: $gray-200 !important;
+    }
   }
 }
 

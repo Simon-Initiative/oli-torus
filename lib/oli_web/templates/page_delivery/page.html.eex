@@ -5,7 +5,7 @@
 
 <div id="wrapper">
     <!-- Sidebar -->
-    <nav id="sidebar">
+    <nav id="sidebar" class="outline">
       <div class="header d-flex flex-column">
         <div>
           <a href="<%= Routes.delivery_path(@conn, :index) %>" class="btn btn-link course-btn">
