@@ -8,11 +8,11 @@ defmodule Oli.Rendering.Content.Html do
   @behaviour Oli.Rendering.Content
 
   def example(%Context{} = _context, next, _) do
-    ["<div class=\"content-example\"><div class=\"content-purpose-label\">Example</div>", next.(), "</div>\n"]
+    ["<div class=\"content-purpose example\"><div class=\"content-purpose-label\">Example</div><div class=\"content-purpose-content\">", next.(), "</div></div>\n"]
   end
 
   def learn_more(%Context{} = _context, next, _) do
-    ["<div class=\"content-learn-more\"><div class=\"content-purpose-label\">Learn more</div>", next.(), "</div>\n"]
+    ["<div class=\"content-purpose learn-more\"><div class=\"content-purpose-label\">Learn more</div><div class=\"content-purpose-content\">", next.(), "</div></div>\n"]
   end
 
   def p(%Context{} = _context, next, _) do
@@ -73,7 +73,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def table(%Context{} = _context, next, _) do
-    ["<table>", next.(), "</table>\n"]
+    ["<table class=\"table table-bordered\">", next.(), "</table>\n"]
   end
 
   def tr(%Context{} = _context, next, _) do

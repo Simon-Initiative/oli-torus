@@ -12,6 +12,7 @@ defmodule OliWeb.RevisionHistory do
   alias OliWeb.RevisionHistory.Details
   alias OliWeb.RevisionHistory.Graph
   alias OliWeb.RevisionHistory.Table
+  alias OliWeb.Common.Modal
   alias OliWeb.RevisionHistory.Pagination
   alias Oli.Authoring.Broadcaster
   alias Oli.Publishing.AuthoringResolver
@@ -126,26 +127,13 @@ defmodule OliWeb.RevisionHistory do
       </div>
     </div>
 
-    <div class="modal fade" id="restoreModal" tabindex="-1" role="dialog" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLongTitle">Restore this Revision</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <p clsas="mb-4">Are you sure you want to restore this revision?</p>
-            <p>This will end any active editing session for other users and will create a new revision to restore the title, content and objectives and other settings of this selected revision.</p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-danger" data-dismiss="modal" phx-click="restore">Proceed</button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <%= live_component @socket, Modal, title: "Restore this Revision", modal_id: "restoreModal", ok_action: "restore", ok_label: "Proceed", ok_style: "btn-danger" do %>
+      <p class="mb-4">Are you sure you want to restore this revision?</p>
+
+      <p>This will end any active editing session for other users and will create a
+         new revision to restore the title, content and objectives and other settings
+         of this selected revision.</p>
+    <% end %>
     """
   end
 

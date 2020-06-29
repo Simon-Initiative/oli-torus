@@ -28,7 +28,12 @@ defmodule OliWeb.ObjectivesLiveTest do
       |> element("##{Integer.to_string(objective1.resource.id)}")
       |> render_click()
 
-      # delete the selected objective
+      # delete the selected objective, which requires first clicking the delete button
+      # which will display the modal, then we click the "Delete" button in the modal
+      view
+       |> element("#delete_#{Integer.to_string(objective1.resource.id)}")
+       |> render_click()
+
       view
        |> element(".btn-danger")
        |> render_click()
