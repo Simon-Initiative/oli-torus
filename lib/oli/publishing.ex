@@ -512,4 +512,107 @@ defmodule Oli.Publishing do
     |> Enum.reduce(%{}, fn m, acc -> Map.put_new(acc, m.resource_id, {m.resource, m.revision}) end)
   end
 
+
+  @doc """
+  For a given objective resource id and a given project's publication id,
+  this function will find all pages and activities that have the objective
+  attached to it.
+
+  This function will return an activity more than once if that activity
+  contains multiple parts with the objective attached to it.
+
+  The return value is a list of maps of the following format:
+  %{
+    id: the revision id
+    resource_id: the resource id
+    title: the title of the resource
+    slug: the slug of the revision
+    part: the part name, or "attached" if pertaining to a page
+  }
+  """
+  def find_objective_attachments(resource_id, publication_id) do
+
+    page_id = ResourceType.get_id_by_type("page")
+    activity_id = ResourceType.get_id_by_type("activity")
+
+    sql =
+      """
+      select
+        revisions.id, revisions.resource_id, revisions.title, revisions.slug, part
+      FROM revisions, jsonb_object_keys(revisions.objectives) p(part)
+      WHERE
+        revisions.id IN (SELECT revision_id
+        FROM published_resources
+         WHERE publication_id = #{publication_id})
+         AND (
+           (revisions.resource_type_id = #{activity_id} AND revisions.objectives->part @> '[#{resource_id}]')
+           OR
+           (revisions.resource_type_id = #{page_id} AND revisions.objectives->'attached' @> '[#{resource_id}]')
+         )
+      """
+
+    {:ok, %{rows: results }} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    results
+    |> Enum.map(fn [id, resource_id, title, slug, part] ->
+      %{
+        id: id,
+        resource_id: resource_id,
+        title: title,
+        slug: slug,
+        part: part
+      }
+    end)
+  end
+
+  @doc """
+  For a given list of resource ids and a given project publication id,
+  retrieve the corresponding published resource record, preloading the
+  locked_by_id to allow access to the user that might have the resource locked.
+  """
+  def retrieve_lock_info(resource_ids, publication_id) do
+
+    mappings = Repo.all(from mapping in PublishedResource,
+      where: mapping.publication_id == ^publication_id and mapping.resource_id in ^resource_ids,
+      select: mapping,
+      preload: [:author])
+
+    Enum.reduce(%{}, mappings, fn e, m -> Map.put(m, e.resource_id, e) end)
+
+  end
+
+  @doc """
+  For a given list of activity resource ids and a given project publication id,
+  find and retrieve all revisions for the pages that contain the activities.
+
+  Returns a map of activity_ids to a map containing the slug and resource id of the
+  page that encloses it
+  """
+  def determine_parent_pages(activity_resource_ids, publication_id) do
+
+    page_id = ResourceType.get_id_by_type("page")
+
+    activities = MapSet.new(activity_resource_ids)
+
+    sql =
+      """
+      select
+        rev.resource_id,
+        rev.slug,
+        jsonb_path_query(content, '$.model[*] ? (@.type == "activity-reference")')
+      from published_resources as mapping
+      join revisions as rev
+      on mapping.revision_id = rev.id
+      where mapping.publication_id = #{publication_id}
+        and rev.resource_type_id = #{page_id}
+        and rev.deleted is false
+      """
+
+    {:ok, %{rows: results }} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    Enum.filter(results, fn [_, _, %{"activity_id" => activity_id}] -> MapSet.member?(activities, activity_id) end)
+    |> Enum.reduce(%{}, fn [id, slug, %{"activity_id" => activity_id}], map -> Map.put(map, activity_id, %{slug: slug, id: id}) end)
+
+  end
+
 end
