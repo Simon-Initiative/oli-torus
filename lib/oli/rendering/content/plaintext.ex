@@ -4,7 +4,6 @@ defmodule Oli.Rendering.Content.Plaintext do
   This was written quickly for simplicity. It leaves a trailing space at the end of the final string.
   """
   alias Oli.Rendering.Context
-  alias Phoenix.HTML
 
   @behaviour Oli.Rendering.Content
 
@@ -44,7 +43,7 @@ defmodule Oli.Rendering.Content.Plaintext do
     [next.(), " "]
   end
 
-  def img(%Context{} = _context, _, %{"src" => src} = attrs) do
+  def img(%Context{} = _context, _, %{"src" => src}) do
     ["[image with src #{src}] "]
   end
 
@@ -116,7 +115,7 @@ defmodule Oli.Rendering.Content.Plaintext do
     [next.(), " "]
   end
 
-  def text(%Context{} = _context, %{"text" => text} = text_entity) do
+  def text(%Context{} = _context, %{"text" => text}) do
     text
   end
 
