@@ -17,13 +17,13 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
   alias Oli.Repo
 
   def setup(%{
-    project_slug: project_slug,
+    dataset_name: dataset_name,
     part_attempt: part_attempt,
     problem_name: problem_name,
     publication: publication
   }) do
     element(:dataset, [
-      element(:name, dataset_name(project_slug)),
+      element(:name, dataset_name),
       create_problem_hierarchy(problem_name, publication, part_attempt)
     ])
   end
@@ -75,12 +75,4 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
       false -> "tutor"
     end
   end
-
-  # For now, the dataset name is scoped to the project. Uploading datasets with the same name will
-  # cause the data to be appended, so a guid is added to ensure a unique dataset is uploaded every time.
-  # This will need to change if dataset processing is changed from "batch" to "live" updates.
-  defp dataset_name(project_slug) do
-    "#{project_slug}-#{Utils.uuid()}"
-  end
-
 end

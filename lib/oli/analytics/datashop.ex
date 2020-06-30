@@ -36,6 +36,7 @@ defmodule Oli.Analytics.Datashop do
 
       context_message_id = Utils.make_context_message_id(email, activity_slug, part_id)
       problem_name = Utils.make_problem_name(activity_slug, part_id)
+      dataset_name = Utils.make_dataset_name(project.slug)
 
       context_message = Context.setup(%{
         name: "START_PROBLEM",
@@ -45,7 +46,7 @@ defmodule Oli.Analytics.Datashop do
           email: email
         },
         dataset_element_context: %{
-          project_slug: project.slug,
+          dataset_name: dataset_name,
           part_attempt: hd(part_attempts),
           publication: publication,
           problem_name: problem_name

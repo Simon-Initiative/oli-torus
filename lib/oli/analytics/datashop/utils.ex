@@ -54,4 +54,12 @@ defmodule Oli.Analytics.Datashop.Utils do
   def make_problem_name(activity_slug, part_id) do
     "Activity " <> activity_slug <> ", part " <> part_id
   end
+
+  # For now, the dataset name is scoped to the project. Uploading datasets with the same name will
+  # cause the data to be appended, so a guid is added to ensure a unique dataset is uploaded every time.
+  # This will need to change if dataset processing is changed from "batch" to "live" updates.
+  def make_dataset_name(project_slug) do
+    "#{project_slug}-#{Utils.uuid()}"
+  end
+
 end
