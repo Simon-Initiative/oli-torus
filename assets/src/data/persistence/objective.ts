@@ -10,7 +10,7 @@ export function create(project: ProjectSlug, title: string) {
 
   const params = {
     method: 'POST',
-    body: JSON.stringify({ title: title }),
+    body: JSON.stringify({ title }),
     url: `/project/${project}/objectives`,
   };
 

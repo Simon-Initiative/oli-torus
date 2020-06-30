@@ -46,7 +46,7 @@ export const Objectives = (props: ObjectivesProps) => {
           if (createdObjective) {
             create(props.projectSlug, createdObjective.title)
               .then((result) => {
-                if (result.type == 'success') {
+                if (result.type === 'success') {
                   onRegisterNewObjective({
                     slug: result.revisionSlug,
                     title: createdObjective.title,
@@ -54,11 +54,10 @@ export const Objectives = (props: ObjectivesProps) => {
 
                   // the newly created objective will be the only one that has null as it's slug,
                   // so while mapping objectives to slugs replace any nulls with the new slug
-                  const updatedObjectives = updated.map(o => valueOr(o.slug, result.revisionSlug))
+                  const updatedObjectives = updated.map(o => valueOr(o.slug, result.revisionSlug));
 
                   onEdit(Immutable.List<ObjectiveSlug>(updatedObjectives));
-                }
-                else {
+                } else {
                   throw result;
                 }
               })
@@ -66,14 +65,13 @@ export const Objectives = (props: ObjectivesProps) => {
                 // TODO: this should probably give a message to the user indicating that
                 // objective creation failed once we have a global messaging
                 // infrastructure in place. For now, we will just log to the conosle
-                console.error('objective creation failed', e)
-              })
-          }
-          else {
+                console.error('objective creation failed', e);
+              });
+          } else {
             // This check handles some weirdness where Typeahead fires onChange when
             // there really isn't a change.
             if (updated.length !== selected.size) {
-              const updatedObjectives = updated.map(o => o.slug)
+              const updatedObjectives = updated.map(o => o.slug);
               onEdit(Immutable.List<ObjectiveSlug>(updatedObjectives));
             }
           }
