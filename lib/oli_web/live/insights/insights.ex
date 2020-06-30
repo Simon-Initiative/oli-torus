@@ -110,5 +110,4 @@ defmodule OliWeb.Insights do
   defp is_disabled(selected, title) do
     if selected == title do "disabled" else "" end
   end
-
 end

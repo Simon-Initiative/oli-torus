@@ -53,13 +53,13 @@ defmodule Oli.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:ex_aws, "~> 2.1"},
-      {:ex_aws_s3, "~> 2.0"},
       {:bcrypt_elixir, "~> 2.2"},
       {:credo, "~> 1.1.0", only: [:dev, :test], runtime: true},
       {:csv, "~> 2.3"},
       {:dialyxir, "~> 0.5.0", only: [:dev], runtime: true},
       {:ecto_sql, "~> 3.1"},
+      {:ex_aws, "~> 2.1"},
+      {:ex_aws_s3, "~> 2.0"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
       {:floki, ">= 0.26.0", only: :test},
       {:gettext, "~> 0.11"},
@@ -79,15 +79,17 @@ defmodule Oli.MixProject do
       {:plug_cowboy, "~> 2.1"},
       {:poison, "~> 3.1"},
       {:postgrex, ">= 0.0.0"},
+      {:shortuuid, "~> 2.1"},
       {:telemetry, "~> 0.4.1"},
       {:telemetry_poller, "~> 0.4"},
       {:telemetry_metrics, "~> 0.4"},
       {:timex, "~> 3.5"},
       {:ueberauth, "~> 0.5"},
-      {:ueberauth_google, "~> 0.7"},
       {:ueberauth_facebook, "~> 0.8"},
+      {:ueberauth_google, "~> 0.7"},
       {:ueberauth_identity, "~> 0.2"},
-      {:uuid, "~> 1.1" }
+      {:uuid, "~> 1.1" },
+      {:xml_builder, "~> 2.1.1"}
     ]
   end
 
