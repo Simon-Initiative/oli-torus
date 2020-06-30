@@ -1,4 +1,4 @@
-<%= render_layout "delivery.html", assigns do %>
+<%= render_layout "delivery.html", assigns |> Map.put_new(:preview_mode, true) do %>
 
   <%= @inner_content %>
 

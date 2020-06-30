@@ -5,6 +5,10 @@ defmodule OliWeb.LayoutView do
   alias Oli.Authoring
   alias Oli.Accounts.AuthorPreferences
 
+  def get_title(assigns) do
+    live_title_tag assigns[:page_title] || assigns[:title] || "Open Learning Initiative", suffix: ""
+  end
+
   def active_or_nil(assigns) do
     get_in(assigns, [Access.key(:active, nil)])
   end
@@ -28,7 +32,7 @@ defmodule OliWeb.LayoutView do
     render(layout, Map.put(assigns, :inner_layout, content))
   end
 
-  def authoring_theme_url(%{:assigns => assigns} = _conn) do
+  def theme_url(%{:assigns => assigns} = _conn, :authoring) do
     case assigns do
       %{current_author: current_author} ->
         case current_author do
@@ -42,4 +46,13 @@ defmodule OliWeb.LayoutView do
         Authoring.get_default_theme!().url
     end
   end
+
+  def theme_url(conn, :delivery) do
+    Routes.static_path(conn, "/css/delivery_theme.css")
+  end
+
+  def preview_mode(%{assigns: assigns} = _conn) do
+    Map.get(assigns, :preview_mode, false)
+  end
+
 end

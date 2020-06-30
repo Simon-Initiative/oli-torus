@@ -1,77 +1,79 @@
-.delivery {
-  nav .nav-item a.user {
-    color: inherit;
-    display: flex;
-  }
 
+nav .nav-item a.user {
+  color: inherit;
+  display: flex;
+}
+
+nav .nav-item a.user .role {
+  color: $gray-600;
+  font-size: .8em;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+nav .nav-item a.user .user-icon,
+nav .nav-item a.user::after {
+  align-self: center;
+}
+
+nav .nav-item a.user::after {
+  margin-left: 10px;
+}
+
+@media (max-width: 767.98px) {
+  nav .nav-item a.user .username,
   nav .nav-item a.user .role {
-    color: $gray-600;
-    font-size: .8em;
-    font-weight: 600;
-    text-transform: uppercase;
+    display: none;
   }
+}
 
-  nav .nav-item a.user .user-icon,
-  nav .nav-item a.user::after {
-    align-self: center;
-  }
+body.app nav.navbar {
+  border-bottom: 2px solid $gray-500;
+}
 
-  nav .nav-item a.user::after {
-    margin-left: 10px;
-  }
+nav.navbar .navbar-brand {
+  color: inherit;
+}
 
-  @media (max-width: 767.98px) {
-    nav .nav-item a.user .username,
-    nav .nav-item a.user .role {
-      display: none;
-    }
-  }
+nav.navbar a.user {
+  display: flex;
+  flex-direction: row;
+  height: 50px;
+}
 
-  body.app nav.navbar {
-    border-bottom: 2px solid $gray-500;
-  }
+nav.navbar .user::after {
+  margin: 14px 0 14px 10px;
+}
 
-  nav.navbar .navbar-brand {
+nav.navbar .user img {
+  width: 30px;
+  height: 30px;
+  border: 2px solid white;
+  -webkit-box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.75);
+  -moz-box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.75);
+  box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.75);
+}
+
+.configure-section {
+  text-align: center;
+
+  .btn-card {
+    cursor: pointer;
     color: inherit;
+    user-select: none;
   }
 
-  nav.navbar a.user {
-    display: flex;
-    flex-direction: row;
-    height: 50px;
+  .btn-card:hover {
+    border: 1px solid #007bff;
+    text-decoration: none;
+    color: inherit;
+    -webkit-box-shadow: 0px 0px 4px 0px rgba(0,123,255,1);
+    -moz-box-shadow: 0px 0px 4px 0px rgba(0,123,255,1);
+    box-shadow: 0px 0px 4px 0px rgba(0,123,255,1);
   }
+}
 
-  nav.navbar .user::after {
-    margin: 14px 0 14px 10px;
-  }
-
-  nav.navbar .user img {
-    width: 30px;
-    height: 30px;
-    border: 2px solid white;
-    -webkit-box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.75);
-    -moz-box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.75);
-    box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.75);
-  }
-
-  .configure-section {
-    text-align: center;
-
-    .btn-card {
-      cursor: pointer;
-      color: inherit;
-      user-select: none;
-    }
-
-    .btn-card:hover {
-      border: 1px solid #007bff;
-      text-decoration: none;
-      color: inherit;
-      -webkit-box-shadow: 0px 0px 4px 0px rgba(0,123,255,1);
-      -moz-box-shadow: 0px 0px 4px 0px rgba(0,123,255,1);
-      box-shadow: 0px 0px 4px 0px rgba(0,123,255,1);
-    }
-  }
-
-
+main.container {
+  padding-right: 0;
+  padding-left: 0;
 }

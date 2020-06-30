@@ -32,4 +32,17 @@ defmodule Oli.Authoring.Broadcaster do
       {:new_resource, revision, project_slug}
   end
 
+  @doc """
+  Broadcasts that the unpublished publication has been published
+  """
+  def broadcase_publication(publication, project_slug) do
+    PubSub.broadcast Oli.PubSub, "new_publication:project:" <> project_slug,
+      {:new_publication, publication, project_slug}
+
+  end
+
+
+
+
+
 end

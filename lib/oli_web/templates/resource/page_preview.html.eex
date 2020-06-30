@@ -1,3 +1,8 @@
+
+<%= for script <- @scripts do %>
+  <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
+<% end %>
+
 <h1><%= @context.title %></h1>
 
 <%= raw(@content_html) %>

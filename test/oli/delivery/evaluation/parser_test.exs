@@ -1,6 +1,6 @@
 defmodule Oli.Delivery.Evaluation.ParserTest do
 
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   defp parse(input), do: Oli.Delivery.Evaluation.Rule.parse(input)
 

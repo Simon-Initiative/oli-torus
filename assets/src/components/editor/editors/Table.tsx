@@ -1,14 +1,14 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ReactEditor, useFocused, useSelected, useSlate } from 'slate-react';
 import { Transforms, Editor, Path } from 'slate';
 import { updateModel, getEditMode } from './utils';
 import * as ContentModel from 'data/content/model';
 import { Command, CommandDesc } from '../interfaces';
-import { EditorProps } from './interfaces';
+import { EditorProps, CommandContext } from './interfaces';
 import guid from 'utils/guid';
-import { LabelledTextEditor } from 'components/TextEditor';
 import { SizePicker } from './SizePicker';
-import Popover from 'react-tiny-popover';
+import * as Settings from './Settings';
+import './Settings.scss';
 
 // Helper functions for creating tables and its parts
 const td = (text: string) => ContentModel.create<ContentModel.TableData>(
@@ -152,36 +152,35 @@ const DropdownMenu = (props: any) => {
   } as any;
 
   const buttonStyle = {
-    height: 20,
-    width: 20,
     border: 'none',
     outline: 'none',
+
   };
 
   return (
-    <div ref={ref as any} className="dropdown" style={style} contentEditable={false}>
+    <div ref={ref as any} className="dropdown table-dropdown" style={style} contentEditable={false}>
       <button type="button"
         style={buttonStyle}
-        className="dropdown-toggle"
+        className="dropdown-toggle btn"
         data-reference="parent"
         data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         <span className="sr-only">Toggle Dropdown</span>
       </button>
       <div className="dropdown-menu">
         <h6 className="dropdown-header">Insert</h6>
-        <a className="dropdown-item" onClick={onAddRowBefore}>Row before</a>
-        <a className="dropdown-item" onClick={onAddRowAfter}>Row after</a>
-        <a className="dropdown-item" onClick={onAddColumnBefore}>Column before</a>
-        <a className="dropdown-item" onClick={onAddColumnAfter}>Column after</a>
+        <div className="dropdown-item" onClick={onAddRowBefore}>Row before</div>
+        <div className="dropdown-item" onClick={onAddRowAfter}>Row after</div>
+        <div className="dropdown-item" onClick={onAddColumnBefore}>Column before</div>
+        <div className="dropdown-item" onClick={onAddColumnAfter}>Column after</div>
 
         <div className="dropdown-divider"></div>
 
         <h6 className="dropdown-header">Delete</h6>
-        <a className="dropdown-item" onClick={onDeleteRow}>Row</a>
-        <a className="dropdown-item" onClick={onDeleteColumn}>Column</a>
+        <div className="dropdown-item" onClick={onDeleteRow}>Row</div>
+        <div className="dropdown-item" onClick={onDeleteColumn}>Column</div>
 
         <div className="dropdown-divider"></div>
-        <a className="dropdown-item" onClick={onToggleHeader}>Toggle Header</a>
+        <div className="dropdown-item" onClick={onToggleHeader}>Toggle Header</div>
       </div>
     </div>
   );
@@ -237,17 +236,104 @@ export const TrEditor = (props: EditorProps<ContentModel.TableRow>) => {
   );
 };
 
+
+type TableSettingsProps = {
+  model: ContentModel.Table,
+  onEdit: (model: ContentModel.Table) => void,
+  onRemove: () => void,
+  commandContext: CommandContext,
+  editMode: boolean,
+};
+
+const toLink = (src: string) =>
+  'https://www.youtube.com/embed/' + (src === '' ? 'zHIIzcWqsP0' : src);
+
+
+const TableSettings = (props: TableSettingsProps) => {
+
+  // Which selection is active, URL or in course page
+  const [model, setModel] = useState(props.model);
+
+  const ref = useRef();
+
+  useEffect(() => {
+
+    // Inits the tooltips, since this popover rendres in a react portal
+    // this was necessary
+    if (ref !== null && ref.current !== null) {
+      ((window as any).$('[data-toggle="tooltip"]')).tooltip();
+    }
+  });
+
+  const setCaption = (caption: string) => setModel(Object.assign({}, model, { caption }));
+
+  const applyButton = (disabled: boolean) => <button onClick={(e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    props.onEdit(model);
+  }}
+  disabled={disabled}
+  className="btn btn-primary ml-1">Apply</button>;
+
+  return (
+    <div className="settings-editor-wrapper">
+      <div className="settings-editor" ref={ref as any}>
+
+        <div className="d-flex justify-content-between mb-2">
+          <div>
+            Table
+          </div>
+
+          <div>
+            <Settings.Action icon="fas fa-trash" tooltip="Remove Table" id="remove-button"
+              onClick={() => props.onRemove()}/>
+          </div>
+        </div>
+
+        <form className="form">
+          <label>Caption</label>
+          <input type="text" value={model.caption} onChange={e => setCaption(e.target.value)}
+            className="form-control mr-sm-2"/>
+        </form>
+
+        {applyButton(!props.editMode)}
+
+      </div>
+    </div>
+  );
+};
+
+
 export const TableEditor = (props: TableProps) => {
 
-  const selected = useSelected();
-  const focused = useFocused();
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const { attributes, children, editor } = props;
   const { model } = props;
 
   const editMode = getEditMode(editor);
 
-  const onEditCaption = (caption: string) => updateModel(editor, model, { caption });
+  const onEdit = (updated: ContentModel.Table) => {
+    updateModel<ContentModel.Table>(editor, model, updated);
+
+    setIsPopoverOpen(false);
+  };
+
+  const onRemove = () => {
+    ($('#remove-button') as any).tooltip('hide');
+
+    const path = ReactEditor.findPath(editor, model);
+    Transforms.removeNodes(editor, { at: path });
+
+    setIsPopoverOpen(false);
+  };
+
+  const contentFn = () => <TableSettings
+    model={model}
+    editMode={editMode}
+    commandContext={props.commandContext}
+    onRemove={onRemove}
+    onEdit={onEdit}/>;
 
   // Note that it is important that any interactive portions of a void editor
   // must be enclosed inside of a "contentEditable=false" container. Otherwise,
@@ -255,7 +341,7 @@ export const TableEditor = (props: TableProps) => {
   // events.
 
   return (
-    <div style={{ margin: '20px' }}>
+    <div className="ml-4 mr-4">
 
       <div>
         <table className="table table-bordered">
@@ -264,16 +350,12 @@ export const TableEditor = (props: TableProps) => {
           </tbody>
         </table>
       </div>
-
       <div contentEditable={false} style={{ userSelect: 'none' }}>
-        <div style={{ marginLeft: '30px' }}>
-          <LabelledTextEditor
-            label="Caption"
-            model={model.caption || ''}
-            onEdit={onEditCaption}
-            showAffordances={selected && focused}
-            editMode={editMode} />
-        </div>
+        <Settings.ToolPopupButton
+          contentFn={contentFn}
+          setIsPopoverOpen={setIsPopoverOpen}
+          isPopoverOpen={isPopoverOpen} />
+        <Settings.Caption caption={model.caption}/>
       </div>
     </div>
   );

@@ -6,9 +6,11 @@ import { Transforms } from 'slate';
 import { EditorProps, CommandContext } from './interfaces';
 import { Command, CommandDesc } from '../interfaces';
 import { updateModel } from './utils';
+import { Action } from './Settings';
 import * as Persistence from 'data/persistence/resource';
 
 import './Link.scss';
+import './Settings.scss';
 
 import guid from 'utils/guid';
 
@@ -74,16 +76,7 @@ interface Uninitialized {
 
 type LinkablePages = Uninitialized | Waiting | Persistence.PagesReceived;
 
-// Component for rendering a small action icon with tooltip.  Used for
-// the "copy", "open", and "remove" operations
-const Action = ({ icon, onClick, tooltip, id }: any) => {
-  return (
-    <span id={id} data-toggle="tooltip" data-placement="top" title={tooltip}
-      style={ { cursor: 'pointer ' }}>
-      <i onClick={onClick} className={icon + ' mr-2'}></i>
-    </span>
-  );
-};
+
 
 const ExistingLink = (props: ExistingLinkProps) => {
 
@@ -244,8 +237,8 @@ const ExistingLink = (props: ExistingLinkProps) => {
       </React.Fragment>;
 
   return (
-    <div className="link-editor-wrapper">
-      <div className="link-editor" ref={ref as any}>
+    <div className="settings-editor-wrapper">
+      <div className="settings-editor" ref={ref as any}>
 
           <div className="d-flex justify-content-between mb-2">
             <div>
@@ -257,7 +250,7 @@ const ExistingLink = (props: ExistingLinkProps) => {
                 onClick={() => props.onVisit(href)}/>
               <Action icon="far fa-copy" tooltip="Copy link"
                 onClick={() => props.onCopy(href)}/>
-              <Action icon="fas fa-times-circle" tooltip="Remove link" id="remove-button"
+              <Action icon="fas fa-trash" tooltip="Remove link" id="remove-button"
                 onClick={() => props.onRemove()}/>
             </div>
           </div>

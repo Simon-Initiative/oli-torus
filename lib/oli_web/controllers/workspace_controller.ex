@@ -19,7 +19,7 @@ defmodule OliWeb.WorkspaceController do
       author: current_author,
       projects: projects
     }
-    render %{conn | assigns: (Map.merge(conn.assigns, params) |> Map.put(:page_title, "Projects - "))}, "projects.html"
+    render %{conn | assigns: (Map.merge(conn.assigns, params) |> Map.put(:title, "Projects"))}, "projects.html"
   end
 
   def account(conn, _params) do
@@ -32,7 +32,7 @@ defmodule OliWeb.WorkspaceController do
       %{theme: url} ->
         Authoring.get_theme_by_url!(url)
     end
-    render conn, "account.html", title: "Account", active: :account, institutions: institutions, themes: themes, active_theme: active_theme, page_title: "Account - "
+    render conn, "account.html", title: "Account", active: :account, institutions: institutions, themes: themes, active_theme: active_theme, title: "Account"
   end
 
   def update_theme(conn, %{"id" => theme_id} = _params) do

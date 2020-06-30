@@ -3,9 +3,8 @@ import React, { useState } from 'react';
 import { ProjectSlug } from 'data/types';
 import { ResourceContent, Activity, ActivityReference, StructuredContent } from 'data/content/resource';
 import { ActivityEditorMap } from 'data/content/editors';
-import { toSimpleText } from '../editor/utils';
 import { DragHandle } from './DragHandle';
-import { getContentDescription } from 'data/content/utils';
+import { getContentDescription, toSimpleText } from 'data/content/utils';
 import * as Persistence from 'data/persistence/activity';
 import './Outline.scss';
 
@@ -68,6 +67,7 @@ const DropTarget = ({ id, index, onDrop }) => {
 // Outline of the content
 type OutlineEntryProps = {
   description: string | JSX.Element,
+  label: string,
   dragPayload: DragPayload,
   content: ResourceContent,
   editorMap: ActivityEditorMap,
@@ -131,8 +131,7 @@ const OutlineEntry = (props: OutlineEntryProps) => {
           <DragHandle/>
           <div className="m-2 text-truncate">
             <div className="d-flex justify-content-between">
-              <div className="mb-1">{content.type === 'content' ? 'Content' : 'Activity'}</div>
-              {content.purpose !== 'None' ? <small>{content.purpose}</small> : null}
+              <div className="mb-1">{props.label}</div>
             </div>
             <small>{description}</small>
           </div>
@@ -140,6 +139,13 @@ const OutlineEntry = (props: OutlineEntryProps) => {
       </div>
     </div>
   );
+};
+
+const getFriendlyName = (item: ActivityReference, editorMap: ActivityEditorMap,
+  activities: Immutable.Map<string, Activity>) => {
+
+  const activity = activities.get(item.activitySlug);
+  return editorMap[(activity as any).typeSlug].friendlyName;
 };
 
 
@@ -153,7 +159,8 @@ export const Outline = (props: OutlineProps) => {
   const onFocus = (index: number) => {
     const item = content.get(index) as ResourceContent;
     const desc = item.type === 'content'
-      ? getContentDescription(item) : editorMap[item.type].friendlyName;
+      ? getContentDescription(item)
+      : getFriendlyName(item, editorMap, activities);
 
     setAssisstive(
       `Listbox. ${index + 1} of ${content.size}. ${desc}.`);
@@ -172,7 +179,7 @@ export const Outline = (props: OutlineProps) => {
 
     const newIndex = inserted.findIndex(c => c.id === item.id);
     const desc = item.type === 'content'
-      ? 'Content' : editorMap[item.type].friendlyName;
+      ? 'Content' : getFriendlyName(item, editorMap, activities);
 
     setAssisstive(
       `Listbox. ${newIndex + 1} of ${content.size}. ${desc}.`);
@@ -262,13 +269,17 @@ export const Outline = (props: OutlineProps) => {
   const entries = content.toArray().map((c, i) => {
 
     let description;
+    let label = '';
+
     let dragPayload : DragPayload;
     if (c.type === 'content') {
       description = getContentDescription(c);
+      label = 'Content';
       dragPayload = c;
     } else if (activities.has(c.activitySlug)) {
       const activity = activities.get(c.activitySlug);
-      description = editorMap[(activity as any).typeSlug].friendlyName;
+      label = editorMap[(activity as any).typeSlug].friendlyName;
+      description = '';
       dragPayload = {
         type: 'ActivityPayload',
         id: c.id,
@@ -285,6 +296,7 @@ export const Outline = (props: OutlineProps) => {
       <OutlineEntry
         key={c.id}
         description={description}
+        label={label}
         dragPayload={dragPayload}
         content={c}
         activities={activities}

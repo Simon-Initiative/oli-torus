@@ -35,7 +35,7 @@ defmodule Oli.Content.Activity.HtmlTest do
       rendered_html = Activity.render(%Context{user: author, activity_map: activity_map}, element, Activity.Html)
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
 
-      assert rendered_html_string =~ "<oli-multiple-choice-delivery class=\"activity\" graded=\"false\" state=\"{ \"active\": true }\" model=\"{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}\""
+      assert rendered_html_string =~ "<oli-multiple-choice-delivery class=\"activity-container\" graded=\"false\" state=\"{ \"active\": true }\" model=\"{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}\""
     end
 
     test "renders malformed activity gracefully", %{author: author} do
@@ -61,7 +61,7 @@ defmodule Oli.Content.Activity.HtmlTest do
         rendered_html = Activity.render(%Context{user: author, activity_map: activity_map}, element, Activity.Html)
         rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
 
-        assert rendered_html_string =~ "<div class=\"activity invalid\">Activity is invalid"
+        assert rendered_html_string =~ "<div class=\"activity invalid alert alert-danger\">Activity is invalid"
       end) =~ "Activity is invalid"
     end
 
@@ -89,7 +89,7 @@ defmodule Oli.Content.Activity.HtmlTest do
         rendered_html = Activity.render(%Context{user: author, activity_map: activity_map}, element, Activity.Html)
         rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
 
-        assert rendered_html_string =~ "<div class=\"activity error\">This activity could not be rendered"
+        assert rendered_html_string =~ "<div class=\"activity error alert alert-danger\">An error occurred and this activity could not be shown. Please contact support with issue"
       end) =~ "ActivitySummary with id 1 missing from activity_map"
     end
   end

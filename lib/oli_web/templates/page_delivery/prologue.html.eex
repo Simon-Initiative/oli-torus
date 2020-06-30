@@ -1,4 +1,5 @@
-<div class="jumbotron">
+<% prologue_class = "jumbotron prologue " <> if @allow_attempt?, do: "allow-attempt", else: "" %>
+<div class="<%= prologue_class %>">
   <h3 class="display-4"><%= @title %></h3>
   <p class="lead" style="color: darkred;">This is a <strong>graded assessment</strong></p>
 
@@ -7,13 +8,10 @@
   <%= if @allow_attempt? do %>
 
     <hr class="my-4">
-    <p>When you are ready to begin, click:</p>
+    <p>When you are ready to begin, you may <strong>Start Attempt</strong>.</p>
     <p class="lead">
       <%= link "Start Attempt", class: "btn btn-primary btn-lg", to: Routes.page_delivery_path(@conn, :start_attempt, @context_id, @slug) %>
     </p>
 
   <% end  %>
 </div>
-
-<%= render "_previous_next_nav.html",
-  conn: @conn, context_id: @context_id, previous_page: @previous_page, next_page: @next_page %>

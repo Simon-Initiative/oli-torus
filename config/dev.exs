@@ -13,6 +13,11 @@ config :oli, Oli.Repo,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
+force_ssl = case System.get_env("FORCE_SSL", "true") do
+  "true" -> [rewrite_on: [:x_forwarded_proto]]
+  _ -> false
+end
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #
@@ -20,15 +25,15 @@ config :oli, Oli.Repo,
 # watchers to your application. For example, we use it
 # with webpack to recompile .js and .css sources.
 config :oli, OliWeb.Endpoint,
-  http: [port: 4000],
-  url: [host: "localhost"],
+  http: [port: String.to_integer(System.get_env("PORT") || "4000")],
+  url: [host: System.get_env("HOST") || "localhost"],
   https: [
     port: 443,
     otp_app: :oli,
     keyfile: "priv/ssl/localhost.key",
     certfile: "priv/ssl/localhost.crt",
   ],
-  force_ssl: [rewrite_on: [:x_forwarded_proto]],
+  force_ssl: force_ssl,
   debug_errors: true,
   code_reloader: true,
   check_origin: false,

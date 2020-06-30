@@ -71,7 +71,10 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
         <button
           id=<%= "delete_#{@objective_mapping.resource.id}" %>
           title="Delete"
-          class="ml-1 btn btn-sm btn-outline-danger" data-toggle="modal" data-target="#exampleModalCenter"
+          phx-click="prepare_delete"
+          data-backdrop="static"
+          data-keyboard="false"
+          class="ml-1 btn btn-sm btn-outline-danger"
          >
          <i class="fas fa-trash fa-lg"></i>
         </button>
