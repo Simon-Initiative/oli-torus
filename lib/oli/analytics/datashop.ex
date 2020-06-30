@@ -26,6 +26,7 @@ defmodule Oli.Analytics.Datashop do
   defp create_messages(project_id) do
     project = Course.get_project!(project_id)
     publication = Publishing.get_latest_published_publication_by_slug!(project.slug)
+    dataset_name = Utils.make_dataset_name(project.slug)
 
     Attempts.get_part_attempts_and_users_for_publication(publication.id)
     |> Enum.group_by(
@@ -34,9 +35,8 @@ defmodule Oli.Analytics.Datashop do
     # now we have a list of keys of `revision_slug-user_email`, each of which has a list of part attempts
     |> Enum.map(fn {{email, activity_slug, part_id}, part_attempts} ->
 
-      context_message_id = Utils.make_context_message_id(email, activity_slug, part_id)
+      context_message_id = Utils.make_unique_id(activity_slug, part_id)
       problem_name = Utils.make_problem_name(activity_slug, part_id)
-      dataset_name = Utils.make_dataset_name(project.slug)
 
       context_message = Context.setup(%{
         name: "START_PROBLEM",
@@ -73,7 +73,7 @@ defmodule Oli.Analytics.Datashop do
             fn {hint_id, hint_index} ->
 
               # transaction id connects tool and tutor messages
-              transaction_id = Utils.make_transaction_id(context_message_id)
+              transaction_id = Utils.make_unique_id(activity_slug, part_id)
 
               [
                 Tool.setup(%{
@@ -107,7 +107,7 @@ defmodule Oli.Analytics.Datashop do
               ]
             end)
 
-          transaction_id = Utils.make_transaction_id(context_message_id)
+          transaction_id = Utils.make_unique_id(activity_slug, part_id)
 
           hint_message_pairs ++ [
             Tool.setup(%{

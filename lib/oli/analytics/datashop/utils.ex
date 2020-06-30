@@ -42,13 +42,9 @@ defmodule Oli.Analytics.Datashop.Utils do
   end
 
   # Datashop "contexts" are defined by a "session" of {user, problem, time} tuples
-  # We don't make use of the timing information now, so it's omitted
-  def make_context_message_id(email, activity_slug, part_id) do
-    "#{email}-#{activity_slug}-part#{part_id}"
-  end
-
-  def make_transaction_id(context_message_id) do
-    context_message_id <> "-" <> uuid()
+  # We don't make use of the timing information now, so it's omitted.
+  def make_unique_id(activity_slug, part_id) do
+    "#{activity_slug}-part#{part_id}-#{uuid()}"
   end
 
   def make_problem_name(activity_slug, part_id) do
