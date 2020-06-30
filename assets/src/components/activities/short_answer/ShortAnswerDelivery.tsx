@@ -23,12 +23,14 @@ type InputProps = {
 
 const Input = (props: InputProps) => {
 
+  const input = props.input === null ? undefined : props.input;
+
   if (props.inputType === 'numeric') {
     return (
       <input type="number"
         className="form-control"
         onChange={(e: any) => props.onChange(e.target.value)}
-        value={props.input}/>
+        value={input}/>
     );
   }
   if (props.inputType === 'text') {
@@ -36,7 +38,7 @@ const Input = (props: InputProps) => {
       <input type="text"
         className="form-control"
         onChange={(e: any) => props.onChange(e.target.value)}
-        value={props.input}/>
+        value={input}/>
     );
   }
   return (
@@ -45,7 +47,7 @@ const Input = (props: InputProps) => {
       cols={80}
       className="form-control"
       onChange={(e: any) => props.onChange(e.target.value)}>
-      {props.input}
+      {input}
     </textarea>
   );
 };
@@ -113,7 +115,7 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
 
   const ungradedDetails = props.graded ? null : [
     evaluationSummary,
-    <Hints onClick={onRequestHint} hints={hints}
+    <Hints key="hints" onClick={onRequestHint} hints={hints}
       hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>];
 
   return (
