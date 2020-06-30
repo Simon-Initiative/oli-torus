@@ -251,7 +251,11 @@ defmodule OliWeb.Router do
   scope "/admin", OliWeb do
     pipe_through [:browser, :csrf_always, :protected, :admin]
     live_dashboard "/dashboard", metrics: OliWeb.Telemetry
-    live "/history/:slug", RevisionHistory
+  end
+
+  scope "/project", OliWeb do
+    pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring, :authorize_project, :admin]
+    live "/:project_id/history/:slug", RevisionHistory
   end
 
   # routes only accessible to developers

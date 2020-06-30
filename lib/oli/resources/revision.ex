@@ -6,6 +6,11 @@ defmodule Oli.Resources.Revision do
 
   schema "revisions" do
 
+    #
+    # NOTE: any field additions made here should be made also
+    # in `Oli.Resources.create_revision_from_previous`
+    #
+
     # fields that apply to all types
     field :title, :string
     field :slug, :string

@@ -23,29 +23,15 @@
   }
 
   .workspace-header {
-    display: flex;
-    flex-direction: row;
     border-bottom: 1px solid $gray-400;
     padding: 20px;
     position: relative;
     background-color: $workspace-header-bg;
+    width: 100%;
 
     .page-title {
       font-weight: bold;
-      width: 150px;
     }
-
-    .page-controls {
-      width: 150px;
-      display: flex;
-      flex-direction: row-reverse;
-    }
-
-    .project-title {
-      flex: 1;
-      text-align: center;
-    }
-
 
   }
 

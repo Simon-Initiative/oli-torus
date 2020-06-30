@@ -17,7 +17,18 @@ import { initActivityBridge } from './activity_bridge';
 const csrfToken
   = (document as any).querySelector('meta[name="csrf-token"]').getAttribute('content');
 const liveSocket
-  = new LiveSocket('/live', Socket, { hooks: Hooks, params: { _csrf_token: csrfToken } });
+  = new LiveSocket('/live', Socket, {
+    hooks: Hooks,
+    params: { _csrf_token: csrfToken },
+    metadata: {
+      keydown: (e: any, el: any) => {
+        return {
+          key: e.key,
+          shiftKey: e.shiftKey,
+        };
+      },
+    },
+  });
 
 // Show progress bar on live navigation and form submits
 window.addEventListener('phx:page-loading-start', info => NProgress.start());

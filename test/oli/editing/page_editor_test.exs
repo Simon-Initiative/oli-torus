@@ -18,6 +18,8 @@ defmodule Oli.EditingTest do
     test "edit/4 creates a new revision when no lock in place", %{author: author, revision1: revision1, project: project } do
 
       content = %{ "model" => [%{"type" => "p", children: [%{ "text" => "A paragraph."}] }]}
+
+      PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
       {:ok, updated_revision} = PageEditor.edit(project.slug, revision1.slug, author.email, %{ "content" => content })
 
       assert revision1.id != updated_revision.id
@@ -27,7 +29,7 @@ defmodule Oli.EditingTest do
 
       content = %{ "model" => [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }] }
       title = "a new title"
-
+      PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
       {:ok, updated_revision} = PageEditor.edit(project.slug, revision1.slug, author.email, %{ "title" => title, "content" => content })
 
       # read it back from the db and verify both edits were made
@@ -40,7 +42,7 @@ defmodule Oli.EditingTest do
     test "edit/4 can handle string keys in the update map", %{author: author, revision1: revision1, project: project} do
 
       title = "a new title"
-
+      PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
       {:ok, updated_revision} = PageEditor.edit(project.slug, revision1.slug, author.email, %{ "title" => title })
 
       # read it back from the db and verify both edits were made
@@ -56,6 +58,7 @@ defmodule Oli.EditingTest do
       |> Publishing.update_resource_mapping(%{lock_updated_at: Time.now(), locked_by_id: author.id})
 
       content = %{ "model" => [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }] }
+
       {:ok, updated_revision} = PageEditor.edit(project.slug, revision1.slug, author.email, %{ "content" => content })
 
       assert revision1.id == updated_revision.id
@@ -68,6 +71,7 @@ defmodule Oli.EditingTest do
       |> Publishing.update_resource_mapping(%{lock_updated_at: yesterday(), locked_by_id: author.id})
 
       content = %{ "model" => [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }] }
+
       {:ok, updated_revision} = PageEditor.edit(project.slug, revision1.slug, author.email, %{ "content" => content })
 
       assert revision1.id != updated_revision.id
@@ -80,6 +84,7 @@ defmodule Oli.EditingTest do
 
       # now try to make the edit with the original user
       content = %{ "model" => [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }] }
+      PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
       result = PageEditor.edit(project.slug, revision1.slug, author.email, %{ "content" => content })
 
       id = author2.id

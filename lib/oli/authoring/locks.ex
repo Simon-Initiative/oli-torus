@@ -112,15 +112,15 @@ defmodule Oli.Authoring.Locks do
 
       # Acquire the lock if held already by this user and the lock is expired or its last_updated_date is empty
       # otherwise, simply update it
-      %{locked_by_id: ^user_id} = mapping -> lock_action(mapping, user_id, &expired_or_empty?/1, {:acquired}, {:updated}, now())
+      %{locked_by_id: ^user_id} = mapping -> lock_action(mapping, user_id, &expired_or_empty_predicate?/1, {:acquired}, {:updated}, now())
 
-      # Acquire the lock if no user has this mapping locked
-      %{locked_by_id: nil} = mapping -> lock_action(mapping, user_id, &always?/1, {:acquired}, {:acquired}, now())
-
-      # Otherwise, another user may have this locked, acquire it if
-      # the lock is expired, otherwise report lock not acquired
-      %{ locked_by_id: other_user_id, lock_updated_at: lock_updated_at} = mapping ->
-        lock_action(mapping, user_id, &expired?/1, {:acquired}, {:lock_not_acquired, {other_user_id, lock_updated_at}}, now())
+      # Otherwise, another user may have this locked, or it was locked by this
+      # user and it expired and an interleaving lock, redit, release by another user
+      # has taken place.  We must not acquire here since this could lead to lost changes as
+      # the client has a copy of content in client-side memory and is seeking to update this
+      # revision.
+      %{ locked_by_id: other_user_id, lock_updated_at: lock_updated_at} ->
+        {:lock_not_acquired, {other_user_id, lock_updated_at}}
     end
   end
 
@@ -175,7 +175,11 @@ defmodule Oli.Authoring.Locks do
     NaiveDateTime.diff(now(), to_use) > @ttl
   end
 
-  defp expired_or_empty?(%{ lock_updated_at: lock_updated_at} = mapping) do
+  def expired_or_empty?(%{ locked_by_id: locked_by_id} = mapping) do
+    locked_by_id == nil or expired?(mapping)
+  end
+
+  def expired_or_empty_predicate?(%{ lock_updated_at: lock_updated_at} = mapping) do
     lock_updated_at == nil or expired?(mapping)
   end
 

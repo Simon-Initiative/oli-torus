@@ -2,8 +2,6 @@
 .project-card {
   width: 270px;
   height: 150px;
-  margin-right: 16px;
-  margin-bottom: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -35,9 +33,11 @@
       color: $link-color;
     }
   }
-
-  .project-card-link:hover {
-    text-decoration: none;
+  .project-card-link {
+    margin: 0 16px 16px 0;
+    &:hover {
+      text-decoration: none;
+    }
   }
 
   p:last-of-type {

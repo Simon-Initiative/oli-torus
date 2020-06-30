@@ -2,6 +2,25 @@
   <div class="row">
     <div class="col-12">
 
+      <h2>Details</h2>
+
+      <%= form_for @changeset, Routes.project_path(@conn, :update, @project), fn f -> %>
+
+        <div class="form-label-group mb-3">
+          <%= label f, :title, "Course Title", class: "control-label" %>
+          <%= text_input f, :title, class: "form-control", placeholder: "The title of your course...", required: false %>
+        </div>
+
+        <div class="form-label-group mb-3">
+          <%= label f, :description, "Course Description", class: "control-label" %>
+          <%= textarea f, :description, class: "form-control", placeholder: "A brief description of your course...", required: false %>
+        </div>
+        <div class="d-flex flex-row-reverse">
+          <%= submit "Save", class: "btn btn-md btn-primary mt-2" %>
+        </div>
+
+      <% end %>
+
       <h2>Collaborators</h2>
 
       <%= form_for @conn, Routes.collaborator_path(@conn, :create, @project), [id: "form-add-collaborator"], fn f -> %>
@@ -40,16 +59,7 @@
         </tbody>
       </table>
 
-      <hr class="my-4 mt-5" />
-      <h2>Details</h2>
 
-      <%= form_for @changeset, Routes.project_path(@conn, :update, @project), fn f -> %>
-        <div class="form-label-group">
-          <%= label f, :description, "Course Description", class: "control-label" %>
-          <%= textarea f, :description, class: "form-control", placeholder: "A brief description of your course...", required: false %>
-        </div>
-        <%= submit "Save Description", class: "btn btn-md btn-primary mt-2 float-right" %>
-      <% end %>
 
       <%= button("Download Datashop Export", to: Routes.project_path(@conn, :download_datashop, @project), method: :post, class: "btn btn-primary") %>
 

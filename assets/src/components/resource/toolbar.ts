@@ -10,6 +10,10 @@ import { commandDesc as tableCommandDesc } from '../editor/editors/Table';
 import { ResourceType } from 'data/content/resource';
 
 const toolbarItems: ToolbarItem[] = [
+  tableCommandDesc,
+  {
+    type: 'GroupDivider',
+  },
   quoteCommandDesc,
   {
     type: 'GroupDivider',
@@ -26,7 +30,6 @@ const toolbarItems: ToolbarItem[] = [
     type: 'GroupDivider',
   },
   codeCommandDesc,
-  tableCommandDesc,
 ];
 
 export function getToolbarForResourceType(resourceType: ResourceType) : ToolbarItem[] {

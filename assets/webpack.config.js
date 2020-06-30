@@ -96,7 +96,10 @@ module.exports = (env, options) => ({
         use: [
           MiniCssExtractPlugin.loader,
           {
-            loader: 'css-loader'
+            loader: 'css-loader',
+            options: {
+              sourceMap: true,
+            },
           },
           {
               loader: 'sass-loader',

@@ -290,6 +290,21 @@ defmodule Oli.Delivery.Attempts do
       select: a)
   end
 
+  @doc """
+  Retrieves all resource accesses for a given context and user
+
+  `[%ResourceAccess{}, ...]`
+  """
+  def get_user_resource_accesses_for_context(context_id, user_id) do
+    Repo.all(from a in ResourceAccess,
+      join: s in Section, on: a.section_id == s.id,
+      join: p in PublishedResource, on: s.publication_id == p.publication_id,
+      join: r in Revision, on: p.revision_id == r.id,
+      where: s.context_id == ^context_id and a.user_id == ^user_id,
+      distinct: a.id,
+      select: a)
+  end
+
   defp get_resource_access(resource_id, context_id, user_id) do
     Repo.one(from a in ResourceAccess,
       join: s in Section, on: a.section_id == s.id,
@@ -777,9 +792,9 @@ defmodule Oli.Delivery.Attempts do
 
   defp submit_graded_page_activity(role, context_id, activity_attempt_guid) do
 
-    Repo.transaction(fn ->
+    part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
-      part_attempts = get_latest_part_attempts(activity_attempt_guid)
+    if Enum.all?(part_attempts, fn pa -> pa.response != nil end) do
 
       roll_up_fn = fn result ->
         rollup_part_attempt_evaluations(activity_attempt_guid)
@@ -798,7 +813,10 @@ defmodule Oli.Delivery.Attempts do
         {:error, error} -> Repo.rollback(error)
       end
 
-    end)
+    else
+      Repo.rollback({:not_all_answered})
+    end
+
 
   end
 

@@ -23,8 +23,7 @@ defmodule OliWeb.Objectives.ObjectiveForm do
       class: "form-control form-control-sm mb-2 mr-sm-2 mb-sm-0 title container-fluid form-grow" <> error_class(f, :title, "is-invalid"),
       placeholder: @place_holder,
       id: "input-title-" <> @form_id,
-      required: true,
-      autofocus: focusHelper(f, :title, default: true) %>
+      required: true %>
     <%= hidden_input f,
       :parent_slug,
       value: @parent_slug_value %>
