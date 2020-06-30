@@ -81,8 +81,21 @@ defmodule Oli.Publishing do
       [%Publication{}, ...]
   """
   def available_publications() do
-    Repo.all(Publication, open_and_free: true) |> Repo.preload([:project])
+    subquery = from t in Publication,
+      select: %{project_id: t.project_id, max_date: max(t.updated_at)},
+      where: t.published == true,
+      group_by: t.project_id
+
+    query = from pub in Publication,
+      join: u in subquery(subquery), on: pub.project_id == u.project_id and u.max_date == pub.updated_at,
+      join: proj in Project, on: pub.project_id == proj.id,
+      where: pub.open_and_free == true,
+      preload: [:project],
+      select: pub
+
+    Repo.all(query)
   end
+
   @spec available_publications(Oli.Accounts.Author.t()) :: any
   def available_publications(%Author{} = author) do
 
@@ -131,11 +144,6 @@ defmodule Oli.Publishing do
           resource_id: resource.id,
           revision_id: resource_revision.id,
         })
-        # {:ok, objective_mapping} <- create_objective_mapping(%{
-        #   publication_id: publication.id,
-        #   objective_id: objective.id,
-        #   revision_id: objective_revision.id,
-        # })
       do
         %{}
         |> Map.put(:publication, publication)
@@ -436,7 +444,20 @@ defmodule Oli.Publishing do
     # push forward all existing sections to this newly published publication
     update_all_section_publications(project, active_publication)
 
+    Oli.Authoring.Broadcaster.broadcase_publication(result, project.slug)
+
     result
+  end
+
+  def get_all_mappings_for_resource(resource_id, project_slug) do
+
+    Repo.all(from mapping in PublishedResource,
+      join: p in Publication, on: mapping.publication_id == p.id,
+      join: project in Project, on: p.project_id == project.id,
+      where: mapping.resource_id == ^resource_id and project.slug == ^project_slug,
+      select: mapping,
+      preload: [:publication, :revision])
+
   end
 
   defp copy_mapping_for_publication(%PublishedResource{} = resource_mapping, publication) do
@@ -496,11 +517,11 @@ defmodule Oli.Publishing do
   end
 
   @doc """
-  Returns a list of {resource, revision} tuples for a publication
+  Returns a map of resource ids to {resource, revision} tuples for a publication
 
   ## Examples
       iex> get_resource_revisions_for_publication(123)
-      [{%Resource{}, %Revision{}}, ...]
+      %{124 => [{%Resource{}, %Revision{}}], ...}
   """
   def get_resource_revisions_for_publication(publication) do
     resource_mappings = get_resource_mappings_by_publication(publication.id)

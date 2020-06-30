@@ -1,10 +1,10 @@
-<a id='skip-nav' class='screenreader-text' href='#main-content'>
-  Skip Navigation
-</a>
-
 <%= render_layout "authoring.html", assigns do %>
 
 <div class="workspace">
+  <a id='skip-nav' tabindex="1" class='screenreader-text' href='#main-content'>
+    Skip Navigation
+  </a>
+
   <div class="workspace-left">
     <%= render OliWeb.LayoutView, "_#{if @conn.params["project_id"] do "project" else "workspace" end}_sidebar.html", assigns %>
   </div>

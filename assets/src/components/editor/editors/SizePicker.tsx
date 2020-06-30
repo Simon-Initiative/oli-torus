@@ -50,7 +50,7 @@ export const SizePicker = (props: SizePickerProps) => {
   const cols = range(numCols);
 
   const width = (numCols * 19 + 10) + 'px';
-  const height = (numRows * 28 + 15) + 'px';
+  const height = (numRows * 22 + 5) + 'px';
 
   const mapRow = (row: number) => {
     const cells = cols.map((col: number) => (

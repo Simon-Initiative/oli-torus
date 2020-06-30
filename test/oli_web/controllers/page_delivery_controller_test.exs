@@ -26,7 +26,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn = conn
       |> get(Routes.page_delivery_path(conn, :page, section.context_id, revision.slug))
 
-      assert html_response(conn, 200) =~ "<h3>"
+      assert html_response(conn, 200) =~ "<h1>"
     end
 
 
@@ -52,7 +52,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn = conn
       |> get(Routes.page_delivery_path(conn, :page, section.context_id, page_revision.slug))
 
-      assert html_response(conn, 200) =~ "When you are ready to begin, click"
+      assert html_response(conn, 200) =~ "When you are ready to begin, you may"
 
       # now start the attempt
       conn = conn

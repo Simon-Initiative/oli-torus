@@ -2,7 +2,7 @@ defmodule Oli.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "user" do
+  schema "users" do
     field :email, :string, default: ""
     field :first_name, :string, default: ""
     field :last_name, :string, default: ""

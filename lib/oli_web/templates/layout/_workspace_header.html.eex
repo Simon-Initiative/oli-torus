@@ -33,9 +33,8 @@
   </div>
 </div>
 
-<div class="workspace-header">
+<div class="workspace-header d-flex justify-content-between">
   <div class="page-title"><%= @title %></div>
-  <div class="flex-fill"></div>
   <div class="page-controls">
     <button id="button-new-project"
       class="btn btn-sm btn-primary"

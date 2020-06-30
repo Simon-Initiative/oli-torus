@@ -47,7 +47,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     :: {:ok, %Revision{}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:lock_not_acquired}} | {:error, {:not_authorized}}
   def edit(project_slug, revision_slug, activity_slug, author_email, update) do
 
-    with {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
+    result = with {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
          {:ok, activity} <- Resources.get_resource_from_slug(activity_slug) |> trap_nil(),
@@ -82,6 +82,13 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
     else
       error -> error
+    end
+
+    case result do
+      {:ok, revision} ->
+        Broadcaster.broadcast_revision(revision, project_slug)
+        {:ok, revision}
+      e -> e
     end
 
   end
@@ -158,14 +165,11 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   # Applies the update to the revision, converting any objective slugs back to ids
-  defp update_revision(revision, update, project_slug) do
+  defp update_revision(revision, update, _) do
     objectives = if Map.has_key?(update, "objectives"), do: Map.get(update, "objectives"), else: revision.objectives
     parts = update["content"]["authoring"]["parts"]
     update = sync_objectives_to_parts(objectives, update, parts)
     {:ok, updated} = Resources.update_revision(revision, update)
-
-    # Broadcast this revision creation
-    Broadcaster.broadcast_revision(updated, project_slug)
 
     updated
   end

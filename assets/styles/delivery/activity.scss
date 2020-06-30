@@ -1,5 +1,8 @@
+@import "delivery/variables";
+
 .activity {
-  margin: 20px 0;
+  margin-top: 1em;
+  margin-bottom: 4em;
 
   &.evaluated {
     .choice {
@@ -32,20 +35,27 @@
   .choice {
     display: inline-flex;
     align-items: top;
-    border-width: 1px 2px 3px 1px;
+    border-width: 1px;
     padding: 12px 16px;
     border-style: solid;
     border-color: #e5e5e5;
     cursor: pointer;
 
     &:hover {
-      background-color: lighten($choice-selected-bg, 3%);
+      background-color: lighten($choice-selected-bg, 5%);
+
+      .choice-index {
+        background-color: $white;
+      }
     }
 
     &.selected {
       color: $choice-selected-color;
       background-color: $choice-selected-bg;
       border-color: $choice-selected-border-color;
+      -webkit-box-shadow: 2px 2px 0px 0px $choice-selected-border-color;
+      -moz-box-shadow: 2px 2px 0px 0px $choice-selected-border-color;
+      box-shadow: 2px 2px 0px 0px $choice-selected-border-color;
 
       .choice-index {
         border: 2px solid $choice-selected-color;

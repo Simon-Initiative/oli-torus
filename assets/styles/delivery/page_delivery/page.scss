@@ -1,0 +1,63 @@
+@import "delivery/variables";
+
+#wrapper {
+  display: flex;
+  width: 100%;
+  position: relative;
+}
+
+#sidebar {
+  width: 250px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: all 0.3s;
+
+  .page-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 10px;
+  }
+
+  &.outline {
+    .list-group-item.list-group-item-action.active .text-secondary {
+      color: $gray-200 !important;
+    }
+  }
+}
+
+#sidebar .header {
+  height: 50px;
+}
+
+#content {
+  flex: 1;
+  padding: 0 30px;
+  margin-left: 250px;
+}
+
+/** override styles for devices medium-sized and smaller */
+@include media-breakpoint-down(md) {
+  #sidebar {
+    display: none;
+  }
+
+  #content {
+    margin-left: 0px;
+  }
+}
+
+.course-btn {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#content {
+  /** images should scale to available width if larger than available width */
+  img {
+    max-width: 100%;
+  }
+}
