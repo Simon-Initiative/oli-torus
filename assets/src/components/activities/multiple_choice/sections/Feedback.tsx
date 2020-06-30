@@ -36,7 +36,7 @@ export const Feedback = ({ onEditResponse, model, editMode, projectSlug }: Feedb
           onEdit={content => onEditResponse(correctResponse.id, content)}/>
       </div>
       {incorrectResponses.map((response, index) =>
-        <div className="mb-3">
+        <div className="mb-3" key={response.id}>
           <Description>
             <IconIncorrect /> Feedback for Incorrect Choice {index + 1}
           </Description>

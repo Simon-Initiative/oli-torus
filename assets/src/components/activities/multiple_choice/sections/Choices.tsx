@@ -48,7 +48,7 @@ export const Choices = ({ onAddChoice, onEditChoice, onRemoveChoice, editMode, m
         key="correct" editMode={editMode} text={correctChoice.content}
         onEdit={content => onEditChoice(correctChoice.id, content)} />
       {incorrectChoices.map((choice, index) =>
-        <React.Fragment>
+        <React.Fragment key={choice.id}>
           <Description>
             <IconIncorrect /> Incorrect Choice {index + 1}
           </Description>

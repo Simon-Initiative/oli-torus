@@ -141,6 +141,13 @@ const OutlineEntry = (props: OutlineEntryProps) => {
   );
 };
 
+const getFriendlyName = (item: ActivityReference, editorMap: ActivityEditorMap,
+  activities: Immutable.Map<string, Activity>) => {
+
+  const activity = activities.get(item.activitySlug);
+  return editorMap[(activity as any).typeSlug].friendlyName;
+};
+
 
 // Outline of the content
 export const Outline = (props: OutlineProps) => {
@@ -152,7 +159,8 @@ export const Outline = (props: OutlineProps) => {
   const onFocus = (index: number) => {
     const item = content.get(index) as ResourceContent;
     const desc = item.type === 'content'
-      ? getContentDescription(item) : editorMap[item.type].friendlyName;
+      ? getContentDescription(item)
+      : getFriendlyName(item, editorMap, activities);
 
     setAssisstive(
       `Listbox. ${index + 1} of ${content.size}. ${desc}.`);
@@ -171,7 +179,7 @@ export const Outline = (props: OutlineProps) => {
 
     const newIndex = inserted.findIndex(c => c.id === item.id);
     const desc = item.type === 'content'
-      ? 'Content' : editorMap[item.type].friendlyName;
+      ? 'Content' : getFriendlyName(item, editorMap, activities);
 
     setAssisstive(
       `Listbox. ${newIndex + 1} of ${content.size}. ${desc}.`);
