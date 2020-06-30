@@ -121,6 +121,7 @@ defmodule OliWeb.Router do
     post "/:project_id/publish", ProjectController, :publish_active
     post "/:project_id/review", ProjectController, :review_project
     delete "/:project_id/review", ProjectController, :dismiss_warning
+    post "/:project_id/datashop", ProjectController, :download_datashop
 
     # Project
     put "/:project_id", ProjectController, :update

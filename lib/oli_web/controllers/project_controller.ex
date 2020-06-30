@@ -7,6 +7,7 @@ defmodule OliWeb.ProjectController do
   alias Oli.Authoring.Course.Project
   alias Oli.Publishing
   alias Oli.Qa
+  alias Oli.Analytics.Datashop
 
   def overview(conn, project_params) do
     project = conn.assigns.project
@@ -138,5 +139,17 @@ defmodule OliWeb.ProjectController do
         |> put_flash(:error, "Project could not be updated.")
         |> render("overview.html")
     end
+  end
+
+  def download_datashop(conn, _project_params) do
+    project = conn.assigns.project
+    {:ok, path, filename} = Datashop.export(project.id, "Datashop Export - #{project.slug}")
+
+    conn
+    |> put_resp_header("content-disposition",
+                        ~s(attachment; filename="#{filename}"))
+    |> send_file(200, path)
+
+    {_, 0} = System.cmd "rm", [path]
   end
 end

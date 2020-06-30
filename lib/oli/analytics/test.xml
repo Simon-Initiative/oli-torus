@@ -3,43 +3,52 @@
   <context_message context_message_id="t.stark+0@avengers.com-one-part1" name="START_PROBLEM">
     <meta>
       <user_id>t.stark+0@avengers.com</user_id>
-      <session_id>t.stark+0@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+0@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
     <dataset>
-      <name>dataset-example_open_and_free_course</name>
-      <level type="Page">
-        <name>one</name>
-        <problem>
-          <name>one-part1</name>
-        </problem>
+      <name>example_open_and_free_course-szbP4LVfKfGdgFfwHhtUyd</name>
+      <level type="container">
+        <name>some title</name>
+        <level type="Page">
+          <name>Page one</name>
+          <problem tutorFlag="tutor">
+            <name>Activity one, part 1</name>
+          </problem>
+        </level>
       </level>
     </dataset>
   </context_message>
   <tool_message context_message_id="t.stark+0@avengers.com-one-part1">
     <meta>
       <user_id>t.stark+0@avengers.com</user_id>
-      <session_id>t.stark+0@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+0@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>one-part1</problem_name>
-    <semantic_event name="HINT_REQUEST" transaction_id="t.stark+0@avengers.com-one-part1-8s9CHVf2trNaA4mpKUXTrR"/>
+    <problem_name>Activity one, part 1</problem_name>
+    <semantic_event name="HINT_REQUEST" transaction_id="t.stark+0@avengers.com-one-part1-8dSbCvHTVip26D8NJdFEGG"/>
     <event_descriptor>
-      <selection/>
-      <action>HELP</action>
+      <selection>Activity one, part 1</selection>
+      <action>Multiple choice selection</action>
+      <input>HINT</input>
     </event_descriptor>
   </tool_message>
   <tutor_message context_message_id="t.stark+0@avengers.com-one-part1">
     <meta>
       <user_id>t.stark+0@avengers.com</user_id>
-      <session_id>t.stark+0@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+0@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>one-part1</problem_name>
-    <semantic_event name="HINT_MSG" transaction_id="t.stark+0@avengers.com-one-part1-8s9CHVf2trNaA4mpKUXTrR"/>
+    <problem_name>Activity one, part 1</problem_name>
+    <semantic_event name="HINT_MSG" transaction_id="t.stark+0@avengers.com-one-part1-8dSbCvHTVip26D8NJdFEGG"/>
+    <event_descriptor>
+      <selection>Activity one, part 1</selection>
+      <action>Multiple choice selection</action>
+      <input>HINT</input>
+    </event_descriptor>
     <action_evaluation current_hint_number="1" total_hints_available="3">HINT</action_evaluation>
     <tutor_advice><![CDATA[<p>Hint 1</p>]]></tutor_advice>
     <skill>
@@ -49,14 +58,14 @@
   <tool_message context_message_id="t.stark+0@avengers.com-one-part1">
     <meta>
       <user_id>t.stark+0@avengers.com</user_id>
-      <session_id>t.stark+0@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+0@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>one-part1</problem_name>
-    <semantic_event name="ATTEMPT" transaction_id="t.stark+0@avengers.com-one-part1_zUYmfqjLNTKXuNDGVjHGbh"/>
+    <problem_name>Activity one, part 1</problem_name>
+    <semantic_event name="ATTEMPT" transaction_id="t.stark+0@avengers.com-one-part1-eopckZrUZovY9soBsSQZHj"/>
     <event_descriptor>
-      <selection>one-part1</selection>
+      <selection>Activity one, part 1</selection>
       <action>Multiple choice selection</action>
       <input><![CDATA[<p>Choice B (incorrect)</p>]]></input>
     </event_descriptor>
@@ -64,14 +73,14 @@
   <tutor_message context_message_id="t.stark+0@avengers.com-one-part1">
     <meta>
       <user_id>t.stark+0@avengers.com</user_id>
-      <session_id>t.stark+0@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+0@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>one-part1</problem_name>
-    <semantic_event name="RESULT" transaction_id="t.stark+0@avengers.com-one-part1_zUYmfqjLNTKXuNDGVjHGbh"/>
+    <problem_name>Activity one, part 1</problem_name>
+    <semantic_event name="RESULT" transaction_id="t.stark+0@avengers.com-one-part1-eopckZrUZovY9soBsSQZHj"/>
     <event_descriptor>
-      <selection>one-part1</selection>
+      <selection>Activity one, part 1</selection>
       <action>Multiple choice selection</action>
       <input><![CDATA[<p>Incorrect feedback</p>]]></input>
     </event_descriptor>
@@ -83,26 +92,32 @@
   <tool_message context_message_id="t.stark+0@avengers.com-one-part1">
     <meta>
       <user_id>t.stark+0@avengers.com</user_id>
-      <session_id>t.stark+0@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+0@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>one-part1</problem_name>
-    <semantic_event name="HINT_REQUEST" transaction_id="t.stark+0@avengers.com-one-part1-HRUMWxhm35HkJV8KZg3W6G"/>
+    <problem_name>Activity one, part 1</problem_name>
+    <semantic_event name="HINT_REQUEST" transaction_id="t.stark+0@avengers.com-one-part1-K545gonnA5Xwrb4ayYrXHS"/>
     <event_descriptor>
-      <selection/>
-      <action>HELP</action>
+      <selection>Activity one, part 1</selection>
+      <action>Multiple choice selection</action>
+      <input>HINT</input>
     </event_descriptor>
   </tool_message>
   <tutor_message context_message_id="t.stark+0@avengers.com-one-part1">
     <meta>
       <user_id>t.stark+0@avengers.com</user_id>
-      <session_id>t.stark+0@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+0@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>one-part1</problem_name>
-    <semantic_event name="HINT_MSG" transaction_id="t.stark+0@avengers.com-one-part1-HRUMWxhm35HkJV8KZg3W6G"/>
+    <problem_name>Activity one, part 1</problem_name>
+    <semantic_event name="HINT_MSG" transaction_id="t.stark+0@avengers.com-one-part1-K545gonnA5Xwrb4ayYrXHS"/>
+    <event_descriptor>
+      <selection>Activity one, part 1</selection>
+      <action>Multiple choice selection</action>
+      <input>HINT</input>
+    </event_descriptor>
     <action_evaluation current_hint_number="1" total_hints_available="3">HINT</action_evaluation>
     <tutor_advice><![CDATA[<p>Hint 2</p>]]></tutor_advice>
     <skill>
@@ -112,14 +127,14 @@
   <tool_message context_message_id="t.stark+0@avengers.com-one-part1">
     <meta>
       <user_id>t.stark+0@avengers.com</user_id>
-      <session_id>t.stark+0@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+0@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>one-part1</problem_name>
-    <semantic_event name="ATTEMPT" transaction_id="t.stark+0@avengers.com-one-part1_EQn28WMVcQTxjPiiVTBzsP"/>
+    <problem_name>Activity one, part 1</problem_name>
+    <semantic_event name="ATTEMPT" transaction_id="t.stark+0@avengers.com-one-part1-VEvRFuH3GM2krxvFSzGHsZ"/>
     <event_descriptor>
-      <selection>one-part1</selection>
+      <selection>Activity one, part 1</selection>
       <action>Multiple choice selection</action>
       <input><![CDATA[<p>Choice A (correct)</p>]]></input>
     </event_descriptor>
@@ -127,14 +142,14 @@
   <tutor_message context_message_id="t.stark+0@avengers.com-one-part1">
     <meta>
       <user_id>t.stark+0@avengers.com</user_id>
-      <session_id>t.stark+0@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+0@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>one-part1</problem_name>
-    <semantic_event name="RESULT" transaction_id="t.stark+0@avengers.com-one-part1_EQn28WMVcQTxjPiiVTBzsP"/>
+    <problem_name>Activity one, part 1</problem_name>
+    <semantic_event name="RESULT" transaction_id="t.stark+0@avengers.com-one-part1-VEvRFuH3GM2krxvFSzGHsZ"/>
     <event_descriptor>
-      <selection>one-part1</selection>
+      <selection>Activity one, part 1</selection>
       <action>Multiple choice selection</action>
       <input><![CDATA[<p>Correct feedback</p>]]></input>
     </event_descriptor>
@@ -146,43 +161,52 @@
   <context_message context_message_id="t.stark+0@avengers.com-two-part1" name="START_PROBLEM">
     <meta>
       <user_id>t.stark+0@avengers.com</user_id>
-      <session_id>t.stark+0@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+0@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
     <dataset>
-      <name>dataset-example_open_and_free_course</name>
-      <level type="Page">
-        <name>two</name>
-        <problem>
-          <name>two-part1</name>
-        </problem>
+      <name>example_open_and_free_course-sWSEqxXENkSPYY8zURzDG5</name>
+      <level type="container">
+        <name>some title</name>
+        <level type="Page">
+          <name>Page two</name>
+          <problem tutorFlag="tutor">
+            <name>Activity two, part 1</name>
+          </problem>
+        </level>
       </level>
     </dataset>
   </context_message>
   <tool_message context_message_id="t.stark+0@avengers.com-two-part1">
     <meta>
       <user_id>t.stark+0@avengers.com</user_id>
-      <session_id>t.stark+0@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+0@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>two-part1</problem_name>
-    <semantic_event name="HINT_REQUEST" transaction_id="t.stark+0@avengers.com-two-part1-CJCXGwBe66eRCCVgejWmMP"/>
+    <problem_name>Activity two, part 1</problem_name>
+    <semantic_event name="HINT_REQUEST" transaction_id="t.stark+0@avengers.com-two-part1-AoBqU59jRu6iWE7iaok4HF"/>
     <event_descriptor>
-      <selection/>
-      <action>HELP</action>
+      <selection>Activity two, part 1</selection>
+      <action>Short answer input</action>
+      <input>HINT</input>
     </event_descriptor>
   </tool_message>
   <tutor_message context_message_id="t.stark+0@avengers.com-two-part1">
     <meta>
       <user_id>t.stark+0@avengers.com</user_id>
-      <session_id>t.stark+0@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+0@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>two-part1</problem_name>
-    <semantic_event name="HINT_MSG" transaction_id="t.stark+0@avengers.com-two-part1-CJCXGwBe66eRCCVgejWmMP"/>
+    <problem_name>Activity two, part 1</problem_name>
+    <semantic_event name="HINT_MSG" transaction_id="t.stark+0@avengers.com-two-part1-AoBqU59jRu6iWE7iaok4HF"/>
+    <event_descriptor>
+      <selection>Activity two, part 1</selection>
+      <action>Short answer input</action>
+      <input>HINT</input>
+    </event_descriptor>
     <action_evaluation current_hint_number="1" total_hints_available="3">HINT</action_evaluation>
     <tutor_advice><![CDATA[<p>Hint 1</p>]]></tutor_advice>
     <skill>
@@ -195,29 +219,29 @@
   <tool_message context_message_id="t.stark+0@avengers.com-two-part1">
     <meta>
       <user_id>t.stark+0@avengers.com</user_id>
-      <session_id>t.stark+0@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+0@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>two-part1</problem_name>
-    <semantic_event name="ATTEMPT" transaction_id="t.stark+0@avengers.com-two-part1_ngr3DPwVMHwoRaZ9p2HUjL"/>
+    <problem_name>Activity two, part 1</problem_name>
+    <semantic_event name="ATTEMPT" transaction_id="t.stark+0@avengers.com-two-part1-RNLwHHaVyKrJHSMMXmLubk"/>
     <event_descriptor>
-      <selection>two-part1</selection>
+      <selection>Activity two, part 1</selection>
       <action>Short answer input</action>
-      <input>Student 1&apos;s input</input>
+      <input><![CDATA[Student 1's input]]></input>
     </event_descriptor>
   </tool_message>
   <tutor_message context_message_id="t.stark+0@avengers.com-two-part1">
     <meta>
       <user_id>t.stark+0@avengers.com</user_id>
-      <session_id>t.stark+0@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+0@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>two-part1</problem_name>
-    <semantic_event name="RESULT" transaction_id="t.stark+0@avengers.com-two-part1_ngr3DPwVMHwoRaZ9p2HUjL"/>
+    <problem_name>Activity two, part 1</problem_name>
+    <semantic_event name="RESULT" transaction_id="t.stark+0@avengers.com-two-part1-RNLwHHaVyKrJHSMMXmLubk"/>
     <event_descriptor>
-      <selection>two-part1</selection>
+      <selection>Activity two, part 1</selection>
       <action>Short answer input</action>
       <input><![CDATA[<p>Feedback (Incorrect)</p>]]></input>
     </event_descriptor>
@@ -232,26 +256,32 @@
   <tool_message context_message_id="t.stark+0@avengers.com-two-part1">
     <meta>
       <user_id>t.stark+0@avengers.com</user_id>
-      <session_id>t.stark+0@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+0@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>two-part1</problem_name>
-    <semantic_event name="HINT_REQUEST" transaction_id="t.stark+0@avengers.com-two-part1-5L8QQTSbgSWicGpwvwGsrc"/>
+    <problem_name>Activity two, part 1</problem_name>
+    <semantic_event name="HINT_REQUEST" transaction_id="t.stark+0@avengers.com-two-part1-MvokakepUHVg8DeXjsopUV"/>
     <event_descriptor>
-      <selection/>
-      <action>HELP</action>
+      <selection>Activity two, part 1</selection>
+      <action>Short answer input</action>
+      <input>HINT</input>
     </event_descriptor>
   </tool_message>
   <tutor_message context_message_id="t.stark+0@avengers.com-two-part1">
     <meta>
       <user_id>t.stark+0@avengers.com</user_id>
-      <session_id>t.stark+0@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+0@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>two-part1</problem_name>
-    <semantic_event name="HINT_MSG" transaction_id="t.stark+0@avengers.com-two-part1-5L8QQTSbgSWicGpwvwGsrc"/>
+    <problem_name>Activity two, part 1</problem_name>
+    <semantic_event name="HINT_MSG" transaction_id="t.stark+0@avengers.com-two-part1-MvokakepUHVg8DeXjsopUV"/>
+    <event_descriptor>
+      <selection>Activity two, part 1</selection>
+      <action>Short answer input</action>
+      <input>HINT</input>
+    </event_descriptor>
     <action_evaluation current_hint_number="1" total_hints_available="3">HINT</action_evaluation>
     <tutor_advice><![CDATA[<p>Hint 2</p>]]></tutor_advice>
     <skill>
@@ -264,29 +294,29 @@
   <tool_message context_message_id="t.stark+0@avengers.com-two-part1">
     <meta>
       <user_id>t.stark+0@avengers.com</user_id>
-      <session_id>t.stark+0@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+0@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>two-part1</problem_name>
-    <semantic_event name="ATTEMPT" transaction_id="t.stark+0@avengers.com-two-part1_8u8EeSRywsgEjEg5TopA3d"/>
+    <problem_name>Activity two, part 1</problem_name>
+    <semantic_event name="ATTEMPT" transaction_id="t.stark+0@avengers.com-two-part1-Qk8yU4cn6EF3LPiGVhJGvi"/>
     <event_descriptor>
-      <selection>two-part1</selection>
+      <selection>Activity two, part 1</selection>
       <action>Short answer input</action>
-      <input>answer</input>
+      <input><![CDATA[answer]]></input>
     </event_descriptor>
   </tool_message>
   <tutor_message context_message_id="t.stark+0@avengers.com-two-part1">
     <meta>
       <user_id>t.stark+0@avengers.com</user_id>
-      <session_id>t.stark+0@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+0@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>two-part1</problem_name>
-    <semantic_event name="RESULT" transaction_id="t.stark+0@avengers.com-two-part1_8u8EeSRywsgEjEg5TopA3d"/>
+    <problem_name>Activity two, part 1</problem_name>
+    <semantic_event name="RESULT" transaction_id="t.stark+0@avengers.com-two-part1-Qk8yU4cn6EF3LPiGVhJGvi"/>
     <event_descriptor>
-      <selection>two-part1</selection>
+      <selection>Activity two, part 1</selection>
       <action>Short answer input</action>
       <input><![CDATA[<p>Feedback (Correct)</p>]]></input>
     </event_descriptor>
@@ -301,43 +331,52 @@
   <context_message context_message_id="t.stark+1@avengers.com-one-part1" name="START_PROBLEM">
     <meta>
       <user_id>t.stark+1@avengers.com</user_id>
-      <session_id>t.stark+1@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+1@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
     <dataset>
-      <name>dataset-example_open_and_free_course</name>
-      <level type="Page">
-        <name>one</name>
-        <problem>
-          <name>one-part1</name>
-        </problem>
+      <name>example_open_and_free_course-XRUAT7Gsog2Uz6r5yxaLaM</name>
+      <level type="container">
+        <name>some title</name>
+        <level type="Page">
+          <name>Page one</name>
+          <problem tutorFlag="tutor">
+            <name>Activity one, part 1</name>
+          </problem>
+        </level>
       </level>
     </dataset>
   </context_message>
   <tool_message context_message_id="t.stark+1@avengers.com-one-part1">
     <meta>
       <user_id>t.stark+1@avengers.com</user_id>
-      <session_id>t.stark+1@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+1@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>one-part1</problem_name>
-    <semantic_event name="HINT_REQUEST" transaction_id="t.stark+1@avengers.com-one-part1-dshRVMzk2QsEM4cQPUcw8g"/>
+    <problem_name>Activity one, part 1</problem_name>
+    <semantic_event name="HINT_REQUEST" transaction_id="t.stark+1@avengers.com-one-part1-HwsxWYW7gBP3C3v2LxSvke"/>
     <event_descriptor>
-      <selection/>
-      <action>HELP</action>
+      <selection>Activity one, part 1</selection>
+      <action>Multiple choice selection</action>
+      <input>HINT</input>
     </event_descriptor>
   </tool_message>
   <tutor_message context_message_id="t.stark+1@avengers.com-one-part1">
     <meta>
       <user_id>t.stark+1@avengers.com</user_id>
-      <session_id>t.stark+1@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+1@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>one-part1</problem_name>
-    <semantic_event name="HINT_MSG" transaction_id="t.stark+1@avengers.com-one-part1-dshRVMzk2QsEM4cQPUcw8g"/>
+    <problem_name>Activity one, part 1</problem_name>
+    <semantic_event name="HINT_MSG" transaction_id="t.stark+1@avengers.com-one-part1-HwsxWYW7gBP3C3v2LxSvke"/>
+    <event_descriptor>
+      <selection>Activity one, part 1</selection>
+      <action>Multiple choice selection</action>
+      <input>HINT</input>
+    </event_descriptor>
     <action_evaluation current_hint_number="1" total_hints_available="3">HINT</action_evaluation>
     <tutor_advice><![CDATA[<p>Hint 2</p>]]></tutor_advice>
     <skill>
@@ -347,14 +386,14 @@
   <tool_message context_message_id="t.stark+1@avengers.com-one-part1">
     <meta>
       <user_id>t.stark+1@avengers.com</user_id>
-      <session_id>t.stark+1@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+1@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>one-part1</problem_name>
-    <semantic_event name="ATTEMPT" transaction_id="t.stark+1@avengers.com-one-part1_GoM93pzQsZBNUWwSSkTL8V"/>
+    <problem_name>Activity one, part 1</problem_name>
+    <semantic_event name="ATTEMPT" transaction_id="t.stark+1@avengers.com-one-part1-tSnzt4cSnHwkLH73H6LJWT"/>
     <event_descriptor>
-      <selection>one-part1</selection>
+      <selection>Activity one, part 1</selection>
       <action>Multiple choice selection</action>
       <input><![CDATA[<p>Choice A (correct)</p>]]></input>
     </event_descriptor>
@@ -362,14 +401,14 @@
   <tutor_message context_message_id="t.stark+1@avengers.com-one-part1">
     <meta>
       <user_id>t.stark+1@avengers.com</user_id>
-      <session_id>t.stark+1@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+1@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>one-part1</problem_name>
-    <semantic_event name="RESULT" transaction_id="t.stark+1@avengers.com-one-part1_GoM93pzQsZBNUWwSSkTL8V"/>
+    <problem_name>Activity one, part 1</problem_name>
+    <semantic_event name="RESULT" transaction_id="t.stark+1@avengers.com-one-part1-tSnzt4cSnHwkLH73H6LJWT"/>
     <event_descriptor>
-      <selection>one-part1</selection>
+      <selection>Activity one, part 1</selection>
       <action>Multiple choice selection</action>
       <input><![CDATA[<p>Correct feedback</p>]]></input>
     </event_descriptor>
@@ -381,43 +420,52 @@
   <context_message context_message_id="t.stark+1@avengers.com-two-part1" name="START_PROBLEM">
     <meta>
       <user_id>t.stark+1@avengers.com</user_id>
-      <session_id>t.stark+1@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+1@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
     <dataset>
-      <name>dataset-example_open_and_free_course</name>
-      <level type="Page">
-        <name>two</name>
-        <problem>
-          <name>two-part1</name>
-        </problem>
+      <name>example_open_and_free_course-8gDptE3eBA567ykdHHrXdU</name>
+      <level type="container">
+        <name>some title</name>
+        <level type="Page">
+          <name>Page two</name>
+          <problem tutorFlag="tutor">
+            <name>Activity two, part 1</name>
+          </problem>
+        </level>
       </level>
     </dataset>
   </context_message>
   <tool_message context_message_id="t.stark+1@avengers.com-two-part1">
     <meta>
       <user_id>t.stark+1@avengers.com</user_id>
-      <session_id>t.stark+1@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+1@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>two-part1</problem_name>
-    <semantic_event name="HINT_REQUEST" transaction_id="t.stark+1@avengers.com-two-part1-BMY3dPZXpmqWMciexyxfUU"/>
+    <problem_name>Activity two, part 1</problem_name>
+    <semantic_event name="HINT_REQUEST" transaction_id="t.stark+1@avengers.com-two-part1-ZhjcyqpNBUtxk7FVtWd9D3"/>
     <event_descriptor>
-      <selection/>
-      <action>HELP</action>
+      <selection>Activity two, part 1</selection>
+      <action>Short answer input</action>
+      <input>HINT</input>
     </event_descriptor>
   </tool_message>
   <tutor_message context_message_id="t.stark+1@avengers.com-two-part1">
     <meta>
       <user_id>t.stark+1@avengers.com</user_id>
-      <session_id>t.stark+1@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+1@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>two-part1</problem_name>
-    <semantic_event name="HINT_MSG" transaction_id="t.stark+1@avengers.com-two-part1-BMY3dPZXpmqWMciexyxfUU"/>
+    <problem_name>Activity two, part 1</problem_name>
+    <semantic_event name="HINT_MSG" transaction_id="t.stark+1@avengers.com-two-part1-ZhjcyqpNBUtxk7FVtWd9D3"/>
+    <event_descriptor>
+      <selection>Activity two, part 1</selection>
+      <action>Short answer input</action>
+      <input>HINT</input>
+    </event_descriptor>
     <action_evaluation current_hint_number="1" total_hints_available="3">HINT</action_evaluation>
     <tutor_advice><![CDATA[<p>Hint 3</p>]]></tutor_advice>
     <skill>
@@ -430,29 +478,29 @@
   <tool_message context_message_id="t.stark+1@avengers.com-two-part1">
     <meta>
       <user_id>t.stark+1@avengers.com</user_id>
-      <session_id>t.stark+1@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+1@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>two-part1</problem_name>
-    <semantic_event name="ATTEMPT" transaction_id="t.stark+1@avengers.com-two-part1_BSrRtaR2SqLMgR3qYBgFfE"/>
+    <problem_name>Activity two, part 1</problem_name>
+    <semantic_event name="ATTEMPT" transaction_id="t.stark+1@avengers.com-two-part1-6tsfnQJdqGMqkEeVXh8aPS"/>
     <event_descriptor>
-      <selection>two-part1</selection>
+      <selection>Activity two, part 1</selection>
       <action>Short answer input</action>
-      <input>Student 1&apos;s input</input>
+      <input><![CDATA[Student 1's input]]></input>
     </event_descriptor>
   </tool_message>
   <tutor_message context_message_id="t.stark+1@avengers.com-two-part1">
     <meta>
       <user_id>t.stark+1@avengers.com</user_id>
-      <session_id>t.stark+1@avengers.com 2020-06-25 00:52</session_id>
-      <time>2020-06-25 00:52</time>
+      <session_id>t.stark+1@avengers.com 2020-06-30 04:07</session_id>
+      <time>2020-06-30 04:07</time>
       <time_zone>GMT</time_zone>
     </meta>
-    <problem_name>two-part1</problem_name>
-    <semantic_event name="RESULT" transaction_id="t.stark+1@avengers.com-two-part1_BSrRtaR2SqLMgR3qYBgFfE"/>
+    <problem_name>Activity two, part 1</problem_name>
+    <semantic_event name="RESULT" transaction_id="t.stark+1@avengers.com-two-part1-6tsfnQJdqGMqkEeVXh8aPS"/>
     <event_descriptor>
-      <selection>two-part1</selection>
+      <selection>Activity two, part 1</selection>
       <action>Short answer input</action>
       <input><![CDATA[<p>Feedback (Correct)</p>]]></input>
     </event_descriptor>

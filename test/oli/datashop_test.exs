@@ -1,10 +1,7 @@
 defmodule Oli.DatashopTest do
   use Oli.DataCase
 
-  alias Oli.Repo
   alias Oli.Analytics.Datashop
-  alias Oli.Delivery.Attempts
-  alias Oli.Delivery.Sections
   alias Oli.Activities.Model.Part
   alias Oli.Publishing
 
@@ -593,35 +590,33 @@ defmodule Oli.DatashopTest do
       map
     end
 
-    test "Attempts.get_part_attempts_and_users_for_publication"
-
-    test "export", %{project: project} do
+    test "export should create a file", %{project: project} do
       Datashop.export(project.id)
+      true
     end
+
+    @tag :skip
+    test "tutor message should be well formed for hints"
+    @tag :skip
+    test "tutor message should be well formed for attempts"
+    @tag :skip
+    test "tool message should be well formed for hints"
+    @tag :skip
+    test "tool message should be well formed for attempts"
+    @tag :skip
+    test "context message should be well formed"
+    @tag :skip
+    test "user1 context message should have right info"
+    @tag :skip
+    test "user1 hint tool message should match context message"
+    @tag :skip
+    test "user1 hint tutor message should match context message"
+    @tag :skip
+    test "user1 hint pair should have matching transaction ids"
+    @tag :skip
+    test "user1 attempt tool message should have right info"
+    @tag :skip
+    test "user1 attempt tutor message should have right info"
   end
-
-  # Generate part attempts with necessary linkages for use in datashop export
-  # for multiple users, generate part attempts for multiple activities
-  # def generate_attempts(%{number_of_users: number_of_users} \\ %{ number_of_users: 1 }) do
-
-  #   # make section
-  #   # make enrollment
-  #   # make x users
-
-  #   # for each resource:
-  #     # make x activities linked to the page (what attributes?)
-  #     # make resource access
-  #     # make resource attempt
-  #     # for each attached activity:
-  #       # make x activity attempts linked to the resource attempt (for different users)
-  #       # make x part attempts linked to the activity attempts (for different users)
-  #   from section in Section,
-  #     join: enrollment in Enrollment, on: enrollment.section_id == section.id,
-  #     join: user in Oli.Accounts.User, on: enrollment.user_id == user.id,
-  #     join: raccess in ResourceAccess, on: section.id == raccess.section_id,
-  #     join: rattempt in ResourceAttempt, on: raccess.id == rattempt.resource_access_id,
-  #     join: aattempt in ActivityAttempt, on: rattempt.id == aattempt.resource_attempt_id,
-  #     join: pattempt in PartAttempt, on: aattempt.id == pattempt.activity_attempt_id,
-  # end
 
 end

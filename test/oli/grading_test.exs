@@ -1,7 +1,6 @@
 defmodule Oli.GradingTest do
   use Oli.DataCase
 
-  alias Oli.Repo
   alias Oli.Grading
 
   describe "grading" do

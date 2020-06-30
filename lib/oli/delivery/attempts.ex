@@ -320,7 +320,7 @@ defmodule Oli.Delivery.Attempts do
       where: enrollment.section_role_id == ^student_role_id,
       select: %{ part_attempt: pattempt, user: user })
       # TODO: This should be done in the query, but can't get the syntax right
-    |> Enum.map(& %{ user: &1.user, part_attempt: Repo.preload(&1.part_attempt, [activity_attempt: [:revision, revision: :activity_type]]) })
+    |> Enum.map(& %{ user: &1.user, part_attempt: Repo.preload(&1.part_attempt, [activity_attempt: [:revision, revision: :activity_type, resource_attempt: :revision]]) })
   end
 
   def create_new_attempt_tree(old_resource_attempt, resource_revision, context_id, user_id, activity_provider) do

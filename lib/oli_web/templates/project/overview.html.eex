@@ -51,6 +51,8 @@
         <%= submit "Save Description", class: "btn btn-md btn-primary mt-2 float-right" %>
       <% end %>
 
+      <%= button("Download Datashop Export", to: Routes.project_path(@conn, :download_datashop, @project), method: :post, class: "btn btn-primary") %>
+
     </div>
   </div>
 </div>
