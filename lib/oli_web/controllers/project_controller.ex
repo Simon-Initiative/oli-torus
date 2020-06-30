@@ -143,13 +143,23 @@ defmodule OliWeb.ProjectController do
 
   def download_datashop(conn, _project_params) do
     project = conn.assigns.project
-    {:ok, path, filename} = Datashop.export(project.id, "Datashop Export - #{project.slug}")
 
-    conn
-    |> put_resp_header("content-disposition",
-                        ~s(attachment; filename="#{filename}"))
-    |> send_file(200, path)
+    case Datashop.export(project.id, "Datashop Export - #{project.slug}") do
+      {:ok, path, filename} ->
+        {_, 0} = System.cmd "rm", [path]
 
-    {_, 0} = System.cmd "rm", [path]
+        conn
+          |> put_resp_header("content-disposition",
+                              ~s(attachment; filename="#{filename}"))
+          |> send_file(200, path)
+
+      _ -> send_resp(conn, 500, "Error generating export")
+
+    end
+
+
+
+
+
   end
 end
