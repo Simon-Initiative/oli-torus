@@ -220,7 +220,9 @@ defmodule Oli.Authoring.MediaLibrary do
     bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
 
     case upload_file(bucket_name, path, file_contents) do
-      {:ok, %{status_code: 200}} -> {:ok, "https://#{bucket_name}.s3.amazonaws.com/#{path}"}
+#      {:ok, %{status_code: 200}} -> {:ok, "https://#{bucket_name}.s3.amazonaws.com/#{path}"}
+      {:ok, %{status_code: 200}} -> {:ok, "https://d3mj2lrnjozzvf.cloudfront.net/#{path}"}
+
       _ -> {:error, {:persistence}}
     end
   end
