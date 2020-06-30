@@ -183,6 +183,10 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       }
     };
 
+    const onRegisterNewObjective = (o: Objective) => {
+      this.setState({ allObjectives: state.allObjectives.concat(o) });
+    };
+
     return (
       <div className="row">
         <div className="col-12">
@@ -209,8 +213,10 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           <div className="learning-objectives-label">Learning Objectives</div>
           <Objectives
             editMode={this.state.editMode}
+            projectSlug={props.projectSlug}
             selected={this.state.undoable.current.objectives}
             objectives={this.state.allObjectives}
+            onRegisterNewObjective={onRegisterNewObjective}
             onEdit={objectives => this.update({ objectives })} />
           <div className="d-flex flex-row align-items-start">
             <div className="d-flex flex-column">

@@ -170,6 +170,8 @@ defmodule OliWeb.Router do
 
     post "/:project/media", MediaController, :create
     get "/:project/media", MediaController, :index
+
+    post "/:project_id/objectives", ResourceController, :create_objective
   end
 
   scope "/api/v1/attempt", OliWeb do
