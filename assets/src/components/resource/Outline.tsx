@@ -146,7 +146,7 @@ const getFriendlyName = (item: ActivityReference, editorMap: ActivityEditorMap,
 
   const activity = activities.get(item.activitySlug);
   return editorMap[(activity as any).typeSlug].friendlyName;
-}
+};
 
 
 // Outline of the content
