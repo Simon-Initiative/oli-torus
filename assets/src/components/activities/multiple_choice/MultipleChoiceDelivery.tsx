@@ -29,6 +29,7 @@ const Choices = ({ choices, selected, onSelect, isEvaluated }: ChoicesProps) => 
     <div className="choices">
     {choices.map((choice, index) =>
       <Choice
+        key={choice.id}
         onClick={() => onSelect(choice.id)}
         selected={selected.valueOr('') === choice.id}
         choice={choice}
@@ -130,7 +131,7 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
 
   const ungradedDetails = props.graded ? null : [
     evaluationSummary,
-    <Hints onClick={onRequestHint} hints={hints}
+    <Hints key="hints" onClick={onRequestHint} hints={hints}
       hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>];
 
   return (
