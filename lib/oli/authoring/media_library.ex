@@ -215,7 +215,7 @@ defmodule Oli.Authoring.MediaLibrary do
 
   defp upload(project_slug, file_name, file_contents) do
 
-    path = project_slug <> "/" <> file_name
+    path = project_slug <> "/resources/" <> file_name
 
     bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
 
