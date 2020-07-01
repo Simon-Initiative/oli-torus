@@ -46,7 +46,7 @@ defmodule OliWeb.ResourceController do
     is_admin? = Accounts.is_admin?(author)
 
     case PageEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
-      {:ok, context} -> render(conn, "edit.html", title: "Page Editor", is_admin?: is_admin?, context: Jason.encode!(context), scripts: Activities.get_activity_scripts(), project_slug: project_slug, revision_slug: revision_slug)
+      {:ok, context} -> render(conn, "edit.html", active: :curriculum, title: "Page Editor", is_admin?: is_admin?, context: Jason.encode!(context), scripts: Activities.get_activity_scripts(), project_slug: project_slug, revision_slug: revision_slug)
 
       {:error, :not_found} ->
         conn

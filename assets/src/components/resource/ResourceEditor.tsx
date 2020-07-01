@@ -20,6 +20,7 @@ import { UndoableState, processRedo, processUndo, processUpdate, init } from './
 import { releaseLock, acquireLock } from 'data/persistence/lock';
 import { Message, createMessage } from 'data/messages/messages';
 import { Banner } from '../messages/Banner';
+import { BreadcrumbTrail } from 'components/common/BreadcrumbTrail';
 
 export interface ResourceEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap;   // Map of activity types to activity elements
@@ -168,6 +169,12 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     const props = this.props;
     const state = this.state;
 
+    const { projectSlug, resourceSlug, title } = this.props;
+    const page = {
+      slug: resourceSlug,
+      title,
+    };
+
     const onEdit = (content: Immutable.List<ResourceContent>) => {
       this.update({ content });
     };
@@ -196,6 +203,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
             executeAction={() => true}
             messages={this.state.messages}
           />
+          <BreadcrumbTrail projectSlug={projectSlug} page={page} />
           <TitleBar
             title={state.undoable.current.title}
             onTitleEdit={onTitleEdit}
