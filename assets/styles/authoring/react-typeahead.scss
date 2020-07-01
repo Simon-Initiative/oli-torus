@@ -1,7 +1,8 @@
+@import "delivery/variables";
 
-/*
-Inlined react-bootstrap-typeahead styles
-*/
+/**
+ * Inlined react-bootstrap-typeahead styles
+ */
 
 .rbt .rbt-input-main::-ms-clear {
   display: none;
@@ -17,6 +18,15 @@ Inlined react-bootstrap-typeahead styles
 .rbt-menu > .dropdown-item {
   overflow: hidden;
   text-overflow: ellipsis;
+  color: $gray-900;
+}
+
+.rbt-menu > .dropdown-item.active {
+  color: $white;
+}
+
+.rbt-menu > .dropdown-item:hover {
+  color: $white;
 }
 
 .rbt-menu > .dropdown-item:focus {
@@ -40,7 +50,7 @@ Inlined react-bootstrap-typeahead styles
 .rbt-input-multi.focus {
   border-color: #80bdff;
   box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-  color: #495057;
+  color: $gray-900;
   outline: 0;
 }
 
@@ -60,16 +70,16 @@ Inlined react-bootstrap-typeahead styles
 }
 
 .rbt-input-multi input::-moz-placeholder {
-  color: #6c757d;
+  color: $gray-900;
   opacity: 1;
 }
 
 .rbt-input-multi input:-ms-input-placeholder {
-  color: #6c757d;
+  color: $gray-900;
 }
 
 .rbt-input-multi input::-webkit-input-placeholder {
-  color: #6c757d;
+  color: $gray-900;
 }
 
 .rbt-input-multi .rbt-input-wrapper {
@@ -113,7 +123,7 @@ Inlined react-bootstrap-typeahead styles
 
 .rbt-token-disabled {
   background-color: rgba(0, 0, 0, 0.1);
-  color: #495057;
+  color: $gray-900;
   pointer-events: none;
 }
 
