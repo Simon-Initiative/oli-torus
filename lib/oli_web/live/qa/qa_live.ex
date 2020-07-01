@@ -34,7 +34,7 @@ defmodule OliWeb.Qa.QaLive do
     PubSub.subscribe(Oli.PubSub, "dismiss_warning:project:" <> project_slug)
   end
 
-  defp read_current_review(project) do
+  def read_current_review(project) do
     warnings = Qa.Warnings.list_active_warnings(project.id)
     qa_reviews = Qa.Reviews.list_reviews(project.id)
 
