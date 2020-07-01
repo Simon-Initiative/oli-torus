@@ -77,7 +77,7 @@ defmodule Oli.Analytics.Datashop do
 
               [
                 Tool.setup(%{
-                  type: "HINT", # HINT or ATTEMPT
+                  type: "HINT",
                   context_message_id: context_message_id,
                   meta_element_context: meta_element_context,
                   semantic_event_context: %{

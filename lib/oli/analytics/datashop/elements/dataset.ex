@@ -57,8 +57,9 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
               true ->
                 element(:level, %{type: "Page"}, [
                   element(:name, revision.title),
-                  element(:problem, %{tutorFlag: tutor_or_test(revision.graded)}, [
-                    element(:name, problem_name)])
+                  element(:problem,
+                    %{tutorFlag: tutor_or_test(revision.graded)},
+                    [element(:name, problem_name)])
                 ])
               false ->
                 dfs(context, ids)
