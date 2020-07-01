@@ -119,8 +119,6 @@ defmodule OliWeb.Router do
     get "/:project_id", ProjectController, :overview
     get "/:project_id/publish", ProjectController, :publish
     post "/:project_id/publish", ProjectController, :publish_active
-    post "/:project_id/review", ProjectController, :review_project
-    delete "/:project_id/review", ProjectController, :dismiss_warning
     post "/:project_id/datashop", ProjectController, :download_datashop
 
     # Project
@@ -132,6 +130,9 @@ defmodule OliWeb.Router do
 
     # Curriculum
     live "/:project_id/curriculum", Curriculum.Container
+
+    # Review/QA
+    live "/:project_id/review", Qa.QaLive
 
     # Editors
     get "/:project_id/resource/:revision_slug", ResourceController, :edit

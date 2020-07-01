@@ -35,14 +35,28 @@ defmodule Oli.Authoring.Broadcaster do
   @doc """
   Broadcasts that the unpublished publication has been published
   """
-  def broadcase_publication(publication, project_slug) do
+  def broadcast_publication(publication, project_slug) do
     PubSub.broadcast Oli.PubSub, "new_publication:project:" <> project_slug,
       {:new_publication, publication, project_slug}
 
   end
 
 
+  @doc """
+  Broadcasts that a new review has been executed for a project
+  """
+  def broadcast_review(project_slug) do
+    PubSub.broadcast Oli.PubSub, "new_review:project:" <> project_slug,
+      {:new_review, project_slug}
+  end
 
 
+  @doc """
+  Broadcasts that a new review has been executed for a project
+  """
+  def broadcast_dismiss_warning(warning_id, project_slug) do
+    PubSub.broadcast Oli.PubSub, "dismiss_warning:project:" <> project_slug,
+      {:dismiss_warning, warning_id, project_slug}
+  end
 
 end
