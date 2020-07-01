@@ -52,7 +52,7 @@ defmodule Oli.Authoring.Broadcaster do
 
 
   @doc """
-  Broadcasts that a new review has been executed for a project
+  Broadcasts that a warning has been dismissed for a project
   """
   def broadcast_dismiss_warning(warning_id, project_slug) do
     PubSub.broadcast Oli.PubSub, "dismiss_warning:project:" <> project_slug,
