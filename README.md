@@ -18,6 +18,7 @@
     $ docker-compose up -d postgres
     $ docker-compose run app mix ecto.create
     $ docker-compose run app mix ecto.migrate
+    $ docker-compose run app mix run priv/repo/seeds.exs
     ```
 
 1. Start Phoenix server

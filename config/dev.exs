@@ -2,7 +2,8 @@ use Mix.Config
 
 config :oli,
   env: :dev,
-  s3_media_bucket_name: "torus-media-dev"
+  s3_media_bucket_name: "torus-media-dev",
+  media_url: "torus-media-dev.s3.amazonaws.com"
 
 # Configure your database
 config :oli, Oli.Repo,
