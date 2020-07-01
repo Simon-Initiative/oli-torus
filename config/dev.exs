@@ -3,7 +3,7 @@ use Mix.Config
 config :oli,
   env: :dev,
   s3_media_bucket_name: "torus-media-dev",
-  media_url: "d3mj2lrnjozzvf.cloudfront.net"
+  media_url: "www.dev.oli.cmu.edu"
 
 # Configure your database
 config :oli, Oli.Repo,
