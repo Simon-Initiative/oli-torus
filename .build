@@ -1,4 +1,4 @@
-dist/search_items-5866e8c255.js
+dist/search_items-6fac8ad06e.js
 dist/app-a225d03098e64fef431a.js
 dist/elixir-0ab8a6a80ebaaa287431.css
 dist/erlang-bd206729da4d0d280293.css
@@ -6,7 +6,7 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/sidebar_items-07a22c108f.js
+dist/sidebar_items-9b51097f8a.js
 api-reference.html
 readme.html
 license.html
@@ -182,6 +182,7 @@ OliWeb.AttemptController.html
 OliWeb.AuthController.html
 OliWeb.AuthView.html
 OliWeb.CollaboratorController.html
+OliWeb.Common.Links.html
 OliWeb.Common.ManualModal.html
 OliWeb.Common.MaterialIcon.html
 OliWeb.Common.Modal.html
@@ -219,6 +220,12 @@ OliWeb.Plugs.Guest.html
 OliWeb.ProjectController.html
 OliWeb.ProjectPlugs.html
 OliWeb.ProjectView.html
+OliWeb.Qa.QaLive.html
+OliWeb.Qa.State.html
+OliWeb.Qa.Utils.html
+OliWeb.Qa.WarningDetails.html
+OliWeb.Qa.WarningFilter.html
+OliWeb.Qa.WarningSummary.html
 OliWeb.ResourceController.html
 OliWeb.ResourceView.html
 OliWeb.RevisionHistory.html
