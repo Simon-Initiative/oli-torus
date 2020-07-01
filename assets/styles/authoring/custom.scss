@@ -1,4 +1,5 @@
 /** Custom theme-specific styles for authoring **/
+@import "authoring/variables";
 
 p:last-of-type {
   margin: 0;
@@ -28,4 +29,17 @@ a:not([href]) {
   &:hover {
     color: $white;
   }
+}
+
+/** override form control color so that text can be seen easier */
+.form-control {
+  color: $gray-800;
+
+  &:focus {
+    color: $gray-800;
+  }
+}
+
+.dropdown-item {
+  color: $gray-800;
 }
