@@ -200,13 +200,23 @@ defmodule Oli.Accounts do
   defp resolve_authorization({:ok, author}, _author), do: {:ok, author}
 
   def can_access?(author, project) do
-    # querying join table rather than author's project associations list
-    # in case the author has many projects
-    Repo.one(
-      from assoc in "authors_projects",
-        where: assoc.author_id == ^author.id and
-        assoc.project_id == ^project.id,
-        select: count(assoc)) != 0
+
+    admin_role_id = SystemRole.role_id().admin
+
+    case author do
+
+      # Admin authors have access to every project
+      %{system_role_id: ^admin_role_id} -> true
+
+      # querying join table rather than author's project associations list
+      # in case the author has many projects
+      _ -> Repo.one(
+        from assoc in "authors_projects",
+          where: assoc.author_id == ^author.id and
+          assoc.project_id == ^project.id,
+          select: count(assoc)) != 0
+    end
+
   end
 
   def project_author_count(project) do
@@ -214,6 +224,14 @@ defmodule Oli.Accounts do
       from assoc in "authors_projects",
         where: assoc.project_id == ^project.id,
         select: count(assoc))
+  end
+
+  def project_authors(project_ids) when is_list(project_ids) do
+    Repo.all(
+      from assoc in "authors_projects",
+        join: author in Author, on: assoc.author_id == author.id,
+        where: assoc.project_id in ^project_ids,
+        select: [author, assoc.project_id])
   end
 
   def project_authors(project) do

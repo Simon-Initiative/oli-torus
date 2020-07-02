@@ -2,14 +2,17 @@ defmodule OliWeb.WorkspaceController do
   use OliWeb, :controller
   alias Oli.Authoring
   alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Course
   alias Oli.Repo
   alias Oli.Accounts
+  alias Oli.Accounts.{SystemRole}
 
   def projects(%{:assigns => %{:current_author => current_author}} = conn, params) do
-    current_author = Repo.preload(current_author, [:projects])
-    projects = current_author.projects
-      |> Enum.map(fn project ->
-        Map.put(project, :author_count, Accounts.project_author_count(project)) end)
+
+    projects = Course.get_projects_for_author(current_author)
+    author_counts = Accounts.project_author_count(Enum.map(projects, fn %{id: id} -> id end))
+    |> Enum.reduce(%{}, fn [id, count], m -> Map.put(m, id, count) end)
+
     params = %{
       title: "Projects",
       active: :projects,
@@ -17,7 +20,9 @@ defmodule OliWeb.WorkspaceController do
         title: params["project_title"] || ""
       }),
       author: current_author,
-      projects: projects
+      projects: projects,
+      author_counts: author_counts,
+      is_admin: SystemRole.role_id().admin == current_author.system_role_id
     }
     render %{conn | assigns: (Map.merge(conn.assigns, params) |> Map.put(:title, "Projects"))}, "projects.html"
   end
