@@ -29,18 +29,18 @@ export const ToolPopupButton = ({
 
   return (
     <div style={ { float: 'right' } }>
-        <Popover
-          onClickOutside={() => {
-            setIsPopoverOpen(false);
-          }}
-          isOpen={isPopoverOpen}
-          padding={25}
-          position={['bottom', 'top', 'left', 'right']}
-          content={contentFn}>
-          <button onClick={() => setIsPopoverOpen(true)} className="btn btn-light btn-sm mt-1">
-              <i className="fas fa-cog"></i>
-          </button>
-        </Popover>
+      <Popover
+        onClickOutside={() => {
+          setIsPopoverOpen(false);
+        }}
+        isOpen={isPopoverOpen}
+        padding={25}
+        position={['bottom', 'top', 'left', 'right']}
+        content={contentFn}>
+        {ref => <button ref={ref} onClick={() => setIsPopoverOpen(true)} className="btn btn-light btn-sm mt-1">
+            <i className="fas fa-cog"></i>
+        </button>}
+      </Popover>
     </div>
   );
 };

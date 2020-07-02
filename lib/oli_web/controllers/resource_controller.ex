@@ -7,6 +7,7 @@ defmodule OliWeb.ResourceController do
   alias Oli.Accounts
   alias Oli.Activities
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.Authoring.Editing.ObjectiveEditor
 
   import OliWeb.ProjectPlugs
 
@@ -92,6 +93,20 @@ defmodule OliWeb.ResourceController do
 
   def delete(_conn, %{"project_id" => _project_slug, "revision_slug" => _resource_slug }) do
 
+  end
+
+  def create_objective(conn, %{"project_id" => project_slug, "title" => title }) do
+    project = Course.get_project_by_slug(project_slug)
+    author = conn.assigns[:current_author]
+
+    case ObjectiveEditor.add_new(%{title: title}, author, project, nil) do
+      {:ok, %{revision: revision}} ->
+        conn
+        |> json(%{ "type" => "success", "revisionSlug" => revision.slug})
+      {:error, %Ecto.Changeset{} = _changeset} ->
+        conn
+        |> send_resp(500, "Objective could not be created")
+    end
   end
 
   defp error(conn, code, reason) do
