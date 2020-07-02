@@ -192,6 +192,10 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
       this.update({ title });
     };
 
+    const onRegisterNewObjective = (o: Objective) => {
+      this.setState({ allObjectives: this.state.allObjectives.concat(o) });
+    };
+
     const webComponentProps = {
       model: JSON.stringify(this.state.undoable.current.content),
       editMode: this.state.editMode,
@@ -224,8 +228,10 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
           <PartObjectives
               partIds={Immutable.List(partIds)}
               editMode={this.state.editMode}
+              projectSlug={webComponentProps.projectSlug}
               objectives={this.state.undoable.current.objectives}
               allObjectives={this.state.allObjectives}
+              onRegisterNewObjective={onRegisterNewObjective}
               onEdit={objectives => this.update({ objectives })} />
           <div ref={this.ref}>
             {React.createElement(authoringElement, webComponentProps as any)}

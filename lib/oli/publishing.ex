@@ -444,7 +444,7 @@ defmodule Oli.Publishing do
     # push forward all existing sections to this newly published publication
     update_all_section_publications(project, active_publication)
 
-    Oli.Authoring.Broadcaster.broadcase_publication(result, project.slug)
+    Oli.Authoring.Broadcaster.broadcast_publication(result, project.slug)
 
     result
   end
