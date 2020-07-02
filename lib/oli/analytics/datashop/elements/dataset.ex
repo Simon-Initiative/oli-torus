@@ -12,7 +12,6 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
   </dataset>
   """
   import XmlBuilder
-  alias Oli.Analytics.Datashop.Utils
   alias Oli.Publishing
   alias Oli.Repo
 

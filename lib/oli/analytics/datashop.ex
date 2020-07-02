@@ -146,10 +146,9 @@ defmodule Oli.Analytics.Datashop do
       & &1.part_attempt)
   end
 
-  @doc """
-  Wraps the messages inside a <tutor_related_message_sequence />, which is required by the
-  Datashop DTD to set the meta-info.
-  """
+
+  # Wraps the messages inside a <tutor_related_message_sequence />, which is required by the
+  # Datashop DTD to set the meta-info.
   defp wrap_with_tutor_related_message(children) do
     element(:tutor_related_message_sequence,
       %{
