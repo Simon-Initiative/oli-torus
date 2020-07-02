@@ -29,10 +29,7 @@ defmodule Oli.Analytics.Datashop do
     dataset_name = Utils.make_dataset_name(project.slug)
 
     Attempts.get_part_attempts_and_users_for_publication(publication.id)
-    |> Enum.group_by(
-      & {&1.user.email, &1.part_attempt.activity_attempt.revision.slug, &1.part_attempt.part_id},
-      & &1.part_attempt)
-    # now we have a list of keys of `revision_slug-user_email`, each of which has a list of part attempts
+    |> group_part_attempts_by_user_and_part
     |> Enum.map(fn {{email, activity_slug, part_id}, part_attempts} ->
 
       context_message_id = Utils.make_unique_id(activity_slug, part_id)
@@ -142,11 +139,18 @@ defmodule Oli.Analytics.Datashop do
     end)
   end
 
+  defp group_part_attempts_by_user_and_part(part_attempts_and_users) do
+    part_attempts_and_users
+    |> Enum.group_by(
+      & {&1.user.email, &1.part_attempt.activity_attempt.revision.slug, &1.part_attempt.part_id},
+      & &1.part_attempt)
+  end
+
   @doc """
   Wraps the messages inside a <tutor_related_message_sequence />, which is required by the
   Datashop DTD to set the meta-info.
   """
-  def wrap_with_tutor_related_message(children) do
+  defp wrap_with_tutor_related_message(children) do
     element(:tutor_related_message_sequence,
       %{
         "xmlns:xsi" => "http://www.w3.org/2001/XMLSchema-instance",
@@ -156,7 +160,7 @@ defmodule Oli.Analytics.Datashop do
       children)
   end
 
-  def write_file(xml, file_name) do
+  defp write_file(xml, file_name) do
     file_name = file_name <> ".xml"
     path = Path.expand(__DIR__) <> "/"
 

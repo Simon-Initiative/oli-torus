@@ -154,12 +154,6 @@ defmodule OliWeb.ProjectController do
           |> send_file(200, path)
 
       _ -> send_resp(conn, 500, "Error generating export")
-
     end
-
-
-
-
-
   end
 end
