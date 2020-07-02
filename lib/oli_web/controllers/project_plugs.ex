@@ -9,7 +9,7 @@ defmodule OliWeb.ProjectPlugs do
       nil ->
         conn
         |> Phoenix.Controller.put_flash(:info, "That project does not exist")
-        |> Phoenix.Controller.redirect(to: Routes.workspace_path(conn, :projects))
+        |> Phoenix.Controller.redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
         |> Plug.Conn.halt()
       project -> conn
         |> Plug.Conn.assign(:project, project)
@@ -22,7 +22,7 @@ defmodule OliWeb.ProjectPlugs do
     else
       conn
        |> Phoenix.Controller.put_flash(:info, "You don't have access to that project")
-       |> Phoenix.Controller.redirect(to: Routes.workspace_path(conn, :projects))
+       |> Phoenix.Controller.redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
        |> Plug.Conn.halt()
     end
   end

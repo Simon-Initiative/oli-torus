@@ -5,7 +5,7 @@ defmodule Oli.Authoring.Course do
   alias Oli.Publishing
   alias Oli.Authoring.{Collaborators}
   alias Oli.Authoring.Course.{Utils, Project, Family, ProjectResource}
-  alias Oli.Accounts.{Author, SystemRole}
+  alias Oli.Accounts.{SystemRole}
 
   def create_project_resource(attrs) do
     %ProjectResource{}
@@ -27,7 +27,7 @@ defmodule Oli.Authoring.Course do
       # Admin authors have access to every project
       %{system_role_id: ^admin_role_id} -> Repo.all(Project)
 
-      %{id: id} -> Repo.preload(author, [:projects]).projects
+      _ -> Repo.preload(author, [:projects]).projects
     end
 
   end

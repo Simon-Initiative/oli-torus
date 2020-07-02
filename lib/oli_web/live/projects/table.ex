@@ -7,11 +7,26 @@ defmodule OliWeb.Projects.Table do
     Map.get(assigns.authors, project_id)
   end
 
+  def th(assigns, label, sort_by, sort_order, column) do
+    ~L"""
+    <th style="cursor: pointer;" phx-click="sort" phx-value-sort_by="<%= column %>">
+      <%= label %>
+      <%= if sort_by == column do %>
+        <i class="fas fa-sort-<%= if sort_order == "asc" do "up" else "down" end %>"></i>
+      <% end %>
+    </th>
+    """
+  end
+
   def render(assigns) do
     ~L"""
     <table class="table table-hover table-bordered table-sm">
       <thead class="thead-dark">
-        <tr><th>Title</th><th>Created</th><th>Authors</th></tr>
+        <tr>
+          <%= th(assigns, "Title", @sort_by, @sort_order, "title") %>
+          <%= th(assigns, "Created", @sort_by, @sort_order, "created") %>
+          <%= th(assigns, "Authors", @sort_by, @sort_order, "author") %>
+        </tr>
       </thead>
       <tbody>
         <%= for project <- @projects do %>
