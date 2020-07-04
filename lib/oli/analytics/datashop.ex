@@ -26,15 +26,13 @@ defmodule Oli.Analytics.Datashop do
   defp create_messages(project_id) do
     project = Course.get_project!(project_id)
     publication = Publishing.get_latest_published_publication_by_slug!(project.slug)
+    dataset_name = Utils.make_dataset_name(project.slug)
 
     Attempts.get_part_attempts_and_users_for_publication(publication.id)
-    |> Enum.group_by(
-      & {&1.user.email, &1.part_attempt.activity_attempt.revision.slug, &1.part_attempt.part_id},
-      & &1.part_attempt)
-    # now we have a list of keys of `revision_slug-user_email`, each of which has a list of part attempts
+    |> group_part_attempts_by_user_and_part
     |> Enum.map(fn {{email, activity_slug, part_id}, part_attempts} ->
 
-      context_message_id = Utils.make_context_message_id(email, activity_slug, part_id)
+      context_message_id = Utils.make_unique_id(activity_slug, part_id)
       problem_name = Utils.make_problem_name(activity_slug, part_id)
 
       context_message = Context.setup(%{
@@ -45,7 +43,7 @@ defmodule Oli.Analytics.Datashop do
           email: email
         },
         dataset_element_context: %{
-          project_slug: project.slug,
+          dataset_name: dataset_name,
           part_attempt: hd(part_attempts),
           publication: publication,
           problem_name: problem_name
@@ -72,11 +70,11 @@ defmodule Oli.Analytics.Datashop do
             fn {hint_id, hint_index} ->
 
               # transaction id connects tool and tutor messages
-              transaction_id = Utils.make_transaction_id(context_message_id)
+              transaction_id = Utils.make_unique_id(activity_slug, part_id)
 
               [
                 Tool.setup(%{
-                  type: "HINT", # HINT or ATTEMPT
+                  type: "HINT",
                   context_message_id: context_message_id,
                   meta_element_context: meta_element_context,
                   semantic_event_context: %{
@@ -106,7 +104,7 @@ defmodule Oli.Analytics.Datashop do
               ]
             end)
 
-          transaction_id = Utils.make_transaction_id(context_message_id)
+          transaction_id = Utils.make_unique_id(activity_slug, part_id)
 
           hint_message_pairs ++ [
             Tool.setup(%{
@@ -141,11 +139,17 @@ defmodule Oli.Analytics.Datashop do
     end)
   end
 
-  @doc """
-  Wraps the messages inside a <tutor_related_message_sequence />, which is required by the
-  Datashop DTD to set the meta-info.
-  """
-  def wrap_with_tutor_related_message(children) do
+  defp group_part_attempts_by_user_and_part(part_attempts_and_users) do
+    part_attempts_and_users
+    |> Enum.group_by(
+      & {&1.user.email, &1.part_attempt.activity_attempt.revision.slug, &1.part_attempt.part_id},
+      & &1.part_attempt)
+  end
+
+
+  # Wraps the messages inside a <tutor_related_message_sequence />, which is required by the
+  # Datashop DTD to set the meta-info.
+  defp wrap_with_tutor_related_message(children) do
     element(:tutor_related_message_sequence,
       %{
         "xmlns:xsi" => "http://www.w3.org/2001/XMLSchema-instance",
@@ -155,7 +159,7 @@ defmodule Oli.Analytics.Datashop do
       children)
   end
 
-  def write_file(xml, file_name) do
+  defp write_file(xml, file_name) do
     file_name = file_name <> ".xml"
     path = Path.expand(__DIR__) <> "/"
 
