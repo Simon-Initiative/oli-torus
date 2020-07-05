@@ -1,4 +1,4 @@
-dist/search_items-6ce39bdefd.js
+dist/search_items-c9c1909059.js
 dist/app-a225d03098e64fef431a.js
 dist/elixir-0ab8a6a80ebaaa287431.css
 dist/erlang-bd206729da4d0d280293.css
@@ -6,7 +6,7 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/sidebar_items-1464a285de.js
+dist/sidebar_items-e50f0d5500.js
 api-reference.html
 readme.html
 license.html
@@ -220,6 +220,11 @@ OliWeb.Plugs.Guest.html
 OliWeb.ProjectController.html
 OliWeb.ProjectPlugs.html
 OliWeb.ProjectView.html
+OliWeb.Projects.Card.html
+OliWeb.Projects.Cards.html
+OliWeb.Projects.ProjectsLive.html
+OliWeb.Projects.State.html
+OliWeb.Projects.Table.html
 OliWeb.Qa.QaLive.html
 OliWeb.Qa.State.html
 OliWeb.Qa.Utils.html

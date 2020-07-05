@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Authoring.Course — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-1464a285de.js"></script>
+    <script src="dist/sidebar_items-e50f0d5500.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -130,6 +130,11 @@ Oli.Authoring.Course          <a href="https://github.com/Simon-Initiative/oli-t
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#get_projects_for_author/1">get_projects_for_author(author)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#initial_resource_setup/2">initial_resource_setup(author, project)</a>
   </div>
 </div>
@@ -166,7 +171,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">attach_to_project(resource, project)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L34" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L51" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -181,7 +186,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">create_and_attach_resource(project, attrs)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L24" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L41" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -197,7 +202,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">create_family(attrs \\ %{})</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L109" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L126" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -212,7 +217,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">create_project(title, author)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L55" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L72" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -227,7 +232,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">create_project_resource(attrs)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L9" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L10" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -242,7 +247,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_family!(id)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L101" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L118" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -257,7 +262,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_project!(id)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L19" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L36" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -272,7 +277,22 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_project_by_slug(slug)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L20" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L37" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="get_projects_for_author/1">
+  <div class="detail-header">
+    <a href="#get_projects_for_author/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_projects_for_author(author)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L21" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -287,7 +307,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">initial_resource_setup(author, project)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L43" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L60" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -302,7 +322,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">list_projects()</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L15" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L16" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -317,7 +337,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">update_family(family, attrs)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L103" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L120" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -332,7 +352,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">update_project(project, attrs)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L95" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L112" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
