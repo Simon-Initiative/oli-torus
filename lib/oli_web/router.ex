@@ -101,7 +101,7 @@ defmodule OliWeb.Router do
   scope "/", OliWeb do
     pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring]
 
-    get "/projects", WorkspaceController, :projects
+    live "/projects", Projects.ProjectsLive
     get "/account", WorkspaceController, :account
     post "/account/theme", WorkspaceController, :update_theme
     resources "/institutions", InstitutionController

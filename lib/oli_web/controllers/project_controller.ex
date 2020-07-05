@@ -98,7 +98,7 @@ defmodule OliWeb.ProjectController do
       {:error, _changeset} ->
         conn
           |> put_flash(:error, "Could not create project. Please try again")
-          |> redirect(to: Routes.workspace_path(conn, :projects, project_title: title))
+          |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
     end
   end
 
