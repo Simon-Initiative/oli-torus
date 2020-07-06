@@ -1,0 +1,51 @@
+@import "authoring/variables.scss";
+
+.editors {
+  .resource-content-frame {
+    width: 100%;
+
+    .delivery {
+      padding: 10px;
+      color: $body-color;
+      background-color: $body-bg;
+    }
+  }
+
+  .assistive-text {
+    position: absolute;
+    margin: -1px;
+    border: 0;
+    padding: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .drop-target {
+    display: flex;
+    height: 20px;
+    opacity: 0;
+    transition: all .1s ease-out;
+
+    &.hovered {
+      height: 100px;
+      opacity: 1;
+
+      &::after {
+        content: 'drop to place here';
+        margin: 20px 0;
+        padding: 20px;
+        background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='8' ry='8' stroke='%23DEDEDEFF' stroke-width='4' stroke-dasharray='6%2c 14' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+        border-radius: 8px;
+        width: 100%;
+        margin: auto;
+        text-align: center;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: $gray-300;
+      }
+    }
+  }
+
+}

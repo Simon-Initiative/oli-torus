@@ -8,7 +8,6 @@ import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
 import { Editors } from './Editors';
 import { Objectives } from './Objectives';
-import { Outline } from './Outline';
 import { TitleBar } from '../content/TitleBar';
 import { UndoRedo } from '../content/UndoRedo';
 import { PreviewButton } from '../content/PreviewButton';
@@ -218,24 +217,20 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
             objectives={this.state.allObjectives}
             onRegisterNewObjective={onRegisterNewObjective}
             onEdit={objectives => this.update({ objectives })} />
-          <div className="d-flex flex-row align-items-start">
-            <div className="d-flex flex-column">
-              <Outline {...props} editMode={this.state.editMode}
-                activities={this.state.activities}
-                onEdit={c => onEdit(c)} content={this.state.undoable.current.content}/>
-              <AddResourceContent
-                editMode={this.state.editMode}
-                onAddItem={onAddItem}
-                editorMap={props.editorMap}
-                resourceContext={props} />
-            </div>
+          <div>
             <Editors {...props} editMode={this.state.editMode}
               activities={this.state.activities}
               onRemove={index => onEdit(this.state.undoable.current.content.delete(index))}
               onEdit={(c, index) => {
                 onEdit(this.state.undoable.current.content.set(index, c));
               }}
+              onEditContentList={onEdit}
               content={this.state.undoable.current.content}/>
+            <AddResourceContent
+              editMode={this.state.editMode}
+              onAddItem={onAddItem}
+              editorMap={props.editorMap}
+              resourceContext={props} />
           </div>
         </div>
       </div>

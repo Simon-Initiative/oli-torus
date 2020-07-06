@@ -3,5 +3,9 @@
 .add-resource-content {
   button.dropdown-toggle {
     width: 100%;
+
+    &::after {
+      display: none;
+    }
   }
 }
