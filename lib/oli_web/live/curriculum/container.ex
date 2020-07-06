@@ -50,7 +50,15 @@ defmodule OliWeb.Curriculum.Container do
 
     ~L"""
       <div class="container">
-        <h2>Course Curriculum</h2>
+        <div class="row">
+          <div class="col-12">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item active" aria-current="page">Curriculum</li>
+              </ol>
+            </nav>
+          </div>
+        </div>
         <div class="row">
           <div class="col-12">
             <p class="text-secondary">

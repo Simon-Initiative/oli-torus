@@ -1,5 +1,6 @@
 import { ProjectSlug, ResourceSlug } from 'data/types';
 import { SiblingActivity, ActivityContext } from 'data/content/activity';
+import { BreadcrumbTrail } from 'components/common/BreadcrumbTrail';
 
 const Sibling = ({ sibling, children, projectSlug, resourceSlug }
   : { sibling: SiblingActivity | null, children: any,
@@ -25,32 +26,21 @@ const Sibling = ({ sibling, children, projectSlug, resourceSlug }
 
 export const Navigation = (props: ActivityContext) => {
 
-  const { projectSlug, resourceSlug, previousActivity, nextActivity } = props;
+  const { projectSlug, resourceSlug, resourceTitle,
+    activitySlug, title, previousActivity, nextActivity } = props;
+
+  const page = {
+    slug: resourceSlug,
+    title: resourceTitle,
+  };
+  const activity = {
+    slug: activitySlug,
+    title,
+  };
 
   return (
     <div className="d-flex justify-content-between">
-      <nav aria-label="navigation">
-        <ul className="pagination">
-          <li className="page-item">
-            <a className="btn btn-outline-primary"
-              href={`/project/${projectSlug}/resource/${resourceSlug}`}>
-              <i className="fas fa-arrow-left"></i> Return to Page
-            </a>
-          </li>
-        </ul>
-      </nav>
-      <nav aria-label="navigation">
-        <ul className="pagination">
-          <Sibling projectSlug={projectSlug} resourceSlug={resourceSlug}
-            sibling={previousActivity}>
-            <i className="fas fa-arrow-circle-left"></i> Previous Activity
-          </Sibling>
-          <Sibling projectSlug={projectSlug} resourceSlug={resourceSlug}
-            sibling={nextActivity}>
-            Next Activity <i className="fas fa-arrow-circle-right"></i>
-          </Sibling>
-        </ul>
-      </nav>
+      <BreadcrumbTrail projectSlug={projectSlug} page={page} activity={activity}/>
     </div>
   );
 

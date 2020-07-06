@@ -9,6 +9,7 @@ defmodule Oli.Authoring.Editing.ActivityContext do
     :authorEmail,
     :projectSlug,
     :resourceSlug,
+    :resourceTitle,
     :activitySlug,
     :title,
     :model,
