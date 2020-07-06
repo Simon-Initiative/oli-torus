@@ -18,13 +18,15 @@
     padding-bottom: 40px;
 
     main {
-      padding: 20px;
+      padding: 32px;
     }
   }
 
   .workspace-header {
     border-bottom: 1px solid $gray-400;
-    padding: 20px;
+    height: 48px;
+    line-height: 48px;
+    padding: 0 32px;
     position: relative;
     background-color: $workspace-header-bg;
     width: 100%;
@@ -32,42 +34,61 @@
     .page-title {
       font-weight: bold;
     }
-
   }
 
   .workspace-sidebar {
     flex: 1;
     width: 200px;
-    padding: 24px;
     border-right: 1px solid $gray-400;
     background-color: $workspace-sidebar-bg;
 
     a {
+      padding: 6px 20px;
+      font-size: 14px;
       display: flex;
-      flex-direction: columns;
-      margin: 20px 0;
-      color: $workspace-sidebar-link-color;
+      flex-direction: column;
+      color: $black;
     }
 
     .user {
-      margin-bottom: 40px;
+      margin-bottom: 20px;
     }
 
     .category {
-      font-size: 12px;
-      color: $gray-500;
+      padding: 6px 20px;
+      font-size: 16px;
+      color: #8f9599;
       user-select: none;
       margin-top: 20px;
-      margin-bottom: 10px;
+      margin-bottom: 0;
     }
 
     .active {
-      font-weight: bold;
-      color: $link-color;
+      background-color: $workspace-sidebar-link-color;
     }
 
     .account-link {
+      height: 48px;
+      display: inline-block;
       margin: 0;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      width: 100%;
+      overflow: hidden;
+    }
+    .account-link[data-initials]:before {
+      font-weight: 400;
+      content: attr(data-initials);
+      display: inline-block;
+      font-size: 1em;
+      width: 2.5em;
+      height: 2.5em;
+      line-height: 2.5em;
+      text-align: center;
+      border-radius: 50%;
+      background: #ec4e2a;
+      margin-right: 1em;
+      color: white;
     }
   }
 }

@@ -1,0 +1,15 @@
+.objectives {
+  .list-group {
+    .list-group-item {
+      border-radius: .2rem;
+      border: 0 !important;
+    }
+    .list-group-item:hover {
+      background-color: $interactable-hover;
+    }
+    .active-objective {
+      outline: none;
+      box-shadow: inset 0 0 0 2px #18a0fb;
+    }
+  }
+}

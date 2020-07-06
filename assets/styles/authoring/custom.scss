@@ -1,6 +1,10 @@
 /** Custom theme-specific styles for authoring **/
 @import "authoring/variables";
 
+p {
+  font-size: 14px;
+}
+
 p:last-of-type {
   margin: 0;
 }

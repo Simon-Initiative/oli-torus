@@ -21,7 +21,7 @@ body {
 }
 
 .authoring {
-  @import 'authoring/variables';
+  @import 'authoring/variables.clean';
   @import 'authoring/mixins';
   @import '../node_modules/bootstrap/scss/bootstrap';
   @import 'authoring/**/*.scss';
