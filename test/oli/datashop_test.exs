@@ -587,36 +587,47 @@ defmodule Oli.DatashopTest do
         hints: ["1137320916"]
       }, %Part{id: "1", responses: [], hints: []}, :sa_user2_attempt1, :sa_user2_part_attempt1)
 
-      map
+      {:ok, path, _file_name} = Datashop.export(map.project.id)
+      {:ok, datashop_file} = File.read(path)
+
+      Map.put(map, :datashop_file, datashop_file)
     end
 
-    test "export should create a file", %{project: project} do
-      Datashop.export(project.id)
-      true
+    test "tool message should be well formed for hint requests", %{ datashop_file: datashop_file } do
+      regex = ~r/<tool_message context_message_id=".*">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<problem_name>(.*)<\/problem_name>\s*<semantic_event name="HINT_REQUEST" transaction_id=".*"\/>\s*<event_descriptor>\s*<selection>\1<\/selection>\s*<action>.*<\/action>\s*<input>HINT<\/input>\s*<\/event_descriptor>\s*<\/tool_message>/
+      assert String.match?(datashop_file, regex)
     end
 
-    @tag :skip
-    test "tutor message should be well formed for hints"
-    @tag :skip
-    test "tutor message should be well formed for attempts"
-    @tag :skip
-    test "tool message should be well formed for hints"
-    @tag :skip
-    test "tool message should be well formed for attempts"
-    @tag :skip
-    test "context message should be well formed"
-    @tag :skip
-    test "user1 context message should have right info"
-    @tag :skip
-    test "user1 hint tool message should match context message"
-    @tag :skip
-    test "user1 hint tutor message should match context message"
-    @tag :skip
-    test "user1 hint pair should have matching transaction ids"
-    @tag :skip
-    test "user1 attempt tool message should have right info"
-    @tag :skip
-    test "user1 attempt tutor message should have right info"
+    test "tool message should be well formed for attempts", %{ datashop_file: datashop_file } do
+      regex = ~r/<tool_message context_message_id=".*">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<problem_name>(.*)<\/problem_name>\s*<semantic_event name="ATTEMPT" transaction_id=".*"\/>\s*<event_descriptor>\s*<selection>\1<\/selection>\s*<action>.*<\/action>\s*<input>.*<\/input>\s*<\/event_descriptor>\s*<\/tool_message>/
+      assert String.match?(datashop_file, regex)
+    end
+
+    test "tutor message should be well formed for hint requests", %{ datashop_file: datashop_file } do
+      regex = ~r/<tutor_message context_message_id=".*">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<problem_name>(.*)<\/problem_name>\s*<semantic_event name="HINT_MSG" transaction_id=".*"\/>\s*<event_descriptor>\s*<selection>\1<\/selection>\s*<action>.*<\/action>\s*<input>HINT<\/input>\s*<\/event_descriptor>\s*<action_evaluation current_hint_number="\d+" total_hints_available="(\d+|\w+)">HINT<\/action_evaluation>\s*<tutor_advice>.*<\/tutor_advice>\s*(<skill>\s*<name>.*<\/name>\s*<\/skill>)+\s*<\/tutor_message>/
+      assert String.match?(datashop_file, regex)
+    end
+
+    test "tutor message should be well formed for attempts", %{ datashop_file: datashop_file } do
+      regex = ~r/<tutor_message context_message_id=".*">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<problem_name>(.*)<\/problem_name>\s*<semantic_event name="RESULT" transaction_id=".*"\/>\s*<event_descriptor>\s*<selection>\1<\/selection>\s*<action>.*<\/action>\s*<input>.*<\/input>\s*<\/event_descriptor>\s*<action_evaluation>(CORRECT\b|\bINCORRECT)<\/action_evaluation>\s*(<skill>\s*<name>.*<\/name>\s*<\/skill>)+\s*<\/tutor_message>/
+      assert String.match?(datashop_file, regex)
+    end
+
+    test "context message should be well formed", %{ datashop_file: datashop_file } do
+      regex = ~r/<context_message context_message_id=".*" name="START_PROBLEM">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<dataset>\s*<name>.*<\/name>\s*(<level type=".*">\s*<name>.*<\/name>\s*)*<problem tutorFlag="(tutor|test)">\s*<name>.*<\/name>\s*<\/problem>(\s*<\/level>)+\s*<\/dataset>\s*<\/context_message>/
+      assert String.match?(datashop_file, regex)
+    end
+
+    test "context message id should be shared across context, tool, and tutor messages", %{ datashop_file: datashop_file } do
+      regex = ~r/<context_message context_message_id="(.*)".*<\/context_message>.*<tool_message context_message_id="\1">.*<\/tool_message>.*<tutor_message context_message_id="\1">.*<\/tutor_message>/s
+      assert String.match?(datashop_file, regex)
+    end
+
+    test "tool and tutor pairs should have matching transaction ids", %{ datashop_file: datashop_file } do
+      regex = ~r/<tool_message.*<semantic_event.*transaction_id="(.*)"\/>.*<\/tool_message>.*<tutor_message.*<semantic_event.*transaction_id="\1"\/>.*<\/tutor_message>/s
+      assert String.match?(datashop_file, regex)
+    end
+
   end
 
 end

@@ -82,7 +82,7 @@ defmodule OliWeb.ProjectControllerTest do
 
   defp unauthorized_redirect(conn, path, project) do
     conn = get(conn, Routes.project_path(conn, path, project))
-    assert redirected_to(conn) == Routes.workspace_path(conn, :projects)
+    assert redirected_to(conn) == Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
   end
 
 end

@@ -3,7 +3,6 @@ defmodule OliWeb.Qa.StateLogicTest do
   use Oli.DataCase
   alias Oli.Qa.Reviewers.Pedagogy
   alias Oli.Qa.Reviewers.Content
-  alias Oli.Qa.Warnings
   alias Oli.Publishing
 
   alias OliWeb.Qa.State

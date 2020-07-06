@@ -1,7 +1,0 @@
-<%= link to: Routes.project_path(@conn, :overview, @project), class: "project-card-link" do %>
-  <div class="project-card">
-    <h1><%= @project.title  %></h1>
-    <p><%= @project.description %></p>
-    <span class="authors"><%= @project.author_count %> <i class="material-icons-outlined">person</i>
-  </div>
-<% end %>
