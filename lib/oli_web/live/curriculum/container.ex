@@ -52,6 +52,15 @@ defmodule OliWeb.Curriculum.Container do
       <div class="container">
         <div class="row">
           <div class="col-12">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item active" aria-current="page">Curriculum</li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-12">
             <p class="text-secondary">
               Create and arrange items to form your project curriculum. Select an item to configure it.
             </p>

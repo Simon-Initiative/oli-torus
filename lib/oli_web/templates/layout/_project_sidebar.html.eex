@@ -1,7 +1,7 @@
 <div class="workspace-sidebar">
   <div class="user">
     <%= account_link @conn %>
-    <%= sidebar_link @conn, "Projects", :projects, to: Routes.workspace_path(@conn, :projects) %>
+    <%= sidebar_link @conn, "Projects", :projects, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>
   </div>
   <p class="category">Create</p>
   <%= sidebar_link @conn, "Overview", :overview, to: Routes.project_path(@conn, :overview, @project) %>

@@ -78,10 +78,10 @@ defmodule Oli.Seeder do
 
   end
 
-  def another_project(author, institution) do
+  def another_project(author, institution, title \\ "title") do
 
     {:ok, family} = Family.changeset(%Family{}, %{description: "description", title: "title"}) |> Repo.insert
-    {:ok, project} = Project.changeset(%Project{}, %{description: "description", title: "title", version: "1", family_id: family.id}) |> Repo.insert
+    {:ok, project} = Project.changeset(%Project{}, %{description: "description", title: title, version: "1", family_id: family.id}) |> Repo.insert
 
     {:ok, _} = AuthorProject.changeset(%AuthorProject{}, %{author_id: author.id, project_id: project.id, project_role_id: ProjectRole.role_id.owner}) |> Repo.insert
 

@@ -17,7 +17,7 @@ defmodule OliWeb.ActivityController do
     is_admin? = Accounts.is_admin?(author)
 
     case ActivityEditor.create_context(project_slug, revision_slug, activity_slug, author) do
-      {:ok, context} -> render(conn, "edit.html", title: "Activity Editor", project_slug: project_slug, is_admin?: is_admin?, activity_slug: activity_slug, script: context.authoringScript, context: Jason.encode!(context))
+      {:ok, context} -> render(conn, "edit.html", active: :curriculum, title: "Activity Editor", project_slug: project_slug, is_admin?: is_admin?, activity_slug: activity_slug, script: context.authoringScript, context: Jason.encode!(context))
       {:error, :not_found} -> render conn, OliWeb.SharedView, "_not_found.html"
     end
 
