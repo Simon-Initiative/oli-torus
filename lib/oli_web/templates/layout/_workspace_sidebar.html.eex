@@ -3,4 +3,9 @@
     <%= account_link @conn %>
     <%= sidebar_link @conn, "Projects", :projects, to: Routes.workspace_path(@conn, :projects) %>
   </div>
+
+  <%= if is_admin?(@conn) do %>
+    <%= render OliWeb.LayoutView, "_admin_sidebar.html", assigns %>
+  <% end %>
+
 </div>
