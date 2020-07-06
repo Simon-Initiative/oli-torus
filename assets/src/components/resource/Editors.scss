@@ -4,10 +4,38 @@
   .resource-content-frame {
     width: 100%;
 
+    .card-header {
+      .description {
+        display: none;
+      }
+    }
+
     .delivery {
       padding: 10px;
       color: $body-color;
       background-color: $body-bg;
+    }
+  }
+
+  .resource-editor-and-controls {
+    &.is-dragging {
+      display: none;
+    }
+  }
+
+  .resource-editor {
+    &.reorder-mode {
+      .resource-content-frame {
+        .card-header {
+          .description {
+            display: block;
+          }
+        }
+
+        .card-body {
+          display: none;
+        }
+      }
     }
   }
 

@@ -83,6 +83,15 @@ const getFriendlyName = (item: ActivityReference, editorMap: ActivityEditorMap,
   return editorMap[(activity as any).typeSlug].friendlyName;
 };
 
+const getDescription = (item: ResourceContent) => {
+
+  const summary = item.type === 'content'
+      ? getContentDescription(item)
+      : '';
+
+  return summary;
+};
+
 // The list of editors
 export const Editors = (props: EditorsProps) => {
 
@@ -184,7 +193,21 @@ export const Editors = (props: EditorsProps) => {
       `Listbox. ${newIndex + 1} of ${content.size}. ${desc}.`);
   };
 
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+
+  const handleDragEnd = () => {
+    setActiveDragId(null);
+  };
+
+  const scrollToResourceEditor = (contentId: string) => {
+    setTimeout(() => {
+      document.querySelector(`#re${contentId}`)?.scrollIntoView({behavior: "smooth"});
+    });
+  }
+
   const onDrop = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+    handleDragEnd();
+
     if (editMode) {
       const data = e.dataTransfer.getData('application/x-oli-resource-content');
 
@@ -221,6 +244,9 @@ export const Editors = (props: EditorsProps) => {
             onEditContentList(content.insert(index, droppedContent.data));
           }
 
+          // scroll to inserted item
+          scrollToResourceEditor(droppedContent.id)
+
           return;
 
         }
@@ -239,6 +265,10 @@ export const Editors = (props: EditorsProps) => {
 
           const reordered = content.remove(sourceIndex).insert(adjusted, toInsert);
           onEditContentList(reordered);
+
+          // scroll to moved item
+          scrollToResourceEditor(droppedContent.id)
+
           return;
         }
       }
@@ -257,6 +287,9 @@ export const Editors = (props: EditorsProps) => {
             .insert(index, parsedContent);
 
             onEditContentList(inserted);
+
+            // scroll to inserted item
+            scrollToResourceEditor(parsedContent.id)
         } catch (err) {
 
         }
@@ -264,7 +297,6 @@ export const Editors = (props: EditorsProps) => {
 
     }
   };
-
 
   const editors = content.map((c, index) => {
 
@@ -325,6 +357,12 @@ export const Editors = (props: EditorsProps) => {
       dt.setData('text/plain', toSimpleText(c as any));
       dt.effectAllowed = 'move';
 
+      // setting the reorder mode flag needs to happen at the end of the event loop to
+      // ensure that all dom nodes that existed when the drag began still exist throughout
+      // the entire event. This set timeout ensures this correct order of operations
+      setTimeout(() => {
+        setActiveDragId(c.id);
+      });
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -336,10 +374,10 @@ export const Editors = (props: EditorsProps) => {
     };
 
     return (
-      <React.Fragment>
+      <div id={`re${c.id}`} className={classNames(['resource-editor-and-controls', c.id, c.id === activeDragId ? 'is-dragging' : ''])}>
         <DropTarget id={c.id} index={index} onDrop={onDrop}/>
 
-        <div className="resource-editor"
+        <div className={classNames(['resource-editor', activeDragId ? 'reorder-mode' : ''])}
           key={c.id}
           onKeyDown={handleKeyDown}
           onFocus={e => onFocus(index)}
@@ -350,7 +388,8 @@ export const Editors = (props: EditorsProps) => {
           <div className="resource-content-frame card">
             <div className="card-header pl-2"
               draggable={true}
-              onDragStart={handleDragStart}>
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}>
               <div className="d-flex flex-row align-items-baseline">
                 <div className="flex-grow-1">
                   <DragHandle style={{ height: 24, marginRight: 10 }} /> {label}
@@ -360,13 +399,16 @@ export const Editors = (props: EditorsProps) => {
                 {link}
                 <DeleteButton editMode={content.size > 1} onClick={onRemove}/>
               </div>
+              <div className="description text-secondary ellipsize-overflow flex-1 mx-4 mt-2">
+                {getDescription(c)}
+              </div>
             </div>
             <div className="card-body">
               {editor}
             </div>
           </div>
         </div>
-      </React.Fragment>
+      </div>
     );
   });
 

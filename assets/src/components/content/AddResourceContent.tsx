@@ -59,10 +59,9 @@ export const AddResourceContent = (
     .map((k: string) => {
       const editorDesc : EditorDesc = editorMap[k];
       return (
-        <a className="dropdown-item"
-          href="#"
+        <div className="dropdown-item"
           key={editorDesc.slug}
-          onClick={handleAdd.bind(this, editorDesc)}>{editorDesc.friendlyName}</a>
+          onClick={handleAdd.bind(this, editorDesc)}>{editorDesc.friendlyName}</div>
       );
     });
 
