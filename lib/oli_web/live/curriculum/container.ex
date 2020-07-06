@@ -50,11 +50,10 @@ defmodule OliWeb.Curriculum.Container do
 
     ~L"""
       <div class="container">
-        <h2>Course Curriculum</h2>
         <div class="row">
           <div class="col-12">
             <p class="text-secondary">
-              Create and arrange items to form your course curriculum. Select an item to configure it.
+              Create and arrange items to form your project curriculum. Select an item to configure it.
             </p>
           </div>
         </div>

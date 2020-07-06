@@ -27,7 +27,7 @@ defmodule OliWeb.Qa.State do
 
   def new_review_ran(state, {warnings, parent_pages, qa_reviews}) do
     Keyword.merge([
-      selected: nil,
+      selected: Enum.at(warnings, 0, nil),
       qa_reviews: qa_reviews,
       parent_pages: parent_pages,
     ], update_warnings(state, warnings))

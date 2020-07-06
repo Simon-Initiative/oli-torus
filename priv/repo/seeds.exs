@@ -95,6 +95,12 @@ if !Oli.Repo.get_by(Oli.Authoring.Theme, id: 1) do
     name: "Dark",
     url: "/css/oli-authoring-dark.css",
   }
+
+  Oli.Repo.insert! %Oli.Authoring.Theme{
+    id: 3,
+    name: "Clean",
+    url: "/css/oli-authoring-clean.css",
+  }
 end
 
 # only seed with sample data if in development mode

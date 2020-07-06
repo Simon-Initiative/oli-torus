@@ -24,8 +24,12 @@ defmodule OliWeb.LayoutView do
   def account_link(%{:assigns => assigns} = conn) do
     current_author = assigns.current_author
     full_name = "#{current_author.first_name} #{current_author.last_name}"
-    link full_name, to: Routes.workspace_path(conn, :account),
-    class: "#{active_class(active_or_nil(assigns), :account)} account-link"
+    initials = String.upcase(String.first(current_author.first_name)) <> String.upcase(String.first(current_author.last_name))
+
+    link full_name,
+      to: Routes.workspace_path(conn, :account),
+      class: "#{active_class(active_or_nil(assigns), :account)} account-link",
+      data: [initials: initials]
   end
 
   def render_layout(layout, assigns, do: content) do
@@ -53,6 +57,10 @@ defmodule OliWeb.LayoutView do
 
   def preview_mode(%{assigns: assigns} = _conn) do
     Map.get(assigns, :preview_mode, false)
+  end
+
+  def hash_color(initials) do
+
   end
 
 end

@@ -19,15 +19,6 @@ defmodule OliWeb.Qa.Utils do
 
   def title_case(string) do
     String.capitalize(string)
-
-    # Unsure whether it's better to titlecase or capitalize
-    # |> String.split(" ")
-    # |> Enum.map(& String.capitalize(&1))
-    # |> Enum.join(" ")
-  end
-
-  def type_selected?(_type, _params) do
-    # Placeholder for where the logic for filtering reviews of a certain type will go
   end
 
   def warning_selected?(selected, warning) do

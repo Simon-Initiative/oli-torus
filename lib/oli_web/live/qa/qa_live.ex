@@ -86,7 +86,7 @@ defmodule OliWeb.Qa.QaLive do
           <h2>Review</h2>
           <p class="text-secondary">Run an automated review before publishing to check for broken links and other common issues that may be present in your course.</p>
 
-          <button class="btn btn-primary mt-3" id="button-publish"
+          <button class="btn btn-sm btn-outline-primary mt-3" id="button-publish"
             phx-click="review"
             phx-disable-with="Reviewing...">Run Review</button>
 

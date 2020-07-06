@@ -5,7 +5,6 @@
       Open Learning <span style="font-weight: 200">Initiative</span>
     </a>
 
-
     <%= if author_signed_in?(@conn) do %>
       <div>
         <%= link "My Projects", to: Routes.workspace_path(@conn, :projects), class: "btn btn-primary mx-2" %>

@@ -20,7 +20,7 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
       phx-value-slug="<%= @objective_mapping.revision.slug %>"
       class="my-1 list-group-item d-flex align-items-start
       <%= if @selected == @objective_mapping.revision.slug do
-             "list-group-item-secondary"
+             "active-objective"
           end
       %>"
     >

@@ -34,7 +34,7 @@ defmodule OliWeb.Objectives.ObjectiveForm do
     <%= submit @button_text, class: "btn btn-primary ob-form-button btn-sm" %>
     </form>
 
-    <%= if @button_text != "Create" do %>
+    <%= if @button_text != "Add" do %>
     <button
       phx-click="cancel"
       class = "mx-1 btn btn-primary btn-sm"

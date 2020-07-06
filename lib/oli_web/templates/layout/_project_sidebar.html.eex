@@ -8,12 +8,10 @@
   <%= sidebar_link @conn, "Objectives", :objectives, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Objectives.Objectives, @project.slug) %>
   <%= sidebar_link @conn, "Curriculum", :curriculum, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, @project.slug) %>
 
-  <hr>
   <p class="category">Publish<p>
   <%= sidebar_link @conn, "Review", :review, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Qa.QaLive, @project.slug) %>
   <%= sidebar_link @conn, "Publish", :publish, to: Routes.project_path(@conn, :publish, @project) %>
 
-  <hr>
   <p class="category">Improve</p>
   <%= sidebar_link @conn, "Insights", :insights, to: Routes.project_path(@conn, :insights, @project) %>
 

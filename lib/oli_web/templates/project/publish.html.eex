@@ -29,7 +29,7 @@
           <%# <%= hidden_input f, "project_", value: "" %>
           <%= submit "Publish",
             id: "button-publish",
-            class: "btn btn-primary",
+            class: "btn btn-sm btn-outline-primary",
             disabled: !@has_changes,
             phx_disable_with: "Publishing..." %>
         <% end %>

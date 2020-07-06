@@ -35,11 +35,11 @@ defmodule OliWeb.Insights do
       </div>
       <div class="card-body">
         <h5 class="card-title">
-          <%= case @selected do
-          :by_page -> "View analytics by page"
-          :by_activity -> "View analytics by activity"
-          :by_objective -> "View analytics by objective"
-          _ -> "View analytics by activity"
+          Viewing analytics by <%= case @selected do
+          :by_page -> "page"
+          :by_activity -> "activity"
+          :by_objective -> "objective"
+          _ -> "activity"
         end %></h5>
         <table class="table">
           <%= live_component @socket, TableHeader, assigns %>
