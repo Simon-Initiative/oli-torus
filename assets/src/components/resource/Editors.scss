@@ -1,3 +1,4 @@
+@use 'delivery/variables' as delivery;
 @import "authoring/variables.scss";
 
 .editors {
@@ -12,8 +13,8 @@
 
     .delivery {
       padding: 10px;
-      color: $body-color;
-      background-color: $body-bg;
+      color: delivery.$body-color;
+      background-color: delivery.$body-bg;
     }
   }
 
@@ -54,7 +55,7 @@
     display: flex;
     height: 20px;
     opacity: 0;
-    transition: all .1s ease-out;
+    transition: all .15s ease-in-out;
 
     &.hovered {
       height: 100px;
