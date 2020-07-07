@@ -26,6 +26,8 @@ defmodule OliWeb.Accounts.AccountsLive do
       event_suffix: "_authors",
       id_field: :email)
 
+    authors_model = Map.put(authors_model, :author, author)
+
     {:ok, users_model} = SortableTableModel.new(
       rows: Accounts.list_users(),
       column_specs: [
@@ -45,7 +47,7 @@ defmodule OliWeb.Accounts.AccountsLive do
   def render_role_column(assigns, %{system_role_id: system_role_id} = row, _) do
     admin_role_id = SystemRole.role_id().admin
 
-    if row == assigns.model.selected and row.email != "admin@oli.cmu.edu" do
+    if row == assigns.model.selected and row.email != "admin@oli.cmu.edu" and row != assigns.model.author do
       case system_role_id do
         ^admin_role_id ->
           ~L"""
