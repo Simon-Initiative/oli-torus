@@ -105,9 +105,9 @@ export const AddResourceContent = (
                 transitionDuration={0.25}
                 position={['bottom', 'top']}
                 content={contentFn}>
-                  <div className="insert-button">
+                  {ref => <div ref={ref} className="insert-button">
                     <i className="fa fa-plus"></i>
-                  </div>
+                  </div>}
               </Popover>
             </div>
             <div className="insert-adornment"></div>
