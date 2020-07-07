@@ -24,7 +24,7 @@ export const Feedback = ({ onEditResponse, model, editMode, projectSlug }: Feedb
     .filter(r => r.id !== correctResponse.id);
 
   return (
-    <div className={classNames(['feedback'])}>
+    <div className={'my-5 ' + classNames(['feedback'])}>
       <Heading title="Answer Choice Feedback" subtitle="Providing feedback when a student answers a
         question is one of the best ways to reinforce their understanding." id="feedback" />
       <div className="mb-3" key={correctResponse.id}>

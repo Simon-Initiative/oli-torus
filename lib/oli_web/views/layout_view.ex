@@ -59,8 +59,4 @@ defmodule OliWeb.LayoutView do
     Map.get(assigns, :preview_mode, false)
   end
 
-  def hash_color(initials) do
-
-  end
-
 end
