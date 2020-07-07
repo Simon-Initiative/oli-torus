@@ -27,11 +27,15 @@ defmodule OliWeb.Common.Table.SortableTable do
       </thead>
       <tbody>
         <%= for row <- @model.rows do %>
-          <tr>
+          <%= if row == @model.selected do %>
+          <tr id="<%= Map.get(row, @model.id_field) %>" class="table-active">
+          <% else %>
+          <tr id="<%= Map.get(row, @model.id_field) %>" style="cursor: pointer;" phx-click="select<%= @model.event_suffix %>" phx-value-id="<%= Map.get(row, @model.id_field) %>">
+          <% end %>
             <%= for column_spec <- @model.column_specs do %>
               <td>
                 <%= case column_spec.render_fn do
-                  nil -> ColumnSpec.default_render_fn(column_spec.name, row)
+                  nil -> ColumnSpec.default_render_fn(column_spec, row)
                   func -> func.(assigns, row, column_spec)
                   end %>
               </td>

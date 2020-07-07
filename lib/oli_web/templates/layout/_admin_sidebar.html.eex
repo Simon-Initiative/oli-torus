@@ -1,4 +1,4 @@
 <hr>
 <p class="category">Admin</p>
 <%= sidebar_link @conn, "Dashboard", :dashboard, to: Routes.live_dashboard_path(OliWeb.Endpoint, :home) %>
-<%= sidebar_link @conn, "Users", :users, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersLive) %>
+<%= sidebar_link @conn, "Accounts", :accounts, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Accounts.AccountsLive) %>

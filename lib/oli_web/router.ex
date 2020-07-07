@@ -258,7 +258,7 @@ defmodule OliWeb.Router do
 
   scope "/admin", OliWeb do
     pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring, :admin]
-    live "/users", Users.UsersLive
+    live "/accounts", Accounts.AccountsLive
   end
 
   scope "/project", OliWeb do
