@@ -60,7 +60,7 @@ defmodule Oli.Authoring.Course do
   def initial_resource_setup(author, project) do
 
     attrs = %{
-      title: project.title <> " Curriculum",
+      title: "Curriculum",
       author_id: author.id,
       resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
     }
