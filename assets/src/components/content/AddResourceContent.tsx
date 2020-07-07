@@ -78,16 +78,18 @@ export const AddResourceContent = (
         <div className="list-group">
           {[content, ...activityEntries]}
         </div>
-      </div>
+      </div>;
 
-const [latestClickEvent, setLatestClickEvent] = useState<MouseEvent>();
+  const [latestClickEvent, setLatestClickEvent] = useState<MouseEvent>();
   const togglePopover = (e: React.MouseEvent) => {
     setIsPopoverOpen(!isPopoverOpen);
     setLatestClickEvent(e.nativeEvent);
   };
 
   return (
-      <div className={classNames(['add-resource-content', isPopoverOpen ? 'active' : ''])} onClick={togglePopover}>
+      <div className={classNames(['add-resource-content', isPopoverOpen ? 'active' : ''])}
+        onClick={togglePopover}>
+
         {editMode &&
           <React.Fragment>
             <div className="insert-button-container">
@@ -111,6 +113,7 @@ const [latestClickEvent, setLatestClickEvent] = useState<MouseEvent>();
             <div className="insert-adornment"></div>
           </React.Fragment>
         }
+
       </div>
   );
 };

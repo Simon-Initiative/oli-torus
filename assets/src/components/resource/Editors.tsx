@@ -15,7 +15,7 @@ import { DeleteButton } from '../misc/DeleteButton';
 import { EditLink } from '../misc/EditLink';
 import * as Persistence from 'data/persistence/activity';
 
-import "./Editors.scss"
+import './Editors.scss';
 import { getContentDescription, toSimpleText } from 'data/content/utils';
 import { DragHandle } from './DragHandle';
 import { classNames } from 'utils/classNames';
@@ -240,9 +240,9 @@ export const Editors = (props: EditorsProps) => {
 
   const scrollToResourceEditor = (contentId: string) => {
     setTimeout(() => {
-      document.querySelector(`#re${contentId}`)?.scrollIntoView({behavior: "smooth"});
+      document.querySelector(`#re${contentId}`)?.scrollIntoView({ behavior: 'smooth' });
     });
-  }
+  };
 
   const onDrop = (e: React.DragEvent<HTMLDivElement>, index: number) => {
     handleDragEnd();
@@ -284,7 +284,7 @@ export const Editors = (props: EditorsProps) => {
           }
 
           // scroll to inserted item
-          scrollToResourceEditor(droppedContent.id)
+          scrollToResourceEditor(droppedContent.id);
 
           return;
 
@@ -306,7 +306,7 @@ export const Editors = (props: EditorsProps) => {
           onEditContentList(reordered);
 
           // scroll to moved item
-          scrollToResourceEditor(droppedContent.id)
+          scrollToResourceEditor(droppedContent.id);
 
           return;
         }
@@ -325,10 +325,10 @@ export const Editors = (props: EditorsProps) => {
             // Then insert it
             .insert(index, parsedContent);
 
-            onEditContentList(inserted);
+          onEditContentList(inserted);
 
             // scroll to inserted item
-            scrollToResourceEditor(parsedContent.id)
+          scrollToResourceEditor(parsedContent.id);
         } catch (err) {
 
         }
@@ -413,7 +413,11 @@ export const Editors = (props: EditorsProps) => {
     };
 
     return (
-      <div id={`re${c.id}`} className={classNames(['resource-editor-and-controls', c.id, c.id === activeDragId ? 'is-dragging' : ''])}>
+      <div id={`re${c.id}`}
+        className={classNames([
+          'resource-editor-and-controls',
+          c.id, c.id === activeDragId ? 'is-dragging' : '',
+        ])}>
 
         <AddResourceOrDropTarget
           id={c.id}
