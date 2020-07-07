@@ -50,3 +50,4 @@ postgres.env
 /amisc/
 /docker-compose-dev.yml
 assets/yarn.lock
+lib/oli/analytics/test.xml
