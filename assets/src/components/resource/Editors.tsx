@@ -2,7 +2,7 @@ import * as Immutable from 'immutable';
 import React, { useState } from 'react';
 import {
   ResourceContent, Activity, ResourceType, ActivityPurposes, ContentPurposes,
-  ActivityReference, StructuredContent,
+  ActivityReference, StructuredContent, ResourceContext,
 } from 'data/content/resource';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { UnsupportedActivity } from './UnsupportedActivity';
@@ -19,6 +19,7 @@ import "./Editors.scss"
 import { getContentDescription, toSimpleText } from 'data/content/utils';
 import { DragHandle } from './DragHandle';
 import { classNames } from 'utils/classNames';
+import { AddResourceContent } from '../content/AddResourceContent';
 
 export type EditorsProps = {
   editMode: boolean,              // Whether or not we can edit
@@ -26,11 +27,13 @@ export type EditorsProps = {
   onEdit: (content: ResourceContent, index: number) => void,
   onEditContentList: (content: Immutable.List<ResourceContent>) => void,
   onRemove: (index: number) => void,
+  onAddItem: (c : ResourceContent, index: number, a? : Activity) => void,
   editorMap: ActivityEditorMap,   // Map of activity types to activity elements
   graded: boolean,
   activities: Immutable.Map<string, Activity>,
   projectSlug: ProjectSlug,
   resourceSlug: ResourceSlug,
+  resourceContext: ResourceContext,
 };
 
 interface ActivityPayload {
@@ -76,6 +79,39 @@ const DropTarget = ({ id, index, onDrop }) => {
   );
 };
 
+type AddResourceOrDropTargetProps = {
+  isReorderMode: boolean,
+  id: string,
+  index: number,
+  editMode: boolean,
+  editorMap: ActivityEditorMap,
+  resourceContext: ResourceContext,
+  onDrop: (e: React.DragEvent<HTMLDivElement>, index: number) => void,
+  onAddItem: (c : ResourceContent, index: number, a? : Activity) => void,
+};
+
+const AddResourceOrDropTarget = ({
+  isReorderMode,
+  id,
+  index,
+  editMode,
+  editorMap,
+  resourceContext,
+  onDrop,
+  onAddItem,
+}: AddResourceOrDropTargetProps) => isReorderMode
+  ? (
+    <DropTarget id={id} index={index} onDrop={onDrop}/>
+  )
+  : (
+    <AddResourceContent
+      editMode={editMode}
+      index={index}
+      onAddItem={onAddItem}
+      editorMap={editorMap}
+      resourceContext={resourceContext} />
+  );
+
 const getFriendlyName = (item: ActivityReference, editorMap: ActivityEditorMap,
   activities: Immutable.Map<string, Activity>) => {
 
@@ -95,8 +131,10 @@ const getDescription = (item: ResourceContent) => {
 // The list of editors
 export const Editors = (props: EditorsProps) => {
 
-  const { editorMap, editMode, graded,
-    content, activities, projectSlug, resourceSlug, onEditContentList } = props;
+  const {
+    editorMap, editMode, graded, content, activities, projectSlug,
+    resourceSlug, onEditContentList, onAddItem,
+  } = props;
 
   // Factory for creating top level editors, for things like structured
   // content or referenced activities
@@ -194,6 +232,7 @@ export const Editors = (props: EditorsProps) => {
   };
 
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const isReorderMode = activeDragId !== null;
 
   const handleDragEnd = () => {
     setActiveDragId(null);
@@ -375,9 +414,18 @@ export const Editors = (props: EditorsProps) => {
 
     return (
       <div id={`re${c.id}`} className={classNames(['resource-editor-and-controls', c.id, c.id === activeDragId ? 'is-dragging' : ''])}>
-        <DropTarget id={c.id} index={index} onDrop={onDrop}/>
 
-        <div className={classNames(['resource-editor', activeDragId ? 'reorder-mode' : ''])}
+        <AddResourceOrDropTarget
+          id={c.id}
+          index={index}
+          editMode={editMode}
+          isReorderMode={isReorderMode}
+          editorMap={editorMap}
+          resourceContext={props.resourceContext}
+          onAddItem={onAddItem}
+          onDrop={onDrop} />
+
+        <div className={classNames(['resource-editor', isReorderMode ? 'reorder-mode' : ''])}
           key={c.id}
           onKeyDown={handleKeyDown}
           onFocus={e => onFocus(index)}
@@ -408,6 +456,7 @@ export const Editors = (props: EditorsProps) => {
             </div>
           </div>
         </div>
+
       </div>
     );
   });
@@ -416,7 +465,15 @@ export const Editors = (props: EditorsProps) => {
     <div className="editors d-flex flex-column flex-grow-1">
       {editors}
 
-      <DropTarget id="last" index={editors.size} onDrop={onDrop}/>
+      <AddResourceOrDropTarget
+        id="last"
+        index={editors.size}
+        editMode={editMode}
+        isReorderMode={isReorderMode}
+        editorMap={editorMap}
+        resourceContext={props.resourceContext}
+        onAddItem={onAddItem}
+        onDrop={onDrop} />
     </div>
   );
 };

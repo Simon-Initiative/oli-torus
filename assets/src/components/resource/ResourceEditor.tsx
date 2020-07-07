@@ -12,7 +12,6 @@ import { TitleBar } from '../content/TitleBar';
 import { UndoRedo } from '../content/UndoRedo';
 import { PreviewButton } from '../content/PreviewButton';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
-import { AddResourceContent } from '../content/AddResourceContent';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug } from 'data/types';
 import * as Persistence from 'data/persistence/resource';
 import { UndoableState, processRedo, processUndo, processUpdate, init } from './undo';
@@ -175,8 +174,8 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       this.update({ title });
     };
 
-    const onAddItem = (c : ResourceContent, a? : Activity) => {
-      this.update({ content: this.state.undoable.current.content.push(c) });
+    const onAddItem = (c : ResourceContent, index: number, a? : Activity) => {
+      this.update({ content: this.state.undoable.current.content.insert(index, c) });
       if (a) {
         this.setState({ activities: this.state.activities.set(a.activitySlug, a) });
       }
@@ -225,11 +224,8 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
                 onEdit(this.state.undoable.current.content.set(index, c));
               }}
               onEditContentList={onEdit}
-              content={this.state.undoable.current.content}/>
-            <AddResourceContent
-              editMode={this.state.editMode}
+              content={this.state.undoable.current.content}
               onAddItem={onAddItem}
-              editorMap={props.editorMap}
               resourceContext={props} />
           </div>
         </div>
