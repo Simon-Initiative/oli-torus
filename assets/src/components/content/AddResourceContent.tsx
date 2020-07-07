@@ -16,8 +16,8 @@ type AddCallback = (content: ResourceContent, index: number, a? : Activity) => v
 // Component that presents a drop down to use to add structure
 // content or the any of the registered activities
 export const AddResourceContent = (
-  { editMode, index, onAddItem, editorMap, resourceContext }
-  : {editMode: boolean, index: number, onAddItem: AddCallback,
+  { editMode, index, onAddItem, editorMap, resourceContext, isLast }
+  : {editMode: boolean, index: number, onAddItem: AddCallback, isLast: boolean,
     editorMap: ActivityEditorMap, resourceContext: ResourceContext }) => {
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
@@ -87,7 +87,7 @@ export const AddResourceContent = (
   };
 
   return (
-      <div className={classNames(['add-resource-content', isPopoverOpen ? 'active' : ''])}
+      <div className={classNames(['add-resource-content', isPopoverOpen ? 'active' : '', isLast ? 'add-resource-content-last' : ''])}
         onClick={togglePopover}>
 
         {editMode &&

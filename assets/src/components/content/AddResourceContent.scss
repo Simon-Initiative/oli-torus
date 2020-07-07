@@ -5,6 +5,7 @@
   padding: 10px 0;
   cursor: pointer;
 
+
   &:hover {
     .insert-button-container .insert-button {
       opacity: 1;
@@ -70,6 +71,11 @@
     transition: opacity 200ms ease-out;
   }
 
+}
+
+
+.add-resource-content-last {
+  padding-bottom: 100px;
 }
 
 .add-resource-popover {

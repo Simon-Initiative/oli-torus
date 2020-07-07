@@ -106,6 +106,7 @@ const AddResourceOrDropTarget = ({
   : (
     <AddResourceContent
       editMode={editMode}
+      isLast={id === 'last'}
       index={index}
       onAddItem={onAddItem}
       editorMap={editorMap}
