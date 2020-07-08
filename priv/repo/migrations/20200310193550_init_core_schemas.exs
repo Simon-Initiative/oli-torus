@@ -107,7 +107,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
     create table(:projects) do
       add :title, :string
       add :slug, :string
-      add :description, :string
+      add :description, :text
       add :version, :string
       add :project_id, references(:projects)
       add :family_id, references(:families)

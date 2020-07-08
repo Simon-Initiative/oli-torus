@@ -25,6 +25,15 @@ defmodule OliWeb.Projects.ProjectsLive do
     {:ok, assign(socket, State.initialize_state(author, projects, author_projects))}
   end
 
+  def handle_params(%{"display_mode" => display_mode}, _, socket) do
+    display_mode =
+      case display_mode do
+        display_mode when display_mode in ~w(cards table) -> display_mode
+        _ -> socket.assigns.display_mode
+      end
+    {:noreply, assign(socket, display_mode: display_mode)}
+  end
+
   def handle_params(params, _, socket) do
 
     sort_by =
@@ -42,12 +51,19 @@ defmodule OliWeb.Projects.ProjectsLive do
     {:noreply, assign(socket, State.sort_projects(socket.assigns, sort_by, sort_order))}
   end
 
-
   def render(assigns) do
-
-    case assigns.is_admin do
-      true ->
-        ~L"""
+    ~L"""
+    <div class="projects-title-row">
+      <h4>My Projects</h4>
+        <span class="display-modes">
+        <i class="material-icons <%= active_display_mode(@display_mode, "cards") %>" phx-click="display_mode" phx-value-display_mode="cards">apps</i>
+        <i class="material-icons <%= active_display_mode(@display_mode, "table") %>" phx-click="display_mode" phx-value-display_mode="table">view_headline</i>
+      </span>
+    </div>
+    <%= case @display_mode do %>
+      <% "cards" -> %>
+        <%= live_component @socket, Cards, projects: @projects, authors: @authors %>
+      <% "table" -> %>
         <div class="container">
           <div class="row">
             <div class="col-12">
@@ -55,15 +71,15 @@ defmodule OliWeb.Projects.ProjectsLive do
             </div>
           </div>
         </div>
-        """
-      false ->
-        ~L"""
-        <div>
-          <%= live_component @socket, Cards, projects: @projects, authors: @authors %>
-        </div>
-        """
-    end
+    <% end %>
+    """
+  end
 
+  def handle_event("display_mode", %{"display_mode" => display_mode}, socket) do
+    cond do
+      display_mode == socket.assigns.display_mode -> {:noreply, socket}
+      true -> {:noreply, push_patch(socket, to: Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{display_mode: display_mode}))}
+    end
   end
 
   # handle change of selection
@@ -75,6 +91,13 @@ defmodule OliWeb.Projects.ProjectsLive do
     end
 
     {:noreply, push_patch(socket, to: Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{sort_by: sort_by, sort_order: sort_order}))}
+  end
+
+  def active_display_mode(actual, target) do
+    if actual == target
+    do "active-display-mode"
+    else nil
+    end
   end
 
 end

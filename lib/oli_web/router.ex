@@ -103,6 +103,7 @@ defmodule OliWeb.Router do
 
     live "/projects", Projects.ProjectsLive
     get "/account", WorkspaceController, :account
+    put "/account", WorkspaceController, :update_author
     post "/account/theme", WorkspaceController, :update_theme
     resources "/institutions", InstitutionController
   end
