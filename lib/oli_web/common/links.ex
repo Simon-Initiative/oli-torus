@@ -8,6 +8,7 @@ defmodule OliWeb.Common.Links do
       "objective" -> link revision.title, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Objectives.Objectives, project.slug)
       "page" -> link revision.title, to: Routes.resource_path(OliWeb.Endpoint, :edit, project, revision.slug)
       "activity" -> link revision.title, to: Routes.resource_path(OliWeb.Endpoint, :edit, project, Map.get(parent_pages, revision.resource_id).slug)
+      "container" -> link revision.title, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project.slug)
     end
 
   end
