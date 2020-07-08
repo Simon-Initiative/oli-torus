@@ -2,7 +2,7 @@
 @import "authoring/variables";
 
 p {
-  font-size: 14px;
+  font-size: 11px;
 }
 
 p:last-of-type {
@@ -47,3 +47,146 @@ a:not([href]) {
 .dropdown-item {
   color: $gray-800;
 }
+
+.modal-footer {
+  border-top: 0;
+}
+
+input.form-control {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  border: 2px solid #e5e5e5;
+  padding: 6px 12px;
+  border-radius: 2px;
+  outline: none;
+  height: 42px;
+}
+input.form-control:focus {
+  box-shadow: none;
+  border: 2px solid #18a0fb;
+}
+input.form-control::placeholder {
+  color: #777;
+}
+
+// Modal
+.modal-content {
+  padding: 24px;
+}
+.modal-body {
+  padding: 0;
+}
+.modal-header {
+  padding: 0 0 24px 0;
+  border-bottom: 0;
+}
+.modal-footer {
+  padding: 0;
+}
+
+.control-label.text-secondary {
+  font-size: 11px;
+  color: #333;
+  line-height: 1.5em;
+}
+
+.btn.btn-primary {
+  color: #fff;
+  background-color: #18a0fb;
+  border: 2px solid transparent;
+  background-clip: border-box;
+  font-weight: 500;
+  text-align: center;
+  padding: 0 15px;
+  height: 44px;
+  border-radius: 8px;
+  line-height: 42px;
+
+  &:not(:disabled):not(.disabled):focus,
+  &:not(:disabled):not(.disabled):active:focus {
+    background-color: #18a0fb;
+    box-shadow: none;
+    border: 2px solid rgba(0,0,0,.9);
+  }
+}
+
+// Buttons
+.btn.btn-secondary {
+  background-color: white;
+  border: none;
+  color: #333;
+
+  &:not(:disabled):not(.disabled):focus,
+  &:not(:disabled):not(.disabled):active:focus {
+    background-color: white;
+    color: #333;
+    border-color: #18a0fb;
+    box-shadow: inset 0 0 0 2px #18a0fb;
+    border-radius: .2rem;
+  }
+  &:not(:disabled):not(.disabled):hover {
+    background-color: rgba(0,0,0,.06);
+    border: none;
+    color: #333;
+  }
+}
+
+
+#main-content .container {
+  padding: 0;
+  margin: 0;
+}
+
+.row {
+  margin: 0;
+}
+
+.col-12 {
+  padding-left: 0;
+}
+
+h4 {
+  font-size: 14px;
+  color: #333;
+  font-weight: 400;
+  letter-spacing: -.087px;
+  font-feature-settings: 'liga' on,'calt' on;
+}
+
+textarea.form-control {
+  border: 2px solid #e5e5e5;
+  padding: 6px 10px;
+  border-radius: 2px;
+  outline: none;
+  min-height: 90px;
+  min-width: 200px;
+  padding: 6px 12px;
+  border-radius: 2px;
+  resize: both;
+  &:placeholder {
+    color: #777;
+  }
+  &:focus,
+  &:active {
+    border: 2px solid #18a0fb;
+    outline: none;
+    box-shadow: none;
+  }
+}
+
+
+// Normal, active, focus, hover
+// Make button primary
+//    blue button, padding
+//    gray disabled
+// Button secondary
+//    transparent background
+//    on hover, gray
+// Button outline primary
+// Button outline secondary
+// Link
+//  blue text
+
+// h2, h4
+// h2 for main titles, h4 for smaller sub-titles

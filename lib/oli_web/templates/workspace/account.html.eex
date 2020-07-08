@@ -1,60 +1,140 @@
 
 <div class="container">
-  <div class="col-12">
-    <h2 class="mb-4">My Institutions</h2>
 
-    <%= if Enum.count(@institutions) == 0 do %>
-      <div class="my-5 text-center">
-        <%= "#{@current_author.first_name} #{@current_author.last_name}" %> has no registered institutions
+  <div class="account-section">
+    <div class="row mb-4">
+      <div class="col-12">
+        <h4 class="mb-3">Name</h4>
+        <p class="mb-2">
+          <%= "#{@current_author.first_name} #{@current_author.last_name}" %>
+        </p>
+        <a href="#" onclick="function(e) { e.preventDefault()}" data-toggle="modal" data-target="#modal-change-name" id="change-name">Change name</a>
       </div>
-    <% else %>
-      <table class="table table-sm table-striped table-bordered">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Country Code</th>
-            <th>Email</th>
-            <th>URL</th>
-            <th>Timezone</th>
-            <th>Consumer Key</th>
-            <th>Shared Secret</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-      <%= for institution <- @institutions do %>
-          <tr>
-            <td><%= institution.name %></td>
-            <td><%= institution.country_code %></td>
-            <td><%= institution.institution_email %></td>
-            <td><%= institution.institution_url %></td>
-            <td><%= institution.timezone %></td>
-            <td><%= institution.consumer_key %></td>
-            <td><%= institution.shared_secret %></td>
+    </div>
 
-            <td>
-              <span><%= link "Show", to: Routes.institution_path(@conn, :show, institution), class: "btn btn-xs btn-outline-primary my-2" %></span>
-              <span><%= link "Edit", to: Routes.institution_path(@conn, :edit, institution), class: "btn btn-xs btn-outline-primary my-2" %></span>
-              <span><%= link "Delete", to: Routes.institution_path(@conn, :delete, institution), method: :delete, data: [confirm: "Are you sure?"], class: "btn btn-xs btn-outline-danger my-2" %></span>
-            </td>
-          </tr>
-      <% end %>
-        </tbody>
-      </table>
-    <% end %>
+    <div class="row my-4">
+      <div class="col-12">
+        <h4 class="mb-3">Email</h2>
+        <p class="mb-2">
+          <%= "#{@current_author.email}" %>
+        </p>
+        <%= case @current_author.provider do
+          "facebook" -> "Managed by Facebook"
+          "google" -> "Managed by Google"
+          _ -> ""
+        end %>
+      </div>
+    </div>
+  </div>
 
-    <span><%= link "Register an Institution", to: Routes.institution_path(@conn, :new), class: "btn btn-md btn-outline-primary" %></span>
+  <hr />
 
-    <h2 class="mt-5">Preferences</h2>
+  <div class="row">
+    <div class="col-12">
+      <h2 class="mb-4">My Institutions</h2>
 
-    <div class="my-4">
-      <%= form_for @conn, Routes.workspace_path(@conn, :update_theme), fn f -> %>
-        <%= label f, "Editor theme", class: "control-label" %>
-        <div class="input-group mb-3">
-          <%= select f, :id, Enum.map(@themes, fn t -> if t.default, do: {"#{t.name} (Default)", t.id}, else: {t.name, t.id} end), value: @active_theme.id, class: "form-control" %>
+      <%= if Enum.count(@institutions) == 0 do %>
+        <div class="my-5 text-center">
+          <%= "#{@current_author.first_name} #{@current_author.last_name}" %> has no registered institutions
         </div>
-        <%= submit "Save Theme", class: "btn btn-sm btn-primary", phx_disable_with: "Saving..." %>
+      <% else %>
+        <table class="table table-sm table-striped table-bordered">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Country Code</th>
+              <th>Email</th>
+              <th>URL</th>
+              <th>Timezone</th>
+              <th>Consumer Key</th>
+              <th>Shared Secret</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+        <%= for institution <- @institutions do %>
+            <tr>
+              <td><%= institution.name %></td>
+              <td><%= institution.country_code %></td>
+              <td><%= institution.institution_email %></td>
+              <td><%= institution.institution_url %></td>
+              <td><%= institution.timezone %></td>
+              <td><%= institution.consumer_key %></td>
+              <td><%= institution.shared_secret %></td>
 
+              <td>
+                <span><%= link "Show", to: Routes.institution_path(@conn, :show, institution), class: "btn btn-xs btn-outline-primary my-2" %></span>
+                <span><%= link "Edit", to: Routes.institution_path(@conn, :edit, institution), class: "btn btn-xs btn-outline-primary my-2" %></span>
+                <span><%= link "Delete", to: Routes.institution_path(@conn, :delete, institution), method: :delete, data: [confirm: "Are you sure?"], class: "btn btn-xs btn-outline-danger my-2" %></span>
+              </td>
+            </tr>
+        <% end %>
+          </tbody>
+        </table>
+      <% end %>
+
+      <span><%= link "Register an Institution", to: Routes.institution_path(@conn, :new), class: "btn btn-md btn-outline-primary" %></span>
+
+    </div>
+
+    <div class="row">
+      <div class="col-12">
+        <h2 class="mt-5">Preferences</h2>
+        <div class="my-4">
+          <%= form_for @conn, Routes.workspace_path(@conn, :update_theme), fn f -> %>
+            <%= label f, "Editor theme", class: "control-label" %>
+            <div class="input-group mb-3">
+              <%= select f, :id, Enum.map(@themes, fn t -> if t.default, do: {"#{t.name} (Default)", t.id}, else: {t.name, t.id} end), value: @active_theme.id, class: "form-control" %>
+            </div>
+            <%= submit "Save Theme", class: "btn btn-sm btn-primary", phx_disable_with: "Saving..." %>
+          <% end %>
+        <div>
+      </div>
+    </div>
+  <div>
+</div>
+
+<div class="modal fade" id="modal-change-name" tabindex="-1" role="dialog" aria-labelledby="change-name-modal" aria-hidden="true">
+  <div class="modal-dialog modal-sm" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="exampleModalLabel">Change your name</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <%= form_for @changeset, Routes.workspace_path(@conn, :update_author), [id: "form-create-project"], fn f -> %>
+        <div class="modal-body">
+            <div class="form-label-group">
+
+              <%= label f, :first_name, "First name", class: "control-label text-secondary", for: "input-first-name" %>
+              <%= text_input f,
+                :first_name,
+                class: "form-control input-bold mb-3" <> error_class(f, :first_name, "is-invalid"),
+                placeholder: "Tony",
+                id: "input-first-name",
+                required: true,
+                autofocus: focusHelper(f, :first_name, default: true) %>
+              <%= error_tag f, :first_name %>
+
+              <%= label f, :last_name, "Last name", class: "control-label text-secondary", for: "input-last-name" %>
+              <%= text_input f,
+                :last_name,
+                class: "form-control input-bold mb-3" <> error_class(f, :last_name, "is-invalid"),
+                placeholder: "Stark",
+                id: "input-last-name",
+                required: true,
+                autofocus: focusHelper(f, :last_name, default: true) %>
+              <%= error_tag f, :last_name %>
+
+            </div>
+        </div>
+        <div class="modal-footer">
+          <%= submit "Change name",
+            id: "button-change-name",
+            class: "btn btn-primary",
+            phx_disable_with: "Changing name..." %>
+        </div>
       <% end %>
     </div>
   </div>

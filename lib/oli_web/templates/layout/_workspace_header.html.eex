@@ -1,8 +1,8 @@
 <div class="modal fade" id="modal-new-project" tabindex="-1" role="dialog" aria-labelledby="new-project-modal" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
+  <div class="modal-dialog modal-md" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 class="modal-title" id="exampleModalLabel">Create Project</h5>
+        <h2 class="modal-title" id="exampleModalLabel">Name your project</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -22,7 +22,6 @@
             </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Cancel</button>
           <%= submit "Create Project",
             id: "button-create-project",
             class: "btn btn-primary",
@@ -37,7 +36,7 @@
   <div class="page-title"><%= @title %></div>
   <div class="page-controls">
     <button id="button-new-project"
-      class="btn btn-sm btn-primary"
+      class="btn btn-sm btn-secondary"
       data-toggle="modal"
       data-target="#modal-new-project">
       <i class="fa fa-plus"></i> New Project

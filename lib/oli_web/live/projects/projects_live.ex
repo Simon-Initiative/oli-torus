@@ -55,7 +55,7 @@ defmodule OliWeb.Projects.ProjectsLive do
   def render(assigns) do
     ~L"""
     <div class="projects-title-row">
-      <h4 style="display: inline-block">My Projects</h4>
+      <h4>My Projects</h4>
       <span class="display-modes">
         <i class="material-icons <%= active_display_mode(@display_mode, "cards") %>" phx-click="display_mode" phx-value-display_mode="cards">apps</i>
         <i class="material-icons <%= active_display_mode(@display_mode, "table") %>" phx-click="display_mode" phx-value-display_mode="table">view_headline</i>

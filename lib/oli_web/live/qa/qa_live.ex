@@ -83,7 +83,6 @@ defmodule OliWeb.Qa.QaLive do
     <div class="container review">
       <div class="row">
         <div class="col-12">
-          <h2>Review</h2>
           <p class="text-secondary">Run an automated review before publishing to check for broken links and other common issues that may be present in your course.</p>
 
           <button class="btn btn-sm btn-outline-primary mt-3" id="button-publish"

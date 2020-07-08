@@ -49,39 +49,3 @@ body {
     padding: 10px;
   }
 }
-
-.btn.btn-primary {
-  background-color: white;
-  border: none;
-  color: #333;
-}
-.btn-primary:not(:disabled):not(.disabled):focus,
-.btn-primary:not(:disabled):not(.disabled):active:focus {
-  background-color: white;
-  color: #333;
-  border-color: #18a0fb;
-  box-shadow: inset 0 0 0 2px #18a0fb;
-  border-radius: .2rem;
-}
-.btn-primary:not(:disabled):not(.disabled):hover {
-  background-color: rgba(0,0,0,.06);
-  border: none;
-  color: #333;
-}
-
-#main-content .container {
-  padding: 0;
-  margin: 0;
-}
-
-.row {
-  margin: 0;
-}
-
-.col-12 {
-  padding-left: 0;
-}
-
-.modal-header {
-  border-bottom: 0;
-}
