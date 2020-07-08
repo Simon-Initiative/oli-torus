@@ -8,7 +8,7 @@
 
     <%= if author_signed_in?(@conn) do %>
       <div>
-        <%= link "My Projects", to: Routes.workspace_path(@conn, :projects), class: "btn btn-primary mx-2" %>
+        <%= link "My Projects", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive), class: "btn btn-primary mx-2" %>
         <%= link "Sign out", to: Routes.auth_path(@conn, :signout), class: "btn btn-link ml-2" %>
       <div>
     <% else %>

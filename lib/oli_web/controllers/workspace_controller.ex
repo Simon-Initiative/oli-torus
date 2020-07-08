@@ -1,26 +1,8 @@
 defmodule OliWeb.WorkspaceController do
   use OliWeb, :controller
   alias Oli.Authoring
-  alias Oli.Authoring.Course.Project
-  alias Oli.Repo
   alias Oli.Accounts
-
-  def projects(%{:assigns => %{:current_author => current_author}} = conn, params) do
-    current_author = Repo.preload(current_author, [:projects])
-    projects = current_author.projects
-      |> Enum.map(fn project ->
-        Map.put(project, :author_count, Accounts.project_author_count(project)) end)
-    params = %{
-      title: "Projects",
-      active: :projects,
-      changeset: Project.changeset(%Project{
-        title: params["project_title"] || ""
-      }),
-      author: current_author,
-      projects: projects
-    }
-    render %{conn | assigns: (Map.merge(conn.assigns, params) |> Map.put(:title, "Projects"))}, "projects.html"
-  end
+  alias Oli.Accounts.Author
 
   def account(conn, _params) do
     author = conn.assigns.current_author
@@ -32,7 +14,30 @@ defmodule OliWeb.WorkspaceController do
       %{theme: url} ->
         Authoring.get_theme_by_url!(url)
     end
-    render conn, "account.html", title: "Account", active: :account, institutions: institutions, themes: themes, active_theme: active_theme, title: "Account"
+
+    render conn,
+      "account.html",
+      title: "Account",
+      active: :account,
+      institutions: institutions,
+      themes: themes,
+      active_theme: active_theme,
+      title: "Account",
+      changeset: Author.changeset(author)
+  end
+
+  def update_author(conn, %{"author" => %{"first_name" => first_name, "last_name" => last_name}}) do
+    author = conn.assigns.current_author
+    case Accounts.update_author(author, %{first_name: first_name, last_name: last_name}) do
+      {:ok, _author} ->
+        conn
+        |> redirect(to: Routes.workspace_path(conn, :account))
+
+      {:error, _} ->
+        conn
+        |> put_flash(:error, "Failed to change name")
+        |> redirect(to: Routes.workspace_path(conn, :account))
+    end
   end
 
   def update_theme(conn, %{"id" => theme_id} = _params) do
@@ -52,8 +57,6 @@ defmodule OliWeb.WorkspaceController do
         conn
         |> put_flash(:error, "Failed to change theme")
         |> redirect(to: Routes.workspace_path(conn, :account))
-
     end
-
   end
 end

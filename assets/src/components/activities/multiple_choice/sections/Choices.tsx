@@ -36,7 +36,7 @@ export const Choices = ({ onAddChoice, onEditChoice, onRemoveChoice, editMode, m
   const incorrectChoices = choices.filter(choice => choice.id !== correctChoice.id);
 
   return (
-    <div className="my-4">
+    <div className="my-5">
       <Heading title="Answer Choices"
         subtitle="One correct answer choice and as many incorrect answer choices as you like." id="choices" />
       <Description>

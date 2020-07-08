@@ -6,7 +6,7 @@ defmodule OliWeb.WorkspaceControllerTest do
 
     test "displays the projects page", %{conn: conn} do
       {:ok, conn: conn, author: _author} = author_conn(%{conn: conn})
-      conn = get(conn, Routes.workspace_path(conn, :projects))
+      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
       assert html_response(conn, 200) =~ "Projects"
     end
 
@@ -14,7 +14,7 @@ defmodule OliWeb.WorkspaceControllerTest do
       {:ok, conn: conn, author: author} = author_conn(%{conn: conn})
       make_n_projects(3, author)
 
-      conn = get(conn, Routes.workspace_path(conn, :projects))
+      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
       assert length(Repo.preload(author, [:projects]).projects) == 3
       assert !(html_response(conn, 200) =~ "No projects")
     end
@@ -23,14 +23,14 @@ defmodule OliWeb.WorkspaceControllerTest do
       {:ok, conn: conn, author: author} = author_conn(%{conn: conn})
       make_n_projects(0, author)
 
-      conn = get(conn, Routes.workspace_path(conn, :projects))
+      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
       assert Enum.empty?(Repo.preload(author, [:projects]).projects)
       assert html_response(conn, 200) =~ "No projects"
     end
 
     test "Has a `create project` button", %{conn: conn} do
       {:ok, conn: conn, author: _author} = author_conn(%{conn: conn})
-      conn = get(conn, Routes.workspace_path(conn, :projects))
+      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
       assert html_response(conn, 200) =~ "action=\"/project\""
     end
   end

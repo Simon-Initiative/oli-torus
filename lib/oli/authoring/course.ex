@@ -5,6 +5,7 @@ defmodule Oli.Authoring.Course do
   alias Oli.Publishing
   alias Oli.Authoring.{Collaborators}
   alias Oli.Authoring.Course.{Utils, Project, Family, ProjectResource}
+  alias Oli.Accounts.{SystemRole}
 
   def create_project_resource(attrs) do
     %ProjectResource{}
@@ -15,6 +16,22 @@ defmodule Oli.Authoring.Course do
   def list_projects do
     Repo.all(Project)
   end
+
+
+  def get_projects_for_author(author) do
+
+    admin_role_id = SystemRole.role_id().admin
+
+    case author do
+
+      # Admin authors have access to every project
+      %{system_role_id: ^admin_role_id} -> Repo.all(Project)
+
+      _ -> Repo.preload(author, [:projects]).projects
+    end
+
+  end
+
 
   def get_project!(id), do: Repo.get!(Project, id)
   def get_project_by_slug(nil), do: nil
@@ -43,7 +60,7 @@ defmodule Oli.Authoring.Course do
   def initial_resource_setup(author, project) do
 
     attrs = %{
-      title: project.title <> " root container",
+      title: "Curriculum",
       author_id: author.id,
       resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
     }

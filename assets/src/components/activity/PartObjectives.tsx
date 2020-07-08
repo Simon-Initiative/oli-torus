@@ -10,13 +10,15 @@ export type PartObjectivesProps = {
   objectives: Immutable.Map<string, Immutable.List<ObjectiveSlug>>,
   allObjectives: Immutable.List<Objective>,
   editMode: boolean,
+  projectSlug: string,
   onEdit: (objectives: Immutable.Map<string, Immutable.List<ObjectiveSlug>>) => void;
+  onRegisterNewObjective: (objective: Objective) => void;
 };
 
 // PartObjective component that allows attaching and removal of objectives to activity parts
 export const PartObjectives = (props: PartObjectivesProps) => {
 
-  const { partIds, objectives, allObjectives, editMode, onEdit } = props;
+  const { partIds, objectives, allObjectives, editMode, onEdit, onRegisterNewObjective } = props;
 
   return (
     <div>
@@ -29,9 +31,11 @@ export const PartObjectives = (props: PartObjectivesProps) => {
                 <div>Part {id}</div>
                 <Objectives
                   editMode={editMode}
+                  projectSlug={props.projectSlug}
                   selected={Immutable.List<ObjectiveSlug>(valueOr(objectives.get(id),
                     Immutable.List<ObjectiveSlug>()))}
                   objectives={allObjectives}
+                  onRegisterNewObjective={onRegisterNewObjective}
                   onEdit={objectives => onEdit(Immutable.Map<string,
                     Immutable.List<ObjectiveSlug>>({ [id]: objectives } as any))}/>
               </div>
@@ -40,9 +44,11 @@ export const PartObjectives = (props: PartObjectivesProps) => {
               <div className="d-flex flex-row">
                 <Objectives
                   editMode={editMode}
+                  projectSlug={props.projectSlug}
                   selected={Immutable.List<ObjectiveSlug>(valueOr(objectives.get(partIds.first()),
                     Immutable.List<ObjectiveSlug>()))}
                   objectives={allObjectives}
+                  onRegisterNewObjective={onRegisterNewObjective}
                   onEdit={objectives => onEdit(
                     Immutable.Map<string,
                     Immutable.List<ObjectiveSlug>>({

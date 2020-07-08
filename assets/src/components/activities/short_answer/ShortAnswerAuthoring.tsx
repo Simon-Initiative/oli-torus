@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect } from 'react';
+import React, { useReducer, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { ShortAnswerModelSchema, InputType } from './schema';
@@ -48,9 +48,15 @@ export const InputTypeDropdown = ({ onChange, editMode, inputType }: InputTypeDr
 
 const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
   const [state, dispatch] = useReducer(ShortAnswerReducer, props.model);
+  const [initialUpdate, setInitialUpate] = useState(true);
 
   useEffect(() => {
-    props.onEdit(state);
+    // This prevents an immediate persistence call as this effect will
+    // view the [state] dependency as having changed on the initial update
+    if (!initialUpdate) {
+      props.onEdit(state);
+    }
+    setInitialUpate(false);
   }, [state]);
 
   const sharedProps = {

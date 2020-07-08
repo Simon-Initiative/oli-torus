@@ -20,7 +20,8 @@ export type ActivityContext = {
   description: string,            // Activity type description
   authorEmail: string,            // The current author
   projectSlug: ProjectSlug,       // The current project
-  resourceSlug: ResourceSlug,     // The current resource
+  resourceSlug: ResourceSlug,     // The slug of parent resource
+  resourceTitle: string,          // The title of the parent resource
   activitySlug: ActivitySlug,     // The current resource
   title: string,                  // The title of the resource
   model: ActivityModelSchema,     // Content of the resource
