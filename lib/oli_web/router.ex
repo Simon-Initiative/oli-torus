@@ -101,8 +101,9 @@ defmodule OliWeb.Router do
   scope "/", OliWeb do
     pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring]
 
-    get "/projects", WorkspaceController, :projects
+    live "/projects", Projects.ProjectsLive
     get "/account", WorkspaceController, :account
+    put "/account", WorkspaceController, :update_author
     post "/account/theme", WorkspaceController, :update_theme
     resources "/institutions", InstitutionController
   end
@@ -119,8 +120,6 @@ defmodule OliWeb.Router do
     get "/:project_id", ProjectController, :overview
     get "/:project_id/publish", ProjectController, :publish
     post "/:project_id/publish", ProjectController, :publish_active
-    post "/:project_id/review", ProjectController, :review_project
-    delete "/:project_id/review", ProjectController, :dismiss_warning
     post "/:project_id/datashop", ProjectController, :download_datashop
 
     # Project
@@ -132,6 +131,9 @@ defmodule OliWeb.Router do
 
     # Curriculum
     live "/:project_id/curriculum", Curriculum.Container
+
+    # Review/QA
+    live "/:project_id/review", Qa.QaLive
 
     # Editors
     get "/:project_id/resource/:revision_slug", ResourceController, :edit
@@ -170,6 +172,8 @@ defmodule OliWeb.Router do
 
     post "/:project/media", MediaController, :create
     get "/:project/media", MediaController, :index
+
+    post "/:project_id/objectives", ResourceController, :create_objective
   end
 
   scope "/api/v1/attempt", OliWeb do
@@ -251,6 +255,11 @@ defmodule OliWeb.Router do
   scope "/admin", OliWeb do
     pipe_through [:browser, :csrf_always, :protected, :admin]
     live_dashboard "/dashboard", metrics: OliWeb.Telemetry
+  end
+
+  scope "/admin", OliWeb do
+    pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring, :admin]
+    live "/accounts", Accounts.AccountsLive
   end
 
   scope "/project", OliWeb do

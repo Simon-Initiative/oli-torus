@@ -7,6 +7,7 @@ defmodule OliWeb.ResourceController do
   alias Oli.Accounts
   alias Oli.Activities
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.Authoring.Editing.ObjectiveEditor
 
   import OliWeb.ProjectPlugs
 
@@ -45,7 +46,7 @@ defmodule OliWeb.ResourceController do
     is_admin? = Accounts.is_admin?(author)
 
     case PageEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
-      {:ok, context} -> render(conn, "edit.html", title: "Page Editor", is_admin?: is_admin?, context: Jason.encode!(context), scripts: Activities.get_activity_scripts(), project_slug: project_slug, revision_slug: revision_slug)
+      {:ok, context} -> render(conn, "edit.html", active: :curriculum, title: "Page Editor", is_admin?: is_admin?, context: Jason.encode!(context), scripts: Activities.get_activity_scripts(), project_slug: project_slug, revision_slug: revision_slug)
 
       {:error, :not_found} ->
         conn
@@ -92,6 +93,20 @@ defmodule OliWeb.ResourceController do
 
   def delete(_conn, %{"project_id" => _project_slug, "revision_slug" => _resource_slug }) do
 
+  end
+
+  def create_objective(conn, %{"project_id" => project_slug, "title" => title }) do
+    project = Course.get_project_by_slug(project_slug)
+    author = conn.assigns[:current_author]
+
+    case ObjectiveEditor.add_new(%{title: title}, author, project, nil) do
+      {:ok, %{revision: revision}} ->
+        conn
+        |> json(%{ "type" => "success", "revisionSlug" => revision.slug})
+      {:error, %Ecto.Changeset{} = _changeset} ->
+        conn
+        |> send_resp(500, "Objective could not be created")
+    end
   end
 
   defp error(conn, code, reason) do

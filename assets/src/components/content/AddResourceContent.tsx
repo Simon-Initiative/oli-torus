@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ResourceContent, Activity, ResourceContext, ActivityReference,
   createDefaultStructuredContent } from 'data/content/resource';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
@@ -6,17 +6,21 @@ import { ActivityModelSchema } from 'components/activities/types';
 import { invokeCreationFunc } from 'components/activities/creation';
 import * as Persistence from 'data/persistence/activity';
 import guid from 'utils/guid';
+import Popover from 'react-tiny-popover';
 
 import './AddResourceContent.scss';
+import { classNames } from 'utils/classNames';
 
-type AddCallback = (content: ResourceContent, a? : Activity) => void;
+type AddCallback = (content: ResourceContent, index: number, a? : Activity) => void;
 
 // Component that presents a drop down to use to add structure
 // content or the any of the registered activities
 export const AddResourceContent = (
-  { editMode, onAddItem, editorMap, resourceContext }
-  : {editMode: boolean, onAddItem: AddCallback,
+  { editMode, index, onAddItem, editorMap, resourceContext, isLast }
+  : {editMode: boolean, index: number, onAddItem: AddCallback, isLast: boolean,
     editorMap: ActivityEditorMap, resourceContext: ResourceContext }) => {
+
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const handleAdd = (editorDesc: EditorDesc) => {
 
@@ -44,37 +48,72 @@ export const AddResourceContent = (
           transformed: result.transformed,
         };
 
-        onAddItem(resourceContent, activity);
+        onAddItem(resourceContent, index, activity);
       })
       .catch((err) => {
         // console.log(err);
       });
   };
 
-  const content = <a className="dropdown-item" key="content" href="#"
-    onClick={() => onAddItem(createDefaultStructuredContent())}>Content</a>;
+  const content =
+    <div className="insert-item list-group-item list-group-item-action" key="content"
+      onClick={() => onAddItem(createDefaultStructuredContent(), index)}>
+      Content
+    </div>;
 
   const activityEntries = Object
     .keys(editorMap)
     .map((k: string) => {
       const editorDesc : EditorDesc = editorMap[k];
       return (
-        <a className="dropdown-item"
-          href="#"
-          key={editorDesc.slug}
-          onClick={handleAdd.bind(this, editorDesc)}>{editorDesc.friendlyName}</a>
+        <div className="insert-item list-group-item list-group-item-action" key={editorDesc.slug}
+            onClick={handleAdd.bind(this, editorDesc)}>
+            {editorDesc.friendlyName}
+        </div>
       );
     });
 
+  const contentFn = () =>
+      <div className="add-resource-popover-content">
+        <div className="list-group">
+          {[content, ...activityEntries]}
+        </div>
+      </div>;
+
+  const [latestClickEvent, setLatestClickEvent] = useState<MouseEvent>();
+  const togglePopover = (e: React.MouseEvent) => {
+    setIsPopoverOpen(!isPopoverOpen);
+    setLatestClickEvent(e.nativeEvent);
+  };
+
   return (
-    <div className="add-resource-content dropdown mx-1">
-      <button className={`btn btn-light dropdown-toggle ${editMode ? '' : 'disabled'}`} type="button"
-        id="addResourceContent" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <i className="fa fa-plus"></i> Add
-      </button>
-      <div className="dropdown-menu dropdown-menu-right" aria-labelledby="addResourceContent">
-        {[content, ...activityEntries]}
+      <div className={classNames(['add-resource-content', isPopoverOpen ? 'active' : '', isLast ? 'add-resource-content-last' : ''])}
+        onClick={togglePopover}>
+
+        {editMode &&
+          <React.Fragment>
+            <div className="insert-button-container">
+              <Popover
+                containerClassName="add-resource-popover"
+                onClickOutside={(e) => {
+                  if (e !== latestClickEvent) {
+                    setIsPopoverOpen(false);
+                  }
+                }}
+                isOpen={isPopoverOpen}
+                align="start"
+                transitionDuration={0.25}
+                position={['bottom', 'top']}
+                content={contentFn}>
+                  {ref => <div ref={ref} className="insert-button">
+                    <i className="fa fa-plus"></i>
+                  </div>}
+              </Popover>
+            </div>
+            <div className="insert-adornment"></div>
+          </React.Fragment>
+        }
+
       </div>
-    </div>
   );
 };

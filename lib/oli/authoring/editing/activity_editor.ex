@@ -233,7 +233,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
          {:ok, all_objectives} <- Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, objectives_without_ids} <- PageEditor.strip_ids(all_objectives) |> trap_nil(),
-         {:ok, %{content: content}} <- PageEditor.get_latest_revision(publication, resource) |> trap_nil(),
+         {:ok, %{content: content, title: resource_title}} <- PageEditor.get_latest_revision(publication, resource) |> trap_nil(),
          {:ok, %{id: activity_id}} <- Resources.get_resource_from_slug(activity_slug) |> trap_nil(),
          {:ok, %{activity_type: activity_type, content: model, title: title, objectives: objectives}} <- get_latest_revision(publication.id, activity_id) |> trap_nil()
     do
@@ -248,6 +248,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         authorEmail: author.email,
         projectSlug: project_slug,
         resourceSlug: revision_slug,
+        resourceTitle: resource_title,
         activitySlug: activity_slug,
         title: title,
         model: model,

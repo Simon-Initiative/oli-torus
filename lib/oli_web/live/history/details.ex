@@ -36,7 +36,7 @@ defmodule OliWeb.RevisionHistory.Details do
         <%= for k <- attrs do %>
           <tr>
           <td style="width:100px;"><strong><%= k %></strong></td>
-          <td><%= Map.get(@revision, String.to_atom(k)) %></td>
+          <td><%= Map.get(@revision, String.to_existing_atom(k)) %></td>
           </tr>
         <% end %>
       </tbody>

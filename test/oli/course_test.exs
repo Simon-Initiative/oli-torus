@@ -129,12 +129,12 @@ defmodule Oli.CourseTest do
     end
 
     test "creates a new container resource", %{resource_revision: revision} do
-      assert revision.slug =~ "root_container"
+      assert revision.slug =~ "curriculum"
     end
 
     test "creates a new resource revision for the container", %{resource: resource, resource_revision: resource_revision} do
       revision = Repo.preload(resource_revision, [:resource])
-      assert revision.slug =~ "root_container"
+      assert revision.slug =~ "curriculum"
       assert revision.resource == resource
     end
 

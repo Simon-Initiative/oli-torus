@@ -172,7 +172,6 @@ defmodule OliWeb.AuthController do
 
   def signin_callback(conn, author) do
     conn
-    |> put_flash(:info, "Thank you for signing in!")
     |> put_session(:current_author_id, author.id)
     |> redirect(to: redirect_path(conn, author))
   end
@@ -195,7 +194,7 @@ defmodule OliWeb.AuthController do
 
     case length author.projects do
       1 -> Routes.project_path conn, :overview, (hd author.projects).slug
-      _ -> Routes.workspace_path conn, :projects
+      _ -> Routes.live_path OliWeb.Endpoint, OliWeb.Projects.ProjectsLive
     end
   end
 

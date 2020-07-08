@@ -8,18 +8,17 @@ import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
 import { Editors } from './Editors';
 import { Objectives } from './Objectives';
-import { Outline } from './Outline';
 import { TitleBar } from '../content/TitleBar';
 import { UndoRedo } from '../content/UndoRedo';
 import { PreviewButton } from '../content/PreviewButton';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
-import { AddResourceContent } from '../content/AddResourceContent';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug } from 'data/types';
 import * as Persistence from 'data/persistence/resource';
 import { UndoableState, processRedo, processUndo, processUpdate, init } from './undo';
 import { releaseLock, acquireLock } from 'data/persistence/lock';
 import { Message, createMessage } from 'data/messages/messages';
 import { Banner } from '../messages/Banner';
+import { BreadcrumbTrail } from 'components/common/BreadcrumbTrail';
 
 export interface ResourceEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap;   // Map of activity types to activity elements
@@ -168,6 +167,12 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     const props = this.props;
     const state = this.state;
 
+    const { projectSlug, resourceSlug, title } = this.props;
+    const page = {
+      slug: resourceSlug,
+      title,
+    };
+
     const onEdit = (content: Immutable.List<ResourceContent>) => {
       this.update({ content });
     };
@@ -176,11 +181,15 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       this.update({ title });
     };
 
-    const onAddItem = (c : ResourceContent, a? : Activity) => {
-      this.update({ content: this.state.undoable.current.content.push(c) });
+    const onAddItem = (c : ResourceContent, index: number, a? : Activity) => {
+      this.update({ content: this.state.undoable.current.content.insert(index, c) });
       if (a) {
         this.setState({ activities: this.state.activities.set(a.activitySlug, a) });
       }
+    };
+
+    const onRegisterNewObjective = (o: Objective) => {
+      this.setState({ allObjectives: state.allObjectives.concat(o) });
     };
 
     return (
@@ -192,6 +201,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
             executeAction={() => true}
             messages={this.state.messages}
           />
+          <BreadcrumbTrail projectSlug={projectSlug} page={page} />
           <TitleBar
             title={state.undoable.current.title}
             onTitleEdit={onTitleEdit}
@@ -209,27 +219,22 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           <div className="learning-objectives-label">Learning Objectives</div>
           <Objectives
             editMode={this.state.editMode}
+            projectSlug={props.projectSlug}
             selected={this.state.undoable.current.objectives}
             objectives={this.state.allObjectives}
+            onRegisterNewObjective={onRegisterNewObjective}
             onEdit={objectives => this.update({ objectives })} />
-          <div className="d-flex flex-row align-items-start">
-            <div className="d-flex flex-column">
-              <Outline {...props} editMode={this.state.editMode}
-                activities={this.state.activities}
-                onEdit={c => onEdit(c)} content={this.state.undoable.current.content}/>
-              <AddResourceContent
-                editMode={this.state.editMode}
-                onAddItem={onAddItem}
-                editorMap={props.editorMap}
-                resourceContext={props} />
-            </div>
+          <div>
             <Editors {...props} editMode={this.state.editMode}
               activities={this.state.activities}
               onRemove={index => onEdit(this.state.undoable.current.content.delete(index))}
               onEdit={(c, index) => {
                 onEdit(this.state.undoable.current.content.set(index, c));
               }}
-              content={this.state.undoable.current.content}/>
+              onEditContentList={onEdit}
+              content={this.state.undoable.current.content}
+              onAddItem={onAddItem}
+              resourceContext={props} />
           </div>
         </div>
       </div>
