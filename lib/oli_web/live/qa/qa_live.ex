@@ -13,7 +13,7 @@ defmodule OliWeb.Qa.QaLive do
   alias OliWeb.Qa.WarningSummary
   alias OliWeb.Qa.WarningDetails
   alias OliWeb.Qa.State
-
+  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Repo
   alias Phoenix.PubSub
 
@@ -63,11 +63,19 @@ defmodule OliWeb.Qa.QaLive do
   end
 
   def handle_event("filter", %{"type" => type}, socket) do
-    {:noreply, assign(socket, State.filter_toggled(socket.assigns, type))}
+
+    state = socket.assigns
+    filters = State.toggle_filter(state, type)
+    selected_id = if state.selected == nil do "" else state.selected.id end
+
+    {:noreply, push_patch(socket, to: Routes.live_path(socket, OliWeb.Qa.QaLive, state.project.slug, State.to_params(filters, selected_id)))}
   end
 
   def handle_event("select", %{"warning" => warning_id}, socket) do
-    {:noreply, assign(socket, State.selection_changed(socket.assigns, warning_id))}
+
+    filters = socket.assigns.filters
+
+    {:noreply, push_patch(socket, to: Routes.live_path(socket, OliWeb.Qa.QaLive, socket.assigns.project.slug, State.to_params(filters, warning_id)))}
   end
 
   def handle_event("review", _, socket) do
@@ -76,6 +84,10 @@ defmodule OliWeb.Qa.QaLive do
     Oli.Authoring.Broadcaster.broadcast_review(socket.assigns.project.slug)
 
     {:noreply, socket}
+  end
+
+  def handle_params(params, _, socket) do
+    {:noreply, assign(socket, State.from_params(socket.assigns, params))}
   end
 
   def render(assigns) do
