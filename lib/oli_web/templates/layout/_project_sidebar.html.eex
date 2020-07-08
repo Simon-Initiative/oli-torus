@@ -17,5 +17,8 @@
   <p class="category">Improve</p>
   <%= sidebar_link @conn, "Insights", :insights, to: Routes.project_path(@conn, :insights, @project) %>
 
+  <%= if is_admin?(@conn) do %>
+    <%= render OliWeb.LayoutView, "_admin_sidebar.html", assigns %>
+  <% end %>
 
 </div>

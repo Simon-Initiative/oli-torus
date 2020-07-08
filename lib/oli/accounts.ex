@@ -15,6 +15,17 @@ defmodule Oli.Accounts do
     Repo.all(User)
   end
 
+
+  @doc """
+  Returns the list of authors.
+  ## Examples
+      iex> list_authors()
+      [%Author{}, ...]
+  """
+  def list_authors do
+    Repo.all(Author)
+  end
+
   @doc """
   Gets a single user.
   Raises `Ecto.NoResultsError` if the User does not exist.
