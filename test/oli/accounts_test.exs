@@ -4,6 +4,15 @@ defmodule Oli.AccountsTest do
   alias Oli.Accounts
   alias Oli.Accounts.Author
 
+  describe "authors" do
+
+    test "system role defaults to author", %{} do
+      author = author_fixture()
+
+      assert author.system_role_id == Accounts.SystemRole.role_id.author
+    end
+  end
+
   describe "users" do
     alias Oli.Accounts.User
 
