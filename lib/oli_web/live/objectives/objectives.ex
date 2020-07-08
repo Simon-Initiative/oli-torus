@@ -181,7 +181,7 @@ defmodule OliWeb.Objectives.Objectives do
   # process form submission to save page settings
   def handle_event("edit", %{"revision" => objective_params}, socket) do
     with_atom_keys = Map.keys(objective_params)
-                     |> Enum.reduce(%{}, fn k, m -> Map.put(m, String.to_atom(k), Map.get(objective_params, k)) end)
+                     |> Enum.reduce(%{}, fn k, m -> Map.put(m, String.to_existing_atom(k), Map.get(objective_params, k)) end)
     socket = case ObjectiveEditor.edit(Map.get(with_atom_keys,:slug), with_atom_keys, socket.assigns.author, socket.assigns.project) do
       {:ok, _} -> socket
       {:error, _} -> socket
@@ -220,7 +220,7 @@ defmodule OliWeb.Objectives.Objectives do
   # handle clicking of the add objective
   def handle_event("new", %{"revision" => objective_params}, socket) do
     with_atom_keys = Map.keys(objective_params)
-                     |> Enum.reduce(%{}, fn k, m -> Map.put(m, String.to_atom(k), Map.get(objective_params, k)) end)
+                     |> Enum.reduce(%{}, fn k, m -> Map.put(m, String.to_existing_atom(k), Map.get(objective_params, k)) end)
 
     container_slug = Map.get(objective_params, "parent_slug")
 

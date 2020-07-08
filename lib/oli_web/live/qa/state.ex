@@ -1,8 +1,10 @@
 defmodule OliWeb.Qa.State do
 
+  @default_filters MapSet.new(["pedagogy", "content", "accessibility"])
+
   @default_state %{
     active: :review,
-    filters: MapSet.new(["pedagogy", "content", "accessibility"]),
+    filters: @default_filters,
     filtered_warnings: [],
     warnings: [],
     qa_reviews: [],
@@ -13,6 +15,32 @@ defmodule OliWeb.Qa.State do
     project: nil,
     author: nil
   }
+
+  def from_params(state, params) do
+
+    filters =
+      case params["filters"] do
+        nil -> @default_filters
+        s -> String.split(s, ",") |> MapSet.new
+      end
+
+    selected_id =
+      case params["selected"] do
+        nil -> if state.selected == nil do nil else state.selected.id end
+        id -> id
+      end
+
+    state = Map.merge(state, Map.new(selection_changed(state, selected_id)))
+    set_filters(state, filters)
+
+  end
+
+  def to_params(filters, selected) do
+    %{
+      filters: MapSet.to_list(filters) |> Enum.join(","),
+      selected: selected
+    }
+  end
 
   def initialize_state(author, project, initial_review) do
 
@@ -33,13 +61,17 @@ defmodule OliWeb.Qa.State do
     ], update_warnings(state, warnings))
   end
 
-  def filter_toggled(state, filter_type) do
+  def toggle_filter(state, filter_type) do
 
-    filters = if MapSet.member?(state.filters, filter_type) do
+    if MapSet.member?(state.filters, filter_type) do
       MapSet.delete(state.filters, filter_type)
     else
       MapSet.put(state.filters, filter_type)
     end
+
+  end
+
+  def set_filters(state, filters) do
 
     filtered_warnings = filter_warnings(filters, state.warnings)
 
@@ -54,6 +86,9 @@ defmodule OliWeb.Qa.State do
       selected: selected
     ]
   end
+
+  def selection_changed(_, nil), do: []
+  def selection_changed(_, ""), do: []
 
   def selection_changed(state, warning_id) do
     [selected: Enum.find(state.warnings, fn r -> r.id == String.to_integer(warning_id) end)]

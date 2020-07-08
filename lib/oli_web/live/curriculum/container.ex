@@ -126,7 +126,7 @@ defmodule OliWeb.Curriculum.Container do
     params = Enum.reduce(params, %{}, fn {k, v}, m ->
       case MapSet.member?(MapSet.new(["_csrf_token", "_target"]), k) do
         true -> m
-        false -> Map.put(m, String.to_atom(k), v)
+        false -> Map.put(m, String.to_existing_atom(k), v)
       end
     end)
 

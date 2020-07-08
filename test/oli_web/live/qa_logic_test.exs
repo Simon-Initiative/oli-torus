@@ -80,23 +80,23 @@ defmodule OliWeb.Qa.StateLogicTest do
       assert state.filters == MapSet.new(["pedagogy", "content", "accessibility"])
       assert length(state.filtered_warnings) == length(state.warnings)
 
-      state = State.filter_toggled(state, "pedagogy") |> merge_changes(state)
+      state = State.set_filters(state, State.toggle_filter(state, "pedagogy")) |> merge_changes(state)
       assert state.filters == MapSet.new(["content", "accessibility"])
       assert length(state.filtered_warnings) != length(state.warnings)
       assert state.selected == nil
 
       # turn off content filter, which should result then in zero warnings being displayed
-      state = State.filter_toggled(state, "content") |> merge_changes(state)
+      state = State.set_filters(state, State.toggle_filter(state, "content")) |> merge_changes(state)
       assert state.filters == MapSet.new(["accessibility"])
       assert length(state.filtered_warnings) == 0
 
       # bring back pedagody and select the first pedagogy, then bring back content,
       # ensuring that the selection of that pedagogy item remains
-      state = State.filter_toggled(state, "pedagogy") |> merge_changes(state)
+      state = State.set_filters(state, State.toggle_filter(state, "pedagogy")) |> merge_changes(state)
       assert state.filters == MapSet.new(["pedagogy", "accessibility"])
       state = State.selection_changed(state, Integer.to_string(first_pedagogy_warning.id)) |> merge_changes(state)
       assert state.selected == first_pedagogy_warning
-      state = State.filter_toggled(state, "content") |> merge_changes(state)
+      state = State.set_filters(state, State.toggle_filter(state, "content")) |> merge_changes(state)
       assert state.filters == MapSet.new(["pedagogy", "content", "accessibility"])
       assert state.selected == first_pedagogy_warning
 
