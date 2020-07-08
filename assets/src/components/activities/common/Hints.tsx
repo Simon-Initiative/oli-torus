@@ -23,7 +23,7 @@ export const Hints = ({ onAddHint, onEditHint,
   const cognitiveHints = hints.slice(1, hints.length - 1);
 
   return (
-    <div>
+    <div className="my-5">
       <Heading title="Hints" subtitle="The best hints follow a pattern:" id="hints" />
 
       {/* Deer in headlights hint */}

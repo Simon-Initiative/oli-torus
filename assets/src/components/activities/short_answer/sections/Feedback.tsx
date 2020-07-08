@@ -96,7 +96,7 @@ export const Feedback = (props: FeedbackProps) => {
   const { authoring: { parts } } = model;
 
   return (
-    <div className="my-3">
+    <div className="my-5">
       <Heading title="Feedback" subtitle="Providing feedback when a student answers a
         question is one of the best ways to reinforce their understanding." id="feedback" />
 

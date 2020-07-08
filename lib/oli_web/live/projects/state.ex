@@ -5,11 +5,14 @@ defmodule OliWeb.Projects.State do
 
   @default_sort_by "title"
   @default_sort_order "asc"
+  @default_display_mode "table"
 
   @default_state %{
+    active: :projects,
     projects: [],
     authors: %{},
     author: nil,
+    display_mode: @default_display_mode,
     sort_order: @default_sort_order,
     sort_by: @default_sort_by,
     changeset: Project.changeset(%Project{
@@ -33,12 +36,15 @@ defmodule OliWeb.Projects.State do
       Map.put(m, k, Enum.sort(v, fn a1, a2 -> a1.last_name < a2.last_name end))
     end)
 
+    is_admin = SystemRole.role_id().admin == author.system_role_id
+
     state = @default_state
     |> with_changes([
       projects: projects,
       author: author,
       authors: authors,
-      is_admin: SystemRole.role_id().admin == author.system_role_id,
+      is_admin: is_admin,
+      display_mode: if is_admin do "table" else "cards" end
     ])
 
     with_changes(state, sort_projects(state, @default_sort_by, @default_sort_order))

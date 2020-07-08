@@ -53,6 +53,8 @@ defmodule OliWeb.ProjectController do
           %{}
         end
 
+        IO.inspect parent_pages
+
         {has_changes, changes, parent_pages}
       end
 

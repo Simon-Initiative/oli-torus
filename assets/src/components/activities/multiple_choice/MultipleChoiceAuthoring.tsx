@@ -35,7 +35,7 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
   };
 
   return (
-    <div>
+    <React.Fragment>
       <Stem
         projectSlug={props.projectSlug}
         editMode={props.editMode}
@@ -54,7 +54,7 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
         onAddHint={() => dispatch(MCActions.addHint())}
         onEditHint={(id, content) => dispatch(MCActions.editHint(id, content))}
         onRemoveHint={id => dispatch(MCActions.removeHint(id))} />
-    </div>
+    </React.Fragment>
   );
 };
 
