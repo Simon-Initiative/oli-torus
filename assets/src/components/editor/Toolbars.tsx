@@ -37,7 +37,7 @@ function positionHovering(el: HTMLElement) {
 }
 
 function hideToolbar(el: HTMLElement) {
-  el.style.visibility = 'hidden';
+  el.style.display = 'none';
 }
 
 function shouldHideToolbar(editor: ReactEditor) {
@@ -119,7 +119,7 @@ export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
 }, hoveringAreEqual);
 
 function showToolbar(el: HTMLElement) {
-  el.style.visibility = 'visible';
+  el.style.display = 'block';
 }
 
 function shouldHideFixedToolbar(editor: ReactEditor) {
@@ -185,7 +185,7 @@ export const FixedToolbar = React.memo((props: FixedToolbarProps) => {
 
 
   return (
-    <div ref={(ref as any)} style={{ visibility: 'hidden', position: 'sticky', top: '0px' }}>
+    <div ref={(ref as any)} style={{ display: 'none', position: 'sticky', top: '0px' }}>
       <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>
         {buttons}
         <button
