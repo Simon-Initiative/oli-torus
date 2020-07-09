@@ -575,7 +575,7 @@ defmodule Oli.Delivery.Attempts do
       set: [response: input, date_evaluated: now, score: score, out_of: out_of, feedback: feedback]) do
       nil -> {:halt, {:error, :error}}
       {1, _} -> {:cont, {:ok, results ++ [%{attempt_guid: attempt_guid, feedback: feedback, score: score, out_of: out_of}]}}
-      e ->
+      _ ->
         {:halt, {:error, :error}}
     end
 
