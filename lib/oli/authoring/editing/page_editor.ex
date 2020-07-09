@@ -387,7 +387,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
     title = Map.get(update, "title", previous.title)
 
     if (title != previous.title) do
-      create_new_revision(previous, publication, resource, author_id)
+      create_new_revision({previous, changed_activity_revisions}, publication, resource, author_id)
     else
       {previous, changed_activity_revisions}
     end
