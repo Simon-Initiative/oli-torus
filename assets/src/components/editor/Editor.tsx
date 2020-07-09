@@ -157,11 +157,11 @@ export const Editor = React.memo((props: EditorProps) => {
 
   const hotkeyHandler = (editor: ReactEditor, e: KeyboardEvent) => {
     if (isBoldHotkey(e)) {
-      toggleMark(editor, 'strong')
+      toggleMark(editor, 'strong');
     } else if (isItalicHotkey(e)) {
-      toggleMark(editor, 'em')
+      toggleMark(editor, 'em');
     } else if (isCodeHotkey(e)) {
-      toggleMark(editor, 'code')
+      toggleMark(editor, 'code');
     } else if (isLinkHotkey(e)) {
       linkCmd.command.execute(props.commandContext, editor);
     }
