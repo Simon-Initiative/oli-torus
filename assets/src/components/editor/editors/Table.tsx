@@ -153,23 +153,37 @@ const DropdownMenu = (props: any) => {
         className="dropdown-toggle btn"
         data-reference="parent"
         data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <span className="sr-only">Toggle Dropdown</span>
+        <span className="sr-only">Toggle Table Cell Options</span>
       </button>
       <div className="dropdown-menu">
         <h6 className="dropdown-header">Insert</h6>
-        <button type="button" className="dropdown-item" onClick={onAddRowBefore}>Row before</button>
-        <button type="button" className="dropdown-item" onClick={onAddRowAfter}>Row after</button>
-        <button type="button" className="dropdown-item" onClick={onAddColumnBefore}>Column before</button>
-        <button type="button" className="dropdown-item" onClick={onAddColumnAfter}>Column after</button>
+        <button type="button"
+          className="dropdown-item"
+          onClick={onAddRowBefore}>Row before</button>
+        <button type="button"
+          className="dropdown-item"
+          onClick={onAddRowAfter}>Row after</button>
+        <button type="button"
+          className="dropdown-item"
+          onClick={onAddColumnBefore}>Column before</button>
+        <button type="button"
+          className="dropdown-item"
+          onClick={onAddColumnAfter}>Column after</button>
 
         <div className="dropdown-divider"></div>
 
         <h6 className="dropdown-header">Delete</h6>
-        <button type="button" className="dropdown-item" onClick={onDeleteRow}>Row</button>
-        <button type="button" className="dropdown-item" onClick={onDeleteColumn}>Column</button>
+        <button type="button"
+          className="dropdown-item"
+          onClick={onDeleteRow}>Row</button>
+        <button type="button"
+          className="dropdown-item"
+          onClick={onDeleteColumn}>Column</button>
 
         <div className="dropdown-divider"></div>
-        <button type="button" className="dropdown-item" onClick={onToggleHeader}>Toggle Header</button>
+        <button type="button"
+          className="dropdown-item"
+          onClick={onToggleHeader}>Toggle Header</button>
       </div>
     </div>
   );
