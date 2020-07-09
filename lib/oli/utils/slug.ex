@@ -103,6 +103,7 @@ defmodule Oli.Utils.Slug do
     String.downcase(title, :default)
       |> String.trim()
       |> String.replace(" ", "_")
+      |> alpha_numeric_only()
       |> URI.encode_www_form()
       |> String.slice(0, 30)
   end
@@ -121,4 +122,8 @@ defmodule Oli.Utils.Slug do
   end
   defp unique_slug(_table, _, []) do "" end
 
+  def alpha_numeric_only(str) do
+    # \W is the shorthand for the [^a-zA-Z0-9] pattern
+    String.replace(str, ~r/[\W]+/, "")
+  end
 end
