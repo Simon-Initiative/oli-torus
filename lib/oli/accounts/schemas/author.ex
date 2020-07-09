@@ -2,6 +2,8 @@ defmodule Oli.Accounts.Author do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Oli.Accounts.SystemRole
+
   schema "authors" do
     field :email, :string
     field :first_name, :string
@@ -39,13 +41,14 @@ defmodule Oli.Accounts.Author do
       :token,
       :password,
       :email_verified,
-      :system_role_id
+      :system_role_id,
     ])
     |> cast_embed(:preferences)
     |> validate_required(
-      [:email, :first_name, :last_name, :provider, :system_role_id]
+      [:email, :first_name, :last_name, :provider]
       |> filter_ignored_fields(ignore_required)
     )
+    |> default_system_role()
     |> unique_constraint(:email)
     |> validate_length(:password, min: 6)
     |> validate_confirmation(:password, message: "does not match password")
@@ -58,6 +61,23 @@ defmodule Oli.Accounts.Author do
     Enum.filter(fields, fn field ->
       if Enum.member?(ignored_fields, field), do: false, else: true
     end)
+  end
+
+  defp default_system_role(changeset) do
+    case changeset do
+      # if changeset is valid and doesnt have a system role set, default to author
+      %Ecto.Changeset{valid?: true, changes: changes, data: %Oli.Accounts.Author{system_role_id: nil}} ->
+        case Map.get(changes, :system_role_id) do
+          nil ->
+            put_change(changeset, :system_role_id, SystemRole.role_id.author)
+
+          _ ->
+            changeset
+        end
+
+      _ ->
+        changeset
+    end
   end
 
   defp hash_password(changeset) do
