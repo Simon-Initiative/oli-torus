@@ -13,7 +13,7 @@ function isMarkActive(editor: ReactEditor, mark: Mark): boolean {
   return !!match;
 }
 
-function toggleMark(editor: ReactEditor, mark: Mark) {
+export function toggleMark(editor: ReactEditor, mark: Mark) {
   const isActive = isMarkActive(editor, mark);
 
   Transforms.setNodes(

@@ -1,13 +1,16 @@
-import React, { useMemo, useCallback, KeyboardEvent } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Slate, Editable, withReact, ReactEditor } from 'slate-react';
 import { createEditor, Node, NodeEntry, Range, Editor as SlateEditor, Transforms, Path } from 'slate';
+import isHotkey from 'is-hotkey';
 import { create, Mark, ModelElement, schema, Paragraph, SchemaConfig } from 'data/content/model';
 import { editorFor, markFor } from './editors';
 import { ToolbarItem, CommandContext } from './interfaces';
 import { FixedToolbar, HoveringToolbar } from './Toolbars';
 import { onKeyDown as listOnKeyDown } from './editors/Lists';
 import { onKeyDown as quoteOnKeyDown } from './editors/Blockquote';
+import { commandDesc as linkCmd } from './editors/Link';
 import { getRootOfText } from './utils';
+import { toggleMark } from './commands';
 
 import guid from 'utils/guid';
 
@@ -29,7 +32,7 @@ export type EditorProps = {
 
 // Pressing the Enter key on any void block should insert an empty
 // paragraph after that node
-const voidOnKeyDown = (editor: ReactEditor, e: KeyboardEvent) => {
+const voidOnKeyDown = (editor: ReactEditor, e: React.KeyboardEvent) => {
 
   if (e.key === 'Enter') {
     if (editor.selection !== null && Range.isCollapsed(editor.selection)) {
@@ -146,10 +149,30 @@ export const Editor = React.memo((props: EditorProps) => {
     return editorFor(model, props, editor, commandContext);
   }, []);
 
-  const onKeyDown = useCallback((e: KeyboardEvent) => {
+  // register hotkeys
+  const isBoldHotkey = isHotkey('mod+b');
+  const isItalicHotkey = isHotkey('mod+i');
+  const isCodeHotkey = isHotkey('mod+;');
+  const isLinkHotkey = isHotkey('mod+l');
+
+  const hotkeyHandler = (editor: ReactEditor, e: KeyboardEvent) => {
+    if (isBoldHotkey(e)) {
+      toggleMark(editor, 'strong')
+    } else if (isItalicHotkey(e)) {
+      toggleMark(editor, 'em')
+    } else if (isCodeHotkey(e)) {
+      toggleMark(editor, 'code')
+    } else if (isLinkHotkey(e)) {
+      linkCmd.command.execute(props.commandContext, editor);
+    }
+  };
+
+  const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     voidOnKeyDown(editor, e);
     listOnKeyDown(editor, e);
     quoteOnKeyDown(editor, e);
+
+    hotkeyHandler(editor, e.nativeEvent);
   }, []);
 
   const renderLeaf = useCallback(({ attributes, children, leaf }: any) => {
