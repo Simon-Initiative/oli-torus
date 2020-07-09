@@ -7,7 +7,11 @@ defmodule OliWeb.Common.Links do
     case Oli.Resources.ResourceType.get_type_by_id(revision.resource_type_id) do
       "objective" -> link revision.title, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Objectives.Objectives, project.slug)
       "page" -> link revision.title, to: Routes.resource_path(OliWeb.Endpoint, :edit, project, revision.slug)
-      "activity" -> link revision.title, to: Routes.resource_path(OliWeb.Endpoint, :edit, project, Map.get(parent_pages, revision.resource_id).slug)
+      "activity" ->
+        case Map.get(parent_pages, revision.resource_id) do
+          nil -> revision.title
+          parent_page -> link revision.title, to: Routes.resource_path(OliWeb.Endpoint, :edit, project, parent_page.slug)
+        end
       "container" -> link revision.title, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project.slug)
     end
   end

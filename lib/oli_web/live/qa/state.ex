@@ -76,7 +76,7 @@ defmodule OliWeb.Qa.State do
     filtered_warnings = filter_warnings(filters, state.warnings)
 
     selected = case Enum.find(filtered_warnings, fn w -> w == state.selected end) do
-      nil -> nil
+      nil -> Enum.at(filtered_warnings, 0, nil)
       item -> item
     end
 

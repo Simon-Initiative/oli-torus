@@ -21,6 +21,11 @@ defmodule OliWeb.LayoutView do
     link text, to: route, class: active_class(active_or_nil(assigns), path)
   end
 
+  def is_admin?(%{:assigns => assigns}) do
+    admin_role_id = Oli.Accounts.SystemRole.role_id().admin
+    assigns.current_author.system_role_id == admin_role_id
+  end
+
   def account_link(%{:assigns => assigns} = conn) do
     current_author = assigns.current_author
     full_name = "#{current_author.first_name} #{current_author.last_name}"

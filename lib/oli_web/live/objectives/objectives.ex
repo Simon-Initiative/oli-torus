@@ -81,7 +81,7 @@ defmodule OliWeb.Objectives.Objectives do
         <div class="col-12">
           <h2>Existing Objectives</h2>
           <%= if Enum.count(@objective_mappings) == 0 do %>
-            <div class="my-5 text-center">
+            <div class="mb-4">
               This project does not yet have any objectives.
             </div>
           <% else %>

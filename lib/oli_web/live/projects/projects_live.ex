@@ -48,18 +48,43 @@ defmodule OliWeb.Projects.ProjectsLive do
         _ -> socket.assigns.sort_order
       end
 
-    {:noreply, assign(socket, State.sort_projects(socket.assigns, sort_by, sort_order))}
-  end
+    display_mode =
+      case params["display_mode"] do
+        display_mode when display_mode in ~w(cards table) -> display_mode
+        _ -> socket.assigns.display_mode
+      end
 
+    changes = Keyword.merge(State.sort_projects(socket.assigns, sort_by, sort_order), [display_mode: display_mode])
+
+    {:noreply, assign(socket, changes)}
+  end
 
   def render(assigns) do
     ~L"""
     <div class="projects-title-row">
-      <h4>My Projects</h4>
-      <span class="display-modes">
-        <i class="material-icons <%= active_display_mode(@display_mode, "cards") %>" phx-click="display_mode" phx-value-display_mode="cards">apps</i>
-        <i class="material-icons <%= active_display_mode(@display_mode, "table") %>" phx-click="display_mode" phx-value-display_mode="table">view_headline</i>
-      </span>
+      <div class="container">
+        <div class="row">
+          <div class="col-12">
+
+            <div class="d-flex justify-content-between align-items-baseline">
+              <h2>My Projects</h2>
+
+              <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                <label phx-click="display_mode" phx-value-display_mode="cards" class="btn btn-sm btn-secondary <%= if @display_mode == "cards" do "active" else "" end %> %>">
+                  <input type="radio" name="options" id="option1"
+                    <%= if @display_mode == "cards" do "checked" else "" end %>
+                  > <span><i class="fas fa-th-large"></i></span>
+                </label>
+                <label phx-click="display_mode" phx-value-display_mode="table" class="btn btn-sm btn-secondary <%= if @display_mode == "table" do "active" else "" end %>">
+                  <input type="radio" name="options" id="option2"
+                    <%= if @display_mode == "table" do "checked" else "" end %>
+                  > <span><i class="fas fa-table"></i></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <%= case @display_mode do %>
       <% "cards" -> %>
@@ -77,9 +102,12 @@ defmodule OliWeb.Projects.ProjectsLive do
   end
 
   def handle_event("display_mode", %{"display_mode" => display_mode}, socket) do
+    sort_by = socket.assigns.sort_by
+    sort_order = socket.assigns.sort_order
+
     cond do
       display_mode == socket.assigns.display_mode -> {:noreply, socket}
-      true -> {:noreply, push_patch(socket, to: Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{display_mode: display_mode}))}
+      true -> {:noreply, push_patch(socket, to: Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{sort_by: sort_by, sort_order: sort_order, display_mode: display_mode}))}
     end
   end
 
@@ -91,7 +119,9 @@ defmodule OliWeb.Projects.ProjectsLive do
       _ -> socket.assigns.sort_order
     end
 
-    {:noreply, push_patch(socket, to: Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{sort_by: sort_by, sort_order: sort_order}))}
+    display_mode = socket.assigns.display_mode
+
+    {:noreply, push_patch(socket, to: Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{sort_by: sort_by, sort_order: sort_order, display_mode: display_mode}))}
   end
 
   def active_display_mode(actual, target) do

@@ -41,7 +41,7 @@
             </div>
 
             <%= submit "Register", class: "btn btn-md btn-primary btn-block" %>
-            <%= link "Cancel", to: @actions.cancel, class: "btn btn-md btn-outline-secondary btn-block mt-4" %>
+            <%= link "Cancel", to: @actions.cancel, class: "btn btn-md btn-secondary btn-block mt-4" %>
           <% end %>
         </div>
       </div>

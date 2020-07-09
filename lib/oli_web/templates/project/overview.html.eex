@@ -60,8 +60,10 @@
       </table>
 
 
-      <br /> <br /> <br />
-      <%= button("Download Datashop Export", to: Routes.project_path(@conn, :download_datashop, @project), method: :post, class: "btn btn-primary") %>
+      <%= if Accounts.is_admin?(@current_author) do %>
+        <br /> <br /> <br />
+        <%= button("Download Datashop Export", to: Routes.project_path(@conn, :download_datashop, @project), method: :post, class: "btn btn-primary") %>
+      <% end %>
 
     </div>
   </div>

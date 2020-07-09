@@ -4,7 +4,6 @@ defmodule OliWeb.WorkspaceController do
   alias Oli.Accounts
   alias Oli.Accounts.Author
 
-
   def account(conn, _params) do
     author = conn.assigns.current_author
     institutions = Accounts.list_institutions() |> Enum.filter(fn i -> i.author_id == conn.assigns.current_author.id end)
@@ -58,8 +57,6 @@ defmodule OliWeb.WorkspaceController do
         conn
         |> put_flash(:error, "Failed to change theme")
         |> redirect(to: Routes.workspace_path(conn, :account))
-
     end
-
   end
 end

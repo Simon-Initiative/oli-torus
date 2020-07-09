@@ -4,7 +4,9 @@
       border-radius: .2rem;
       border: 0 !important;
     }
-    .list-group-item:hover {
+    .list-group-item:hover,
+    .list-group-item:focus {
+      outline: none;
       background-color: $interactable-hover;
     }
     .active-objective {

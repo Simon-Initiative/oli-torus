@@ -6,9 +6,12 @@
           <h5 class="card-title text-center"><%= @title %></h5>
           <a href="<%= @actions.google %>" class="btn btn-md btn-google btn-block social-signin"><i class="fab fa-google fa-lg mr-2"></i> Sign in with Google</a>
           <a href="<%= @actions.facebook %>" class="btn btn-md btn-facebook btn-block social-signin"><i class="fab fa-facebook-f fa-lg mr-2"></i> Sign in with Facebook</a>
-          <a href="<%= @actions.identity %>" class="btn btn-md btn-secondary btn-block social-signin"><i class="fab fa-mail-f fa-lg mr-2"></i> Email and Password</a>
+          <a href="<%= @actions.identity %>" class="btn btn-md btn-primary btn-block social-signin"><i class="fab fa-mail-f fa-lg mr-2"></i> Email and Password</a>
+          <p>Already have an account? <a href="<%= Routes.auth_path(@conn, :signin) %>">Log in</a></p>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<%= render OliWeb.SharedView, "_signup_modal.html" %>

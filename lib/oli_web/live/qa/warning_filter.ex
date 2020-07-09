@@ -17,7 +17,7 @@ defmodule OliWeb.Qa.WarningFilter do
               aria-label="Checkbox for <%= @type %>">
           </div>
         </div>
-        <span class="form-control d-flex align-items-center">
+        <span class="warning-filter form-control d-flex align-items-center">
           <span class="badge badge-info"><%= length(@warnings) %></span>&nbsp;
           <%= title_case(@type) %>
         </span>

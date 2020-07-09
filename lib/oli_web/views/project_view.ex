@@ -1,5 +1,6 @@
 defmodule OliWeb.ProjectView do
   use OliWeb, :view
+  alias Oli.Accounts
 
   def resource_link(activity_map, slug, title, conn, project) do
     if Map.get(activity_map, slug) do

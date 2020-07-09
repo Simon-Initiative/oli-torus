@@ -19,18 +19,21 @@ defmodule OliWeb.Curriculum.Settings do
     ~L"""
     <%= _ = form_for @changeset, "#", [phx_change: :save] %>
 
-      <div><small>Grading Type:</small></div>
+      <div class="mb-1"><p>Grading Type:</p></div>
 
-      <select class="custom-select" name="graded">
+      <select class="custom-select mb-1" name="graded">
         <option <%= selected_attr(@page.graded, true) %> value="true">Graded Assessment</option>
         <option <%= selected_attr(@page.graded, false) %> value="false">Ungraded Practice Page</option>
       </select>
-      <small class="text-muted">
-      Graded assessments report a grade to the gradebook, while practice pages do not.
-      </small>
+      <p class="text-muted">
+        <%= case @page.graded do
+          true -> "Graded assessments report a grade to the gradebook."
+          false -> "Practice pages do not report a grade to the gradebook."
+        end %>
+      </p>
 
-      <div class="mt-4"><small>Number of Attempts:</small></div>
-      <select <%= disabled_attr(@page.graded) %> class="custom-select" name="max_attempts">
+      <div class="mt-4 mb-1"><p>Number of Attempts:</p></div>
+      <select <%= disabled_attr(@page.graded) %> class="custom-select mb-1" name="max_attempts">
         <%= for c <- 1..10 do %>
         <option value="<%= c %>" <%= selected_attr(@page.max_attempts, c) %>>
           <%= c %>
@@ -38,23 +41,29 @@ defmodule OliWeb.Curriculum.Settings do
         <% end %>
         <option <%= selected_attr(@page.max_attempts, 0) %> value="0">Unlimited</option>
       </select>
-      <small class="text-muted">
-      Graded assessments allow a configurable number of attempts, while practice pages
-      offer unlimited attempts.
-      </small>
+      <p class="text-muted">
+        <%= case @page.graded do
+          true -> "Graded assessments allow a configurable number of attempts."
+          false -> "Practice pages offer unlimited attempts."
+        end %>
+      </p>
 
-      <div class="mt-4"><small>Scoring Strategy</small></div>
-      <select <%= disabled_attr(@page.graded) %> class="custom-select" name="scoring_strategy_id">
-        <%= for %{id: id, type: type} <- ScoringStrategy.get_types() do %>
-          <option value="<%= id %>" <%= selected_attr(@page.scoring_strategy_id, id) %>>
-            <%= Oli.Utils.snake_case_to_friendly(type) %>
-          </option>
-        <% end %>
-      </select>
-      <small class="text-muted">
-      The scoring strategy determines how to calculate the final gradebook score across
-      all attempts.
-      </small>
+      <%= case @page.graded do %>
+        <% true -> %>
+          <div class="mt-4 mb-1"><p>Scoring Strategy</p></div>
+          <select <%= disabled_attr(@page.graded) %> class="custom-select mb-1" name="scoring_strategy_id">
+            <%= for %{id: id, type: type} <- ScoringStrategy.get_types() do %>
+              <option value="<%= id %>" <%= selected_attr(@page.scoring_strategy_id, id) %>>
+                <%= Oli.Utils.snake_case_to_friendly(type) %>
+              </option>
+            <% end %>
+          </select>
+          <p class="text-muted">
+            The scoring strategy determines how to calculate the final gradebook score across
+            all attempts.
+          </p>
+        <% false -> %>
+      <% end %>
 
     </form>
 
