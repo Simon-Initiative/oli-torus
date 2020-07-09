@@ -1,17 +1,32 @@
 defmodule OliWeb.Insights do
   use Phoenix.LiveView
   alias OliWeb.Insights.{TableHeader, TableRow}
+  alias Oli.Authoring.Course
 
   def mount(_params, %{ "project_slug" => project_slug } = _session, socket) do
+
+    by_activity_rows = Oli.Analytics.ByActivity.query_against_project_slug(project_slug)
+    project = Course.get_project_by_slug(project_slug)
+
+    parent_pages = Enum.map(by_activity_rows, fn r -> r.slice.resource_id end)
+    |> parent_pages(project_slug)
+
     {:ok, assign(socket,
+      project: project,
       by_page_rows: Oli.Analytics.ByPage.query_against_project_slug(project_slug),
-      by_activity_rows: Oli.Analytics.ByActivity.query_against_project_slug(project_slug),
+      by_activity_rows: by_activity_rows,
       by_objective_rows: Oli.Analytics.ByObjective.query_against_project_slug(project_slug),
+      parent_pages: parent_pages,
       selected: :by_activity,
       query: "",
       sort_by: "title",
       sort_order: :asc
     )}
+  end
+
+  defp parent_pages(resource_ids, project_slug) do
+    publication = Oli.Publishing.AuthoringResolver.publication(project_slug)
+    Oli.Publishing.determine_parent_pages(resource_ids, publication.id)
   end
 
   def render(assigns) do
@@ -45,7 +60,7 @@ defmodule OliWeb.Insights do
           <%= live_component @socket, TableHeader, assigns %>
           <tbody>
             <%= for row <- active_rows(assigns) do %>
-              <%= live_component @socket, TableRow, row: row %>
+              <%= live_component @socket, TableRow, row: row, parent_pages: assigns.parent_pages, project: assigns.project %>
             <% end %>
           </tbody>
         </table>
