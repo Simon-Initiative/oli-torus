@@ -41,6 +41,7 @@ defmodule Oli.Accounts.Author do
       :token,
       :password,
       :email_verified,
+      :system_role_id,
     ])
     |> cast_embed(:preferences)
     |> validate_required(
@@ -65,8 +66,14 @@ defmodule Oli.Accounts.Author do
   defp default_system_role(changeset) do
     case changeset do
       # if changeset is valid and doesnt have a system role set, default to author
-      %Ecto.Changeset{valid?: true, data: %Oli.Accounts.Author{system_role_id: nil}} ->
-        put_change(changeset, :system_role_id, SystemRole.role_id.author)
+      %Ecto.Changeset{valid?: true, changes: changes, data: %Oli.Accounts.Author{system_role_id: nil}} ->
+        case Map.get(changes, :system_role_id) do
+          nil ->
+            put_change(changeset, :system_role_id, SystemRole.role_id.author)
+
+          _ ->
+            changeset
+        end
 
       _ ->
         changeset

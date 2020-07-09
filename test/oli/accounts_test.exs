@@ -7,9 +7,32 @@ defmodule Oli.AccountsTest do
   describe "authors" do
 
     test "system role defaults to author", %{} do
-      author = author_fixture()
+
+      {:ok, author} = Author.changeset(%Author{}, %{
+        email: "ironman#{System.unique_integer([:positive])}@example.com",
+        first_name: "Tony",
+        last_name: "Stark",
+        token: "2u9dfh7979hfd",
+        provider: "google",
+      })
+      |> Repo.insert()
 
       assert author.system_role_id == Accounts.SystemRole.role_id.author
+    end
+
+    test "changeset accepts system role change", %{} do
+      {:ok, author} = Author.changeset(%Author{}, %{
+        email: "ironman#{System.unique_integer([:positive])}@example.com",
+        first_name: "Tony",
+        last_name: "Stark",
+        token: "2u9dfh7979hfd",
+        provider: "google",
+      })
+      |> Repo.insert()
+
+      {:ok , author} = Accounts.insert_or_update_author(%{email: author.email, system_role_id: Accounts.SystemRole.role_id.admin})
+
+      assert author.system_role_id == Accounts.SystemRole.role_id.admin
     end
   end
 
