@@ -126,7 +126,7 @@ defmodule OliWeb.PageDeliveryController do
         {:ok, _} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
         {:error, {:active_attempt_present}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
         {:error, {:no_more_attempts}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
-        {:error, {:not_found}} -> render(conn, "error.html")
+        _ -> render(conn, "error.html")
       end
 
     else
@@ -153,7 +153,7 @@ defmodule OliWeb.PageDeliveryController do
         {:error, {:already_submitted}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
         {:error, {:active_attempt_present}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
         {:error, {:no_more_attempts}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
-        {:error, {:not_found}} -> render(conn, "error.html")
+        _ -> render(conn, "error.html")
       end
 
     else

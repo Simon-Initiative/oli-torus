@@ -573,9 +573,10 @@ defmodule Oli.Delivery.Attempts do
 
     case Repo.update_all(from(p in PartAttempt, where: p.attempt_guid == ^attempt_guid and is_nil(p.date_evaluated)),
       set: [response: input, date_evaluated: now, score: score, out_of: out_of, feedback: feedback]) do
-      nil -> {:halt, :error}
+      nil -> {:halt, {:error, :error}}
       {1, _} -> {:cont, {:ok, results ++ [%{attempt_guid: attempt_guid, feedback: feedback, score: score, out_of: out_of}]}}
-      _ -> {:halt, :error}
+      e ->
+        {:halt, {:error, :error}}
     end
 
   end
@@ -715,6 +716,7 @@ defmodule Oli.Delivery.Attempts do
 
         {:ok, results} -> results
         {:error, error} -> Repo.rollback(error)
+        _ -> Repo.rollback("unknown error")
       end
 
     end)
