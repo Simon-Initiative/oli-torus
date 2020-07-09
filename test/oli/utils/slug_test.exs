@@ -24,6 +24,7 @@ defmodule Oli.Utils.SlugTest do
 
       alpha_numeric = Slug.alpha_numeric_only("My_Test Project ~!@#$%^&*()--+=[]{}\|;:'<>,./?")
       assert alpha_numeric == "My_TestProject"
+
     end
 
     test "update_on_change/2 does not update the slug when the previous revision title matches", %{ revision1: r } do
