@@ -31,14 +31,4 @@ defmodule OliWeb.Insights.TableRow do
   defp format_percent(float_or_nil) when is_nil(float_or_nil), do: nil
   defp format_percent(float_or_nil) when is_float(float_or_nil), do: "#{round(100 * float_or_nil)}%"
 
-  # TODO: Link activity to resource
-  defp link_url(slice) do
-    import Oli.Resources.ResourceType, only: [get_id_by_type: 1]
-    cond do
-      slice.resource_type.id == get_id_by_type("objective") -> "objectives"
-      slice.resource_type.id == get_id_by_type("page") -> "resource/#{slice.slug}"
-      slice.resource_type.id == get_id_by_type("activity") -> ""
-    end
-  end
-
 end
