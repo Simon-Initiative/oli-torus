@@ -108,7 +108,6 @@ defmodule OliWeb.AuthController do
           last_name: auth.info.last_name,
           provider: "google",
           token: auth.credentials.token,
-          system_role_id: SystemRole.role_id.author
         }
       :facebook ->
         # FIXME: There has to be a better way to get first_name and last_name from facebook
@@ -120,7 +119,6 @@ defmodule OliWeb.AuthController do
           last_name: last_name,
           provider: "facebook",
           token: auth.credentials.token,
-          system_role_id: SystemRole.role_id.author
         }
     end
 
