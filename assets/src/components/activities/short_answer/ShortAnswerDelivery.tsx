@@ -118,6 +118,15 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
     <Hints key="hints" onClick={onRequestHint} hints={hints}
       hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>];
 
+  const maybeSubmitButton = props.graded
+  ? null
+  : (
+    <button
+      className="btn btn-primary mt-2" disabled={isEvaluated} onClick={onSubmit}>
+      Submit
+    </button>
+  );
+
   return (
     <div className="activity short-answer-activity">
       <div className="activity-content">
@@ -125,11 +134,7 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
 
         <div className="">
           <Input inputType={model.inputType} input={input} onChange={onInputChange}/>
-
-          <button
-            className="btn btn-primary mt-2" disabled={isEvaluated} onClick={onSubmit}>
-            Submit
-          </button>
+          {maybeSubmitButton}
         </div>
 
         {ungradedDetails}
