@@ -19,7 +19,7 @@ defmodule Oli.Authoring.MediaLibrary.ItemOptions do
      mime_filter: nil,
      url_filter: nil,
      search_text: nil,
-     order_field: "file_name",
+     order_field: "fileName",
      order: "asc"
     }
   end
@@ -37,7 +37,7 @@ defmodule Oli.Authoring.MediaLibrary.ItemOptions do
       mime_filter: mime_filter,
       url_filter: Map.get(options, "urlFilter", nil),
       search_text: Map.get(options, "searchText", nil),
-      order_field:  Map.get(options, "orderBy", "file_name"),
+      order_field:  Map.get(options, "orderBy", "fileName"),
       order: Map.get(options, "order", "asc"),
     }
   end

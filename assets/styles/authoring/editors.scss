@@ -1,0 +1,15 @@
+@import "authoring/variables";
+
+.table-editor {
+  table {
+    .table-dropdown {
+      user-select: none;
+      float: right;
+
+      button.dropdown-toggle {
+        border: 'none';
+        outline: 'none';
+      }
+    }
+  }
+}
