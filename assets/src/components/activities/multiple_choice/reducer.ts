@@ -3,61 +3,76 @@ import { fromText, makeResponse } from './utils';
 import { RichText, Feedback as FeedbackType, Hint as HintType } from '../types';
 import { Maybe } from 'tsmonad';
 import { Identifiable } from 'data/content/model';
-import { ImmerReducer, createActionCreators, createReducerFunction } from 'immer-reducer';
 
-class Reducer extends ImmerReducer<MultipleChoiceModelSchema> {
-  private getById<T extends Identifiable>(slice: T[], id: string): Maybe<T> {
+export class MCActions {
+  private static getById<T extends Identifiable>(slice: T[], id: string): Maybe<T> {
     return Maybe.maybe(slice.find(c => c.id === id));
   }
-  private getChoice = (id: string) => this.getById(this.draftState.choices, id);
-  private getResponse = (id: string) => {
-    return this.getById(this.draftState.authoring.parts[0].responses, id);
+  private static getChoice = (draftState: MultipleChoiceModelSchema,
+    id: string) => MCActions.getById(draftState.choices, id);
+  private static getResponse = (draftState: MultipleChoiceModelSchema, id: string) => {
+    return MCActions.getById(draftState.authoring.parts[0].responses, id);
   }
-  private getHint = (id: string) => this.getById(this.draftState.authoring.parts[0].hints, id);
+  private static getHint = (draftState: MultipleChoiceModelSchema,
+    id: string) => MCActions.getById(draftState.authoring.parts[0].hints, id)
 
-  editStem(content: RichText) {
-    this.draftState.stem.content = content;
-  }
-
-  addChoice() {
-    const newChoice: ChoiceType = fromText('');
-    this.draftState.choices.push(newChoice);
-    this.draftState.authoring.parts[0].responses.push(
-      makeResponse(`input like {${newChoice.id}}`, 0, ''));
+  static editStem(content: RichText) {
+    return (draftState: MultipleChoiceModelSchema) => {
+      draftState.stem.content = content;
+    };
   }
 
-  editChoice(id: string, content: RichText) {
-    this.getChoice(id).lift(choice => choice.content = content);
+  static addChoice() {
+    return (draftState: MultipleChoiceModelSchema) => {
+      const newChoice: ChoiceType = fromText('');
+      draftState.choices.push(newChoice);
+      draftState.authoring.parts[0].responses.push(
+        makeResponse(`input like {${newChoice.id}}`, 0, ''));
+    };
   }
 
-  removeChoice(id: string) {
-    this.draftState.choices = this.draftState.choices.filter(c => c.id !== id);
-    this.draftState.authoring.parts[0].responses = this.draftState.authoring.parts[0].responses
-      .filter(r => r.rule !== `input like {${id}}`);
+  static editChoice(id: string, content: RichText) {
+    return (draftState: MultipleChoiceModelSchema) => {
+      MCActions.getChoice(draftState, id).lift(choice => choice.content = content);
+    };
   }
 
-  editFeedback(id: string, content: RichText) {
-    this.getResponse(id).lift(r => r.feedback.content = content);
+  static removeChoice(id: string) {
+    return (draftState: MultipleChoiceModelSchema) => {
+      draftState.choices = draftState.choices.filter(c => c.id !== id);
+      draftState.authoring.parts[0].responses = draftState.authoring.parts[0].responses
+        .filter(r => r.rule !== `input like {${id}}`);
+    };
   }
 
-  addHint() {
-    const newHint: HintType = fromText('');
-    // new hints are always cognitive hints. they should be inserted
-    // right before the bottomOut hint at the end of the list
-    const bottomOutIndex = this.draftState.authoring.parts[0].hints.length - 1;
-    this.draftState.authoring.parts[0].hints.splice(bottomOutIndex, 0, newHint);
+  static editFeedback(id: string, content: RichText) {
+    return (draftState: MultipleChoiceModelSchema) => {
+      MCActions.getResponse(draftState, id).lift(r => r.feedback.content = content);
+    };
   }
 
-  editHint(id: string, content: RichText) {
-    this.getHint(id).lift(hint => hint.content = content);
+  static addHint() {
+    return (draftState: MultipleChoiceModelSchema) => {
+      const newHint: HintType = fromText('');
+      // new hints are always cognitive hints. they should be inserted
+      // right before the bottomOut hint at the end of the list
+      const bottomOutIndex = draftState.authoring.parts[0].hints.length - 1;
+      draftState.authoring.parts[0].hints.splice(bottomOutIndex, 0, newHint);
+    };
   }
 
-  removeHint(id: string) {
-    this.draftState.authoring.parts[0].hints = this.draftState.authoring.parts[0].hints
+  static editHint(id: string, content: RichText) {
+    return (draftState: MultipleChoiceModelSchema) => {
+      MCActions.getHint(draftState, id).lift(hint => hint.content = content);
+    };
+  }
+
+  static removeHint(id: string) {
+    return (draftState: MultipleChoiceModelSchema) => {
+      draftState.authoring.parts[0].hints = draftState.authoring.parts[0].hints
       .filter(h => h.id !== id);
+    };
+
   }
 }
 
-// immer-reducer
-export const MCActions = createActionCreators(Reducer);
-export const MCReducer = createReducerFunction(Reducer);

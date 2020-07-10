@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect, useState } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { ShortAnswerModelSchema, InputType } from './schema';
@@ -6,10 +6,11 @@ import * as ActivityTypes from '../types';
 import { Stem } from '../common/Stem';
 import { Feedback } from './sections/Feedback';
 import { Hints } from '../common/Hints';
-import { ShortAnswerActions, ShortAnswerReducer } from './reducer';
+import { ShortAnswerActions } from './reducer';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
+import produce from 'immer';
 
 const store = configureStore();
 
@@ -45,22 +46,15 @@ export const InputTypeDropdown = ({ onChange, editMode, inputType }: InputTypeDr
   );
 };
 
-
 const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
-  const [state, dispatch] = useReducer(ShortAnswerReducer, props.model);
-  const [initialUpdate, setInitialUpate] = useState(true);
 
-  useEffect(() => {
-    // This prevents an immediate persistence call as this effect will
-    // view the [state] dependency as having changed on the initial update
-    if (!initialUpdate) {
-      props.onEdit(state);
-    }
-    setInitialUpate(false);
-  }, [state]);
+  const dispatch = (action: any) => {
+    const nextModel = produce(props.model, draftState => action(draftState));
+    props.onEdit(nextModel);
+  };
 
   const sharedProps = {
-    model: state,
+    model: props.model,
     editMode: props.editMode,
   };
 
@@ -73,7 +67,7 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
       <Stem
         projectSlug={props.projectSlug}
         editMode={props.editMode}
-        stem={state.stem}
+        stem={props.model.stem}
         onEditStem={content => dispatch(ShortAnswerActions.editStem(content))} />
       <Feedback {...sharedProps}
         projectSlug={props.projectSlug}
@@ -83,7 +77,7 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
         onEditResponse={(id, content) => dispatch(ShortAnswerActions.editFeedback(id, content))} />
       <Hints
         projectSlug={props.projectSlug}
-        hints={state.authoring.parts[0].hints}
+        hints={props.model.authoring.parts[0].hints}
         editMode={props.editMode}
         onAddHint={() => dispatch(ShortAnswerActions.addHint())}
         onEditHint={(id, content) => dispatch(ShortAnswerActions.editHint(id, content))}
