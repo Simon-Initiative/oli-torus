@@ -1,5 +1,6 @@
 import * as Immutable from 'immutable';
 import React, { useState } from 'react';
+import isHotkey from 'is-hotkey';
 import {
   ResourceContent, Activity, ResourceType, ActivityPurposes, ContentPurposes,
   ActivityReference, StructuredContent, ResourceContext,
@@ -405,10 +406,14 @@ export const Editors = (props: EditorsProps) => {
       });
     };
 
+    // register keydown handlers
+    const isShiftArrowDown = isHotkey('shift+down');
+    const isShiftArrowUp = isHotkey('shift+up');
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (e.shiftKey && e.key === 'ArrowDown') {
+      if (isShiftArrowDown(e.nativeEvent)) {
         onMove(index, false);
-      } else if (e.shiftKey && e.key === 'ArrowUp') {
+      } else if (isShiftArrowUp(e.nativeEvent)) {
         onMove(index, true);
       }
     };
