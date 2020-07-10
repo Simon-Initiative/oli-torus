@@ -1,7 +1,15 @@
-import { MCActions, MCReducer } from 'components/activities/multiple_choice/reducer';
+import { MCActions } from 'components/activities/multiple_choice/actions';
 import * as ContentModel from 'data/content/model';
 import { MultipleChoiceModelSchema, Choice } from 'components/activities/multiple_choice/schema';
 import { ScoringStrategy } from 'components/activities/types';
+import produce from 'immer';
+
+const applyAction = (
+  model: MultipleChoiceModelSchema,
+  action: any) => {
+
+  return produce(model, draftState => action(draftState));
+};
 
 function testFromText(text: string) {
   return {
@@ -65,7 +73,7 @@ describe('multiple choice question', () => {
 
   it('can edit stem', () => {
     const newStemContent = testFromText('new content').content;
-    expect(MCReducer(model, MCActions.editStem(newStemContent)).stem).toMatchObject({
+    expect(applyAction(model, MCActions.editStem(newStemContent)).stem).toMatchObject({
       content: newStemContent,
     });
   });
@@ -77,20 +85,20 @@ describe('multiple choice question', () => {
 
   // Creating guids causes failures
   xit('can add a choice', () => {
-    expect(MCReducer(model, MCActions.addChoice()).choices.length)
+    expect(applyAction(model, MCActions.addChoice()).choices.length)
       .toBeGreaterThan(model.choices.length);
   });
 
   it('can edit a choice', () => {
     const newChoiceContent = testFromText('new content').content;
     const firstChoice = model.choices[0];
-    expect(MCReducer(model, MCActions.editChoice(firstChoice.id, newChoiceContent)).choices[0])
+    expect(applyAction(model, MCActions.editChoice(firstChoice.id, newChoiceContent)).choices[0])
     .toHaveProperty('content', newChoiceContent);
   });
 
   it('can remove a choice', () => {
     const firstChoice = model.choices[0];
-    const newModel = MCReducer(model, MCActions.removeChoice(firstChoice.id));
+    const newModel = applyAction(model, MCActions.removeChoice(firstChoice.id));
     expect(newModel.choices).toHaveLength(1);
     expect(newModel.authoring.parts[0].responses).toHaveLength(1);
   });
@@ -102,7 +110,7 @@ describe('multiple choice question', () => {
   it('can edit feedback', () => {
     const newFeedbackContent = testFromText('new content').content;
     const firstFeedback = model.authoring.parts[0].responses[0];
-    expect(MCReducer(model, MCActions.editFeedback(firstFeedback.id, newFeedbackContent))
+    expect(applyAction(model, MCActions.editFeedback(firstFeedback.id, newFeedbackContent))
       .authoring.parts[0].responses[0].feedback)
       .toHaveProperty('content', newFeedbackContent);
   });
@@ -112,21 +120,21 @@ describe('multiple choice question', () => {
   });
 
   it('can add a cognitive hint before the end of the array', () => {
-    expect(MCReducer(model, MCActions.addHint()).authoring.parts[0].hints.length)
+    expect(applyAction(model, MCActions.addHint()).authoring.parts[0].hints.length)
       .toBeGreaterThan(model.authoring.parts[0].hints.length);
   });
 
   it('can edit a hint', () => {
     const newHintContent = testFromText('new content').content;
     const firstHint = model.authoring.parts[0].hints[0];
-    expect(MCReducer(model,
+    expect(applyAction(model,
       MCActions.editHint(firstHint.id, newHintContent)).authoring.parts[0].hints[0])
     .toHaveProperty('content', newHintContent);
   });
 
   it('can remove a hint', () => {
     const firstHint = model.authoring.parts[0].hints[0];
-    expect(MCReducer(model,
+    expect(applyAction(model,
       MCActions.removeHint(firstHint.id)).authoring.parts[0].hints).toHaveLength(2);
   });
 });
