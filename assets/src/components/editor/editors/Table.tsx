@@ -147,40 +147,43 @@ const DropdownMenu = (props: any) => {
     }
   };
 
-  const style = {
-    float: 'right',
-  } as any;
-
-  const buttonStyle = {
-    border: 'none',
-    outline: 'none',
-
-  };
-
   return (
-    <div ref={ref as any} className="dropdown table-dropdown" style={style} contentEditable={false}>
+    <div ref={ref as any} className="dropdown table-dropdown" contentEditable={false}>
       <button type="button"
-        style={buttonStyle}
         className="dropdown-toggle btn"
         data-reference="parent"
         data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <span className="sr-only">Toggle Dropdown</span>
+        <span className="sr-only">Toggle Table Cell Options</span>
       </button>
       <div className="dropdown-menu">
         <h6 className="dropdown-header">Insert</h6>
-        <div className="dropdown-item" onClick={onAddRowBefore}>Row before</div>
-        <div className="dropdown-item" onClick={onAddRowAfter}>Row after</div>
-        <div className="dropdown-item" onClick={onAddColumnBefore}>Column before</div>
-        <div className="dropdown-item" onClick={onAddColumnAfter}>Column after</div>
+        <button type="button"
+          className="dropdown-item"
+          onClick={onAddRowBefore}>Row before</button>
+        <button type="button"
+          className="dropdown-item"
+          onClick={onAddRowAfter}>Row after</button>
+        <button type="button"
+          className="dropdown-item"
+          onClick={onAddColumnBefore}>Column before</button>
+        <button type="button"
+          className="dropdown-item"
+          onClick={onAddColumnAfter}>Column after</button>
 
         <div className="dropdown-divider"></div>
 
         <h6 className="dropdown-header">Delete</h6>
-        <div className="dropdown-item" onClick={onDeleteRow}>Row</div>
-        <div className="dropdown-item" onClick={onDeleteColumn}>Column</div>
+        <button type="button"
+          className="dropdown-item"
+          onClick={onDeleteRow}>Row</button>
+        <button type="button"
+          className="dropdown-item"
+          onClick={onDeleteColumn}>Column</button>
 
         <div className="dropdown-divider"></div>
-        <div className="dropdown-item" onClick={onToggleHeader}>Toggle Header</div>
+        <button type="button"
+          className="dropdown-item"
+          onClick={onToggleHeader}>Toggle Header</button>
       </div>
     </div>
   );
@@ -341,7 +344,7 @@ export const TableEditor = (props: TableProps) => {
   // events.
 
   return (
-    <div className="ml-4 mr-4">
+    <div className="table-editor ml-4 mr-4">
 
       <div>
         <table className="table table-bordered">

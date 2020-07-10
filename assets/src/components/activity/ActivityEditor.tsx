@@ -146,26 +146,34 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
   }
 
   update(update: Partial<Undoable>) {
+
+    const syncedUpdate = this.syncObjectivesWithParts(update);
+
     this.setState(
-      { undoable: processUpdate(this.state.undoable, update) },
-      () => this.postUpdate());
+      { undoable: processUpdate(this.state.undoable, syncedUpdate) },
+      () => this.save());
   }
 
-  postUpdate() {
-    // Sync objective list to potential changes in number of parts
-    const parts = valueOr(this.state.undoable.current.content.authoring.parts, []);
-    const partIds = parts.map((p: any)  => valueOr(p.id, ''));
-    let objectives = this.state.undoable.current.objectives;
-    const keys = objectives.keySeq().toArray();
-    keys.forEach((pId: string)  => {
-      if (partIds.indexOf(pId.toString()) < 0) {
-        objectives = objectives.delete(pId);
-      }
-    });
+  syncObjectivesWithParts(update: Partial<Undoable>) {
 
-    this.setState(
-        { undoable: processUpdate(this.state.undoable, { objectives }) },
-        () => this.save());
+    if (update.content !== undefined) {
+
+      let objectives = this.state.undoable.current.objectives;
+      const parts = valueOr(update.content.authoring.parts, []);
+      const partIds = parts.map((p: any) => valueOr(p.id, ''))
+        .reduce((m: any, id: string) => { m[id] = true; return m; }, {});
+
+      const keys = objectives.keySeq().toArray();
+      keys.forEach((pId: string)  => {
+        if (partIds[pId.toString()] === undefined) {
+          objectives = objectives.delete(pId);
+        }
+      });
+
+      return Object.assign({}, update, { objectives });
+
+    }
+    return update;
   }
 
   save() {
