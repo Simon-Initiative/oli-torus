@@ -9,7 +9,7 @@ export class MCActions {
     return Maybe.maybe(slice.find(c => c.id === id));
   }
   private static getChoice = (draftState: MultipleChoiceModelSchema,
-    id: string) => MCActions.getById(draftState.choices, id);
+    id: string) => MCActions.getById(draftState.choices, id)
   private static getResponse = (draftState: MultipleChoiceModelSchema, id: string) => {
     return MCActions.getById(draftState.authoring.parts[0].responses, id);
   }

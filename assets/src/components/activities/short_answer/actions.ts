@@ -15,7 +15,7 @@ export class ShortAnswerActions {
     return ShortAnswerActions.getById(draftState.authoring.parts[0].responses, id);
   }
   private static getHint = (draftState: ShortAnswerModelSchema,
-    id: string) => ShortAnswerActions.getById(draftState.authoring.parts[0].hints, id);
+    id: string) => ShortAnswerActions.getById(draftState.authoring.parts[0].hints, id)
 
   static setModel(model: ShortAnswerModelSchema) {
     return (draftState: ShortAnswerModelSchema) => {
