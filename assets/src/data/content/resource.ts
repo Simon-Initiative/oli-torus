@@ -62,7 +62,7 @@ export const createDefaultStructuredContent = () => {
     type: 'content',
     id: guid(),
     children: [
-      { type: 'p', id: guid(), children: [{ text: ' ' }] },
+      { type: 'p', id: guid(), children: [{ text: '' }] },
     ],
     purpose: 'none',
   } as StructuredContent;

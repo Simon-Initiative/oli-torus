@@ -185,7 +185,7 @@ export const Editor = React.memo((props: EditorProps) => {
           readOnly={!props.editMode}
           renderElement={renderElement}
           renderLeaf={renderLeaf}
-          placeholder="Enter some text..."
+          placeholder="Enter some content here..."
           onKeyDown={onKeyDown}
         />
       </Slate>
