@@ -168,8 +168,8 @@ Functions          </h1>
   Examples
 </h2>
 
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_nonce</span><span class="p" data-group-id="4456243322-1">(</span><span class="n">nonce</span><span class="p" data-group-id="4456243322-1">)</span><span class="w">
-</span><span class="p" data-group-id="4456243322-2">%</span><span class="nc" data-group-id="4456243322-2">Ecto.Changeset</span><span class="p" data-group-id="4456243322-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4456243322-3">%</span><span class="nc" data-group-id="4456243322-3">Nonce</span><span class="p" data-group-id="4456243322-3">{</span><span class="p" data-group-id="4456243322-3">}</span><span class="p" data-group-id="4456243322-2">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_nonce</span><span class="p" data-group-id="4908190611-1">(</span><span class="n">nonce</span><span class="p" data-group-id="4908190611-1">)</span><span class="w">
+</span><span class="p" data-group-id="4908190611-2">%</span><span class="nc" data-group-id="4908190611-2">Ecto.Changeset</span><span class="p" data-group-id="4908190611-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4908190611-3">%</span><span class="nc" data-group-id="4908190611-3">Nonce</span><span class="p" data-group-id="4908190611-3">{</span><span class="p" data-group-id="4908190611-3">}</span><span class="p" data-group-id="4908190611-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="cleanup_nonce_store/0">
@@ -207,10 +207,10 @@ Functions          </h1>
   Examples
 </h2>
 
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_nonce</span><span class="p" data-group-id="9914068303-1">(</span><span class="p" data-group-id="9914068303-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="9914068303-2">}</span><span class="p" data-group-id="9914068303-1">)</span><span class="w">
-</span><span class="p" data-group-id="9914068303-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9914068303-4">%</span><span class="nc" data-group-id="9914068303-4">Nonce</span><span class="p" data-group-id="9914068303-4">{</span><span class="p" data-group-id="9914068303-4">}</span><span class="p" data-group-id="9914068303-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_nonce</span><span class="p" data-group-id="9914068303-5">(</span><span class="p" data-group-id="9914068303-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9914068303-6">}</span><span class="p" data-group-id="9914068303-5">)</span><span class="w">
-</span><span class="p" data-group-id="9914068303-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9914068303-8">%</span><span class="nc" data-group-id="9914068303-8">Ecto.Changeset</span><span class="p" data-group-id="9914068303-8">{</span><span class="p" data-group-id="9914068303-8">}</span><span class="p" data-group-id="9914068303-7">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_nonce</span><span class="p" data-group-id="1520130752-1">(</span><span class="p" data-group-id="1520130752-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="1520130752-2">}</span><span class="p" data-group-id="1520130752-1">)</span><span class="w">
+</span><span class="p" data-group-id="1520130752-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1520130752-4">%</span><span class="nc" data-group-id="1520130752-4">Nonce</span><span class="p" data-group-id="1520130752-4">{</span><span class="p" data-group-id="1520130752-4">}</span><span class="p" data-group-id="1520130752-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_nonce</span><span class="p" data-group-id="1520130752-5">(</span><span class="p" data-group-id="1520130752-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1520130752-6">}</span><span class="p" data-group-id="1520130752-5">)</span><span class="w">
+</span><span class="p" data-group-id="1520130752-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1520130752-8">%</span><span class="nc" data-group-id="1520130752-8">Ecto.Changeset</span><span class="p" data-group-id="1520130752-8">{</span><span class="p" data-group-id="1520130752-8">}</span><span class="p" data-group-id="1520130752-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_nonce/1">
@@ -232,10 +232,10 @@ Functions          </h1>
   Examples
 </h2>
 
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_nonce</span><span class="p" data-group-id="7933362492-1">(</span><span class="n">nonce</span><span class="p" data-group-id="7933362492-1">)</span><span class="w">
-</span><span class="p" data-group-id="7933362492-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7933362492-3">%</span><span class="nc" data-group-id="7933362492-3">Nonce</span><span class="p" data-group-id="7933362492-3">{</span><span class="p" data-group-id="7933362492-3">}</span><span class="p" data-group-id="7933362492-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_nonce</span><span class="p" data-group-id="7933362492-4">(</span><span class="n">nonce</span><span class="p" data-group-id="7933362492-4">)</span><span class="w">
-</span><span class="p" data-group-id="7933362492-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7933362492-6">%</span><span class="nc" data-group-id="7933362492-6">Ecto.Changeset</span><span class="p" data-group-id="7933362492-6">{</span><span class="p" data-group-id="7933362492-6">}</span><span class="p" data-group-id="7933362492-5">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_nonce</span><span class="p" data-group-id="4964114674-1">(</span><span class="n">nonce</span><span class="p" data-group-id="4964114674-1">)</span><span class="w">
+</span><span class="p" data-group-id="4964114674-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4964114674-3">%</span><span class="nc" data-group-id="4964114674-3">Nonce</span><span class="p" data-group-id="4964114674-3">{</span><span class="p" data-group-id="4964114674-3">}</span><span class="p" data-group-id="4964114674-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_nonce</span><span class="p" data-group-id="4964114674-4">(</span><span class="n">nonce</span><span class="p" data-group-id="4964114674-4">)</span><span class="w">
+</span><span class="p" data-group-id="4964114674-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4964114674-6">%</span><span class="nc" data-group-id="4964114674-6">Ecto.Changeset</span><span class="p" data-group-id="4964114674-6">{</span><span class="p" data-group-id="4964114674-6">}</span><span class="p" data-group-id="4964114674-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="get_nonce!/1">
@@ -258,9 +258,9 @@ Raises <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.NoResultsError.html"><code cl
   Examples
 </h2>
 
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_nonce!</span><span class="p" data-group-id="9286026974-1">(</span><span class="mi">123</span><span class="p" data-group-id="9286026974-1">)</span><span class="w">
-</span><span class="p" data-group-id="9286026974-2">%</span><span class="nc" data-group-id="9286026974-2">Nonce</span><span class="p" data-group-id="9286026974-2">{</span><span class="p" data-group-id="9286026974-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_nonce!</span><span class="p" data-group-id="9286026974-3">(</span><span class="mi">456</span><span class="p" data-group-id="9286026974-3">)</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_nonce!</span><span class="p" data-group-id="2046424247-1">(</span><span class="mi">123</span><span class="p" data-group-id="2046424247-1">)</span><span class="w">
+</span><span class="p" data-group-id="2046424247-2">%</span><span class="nc" data-group-id="2046424247-2">Nonce</span><span class="p" data-group-id="2046424247-2">{</span><span class="p" data-group-id="2046424247-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_nonce!</span><span class="p" data-group-id="2046424247-3">(</span><span class="mi">456</span><span class="p" data-group-id="2046424247-3">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -283,8 +283,8 @@ Raises <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.NoResultsError.html"><code cl
   Examples
 </h2>
 
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_nonce_store</span><span class="p" data-group-id="9000860787-1">(</span><span class="p" data-group-id="9000860787-1">)</span><span class="w">
-</span><span class="p" data-group-id="9000860787-2">[</span><span class="p" data-group-id="9000860787-3">%</span><span class="nc" data-group-id="9000860787-3">Nonce</span><span class="p" data-group-id="9000860787-3">{</span><span class="p" data-group-id="9000860787-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="9000860787-2">]</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_nonce_store</span><span class="p" data-group-id="2159578572-1">(</span><span class="p" data-group-id="2159578572-1">)</span><span class="w">
+</span><span class="p" data-group-id="2159578572-2">[</span><span class="p" data-group-id="2159578572-3">%</span><span class="nc" data-group-id="2159578572-3">Nonce</span><span class="p" data-group-id="2159578572-3">{</span><span class="p" data-group-id="2159578572-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="2159578572-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="parse_lti_role/1">
@@ -321,10 +321,10 @@ Raises <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.NoResultsError.html"><code cl
   Examples
 </h2>
 
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_nonce</span><span class="p" data-group-id="5665600621-1">(</span><span class="n">nonce</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5665600621-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="5665600621-2">}</span><span class="p" data-group-id="5665600621-1">)</span><span class="w">
-</span><span class="p" data-group-id="5665600621-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5665600621-4">%</span><span class="nc" data-group-id="5665600621-4">Nonce</span><span class="p" data-group-id="5665600621-4">{</span><span class="p" data-group-id="5665600621-4">}</span><span class="p" data-group-id="5665600621-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_nonce</span><span class="p" data-group-id="5665600621-5">(</span><span class="n">nonce</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5665600621-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="5665600621-6">}</span><span class="p" data-group-id="5665600621-5">)</span><span class="w">
-</span><span class="p" data-group-id="5665600621-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5665600621-8">%</span><span class="nc" data-group-id="5665600621-8">Ecto.Changeset</span><span class="p" data-group-id="5665600621-8">{</span><span class="p" data-group-id="5665600621-8">}</span><span class="p" data-group-id="5665600621-7">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_nonce</span><span class="p" data-group-id="3487102661-1">(</span><span class="n">nonce</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3487102661-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="3487102661-2">}</span><span class="p" data-group-id="3487102661-1">)</span><span class="w">
+</span><span class="p" data-group-id="3487102661-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3487102661-4">%</span><span class="nc" data-group-id="3487102661-4">Nonce</span><span class="p" data-group-id="3487102661-4">{</span><span class="p" data-group-id="3487102661-4">}</span><span class="p" data-group-id="3487102661-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_nonce</span><span class="p" data-group-id="3487102661-5">(</span><span class="n">nonce</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3487102661-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="3487102661-6">}</span><span class="p" data-group-id="3487102661-5">)</span><span class="w">
+</span><span class="p" data-group-id="3487102661-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3487102661-8">%</span><span class="nc" data-group-id="3487102661-8">Ecto.Changeset</span><span class="p" data-group-id="3487102661-8">{</span><span class="p" data-group-id="3487102661-8">}</span><span class="p" data-group-id="3487102661-7">}</span></code></pre>
   </section>
 </section>
           </div>
