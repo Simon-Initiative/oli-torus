@@ -8,6 +8,10 @@ body {
   font-size: $font-size-base;
 }
 
+body.modal-open {
+  overflow: visible;
+}
+
 .oli-logo {
   font-family: 'Open Sans', sans-serif;
 }

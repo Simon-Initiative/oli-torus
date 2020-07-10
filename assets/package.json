@@ -27,7 +27,6 @@
     "@types/redux-logger": "^3.0.7",
     "bootstrap": "^4.5.0",
     "immer": "^6.0.3",
-    "immer-reducer": "^0.7.10",
     "immutable": "^4.0.0-rc.12",
     "is-hotkey": "^0.1.6",
     "jquery": "^3.5.0",

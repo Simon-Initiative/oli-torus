@@ -49,7 +49,7 @@ class ModalSelection extends React.PureComponent<ModalSelectionProps, {}> {
     return (
       <div ref={(modal) => { this.modal = modal; }}
         data-backdrop="true" className="modal">
-        <div className={`modal-dialog modal-${size}`} role="document">
+        <div className={`modal-dialog modal-dialog-centered modal-${size}`} role="document">
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title">{this.props.title}</h5>
