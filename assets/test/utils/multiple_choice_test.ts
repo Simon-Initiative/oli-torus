@@ -1,4 +1,4 @@
-import { MCActions } from 'components/activities/multiple_choice/reducer';
+import { MCActions } from 'components/activities/multiple_choice/actions';
 import * as ContentModel from 'data/content/model';
 import { MultipleChoiceModelSchema, Choice } from 'components/activities/multiple_choice/schema';
 import { ScoringStrategy } from 'components/activities/types';

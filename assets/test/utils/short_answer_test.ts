@@ -1,4 +1,4 @@
-import { ShortAnswerActions } from 'components/activities/short_answer/reducer';
+import { ShortAnswerActions } from 'components/activities/short_answer/actions';
 import * as ContentModel from 'data/content/model';
 import { ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
 import { ScoringStrategy } from 'components/activities/types';

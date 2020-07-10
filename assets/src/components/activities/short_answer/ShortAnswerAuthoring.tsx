@@ -6,7 +6,7 @@ import * as ActivityTypes from '../types';
 import { Stem } from '../common/Stem';
 import { Feedback } from './sections/Feedback';
 import { Hints } from '../common/Hints';
-import { ShortAnswerActions } from './reducer';
+import { ShortAnswerActions } from './actions';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
