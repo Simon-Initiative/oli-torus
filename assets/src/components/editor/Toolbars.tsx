@@ -211,12 +211,12 @@ const Spacer = () => {
 
 const textOptions = [
   { value: 'p', text: 'Normal text' },
-  { value: 'h1', text: 'Title' },
-  { value: 'h2', text: 'Subtitle' },
-  { value: 'h3', text: 'Heading 1' },
-  { value: 'h4', text: 'Heading 2' },
-  { value: 'h5', text: 'Heading 3' },
-  { value: 'h6', text: 'Heading 4' },
+  { value: 'h1', text: 'Subtitle' },
+  { value: 'h2', text: 'Heading 1' },
+  { value: 'h3', text: 'Heading 2' },
+  { value: 'h4', text: 'Heading 3' },
+  { value: 'h5', text: 'Heading 4' },
+  { value: 'h6', text: 'Heading 5' },
 ];
 
 const TextFormatter = () => {
