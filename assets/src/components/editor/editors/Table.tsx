@@ -57,7 +57,6 @@ export const normalize = (editor: ReactEditor, node: Node, path: Path) => {
         // Add as many empty td elements to bring this row back up to
         // the max td count
         while (count < max) {
-          console.log('Inserting cell')
           Transforms.insertNodes(editor, td(''), { at: thisPath });
           count = count + 1;
         }
