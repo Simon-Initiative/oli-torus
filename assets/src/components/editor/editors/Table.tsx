@@ -57,6 +57,7 @@ export const normalize = (editor: ReactEditor, node: Node, path: Path) => {
         // Add as many empty td elements to bring this row back up to
         // the max td count
         while (count < max) {
+          console.log('Inserting cell')
           Transforms.insertNodes(editor, td(''), { at: thisPath });
           count = count + 1;
         }
@@ -150,29 +151,68 @@ const DropdownMenu = (props: any) => {
   };
 
   const onAddColumnBefore = () => {
-    const editor: ReactEditor = props.editor;
-    const path = ReactEditor.findPath(editor, props.model);
-    const [, parentPath] = Editor.parent(editor, path);
-    const [table] = Editor.parent(editor, parentPath);
 
-    const rows = table.children.length;
-    for (let i = 0; i < rows; i += 1) {
-      path[path.length - 2] = i;
-      Transforms.insertNodes(editor, td(''), { at: path });
+    const editor: ReactEditor = props.editor;
+
+    try {
+
+      // The edits here result in intermediate states that normalization
+      // would seek to correct.  So to allow this operation to succeed,
+      // we instruct our editor instance to suspend normalization.
+
+      (editor as any).suspendNormalization = true;
+
+      const path = ReactEditor.findPath(editor, props.model);
+      const [, parentPath] = Editor.parent(editor, path);
+      const [table] = Editor.parent(editor, parentPath);
+
+      const rows = table.children.length;
+      for (let i = 0; i < rows; i += 1) {
+        path[path.length - 2] = i;
+        Transforms.insertNodes(editor, td(''), { at: path });
+      }
+    } catch (error) {
+      // tslint:disable-next-line
+      console.log(error);
+
+    } finally {
+      // Whether the operation succeeded or failed, we restore
+      // normalization
+      (editor as any).suspendNormalization = false;
     }
+
   };
 
   const onAddColumnAfter = () => {
-    const editor: ReactEditor = props.editor;
-    const path = ReactEditor.findPath(editor, props.model);
-    const [, parentPath] = Editor.parent(editor, path);
-    const [table] = Editor.parent(editor, parentPath);
 
-    const rows = table.children.length;
-    for (let i = 0; i < rows; i += 1) {
-      path[path.length - 2] = i;
-      Transforms.insertNodes(editor, td(''), { at: Path.next(path) });
+    const editor: ReactEditor = props.editor;
+
+    try {
+
+      // The edits here result in intermediate states that normalization
+      // would seek to correct.  So to allow this operation to succeed,
+      // we instruct our editor instance to suspend normalization.
+      (editor as any).suspendNormalization = true;
+
+      const path = ReactEditor.findPath(editor, props.model);
+      const [, parentPath] = Editor.parent(editor, path);
+      const [table] = Editor.parent(editor, parentPath);
+
+      const rows = table.children.length;
+      for (let i = 0; i < rows; i += 1) {
+        path[path.length - 2] = i;
+        Transforms.insertNodes(editor, td(''), { at: Path.next(path) });
+      }
+    } catch (error) {
+      // tslint:disable-next-line
+      console.log(error);
+
+    } finally {
+      // Whether the operation succeeded or failed, we restore
+      // normalization
+      (editor as any).suspendNormalization = false;
     }
+
   };
 
   const onDeleteRow = () => {
