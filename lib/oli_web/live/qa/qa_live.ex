@@ -101,45 +101,45 @@ defmodule OliWeb.Qa.QaLive do
           <button class="btn btn-primary mt-3" id="button-publish"
             phx-click="review"
             phx-disable-with="Reviewing...">Run Review</button>
-
         </div>
       </div>
 
-      <%= if !Enum.empty?(@warnings_by_type) do %>
+      <%= if !Enum.empty?(@qa_reviews) do %>
         <div class="row mt-4">
           <div class="col-12">
             <p class="mb-3">
               Last reviewed <strong><%= (hd @qa_reviews).inserted_at |> Timex.format!("{relative}", :relative) %></strong>,
               with <strong><%= length @warnings %></strong> potential improvement <%= if (length @warnings) == 1 do "opportunity" else "opportunities" end %> found.
             </p>
-
-            <div class="d-flex">
-              <%= for type <- @warning_types do %>
-                <%= live_component @socket, WarningFilter, active: MapSet.member?(@filters, type), type: type, warnings: Map.get(@warnings_by_type, type) %>
-              <% end %>
-            </div>
-
-            <div class="reviews">
-              <ul class="review-links">
-                <%= for warning <- @filtered_warnings do %>
-                  <%= live_component @socket, WarningSummary, warning: warning, selected: @selected %>
-                <% end %>
-              </ul>
-              <div class="review-cards">
-                <%= if @selected != nil do %>
-                  <%= live_component @socket, WarningDetails,
-                    parent_pages: @parent_pages,
-                    selected: @selected,
-                    author: @author,
-                    project: @project,
-                    warning: @selected %>
+            <%= if !Enum.empty?(@warnings_by_type) do %>
+              <div class="d-flex">
+                <%= for type <- @warning_types do %>
+                  <%= live_component @socket, WarningFilter, active: MapSet.member?(@filters, type), type: type, warnings: Map.get(@warnings_by_type, type) %>
                 <% end %>
               </div>
-            </div>
+
+              <div class="reviews">
+                <ul class="review-links">
+                  <%= for warning <- @filtered_warnings do %>
+                    <%= live_component @socket, WarningSummary, warning: warning, selected: @selected %>
+                  <% end %>
+                </ul>
+                <div class="review-cards">
+                  <%= if @selected != nil do %>
+                    <%= live_component @socket, WarningDetails,
+                      parent_pages: @parent_pages,
+                      selected: @selected,
+                      author: @author,
+                      project: @project,
+                      warning: @selected %>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
           </div>
         </div>
-      </div>
-    <% end %>
+      <% end %>
+    </div>
     """
   end
 
