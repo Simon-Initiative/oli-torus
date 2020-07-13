@@ -7,10 +7,8 @@ type Size = {
 
 const initialSize: Size = { rows: 1, columns: 1 };
 
-const minRows = 6;
-const maxRows = 16;
-const minCols = 6;
-const maxCols = 16;
+const maxRows = 10;
+const maxCols = 8;
 
 const cellContainerStyle = {
   padding: '2px',
@@ -43,14 +41,14 @@ export const SizePicker = (props: SizePickerProps) => {
 
   const isHighlighted = (row: number, col: number) => size.rows >= row && size.columns >= col;
 
-  const numRows = Math.min(Math.max(size.rows, minRows) + 1, maxRows);
-  const numCols = Math.min(Math.max(size.columns, minCols) + 1, maxCols);
+  const numRows = maxRows;
+  const numCols = maxCols;
 
   const rows = range(numRows);
   const cols = range(numCols);
 
-  const width = (numCols * 19 + 10) + 'px';
-  const height = (numRows * 22 + 5) + 'px';
+  const width = (maxCols * 19 + 10) + 'px';
+  const height = (maxRows * 25 + 35) + 'px';
 
   const mapRow = (row: number) => {
     const cells = cols.map((col: number) => (
