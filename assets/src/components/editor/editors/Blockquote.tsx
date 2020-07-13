@@ -10,7 +10,7 @@ import guid from 'utils/guid';
 const command: Command = {
   execute: (context, editor: ReactEditor) => {
     const quote = ContentModel.create<ContentModel.Blockquote>(
-      { type: 'blockquote', children: [{ text: '' }], id: guid() });
+      { type: 'blockquote', children: [{ type: 'p', children: [{ text: '' }] }], id: guid() });
     Transforms.insertNodes(editor, quote);
   },
   precondition: (editor: ReactEditor) => {
@@ -46,54 +46,3 @@ export const BlockQuoteEditor = (props: BlockQuoteProps) => {
   );
 };
 
-
-// Handles exiting a blockquote on enter
-function handleTermination(editor: SlateEditor, e: KeyboardEvent) {
-  if (editor.selection !== null && Range.isCollapsed(editor.selection)) {
-
-    const [match] = SlateEditor.nodes(editor, {
-      match: n => n.type === 'blockquote',
-    });
-
-    if (match) {
-      const [, path] = match;
-
-      const p = ContentModel.create<ContentModel.Paragraph>(
-        { type: 'p', children: [{ text: '' }], id: guid() });
-
-      // Insert it ahead of the next node
-      const nextMatch = SlateEditor.next(editor, { at: path });
-      if (nextMatch) {
-        const [, nextPath] = nextMatch;
-        Transforms.insertNodes(editor, p, { at: nextPath });
-
-        const newNext = SlateEditor.next(editor, { at: path });
-        if (newNext) {
-          const [, newPath] = newNext;
-          Transforms.select(editor, newPath);
-        }
-
-
-      // But if there is no next node, insert it at end
-      } else {
-        Transforms.insertNodes(editor, p, { mode: 'highest', at: SlateEditor.end(editor, []) });
-
-        const newNext = SlateEditor.next(editor, { at: path });
-        if (newNext) {
-          const [, newPath] = newNext;
-          Transforms.select(editor, newPath);
-        }
-      }
-
-      e.preventDefault();
-
-    }
-  }
-}
-
-// The key down handler required to allow special quote processing.
-export const onKeyDown = (editor: SlateEditor, e: KeyboardEvent) => {
-  if (e.key === 'Enter') {
-    handleTermination(editor, e);
-  }
-};

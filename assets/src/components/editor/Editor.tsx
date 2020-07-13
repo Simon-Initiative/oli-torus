@@ -1,12 +1,11 @@
 import React, { useMemo, useCallback, KeyboardEvent } from 'react';
 import { Slate, Editable, withReact, ReactEditor } from 'slate-react';
-import { createEditor, Node, NodeEntry, Range, Editor as SlateEditor, Transforms, Path } from 'slate';
+import { createEditor, Node, NodeEntry, Point, Range, Editor as SlateEditor, Transforms, Path } from 'slate';
 import { create, Mark, ModelElement, schema, Paragraph, SchemaConfig } from 'data/content/model';
 import { editorFor, markFor } from './editors';
 import { ToolbarItem, CommandContext } from './interfaces';
 import { FixedToolbar, HoveringToolbar } from './Toolbars';
 import { onKeyDown as listOnKeyDown } from './editors/Lists';
-import { onKeyDown as quoteOnKeyDown } from './editors/Blockquote';
 import { getRootOfText } from './utils';
 
 import guid from 'utils/guid';
@@ -36,7 +35,10 @@ const voidOnKeyDown = (editor: ReactEditor, e: KeyboardEvent) => {
 
       getRootOfText(editor).lift((node: Node) => {
 
-        if ((schema as any)[node.type as string].isVoid) {
+        const nodeType = node.type as string;
+        const schemaItem : SchemaConfig = (schema as any)[nodeType];
+
+        if (schemaItem.isVoid) {
           const path = ReactEditor.findPath(editor, node);
           Transforms.insertNodes(editor, create<Paragraph>(
             { type: 'p', children: [{ text: '' }], id: guid() }),
@@ -47,6 +49,58 @@ const voidOnKeyDown = (editor: ReactEditor, e: KeyboardEvent) => {
     }
   }
 };
+
+
+// Handles exiting a header item via Enter key, setting the next block back to normal (p)
+function handleFormattingTermination(editor: SlateEditor, e: KeyboardEvent) {
+  if (e.key === 'Enter' && editor.selection !== null && Range.isCollapsed(editor.selection)) {
+
+    const [match] = SlateEditor.nodes(editor, {
+      match: n => n.type === 'h1' || n.type === 'h2'
+      || n.type === 'h3' || n.type === 'h4'
+      || n.type === 'h5' || n.type === 'h6',
+    });
+
+    if (match) {
+      const [, path] = match;
+
+      const end = SlateEditor.end(editor, path);
+
+      // If the cursor is at the end of the block
+      if (Point.equals(editor.selection.focus, end)) {
+
+        const p = create<Paragraph>(
+          { type: 'p', children: [{ text: '' }], id: guid() });
+
+        // Insert it ahead of the next node
+        const nextMatch = SlateEditor.next(editor, { at: path });
+        if (nextMatch) {
+          const [, nextPath] = nextMatch;
+          Transforms.insertNodes(editor, p, { at: nextPath });
+
+          const newNext = SlateEditor.next(editor, { at: path });
+          if (newNext) {
+            const [, newPath] = newNext;
+            Transforms.select(editor, newPath);
+          }
+
+
+        // But if there is no next node, insert it at end
+        } else {
+          Transforms.insertNodes(editor, p, { mode: 'highest', at: SlateEditor.end(editor, []) });
+
+          const newNext = SlateEditor.next(editor, { at: path });
+          if (newNext) {
+            const [, newPath] = newNext;
+            Transforms.select(editor, newPath);
+          }
+        }
+
+        e.preventDefault();
+      }
+    }
+  }
+}
 
 
 function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
@@ -149,7 +203,7 @@ export const Editor = React.memo((props: EditorProps) => {
   const onKeyDown = useCallback((e: KeyboardEvent) => {
     voidOnKeyDown(editor, e);
     listOnKeyDown(editor, e);
-    quoteOnKeyDown(editor, e);
+    handleFormattingTermination(editor, e);
   }, []);
 
   const renderLeaf = useCallback(({ attributes, children, leaf }: any) => {
