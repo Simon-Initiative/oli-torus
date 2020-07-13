@@ -149,17 +149,35 @@ const DropdownMenu = (props: any) => {
 
   };
 
-  const onAddColumnBefore = () => {
+  // Wraps a table editing function so that the execution of the edits
+  // within it operate outside of slate normalization.  This is to allow
+  // edit sequences that would put the document in intermediate states
+  // that normalization would seek to adjust to execute without that
+  // adjustment.
 
+  const withoutNormalization = (fn: any) => {
     const editor: ReactEditor = props.editor;
 
     try {
 
-      // The edits here result in intermediate states that normalization
-      // would seek to correct.  So to allow this operation to succeed,
-      // we instruct our editor instance to suspend normalization.
-
       (editor as any).suspendNormalization = true;
+
+      fn(editor);
+
+    } catch (error) {
+      // tslint:disable-next-line
+      console.log(error);
+
+    } finally {
+      // Whether the operation succeeded or failed, we restore
+      // normalization
+      (editor as any).suspendNormalization = false;
+    }
+  };
+
+  const onAddColumnBefore = () => {
+
+    withoutNormalization((editor: ReactEditor) => {
 
       const path = ReactEditor.findPath(editor, props.model);
       const [, parentPath] = Editor.parent(editor, path);
@@ -170,28 +188,13 @@ const DropdownMenu = (props: any) => {
         path[path.length - 2] = i;
         Transforms.insertNodes(editor, td(''), { at: path });
       }
-    } catch (error) {
-      // tslint:disable-next-line
-      console.log(error);
-
-    } finally {
-      // Whether the operation succeeded or failed, we restore
-      // normalization
-      (editor as any).suspendNormalization = false;
-    }
+    });
 
   };
 
   const onAddColumnAfter = () => {
 
-    const editor: ReactEditor = props.editor;
-
-    try {
-
-      // The edits here result in intermediate states that normalization
-      // would seek to correct.  So to allow this operation to succeed,
-      // we instruct our editor instance to suspend normalization.
-      (editor as any).suspendNormalization = true;
+    withoutNormalization((editor: ReactEditor) => {
 
       const path = ReactEditor.findPath(editor, props.model);
       const [, parentPath] = Editor.parent(editor, path);
@@ -202,15 +205,7 @@ const DropdownMenu = (props: any) => {
         path[path.length - 2] = i;
         Transforms.insertNodes(editor, td(''), { at: Path.next(path) });
       }
-    } catch (error) {
-      // tslint:disable-next-line
-      console.log(error);
-
-    } finally {
-      // Whether the operation succeeded or failed, we restore
-      // normalization
-      (editor as any).suspendNormalization = false;
-    }
+    });
 
   };
 
@@ -222,16 +217,20 @@ const DropdownMenu = (props: any) => {
   };
 
   const onDeleteColumn = () => {
-    const editor: ReactEditor = props.editor;
-    const path = ReactEditor.findPath(editor, props.model);
-    const [, parentPath] = Editor.parent(editor, path);
-    const [table] = Editor.parent(editor, parentPath);
 
-    const rows = table.children.length;
-    for (let i = 0; i < rows; i += 1) {
-      path[path.length - 2] = i;
-      Transforms.removeNodes(editor, { at: path });
-    }
+    withoutNormalization((editor: ReactEditor) => {
+
+      const path = ReactEditor.findPath(editor, props.model);
+      const [, parentPath] = Editor.parent(editor, path);
+      const [table] = Editor.parent(editor, parentPath);
+
+      const rows = table.children.length;
+      for (let i = 0; i < rows; i += 1) {
+        path[path.length - 2] = i;
+        Transforms.removeNodes(editor, { at: path });
+      }
+    });
+
   };
 
   return (
