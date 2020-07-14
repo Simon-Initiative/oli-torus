@@ -7,6 +7,7 @@ import { Description } from 'components/misc/Description';
 import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 import { parseInputFromRule } from '../utils';
 import { ProjectSlug } from 'data/types';
+import { CloseButton } from 'components/misc/CloseButton';
 
 interface FeedbackProps extends ModelEditorProps {
   onEditResponse: (id: string, content: RichText) => void;
@@ -18,6 +19,7 @@ interface FeedbackProps extends ModelEditorProps {
 
 interface ItemProps extends FeedbackProps {
   response: Response;
+  index: number;
 }
 
 export const Item = (props: ItemProps) => {
@@ -43,51 +45,59 @@ export const Item = (props: ItemProps) => {
   };
 
   if (response.score === 1) {
-    details = (
-      <div className="my-2">
-        <IconCorrect /> Feedback for Correct Answer:
-        <input type={props.model.inputType === 'numeric' ? 'number' : 'text'}
-          className="form-control my-2"
-          placeholder="Enter correct answer..."
-          onChange={(e: any) => onEditRule(e.target.value)}
-          value={value} />
+    return (
+      <div className="my-3" key={response.id}>
+        <Description>
+          <IconCorrect /> Feedback for Correct Answer:
+          <input type={props.model.inputType === 'numeric' ? 'number' : 'text'}
+            className="form-control my-2"
+            placeholder="Enter correct answer..."
+            onChange={(e: any) => onEditRule(e.target.value)}
+            value={value} />
+        </Description>
+        <RichTextEditor
+          projectSlug={props.projectSlug}
+          editMode={editMode}
+          text={response.feedback.content}
+          onEdit={content => onEditResponse(response.id, content)}/>
       </div>
     );
   } else if (value === '.*') {
-    details = (
-      <div className="my-2">
-        <IconIncorrect /> Feedback for any other Incorrect Answer
+    return (
+      <div className="my-3" key={response.id}>
+        <Description>
+          <IconIncorrect /> Feedback for any other Incorrect Answer
+        </Description>
+        <RichTextEditor
+          projectSlug={props.projectSlug}
+          editMode={editMode}
+          text={response.feedback.content}
+          onEdit={content => onEditResponse(response.id, content)}/>
       </div>
     );
   } else {
-    details = (
-      <div className="my-2">
-        Feedback for Incorrect Answer:
-        <input type={props.model.inputType === 'numeric' ? 'number' : 'text'}
-          className="form-control"
-          onChange={(e: any) => onEditRule(e.target.value)}
-          value={value} />
-        <button className="btn btn-sm" onClick={() => props.onRemoveResponse(response.id)}>
-          <i style={{ color: '#55C273' }} className="material-icons-outlined icon">
-            delete-forever
-          </i>
-        </button>
+    return (
+      <div className="my-3 d-flex mb-3" key={response.id}>
+        <div className="d-flex flex-column flex-grow-1">
+          <Description>
+            <IconIncorrect /> Feedback for Incorrect Answer:
+            <input type={props.model.inputType === 'numeric' ? 'number' : 'text'}
+              className="form-control"
+              onChange={(e: any) => onEditRule(e.target.value)}
+              value={value} />
+          </Description>
+          <RichTextEditor
+            projectSlug={props.projectSlug}
+            editMode={editMode} text={response.feedback.content}
+            onEdit={content => onEditResponse(response.id, content)}/>
+        </div>
+        <CloseButton
+          className="pl-3 pr-1"
+          onClick={() => props.onRemoveResponse(response.id)}
+          editMode={editMode} />
       </div>
     );
   }
-
-  return (
-    <React.Fragment key={response.id}>
-      <Description>
-        {details}
-      </Description>
-      <RichTextEditor
-        projectSlug={props.projectSlug}
-        editMode={editMode}
-        text={response.feedback.content}
-        onEdit={content => onEditResponse(response.id, content)}/>
-    </React.Fragment>
-  );
 };
 
 export const Feedback = (props: FeedbackProps) => {
@@ -100,8 +110,8 @@ export const Feedback = (props: FeedbackProps) => {
       <Heading title="Feedback" subtitle="Providing feedback when a student answers a
         question is one of the best ways to reinforce their understanding." id="feedback" />
 
-      {parts[0].responses.map((response: Response) =>
-        <Item key={response.id} {...props} response={response} />)}
+      {parts[0].responses.map((response: Response, index) =>
+        <Item key={response.id} {...props} response={response} index={index} />)}
 
       <button className="btn btn-sm btn-primary my-2" disabled={!editMode} onClick={onAddResponse}>
         Add Feedback
