@@ -59,10 +59,20 @@
         </tbody>
       </table>
 
-
-      <br /> <br /> <br />
-      <%= button("Download Datashop Export", to: Routes.project_path(@conn, :download_datashop, @project), method: :post, class: "btn btn-primary") %>
-
+      <div class="row my-4">
+        <div class="col-12">
+          <h4>Datashop Export</h4>
+          <%= case Oli.Publishing.get_latest_published_publication_by_slug!(@project.slug) do %>
+            <% nil -> %>
+              <p class="mb-2">
+                Project must be published to generate a datashop export file.
+              </p>
+              <button disabled class="btn btn-primary">Download Datashop Export</button>
+            <% _pub -> %>
+              <%= button("Download Datashop Export", to: Routes.project_path(@conn, :download_datashop, @project), method: :post, class: "btn btn-primary") %>
+          <% end %>
+        </div>
+      </div>
     </div>
   </div>
 </div>
