@@ -61,7 +61,7 @@ export const TestEditor = () => {
         value={stem.content}
         selection={stem.selection}
         onEdit={(content, selection) => {
-          setStem({content, selection});
+          setStem({ content, selection });
         }}
         toolbarItems={toolbarItems} />
 

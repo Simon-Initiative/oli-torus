@@ -4,7 +4,7 @@ import { Identifiable, ModelElement, Selection } from 'data/content/model';
 export type RichText = {
   content: ModelElement[];
   selection: Selection;
-}
+};
 
 export interface Success {
   type: 'success';
