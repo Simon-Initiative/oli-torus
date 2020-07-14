@@ -19,13 +19,11 @@ interface FeedbackProps extends ModelEditorProps {
 
 interface ItemProps extends FeedbackProps {
   response: Response;
-  index: number;
 }
 
 export const Item = (props: ItemProps) => {
 
   const { response, editMode, onEditResponse } = props;
-  let details;
   const [value, setValue] = useState(parseInputFromRule(response.rule));
 
   const onEditRule = (input: string) => {
@@ -111,7 +109,7 @@ export const Feedback = (props: FeedbackProps) => {
         question is one of the best ways to reinforce their understanding." id="feedback" />
 
       {parts[0].responses.map((response: Response, index) =>
-        <Item key={response.id} {...props} response={response} index={index} />)}
+        <Item key={response.id} {...props} response={response} />)}
 
       <button className="btn btn-sm btn-primary my-2" disabled={!editMode} onClick={onAddResponse}>
         Add Feedback
