@@ -63,11 +63,7 @@ defmodule OliWeb.AuthController do
       "g-recaptcha-response" => g_recaptcha_response
     } = params)
   do
-    IO.puts("user registration recaptcha #{g_recaptcha_response}")
-    verified = Recaptcha.verify(g_recaptcha_response)
-    IO.puts("recapture verified #{inspect(verified)}")
-
-    case verified do
+    case Recaptcha.verify(g_recaptcha_response) do
       {:success, :false} ->
         actions = %{
           google: Routes.auth_path(conn, :request, "google"),
