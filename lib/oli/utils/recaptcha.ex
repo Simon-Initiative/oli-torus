@@ -29,7 +29,7 @@ defmodule Oli.Utils.Recaptcha do
     case result do
       {:ok, %{"success" => true}} -> {:success, :true}
       {:ok, %{"success" => false}} -> {:success, :false}
-      {:error, errors} -> {:success, :false}
+      {:error, _errors} -> {:success, :false}
     end
   end
 
