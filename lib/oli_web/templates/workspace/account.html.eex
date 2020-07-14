@@ -25,14 +25,16 @@
     </div>
   </div>
 
-  <hr />
-
-  <div class="row">
+  <div class="row my-4">
     <div class="col-12">
-      <h2 class="mb-4">My Institutions</h2>
+      <h4 class="mb-3">My Institutions</h4>
+
+      <%= link to: Routes.institution_path(@conn, :new), class: "d-flex align-items-center mb-2" do %>
+        <%= link "Register an Institution", to: Routes.institution_path(@conn, :new), class: "btn btn-md btn-outline-primary mb-2" %>
+      <% end %>
 
       <%= if Enum.count(@institutions) == 0 do %>
-        <div class="my-5 text-center">
+        <div class="my-5">
           <%= "#{@current_author.first_name} #{@current_author.last_name}" %> has no registered institutions
         </div>
       <% else %>
@@ -70,21 +72,20 @@
           </tbody>
         </table>
       <% end %>
+    </div>
+  </div>
 
-      <span><%= link "Register an Institution", to: Routes.institution_path(@conn, :new), class: "btn btn-md btn-outline-primary" %></span>
-
-      <h2 class="mt-5">Preferences</h2>
-
-      <div class="my-4">
+  <div class="row my-4">
+    <div class="col-3">
+      <h4 class="mb-3">Editor Theme</h4>
         <%= form_for @conn, Routes.workspace_path(@conn, :update_theme), fn f -> %>
-          <%= label f, "Editor theme", class: "control-label" %>
-          <div class="input-group mb-3">
-            <%= select f, :id, Enum.map(@themes, fn t -> if t.default, do: {"#{t.name} (Default)", t.id}, else: {t.name, t.id} end), value: @active_theme.id, class: "form-control" %>
-          </div>
-          <%= submit "Save Theme", class: "btn btn-sm btn-primary", phx_disable_with: "Saving..." %>
-
+          <%= select f,
+            :id,
+            Enum.map(@themes, fn t -> if t.default, do: {"#{t.name} (Default)", t.id}, else: {t.name, t.id} end),
+            value: @active_theme.id,
+            class: "form-control",
+            onchange: "this.form.submit();" %>
         <% end %>
-      </div>
     </div>
   </div>
 </div>
