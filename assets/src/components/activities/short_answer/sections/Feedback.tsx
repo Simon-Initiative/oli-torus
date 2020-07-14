@@ -60,7 +60,8 @@ export const Item = (props: ItemProps) => {
           onEdit={content => onEditResponse(response.id, content)}/>
       </div>
     );
-  } else if (value === '.*') {
+  }
+  if (value === '.*') {
     return (
       <div className="my-3" key={response.id}>
         <Description>
@@ -73,29 +74,29 @@ export const Item = (props: ItemProps) => {
           onEdit={content => onEditResponse(response.id, content)}/>
       </div>
     );
-  } else {
-    return (
-      <div className="my-3 d-flex mb-3" key={response.id}>
-        <div className="d-flex flex-column flex-grow-1">
-          <Description>
-            <IconIncorrect /> Feedback for Incorrect Answer:
-            <input type={props.model.inputType === 'numeric' ? 'number' : 'text'}
-              className="form-control"
-              onChange={(e: any) => onEditRule(e.target.value)}
-              value={value} />
-          </Description>
-          <RichTextEditor
-            projectSlug={props.projectSlug}
-            editMode={editMode} text={response.feedback.content}
-            onEdit={content => onEditResponse(response.id, content)}/>
-        </div>
-        <CloseButton
-          className="pl-3 pr-1"
-          onClick={() => props.onRemoveResponse(response.id)}
-          editMode={editMode} />
-      </div>
-    );
   }
+
+  return (
+    <div className="my-3 d-flex mb-3" key={response.id}>
+      <div className="d-flex flex-column flex-grow-1">
+        <Description>
+          <IconIncorrect /> Feedback for Incorrect Answer:
+          <input type={props.model.inputType === 'numeric' ? 'number' : 'text'}
+            className="form-control"
+            onChange={(e: any) => onEditRule(e.target.value)}
+            value={value} />
+        </Description>
+        <RichTextEditor
+          projectSlug={props.projectSlug}
+          editMode={editMode} text={response.feedback.content}
+          onEdit={content => onEditResponse(response.id, content)}/>
+      </div>
+      <CloseButton
+        className="pl-3 pr-1"
+        onClick={() => props.onRemoveResponse(response.id)}
+        editMode={editMode} />
+    </div>
+  );
 };
 
 export const Feedback = (props: FeedbackProps) => {
