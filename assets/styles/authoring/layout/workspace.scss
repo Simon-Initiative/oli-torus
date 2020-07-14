@@ -9,6 +9,7 @@
   }
 
   .workspace-right {
+    width: calc(100vw - 200px);
     display: flex;
     flex-direction: column;
     flex-grow: 1;
@@ -23,14 +24,24 @@
   }
 
   .workspace-header {
+    width: 100%;
     border-bottom: 1px solid $gray-400;
-    padding: 20px;
+    height: 48px;
+    line-height: 48px;
+    padding: 0 32px;
     position: relative;
     background-color: $workspace-header-bg;
-    width: 100%;
+
+    display: flex;
 
     .page-title {
       font-weight: bold;
+    }
+
+    .project-title {
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
     }
 
   }
@@ -45,7 +56,7 @@
     a {
       display: flex;
       flex-direction: columns;
-      margin: 20px 0;
+      margin: 10px 0;
       color: $workspace-sidebar-link-color;
     }
 
@@ -54,11 +65,12 @@
     }
 
     .category {
-      font-size: 12px;
+      padding: 0;
+      font-size: 16px;
       color: $gray-500;
       user-select: none;
-      margin-top: 20px;
-      margin-bottom: 10px;
+      margin-top: 36px;
+      margin-bottom: 0px;
     }
 
     .active {
@@ -70,9 +82,9 @@
       height: 48px;
       display: inline-block;
       margin: 0;	      margin: 0;
+      width: 100%;
       white-space: nowrap;
       text-overflow: ellipsis;
-      width: 100%;
       overflow: hidden;
     }
   }
