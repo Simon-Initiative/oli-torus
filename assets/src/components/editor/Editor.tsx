@@ -2,7 +2,10 @@ import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { Slate, Editable, withReact, ReactEditor } from 'slate-react';
 import { createEditor, Node, Point, Range, Editor as SlateEditor, Transforms, Path } from 'slate';
 import isHotkey from 'is-hotkey';
-import { create, Mark, ModelElement, schema, Paragraph, SchemaConfig } from 'data/content/model';
+import {
+  create, Mark, ModelElement, schema, Paragraph,
+  SchemaConfig, Selection,
+} from 'data/content/model';
 import { editorFor, markFor } from './editors';
 import { ToolbarItem, CommandContext } from './interfaces';
 import { FixedToolbar, HoveringToolbar } from './Toolbars';
@@ -15,10 +18,13 @@ import guid from 'utils/guid';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor (including selection state)
-  onEdit: (value: any) => void;
+  onEdit: (value: Node[], selection: Selection) => void;
 
   // The content to display
   value: Node[];
+
+  // The current selection
+  selection: Selection;
 
   // The fixed toolbar configuration
   toolbarItems: ToolbarItem[];
@@ -149,6 +155,8 @@ export const Editor = React.memo((props: EditorProps) => {
     }
   };
 
+  editor.selection = props.selection;
+
   const renderElement = useCallback((props) => {
     const model = props.element as ModelElement;
 
@@ -189,11 +197,11 @@ export const Editor = React.memo((props: EditorProps) => {
   }, []);
 
   const onChange = (value: Node[]) => {
-    const { operations } = editor;
+    const { operations, selection } = editor;
 
     // Determine if this onChange was due to an actual content change
     if (operations.filter(({ type }) => type !== 'set_selection').length) {
-      props.onEdit(value);
+      props.onEdit(value, selection);
     }
   };
 
