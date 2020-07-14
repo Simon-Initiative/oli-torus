@@ -2,7 +2,7 @@ import { ResourceContext } from 'data/content/resource';
 import { Identifiable, ModelElement, Selection } from 'data/content/model';
 
 export type RichText = {
-  content: ModelElement[];
+  model: ModelElement[];
   selection: Selection;
 };
 

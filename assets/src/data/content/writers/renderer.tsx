@@ -7,5 +7,5 @@ interface Props {
   text: RichText;
 }
 export const HtmlContentModelRenderer = ({ text } : Props) => <div dangerouslySetInnerHTML={{
-  __html: new ContentWriter().render(defaultWriterContext(), text.content, new HtmlParser()),
+  __html: new ContentWriter().render(defaultWriterContext(), text.model, new HtmlParser()),
 }} />;

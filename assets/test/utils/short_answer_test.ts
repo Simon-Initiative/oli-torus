@@ -15,7 +15,7 @@ function testFromText(text: string) {
   return {
     id: Math.random() + '',
     content: {
-      content: [
+      model: [
         ContentModel.create<ContentModel.Paragraph>({
           type: 'p',
           children: [{ text }],

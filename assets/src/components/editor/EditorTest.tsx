@@ -12,7 +12,7 @@ import { RichText } from 'components/activities/types';
 import { ModelElement } from 'data/content/model';
 
 const initialStem: RichText = {
-  content: ([
+  model: ([
     {
       type: 'p',
       children: [{ text: 'This is the editor test view.' }],
@@ -58,10 +58,10 @@ export const TestEditor = () => {
       <Editor
         commandContext={ { projectSlug: '' }}
         editMode={true}
-        value={stem.content}
+        value={stem.model}
         selection={stem.selection}
-        onEdit={(content, selection) => {
-          setStem({ content, selection });
+        onEdit={(model, selection) => {
+          setStem({ model, selection });
         }}
         toolbarItems={toolbarItems} />
 
