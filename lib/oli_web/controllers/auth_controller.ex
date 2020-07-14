@@ -6,6 +6,7 @@ defmodule OliWeb.AuthController do
   alias Oli.Accounts.Author
   alias Oli.Accounts.SystemRole
   alias Oli.Repo
+  alias Oli.Utils.Recaptcha
 
   def signin(conn, _params) do
     actions = %{
@@ -59,37 +60,52 @@ defmodule OliWeb.AuthController do
         "password" => password,
         "password_confirmation" => password_confirmation
       },
+      "g-recaptcha-response" => g_recaptcha_response
     } = params)
   do
-    author_params = %{
-      email: email,
-      first_name: first_name,
-      last_name: last_name,
-      provider: "identity",
-      password: password,
-      password_confirmation: password_confirmation,
-      email_verified: false,
-      system_role_id: SystemRole.role_id.author
-    }
+    IO.puts("user registration recaptcha #{g_recaptcha_response}")
+    verified = Recaptcha.verify(g_recaptcha_response)
+    IO.puts("recapture verified #{inspect(verified)}")
 
-    case Accounts.create_author(author_params) do
-      {:ok, author} ->
-        case params do
-          %{"type" => "link-account"} ->
-            link_account_callback(conn, author)
-          _ ->
-            signin_callback(conn, author)
-        end
-
-      {:error, changeset} ->
-        # remove password_hash from changeset for security, just in case
-        changeset = Ecto.Changeset.delete_change(changeset, :password_hash)
+    case verified do
+      {:success, :false} ->
         actions = %{
-          submit: Routes.auth_path(conn, :register_email_submit),
-          cancel: Routes.auth_path(conn, :register)
+          google: Routes.auth_path(conn, :request, "google"),
+          facebook: Routes.auth_path(conn, :request, "facebook"),
+          identity: Routes.auth_path(conn, :register_email_form),
         }
-        conn
-        |> render("register_email.html", changeset: changeset, actions: actions)
+        render(conn, "register.html", title: "Create an Account", actions: actions)
+      {:success, :true} ->
+        author_params = %{
+          email: email,
+          first_name: first_name,
+          last_name: last_name,
+          provider: "identity",
+          password: password,
+          password_confirmation: password_confirmation,
+          email_verified: false,
+          system_role_id: SystemRole.role_id.author
+        }
+
+        case Accounts.create_author(author_params) do
+          {:ok, author} ->
+            case params do
+              %{"type" => "link-account"} ->
+                link_account_callback(conn, author)
+              _ ->
+                signin_callback(conn, author)
+            end
+
+          {:error, changeset} ->
+            # remove password_hash from changeset for security, just in case
+            changeset = Ecto.Changeset.delete_change(changeset, :password_hash)
+            actions = %{
+              submit: Routes.auth_path(conn, :register_email_submit),
+              cancel: Routes.auth_path(conn, :register)
+            }
+            conn
+            |> render("register_email.html", changeset: changeset, actions: actions)
+        end
     end
   end
 

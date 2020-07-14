@@ -1,3 +1,4 @@
+<script src="https://www.google.com/recaptcha/api.js"></script>
 <div class="container signin">
   <div class="row">
     <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
@@ -38,6 +39,10 @@
                 placeholder: "Confirm Password", required: true, autofocus: focusHelper(f, :password_confirmation) %>
               <%= label f, :password_confirmation, "Confirm Password", class: "control-label" %>
               <%= error_tag f, :password_confirmation %>
+            </div>
+
+            <div class="form-label-group">
+              <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
             </div>
 
             <%= submit "Register", class: "btn btn-md btn-primary btn-block" %>
