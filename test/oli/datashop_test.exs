@@ -587,10 +587,7 @@ defmodule Oli.DatashopTest do
         hints: ["1137320916"]
       }, %Part{id: "1", responses: [], hints: []}, :sa_user2_attempt1, :sa_user2_part_attempt1)
 
-      {:ok, path, _file_name} = Datashop.export(map.project.id)
-      {:ok, datashop_file} = File.read(path)
-
-      Map.put(map, :datashop_file, datashop_file)
+      Map.put(map, :datashop_file, Datashop.export(map.project.id))
     end
 
     test "tool message should be well formed for hint requests", %{ datashop_file: datashop_file } do

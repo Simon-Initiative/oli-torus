@@ -1,10 +1,10 @@
 defmodule Oli.Analytics.Datashop do
   @moduledoc """
+  For documentation on DataShop logging message formats, see:
+
   https://pslcdatashop.web.cmu.edu/dtd/guide/tutor_message_dtd_guide_v4.pdf
   https://pslcdatashop.web.cmu.edu/help?page=logging
   https://pslcdatashop.web.cmu.edu/help?page=importFormatTd
-
-  QA: https://pslc-qa.andrew.cmu.edu/datashop/Project?id=250
   """
 
   import XmlBuilder
@@ -14,13 +14,12 @@ defmodule Oli.Analytics.Datashop do
   alias Oli.Analytics.Datashop.Messages.{Context, Tool, Tutor}
   alias Oli.Analytics.Datashop.Utils
 
-  def export(project_id, filename \\ "test") do
+  def export(project_id) do
     project_id
     |> create_messages
     |> wrap_with_tutor_related_message
     |> document
     |> generate
-    |> write_file(filename)
   end
 
   defp create_messages(project_id) do
@@ -158,15 +157,4 @@ defmodule Oli.Analytics.Datashop do
       },
       children)
   end
-
-  defp write_file(xml, file_name) do
-    file_name = file_name <> ".xml"
-    path = Path.expand(__DIR__) <> "/"
-
-    case File.write(path <> file_name, xml) do
-      :ok -> {:ok, path <> file_name, file_name}
-      {:error, posix} -> {:error, posix}
-    end
-  end
-
 end
