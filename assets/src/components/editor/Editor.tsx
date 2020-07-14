@@ -18,10 +18,10 @@ import guid from 'utils/guid';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor (including selection state)
-  onEdit: (value: Node[], selection: Selection) => void;
+  onEdit: (value: ModelElement[], selection: Selection) => void;
 
   // The content to display
-  value: Node[];
+  value: ModelElement[];
 
   // The current selection
   selection: Selection;
@@ -196,7 +196,7 @@ export const Editor = React.memo((props: EditorProps) => {
     return <span {...attributes}>{markup}</span>;
   }, []);
 
-  const onChange = (value: Node[]) => {
+  const onChange = (value: ModelElement[]) => {
     const { operations, selection } = editor;
 
     // Determine if this onChange was due to an actual content change

@@ -14,13 +14,16 @@ const applyAction = (
 function testFromText(text: string) {
   return {
     id: Math.random() + '',
-    content: [
-      ContentModel.create<ContentModel.Paragraph>({
-        type: 'p',
-        children: [{ text }],
-        id: Math.random() + '',
-      }),
-    ],
+    content: {
+      content: [
+        ContentModel.create<ContentModel.Paragraph>({
+          type: 'p',
+          children: [{ text }],
+          id: Math.random() + '',
+        }),
+      ],
+      selection: null,
+    },
   };
 }
 

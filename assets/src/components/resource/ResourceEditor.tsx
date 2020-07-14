@@ -14,12 +14,14 @@ import { PreviewButton } from '../content/PreviewButton';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug } from 'data/types';
 import * as Persistence from 'data/persistence/resource';
-import { UndoableState, processRedo, processUndo, processUpdate, init } from './undo';
+import {
+  UndoableState, processRedo, processUndo, processUpdate, init,
+  registerUndoRedoHotkeys, unregisterUndoRedoHotkeys,
+} from './undo';
 import { releaseLock, acquireLock } from 'data/persistence/lock';
 import { Message, createMessage } from 'data/messages/messages';
 import { Banner } from '../messages/Banner';
 import { BreadcrumbTrail } from 'components/common/BreadcrumbTrail';
-import isHotkey from 'is-hotkey';
 
 export interface ResourceEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap;   // Map of activity types to activity elements
@@ -66,24 +68,6 @@ function registerUnload(strategy: PersistenceStrategy) {
 
 function unregisterUnload(listener: any) {
   window.removeEventListener('beforeunload', listener);
-}
-
-function registerUndoRedoHotkeys(onUndo: () => void, onRedo: () => void) {
-  // register hotkeys
-  const isUndoHotkey = isHotkey('mod+z');
-  const isRedoHotkey = isHotkey('mod+shift+z');
-
-  return window.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (isUndoHotkey(e)) {
-      onUndo();
-    } else if (isRedoHotkey(e)) {
-      onRedo();
-    }
-  });
-}
-
-function unregisterUndoRedoHotkeys(listener: any) {
-  window.removeEventListener('keydown', listener);
 }
 
 // The resource editor
