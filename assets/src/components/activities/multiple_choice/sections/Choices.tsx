@@ -56,7 +56,7 @@ export const Choices = ({ onAddChoice, onEditChoice, onRemoveChoice, editMode, m
             <RichTextEditor
               className="flex-fill"
               projectSlug={projectSlug}
-              key={choice.id} editMode={editMode} text={choice.content}
+              editMode={editMode} text={choice.content}
               onEdit={content => onEditChoice(choice.id, content)}/>
             <CloseButton
               className="pl-3 pr-1"
