@@ -7,7 +7,6 @@ import { ResourceContent, ResourceContext,
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
 import { Editors } from './Editors';
-import { Objectives } from './Objectives';
 import { TitleBar } from '../content/TitleBar';
 import { UndoRedo } from '../content/UndoRedo';
 import { PreviewButton } from '../content/PreviewButton';
@@ -188,10 +187,6 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       }
     };
 
-    const onRegisterNewObjective = (o: Objective) => {
-      this.setState({ allObjectives: state.allObjectives.concat(o) });
-    };
-
     return (
       <div className="row">
         <div className="col-12">
@@ -216,14 +211,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
               canUndo={this.state.undoable.undoStack.size > 0}
               onUndo={this.undo} onRedo={this.redo}/>
           </TitleBar>
-          <div className="learning-objectives-label">Learning Objectives</div>
-          <Objectives
-            editMode={this.state.editMode}
-            projectSlug={props.projectSlug}
-            selected={this.state.undoable.current.objectives}
-            objectives={this.state.allObjectives}
-            onRegisterNewObjective={onRegisterNewObjective}
-            onEdit={objectives => this.update({ objectives })} />
+
           <div>
             <Editors {...props} editMode={this.state.editMode}
               activities={this.state.activities}

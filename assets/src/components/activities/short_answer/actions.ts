@@ -3,6 +3,7 @@ import { makeResponse } from './utils';
 import { fromText } from '../common/utils';
 import { RichText, Hint as HintType, Response } from '../types';
 import { Maybe } from 'tsmonad';
+import { toSimpleText } from 'data/content/text';
 import { Identifiable } from 'data/content/model';
 
 export class ShortAnswerActions {
@@ -28,6 +29,7 @@ export class ShortAnswerActions {
   static editStem(content: RichText) {
     return (draftState: ShortAnswerModelSchema) => {
       draftState.stem.content = content;
+      draftState.authoring.previewText = toSimpleText({ children: content });
     };
   }
 

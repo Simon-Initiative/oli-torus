@@ -9,14 +9,14 @@ import { UnsupportedActivity } from './UnsupportedActivity';
 import { getToolbarForResourceType } from './toolbar';
 import { StructuredContentEditor } from 'components/content/StructuredContentEditor';
 import { ProjectSlug, ResourceSlug } from 'data/types';
-import { TestModeHandler, defaultState } from './TestModeHandler';
+import { AbbreviatedActivity } from './AbbreviatedActivity';
 import { Purpose } from '../content/Purpose';
 import { DeleteButton } from '../misc/DeleteButton';
-import { EditLink } from '../misc/EditLink';
 import * as Persistence from 'data/persistence/activity';
-
+import { EditLink } from '../misc/EditLink';
 import './Editors.scss';
-import { getContentDescription, toSimpleText } from 'data/content/utils';
+import { getContentDescription } from 'data/content/utils';
+import { toSimpleText } from 'data/content/text';
 import { DragHandle } from './DragHandle';
 import { classNames } from 'utils/classNames';
 import { AddResourceContent } from '../content/AddResourceContent';
@@ -132,6 +132,14 @@ const getDescription = (item: ResourceContent) => {
 // The list of editors
 export const Editors = (props: EditorsProps) => {
 
+  const objectivesMap =  props.resourceContext.allObjectives.reduce(
+    (m: any, o) => {
+      m[o.slug] = o.title;
+      return m;
+    },
+    {},
+  );
+
   const {
     editorMap, editMode, graded, content, activities, projectSlug,
     resourceSlug, onEditContentList, onAddItem,
@@ -155,6 +163,7 @@ export const Editors = (props: EditorsProps) => {
           graded ? ResourceType.assessment : ResourceType.page)}/>, 'Content'];
     }
 
+
     const unsupported : EditorDesc = {
       deliveryElement: UnsupportedActivity,
       authoringElement: UnsupportedActivity,
@@ -165,39 +174,44 @@ export const Editors = (props: EditorsProps) => {
     };
 
     const activity = activities.get(content.activitySlug);
-    let editor;
-    let props;
+
+    let friendlyName = 'Unknown';
+    let previewText = '';
+    let objectives = [];
 
     if (activity !== undefined) {
 
-      editor = editorMap[activity.typeSlug]
+      const editor = editorMap[activity.typeSlug]
         ? editorMap[activity.typeSlug] : unsupported;
+      friendlyName = editor.friendlyName;
 
-      // Test mode is supported by giving the delivery component a transformed
-      // instance of the activity model.  Recognizing that we are in an editing mode
-      // we make this robust to problems with transormation so we fallback to the raw
-      // model if the transformed model is null (which results from failure to transform)
-      const model = activity.transformed === null ? activity.model : activity.transformed;
+      if (activity.model.authoring !== undefined) {
+        if (activity.model.authoring.previewText !== undefined) {
+          previewText = activity.model.authoring.previewText;
+        }
 
-      props = {
-        model: JSON.stringify(model),
-        activitySlug: activity.activitySlug,
-        state: JSON.stringify(
-          defaultState(activity.transformed === null ? model : activity.transformed)),
-        graded: false,
-      };
+        const slugsAsKeys = Object.keys(activity.objectives)
+          .reduce((map: any, key) => {
+            (activity.objectives as any)[key as any].forEach((slug: string) => {
+              map[slug] = true;
+            });
+            return map;
+          },
+          {});
 
-      const testModeEnabledComponent = (
-        <TestModeHandler model={model}>
-          {React.createElement(editor.deliveryElement, props as any)}
-        </TestModeHandler>
-      );
-
-      return [testModeEnabledComponent, editor.friendlyName];
+        objectives = Object.keys(slugsAsKeys)
+          .map(slug => objectivesMap[slug]);
+      }
 
     }
 
-    return [React.createElement(unsupported.deliveryElement), unsupported.friendlyName];
+    const abbreviatedActivity = (
+      <AbbreviatedActivity
+        previewText={previewText}
+        objectives={objectives}/>
+    );
+
+    return [abbreviatedActivity, friendlyName];
 
   };
 
@@ -349,15 +363,6 @@ export const Editors = (props: EditorsProps) => {
 
     const [editor, label] = createEditor(c, onEdit);
 
-    const editingLink = c.type === 'activity-reference'
-      ? `/project/${projectSlug}/resource/${resourceSlug}/activity/${c.activitySlug}` : undefined;
-
-    const link = editingLink !== undefined
-      ? (
-          <EditLink href={editingLink}/>
-        )
-      : null;
-
     const purposes = c.type === 'activity-reference'
       ? ActivityPurposes : ContentPurposes;
 
@@ -413,6 +418,59 @@ export const Editors = (props: EditorsProps) => {
       }
     };
 
+    const resourceContentFrame = c.type === 'activity-reference'
+    ? (
+      <div className="resource-content-frame card">
+        <div className="card-header pl-2"
+          draggable={true}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}>
+          <div className="d-flex flex-row align-items-baseline">
+
+            <div className="flex-grow-1">
+              <DragHandle style={{ height: 24, marginRight: 10 }} />
+              <EditLink
+                label={'Edit this ' + label + ' Activity'}
+                href={`/project/${projectSlug}/resource/${resourceSlug}/activity/${c.activitySlug}`}
+                />
+            </div>
+            <Purpose purpose={c.purpose} purposes={purposes}
+              editMode={editMode} onEdit={(p: string) => onEditPurpose(p)}/>
+            <DeleteButton editMode={content.size > 1} onClick={onRemove}/>
+          </div>
+
+          {editor}
+
+        </div>
+
+
+
+      </div>
+    )
+    : (
+      <div className="resource-content-frame card">
+        <div className="card-header pl-2"
+          draggable={true}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}>
+          <div className="d-flex flex-row align-items-baseline">
+            <div className="flex-grow-1">
+              <DragHandle style={{ height: 24, marginRight: 10 }} /> {label}
+            </div>
+            <Purpose purpose={c.purpose} purposes={purposes}
+              editMode={editMode} onEdit={(p: string) => onEditPurpose(p)}/>
+            <DeleteButton editMode={content.size > 1} onClick={onRemove}/>
+          </div>
+          <div className="description text-secondary ellipsize-overflow flex-1 mx-4 mt-2">
+            {getDescription(c)}
+          </div>
+        </div>
+        <div className="card-body">
+          {editor}
+        </div>
+      </div>
+    );
+
     return (
       <div key={c.id}
         id={`re${c.id}`}
@@ -438,28 +496,8 @@ export const Editors = (props: EditorsProps) => {
           aria-describedby="content-list-operation"
           tabIndex={index + 1}>
 
-          <div className="resource-content-frame card">
-            <div className="card-header pl-2"
-              draggable={true}
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}>
-              <div className="d-flex flex-row align-items-baseline">
-                <div className="flex-grow-1">
-                  <DragHandle style={{ height: 24, marginRight: 10 }} /> {label}
-                </div>
-                <Purpose purpose={c.purpose} purposes={purposes}
-                  editMode={editMode} onEdit={(p: string) => onEditPurpose(p)}/>
-                {link}
-                <DeleteButton editMode={content.size > 1} onClick={onRemove}/>
-              </div>
-              <div className="description text-secondary ellipsize-overflow flex-1 mx-4 mt-2">
-                {getDescription(c)}
-              </div>
-            </div>
-            <div className="card-body">
-              {editor}
-            </div>
-          </div>
+          {resourceContentFrame}
+
         </div>
 
       </div>

@@ -55,6 +55,7 @@ function testDefaultModel(): ShortAnswerModelSchema {
         },
       ],
       transformations: [],
+      previewText: '',
     },
   };
 }

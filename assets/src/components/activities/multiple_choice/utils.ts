@@ -33,6 +33,7 @@ export const defaultMCModel : () => MultipleChoiceModelSchema = () => {
       transformations: [
         { id: guid(), path: 'choices', operation: Operation.shuffle },
       ],
+      previewText: '',
     },
   };
 };
