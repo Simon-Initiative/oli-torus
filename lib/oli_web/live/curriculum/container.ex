@@ -31,12 +31,20 @@ defmodule OliWeb.Curriculum.Container do
     pages = ContainerEditor.list_all_pages(project)
 
     root_resource = AuthoringResolver.root_resource(project.slug)
-    subscriptions = subscribe(root_resource, pages, project.slug)
+
+    page_activity_map = build_activity_to_page_map(pages)
+    activity_map = build_activity_map(project.slug, page_activity_map)
+    objective_map = build_objective_map(project.slug, activity_map)
+
+    subscriptions = subscribe(root_resource, pages, activity_map, objective_map, project.slug)
 
     {:ok, assign(socket,
       pages: pages,
       active: :curriculum,
       title: "Curriculum",
+      page_activity_map: page_activity_map,
+      activity_map: activity_map,
+      objective_map: objective_map,
       changeset: Resources.change_revision(%Revision{}),
       root_resource: root_resource,
       project: project,
@@ -46,13 +54,50 @@ defmodule OliWeb.Curriculum.Container do
     }
   end
 
-  def render(assigns) do
+  # creates a map of page resource ids to a list of the activity ids for the activities
+  # that they contain
+  defp build_activity_to_page_map(pages) do
 
+    Enum.reduce(pages, %{}, fn %{resource_id: page_id, content: %{"model" => model}}, map ->
+      activities = get_activities_from_page(model)
+      Map.put(map, page_id, activities)
+    end)
+
+  end
+
+  # extract all the activity ids referenced from a page model
+  defp get_activities_from_page(nil), do: []
+  defp get_activities_from_page(model) do
+    Enum.filter(model, fn %{"type" => type} -> type == "activity-reference" end)
+    |> Enum.map(fn %{"activity_id" => id} -> id end)
+  end
+
+  # creates a map of activity ids to activity revisions, based on the page_to_activities_map
+  defp build_activity_map(project_slug, page_to_activities_map) do
+    all_activities = Enum.map(page_to_activities_map, fn {_, activity_ids} -> activity_ids end)
+    |> List.flatten()
+
+    AuthoringResolver.from_resource_id(project_slug, all_activities)
+    |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.resource_id, a) end)
+  end
+
+  # creates a map of objective ids to objective revisions, based on the activity map
+  defp build_objective_map(project_slug, activity_map) do
+    all_objectives = Enum.reduce(activity_map, [], fn {_, %{objectives: objectives}}, all ->
+      (Enum.map(objectives, fn {_, ids} -> ids end) |> List.flatten()) ++ all
+    end)
+
+    AuthoringResolver.from_resource_id(project_slug, all_objectives)
+    |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.resource_id, a) end)
+
+  end
+
+  def render(assigns) do
     ~L"""
-      <div class="container">
+      <div class="container container-editor">
         <div class="row">
           <div class="col-12">
-            <nav aria-label="breadcrumb">
+            <nav aria-label="breadcrumb" class="mb-5">
               <ol class="breadcrumb">
                 <li class="breadcrumb-item active" aria-current="page">Curriculum</li>
               </ol>
@@ -61,8 +106,8 @@ defmodule OliWeb.Curriculum.Container do
         </div>
         <div class="row">
           <div class="col-12">
-            <p class="text-secondary">
-              Create and arrange items to form your project curriculum. Select an item to configure it.
+            <p class="text-secondary mb-3">
+              Create and arrange items to form your project curriculum. Select an item to edit it.
             </p>
           </div>
         </div>
@@ -72,7 +117,10 @@ defmodule OliWeb.Curriculum.Container do
             <div class="curriculum-entries">
               <%= for {page, index} <- Enum.with_index(@pages) do %>
                 <%= live_component @socket, DropTarget, index: index %>
-                <%= live_component @socket, Entry, selected: page == @selected, page: page, index: index, project: @project %>
+                <%= live_component @socket, Entry, selected: page == @selected,
+                  page: page, activity_ids: Map.get(assigns.page_activity_map, page.resource_id),
+                  activity_map: assigns.activity_map, objective_map: assigns.objective_map,
+                  index: index, project: @project %>
               <% end %>
               <%= live_component @socket, DropTarget, index: length(@pages) %>
             </div>
@@ -91,7 +139,7 @@ defmodule OliWeb.Curriculum.Container do
 
           <div class="col-12 col-md-4">
             <%= if @selected != nil do %>
-            <%= live_component @socket, Settings, page: @selected, changeset: @changeset %>
+            <%= live_component @socket, Settings, page: @selected, changeset: @changeset, project: @project %>
             <% end %>
           </div>
         </div>
@@ -100,17 +148,22 @@ defmodule OliWeb.Curriculum.Container do
     """
   end
 
-  # spin up subscriptions for the container and for all of its pages
-  defp subscribe(root_resource, pages, project_slug) do
+  # spin up subscriptions for the container and for all of its pages, activities and attached objectives
+  defp subscribe(root_resource, pages, activity_map, objective_map, project_slug) do
 
-    ids = [root_resource.resource_id] ++ Enum.map(pages, fn p -> p.resource_id end)
+    activity_ids = Enum.map(activity_map, fn {id, _} -> id end)
+    objective_ids = Enum.map(objective_map, fn {id, _} -> id end)
+
+    ids = [root_resource.resource_id] ++ Enum.map(pages, fn p -> p.resource_id end) ++ activity_ids ++ objective_ids
     Enum.each(ids, fn id -> PubSub.subscribe(Oli.PubSub, "resource:" <> Integer.to_string(id) <> ":project:" <> project_slug) end)
+    PubSub.subscribe(Oli.PubSub, "new_resource:resource_type:" <> Integer.to_string(Oli.Resources.ResourceType.get_id_by_type("objective")) <> ":project:" <> project_slug)
 
     ids
   end
 
   # release a collection of subscriptions
   defp unsubscribe(ids, project_slug) do
+    PubSub.unsubscribe(Oli.PubSub, "new_resource:resource_type:" <> Integer.to_string(Oli.Resources.ResourceType.get_id_by_type("objective")) <> ":project:" <> project_slug)
     Enum.each(ids, fn id -> PubSub.unsubscribe(Oli.PubSub, "resource:" <> Integer.to_string(id) <> ":project:" <> project_slug) end)
   end
 
@@ -216,42 +269,174 @@ defmodule OliWeb.Curriculum.Container do
     {:noreply, socket}
   end
 
-  # Here are listening for subscription notifications for edits made
-  # to the container or to its child pages
-  def handle_info({:updated, revision, _}, socket) do
+  # When an activity that we are monitoring changes, we need to see if the changes
+  # attached or detached any objectives.
+  defp handle_updated_activity(socket, revision) do
+
+    # if the attached objectives in this activity haven't changed - we ignore this
+    # update, this allows for total optimization of this view as we will not re-render
+    # anything
+
+    old_activity = Map.get(socket.assigns.activity_map, revision.resource_id)
+
+    get_objectves = fn %{objectives: objectives} -> (Enum.map(objectives, fn {_, ids} -> ids end) |> List.flatten() |> MapSet.new()) end
+
+    old_objectives = get_objectves.(old_activity)
+    updated_objectives = get_objectves.(revision)
+
+    if MapSet.equal?(old_objectives, updated_objectives) do
+
+      socket
+    else
+
+      activity_map = Map.put(socket.assigns.activity_map, revision.resource_id, revision)
+
+      partial_activity_map = Map.put(%{}, revision.resource_id, revision)
+      objective_map = Map.merge(socket.assigns.objective_map, build_objective_map(socket.assigns.project.slug, partial_activity_map))
+
+      assign(socket, activity_map: activity_map, objective_map: objective_map)
+    end
+
+  end
+
+  # We need to monitor for changes in the title of an objective
+  defp handle_updated_objective(socket, revision) do
+    objective_map = Map.put(socket.assigns.objective_map, revision.resource_id, revision)
+    assign(socket, objective_map: objective_map)
+  end
+
+  defp has_renderable_change?(page1, page2) do
+
+    page1.title != page2.title
+    or page1.graded != page2.graded
+    or page1.max_attempts != page2.max_attempts
+    or page1.scoring_strategy_id != page2.scoring_strategy_id
+
+  end
+
+  defp handle_page(socket, revision) do
 
     id = revision.resource_id
 
-    # now determine if the change was to the container or to one of the pages itself
-    {pages, root_resource} = if (socket.assigns.root_resource.resource_id == id) do
+    old_page = Enum.find(socket.assigns.pages, fn p -> p.resource_id == revision.resource_id end)
 
-      # in the case of a change to the container, we simplify by just pulling a new view of
-      # the container and its contents. This handles addition, removal, reordering from the
-      # local user as well as a collaborator
-      pages = ContainerEditor.list_all_pages(socket.assigns.project)
-      {pages, revision}
-    else
+    has_changed? = has_renderable_change?(old_page, revision)
 
-      # on just a page change, we splice that page into its location
+    # check to see if the activities in that page have changed since our last view of it
+    current_activities = get_activities_from_page(Map.get(revision.content, "model")) |> MapSet.new
+    old_page = Enum.find(socket.assigns.pages, fn p -> p.resource_id == revision.resource_id end)
+    previous_activities = get_activities_from_page(Map.get(old_page.content, "model")) |> MapSet.new
+
+    deleted_activities = MapSet.difference(previous_activities, current_activities) |> MapSet.to_list()
+    added_activities = MapSet.difference(current_activities, previous_activities) |> MapSet.to_list()
+
+    # We only track this update if it affects our rendering.  So we check to see if the
+    # title or settings has changed of if the activities in this page haven't been added/removed
+    if has_changed? or length(deleted_activities) > 0 or length(added_activities) > 0 do
+
+      # we splice that page into its location
       pages = case Enum.find_index(socket.assigns.pages, fn p -> p.resource_id == id end) do
         nil -> socket.assigns.pages
         index -> List.replace_at(socket.assigns.pages, index, revision)
       end
-      {pages, socket.assigns.root_resource}
-    end
 
-    # update our selection to reflect the latest model
+      # update our selection to reflect the latest model
+      selected = case socket.assigns.selected do
+        nil -> nil
+        s -> Enum.find(pages, fn r -> r.resource_id == s.resource_id end)
+      end
+
+      # update the relevant maps that allow us to show roll ups
+      page_activity_map = Map.put(socket.assigns.page_activity_map, revision.resource_id, MapSet.to_list(current_activities))
+
+      activity_map = Enum.reduce(deleted_activities, socket.assigns.activity_map, fn id, m -> Map.delete(m, id) end)
+
+      {activity_map, objective_map} = case added_activities do
+
+        [] -> {activity_map, socket.assigns.objective_map}
+
+        activities ->
+
+          resolved_activities = AuthoringResolver.from_resource_id(socket.assigns.project.slug, added_activities)
+
+          partial_activity_map = resolved_activities
+          |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.resource_id, a) end)
+
+          activity_map = Map.merge(activity_map, partial_activity_map)
+
+          objective_map = Map.merge(socket.assigns.objective_map, build_objective_map(socket.assigns.project.slug, partial_activity_map))
+
+          {activity_map, objective_map}
+      end
+
+      assign(socket, selected: selected, pages: pages, page_activity_map: page_activity_map, activity_map: activity_map, objective_map: objective_map)
+
+    else
+      socket
+    end
+  end
+
+  defp handle_container(socket, revision) do
+    id = revision.resource_id
+
+    # in the case of a change to the container, we simplify by just pulling a new view of
+    # the container and its contents. This handles addition, removal, reordering from the
+    # local user as well as a collaborator
+    pages = ContainerEditor.list_all_pages(socket.assigns.project)
+    page_activity_map = build_activity_to_page_map(pages)
+    activity_map = build_activity_map(socket.assigns.project.slug, page_activity_map)
+    objective_map = build_objective_map(socket.assigns.project.slug, activity_map)
+
     selected = case socket.assigns.selected do
       nil -> nil
       s -> Enum.find(pages, fn r -> r.resource_id == s.resource_id end)
     end
 
-    # redo all subscriptions
-    unsubscribe(socket.assigns.subscriptions, socket.assigns.project.slug)
-    subscriptions = subscribe(root_resource, pages, socket.assigns.project.slug)
+    assign(socket, selected: selected, root_resource: revision, pages: pages, page_activity_map: page_activity_map, activity_map: activity_map, objective_map: objective_map)
 
-    {:noreply, assign(socket, selected: selected, pages: pages, root_resource: root_resource, subscriptions: subscriptions)}
   end
 
+  defp handle_page_or_container(socket, revision) do
+
+    id = revision.resource_id
+
+    # now determine if the change was to the container or to one of the pages itself
+    if (socket.assigns.root_resource.resource_id == id) do
+      handle_container(socket, revision)
+    else
+      handle_page(socket, revision)
+    end
+
+  end
+
+  # Here we are listening for subscription notifications for edits made
+  # to the container or to its child pages, contained activities and attached objectives
+  def handle_info({:updated, revision, _}, socket) do
+
+    socket = case Oli.Resources.ResourceType.get_type_by_id(revision.resource_type_id) do
+      "activity" -> handle_updated_activity(socket, revision)
+      "objective" -> handle_updated_objective(socket, revision)
+      _ -> handle_page_or_container(socket, revision)
+    end
+
+    # redo all subscriptions
+    unsubscribe(socket.assigns.subscriptions, socket.assigns.project.slug)
+    subscriptions = subscribe(socket.assigns.root_resource, socket.assigns.pages, socket.assigns.activity_map, socket.assigns.objective_map, socket.assigns.project.slug)
+
+    {:noreply, assign(socket, subscriptions: subscriptions)}
+  end
+
+  # listens for creation of new objectives
+  def handle_info({:new_resource, revision, _}, socket) do
+
+    # include it in our objective map
+    objective_map = Map.merge(socket.assigns.objective_map, Map.put(%{}, revision.resource_id, revision))
+
+    # now listen to it for future edits
+    PubSub.subscribe(Oli.PubSub, "resource:" <> Integer.to_string(revision.resource_id) <> ":project:" <> socket.assigns.project.slug)
+    subscriptions = [revision.resource_id | socket.assigns.subscriptions]
+
+    {:noreply, assign(socket, objective_map: objective_map, subscriptions: subscriptions)}
+  end
 
 end
