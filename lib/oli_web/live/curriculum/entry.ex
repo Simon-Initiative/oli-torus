@@ -28,7 +28,6 @@ defmodule OliWeb.Curriculum.Entry do
     count = length(objectives)
 
     objs = if count == 1 do "objective" else "objectives" end
-    muted = if assigns.selected do "" else "text-muted" end
 
     ~L"""
     <%= count %> <%= objs %>

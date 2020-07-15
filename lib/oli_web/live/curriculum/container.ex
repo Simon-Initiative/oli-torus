@@ -355,7 +355,7 @@ defmodule OliWeb.Curriculum.Container do
 
         [] -> {activity_map, socket.assigns.objective_map}
 
-        activities ->
+        _ ->
 
           resolved_activities = AuthoringResolver.from_resource_id(socket.assigns.project.slug, added_activities)
 
@@ -377,7 +377,6 @@ defmodule OliWeb.Curriculum.Container do
   end
 
   defp handle_container(socket, revision) do
-    id = revision.resource_id
 
     # in the case of a change to the container, we simplify by just pulling a new view of
     # the container and its contents. This handles addition, removal, reordering from the
