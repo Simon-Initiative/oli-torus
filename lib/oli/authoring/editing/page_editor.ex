@@ -14,7 +14,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Accounts
   alias Oli.Repo
   alias Oli.Rendering
-  alias Oli.Activities.Transformers
   alias Oli.Authoring.Broadcaster
 
   import Ecto.Query, warn: false
@@ -182,7 +181,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   def render_page_html(project_slug, revision_slug, author) do
     with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
-         {:ok, %{content: content, objectives: objectives} = _revision} <- get_latest_revision(publication, resource) |> trap_nil(),
+         {:ok, %{content: content } = _revision} <- get_latest_revision(publication, resource) |> trap_nil(),
          {:ok, activities} <- create_activities_map(project_slug, publication.id, content),
          render_context <- %Rendering.Context{user: author, activity_map: activities}
     do
