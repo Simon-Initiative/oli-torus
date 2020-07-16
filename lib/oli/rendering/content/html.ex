@@ -51,29 +51,37 @@ defmodule Oli.Rendering.Content.Html do
     end
 
     ["<img "]
-    ++ height_width
-    ++ [" style=\"display: block; max-height: 500px; margin-left: auto; margin-right: auto;\" src=\"", src, "\"/>\n"]
+      ++ height_width
+      ++ [" style=\"display: block; max-height: 500px; margin-left: auto; margin-right: auto;\" src=\"", src, "\"/>\n"]
   end
 
-  def youtube(%Context{} = _context, _, %{"src" => src}) do
-    ["""
+  def youtube(%Context{} = _context, _, %{"src" => src} = attrs) do
+    default_width = 640
+    default_height = 476
+
+    wrap_with_figure(Map.merge(attrs, %{"width" => default_width}), ["""
     <iframe
       id="#{src}"
-      width="640"
-      height="476"
+      width="#{default_width}"
+      height="#{default_height}"
       src="https://www.youtube.com/embed/#{src}"
       frameBorder="0"
       style="display: block; margin-left: auto; margin-right: auto;"
     ></iframe>
-    """]
+    """])
   end
 
-  def audio(%Context{} = _context, _, %{"src" => src}) do
-    ["<audio src=\"", src, "\"/>\n"]
+  def audio(%Context{} = _context, _, %{"src" => src} = attrs) do
+    wrap_with_figure(attrs, ["<audio src=\"", src, "\">Your browser does not support the
+    <code>audio</code> element.</audio>\n"])
   end
 
-  def table(%Context{} = _context, next, _) do
-    ["<table class=\"table table-bordered\">", next.(), "</table>\n"]
+  def table(%Context{} = _context, next, attrs) do
+    caption = case attrs do
+      %{"caption" => caption} -> "<caption>#{caption}</caption>"
+      _ -> ""
+    end
+    ["<table class=\"table table-bordered\">#{caption}", next.(), "</table>\n"]
   end
 
   def tr(%Context{} = _context, next, _) do
@@ -112,8 +120,8 @@ defmodule Oli.Rendering.Content.Html do
     "language" => _language,
     "startingLineNumber" => _startingLineNumber,
     "showNumbers" => _showNumbers
-  }) do
-    ["<pre><code>", next.(), "</code></pre>\n"]
+  } = attrs) do
+    wrap_with_figure(attrs, ["<pre><code>", next.(), "</code></pre>\n"])
   end
 
   def code_line(%Context{} = _context, next, _) do
@@ -180,4 +188,13 @@ defmodule Oli.Rendering.Content.Html do
       end
     )
   end
+
+
+  # Accessible captions are created using a combination of the <figure /> and <figcaption /> elements.
+  defp wrap_with_figure(%{"caption" => caption} = attrs, content) do
+    ["<figure#{figure_width(attrs)}>"] ++ content ++ ["<figcaption>#{caption}</figcaption></figure>"]
+  end
+  defp wrap_with_figure(_attrs, content), do: content
+  defp figure_width(%{"width" => width}), do: " style=\"width: #{width}px; margin-left: auto; margin-right: auto;\""
+  defp figure_width(_), do: ""
 end
