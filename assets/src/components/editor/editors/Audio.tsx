@@ -27,7 +27,9 @@ export function selectAudio(projectSlug: string,
     const mediaLibrary =
       <ModalSelection title="Select audio"
         onInsert={() => { dismiss(); resolve(selected.img as any); }}
-        onCancel={() => dismiss()}>
+        onCancel={() => dismiss()}
+        disableInsert={selected.img === null}
+      >
         <MediaManager model={model}
           projectSlug={projectSlug}
           onEdit={() => { }}

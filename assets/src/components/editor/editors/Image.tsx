@@ -27,7 +27,9 @@ export function selectImage(projectSlug: string,
     const mediaLibrary =
       <ModalSelection title="Select an image"
         onInsert={() => { dismiss(); resolve(selected.img as any); }}
-        onCancel={() => dismiss()}>
+        onCancel={() => dismiss()}
+        disableInsert={selected.img === null}
+      >
         <MediaManager model={model}
           projectSlug={projectSlug}
           onEdit={() => { }}
