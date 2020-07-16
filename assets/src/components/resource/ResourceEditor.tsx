@@ -7,7 +7,6 @@ import { ResourceContent, ResourceContext,
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
 import { Editors } from './Editors';
-import { Objectives } from './Objectives';
 import { TitleBar } from '../content/TitleBar';
 import { UndoRedo } from '../content/UndoRedo';
 import { PreviewButton } from '../content/PreviewButton';
@@ -19,6 +18,7 @@ import { releaseLock, acquireLock } from 'data/persistence/lock';
 import { Message, createMessage } from 'data/messages/messages';
 import { Banner } from '../messages/Banner';
 import { BreadcrumbTrail } from 'components/common/BreadcrumbTrail';
+import { create } from 'data/persistence/objective';
 
 export interface ResourceEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap;   // Map of activity types to activity elements
@@ -78,7 +78,7 @@ function mapChildrenObjectives(objectives: Objective[])
         if (o.parentSlug !== null && !map.has(o.parentSlug)) {
           updatedMap = updatedMap.set(o.parentSlug, Immutable.List());
         }
-        const appended = (updatedMap.get(o.parentSlug) as any).append(o);
+        const appended = (updatedMap.get(o.parentSlug) as any).push(o);
         return updatedMap.set(o.parentSlug, appended);
       }
       return map;
@@ -209,8 +209,39 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       }
     };
 
-    const onRegisterNewObjective = (o: Objective) => {
-      this.setState({ allObjectives: state.allObjectives.concat(o) });
+    const onRegisterNewObjective = (title: string) : Promise<Objective> => {
+      return new Promise((resolve, reject) => {
+
+        create(props.projectSlug, title)
+        .then((result) => {
+          if (result.type === 'success') {
+
+            const objective = {
+              slug: result.revisionSlug,
+              title,
+              parentSlug: null,
+            };
+
+            this.setState({
+              allObjectives: this.state.allObjectives.push(objective),
+              childrenObjectives:
+                this.state.childrenObjectives.set(objective.slug, Immutable.List<Objective>()),
+            });
+
+            resolve(objective);
+
+          } else {
+            throw result;
+          }
+        })
+        .catch((e) => {
+          // TODO: this should probably give a message to the user indicating that
+          // objective creation failed once we have a global messaging
+          // infrastructure in place. For now, we will just log to the conosle
+          console.error('objective creation failed', e);
+        });
+
+      });
     };
 
     return (
@@ -237,16 +268,11 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
               canUndo={this.state.undoable.undoStack.size > 0}
               onUndo={this.undo} onRedo={this.redo}/>
           </TitleBar>
-          <div className="learning-objectives-label">Learning Objectives</div>
-          <Objectives
-            editMode={this.state.editMode}
-            projectSlug={props.projectSlug}
-            selected={this.state.undoable.current.objectives}
-            objectives={this.state.allObjectives}
-            onRegisterNewObjective={onRegisterNewObjective}
-            onEdit={objectives => this.update({ objectives })} />
           <div>
             <Editors {...props} editMode={this.state.editMode}
+              objectives={this.state.allObjectives}
+              childrenObjectives={this.state.childrenObjectives}
+              onRegisterNewObjective={onRegisterNewObjective}
               activities={this.state.activities}
               onRemove={index => onEdit(this.state.undoable.current.content.delete(index))}
               onEdit={(c, index) => {

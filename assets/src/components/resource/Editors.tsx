@@ -14,7 +14,7 @@ import { Purpose } from '../content/Purpose';
 import { DeleteButton } from '../misc/DeleteButton';
 import { EditLink } from '../misc/EditLink';
 import * as Persistence from 'data/persistence/activity';
-
+import { Objective, ObjectiveSlug } from 'data/content/objective';
 import './Editors.scss';
 import { getContentDescription, toSimpleText } from 'data/content/utils';
 import { DragHandle } from './DragHandle';
@@ -34,6 +34,9 @@ export type EditorsProps = {
   projectSlug: ProjectSlug,
   resourceSlug: ResourceSlug,
   resourceContext: ResourceContext,
+  objectives: Immutable.List<Objective>,
+  childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>,
+  onRegisterNewObjective: (text: string) => Promise<Objective>,
 };
 
 interface ActivityPayload {
@@ -88,6 +91,9 @@ type AddResourceOrDropTargetProps = {
   resourceContext: ResourceContext,
   onDrop: (e: React.DragEvent<HTMLDivElement>, index: number) => void,
   onAddItem: (c : ResourceContent, index: number, a? : Activity) => void,
+  objectives: Immutable.List<Objective>,
+  childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>,
+  onRegisterNewObjective: (text: string) => Promise<Objective>,
 };
 
 const AddResourceOrDropTarget = ({
@@ -99,12 +105,18 @@ const AddResourceOrDropTarget = ({
   resourceContext,
   onDrop,
   onAddItem,
+  objectives,
+  childrenObjectives,
+  onRegisterNewObjective,
 }: AddResourceOrDropTargetProps) => isReorderMode
   ? (
     <DropTarget id={id} index={index} onDrop={onDrop}/>
   )
   : (
     <AddResourceContent
+      objectives={objectives}
+      childrenObjectives={childrenObjectives}
+      onRegisterNewObjective={onRegisterNewObjective}
       editMode={editMode}
       isLast={id === 'last'}
       index={index}
@@ -268,7 +280,7 @@ export const Editors = (props: EditorsProps) => {
               Persistence.create(
                 droppedContent.project,
                 droppedContent.activity.typeSlug,
-                droppedContent.activity.model)
+                droppedContent.activity.model, [])
               .then((result: Persistence.Created) => {
                 onEditContentList(content.insert(index, droppedContent.reference));
               });
@@ -423,6 +435,9 @@ export const Editors = (props: EditorsProps) => {
 
         <AddResourceOrDropTarget
           id={c.id}
+          objectives={props.objectives}
+          childrenObjectives={props.childrenObjectives}
+          onRegisterNewObjective={props.onRegisterNewObjective}
           index={index}
           editMode={editMode}
           isReorderMode={isReorderMode}
@@ -471,6 +486,7 @@ export const Editors = (props: EditorsProps) => {
       {editors}
 
       <AddResourceOrDropTarget
+        {...props}
         id="last"
         index={editors.size}
         editMode={editMode}

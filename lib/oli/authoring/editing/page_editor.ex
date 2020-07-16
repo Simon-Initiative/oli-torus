@@ -347,9 +347,10 @@ defmodule Oli.Authoring.Editing.PageEditor do
   #
   def construct_parent_references(objectives) do
 
-    by_resource_id = Enum.reduce(objectives, %{}, fn o, m -> Map.put(m, o.resource_id, o) end)
+    by_resource_id = Enum.reduce(objectives, %{}, fn o, m -> Map.put(m, o.resource_id, o.slug) end)
+
     parent_slug = Enum.reduce(objectives, %{}, fn o, m ->
-      Enum.reduce(o.children, m, fn id -> Map.put(m, Map.get(by_resource_id, id), Map.get(by_resource_id, o.id)) end)
+      Enum.reduce(o.children, m, fn child, m -> Map.put(m, Map.get(by_resource_id, child), Map.get(by_resource_id, o.resource_id)) end)
     end)
 
     Enum.map(objectives, fn o ->

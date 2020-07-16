@@ -4,31 +4,86 @@ import { ResourceContent, Activity, ResourceContext, ActivityReference,
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { ActivityModelSchema } from 'components/activities/types';
 import { invokeCreationFunc } from 'components/activities/creation';
+import { Objective, ObjectiveSlug } from 'data/content/objective';
 import * as Persistence from 'data/persistence/activity';
 import guid from 'utils/guid';
 import Popover from 'react-tiny-popover';
 
+import { modalActions } from 'actions/modal';
+import * as Immutable from 'immutable';
+
+const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
+const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
+
 import './AddResourceContent.scss';
 import { classNames } from 'utils/classNames';
+import { ObjectiveSelection } from 'components/resource/ObjectiveSelection';
+import ModalSelection from 'components/modal/ModalSelection';
 
 type AddCallback = (content: ResourceContent, index: number, a? : Activity) => void;
+
+
+const promptForObjectiveSelection
+  = (objectives: Immutable.List<Objective>,
+    childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>,
+    onRegisterNewObjective: (title: string) => Promise<Objective>) => {
+
+    return new Promise((resolve, reject) => {
+
+      const onRegister = (title: string) : Promise<Objective> => {
+        return new Promise((inner, reject) => {
+          onRegisterNewObjective(title)
+          .then((objective) => {
+            dismiss();
+            resolve(Immutable.List<ObjectiveSlug>([objective.slug]));
+          });
+        });
+      };
+
+      const onUseSelected = (selected: Immutable.List<ObjectiveSlug>) => {
+        dismiss();
+        resolve(selected);
+      };
+
+      display(<ModalSelection title="Target learning objectives with this activity"
+        hideOkButton={true}
+        cancelLabel="Skip this step"
+        onInsert={() => { dismiss(); }}
+        onCancel={() => { dismiss(); }}>
+
+        <ObjectiveSelection objectives={objectives}
+          childrenObjectives={childrenObjectives}
+          onUseSelected={onUseSelected}
+          onRegisterNewObjective={onRegister}/>
+      </ModalSelection>);
+    });
+
+  };
+
 
 // Component that presents a drop down to use to add structure
 // content or the any of the registered activities
 export const AddResourceContent = (
-  { editMode, index, onAddItem, editorMap, resourceContext, isLast }
+  { editMode, index, onAddItem, editorMap, resourceContext, isLast,
+    objectives, onRegisterNewObjective, childrenObjectives }
   : {editMode: boolean, index: number, onAddItem: AddCallback, isLast: boolean,
-    editorMap: ActivityEditorMap, resourceContext: ResourceContext }) => {
+    objectives: Immutable.List<Objective>,
+    childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>,
+    onRegisterNewObjective: (text: string) => Promise<Objective>,
+    editorMap: ActivityEditorMap, resourceContext: ResourceContext  }) => {
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const handleAdd = (editorDesc: EditorDesc) => {
 
     let model : ActivityModelSchema;
-    invokeCreationFunc(editorDesc.slug, resourceContext)
+
+    promptForObjectiveSelection(objectives, childrenObjectives, onRegisterNewObjective)
+    .then((objectives: string[]) => invokeCreationFunc(editorDesc.slug, resourceContext)
       .then((createdModel) => {
+
         model = createdModel;
-        return Persistence.create(resourceContext.projectSlug, editorDesc.slug, model);
+        return Persistence.create(resourceContext.projectSlug, editorDesc.slug, model, objectives);
       })
       .then((result: Persistence.Created) => {
 
@@ -52,7 +107,7 @@ export const AddResourceContent = (
       })
       .catch((err) => {
         // console.log(err);
-      });
+      }));
   };
 
   const content =
