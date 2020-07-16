@@ -11,6 +11,7 @@ import { Stem } from '../common/DisplayedStem';
 import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/Evaluation';
+import { TestModeHandler } from 'components/resource/TestModeHandler';
 
 type Evaluation = {
   score: number,
@@ -150,7 +151,14 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
 // Defines the web component, a simple wrapper over our React component above
 export class MultipleChoiceDelivery extends DeliveryElement<MultipleChoiceModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MultipleChoiceModelSchema>) {
-    ReactDOM.render(<MultipleChoice {...props} />, mountPoint);
+    props.preview
+      ? ReactDOM.render(
+        <TestModeHandler model={props.model}>
+          <MultipleChoice {...props} />
+        </TestModeHandler>,
+        mountPoint,
+      )
+      : ReactDOM.render(<MultipleChoice {...props} />, mountPoint);
   }
 }
 

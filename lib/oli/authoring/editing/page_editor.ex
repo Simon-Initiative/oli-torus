@@ -15,6 +15,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Rendering
   alias Oli.Activities.Transformers
   alias Oli.Authoring.Broadcaster
+  alias Oli.Delivery.Page.ActivityContext
+  alias Oli.Rendering.Activity.ActivitySummary
+  alias Oli.Activities
 
   import Ecto.Query, warn: false
 
@@ -178,17 +181,85 @@ defmodule Oli.Authoring.Editing.PageEditor do
     end
   end
 
-  def render_page_html(project_slug, revision_slug, author) do
+  def render_page_html(project_slug, revision_slug, author, options \\ []) do
     with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
          {:ok, %{content: content} = _revision} <- get_latest_revision(publication, resource) |> trap_nil(),
-         {:ok, activities} <- create_activities_map(publication.id, content),
-         render_context <- %Rendering.Context{user: author, activity_map: activities}
+         {:ok, activities} <- create_activity_summary_map(publication.id, content) |> IO.inspect(label: "create_activities_map"),
+         render_context <- %Rendering.Context{user: author, preview: Keyword.get(options, :preview, false), activity_map: activities}
     do
       Rendering.Page.render(render_context, content["model"], Rendering.Page.Html)
     else
       _ -> {:error, :not_found}
     end
+  end
+
+  defp create_activity_summary_map(publication_id, %{"model" => content}) do
+    # Now see if we even have any activities that need to be mapped
+    found_activities = Enum.filter(content, fn c -> Map.get(c, "type") == "activity-reference" end)
+      |> Enum.map(fn c -> Map.get(c, "activity_id") end)
+
+    if (length(found_activities) != 0) do
+      # get a view of all current registered activity types
+      registrations = Activities.list_activity_registrations()
+      reg_map = Enum.reduce(registrations, %{}, fn r, m -> Map.put(m, r.id, r) end)
+
+      # find the published revisions for these activities, and convert them
+      # to a form suitable for front-end consumption
+      {:ok, Publishing.get_published_activity_revisions(publication_id, found_activities)
+        |> Enum.map(fn %Revision{resource_id: resource_id, activity_type_id: activity_type_id, content: content, graded: graded} ->
+
+          # To support 'test mode' in the editor, we give the editor an initial transormed
+          # version of the model that it can immediately use for display purposes. If it fails
+          # to transform, nil will be handled by the client and the raw model will be used
+          # instead
+          transformed = case Transformers.apply_transforms(content) do
+            {:ok, t} -> t
+            _ -> nil
+          end
+
+          # the activity type this revision pertains to
+          type = Map.get(reg_map, activity_type_id)
+
+          state = %Oli.Activities.State.ActivityState{
+            attemptGuid: "preview",
+            attemptNumber: 1,
+            dateEvaluated: nil,
+            score: nil,
+            outOf: nil,
+            hasMoreAttempts: true,
+            parts: Enum.map(transformed["authoring"]["parts"], fn p ->
+              %Oli.Activities.State.PartState{
+                attemptGuid: p["id"],
+                attemptNumber: 1,
+                dateEvaluated: nil,
+                score: nil,
+                outOf: nil,
+                response: nil,
+                feedback: nil,
+                hints: [],
+                hasMoreHints: Enum.count(p["hints"]) > 0,
+                hasMoreAttempts: true,
+                partId: p["id"],
+              }
+            end)
+          }
+
+          %ActivitySummary{
+            id: resource_id,
+            model: ActivityContext.prepare_model(transformed),
+            state: ActivityContext.prepare_state(state),
+            delivery_element: type.delivery_element,
+            script: type.delivery_script,
+            graded: graded
+          }
+        end)
+        |> Enum.reduce(%{}, fn summary, acc -> Map.put(acc, summary.id, summary) end)
+      }
+    else
+      {:ok, %{}}
+    end
+
   end
 
   # From the array of maps found in a resource revision content, produce a

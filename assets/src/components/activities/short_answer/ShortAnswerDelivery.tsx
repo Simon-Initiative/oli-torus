@@ -8,6 +8,7 @@ import { Stem } from '../common/DisplayedStem';
 import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/Evaluation';
+import { TestModeHandler } from 'components/resource/TestModeHandler';
 
 type Evaluation = {
   score: number,
@@ -147,7 +148,14 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
 // Defines the web component, a simple wrapper over our React component above
 export class ShortAnswerDelivery extends DeliveryElement<ShortAnswerModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<ShortAnswerModelSchema>) {
-    ReactDOM.render(<ShortAnswer {...props} />, mountPoint);
+    props.preview
+      ? ReactDOM.render(
+        <TestModeHandler model={props.model}>
+          <ShortAnswer {...props} />
+        </TestModeHandler>,
+        mountPoint,
+      )
+      : ReactDOM.render(<ShortAnswer {...props} />, mountPoint);
   }
 }
 

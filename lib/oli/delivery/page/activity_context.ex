@@ -44,14 +44,14 @@ defmodule Oli.Delivery.Page.ActivityContext do
 
   end
 
-  defp prepare_model(model) do
+  def prepare_model(model) do
     case ModelPruner.prune(model) |> Jason.encode() do
       {:ok, s} -> s |> encode()
       {:error, _} -> "{ \"error\": true }" |> encode()
     end
   end
 
-  defp prepare_state(%ActivityState{} = state) do
+  def prepare_state(%ActivityState{} = state) do
     case Jason.encode(state) do
       {:ok, s} -> s |> encode()
       {:error, _} -> "{ \"error\": true }" |> encode()
