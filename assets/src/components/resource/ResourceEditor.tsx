@@ -10,7 +10,6 @@ import { Editors } from './Editors';
 import { Objectives } from './Objectives';
 import { TitleBar } from '../content/TitleBar';
 import { UndoRedo } from '../content/UndoRedo';
-import { PreviewButton } from '../content/PreviewButton';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug } from 'data/types';
 import * as Persistence from 'data/persistence/resource';
@@ -39,6 +38,7 @@ type ResourceEditorState = {
   activities: Immutable.Map<string, Activity>,
   editMode: boolean,
   persistence: 'idle' | 'pending' | 'inflight',
+  previewMode: boolean,
 };
 
 // Creates a function that when invoked submits a save request
@@ -90,6 +90,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       allObjectives: Immutable.List<Objective>(allObjectives),
       activities: Immutable.Map<string, Activity>(
         Object.keys(activities).map(k => [k, activities[k]])),
+      previewMode: false,
     };
 
     this.persistence = new DeferredPersistenceStrategy();
@@ -192,6 +193,44 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       this.setState({ allObjectives: state.allObjectives.concat(o) });
     };
 
+    const onPreviewClick = () => {
+      this.setState({ previewMode: !state.previewMode });
+      // window.open(`/project/${projectSlug}/resource/${resourceSlug}/preview`, 'page-preview')
+    };
+
+    const isSaving = (this.state.persistence === 'inflight' || this.state.persistence === 'pending');
+
+    if (state.previewMode) {
+      return (
+        <div className="row">
+          <div className="col-12 d-flex flex-column">
+            <div className="d-flex flex-row">
+              <div className="flex-grow-1"></div>
+              <button
+                role="button"
+                className="btn btn-sm btn-warning"
+                onClick={onPreviewClick}
+                disabled={isSaving}>
+                Exit Preview
+              </button>
+            </div>
+            <iframe
+              className="flex-grow-1"
+              frameBorder="0"
+              src={`/project/${projectSlug}/resource/${resourceSlug}/preview`}
+              ref={(iframe) => {
+                if (iframe && iframe.contentWindow) {
+                  const contentWindow = iframe.contentWindow as Window;
+                  iframe.onload = function() {
+                    iframe.style.height = (contentWindow.document.body.scrollHeight + 10) + 'px';
+                  }
+                }
+              }} />
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className="row">
         <div className="col-12">
@@ -207,10 +246,15 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
             onTitleEdit={onTitleEdit}
             editMode={this.state.editMode}>
             <PersistenceStatus persistence={this.state.persistence}/>
-            <PreviewButton
-              projectSlug={props.projectSlug}
-              resourceSlug={props.resourceSlug}
-              persistence={this.state.persistence} />
+
+            <button
+              role="button"
+              className="btn btn-sm btn-outline-primary"
+              onClick={onPreviewClick}
+              disabled={isSaving}>
+              Preview
+            </button>
+
             <UndoRedo
               canRedo={this.state.undoable.redoStack.size > 0}
               canUndo={this.state.undoable.undoStack.size > 0}
