@@ -185,7 +185,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
     with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
          {:ok, %{content: content} = _revision} <- get_latest_revision(publication, resource) |> trap_nil(),
-         {:ok, activities} <- create_activity_summary_map(publication.id, content) |> IO.inspect(label: "create_activities_map"),
+         {:ok, activities} <- create_activity_summary_map(publication.id, content),
          render_context <- %Rendering.Context{user: author, preview: Keyword.get(options, :preview, false), activity_map: activities}
     do
       Rendering.Page.render(render_context, content["model"], Rendering.Page.Html)
