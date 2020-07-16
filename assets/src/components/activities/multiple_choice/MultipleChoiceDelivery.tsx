@@ -11,7 +11,6 @@ import { Stem } from '../common/DisplayedStem';
 import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/Evaluation';
-import { TestModeHandler } from 'components/resource/TestModeHandler';
 
 type Evaluation = {
   score: number,
@@ -74,7 +73,6 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
   const isEvaluated = attemptState.score !== null;
 
   const onSelect = (id: string) => {
-
     // Update local state
     setSelected(Maybe.just<string>(id));
 
@@ -121,7 +119,7 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
     });
   };
 
-  const evaluationSummary = isEvaluated ? <Evaluation attemptState={attemptState}/> : null;
+  const evaluationSummary = isEvaluated ? <Evaluation key="evaluation" attemptState={attemptState}/> : null;
   const reset = isEvaluated && !props.graded
     ? (<div className="d-flex my-3">
         <div className="flex-fill"></div>
@@ -151,14 +149,7 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
 // Defines the web component, a simple wrapper over our React component above
 export class MultipleChoiceDelivery extends DeliveryElement<MultipleChoiceModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MultipleChoiceModelSchema>) {
-    props.preview
-      ? ReactDOM.render(
-        <TestModeHandler model={props.model}>
-          <MultipleChoice {...props} />
-        </TestModeHandler>,
-        mountPoint,
-      )
-      : ReactDOM.render(<MultipleChoice {...props} />, mountPoint);
+    ReactDOM.render(<MultipleChoice {...props} />, mountPoint);
   }
 }
 

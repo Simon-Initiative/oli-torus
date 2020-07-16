@@ -8,7 +8,7 @@ import { Stem } from '../common/DisplayedStem';
 import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/Evaluation';
-import { TestModeHandler } from 'components/resource/TestModeHandler';
+import { valueOr } from 'utils/common';
 
 type Evaluation = {
   score: number,
@@ -20,18 +20,20 @@ type InputProps = {
   input: any;
   onChange: (input: any) => void;
   inputType: InputType;
+  isEvaluated: boolean;
 };
 
 const Input = (props: InputProps) => {
 
-  const input = props.input === null ? undefined : props.input;
+  const input = props.input === null ? '' : props.input;
 
   if (props.inputType === 'numeric') {
     return (
       <input type="number"
         className="form-control"
         onChange={(e: any) => props.onChange(e.target.value)}
-        value={input}/>
+        value={input}
+        disabled={props.isEvaluated} />
     );
   }
   if (props.inputType === 'text') {
@@ -39,7 +41,8 @@ const Input = (props: InputProps) => {
       <input type="text"
         className="form-control"
         onChange={(e: any) => props.onChange(e.target.value)}
-        value={input}/>
+        value={input}
+        disabled={props.isEvaluated} />
     );
   }
   return (
@@ -47,7 +50,8 @@ const Input = (props: InputProps) => {
       rows={5}
       cols={80}
       className="form-control"
-      onChange={(e: any) => props.onChange(e.target.value)}>
+      onChange={(e: any) => props.onChange(e.target.value)}
+      disabled={props.isEvaluated}>
       {input}
     </textarea>
   );
@@ -59,7 +63,7 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
   const [attemptState, setAttemptState] = useState(props.state);
   const [hints, setHints] = useState(props.state.parts[0].hints);
   const [hasMoreHints, setHasMoreHints] = useState(props.state.parts[0].hasMoreHints);
-  const [input, setInput] = useState(attemptState.parts[0].response);
+  const [input, setInput] = useState(valueOr(attemptState.parts[0].response, ''));
   const { stem } = model;
 
   const isEvaluated = attemptState.score !== null;
@@ -102,10 +106,11 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
       setModel(state.model as ShortAnswerModelSchema);
       setHints([]);
       setHasMoreHints(props.state.parts[0].hasMoreHints);
+      setInput('');
     });
   };
 
-  const evaluationSummary = isEvaluated ? <Evaluation attemptState={attemptState}/> : null;
+  const evaluationSummary = isEvaluated ? <Evaluation key="evaluation" attemptState={attemptState}/> : null;
   const reset = isEvaluated && !props.graded
     ? (<div className="d-flex">
         <div className="flex-fill"></div>
@@ -134,7 +139,7 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
         <Stem stem={stem} />
 
         <div className="">
-          <Input inputType={model.inputType} input={input} onChange={onInputChange}/>
+          <Input inputType={model.inputType} input={input} isEvaluated={isEvaluated} onChange={onInputChange}/>
           {maybeSubmitButton}
         </div>
 
@@ -148,14 +153,7 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
 // Defines the web component, a simple wrapper over our React component above
 export class ShortAnswerDelivery extends DeliveryElement<ShortAnswerModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<ShortAnswerModelSchema>) {
-    props.preview
-      ? ReactDOM.render(
-        <TestModeHandler model={props.model}>
-          <ShortAnswer {...props} />
-        </TestModeHandler>,
-        mountPoint,
-      )
-      : ReactDOM.render(<ShortAnswer {...props} />, mountPoint);
+    ReactDOM.render(<ShortAnswer {...props} />, mountPoint);
   }
 }
 

@@ -118,7 +118,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     const model = JSON.parse(this.getAttribute('model') as any);
     const graded = JSON.parse(this.getAttribute('graded') as any);
     const state = JSON.parse(this.getAttribute('state') as any) as ActivityState;
-    const preview = JSON.parse(valueOr(this.getAttribute('preview'), 'false')) === 'true';
+    const preview = valueOr(JSON.parse(this.getAttribute('preview') as any), false);
 
     return {
       graded,
@@ -144,6 +144,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
         attemptGuid,
         partAttemptGuid,
         continuation,
+        props: this.props(),
       },
     };
   }

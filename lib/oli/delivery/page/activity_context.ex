@@ -44,8 +44,9 @@ defmodule Oli.Delivery.Page.ActivityContext do
 
   end
 
-  def prepare_model(model) do
-    case ModelPruner.prune(model) |> Jason.encode() do
+  def prepare_model(model, opts \\ []) do
+    model = if Keyword.get(opts, :prune, true), do: ModelPruner.prune(model), else: model
+    case Jason.encode(model) do
       {:ok, s} -> s |> encode()
       {:error, _} -> "{ \"error\": true }" |> encode()
     end

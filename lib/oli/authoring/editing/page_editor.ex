@@ -14,6 +14,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Repo
   alias Oli.Rendering
   alias Oli.Activities.Transformers
+  alias Oli.Activities.State.ActivityState
   alias Oli.Authoring.Broadcaster
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Rendering.Activity.ActivitySummary
@@ -221,33 +222,11 @@ defmodule Oli.Authoring.Editing.PageEditor do
           # the activity type this revision pertains to
           type = Map.get(reg_map, activity_type_id)
 
-          state = %Oli.Activities.State.ActivityState{
-            attemptGuid: "preview",
-            attemptNumber: 1,
-            dateEvaluated: nil,
-            score: nil,
-            outOf: nil,
-            hasMoreAttempts: true,
-            parts: Enum.map(transformed["authoring"]["parts"], fn p ->
-              %Oli.Activities.State.PartState{
-                attemptGuid: p["id"],
-                attemptNumber: 1,
-                dateEvaluated: nil,
-                score: nil,
-                outOf: nil,
-                response: nil,
-                feedback: nil,
-                hints: [],
-                hasMoreHints: Enum.count(p["hints"]) > 0,
-                hasMoreAttempts: true,
-                partId: p["id"],
-              }
-            end)
-          }
+          state = ActivityState.create_preview_state(transformed)
 
           %ActivitySummary{
             id: resource_id,
-            model: ActivityContext.prepare_model(transformed),
+            model: ActivityContext.prepare_model(transformed, prune: false),
             state: ActivityContext.prepare_state(state),
             delivery_element: type.delivery_element,
             script: type.delivery_script,
