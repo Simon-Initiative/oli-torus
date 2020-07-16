@@ -53,39 +53,45 @@ defmodule OliWeb.Objectives.Objectives do
 
   def render(assigns) do
     ~L"""
-    <div>
-      <div style="margin: 20px;">
-        <div class="container">
-        <div class="mb-2 row">
-          <h2>Course Objectives</h2>
+    <div class="objectives container">
+      <div class="mb-2 row">
+        <div class="col-12">
           <p class="text-secondary">
-          Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies.
-          Visit the <a href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">CMU Eberly Center guide on learning objectives</a> to learn more about the importance of attaching learning objectives to pages and activities.
+            Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies.
           </p>
-          <p class="text-secondary">At the end of the course my students should be able to...</p>
+          <p class="text-secondary">
+            Visit the <a href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">CMU Eberly Center guide on learning objectives</a> to learn more about the importance of attaching learning objectives to pages and activities.
+          </p>
         </div>
-          <div class="mb-2 row">
-            <%= live_component @socket, ObjectiveRender, changeset: @changeset, project: @project, form_id: "create-objective",
-              place_holder: "New Learning Objective", title_value: "", slug_value: "", parent_slug_value: "",
-              edit: @edit, method: "new", mode: :new_objective, phx_disable_with: "Adding Objective...", button_text: "Create" %>
-          </div>
+      </div>
+      <div class="mb-2 mt-5 row">
+        <div class="col-12">
+          <h2>New Objective</h2>
+          <p>At the end of the course, my students should be able to...</p>
+        </div>
+      </div>
+      <div class="mb-2 row">
+        <div class="col-12">
+          <%= live_component @socket, ObjectiveRender, changeset: @changeset, project: @project, form_id: "create-objective",
+            place_holder: "Interpret trends in energy and material use over time", title_value: "", slug_value: "", parent_slug_value: "",
+            edit: @edit, method: "new", mode: :new_objective, phx_disable_with: "Creating objective...", button_text: "Create" %>
+        </div>
+      </div>
+      <div class="mt-5 row">
+        <div class="col-12">
+          <h2>Existing Objectives</h2>
           <%= if Enum.count(@objective_mappings) == 0 do %>
-          <div class="row">
-            <div class="my-5 text-center">
-              No objectives
+            <div class="mb-4">
+              This project does not yet have any objectives.
             </div>
-          </div>
           <% else %>
-          <div class="row">
-            <div class="border border-light list-group list-group-flush w-100">
-                <%= for {objective_tree, index} <- Enum.with_index(@objectives_tree) do %>
-                  <%= live_component @socket, ObjectiveEntry, changeset: @changeset, objective_mapping: objective_tree.mapping,
-                      children: objective_tree.children, depth: 1, index: index, project: @project, selected: @selected, edit: @edit %>
-                <% end %>
+            <div class="list-group list-group-flush w-100">
+              <%= for {objective_tree, index} <- Enum.with_index(@objectives_tree) do %>
+                <%= live_component @socket, ObjectiveEntry, changeset: @changeset, objective_mapping: objective_tree.mapping,
+                  children: objective_tree.children, depth: 1, index: index, project: @project, selected: @selected, edit: @edit %>
+              <% end %>
             </div>
-          </div>
           <% end %>
-          </div>
         </div>
       </div>
 
