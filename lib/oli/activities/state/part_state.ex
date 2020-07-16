@@ -33,12 +33,20 @@ defmodule Oli.Activities.State.PartState do
   ]
 
   def from_attempt(%PartAttempt{} = attempt, %Part{} = part) do
+    IO.inspect("here 1")
 
     # From the ids of hints displayed in the attempt, look up
     # the hint content from the part
     hint_map = Enum.reduce(part.hints, %{}, fn h, m -> Map.put(m, h.id, h) end)
     hints = Enum.map(attempt.hints, fn id -> Map.get(hint_map, id, nil) end)
       |> Enum.filter(fn id -> !is_nil(id) end)
+
+    # Activities save empty hints to preserve the "deer in headlights" / "cognitive" / "bottom out"
+    # hint ordering. Empty hints are filtered out here.
+    real_part_hints = part.hints
+    |> Enum.filter(& String.trim(&1) != "")
+    IO.inspect(real_part_hints, label: "Real part hints")
+    IO.inspect(hints, label: "hints")
 
     %Oli.Activities.State.PartState{
       attemptGuid: attempt.attempt_guid,
@@ -49,14 +57,10 @@ defmodule Oli.Activities.State.PartState do
       response: attempt.response,
       feedback: attempt.feedback,
       hints: hints,
-      hasMoreHints: length(attempt.hints) < length(part.hints),
+      hasMoreHints: length(attempt.hints) < length(real_part_hints),
       hasMoreAttempts: true,
       partId: attempt.part_id
     }
 
   end
-
-
 end
-
-

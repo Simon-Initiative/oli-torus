@@ -14,6 +14,7 @@ defmodule Oli.Activities.Model.Hint do
   def parse(hints) when is_list(hints) do
     Enum.map(hints, &parse/1)
     |> Oli.Activities.ParseUtils.items_or_errors()
+    |> Oli.Activities.ParseUtils.remove_empty()
   end
 
   def parse(_) do

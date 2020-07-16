@@ -1,4 +1,6 @@
 defmodule Oli.Activities.ParseUtils do
+  alias Oli.Rendering
+  alias Oli.Rendering.Context
 
   @doc """
   Takes a list of items that are either of the
@@ -18,5 +20,21 @@ defmodule Oli.Activities.ParseUtils do
     end
   end
 
-
+  @doc """
+  Filters out items with no content
+  """
+  def remove_empty({:error, _} = items), do: items
+  def remove_empty({:ok, items}) do
+    {:ok, Enum.filter(items, & has_content?(&1))}
+  end
+  def has_content?(%{content: content} = here) do
+    IO.inspect(here, label: "here")
+    text = Rendering.Content.render(%Context{}, content, Rendering.Content.Plaintext)
+    |> Enum.join("")
+    IO.inspect(text, label: "text")
+    case String.trim(text) do
+      "" -> false
+      _ -> true
+    end
+  end
 end

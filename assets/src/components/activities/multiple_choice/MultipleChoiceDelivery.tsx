@@ -129,6 +129,8 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
     )
     : null;
 
+  console.log(hasMoreHints)
+
   const ungradedDetails = props.graded ? null : [
     evaluationSummary,
     <Hints key="hints" onClick={onRequestHint} hints={hints}

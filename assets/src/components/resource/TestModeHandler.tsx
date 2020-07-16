@@ -8,6 +8,7 @@ import produce from 'immer';
 export const defaultState = (model: ActivityModelSchema) => {
 
   const parts = model.authoring.parts.map((p: any) =>
+    console.log('p.hints', p.hints) ||
     ({
       attemptNumber: 1,
       attemptGuid: p.id,

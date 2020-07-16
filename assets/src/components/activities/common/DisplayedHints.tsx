@@ -7,7 +7,7 @@ interface DisplayedHintProps {
 }
 
 const DisplayedHint = ({ hint }: DisplayedHintProps) => {
-
+  console.log('hint in displayed hint', hint)
   return (
     <div key={hint.id}
       className="hint mb-2 d-flex">
@@ -27,6 +27,8 @@ interface HintsProps {
 }
 
 export const Hints = (props: HintsProps) => {
+  console.log("has more hints", props.hasMoreHints)
+  console.log("hints", props.hints)
   return (
     <div className="hints my-2">
       <div className="hints-adornment"></div>

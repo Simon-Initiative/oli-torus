@@ -15,6 +15,7 @@ defmodule Oli.Activities.Model.Part do
       {:ok, hints} <- Oli.Activities.Model.Hint.parse(hints),
       {:ok, parts} <- Oli.Activities.Model.Part.parse(parts)
     do
+      IO.inspect(hints, label: "hints after parsing")
       {:ok, %Oli.Activities.Model.Part{
         responses: responses,
         hints: hints,
