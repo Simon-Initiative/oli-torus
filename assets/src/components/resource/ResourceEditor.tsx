@@ -36,6 +36,7 @@ type ResourceEditorState = {
   messages: Message[],
   undoable: UndoableState<Undoable>,
   allObjectives: Immutable.List<Objective>,
+  childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>,
   activities: Immutable.Map<string, Activity>,
   editMode: boolean,
   persistence: 'idle' | 'pending' | 'inflight',
@@ -67,6 +68,25 @@ function unregisterUnload(listener: any) {
   window.removeEventListener('beforeunload', listener);
 }
 
+function mapChildrenObjectives(objectives: Objective[])
+  : Immutable.Map<ObjectiveSlug, Immutable.List<Objective>> {
+
+  return objectives.reduce(
+    (map, o) => {
+      if (o.parentSlug !== null) {
+        let updatedMap = map;
+        if (o.parentSlug !== null && !map.has(o.parentSlug)) {
+          updatedMap = updatedMap.set(o.parentSlug, Immutable.List());
+        }
+        const appended = (updatedMap.get(o.parentSlug) as any).append(o);
+        return updatedMap.set(o.parentSlug, appended);
+      }
+      return map;
+    },
+    Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>(),
+  );
+}
+
 // The resource editor
 export class ResourceEditor extends React.Component<ResourceEditorProps, ResourceEditorState> {
 
@@ -88,6 +108,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       }),
       persistence: 'idle',
       allObjectives: Immutable.List<Objective>(allObjectives),
+      childrenObjectives: mapChildrenObjectives(allObjectives),
       activities: Immutable.Map<string, Activity>(
         Object.keys(activities).map(k => [k, activities[k]])),
     };
