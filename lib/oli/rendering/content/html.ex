@@ -60,14 +60,14 @@ defmodule Oli.Rendering.Content.Html do
     default_height = 476
 
     wrap_with_figure(Map.merge(attrs, %{"width" => default_width}), ["""
-    <iframe
-      id="#{src}"
-      width="#{default_width}"
-      height="#{default_height}"
-      src="https://www.youtube.com/embed/#{src}"
-      frameBorder="0"
-      style="display: block; margin-left: auto; margin-right: auto;"
-    ></iframe>
+    <div className="embed-responsive embed-responsive-16by9">
+      <iframe
+        class="embed-responsive-item"
+        id="#{src}"
+        allowfullscreen
+        src="https://www.youtube.com/embed/#{src}"
+      ></iframe>
+    </div>
     """])
   end
 
