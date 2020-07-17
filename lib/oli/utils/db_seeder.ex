@@ -38,7 +38,6 @@ defmodule Oli.Seeder do
     publish_resource(publication, container_resource, container_revision)
 
     %{resource: page1, revision: revision1} = create_page("Page one", publication, project, author)
-    # %{resource: page2, revision: revision2} = create_page("Page two", publication, project, author)
     %{resource: page2, revision: revision2} = create_page("Page two", publication, project, author, create_sample_content())
     container_revision = attach_pages_to([page1, page2], container_resource, container_revision, publication)
 
@@ -51,10 +50,8 @@ defmodule Oli.Seeder do
       |> Map.put(:container, %{ resource: container_resource, revision: container_revision })
       |> Map.put(:page1, page1)
       |> Map.put(:page2, page2)
-      # |> Map.put(:page3, page3)
       |> Map.put(:revision1, revision1)
       |> Map.put(:revision2, revision2)
-      # |> Map.put(:revision3, revision3)
       |> add_lti_consumer(%{}, :lti_consumer)
 
   end
