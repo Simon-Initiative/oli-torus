@@ -51,8 +51,8 @@ const Input = (props: InputProps) => {
       cols={80}
       className="form-control"
       onChange={(e: any) => props.onChange(e.target.value)}
+      value={input}
       disabled={props.isEvaluated}>
-      {input}
     </textarea>
   );
 };
