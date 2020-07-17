@@ -733,7 +733,11 @@ defmodule Oli.Delivery.Attempts do
       if resource_attempt.date_evaluated == nil do
 
         Enum.each(resource_attempt.activity_attempts, fn a ->
-          submit_graded_page_activity(role, context_id, a.attempt_guid)
+          # some activities will finalize themselves ahead of a graded page
+          # submission.  so we only submit those that are still yet to be finalized.
+          if a.date_evaluated == nil do
+            submit_graded_page_activity(role, context_id, a.attempt_guid)
+          end
         end)
 
         case roll_up_activities_to_resource_attempt(resource_attempt_guid) do
