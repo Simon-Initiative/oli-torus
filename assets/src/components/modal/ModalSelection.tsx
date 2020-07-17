@@ -15,14 +15,16 @@ export interface ModalSelectionProps {
   okLabel?: string;
   okClassName?: string;
   cancelLabel?: string;
-  disableInsert?: boolean;
+  // disableInsert?: boolean;
+  onSelectionChange: any;
+  selected: any;
   title: string;
   onInsert: () => void;
   onCancel: () => void;
   size?: sizes;
 }
 
-class ModalSelection extends React.PureComponent<ModalSelectionProps, {}> {
+class ModalSelection extends React.Component<ModalSelectionProps, {}> {
 
   componentDidMount() {
     (window as any).$(this.modal).modal('show');
@@ -32,12 +34,22 @@ class ModalSelection extends React.PureComponent<ModalSelectionProps, {}> {
     (window as any).$(this.modal).modal('hide');
   }
 
+  updateDisableInsert = (lastState: boolean) => {
+
+  }
+
   onInsert = (e: any) => { e.preventDefault(); this.props.onInsert(); };
 
   onCancel = (e: any) => { e.preventDefault(); this.props.onCancel(); };
 
   render() {
-    const disableInsert = this.props.disableInsert;
+    // this.updateDisableInsert(this.props.selection)
+    // console.log(this.props.selected())
+    // console.log(this.props.disableInsert)
+    // const disableInsert = this.props.disableInsert !== undefined
+    //   ? this.props.disableInsert
+    //   : true;
+    // console.log("disableInsert", disableInsert)
     const okLabel = this.props.okLabel !== undefined
       ? this.props.okLabel : 'Insert';
     const cancelLabel = this.props.cancelLabel !== undefined
@@ -65,7 +77,7 @@ class ModalSelection extends React.PureComponent<ModalSelectionProps, {}> {
             </div>
             <div className="modal-footer">
               <button
-                disabled={disableInsert}
+                disabled={(() => this.props.selected.img === null)()}
                 type="button"
                 onClick={this.onInsert}
                 className={`btn btn-${okClassName}`}>{okLabel}</button>

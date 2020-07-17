@@ -60,9 +60,21 @@ defmodule OliWeb.MediaController do
   end
 
   defp error(conn, code, reason) do
+    IO.inspect(code)
+    IO.inspect(reason)
     conn
-    |> send_resp(code, reason)
+    |> send_resp(code, prettify_error(reason))
     |> halt()
   end
 
+  # Match on MediaLibrary.add error reasons
+  defp prettify_error(reason) do
+    case reason do
+      {:file_exists} -> "That file already exists in storage. A file can only be uploaded once."
+      {:persistence} -> "The file could not be saved in storage. Hopefully, this is a temporary problem, so give it another try, but let us know if it continues to fail."
+      {:not_found} -> "The project you are trying to upload to could not be found."
+      %Ecto.Changeset{} = changeset -> "It looks like something is wrong with that file's metadata. Make sure the image is correct, and if you're still having issues let us know."
+      _ -> "Something unexpected prevented that file from being uploaded. Try another file or reach out to us for support."
+    end
+  end
 end

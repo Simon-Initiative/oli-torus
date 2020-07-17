@@ -9,6 +9,7 @@ import * as persistence from 'data/persistence/media';
 import { OrderedMediaLibrary } from '../OrderedMediaLibrary';
 import './MediaManager.scss';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
+import { parseDate, relativeToNow } from 'utils/date';
 
 const PAGELOAD_TRIGGER_MARGIN_PX = 100;
 const MAX_NAME_LENGTH = 26;
@@ -109,6 +110,7 @@ export interface MediaManagerState {
   order: string;
   layout: LAYOUTS;
   showDetails: boolean;
+  error: Maybe<string>;
 }
 
 /**
@@ -128,6 +130,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       order: SORT_MAPPINGS.Newest.order,
       layout: LAYOUTS.GRID,
       showDetails: true,
+      error: Maybe.nothing<string>(),
     };
 
     this.onScroll = this.onScroll.bind(this);
@@ -147,20 +150,23 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
 
     // load initial selection data
     if (initialSelectionPaths) {
-      Promise.all(initialSelectionPaths.filter(path => path).map(path =>
-        onLoadMediaItemByPath(this.props.projectSlug, path.replace(/^[./]+/, ''))),
-      ).then((mediaItems) => {
-        this.setState({
-          selection: Immutable.List(
-            mediaItems.map(mi =>
-              mi.caseOf({
-                just: item => item.guid,
-                nothing: () => undefined,
-              }) as string,
-            ).filter(i => i),
-          ),
-        });
-      });
+      Promise
+        .all(initialSelectionPaths.filter(path => path).map(path =>
+          onLoadMediaItemByPath(this.props.projectSlug, path.replace(/^[./]+/, ''))))
+        .then((mediaItems) => {
+          this.setState({
+            selection: Immutable.List(
+              mediaItems.map(mi =>
+                mi.caseOf({
+                  just: item => item.guid,
+                  nothing: () => undefined,
+                }) as string,
+              ).filter(i => i),
+            ),
+            error: Maybe.nothing<string>(),
+          });
+        })
+        .catch(e => this.setState({ error: Maybe.just(e.message) }));
     }
   }
 
@@ -246,12 +252,15 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
           .then((mediaItems) => {
             mediaItems.lift((files) => {
               if (files.size > 0) {
-                Maybe.maybe(files.find(f => f.url === result[0])).lift(file =>
-                  this.onSelect(file.guid));
+                Maybe
+                .maybe(files.find(f => f.url === (result[0] && result[0].url)))
+                .lift(file => this.onSelect(file.guid));
               }
             });
-          });
-      });
+          })
+          .then(() => this.setState({ error: Maybe.nothing<string>() }));
+      })
+      .catch((e: Error) => this.setState({ error: Maybe.just(e.message) }));
   }
 
   onChangeLayout(newLayout: LAYOUTS) {
@@ -448,22 +457,25 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       );
     }
 
+    const detailsOnClick = () => this.setState({ showDetails: !showDetails })
+
     if (selectedMediaItems.size > 0) {
       const selectedItem = selectedMediaItems.first() as MediaItem;
 
       return (
         <div className="media-selection-details">
           <div className="details-title">
-            <a
+            <span>Selected: <a
               href={selectedItem.url}
               target="_blank"
-              onClick={popOpenImage} >
+              onClick={popOpenImage}>
               {stringFormat.ellipsize(selectedItem.fileName, 65, 5)}</a>
-            <div className="flex-spacer" />
-            <button className="btn btn-link" onClick={() =>
-              this.setState({ showDetails: !showDetails })}>
-              {showDetails ? 'Hide' : 'Details'}
-            </button>
+            </span>
+            {showDetails
+              ? <span role="button" onClick={detailsOnClick}
+                  className="material-icons">keyboard_arrow_down</span>
+              : <span role="button" onClick={detailsOnClick}
+                  className="material-icons">keyboard_arrow_up</span>}
           </div>
           {showDetails &&
             <div className="details-content">
@@ -473,10 +485,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
                 url={selectedItem.url} />
               <div className="details-info">
                 <div className="detail-row date-created">
-                  <b>Created:</b> {selectedItem.dateCreated}
-                </div>
-                <div className="detail-row date-updated">
-                  <b>Updated:</b> {selectedItem.dateUpdated}
+                  <b>Uploaded:</b> {relativeToNow(new Date(selectedItem.dateCreated))}
                 </div>
                 <div className="detail-row file-size">
                   <b>Size:</b> {convert.toByteNotation(selectedItem.fileSize)}
@@ -489,6 +498,20 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     }
   }
 
+  renderError() {
+    const { error } = this.state;
+
+    return error.caseOf({
+      just: error => <div className="alert alert-danger alert-dismissible fade show" role="alert">
+        {error}
+        <button type="button" className="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>,
+      nothing: () => null,
+    });
+  }
+
   render() {
     const { className, mimeFilter, media } = this.props;
     const { searchText, layout, orderBy, order } = this.state;
@@ -499,6 +522,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
 
     return (
       <div className={`media-manager ${className || ''}`}>
+        {this.renderError()}
         <div className="media-toolbar">
           <input
             id={id}
@@ -526,14 +550,14 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
           </div>
           <div className="media-toolbar-item flex-spacer" />
           <div className="media-toolbar-item sort-control dropdown">
-            Sort By:
-            <button
-              className="btn btn-secondary dropdown-toggle sort-btn"
-              type="button" id="dropdownMenu2"
+            Sort By:&nbsp;
+            <span
+              className="dropdown-toggle sort-btn"
+              id="dropdownMenu2"
               data-toggle="dropdown">
               <i className={SORT_MAPPINGS[getSortMappingKey(orderBy, order) as any].icon} />
               {` ${getSortMappingKey(orderBy, order)}`}
-            </button>
+            </span>
             <div className="dropdown-menu">
               {Object.keys(SORT_MAPPINGS).map(sortKey =>
                 <button

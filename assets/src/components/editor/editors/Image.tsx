@@ -23,12 +23,18 @@ export function selectImage(projectSlug: string,
   return new Promise((resolve, reject) => {
 
     const selected = { img: null };
+    // let disableInsert = true;
+    // const updateDisableInsert = () => disableInsert = selected.img === null;
 
     const mediaLibrary =
       <ModalSelection title="Select an image"
         onInsert={() => { dismiss(); resolve(selected.img as any); }}
         onCancel={() => dismiss()}
-        disableInsert={selected.img === null}
+        onSelectionChange={(images: MediaItem[]) => {
+          const first : ContentModel.Image = { type: 'img', src: images[0].url,
+            children: [{ text: '' }], id: guid() };
+          (selected as any).img = first;
+        }}
       >
         <MediaManager model={model}
           projectSlug={projectSlug}
@@ -38,9 +44,9 @@ export function selectImage(projectSlug: string,
           initialSelectionPaths={[model.src]}
           onSelectionChange={(images: MediaItem[]) => {
             const first : ContentModel.Image = { type: 'img', src: images[0].url,
-              children: [{ text: '' }], id: guid() };
-            (selected as any).img = first;
-          }} />
+              children: [{ text: '' }], id: guid()};
+            return first;
+          }} />;
       </ModalSelection>;
 
     display(mediaLibrary);
