@@ -339,7 +339,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 
             <button
               role="button"
-              className="btn btn-sm btn-outline-primary"
+              className="btn btn-sm btn-outline-primary ml-3"
               onClick={onPreviewClick}
               disabled={isSaving}>
               Preview Page
