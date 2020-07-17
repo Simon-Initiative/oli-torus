@@ -19,7 +19,12 @@ export const RichTextEditor = ({ editMode, className, text, onEdit, projectSlug 
   return (
     <div className={classNames(['rich-text-editor', className])}>
       <ErrorBoundary>
-        <Editor commandContext={{ projectSlug }} editMode={editMode} value={text} onEdit={onEdit}
+        <Editor
+          commandContext={{ projectSlug }}
+          editMode={editMode}
+          value={text.model}
+          onEdit={(model, selection) => onEdit({ model, selection })}
+          selection={text.selection}
           toolbarItems={getToolbarForResourceType(1)} />
       </ErrorBoundary>
     </div>

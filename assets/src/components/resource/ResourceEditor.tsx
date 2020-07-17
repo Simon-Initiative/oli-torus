@@ -14,7 +14,10 @@ import { PreviewButton } from '../content/PreviewButton';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug } from 'data/types';
 import * as Persistence from 'data/persistence/resource';
-import { UndoableState, processRedo, processUndo, processUpdate, init } from './undo';
+import {
+  UndoableState, processRedo, processUndo, processUpdate, init,
+  registerUndoRedoHotkeys, unregisterUndoRedoHotkeys,
+} from './undo';
 import { releaseLock, acquireLock } from 'data/persistence/lock';
 import { Message, createMessage } from 'data/messages/messages';
 import { Banner } from '../messages/Banner';
@@ -72,6 +75,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 
   persistence: PersistenceStrategy;
   windowUnloadListener: any;
+  undoRedoListener: any;
 
   constructor(props: ResourceEditorProps) {
     super(props);
@@ -114,6 +118,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       this.setState({ editMode });
       if (editMode) {
         this.windowUnloadListener = registerUnload(this.persistence);
+        this.undoRedoListener = registerUndoRedoHotkeys(this.undo.bind(this), this.redo.bind(this));
       }
     });
   }
@@ -122,6 +127,10 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     this.persistence.destroy();
     if (this.windowUnloadListener !== null) {
       unregisterUnload(this.windowUnloadListener);
+    }
+
+    if (this.undoRedoListener !== null) {
+      unregisterUndoRedoHotkeys(this.undoRedoListener);
     }
   }
 
