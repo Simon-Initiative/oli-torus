@@ -1,4 +1,4 @@
-import { Editor, Transforms, Text, Range } from 'slate';
+import { Editor } from 'slate';
 import { Mark } from 'data/content/model';
 import { ReactEditor } from 'slate-react';
 import { CommandDesc } from './interfaces';
