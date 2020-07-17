@@ -273,11 +273,12 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           if (html) {
             this.setState({ previewHtml: html });
           }
-        })
+        });
       }
     };
 
-    const isSaving = (this.state.persistence === 'inflight' || this.state.persistence === 'pending');
+    const isSaving =
+      (this.state.persistence === 'inflight' || this.state.persistence === 'pending');
 
     if (state.previewMode) {
       return (
@@ -307,8 +308,8 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
                 // when this div is rendered and contains rendered preview html,
                 // find and execute all scripts required to run the delivery elements
                 if (div && state.previewHtml !== '') {
-                  const scripts = div.getElementsByTagName('script')
-                  for (let s of scripts) {
+                  const scripts = div.getElementsByTagName('script');
+                  for (const s of scripts) {
                     if (s.innerText) {
                       window.eval(s.innerText);
                     }
@@ -318,7 +319,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
               />
           </div>
         </div>
-      )
+      );
     }
 
     return (

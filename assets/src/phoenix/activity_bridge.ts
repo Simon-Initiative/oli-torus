@@ -111,7 +111,7 @@ export const initPreviewActivityBridge = (elementId: string) => {
     return model.authoring.parts.find((p: any) => p.id === id);
   }
 
-  function submit (e: CustomEvent) {
+  function submit(e: CustomEvent) {
     const props = e.detail.props;
     const continuation: Continuation = e.detail.continuation;
     const partInputs: PartResponse[] = e.detail.payload;
@@ -123,7 +123,7 @@ export const initPreviewActivityBridge = (elementId: string) => {
         .map((evaluation : any) => {
           // handle any errors
           if (evaluation.error) {
-            console.error('Evaluation error: ' + evaluation.error)
+            console.error('Evaluation error: ' + evaluation.error);
             return;
           }
 

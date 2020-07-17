@@ -110,7 +110,10 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
     });
   };
 
-  const evaluationSummary = isEvaluated ? <Evaluation key="evaluation" attemptState={attemptState}/> : null;
+  const evaluationSummary = isEvaluated
+    ? <Evaluation key="evaluation" attemptState={attemptState}/>
+    : null;
+
   const reset = isEvaluated && !props.graded
     ? (<div className="d-flex">
         <div className="flex-fill"></div>
@@ -139,7 +142,11 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
         <Stem stem={stem} />
 
         <div className="">
-          <Input inputType={model.inputType} input={input} isEvaluated={isEvaluated} onChange={onInputChange}/>
+          <Input
+            inputType={model.inputType}
+            input={input}
+            isEvaluated={isEvaluated}
+            onChange={onInputChange}/>
           {maybeSubmitButton}
         </div>
 

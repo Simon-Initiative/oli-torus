@@ -119,7 +119,10 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
     });
   };
 
-  const evaluationSummary = isEvaluated ? <Evaluation key="evaluation" attemptState={attemptState}/> : null;
+  const evaluationSummary = isEvaluated
+    ? <Evaluation key="evaluation" attemptState={attemptState}/>
+    : null;
+
   const reset = isEvaluated && !props.graded
     ? (<div className="d-flex my-3">
         <div className="flex-fill"></div>

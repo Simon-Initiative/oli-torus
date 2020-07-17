@@ -108,7 +108,7 @@ export const AddResourceContent = (
       .catch((err) => {
         // tslint:disable-next-line
         console.error(err);
-      })
+      }),
     );
   };
 
