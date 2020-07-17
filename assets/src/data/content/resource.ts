@@ -1,4 +1,4 @@
-import { ModelElement } from './model';
+import { ModelElement, Selection } from './model';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug, ActivitySlug, ActivityTypeSlug } from 'data/types';
 import { Objective } from 'data/content/objective';
 
@@ -65,6 +65,7 @@ export const createDefaultStructuredContent = () => {
       { type: 'p', id: guid(), children: [{ text: '' }] },
     ],
     purpose: 'none',
+    selection: null,
   } as StructuredContent;
 };
 
@@ -73,6 +74,7 @@ export interface StructuredContent {
   id: string;
   children: ModelElement[];
   purpose: string;
+  selection: Selection;
 }
 
 export interface ActivityReference {

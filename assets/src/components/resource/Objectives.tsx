@@ -50,6 +50,7 @@ export const Objectives = (props: ObjectivesProps) => {
                   onRegisterNewObjective({
                     slug: result.revisionSlug,
                     title: createdObjective.title,
+                    parentSlug: null,
                   });
 
                   // the newly created objective will be the only one that has null as it's slug,

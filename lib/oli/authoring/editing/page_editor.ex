@@ -172,11 +172,11 @@ defmodule Oli.Authoring.Editing.PageEditor do
     with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, %{content: content} = revision} <- AuthoringResolver.from_revision_slug(project_slug, revision_slug) |> trap_nil(),
          {:ok, objectives} <- Publishing.get_published_objective_details(publication.id) |> trap_nil(),
-         {:ok, objectives_without_ids} <- strip_ids(objectives) |> trap_nil(),
+         {:ok, objectives_with_parent_reference} <- construct_parent_references(objectives) |> trap_nil(),
          {:ok, attached_objectives} <- id_to_slug(revision.objectives, objectives) |> trap_nil(),
          {:ok, activities} <- create_activities_map(publication.id, content)
     do
-      {:ok, create(publication.id, revision, project_slug, revision_slug, author, objectives_without_ids, attached_objectives, activities, editor_map)}
+      {:ok, create(publication.id, revision, project_slug, revision_slug, author, objectives_with_parent_reference, attached_objectives, activities, editor_map)}
     else
       _ -> {:error, :not_found}
     end
@@ -386,9 +386,30 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
   end
 
-  # removes the objective_id from the maps contained with a list of objectives
-  def strip_ids(objectives) do
-    Enum.map(objectives, fn o -> Map.delete(o, :objective_id) end)
+  # Take a list of maps containing the title, slug, resource_id, and children (as a list of resource_ids)
+  # and turn it into a list of maps of this form:
+  #
+  # %{
+  #   slug: the slug of the objective
+  #   title: the title of the objective
+  #   parentSlug: the slug of the parent objective, nil if no parent objective
+  # }
+  #
+  def construct_parent_references(objectives) do
+
+    by_resource_id = Enum.reduce(objectives, %{}, fn o, m -> Map.put(m, o.resource_id, o.slug) end)
+
+    parent_slug = Enum.reduce(objectives, %{}, fn o, m ->
+      Enum.reduce(o.children, m, fn child, m -> Map.put(m, Map.get(by_resource_id, child), Map.get(by_resource_id, o.resource_id)) end)
+    end)
+
+    Enum.map(objectives, fn o ->
+    %{
+      slug: o.slug,
+      title: o.title,
+      parentSlug: Map.get(parent_slug, o.slug)
+    }
+    end)
   end
 
   # takes the attached objectives in the form of a map of "attached" to a list of objective ids
@@ -409,7 +430,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
     %{attached: attached}
   end
 
-  # Create the resource editing content that we will supply to the client side editor
+  # Create the resource editing context that we will supply to the client side editor
   defp create(publication_id, revision, project_slug, revision_slug, author, all_objectives, objectives, activities, editor_map) do
     %Oli.Authoring.Editing.ResourceContext{
       authorEmail: author.email,

@@ -256,7 +256,7 @@ defmodule Oli.Publishing do
     Repo.all from mapping in PublishedResource,
       join: rev in Revision, on: mapping.revision_id == rev.id,
       where: rev.deleted == false and rev.resource_type_id == ^objective and mapping.publication_id == ^publication_id,
-      select: map(rev, [:slug, :title, :resource_id])
+      select: map(rev, [:slug, :title, :resource_id, :children])
   end
 
   @doc """
