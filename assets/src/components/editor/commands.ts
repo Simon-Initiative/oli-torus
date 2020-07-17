@@ -17,7 +17,7 @@ export function toggleMark(editor: ReactEditor, mark: Mark) {
   const isActive = isMarkActive(editor, mark);
 
   if (isActive) {
-    Editor.removeMark(editor, mark)
+    Editor.removeMark(editor, mark);
   } else {
     Editor.addMark(editor, mark, true);
   }
