@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Authoring.Editing.ActivityEditor — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-2e2099f01b.js"></script>
+    <script src="dist/sidebar_items-a800491744.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -93,7 +93,7 @@ Oli.Authoring.Editing.ActivityEditor          <a href="https://github.com/Simon-
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#create/4">create(project_slug, activity_type_slug, author, model)</a>
+    <a href="#create/5">create(project_slug, activity_type_slug, author, model, objectives)</a>
   </div>
     <div class="summary-synopsis"><p>Attempts to process a request to create a new activity.</p></div>
 </div>
@@ -128,14 +128,14 @@ project and revision slug and activity slug for the author specified by email.</
             </a>
 Functions          </h1>
           <div class="functions-list">
-<section class="detail" id="create/4">
+<section class="detail" id="create/5">
   <div class="detail-header">
-    <a href="#create/4" class="detail-link" title="Link to this function">
+    <a href="#create/5" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">create(project_slug, activity_type_slug, author, model)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L201" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">create(project_slug, activity_type_slug, author, model, objectives)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L220" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -165,7 +165,8 @@ Functions          </h1>
     updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     users: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
-  %{}
+  %{},
+  []
 ) ::
   {:ok,
    %Oli.Resources.Revision{
@@ -218,7 +219,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">create_context(project_slug, revision_slug, activity_slug, author)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L230" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L250" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -303,7 +304,7 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_latest_revision(publication_id, resource_id)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L269" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L288" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
