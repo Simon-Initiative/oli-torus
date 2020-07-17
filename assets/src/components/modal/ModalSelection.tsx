@@ -1,4 +1,7 @@
 import * as React from 'react';
+import { Provider } from 'react-redux';
+import { configureStore } from 'state/store';
+import produce from 'immer';
 
 interface ModalSelection {
   modal: any;
@@ -37,6 +40,11 @@ class ModalSelection extends React.Component<ModalSelectionProps, {}> {
   updateDisableInsert = (lastState: boolean) => {
 
   }
+
+  dispatch = (action: any) => {
+    const nextModel = produce(props.model, draftState => action(draftState));
+    props.onEdit(nextModel);
+  };
 
   onInsert = (e: any) => { e.preventDefault(); this.props.onInsert(); };
 

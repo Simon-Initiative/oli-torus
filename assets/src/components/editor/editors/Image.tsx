@@ -30,11 +30,6 @@ export function selectImage(projectSlug: string,
       <ModalSelection title="Select an image"
         onInsert={() => { dismiss(); resolve(selected.img as any); }}
         onCancel={() => dismiss()}
-        onSelectionChange={(images: MediaItem[]) => {
-          const first : ContentModel.Image = { type: 'img', src: images[0].url,
-            children: [{ text: '' }], id: guid() };
-          (selected as any).img = first;
-        }}
       >
         <MediaManager model={model}
           projectSlug={projectSlug}
