@@ -23,11 +23,11 @@ defmodule OliWeb.ActivityController do
 
   end
 
-  def create(conn, %{"project" => project_slug, "activity_type" => activity_type_slug, "model" => model }) do
+  def create(conn, %{"project" => project_slug, "activity_type" => activity_type_slug, "model" => model, "objectives" => objectives}) do
 
     author = conn.assigns[:current_author]
 
-    case ActivityEditor.create(project_slug, activity_type_slug, author, model) do
+    case ActivityEditor.create(project_slug, activity_type_slug, author, model, objectives) do
       {:ok, {%{slug: slug}, transformed}} -> json conn, %{ "type" => "success", "revisionSlug" => slug, "transformed" => transformed}
       {:error, {:not_found}} -> error(conn, 404, "not found")
       {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")

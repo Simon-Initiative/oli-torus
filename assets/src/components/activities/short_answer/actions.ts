@@ -33,7 +33,6 @@ export class ShortAnswerActions {
 
   static editFeedback(id: string, content: RichText) {
     return (draftState: ShortAnswerModelSchema) => {
-      draftState.stem.content = content;
       ShortAnswerActions.getResponse(draftState, id).lift(r => r.feedback.content = content);
     };
 

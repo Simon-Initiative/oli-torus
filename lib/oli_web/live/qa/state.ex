@@ -97,9 +97,10 @@ defmodule OliWeb.Qa.State do
   def warning_dismissed(state, warning_id) do
 
     warnings = Enum.filter(state.warnings, fn %{id: id} -> id !== warning_id end)
+
     selected = case state.selected do
       nil -> nil
-      %{id: ^warning_id} -> select_another(state.warnings, state.selected)
+      %{id: ^warning_id} -> select_another(state.filtered_warnings, state.selected)
       _ -> state.selected
     end
 
