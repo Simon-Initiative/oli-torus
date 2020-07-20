@@ -3,6 +3,15 @@ import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import produce from 'immer';
 
+const store = configureStore();
+
+class SelectionActions {
+  static addChoice() {
+    return (draftState: MultipleChoiceModelSchema) => {
+    }
+  }
+}
+
 interface ModalSelection {
   modal: any;
 }
@@ -42,8 +51,8 @@ class ModalSelection extends React.Component<ModalSelectionProps, {}> {
   }
 
   dispatch = (action: any) => {
-    const nextModel = produce(props.model, draftState => action(draftState));
-    props.onEdit(nextModel);
+    const nextModel = produce(this.props, draftState => action(draftState));
+    this.props.onEdit(nextModel);
   };
 
   onInsert = (e: any) => { e.preventDefault(); this.props.onInsert(); };
