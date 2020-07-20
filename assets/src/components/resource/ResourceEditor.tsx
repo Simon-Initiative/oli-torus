@@ -79,7 +79,7 @@ export function registerKeydown(self: ResourceEditor) {
     const isShiftkey = e.keyCode === 91;
 
     if (isShiftkey) {
-      self.setState({ metaModifier: true })
+      self.setState({ metaModifier: true });
     }
   });
 }
@@ -93,7 +93,7 @@ export function registerKeyup(self: ResourceEditor) {
     const isShiftkey = e.keyCode === 91;
 
     if (isShiftkey) {
-      self.setState({ metaModifier: false })
+      self.setState({ metaModifier: false });
     }
   });
 }
@@ -104,7 +104,7 @@ export function unregisterKeyup(listener: any) {
 
 export function registerWindowBlur(self: ResourceEditor) {
   return window.addEventListener('blur', (e) => {
-    self.setState({ metaModifier: false })
+    self.setState({ metaModifier: false });
   });
 }
 
@@ -199,9 +199,9 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     this.persistence.destroy();
     unregisterUnload(this.windowUnloadListener);
     unregisterUndoRedoHotkeys(this.undoRedoListener);
-    unregisterKeydown(this.keydownListener)
-    unregisterKeyup(this.keyupListener)
-    unregisterWindowBlur(this.windowBlurListener)
+    unregisterKeydown(this.keydownListener);
+    unregisterKeyup(this.keyupListener);
+    unregisterWindowBlur(this.windowBlurListener);
   }
 
   publishErrorMessage(failure: any) {
@@ -264,7 +264,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 
     if (metaModifier && enteringPreviewMode) {
       // if shift key is down, open in a new window
-      window.open(`/project/${projectSlug}/resource/${resourceSlug}/preview`, 'page-preview')
+      window.open(`/project/${projectSlug}/resource/${resourceSlug}/preview`, 'page-preview');
     } else if (enteringPreviewMode) {
       // otherwise, switch the current view to preview mode
       this.setState({ previewMode: !previewMode, previewHtml: '' });
