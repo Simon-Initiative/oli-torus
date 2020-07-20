@@ -240,7 +240,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   # deleted state of the activity revision correct.
   defp resurrect_or_delete_activity_references(revision, change, project_slug) do
 
-    if Map.get(change, :deleted) == true do
+    if Map.get(change, :deleted) do
       content = Map.get(revision.content, "model")
       deletions = activity_references(content)
       delete_activity_references(project_slug, revision, MapSet.new(), deletions)
