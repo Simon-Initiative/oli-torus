@@ -1,5 +1,6 @@
 import * as Immutable from 'immutable';
 import React from 'react';
+import isHotkey from 'is-hotkey';
 import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
 import { ResourceContent, ResourceContext,
@@ -44,6 +45,7 @@ type ResourceEditorState = {
   persistence: 'idle' | 'pending' | 'inflight',
   previewMode: boolean,
   previewHtml: string,
+  metaModifier: boolean,
 };
 
 // Creates a function that when invoked submits a save request
@@ -72,6 +74,45 @@ function unregisterUnload(listener: any) {
   window.removeEventListener('beforeunload', listener);
 }
 
+export function registerKeydown(self: ResourceEditor) {
+  return window.addEventListener('keydown', (e: KeyboardEvent) => {
+    const isShiftkey = e.keyCode === 91;
+
+    if (isShiftkey) {
+      self.setState({ metaModifier: true })
+    }
+  });
+}
+
+export function unregisterKeydown(listener: any) {
+  window.removeEventListener('keydown', listener);
+}
+
+export function registerKeyup(self: ResourceEditor) {
+  return window.addEventListener('keyup', (e: KeyboardEvent) => {
+    const isShiftkey = e.keyCode === 91;
+
+    if (isShiftkey) {
+      self.setState({ metaModifier: false })
+    }
+  });
+}
+
+export function unregisterKeyup(listener: any) {
+  window.removeEventListener('keyup', listener);
+}
+
+export function registerWindowBlur(self: ResourceEditor) {
+  return window.addEventListener('blur', (e) => {
+    self.setState({ metaModifier: false })
+  });
+}
+
+export function unregisterWindowBlur(listener: any) {
+  window.removeEventListener('blur', listener);
+}
+
+
 function mapChildrenObjectives(objectives: Objective[])
   : Immutable.Map<ObjectiveSlug, Immutable.List<Objective>> {
 
@@ -97,6 +138,9 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
   persistence: PersistenceStrategy;
   windowUnloadListener: any;
   undoRedoListener: any;
+  keydownListener: any;
+  keyupListener: any;
+  windowBlurListener: any;
 
   constructor(props: ResourceEditorProps) {
     super(props);
@@ -118,6 +162,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
         Object.keys(activities).map(k => [k, activities[k]])),
       previewMode: false,
       previewHtml: '',
+      metaModifier: false,
     };
 
     this.persistence = new DeferredPersistenceStrategy();
@@ -143,19 +188,20 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       if (editMode) {
         this.windowUnloadListener = registerUnload(this.persistence);
         this.undoRedoListener = registerUndoRedoHotkeys(this.undo.bind(this), this.redo.bind(this));
+        this.keydownListener = registerKeydown(this);
+        this.keyupListener = registerKeyup(this);
+        this.windowBlurListener = registerWindowBlur(this);
       }
     });
   }
 
   componentWillUnmount() {
     this.persistence.destroy();
-    if (this.windowUnloadListener !== null) {
-      unregisterUnload(this.windowUnloadListener);
-    }
-
-    if (this.undoRedoListener !== null) {
-      unregisterUndoRedoHotkeys(this.undoRedoListener);
-    }
+    unregisterUnload(this.windowUnloadListener);
+    unregisterUndoRedoHotkeys(this.undoRedoListener);
+    unregisterKeydown(this.keydownListener)
+    unregisterKeyup(this.keyupListener)
+    unregisterWindowBlur(this.windowBlurListener)
   }
 
   publishErrorMessage(failure: any) {
@@ -211,16 +257,19 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
   }
 
   onPreviewClick = () => {
-    const { previewMode } = this.state;
+    const { previewMode, metaModifier } = this.state;
     const { projectSlug, resourceSlug, graded } = this.props;
 
     const enteringPreviewMode = !previewMode;
-    this.setState({ previewMode: !previewMode, previewHtml: '' });
-    this.showPreviewMessage(graded);
 
-    // window.open(`/project/${projectSlug}/resource/${resourceSlug}/preview`, 'page-preview')
+    if (metaModifier && enteringPreviewMode) {
+      // if shift key is down, open in a new window
+      window.open(`/project/${projectSlug}/resource/${resourceSlug}/preview`, 'page-preview')
+    } else if (enteringPreviewMode) {
+      // otherwise, switch the current view to preview mode
+      this.setState({ previewMode: !previewMode, previewHtml: '' });
+      this.showPreviewMessage(graded);
 
-    if (enteringPreviewMode) {
       fetch(`/project/${projectSlug}/resource/${resourceSlug}/preview`)
       .then((res) => {
         if (res.ok) {
@@ -380,6 +429,9 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
               onClick={this.onPreviewClick}
               disabled={isSaving}>
               Preview Page
+              {state.metaModifier &&
+                <i className="las la-external-link-alt ml-1"></i>
+              }
             </button>
 
             <UndoRedo
