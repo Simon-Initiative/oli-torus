@@ -3,12 +3,6 @@
   <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
 <% end %>
 
-<%= if @context.graded do %>
-<div class="alert alert-warning" role="alert">
-  This page is a <strong>graded assessment</strong> but it is being displayed as an ungraded page to show feedback and hints
-</div>
-<% end %>
-
 <h1><%= @context.title %></h1>
 
 <div id="eventIntercept">

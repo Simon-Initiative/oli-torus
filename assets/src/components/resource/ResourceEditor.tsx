@@ -17,7 +17,7 @@ import {
   registerUndoRedoHotkeys, unregisterUndoRedoHotkeys,
 } from './undo';
 import { releaseLock, acquireLock } from 'data/persistence/lock';
-import { Message, createMessage } from 'data/messages/messages';
+import { Message, Severity, createMessage } from 'data/messages/messages';
 import { Banner } from '../messages/Banner';
 import { BreadcrumbTrail } from 'components/common/BreadcrumbTrail';
 import { create } from 'data/persistence/objective';
@@ -166,6 +166,75 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     this.setState({ messages: [...this.state.messages, message] });
   }
 
+  createObjectiveErrorMessage(failure: any) {
+    const message = createMessage({
+      canUserDismiss: true,
+      content: 'A problem occurred while creating your new objective',
+      severity: Severity.Error,
+    });
+    this.setState({ messages: [...this.state.messages, message] });
+  }
+
+  showPreviewMessage(isGraded: boolean) {
+    const content = isGraded
+      ? <p>
+          This is a preview of your graded assessment, but it is being
+          displayed as an ungraded page to show feedback and hints</p>
+
+      : <p>This is a preview of your ungraded page</p>;
+
+    const message = createMessage({
+      canUserDismiss: false,
+      content: (
+        <div>
+          <strong>Preview Mode</strong><br />
+          {content}
+        </div>
+      ),
+      severity: Severity.Information,
+      actions: [{
+        label: 'Exit Preview',
+        enabled: true,
+        btnClass: 'btn-warning',
+        execute: (message: Message) => {
+          // exit preview mode and remove preview message
+          this.setState({
+            messages: this.state.messages.filter(m => m.guid !== message.guid),
+            previewMode: false,
+            previewHtml: '',
+          });
+
+        },
+      }],
+    });
+    this.setState({ messages: [...this.state.messages, message] });
+  }
+
+  onPreviewClick = () => {
+    const { previewMode } = this.state;
+    const { projectSlug, resourceSlug, graded } = this.props;
+
+    const enteringPreviewMode = !previewMode;
+    this.setState({ previewMode: !previewMode, previewHtml: '' });
+    this.showPreviewMessage(graded);
+
+    // window.open(`/project/${projectSlug}/resource/${resourceSlug}/preview`, 'page-preview')
+
+    if (enteringPreviewMode) {
+      fetch(`/project/${projectSlug}/resource/${resourceSlug}/preview`)
+      .then((res) => {
+        if (res.ok) {
+          return res.text();
+        }
+      })
+      .then((html) => {
+        if (html) {
+          this.setState({ previewHtml: html });
+        }
+      });
+    }
+  }
+
   update(update: Partial<Undoable>) {
     this.setState(
       { undoable: processUpdate(this.state.undoable, update) },
@@ -247,34 +316,11 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           }
         })
         .catch((e) => {
-          // TODO: this should probably give a message to the user indicating that
-          // objective creation failed once we have a global messaging
-          // infrastructure in place. For now, we will just log to the conosle
+          this.createObjectiveErrorMessage(e);
           console.error('objective creation failed', e);
         });
 
       });
-    };
-
-    const onPreviewClick = () => {
-      const enteringPreviewMode = !state.previewMode;
-      this.setState({ previewMode: !state.previewMode, previewHtml: '' });
-
-      // window.open(`/project/${projectSlug}/resource/${resourceSlug}/preview`, 'page-preview')
-
-      if (enteringPreviewMode) {
-        fetch(`/project/${projectSlug}/resource/${resourceSlug}/preview`)
-        .then((res) => {
-          if (res.ok) {
-            return res.text();
-          }
-        })
-        .then((html) => {
-          if (html) {
-            this.setState({ previewHtml: html });
-          }
-        });
-      }
     };
 
     const isSaving =
@@ -284,23 +330,13 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       return (
         <div className="row">
           <div className="col-12 d-flex flex-column">
+            <BreadcrumbTrail projectSlug={projectSlug} page={page} />
             <Banner
               dismissMessage={msg => this.setState(
                 { messages: this.state.messages.filter(m => msg.guid !== m.guid) })}
-              executeAction={() => true}
+              executeAction={(message, action) => action.execute(message)}
               messages={this.state.messages}
             />
-            <BreadcrumbTrail projectSlug={projectSlug} page={page} />
-            <div className="d-flex flex-row my-2">
-              <div className="flex-grow-1"></div>
-              <button
-                role="button"
-                className="btn btn-sm btn-warning"
-                onClick={onPreviewClick}
-                disabled={isSaving}>
-                Exit Preview
-              </button>
-            </div>
             <div
               className="preview-content delivery flex-grow-1"
               dangerouslySetInnerHTML={{ __html: state.previewHtml }}
@@ -325,13 +361,13 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     return (
       <div className="row">
         <div className="col-12">
+          <BreadcrumbTrail projectSlug={projectSlug} page={page} />
           <Banner
             dismissMessage={msg => this.setState(
               { messages: this.state.messages.filter(m => msg.guid !== m.guid) })}
-            executeAction={() => true}
+            executeAction={(message, action) => action.execute(message)}
             messages={this.state.messages}
           />
-          <BreadcrumbTrail projectSlug={projectSlug} page={page} />
           <TitleBar
             title={state.undoable.current.title}
             onTitleEdit={onTitleEdit}
@@ -341,7 +377,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
             <button
               role="button"
               className="btn btn-sm btn-outline-primary ml-3"
-              onClick={onPreviewClick}
+              onClick={this.onPreviewClick}
               disabled={isSaving}>
               Preview Page
             </button>
