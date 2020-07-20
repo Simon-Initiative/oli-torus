@@ -1,0 +1,19 @@
+@import "authoring/variables.scss";
+
+.preview-text {
+  color: $gray-700;
+}
+
+.no-objectives {
+  color: $warning;
+}
+
+.with-objectives {
+  color: $info;
+}
+
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

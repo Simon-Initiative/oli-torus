@@ -90,7 +90,7 @@ export interface Activity {
   activitySlug: ActivitySlug;
   typeSlug: ActivityTypeSlug;
   model: ActivityModelSchema;
-  transformed: ActivityModelSchema | null;
+  objectives: Object;
 }
 
 export interface ActivityMap {

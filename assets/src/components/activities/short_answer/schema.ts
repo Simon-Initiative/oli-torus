@@ -9,6 +9,7 @@ export interface ShortAnswerModelSchema extends ActivityModelSchema {
   authoring: {
     parts: Part[];
     transformations: Transformation[];
+    previewText: string;
   };
 }
 

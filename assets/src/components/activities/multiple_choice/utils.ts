@@ -33,6 +33,7 @@ export const defaultMCModel : () => MultipleChoiceModelSchema = () => {
       transformations: [
         { id: guid(), path: 'choices', operation: Operation.shuffle },
       ],
+      previewText: '',
     },
   };
 };
@@ -41,7 +42,7 @@ export function fromText(text: string): { id: string, content: RichText } {
   return {
     id: guid() + '',
     content: {
-      model:[
+      model: [
         ContentModel.create<ContentModel.Paragraph>({
           type: 'p',
           children: [{ text }],
