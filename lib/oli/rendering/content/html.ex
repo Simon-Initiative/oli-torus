@@ -46,27 +46,22 @@ defmodule Oli.Rendering.Content.Html do
   def img(%Context{} = _context, _, %{"src" => src} = attrs) do
 
     height_width = case attrs do
-      %{"height" => height, "width" => width} -> ["height=#{height} width=#{width}"]
+      %{"height" => height, "width" => width} -> [" height=#{height} width=#{width}"]
       _ -> []
     end
 
-    ["<img "]
+    ["<img"]
       ++ height_width
+      ++ [" class=\"img-fluid img-thumbnail\""]
       ++ [" style=\"display: block; max-height: 500px; margin-left: auto; margin-right: auto;\" src=\"", src, "\"/>\n"]
   end
 
   def youtube(%Context{} = _context, _, %{"src" => src} = attrs) do
-    default_width = 640
-
-    wrap_with_figure(Map.merge(attrs, %{"width" => default_width}), [
+    wrap_with_figure(attrs, [
     """
-    <div className="embed-responsive embed-responsive-16by9">
-      <iframe
-        class="embed-responsive-item"
-        id="#{src}"
-        allowfullscreen
-        src="https://www.youtube.com/embed/#{src}"
-      ></iframe>
+    <div class="embed-responsive embed-responsive-16by9 img-thumbnail">
+      <iframe class="embed-responsive-item" id="#{src}" allowfullscreen src="https://www.youtube.com/embed/#{src}">
+      </iframe>
     </div>
     """])
   end
@@ -191,10 +186,8 @@ defmodule Oli.Rendering.Content.Html do
 
 
   # Accessible captions are created using a combination of the <figure /> and <figcaption /> elements.
-  defp wrap_with_figure(%{"caption" => caption} = attrs, content) do
-    ["<figure#{figure_width(attrs)}>"] ++ content ++ ["<figcaption>#{caption}</figcaption></figure>"]
-  end
+  defp wrap_with_figure(%{"caption" => caption}, content) do
+    ["<figure>"] ++ content ++ ["<figcaption>#{caption}</figcaption></figure>"]
+end
   defp wrap_with_figure(_attrs, content), do: content
-  defp figure_width(%{"width" => width}), do: " style=\"width: #{width}px; margin-left: auto; margin-right: auto;\""
-  defp figure_width(_), do: ""
 end
