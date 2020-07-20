@@ -240,59 +240,46 @@ defmodule Oli.Authoring.Editing.PageEditor do
   # deleted state of the activity revision correct.
   defp resurrect_or_delete_activity_references(revision, change, project_slug) do
 
-    # Handle the case where this change does not include content
-    case Map.get(change, "content") do
+    if Map.get(change, :deleted) == true do
+      content = Map.get(revision.content, "model")
+      deletions = activity_references(content)
+      delete_activity_references(project_slug, revision, MapSet.new(), deletions)
+    else
+      # Handle the case where this change does not include content
+      case Map.get(change, "content") do
 
-      nil ->
+        nil -> {revision, []}
 
-        if Map.get(change, :deleted) do
-          IO.inspect("deletion2 called #{inspect(change)}")
-          content = Map.get(revision.content, "model")
-          deletions = activity_references(content)
-          case deletions |> MapSet.to_list() do
+        map ->
+          # First caculate the difference, if any, between the current revision and the
+          # change that we are about to commit
+          content1 = Map.get(revision.content, "model")
+          content2 = Map.get(map, "model")
 
-            [] -> {revision, []}
+          {additions, deletions} = diff_activity_references(content1, content2)
 
-            activity_ids ->
-              activity_revisions = AuthoringResolver.from_resource_id(project_slug, activity_ids)
-                                   |> Enum.map(fn revision ->
-                {:ok, updated} = Oli.Resources.update_revision(revision, %{deleted: MapSet.member?(deletions, revision.resource_id)})
-                updated
-              end)
-
-              {revision, activity_revisions}
-          end
-        else
-          {revision, []}
-        end
-
-      map ->
-
-        # First caculate the difference, if any, between the current revision and the
-        # change that we are about to commit
-        content1 = Map.get(revision.content, "model")
-        content2 = Map.get(map, "model")
-
-        {additions, deletions} = diff_activity_references(content1, content2)
-
-        # If there are activity-reference changes, resolve those activity ids to
-        # revisions and set their deleted flag appropriately
-        case MapSet.union(additions, deletions) |> MapSet.to_list() do
-
-          [] -> {revision, []}
-
-          activity_ids ->
-            activity_revisions = AuthoringResolver.from_resource_id(project_slug, activity_ids)
-            |> Enum.map(fn revision ->
-              {:ok, updated} = Oli.Resources.update_revision(revision, %{deleted: MapSet.member?(deletions, revision.resource_id)})
-              updated
-            end)
-
-            {revision, activity_revisions}
-        end
+          delete_activity_references(project_slug, revision, additions, deletions)
+      end
     end
+  end
 
+  # If there are activity-reference changes, resolve those activity ids to
+  # revisions and set their deleted flag appropriately
+  defp delete_activity_references(project_slug, revision, additions, deletions) do
 
+    case MapSet.union(additions, deletions) |> MapSet.to_list() do
+
+      [] -> {revision, []}
+
+      activity_ids ->
+        activity_revisions = AuthoringResolver.from_resource_id(project_slug, activity_ids)
+                             |> Enum.map(fn revision ->
+          {:ok, updated} = Oli.Resources.update_revision(revision, %{deleted: MapSet.member?(deletions, revision.resource_id)})
+          updated
+        end)
+
+        {revision, activity_revisions}
+    end
   end
 
   # Reverse references found in a resource update for activites. They will
