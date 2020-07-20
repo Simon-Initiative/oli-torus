@@ -8,8 +8,9 @@ defmodule OliWeb.Objectives.Objectives do
 
   alias Oli.Authoring.Editing.ObjectiveEditor
   alias OliWeb.Objectives.ObjectiveEntry
-  alias OliWeb.Objectives.ObjectiveRender
+  alias OliWeb.Objectives.CreateNew
   alias OliWeb.Objectives.Attachments
+  alias OliWeb.Objectives.Actions
   alias OliWeb.Common.ManualModal
   alias Oli.Publishing.ObjectiveMappingTransfer
   alias Oli.Authoring.Course
@@ -46,6 +47,7 @@ defmodule OliWeb.Objectives.Objectives do
       modal_shown: false,
       author: author,
       force_render: 0,
+      is_root_selected?: false,
       selected: nil,
       edit: :none)
     }
@@ -53,7 +55,7 @@ defmodule OliWeb.Objectives.Objectives do
 
   def render(assigns) do
     ~L"""
-    <div class="objectives container">
+    <div class="objectives container objectives-authoring">
       <div class="mb-2 row">
         <div class="col-12">
           <p class="text-secondary">
@@ -64,44 +66,41 @@ defmodule OliWeb.Objectives.Objectives do
           </p>
         </div>
       </div>
-      <div class="mb-2 mt-5 row">
-        <div class="col-12">
-          <h2>New Objective</h2>
-          <p>At the end of the course, my students should be able to...</p>
-        </div>
-      </div>
-      <div class="mb-2 row">
-        <div class="col-12">
-          <%= live_component @socket, ObjectiveRender, changeset: @changeset, project: @project, form_id: "create-objective",
-            place_holder: "Interpret trends in energy and material use over time", title_value: "", slug_value: "", parent_slug_value: "",
-            edit: @edit, method: "new", mode: :new_objective, phx_disable_with: "Creating objective...", button_text: "Create" %>
-        </div>
-      </div>
+
+      <%= live_component @socket, CreateNew, changeset: @changeset, project: @project %>
+
       <div class="mt-5 row">
         <div class="col-12">
-          <h2>Existing Objectives</h2>
-          <%= if Enum.count(@objective_mappings) == 0 do %>
-            <div class="mb-4">
-              This project does not yet have any objectives.
-            </div>
-          <% else %>
-            <div class="list-group list-group-flush w-100">
-              <%= for {objective_tree, index} <- Enum.with_index(@objectives_tree) do %>
-                <%= live_component @socket, ObjectiveEntry, changeset: @changeset, objective_mapping: objective_tree.mapping,
-                  children: objective_tree.children, depth: 1, index: index, project: @project, selected: @selected, edit: @edit %>
-              <% end %>
-            </div>
-          <% end %>
+          <div class="d-flex justify-content-between">
+            <h2>Existing Objectives</h2>
+            <%= live_component @socket, Actions, selected: @selected, is_root?: @is_root_selected? %>
+          </div>
         </div>
       </div>
 
-      <%= if @modal_shown do %>
-        <%= live_component @socket, ManualModal, title: "Delete Objective", modal_id: "deleteModal", ok_action: "delete", ok_label: "Delete", ok_style: "btn-danger" do %>
-          <%= live_component @socket, Attachments, attachment_summary: @attachment_summary, project: @project %>
+      <%= if Enum.count(@objective_mappings) == 0 do %>
+        <div class="mt-1 row">
+          <div class="col-12">
+            <p>This project has no objectives</p>
+          </div>
+        </div>
+      <% else %>
+
+        <%= for {objective_tree, index} <- Enum.with_index(@objectives_tree) do %>
+          <%= live_component @socket, ObjectiveEntry, changeset: @changeset, objective_mapping: objective_tree.mapping,
+            children: objective_tree.children, depth: 1, index: index, project: @project, selected: @selected, edit: @edit %>
         <% end %>
+
       <% end %>
 
-    <div>
+    </div>
+
+    <%= if @modal_shown do %>
+      <%= live_component @socket, ManualModal, title: "Delete Objective", modal_id: "deleteModal", ok_action: "delete", ok_label: "Delete", ok_style: "btn-danger" do %>
+        <%= live_component @socket, Attachments, attachment_summary: @attachment_summary, project: @project %>
+      <% end %>
+    <% end %>
+
     """
   end
 
@@ -120,7 +119,7 @@ defmodule OliWeb.Objectives.Objectives do
       end)
 
       # Build nested tree structure
-      root_parents = Enum.reduce(objective_mappings, [], fn(m, acc) ->
+      Enum.reduce(objective_mappings, [], fn(m, acc) ->
         a = Map.get(mapping_obs, m.resource.id)
         a = %{a | children: m.revision.children |> Enum.reduce(a.children,fn(c, mc) ->
           val = Map.get(mapping_obs, c)
@@ -137,7 +136,7 @@ defmodule OliWeb.Objectives.Objectives do
         end
       end)
 
-      Enum.sort_by(root_parents, &(&1.mapping.revision.title))
+
     end
   end
 
@@ -166,13 +165,33 @@ defmodule OliWeb.Objectives.Objectives do
 
   # handle change of selection
   def handle_event("select", %{"slug" => slug}, socket) do
-    {:noreply, assign(socket, selected: slug, attachment_summary: @default_attachment_summary)}
+
+    is_root_selected? = case Enum.find(socket.assigns.objectives_tree, fn %{mapping: mapping} -> mapping.revision.slug == slug end) do
+      nil -> false
+      _ -> true
+    end
+
+    {:noreply, assign(socket, selected: slug, is_root_selected?: is_root_selected?, attachment_summary: @default_attachment_summary)}
   end
 
   # handle change of edit
   def handle_event("modify", %{"slug" => slug}, socket) do
+
     {:noreply, assign(socket, :edit, slug)}
   end
+
+  def handle_event("add_sub", %{"slug" => slug}, socket) do
+
+    # even though we disable the "add sub objective" button when a non-root is selected,
+    # LV seems to still send the add_sub message on click.  So we catch that case here
+    # and ignore it
+    case socket.assigns.is_root_selected? do
+      true -> {:noreply, assign(socket, :edit, slug)}
+      false -> {:noreply, socket}
+    end
+
+  end
+
 
   def handle_event("cancel", _, socket) do
     {:noreply, assign(socket, :edit, :none)}
@@ -188,7 +207,7 @@ defmodule OliWeb.Objectives.Objectives do
       |> put_flash(:error, "Could not edit objective")
     end
 
-    {:noreply, socket}
+    {:noreply, assign(socket, :edit, :none)}
   end
 
   def handle_event("prepare_delete", _, socket) do
@@ -231,7 +250,7 @@ defmodule OliWeb.Objectives.Objectives do
         |> put_flash(:error, "Could not create objective")
     end
 
-    {:noreply, socket}
+    {:noreply, assign(socket, :edit, :none)}
   end
 
   # Here are listening for subscription notifications for newly created resources
