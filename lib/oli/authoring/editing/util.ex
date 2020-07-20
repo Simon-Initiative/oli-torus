@@ -38,9 +38,12 @@ defmodule Oli.Authoring.Editing.Utils do
   end
 
   def activity_references(content) do
-    Enum.filter(content, fn %{"type" => type} -> type == "activity-reference" end)
-    |> Enum.map(fn %{"activity_id" => id} -> id end)
-    |> MapSet.new()
+    case content do
+       nil -> MapSet.new()
+       _ -> Enum.filter(content, fn %{"type" => type} -> type == "activity-reference" end)
+            |> Enum.map(fn %{"activity_id" => id} -> id end)
+            |> MapSet.new()
+    end
   end
 
 end
