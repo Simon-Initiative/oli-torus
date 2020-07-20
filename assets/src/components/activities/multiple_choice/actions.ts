@@ -20,7 +20,7 @@ export class MCActions {
   static editStem(content: RichText) {
     return (draftState: MultipleChoiceModelSchema) => {
       draftState.stem.content = content;
-      draftState.authoring.previewText = toSimpleText({ children: content });
+      draftState.authoring.previewText = toSimpleText({ children: [content] } as any);
     };
   }
 

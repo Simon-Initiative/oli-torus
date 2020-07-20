@@ -29,7 +29,7 @@ export class ShortAnswerActions {
   static editStem(content: RichText) {
     return (draftState: ShortAnswerModelSchema) => {
       draftState.stem.content = content;
-      draftState.authoring.previewText = toSimpleText({ children: content });
+      draftState.authoring.previewText = toSimpleText({ children: [content] } as any);
     };
   }
 
