@@ -243,7 +243,28 @@ defmodule Oli.Authoring.Editing.PageEditor do
     # Handle the case where this change does not include content
     case Map.get(change, "content") do
 
-      nil -> {revision, []}
+      nil ->
+
+        if Map.get(change, :deleted) do
+          IO.inspect("deletion2 called #{inspect(change)}")
+          content = Map.get(revision.content, "model")
+          deletions = activity_references(content)
+          case deletions |> MapSet.to_list() do
+
+            [] -> {revision, []}
+
+            activity_ids ->
+              activity_revisions = AuthoringResolver.from_resource_id(project_slug, activity_ids)
+                                   |> Enum.map(fn revision ->
+                {:ok, updated} = Oli.Resources.update_revision(revision, %{deleted: MapSet.member?(deletions, revision.resource_id)})
+                updated
+              end)
+
+              {revision, activity_revisions}
+          end
+        else
+          {revision, []}
+        end
 
       map ->
 
