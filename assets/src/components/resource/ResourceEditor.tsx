@@ -375,6 +375,19 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     const isSaving =
       (this.state.persistence === 'inflight' || this.state.persistence === 'pending');
 
+    const PreviewButton = () => (
+      <button
+        role="button"
+        className="btn btn-sm btn-outline-primary ml-3"
+        onClick={this.onPreviewClick}
+        disabled={isSaving}>
+        Preview Page
+        {state.metaModifier &&
+          <i className="las la-external-link-alt ml-1"></i>
+        }
+      </button>
+    );
+
     if (state.previewMode) {
       return (
         <div className="row">
@@ -423,16 +436,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
             editMode={this.state.editMode}>
             <PersistenceStatus persistence={this.state.persistence}/>
 
-            <button
-              role="button"
-              className="btn btn-sm btn-outline-primary ml-3"
-              onClick={this.onPreviewClick}
-              disabled={isSaving}>
-              Preview Page
-              {state.metaModifier &&
-                <i className="las la-external-link-alt ml-1"></i>
-              }
-            </button>
+            <PreviewButton />
 
             <UndoRedo
               canRedo={this.state.undoable.redoStack.size > 0}
