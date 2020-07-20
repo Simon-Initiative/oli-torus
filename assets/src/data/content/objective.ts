@@ -4,4 +4,5 @@ export { ObjectiveSlug } from 'data/types';
 export type Objective = {
   slug: ObjectiveSlug,
   title: string,
+  parentSlug: ObjectiveSlug | null,
 };

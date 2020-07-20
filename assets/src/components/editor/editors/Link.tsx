@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Popover from 'react-tiny-popover';
 import * as ContentModel from 'data/content/model';
 import { ReactEditor } from 'slate-react';
-import { Transforms } from 'slate';
+import { Transforms, Node, Path } from 'slate';
 import { EditorProps, CommandContext } from './interfaces';
 import { Command, CommandDesc } from '../interfaces';
 import { updateModel } from './utils';
@@ -34,14 +34,17 @@ const wrapLink = (editor: ReactEditor, link: ContentModel.Hyperlink) => {
 const command: Command = {
   execute: (context, editor: ReactEditor) => {
 
-    const href = '';
-    // Create a new link object... adding in the 'open' attribute
-    // which is present merely to allow the popup link editor to appear
-    // at the newly rendered slate link editor
-    const link = ContentModel.create<ContentModel.Hyperlink>(
-      { type: 'a', href, target: 'self', children: [{ text: '' }], id: guid(), open: true });
-    wrapLink(editor, link);
-
+    // make sure we arent creating a link within a link
+    const parentType = Node.parent(editor, editor.selection?.anchor.path as Path)?.type;
+    if (parentType !== 'a') {
+      const href = '';
+      // Create a new link object... adding in the 'open' attribute
+      // which is present merely to allow the popup link editor to appear
+      // at the newly rendered slate link editor
+      const link = ContentModel.create<ContentModel.Hyperlink>(
+        { type: 'a', href, target: 'self', children: [{ text: '' }], id: guid(), open: true });
+      wrapLink(editor, link);
+    }
   },
   precondition: (editor: ReactEditor) => {
     return true;

@@ -77,7 +77,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
 
       # attach it to a page and release the lock
       content = %{ "stem" => "one" }
-      {:ok, {%{slug: slug, resource_id: activity_id}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content)
+      {:ok, {%{slug: slug, resource_id: activity_id}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
 
       update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug, "purpose" => "none"}]}}
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
@@ -101,7 +101,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
 
       # attach it to a page and release the lock
       content = %{ "stem" => "one" }
-      {:ok, {%{slug: slug, resource_id: activity_id}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content)
+      {:ok, {%{slug: slug, resource_id: activity_id}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
 
       update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug, "purpose" => "none"}]}}
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)

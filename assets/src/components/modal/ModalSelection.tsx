@@ -17,6 +17,7 @@ export interface ModalSelectionProps {
   cancelLabel?: string;
   disableInsert?: boolean;
   title: string;
+  hideOkButton?: boolean;
   onInsert: () => void;
   onCancel: () => void;
   size?: sizes;
@@ -64,11 +65,13 @@ class ModalSelection extends React.PureComponent<ModalSelectionProps, {}> {
               {this.props.children}
             </div>
             <div className="modal-footer">
-              <button
-                disabled={disableInsert}
-                type="button"
-                onClick={this.onInsert}
-                className={`btn btn-${okClassName}`}>{okLabel}</button>
+              {this.props.hideOkButton === true
+                ? null
+                : <button
+                    disabled={disableInsert}
+                    type="button"
+                    onClick={this.onInsert}
+                    className={`btn btn-${okClassName}`}>{okLabel}</button>}
               <button type="button" className="btn btn-link"
                 onClick={this.onCancel}
                 data-dismiss="modal">{cancelLabel}</button>

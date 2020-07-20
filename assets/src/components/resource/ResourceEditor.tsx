@@ -13,11 +13,15 @@ import { PreviewButton } from '../content/PreviewButton';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug } from 'data/types';
 import * as Persistence from 'data/persistence/resource';
-import { UndoableState, processRedo, processUndo, processUpdate, init } from './undo';
+import {
+  UndoableState, processRedo, processUndo, processUpdate, init,
+  registerUndoRedoHotkeys, unregisterUndoRedoHotkeys,
+} from './undo';
 import { releaseLock, acquireLock } from 'data/persistence/lock';
 import { Message, createMessage } from 'data/messages/messages';
 import { Banner } from '../messages/Banner';
 import { BreadcrumbTrail } from 'components/common/BreadcrumbTrail';
+import { create } from 'data/persistence/objective';
 
 export interface ResourceEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap;   // Map of activity types to activity elements
@@ -35,6 +39,7 @@ type ResourceEditorState = {
   messages: Message[],
   undoable: UndoableState<Undoable>,
   allObjectives: Immutable.List<Objective>,
+  childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>,
   activities: Immutable.Map<string, Activity>,
   editMode: boolean,
   persistence: 'idle' | 'pending' | 'inflight',
@@ -66,11 +71,31 @@ function unregisterUnload(listener: any) {
   window.removeEventListener('beforeunload', listener);
 }
 
+function mapChildrenObjectives(objectives: Objective[])
+  : Immutable.Map<ObjectiveSlug, Immutable.List<Objective>> {
+
+  return objectives.reduce(
+    (map, o) => {
+      if (o.parentSlug !== null) {
+        let updatedMap = map;
+        if (o.parentSlug !== null && !map.has(o.parentSlug)) {
+          updatedMap = updatedMap.set(o.parentSlug, Immutable.List());
+        }
+        const appended = (updatedMap.get(o.parentSlug) as any).push(o);
+        return updatedMap.set(o.parentSlug, appended);
+      }
+      return map;
+    },
+    Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>(),
+  );
+}
+
 // The resource editor
 export class ResourceEditor extends React.Component<ResourceEditorProps, ResourceEditorState> {
 
   persistence: PersistenceStrategy;
   windowUnloadListener: any;
+  undoRedoListener: any;
 
   constructor(props: ResourceEditorProps) {
     super(props);
@@ -87,6 +112,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       }),
       persistence: 'idle',
       allObjectives: Immutable.List<Objective>(allObjectives),
+      childrenObjectives: mapChildrenObjectives(allObjectives),
       activities: Immutable.Map<string, Activity>(
         Object.keys(activities).map(k => [k, activities[k]])),
     };
@@ -113,6 +139,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       this.setState({ editMode });
       if (editMode) {
         this.windowUnloadListener = registerUnload(this.persistence);
+        this.undoRedoListener = registerUndoRedoHotkeys(this.undo.bind(this), this.redo.bind(this));
       }
     });
   }
@@ -121,6 +148,10 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     this.persistence.destroy();
     if (this.windowUnloadListener !== null) {
       unregisterUnload(this.windowUnloadListener);
+    }
+
+    if (this.undoRedoListener !== null) {
+      unregisterUndoRedoHotkeys(this.undoRedoListener);
     }
   }
 
@@ -187,6 +218,41 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       }
     };
 
+    const onRegisterNewObjective = (title: string) : Promise<Objective> => {
+      return new Promise((resolve, reject) => {
+
+        create(props.projectSlug, title)
+        .then((result) => {
+          if (result.type === 'success') {
+
+            const objective = {
+              slug: result.revisionSlug,
+              title,
+              parentSlug: null,
+            };
+
+            this.setState({
+              allObjectives: this.state.allObjectives.push(objective),
+              childrenObjectives:
+                this.state.childrenObjectives.set(objective.slug, Immutable.List<Objective>()),
+            });
+
+            resolve(objective);
+
+          } else {
+            throw result;
+          }
+        })
+        .catch((e) => {
+          // TODO: this should probably give a message to the user indicating that
+          // objective creation failed once we have a global messaging
+          // infrastructure in place. For now, we will just log to the conosle
+          console.error('objective creation failed', e);
+        });
+
+      });
+    };
+
     return (
       <div className="row">
         <div className="col-12">
@@ -211,9 +277,11 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
               canUndo={this.state.undoable.undoStack.size > 0}
               onUndo={this.undo} onRedo={this.redo}/>
           </TitleBar>
-
           <div>
             <Editors {...props} editMode={this.state.editMode}
+              objectives={this.state.allObjectives}
+              childrenObjectives={this.state.childrenObjectives}
+              onRegisterNewObjective={onRegisterNewObjective}
               activities={this.state.activities}
               onRemove={index => onEdit(this.state.undoable.current.content.delete(index))}
               onEdit={(c, index) => {

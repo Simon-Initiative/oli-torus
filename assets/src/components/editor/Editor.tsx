@@ -1,21 +1,30 @@
-import React, { useMemo, useCallback, useEffect, useState, KeyboardEvent } from 'react';
+import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { Slate, Editable, withReact, ReactEditor } from 'slate-react';
 import { createEditor, Node, Point, Range, Editor as SlateEditor, Transforms, Path } from 'slate';
-import { create, Mark, ModelElement, schema, Paragraph, SchemaConfig } from 'data/content/model';
+import isHotkey from 'is-hotkey';
+import {
+  create, Mark, ModelElement, schema, Paragraph,
+  SchemaConfig, Selection,
+} from 'data/content/model';
 import { editorFor, markFor } from './editors';
 import { ToolbarItem, CommandContext } from './interfaces';
 import { FixedToolbar, HoveringToolbar } from './Toolbars';
 import { onKeyDown as listOnKeyDown } from './editors/Lists';
+import { commandDesc as linkCmd } from './editors/Link';
 import { getRootOfText } from './utils';
+import { toggleMark } from './commands';
 import { installNormalizer } from './normalizer';
 import guid from 'utils/guid';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor (including selection state)
-  onEdit: (value: any) => void;
+  onEdit: (value: ModelElement[], selection: Selection) => void;
 
   // The content to display
-  value: Node[];
+  value: ModelElement[];
+
+  // The current selection
+  selection: Selection;
 
   // The fixed toolbar configuration
   toolbarItems: ToolbarItem[];
@@ -28,7 +37,7 @@ export type EditorProps = {
 
 // Pressing the Enter key on any void block should insert an empty
 // paragraph after that node
-const voidOnKeyDown = (editor: ReactEditor, e: KeyboardEvent) => {
+const voidOnKeyDown = (editor: ReactEditor, e: React.KeyboardEvent) => {
 
   if (e.key === 'Enter') {
     if (editor.selection !== null && Range.isCollapsed(editor.selection)) {
@@ -52,7 +61,7 @@ const voidOnKeyDown = (editor: ReactEditor, e: KeyboardEvent) => {
 
 
 // Handles exiting a header item via Enter key, setting the next block back to normal (p)
-function handleFormattingTermination(editor: SlateEditor, e: KeyboardEvent) {
+function handleFormattingTermination(editor: SlateEditor, e: React.KeyboardEvent) {
   if (e.key === 'Enter' && editor.selection !== null && Range.isCollapsed(editor.selection)) {
 
     const [match] = SlateEditor.nodes(editor, {
@@ -146,16 +155,37 @@ export const Editor = React.memo((props: EditorProps) => {
     }
   };
 
+  editor.selection = props.selection;
+
   const renderElement = useCallback((props) => {
     const model = props.element as ModelElement;
 
     return editorFor(model, props, editor, commandContext);
   }, []);
 
-  const onKeyDown = useCallback((e: KeyboardEvent) => {
+  // register hotkeys
+  const isBoldHotkey = isHotkey('mod+b');
+  const isItalicHotkey = isHotkey('mod+i');
+  const isCodeHotkey = isHotkey('mod+;');
+  const isLinkHotkey = isHotkey('mod+l');
+
+  const hotkeyHandler = (editor: ReactEditor, e: KeyboardEvent) => {
+    if (isBoldHotkey(e)) {
+      toggleMark(editor, 'strong');
+    } else if (isItalicHotkey(e)) {
+      toggleMark(editor, 'em');
+    } else if (isCodeHotkey(e)) {
+      toggleMark(editor, 'code');
+    } else if (isLinkHotkey(e)) {
+      linkCmd.command.execute(props.commandContext, editor);
+    }
+  };
+
+  const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     voidOnKeyDown(editor, e);
     listOnKeyDown(editor, e);
     handleFormattingTermination(editor, e);
+    hotkeyHandler(editor, e.nativeEvent);
   }, []);
 
   const renderLeaf = useCallback(({ attributes, children, leaf }: any) => {
@@ -166,12 +196,12 @@ export const Editor = React.memo((props: EditorProps) => {
     return <span {...attributes}>{markup}</span>;
   }, []);
 
-  const onChange = (value: Node[]) => {
-    const { operations } = editor;
+  const onChange = (value: ModelElement[]) => {
+    const { operations, selection } = editor;
 
     // Determine if this onChange was due to an actual content change
     if (operations.filter(({ type }) => type !== 'set_selection').length) {
-      props.onEdit(value);
+      props.onEdit(value, selection);
     }
   };
 

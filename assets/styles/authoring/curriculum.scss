@@ -1,0 +1,28 @@
+@import "authoring/variables";
+
+.container-editor {
+
+  .targeted-objectives {
+
+    .objective {
+      margin-left: 20px;
+      color: $info;
+      font-size: 0.9em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+  }
+
+  .no-objectives {
+    margin-left: 20px;
+    color: $warning;
+    font-size: 0.9em;
+
+  }
+
+  .resource-label {
+    font-size: 20pt;
+  }
+}

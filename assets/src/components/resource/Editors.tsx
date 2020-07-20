@@ -1,5 +1,6 @@
 import * as Immutable from 'immutable';
 import React, { useState } from 'react';
+import isHotkey from 'is-hotkey';
 import {
   ResourceContent, Activity, ResourceType, ActivityPurposes, ContentPurposes,
   ActivityReference, StructuredContent, ResourceContext,
@@ -14,6 +15,7 @@ import { Purpose } from '../content/Purpose';
 import { DeleteButton } from '../misc/DeleteButton';
 import * as Persistence from 'data/persistence/activity';
 import { EditLink } from '../misc/EditLink';
+import { Objective, ObjectiveSlug } from 'data/content/objective';
 import './Editors.scss';
 import { getContentDescription } from 'data/content/utils';
 import { toSimpleText } from 'data/content/text';
@@ -34,6 +36,9 @@ export type EditorsProps = {
   projectSlug: ProjectSlug,
   resourceSlug: ResourceSlug,
   resourceContext: ResourceContext,
+  objectives: Immutable.List<Objective>,
+  childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>,
+  onRegisterNewObjective: (text: string) => Promise<Objective>,
 };
 
 interface ActivityPayload {
@@ -88,6 +93,9 @@ type AddResourceOrDropTargetProps = {
   resourceContext: ResourceContext,
   onDrop: (e: React.DragEvent<HTMLDivElement>, index: number) => void,
   onAddItem: (c : ResourceContent, index: number, a? : Activity) => void,
+  objectives: Immutable.List<Objective>,
+  childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>,
+  onRegisterNewObjective: (text: string) => Promise<Objective>,
 };
 
 const AddResourceOrDropTarget = ({
@@ -99,12 +107,18 @@ const AddResourceOrDropTarget = ({
   resourceContext,
   onDrop,
   onAddItem,
+  objectives,
+  childrenObjectives,
+  onRegisterNewObjective,
 }: AddResourceOrDropTargetProps) => isReorderMode
   ? (
     <DropTarget id={id} index={index} onDrop={onDrop}/>
   )
   : (
     <AddResourceContent
+      objectives={objectives}
+      childrenObjectives={childrenObjectives}
+      onRegisterNewObjective={onRegisterNewObjective}
       editMode={editMode}
       isLast={id === 'last'}
       index={index}
@@ -282,7 +296,7 @@ export const Editors = (props: EditorsProps) => {
               Persistence.create(
                 droppedContent.project,
                 droppedContent.activity.typeSlug,
-                droppedContent.activity.model)
+                droppedContent.activity.model, [])
               .then((result: Persistence.Created) => {
                 onEditContentList(content.insert(index, droppedContent.reference));
               });
@@ -410,10 +424,14 @@ export const Editors = (props: EditorsProps) => {
       });
     };
 
+    // register keydown handlers
+    const isShiftArrowDown = isHotkey('shift+down');
+    const isShiftArrowUp = isHotkey('shift+up');
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (e.shiftKey && e.key === 'ArrowDown') {
+      if (isShiftArrowDown(e.nativeEvent)) {
         onMove(index, false);
-      } else if (e.shiftKey && e.key === 'ArrowUp') {
+      } else if (isShiftArrowUp(e.nativeEvent)) {
         onMove(index, true);
       }
     };
@@ -481,6 +499,9 @@ export const Editors = (props: EditorsProps) => {
 
         <AddResourceOrDropTarget
           id={c.id}
+          objectives={props.objectives}
+          childrenObjectives={props.childrenObjectives}
+          onRegisterNewObjective={props.onRegisterNewObjective}
           index={index}
           editMode={editMode}
           isReorderMode={isReorderMode}
@@ -509,6 +530,7 @@ export const Editors = (props: EditorsProps) => {
       {editors}
 
       <AddResourceOrDropTarget
+        {...props}
         id="last"
         index={editors.size}
         editMode={editMode}

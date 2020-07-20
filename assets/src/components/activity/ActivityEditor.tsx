@@ -8,7 +8,10 @@ import { TitleBar } from '../content/TitleBar';
 import { UndoRedo } from '../content/UndoRedo';
 import { Navigation } from './Navigation';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug, ActivitySlug } from 'data/types';
-import { UndoableState, processRedo, processUndo, processUpdate, init } from '../resource/undo';
+import {
+  UndoableState, processRedo, processUndo, processUpdate, init,
+  registerUndoRedoHotkeys, unregisterUndoRedoHotkeys,
+} from '../resource/undo';
 import { releaseLock, acquireLock } from 'data/persistence/lock';
 import * as Persistence from 'data/persistence/activity';
 import { ActivityModelSchema } from 'components/activities/types';
@@ -60,6 +63,7 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
 
   persistence: PersistenceStrategy;
   windowUnloadListener: any;
+  undoRedoListener: any;
   ref: any;
 
   constructor(props: ActivityEditorProps) {
@@ -116,6 +120,7 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
       this.setState({ editMode });
       if (editMode) {
         this.windowUnloadListener = registerUnload(this.persistence, this.beforeUnload.bind(this));
+        this.undoRedoListener = registerUndoRedoHotkeys(this.undo.bind(this), this.redo.bind(this));
       }
     });
 
@@ -134,6 +139,10 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
     this.persistence.destroy();
     if (this.windowUnloadListener !== null) {
       unregisterUnload(this.windowUnloadListener);
+    }
+
+    if (this.undoRedoListener !== null) {
+      unregisterUndoRedoHotkeys(this.undoRedoListener);
     }
   }
 

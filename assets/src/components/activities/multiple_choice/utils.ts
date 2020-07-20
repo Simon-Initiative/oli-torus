@@ -41,13 +41,16 @@ export const defaultMCModel : () => MultipleChoiceModelSchema = () => {
 export function fromText(text: string): { id: string, content: RichText } {
   return {
     id: guid() + '',
-    content: [
-      ContentModel.create<ContentModel.Paragraph>({
-        type: 'p',
-        children: [{ text }],
-        id: guid() + '',
-      }),
-    ],
+    content: {
+      model:[
+        ContentModel.create<ContentModel.Paragraph>({
+          type: 'p',
+          children: [{ text }],
+          id: guid() + '',
+        }),
+      ],
+      selection: null,
+    },
   };
 }
 
