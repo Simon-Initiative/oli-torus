@@ -251,7 +251,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
         nil -> {revision, []}
 
         map ->
-          # First caculate the difference, if any, between the current revision and the
+          # First calculate the difference, if any, between the current revision and the
           # change that we are about to commit
           content1 = Map.get(revision.content, "model")
           content2 = Map.get(map, "model")
