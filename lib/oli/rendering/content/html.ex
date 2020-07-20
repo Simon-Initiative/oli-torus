@@ -57,9 +57,9 @@ defmodule Oli.Rendering.Content.Html do
 
   def youtube(%Context{} = _context, _, %{"src" => src} = attrs) do
     default_width = 640
-    default_height = 476
 
-    wrap_with_figure(Map.merge(attrs, %{"width" => default_width}), ["""
+    wrap_with_figure(Map.merge(attrs, %{"width" => default_width}), [
+    """
     <div className="embed-responsive embed-responsive-16by9">
       <iframe
         class="embed-responsive-item"
