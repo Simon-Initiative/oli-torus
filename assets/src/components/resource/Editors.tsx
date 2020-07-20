@@ -57,7 +57,7 @@ interface UnknownPayload {
 type DragPayload = StructuredContent | ActivityPayload | UnknownPayload;
 
 // @ts-ignore
-const DropTarget = ({ id, index, onDrop }) => {
+const DropTarget = ({ id, index, isLast, onDrop }) => {
   const [hovered, setHovered] = useState(false);
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => setHovered(true);
@@ -74,7 +74,7 @@ const DropTarget = ({ id, index, onDrop }) => {
 
   return (
     <div key={id + '-drop'}
-      className={classNames(['drop-target ', hovered ? 'hovered' : ''])}
+      className={classNames(['drop-target ', hovered ? 'hovered' : '', isLast ? 'is-last' : ''])}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -111,7 +111,7 @@ const AddResourceOrDropTarget = ({
   onRegisterNewObjective,
 }: AddResourceOrDropTargetProps) => isReorderMode
   ? (
-    <DropTarget id={id} index={index} onDrop={onDrop}/>
+    <DropTarget id={id} index={index} isLast={id === 'last'} onDrop={onDrop}/>
   )
   : (
     <AddResourceContent
