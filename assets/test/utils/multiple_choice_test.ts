@@ -63,6 +63,7 @@ function testDefaultModel(): MultipleChoiceModelSchema {
         },
       ],
       transformations: [],
+      previewText: '',
     },
   };
 }

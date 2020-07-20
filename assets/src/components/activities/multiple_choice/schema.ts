@@ -10,6 +10,7 @@ export interface MultipleChoiceModelSchema extends ActivityModelSchema {
   authoring: {
     parts: Part[];
     transformations: Transformation[];
+    previewText: string;
   };
 }
 

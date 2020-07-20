@@ -100,7 +100,7 @@ export const AddResourceContent = (
           activitySlug: result.revisionSlug,
           typeSlug: editorDesc.slug,
           model,
-          transformed: result.transformed,
+          objectives: {},
         };
 
         onAddItem(resourceContent, index, activity);
