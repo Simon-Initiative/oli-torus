@@ -50,10 +50,10 @@ defmodule Oli.Rendering.Content.Html do
       _ -> []
     end
 
-    ["<img"]
+    wrap_with_figure(attrs, ["<img"]
       ++ height_width
       ++ [" class=\"img-fluid img-thumbnail\""]
-      ++ [" style=\"display: block; max-height: 500px; margin-left: auto; margin-right: auto;\" src=\"", src, "\"/>\n"]
+      ++ [" style=\"display: block; max-height: 500px; margin-left: auto; margin-right: auto;\" src=\"", src, "\"/>\n"])
   end
 
   def youtube(%Context{} = _context, _, %{"src" => src} = attrs) do
@@ -188,6 +188,6 @@ defmodule Oli.Rendering.Content.Html do
   # Accessible captions are created using a combination of the <figure /> and <figcaption /> elements.
   defp wrap_with_figure(%{"caption" => caption}, content) do
     ["<figure>"] ++ content ++ ["<figcaption>#{caption}</figcaption></figure>"]
-end
+  end
   defp wrap_with_figure(_attrs, content), do: content
 end
