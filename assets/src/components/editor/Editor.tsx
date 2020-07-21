@@ -52,6 +52,8 @@ const voidOnKeyDown = (editor: ReactEditor, e: React.KeyboardEvent) => {
           Transforms.insertNodes(editor, create<Paragraph>(
             { type: 'p', children: [{ text: '' }], id: guid() }),
             { at: Path.next(path) });
+
+          Transforms.select(editor, Path.next(path));
         }
       });
 
