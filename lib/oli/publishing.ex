@@ -8,6 +8,7 @@ defmodule Oli.Publishing do
   alias Oli.Delivery.Sections
   alias Oli.Resources.{Revision, ResourceType}
   alias Oli.Publishing.{Publication, PublishedResource}
+  alias Oli.Publishing.AuthoringResolver
 
   def query_unpublished_revisions_by_type(project_slug, type) do
     publication_id = get_unpublished_publication_by_slug!(project_slug).id
@@ -600,6 +601,21 @@ defmodule Oli.Publishing do
 
     Enum.reduce(%{}, mappings, fn e, m -> Map.put(m, e.resource_id, e) end)
 
+  end
+
+  @doc """
+  Given the project_slug and revision_slug, retrieve the corresponding author
+  or nil
+  """
+  def retrieve_lock_author(project_slug, revision_slug) do
+    revision = AuthoringResolver.from_revision_slug(project_slug, revision_slug)
+    if revision !== nil do
+      publication = get_unpublished_publication_by_slug!(project_slug)
+      [lock_info | _tail] = retrieve_lock_info([revision.resource_id], publication.id)
+      lock_info.author
+    else
+      nil
+    end
   end
 
   @doc """

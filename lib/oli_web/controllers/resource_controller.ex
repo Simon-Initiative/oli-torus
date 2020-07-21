@@ -45,19 +45,13 @@ defmodule OliWeb.ResourceController do
   def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
     author = conn.assigns[:current_author]
     is_admin? = Accounts.is_admin?(author)
-    revision = AuthoringResolver.from_revision_slug(project_slug, revision_slug)
-    publication = Publishing.get_unpublished_publication_by_slug!(project_slug)
-    [lock_info | _tail] = Publishing.retrieve_lock_info([revision.resource_id], publication.id)
 
-    lock_author = case lock_info.author do
-      nil -> nil
-      _ ->
-        # Return nil if author is the same as edit requester
-        if lock_info.author.email == author.email do
-          nil
-        else
-          lock_info.author
-        end
+    lock_author = Publishing.retrieve_lock_author(project_slug, revision_slug)
+    # Return nil if author is the same as edit requester
+    lock_author = if lock_author == nil || lock_author.email == author.email do
+      nil
+    else
+      lock_author
     end
 
     case PageEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do

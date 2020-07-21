@@ -20,7 +20,7 @@
     <strong>Read only.</strong> <span>User <%= @author.email %> is currently editing.</span>
 
     <form  style="float: right;" class="form-inline my-2 my-lg-0">
-       <button  class="btn btn-link shadow-none" type="button" data-toggle="modal" data-target="#configure-token-modal">Learn more</button>
+       <button  class="btn btn-link shadow-none" type="button" data-toggle="modal" data-target="#learn-more-modal">Learn more</button>
        <%= if @is_admin? do %>
          <span style="float: right;">
            <%= link class: "toolbar-link", to: Routes.live_path(OliWeb.Endpoint, OliWeb.RevisionHistory, @project_slug,@revision_slug) do %>
@@ -32,7 +32,7 @@
 
   </div>
 <% end %>
-<div class="modal fade" id="configure-token-modal" data-backdrop="static" tabindex="-1">
+<div class="modal fade" id="learn-more-modal" data-backdrop="static" tabindex="-1">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
