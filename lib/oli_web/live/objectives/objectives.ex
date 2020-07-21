@@ -35,6 +35,11 @@ defmodule OliWeb.Objectives.Objectives do
 
     objectives_tree = to_objective_tree(objective_mappings)
 
+    selected = case length(objectives_tree) do
+      0 -> nil
+      _ -> hd(objectives_tree).mapping.revision.slug
+    end
+
     {:ok, assign(socket,
       active: :objectives,
       objective_mappings: objective_mappings,
@@ -49,7 +54,7 @@ defmodule OliWeb.Objectives.Objectives do
       force_render: 0,
       is_root_selected?: false,
       can_delete?: false,
-      selected: nil,
+      selected: selected,
       edit: :none)
     }
   end
