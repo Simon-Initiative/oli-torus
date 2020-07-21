@@ -105,7 +105,6 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         |> Map.get("objectives")
 
       {:error, e} ->
-        IO.inspect e
         %{}
     end
 

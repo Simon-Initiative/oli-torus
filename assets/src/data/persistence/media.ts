@@ -82,8 +82,6 @@ export function fetchMedia(
     order ? { order } : {},
   );
 
-  console.log('urlFilter', urlFilter)
-
   const params = {
     method: 'GET',
     query,

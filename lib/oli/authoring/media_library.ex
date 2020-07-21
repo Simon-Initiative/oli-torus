@@ -172,7 +172,6 @@ defmodule Oli.Authoring.MediaLibrary do
     |> Enum.reduce(dynamic([item, project: p], p.slug == ^slug and item.deleted == false), fn
 
       {:mime_filter, nil}, dynamic ->
-        IO.inspect("mime here 1")
         dynamic
 
       {:url_filter, nil}, dynamic ->
@@ -182,7 +181,6 @@ defmodule Oli.Authoring.MediaLibrary do
         dynamic
 
       {:mime_filter, value}, dynamic ->
-        IO.inspect("mime here 2")
         dynamic([p], ^dynamic and p.mime_type in ^value)
 
       {:url_filter, value}, dynamic ->
