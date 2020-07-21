@@ -19,13 +19,33 @@
   <div class="alert alert-warning alert-dismissible fade show" style="position: sticky; top: 0px; z-index: 900;" role="alert">
     <strong>Read only User <%= @author.email %> is currently editing.</strong>
 
-    <%= if @is_admin? do %>
-      <span style="float: right;">
-        <%= link class: "toolbar-link", to: Routes.live_path(OliWeb.Endpoint, OliWeb.RevisionHistory, @project_slug,@revision_slug) do %>
-          <span><i class="fas fa-history"></i></span> View History
-        <% end %>
-      </span>
-    <% end %>
+    <form  style="float: right;" class="form-inline my-2 my-lg-0">
+       <button  class="btn btn-link shadow-none" type="button" data-toggle="modal" data-target="#configure-token-modal">Learn more</button>
+       <%= if @is_admin? do %>
+         <span style="float: right;">
+           <%= link class: "toolbar-link", to: Routes.live_path(OliWeb.Endpoint, OliWeb.RevisionHistory, @project_slug,@revision_slug) do %>
+             <span><i class="fas fa-history"></i></span> View History
+           <% end %>
+         </span>
+       <% end %>
+    </form>
 
   </div>
 <% end %>
+<div class="modal fade" id="configure-token-modal" data-backdrop="static" tabindex="-1">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        The Torus authoring platform allows multiple users to author and edit course materials. To prevent loss of data, the system eliminates the possibility that two users can concurrently edit the same course resource (e.g. page, assessment) by requiring a user to first 'lock' a resource before editing it. Another user currently has this resource locked. When they finish editing this lock will be released and you can then begin editing. You will not automatically be notified that they are done editing. You will have to refresh your browser and revisit this resource to determine if they are done editing.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
