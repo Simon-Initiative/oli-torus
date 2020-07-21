@@ -11,6 +11,6 @@
   OLI.initActivityBridge('eventIntercept');
 </script>
 
-<%= if @graded do %>
+<%= if @graded && @activity_count > 0 do %>
   <%= link "Submit Assessment", to: Routes.page_delivery_path(@conn, :finalize_attempt, @context_id, @slug, @attempt_guid), class: "btn btn-primary btn-lg" %>
 <% end %>

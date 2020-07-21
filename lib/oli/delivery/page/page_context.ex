@@ -4,8 +4,8 @@ defmodule Oli.Delivery.Page.PageContext do
   Defines the context required to render a page in delivery mode.
   """
 
-  @enforce_keys [:summary, :page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page]
-  defstruct [:summary, :page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page]
+  @enforce_keys [:summary, :page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page, :activity_count]
+  defstruct [:summary, :page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page, :activity_count]
 
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Delivery.Page.PageContext
@@ -51,6 +51,8 @@ defmodule Oli.Delivery.Page.PageContext do
       page_revision
     end
 
+    activity_count = activity_reference_count(Map.get(page_revision.content, "model"))
+
     {objectives, previous, next} = retrieve_objectives_previous_next(context_id, page_revision, container_id)
 
     {:ok, summary} = Summary.get_summary(context_id, user)
@@ -63,8 +65,18 @@ defmodule Oli.Delivery.Page.PageContext do
       activities: activities,
       objectives: objectives,
       previous_page: previous,
-      next_page: next
+      next_page: next,
+      activity_count: activity_count
     }
+  end
+
+  defp activity_reference_count(content) do
+    case content do
+      nil -> 0
+      [] -> 0
+      _ -> Enum.filter(content, fn %{"type" => type} -> type == "activity-reference" end)
+           |> Enum.count
+    end
   end
 
   # We combine retrieve objective titles and previous next page
