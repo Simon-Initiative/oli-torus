@@ -68,7 +68,7 @@ export function createMedia(
 
 export function fetchMedia(
   project: ProjectSlug, offset?: number, limit?: number,
-  mimeFilter?: string[], pathFilter?: string, searchText?: string, orderBy?: string,
+  mimeFilter?: string[], urlFilter?: string, searchText?: string, orderBy?: string,
   order?: string): Promise<PaginatedResponse<MediaItem> | ServerError> {
 
   const query = Object.assign(
@@ -76,7 +76,7 @@ export function fetchMedia(
     offset ? { offset } : {},
     limit ? { limit } : {},
     mimeFilter ? { mimeFilter } : {},
-    pathFilter ? { pathFilter } : {},
+    urlFilter ? { urlFilter } : {},
     searchText ? { searchText } : {},
     orderBy ? { orderBy } : {},
     order ? { order } : {},

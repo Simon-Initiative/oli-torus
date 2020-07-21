@@ -169,7 +169,6 @@ export const fetchMediaItemByPath = (courseId: ProjectSlug, url: string) => (
 
     return persistence.fetchMedia(courseId, offset, limit, undefined, url)
       .then((response) => {
-
         if (response.type === 'success') {
           const data = Map<string, MediaItem>(
             response.results.map(item => [item.guid, item]));

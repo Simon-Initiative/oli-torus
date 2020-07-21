@@ -23,7 +23,15 @@ export interface ModalSelectionProps {
   size?: sizes;
 }
 
-class ModalSelection extends React.PureComponent<ModalSelectionProps, {}> {
+interface ModalSelectionState {
+  disableInsert: boolean;
+}
+
+class ModalSelection extends React.PureComponent<ModalSelectionProps, ModalSelectionState> {
+
+  state = {
+    disableInsert: this.props.disableInsert === undefined ? false : this.props.disableInsert,
+  };
 
   componentDidMount() {
     (window as any).$(this.modal).modal('show');
@@ -38,7 +46,7 @@ class ModalSelection extends React.PureComponent<ModalSelectionProps, {}> {
   onCancel = (e: any) => { e.preventDefault(); this.props.onCancel(); };
 
   render() {
-    const disableInsert = this.props.disableInsert;
+    const disableInsert = this.state.disableInsert;
     const okLabel = this.props.okLabel !== undefined
       ? this.props.okLabel : 'Insert';
     const cancelLabel = this.props.cancelLabel !== undefined
@@ -62,16 +70,19 @@ class ModalSelection extends React.PureComponent<ModalSelectionProps, {}> {
               </button>
             </div>
             <div className="modal-body">
-              {this.props.children}
+              {React.Children.map(this.props.children, child =>
+                React.cloneElement(child as React.ReactElement<any>, {
+                  toggleDisableInsert: (bool: boolean) => this.setState({ disableInsert: bool }),
+                }))}
             </div>
             <div className="modal-footer">
               {this.props.hideOkButton === true
                 ? null
                 : <button
-                    disabled={disableInsert}
-                    type="button"
-                    onClick={this.onInsert}
-                    className={`btn btn-${okClassName}`}>{okLabel}</button>}
+                  disabled={disableInsert}
+                  type="button"
+                  onClick={this.onInsert}
+                  className={`btn btn-${okClassName}`}>{okLabel}</button>}
               <button type="button" className="btn btn-link"
                 onClick={this.onCancel}
                 data-dismiss="modal">{cancelLabel}</button>

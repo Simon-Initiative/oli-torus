@@ -13,6 +13,7 @@ import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
 import * as Settings from './Settings';
 import './Settings.scss';
+import { media } from 'state/media';
 
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
@@ -25,21 +26,23 @@ export function selectImage(projectSlug: string,
     const selected = { img: null };
 
     const mediaLibrary =
-      <ModalSelection title="Select an image"
-        onInsert={() => { dismiss(); resolve(selected.img as any); }}
-        onCancel={() => dismiss()}>
-        <MediaManager model={model}
-          projectSlug={projectSlug}
-          onEdit={() => { }}
-          mimeFilter={MIMETYPE_FILTERS.IMAGE}
-          selectionType={SELECTION_TYPES.SINGLE}
-          initialSelectionPaths={[model.src]}
-          onSelectionChange={(images: MediaItem[]) => {
-            const first : ContentModel.Image = { type: 'img', src: images[0].url,
-              children: [{ text: '' }], id: guid() };
-            (selected as any).img = first;
-          }} />
-      </ModalSelection>;
+        <ModalSelection title="Select an image"
+          onInsert={() => { dismiss(); resolve(selected.img as any); }}
+          onCancel={() => dismiss()}
+          disableInsert={true}
+        >
+          <MediaManager model={model}
+            projectSlug={projectSlug}
+            onEdit={() => { }}
+            mimeFilter={MIMETYPE_FILTERS.IMAGE}
+            selectionType={SELECTION_TYPES.SINGLE}
+            initialSelectionPaths={model.src ? [model.src] : [selected.img as any]}
+            onSelectionChange={(images: MediaItem[]) => {
+              const first : ContentModel.Image = { type: 'img', src: images[0].url,
+                children: [{ text: '' }], id: guid()};
+              (selected as any).img = first;
+            }} />
+        </ModalSelection>;
 
     display(mediaLibrary);
   });
