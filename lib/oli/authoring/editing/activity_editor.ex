@@ -104,7 +104,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         |> translate_objective_slugs_to_ids()
         |> Map.get("objectives")
 
-      {:error, e} ->
+      {:error, _e} ->
         %{}
     end
 
