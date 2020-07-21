@@ -1,5 +1,6 @@
 import * as React from 'react';
 import * as Messages from 'data/messages/messages';
+import { classNames } from 'utils/classNames';
 
 
 export interface MessageProps {
@@ -11,7 +12,7 @@ export interface MessageProps {
 const classesForSeverity = {
   [Messages.Severity.Error]: 'alert alert-danger',
   [Messages.Severity.Warning]: 'alert alert-warning',
-  [Messages.Severity.Information]: 'alert alert-primary',
+  [Messages.Severity.Information]: 'alert alert-info',
   [Messages.Severity.Task]: 'alert alert-light',
 };
 
@@ -38,7 +39,8 @@ export class Message
     return (
       <button
         key={action.label}
-        className="btn btn-action"
+        className={classNames(['btn btn-action', action.btnClass])}
+        style={{ whiteSpace: 'nowrap' }}
         disabled={!action.enabled}
         onClick={() => this.props.executeAction(message, action)}
         type="button">{action.label}
@@ -49,11 +51,11 @@ export class Message
   renderActions(message: Messages.Message) {
     if (message.canUserDismiss || message.actions.length > 0) {
       return (
-        <form className="form-inline my-2 my-lg-0">
+        <div className="form-inline my-2 my-lg-0">
           {message.actions.map(
             (a: Messages.MessageAction) => this.renderMessageAction(message, a))}
           {message.canUserDismiss && this.renderCloseButton()}
-        </form>
+        </div>
       );
     }
   }
@@ -79,7 +81,7 @@ export class Message
   render(): JSX.Element {
 
     const { message } = this.props;
-    const classes = 'd-flex justify-content-between '
+    const classes = 'message d-flex justify-content-between '
       + classesForSeverity[message.severity];
 
     return (

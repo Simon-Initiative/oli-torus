@@ -50,7 +50,7 @@
         </div>
       <% end %>
     <% else %>
-      <%= if preview_mode(@conn) do %>
+      <%= if preview_mode(@conn) == true do %>
         <div class="nav-item dropdown form-inline my-2 my-lg-0">
           <a class="user block nav-link dropdown-toggle" href="#" aria-haspopup="false" aria-expanded="false">
             <span class="block lg:inline-block lg:mt-0 text-grey-darkest no-underline hover:underline my-1 mr-3">

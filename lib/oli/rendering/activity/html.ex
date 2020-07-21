@@ -9,7 +9,7 @@ defmodule Oli.Rendering.Activity.Html do
 
   @behaviour Oli.Rendering.Activity
 
-  def activity(%Context{activity_map: activity_map, render_opts: render_opts} = context, %{"activity_id" => activity_id, "purpose" => purpose} = activity) do
+  def activity(%Context{activity_map: activity_map, render_opts: render_opts, preview: preview} = context, %{"activity_id" => activity_id, "purpose" => purpose} = activity) do
     activity_summary = activity_map[activity_id]
 
     case activity_summary do
@@ -29,7 +29,7 @@ defmodule Oli.Rendering.Activity.Html do
         graded = activity_summary.graded
         model_json = activity_summary.model
 
-        activity_html = ["<#{tag} class=\"activity-container\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{model_json}\"></#{tag}>\n"]
+        activity_html = ["<#{tag} class=\"activity-container\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{model_json}\" preview=\"#{preview}\"></#{tag}>\n"]
 
         case purpose do
           "none" ->

@@ -21,8 +21,7 @@ export const Evaluation = ({ attemptState } : { attemptState : ActivityTypes.Act
   }
 
   return (
-    <div key="evaluation"
-      className={`evaluation feedback ${resultClass} my-1`}>
+    <div className={`evaluation feedback ${resultClass} my-1`}>
         <div className="result">
           <span className="score">{score}</span>
           <span className="out-of">{` / ${outOf}`}</span>
