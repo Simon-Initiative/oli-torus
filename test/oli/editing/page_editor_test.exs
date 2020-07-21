@@ -2,7 +2,7 @@ defmodule Oli.EditingTest do
   use Oli.DataCase
 
   alias Oli.Resources
-  alias Oli.Authoring.Editing.PageEditor
+  alias Oli.Authoring.Editing.{PageEditor, ActivityEditor}
   alias Oli.Publishing
   alias Oli.Accounts.Author
   alias Oli.Accounts.SystemRole
@@ -23,6 +23,23 @@ defmodule Oli.EditingTest do
       {:ok, updated_revision} = PageEditor.edit(project.slug, revision1.slug, author.email, %{ "content" => content })
 
       assert revision1.id != updated_revision.id
+    end
+
+    test "edit/4 mark page delete and cascade to child activities", %{author: author, revision1: revision1, project: project } do
+
+      content = %{ "stem" => "Hey there" }
+      {:ok, {revision, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
+
+      PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+      page_content = %{ "model" => [%{"type" => "p", children: [%{ "text" => "A paragraph22."}]},%{"activitySlug" => revision.slug, "id" => "2656470668","children" => [], "purpose" => "none", "type" => "activity-reference"}]}
+      PageEditor.edit(project.slug, revision1.slug, author.email, %{ "content" => page_content })
+
+      deletion = %{deleted: true,author_id: author.id}
+      PageEditor.edit(project.slug, revision1.slug, author.email, deletion)
+
+      publication = Publishing.get_unpublished_publication_id!(project.id)
+      latest_revision = ActivityEditor.get_latest_revision(publication, revision.resource_id)
+      assert latest_revision.deleted
     end
 
     test "edit/4 can edit multiple parameters", %{author: author, project: project, revision1: revision1} do
