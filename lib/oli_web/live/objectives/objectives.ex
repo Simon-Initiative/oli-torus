@@ -230,8 +230,10 @@ defmodule OliWeb.Objectives.Objectives do
 
     ObjectiveEditor.detach_objective(socket.assigns.selected, socket.assigns.project, socket.assigns.author)
 
+    parent_objective = determine_parent_objective(socket, socket.assigns.selected)
+
     socket = case ObjectiveEditor.preview_objective_detatchment(socket.assigns.selected, socket.assigns.project) do
-      %{attachments: {[], []}} -> case ObjectiveEditor.edit(socket.assigns.selected, %{ deleted: true }, socket.assigns.author, socket.assigns.project) do
+      %{attachments: {[], []}} -> case ObjectiveEditor.delete(socket.assigns.selected, socket.assigns.author, socket.assigns.project, parent_objective) do
         {:ok, _} -> socket
         {:error, _} -> socket
         |> put_flash(:error, "Could not remove objective")
@@ -257,6 +259,18 @@ defmodule OliWeb.Objectives.Objectives do
     end
 
     {:noreply, assign(socket, :edit, :none)}
+  end
+
+
+  defp determine_parent_objective(socket, slug) do
+
+    child = Enum.find(socket.assigns.objective_mappings, fn %{ revision: revision } -> revision.slug == slug end)
+
+    case Enum.find(socket.assigns.objectives_tree, fn %{mapping: mapping} -> Enum.any?(mapping.revision.children, fn id -> id == child.revision.resource_id end) end) do
+      nil -> nil
+      o -> o.mapping.revision
+    end
+
   end
 
   # Here are listening for subscription notifications for newly created resources

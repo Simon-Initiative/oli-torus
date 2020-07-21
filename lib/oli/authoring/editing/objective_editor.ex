@@ -89,10 +89,10 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   def delete(revision_slug, %Author{} = author, %Project{} = project, parent_objective \\ nil) do
 
-    attrs = Map.merge(attrs, %{
+    attrs = %{
       author_id: author.id,
       deleted: true,
-    })
+    }
 
     Repo.transaction(fn ->
 
@@ -100,8 +100,8 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
       do
 
         if parent_objective != nil do
-          edit(parent.slug,
-            %{ children: Enum.filter(parent.children, fn id -> id == revision.resource_id end)},
+          edit(parent_objective.slug,
+            %{ children: Enum.filter(parent_objective.children, fn id -> id != revision.resource_id end)},
             author, project)
         end
 
