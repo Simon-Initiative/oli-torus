@@ -201,9 +201,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 
   componentWillUnmount() {
 
-    console.log('component unmounted');
     this.persistence.destroy();
-
 
     unregisterUnload(this.windowUnloadListener);
     unregisterUndoRedoHotkeys(this.undoRedoListener);
