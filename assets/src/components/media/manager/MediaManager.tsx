@@ -17,7 +17,7 @@ const PAGE_LOADING_MESSAGE = 'Hang on while we load your items...';
 
 export const MIMETYPE_FILTERS = {
   IMAGE: ['image/jpeg', 'image/png', 'image/tiff', 'image/gif'],
-  AUDIO: ['audio/mpeg'],
+  AUDIO: ['audio/mpeg', 'audio/wav', 'audio/mid', 'audio/mp4'],
   VIDEO: ['video/mp4'],
   HTML: ['text/html'],
   ALL: undefined,
@@ -469,7 +469,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       );
     }
 
-    const detailsOnClick = () => this.setState({ showDetails: !showDetails })
+    const detailsOnClick = () => this.setState({ showDetails: !showDetails });
 
     if (selectedMediaItems.size > 0) {
       const selectedItem = selectedMediaItems.first() as MediaItem;
@@ -514,11 +514,8 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     const { error } = this.state;
 
     return error.caseOf({
-      just: error => <div className="alert alert-danger alert-dismissible fade show" role="alert">
+      just: error => <div className="alert alert-danger fade show" role="alert">
         {error}
-        <button type="button" className="close" data-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
       </div>,
       nothing: () => null,
     });
