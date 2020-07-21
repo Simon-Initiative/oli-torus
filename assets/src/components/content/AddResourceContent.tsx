@@ -106,8 +106,10 @@ export const AddResourceContent = (
         onAddItem(resourceContent, index, activity);
       })
       .catch((err) => {
-        // console.log(err);
-      }));
+        // tslint:disable-next-line
+        console.error(err);
+      }),
+    );
   };
 
   const content =

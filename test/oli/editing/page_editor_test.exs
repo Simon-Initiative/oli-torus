@@ -137,6 +137,12 @@ defmodule Oli.EditingTest do
       assert {:error, {:not_authorized}} = result
     end
 
+    test "render_page_html/4 renders a page", %{project: project, revision2: revision, author: author} do
+      html = PageEditor.render_page_html(project.slug, revision.slug, author)
+
+      assert html == [[["<p>", [[[[], "Here" | "&#39;"] | "s some test content"]], "</p>\n"]]]
+    end
+
   end
 
 end
