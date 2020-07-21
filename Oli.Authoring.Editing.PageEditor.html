@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Authoring.Editing.PageEditor — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-6bd5b26e20.js"></script>
+    <script src="dist/sidebar_items-8aa284c4fd.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -139,7 +139,7 @@ project and revision slug, for the author specified by email.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#render_page_html/3">render_page_html(project_slug, revision_slug, author)</a>
+    <a href="#render_page_html/4">render_page_html(project_slug, revision_slug, author, options \\ [])</a>
   </div>
 </div>
   </div>
@@ -160,7 +160,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">acquire_lock(project_slug, revision_slug, author_email)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L106" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L111" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -192,7 +192,7 @@ an expected condition that a user could encounter.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">construct_parent_references(objectives)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L347" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L398" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -207,7 +207,7 @@ an expected condition that a user could encounter.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">create_context(project_slug, revision_slug, author)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L164" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L169" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -224,7 +224,7 @@ for a specific resource / revision.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">create_new_revision(arg, publication, resource, author_id)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L417" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L468" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -239,7 +239,7 @@ for a specific resource / revision.</p>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">edit(project_slug, revision_slug, author_email, update)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L44" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L49" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -306,7 +306,7 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_latest_revision(publication, resource)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L400" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L451" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -321,7 +321,7 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">id_to_slug(attached_objectives, all_objectives)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L366" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L417" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -336,7 +336,7 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">release_lock(project_slug, revision_slug, author_email)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L142" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L147" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -357,14 +357,15 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
 .<code class="inline">{:error, {:not_authorized}}</code> if the user is not authorized to edit this resource</p>
   </section>
 </section>
-<section class="detail" id="render_page_html/3">
+<section class="detail" id="render_page_html/4">
+    <span id="render_page_html/3"></span>
   <div class="detail-header">
-    <a href="#render_page_html/3" class="detail-link" title="Link to this function">
+    <a href="#render_page_html/4" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">render_page_html(project_slug, revision_slug, author)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L181" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">render_page_html(project_slug, revision_slug, author, options \\ [])</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L186" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

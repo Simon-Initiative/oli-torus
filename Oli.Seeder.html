@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Seeder — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-6bd5b26e20.js"></script>
+    <script src="dist/sidebar_items-8aa284c4fd.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -170,7 +170,7 @@ Oli.Seeder          <a href="https://github.com/Simon-Initiative/oli-torus/blob/
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#create_page/4">create_page(title, publication, project, author)</a>
+    <a href="#create_page/5">create_page(title, publication, project, author, content \\ %{&quot;model&quot; =&gt; []})</a>
   </div>
 </div>
 <div class="summary-row">
@@ -186,6 +186,11 @@ Oli.Seeder          <a href="https://github.com/Simon-Initiative/oli-torus/blob/
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#create_resource_attempt/6">create_resource_attempt(map, attrs, user_tag, resource_tag, revision_tag, tag)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create_sample_content/0">create_sample_content()</a>
   </div>
 </div>
 <div class="summary-row">
@@ -217,7 +222,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">add_activity(map, attrs, tag \\ nil)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L319" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L358" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -232,7 +237,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">add_activity(map, attrs, publication_tag, project_tag, author_tag, activity_tag)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L340" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L379" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -247,7 +252,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">add_activity_snapshot(map, attrs, tag)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L396" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L435" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -262,7 +267,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">add_author(map, author, atom)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L391" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L430" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -278,7 +283,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">add_lti_consumer(map, attrs, tag \\ nil)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L260" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L299" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -294,7 +299,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">add_objective(map, title, tag \\ nil)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L377" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L416" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -310,7 +315,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">add_page(map, attrs, container_tag \\ :container, tag)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L283" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L322" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -325,7 +330,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">add_resource_accesses(map, section_tag, score_map)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L407" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L446" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -340,7 +345,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">add_review(map, type, tag)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L401" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L440" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -356,7 +361,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">add_user(map, attrs, tag \\ nil)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L213" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L252" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -371,7 +376,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">add_users_to_section(map, section_tag, user_tags)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L241" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L280" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -402,7 +407,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">attach_pages_to(resources, container, container_revision, publication)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L358" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L397" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -432,7 +437,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">create_activity(attrs, publication, project, author)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L305" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L344" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -456,13 +461,14 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="create_page/4">
+<section class="detail" id="create_page/5">
+    <span id="create_page/4"></span>
   <div class="detail-header">
-    <a href="#create_page/4" class="detail-link" title="Link to this function">
+    <a href="#create_page/5" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">create_page(title, publication, project, author)</h1>
+    <h1 class="signature">create_page(title, publication, project, author, content \\ %{&quot;model&quot; =&gt; []})</h1>
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L202" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
@@ -517,6 +523,21 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
+<section class="detail" id="create_sample_content/0">
+  <div class="detail-header">
+    <a href="#create_sample_content/0" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create_sample_content()</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L213" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
 <section class="detail" id="create_section/1">
   <div class="detail-header">
     <a href="#create_section/1" class="detail-link" title="Link to this function">
@@ -539,7 +560,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">replace_pages_with(resources, container, container_revision, publication)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L363" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/db_seeder.ex#L402" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
