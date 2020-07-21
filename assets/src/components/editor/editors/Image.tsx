@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ReactEditor } from 'slate-react';
+import { ReactEditor, useFocused, useSelected } from 'slate-react';
 import { Transforms } from 'slate';
 import { updateModel, getEditMode } from './utils';
 import * as ContentModel from 'data/content/model';
@@ -163,6 +163,9 @@ export const ImageEditor = (props: ImageProps) => {
   const { attributes, children, editor } = props;
   const { model } = props;
 
+  const focused = useFocused();
+  const selected = useSelected();
+
   const editMode = getEditMode(editor);
 
   const onEdit = (updated: ContentModel.Image) => {
@@ -186,6 +189,9 @@ export const ImageEditor = (props: ImageProps) => {
     onRemove={onRemove}
     onEdit={onEdit}/>;
 
+  const imageStyle = focused && selected
+  ? { border: 'solid 2px lightblue' } : {};
+
   // Note that it is important that any interactive portions of a void editor
   // must be enclosed inside of a "contentEditable=false" container. Otherwise,
   // slate does some weird things that non-deterministically interface with click
@@ -197,6 +203,7 @@ export const ImageEditor = (props: ImageProps) => {
       <div contentEditable={false} style={{ userSelect: 'none' }}>
         <div className="ml-4 mr-4">
           <img
+            style={imageStyle}
             className="img-fluid img-thumbnail"
             src={model.src}
             draggable={false}
