@@ -5,6 +5,8 @@ defmodule OliWeb.ActivityController do
   alias Oli.Accounts
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Attempts.StudentInput
+  alias Oli.Publishing
+  alias Oli.Publishing.AuthoringResolver
 
   import OliWeb.ProjectPlugs
 
@@ -15,9 +17,23 @@ defmodule OliWeb.ActivityController do
 
     author = conn.assigns[:current_author]
     is_admin? = Accounts.is_admin?(author)
+    revision = AuthoringResolver.from_revision_slug(project_slug, revision_slug)
+    publication = Publishing.get_unpublished_publication_by_slug!(project_slug)
+    [lock_info | _tail] = Publishing.retrieve_lock_info([revision.resource_id], publication.id)
+
+    lock_author = case lock_info.author do
+      nil -> nil
+      _ ->
+        # Return nil if author is the same as edit requester
+        if lock_info.author.email == author.email do
+          nil
+        else
+          lock_info.author
+        end
+    end
 
     case ActivityEditor.create_context(project_slug, revision_slug, activity_slug, author) do
-      {:ok, context} -> render(conn, "edit.html", active: :curriculum, title: "Activity Editor", project_slug: project_slug, is_admin?: is_admin?, activity_slug: activity_slug, script: context.authoringScript, context: Jason.encode!(context))
+      {:ok, context} -> render(conn, "edit.html", active: :curriculum, title: "Activity Editor", project_slug: project_slug, author: lock_author, is_admin?: is_admin?, activity_slug: activity_slug, script: context.authoringScript, context: Jason.encode!(context))
       {:error, :not_found} -> render conn, OliWeb.SharedView, "_not_found.html"
     end
 

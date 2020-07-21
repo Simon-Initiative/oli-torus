@@ -1,5 +1,5 @@
 
-<%= if @is_admin? do %>
+<%= if @is_admin? && @author == nil do %>
   <div class="alert alert-warning alert-dismissible fade show" style="position: sticky; top: 0px; z-index: 900;" role="alert">
   <strong>You are editing as an administrator</strong>
 
@@ -14,4 +14,18 @@
   </button>
 
 </div>
+<% end %>
+<%= if @author !== nil do %>
+  <div class="alert alert-warning alert-dismissible fade show" style="position: sticky; top: 0px; z-index: 900;" role="alert">
+    <strong>Read only User <%= @author.email %> is currently editing.</strong>
+
+    <%= if @is_admin? do %>
+      <span style="float: right;">
+        <%= link class: "toolbar-link", to: Routes.live_path(OliWeb.Endpoint, OliWeb.RevisionHistory, @project_slug,@revision_slug) do %>
+          <span><i class="fas fa-history"></i></span> View History
+        <% end %>
+      </span>
+    <% end %>
+
+  </div>
 <% end %>
