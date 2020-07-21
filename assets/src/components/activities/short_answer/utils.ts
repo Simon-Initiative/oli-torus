@@ -32,6 +32,7 @@ export const defaultModel : () => ShortAnswerModelSchema = () => {
         ],
       }],
       transformations: [],
+      previewText: '',
     },
   };
 };

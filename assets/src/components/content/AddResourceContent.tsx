@@ -100,14 +100,16 @@ export const AddResourceContent = (
           activitySlug: result.revisionSlug,
           typeSlug: editorDesc.slug,
           model,
-          transformed: result.transformed,
+          objectives: {},
         };
 
         onAddItem(resourceContent, index, activity);
       })
       .catch((err) => {
-        // console.log(err);
-      }));
+        // tslint:disable-next-line
+        console.error(err);
+      }),
+    );
   };
 
   const content =
@@ -166,6 +168,14 @@ export const AddResourceContent = (
               </Popover>
             </div>
             <div className="insert-adornment"></div>
+
+            {isLast && (
+              <div className="insert-label mt-4 text-center">
+                <div className="btn btn-sm btn-light">
+                  Add Content or Activity
+                </div>
+              </div>
+            )}
           </React.Fragment>
         }
 

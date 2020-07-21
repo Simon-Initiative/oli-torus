@@ -27,16 +27,20 @@ defmodule Oli.Authoring.Editing.Utils do
   """
   def diff_activity_references(content1, content2) do
 
-    get_activities = fn content -> Enum.filter(content, fn %{"type" => type} -> type == "activity-reference" end)
-    |> Enum.map(fn %{"activity_id" => id} -> id end)
-    |> MapSet.new() end
-
-    activities1 = get_activities.(content1)
-    activities2 = get_activities.(content2)
+    activities1 = activity_references(content1)
+    activities2 = activity_references(content2)
 
     {MapSet.difference(activities2, activities1), MapSet.difference(activities1, activities2)}
   end
 
-
+  def activity_references(content) do
+    case content do
+       nil -> MapSet.new()
+       [] -> MapSet.new()
+       _ -> Enum.filter(content, fn %{"type" => type} -> type == "activity-reference" end)
+            |> Enum.map(fn %{"activity_id" => id} -> id end)
+            |> MapSet.new()
+    end
+  end
 
 end

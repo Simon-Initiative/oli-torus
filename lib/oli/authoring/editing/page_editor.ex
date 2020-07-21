@@ -7,6 +7,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Authoring.{Locks, Course}
   alias Oli.Resources.Revision
   alias Oli.Resources
+  alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Activities
@@ -14,7 +15,11 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Repo
   alias Oli.Rendering
   alias Oli.Activities.Transformers
+  alias Oli.Activities.State.ActivityState
   alias Oli.Authoring.Broadcaster
+  alias Oli.Delivery.Page.ActivityContext
+  alias Oli.Rendering.Activity.ActivitySummary
+  alias Oli.Activities
 
   import Ecto.Query, warn: false
 
@@ -166,11 +171,11 @@ defmodule Oli.Authoring.Editing.PageEditor do
     editor_map = Oli.Activities.create_registered_activity_map()
 
     with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
-         {:ok, %{content: content} = revision} <- AuthoringResolver.from_revision_slug(project_slug, revision_slug) |> trap_nil(),
+         {:ok, %{content: content } = revision} <- AuthoringResolver.from_revision_slug(project_slug, revision_slug) |> trap_nil(),
          {:ok, objectives} <- Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, objectives_with_parent_reference} <- construct_parent_references(objectives) |> trap_nil(),
          {:ok, attached_objectives} <- id_to_slug(revision.objectives, objectives) |> trap_nil(),
-         {:ok, activities} <- create_activities_map(publication.id, content)
+         {:ok, activities} <- create_activities_map(project_slug, publication.id, content)
     do
       {:ok, create(publication.id, revision, project_slug, revision_slug, author, objectives_with_parent_reference, attached_objectives, activities, editor_map)}
     else
@@ -178,12 +183,12 @@ defmodule Oli.Authoring.Editing.PageEditor do
     end
   end
 
-  def render_page_html(project_slug, revision_slug, author) do
+  def render_page_html(project_slug, revision_slug, author, options \\ []) do
     with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
          {:ok, %{content: content} = _revision} <- get_latest_revision(publication, resource) |> trap_nil(),
-         {:ok, activities} <- create_activities_map(publication.id, content),
-         render_context <- %Rendering.Context{user: author, activity_map: activities}
+         {:ok, activities} <- create_activity_summary_map(publication.id, content),
+         render_context <- %Rendering.Context{user: author, preview: Keyword.get(options, :preview, false), activity_map: activities}
     do
       Rendering.Page.render(render_context, content["model"], Rendering.Page.Html)
     else
@@ -191,10 +196,56 @@ defmodule Oli.Authoring.Editing.PageEditor do
     end
   end
 
+  defp create_activity_summary_map(publication_id, %{"model" => content}) do
+    # Now see if we even have any activities that need to be mapped
+    found_activities = Enum.filter(content, fn c -> Map.get(c, "type") == "activity-reference" end)
+      |> Enum.map(fn c -> Map.get(c, "activity_id") end)
+
+    if (length(found_activities) != 0) do
+      # get a view of all current registered activity types
+      registrations = Activities.list_activity_registrations()
+      reg_map = Enum.reduce(registrations, %{}, fn r, m -> Map.put(m, r.id, r) end)
+
+      # find the published revisions for these activities, and convert them
+      # to a form suitable for front-end consumption
+      {:ok, Publishing.get_published_activity_revisions(publication_id, found_activities)
+        |> Enum.map(fn %Revision{resource_id: resource_id, activity_type_id: activity_type_id, content: content, graded: graded} ->
+
+          # To support 'test mode' in the editor, we give the editor an initial transormed
+          # version of the model that it can immediately use for display purposes. If it fails
+          # to transform, nil will be handled by the client and the raw model will be used
+          # instead
+          transformed = case Transformers.apply_transforms(content) do
+            {:ok, t} -> t
+            _ -> nil
+          end
+
+          # the activity type this revision pertains to
+          type = Map.get(reg_map, activity_type_id)
+
+          state = ActivityState.create_preview_state(transformed)
+
+          %ActivitySummary{
+            id: resource_id,
+            model: ActivityContext.prepare_model(transformed, prune: false),
+            state: ActivityContext.prepare_state(state),
+            delivery_element: type.delivery_element,
+            script: type.delivery_script,
+            graded: graded
+          }
+        end)
+        |> Enum.reduce(%{}, fn summary, acc -> Map.put(acc, summary.id, summary) end)
+      }
+    else
+      {:ok, %{}}
+    end
+
+  end
+
   # From the array of maps found in a resource revision content, produce a
   # map of the content of the activity revisions that pertain to the
   # current publication
-  defp create_activities_map(publication_id, %{ "model" => content}) do
+  defp create_activities_map(project_slug, publication_id, %{ "model" => content}) do
 
     # Now see if we even have any activities that need to be mapped
     found_activities = Enum.filter(content, fn c -> Map.get(c, "type") == "activity-reference" end)
@@ -208,23 +259,14 @@ defmodule Oli.Authoring.Editing.PageEditor do
       # find the published revisions for these activities, and convert them
       # to a form suitable for front-end consumption
       {:ok, Publishing.get_published_activity_revisions(publication_id, found_activities)
-        |> Enum.map(fn %Revision{activity_type_id: activity_type_id, slug: slug, content: content} ->
-
-          # To support 'test mode' in the editor, we give the editor an initial transormed
-          # version of the model that it can immediately use for display purposes. If it fails
-          # to transform, nil will be handled by the client and the raw model will be used
-          # instead
-          transformed = case Transformers.apply_transforms(content) do
-            {:ok, t} -> t
-            _ -> nil
-          end
+        |> Enum.map(fn %Revision{activity_type_id: activity_type_id, objectives: objectives, slug: slug, content: content} ->
 
           %{
           type: "activity",
           typeSlug: Map.get(id_to_slug, activity_type_id),
           activitySlug: slug,
           model: content,
-          transformed: transformed
+          objectives: ActivityEditor.translate_ids_to_slugs(project_slug, objectives)
         } end)
         |> Enum.reduce(%{}, fn e, m -> Map.put(m, Map.get(e, :activitySlug), e) end)}
     else
@@ -240,38 +282,46 @@ defmodule Oli.Authoring.Editing.PageEditor do
   # deleted state of the activity revision correct.
   defp resurrect_or_delete_activity_references(revision, change, project_slug) do
 
-    # Handle the case where this change does not include content
-    case Map.get(change, "content") do
+    if Map.get(change, :deleted) do
+      content = Map.get(revision.content, "model")
+      deletions = activity_references(content)
+      delete_activity_references(project_slug, revision, MapSet.new(), deletions)
+    else
+      # Handle the case where this change does not include content
+      case Map.get(change, "content") do
 
-      nil -> {revision, []}
+        nil -> {revision, []}
 
-      map ->
+        map ->
+          # First calculate the difference, if any, between the current revision and the
+          # change that we are about to commit
+          content1 = Map.get(revision.content, "model")
+          content2 = Map.get(map, "model")
 
-        # First caculate the difference, if any, between the current revision and the
-        # change that we are about to commit
-        content1 = Map.get(revision.content, "model")
-        content2 = Map.get(map, "model")
+          {additions, deletions} = diff_activity_references(content1, content2)
 
-        {additions, deletions} = diff_activity_references(content1, content2)
-
-        # If there are activity-reference changes, resolve those activity ids to
-        # revisions and set their deleted flag appropriately
-        case MapSet.union(additions, deletions) |> MapSet.to_list() do
-
-          [] -> {revision, []}
-
-          activity_ids ->
-            activity_revisions = AuthoringResolver.from_resource_id(project_slug, activity_ids)
-            |> Enum.map(fn revision ->
-              {:ok, updated} = Oli.Resources.update_revision(revision, %{deleted: MapSet.member?(deletions, revision.resource_id)})
-              updated
-            end)
-
-            {revision, activity_revisions}
-        end
+          delete_activity_references(project_slug, revision, additions, deletions)
+      end
     end
+  end
 
+  # If there are activity-reference changes, resolve those activity ids to
+  # revisions and set their deleted flag appropriately
+  defp delete_activity_references(project_slug, revision, additions, deletions) do
 
+    case MapSet.union(additions, deletions) |> MapSet.to_list() do
+
+      [] -> {revision, []}
+
+      activity_ids ->
+        activity_revisions = AuthoringResolver.from_resource_id(project_slug, activity_ids)
+                             |> Enum.map(fn revision ->
+          {:ok, updated} = Oli.Resources.update_revision(revision, %{deleted: MapSet.member?(deletions, revision.resource_id)})
+          updated
+        end)
+
+        {revision, activity_revisions}
+    end
   end
 
   # Reverse references found in a resource update for activites. They will
