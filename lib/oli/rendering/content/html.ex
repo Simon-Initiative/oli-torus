@@ -69,7 +69,8 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def audio(%Context{} = _context, _, %{"src" => src}) do
-    ["<audio src=\"", src, "\"/>\n"]
+    ["<audio controls src=\"", src, "\">Your browser does not support the
+    <code>audio</code> element.</audio>\n"]
   end
 
   def table(%Context{} = _context, next, _) do

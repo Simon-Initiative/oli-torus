@@ -9,8 +9,10 @@ defmodule OliWeb.MediaController do
   plug :fetch_project when action not in [:index, :create]
 
   def index(conn, %{"project" => project_slug} = params) do
+    IO.inspect(params, label: "params")
 
     options = ItemOptions.from_client_options(params)
+    IO.inspect(options, label: "options")
 
     case MediaLibrary.items(project_slug, options) do
       {:ok, {items, count}} -> json conn, to_paginated_response(options, items, count)

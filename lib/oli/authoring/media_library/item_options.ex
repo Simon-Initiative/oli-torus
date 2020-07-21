@@ -26,6 +26,8 @@ defmodule Oli.Authoring.MediaLibrary.ItemOptions do
 
   def from_client_options(options) do
 
+    IO.inspect(Map.get(options, "mimeFilter", nil), label: "in client options, mime")
+
     mime_filter = case Map.get(options, "mimeFilter", nil) do
       nil -> nil
       str -> String.split(str, ",")

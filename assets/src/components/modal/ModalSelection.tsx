@@ -1,16 +1,4 @@
 import * as React from 'react';
-import { Provider } from 'react-redux';
-import { configureStore } from 'state/store';
-import produce from 'immer';
-
-const store = configureStore();
-
-class SelectionActions {
-  static addChoice() {
-    return (draftState: MultipleChoiceModelSchema) => {
-    }
-  }
-}
 
 interface ModalSelection {
   modal: any;
@@ -27,16 +15,23 @@ export interface ModalSelectionProps {
   okLabel?: string;
   okClassName?: string;
   cancelLabel?: string;
-  // disableInsert?: boolean;
-  onSelectionChange: any;
-  selected: any;
+  disableInsert?: boolean;
   title: string;
+  hideOkButton?: boolean;
   onInsert: () => void;
   onCancel: () => void;
   size?: sizes;
 }
 
-class ModalSelection extends React.Component<ModalSelectionProps, {}> {
+interface ModalSelectionState {
+  disableInsert: boolean;
+}
+
+class ModalSelection extends React.PureComponent<ModalSelectionProps, ModalSelectionState> {
+
+  state = {
+    disableInsert: this.props.disableInsert === undefined ? false : this.props.disableInsert,
+  };
 
   componentDidMount() {
     (window as any).$(this.modal).modal('show');
@@ -46,27 +41,12 @@ class ModalSelection extends React.Component<ModalSelectionProps, {}> {
     (window as any).$(this.modal).modal('hide');
   }
 
-  updateDisableInsert = (lastState: boolean) => {
-
-  }
-
-  dispatch = (action: any) => {
-    const nextModel = produce(this.props, draftState => action(draftState));
-    this.props.onEdit(nextModel);
-  };
-
   onInsert = (e: any) => { e.preventDefault(); this.props.onInsert(); };
 
   onCancel = (e: any) => { e.preventDefault(); this.props.onCancel(); };
 
   render() {
-    // this.updateDisableInsert(this.props.selection)
-    // console.log(this.props.selected())
-    // console.log(this.props.disableInsert)
-    // const disableInsert = this.props.disableInsert !== undefined
-    //   ? this.props.disableInsert
-    //   : true;
-    // console.log("disableInsert", disableInsert)
+    const disableInsert = this.state.disableInsert;
     const okLabel = this.props.okLabel !== undefined
       ? this.props.okLabel : 'Insert';
     const cancelLabel = this.props.cancelLabel !== undefined
@@ -90,14 +70,19 @@ class ModalSelection extends React.Component<ModalSelectionProps, {}> {
               </button>
             </div>
             <div className="modal-body">
-              {this.props.children}
+              {React.Children.map(this.props.children, child =>
+                React.cloneElement(child as React.ReactElement<any>, {
+                  toggleDisableInsert: (bool: boolean) => this.setState({ disableInsert: bool }),
+                }))}
             </div>
             <div className="modal-footer">
-              <button
-                disabled={(() => this.props.selected.img === null)()}
-                type="button"
-                onClick={this.onInsert}
-                className={`btn btn-${okClassName}`}>{okLabel}</button>
+              {this.props.hideOkButton === true
+                ? null
+                : <button
+                  disabled={disableInsert}
+                  type="button"
+                  onClick={this.onInsert}
+                  className={`btn btn-${okClassName}`}>{okLabel}</button>}
               <button type="button" className="btn btn-link"
                 onClick={this.onCancel}
                 data-dismiss="modal">{cancelLabel}</button>

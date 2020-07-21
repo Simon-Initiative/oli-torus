@@ -10,7 +10,8 @@
   .media-toolbar {
     display: flex;
     flex-direction: row;
-    padding: 15px;
+    justify-content: space-between;
+    padding-bottom: 15px;
 
     & > *, .media-toolbar-item {
       margin-right: 15px;
@@ -22,7 +23,7 @@
       &.sort-control {
         display: flex;
         flex-direction: row;
-        margin-top: 5px;
+        align-items: center;
         z-index: $dropdown-menu;
 
         i {
@@ -34,9 +35,7 @@
         }
 
         .sort-btn {
-          margin-top: -10px;
-          font-size: initial;
-
+          cursor: pointer;
           &.dropdown-toggle {
             box-shadow: none;
           }
@@ -90,7 +89,7 @@
     .media-sidebar {
       display: flex;
       flex-direction: column;
-      width: 200px;
+      width: 100px;
       height: 100%;
       overflow: auto;
       border-right: 1px solid $gray-100;
@@ -102,8 +101,16 @@
         width: 100%;
         padding: 10px;
         text-align: center;
-        color: $gray-600;
+        color: black;
         cursor: pointer;
+
+        &:first-child,
+        &:last-child {
+          cursor: default;
+        }
+        &:last-child {
+          color: $gray-600;
+        }
 
         &.active {
           color: initial;
@@ -249,6 +256,10 @@
             line-height: 20px;
           }
 
+          &.not-selectable {
+            opacity: 0.5;
+          }
+
           &.selectable {
             cursor: pointer;
 
@@ -347,6 +358,10 @@
           position: relative;
           border: 1px solid transparent;
 
+          &.not-selectable {
+            opacity: 0.5;
+          }
+
           &:nth-child(odd) {
             background-color: lighten($gray-100, 5%);
           }
@@ -368,6 +383,10 @@
             vertical-align: baseline;
             overflow: visible;
             white-space: nowrap;
+          }
+
+          &.not-selectable {
+            opacity: 0.5;
           }
 
           &.selectable {
