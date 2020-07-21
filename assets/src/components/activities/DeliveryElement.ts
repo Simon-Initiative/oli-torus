@@ -1,5 +1,6 @@
 import { ActivityModelSchema, ActivityState, PartResponse,
   StudentResponse, Hint, Success, PartState } from './types';
+import { valueOr } from 'utils/common';
 
 
 export interface EvaluatedPart {
@@ -38,6 +39,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   graded: boolean;
   model: T;
   state: ActivityState;
+  preview: boolean;
 
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
   onSubmitActivity: (attemptGuid: string,
@@ -116,11 +118,13 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     const model = JSON.parse(this.getAttribute('model') as any);
     const graded = JSON.parse(this.getAttribute('graded') as any);
     const state = JSON.parse(this.getAttribute('state') as any) as ActivityState;
+    const preview = valueOr(JSON.parse(this.getAttribute('preview') as any), false);
 
     return {
       graded,
       model,
       state,
+      preview,
       onRequestHint: this.onRequestHint,
       onSavePart: this.onSavePart,
       onSubmitPart: this.onSubmitPart,
@@ -140,6 +144,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
         attemptGuid,
         partAttemptGuid,
         continuation,
+        props: this.props(),
       },
     };
   }

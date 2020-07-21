@@ -9,5 +9,6 @@ defmodule Oli.Rendering.Context do
     render_opts: %{
       log_errors: true,
       render_errors: true,
-    }
+    },
+    preview: false
 end

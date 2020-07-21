@@ -63,8 +63,7 @@ defmodule OliWeb.ResourceController do
       {:ok, context} ->
         render(conn, "page_preview.html",
           title: "Preview - #{context.title}",
-          # content_html: PageEditor.render_page_html(project_slug, revision_slug, author, PageEditor.create_activities_map(publication_id, map)),
-          content_html: PageEditor.render_page_html(project_slug, revision_slug, author),
+          content_html: PageEditor.render_page_html(project_slug, revision_slug, author, preview: true),
           context: context,
           scripts: Activities.get_activity_scripts(),
           preview_mode: true

@@ -1,10 +1,8 @@
 import * as React from 'react';
-
 import ReactCSSTransitionGroup from 'react-addons-css-transition-group';
-
 import { Message as Msg, MessageAction, Severity } from 'data/messages/messages';
 import { Message } from './Message';
-
+import './Banner.scss';
 
 export interface BannerProps {
   dismissMessage: (message: Msg) => void;
@@ -44,9 +42,9 @@ export class Banner
     const messages = [...errors, ...warnings, ...infos, ...tasks];
 
     return (
-      <div className="messages">
+      <div className="banner">
         <ReactCSSTransitionGroup transitionName="message"
-          transitionEnterTimeout={250} transitionLeaveTimeout={250}>
+          transitionEnterTimeout={200} transitionLeaveTimeout={200}>
           {messages.map(m => <Message key={m.guid} {...this.props} message={m} />)}
         </ReactCSSTransitionGroup>
       </div>

@@ -47,7 +47,7 @@ defmodule OliWeb.Accounts.AccountsLive do
   def render_role_column(assigns, %{system_role_id: system_role_id} = row, _) do
     admin_role_id = SystemRole.role_id().admin
 
-    if row == assigns.model.selected and row.email != "admin@oli.cmu.edu" and row != assigns.model.author do
+    if row == assigns.model.selected and row.email != System.get_env("ADMIN_EMAIL", "admin@example.edu") and row != assigns.model.author do
       case system_role_id do
         ^admin_role_id ->
           ~L"""
