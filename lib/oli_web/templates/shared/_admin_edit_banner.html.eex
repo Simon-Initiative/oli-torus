@@ -17,7 +17,7 @@
 <% end %>
 <%= if @author !== nil do %>
   <div class="alert alert-warning alert-dismissible fade show" style="position: sticky; top: 0px; z-index: 900;" role="alert">
-    <strong>Read only User <%= @author.email %> is currently editing.</strong>
+    <strong>Read only.</strong> <span>User <%= @author.email %> is currently editing.</span>
 
     <form  style="float: right;" class="form-inline my-2 my-lg-0">
        <button  class="btn btn-link shadow-none" type="button" data-toggle="modal" data-target="#configure-token-modal">Learn more</button>
