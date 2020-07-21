@@ -67,7 +67,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def audio(%Context{} = _context, _, %{"src" => src} = attrs) do
-    wrap_with_figure(attrs, ["<audio src=\"", src, "\">Your browser does not support the
+    wrap_with_figure(attrs, ["<audio controls src=\"", src, "\">Your browser does not support the
     <code>audio</code> element.</audio>\n"])
   end
 
