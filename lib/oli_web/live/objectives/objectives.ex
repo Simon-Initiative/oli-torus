@@ -48,6 +48,7 @@ defmodule OliWeb.Objectives.Objectives do
       author: author,
       force_render: 0,
       is_root_selected?: false,
+      can_delete?: false,
       selected: nil,
       edit: :none)
     }
@@ -73,7 +74,7 @@ defmodule OliWeb.Objectives.Objectives do
         <div class="col-12">
           <div class="d-flex justify-content-between">
             <h2>Existing Objectives</h2>
-            <%= live_component @socket, Actions, selected: @selected, is_root?: @is_root_selected? %>
+            <%= live_component @socket, Actions, selected: @selected, is_root?: @is_root_selected?, can_delete?: @can_delete? %>
           </div>
         </div>
       </div>
@@ -166,12 +167,12 @@ defmodule OliWeb.Objectives.Objectives do
   # handle change of selection
   def handle_event("select", %{"slug" => slug}, socket) do
 
-    is_root_selected? = case Enum.find(socket.assigns.objectives_tree, fn %{mapping: mapping} -> mapping.revision.slug == slug end) do
-      nil -> false
-      _ -> true
+    {is_root_selected?, can_delete?} = case Enum.find(socket.assigns.objectives_tree, fn %{mapping: mapping} -> mapping.revision.slug == slug end) do
+      nil -> {false, true}
+      %{mapping: mapping} -> {true, length(mapping.revision.children) == 0}
     end
 
-    {:noreply, assign(socket, selected: slug, is_root_selected?: is_root_selected?, attachment_summary: @default_attachment_summary)}
+    {:noreply, assign(socket, selected: slug, can_delete?: can_delete?, is_root_selected?: is_root_selected?, attachment_summary: @default_attachment_summary)}
   end
 
   # handle change of edit
@@ -211,8 +212,13 @@ defmodule OliWeb.Objectives.Objectives do
   end
 
   def handle_event("prepare_delete", _, socket) do
-    attachment_summary = ObjectiveEditor.preview_objective_detatchment(socket.assigns.selected, socket.assigns.project)
-    {:noreply, assign(socket, modal_shown: true, attachment_summary: attachment_summary, force_render: socket.assigns.force_render + 1)}
+
+    if socket.assigns.can_delete? do
+      attachment_summary = ObjectiveEditor.preview_objective_detatchment(socket.assigns.selected, socket.assigns.project)
+      {:noreply, assign(socket, modal_shown: true, attachment_summary: attachment_summary, force_render: socket.assigns.force_render + 1)}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event("cancel_modal", _, socket) do

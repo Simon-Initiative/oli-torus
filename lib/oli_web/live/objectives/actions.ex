@@ -39,7 +39,7 @@ defmodule OliWeb.Objectives.Actions do
           title="Delete the selected objective"
           id="action_delete"
           phx-hook="TooltipInit"
-          <%= if @selected != nil do "" else "disabled" end %>
+          <%= if @selected != nil and @can_delete? do "" else "disabled" end %>
           data-toggle="tooltip"
           phx-click="prepare_delete"
           data-backdrop="static"
