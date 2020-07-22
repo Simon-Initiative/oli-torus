@@ -51,7 +51,31 @@ defmodule Oli.Activities.State.ActivityState do
 
   end
 
+  def create_preview_state(transformed_model) do
+    %Oli.Activities.State.ActivityState{
+      attemptGuid: "preview",
+      attemptNumber: 1,
+      dateEvaluated: nil,
+      score: nil,
+      outOf: nil,
+      hasMoreAttempts: true,
+      parts: Enum.map(transformed_model["authoring"]["parts"], fn p ->
+        %Oli.Activities.State.PartState{
+          attemptGuid: p["id"],
+          attemptNumber: 1,
+          dateEvaluated: nil,
+          score: nil,
+          outOf: nil,
+          response: nil,
+          feedback: nil,
+          hints: [],
+          hasMoreHints: Enum.count(p["hints"]) > 0,
+          hasMoreAttempts: true,
+          partId: p["id"],
+        }
+      end)
+    }
+  end
+
 
 end
-
-

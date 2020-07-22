@@ -93,6 +93,24 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   end
 
+  # takes the model of the activity to be created and a list of objective slugs and
+  # creates a map of all part ids to objective resource ids
+  defp attach_objectives_to_all_parts(model, objectives) do
+
+    result = case Oli.Activities.Model.parse(model) do
+      {:ok, %{parts: parts}} ->
+
+        %{"objectives" => Enum.reduce(parts, %{}, fn %{id: id}, m -> Map.put(m, id, objectives) end)}
+        |> translate_objective_slugs_to_ids()
+        |> Map.get("objectives")
+
+      {:error, _e} ->
+        %{}
+    end
+
+    {:ok, result}
+  end
+
   defp translate_objective_slugs_to_ids(%{"objectives" => objectives} = update) do
 
     map = Map.values(objectives)
@@ -112,7 +130,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   defp translate_objective_slugs_to_ids(update), do: update
 
-  defp translate_ids_to_slugs(project_slug, objectives) do
+  def translate_ids_to_slugs(project_slug, objectives) do
 
     all = Map.values(objectives)
     |> Enum.reduce([], fn ids, list -> list ++ ids end)
@@ -196,9 +214,9 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   .`{:error, {:not_authorized}}` if the user is not authorized to create this activity
   .`{:error, {:error}}` unknown error
   """
-  @spec create(String.t, String.t, %Author{}, %{})
+  @spec create(String.t, String.t, %Author{}, %{}, [])
     :: {:ok, %Revision{}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:not_authorized}}
-  def create(project_slug, activity_type_slug, author, model) do
+  def create(project_slug, activity_type_slug, author, model, objectives) do
 
     Repo.transaction(fn ->
 
@@ -206,7 +224,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          {:ok} <- authorize_user(author, project),
          {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, activity_type} <- Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
-         {:ok, %{content: content} = activity} <- Activity.create_new(%{title: activity_type.title, scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"), objectives: %{}, author_id: author.id, content: model, activity_type_id: activity_type.id}),
+         {:ok, attached_objectives} <- attach_objectives_to_all_parts(model, objectives),
+         {:ok, %{content: content} = activity} <- Activity.create_new(%{title: activity_type.title, scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"), objectives: attached_objectives, author_id: author.id, content: model, activity_type_id: activity_type.id}),
          {:ok, _} <- Course.create_project_resource(%{ project_id: project.id, resource_id: activity.resource_id}) |> trap_nil(),
          {:ok, _mapping} <- Publishing.create_resource_mapping(%{publication_id: publication.id, resource_id: activity.resource_id, revision_id: activity.id})
       do
@@ -232,7 +251,6 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
          {:ok, all_objectives} <- Publishing.get_published_objective_details(publication.id) |> trap_nil(),
-         {:ok, objectives_without_ids} <- PageEditor.strip_ids(all_objectives) |> trap_nil(),
          {:ok, %{content: content, title: resource_title}} <- PageEditor.get_latest_revision(publication, resource) |> trap_nil(),
          {:ok, %{id: activity_id}} <- Resources.get_resource_from_slug(activity_slug) |> trap_nil(),
          {:ok, %{activity_type: activity_type, content: model, title: title, objectives: objectives}} <- get_latest_revision(publication.id, activity_id) |> trap_nil()
@@ -253,7 +271,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         title: title,
         model: model,
         objectives: translate_ids_to_slugs(project_slug, objectives),
-        allObjectives: objectives_without_ids,
+        allObjectives: all_objectives,
         previousActivity: previous,
         nextActivity: next
       }

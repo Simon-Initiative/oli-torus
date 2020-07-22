@@ -14,13 +14,16 @@ const applyAction = (
 function testFromText(text: string) {
   return {
     id: Math.random() + '',
-    content: [
-      ContentModel.create<ContentModel.Paragraph>({
-        type: 'p',
-        children: [{ text }],
-        id: Math.random() + '',
-      }),
-    ],
+    content: {
+      model: [
+        ContentModel.create<ContentModel.Paragraph>({
+          type: 'p',
+          children: [{ text }],
+          id: Math.random() + '',
+        }),
+      ],
+      selection: null,
+    },
   };
 }
 
@@ -60,6 +63,7 @@ function testDefaultModel(): MultipleChoiceModelSchema {
         },
       ],
       transformations: [],
+      previewText: '',
     },
   };
 }

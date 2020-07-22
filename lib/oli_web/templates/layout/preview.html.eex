@@ -3,4 +3,3 @@
   <%= @inner_content %>
 
 <% end %>
-

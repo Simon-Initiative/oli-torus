@@ -73,7 +73,6 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
   const isEvaluated = attemptState.score !== null;
 
   const onSelect = (id: string) => {
-
     // Update local state
     setSelected(Maybe.just<string>(id));
 
@@ -120,7 +119,10 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
     });
   };
 
-  const evaluationSummary = isEvaluated ? <Evaluation attemptState={attemptState}/> : null;
+  const evaluationSummary = isEvaluated
+    ? <Evaluation key="evaluation" attemptState={attemptState}/>
+    : null;
+
   const reset = isEvaluated && !props.graded
     ? (<div className="d-flex my-3">
         <div className="flex-fill"></div>

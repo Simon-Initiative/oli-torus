@@ -19,6 +19,7 @@ export type MessageAction = {
   label: string,
   enabled: boolean,
   execute: (message: Message) => void;
+  btnClass?: string;
 };
 
 export type Message = {

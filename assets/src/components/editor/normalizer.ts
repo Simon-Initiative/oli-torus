@@ -60,7 +60,7 @@ export function installNormalizer(editor: SlateEditor & ReactEditor) {
 
     } catch (e) {
       // tslint:disable-next-line
-      console.log(e);
+      console.error(e);
     }
 
     normalizeNode(entry);

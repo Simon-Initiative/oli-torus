@@ -9,17 +9,18 @@ import * as persistence from 'data/persistence/media';
 import { OrderedMediaLibrary } from '../OrderedMediaLibrary';
 import './MediaManager.scss';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
+import { relativeToNow } from 'utils/date';
 
 const PAGELOAD_TRIGGER_MARGIN_PX = 100;
 const MAX_NAME_LENGTH = 26;
-const PAGE_LOADING_MESSAGE = 'Hang on while more items are loaded...';
+const PAGE_LOADING_MESSAGE = 'Hang on while we load your items...';
 
 export const MIMETYPE_FILTERS = {
-  IMAGE: ['image/jpeg', 'image/png', 'image/jpeg', 'image/gif'],
-  AUDIO: ['audio/mpeg'],
-  VIDEO:  ['video/mp4'],
+  IMAGE: ['image/jpeg', 'image/png', 'image/tiff', 'image/gif'],
+  AUDIO: ['audio/mpeg', 'audio/wav', 'audio/mid', 'audio/mp4'],
+  VIDEO: ['video/mp4'],
   HTML: ['text/html'],
-  ALL: [''],
+  ALL: undefined,
 };
 
 export enum SELECTION_TYPES {
@@ -72,7 +73,7 @@ const getSortMappingKey = (orderBy: string, order?: string) => {
     && (order === undefined || order === SORT_MAPPINGS[key].order));
 };
 
-const popOpenImage = (e : any) => {
+const popOpenImage = (e: any) => {
   const link = e.target;
   const w = window.open(
     link.href,
@@ -90,16 +91,17 @@ export interface MediaManagerProps {
   projectSlug: string;
   model: Media;
   media: OrderedMediaLibrary;
-  mimeFilter?: string[];
+  mimeFilter?: string[] | undefined;
   selectionType: SELECTION_TYPES;
   initialSelectionPaths: string[];
   onEdit: (updated: Media) => void;
   onLoadCourseMediaNextPage: (projectSlug: string,
-    mimeFilter: string[], searchText: string,
+    mimeFilter: string[] | undefined, searchText: string,
     orderBy: string, order: string) => Promise<Maybe<Immutable.List<MediaItem>>>;
   onResetMedia: () => void;
   onSelectionChange: (selection: MediaItem[]) => void;
   onLoadMediaItemByPath: (projectSlug: string, path: string) => Promise<Maybe<MediaItem>>;
+  toggleDisableInsert?: (b: boolean) => void;
 }
 
 export interface MediaManagerState {
@@ -109,6 +111,8 @@ export interface MediaManagerState {
   order: string;
   layout: LAYOUTS;
   showDetails: boolean;
+  error: Maybe<string>;
+  filteredMimeTypes: string[] | undefined;
 }
 
 /**
@@ -128,6 +132,8 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       order: SORT_MAPPINGS.Newest.order,
       layout: LAYOUTS.GRID,
       showDetails: true,
+      error: Maybe.nothing<string>(),
+      filteredMimeTypes: props.mimeFilter,
     };
 
     this.onScroll = this.onScroll.bind(this);
@@ -147,20 +153,23 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
 
     // load initial selection data
     if (initialSelectionPaths) {
-      Promise.all(initialSelectionPaths.filter(path => path).map(path =>
-        onLoadMediaItemByPath(this.props.projectSlug, path.replace(/^[./]+/, ''))),
-      ).then((mediaItems) => {
-        this.setState({
-          selection: Immutable.List(
-            mediaItems.map(mi =>
-              mi.caseOf({
-                just: item => item.guid,
-                nothing: () => undefined,
-              }) as string,
-            ).filter(i => i),
-          ),
-        });
-      });
+      Promise
+        .all(initialSelectionPaths.filter(path => path).map(path =>
+          onLoadMediaItemByPath(this.props.projectSlug, path.replace(/^[./]+/, ''))))
+        .then((mediaItems) => {
+          this.setState({
+            selection: Immutable.List(
+              mediaItems.map(mi =>
+                mi.caseOf({
+                  just: item => item.guid,
+                  nothing: () => undefined,
+                }) as string,
+              ).filter(i => i),
+            ),
+            error: Maybe.nothing<string>(),
+          });
+        })
+        .catch(e => this.setState({ error: Maybe.just(e.message) }));
     }
   }
 
@@ -189,8 +198,8 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
   }
 
   onScroll() {
-    const { media, mimeFilter, onLoadCourseMediaNextPage } = this.props;
-    const { searchText, orderBy, order } = this.state;
+    const { media, onLoadCourseMediaNextPage } = this.props;
+    const { searchText, orderBy, order, filteredMimeTypes } = this.state;
 
     const isLoadingMedia = media.isLoading;
 
@@ -203,7 +212,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
 
     if (!isLoadingMedia && this.scrollView.scrollTop + PAGELOAD_TRIGGER_MARGIN_PX
       > (this.scrollContent.offsetHeight - this.scrollView.offsetHeight)) {
-      onLoadCourseMediaNextPage(this.props.projectSlug, mimeFilter as string[],
+      onLoadCourseMediaNextPage(this.props.projectSlug, filteredMimeTypes,
         searchText as string, orderBy, order);
     }
   }
@@ -214,7 +223,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     const { searchText, orderBy, order } = this.state;
 
     // get a list of the files to upload
-    const fileList : File[] = [];
+    const fileList: File[] = [];
     for (let i = 0; i < files.length; i = i + 1) {
       fileList.push(files[i]);
     }
@@ -222,8 +231,8 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     // the server creates a lock on upload, so we must upload files one at a
     // time. This factory function returns a new promise to upload a file
     // recursively until fileList is empty
-    const results : any = [];
-    const createWebContentPromiseFactory = (courseId : string, file: File) : any =>
+    const results: any = [];
+    const createWebContentPromiseFactory = (courseId: string, file: File): any =>
       persistence.createMedia(courseId, file)
         .then((result) => {
           results.push(result);
@@ -246,12 +255,15 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
           .then((mediaItems) => {
             mediaItems.lift((files) => {
               if (files.size > 0) {
-                Maybe.maybe(files.find(f => f.url === result[0])).lift(file =>
-                  this.onSelect(file.guid));
+                Maybe
+                  .maybe(files.find(f => f.url === (result[0] && result[0].url)))
+                  .lift(file => this.onSelect(file.guid));
               }
             });
-          });
-      });
+          })
+          .then(() => this.setState({ error: Maybe.nothing<string>() }));
+      })
+      .catch((e: Error) => this.setState({ error: Maybe.just(e.message) }));
   }
 
   onChangeLayout(newLayout: LAYOUTS) {
@@ -295,21 +307,22 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     if (mediaLibrary) {
       onSelectionChange(
         updatedSelection.map(s => mediaLibrary.getItem(s)).toArray() as MediaItem[]);
+      this.props.toggleDisableInsert && this.props.toggleDisableInsert(false);
     }
   }
 
   onSearch(searchText: string) {
-    const { mimeFilter, onLoadCourseMediaNextPage, onResetMedia } = this.props;
-    const { orderBy, order } = this.state;
+    const { onLoadCourseMediaNextPage, onResetMedia } = this.props;
+    const { orderBy, order, filteredMimeTypes } = this.state;
 
     onResetMedia();
-    onLoadCourseMediaNextPage(this.props.projectSlug, mimeFilter as string[],
+    onLoadCourseMediaNextPage(this.props.projectSlug, filteredMimeTypes,
       searchText, orderBy, order);
   }
 
   onSortChange(sortKey: string) {
-    const { mimeFilter, onLoadCourseMediaNextPage, onResetMedia } = this.props;
-    const { searchText } = this.state;
+    const { onLoadCourseMediaNextPage, onResetMedia } = this.props;
+    const { searchText, filteredMimeTypes } = this.state;
 
     this.setState({
       orderBy: SORT_MAPPINGS[sortKey].orderBy,
@@ -318,9 +331,13 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
 
     onResetMedia();
     onLoadCourseMediaNextPage(this.props.projectSlug,
-      mimeFilter as string[], searchText as string,
+      filteredMimeTypes, searchText as string,
       SORT_MAPPINGS[sortKey].orderBy, SORT_MAPPINGS[sortKey].order);
   }
+
+  isItemSelectable = (selectionType: SELECTION_TYPES, item: MediaItem) =>
+    selectionType !== SELECTION_TYPES.NONE
+    && (!this.props.mimeFilter || this.props.mimeFilter.includes(item.mimeType))
 
   renderMediaList() {
     const { media, selectionType } = this.props;
@@ -348,8 +365,10 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
               <div key={item.guid}
                 className={
                   `media-item ${this.isSelected(item.guid) ? 'selected' : ''} `
-                  + `${selectionType !== SELECTION_TYPES.NONE ? 'selectable' : ''}`}
-                onClick={() => this.onSelect(item.guid)}>
+                  + `${this.isItemSelectable(selectionType, item) ? 'selectable' : 'not-selectable'}`}
+                onClick={() => this.isItemSelectable(selectionType, item)
+                  ? this.onSelect(item.guid)
+                  : null}>
                 <div className="sel-col">
                   <input
                     type="checkbox"
@@ -398,8 +417,10 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
           {mediaItems.map(item => (
             <div key={item.guid}
               className={`media-item ${this.isSelected(item.guid) ? 'selected' : ''} `
-                + `${selectionType !== SELECTION_TYPES.NONE ? 'selectable' : ''}`}
-              onClick={() => this.onSelect(item.guid)}>
+                + `${this.isItemSelectable(selectionType, item) ? 'selectable' : 'not-selectable'}`}
+              onClick={() => this.isItemSelectable(selectionType, item)
+                ? this.onSelect(item.guid)
+                : null}>
               <input
                 type="checkbox"
                 readOnly
@@ -448,22 +469,25 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       );
     }
 
+    const detailsOnClick = () => this.setState({ showDetails: !showDetails });
+
     if (selectedMediaItems.size > 0) {
       const selectedItem = selectedMediaItems.first() as MediaItem;
 
       return (
         <div className="media-selection-details">
           <div className="details-title">
-            <a
+            <span>Selected: <a
               href={selectedItem.url}
               target="_blank"
-              onClick={popOpenImage} >
+              onClick={popOpenImage}>
               {stringFormat.ellipsize(selectedItem.fileName, 65, 5)}</a>
-            <div className="flex-spacer" />
-            <button className="btn btn-link" onClick={() =>
-              this.setState({ showDetails: !showDetails })}>
-              {showDetails ? 'Hide' : 'Details'}
-            </button>
+            </span>
+            {showDetails
+              ? <span role="button" onClick={detailsOnClick}
+                className="material-icons">keyboard_arrow_down</span>
+              : <span role="button" onClick={detailsOnClick}
+                className="material-icons">keyboard_arrow_up</span>}
           </div>
           {showDetails &&
             <div className="details-content">
@@ -473,10 +497,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
                 url={selectedItem.url} />
               <div className="details-info">
                 <div className="detail-row date-created">
-                  <b>Created:</b> {selectedItem.dateCreated}
-                </div>
-                <div className="detail-row date-updated">
-                  <b>Updated:</b> {selectedItem.dateUpdated}
+                  <b>Uploaded:</b> {relativeToNow(new Date(selectedItem.dateCreated))}
                 </div>
                 <div className="detail-row file-size">
                   <b>Size:</b> {convert.toByteNotation(selectedItem.fileSize)}
@@ -489,6 +510,37 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     }
   }
 
+  renderError() {
+    const { error } = this.state;
+
+    return error.caseOf({
+      just: error => <div className="alert alert-danger fade show" role="alert">
+        {error}
+      </div>,
+      nothing: () => null,
+    });
+  }
+
+  displayMediaOfType = (mimeFilter: string[] | undefined) => {
+    const { searchText, orderBy, order } = this.state;
+    this.props.onResetMedia();
+    this.props.onLoadCourseMediaNextPage(this.props.projectSlug, mimeFilter,
+      searchText as string, orderBy, order)
+      .then(_ => this.setState({ filteredMimeTypes: mimeFilter }));
+  }
+
+  mimeTypeFilter = (type: string[] | undefined) => {
+    const { filteredMimeTypes } = this.state;
+    if (type === MIMETYPE_FILTERS.ALL || filteredMimeTypes === MIMETYPE_FILTERS.ALL) {
+      return type === filteredMimeTypes ? 'active' : '';
+    }
+
+    const filtersAreSame = (arr1: string[], arr2: string[]) =>
+      arr1.reduce((acc, curr, i) => curr === arr2[i] ? acc : false, true);
+
+    return filtersAreSame(filteredMimeTypes, type) ? 'active' : '';
+  }
+
   render() {
     const { className, mimeFilter, media } = this.props;
     const { searchText, layout, orderBy, order } = this.state;
@@ -499,6 +551,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
 
     return (
       <div className={`media-manager ${className || ''}`}>
+        {this.renderError()}
         <div className="media-toolbar">
           <input
             id={id}
@@ -512,56 +565,71 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
             onClick={() => this.onUploadClick(id)}>
             <i className="fa fa-upload" /> Upload
           </button>
-          <div className="media-toolbar-item layout-control">
-            <button
-              className={`btn btn-outline-primary ${layout === LAYOUTS.GRID ? 'selected' : ''}`}
-              onClick={() => this.onChangeLayout(LAYOUTS.GRID)}>
-              <i className="fa fa-th" />
-            </button>
-            <button
-              className={`btn btn-outline-primary ${layout === LAYOUTS.LIST ? 'selected' : ''}`}
-              onClick={() => this.onChangeLayout(LAYOUTS.LIST)}>
-              <i className="fa fa-th-list" />
-            </button>
-          </div>
-          <div className="media-toolbar-item flex-spacer" />
-          <div className="media-toolbar-item sort-control dropdown">
-            Sort By:
-            <button
-              className="btn btn-secondary dropdown-toggle sort-btn"
-              type="button" id="dropdownMenu2"
-              data-toggle="dropdown">
-              <i className={SORT_MAPPINGS[getSortMappingKey(orderBy, order) as any].icon} />
-              {` ${getSortMappingKey(orderBy, order)}`}
-            </button>
-            <div className="dropdown-menu">
-              {Object.keys(SORT_MAPPINGS).map(sortKey =>
-                <button
-                  key={sortKey}
-                  type="button"
-                  className="dropdown-item"
-                  onClick={() => this.onSortChange(sortKey)}>
-                  {sortKey}
-                </button>,
-              )}
+          <div className="d-flex">
+            <div className="media-toolbar-item btn-group layout-control">
+              <button
+                className={`btn btn-outline-primary ${layout === LAYOUTS.GRID ? 'selected' : ''}`}
+                onClick={() => this.onChangeLayout(LAYOUTS.GRID)}>
+                <i className="fa fa-th" />
+              </button>
+              <button
+                className={`btn btn-outline-primary ${layout === LAYOUTS.LIST ? 'selected' : ''}`}
+                onClick={() => this.onChangeLayout(LAYOUTS.LIST)}>
+                <i className="fa fa-th-list" />
+              </button>
             </div>
-          </div>
-          <div className="media-toolbar-item search">
-            <div className="input-group">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search"
-                value={searchText}
-                onChange={({ target: { value } }) => this.onSearch(value)} />
+            <div className="media-toolbar-item sort-control dropdown">
+              Sort By:&nbsp;
+              <span
+                className="dropdown-toggle sort-btn"
+                id="dropdownMenu2"
+                data-toggle="dropdown">
+                <i className={SORT_MAPPINGS[getSortMappingKey(orderBy, order) as any].icon} />
+                {` ${getSortMappingKey(orderBy, order)}`}
+              </span>
+              <div className="dropdown-menu">
+                {Object.keys(SORT_MAPPINGS).map(sortKey =>
+                  <button
+                    key={sortKey}
+                    type="button"
+                    className="dropdown-item"
+                    onClick={() => this.onSortChange(sortKey)}>
+                    {sortKey}
+                  </button>,
+                )}
+              </div>
+            </div>
+            <div className="media-toolbar-item search">
+              <div className="input-group">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Search"
+                  value={searchText}
+                  onChange={({ target: { value } }) => this.onSearch(value)} />
+              </div>
             </div>
           </div>
         </div>
         <div className="media-library">
-          <ol className="media-sidebar">
-            <li className="active">All Media</li>
-            {/* <li className="">Unit 1</li>
-            <li className="">Unit 2</li> */}
+          <ol className="media-sidebar text-center">
+            <li>Filter to:</li>
+            <li className={this.mimeTypeFilter(MIMETYPE_FILTERS.ALL)}
+              onClick={() => this.displayMediaOfType(MIMETYPE_FILTERS.ALL)}>
+              All Media
+            </li>
+            <li className={this.mimeTypeFilter(MIMETYPE_FILTERS.IMAGE)}
+              onClick={() => this.displayMediaOfType(MIMETYPE_FILTERS.IMAGE)}>
+              Images
+              </li>
+            <li className={this.mimeTypeFilter(MIMETYPE_FILTERS.AUDIO)}
+              onClick={() => this.displayMediaOfType(MIMETYPE_FILTERS.AUDIO)}>
+              Audio
+            </li>
+            <li className="d-flex flex-column">
+              <span>Video</span>
+              <small>Managed by Youtube</small>
+            </li>
           </ol>
           <div className="media-content">
             {layout === LAYOUTS.GRID

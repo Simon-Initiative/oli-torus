@@ -23,7 +23,7 @@ defmodule Oli.PublishingTest do
     parts = Enum.map(parts, fn {part_id, _} -> part_id end)
     content = %{ "content" => %{"authoring" => %{"parts" => parts}}}
 
-    {:ok, {revision, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content)
+    {:ok, {revision, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
 
     # attach just one activity
     update = %{ "objectives" => %{ "attached" => [obj_slug]}, "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => revision.slug, "purpose" => "none"}]}}
@@ -227,4 +227,3 @@ defmodule Oli.PublishingTest do
   end
 
 end
-

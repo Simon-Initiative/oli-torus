@@ -5,7 +5,7 @@
 
   <span style="float: right;">
     <%= link class: "toolbar-link", to: Routes.live_path(OliWeb.Endpoint, OliWeb.RevisionHistory, @project_slug,@revision_slug) do %>
-      <span><i class="fas fa-history"></i></span> View History
+      <span style="margin-right: 5px"><i class="fas fa-history"></i></span><span>View History</span>
     <% end %>
   </span>
 
