@@ -87,6 +87,35 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     end
   end
 
+  def delete(revision_slug, %Author{} = author, %Project{} = project, parent_objective \\ nil) do
+
+    attrs = %{
+      author_id: author.id,
+      deleted: true,
+    }
+
+    Repo.transaction(fn ->
+
+      with {:ok, revision} <- edit(revision_slug, attrs, author, project)
+      do
+
+        if parent_objective != nil do
+          edit(parent_objective.slug,
+            %{ children: Enum.filter(parent_objective.children, fn id -> id != revision.resource_id end)},
+            author, project)
+        end
+
+        revision
+
+      else
+        error -> Repo.rollback(error)
+      end
+
+    end)
+
+  end
+
+
 
   @doc """
   Detaches an objective from all unlocked pages and activites that currently reference it.

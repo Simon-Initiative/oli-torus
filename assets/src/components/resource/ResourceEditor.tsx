@@ -66,7 +66,11 @@ function withDefaultContent(content: ResourceContent[]) {
 
 function registerUnload(strategy: PersistenceStrategy) {
   return window.addEventListener('beforeunload', (event) => {
-    strategy.destroy();
+
+    // Destroying the strategy is done in another execution context
+    // as running it inline fails in Firefox, as the release
+    // lock HTTP request does not get sent
+    setTimeout(() => strategy.destroy(), 0);
   });
 }
 
@@ -196,7 +200,9 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
   }
 
   componentWillUnmount() {
+
     this.persistence.destroy();
+
     unregisterUnload(this.windowUnloadListener);
     unregisterUndoRedoHotkeys(this.undoRedoListener);
     unregisterKeydown(this.keydownListener);

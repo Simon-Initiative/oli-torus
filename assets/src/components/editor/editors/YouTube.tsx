@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ReactEditor } from 'slate-react';
+import { ReactEditor, useSelected, useFocused } from 'slate-react';
 import { Transforms } from 'slate';
 
 import { updateModel, getEditMode } from './utils';
@@ -135,6 +135,9 @@ export const YouTubeEditor = (props: YouTubeProps) => {
 
   const editMode = getEditMode(editor);
 
+  const focused = useFocused();
+  const selected = useSelected();
+
   // Note that it is important that any interactive portions of a void editor
   // must be enclosed inside of a "contentEditable=false" container. Otherwise,
   // slate does some weird things that non-deterministically interface with click
@@ -165,13 +168,19 @@ export const YouTubeEditor = (props: YouTubeProps) => {
     onRemove={onRemove}
     onEdit={onEdit}/>;
 
+
+  const borderStyle = focused && selected
+    ? { border: 'solid 2px lightblue' } : {};
+
+
   return (
     <div {...attributes} className="ml-4 mr-4">
 
-      <div contentEditable={false} style={{ userSelect: 'none' }} className="youtube-editor">
+      <div contentEditable={false} style={{ userSelect: 'none' }}
+        className="youtube-editor">
 
         <div className="embed-responsive embed-responsive-16by9 img-thumbnail">
-          <iframe className="embed-responsive-item"
+          <iframe className="embed-responsive-item" style={borderStyle}
             src={fullSrc} allowFullScreen></iframe>
         </div>
         <Settings.ToolPopupButton
