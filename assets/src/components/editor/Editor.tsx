@@ -8,7 +8,7 @@ import {
 } from 'data/content/model';
 import { editorFor, markFor } from './editors';
 import { ToolbarItem, CommandContext } from './interfaces';
-import { FixedToolbar, HoveringToolbar } from './Toolbars';
+import { FixedToolbar, HoveringToolbar, ToolbarPosition } from './Toolbars';
 import { onKeyDown as listOnKeyDown } from './editors/Lists';
 import { commandDesc as linkCmd } from './editors/Link';
 import { getRootOfText } from './utils';
@@ -33,6 +33,8 @@ export type EditorProps = {
   editMode: boolean;
 
   commandContext: CommandContext;
+
+  toolbarPosition?: ToolbarPosition;
 };
 
 // Pressing the Enter key on any void block should insert an empty
@@ -215,7 +217,8 @@ export const Editor = React.memo((props: EditorProps) => {
         value={props.value}
         onChange={onChange}
         >
-        <FixedToolbar toolbarItems={props.toolbarItems} commandContext={props.commandContext} />
+        <FixedToolbar position={props.toolbarPosition} toolbarItems={props.toolbarItems}
+          commandContext={props.commandContext} />
 
         <HoveringToolbar commandContext={props.commandContext}/>
 

@@ -111,7 +111,7 @@ export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
     <div ref={(ref as any)} className="hovering-toolbar" style={{ display: 'none', position: 'relative' }}>
       <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>
         {hoverMenuCommands.map(b =>
-          <ToolbarButton style="btn-secondary" key={b.icon}
+          <ToolbarButton style="btn-dark" key={b.icon}
           icon={b.icon} command={b.command} context={props.commandContext} />)}
       </div>
     </div>, document.body,
@@ -126,9 +126,17 @@ function shouldHideFixedToolbar(editor: ReactEditor) {
   return !ReactEditor.isFocused(editor);
 }
 
+export type ToolbarPosition = {
+  top?: number,
+  bottom?: number,
+  left?: number,
+  right?: number,
+};
+
 type FixedToolbarProps = {
   toolbarItems: ToolbarItem[];
   commandContext: CommandContext;
+  position?: ToolbarPosition;
 };
 
 function fixedAreEqual(prevProps: FixedToolbarProps, nextProps: FixedToolbarProps) {
@@ -138,11 +146,8 @@ function fixedAreEqual(prevProps: FixedToolbarProps, nextProps: FixedToolbarProp
 
 export const FixedToolbar = React.memo((props: FixedToolbarProps) => {
   const { toolbarItems } = props;
-  const [collapsed, setCollapsed] = useState(false);
   const ref = useRef();
   const editor = useSlate();
-
-  const icon = collapsed ? 'fas fa-angle-left' : 'fas fa-angle-right';
 
   useEffect(() => {
     const el = ref.current as any;
@@ -158,46 +163,40 @@ export const FixedToolbar = React.memo((props: FixedToolbarProps) => {
     }
   });
 
-  const style = {
-    position: 'absolute',
-    zIndex: 1,
-    top: '0px',
-    right: -gutterWidth + 'px',
-    borderRadius: '4px',
-    transition: 'opacity 0.75s',
-  } as any;
-
-  const buttons = collapsed
-    ? []
-    : [<TextFormatter key="text"/>, ...toolbarItems.map((t, i) => {
+  const buttons = [
+    <TextFormatter key="text" />,
+    ...toolbarItems.map((t, i) => {
       if (t.type === 'CommandDesc' && t.command.obtainParameters === undefined) {
         return <ToolbarButton
           tooltip={t.description}
-          style="" key={t.icon} icon={t.icon} command={t.command} context={props.commandContext} />;
+          style="mr-1" key={t.icon} icon={t.icon}
+          command={t.command} context={props.commandContext} />;
       }
       if (t.type === 'CommandDesc' && t.command.obtainParameters !== undefined) {
-        return <DropdownToolbarButton style="" key={t.icon} icon={t.icon}
+        return <DropdownToolbarButton style="mr-1" key={t.icon} icon={t.icon}
           tooltip={t.description}
           command={t.command} context={props.commandContext}/>;
       }
       return <Spacer key={'spacer-' + i} />;
-    })];
+    }),
+  ];
 
+  const style = props.position !== undefined
+    ? {
+      display: 'none',
+      top: props.position.top,
+      bottom: props.position.bottom,
+      left: props.position.left,
+      right: props.position.right,
+    }
+    : {
+      display: 'none',
+    };
 
   return (
-    <div ref={(ref as any)} style={{ display: 'none', position: 'sticky', top: '0px' }}>
-      <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>
+    <div ref={(ref as any)} className="toolbar fixed-toolbar" style={style}>
+      <div className="toolbar-buttons btn-group btn-group-sm" role="group" ref={(ref as any)}>
         {buttons}
-        <button
-          className="btn btn-sm"
-          style={{ width: '10px' }}
-          onMouseDown={(event) => {
-            event.preventDefault();
-            setCollapsed(!collapsed);
-          }}
-        >
-          <i className={icon}></i>
-        </button>
       </div>
     </div>
   );
@@ -241,7 +240,7 @@ const TextFormatter = () => {
     <select
       onChange={onChange}
       value={selected  as string}
-      className="custom-select custom-select-sm">
+      className="text-formatter custom-select custom-select-sm mr-3">
       {textOptions.map(o =>
         <option key={o.value} value={o.value}>{o.text}</option>)}
     </select>
