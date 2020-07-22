@@ -16,7 +16,7 @@ export function assertNever(x: never): never {
 export function removeEmpty(items: any[]) {
   return items.filter(hasContent);
 }
-// Forgive me father, for I have sinned
+// Forgive me for I have sinned
 function hasContent(item: any) {
   try {
     if (item.content) {
