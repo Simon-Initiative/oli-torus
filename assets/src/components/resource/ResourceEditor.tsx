@@ -197,7 +197,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
         this.windowBlurListener = registerWindowBlur(this);
       } else {
         if (this.persistence.getLockResult().type === 'not_acquired') {
-          const notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired
+          const notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired;
           this.editingLockedMessage(notAcquired.user);
         }
       }
@@ -218,7 +218,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
   editingLockedMessage(email: string) {
     const message = createMessage({
       canUserDismiss: false,
-      content: 'Read Only. User ' + email +' is currently editing this page.',
+      content: 'Read Only. User ' + email + ' is currently editing this page.',
       severity: Severity.Information,
     });
     this.setState({ messages: [...this.state.messages, message] });
