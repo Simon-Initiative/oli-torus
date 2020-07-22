@@ -29,6 +29,7 @@ defmodule Oli.Authoring.Locks do
   """
 
   alias Oli.Publishing
+  alias Oli.Repo
 
   # Locks that are not updated after 10 minutes are considered to be expired
   @ttl 10 * 60
@@ -62,7 +63,7 @@ defmodule Oli.Authoring.Locks do
   def acquire(publication_id, resource_id, user_id) do
 
     # Get the mapping that pertains to this publication and resource
-    case Publishing.get_resource_mapping!(publication_id, resource_id) do
+    case Publishing.get_resource_mapping!(publication_id, resource_id) |> Repo.preload([:author]) do
 
       # Acquire the lock if held already by this user
       %{locked_by_id: ^user_id} = mapping -> lock_action(mapping, user_id, &always?/1, {:acquired}, {:acquired}, nil)
@@ -72,8 +73,8 @@ defmodule Oli.Authoring.Locks do
 
       # Otherwise, another user may have this locked, acquire it if
       # the lock is expired
-      %{ locked_by_id: other_user_id, lock_updated_at: lock_updated_at} = mapping ->
-        lock_action(mapping, user_id, &expired?/1, {:acquired}, {:lock_not_acquired, {other_user_id, lock_updated_at}}, nil)
+      %{ locked_by_id: other_user_id, lock_updated_at: lock_updated_at, } = mapping ->
+        lock_action(mapping, user_id, &expired?/1, {:acquired}, {:lock_not_acquired, {mapping.author.email, lock_updated_at}}, nil)
     end
   end
 
@@ -108,7 +109,7 @@ defmodule Oli.Authoring.Locks do
   def update(publication_id, resource_id, user_id) do
 
     # Get the mapping that pertains to this publication and resource
-    case Publishing.get_resource_mapping!(publication_id, resource_id) do
+    case Publishing.get_resource_mapping!(publication_id, resource_id) |> Repo.preload([:author]) do
 
       # Acquire the lock if held already by this user and the lock is expired or its last_updated_date is empty
       # otherwise, simply update it
@@ -119,8 +120,8 @@ defmodule Oli.Authoring.Locks do
       # has taken place.  We must not acquire here since this could lead to lost changes as
       # the client has a copy of content in client-side memory and is seeking to update this
       # revision.
-      %{ locked_by_id: other_user_id, lock_updated_at: lock_updated_at} ->
-        {:lock_not_acquired, {other_user_id, lock_updated_at}}
+      %{ locked_by_id: other_user_id, lock_updated_at: lock_updated_at} = mapping ->
+        {:lock_not_acquired, {mapping.author.email, lock_updated_at}}
     end
   end
 
