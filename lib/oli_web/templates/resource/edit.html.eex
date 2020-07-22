@@ -10,5 +10,5 @@
 <div id="editor" class="container"/>
 
 <script>
-  window.oliMountApplication(document.getElementById('editor'), <%= raw(@context) %>);
+  window.oliMountApplication(document.getElementById('editor'), "<%= Base.encode64(@context) %>");
 </script>
