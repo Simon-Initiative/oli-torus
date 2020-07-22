@@ -12,11 +12,11 @@ import {
   UndoableState, processRedo, processUndo, processUpdate, init,
   registerUndoRedoHotkeys, unregisterUndoRedoHotkeys,
 } from '../resource/undo';
-import { releaseLock, acquireLock } from 'data/persistence/lock';
+import { releaseLock, acquireLock, NotAcquired } from 'data/persistence/lock';
 import * as Persistence from 'data/persistence/activity';
 import { ActivityModelSchema } from 'components/activities/types';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
-import { Message, createMessage } from 'data/messages/messages';
+import { Message, createMessage, Severity } from 'data/messages/messages';
 import { Banner } from '../messages/Banner';
 import { PartObjectives } from 'components/activity/PartObjectives';
 import { valueOr } from 'utils/common';
@@ -121,6 +121,11 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
       if (editMode) {
         this.windowUnloadListener = registerUnload(this.persistence, this.beforeUnload.bind(this));
         this.undoRedoListener = registerUndoRedoHotkeys(this.undo.bind(this), this.redo.bind(this));
+      } else {
+        if (this.persistence.getLockResult().type === 'not_acquired') {
+          const notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired;
+          this.editingLockedMessage(notAcquired.user);
+        }
       }
     });
 
@@ -144,6 +149,15 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
     if (this.undoRedoListener !== null) {
       unregisterUndoRedoHotkeys(this.undoRedoListener);
     }
+  }
+
+  editingLockedMessage(email: string) {
+    const message = createMessage({
+      canUserDismiss: false,
+      content: 'Read Only. User ' + email + ' is currently editing this page.',
+      severity: Severity.Information,
+    });
+    this.setState({ messages: [...this.state.messages, message] });
   }
 
   publishErrorMessage(failure: any) {
