@@ -124,7 +124,7 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
 
   console.log(hasMoreHints)
 
-  const ungradedDetails = props.graded ? null : [
+  const ungradedDetails = props.graded || hints.length === 0 ? null : [
     evaluationSummary,
     <Hints key="hints" onClick={onRequestHint} hints={hints}
       hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>];

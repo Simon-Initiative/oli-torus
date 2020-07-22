@@ -52,6 +52,8 @@ defmodule Oli.Activities.State.ActivityState do
   end
 
   def create_preview_state(transformed_model) do
+    # This is the second place -> adjust filtered hints and counts
+
     %Oli.Activities.State.ActivityState{
       attemptGuid: "preview",
       attemptNumber: 1,
@@ -69,7 +71,9 @@ defmodule Oli.Activities.State.ActivityState do
           response: nil,
           feedback: nil,
           hints: [],
-          hasMoreHints: Enum.count(p["hints"]) > 0,
+          hasMoreHints: (p["hints"]
+            |> Oli.Activities.ParseUtils.remove_empty
+            |> length) > 0,
           hasMoreAttempts: true,
           partId: p["id"],
         }

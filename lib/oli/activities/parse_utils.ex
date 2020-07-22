@@ -23,13 +23,12 @@ defmodule Oli.Activities.ParseUtils do
   @doc """
   Filters out items with no content
   """
-  def remove_empty({:error, _} = items), do: items
-  def remove_empty({:ok, items}) do
-    {:ok, Enum.filter(items, & has_content?(&1))}
+  def remove_empty(items) do
+    Enum.filter(items, & has_content?(&1))
   end
-  def has_content?(%{content: content} = here) do
+  def has_content?(%{content: %{ "model" => model }} = here) do
     IO.inspect(here, label: "here")
-    text = Rendering.Content.render(%Context{}, content, Rendering.Content.Plaintext)
+    text = Rendering.Content.render(%Context{}, model, Rendering.Content.Plaintext)
     |> Enum.join("")
     IO.inspect(text, label: "text")
     case String.trim(text) do
