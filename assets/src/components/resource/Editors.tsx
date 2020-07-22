@@ -167,14 +167,17 @@ export const Editors = (props: EditorsProps) => {
     ) : [JSX.Element, string] => {
 
     if (content.type === 'content') {
-      return [<StructuredContentEditor
-        key={content.id}
-        editMode={editMode}
-        content={content}
-        onEdit={onEdit}
-        projectSlug={projectSlug}
-        toolbarItems={getToolbarForResourceType(
-          graded ? ResourceType.assessment : ResourceType.page)}/>, 'Content'];
+      return [
+        <StructuredContentEditor
+          key={content.id}
+          editMode={editMode}
+          content={content}
+          onEdit={onEdit}
+          projectSlug={projectSlug}
+          toolbarItems={getToolbarForResourceType(
+            graded ? ResourceType.assessment : ResourceType.page)}/>,
+        'Content',
+      ];
     }
 
 
@@ -473,7 +476,7 @@ export const Editors = (props: EditorsProps) => {
           onDragEnd={handleDragEnd}>
           <div className="d-flex flex-row align-items-baseline">
             <div className="flex-grow-1">
-              <DragHandle style={{ height: 24, marginRight: 10 }} /> {label}
+              <DragHandle style={{ height: 24, marginRight: 10 }} />
             </div>
             <Purpose purpose={c.purpose} purposes={purposes}
               editMode={editMode} onEdit={(p: string) => onEditPurpose(p)}/>
