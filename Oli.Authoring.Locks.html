@@ -173,7 +173,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">acquire(publication_id, resource_id, user_id)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L62" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L63" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -201,7 +201,7 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
 <p>Returns:</p>
 <p>.<code class="inline">{:acquired}</code> if the lock was acquired
 .<code class="inline">{:error}</code> if an internal error was encountered
-.<code class="inline">{:lock_not_acquired, {user_id, date_time}}</code> the date and user id of the existing lock</p>
+.<code class="inline">{:lock_not_acquired, {user_email, date_time}}</code> the date and user id of the existing lock</p>
   </section>
 </section>
 <section class="detail" id="expired_or_empty?/1">
@@ -211,7 +211,7 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">expired_or_empty?(mapping)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L178" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L179" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -226,7 +226,7 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">expired_or_empty_predicate?(mapping)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L182" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L183" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -241,7 +241,7 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">release(publication_id, resource_id, user_id)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L140" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L141" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -265,7 +265,7 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">update(publication_id, resource_id, user_id)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L108" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L109" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -295,7 +295,7 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
 <p>.<code class="inline">{:acquired}</code> if the lock was acquired
 .<code class="inline">{:updated}</code> if the lock was updated
 .<code class="inline">{:error}</code> if an internal error was encountered
-.<code class="inline">{:lock_not_acquired, {user_id, date_time}}</code> the date and user id of the existing lock</p>
+.<code class="inline">{:lock_not_acquired, {user_email, date_time}}</code> the date and user id of the existing lock</p>
   </section>
 </section>
           </div>
