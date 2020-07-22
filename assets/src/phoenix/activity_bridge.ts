@@ -1,7 +1,7 @@
 import * as Persistence from 'data/persistence/activity';
 import { PartResponse, ActivityModelSchema } from 'components/activities/types';
 import { RequestHintResponse } from 'components/activities/DeliveryElement';
-import { valueOr } from 'utils/common';
+import { valueOr, removeEmpty } from 'utils/common';
 
 type Continuation = (success: any, error: any) => void;
 
@@ -185,15 +185,18 @@ export const initPreviewActivityBridge = (elementId: string) => {
     e.preventDefault();
     e.stopPropagation();
 
+    console.log('e.detail', e.detail)
+
     const props = e.detail.props;
     const continuation: Continuation = e.detail.continuation;
     const partInputs: PartResponse[] = e.detail.payload;
     const partId = e.detail.partAttemptGuid;
     const model = props.model;
-    const hints = getPart(model, partId).hints;
-    console.log('props', props)
-    console.log("part in activity bridge", getPart(model, partId));
+    const hints = removeEmpty(getPart(model, partId).hints);
 
+    console.log('hints', hints)
+
+    console.log('partId', partId)
     const nextHintIndex =  valueOr(hintRequestCounts[partId], 0);
     const hasMoreHints = hints.length > nextHintIndex + 1;
     const hint = hints[nextHintIndex];
@@ -202,6 +205,9 @@ export const initPreviewActivityBridge = (elementId: string) => {
       hint,
       hasMoreHints,
     };
+
+    console.log('nextHintIndex', nextHintIndex)
+    console.log('hasMoreHints', hasMoreHints)
 
     // keep track the number of hints requested for this part
     hintRequestCounts[partId] = valueOr(hintRequestCounts[partId], 0) + 1;

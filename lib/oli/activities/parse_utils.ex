@@ -21,7 +21,15 @@ defmodule Oli.Activities.ParseUtils do
   end
 
   @doc """
-  Filters out items with no content
+  Filters out slate items with no "real" content. E.g.,
+  # %{
+  #   "content" => %{
+  #     "model" => [
+  #       %{"children" => [%{"text" => ""}], "id" => "3358554622", "type" => "p"}
+  #     ],
+  #     "selection" => nil
+  #   }
+  # }
   """
   def remove_empty(items) do
     Enum.filter(items, & has_content?(&1))
@@ -31,13 +39,7 @@ defmodule Oli.Activities.ParseUtils do
   def has_content?(%{content: %{ model: model }}), do: has_content?(model)
   def has_content?(%{content: %{ "model" => model }}), do: has_content?(model)
   def has_content?(%{"content" => %{ "model" => model }}), do: has_content?(model)
-  def has_content?(model) do
-    plaintext_content = Rendering.Content.render(%Context{}, model, Rendering.Content.Plaintext)
-    |> Enum.join("")
-    |> String.trim()
-    case plaintext_content do
-      "" -> false
-      _ -> true
-    end
-  end
+  # The model has content if it's not a paragraph node with no trimmed text.
+  def has_content?([%{ "children" => [ %{"text" => text} | _ ], "type" => "p"} | _ ]), do: String.trim(text) != ""
+  def has_content?(model), do: true
 end
