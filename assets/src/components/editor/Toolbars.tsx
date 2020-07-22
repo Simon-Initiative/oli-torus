@@ -169,7 +169,8 @@ export const FixedToolbar = React.memo((props: FixedToolbarProps) => {
       if (t.type === 'CommandDesc' && t.command.obtainParameters === undefined) {
         return <ToolbarButton
           tooltip={t.description}
-          style="mr-1" key={t.icon} icon={t.icon} command={t.command} context={props.commandContext} />;
+          style="mr-1" key={t.icon} icon={t.icon}
+          command={t.command} context={props.commandContext} />;
       }
       if (t.type === 'CommandDesc' && t.command.obtainParameters !== undefined) {
         return <DropdownToolbarButton style="mr-1" key={t.icon} icon={t.icon}

@@ -217,7 +217,8 @@ export const Editor = React.memo((props: EditorProps) => {
         value={props.value}
         onChange={onChange}
         >
-        <FixedToolbar position={props.toolbarPosition} toolbarItems={props.toolbarItems} commandContext={props.commandContext} />
+        <FixedToolbar position={props.toolbarPosition} toolbarItems={props.toolbarItems}
+          commandContext={props.commandContext} />
 
         <HoveringToolbar commandContext={props.commandContext}/>
 
