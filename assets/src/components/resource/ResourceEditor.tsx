@@ -196,8 +196,8 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
         this.keyupListener = registerKeyup(this);
         this.windowBlurListener = registerWindowBlur(this);
       } else {
-        if(this.persistence.getLockResult().type === 'not_acquired' ){
-          let notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired
+        if (this.persistence.getLockResult().type === 'not_acquired') {
+          const notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired
           this.editingLockedMessage(notAcquired.user);
         }
       }

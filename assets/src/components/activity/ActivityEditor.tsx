@@ -122,8 +122,8 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
         this.windowUnloadListener = registerUnload(this.persistence, this.beforeUnload.bind(this));
         this.undoRedoListener = registerUndoRedoHotkeys(this.undo.bind(this), this.redo.bind(this));
       } else {
-        if(this.persistence.getLockResult().type === 'not_acquired' ){
-          let notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired
+        if (this.persistence.getLockResult().type === 'not_acquired') {
+          const notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired
           this.editingLockedMessage(notAcquired.user);
         }
       }
