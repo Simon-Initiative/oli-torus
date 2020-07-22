@@ -53,7 +53,7 @@ defmodule Oli.Activities.State.ActivityState do
 
   def create_preview_state(transformed_model) do
     %Oli.Activities.State.ActivityState{
-      attemptGuid: "preview",
+      attemptGuid: UUID.uuid4(),
       attemptNumber: 1,
       dateEvaluated: nil,
       score: nil,
