@@ -10,7 +10,6 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   alias Oli.Resources.Activity
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ActivityContext
-  alias Oli.Authoring.Editing.SiblingActivity
   alias Oli.Publishing
   alias Oli.Activities
   alias Oli.Accounts.Author
@@ -251,12 +250,10 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
          {:ok, all_objectives} <- Publishing.get_published_objective_details(publication.id) |> trap_nil(),
-         {:ok, %{content: content, title: resource_title}} <- PageEditor.get_latest_revision(publication, resource) |> trap_nil(),
+         {:ok, %{title: resource_title}} <- PageEditor.get_latest_revision(publication, resource) |> trap_nil(),
          {:ok, %{id: activity_id}} <- Resources.get_resource_from_slug(activity_slug) |> trap_nil(),
          {:ok, %{activity_type: activity_type, content: model, title: title, objectives: objectives}} <- get_latest_revision(publication.id, activity_id) |> trap_nil()
     do
-
-      {previous, next} = find_sibling_activities(activity_id, content, publication.id)
 
       context = %ActivityContext{
         authoringScript: activity_type.authoring_script,
@@ -272,8 +269,6 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         model: model,
         objectives: translate_ids_to_slugs(project_slug, objectives),
         allObjectives: all_objectives,
-        previousActivity: previous,
-        nextActivity: next
       }
 
       {:ok, context}
@@ -288,53 +283,5 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     Publishing.get_published_revision(publication_id, resource_id)
     |> Repo.preload([:activity_type])
   end
-
-  # Find the next and previous 'sibling' activities to the activity
-  # specified by activity_id, in the array of content, all through
-  # the lens of a specific publication. Previous and next refer to the
-  # activities that precede or follow the given activity in the content
-  # list, but only looking at activities.
-  #
-  # Returns a tuple of SiblingActivity structs of the form { previous, next }
-  # corresponding to the previous and next sibling activities. If there is
-  # not a previous or next activity (e.g. the activity specified is first or is the
-  # only activity) then nil is returned inside the tuple.
-  defp find_sibling_activities(activity_id, %{"model" => content}, publication_id) do
-
-    references = Enum.filter(content, fn c -> Map.get(c, "type") == "activity-reference" end)
-    size = length(references)
-
-    revisions = if (size == 1) do
-      [nil, nil]
-    else
-      our_index = Enum.find_index(references, fn c -> Map.get(c, "activity_id") == activity_id end)
-
-      map = Enum.zip(references, 0..(size - 1))
-        |> Enum.reduce(%{}, fn {r, i}, m -> Map.put(m, i, Map.get(r, "activity_id")) end)
-
-      # add one so that we can pattern match directly against size as a pin
-      case (our_index + 1) do
-        1 -> Publishing.get_published_activity_revisions(publication_id, [Map.get(map, 1)]) |> List.insert_at(0, nil)
-        ^size -> Publishing.get_published_activity_revisions(publication_id, [Map.get(map, size - 2)]) |> List.insert_at(1, nil)
-        other -> [
-          Publishing.get_published_activity_revisions(publication_id, [Map.get(map, other - 2)]),
-          Publishing.get_published_activity_revisions(publication_id, [Map.get(map, other)])
-        ] |> List.flatten()
-      end
-    end
-
-    # convert them to sibling activity representations
-    as_siblings = Enum.map(revisions, fn r ->
-      case r do
-        nil -> nil
-        rev -> %SiblingActivity{friendlyName: rev.activity_type.title, title: rev.title, activitySlug: rev.slug}
-      end
-    end)
-
-    # return them as a tuple
-    List.to_tuple(as_siblings)
-
-  end
-
 
 end

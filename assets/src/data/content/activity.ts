@@ -27,6 +27,4 @@ export type ActivityContext = {
   model: ActivityModelSchema,     // Content of the resource
   objectives: ObjectiveMap,       // Attached objectives, based on part id
   allObjectives: Objective[],     // All objectives
-  previousActivity: SiblingActivity | null,  // Previous activity, if there is one
-  nextActivity: SiblingActivity | null,  // Next activity, if there is one
 };
