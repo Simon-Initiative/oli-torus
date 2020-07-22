@@ -218,7 +218,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
   editingLockedMessage(email: string) {
     const message = createMessage({
       canUserDismiss: false,
-      content: 'Read Only. User ' + email +' is currently editing.',
+      content: 'Read Only. User ' + email +' is currently editing this page.',
       severity: Severity.Information,
     });
     this.setState({ messages: [...this.state.messages, message] });

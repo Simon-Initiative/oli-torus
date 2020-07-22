@@ -154,7 +154,7 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
   editingLockedMessage(email: string) {
     const message = createMessage({
       canUserDismiss: false,
-      content: 'Read Only. User ' + email +' is currently editing.',
+      content: 'Read Only. User ' + email +' is currently editing this page.',
       severity: Severity.Information,
     });
     this.setState({ messages: [...this.state.messages, message] });
