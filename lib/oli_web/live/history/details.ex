@@ -1,6 +1,5 @@
 defmodule OliWeb.RevisionHistory.Details do
   use Phoenix.LiveComponent
-  import Phoenix.HTML
 
   def render(assigns) do
 
