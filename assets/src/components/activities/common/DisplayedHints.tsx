@@ -26,7 +26,11 @@ interface HintsProps {
 }
 
 export const Hints = (props: HintsProps) => {
-  if (props.hints.length === 0 && !props.hasMoreHints) {
+  const noHintsRequested = props.hints.length === 0;
+
+  // Display nothing if the question has no hints, meaning no hints have been requested so far
+  // and there are no more available to be requested
+  if (noHintsRequested && !props.hasMoreHints) {
     return null;
   }
 

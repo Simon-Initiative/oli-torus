@@ -52,8 +52,6 @@ defmodule Oli.Activities.State.ActivityState do
   end
 
   def create_preview_state(transformed_model) do
-    # This is the second place -> adjust filtered hints and counts
-
     %Oli.Activities.State.ActivityState{
       attemptGuid: "preview",
       attemptNumber: 1,
@@ -72,6 +70,8 @@ defmodule Oli.Activities.State.ActivityState do
           response: nil,
           feedback: nil,
           hints: [],
+          # Activities save empty hints to preserve the "deer in headlights" / "cognitive" / "bottom out"
+          # hint ordering. Empty hints are filtered out here.
           hasMoreHints: (p["hints"]
             |> Oli.Activities.ParseUtils.remove_empty
             |> length) > 0,
@@ -81,6 +81,4 @@ defmodule Oli.Activities.State.ActivityState do
       end)
     }
   end
-
-
 end

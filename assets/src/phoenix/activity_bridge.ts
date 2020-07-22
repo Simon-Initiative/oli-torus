@@ -7,6 +7,7 @@ type Continuation = (success: any, error: any) => void;
 
 export const defaultState = (model: ActivityModelSchema) => {
   const parts = model.authoring.parts.map((p: any) =>
+    console.log("part", p) ||
     ({
       attemptNumber: 1,
       attemptGuid: p.id,
@@ -190,6 +191,8 @@ export const initPreviewActivityBridge = (elementId: string) => {
     const partId = e.detail.partAttemptGuid;
     const model = props.model;
     const hints = getPart(model, partId).hints;
+    console.log('props', props)
+    console.log("part in activity bridge", getPart(model, partId));
 
     const nextHintIndex =  valueOr(hintRequestCounts[partId], 0);
     const hasMoreHints = hints.length > nextHintIndex + 1;

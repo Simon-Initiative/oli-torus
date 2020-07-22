@@ -141,11 +141,11 @@ defmodule Oli.Delivery.Attempts do
         {:ok, part} <- Enum.find(model.parts, fn p -> p.id == part_attempt.part_id end) |> Oli.Utils.trap_nil(:not_found)
       do
         shown_hints = part_attempt.hints
+
+        # Activities save empty hints to preserve the "deer in headlights" / "cognitive" / "bottom out"
+        # hint ordering. Empty hints are filtered out here.
         all_hints = part.hints
         |> Oli.Activities.ParseUtils.remove_empty
-
-        # Use a common util from other 2 places mentioned -> get "real hints" from hints, determine if
-        # there are more non-empty hints
 
         if length(all_hints) > length(shown_hints) do
 

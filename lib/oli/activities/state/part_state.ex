@@ -34,7 +34,6 @@ defmodule Oli.Activities.State.PartState do
   ]
 
   def from_attempt(%PartAttempt{} = attempt, %Part{} = part) do
-    # This is the first location where we need to get the "real" hint count
 
     # From the ids of hints displayed in the attempt, look up
     # the hint content from the part
@@ -46,8 +45,6 @@ defmodule Oli.Activities.State.PartState do
     # hint ordering. Empty hints are filtered out here.
     real_part_hints = part.hints
     |> ParseUtils.remove_empty
-    IO.inspect(length(attempt.hints), label: "length(attempt.hints)")
-    IO.inspect(real_part_hints, label: "Real part hints")
 
     %Oli.Activities.State.PartState{
       attemptGuid: attempt.attempt_guid,
