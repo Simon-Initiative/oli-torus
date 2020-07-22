@@ -7,22 +7,61 @@ import * as ContentModel from 'data/content/model';
 import { Command, CommandDesc } from '../interfaces';
 import { EditorProps, CommandContext } from './interfaces';
 import guid from 'utils/guid';
+import ModalSelection from 'components/modal/ModalSelection';
 import * as Settings from './Settings';
+import { getQueryVariableFromString } from 'utils/params';
 import './Settings.scss';
 
+import { modalActions } from 'actions/modal';
+
+const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
+const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
+
+export function selectYouTube(): Promise<string | null> {
+
+  return new Promise((resolve, reject) => {
+
+    const selected = { src: null };
+
+    const mediaLibrary =
+        <ModalSelection title="Insert YouTube video"
+          onInsert={() => { dismiss(); resolve(selected.src as any); }}
+          onCancel={() => dismiss()}
+        >
+          <YouTubeCreation onSelect={(src: string) => { selected.src = src as any; }}/>
+        </ModalSelection>;
+
+    display(mediaLibrary);
+  });
+}
 
 const command: Command = {
   execute: (context, editor: ReactEditor) => {
-    const src = 'zHIIzcWqsP0';
 
-    const youtube = ContentModel.create<ContentModel.YouTube>(
-      { type: 'youtube', src, children: [{ text: '' }], id: guid() });
-    Transforms.insertNodes(editor, youtube);
+    selectYouTube()
+    .then((selectedSrc) => {
+      if (selectedSrc !== null) {
+
+        let src = selectedSrc;
+        const hasParams = src.includes('?');
+
+        if (hasParams) {
+          const queryString = src.substr(src.indexOf('?') + 1);
+          src = getQueryVariableFromString('v', queryString);
+        }
+
+        const youtube = ContentModel.create<ContentModel.YouTube>(
+          { type: 'youtube', src, children: [{ text: '' }], id: guid() });
+        Transforms.insertNodes(editor, youtube);
+      }
+    });
+
   },
   precondition: (editor: ReactEditor) => {
 
     return true;
   },
+
 };
 
 export const commandDesc: CommandDesc = {
@@ -124,6 +163,36 @@ const YouTubeSettings = (props: YouTubeSettingsProps) => {
         {applyButton(!props.editMode)}
 
       </div>
+    </div>
+  );
+};
+
+
+export type YouTubeCreationProps = {
+  onSelect: (src: string) => void;
+};
+const YouTubeCreation = (props: YouTubeCreationProps) => {
+
+  const [src, setSrc] = useState('');
+  const ref = useRef();
+
+  return (
+    <div>
+
+      <p className="mb-4">Not sure which video you want to use?
+        Visit <a href="https://www.youtube.com" target="_blank">YouTube</a> to search and find it.
+      </p>
+
+      <form className="form">
+        <label>Enter the YouTube Video ID (or just the entire video URL):</label>
+        <input type="text" value={src}
+          onChange={(e) => { props.onSelect(e.target.value); setSrc(e.target.value); }}
+          className="form-control mr-sm-2"/>
+        <div className="mb-2">
+          <small>e.g. https://www.youtube.com/watch?v=<strong>zHIIzcWqsP0</strong></small>
+        </div>
+      </form>
+
     </div>
   );
 };
