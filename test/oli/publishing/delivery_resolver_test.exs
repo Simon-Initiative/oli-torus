@@ -10,6 +10,12 @@ defmodule Oli.Publishing.DeliveryResolverTest do
     setup do
 
       map = Seeder.base_project_with_resource2()
+      |> Seeder.add_objective("child1", :child1)
+      |> Seeder.add_objective("child2", :child2)
+      |> Seeder.add_objective("child3", :child3)
+      |> Seeder.add_objective("child4", :child4)
+      |> Seeder.add_objective_with_children("parent1", [:child1, :child2, :child3], :parent1)
+      |> Seeder.add_objective_with_children("parent2", [:child4], :parent2)
 
       # Create another project with resources and revisions
       Seeder.another_project(map.author, map.institution)
@@ -33,12 +39,18 @@ defmodule Oli.Publishing.DeliveryResolverTest do
       # Create a new page that wasn't present during the first publication
       %{revision: latest3 } = Seeder.create_page("New To Pub2", pub, map.project, map.author)
 
+      second_map = Seeder.add_objective(Map.merge(map, %{publication: pub}), "child5", :child5)
+      second_map = Seeder.add_objective_with_children(Map.merge(second_map, %{publication: pub}), "parent3", [:child5], :parent3)
+
       # Publish again
       {:ok, pub2} = Publishing.publish_project(map.project)
 
       # Create a fourth page that is completely unpublished
       pub = Publishing.get_unpublished_publication_by_slug!(map.project.slug)
       %{revision: latest4 } = Seeder.create_page("Unpublished", pub, map.project, map.author)
+
+      third_map = Seeder.add_objective(Map.merge(map, %{publication: pub}), "child6", :child6)
+      third_map = Seeder.add_objective_with_children(Map.merge(third_map, %{publication: pub}), "parent4", [:child6], :parent4)
 
       # Create a course section, one for each publication
       {:ok, _} = Sections.create_section(%{title: "1", time_zone: "1", registration_open: true, context_id: "1",
@@ -52,6 +64,36 @@ defmodule Oli.Publishing.DeliveryResolverTest do
       |> Map.put(:pub2, pub2)
       |> Map.put(:latest3, latest3)
       |> Map.put(:latest4, latest4)
+      |> Map.put(:child5, Map.get(second_map, :child5))
+      |> Map.put(:parent3, Map.get(second_map, :parent3))
+      |> Map.put(:child6, Map.get(third_map, :child6))
+      |> Map.put(:parent4, Map.get(third_map, :parent4))
+    end
+
+
+    test "find_parent_objectives/2 returns parents", %{
+      child1: child1, child2: child2, child3: child3, child4: child4, parent1: parent1, parent2: parent2,
+      child5: child5, parent3: parent3,
+      child6: child6 } do
+
+      # find one
+      assert [parent1.revision] == DeliveryResolver.find_parent_objectives("1", [child1.resource.id])
+
+      # find both
+      assert [parent1.revision, parent2.revision] == DeliveryResolver.find_parent_objectives("1", [child1.resource.id, child4.resource.id])
+      assert [parent1.revision, parent2.revision] == DeliveryResolver.find_parent_objectives("1", [child1.resource.id, child2.resource.id, child3.resource.id, child4.resource.id])
+
+      # find none
+      assert [] == DeliveryResolver.find_parent_objectives("1", [parent1.resource.id, parent2.resource.id])
+
+      # child5 should only resolve in section 2
+      assert [] == DeliveryResolver.find_parent_objectives("1", [child5.resource.id])
+      assert [parent3.revision] == DeliveryResolver.find_parent_objectives("2", [child5.resource.id])
+
+      # child6 should not resolve anywhere since it and its parent are unpublished
+      assert [] == DeliveryResolver.find_parent_objectives("1", [child6.resource.id])
+      assert [] == DeliveryResolver.find_parent_objectives("2", [child6.resource.id])
+
     end
 
     test "from_resource_id/2 returns correct revision", %{ revision1: revision1, latest1: latest1, latest4: latest4 } do

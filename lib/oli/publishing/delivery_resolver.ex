@@ -82,4 +82,32 @@ defmodule Oli.Publishing.DeliveryResolver do
     |> run() |> emit([:oli, :resolvers, :delivery], :duration)
   end
 
+  @impl Resolver
+  def find_parent_objectives(_, []), do: []
+  def find_parent_objectives(context_id, resource_ids) do
+
+    ids = Enum.join(resource_ids, ",")
+
+    fn ->
+
+      sql =
+        """
+        select rev.*
+        from published_resources as m
+        join sections as c on m.publication_id = c.publication_id
+        join revisions as rev on rev.id = m.revision_id
+        where c.context_id = '#{context_id}'
+          and rev.deleted is false
+          and rev.children && ARRAY[#{ids}]
+        """
+
+      {:ok, result} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+      Enum.map(result.rows, &Repo.load(Revision, {result.columns, &1}))
+
+    end
+    |> run() |> emit([:oli, :resolvers, :authoring], :duration)
+
+  end
+
 end

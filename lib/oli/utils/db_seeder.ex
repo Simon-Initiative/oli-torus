@@ -427,6 +427,22 @@ defmodule Oli.Seeder do
     end
   end
 
+  def add_objective_with_children(%{ project: project, publication: publication, author: author} = map, title, children_tags, tag \\ nil) do
+
+    children = Enum.map(children_tags, fn tag -> Map.get(map, tag).revision.resource_id end)
+
+    {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
+    {:ok, revision} = Oli.Resources.create_revision(%{author_id: author.id, objectives: %{}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective"), children: children, content: %{}, deleted: false, title: title, resource_id: resource.id})
+    {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: resource.id}) |> Repo.insert
+
+    publish_resource(publication, resource, revision)
+
+    case tag do
+      nil -> map
+      t -> Map.put(map, t, %{ revision: revision, resource: resource })
+    end
+  end
+
   def add_author(%{ project: project} = map, author, atom) do
     {:ok, _} = AuthorProject.changeset(%AuthorProject{}, %{author_id: author.id, project_id: project.id, project_role_id: ProjectRole.role_id.owner}) |> Repo.insert
     Map.put(map, atom, author)

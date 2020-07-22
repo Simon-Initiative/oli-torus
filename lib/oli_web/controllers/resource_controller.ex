@@ -59,10 +59,15 @@ defmodule OliWeb.ResourceController do
   def preview(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
     author = conn.assigns[:current_author]
 
+    %{ content: %{"model" => model}} = AuthoringResolver.from_revision_slug(project_slug, revision_slug)
+    activity_ids = Oli.Authoring.Editing.Utils.activity_references(model) |> MapSet.to_list()
+    activity_revisions = AuthoringResolver.from_resource_id(project_slug, activity_ids)
+
     case PageEditor.create_context(project_slug, revision_slug, author) do
       {:ok, context} ->
         render(conn, "page_preview.html",
           title: "Preview - #{context.title}",
+          objectives: Oli.Delivery.Page.ObjectivesRollup.rollup_objectives(activity_revisions, AuthoringResolver, project_slug),
           content_html: PageEditor.render_page_html(project_slug, revision_slug, author, preview: true),
           context: context,
           scripts: Activities.get_activity_scripts(),

@@ -9,10 +9,10 @@ defmodule Oli.Delivery.Page.PageContext do
 
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Delivery.Page.PageContext
-  alias Oli.Resources.Revision
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Student.Summary
+  alias Oli.Delivery.Page.ObjectivesRollup
 
   @doc """
   Creates the page context required to render a page in delivery model, based
@@ -36,9 +36,9 @@ defmodule Oli.Delivery.Page.PageContext do
 
     activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
-    {progress_state, resource_attempts, activities} = case Attempts.determine_resource_attempt_state(page_revision, context_id, user.id, activity_provider) do
-      {:ok, {:not_started, {_, resource_attempts}}} -> {:not_started, resource_attempts, nil}
-      {:ok, {state, {resource_attempt, latest_attempts}}} -> {state, [resource_attempt], ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
+    {progress_state, resource_attempts, latest_attempts, activities} = case Attempts.determine_resource_attempt_state(page_revision, context_id, user.id, activity_provider) do
+      {:ok, {:not_started, {_, resource_attempts}}} -> {:not_started, resource_attempts, %{}, nil}
+      {:ok, {state, {resource_attempt, latest_attempts}}} -> {state, [resource_attempt], latest_attempts, ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
       {:error, _} -> {:error, [], %{}}
     end
 
@@ -61,7 +61,7 @@ defmodule Oli.Delivery.Page.PageContext do
       progress_state: progress_state,
       resource_attempts: resource_attempts,
       activities: activities,
-      objectives: [],
+      objectives: rollup_objectives(latest_attempts, DeliveryResolver, context_id),
       previous_page: previous,
       next_page: next
     }
@@ -70,8 +70,7 @@ defmodule Oli.Delivery.Page.PageContext do
   # We combine retrieve objective titles and previous next page
   # information in one step so that we can do all their revision
   # resolution in one step.
-  defp retrieve_previous_next(context_id,
-    %Revision{objectives: %{"attached" => objective_ids}} = page_revision, container_id) do
+  defp retrieve_previous_next(context_id, page_revision, container_id) do
 
     # if container_id is nil we assume it is the root
     container = case container_id do
@@ -94,17 +93,13 @@ defmodule Oli.Delivery.Page.PageContext do
     {previous, next}
   end
 
-  defp rollup_objectives(activities, resolver) do
+  # for a map of activity ids to latest attempt tuples (where the first tuple item is the activity attempt)
+  # return the parent objective revisions of all attached objectives
+  # if an attached objective is a parent, include that in the return list
+  defp rollup_objectives(latest_attempts, resolver, context_id) do
 
-    all_attached_objectives = Enum.reduce(activities, MapSet.new(), fn {_, %{objectives: objectives}}, all ->
-      Enum.map(objectives, fn {_, ids} -> ids end)
-      |> List.flatten
-      |> MapSet.new
-      |> MapSet.union(all)
-    end)
-    |> MapSet.to_list
-
-
+    Enum.map(latest_attempts, fn {_, {%{ revision: revision }, _}} -> revision end)
+    |> ObjectivesRollup.rollup_objectives(resolver, context_id)
 
   end
 
