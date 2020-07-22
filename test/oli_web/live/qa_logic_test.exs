@@ -58,14 +58,15 @@ defmodule OliWeb.Qa.StateLogicTest do
         }
       }, :page_has_activities)
       |> Seeder.add_activity(%{objectives: %{}}, :activity_no_objectives)
+      |> Seeder.add_activity(%{objectives: %{}}, :activity_no_objectives)
+      |> Seeder.add_activity(%{objectives: %{}}, :activity_no_objectives)
       |> Seeder.add_activity(%{objectives: %{"1" => [Map.get(map, :o1).resource.id]}}, :activity_has_objectives)
       |> Map.put(:pages, Publishing.get_unpublished_revisions_by_type(Map.get(map, :project).slug, "page"))
       |> Map.put(:activities, Publishing.get_unpublished_revisions_by_type(Map.get(map, :project).slug, "activity"))
     end
 
-    test "filtering", %{project: project, review: review, content: content, pages: pages, activities: activities, author: author} do
+    test "filtering", %{project: project, review: review, content: content, activities: activities, author: author} do
 
-      Pedagogy.no_attached_objectives(review, pages)
       Pedagogy.no_attached_objectives(review, activities)
       Content.broken_uris(content, project.slug)
 
@@ -104,9 +105,8 @@ defmodule OliWeb.Qa.StateLogicTest do
     end
 
 
-    test "dismissal when the item is first selected", %{project: project, review: review, content: content, pages: pages, activities: activities, author: author} do
+    test "dismissal when the item is first selected", %{project: project, review: review, content: content, activities: activities, author: author} do
 
-      Pedagogy.no_attached_objectives(review, pages)
       Pedagogy.no_attached_objectives(review, activities)
       Content.broken_uris(content, project.slug)
 
@@ -125,9 +125,8 @@ defmodule OliWeb.Qa.StateLogicTest do
 
     end
 
-    test "dismissal when the item is last selected", %{project: project, review: review, content: content, pages: pages, activities: activities, author: author} do
+    test "dismissal when the item is last selected", %{project: project, review: review, content: content, activities: activities, author: author} do
 
-      Pedagogy.no_attached_objectives(review, pages)
       Pedagogy.no_attached_objectives(review, activities)
       Content.broken_uris(content, project.slug)
 
@@ -146,9 +145,8 @@ defmodule OliWeb.Qa.StateLogicTest do
 
     end
 
-    test "dismissal when the item is not first or last, but selected", %{project: project, review: review, content: content, pages: pages, activities: activities, author: author} do
+    test "dismissal when the item is not first or last, but selected", %{project: project, review: review, content: content, activities: activities, author: author} do
 
-      Pedagogy.no_attached_objectives(review, pages)
       Pedagogy.no_attached_objectives(review, activities)
       Content.broken_uris(content, project.slug)
 
@@ -167,9 +165,8 @@ defmodule OliWeb.Qa.StateLogicTest do
 
     end
 
-    test "dismissal when the dismissed is not selected", %{project: project, review: review, content: content, pages: pages, activities: activities, author: author} do
+    test "dismissal when the dismissed is not selected", %{project: project, review: review, content: content, activities: activities, author: author} do
 
-      Pedagogy.no_attached_objectives(review, pages)
       Pedagogy.no_attached_objectives(review, activities)
       Content.broken_uris(content, project.slug)
 
@@ -189,9 +186,8 @@ defmodule OliWeb.Qa.StateLogicTest do
     end
 
     test "dismissing the last warning in a filtered state should not select a new warning for display",
-      %{project: project, review: review, content: content, pages: pages, activities: activities, author: author} do
+      %{project: project, review: review, content: content, activities: activities, author: author} do
 
-      Pedagogy.no_attached_objectives(review, pages)
       Pedagogy.no_attached_objectives(review, activities)
       Content.broken_uris(content, project.slug)
 

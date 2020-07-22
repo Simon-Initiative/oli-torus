@@ -90,4 +90,34 @@ defmodule Oli.Publishing.AuthoringResolver do
     |> run() |> emit([:oli, :resolvers, :authoring], :duration)
   end
 
+  @impl Resolver
+  def find_parent_objectives(_, []), do: []
+  def find_parent_objectives(project_slug, resource_ids) do
+
+    ids = Enum.join(resource_ids, ",")
+
+    fn ->
+
+      sql =
+        """
+        select rev.*
+        from published_resources as m
+        join publications as p on p.id = m.publication_id
+        join projects as c on p.project_id = c.id
+        join revisions as rev on rev.id = m.revision_id
+        where c.slug = '#{project_slug}'
+          and rev.deleted is false
+          and p.published = false
+          and rev.children && ARRAY[#{ids}]
+        """
+
+      {:ok, result} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+      Enum.map(result.rows, &Repo.load(Revision, {result.columns, &1}))
+
+    end
+    |> run() |> emit([:oli, :resolvers, :authoring], :duration)
+
+  end
+
 end

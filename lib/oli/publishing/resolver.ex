@@ -33,4 +33,12 @@ defmodule Oli.Publishing.Resolver do
   """
   @callback root_resource(String.t) :: %Revision{}
 
+  @doc """
+  Finds the parent objectives for a list of objective resource ids that
+  might be child objectives.  Returns a map of the child objective resource id
+  to the parent objective.  There will not be an entry in this map if
+  a given objective resource id is a root objective
+  """
+  @callback find_parent_objectives(String.t, [number]) :: map()
+
 end
