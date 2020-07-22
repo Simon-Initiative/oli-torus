@@ -1,6 +1,4 @@
 defmodule Oli.Activities.ParseUtils do
-  alias Oli.Rendering
-  alias Oli.Rendering.Context
 
   @doc """
   Takes a list of items that are either of the
@@ -41,5 +39,5 @@ defmodule Oli.Activities.ParseUtils do
   def has_content?(%{"content" => %{ "model" => model }}), do: has_content?(model)
   # The model has content if it's not a paragraph node with no trimmed text.
   def has_content?([%{ "children" => [ %{"text" => text} | _ ], "type" => "p"} | _ ]), do: String.trim(text) != ""
-  def has_content?(model), do: true
+  def has_content?(_model), do: true
 end
