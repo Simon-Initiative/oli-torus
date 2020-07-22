@@ -175,7 +175,8 @@ export const Editors = (props: EditorsProps) => {
           onEdit={onEdit}
           projectSlug={projectSlug}
           toolbarItems={getToolbarForResourceType(
-            graded ? ResourceType.assessment : ResourceType.page)}/>,
+            graded ? ResourceType.assessment : ResourceType.page)}
+          toolbarPosition={{ top: 8, left: 20 }}/>,
         'Content',
       ];
     }

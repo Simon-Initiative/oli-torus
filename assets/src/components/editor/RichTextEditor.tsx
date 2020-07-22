@@ -25,7 +25,8 @@ export const RichTextEditor = ({ editMode, className, text, onEdit, projectSlug 
           value={text.model}
           onEdit={(model, selection) => onEdit({ model, selection })}
           selection={text.selection}
-          toolbarItems={getToolbarForResourceType(1)} />
+          toolbarItems={getToolbarForResourceType(1)}
+          toolbarPosition={{ top: -45 }} />
       </ErrorBoundary>
     </div>
   );

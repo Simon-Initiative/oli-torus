@@ -126,9 +126,17 @@ function shouldHideFixedToolbar(editor: ReactEditor) {
   return !ReactEditor.isFocused(editor);
 }
 
+export type ToolbarPosition = {
+  top?: number,
+  bottom?: number,
+  left?: number,
+  right?: number,
+};
+
 type FixedToolbarProps = {
   toolbarItems: ToolbarItem[];
   commandContext: CommandContext;
+  position?: ToolbarPosition;
 };
 
 function fixedAreEqual(prevProps: FixedToolbarProps, nextProps: FixedToolbarProps) {
@@ -172,8 +180,20 @@ export const FixedToolbar = React.memo((props: FixedToolbarProps) => {
     }),
   ];
 
+  const style = props.position !== undefined
+    ? {
+      display: 'none',
+      top: props.position.top,
+      bottom: props.position.bottom,
+      left: props.position.left,
+      right: props.position.right,
+    }
+    : {
+      display: 'none',
+    };
+
   return (
-    <div ref={(ref as any)} className="toolbar fixed-toolbar">
+    <div ref={(ref as any)} className="toolbar fixed-toolbar" style={style}>
       <div className="toolbar-buttons btn-group btn-group-sm" role="group" ref={(ref as any)}>
         {buttons}
       </div>
