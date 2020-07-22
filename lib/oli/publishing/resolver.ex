@@ -33,4 +33,9 @@ defmodule Oli.Publishing.Resolver do
   """
   @callback root_resource(String.t) :: %Revision{}
 
+  @doc """
+  Finds the top-level objectives and resolves their revisions
+  """
+  @callback top_level_objectives(String.t) :: [%Revision]
+
 end
