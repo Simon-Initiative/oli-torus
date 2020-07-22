@@ -17,7 +17,7 @@ import {
   UndoableState, processRedo, processUndo, processUpdate, init,
   registerUndoRedoHotkeys, unregisterUndoRedoHotkeys,
 } from './undo';
-import {releaseLock, acquireLock, NotAcquired} from 'data/persistence/lock';
+import { releaseLock, acquireLock, NotAcquired } from 'data/persistence/lock';
 import { Message, Severity, createMessage } from 'data/messages/messages';
 import { Banner } from '../messages/Banner';
 import { BreadcrumbTrail } from 'components/common/BreadcrumbTrail';
