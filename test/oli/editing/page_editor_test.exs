@@ -104,8 +104,8 @@ defmodule Oli.EditingTest do
       PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
       result = PageEditor.edit(project.slug, revision1.slug, author.email, %{ "content" => content })
 
-      id = author2.id
-      assert {:error, {:lock_not_acquired, {^id, _}}} = result
+      email = author2.email
+      assert {:error, {:lock_not_acquired, {^email, _}}} = result
     end
 
     test "edit/4 fails when the resource slug is invalid", %{project: project, author: author } do

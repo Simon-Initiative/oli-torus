@@ -17,10 +17,10 @@ defmodule Oli.LocksTest do
     test "acquire/3 does not acquire if already acquired", %{author: author, author2: author2, publication: publication, container: %{resource: container_resource}} do
       assert Locks.acquire(publication.id, container_resource.id, author.id) == {:acquired}
 
-      id = author.id
+      email = author.email
 
       case Locks.acquire(publication.id, container_resource.id, author2.id) do
-        {:lock_not_acquired, {^id, _}} -> assert(true)
+        {:lock_not_acquired, {^email, _}} -> assert(true)
         _ -> assert(false)
       end
     end

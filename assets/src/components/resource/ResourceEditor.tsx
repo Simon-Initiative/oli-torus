@@ -17,7 +17,7 @@ import {
   UndoableState, processRedo, processUndo, processUpdate, init,
   registerUndoRedoHotkeys, unregisterUndoRedoHotkeys,
 } from './undo';
-import { releaseLock, acquireLock } from 'data/persistence/lock';
+import { releaseLock, acquireLock, NotAcquired } from 'data/persistence/lock';
 import { Message, Severity, createMessage } from 'data/messages/messages';
 import { Banner } from '../messages/Banner';
 import { BreadcrumbTrail } from 'components/common/BreadcrumbTrail';
@@ -195,6 +195,11 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
         this.keydownListener = registerKeydown(this);
         this.keyupListener = registerKeyup(this);
         this.windowBlurListener = registerWindowBlur(this);
+      } else {
+        if (this.persistence.getLockResult().type === 'not_acquired') {
+          const notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired;
+          this.editingLockedMessage(notAcquired.user);
+        }
       }
     });
   }
@@ -208,6 +213,15 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     unregisterKeydown(this.keydownListener);
     unregisterKeyup(this.keyupListener);
     unregisterWindowBlur(this.windowBlurListener);
+  }
+
+  editingLockedMessage(email: string) {
+    const message = createMessage({
+      canUserDismiss: false,
+      content: 'Read Only. User ' + email + ' is currently editing this page.',
+      severity: Severity.Information,
+    });
+    this.setState({ messages: [...this.state.messages, message] });
   }
 
   publishErrorMessage(failure: any) {
