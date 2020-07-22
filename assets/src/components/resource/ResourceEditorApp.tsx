@@ -19,7 +19,7 @@ let store = configureStore();
       </Provider>,
       mountPoint,
     );
-  }
+  };
 
 (window as any).store = {
   configureStore: (json: any) => {
