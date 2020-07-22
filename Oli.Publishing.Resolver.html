@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Publishing.Resolver — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-357027ce2b.js"></script>
+    <script src="dist/sidebar_items-84a98573eb.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -90,6 +90,15 @@ Oli.Publishing.Resolver <small>behaviour</small>          <a href="https://githu
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#c:find_parent_objectives/2">find_parent_objectives(arg1, list)</a>
+  </div>
+    <div class="summary-synopsis"><p>Finds the parent objectives for a list of objective resource ids that
+might be child objectives.  Returns a map of the child objective resource id
+to the parent objective.  There will not be an entry in this map if
+a given objective resource id is a root objective</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#c:from_resource_id/2">from_resource_id(arg1, list)</a>
   </div>
     <div class="summary-synopsis"><p>Resolves a revision from a list of resource ids and a given context slug.</p></div>
@@ -124,6 +133,28 @@ Returns nil if a revision cannot be resolved.</p></div>
             </a>
 Callbacks          </h1>
           <div class="callbacks-list">
+<section class="detail" id="c:find_parent_objectives/2">
+  <div class="detail-header">
+    <a href="#c:find_parent_objectives/2" class="detail-link" title="Link to this callback">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature">find_parent_objectives(arg1, list)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/resolver.ex#L42" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+      <div class="specs">
+          <pre>find_parent_objectives(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), [<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()]) :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Finds the parent objectives for a list of objective resource ids that
+might be child objectives.  Returns a map of the child objective resource id
+to the parent objective.  There will not be an entry in this map if
+a given objective resource id is a root objective</p>
+  </section>
+</section>
 <section class="detail" id="c:from_resource_id/2">
   <div class="detail-header">
     <a href="#c:from_resource_id/2" class="detail-link" title="Link to this callback">
