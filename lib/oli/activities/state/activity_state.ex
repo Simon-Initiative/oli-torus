@@ -60,7 +60,6 @@ defmodule Oli.Activities.State.ActivityState do
       outOf: nil,
       hasMoreAttempts: true,
       parts: Enum.map(transformed_model["authoring"]["parts"], fn p ->
-        IO.inspect(p["hints"], label: "Hints in activity_state")
         %Oli.Activities.State.PartState{
           attemptGuid: p["id"],
           attemptNumber: 1,

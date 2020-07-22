@@ -130,7 +130,6 @@ defmodule Oli.Delivery.Attempts do
   `{:error, %Changeset{}}`
   """
   def request_hint(activity_attempt_guid, part_attempt_guid) do
-    IO.inspect("Requested a hint")
 
     # get both the activity and part attempt records
     Repo.transaction(fn ->

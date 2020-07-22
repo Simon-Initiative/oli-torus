@@ -102,8 +102,8 @@ export const initActivityBridge = (elementId: string) => {
   }, false);
 };
 
-const key = (activityAttempgGuid : string,
-  partAttemptGuid : string) => activityAttempgGuid + '|' + partAttemptGuid;
+const key = (activityAttemptGuid : string,
+  partAttemptGuid : string) => activityAttemptGuid + '|' + partAttemptGuid;
 
 export const initPreviewActivityBridge = (elementId: string) => {
   // map to keep track the number of hints requested for each part
