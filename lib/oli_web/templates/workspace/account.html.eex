@@ -7,7 +7,9 @@
         <p class="mb-2">
           <%= "#{@current_author.first_name} #{@current_author.last_name}" %>
         </p>
-        <a href="#" onclick="function(e) { e.preventDefault()}" data-toggle="modal" data-target="#modal-change-name" id="change-name">Change name</a>
+        <%= if @current_author.provider == "identity" do %>
+          <a href="#" onclick="function(e) { e.preventDefault()}" data-toggle="modal" data-target="#modal-change-name" id="change-name">Change name</a>
+        <% end %>
       </div>
     </div>
     <div class="row my-4">
