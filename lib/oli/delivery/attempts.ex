@@ -130,6 +130,7 @@ defmodule Oli.Delivery.Attempts do
   `{:error, %Changeset{}}`
   """
   def request_hint(activity_attempt_guid, part_attempt_guid) do
+    IO.inspect("Requested a hint")
 
     # get both the activity and part attempt records
     Repo.transaction(fn ->
@@ -139,19 +140,18 @@ defmodule Oli.Delivery.Attempts do
         {:ok, model} <- Model.parse(activity_attempt.transformed_model),
         {:ok, part} <- Enum.find(model.parts, fn p -> p.id == part_attempt.part_id end) |> Oli.Utils.trap_nil(:not_found)
       do
-        shown_hints = length(part_attempt.hints)
+        shown_hints = part_attempt.hints
         all_hints = part.hints
         |> Oli.Activities.ParseUtils.remove_empty
-        |> length
 
         # Use a common util from other 2 places mentioned -> get "real hints" from hints, determine if
         # there are more non-empty hints
 
-        if all_hints > shown_hints do
+        if length(all_hints) > length(shown_hints) do
 
-          hint = Enum.at(part.hints, shown_hints)
+          hint = Enum.at(all_hints, length(shown_hints))
           case update_part_attempt(part_attempt, %{hints: part_attempt.hints ++ [hint.id]}) do
-            {:ok, _} -> {hint, all_hints > shown_hints + 1}
+            {:ok, _} -> {hint, length(all_hints) > length(shown_hints) + 1}
             {:error, error} -> Repo.rollback(error)
           end
 

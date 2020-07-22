@@ -46,6 +46,7 @@ defmodule Oli.Activities.State.PartState do
     # hint ordering. Empty hints are filtered out here.
     real_part_hints = part.hints
     |> ParseUtils.remove_empty
+    IO.inspect(length(attempt.hints), label: "length(attempt.hints)")
     IO.inspect(real_part_hints, label: "Real part hints")
 
     %Oli.Activities.State.PartState{
@@ -56,7 +57,7 @@ defmodule Oli.Activities.State.PartState do
       outOf: attempt.out_of,
       response: attempt.response,
       feedback: attempt.feedback,
-      hints: real_part_hints,
+      hints: hints,
       hasMoreHints: length(attempt.hints) < length(real_part_hints),
       hasMoreAttempts: true,
       partId: attempt.part_id

@@ -26,12 +26,16 @@ defmodule Oli.Activities.ParseUtils do
   def remove_empty(items) do
     Enum.filter(items, & has_content?(&1))
   end
-  def has_content?(%{content: %{ "model" => model }} = here) do
-    IO.inspect(here, label: "here")
-    text = Rendering.Content.render(%Context{}, model, Rendering.Content.Plaintext)
+
+  # The model is stored using atoms or strings depending on where it is in the system
+  def has_content?(%{content: %{ model: model }}), do: has_content?(model)
+  def has_content?(%{content: %{ "model" => model }}), do: has_content?(model)
+  def has_content?(%{"content" => %{ "model" => model }}), do: has_content?(model)
+  def has_content?(model) do
+    plaintext_content = Rendering.Content.render(%Context{}, model, Rendering.Content.Plaintext)
     |> Enum.join("")
-    IO.inspect(text, label: "text")
-    case String.trim(text) do
+    |> String.trim()
+    case plaintext_content do
       "" -> false
       _ -> true
     end
