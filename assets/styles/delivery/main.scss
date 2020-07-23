@@ -57,7 +57,7 @@ body.modal-open {
 
 .activity-purpose {
   padding: 4px 8px;
-  font-weight: 300;
+  font-weight: 200;
 
   &.checkpoint {
     background-color: $activity-purpose-checkpoint-color;
@@ -106,7 +106,7 @@ body.modal-open {
 
 blockquote {
   position: relative;
-  padding: 5px 10px 0 50px;
+  padding: 5px 10px 5px 50px;
   background: $gray-100;
   border: 1px solid $gray-200;
   border-left-color: $blue;
