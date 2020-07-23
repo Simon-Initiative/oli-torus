@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Activities.ParseUtils — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-84a98573eb.js"></script>
+    <script src="dist/sidebar_items-7b853b6d8e.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -90,6 +90,11 @@ Oli.Activities.ParseUtils          <a href="https://github.com/Simon-Initiative/
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#has_content?/1">has_content?(arg1)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#items_or_errors/1">items_or_errors(items)</a>
   </div>
     <div class="summary-synopsis"><p>Takes a list of items that are either of the
@@ -97,6 +102,12 @@ form {:ok, struct} or {:error, string} and if any
 errors are present it returns {:error, [string]}.
 If all entries are {:ok, struct} then this
 returns {:ok, [struct]}</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#remove_empty/1">remove_empty(items)</a>
+  </div>
+    <div class="summary-synopsis"><p>Filters out slate items with no &quot;real&quot; content. E.g.,</p></div>
 </div>
   </div>
         </section>
@@ -109,6 +120,21 @@ returns {:ok, [struct]}</p></div>
             </a>
 Functions          </h1>
           <div class="functions-list">
+<section class="detail" id="has_content?/1">
+  <div class="detail-header">
+    <a href="#has_content?/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">has_content?(arg1)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities/parse_utils.ex#L36" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
 <section class="detail" id="items_or_errors/1">
   <div class="detail-header">
     <a href="#items_or_errors/1" class="detail-link" title="Link to this function">
@@ -127,6 +153,29 @@ form {:ok, struct} or {:error, string} and if any
 errors are present it returns {:error, [string]}.
 If all entries are {:ok, struct} then this
 returns {:ok, [struct]}</p>
+  </section>
+</section>
+<section class="detail" id="remove_empty/1">
+  <div class="detail-header">
+    <a href="#remove_empty/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">remove_empty(items)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities/parse_utils.ex#L31" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+<p>Filters out slate items with no &quot;real&quot; content. E.g.,</p>
+<h1>%{</h1>
+<h1>&quot;content&quot; =&gt; %{</h1>
+<h1>&quot;model&quot; =&gt; [</h1>
+<h1>%{&quot;children&quot; =&gt; [%{&quot;text&quot; =&gt; &quot;&quot;}], &quot;type&quot; =&gt; &quot;p&quot;}</h1>
+<h1>]</h1>
+<h1>}</h1>
+<h1>}</h1>
   </section>
 </section>
           </div>
