@@ -25,7 +25,7 @@ type InputProps = {
 
 const Input = (props: InputProps) => {
 
-  const input = props.input === null ? '' : props.input;
+  const input = props.input === null ? '' : props.input.input;
 
   if (props.inputType === 'numeric') {
     return (

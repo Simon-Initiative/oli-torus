@@ -426,9 +426,9 @@ defmodule Oli.Delivery.Attempts do
 
     results = Repo.all(from aa1 in ActivityAttempt,
       join: r in assoc(aa1, :revision),
-      left_join: aa2 in ActivityAttempt, on: (aa1.resource_id == aa2.resource_id and aa1.id < aa2.id),
+      left_join: aa2 in ActivityAttempt, on: (aa1.resource_id == aa2.resource_id and aa1.id < aa2.id and aa1.resource_attempt_id == aa2.resource_attempt_id),
       join: pa1 in PartAttempt, on: aa1.id == pa1.activity_attempt_id,
-      left_join: pa2 in PartAttempt, on: (aa1.id == pa2.activity_attempt_id and pa1.part_id == pa2.part_id and pa1.id < pa2.id),
+      left_join: pa2 in PartAttempt, on: (aa1.id == pa2.activity_attempt_id and pa1.part_id == pa2.part_id and pa1.id < pa2.id and pa1.activity_attempt_id == pa2.activity_attempt_id),
       where: aa1.resource_attempt_id == ^resource_attempt_id and is_nil(aa2.id) and is_nil(pa2.id),
       preload: [revision: r],
       select: {pa1, aa1})
@@ -462,7 +462,7 @@ defmodule Oli.Delivery.Attempts do
     Repo.one(from a in ResourceAccess,
       join: s in Section, on: a.section_id == s.id,
       join: ra1 in ResourceAttempt, on: a.id == ra1.resource_access_id,
-      left_join: ra2 in ResourceAttempt, on: (a.id == ra2.resource_access_id and ra1.id < ra2.id),
+      left_join: ra2 in ResourceAttempt, on: (a.id == ra2.resource_access_id and ra1.id < ra2.id and ra1.resource_access_id == ra2.resource_access_id),
       where: a.user_id == ^user_id and s.context_id == ^context_id and a.resource_id == ^resource_id and is_nil(ra2),
       select: ra1)
 
@@ -517,11 +517,11 @@ defmodule Oli.Delivery.Attempts do
   On success returns a tuple of the form `{:ok, count}`
   """
   def save_student_input(part_inputs) do
-
+    IO.inspect part_inputs
     Repo.transaction(fn ->
       count = length(part_inputs)
       case Enum.reduce_while(part_inputs, :ok, fn %{attempt_guid: attempt_guid, response: response}, _ ->
-
+        IO.inspect response
         case Repo.update_all(from(p in PartAttempt, where: p.attempt_guid == ^attempt_guid), set: [response: response]) do
           nil -> {:halt, :error}
           _ -> {:cont, :ok}
@@ -950,7 +950,7 @@ defmodule Oli.Delivery.Attempts do
   defp get_latest_part_attempts(activity_attempt_guid) do
     Repo.all(from aa in ActivityAttempt,
       join: pa1 in PartAttempt, on: aa.id == pa1.activity_attempt_id,
-      left_join: pa2 in PartAttempt, on: (aa.id == pa2.activity_attempt_id and pa1.part_id == pa2.part_id and pa1.id < pa2.id),
+      left_join: pa2 in PartAttempt, on: (aa.id == pa2.activity_attempt_id and pa1.part_id == pa2.part_id and pa1.id < pa2.id and pa1.activity_attempt_id == pa2.activity_attempt_id),
       where: aa.attempt_guid == ^activity_attempt_guid and is_nil(pa2),
       select: pa1)
   end
