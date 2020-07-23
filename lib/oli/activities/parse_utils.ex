@@ -23,9 +23,8 @@ defmodule Oli.Activities.ParseUtils do
   # %{
   #   "content" => %{
   #     "model" => [
-  #       %{"children" => [%{"text" => ""}], "id" => "3358554622", "type" => "p"}
-  #     ],
-  #     "selection" => nil
+  #       %{"children" => [%{"text" => ""}], "type" => "p"}
+  #     ]
   #   }
   # }
   """
