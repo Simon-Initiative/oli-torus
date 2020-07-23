@@ -1,6 +1,5 @@
 import * as Immutable from 'immutable';
 import React from 'react';
-import isHotkey from 'is-hotkey';
 import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
 import { ResourceContent, ResourceContext,
@@ -22,6 +21,7 @@ import { Message, Severity, createMessage } from 'data/messages/messages';
 import { Banner } from '../messages/Banner';
 import { BreadcrumbTrail } from 'components/common/BreadcrumbTrail';
 import { create } from 'data/persistence/objective';
+import { isFirefox } from 'utils/browser';
 
 export interface ResourceEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap;   // Map of activity types to activity elements
@@ -52,7 +52,7 @@ type ResourceEditorState = {
 function prepareSaveFn(
   project: ProjectSlug, resource: ResourceSlug, update: Persistence.ResourceUpdate) {
 
-  return () => Persistence.edit(project, resource, update);
+  return (releaseLock : boolean) => Persistence.edit(project, resource, update, releaseLock);
 }
 
 // Ensures that there is some default content if the initial content
@@ -67,10 +67,12 @@ function withDefaultContent(content: ResourceContent[]) {
 function registerUnload(strategy: PersistenceStrategy) {
   return window.addEventListener('beforeunload', (event) => {
 
-    // Destroying the strategy is done in another execution context
-    // as running it inline fails in Firefox, as the release
-    // lock HTTP request does not get sent
-    setTimeout(() => strategy.destroy(), 0);
+    if (isFirefox) {
+      setTimeout(() => strategy.destroy());
+    } else {
+      strategy.destroy();
+    }
+
   });
 }
 
@@ -317,6 +319,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       objectives: { attached: this.state.undoable.current.objectives.toArray() },
       title: this.state.undoable.current.title,
       content: { model: this.state.undoable.current.content.toArray() },
+      releaseLock: false,
     };
 
     this.persistence.save(

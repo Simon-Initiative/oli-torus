@@ -48,6 +48,35 @@ defmodule Oli.ActivityEditingTest do
 
     end
 
+    test "edit/5 does not release the lock when 'releaseLock' is absent", %{project: project, author: author, author2: author2, revision1: revision1 } do
+
+      content = %{ "stem" => "Hey there" }
+      {:ok, {%{slug: slug}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
+
+      PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+      update = %{ "title" => "edited title"}
+      {:ok, _} = ActivityEditor.edit(project.slug, revision1.slug, slug, author.email, update)
+
+      PageEditor.acquire_lock(project.slug, revision1.slug, author2.email)
+      result = ActivityEditor.edit(project.slug, revision1.slug, slug, author2.email, update)
+      assert {:error, {:lock_not_acquired, _}} = result
+    end
+
+    test "edit/5 releases the lock when 'releaseLock' present", %{project: project, author: author, author2: author2, revision1: revision1 } do
+
+      content = %{ "stem" => "Hey there" }
+      {:ok, {%{slug: slug}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
+
+      PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+      update = %{ "title" => "edited title", "releaseLock" => true}
+      {:ok, _} = ActivityEditor.edit(project.slug, revision1.slug, slug, author.email, update)
+
+      PageEditor.acquire_lock(project.slug, revision1.slug, author2.email)
+      result = ActivityEditor.edit(project.slug, revision1.slug, slug, author2.email, update)
+      assert {:ok, _} = result
+    end
+
+
     test "can create and attach an activity to a resource", %{author: author, project: project, revision1: revision } do
       content = %{ "stem" => "Hey there" }
       {:ok, {%{slug: slug, resource_id: activity_id}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
@@ -120,8 +149,6 @@ defmodule Oli.ActivityEditingTest do
       # verify all attributes of the editing context are what we expect
       assert context.activitySlug == slug_1
       assert context.model == %{ "stem" => "one" }
-      assert context.previousActivity == nil
-      assert context.nextActivity == nil
       assert context.friendlyName == "Multiple Choice"
       assert context.authoringElement == "oli-multiple-choice-authoring"
       assert context.authoringScript == "oli_multiple_choice_authoring.js"
@@ -129,118 +156,6 @@ defmodule Oli.ActivityEditingTest do
       assert context.resourceSlug == revision_slug
       assert context.authorEmail == author.email
       assert length(context.allObjectives) == 2
-
-    end
-
-    test "activity context previous and next siblings", %{author: author, project: project, revision1: revision } do
-
-      {:ok, {%{slug: slug_1}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, %{ "stem" => "one" }, [])
-      {:ok, {%{slug: slug_2}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, %{ "stem" => "two" }, [])
-      {:ok, {%{slug: slug_3}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, %{ "stem" => "three" }, [])
-
-      # attach just one activity
-      update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug_1, "purpose" => "none"}]}}
-      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
-      assert {:ok, _} =  PageEditor.edit(project.slug, revision.slug, author.email, update)
-
-      # create the activity context
-      {:ok, context} = ActivityEditor.create_context(project.slug, revision.slug, slug_1, author)
-
-      # verify previous and next are nil
-      assert context.previousActivity == nil
-      assert context.nextActivity == nil
-
-      # Attach two activities
-      update = %{ "content" => %{ "model" => [
-        %{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug_1, "purpose" => "none"},
-        %{ "type" => "activity-reference", "id" => 2, "activitySlug" => slug_2, "purpose" => "none"}]}}
-      assert {:ok, _} =  PageEditor.edit(project.slug, revision.slug, author.email, update)
-
-      # create the activity context
-      {:ok, context} = ActivityEditor.create_context(project.slug, revision.slug, slug_1, author)
-
-      # verify previous is nil and next is activity 2
-      assert context.previousActivity == nil
-      assert context.nextActivity.activitySlug == slug_2
-      assert context.nextActivity.title == "Multiple Choice"
-      assert context.nextActivity.friendlyName == "Multiple Choice"
-
-      # create the activity context
-      {:ok, context} = ActivityEditor.create_context(project.slug, revision.slug, slug_2, author)
-
-      # verify previous is nil and previous is activity 1
-      assert context.nextActivity == nil
-      assert context.previousActivity.activitySlug == slug_1
-      assert context.previousActivity.title == "Multiple Choice"
-      assert context.previousActivity.friendlyName == "Multiple Choice"
-
-      # Attach all three activities
-      update = %{ "content" => %{ "model" => [
-        %{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug_1, "purpose" => "none"},
-        %{ "type" => "activity-reference", "id" => 2, "activitySlug" => slug_2, "purpose" => "none"},
-        %{ "type" => "activity-reference", "id" => 3, "activitySlug" => slug_3, "purpose" => "none"}]}}
-      assert {:ok, _} =  PageEditor.edit(project.slug, revision.slug, author.email, update)
-
-      {:ok, context} = ActivityEditor.create_context(project.slug, revision.slug, slug_1, author)
-      assert context.previousActivity == nil
-      assert context.nextActivity.activitySlug == slug_2
-
-      {:ok, context} = ActivityEditor.create_context(project.slug, revision.slug, slug_2, author)
-      assert context.previousActivity.activitySlug == slug_1
-      assert context.nextActivity.activitySlug == slug_3
-
-      {:ok, context} = ActivityEditor.create_context(project.slug, revision.slug, slug_3, author)
-      assert context.previousActivity.activitySlug == slug_2
-      assert context.nextActivity == nil
-
-      # Attach all three activities, with interspersed content
-      update = %{ "content" => %{ "model" => [
-        %{ "type" => "content", "id" => 1, "purpose" => "none", "children" => []},
-        %{ "type" => "activity-reference", "id" => 2, "activitySlug" => slug_1, "purpose" => "none"},
-        %{ "type" => "content", "id" => 3, "purpose" => "none", "children" => []},
-        %{ "type" => "content", "id" => 4, "purpose" => "none", "children" => []},
-        %{ "type" => "activity-reference", "id" => 5, "activitySlug" => slug_2, "purpose" => "none"},
-        %{ "type" => "content", "id" => 6, "purpose" => "none", "children" => []},
-        %{ "type" => "activity-reference", "id" => 7, "activitySlug" => slug_3, "purpose" => "none"},
-        %{ "type" => "content", "id" => 8, "purpose" => "none", "children" => []}]}}
-      assert {:ok, _} =  PageEditor.edit(project.slug, revision.slug, author.email, update)
-
-      {:ok, context} = ActivityEditor.create_context(project.slug, revision.slug, slug_1, author)
-      assert context.previousActivity == nil
-      assert context.nextActivity.activitySlug == slug_2
-
-      {:ok, context} = ActivityEditor.create_context(project.slug, revision.slug, slug_2, author)
-      assert context.previousActivity.activitySlug == slug_1
-      assert context.nextActivity.activitySlug == slug_3
-
-      {:ok, context} = ActivityEditor.create_context(project.slug, revision.slug, slug_3, author)
-      assert context.previousActivity.activitySlug == slug_2
-      assert context.nextActivity == nil
-
-       # Reorder, with interspersed content
-       update = %{ "content" => %{ "model" => [
-        %{ "type" => "content", "id" => 1, "purpose" => "none", "children" => []},
-        %{ "type" => "activity-reference", "id" => 7, "activitySlug" => slug_3, "purpose" => "none"},
-        %{ "type" => "content", "id" => 3, "purpose" => "none", "children" => []},
-        %{ "type" => "content", "id" => 4, "purpose" => "none", "children" => []},
-        %{ "type" => "activity-reference", "id" => 5, "activitySlug" => slug_2, "purpose" => "none"},
-        %{ "type" => "content", "id" => 6, "purpose" => "none", "children" => []},
-        %{ "type" => "activity-reference", "id" => 2, "activitySlug" => slug_1, "purpose" => "none"},
-        %{ "type" => "content", "id" => 8, "purpose" => "none", "children" => []}]}}
-      assert {:ok, _} =  PageEditor.edit(project.slug, revision.slug, author.email, update)
-
-      {:ok, context} = ActivityEditor.create_context(project.slug, revision.slug, slug_1, author)
-      assert context.nextActivity == nil
-      assert context.previousActivity.activitySlug == slug_2
-
-      {:ok, context} = ActivityEditor.create_context(project.slug, revision.slug, slug_2, author)
-      assert context.previousActivity.activitySlug == slug_3
-      assert context.nextActivity.activitySlug == slug_1
-
-      {:ok, context} = ActivityEditor.create_context(project.slug, revision.slug, slug_3, author)
-      assert context.nextActivity.activitySlug == slug_2
-      assert context.previousActivity == nil
-
 
     end
 
