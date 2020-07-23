@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ReactEditor, useSelected, useFocused } from 'slate-react';
-import { Transforms, Range } from 'slate';
+import { Transforms } from 'slate';
 
 import { updateModel, getEditMode } from './utils';
 import * as ContentModel from 'data/content/model';
