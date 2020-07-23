@@ -517,11 +517,11 @@ defmodule Oli.Delivery.Attempts do
   On success returns a tuple of the form `{:ok, count}`
   """
   def save_student_input(part_inputs) do
-    IO.inspect part_inputs
+
     Repo.transaction(fn ->
       count = length(part_inputs)
       case Enum.reduce_while(part_inputs, :ok, fn %{attempt_guid: attempt_guid, response: response}, _ ->
-        IO.inspect response
+
         case Repo.update_all(from(p in PartAttempt, where: p.attempt_guid == ^attempt_guid), set: [response: response]) do
           nil -> {:halt, :error}
           _ -> {:cont, :ok}
