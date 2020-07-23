@@ -43,7 +43,6 @@ export function makeRequest<SuccessType>(
       method,
       headers,
       body,
-      keepalive: true,
     })
     .then((response: Response) => {
       if (!response.ok) {
