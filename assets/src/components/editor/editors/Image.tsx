@@ -201,19 +201,20 @@ export const ImageEditor = (props: ImageProps) => {
     <div {...attributes} className="ml-4 mr-4">
 
       <div contentEditable={false} style={{ userSelect: 'none' }}>
-        <div className="ml-4 mr-4">
+        <div className="ml-4 mr-4 text-center">
           <img
             style={imageStyle}
             className="img-fluid img-thumbnail"
             src={model.src}
             draggable={false}
           />
-          <Settings.ToolPopupButton
-            contentFn={contentFn}
-            setIsPopoverOpen={setIsPopoverOpen}
-            isPopoverOpen={isPopoverOpen} />
-          <Settings.Caption caption={model.caption}/>
         </div>
+        <Settings.ToolPopupButton
+          contentFn={contentFn}
+          setIsPopoverOpen={setIsPopoverOpen}
+          isPopoverOpen={isPopoverOpen}
+          label="Image"/>
+        <Settings.Caption caption={model.caption}/>
       </div>
 
       {children}

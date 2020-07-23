@@ -171,7 +171,8 @@ export const CodeEditor = (props: CodeProps) => {
         <Settings.ToolPopupButton
           contentFn={contentFn}
           setIsPopoverOpen={setIsPopoverOpen}
-          isPopoverOpen={isPopoverOpen} />
+          isPopoverOpen={isPopoverOpen}
+          label="Code" />
         <Settings.Caption caption={model.caption}/>
       </div>
     </div>

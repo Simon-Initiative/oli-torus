@@ -201,7 +201,8 @@ export const AudioEditor = (props: AudioProps) => {
         <Settings.ToolPopupButton
           contentFn={contentFn}
           setIsPopoverOpen={setIsPopoverOpen}
-          isPopoverOpen={isPopoverOpen} />
+          isPopoverOpen={isPopoverOpen}
+          label="Audio" />
         <Settings.Caption caption={model.caption}/>
 
       </div>
