@@ -10,7 +10,6 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   alias Oli.Resources.Activity
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ActivityContext
-  alias Oli.Authoring.Editing.SiblingActivity
   alias Oli.Publishing
   alias Oli.Activities
   alias Oli.Accounts.Author
@@ -65,6 +64,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           {:acquired} -> get_latest_revision(publication.id, activity.id)
             |> create_new_revision(publication, activity, author.id)
             |> update_revision(update, project.slug)
+            |> possibly_release_lock(publication, resource, author, update)
 
           # A successful lock update means we can safely edit the existing revision
           # unless, that is, if the update would change the corresponding slug.
@@ -73,6 +73,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           {:updated} -> get_latest_revision(publication.id, activity.id)
             |> maybe_create_new_revision(publication, activity, author.id, update)
             |> update_revision(update, project.slug)
+            |> possibly_release_lock(publication, resource, author, update)
 
           # error or not able to lock results in a failed edit
           result -> Repo.rollback(result)
@@ -91,6 +92,32 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       e -> e
     end
 
+  end
+
+  defp possibly_release_lock(previous, publication, resource, author, update) do
+    if Map.get(update, "releaseLock", false) do
+      Locks.release(publication.id, resource.id, author.id)
+    end
+
+    previous
+  end
+
+  # takes the model of the activity to be created and a list of objective slugs and
+  # creates a map of all part ids to objective resource ids
+  defp attach_objectives_to_all_parts(model, objectives) do
+
+    result = case Oli.Activities.Model.parse(model) do
+      {:ok, %{parts: parts}} ->
+
+        %{"objectives" => Enum.reduce(parts, %{}, fn %{id: id}, m -> Map.put(m, id, objectives) end)}
+        |> translate_objective_slugs_to_ids()
+        |> Map.get("objectives")
+
+      {:error, _e} ->
+        %{}
+    end
+
+    {:ok, result}
   end
 
   defp translate_objective_slugs_to_ids(%{"objectives" => objectives} = update) do
@@ -112,7 +139,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   defp translate_objective_slugs_to_ids(update), do: update
 
-  defp translate_ids_to_slugs(project_slug, objectives) do
+  def translate_ids_to_slugs(project_slug, objectives) do
 
     all = Map.values(objectives)
     |> Enum.reduce([], fn ids, list -> list ++ ids end)
@@ -196,9 +223,9 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   .`{:error, {:not_authorized}}` if the user is not authorized to create this activity
   .`{:error, {:error}}` unknown error
   """
-  @spec create(String.t, String.t, %Author{}, %{})
+  @spec create(String.t, String.t, %Author{}, %{}, [])
     :: {:ok, %Revision{}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:not_authorized}}
-  def create(project_slug, activity_type_slug, author, model) do
+  def create(project_slug, activity_type_slug, author, model, objectives) do
 
     Repo.transaction(fn ->
 
@@ -206,7 +233,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          {:ok} <- authorize_user(author, project),
          {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, activity_type} <- Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
-         {:ok, %{content: content} = activity} <- Activity.create_new(%{title: activity_type.title, scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"), objectives: %{}, author_id: author.id, content: model, activity_type_id: activity_type.id}),
+         {:ok, attached_objectives} <- attach_objectives_to_all_parts(model, objectives),
+         {:ok, %{content: content} = activity} <- Activity.create_new(%{title: activity_type.title, scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"), objectives: attached_objectives, author_id: author.id, content: model, activity_type_id: activity_type.id}),
          {:ok, _} <- Course.create_project_resource(%{ project_id: project.id, resource_id: activity.resource_id}) |> trap_nil(),
          {:ok, _mapping} <- Publishing.create_resource_mapping(%{publication_id: publication.id, resource_id: activity.resource_id, revision_id: activity.id})
       do
@@ -232,13 +260,10 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     with {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
          {:ok, all_objectives} <- Publishing.get_published_objective_details(publication.id) |> trap_nil(),
-         {:ok, objectives_without_ids} <- PageEditor.strip_ids(all_objectives) |> trap_nil(),
-         {:ok, %{content: content, title: resource_title}} <- PageEditor.get_latest_revision(publication, resource) |> trap_nil(),
+         {:ok, %{title: resource_title}} <- PageEditor.get_latest_revision(publication, resource) |> trap_nil(),
          {:ok, %{id: activity_id}} <- Resources.get_resource_from_slug(activity_slug) |> trap_nil(),
          {:ok, %{activity_type: activity_type, content: model, title: title, objectives: objectives}} <- get_latest_revision(publication.id, activity_id) |> trap_nil()
     do
-
-      {previous, next} = find_sibling_activities(activity_id, content, publication.id)
 
       context = %ActivityContext{
         authoringScript: activity_type.authoring_script,
@@ -253,9 +278,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         title: title,
         model: model,
         objectives: translate_ids_to_slugs(project_slug, objectives),
-        allObjectives: objectives_without_ids,
-        previousActivity: previous,
-        nextActivity: next
+        allObjectives: all_objectives,
       }
 
       {:ok, context}
@@ -270,53 +293,5 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     Publishing.get_published_revision(publication_id, resource_id)
     |> Repo.preload([:activity_type])
   end
-
-  # Find the next and previous 'sibling' activities to the activity
-  # specified by activity_id, in the array of content, all through
-  # the lens of a specific publication. Previous and next refer to the
-  # activities that precede or follow the given activity in the content
-  # list, but only looking at activities.
-  #
-  # Returns a tuple of SiblingActivity structs of the form { previous, next }
-  # corresponding to the previous and next sibling activities. If there is
-  # not a previous or next activity (e.g. the activity specified is first or is the
-  # only activity) then nil is returned inside the tuple.
-  defp find_sibling_activities(activity_id, %{"model" => content}, publication_id) do
-
-    references = Enum.filter(content, fn c -> Map.get(c, "type") == "activity-reference" end)
-    size = length(references)
-
-    revisions = if (size == 1) do
-      [nil, nil]
-    else
-      our_index = Enum.find_index(references, fn c -> Map.get(c, "activity_id") == activity_id end)
-
-      map = Enum.zip(references, 0..(size - 1))
-        |> Enum.reduce(%{}, fn {r, i}, m -> Map.put(m, i, Map.get(r, "activity_id")) end)
-
-      # add one so that we can pattern match directly against size as a pin
-      case (our_index + 1) do
-        1 -> Publishing.get_published_activity_revisions(publication_id, [Map.get(map, 1)]) |> List.insert_at(0, nil)
-        ^size -> Publishing.get_published_activity_revisions(publication_id, [Map.get(map, size - 2)]) |> List.insert_at(1, nil)
-        other -> [
-          Publishing.get_published_activity_revisions(publication_id, [Map.get(map, other - 2)]),
-          Publishing.get_published_activity_revisions(publication_id, [Map.get(map, other)])
-        ] |> List.flatten()
-      end
-    end
-
-    # convert them to sibling activity representations
-    as_siblings = Enum.map(revisions, fn r ->
-      case r do
-        nil -> nil
-        rev -> %SiblingActivity{friendlyName: rev.activity_type.title, title: rev.title, activitySlug: rev.slug}
-      end
-    end)
-
-    # return them as a tuple
-    List.to_tuple(as_siblings)
-
-  end
-
 
 end

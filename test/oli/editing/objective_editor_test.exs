@@ -12,6 +12,39 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       Seeder.base_project_with_resource2()
     end
 
+
+    test "delete/3 removes an objective", %{author: author, project: project } do
+
+      {:ok, %{revision: parent}} = ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+
+      parent = AuthoringResolver.from_resource_id(project.slug, parent.resource_id)
+
+      {:ok, _} = ObjectiveEditor.delete(parent.slug, author, project)
+
+      updated_parent = AuthoringResolver.from_resource_id(project.slug, parent.resource_id)
+
+      assert updated_parent.deleted == true
+
+    end
+
+    test "delete/4 removes objectives from parent during deletion", %{author: author, project: project } do
+
+      {:ok, %{revision: parent}} = ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+      {:ok, %{revision: child}} = ObjectiveEditor.add_new(%{title: "Sub Objective"}, author, project, parent.slug)
+
+      parent = AuthoringResolver.from_resource_id(project.slug, parent.resource_id)
+      assert parent.children == [child.resource_id]
+
+      {:ok, _} = ObjectiveEditor.delete(child.slug, author, project, parent)
+
+      updated_parent = AuthoringResolver.from_resource_id(project.slug, parent.resource_id)
+      updated_child = AuthoringResolver.from_resource_id(project.slug, child.resource_id)
+
+      assert updated_child.deleted == true
+      refute Enum.any?(updated_parent.children, fn id -> id == updated_child.resource_id end)
+
+    end
+
     test "add_new/3 can add an objetive", %{author: author, project: project } do
 
       {:ok, %{revision: revision}} = ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
@@ -77,7 +110,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
 
       # attach it to a page and release the lock
       content = %{ "stem" => "one" }
-      {:ok, {%{slug: slug, resource_id: activity_id}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content)
+      {:ok, {%{slug: slug, resource_id: activity_id}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
 
       update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug, "purpose" => "none"}]}}
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
@@ -101,7 +134,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
 
       # attach it to a page and release the lock
       content = %{ "stem" => "one" }
-      {:ok, {%{slug: slug, resource_id: activity_id}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content)
+      {:ok, {%{slug: slug, resource_id: activity_id}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
 
       update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug, "purpose" => "none"}]}}
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)

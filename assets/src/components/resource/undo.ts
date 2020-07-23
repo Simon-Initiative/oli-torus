@@ -1,4 +1,5 @@
 import * as Immutable from 'immutable';
+import isHotkey from 'is-hotkey';
 
 export interface UndoableState<T> {
   current: T;
@@ -47,4 +48,23 @@ export function processUpdate<T>(
     undoStack: state.undoStack.push(state.current),
     redoStack: state.redoStack,
   };
+}
+
+
+export function registerUndoRedoHotkeys(onUndo: () => void, onRedo: () => void) {
+  // register hotkeys
+  const isUndoHotkey = isHotkey('mod+z');
+  const isRedoHotkey = isHotkey('mod+shift+z');
+
+  return window.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (isUndoHotkey(e)) {
+      onUndo();
+    } else if (isRedoHotkey(e)) {
+      onRedo();
+    }
+  });
+}
+
+export function unregisterUndoRedoHotkeys(listener: any) {
+  window.removeEventListener('keydown', listener);
 }

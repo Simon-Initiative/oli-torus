@@ -2,7 +2,7 @@ defmodule Oli.EditingTest do
   use Oli.DataCase
 
   alias Oli.Resources
-  alias Oli.Authoring.Editing.PageEditor
+  alias Oli.Authoring.Editing.{PageEditor, ActivityEditor}
   alias Oli.Publishing
   alias Oli.Accounts.Author
   alias Oli.Accounts.SystemRole
@@ -23,6 +23,23 @@ defmodule Oli.EditingTest do
       {:ok, updated_revision} = PageEditor.edit(project.slug, revision1.slug, author.email, %{ "content" => content })
 
       assert revision1.id != updated_revision.id
+    end
+
+    test "edit/4 mark page delete and cascade to child activities", %{author: author, revision1: revision1, project: project } do
+
+      content = %{ "stem" => "Hey there" }
+      {:ok, {revision, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
+
+      PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+      page_content = %{ "model" => [%{"type" => "p", children: [%{ "text" => "A paragraph22."}]},%{"activitySlug" => revision.slug, "id" => "2656470668","children" => [], "purpose" => "none", "type" => "activity-reference"}]}
+      PageEditor.edit(project.slug, revision1.slug, author.email, %{ "content" => page_content })
+
+      deletion = %{deleted: true,author_id: author.id}
+      PageEditor.edit(project.slug, revision1.slug, author.email, deletion)
+
+      publication = Publishing.get_unpublished_publication_id!(project.id)
+      latest_revision = ActivityEditor.get_latest_revision(publication, revision.resource_id)
+      assert latest_revision.deleted
     end
 
     test "edit/4 can edit multiple parameters", %{author: author, project: project, revision1: revision1} do
@@ -87,8 +104,20 @@ defmodule Oli.EditingTest do
       PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
       result = PageEditor.edit(project.slug, revision1.slug, author.email, %{ "content" => content })
 
-      id = author2.id
-      assert {:error, {:lock_not_acquired, {^id, _}}} = result
+      email = author2.email
+      assert {:error, {:lock_not_acquired, {^email, _}}} = result
+    end
+
+    test "edit/4 releases the lock when 'releaseLock' present", %{project: project, author: author, author2: author2, revision1: revision1 } do
+
+      content = %{ "model" => [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }] }
+      PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+      result = PageEditor.edit(project.slug, revision1.slug, author.email, %{ "content" => content, "releaseLock" => true })
+      assert {:ok, _} = result
+
+      PageEditor.acquire_lock(project.slug, revision1.slug, author2.email)
+      result = PageEditor.edit(project.slug, revision1.slug, author2.email, %{ "content" => content })
+      assert {:ok, _} = result
     end
 
     test "edit/4 fails when the resource slug is invalid", %{project: project, author: author } do
@@ -118,6 +147,12 @@ defmodule Oli.EditingTest do
       result = PageEditor.edit(project.slug, revision1.slug, author2.email, %{ "content" => content })
 
       assert {:error, {:not_authorized}} = result
+    end
+
+    test "render_page_html/4 renders a page", %{project: project, revision2: revision, author: author} do
+      html = PageEditor.render_page_html(project.slug, revision.slug, author)
+
+      assert html == [[["<p>", [[[[], "Here" | "&#39;"] | "s some test content"]], "</p>\n"]]]
     end
 
   end

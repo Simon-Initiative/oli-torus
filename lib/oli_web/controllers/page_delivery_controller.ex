@@ -107,6 +107,7 @@ defmodule OliWeb.PageDeliveryController do
       next_page: context.next_page,
       title: context.page.title,
       graded: context.page.graded,
+      activity_count: map_size(context.activities),
       html: html,
       objectives: context.objectives,
       slug: context.page.slug,

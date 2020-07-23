@@ -7,10 +7,23 @@ defmodule Oli.Delivery.Page.PageContextTest do
   describe "page context" do
 
     setup do
+
+      content = %{
+        "stem" => "1",
+        "authoring" => %{
+          "parts" => [
+            %{"id" => "1", "responses" => [], "scoringStrategy" => "best", "evaluationStrategy" => "regex"}
+          ]
+        }
+      }
+
       map = Seeder.base_project_with_resource2()
       |> Seeder.create_section()
       |> Seeder.add_objective("objective one", :o1)
-      |> Seeder.add_activity(%{title: "one", content: %{"authoring" => "3"}}, :a1)
+
+      o = Map.get(map, :o1).revision.resource_id
+
+      map = Seeder.add_activity(map, %{title: "one", objectives: %{"1" => [o]}, content: content}, :a1)
       |> Seeder.add_activity(%{title: "two", content: %{"stem" => "3"}}, :a2)
       |> Seeder.add_user(%{}, :user1)
 
@@ -22,7 +35,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
             %{"type" => "activity-reference", "activity_id" => Map.get(map, :a2).resource.id}
           ]
         },
-        objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
+        objectives: %{"attached" => []}
       }
 
       Seeder.add_page(map, attrs, :p1)
@@ -40,7 +53,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
       context = PageContext.create_page_context(section.context_id, p1.revision.slug, user)
 
       # verify activities map
-      assert Map.get(context.activities, a1.resource.id).model == "{}"
+      assert Map.get(context.activities, a1.resource.id).model != nil
 
       # verify objectives map
       assert context.objectives == ["objective one"]

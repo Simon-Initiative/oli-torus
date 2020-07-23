@@ -5,4 +5,12 @@
 
 <h1><%= @context.title %></h1>
 
-<%= raw(@content_html) %>
+<%= render OliWeb.PageDeliveryView, "_objectives.html", objectives: @objectives %>
+
+<div id="eventIntercept">
+  <%= raw(@content_html) %>
+</div>
+
+<script>
+  OLI.initPreviewActivityBridge('eventIntercept');
+</script>

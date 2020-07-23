@@ -1,1 +1,14 @@
-<%# RENDER OBJECTIVES %>
+
+<%= if length(@objectives) > 0 do %>
+
+  <div class="rolled-up-objectives">
+
+    <div class="label">Learning Objectives</div>
+    <ul>
+    <%= for title <- @objectives do %>
+      <li class="title"><%= title %></li>
+    <% end %>
+    </ul>
+  </div>
+
+<% end %>

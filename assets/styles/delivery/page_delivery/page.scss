@@ -48,6 +48,19 @@
   }
 }
 
+.rolled-up-objectives {
+
+  margin: 10px;
+  margin-top: 20px;
+
+  .label {
+    font-size: 1.2em;
+  }
+  .title {
+    font-size: 1.1em;
+  }
+}
+
 .course-btn {
   max-width: 200px;
   overflow: hidden;

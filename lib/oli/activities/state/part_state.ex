@@ -2,6 +2,7 @@ defmodule Oli.Activities.State.PartState do
 
   alias Oli.Delivery.Attempts.PartAttempt
   alias Oli.Activities.Model.Part
+  alias Oli.Activities.ParseUtils
 
   @enforce_keys [
     :attemptGuid,
@@ -40,6 +41,11 @@ defmodule Oli.Activities.State.PartState do
     hints = Enum.map(attempt.hints, fn id -> Map.get(hint_map, id, nil) end)
       |> Enum.filter(fn id -> !is_nil(id) end)
 
+    # Activities save empty hints to preserve the "deer in headlights" / "cognitive" / "bottom out"
+    # hint ordering. Empty hints are filtered out here.
+    real_part_hints = part.hints
+    |> ParseUtils.remove_empty
+
     %Oli.Activities.State.PartState{
       attemptGuid: attempt.attempt_guid,
       attemptNumber: attempt.attempt_number,
@@ -49,14 +55,10 @@ defmodule Oli.Activities.State.PartState do
       response: attempt.response,
       feedback: attempt.feedback,
       hints: hints,
-      hasMoreHints: length(attempt.hints) < length(part.hints),
+      hasMoreHints: length(attempt.hints) < length(real_part_hints),
       hasMoreAttempts: true,
       partId: attempt.part_id
     }
 
   end
-
-
 end
-
-

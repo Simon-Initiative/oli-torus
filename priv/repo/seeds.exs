@@ -28,9 +28,9 @@ if !Oli.Repo.get_by(Oli.Accounts.SystemRole, id: 1) do
 end
 
 # create admin author
-if !Oli.Repo.get_by(Oli.Accounts.Author, email: System.get_env("ADMIN_EMAIL", "admin@oli.cmu.edu")) do
+if !Oli.Repo.get_by(Oli.Accounts.Author, email: System.get_env("ADMIN_EMAIL", "admin@example.edu")) do
   Oli.Repo.insert! %Oli.Accounts.Author{
-    email: System.get_env("ADMIN_EMAIL", "admin@oli.cmu.edu"),
+    email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),
     first_name: "Administrator",
     last_name: "Admin",
     provider: "identity",
@@ -103,7 +103,7 @@ if Application.fetch_env!(:oli, :env) == :dev do
   if !Oli.Repo.get_by(Oli.Accounts.Institution, id: 1) do
     {:ok, _institution} = Oli.Accounts.create_institution(%{
       country_code: "US",
-      institution_email: "admin@oli.cmu.edu",
+      institution_email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),
       institution_url: "oli.cmu.edu",
       name: "Open Learning Initiative",
       timezone: "US/Eastern",
@@ -124,7 +124,7 @@ if Application.fetch_env!(:oli, :env) == :dev do
   }
 
   # create an example package and publication
-  admin_author = Oli.Accounts.get_author_by_email(System.get_env("ADMIN_EMAIL", "admin@oli.cmu.edu"))
+  admin_author = Oli.Accounts.get_author_by_email(System.get_env("ADMIN_EMAIL", "admin@example.edu"))
   _test_author = Oli.Accounts.get_author_by_email("test@oli.cmu.edu")
 
   seeds = Seeder.base_project_with_resource2()

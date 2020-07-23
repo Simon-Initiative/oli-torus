@@ -1,22 +1,30 @@
-import React, { useMemo, useCallback, KeyboardEvent } from 'react';
+import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { Slate, Editable, withReact, ReactEditor } from 'slate-react';
-import { createEditor, Node, NodeEntry, Range, Editor as SlateEditor, Transforms, Path } from 'slate';
-import { create, Mark, ModelElement, schema, Paragraph, SchemaConfig } from 'data/content/model';
+import { createEditor, Node, Point, Range, Editor as SlateEditor, Transforms, Path } from 'slate';
+import isHotkey from 'is-hotkey';
+import {
+  create, Mark, ModelElement, schema, Paragraph,
+  SchemaConfig, Selection,
+} from 'data/content/model';
 import { editorFor, markFor } from './editors';
 import { ToolbarItem, CommandContext } from './interfaces';
-import { FixedToolbar, HoveringToolbar } from './Toolbars';
+import { FixedToolbar, HoveringToolbar, ToolbarPosition } from './Toolbars';
 import { onKeyDown as listOnKeyDown } from './editors/Lists';
-import { onKeyDown as quoteOnKeyDown } from './editors/Blockquote';
+import { commandDesc as linkCmd } from './editors/Link';
 import { getRootOfText } from './utils';
-
+import { toggleMark } from './commands';
+import { installNormalizer } from './normalizer';
 import guid from 'utils/guid';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor (including selection state)
-  onEdit: (value: any) => void;
+  onEdit: (value: ModelElement[], selection: Selection) => void;
 
   // The content to display
-  value: Node[];
+  value: ModelElement[];
+
+  // The current selection
+  selection: Selection;
 
   // The fixed toolbar configuration
   toolbarItems: ToolbarItem[];
@@ -25,28 +33,87 @@ export type EditorProps = {
   editMode: boolean;
 
   commandContext: CommandContext;
+
+  toolbarPosition?: ToolbarPosition;
 };
 
 // Pressing the Enter key on any void block should insert an empty
 // paragraph after that node
-const voidOnKeyDown = (editor: ReactEditor, e: KeyboardEvent) => {
+const voidOnKeyDown = (editor: ReactEditor, e: React.KeyboardEvent) => {
 
   if (e.key === 'Enter') {
     if (editor.selection !== null && Range.isCollapsed(editor.selection)) {
 
       getRootOfText(editor).lift((node: Node) => {
 
-        if ((schema as any)[node.type as string].isVoid) {
+        const nodeType = node.type as string;
+        const schemaItem : SchemaConfig = (schema as any)[nodeType];
+
+        if (schemaItem.isVoid) {
           const path = ReactEditor.findPath(editor, node);
           Transforms.insertNodes(editor, create<Paragraph>(
             { type: 'p', children: [{ text: '' }], id: guid() }),
             { at: Path.next(path) });
+
+          Transforms.select(editor, Path.next(path));
         }
       });
 
     }
   }
 };
+
+
+// Handles exiting a header item via Enter key, setting the next block back to normal (p)
+function handleFormattingTermination(editor: SlateEditor, e: React.KeyboardEvent) {
+  if (e.key === 'Enter' && editor.selection !== null && Range.isCollapsed(editor.selection)) {
+
+    const [match] = SlateEditor.nodes(editor, {
+      match: n => n.type === 'h1' || n.type === 'h2'
+      || n.type === 'h3' || n.type === 'h4'
+      || n.type === 'h5' || n.type === 'h6',
+    });
+
+    if (match) {
+      const [, path] = match;
+
+      const end = SlateEditor.end(editor, path);
+
+      // If the cursor is at the end of the block
+      if (Point.equals(editor.selection.focus, end)) {
+
+        const p = create<Paragraph>(
+          { type: 'p', children: [{ text: '' }], id: guid() });
+
+        // Insert it ahead of the next node
+        const nextMatch = SlateEditor.next(editor, { at: path });
+        if (nextMatch) {
+          const [, nextPath] = nextMatch;
+          Transforms.insertNodes(editor, p, { at: nextPath });
+
+          const newNext = SlateEditor.next(editor, { at: path });
+          if (newNext) {
+            const [, newPath] = newNext;
+            Transforms.select(editor, newPath);
+          }
+
+
+        // But if there is no next node, insert it at end
+        } else {
+          Transforms.insertNodes(editor, p, { mode: 'highest', at: SlateEditor.end(editor, []) });
+
+          const newNext = SlateEditor.next(editor, { at: path });
+          if (newNext) {
+            const [, newPath] = newNext;
+            Transforms.select(editor, newPath);
+          }
+        }
+
+        e.preventDefault();
+      }
+    }
+  }
+}
 
 
 function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
@@ -61,6 +128,15 @@ export const Editor = React.memo((props: EditorProps) => {
   const commandContext = props.commandContext;
 
   const editor = useMemo(() => withReact(createEditor()), []);
+  const [installed, setInstalled] = useState(false);
+
+  // Install the custom normalizer, only once
+  useEffect(() => {
+    if (!installed) {
+      installNormalizer(editor);
+      setInstalled(true);
+    }
+  }, [installed]);
 
   // Override isVoid to incorporate our schema's opinion on which
   // elements are void
@@ -83,62 +159,7 @@ export const Editor = React.memo((props: EditorProps) => {
     }
   };
 
-  const { normalizeNode } = editor;
-  editor.normalizeNode = (entry: NodeEntry<Node>) => {
-
-    if ((editor as any).suspendNormalization) {
-      normalizeNode(entry);
-      return;
-    }
-
-    try {
-      const [node, path] = entry;
-
-      // Ensure that we always have a paragraph as the last node in
-      // the document, otherwise it can be impossible for a user
-      // to position their cursor after the last node
-      if (SlateEditor.isEditor(node)) {
-        const last = node.children[node.children.length - 1];
-
-        if (last.type !== 'p') {
-          Transforms.insertNodes(editor, create<Paragraph>(
-            { type: 'p', children: [{ text: '' }], id: guid() }),
-            { mode: 'highest', at: SlateEditor.end(editor, []) });
-        }
-        return; // Return here is necessary to enable multi-pass normalization
-
-      }
-
-      // Check this node's parent constraints
-      if (SlateEditor.isBlock(editor, node)) {
-        const [parent] = SlateEditor.parent(editor, path);
-        if (!SlateEditor.isEditor(parent)) {
-          const config : SchemaConfig = (schema as any)[parent.type as string];
-          if (!(config.validChildren as any)[node.type as string]) {
-            Transforms.removeNodes(editor, { at: path });
-            return; // Return here is necessary to enable multi-pass normalization
-          }
-
-        }
-      }
-
-      // Check the top-level constraints
-      if (SlateEditor.isBlock(editor, node) && !(schema as any)[node.type as string].isTopLevel) {
-        const [parent] = SlateEditor.parent(editor, path);
-        if (SlateEditor.isEditor(parent)) {
-          Transforms.removeNodes(editor, { at: path });
-          return; // Return here is necessary to enable multi-pass normalization
-        }
-      }
-
-    } catch (e) {
-      // tslint:disable-next-line
-      console.log(e);
-    }
-
-    normalizeNode(entry);
-
-  };
+  editor.selection = props.selection;
 
   const renderElement = useCallback((props) => {
     const model = props.element as ModelElement;
@@ -146,10 +167,29 @@ export const Editor = React.memo((props: EditorProps) => {
     return editorFor(model, props, editor, commandContext);
   }, []);
 
-  const onKeyDown = useCallback((e: KeyboardEvent) => {
+  // register hotkeys
+  const isBoldHotkey = isHotkey('mod+b');
+  const isItalicHotkey = isHotkey('mod+i');
+  const isCodeHotkey = isHotkey('mod+;');
+  const isLinkHotkey = isHotkey('mod+l');
+
+  const hotkeyHandler = (editor: ReactEditor, e: KeyboardEvent) => {
+    if (isBoldHotkey(e)) {
+      toggleMark(editor, 'strong');
+    } else if (isItalicHotkey(e)) {
+      toggleMark(editor, 'em');
+    } else if (isCodeHotkey(e)) {
+      toggleMark(editor, 'code');
+    } else if (isLinkHotkey(e)) {
+      linkCmd.command.execute(props.commandContext, editor);
+    }
+  };
+
+  const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     voidOnKeyDown(editor, e);
     listOnKeyDown(editor, e);
-    quoteOnKeyDown(editor, e);
+    handleFormattingTermination(editor, e);
+    hotkeyHandler(editor, e.nativeEvent);
   }, []);
 
   const renderLeaf = useCallback(({ attributes, children, leaf }: any) => {
@@ -160,12 +200,12 @@ export const Editor = React.memo((props: EditorProps) => {
     return <span {...attributes}>{markup}</span>;
   }, []);
 
-  const onChange = (value: Node[]) => {
-    const { operations } = editor;
+  const onChange = (value: ModelElement[]) => {
+    const { operations, selection } = editor;
 
     // Determine if this onChange was due to an actual content change
     if (operations.filter(({ type }) => type !== 'set_selection').length) {
-      props.onEdit(value);
+      props.onEdit(value, selection);
     }
   };
 
@@ -177,7 +217,8 @@ export const Editor = React.memo((props: EditorProps) => {
         value={props.value}
         onChange={onChange}
         >
-        <FixedToolbar toolbarItems={props.toolbarItems} commandContext={props.commandContext} />
+        <FixedToolbar position={props.toolbarPosition} toolbarItems={props.toolbarItems}
+          commandContext={props.commandContext} />
 
         <HoveringToolbar commandContext={props.commandContext}/>
 

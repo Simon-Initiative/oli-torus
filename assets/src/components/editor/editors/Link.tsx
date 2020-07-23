@@ -2,17 +2,22 @@ import React, { useState, useEffect, useRef } from 'react';
 import Popover from 'react-tiny-popover';
 import * as ContentModel from 'data/content/model';
 import { ReactEditor } from 'slate-react';
-import { Transforms } from 'slate';
+import { Transforms, Node, Range, Path } from 'slate';
 import { EditorProps, CommandContext } from './interfaces';
 import { Command, CommandDesc } from '../interfaces';
 import { updateModel } from './utils';
 import { Action } from './Settings';
 import * as Persistence from 'data/persistence/resource';
-
+import ModalSelection from 'components/modal/ModalSelection';
+import { modalActions } from 'actions/modal';
 import './Link.scss';
 import './Settings.scss';
 
 import guid from 'utils/guid';
+
+
+const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
+const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
 
 const internalLinkPrefix = '/course/link';
 
@@ -26,22 +31,59 @@ const translateDeliveryToAuthoring = (href: string, projectSlug: string) => {
   return `/project/${projectSlug}/resource/` + href.substr(href.lastIndexOf('/') + 1);
 };
 
-const wrapLink = (editor: ReactEditor, link: ContentModel.Hyperlink) => {
-  Transforms.wrapNodes(editor, link, { split: true });
+const wrapLink = (editor: ReactEditor, range: Range, link: ContentModel.Hyperlink) => {
+  Transforms.wrapNodes(editor, link, { split: true, at: range });
   Transforms.collapse(editor, { edge: 'end' });
 };
+
+export function selectHref(commandContext: CommandContext): Promise<string | null> {
+
+  return new Promise((resolve, reject) => {
+
+    const selected = { src: null };
+
+    const linkSelection =
+        <ModalSelection title="Enter Hyperlink"
+          onInsert={() => { dismiss(); resolve(selected.src as any); }}
+          onCancel={() => dismiss()}
+        >
+          <ExistingLink
+            href={''}
+            commandContext={commandContext}
+            onVisit={() => {}}
+            onCopy={() => {}}
+            onRemove={() => {}}
+            inModal={true}
+            onEdit={(href) => { selected.src = href as any; }}/>
+        </ModalSelection>;
+
+    display(linkSelection);
+  });
+}
+
 
 const command: Command = {
   execute: (context, editor: ReactEditor) => {
 
-    const href = '';
-    // Create a new link object... adding in the 'open' attribute
-    // which is present merely to allow the popup link editor to appear
-    // at the newly rendered slate link editor
-    const link = ContentModel.create<ContentModel.Hyperlink>(
-      { type: 'a', href, target: 'self', children: [{ text: '' }], id: guid(), open: true });
-    wrapLink(editor, link);
+    // make sure we arent creating a link within a link
+    const parentType = Node.parent(editor, editor.selection?.anchor.path as Path)?.type;
+    if (parentType !== 'a') {
 
+      const selection = editor.selection;
+
+      selectHref(context)
+      .then((href) => {
+
+        if (href !== null && selection !== null) {
+
+          const link = ContentModel.create<ContentModel.Hyperlink>(
+            { type: 'a', href, target: 'self', children: [{ text: '' }], id: guid() });
+
+          wrapLink(editor, selection, link);
+        }
+      });
+
+    }
   },
   precondition: (editor: ReactEditor) => {
     return true;
@@ -63,6 +105,7 @@ type ExistingLinkProps = {
   onRemove: () => void,
   onCopy: (href: string) => void,
   commandContext: CommandContext,
+  inModal: boolean,
 };
 
 interface Waiting {
@@ -88,6 +131,13 @@ const ExistingLink = (props: ExistingLinkProps) => {
 
   // For either URL or page mode, the href for the link
   const [href, setHref] = useState(props.href);
+
+  const onEditHref = (href: string) => {
+    if (props.inModal) {
+      props.onEdit(href);
+    }
+    setHref(href);
+  };
 
   // All of the pages that we have available in the course
   // for allowing links to
@@ -165,10 +215,10 @@ const ExistingLink = (props: ExistingLinkProps) => {
       input = (
         <form className="form-inline">
           <label className="sr-only">Link</label>
-          <input type="text" value={href} onChange={e => setHref(e.target.value)}
+          <input type="text" value={href} onChange={e => onEditHref(e.target.value)}
             className={`form-control mr-sm-2 ${valid ? '' : 'is-invalid'}`}
             style={ { display: 'inline ', width: '300px' }}/>
-          {applyButton(!valid)}
+          {props.inModal ? null : applyButton(!valid)}
           { valid ? null :
           <div className="invalid-feedback" style={ { display: 'block' } }>
             Valid links should start with http:// or https://
@@ -184,7 +234,7 @@ const ExistingLink = (props: ExistingLinkProps) => {
         : [];
       const onChange = (e: any) => {
         const href = e.target.value;
-        setHref(href);
+        onEditHref(href);
         const item = (pages as Persistence.PagesReceived)
           .pages.find(p => toLink(p) === href) as any;
         setSelectedPage(item);
@@ -198,7 +248,7 @@ const ExistingLink = (props: ExistingLinkProps) => {
           onChange={onChange} style={ { minWidth: '300px' }}>
           {pageLinks}
         </select>
-        {applyButton(false)}
+        {props.inModal ? null : applyButton(false)}
       </form>);
     }
   }
@@ -206,10 +256,10 @@ const ExistingLink = (props: ExistingLinkProps) => {
   const onChangeSource = (e: any) => {
     if (e.target.value === 'page') {
       setIsURL(false);
-      setHref(toLink(selectedPage));
+      onEditHref(toLink(selectedPage));
     } else {
       setIsURL(true);
-      setHref('');
+      onEditHref('');
     }
   };
 
@@ -236,27 +286,29 @@ const ExistingLink = (props: ExistingLinkProps) => {
       </div>
       </React.Fragment>;
 
+  const commandButtons = props.inModal ? null :
+  (
+    <div>
+      <Action icon="fas fa-external-link-alt" tooltip="Open link"
+        onClick={() => props.onVisit(href)}/>
+      <Action icon="far fa-copy" tooltip="Copy link"
+        onClick={() => props.onCopy(href)}/>
+      <Action icon="fas fa-trash" tooltip="Remove link" id="remove-button"
+        onClick={() => props.onRemove()}/>
+    </div>
+  );
+
   return (
-    <div className="settings-editor-wrapper">
-      <div className="settings-editor" ref={ref as any}>
+    <div className={props.inModal ? '' : 'settings-editor-wrapper'}>
+      <div className={props.inModal ? '' : 'settings-editor'} ref={ref as any}>
 
           <div className="d-flex justify-content-between mb-2">
             <div>
               {radioButtons}
             </div>
-
-            <div>
-              <Action icon="fas fa-external-link-alt" tooltip="Open link"
-                onClick={() => props.onVisit(href)}/>
-              <Action icon="far fa-copy" tooltip="Copy link"
-                onClick={() => props.onCopy(href)}/>
-              <Action icon="fas fa-trash" tooltip="Remove link" id="remove-button"
-                onClick={() => props.onRemove()}/>
-            </div>
+            {commandButtons}
           </div>
-
           {input}
-
       </div>
     </div>
   );
@@ -269,15 +321,6 @@ export interface LinkProps extends EditorProps<ContentModel.Hyperlink> {
 export const LinkEditor = (props: LinkProps) => {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const { attributes, children, editor, model } = props;
-
-  useEffect(() => {
-    // This is a bit of a hack, but it allows us to display this
-    // editor automatically for a newly created link
-    if (props.model.open === true) {
-      updateModel<ContentModel.Hyperlink>(editor, props.model, { open: false });
-      setIsPopoverOpen(true);
-    }
-  });
 
   const onEdit = (href: string) => {
 
@@ -335,6 +378,7 @@ export const LinkEditor = (props: LinkProps) => {
           onVisit={onVisit}
           onCopy={onCopy}
           onRemove={onRemove}
+          inModal={false}
           onEdit={onEdit}/>}>
         {ref => <span ref={ref}>{children}</span>}
       </Popover>

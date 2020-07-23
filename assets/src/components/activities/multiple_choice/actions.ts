@@ -2,6 +2,7 @@ import { MultipleChoiceModelSchema, Choice as ChoiceType } from './schema';
 import { fromText, makeResponse } from './utils';
 import { RichText, Feedback as FeedbackType, Hint as HintType } from '../types';
 import { Maybe } from 'tsmonad';
+import { toSimpleText } from 'data/content/text';
 import { Identifiable } from 'data/content/model';
 
 export class MCActions {
@@ -19,6 +20,8 @@ export class MCActions {
   static editStem(content: RichText) {
     return (draftState: MultipleChoiceModelSchema) => {
       draftState.stem.content = content;
+      const previewText = toSimpleText({ children: content.model } as any);
+      draftState.authoring.previewText = previewText;
     };
   }
 

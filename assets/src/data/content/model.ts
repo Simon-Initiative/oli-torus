@@ -1,4 +1,4 @@
-import { Element } from 'slate';
+import { Element, Range } from 'slate';
 
 export function create<ModelElement>(params: ModelElement): ModelElement {
   return (params as ModelElement);
@@ -7,6 +7,8 @@ export function create<ModelElement>(params: ModelElement): ModelElement {
 export function mutate<ModelElement>(obj: ModelElement, changes: Object): ModelElement {
   return Object.assign({}, obj, changes) as ModelElement;
 }
+
+export type Selection = Range | null;
 
 export type ModelElement
   = Paragraph | HeadingOne | HeadingTwo | HeadingThree

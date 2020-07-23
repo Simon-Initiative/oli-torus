@@ -1,7 +1,10 @@
 import { ResourceContext } from 'data/content/resource';
-import { Identifiable, ModelElement } from 'data/content/model';
+import { Identifiable, ModelElement, Selection } from 'data/content/model';
 
-export type RichText = ModelElement[];
+export type RichText = {
+  model: ModelElement[];
+  selection: Selection;
+};
 
 export interface Success {
   type: 'success';

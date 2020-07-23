@@ -41,7 +41,7 @@ const toggleList = (editor: ReactEditor, listType: string) => {
     }
   } catch (error) {
     // tslint:disable-next-line
-    console.log(error);
+    console.error(error);
 
   } finally {
     // Whether the operation succeeded or failed, we restore

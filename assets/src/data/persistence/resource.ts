@@ -6,6 +6,7 @@ export type ResourceUpdate = {
   title: string,
   objectives: AttachedObjectives,
   content: PageContent,
+  releaseLock: boolean,
 };
 
 export type Edited = { type: 'success', revisionSlug: string };
@@ -13,7 +14,10 @@ export type Edited = { type: 'success', revisionSlug: string };
 export function edit(
   project: ProjectSlug,
   resource: ResourceSlug,
-  update: ResourceUpdate) {
+  pendingUpdate: ResourceUpdate,
+  releaseLock: boolean) {
+
+  const update = Object.assign({}, pendingUpdate, { releaseLock });
 
   const params = {
     method: 'PUT',

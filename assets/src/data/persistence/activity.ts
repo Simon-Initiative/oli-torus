@@ -29,11 +29,12 @@ export type Evaluated = {
 export type Edited = { type: 'success', revisionSlug: string };
 
 export function create(
-  project: ProjectSlug, activityTypeSlug: ActivityTypeSlug, model: ActivityModelSchema) {
+  project: ProjectSlug, activityTypeSlug: ActivityTypeSlug,
+  model: ActivityModelSchema, objectives: string[]) {
 
   const params = {
     method: 'POST',
-    body: JSON.stringify({ model }),
+    body: JSON.stringify({ model, objectives }),
     url: `/project/${project}/activity/${activityTypeSlug}`,
   };
 
@@ -42,7 +43,9 @@ export function create(
 
 export function edit(
   project: ProjectSlug, resource: ResourceSlug,
-  activity: ActivitySlug, update: ActivityUpdate) {
+  activity: ActivitySlug, pendingUpdate: ActivityUpdate, releaseLock: boolean) {
+
+  const update = Object.assign({}, pendingUpdate, { releaseLock });
 
   const params = {
     method: 'PUT',
