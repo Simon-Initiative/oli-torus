@@ -5,12 +5,13 @@ import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { Maybe } from 'tsmonad';
 import { configureStore } from 'state/store';
+import { b64DecodeUnicode } from 'utils/decode';
 
 let store = configureStore();
 
 (window as any).oliMountApplication
   = (mountPoint: any, paramString : any) => {
-    const params = JSON.parse(atob(paramString));
+    const params = JSON.parse(b64DecodeUnicode(paramString));
 
     ReactDOM.render(
       <Provider store={store}>
