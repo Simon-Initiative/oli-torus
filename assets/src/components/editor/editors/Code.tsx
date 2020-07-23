@@ -163,7 +163,7 @@ export const CodeEditor = (props: CodeProps) => {
     <div {...props.attributes} className="ml-4 mr-4">
       <div className="code-editor">
         <pre style={{ fontFamily: 'Menlo, Monaco, Courier New, monospace' }} >
-          <code>{props.children}</code>
+          <code className={`language-${model.language}`}>{props.children}</code>
         </pre>
       </div>
 
@@ -171,7 +171,8 @@ export const CodeEditor = (props: CodeProps) => {
         <Settings.ToolPopupButton
           contentFn={contentFn}
           setIsPopoverOpen={setIsPopoverOpen}
-          isPopoverOpen={isPopoverOpen} />
+          isPopoverOpen={isPopoverOpen}
+          label="Code" />
         <Settings.Caption caption={model.caption}/>
       </div>
     </div>

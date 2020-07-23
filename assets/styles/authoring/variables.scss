@@ -51,12 +51,13 @@ $font-family-sans-serif:      "Lato", -apple-system, BlinkMacSystemFont, "Segoe 
 
 $font-size-base:              0.9375rem;
 
-$h1-font-size:                2em;
-$h2-font-size:                1.5em;
-$h3-font-size:                1.17em;
-$h4-font-size:                1em;
-$h5-font-size:                .83em;
-$h6-font-size:                .67em;
+$font-size-base:              1rem;
+$h1-font-size:                $font-size-base * 2.5;
+$h2-font-size:                $font-size-base * 2;
+$h3-font-size:                $font-size-base * 1.75;
+$h4-font-size:                $font-size-base * 1.5;
+$h5-font-size:                $font-size-base * 1.25;
+$h6-font-size:                $font-size-base ;
 
 // Tables
 

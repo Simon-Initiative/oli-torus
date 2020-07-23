@@ -1,5 +1,6 @@
 import React from 'react';
 import Popover from 'react-tiny-popover';
+import { valueOr } from 'utils/common';
 
 // Reusable components for settings UIs
 
@@ -24,6 +25,7 @@ export const ToolPopupButton = ({
   setIsPopoverOpen,
   isPopoverOpen,
   contentFn,
+  label,
 }: any) => {
 
   return (
@@ -37,7 +39,7 @@ export const ToolPopupButton = ({
         position={['bottom', 'top', 'left', 'right']}
         content={contentFn}>
         {ref => <button ref={ref} onClick={() => setIsPopoverOpen(true)} className="btn btn-light btn-sm mt-1">
-            <i className="fas fa-cog"></i>
+          <i className="fas fa-cog mr-1"></i>{label ? `${label} Options` : 'Options'}
         </button>}
       </Popover>
     </div>
