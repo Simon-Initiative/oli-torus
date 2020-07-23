@@ -31,8 +31,8 @@ config :oli, OliWeb.Endpoint,
 config :oli, :recaptcha,
   verify_url: "https://www.google.com/recaptcha/api/siteverify",
   timeout: 5000,
-  site_key: System.get_env("RECAPTCHA_SITE_KEY", "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"),
-  secret: System.get_env("RECAPTCHA_PRIVATE_KEY", "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe")
+  site_key: System.get_env("RECAPTCHA_SITE_KEY"),
+  secret: System.get_env("RECAPTCHA_PRIVATE_KEY")
 
 config :ex_aws,
   access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, :instance_role],
