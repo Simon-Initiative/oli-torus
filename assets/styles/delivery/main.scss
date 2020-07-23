@@ -1,6 +1,8 @@
 /** Delivery Styles **/
 @import "delivery/variables";
 
+@import "//fonts.googleapis.com/css?family=Oswald";
+
 body {
   flex: 1;
   position: relative;
@@ -55,7 +57,7 @@ body.modal-open {
 
 .activity-purpose {
   padding: 4px 8px;
-  font-weight: 300;
+  font-weight: 200;
 
   &.checkpoint {
     background-color: $activity-purpose-checkpoint-color;
@@ -99,5 +101,26 @@ body.modal-open {
       margin-right: 8px;
       content: '\f5da';
     }
+  }
+}
+
+blockquote {
+  position: relative;
+  padding: 5px 10px 5px 50px;
+  background: $gray-100;
+  border: 1px solid $gray-200;
+  border-left-color: $blue;
+  border-left-width: 3px;
+  font-family: 'Times New Roman', Times, serif;
+  font-style: italic;
+
+  &::before {
+    content: "“";
+    font-family: Oswald;
+    font-size: 68px;
+    position: absolute;
+    top: -20px;
+    left: 0;
+    color: $gray-400;
   }
 }
