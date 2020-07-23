@@ -50,6 +50,8 @@ const command: Command = {
         if (hasParams) {
           const queryString = src.substr(src.indexOf('?') + 1);
           src = getQueryVariableFromString('v', queryString);
+        } else if (src.indexOf('/youtu.be/') !== -1) {
+          src = src.substr(src.lastIndexOf('/') + 1);
         }
 
         const youtube = ContentModel.create<ContentModel.YouTube>(
