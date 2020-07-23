@@ -163,7 +163,7 @@ export const CodeEditor = (props: CodeProps) => {
     <div {...props.attributes} className="ml-4 mr-4">
       <div className="code-editor">
         <pre style={{ fontFamily: 'Menlo, Monaco, Courier New, monospace' }} >
-          <code>{props.children}</code>
+          <code className={`language-${model.language}`}>{props.children}</code>
         </pre>
       </div>
 

@@ -112,11 +112,11 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def code(%Context{} = _context, next, %{
-    "language" => _language,
+    "language" => language,
     "startingLineNumber" => _startingLineNumber,
     "showNumbers" => _showNumbers
   } = attrs) do
-    wrap_with_figure(attrs, ["<pre><code>", next.(), "</code></pre>\n"])
+    wrap_with_figure(attrs, ["<pre><code class=\"language-", language, "\">", next.(), "</code></pre>\n"])
   end
 
   def code_line(%Context{} = _context, next, _) do
