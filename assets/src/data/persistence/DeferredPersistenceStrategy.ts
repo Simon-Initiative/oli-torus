@@ -83,7 +83,7 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
         this.stateChangeCallback('inflight');
       }
 
-      saveFn()
+      saveFn(false)
         .then((result: any) => {
 
           if (this.flushResolve !== null) {
@@ -122,38 +122,22 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
     });
   }
 
-  doDestroy() {
+  doDestroy() : boolean {
     return this.flushPendingChanges();
   }
 
 
-  flushPendingChanges() : Promise<{}> {
+  flushPendingChanges() : boolean {
 
     if (this.timer !== null) {
       clearTimeout(this.timer);
     }
 
-    // Handle the case where we have a pending change, but
-    // there isn't anything in flight. We simply persist
-    // the pending change.
-    if (!this.inFlight && this.pending !== null) {
-      return this.persist();
-
+    // Handle the case where we have a pending change
+    if (this.pending !== null) {
+      this.pending(true);
+      return true;
     }
-    if (this.inFlight) {
-      // Handle the case where we have a persistence request
-      // in flight.  In this case we have to wait for that
-      // in flight request to complete.
-
-      return new Promise((resolve, reject) => {
-        // Flush pending changes:
-        this.flushResolve = resolve;
-      });
-
-    // Neither in flight or pending save, so there is nothing
-    // to do.
-    }
-
-    return Promise.resolve({});
+    return false;
   }
 }

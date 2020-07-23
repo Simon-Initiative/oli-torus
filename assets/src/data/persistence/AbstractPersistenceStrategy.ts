@@ -71,16 +71,19 @@ export abstract class AbstractPersistenceStrategy implements PersistenceStrategy
    * Method to that child classes must implement to allow an async
    *
    */
-  abstract doDestroy(): Promise<{}>;
+  abstract doDestroy(): boolean;
 
   /**
    * Indicate to the persistence strategy that it is being shutdown and that it
    * should clean up any resources and flush any pending changes immediately.
    */
-  destroy(): Promise<{}> {
-    const now = new Date().getTime();
-    return this.doDestroy()
-      .then(r => this.releaseLock());
+  destroy() {
+    // If we had a pending change that released the lock, doDestroy returns true
+    if (!this.doDestroy()) {
+
+      // We need to explicity release the lock
+      this.releaseLock();
+    }
 
   }
 }

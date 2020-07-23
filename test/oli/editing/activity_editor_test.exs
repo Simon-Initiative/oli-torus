@@ -48,6 +48,35 @@ defmodule Oli.ActivityEditingTest do
 
     end
 
+    test "edit/5 does not release the lock when 'releaseLock' is absent", %{project: project, author: author, author2: author2, revision1: revision1 } do
+
+      content = %{ "stem" => "Hey there" }
+      {:ok, {%{slug: slug}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
+
+      PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+      update = %{ "title" => "edited title"}
+      {:ok, _} = ActivityEditor.edit(project.slug, revision1.slug, slug, author.email, update)
+
+      PageEditor.acquire_lock(project.slug, revision1.slug, author2.email)
+      result = ActivityEditor.edit(project.slug, revision1.slug, slug, author2.email, update)
+      assert {:error, {:lock_not_acquired, _}} = result
+    end
+
+    test "edit/5 releases the lock when 'releaseLock' present", %{project: project, author: author, author2: author2, revision1: revision1 } do
+
+      content = %{ "stem" => "Hey there" }
+      {:ok, {%{slug: slug}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
+
+      PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+      update = %{ "title" => "edited title", "releaseLock" => true}
+      {:ok, _} = ActivityEditor.edit(project.slug, revision1.slug, slug, author.email, update)
+
+      PageEditor.acquire_lock(project.slug, revision1.slug, author2.email)
+      result = ActivityEditor.edit(project.slug, revision1.slug, slug, author2.email, update)
+      assert {:ok, _} = result
+    end
+
+
     test "can create and attach an activity to a resource", %{author: author, project: project, revision1: revision } do
       content = %{ "stem" => "Hey there" }
       {:ok, {%{slug: slug, resource_id: activity_id}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])

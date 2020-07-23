@@ -108,6 +108,18 @@ defmodule Oli.EditingTest do
       assert {:error, {:lock_not_acquired, {^email, _}}} = result
     end
 
+    test "edit/4 releases the lock when 'releaseLock' present", %{project: project, author: author, author2: author2, revision1: revision1 } do
+
+      content = %{ "model" => [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }] }
+      PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+      result = PageEditor.edit(project.slug, revision1.slug, author.email, %{ "content" => content, "releaseLock" => true })
+      assert {:ok, _} = result
+
+      PageEditor.acquire_lock(project.slug, revision1.slug, author2.email)
+      result = PageEditor.edit(project.slug, revision1.slug, author2.email, %{ "content" => content })
+      assert {:ok, _} = result
+    end
+
     test "edit/4 fails when the resource slug is invalid", %{project: project, author: author } do
 
       # try to make the edit on a resource that isn't found via a revision slug

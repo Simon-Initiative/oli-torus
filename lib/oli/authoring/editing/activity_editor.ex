@@ -64,6 +64,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           {:acquired} -> get_latest_revision(publication.id, activity.id)
             |> create_new_revision(publication, activity, author.id)
             |> update_revision(update, project.slug)
+            |> possibly_release_lock(publication, resource, author, update)
 
           # A successful lock update means we can safely edit the existing revision
           # unless, that is, if the update would change the corresponding slug.
@@ -72,6 +73,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           {:updated} -> get_latest_revision(publication.id, activity.id)
             |> maybe_create_new_revision(publication, activity, author.id, update)
             |> update_revision(update, project.slug)
+            |> possibly_release_lock(publication, resource, author, update)
 
           # error or not able to lock results in a failed edit
           result -> Repo.rollback(result)
@@ -90,6 +92,14 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       e -> e
     end
 
+  end
+
+  defp possibly_release_lock(previous, publication, resource, author, update) do
+    if Map.get(update, "releaseLock", false) do
+      Locks.release(publication.id, resource.id, author.id)
+    end
+
+    previous
   end
 
   # takes the model of the activity to be created and a list of objective slugs and

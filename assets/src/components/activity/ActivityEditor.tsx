@@ -47,7 +47,8 @@ function prepareSaveFn(
   project: ProjectSlug, resource: ResourceSlug,
   activity: ActivitySlug, update: Persistence.ActivityUpdate) {
 
-  return () => Persistence.edit(project, resource, activity, update);
+  return (releaseLock: boolean) =>
+    Persistence.edit(project, resource, activity, update, releaseLock);
 }
 
 function registerUnload(strategy: PersistenceStrategy, unloadFn : any) {

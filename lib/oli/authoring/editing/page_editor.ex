@@ -64,13 +64,14 @@ defmodule Oli.Authoring.Editing.PageEditor do
             |> resurrect_or_delete_activity_references(converted_update, project.slug)
             |> create_new_revision(publication, resource, author.id)
             |> update_revision(converted_update, project.slug)
-
+            |> possibly_release_lock(publication, resource, author, update)
 
           # A successful lock update means we can safely edit the existing revision
           {:updated} -> get_latest_revision(publication, resource)
             |> resurrect_or_delete_activity_references(converted_update, project.slug)
             |> maybe_create_new_revision(publication, resource, author.id, converted_update)
             |> update_revision(converted_update, project.slug)
+            |> possibly_release_lock(publication, resource, author, update)
 
           # error or not able to lock results in a failed edit
           result -> Repo.rollback(result)
@@ -90,6 +91,14 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
     end
 
+  end
+
+  defp possibly_release_lock(previous, publication, resource, author, update) do
+    if Map.get(update, "releaseLock", false) do
+      Locks.release(publication.id, resource.id, author.id)
+    end
+
+    previous
   end
 
   @doc """

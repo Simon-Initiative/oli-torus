@@ -43,7 +43,9 @@ export function create(
 
 export function edit(
   project: ProjectSlug, resource: ResourceSlug,
-  activity: ActivitySlug, update: ActivityUpdate) {
+  activity: ActivitySlug, pendingUpdate: ActivityUpdate, releaseLock: boolean) {
+
+  const update = Object.assign({}, pendingUpdate, { releaseLock });
 
   const params = {
     method: 'PUT',
