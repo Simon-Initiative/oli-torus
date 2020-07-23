@@ -139,14 +139,18 @@ defmodule Oli.Delivery.Attempts do
         {:ok, model} <- Model.parse(activity_attempt.transformed_model),
         {:ok, part} <- Enum.find(model.parts, fn p -> p.id == part_attempt.part_id end) |> Oli.Utils.trap_nil(:not_found)
       do
-        shown_hints = length(part_attempt.hints)
-        all_hints = length(part.hints)
+        shown_hints = part_attempt.hints
 
-        if all_hints > shown_hints do
+        # Activities save empty hints to preserve the "deer in headlights" / "cognitive" / "bottom out"
+        # hint ordering. Empty hints are filtered out here.
+        all_hints = part.hints
+        |> Oli.Activities.ParseUtils.remove_empty
 
-          hint = Enum.at(part.hints, shown_hints)
+        if length(all_hints) > length(shown_hints) do
+
+          hint = Enum.at(all_hints, length(shown_hints))
           case update_part_attempt(part_attempt, %{hints: part_attempt.hints ++ [hint.id]}) do
-            {:ok, _} -> {hint, all_hints > shown_hints + 1}
+            {:ok, _} -> {hint, length(all_hints) > length(shown_hints) + 1}
             {:error, error} -> Repo.rollback(error)
           end
 

@@ -211,7 +211,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
       {:ok, Publishing.get_published_activity_revisions(publication_id, found_activities)
         |> Enum.map(fn %Revision{resource_id: resource_id, activity_type_id: activity_type_id, content: content, graded: graded} ->
 
-          # To support 'test mode' in the editor, we give the editor an initial transormed
+          # To support 'test mode' in the editor, we give the editor an initial transformed
           # version of the model that it can immediately use for display purposes. If it fails
           # to transform, nil will be handled by the client and the raw model will be used
           # instead

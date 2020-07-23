@@ -1,7 +1,8 @@
 import * as Persistence from 'data/persistence/activity';
 import { PartResponse, ActivityModelSchema } from 'components/activities/types';
 import { RequestHintResponse } from 'components/activities/DeliveryElement';
-import { valueOr } from 'utils/common';
+import { valueOr, removeEmpty } from 'utils/common';
+import guid from 'utils/guid';
 
 type Continuation = (success: any, error: any) => void;
 
@@ -23,7 +24,7 @@ export const defaultState = (model: ActivityModelSchema) => {
 
   return {
     attemptNumber: 1,
-    attemptGuid: 'testmode',
+    attemptGuid: guid(),
     dateEvaluated: null,
     score: null,
     outOf: null,
@@ -101,6 +102,9 @@ export const initActivityBridge = (elementId: string) => {
   }, false);
 };
 
+const key = (activityAttemptGuid : string,
+  partAttemptGuid : string) => activityAttemptGuid + '|' + partAttemptGuid;
+
 export const initPreviewActivityBridge = (elementId: string) => {
   // map to keep track the number of hints requested for each part
   const hintRequestCounts: {[key: string]: number} = {};
@@ -166,7 +170,8 @@ export const initPreviewActivityBridge = (elementId: string) => {
       const model = result.transformed === null ? props.model : result.transformed;
 
       // reset the number of hints requested for this part
-      hintRequestCounts[partId] = 0;
+      hintRequestCounts[key(
+        e.detail.attemptGuid, e.detail.partAttemptGuid)] = 0;
 
       const attemptState = defaultState(model);
       continuation({ type: 'success', model, attemptState }, undefined);
@@ -184,14 +189,17 @@ export const initPreviewActivityBridge = (elementId: string) => {
     e.preventDefault();
     e.stopPropagation();
 
+    const hintKey = key(
+      e.detail.attemptGuid, e.detail.partAttemptGuid);
+
     const props = e.detail.props;
     const continuation: Continuation = e.detail.continuation;
     const partInputs: PartResponse[] = e.detail.payload;
     const partId = e.detail.partAttemptGuid;
     const model = props.model;
-    const hints = getPart(model, partId).hints;
+    const hints = removeEmpty(getPart(model, partId).hints);
 
-    const nextHintIndex =  valueOr(hintRequestCounts[partId], 0);
+    const nextHintIndex =  valueOr(hintRequestCounts[hintKey], 0);
     const hasMoreHints = hints.length > nextHintIndex + 1;
     const hint = hints[nextHintIndex];
     const response : RequestHintResponse = {
@@ -201,7 +209,7 @@ export const initPreviewActivityBridge = (elementId: string) => {
     };
 
     // keep track the number of hints requested for this part
-    hintRequestCounts[partId] = valueOr(hintRequestCounts[partId], 0) + 1;
+    hintRequestCounts[hintKey] = valueOr(hintRequestCounts[hintKey], 0) + 1;
 
     continuation(response, undefined);
   }, false);
