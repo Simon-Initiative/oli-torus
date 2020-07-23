@@ -1,9 +1,12 @@
 
 import { ReactEditor } from 'slate-react';
-import { Node, NodeEntry, Editor as SlateEditor, Transforms } from 'slate';
+import * as Immutable from 'immutable';
+import { Node, NodeEntry, Editor as SlateEditor, Transforms, Path } from 'slate';
 import { normalize as tableNormalize } from './editors/Table';
 import { create, schema, Paragraph, SchemaConfig } from 'data/content/model';
 import guid from 'utils/guid';
+
+const spacesRequiredBetween = Immutable.Set<string>(['image', 'youtube', 'audio', 'blockquote', 'code', 'table']);
 
 export function installNormalizer(editor: SlateEditor & ReactEditor) {
 
@@ -52,6 +55,33 @@ export function installNormalizer(editor: SlateEditor & ReactEditor) {
         if (SlateEditor.isEditor(parent)) {
           Transforms.removeNodes(editor, { at: path });
           return; // Return here is necessary to enable multi-pass normalization
+        }
+      }
+
+      // Ensure that certain blocks types, when found next to each other,
+      // get a paragraph inserted in between them
+
+
+      const [parent] = SlateEditor.parent(editor, path);
+
+      // For every block that has a next sibling, look to see if this block and the sibling
+      // are both block types that need to have whitespace between them.
+      if (path[path.length - 1] + 1 < parent.children.length) {
+
+        const nextItem = SlateEditor.node(editor, Path.next(path));
+
+        if (nextItem !== undefined) {
+          const [nextNode] = nextItem;
+
+          if (spacesRequiredBetween.has(nextNode.type as any) &&
+            spacesRequiredBetween.has(node.type as any)) {
+
+            Transforms.insertNodes(editor, create<Paragraph>(
+              { type: 'p', children: [{ text: '' }], id: guid() }),
+              { mode: 'highest', at: Path.next(path) });
+
+            return;  // Return here necessary to enable multi-pass normalization
+          }
         }
       }
 
