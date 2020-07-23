@@ -8,15 +8,19 @@ import { TitleBar } from '../content/TitleBar';
 import { UndoRedo } from '../content/UndoRedo';
 import { Navigation } from './Navigation';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug, ActivitySlug } from 'data/types';
-import { UndoableState, processRedo, processUndo, processUpdate, init } from '../resource/undo';
-import { releaseLock, acquireLock } from 'data/persistence/lock';
+import {
+  UndoableState, processRedo, processUndo, processUpdate, init,
+  registerUndoRedoHotkeys, unregisterUndoRedoHotkeys,
+} from '../resource/undo';
+import { releaseLock, acquireLock, NotAcquired } from 'data/persistence/lock';
 import * as Persistence from 'data/persistence/activity';
 import { ActivityModelSchema } from 'components/activities/types';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
-import { Message, createMessage } from 'data/messages/messages';
+import { Message, createMessage, Severity } from 'data/messages/messages';
 import { Banner } from '../messages/Banner';
 import { PartObjectives } from 'components/activity/PartObjectives';
 import { valueOr } from 'utils/common';
+import { isFirefox } from 'utils/browser';
 
 import './ActivityEditor.scss';
 
@@ -44,12 +48,22 @@ function prepareSaveFn(
   project: ProjectSlug, resource: ResourceSlug,
   activity: ActivitySlug, update: Persistence.ActivityUpdate) {
 
-  return () => Persistence.edit(project, resource, activity, update);
+  return (releaseLock: boolean) =>
+    Persistence.edit(project, resource, activity, update, releaseLock);
 }
 
-function registerUnload(strategy: PersistenceStrategy, unloadFn : any) {
-  return window.addEventListener('beforeunload', unloadFn);
+function registerUnload(strategy: PersistenceStrategy) {
+  return window.addEventListener('beforeunload', (event) => {
+
+    if (isFirefox) {
+      setTimeout(() => strategy.destroy());
+    } else {
+      strategy.destroy();
+    }
+
+  });
 }
+
 
 function unregisterUnload(listener: any) {
   window.removeEventListener('beforeunload', listener);
@@ -60,6 +74,7 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
 
   persistence: PersistenceStrategy;
   windowUnloadListener: any;
+  undoRedoListener: any;
   ref: any;
 
   constructor(props: ActivityEditorProps) {
@@ -90,18 +105,6 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
     this.ref = React.createRef();
   }
 
-  beforeUnload(e: any) {
-    if (this.state.persistence === 'idle') {
-      this.persistence.destroy();
-    } else {
-      this.persistence.destroy();
-
-      e.preventDefault();
-      // Note: Not all browsers will display this custom message.
-      e.returnValue = 'You have unsaved changes, are you sure you want to leave?';
-    }
-  }
-
   componentDidMount() {
 
     const { projectSlug, resourceSlug } = this.props;
@@ -115,7 +118,13 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
     ).then((editMode) => {
       this.setState({ editMode });
       if (editMode) {
-        this.windowUnloadListener = registerUnload(this.persistence, this.beforeUnload.bind(this));
+        this.windowUnloadListener = registerUnload(this.persistence);
+        this.undoRedoListener = registerUndoRedoHotkeys(this.undo.bind(this), this.redo.bind(this));
+      } else {
+        if (this.persistence.getLockResult().type === 'not_acquired') {
+          const notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired;
+          this.editingLockedMessage(notAcquired.user);
+        }
       }
     });
 
@@ -135,6 +144,19 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
     if (this.windowUnloadListener !== null) {
       unregisterUnload(this.windowUnloadListener);
     }
+
+    if (this.undoRedoListener !== null) {
+      unregisterUndoRedoHotkeys(this.undoRedoListener);
+    }
+  }
+
+  editingLockedMessage(email: string) {
+    const message = createMessage({
+      canUserDismiss: false,
+      content: 'Read Only. User ' + email + ' is currently editing this page.',
+      severity: Severity.Information,
+    });
+    this.setState({ messages: [...this.state.messages, message] });
   }
 
   publishErrorMessage(failure: any) {

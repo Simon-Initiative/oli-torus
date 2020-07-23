@@ -8,8 +8,9 @@ defmodule OliWeb.Objectives.Objectives do
 
   alias Oli.Authoring.Editing.ObjectiveEditor
   alias OliWeb.Objectives.ObjectiveEntry
-  alias OliWeb.Objectives.ObjectiveRender
+  alias OliWeb.Objectives.CreateNew
   alias OliWeb.Objectives.Attachments
+  alias OliWeb.Objectives.Actions
   alias OliWeb.Common.ManualModal
   alias Oli.Publishing.ObjectiveMappingTransfer
   alias Oli.Authoring.Course
@@ -34,6 +35,11 @@ defmodule OliWeb.Objectives.Objectives do
 
     objectives_tree = to_objective_tree(objective_mappings)
 
+    selected = case length(objectives_tree) do
+      0 -> nil
+      _ -> hd(objectives_tree).mapping.revision.slug
+    end
+
     {:ok, assign(socket,
       active: :objectives,
       objective_mappings: objective_mappings,
@@ -46,56 +52,61 @@ defmodule OliWeb.Objectives.Objectives do
       modal_shown: false,
       author: author,
       force_render: 0,
-      selected: nil,
+      is_root_selected?: false,
+      can_delete?: false,
+      selected: selected,
       edit: :none)
     }
   end
 
   def render(assigns) do
     ~L"""
-    <div>
-      <div style="margin: 20px;">
-        <div class="container">
-        <div class="mb-2 row">
-          <h2>Course Objectives</h2>
+    <div class="objectives container objectives-authoring">
+      <div class="mb-2 row">
+        <div class="col-12">
           <p class="text-secondary">
-          Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies.
-          Visit the <a href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">CMU Eberly Center guide on learning objectives</a> to learn more about the importance of attaching learning objectives to pages and activities.
+            Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies.
           </p>
-          <p class="text-secondary">At the end of the course my students should be able to...</p>
+          <p class="text-secondary">
+            Visit the <a href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">CMU Eberly Center guide on learning objectives</a> to learn more about the importance of attaching learning objectives to pages and activities.
+          </p>
         </div>
-          <div class="mb-2 row">
-            <%= live_component @socket, ObjectiveRender, changeset: @changeset, project: @project, form_id: "create-objective",
-              place_holder: "New Learning Objective", title_value: "", slug_value: "", parent_slug_value: "",
-              edit: @edit, method: "new", mode: :new_objective, phx_disable_with: "Adding Objective...", button_text: "Create" %>
-          </div>
-          <%= if Enum.count(@objective_mappings) == 0 do %>
-          <div class="row">
-            <div class="my-5 text-center">
-              No objectives
-            </div>
-          </div>
-          <% else %>
-          <div class="row">
-            <div class="border border-light list-group list-group-flush w-100">
-                <%= for {objective_tree, index} <- Enum.with_index(@objectives_tree) do %>
-                  <%= live_component @socket, ObjectiveEntry, changeset: @changeset, objective_mapping: objective_tree.mapping,
-                      children: objective_tree.children, depth: 1, index: index, project: @project, selected: @selected, edit: @edit %>
-                <% end %>
-            </div>
-          </div>
-          <% end %>
+      </div>
+
+      <%= live_component @socket, CreateNew, changeset: @changeset, project: @project %>
+
+      <div class="mt-5 row">
+        <div class="col-12">
+          <div class="d-flex justify-content-between">
+            <h2>Existing Objectives</h2>
+            <%= live_component @socket, Actions, selected: @selected, is_root?: @is_root_selected?, can_delete?: @can_delete? %>
           </div>
         </div>
       </div>
 
-      <%= if @modal_shown do %>
-        <%= live_component @socket, ManualModal, title: "Delete Objective", modal_id: "deleteModal", ok_action: "delete", ok_label: "Delete", ok_style: "btn-danger" do %>
-          <%= live_component @socket, Attachments, attachment_summary: @attachment_summary, project: @project %>
+      <%= if Enum.count(@objective_mappings) == 0 do %>
+        <div class="mt-1 row">
+          <div class="col-12">
+            <p>This project has no objectives</p>
+          </div>
+        </div>
+      <% else %>
+
+        <%= for {objective_tree, index} <- Enum.with_index(@objectives_tree) do %>
+          <%= live_component @socket, ObjectiveEntry, changeset: @changeset, objective_mapping: objective_tree.mapping,
+            children: objective_tree.children, depth: 1, index: index, project: @project, selected: @selected, edit: @edit %>
         <% end %>
+
       <% end %>
 
-    <div>
+    </div>
+
+    <%= if @modal_shown do %>
+      <%= live_component @socket, ManualModal, title: "Delete Objective", modal_id: "deleteModal", ok_action: "delete", ok_label: "Delete", ok_style: "btn-danger" do %>
+        <%= live_component @socket, Attachments, attachment_summary: @attachment_summary, project: @project %>
+      <% end %>
+    <% end %>
+
     """
   end
 
@@ -114,7 +125,7 @@ defmodule OliWeb.Objectives.Objectives do
       end)
 
       # Build nested tree structure
-      root_parents = Enum.reduce(objective_mappings, [], fn(m, acc) ->
+      Enum.reduce(objective_mappings, [], fn(m, acc) ->
         a = Map.get(mapping_obs, m.resource.id)
         a = %{a | children: m.revision.children |> Enum.reduce(a.children,fn(c, mc) ->
           val = Map.get(mapping_obs, c)
@@ -131,7 +142,7 @@ defmodule OliWeb.Objectives.Objectives do
         end
       end)
 
-      Enum.sort_by(root_parents, &(&1.mapping.revision.title))
+
     end
   end
 
@@ -160,13 +171,33 @@ defmodule OliWeb.Objectives.Objectives do
 
   # handle change of selection
   def handle_event("select", %{"slug" => slug}, socket) do
-    {:noreply, assign(socket, selected: slug, attachment_summary: @default_attachment_summary)}
+
+    {is_root_selected?, can_delete?} = case Enum.find(socket.assigns.objectives_tree, fn %{mapping: mapping} -> mapping.revision.slug == slug end) do
+      nil -> {false, true}
+      %{mapping: mapping} -> {true, length(mapping.revision.children) == 0}
+    end
+
+    {:noreply, assign(socket, selected: slug, can_delete?: can_delete?, is_root_selected?: is_root_selected?, attachment_summary: @default_attachment_summary)}
   end
 
   # handle change of edit
   def handle_event("modify", %{"slug" => slug}, socket) do
+
     {:noreply, assign(socket, :edit, slug)}
   end
+
+  def handle_event("add_sub", %{"slug" => slug}, socket) do
+
+    # even though we disable the "add sub objective" button when a non-root is selected,
+    # LV seems to still send the add_sub message on click.  So we catch that case here
+    # and ignore it
+    case socket.assigns.is_root_selected? do
+      true -> {:noreply, assign(socket, :edit, slug)}
+      false -> {:noreply, socket}
+    end
+
+  end
+
 
   def handle_event("cancel", _, socket) do
     {:noreply, assign(socket, :edit, :none)}
@@ -182,12 +213,17 @@ defmodule OliWeb.Objectives.Objectives do
       |> put_flash(:error, "Could not edit objective")
     end
 
-    {:noreply, socket}
+    {:noreply, assign(socket, :edit, :none)}
   end
 
   def handle_event("prepare_delete", _, socket) do
-    attachment_summary = ObjectiveEditor.preview_objective_detatchment(socket.assigns.selected, socket.assigns.project)
-    {:noreply, assign(socket, modal_shown: true, attachment_summary: attachment_summary, force_render: socket.assigns.force_render + 1)}
+
+    if socket.assigns.can_delete? do
+      attachment_summary = ObjectiveEditor.preview_objective_detatchment(socket.assigns.selected, socket.assigns.project)
+      {:noreply, assign(socket, modal_shown: true, attachment_summary: attachment_summary, force_render: socket.assigns.force_render + 1)}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event("cancel_modal", _, socket) do
@@ -199,8 +235,10 @@ defmodule OliWeb.Objectives.Objectives do
 
     ObjectiveEditor.detach_objective(socket.assigns.selected, socket.assigns.project, socket.assigns.author)
 
+    parent_objective = determine_parent_objective(socket, socket.assigns.selected)
+
     socket = case ObjectiveEditor.preview_objective_detatchment(socket.assigns.selected, socket.assigns.project) do
-      %{attachments: {[], []}} -> case ObjectiveEditor.edit(socket.assigns.selected, %{ deleted: true }, socket.assigns.author, socket.assigns.project) do
+      %{attachments: {[], []}} -> case ObjectiveEditor.delete(socket.assigns.selected, socket.assigns.author, socket.assigns.project, parent_objective) do
         {:ok, _} -> socket
         {:error, _} -> socket
         |> put_flash(:error, "Could not remove objective")
@@ -225,7 +263,19 @@ defmodule OliWeb.Objectives.Objectives do
         |> put_flash(:error, "Could not create objective")
     end
 
-    {:noreply, socket}
+    {:noreply, assign(socket, :edit, :none)}
+  end
+
+
+  defp determine_parent_objective(socket, slug) do
+
+    child = Enum.find(socket.assigns.objective_mappings, fn %{ revision: revision } -> revision.slug == slug end)
+
+    case Enum.find(socket.assigns.objectives_tree, fn %{mapping: mapping} -> Enum.any?(mapping.revision.children, fn id -> id == child.revision.resource_id end) end) do
+      nil -> nil
+      o -> o.mapping.revision
+    end
+
   end
 
   # Here are listening for subscription notifications for newly created resources

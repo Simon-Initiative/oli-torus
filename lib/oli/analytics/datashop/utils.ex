@@ -2,6 +2,17 @@ defmodule Oli.Analytics.Datashop.Utils do
   alias Oli.Rendering.Context
   alias Oli.Rendering.Content
 
+  # For internal use and testing only, not for production file creation.
+  def write_file(xml, file_name) do
+    file_name = file_name <> ".xml"
+    path = Path.expand(__DIR__) <> "/"
+
+    case File.write(path <> file_name, xml) do
+      :ok -> {:ok, path <> file_name, file_name}
+      {:error, posix} -> {:error, posix}
+    end
+  end
+
   # for making ids unique
   def uuid() do
     {:ok, uuid} = ShortUUID.encode(UUID.uuid4())

@@ -1,13 +1,14 @@
 defmodule OliWeb.RevisionHistory.Details do
   use Phoenix.LiveComponent
-  import Phoenix.HTML
 
   def render(assigns) do
 
     attrs = ~w"slug deleted author_id previous_revision_id resource_type_id graded max_attempts time_limit scoring_strategy_id activity_type_id"
 
     ~L"""
-    <table class="table table-bordered table-sm">
+    <table
+      style="table-layout: fixed;"
+      class="table table-bordered table-sm">
       <thead class="thead-dark">
         <tr><th style="width:100px;">Attribute</th><th>Value</th></tr>
       </thead>
@@ -18,7 +19,7 @@ defmodule OliWeb.RevisionHistory.Details do
           <td>
             <code>
             <pre style="background-color: #EEEEEE;">
-            <%= raw(Jason.encode!(@revision.objectives) |> Jason.Formatter.pretty_print()) %>
+            <%= Jason.encode!(@revision.objectives) |> Jason.Formatter.pretty_print() %>
             </pre>
             </code>
           </td>
@@ -28,7 +29,7 @@ defmodule OliWeb.RevisionHistory.Details do
           <td>
             <code>
             <pre style="background-color: #EEEEEE;">
-            <%= raw(Jason.encode!(@revision.content) |> Jason.Formatter.pretty_print()) %>
+            <%= Jason.encode!(@revision.content) |> Jason.Formatter.pretty_print() %>
             </pre>
             </code>
           </td>

@@ -1,27 +1,63 @@
 
+.project-cards {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+a.project-card-link {
+  &:hover {
+    text-decoration: none;
+  }
+  border-radius: 6px;
+  box-shadow: 0px 0px 2px rgba(0,0,0, .45);
+  &:not(:disabled):not(.disabled):hover {
+    background-color: rgba(0,0,0,.06);
+    outline: none;
+  }
+  &:not(:disabled):not(.disabled):focus,
+  &:not(:disabled):not(.disabled):active:focus {
+    background-color: white;
+    color: #333;
+    border-color: #18a0fb;
+    outline: none;
+    &:hover {
+      background-color: rgba(0,0,0,.06);
+    }
+  }
+  margin: 0 16px 16px 0;
+  &:last-of-type {
+    margin: 0;
+  }
+}
+
 .project-card {
   width: 270px;
   height: 150px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   position: relative;
-  border-radius: 6px;
-  border: 1px solid #b3b3b3;
-  box-shadow: 0px 0px 1px rgba(0,0,0, .15);
   padding: 24px;
 
   h1 {
+    height: 40px;
     font-size: 1.1em;
     font-weight: bold;
     color: $body-color;
+    width: 100%;
+    overflow: hidden;
+    margin: 0;
   }
 
   p {
     font-size: 11px;
     font-weight: normal;
     color: $secondary;
+    width: 100%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
   }
 
   &:hover {
@@ -33,31 +69,15 @@
       color: $link-color;
     }
   }
-  .project-card-link {
-    margin: 0 16px 16px 0;
-    &:hover {
-      text-decoration: none;
-    }
-  }
-
-  p:last-of-type {
-    margin: 0;
-  }
-
-  i {
-    font-size: 18px;
-  }
 
   .authors {
     display: flex;
-    justify-content: center;
-    position: absolute;
+    align-items: center;
+    width: 100%;
     font-size: 13px;
-    left: 12px;
-    bottom: 12px;
+    color: #7b8a8b;
+    i.material-icons-outlined {
+      font-size: 15px;
+    }
   }
-}
-
-a:hover {
-  text-decoration: none;
 }

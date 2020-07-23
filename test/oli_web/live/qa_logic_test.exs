@@ -17,6 +17,7 @@ defmodule OliWeb.Qa.StateLogicTest do
       map = Seeder.base_project_with_resource2()
       |> Seeder.add_objective("I love writing objectives", :o1)
       |> Seeder.add_review("pedagogy", :review)
+      |> Seeder.add_review("content", :content)
 
       map
       |> Seeder.add_page(%{objectives: %{"attached" => []}}, :page_no_objectives)
@@ -57,24 +58,25 @@ defmodule OliWeb.Qa.StateLogicTest do
         }
       }, :page_has_activities)
       |> Seeder.add_activity(%{objectives: %{}}, :activity_no_objectives)
+      |> Seeder.add_activity(%{objectives: %{}}, :activity_no_objectives)
+      |> Seeder.add_activity(%{objectives: %{}}, :activity_no_objectives)
       |> Seeder.add_activity(%{objectives: %{"1" => [Map.get(map, :o1).resource.id]}}, :activity_has_objectives)
       |> Map.put(:pages, Publishing.get_unpublished_revisions_by_type(Map.get(map, :project).slug, "page"))
       |> Map.put(:activities, Publishing.get_unpublished_revisions_by_type(Map.get(map, :project).slug, "activity"))
     end
 
-    test "filtering", %{project: project, review: review, pages: pages, activities: activities, author: author} do
+    test "filtering", %{project: project, review: review, content: content, activities: activities, author: author} do
 
-      Pedagogy.no_attached_objectives(review, pages)
       Pedagogy.no_attached_objectives(review, activities)
-      Content.broken_uris(review, project.slug)
+      Content.broken_uris(content, project.slug)
 
       current_review = QaLive.read_current_review(project)
 
       state = State.initialize_state(author, project, current_review)
 
-      # test filtering out of pedagogy, and ensure that a selected pedagogy item
-      # results in the selection going to nil
+      # test filtering out of pedagogy, and ensure that a selected pedagogy item gets converted to the content warning
       first_pedagogy_warning = Enum.filter(state.warnings, fn w -> w.review.type == "pedagogy" end) |> hd
+      first_content_warning = Enum.filter(state.warnings, fn w -> w.review.type == "content" end) |> hd
       state = State.selection_changed(state, Integer.to_string(first_pedagogy_warning.id)) |> merge_changes(state)
 
       assert state.filters == MapSet.new(["pedagogy", "content", "accessibility"])
@@ -83,7 +85,7 @@ defmodule OliWeb.Qa.StateLogicTest do
       state = State.set_filters(state, State.toggle_filter(state, "pedagogy")) |> merge_changes(state)
       assert state.filters == MapSet.new(["content", "accessibility"])
       assert length(state.filtered_warnings) != length(state.warnings)
-      assert state.selected == nil
+      assert state.selected == first_content_warning
 
       # turn off content filter, which should result then in zero warnings being displayed
       state = State.set_filters(state, State.toggle_filter(state, "content")) |> merge_changes(state)
@@ -103,11 +105,10 @@ defmodule OliWeb.Qa.StateLogicTest do
     end
 
 
-    test "dismissal when the item is first selected", %{project: project, review: review, pages: pages, activities: activities, author: author} do
+    test "dismissal when the item is first selected", %{project: project, review: review, content: content, activities: activities, author: author} do
 
-      Pedagogy.no_attached_objectives(review, pages)
       Pedagogy.no_attached_objectives(review, activities)
-      Content.broken_uris(review, project.slug)
+      Content.broken_uris(content, project.slug)
 
       current_review = QaLive.read_current_review(project)
 
@@ -124,11 +125,10 @@ defmodule OliWeb.Qa.StateLogicTest do
 
     end
 
-    test "dismissal when the item is last selected", %{project: project, review: review, pages: pages, activities: activities, author: author} do
+    test "dismissal when the item is last selected", %{project: project, review: review, content: content, activities: activities, author: author} do
 
-      Pedagogy.no_attached_objectives(review, pages)
       Pedagogy.no_attached_objectives(review, activities)
-      Content.broken_uris(review, project.slug)
+      Content.broken_uris(content, project.slug)
 
       current_review = QaLive.read_current_review(project)
 
@@ -145,11 +145,10 @@ defmodule OliWeb.Qa.StateLogicTest do
 
     end
 
-    test "dismissal when the item is not first or last, but selected", %{project: project, review: review, pages: pages, activities: activities, author: author} do
+    test "dismissal when the item is not first or last, but selected", %{project: project, review: review, content: content, activities: activities, author: author} do
 
-      Pedagogy.no_attached_objectives(review, pages)
       Pedagogy.no_attached_objectives(review, activities)
-      Content.broken_uris(review, project.slug)
+      Content.broken_uris(content, project.slug)
 
       current_review = QaLive.read_current_review(project)
 
@@ -166,11 +165,10 @@ defmodule OliWeb.Qa.StateLogicTest do
 
     end
 
-    test "dismissal when the dismissed is not selected", %{project: project, review: review, pages: pages, activities: activities, author: author} do
+    test "dismissal when the dismissed is not selected", %{project: project, review: review, content: content, activities: activities, author: author} do
 
-      Pedagogy.no_attached_objectives(review, pages)
       Pedagogy.no_attached_objectives(review, activities)
-      Content.broken_uris(review, project.slug)
+      Content.broken_uris(content, project.slug)
 
       current_review = QaLive.read_current_review(project)
 
@@ -184,6 +182,28 @@ defmodule OliWeb.Qa.StateLogicTest do
 
       state = State.warning_dismissed(state, third.id) |> merge_changes(state)
       assert state.selected == second
+
+    end
+
+    test "dismissing the last warning in a filtered state should not select a new warning for display",
+      %{project: project, review: review, content: content, activities: activities, author: author} do
+
+      Pedagogy.no_attached_objectives(review, activities)
+      Content.broken_uris(content, project.slug)
+
+      current_review = QaLive.read_current_review(project)
+
+      state = State.initialize_state(author, project, current_review)
+
+      state = State.set_filters(state, State.toggle_filter(state, "pedagogy")) |> merge_changes(state)
+      assert state.filters == MapSet.new(["content", "accessibility"])
+
+      assert length(state.filtered_warnings) == 1
+
+      # if we dismiss the last warning in a filtered state when there are other warnings that are filtered out,
+      # the UI should not select and show one of the filtered out warnings, the selection should be nil
+      state = State.warning_dismissed(state, hd(state.filtered_warnings).id) |> merge_changes(state)
+      assert state.selected == nil
 
     end
 

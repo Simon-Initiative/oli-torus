@@ -31,7 +31,7 @@ export interface PersistenceStrategy {
    * Indicate to the persistence strategy that it is being shutdown and that it
    * should clean up any resources and flush any pending changes immediately.
    */
-  destroy: () => Promise<{}>;
+  destroy: () => void;
 
   getLockResult: () => LockResult;
 

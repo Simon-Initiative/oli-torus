@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ReactEditor, useFocused, useSelected, useSlate } from 'slate-react';
-import { Transforms, Editor, Path } from 'slate';
+import { Transforms, Node, Editor, Path, Editor as SlateEditor } from 'slate';
 import { updateModel, getEditMode } from './utils';
 import * as ContentModel from 'data/content/model';
 import { Command, CommandDesc } from '../interfaces';
@@ -19,6 +19,54 @@ const tr = (children: ContentModel.TableData[]) => ContentModel.create<ContentMo
 
 const table = (children: ContentModel.TableRow[]) => ContentModel.create<ContentModel.Table>(
   { type: 'table', children, id: guid() });
+
+export const normalize = (editor: ReactEditor, node: Node, path: Path) => {
+
+  if (node.type === 'table') {
+    // Ensure that the number of cells in each row is the same
+
+    // First get max count of cells in any row, and see if any rows
+    // have a different amount of cells.
+    let max = -1;
+    let anyDiffer = false;
+    (node.children as any).forEach((row: Node) => {
+      const children = row.children as any;
+      const count = children.length;
+
+      if (max === -1) {
+        max = count;
+      } else if (count !== max) {
+        anyDiffer = true;
+
+        if (count > max) {
+          max = count;
+        }
+      }
+    });
+
+
+    if (anyDiffer) {
+
+      (node.children as any).forEach((row: Node, index: number) => {
+        const children = row.children as any;
+        let count = children.length;
+
+        // Get a path to the first td element in this row
+        const thisPath = [...path, index, 0];
+
+        // Add as many empty td elements to bring this row back up to
+        // the max td count
+        while (count < max) {
+          Transforms.insertNodes(editor, td(''), { at: thisPath });
+          count = count + 1;
+        }
+
+      });
+    }
+
+  }
+
+};
 
 
 // The UI command for creating tables
@@ -101,30 +149,64 @@ const DropdownMenu = (props: any) => {
 
   };
 
-  const onAddColumnBefore = () => {
-    const editor: ReactEditor = props.editor;
-    const path = ReactEditor.findPath(editor, props.model);
-    const [, parentPath] = Editor.parent(editor, path);
-    const [table] = Editor.parent(editor, parentPath);
+  // Wraps a table editing function so that the execution of the edits
+  // within it operate outside of slate normalization.  This is to allow
+  // edit sequences that would put the document in intermediate states
+  // that normalization would seek to adjust to execute without that
+  // adjustment.
 
-    const rows = table.children.length;
-    for (let i = 0; i < rows; i += 1) {
-      path[path.length - 2] = i;
-      Transforms.insertNodes(editor, td(''), { at: path });
+  const withoutNormalization = (fn: any) => {
+    const editor: ReactEditor = props.editor;
+
+    try {
+
+      (editor as any).suspendNormalization = true;
+
+      fn(editor);
+
+    } catch (error) {
+      // tslint:disable-next-line
+      console.error(error);
+
+    } finally {
+      // Whether the operation succeeded or failed, we restore
+      // normalization
+      (editor as any).suspendNormalization = false;
     }
   };
 
-  const onAddColumnAfter = () => {
-    const editor: ReactEditor = props.editor;
-    const path = ReactEditor.findPath(editor, props.model);
-    const [, parentPath] = Editor.parent(editor, path);
-    const [table] = Editor.parent(editor, parentPath);
+  const onAddColumnBefore = () => {
 
-    const rows = table.children.length;
-    for (let i = 0; i < rows; i += 1) {
-      path[path.length - 2] = i;
-      Transforms.insertNodes(editor, td(''), { at: Path.next(path) });
-    }
+    withoutNormalization((editor: ReactEditor) => {
+
+      const path = ReactEditor.findPath(editor, props.model);
+      const [, parentPath] = Editor.parent(editor, path);
+      const [table] = Editor.parent(editor, parentPath);
+
+      const rows = table.children.length;
+      for (let i = 0; i < rows; i += 1) {
+        path[path.length - 2] = i;
+        Transforms.insertNodes(editor, td(''), { at: path });
+      }
+    });
+
+  };
+
+  const onAddColumnAfter = () => {
+
+    withoutNormalization((editor: ReactEditor) => {
+
+      const path = ReactEditor.findPath(editor, props.model);
+      const [, parentPath] = Editor.parent(editor, path);
+      const [table] = Editor.parent(editor, parentPath);
+
+      const rows = table.children.length;
+      for (let i = 0; i < rows; i += 1) {
+        path[path.length - 2] = i;
+        Transforms.insertNodes(editor, td(''), { at: Path.next(path) });
+      }
+    });
+
   };
 
   const onDeleteRow = () => {
@@ -135,16 +217,20 @@ const DropdownMenu = (props: any) => {
   };
 
   const onDeleteColumn = () => {
-    const editor: ReactEditor = props.editor;
-    const path = ReactEditor.findPath(editor, props.model);
-    const [, parentPath] = Editor.parent(editor, path);
-    const [table] = Editor.parent(editor, parentPath);
 
-    const rows = table.children.length;
-    for (let i = 0; i < rows; i += 1) {
-      path[path.length - 2] = i;
-      Transforms.removeNodes(editor, { at: path });
-    }
+    withoutNormalization((editor: ReactEditor) => {
+
+      const path = ReactEditor.findPath(editor, props.model);
+      const [, parentPath] = Editor.parent(editor, path);
+      const [table] = Editor.parent(editor, parentPath);
+
+      const rows = table.children.length;
+      for (let i = 0; i < rows; i += 1) {
+        path[path.length - 2] = i;
+        Transforms.removeNodes(editor, { at: path });
+      }
+    });
+
   };
 
   return (
@@ -247,10 +333,6 @@ type TableSettingsProps = {
   commandContext: CommandContext,
   editMode: boolean,
 };
-
-const toLink = (src: string) =>
-  'https://www.youtube.com/embed/' + (src === '' ? 'zHIIzcWqsP0' : src);
-
 
 const TableSettings = (props: TableSettingsProps) => {
 

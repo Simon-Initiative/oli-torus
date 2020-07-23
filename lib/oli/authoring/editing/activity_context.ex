@@ -15,8 +15,6 @@ defmodule Oli.Authoring.Editing.ActivityContext do
     :model,
     :objectives,
     :allObjectives,
-    :previousActivity,
-    :nextActivity
   ]
 
 end

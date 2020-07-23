@@ -9,6 +9,12 @@ defmodule Oli.Publishing.AuthoringResolverTest do
     setup do
 
       map = Seeder.base_project_with_resource2()
+      |> Seeder.add_objective("child1", :child1)
+      |> Seeder.add_objective("child2", :child2)
+      |> Seeder.add_objective("child3", :child3)
+      |> Seeder.add_objective("child4", :child4)
+      |> Seeder.add_objective_with_children("parent1", [:child1, :child2, :child3], :parent1)
+      |> Seeder.add_objective_with_children("parent2", [:child4], :parent2)
 
       # Create another project with resources and revisions
       Seeder.another_project(map.author, map.institution)
@@ -31,6 +37,21 @@ defmodule Oli.Publishing.AuthoringResolverTest do
 
       Map.put(map, :latest1, latest1)
       |> Map.put(:latest2, latest2)
+    end
+
+    test "find_parent_objectives/2 returns parents", %{ project: project,
+      child1: child1, child2: child2, child3: child3, child4: child4, parent1: parent1, parent2: parent2 } do
+
+      # find one
+      assert [parent1.revision] == AuthoringResolver.find_parent_objectives(project.slug, [child1.resource.id])
+
+      # find both
+      assert [parent1.revision, parent2.revision] == AuthoringResolver.find_parent_objectives(project.slug, [child1.resource.id, child4.resource.id])
+      assert [parent1.revision, parent2.revision] == AuthoringResolver.find_parent_objectives(project.slug, [child1.resource.id, child2.resource.id, child3.resource.id, child4.resource.id])
+
+      # find none
+      assert [] == AuthoringResolver.find_parent_objectives(project.slug, [parent1.resource.id, parent2.resource.id])
+
     end
 
     test "from_resource_id/2 returns correct revision", %{ revision1: revision, latest1: latest1, project: project } do

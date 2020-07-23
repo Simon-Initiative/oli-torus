@@ -14,7 +14,7 @@ interface StateProps {
 
 interface DispatchProps {
   onLoadCourseMediaNextPage: (projectSlug: string,
-    mimeFilter: string[], searchText: string,
+    mimeFilter: string[] | undefined, searchText: string,
     orderBy: string, order: string) => void;
   onResetMedia: () => void;
   onLoadMediaItemByPath: (projectSlug: string, path: string) => Promise<Maybe<MediaItem>>;
@@ -24,7 +24,7 @@ interface OwnProps {
   className?: string;
   model: Media;
   projectSlug: string;
-  mimeFilter?: string[];
+  mimeFilter?: string[] | undefined;
   selectionType: SELECTION_TYPES;
   initialSelectionPaths?: string[];
   onEdit: (updated: Media) => void;

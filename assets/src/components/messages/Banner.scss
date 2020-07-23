@@ -1,0 +1,28 @@
+.banner {
+
+  .message {
+    overflow: hidden;
+  }
+
+  .message-enter {
+    height: 0px;
+    opacity: 0;
+  }
+
+  .message-enter.message-enter-active {
+    height: 40px;
+    opacity: 1;
+    transition: height, opacity 200ms ease-in;
+  }
+
+  .message-leave {
+    height: 40px;
+    opacity: 1;
+  }
+
+  .message-leave.message-leave-active {
+    height: 0px;
+    opacity: 0;
+    transition: height, opacity 200ms ease-in;
+  }
+}

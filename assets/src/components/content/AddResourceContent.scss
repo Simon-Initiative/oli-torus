@@ -1,6 +1,8 @@
 @import 'authoring/variables';
+@import 'authoring/mixins';
 
 .add-resource-content {
+  @include disable-select;
   position: relative;
   padding: 10px 0;
   cursor: pointer;
@@ -33,6 +35,10 @@
     .insert-adornment {
       opacity: 1;
       background-color: $primary;
+    }
+
+    .insert-label {
+      opacity: 0;
     }
   }
 
@@ -71,6 +77,9 @@
     transition: opacity 200ms ease-out;
   }
 
+  .insert-label {
+    transition: opacity 200ms ease-out;
+  }
 }
 
 

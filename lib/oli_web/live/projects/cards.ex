@@ -6,13 +6,6 @@ defmodule OliWeb.Projects.Cards do
 
   def render(assigns) do
     ~L"""
-    <style>
-    .project-cards {
-      display: flex;
-      flex-wrap: wrap;
-    }
-    </style>
-
     <div class="container">
       <div class="row">
         <div class="col-12">

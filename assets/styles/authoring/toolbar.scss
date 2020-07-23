@@ -1,0 +1,37 @@
+@import "authoring/variables";
+
+.toolbar {
+  &.fixed-toolbar {
+    position: absolute;
+    height: 100%;
+    width: 0;
+    top: 0;
+    left: 0;
+    display: inline-block;
+
+    .toolbar-buttons {
+      position: sticky;
+      top: 20px;
+      margin-bottom: 100px;
+      padding: 5px 10px;
+
+      background-color: rgba(247, 247, 247, 0.8);
+      backdrop-filter: blur(16px);
+
+      // border: 1px solid $gray-200;
+      border-radius: 4px;
+      z-index: 1;
+
+      .text-formatter {
+        min-width: 160px;
+      }
+
+      button {
+        border-top-left-radius: 3.2px !important;
+        border-top-right-radius: 3.2px !important;
+        border-bottom-left-radius: 3.2px !important;
+        border-bottom-right-radius: 3.2px !important;
+      }
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import * as Immutable from 'immutable';
 import React, { useState } from 'react';
+import isHotkey from 'is-hotkey';
 import {
   ResourceContent, Activity, ResourceType, ActivityPurposes, ContentPurposes,
   ActivityReference, StructuredContent, ResourceContext,
@@ -9,14 +10,15 @@ import { UnsupportedActivity } from './UnsupportedActivity';
 import { getToolbarForResourceType } from './toolbar';
 import { StructuredContentEditor } from 'components/content/StructuredContentEditor';
 import { ProjectSlug, ResourceSlug } from 'data/types';
-import { TestModeHandler, defaultState } from './TestModeHandler';
+import { AbbreviatedActivity } from './AbbreviatedActivity';
 import { Purpose } from '../content/Purpose';
 import { DeleteButton } from '../misc/DeleteButton';
-import { EditLink } from '../misc/EditLink';
 import * as Persistence from 'data/persistence/activity';
-
+import { EditLink } from '../misc/EditLink';
+import { Objective, ObjectiveSlug } from 'data/content/objective';
 import './Editors.scss';
-import { getContentDescription, toSimpleText } from 'data/content/utils';
+import { getContentDescription } from 'data/content/utils';
+import { toSimpleText } from 'data/content/text';
 import { DragHandle } from './DragHandle';
 import { classNames } from 'utils/classNames';
 import { AddResourceContent } from '../content/AddResourceContent';
@@ -34,6 +36,9 @@ export type EditorsProps = {
   projectSlug: ProjectSlug,
   resourceSlug: ResourceSlug,
   resourceContext: ResourceContext,
+  objectives: Immutable.List<Objective>,
+  childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>,
+  onRegisterNewObjective: (text: string) => Promise<Objective>,
 };
 
 interface ActivityPayload {
@@ -53,7 +58,7 @@ interface UnknownPayload {
 type DragPayload = StructuredContent | ActivityPayload | UnknownPayload;
 
 // @ts-ignore
-const DropTarget = ({ id, index, onDrop }) => {
+const DropTarget = ({ id, index, isLast, onDrop }) => {
   const [hovered, setHovered] = useState(false);
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => setHovered(true);
@@ -70,7 +75,7 @@ const DropTarget = ({ id, index, onDrop }) => {
 
   return (
     <div key={id + '-drop'}
-      className={classNames(['drop-target ', hovered ? 'hovered' : ''])}
+      className={classNames(['drop-target ', hovered ? 'hovered' : '', isLast ? 'is-last' : ''])}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -88,6 +93,9 @@ type AddResourceOrDropTargetProps = {
   resourceContext: ResourceContext,
   onDrop: (e: React.DragEvent<HTMLDivElement>, index: number) => void,
   onAddItem: (c : ResourceContent, index: number, a? : Activity) => void,
+  objectives: Immutable.List<Objective>,
+  childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>,
+  onRegisterNewObjective: (text: string) => Promise<Objective>,
 };
 
 const AddResourceOrDropTarget = ({
@@ -99,12 +107,18 @@ const AddResourceOrDropTarget = ({
   resourceContext,
   onDrop,
   onAddItem,
+  objectives,
+  childrenObjectives,
+  onRegisterNewObjective,
 }: AddResourceOrDropTargetProps) => isReorderMode
   ? (
-    <DropTarget id={id} index={index} onDrop={onDrop}/>
+    <DropTarget id={id} index={index} isLast={id === 'last'} onDrop={onDrop}/>
   )
   : (
     <AddResourceContent
+      objectives={objectives}
+      childrenObjectives={childrenObjectives}
+      onRegisterNewObjective={onRegisterNewObjective}
       editMode={editMode}
       isLast={id === 'last'}
       index={index}
@@ -132,6 +146,14 @@ const getDescription = (item: ResourceContent) => {
 // The list of editors
 export const Editors = (props: EditorsProps) => {
 
+  const objectivesMap =  props.resourceContext.allObjectives.reduce(
+    (m: any, o) => {
+      m[o.slug] = o.title;
+      return m;
+    },
+    {},
+  );
+
   const {
     editorMap, editMode, graded, content, activities, projectSlug,
     resourceSlug, onEditContentList, onAddItem,
@@ -145,15 +167,20 @@ export const Editors = (props: EditorsProps) => {
     ) : [JSX.Element, string] => {
 
     if (content.type === 'content') {
-      return [<StructuredContentEditor
-        key={content.id}
-        editMode={editMode}
-        content={content}
-        onEdit={onEdit}
-        projectSlug={projectSlug}
-        toolbarItems={getToolbarForResourceType(
-          graded ? ResourceType.assessment : ResourceType.page)}/>, 'Content'];
+      return [
+        <StructuredContentEditor
+          key={content.id}
+          editMode={editMode}
+          content={content}
+          onEdit={onEdit}
+          projectSlug={projectSlug}
+          toolbarItems={getToolbarForResourceType(
+            graded ? ResourceType.assessment : ResourceType.page)}
+          toolbarPosition={{ top: 8, left: 20 }}/>,
+        'Content',
+      ];
     }
+
 
     const unsupported : EditorDesc = {
       deliveryElement: UnsupportedActivity,
@@ -165,39 +192,44 @@ export const Editors = (props: EditorsProps) => {
     };
 
     const activity = activities.get(content.activitySlug);
-    let editor;
-    let props;
+
+    let friendlyName = 'Unknown';
+    let previewText = '';
+    let objectives = [];
 
     if (activity !== undefined) {
 
-      editor = editorMap[activity.typeSlug]
+      const editor = editorMap[activity.typeSlug]
         ? editorMap[activity.typeSlug] : unsupported;
+      friendlyName = editor.friendlyName;
 
-      // Test mode is supported by giving the delivery component a transformed
-      // instance of the activity model.  Recognizing that we are in an editing mode
-      // we make this robust to problems with transormation so we fallback to the raw
-      // model if the transformed model is null (which results from failure to transform)
-      const model = activity.transformed === null ? activity.model : activity.transformed;
+      if (activity.model.authoring !== undefined) {
+        if (activity.model.authoring.previewText !== undefined) {
+          previewText = activity.model.authoring.previewText;
+        }
 
-      props = {
-        model: JSON.stringify(model),
-        activitySlug: activity.activitySlug,
-        state: JSON.stringify(
-          defaultState(activity.transformed === null ? model : activity.transformed)),
-        graded: false,
-      };
+        const slugsAsKeys = Object.keys(activity.objectives)
+          .reduce((map: any, key) => {
+            (activity.objectives as any)[key as any].forEach((slug: string) => {
+              map[slug] = true;
+            });
+            return map;
+          },
+          {});
 
-      const testModeEnabledComponent = (
-        <TestModeHandler model={model}>
-          {React.createElement(editor.deliveryElement, props as any)}
-        </TestModeHandler>
-      );
-
-      return [testModeEnabledComponent, editor.friendlyName];
+        objectives = Object.keys(slugsAsKeys)
+          .map(slug => objectivesMap[slug]);
+      }
 
     }
 
-    return [React.createElement(unsupported.deliveryElement), unsupported.friendlyName];
+    const abbreviatedActivity = (
+      <AbbreviatedActivity
+        previewText={previewText}
+        objectives={objectives}/>
+    );
+
+    return [abbreviatedActivity, friendlyName];
 
   };
 
@@ -268,7 +300,7 @@ export const Editors = (props: EditorsProps) => {
               Persistence.create(
                 droppedContent.project,
                 droppedContent.activity.typeSlug,
-                droppedContent.activity.model)
+                droppedContent.activity.model, [])
               .then((result: Persistence.Created) => {
                 onEditContentList(content.insert(index, droppedContent.reference));
               });
@@ -349,15 +381,6 @@ export const Editors = (props: EditorsProps) => {
 
     const [editor, label] = createEditor(c, onEdit);
 
-    const editingLink = c.type === 'activity-reference'
-      ? `/project/${projectSlug}/resource/${resourceSlug}/activity/${c.activitySlug}` : undefined;
-
-    const link = editingLink !== undefined
-      ? (
-          <EditLink href={editingLink}/>
-        )
-      : null;
-
     const purposes = c.type === 'activity-reference'
       ? ActivityPurposes : ContentPurposes;
 
@@ -405,13 +428,70 @@ export const Editors = (props: EditorsProps) => {
       });
     };
 
+    // register keydown handlers
+    const isShiftArrowDown = isHotkey('shift+down');
+    const isShiftArrowUp = isHotkey('shift+up');
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (e.shiftKey && e.key === 'ArrowDown') {
+      if (isShiftArrowDown(e.nativeEvent)) {
         onMove(index, false);
-      } else if (e.shiftKey && e.key === 'ArrowUp') {
+      } else if (isShiftArrowUp(e.nativeEvent)) {
         onMove(index, true);
       }
     };
+
+    const resourceContentFrame = c.type === 'activity-reference'
+    ? (
+      <div className="resource-content-frame card">
+        <div className="card-header pl-2"
+          draggable={true}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}>
+          <div className="d-flex flex-row align-items-baseline">
+
+            <div className="flex-grow-1">
+              <DragHandle style={{ height: 24, marginRight: 10 }} />
+              <EditLink
+                label={'Edit this ' + label + ' Activity'}
+                href={`/project/${projectSlug}/resource/${resourceSlug}/activity/${c.activitySlug}`}
+                />
+            </div>
+            <Purpose purpose={c.purpose} purposes={purposes}
+              editMode={editMode} onEdit={(p: string) => onEditPurpose(p)}/>
+            <DeleteButton editMode={content.size > 1} onClick={onRemove}/>
+          </div>
+
+          {editor}
+
+        </div>
+
+
+
+      </div>
+    )
+    : (
+      <div className="resource-content-frame card">
+        <div className="card-header pl-2"
+          draggable={true}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}>
+          <div className="d-flex flex-row align-items-baseline">
+            <div className="flex-grow-1">
+              <DragHandle style={{ height: 24, marginRight: 10 }} />
+            </div>
+            <Purpose purpose={c.purpose} purposes={purposes}
+              editMode={editMode} onEdit={(p: string) => onEditPurpose(p)}/>
+            <DeleteButton editMode={content.size > 1} onClick={onRemove}/>
+          </div>
+          <div className="description text-secondary ellipsize-overflow flex-1 mx-4 mt-2">
+            {getDescription(c)}
+          </div>
+        </div>
+        <div className="card-body">
+          {editor}
+        </div>
+      </div>
+    );
 
     return (
       <div key={c.id}
@@ -423,6 +503,9 @@ export const Editors = (props: EditorsProps) => {
 
         <AddResourceOrDropTarget
           id={c.id}
+          objectives={props.objectives}
+          childrenObjectives={props.childrenObjectives}
+          onRegisterNewObjective={props.onRegisterNewObjective}
           index={index}
           editMode={editMode}
           isReorderMode={isReorderMode}
@@ -438,28 +521,8 @@ export const Editors = (props: EditorsProps) => {
           aria-describedby="content-list-operation"
           tabIndex={index + 1}>
 
-          <div className="resource-content-frame card">
-            <div className="card-header pl-2"
-              draggable={true}
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}>
-              <div className="d-flex flex-row align-items-baseline">
-                <div className="flex-grow-1">
-                  <DragHandle style={{ height: 24, marginRight: 10 }} /> {label}
-                </div>
-                <Purpose purpose={c.purpose} purposes={purposes}
-                  editMode={editMode} onEdit={(p: string) => onEditPurpose(p)}/>
-                {link}
-                <DeleteButton editMode={content.size > 1} onClick={onRemove}/>
-              </div>
-              <div className="description text-secondary ellipsize-overflow flex-1 mx-4 mt-2">
-                {getDescription(c)}
-              </div>
-            </div>
-            <div className="card-body">
-              {editor}
-            </div>
-          </div>
+          {resourceContentFrame}
+
         </div>
 
       </div>
@@ -471,6 +534,7 @@ export const Editors = (props: EditorsProps) => {
       {editors}
 
       <AddResourceOrDropTarget
+        {...props}
         id="last"
         index={editors.size}
         editMode={editMode}

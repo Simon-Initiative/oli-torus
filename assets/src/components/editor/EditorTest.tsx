@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-
-import { Node } from 'slate';
 import { Editor } from './Editor';
 import { ToolbarItem } from './interfaces';
 import { commandDesc as imageCommandDesc } from './editors/Image';
@@ -10,20 +8,25 @@ import { commandDesc as quoteCommandDesc } from './editors/Blockquote';
 import { commandDesc as audioCommandDesc } from './editors/Audio';
 import { commandDesc as codeCommandDesc } from './editors/Code';
 import { commandDesc as tableCommandDesc } from './editors/Table';
+import { RichText } from 'components/activities/types';
+import { ModelElement } from 'data/content/model';
 
-const initialStem: Node[] = [
-  {
-    type: 'p',
-    children: [{ text: 'This is the editor test view.' }],
-  },
-  {
-    type: 'p',
-    children: [
-      { text: 'Here is a sentence.' },
-    ],
-  },
+const initialStem: RichText = {
+  model: ([
+    {
+      type: 'p',
+      children: [{ text: 'This is the editor test view.' }],
+    },
+    {
+      type: 'p',
+      children: [
+        { text: 'Here is a sentence.' },
+      ],
+    },
 
-];
+  ] as ModelElement[]),
+  selection: null,
+};
 
 const toolbarItems: ToolbarItem[] = [
   quoteCommandDesc,
@@ -55,9 +58,10 @@ export const TestEditor = () => {
       <Editor
         commandContext={ { projectSlug: '' }}
         editMode={true}
-        value={stem}
-        onEdit={(value) => {
-          setStem(value);
+        value={stem.model}
+        selection={stem.selection}
+        onEdit={(model, selection) => {
+          setStem({ model, selection });
         }}
         toolbarItems={toolbarItems} />
 

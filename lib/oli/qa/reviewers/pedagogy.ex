@@ -2,7 +2,6 @@ defmodule Oli.Qa.Reviewers.Pedagogy do
   import Ecto.Query, warn: false
   alias Oli.Publishing
   alias Oli.Authoring.Course
-  alias Oli.Resources.ResourceType
   alias Oli.Resources
   alias Oli.Qa.{Warnings, Reviews}
 
@@ -14,7 +13,6 @@ defmodule Oli.Qa.Reviewers.Pedagogy do
     # logic
     {:ok, review} = Reviews.create_review(Course.get_project_by_slug(project_slug), "pedagogy")
     review
-    |> no_attached_objectives(pages)
     |> no_attached_objectives(activities)
     |> no_attached_activities(pages)
     |> Reviews.mark_review_done
@@ -24,7 +22,7 @@ defmodule Oli.Qa.Reviewers.Pedagogy do
 
   def no_attached_objectives(review, revisions) do
     revisions
-    |> Enum.filter(&no_attached_objectives?/1)
+    |> Enum.filter(fn r -> r.objectives == %{} end)
     |> Enum.each(&Warnings.create_warning(%{
       review_id: review.id,
       revision_id: &1.id,
@@ -32,15 +30,6 @@ defmodule Oli.Qa.Reviewers.Pedagogy do
     }))
 
     review
-  end
-
-  defp no_attached_objectives?(revision) do
-    case ResourceType.get_type_by_id(revision.resource_type.id) do
-      "page" -> Enum.empty?(revision.objectives["attached"])
-      "activity" -> revision.objectives == %{}
-      # Containers and objectives not handled
-      _ -> true
-    end
   end
 
   def no_attached_activities(review, pages) do

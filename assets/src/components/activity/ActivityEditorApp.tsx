@@ -9,14 +9,17 @@ import { configureStore } from 'state/store';
 let store = configureStore();
 
 (window as any).oliMountApplication
-  = (mountPoint: any, params : any) =>
-  ReactDOM.render(
-    <Provider store={store}>
-      <ActivityEditor {...params} />
-      <ModalDisplay/>
-    </Provider>,
-    mountPoint,
-  );
+  = (mountPoint: any, paramString : any) => {
+    const params = JSON.parse(atob(paramString));
+
+    ReactDOM.render(
+      <Provider store={store}>
+        <ActivityEditor {...params} />
+        <ModalDisplay/>
+      </Provider>,
+      mountPoint,
+    );
+  };
 
 (window as any).store = {
   configureStore: (json: any) => {
