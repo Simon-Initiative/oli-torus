@@ -255,7 +255,8 @@ export const YouTubeEditor = (props: YouTubeProps) => {
         <Settings.ToolPopupButton
           contentFn={contentFn}
           setIsPopoverOpen={setIsPopoverOpen}
-          isPopoverOpen={isPopoverOpen} />
+          isPopoverOpen={isPopoverOpen}
+          label="YouTube" />
         <Settings.Caption caption={model.caption}/>
 
       </div>

@@ -435,6 +435,11 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
                       window.eval(s.innerText);
                     }
                   }
+
+                  // highlight all codeblocks
+                  div.querySelectorAll('pre code').forEach((block) => {
+                    (window as any).hljs.highlightBlock(block);
+                  });
                 }
               }}
               />

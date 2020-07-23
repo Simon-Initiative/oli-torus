@@ -88,6 +88,8 @@
 }
 
 .add-resource-popover {
+  z-index: 1;
+
   .add-resource-popover-content {
     display: block;
     box-shadow: 0 10px 15px rgba(0,0,0,0.05), 10px 0px 15px rgba(0,0,0,0.05), -10px 0px 15px rgba(0,0,0,0.05), 0px -5px 40px rgba(0,0,0,0.05);

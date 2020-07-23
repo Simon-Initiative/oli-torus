@@ -439,7 +439,8 @@ export const TableEditor = (props: TableProps) => {
         <Settings.ToolPopupButton
           contentFn={contentFn}
           setIsPopoverOpen={setIsPopoverOpen}
-          isPopoverOpen={isPopoverOpen} />
+          isPopoverOpen={isPopoverOpen}
+          label="Table" />
         <Settings.Caption caption={model.caption}/>
       </div>
     </div>
