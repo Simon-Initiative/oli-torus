@@ -36,6 +36,13 @@ host =
     For example: host.example.com
     """
 
+# Configure reCAPTCHA
+config :oli, :recaptcha,
+       verify_url: "https://www.google.com/recaptcha/api/siteverify",
+       timeout: 5000,
+       site_key: System.get_env("RECAPTCHA_SITE_KEY"),
+       secret: System.get_env("RECAPTCHA_PRIVATE_KEY")
+
 config :oli, OliWeb.Endpoint,
   server: true,
   http: [:inet6, port: String.to_integer(System.get_env("PORT") || "80")],
