@@ -38,6 +38,8 @@ export function selectYouTube(): Promise<string | null> {
 const command: Command = {
   execute: (context, editor: ReactEditor) => {
 
+    const selection = editor.selection;
+
     selectYouTube()
     .then((selectedSrc) => {
       if (selectedSrc !== null) {
@@ -52,7 +54,13 @@ const command: Command = {
 
         const youtube = ContentModel.create<ContentModel.YouTube>(
           { type: 'youtube', src, children: [{ text: '' }], id: guid() });
-        Transforms.insertNodes(editor, youtube);
+
+        if (selection !== null) {
+          Transforms.insertNodes(editor, youtube, { at: selection });
+        } else {
+          Transforms.insertNodes(editor, youtube);
+        }
+
       }
     });
 
