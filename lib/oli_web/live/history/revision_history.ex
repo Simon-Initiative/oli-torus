@@ -41,7 +41,7 @@ defmodule OliWeb.RevisionHistory do
     selected = hd(revisions)
 
     {:ok, assign(socket,
-      title: "Revision History",
+      breadcrumbs: [{"Revision History", nil}],
       view: "table",
       resource_id: resource_id,
       mappings: mappings_by_revision,

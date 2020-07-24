@@ -11,7 +11,7 @@ defmodule OliWeb.Qa.State do
     parent_pages: %{},
     warnings_by_type: %{},
     warning_types: [],
-    title: "Review",
+    breadcrumbs: [{"Review", nil}],
     project: nil,
     author: nil
   }

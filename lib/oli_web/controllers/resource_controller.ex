@@ -46,7 +46,9 @@ defmodule OliWeb.ResourceController do
     is_admin? = Accounts.is_admin?(author)
 
     case PageEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
-      {:ok, context} -> render(conn, "edit.html", active: :curriculum, title: "Page Editor", is_admin?: is_admin?, context: Jason.encode!(context), scripts: Activities.get_activity_scripts(), project_slug: project_slug, revision_slug: revision_slug)
+      {:ok, context} -> render(conn, "edit.html", active: :curriculum,
+        breadcrumbs: [{"Curriculum", Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project_slug)}, {context.title, nil}],
+        is_admin?: is_admin?, context: Jason.encode!(context), scripts: Activities.get_activity_scripts(), project_slug: project_slug, revision_slug: revision_slug)
 
       {:error, :not_found} ->
         conn
@@ -66,7 +68,7 @@ defmodule OliWeb.ResourceController do
     case PageEditor.create_context(project_slug, revision_slug, author) do
       {:ok, context} ->
         render(conn, "page_preview.html",
-          title: "Preview - #{context.title}",
+          breadcrumbs: [{"Curriculum", Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project_slug)}, {context.title, nil}],
           objectives: Oli.Delivery.Page.ObjectivesRollup.rollup_objectives(activity_revisions, AuthoringResolver, project_slug),
           content_html: PageEditor.render_page_html(project_slug, revision_slug, author, preview: true),
           context: context,
