@@ -1,6 +1,6 @@
 
 <%= if @is_admin? do %>
-  <div class="alert alert-warning alert-dismissible fade show" style="position: sticky; top: 0px; z-index: 900;" role="alert">
+  <div class="alert alert-warning alert-dismissible fade show" role="alert">
   <strong>You are editing as an administrator</strong>
 
   <span style="float: right;">
