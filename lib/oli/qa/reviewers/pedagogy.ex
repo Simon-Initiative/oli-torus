@@ -11,18 +11,26 @@ defmodule Oli.Qa.Reviewers.Pedagogy do
     activities = Publishing.get_unpublished_revisions_by_type(project_slug, "activity")
 
     # logic
-    {:ok, review} = Reviews.create_review(Course.get_project_by_slug(project_slug), "pedagogy")
-    review
-    |> no_attached_objectives(activities)
-    |> no_attached_activities(pages)
-    |> Reviews.mark_review_done
+    case Reviews.create_review(Course.get_project_by_slug(project_slug), "pedagogy") do
+      {:ok, review} ->
+
+        review
+        |> no_attached_objectives(activities)
+        |> no_attached_activities(pages)
+        |> Reviews.mark_review_done
+
+      {:error, error} -> IO.inspect error
+    end
 
     project_slug
   end
 
   def no_attached_objectives(review, revisions) do
+
     revisions
-    |> Enum.filter(fn r -> r.objectives == %{} end)
+    |> Enum.filter(fn r ->
+      Map.values(r.objectives) |> List.flatten == []
+    end)
     |> Enum.each(&Warnings.create_warning(%{
       review_id: review.id,
       revision_id: &1.id,
