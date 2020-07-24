@@ -86,6 +86,13 @@ defmodule OliWeb.Qa.QaLive do
     {:noreply, socket}
   end
 
+  def handle_event("keydown", %{"warning" => warning_id, "key" => key}, socket) do
+    case key do
+      "Enter" -> handle_event("select", %{"warning" => warning_id}, socket)
+      _ -> {:noreply, socket}
+    end
+  end
+
   def handle_params(params, _, socket) do
     {:noreply, assign(socket, State.from_params(socket.assigns, params))}
   end
