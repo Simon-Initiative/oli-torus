@@ -23,7 +23,9 @@ defmodule OliWeb.ActivityController do
           {context.resourceTitle, Routes.resource_path(OliWeb.Endpoint, :edit, project_slug, context.resourceSlug)},
           {context.title, nil}],
         project_slug: project_slug, is_admin?: is_admin?, activity_slug: activity_slug, script: context.authoringScript, context: Jason.encode!(context))
-      {:error, :not_found} -> render conn, OliWeb.SharedView, "_not_found.html"
+      {:error, :not_found} -> render conn, OliWeb.SharedView, "_not_found.html", breadcrumbs: [
+        {"Curriculum", Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project_slug)},
+        {"Not Found", nil}]
     end
 
   end

@@ -53,7 +53,7 @@ defmodule OliWeb.ResourceController do
       {:error, :not_found} ->
         conn
         |> put_view(OliWeb.SharedView)
-        |> render("_not_found.html", title: "Not Found")
+        |> render("_not_found.html", title: "Not Found", breadcrumbs: [{"Curriculum", Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project_slug)}, {"Not Found", nil}])
     end
 
   end
@@ -78,7 +78,7 @@ defmodule OliWeb.ResourceController do
       {:error, :not_found} ->
         conn
         |> put_view(OliWeb.SharedView)
-        |> render("_not_found.html", title: "Not Found")
+        |> render("_not_found.html", title: "Not Found", breadcrumbs: [{"Curriculum", Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project_slug)}, {"Not Found", nil}])
     end
   end
 
