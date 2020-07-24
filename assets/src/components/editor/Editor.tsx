@@ -42,7 +42,7 @@ export type EditorProps = {
 const voidOnKeyDown = (editor: ReactEditor, e: React.KeyboardEvent) => {
 
   if (e.key === 'Enter') {
-    if (editor.selection !== null && Range.isCollapsed(editor.selection)) {
+    if (editor.selection && Range.isCollapsed(editor.selection)) {
 
       getRootOfText(editor).lift((node: Node) => {
 
@@ -66,7 +66,7 @@ const voidOnKeyDown = (editor: ReactEditor, e: React.KeyboardEvent) => {
 
 // Handles exiting a header item via Enter key, setting the next block back to normal (p)
 function handleFormattingTermination(editor: SlateEditor, e: React.KeyboardEvent) {
-  if (e.key === 'Enter' && editor.selection !== null && Range.isCollapsed(editor.selection)) {
+  if (e.key === 'Enter' && editor.selection && Range.isCollapsed(editor.selection)) {
 
     const [match] = SlateEditor.nodes(editor, {
       match: n => n.type === 'h1' || n.type === 'h2'
@@ -159,7 +159,9 @@ export const Editor = React.memo((props: EditorProps) => {
     }
   };
 
-  editor.selection = props.selection;
+  if (props.selection !== undefined) {
+    editor.selection = props.selection;
+  }
 
   const renderElement = useCallback((props) => {
     const model = props.element as ModelElement;
