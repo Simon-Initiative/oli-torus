@@ -30,7 +30,6 @@ defmodule Oli.Qa.UriValidator do
   # returns all uris as a map of lists grouped by :ok (valid), :error (invalid)
   # elements are of type %{ id, content }
   def validate_uris(elements, project_slug) when is_list(elements) do
-
     verify_with_slug = fn e -> verify_link(e, project_slug) end
 
     elements
@@ -73,14 +72,7 @@ defmodule Oli.Qa.UriValidator do
     if !valid_uri?(uri)
     do {:error, element}
     else
-      try do
-        case HTTPoison.head(uri) do
-          {:ok, _} -> {:ok, element}
-          _ -> {:error, element}
-        end
-      rescue
-        _ -> {:error, element}
-      end
+      {:ok, element}
     end
   end
 
