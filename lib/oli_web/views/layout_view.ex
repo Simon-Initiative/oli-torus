@@ -37,20 +37,25 @@ defmodule OliWeb.LayoutView do
     render(layout, Map.put(assigns, :inner_layout, content))
   end
 
-  def theme_url(%{:assigns => assigns} = _conn, :authoring) do
-    case assigns do
-      %{current_author: current_author} ->
-        case current_author do
-          %{preferences: %AuthorPreferences{theme: url}} ->
-            url
-          _ ->
-            Authoring.get_default_theme!().url
-        end
-
-      _ ->
-        Authoring.get_default_theme!().url
-    end
+  def theme_url(_conn, :authoring) do
+    Authoring.get_default_theme!().url
   end
+
+  # Custom theming disabled in authoring
+  # def theme_url(%{:assigns => assigns} = _conn, :authoring) do
+  #   case assigns do
+  #     %{current_author: current_author} ->
+  #       case current_author do
+  #         %{preferences: %AuthorPreferences{theme: url}} ->
+  #           url
+  #         _ ->
+  #           Authoring.get_default_theme!().url
+  #       end
+
+  #     _ ->
+  #       Authoring.get_default_theme!().url
+  #   end
+  # end
 
   def theme_url(conn, :delivery) do
     Routes.static_path(conn, "/css/delivery_theme.css")
