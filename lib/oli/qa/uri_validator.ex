@@ -30,7 +30,6 @@ defmodule Oli.Qa.UriValidator do
   # returns all uris as a map of lists grouped by :ok (valid), :error (invalid)
   # elements are of type %{ id, content }
   def validate_uris(elements, project_slug) when is_list(elements) do
-    IO.inspect elements
     verify_with_slug = fn e -> verify_link(e, project_slug) end
 
     elements
