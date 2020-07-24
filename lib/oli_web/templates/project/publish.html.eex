@@ -16,7 +16,7 @@
         <% {true, changes} -> %>
           <div class="my-3">Last published <strong><%= @latest_published_publication.updated_at |> Timex.format!("{relative}", :relative) %></strong>.
           <% change_count =  Map.values(changes) |> Enum.filter(fn {status, _} -> status != :identical end) |> Enum.count %>
-          There are <strong><%= change_count %></strong> <%= if change_count == 1 do "change" else "changes" end %> since last publish.</div>
+          There <%= if change_count == 1 do "is" else "are" end %> <strong><%= change_count %></strong> <%= if change_count == 1 do "change" else "changes" end %> since last publish.</div>
           <%= for {status, %{revision: revision}}  <- Map.values(changes) |> Enum.filter(fn {status, _} -> status != :identical end) do %>
             <p>
               <span class="badge badge-secondary badge-<%= status %>"><%= status %></span>
