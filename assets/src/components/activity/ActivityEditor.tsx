@@ -6,7 +6,6 @@ import { ActivityContext } from 'data/content/activity';
 import { Objective } from 'data/content/objective';
 import { TitleBar } from '../content/TitleBar';
 import { UndoRedo } from '../content/UndoRedo';
-import { Navigation } from './Navigation';
 import { ProjectSlug, ResourceSlug, ObjectiveSlug, ActivitySlug } from 'data/types';
 import {
   UndoableState, processRedo, processUndo, processUpdate, init,
@@ -243,7 +242,6 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
               { messages: this.state.messages.filter(m => msg.guid !== m.guid) })}
             executeAction={() => true}
             messages={this.state.messages} />
-          <Navigation {...this.props}/>
           <TitleBar
             className="mb-4"
             title={this.state.undoable.current.title}

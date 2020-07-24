@@ -26,9 +26,12 @@
   .workspace-header {
     width: 100%;
     border-bottom: 1px solid $gray-400;
-    height: 48px;
-    line-height: 48px;
-    padding: 0 32px;
+
+    padding-left: 24px;
+    padding-top: 12px;
+    padding-bottom: 6px;
+    padding-right: 12px;
+
     position: relative;
     background-color: $workspace-header-bg;
 
@@ -42,6 +45,14 @@
       white-space: nowrap;
       text-overflow: ellipsis;
       overflow: hidden;
+    }
+
+    .custom-breadcrumb {
+      background-color: transparent;
+      box-shadow: none;
+      padding: 0px;
+      flex-wrap: none;
+      margin-bottom: 8px;
     }
 
   }

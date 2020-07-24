@@ -44,7 +44,7 @@ defmodule OliWeb.Objectives.Objectives do
       active: :objectives,
       objective_mappings: objective_mappings,
       objectives_tree: objectives_tree,
-      title: "Objectives",
+      breadcrumbs: [{"Objectives", nil}],
       changeset: Resources.change_revision(%Revision{}),
       project: project,
       subscriptions: subscriptions,

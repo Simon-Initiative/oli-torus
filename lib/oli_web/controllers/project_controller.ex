@@ -12,7 +12,7 @@ defmodule OliWeb.ProjectController do
   def overview(conn, project_params) do
     project = conn.assigns.project
     params = %{
-      title: "Overview",
+      breadcrumbs: [{"Overview", nil}],
       active: :overview,
       collaborators: Accounts.project_authors(project),
       changeset: Utils.value_or(
@@ -58,7 +58,7 @@ defmodule OliWeb.ProjectController do
 
     render conn, "publish.html",
       # page
-      title: "Publish",
+      breadcrumbs: [{"Publish", nil}],
       active: :publish,
 
       # publish
@@ -88,7 +88,7 @@ defmodule OliWeb.ProjectController do
   end
 
   def insights(conn, _project_params) do
-    render conn, "insights.html", title: "Insights", active: :insights
+    render conn, "insights.html", breadcrumbs: [{"Insights", nil}], active: :insights
   end
 
   def create(conn, %{"project" => %{"title" => title} = _project_params}) do
@@ -112,7 +112,7 @@ defmodule OliWeb.ProjectController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         overview_params = %{
-          title: "Overview",
+          breadcrumbs: [{"Overview", nil}],
           active: :overview,
           collaborators: Accounts.project_authors(project),
           changeset: changeset
