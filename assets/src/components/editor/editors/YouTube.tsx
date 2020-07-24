@@ -28,7 +28,9 @@ export function selectYouTube(): Promise<string | null> {
           onInsert={() => { dismiss(); resolve(selected.src as any); }}
           onCancel={() => dismiss()}
         >
-          <YouTubeCreation onSelect={(src: string) => { selected.src = src as any; }}/>
+          <YouTubeCreation
+            onEdit={(src: string) => { dismiss(); resolve(src); }}
+            onChange={(src: string) => { selected.src = src as any; }}/>
         </ModalSelection>;
 
     display(mediaLibrary);
@@ -163,10 +165,12 @@ const YouTubeSettings = (props: YouTubeSettingsProps) => {
 
           <label>Caption</label>
           <input type="text" value={model.caption} onChange={e => setCaption(e.target.value)}
+            onKeyPress={e => Settings.onEnterApply(e, () => props.onEdit(model))}
             className="form-control mr-sm-2"/>
 
           <label>Alt Text</label>
           <input type="text" value={model.alt} onChange={e => setAlt(e.target.value)}
+            onKeyPress={e => Settings.onEnterApply(e, () => props.onEdit(model))}
             className="form-control mr-sm-2"/>
         </form>
 
@@ -179,7 +183,8 @@ const YouTubeSettings = (props: YouTubeSettingsProps) => {
 
 
 export type YouTubeCreationProps = {
-  onSelect: (src: string) => void;
+  onChange: (src: string) => void;
+  onEdit: (src: string) => void;
 };
 const YouTubeCreation = (props: YouTubeCreationProps) => {
 
@@ -196,7 +201,8 @@ const YouTubeCreation = (props: YouTubeCreationProps) => {
       <form className="form">
         <label>Enter the YouTube Video ID (or just the entire video URL):</label>
         <input type="text" value={src}
-          onChange={(e) => { props.onSelect(e.target.value); setSrc(e.target.value); }}
+          onChange={(e) => { props.onChange(e.target.value); setSrc(e.target.value); }}
+          onKeyPress={e => Settings.onEnterApply(e, () => props.onEdit(src))}
           className="form-control mr-sm-2"/>
         <div className="mb-2">
           <small>e.g. https://www.youtube.com/watch?v=<strong>zHIIzcWqsP0</strong></small>
