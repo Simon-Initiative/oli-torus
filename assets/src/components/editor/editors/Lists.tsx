@@ -91,7 +91,7 @@ const isList = (n: Node) => n.type === 'ul' || n.type === 'ol';
 
 // Handles a 'tab' key down event that may indent a list item.
 function handleIndent(editor: SlateEditor, e: KeyboardEvent) {
-  if (editor.selection !== null && Range.isCollapsed(editor.selection)) {
+  if (editor.selection && Range.isCollapsed(editor.selection)) {
 
     const [match] = SlateEditor.nodes(editor, {
       match: n => n.type === 'li',
@@ -143,7 +143,7 @@ function handleIndent(editor: SlateEditor, e: KeyboardEvent) {
 
 // Handles a shift+tab press to possibly outdent a list item
 function handleOutdent(editor: SlateEditor, e: KeyboardEvent) {
-  if (editor.selection !== null && Range.isCollapsed(editor.selection)) {
+  if (editor.selection && Range.isCollapsed(editor.selection)) {
 
     const [match] = SlateEditor.nodes(editor, {
       match: n => n.type === 'li',
@@ -178,7 +178,7 @@ function handleOutdent(editor: SlateEditor, e: KeyboardEvent) {
 // This handler should fail fast - given that every enter press
 // in the editor passes through it
 function handleTermination(editor: SlateEditor, e: KeyboardEvent) {
-  if (editor.selection !== null && Range.isCollapsed(editor.selection)) {
+  if (editor.selection && Range.isCollapsed(editor.selection)) {
 
     const [match] = SlateEditor.nodes(editor, {
       match: n => n.type === 'li',

@@ -31,7 +31,7 @@ function toSimpleTextHelper(node: Node, text: string): string {
 // immediate block parent.
 export const getRootOfText = (editor: ReactEditor): Maybe<Node> => {
 
-  if (editor.selection !== null) {
+  if (editor.selection) {
     let [node, path] = Editor.node(editor, editor.selection);
 
     while (true) {
