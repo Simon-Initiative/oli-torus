@@ -62,8 +62,13 @@ defmodule OliWeb.LtiController do
         }) do
           {:ok, user } ->
 
-            # Ensure that we capture an enrollment, if this section exists
-            maybe_enroll_user(user.id, conn.body_params)
+            # Update section specifics - if one exists.  Enroll the
+            # user and also update the section details
+            with {:ok, section} <- get_existing_section(conn.body_params)
+            do
+              enroll_user(user.id, conn.body_params, section.id)
+              update_section_details(conn.body_params, section)
+            end
 
             # if account is linked to an author, sign them in
             conn = if user.author_id != nil do
@@ -97,16 +102,25 @@ defmodule OliWeb.LtiController do
 
   # If a course section exists for the context_id, ensure that
   # this user has an enrollment in this section
-  defp maybe_enroll_user(user_id, %{ "roles" => roles, "context_id" => context_id}) do
+  defp enroll_user(user_id, %{ "roles" => roles}, section_id) do
 
     section_role_id = case Oli.Delivery.Lti.parse_lti_role(roles) do
       :student -> SectionRoles.get_by_type("student").id
       _ -> SectionRoles.get_by_type("instructor").id
     end
 
+    Sections.enroll(user_id, section_id, section_role_id)
+
+  end
+
+  defp update_section_details(%{ "context_title" => title}, section) do
+    Sections.update_section(section, %{title: title})
+  end
+
+  defp get_existing_section(%{ "context_id" => context_id}) do
     case Sections.get_section_by(context_id: context_id) do
-      nil -> {:ok, nil}
-      %{id: section_id} -> Sections.enroll(user_id, section_id, section_role_id)
+      nil -> nil
+      section -> {:ok, section}
     end
   end
 

@@ -41,7 +41,7 @@ defmodule OliWeb.Curriculum.Container do
     {:ok, assign(socket,
       pages: pages,
       active: :curriculum,
-      title: "Curriculum",
+      breadcrumbs: [{"Curriculum", nil}],
       page_activity_map: page_activity_map,
       activity_map: activity_map,
       objective_map: objective_map,
@@ -95,15 +95,6 @@ defmodule OliWeb.Curriculum.Container do
   def render(assigns) do
     ~L"""
       <div class="container container-editor">
-        <div class="row">
-          <div class="col-12">
-            <nav aria-label="breadcrumb" class="mb-5">
-              <ol class="breadcrumb">
-                <li class="breadcrumb-item active" aria-current="page">Curriculum</li>
-              </ol>
-            </nav>
-          </div>
-        </div>
         <div class="row">
           <div class="col-12">
             <p class="text-secondary mb-3">
