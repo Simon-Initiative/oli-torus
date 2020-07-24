@@ -141,7 +141,7 @@ defmodule OliWeb.Objectives.Objectives do
           acc
         end
       end)
-
+      |> Enum.sort(fn e1, e2 -> e1.mapping.resource.inserted_at <= e2.mapping.resource.inserted_at end)
 
     end
   end
