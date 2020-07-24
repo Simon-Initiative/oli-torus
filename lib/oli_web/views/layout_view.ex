@@ -3,7 +3,7 @@ defmodule OliWeb.LayoutView do
 
   import OliWeb.DeliveryView, only: [user_role: 1, user_role_text: 1, user_role_color: 1, account_linked?: 1]
   alias Oli.Authoring
-  alias Oli.Accounts.AuthorPreferences
+  # alias Oli.Accounts.AuthorPreferences
 
   def get_title(assigns) do
     live_title_tag assigns[:page_title] || assigns[:title] || "Open Learning Initiative", suffix: ""
@@ -37,20 +37,25 @@ defmodule OliWeb.LayoutView do
     render(layout, Map.put(assigns, :inner_layout, content))
   end
 
-  def theme_url(%{:assigns => assigns} = _conn, :authoring) do
-    case assigns do
-      %{current_author: current_author} ->
-        case current_author do
-          %{preferences: %AuthorPreferences{theme: url}} ->
-            url
-          _ ->
-            Authoring.get_default_theme!().url
-        end
-
-      _ ->
-        Authoring.get_default_theme!().url
-    end
+  def theme_url(_conn, :authoring) do
+    Authoring.get_default_theme!().url
   end
+
+  # Custom theming disabled in authoring
+  # def theme_url(%{:assigns => assigns} = _conn, :authoring) do
+  #   case assigns do
+  #     %{current_author: current_author} ->
+  #       case current_author do
+  #         %{preferences: %AuthorPreferences{theme: url}} ->
+  #           url
+  #         _ ->
+  #           Authoring.get_default_theme!().url
+  #       end
+
+  #     _ ->
+  #       Authoring.get_default_theme!().url
+  #   end
+  # end
 
   def theme_url(conn, :delivery) do
     Routes.static_path(conn, "/css/delivery_theme.css")
