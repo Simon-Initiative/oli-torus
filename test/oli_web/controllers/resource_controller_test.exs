@@ -10,7 +10,7 @@ defmodule OliWeb.ResourceControllerTest do
     test "renders resource editor", %{conn: conn, project: project, revision1: revision} do
 
       conn = get(conn, Routes.resource_path(conn, :edit, project.slug, revision.slug))
-      assert html_response(conn, 200) =~ "Editor"
+      assert html_response(conn, 200) =~ "window.oliMountApplication"
     end
 
     test "renders error when resource does not exist", %{conn: conn, project: project} do

@@ -6,7 +6,7 @@ import { Transforms, Node, Range, Path } from 'slate';
 import { EditorProps, CommandContext } from './interfaces';
 import { Command, CommandDesc } from '../interfaces';
 import { updateModel } from './utils';
-import { Action } from './Settings';
+import { Action, onEnterApply } from './Settings';
 import * as Persistence from 'data/persistence/resource';
 import ModalSelection from 'components/modal/ModalSelection';
 import { modalActions } from 'actions/modal';
@@ -54,7 +54,13 @@ export function selectHref(commandContext: CommandContext): Promise<string | nul
             onCopy={() => {}}
             onRemove={() => {}}
             inModal={true}
-            onEdit={(href) => { selected.src = href as any; }}/>
+            onEdit={(href: string) => {
+              dismiss();
+              resolve(href);
+            }}
+            onChange={(href) => {
+              selected.src = href as any;
+            }}/>
         </ModalSelection>;
 
     display(linkSelection);
@@ -104,6 +110,7 @@ type ExistingLinkProps = {
   onVisit: (href: string) => void,
   onRemove: () => void,
   onCopy: (href: string) => void,
+  onChange: (href: string) => void,
   commandContext: CommandContext,
   inModal: boolean,
 };
@@ -133,9 +140,7 @@ const ExistingLink = (props: ExistingLinkProps) => {
   const [href, setHref] = useState(props.href);
 
   const onEditHref = (href: string) => {
-    if (props.inModal) {
-      props.onEdit(href);
-    }
+    props.onChange(href);
     setHref(href);
   };
 
@@ -216,6 +221,7 @@ const ExistingLink = (props: ExistingLinkProps) => {
         <form className="form-inline">
           <label className="sr-only">Link</label>
           <input type="text" value={href} onChange={e => onEditHref(e.target.value)}
+            onKeyPress={e => onEnterApply(e, () => props.onEdit(href.trim()))}
             className={`form-control mr-sm-2 ${valid ? '' : 'is-invalid'}`}
             style={ { display: 'inline ', width: '300px' }}/>
           {props.inModal ? null : applyButton(!valid)}
@@ -378,6 +384,7 @@ export const LinkEditor = (props: LinkProps) => {
           onVisit={onVisit}
           onCopy={onCopy}
           onRemove={onRemove}
+          onChange={() => {}}
           inModal={false}
           onEdit={onEdit}/>}>
         {ref => <span ref={ref}>{children}</span>}

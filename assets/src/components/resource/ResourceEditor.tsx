@@ -19,7 +19,6 @@ import {
 import { releaseLock, acquireLock, NotAcquired } from 'data/persistence/lock';
 import { Message, Severity, createMessage } from 'data/messages/messages';
 import { Banner } from '../messages/Banner';
-import { BreadcrumbTrail } from 'components/common/BreadcrumbTrail';
 import { create } from 'data/persistence/objective';
 import { isFirefox } from 'utils/browser';
 
@@ -415,7 +414,6 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       return (
         <div className="row">
           <div className="col-12 d-flex flex-column">
-            <BreadcrumbTrail projectSlug={projectSlug} page={page} />
             <Banner
               dismissMessage={msg => this.setState(
                 { messages: this.state.messages.filter(m => msg.guid !== m.guid) })}
@@ -451,7 +449,6 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     return (
       <div className="row">
         <div className="col-12">
-          <BreadcrumbTrail projectSlug={projectSlug} page={page} />
           <Banner
             dismissMessage={msg => this.setState(
               { messages: this.state.messages.filter(m => msg.guid !== m.guid) })}

@@ -119,6 +119,7 @@ const CodeSettings = (props: CodeSettingsProps) => {
 
           <label>Caption</label>
           <input type="text" value={model.caption} onChange={e => setCaption(e.target.value)}
+            onKeyPress={e => Settings.onEnterApply(e, () => props.onEdit(model))}
             className="form-control mr-sm-2"/>
 
         </form>

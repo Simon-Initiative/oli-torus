@@ -44,7 +44,7 @@ defmodule OliWeb.Objectives.Objectives do
       active: :objectives,
       objective_mappings: objective_mappings,
       objectives_tree: objectives_tree,
-      title: "Objectives",
+      breadcrumbs: [{"Objectives", nil}],
       changeset: Resources.change_revision(%Revision{}),
       project: project,
       subscriptions: subscriptions,
@@ -141,7 +141,7 @@ defmodule OliWeb.Objectives.Objectives do
           acc
         end
       end)
-
+      |> Enum.sort(fn e1, e2 -> e1.mapping.resource.inserted_at <= e2.mapping.resource.inserted_at end)
 
     end
   end
