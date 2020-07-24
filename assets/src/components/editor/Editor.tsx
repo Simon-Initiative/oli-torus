@@ -225,6 +225,7 @@ export const Editor = React.memo((props: EditorProps) => {
         <HoveringToolbar commandContext={props.commandContext}/>
 
         <Editable
+          className="slate-editor"
           readOnly={!props.editMode}
           renderElement={renderElement}
           renderLeaf={renderLeaf}
