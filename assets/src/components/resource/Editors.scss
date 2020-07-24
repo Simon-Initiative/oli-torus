@@ -12,6 +12,14 @@
       }
     }
 
+    .card-body {
+      padding: 0;
+
+      .slate-editor {
+        padding: 1.3em;
+      }
+    }
+
     .delivery {
       padding: 10px;
       color: delivery.$body-color;
