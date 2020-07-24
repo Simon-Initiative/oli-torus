@@ -77,12 +77,15 @@ export const AddResourceContent = (
   const handleAdd = (editorDesc: EditorDesc) => {
 
     let model : ActivityModelSchema;
+    let selectedObjectives : string[];
 
     promptForObjectiveSelection(objectives, childrenObjectives, onRegisterNewObjective)
     .then((objectives: string[]) => invokeCreationFunc(editorDesc.slug, resourceContext)
       .then((createdModel) => {
 
         model = createdModel;
+        selectedObjectives = objectives;
+
         return Persistence.create(resourceContext.projectSlug, editorDesc.slug, model, objectives);
       })
       .then((result: Persistence.Created) => {
@@ -95,12 +98,22 @@ export const AddResourceContent = (
           children: [],
         };
 
+        // For every part that we find in the model, we attach the selected
+        // objectives to it
+        const objectives = model.authoring.parts.map((p: any) => p.id)
+          .reduce(
+            (p: any, id: string) => {
+              p[id] = selectedObjectives;
+              return p;
+            },
+            {});
+
         const activity : Activity = {
           type: 'activity',
           activitySlug: result.revisionSlug,
           typeSlug: editorDesc.slug,
           model,
-          objectives: {},
+          objectives,
         };
 
         onAddItem(resourceContent, index, activity);
