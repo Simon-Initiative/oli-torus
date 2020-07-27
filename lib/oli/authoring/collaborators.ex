@@ -6,23 +6,30 @@ defmodule Oli.Authoring.Collaborators do
   import Oli.Utils
 
   def change_collaborator(email, project_slug) do
-    with {:ok, author} <- Accounts.get_author_by_email(email) |> trap_nil(),
-      {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
+    with {:ok, author} <- Accounts.get_author_by_email(email) |> trap_nil("The author was not found."),
+      {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil("The project was not found."),
       {:ok, project_role} <- Repo.get_by(
         ProjectRole, %{type:
         if Enum.empty?(Repo.preload(project, [:authors]).authors)
           do "owner"
           else "contributor"
-        end }) |> trap_nil()
+        end }) |> trap_nil("The project role was not found.")
     do
-      %AuthorProject{}
-      |> AuthorProject.changeset(%{
+      case Repo.get_by(AuthorProject, %{
         author_id: author.id,
         project_id: project.id,
-        project_role_id: project_role.id,
-      })
+      }) do
+        nil -> %AuthorProject{}
+        |> AuthorProject.changeset(%{
+          author_id: author.id,
+          project_id: project.id,
+          project_role_id: project_role.id,
+        })
+        _ -> {:error, "The author is already a project collaborator."}
+      end
     else
-      error -> error
+      # trap_nil wraps the message in a tuple which must be destructured
+      {:error, {message}} -> {:error, message}
     end
   end
 
@@ -44,22 +51,22 @@ defmodule Oli.Authoring.Collaborators do
   end
 
   def remove_collaborator(email, project_slug) when is_binary(email) and is_binary(project_slug) do
-    with {:ok, author} <- Accounts.get_author_by_email(email) |> trap_nil(),
-         {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
+    with {:ok, author} <- Accounts.get_author_by_email(email) |> trap_nil("The author was not found."),
+         {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil("The project was not found."),
          {:ok, author_project} <- Repo.get_by(AuthorProject, %{
           author_id: author.id,
           project_id: project.id,
-        }) |> trap_nil()
+        }) |> trap_nil("The author is not a collaborator on the project.")
     do
       project_role_type = Repo.preload(author_project, [:project_role]).project_role.type
 
       if (project_role_type) == "owner"
-        do {:error, "Cannot remove the project owner"}
+        do {:error, "That author is the project owner."}
         else Repo.delete(author_project)
       end
 
     else
-      _error -> {:error, "Author not found in project"}
+      {:error, {message}} -> {:error, message}
     end
   end
 end
