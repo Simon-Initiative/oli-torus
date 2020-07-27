@@ -6,7 +6,7 @@ defmodule Oli.Authoring.Collaborators do
   import Oli.Utils
 
   def change_collaborator(email, project_slug) do
-    with {:ok, author} <- Accounts.get_author_by_email(email) |> trap_nil("The author was not found."),
+    with {:ok, author} <- Accounts.get_author_by_email(email) |> trap_nil("An author with that email was not found."),
       {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil("The project was not found."),
       {:ok, project_role} <- Repo.get_by(
         ProjectRole, %{type:
@@ -51,7 +51,7 @@ defmodule Oli.Authoring.Collaborators do
   end
 
   def remove_collaborator(email, project_slug) when is_binary(email) and is_binary(project_slug) do
-    with {:ok, author} <- Accounts.get_author_by_email(email) |> trap_nil("The author was not found."),
+    with {:ok, author} <- Accounts.get_author_by_email(email) |> trap_nil("An author with that email was not found."),
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil("The project was not found."),
          {:ok, author_project} <- Repo.get_by(AuthorProject, %{
           author_id: author.id,
