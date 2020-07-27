@@ -257,15 +257,13 @@ defmodule OliWeb.Objectives.Objectives do
     container_slug = Map.get(objective_params, "parent_slug")
 
     socket = case ObjectiveEditor.add_new(with_atom_keys, socket.assigns.author, socket.assigns.project, container_slug) do
-      {:ok, _} ->
-        IO.inspect("Added new objective")
-        assign(socket, :changeset, Resources.change_revision(%Revision{}))
+      {:ok, _} -> socket
       {:error, %Ecto.Changeset{} = _changeset} ->
         socket
         |> put_flash(:error, "Could not create objective")
     end
 
-    {:noreply, IO.inspect(assign(socket, :edit, :none), label: "Socket")}
+    {:noreply, assign(socket, :edit, :none)}
   end
 
 
