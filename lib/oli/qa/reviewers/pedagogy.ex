@@ -9,7 +9,6 @@ defmodule Oli.Qa.Reviewers.Pedagogy do
     # helpers
     pages = Publishing.get_unpublished_revisions_by_type(project_slug, "page")
     activities = Publishing.get_unpublished_revisions_by_type(project_slug, "activity")
-    IO.inspect(Enum.map(activities, & &1.title), label: "Activities")
 
     # logic
     {:ok, review} = Reviews.create_review(Course.get_project_by_slug(project_slug), "pedagogy")
