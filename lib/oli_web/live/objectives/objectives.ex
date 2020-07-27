@@ -263,7 +263,7 @@ defmodule OliWeb.Objectives.Objectives do
         |> put_flash(:error, "Could not create objective")
     end
 
-    {:noreply, assign(socket, :edit, :none), label: "Socket"}
+    {:noreply, assign(socket, :edit, :none)}
   end
 
 
