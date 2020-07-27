@@ -30,7 +30,7 @@ defmodule OliWeb.InstitutionController do
       {:ok, _institution} ->
         conn
         |> put_flash(:info, "Institution created successfully.")
-        |> redirect(to: Routes.static_page_path(conn, :index))
+        |> redirect(to: Routes.institution_path(conn, :index))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset, country_codes: list_country_codes(), timezones: list_timezones(), title: "Institutions")
