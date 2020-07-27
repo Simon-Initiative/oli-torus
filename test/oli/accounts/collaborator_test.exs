@@ -20,7 +20,7 @@ defmodule Oli.Accounts.CollaboratorTest do
       end
 
       test "cannot add the same author twice", %{author: author, project: project} do
-        catch_error Collaborators.add_collaborator(author.email, project.slug)
+        assert {:error, _} = Collaborators.add_collaborator(author.email, project.slug)
       end
     end
 
