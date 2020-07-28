@@ -8,7 +8,6 @@ import { EditorProps, CommandContext } from './interfaces';
 import guid from 'utils/guid';
 import { SizePicker } from './SizePicker';
 import * as Settings from './Settings';
-import './Settings.scss';
 
 // Helper functions for creating tables and its parts
 const td = (text: string) => ContentModel.create<ContentModel.TableData>(

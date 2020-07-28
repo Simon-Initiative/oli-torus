@@ -2,7 +2,6 @@ import * as React from 'react';
 import ReactCSSTransitionGroup from 'react-addons-css-transition-group';
 import { Message as Msg, MessageAction, Severity } from 'data/messages/messages';
 import { Message } from './Message';
-import './Banner.scss';
 
 export interface BannerProps {
   dismissMessage: (message: Msg) => void;

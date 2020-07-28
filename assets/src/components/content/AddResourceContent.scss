@@ -1,6 +1,3 @@
-@import 'authoring/variables';
-@import 'authoring/mixins';
-
 .add-resource-content {
   @include disable-select;
   position: relative;

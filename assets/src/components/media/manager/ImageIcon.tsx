@@ -1,7 +1,5 @@
 import * as React from 'react';
 
-import './ImageIcon.scss';
-
 export interface ImageIconProps {
   className?: string;
   filename: string;

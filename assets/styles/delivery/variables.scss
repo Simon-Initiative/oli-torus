@@ -1,62 +1,30 @@
-// Overwrite Bootstrap's variables here
-// You can find them in node_modules/bootstrap/scss/_variables.scss
-// Copy the variables you need into this file, don't modify files under node_modules/
-
-// Color system
-
-$white:    #fff !default;
-$gray-100: #f8f9fa !default;
-$gray-200: #e9ecef !default;
-$gray-300: #dee2e6 !default;
-$gray-400: #ced4da !default;
-$gray-500: #adb5bd !default;
-$gray-600: #6c757d !default;
-$gray-700: #495057 !default;
-$gray-800: #343a40 !default;
-$gray-900: #212529 !default;
-$black:    #000 !default;
-
-$blue:    #0d6efd;
-$indigo:  #6610f2;
-$purple:  #6f42c1;
-$pink:    #d63384;
-$red:     #dc3545;
-$orange:  #fd7e14;
-$yellow:  #ffc107;
-$green:   #28a745;
-$teal:    #20c997;
-$cyan:    #17a2b8;
-
-$primary:       #2C67C4 !default;
-$secondary:     $gray-600 !default;
-$success:       $green !default;
-$info:          $cyan !default;
-$warning:       $yellow !default;
-$danger:        $red !default;
-$light:         $gray-100 !default;
-$dark:          $gray-800 !default;
-
-$body-bg:                   $white;
-$body-color:                $gray-900;
+/**
+ * Delivery specific variables.
+ *
+ * These along with any bootstrap variables can be overridden by a specific theme.
+ * When creating a new variable, make sure you use !default so it can be overridden.
+ **/
+@import '../../node_modules/bootstrap/scss/_functions.scss';
+@import '../../node_modules/bootstrap/scss/_variables.scss';
 
 /** OLI specific variables **/
-$choice-selected-bg:                lighten($primary, 42%);
-$choice-selected-color:             $primary;
-$choice-selected-border-color:      $primary;
+$choice-selected-bg: lighten($primary, 42%) !default;
+$choice-selected-color: $primary !default;
+$choice-selected-border-color: $primary !default;
 
-$feedback-correct-bg: lighten($green, 45%);
-$feedback-correct-color: $green;
-$feedback-incorrect-bg: lighten($red, 40%);
-$feedback-incorrect-color: $red;
-$feedback-error-bg: lighten($orange, 42%);
-$feedback-error-color: $orange;
+$feedback-correct-bg: lighten($green, 45%) !default;
+$feedback-correct-color: $green !default;
+$feedback-incorrect-bg: lighten($red, 40%) !default;
+$feedback-incorrect-color: $red !default;
+$feedback-error-bg: lighten($orange, 42%) !default;
+$feedback-error-color: $orange !default;
 
-$hint-bg: lighten($yellow, 45%);
-$hint-border-color: $yellow;
+$hint-bg: lighten($yellow, 45%) !default;
+$hint-border-color: $yellow !default;
 
-$content-purpose-example-color: lighten($blue, 20%);
-$content-purpose-learn-more-color: lighten($teal, 20%);
-$activity-purpose-checkpoint-color: lighten($blue, 10%);
-$activity-purpose-didigetthis-color: lighten($purple, 10%);
-$activity-purpose-learnbydoing-color: lighten($green, 10%);
-$activity-purpose-manystudentswonder-color: lighten($cyan, 10%);
+$content-purpose-example-color: lighten($blue, 20%) !default;
+$content-purpose-learn-more-color: lighten($teal, 20%) !default;
+$activity-purpose-checkpoint-color: lighten($blue, 10%) !default;
+$activity-purpose-didigetthis-color: lighten($purple, 10%) !default;
+$activity-purpose-learnbydoing-color: lighten($green, 10%) !default;
+$activity-purpose-manystudentswonder-color: lighten($cyan, 10%) !default;

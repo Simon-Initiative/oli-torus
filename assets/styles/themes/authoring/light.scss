@@ -1,0 +1,8 @@
+/** Import theme specific variables before authoring base */
+@import 'light/variables.scss';
+@import 'authoring.scss';
+
+/** Override specific styles for theme customization */
+.authoring {
+  @import 'light/custom.scss';
+}

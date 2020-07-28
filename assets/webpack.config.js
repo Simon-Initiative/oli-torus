@@ -17,8 +17,6 @@ const populateEntries = () => {
     components: ['./src/components.tsx'],
     resourceeditor: ['./src/components/resource/ResourceEditorApp.tsx'],
     activityeditor: ['./src/components/activity/ActivityEditorApp.tsx'],
-    authoring_theme: ['./styles/authoring.scss'],
-    delivery_theme: ['./styles/delivery.scss'],
   };
 
   const manifests = glob.sync("./src/components/activities/*/manifest.json", {});
@@ -32,13 +30,25 @@ const populateEntries = () => {
     };
   });
 
+  const themePaths = [
+    ...glob.sync("./styles/themes/authoring/*.scss").map(p => ({prefix: 'authoring_theme_', themePath: p})),
+    ...glob.sync("./styles/themes/delivery/*.scss").map(p => ({prefix: 'delivery_theme_', themePath: p})),
+  ];
+
+  const foundThemes = themePaths.map(({prefix, themePath}) => {
+    const name = path.basename(themePath, '.scss');
+    return {
+      [prefix + name]: themePath,
+    };
+  });
+
   // Merge the attributes of all found activities and the initialEntries
   // into one single object.
-  const merged = foundActivities.reduce((p, c) => Object.assign({}, p, c), initialEntries);
+  const merged = [...foundActivities, ...foundThemes].reduce((p, c) => Object.assign({}, p, c), initialEntries);
 
   // Validate: We should have (2 * foundActivities.length) + number of keys in initialEntries
   // If we don't it is likely due to a naming collision in two or more manifests
-  if (Object.keys(merged).length != Object.keys(initialEntries).length + (2 * foundActivities.length)) {
+  if (Object.keys(merged).length != Object.keys(initialEntries).length + (2 * foundActivities.length) + foundThemes.length) {
     throw new Error('Encountered a possible naming collision in activity manifests. Aborting.');
   }
 
@@ -106,7 +116,8 @@ module.exports = (env, options) => ({
               options: {
                 sassOptions: {
                   includePaths: [
-                      path.join(__dirname, 'styles'),
+                    path.join(__dirname, 'src'),
+                    path.join(__dirname, 'styles'),
                   ],
                   importer: globImporter(),
                 },
