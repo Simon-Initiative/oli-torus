@@ -20,7 +20,7 @@ $gray-800: #303030;
 $gray-900: #222;
 $black:    #000;
 
-$blue:    #375a7f;
+$blue:    #2C67C4;
 $indigo:  #6610f2;
 $purple:  #6f42c1;
 $pink:    #e83e8c;
@@ -49,7 +49,7 @@ $body-color: $white;
 
 // Links
 
-$link-color: $success;
+$link-color: $primary;
 
 // Fonts
 
@@ -175,5 +175,6 @@ $pre-color: inherit;
 /** OLI specific varaibles **/
 
 $workspace-header-bg: $gray-900;
+$workspace-sidebar-bg: $gray-700;
 $workspace-sidebar-link-color:  $white;
 $workspace-bg:  $gray-900;

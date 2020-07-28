@@ -173,6 +173,7 @@ $pre-color: inherit;
 
 /** OLI specific variables **/
 $choice-selected-bg: lighten($primary, 42%);
+$choice-selected-bg-hover: darken($choice-selected-bg, 42%);
 $choice-selected-color: $primary;
 $choice-selected-border-color: $primary;
 

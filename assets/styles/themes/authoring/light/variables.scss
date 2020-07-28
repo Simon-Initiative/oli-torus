@@ -16,14 +16,14 @@ $gray-800: #343a40;
 $gray-900: #212529;
 $black:    #000;
 
-$blue:    #2C3E50;
+$blue:    #2C67C4;
 $indigo:  #6610f2;
 $purple:  #6f42c1;
 $pink:    #e83e8c;
 $red:     #E74C3C;
 $orange:  #fd7e14;
 $yellow:  #F39C12;
-$green:   #18BC9C;
+$green:   #00bc8c;
 $teal:    #20c997;
 $cyan:    #3498DB;
 
@@ -45,7 +45,7 @@ $body-color:                $gray-900;
 
 // Links
 
-$link-color:                #1abc9c;
+$link-color:                $primary;
 
 // Fonts
 
@@ -86,24 +86,6 @@ $navbar-padding-y:                  1rem;
 $navbar-dark-color:                 $white;
 $navbar-dark-hover-color:           $success;
 
-// Pagination
-
-// $pagination-color:                  $white;
-// $pagination-bg:                     $success;
-// $pagination-border-width:           0;
-// $pagination-border-color:           transparent;
-
-// $pagination-hover-color:            $white;
-// $pagination-hover-bg:               darken($success, 15%);
-// $pagination-hover-border-color:     transparent;
-
-// $pagination-active-bg:              $pagination-hover-bg;
-// $pagination-active-border-color:    transparent;
-
-// $pagination-disabled-color:         $gray-200;
-// $pagination-disabled-bg:            lighten($success, 15%);
-// $pagination-disabled-border-color:  transparent;
-
 // List group
 
 $list-group-hover-bg:               $gray-200;
@@ -115,26 +97,6 @@ $list-group-disabled-bg:            $gray-200;
 $close-color:                       $body-color;
 $close-text-shadow:                 none;
 
-// Changing the border radius of buttons
-// $border-radius: 20px;
-
 
 /** OLI specific varaibles **/
 
-$remove: $danger;
-$add: darken($primary, 10%);
-
-$selection: $primary;
-$hover: darken($primary, 10%);
-$active: darken($primary, 15%);
-
-$workspace-header-bg:  $white;
-$workspace-sidebar-bg: #2C3E50;
-$workspace-sidebar-link-color:  $white;
-$workspace-bg:  $white;
-
-// Master z-index list
-// Because of the inherent global nature of z-index, all z-indexes used should be defined and
-// referenced as variables from this file.
-$reposition-target: 999;
-$dropdown-menu: 999;

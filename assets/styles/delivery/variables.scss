@@ -9,6 +9,7 @@
 
 /** OLI specific variables **/
 $choice-selected-bg: lighten($primary, 42%) !default;
+$choice-selected-bg-hover: lighten($choice-selected-bg, 5%) !default;
 $choice-selected-color: $primary !default;
 $choice-selected-border-color: $primary !default;
 

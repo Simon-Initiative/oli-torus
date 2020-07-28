@@ -1,8 +1,15 @@
 /** Theme-specific custom styles for authoring **/
 
+.table {
+  .thead-light th {
+    background-color: $gray-800;
+    color: $body-color;
+  }
+}
+
 .review .reviews .review-links .review-link {
   .review-link-header {
-    color: $gray-400;
+    color: $gray-700;
   }
 
   &.active {
