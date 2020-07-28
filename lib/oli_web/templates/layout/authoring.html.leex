@@ -6,12 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <%= get_title(assigns) %>
 
-    <!-- Base Bootstrap Styles -->
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
-
     <!-- Theme CSS (contains all bootstrap styles as well as custom styles for a specific theme) -->
     <link id="authoring-theme" rel="stylesheet" href="<%= theme_url(@conn, :authoring) %>"/>
     <link id="delivery-theme" rel="stylesheet" href="<%= theme_url(@conn, :delivery) %>"/>
+    <link id="authoring-theme-dark" rel="stylesheet" href="/css/authoring_theme_dark.css" media="screen and (prefers-color-scheme: dark)"/>
+    <link id="delivery-theme-dark" rel="stylesheet" href="/css/delivery_theme_dark.css" media="screen and (prefers-color-scheme: dark)"/>
 
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
@@ -40,11 +39,11 @@
     <%= Map.get(assigns, :inner_layout) || @inner_content %>
 
     <script>
-    window.$ = $;
-    $('.dropdown-toggle').dropdown();
-    $(function () {
-      $('[data-toggle="tooltip"]').tooltip();
-    });
+      window.$ = $;
+      $('.dropdown-toggle').dropdown();
+      $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+      });
     </script>
   </body>
 </html>
