@@ -184,9 +184,9 @@ export const AddResourceContent = (
 
             {isLast && (
               <div className="insert-label mt-4 text-center">
-                <div className="btn btn-sm btn-light">
+                <button className="btn btn-sm btn-light">
                   Add Content or Activity
-                </div>
+                </button>
               </div>
             )}
           </React.Fragment>
