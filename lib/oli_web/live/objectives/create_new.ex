@@ -31,6 +31,7 @@ defmodule OliWeb.Objectives.CreateNew do
               :title,
               class: "form-control form-control-sm mb-2 mr-sm-2 mb-sm-0 title container-fluid form-grow" <> error_class(f, :title, "is-invalid"),
               id: "form-create-objective",
+              placeholder: "Enter a new objective...",
               required: true %>
 
             <%= error_tag f, :title %>
