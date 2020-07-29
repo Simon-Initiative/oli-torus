@@ -7,10 +7,11 @@
 
 <%= render OliWeb.PageDeliveryView, "_objectives.html", objectives: @objectives %>
 
-<div id="eventIntercept">
+<div id="eventIntercept" class="tex2jax_process">
   <%= raw(@content_html) %>
 </div>
 
 <script>
+  MathJax && MathJax.typeset && MathJax.typeset();
   OLI.initPreviewActivityBridge('eventIntercept');
 </script>

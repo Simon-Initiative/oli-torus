@@ -32,12 +32,33 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/atom-one-light.min.css" integrity="sha512-11xYl5MU0/AMaYnuBOXDDQdZnl5WGtLVidxqa0XUAXYf6cGnJShNpgtbmB/0MW6ypeev+9Bwj7I/J8wexX8ePw==" crossorigin="anonymous" />
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
 
+    <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [ ["\\(","\\)"] ],
+        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+        processEscapes: true,
+        packages: ['base', 'ams', 'noerrors', 'noundefined']
+      },
+      options: {
+        ignoreHtmlClass: 'tex2jax_ignore',
+        processHtmlClass: 'tex2jax_process'
+      },
+      loader: {
+        load: ['[tex]/noerrors']
+      }
+    };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script"></script>
+
     <%= csrf_meta_tag() %>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
   </head>
   <body>
 
-    <%= Map.get(assigns, :inner_layout) || @inner_content %>
+    <div class="tex2jax_ignore">
+      <%= Map.get(assigns, :inner_layout) || @inner_content %>
+    </div>
 
     <script>
     window.$ = $;
