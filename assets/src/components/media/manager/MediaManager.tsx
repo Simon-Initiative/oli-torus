@@ -555,8 +555,8 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
           <input
             id={id}
             style={{ display: 'none' }}
-            accept={mimeFilter && `${mimeFilter}/*`}
-            multiple={true}
+            accept={mimeFilter && `${mimeFilter}`}
+            multiple
             onChange={({ target: { files } }) => this.onFileUpload(files as FileList)}
             type="file" />
           <button

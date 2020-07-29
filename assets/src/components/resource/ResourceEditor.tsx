@@ -1,5 +1,6 @@
 import * as Immutable from 'immutable';
 import React from 'react';
+import { toKeyCode } from 'is-hotkey';
 import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
 import { ResourceContent, ResourceContext,
@@ -81,9 +82,7 @@ function unregisterUnload(listener: any) {
 
 export function registerKeydown(self: ResourceEditor) {
   return window.addEventListener('keydown', (e: KeyboardEvent) => {
-    const isShiftkey = e.keyCode === 91;
-
-    if (isShiftkey) {
+    if (e.keyCode === toKeyCode('mod')) {
       self.setState({ metaModifier: true });
     }
   });
@@ -95,9 +94,7 @@ export function unregisterKeydown(listener: any) {
 
 export function registerKeyup(self: ResourceEditor) {
   return window.addEventListener('keyup', (e: KeyboardEvent) => {
-    const isShiftkey = e.keyCode === 91;
-
-    if (isShiftkey) {
+    if (e.keyCode === toKeyCode('mod')) {
       self.setState({ metaModifier: false });
     }
   });
@@ -278,15 +275,12 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
   }
 
   onPreviewClick = () => {
-    const { previewMode, metaModifier } = this.state;
+    const { previewMode } = this.state;
     const { projectSlug, resourceSlug, graded } = this.props;
 
     const enteringPreviewMode = !previewMode;
 
-    if (metaModifier && enteringPreviewMode) {
-      // if shift key is down, open in a new window
-      window.open(`/project/${projectSlug}/resource/${resourceSlug}/preview`, 'page-preview');
-    } else if (enteringPreviewMode) {
+    if (enteringPreviewMode) {
       // otherwise, switch the current view to preview mode
       this.setState({ previewMode: !previewMode, previewHtml: '' });
       this.showPreviewMessage(graded);
@@ -397,16 +391,22 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     const isSaving =
       (this.state.persistence === 'inflight' || this.state.persistence === 'pending');
 
-    const PreviewButton = () => (
+
+    const PreviewButton = () => state.metaModifier
+    ? (
+      <a
+        className={`btn btn-sm btn-outline-primary ml-3 ${isSaving ? 'disabled' : ''}`}
+        onClick={() => window.open(`/project/${projectSlug}/resource/${resourceSlug}/preview`, 'page-preview')}>
+        Preview Page <i className="las la-external-link-alt ml-1"></i>
+      </a>
+    )
+    : (
       <button
         role="button"
         className="btn btn-sm btn-outline-primary ml-3"
         onClick={this.onPreviewClick}
         disabled={isSaving}>
         Preview Page
-        {state.metaModifier &&
-          <i className="las la-external-link-alt ml-1"></i>
-        }
       </button>
     );
 
