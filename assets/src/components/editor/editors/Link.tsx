@@ -10,8 +10,6 @@ import { Action, onEnterApply } from './Settings';
 import * as Persistence from 'data/persistence/resource';
 import ModalSelection from 'components/modal/ModalSelection';
 import { modalActions } from 'actions/modal';
-import './Link.scss';
-import './Settings.scss';
 
 import guid from 'utils/guid';
 

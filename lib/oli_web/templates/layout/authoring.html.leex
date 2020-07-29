@@ -6,12 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <%= get_title(assigns) %>
 
-    <!-- Base Bootstrap Styles -->
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
-
     <!-- Theme CSS (contains all bootstrap styles as well as custom styles for a specific theme) -->
-    <link id="authoring-theme" rel="stylesheet" href="<%= theme_url(@conn, :authoring) %>"/>
-    <link id="delivery-theme" rel="stylesheet" href="<%= theme_url(@conn, :delivery) %>"/>
+    <%= case theme_url(@conn, :authoring) do %>
+      <% nil -> %>
+        <link id="authoring-theme" rel="stylesheet" href="/css/authoring_theme_light.css" media="screen and (prefers-color-scheme: light)"/>
+        <link id="delivery-theme" rel="stylesheet" href="/css/delivery_theme_oli.css" media="screen and (prefers-color-scheme: light)"/>
+        <link id="authoring-theme-dark" rel="stylesheet" href="/css/authoring_theme_dark.css" media="screen and (prefers-color-scheme: dark)"/>
+        <link id="delivery-theme-dark" rel="stylesheet" href="/css/delivery_theme_dark.css" media="screen and (prefers-color-scheme: dark)"/>
+      <% url -> %>
+        <link id="authoring-theme" rel="stylesheet" href="<%= url %>" />
+        <link id="delivery-theme" rel="stylesheet" href="<%= theme_url(@conn, :delivery) %>" />
+    <% end %>
 
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
@@ -32,6 +37,29 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/atom-one-light.min.css" integrity="sha512-11xYl5MU0/AMaYnuBOXDDQdZnl5WGtLVidxqa0XUAXYf6cGnJShNpgtbmB/0MW6ypeev+9Bwj7I/J8wexX8ePw==" crossorigin="anonymous" />
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
 
+    <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [ ["\\(","\\)"] ],
+        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+        processEscapes: true,
+        packages: ['base', 'ams', 'noerrors', 'noundefined']
+      },
+      options: {
+        ignoreHtmlClass: 'tex2jax_ignore',
+        processHtmlClass: 'tex2jax_process'
+      },
+      // Disable MathJax by default. Startup must be called explicitly to run MathJax transformations.
+      startup: {
+        ready: () => {}
+      },
+      loader: {
+        load: ['[tex]/noerrors']
+      }
+    };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script"></script>
+
     <%= csrf_meta_tag() %>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
   </head>
@@ -40,11 +68,11 @@
     <%= Map.get(assigns, :inner_layout) || @inner_content %>
 
     <script>
-    window.$ = $;
-    $('.dropdown-toggle').dropdown();
-    $(function () {
-      $('[data-toggle="tooltip"]').tooltip();
-    });
+      window.$ = $;
+      $('.dropdown-toggle').dropdown();
+      $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
+      });
     </script>
   </body>
 </html>

@@ -12,7 +12,10 @@ defmodule OliWeb.WorkspaceController do
       nil ->
         Authoring.get_default_theme!()
       %{theme: url} ->
-        Authoring.get_theme_by_url!(url)
+        case url do
+          nil -> Authoring.get_default_theme!()
+          _ -> Authoring.get_theme_by_url!(url)
+        end
     end
 
     render conn,

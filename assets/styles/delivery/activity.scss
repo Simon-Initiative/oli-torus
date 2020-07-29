@@ -11,8 +11,16 @@
       &:hover {
         background-color: initial;
 
+        .choice-index {
+          background-color: initial;
+        }
+
         &.selected {
           background-color: $choice-selected-bg;
+
+          .choice-index {
+            background-color: $choice-selected-color;
+          }
         }
       }
     }
@@ -42,7 +50,7 @@
     cursor: pointer;
 
     &:hover {
-      background-color: lighten($choice-selected-bg, 5%);
+      background-color: $choice-selected-bg-hover;
 
       .choice-index {
         background-color: $white;
@@ -53,9 +61,6 @@
       color: $choice-selected-color;
       background-color: $choice-selected-bg;
       border-color: $choice-selected-border-color;
-      -webkit-box-shadow: 2px 2px 0px 0px $choice-selected-border-color;
-      -moz-box-shadow: 2px 2px 0px 0px $choice-selected-border-color;
-      box-shadow: 2px 2px 0px 0px $choice-selected-border-color;
 
       .choice-index {
         border: 2px solid $choice-selected-color;

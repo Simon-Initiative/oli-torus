@@ -8,9 +8,9 @@ defmodule OliWeb.CollaboratorController do
     case Collaborators.add_collaborator(email, project_id) do
       {:ok, _results} ->
         redirect conn, to: Routes.project_path(conn, :overview, project_id)
-      {:error, _error} ->
+      {:error, message} ->
         conn
-          |> put_flash(:error, "Could not add author to project - are you sure the email is correct?")
+          |> put_flash(:error, "We couldn't add that author to the project. #{message}")
           |> redirect(to: Routes.project_path(conn, :overview, project_id))
     end
   end
@@ -25,7 +25,7 @@ defmodule OliWeb.CollaboratorController do
         redirect conn, to: Routes.project_path(conn, :overview, project_id)
       {:error, message} ->
         conn
-          |> put_flash(:error, "Error: #{message}. Please try again")
+          |> put_flash(:error, "We couldn't remove that author from the project. #{message}")
           |> redirect(to: Routes.project_path(conn, :overview, project_id))
     end
   end

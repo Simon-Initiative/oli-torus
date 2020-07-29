@@ -7,7 +7,6 @@ import guid from 'utils/guid';
 import { convert, stringFormat } from 'utils/format';
 import * as persistence from 'data/persistence/media';
 import { OrderedMediaLibrary } from '../OrderedMediaLibrary';
-import './MediaManager.scss';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 import { relativeToNow } from 'utils/date';
 
@@ -556,8 +555,8 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
           <input
             id={id}
             style={{ display: 'none' }}
-            accept={mimeFilter && `${mimeFilter}/*`}
-            multiple={true}
+            accept={mimeFilter && `${mimeFilter}`}
+            multiple
             onChange={({ target: { files } }) => this.onFileUpload(files as FileList)}
             type="file" />
           <button
