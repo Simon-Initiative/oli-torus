@@ -32,3 +32,19 @@
     }
   }
 }
+
+.code-editor {
+  background-color: $gray-600;
+}
+
+.blockquote {
+  background-color: $gray-600;
+  border-color: $gray-500;
+  border-left-color: $purple;
+}
+
+.settings-editor-wrapper {
+  .settings-editor {
+    color: $gray-900;
+  }
+}
