@@ -44,6 +44,10 @@
         ignoreHtmlClass: 'tex2jax_ignore',
         processHtmlClass: 'tex2jax_process'
       },
+      // Disable MathJax by default. Startup must be called explicitly to run MathJax transformations.
+      startup: {
+        ready: () => {}
+      },
       loader: {
         load: ['[tex]/noerrors']
       }
@@ -56,9 +60,7 @@
   </head>
   <body>
 
-    <div class="tex2jax_ignore">
-      <%= Map.get(assigns, :inner_layout) || @inner_content %>
-    </div>
+    <%= Map.get(assigns, :inner_layout) || @inner_content %>
 
     <script>
     window.$ = $;
