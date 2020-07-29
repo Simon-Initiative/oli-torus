@@ -82,20 +82,26 @@ if Enum.empty?(Oli.Activities.list_activity_registrations()) do
 end
 
 # create themes
-if !Oli.Repo.get_by(Oli.Authoring.Theme, id: 1) do
-  Oli.Repo.insert! %Oli.Authoring.Theme{
-    id: 1,
-    name: "Light",
-    url: "/css/authoring_theme_light.css",
-    default: true
-  }
-
-  Oli.Repo.insert! %Oli.Authoring.Theme{
-    id: 2,
-    name: "Dark",
-    url: "/css/authoring_theme_dark.css",
-  }
-end
+[%Oli.Authoring.Theme{
+  id: 1,
+  name: "Automatic",
+  url: nil,
+  default: true
+},
+%Oli.Authoring.Theme{
+  id: 2,
+  name: "Light",
+  url: "/css/authoring_theme_light.css",
+  default: false
+},
+%Oli.Authoring.Theme{
+  id: 3,
+  name: "Dark",
+  url: "/css/authoring_theme_dark.css",
+  default: false
+}]
+|> Enum.map(&Oli.Authoring.Theme.changeset/1)
+|> Enum.map(fn t -> Oli.Repo.insert!(t, on_conflict: :replace_all, conflict_target: :id) end)
 
 # only seed with sample data if in development mode
 if Application.fetch_env!(:oli, :env) == :dev do
@@ -113,26 +119,31 @@ if Application.fetch_env!(:oli, :env) == :dev do
     })
   end
 
-  Oli.Repo.insert! %Oli.Accounts.Author{
-    email: "test@oli.cmu.edu",
-    first_name: "Test",
-    last_name: "Test",
-    provider: "identity",
-    password_hash: Bcrypt.hash_pwd_salt("test"),
-    email_verified: true,
-    system_role_id: Oli.Accounts.SystemRole.role_id.admin
-  }
 
-  # create an example package and publication
-  admin_author = Oli.Accounts.get_author_by_email(System.get_env("ADMIN_EMAIL", "admin@example.edu"))
-  _test_author = Oli.Accounts.get_author_by_email("test@oli.cmu.edu")
+  if !Oli.Repo.get_by(Oli.Accounts.Author, email: "test@oli.cmu.edu") do
+    Oli.Repo.insert! %Oli.Accounts.Author{
+      email: "test@oli.cmu.edu",
+      first_name: "Test",
+      last_name: "Test",
+      provider: "identity",
+      password_hash: Bcrypt.hash_pwd_salt("test"),
+      email_verified: true,
+      system_role_id: Oli.Accounts.SystemRole.role_id.admin
+    }
+  end
 
-  seeds = Seeder.base_project_with_resource2()
-  |> Seeder.create_section()
-  |> Seeder.add_activity(%{title: "Activity with with no attempts"}, :activity_no_attempts)
-  |> SnapshotSeeder.setup_csv(Path.expand(__DIR__) <> "/test_snapshots.csv")
-  Collaborators.add_collaborator(admin_author, seeds.project)
+  if !Oli.Repo.get_by(Oli.Authoring.Course.Project, id: 1) do
+    # create an example package and publication
+    admin_author = Oli.Accounts.get_author_by_email(System.get_env("ADMIN_EMAIL", "admin@example.edu"))
+    _test_author = Oli.Accounts.get_author_by_email("test@oli.cmu.edu")
 
-  Oli.Publishing.publish_project(seeds.project)
+    seeds = Seeder.base_project_with_resource2()
+    |> Seeder.create_section()
+    |> Seeder.add_activity(%{title: "Activity with with no attempts"}, :activity_no_attempts)
+    |> SnapshotSeeder.setup_csv(Path.expand(__DIR__) <> "/test_snapshots.csv")
+    Collaborators.add_collaborator(admin_author, seeds.project)
+
+    Oli.Publishing.publish_project(seeds.project)
+  end
 
 end
