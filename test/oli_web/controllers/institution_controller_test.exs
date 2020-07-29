@@ -33,7 +33,7 @@ defmodule OliWeb.InstitutionControllerTest do
     test "redirects to page index when data is valid", %{conn: conn} do
       conn = post(conn, Routes.institution_path(conn, :create), institution: @create_attrs)
 
-      assert redirected_to(conn) == Routes.institution_path(conn, :index)
+      assert redirected_to(conn) == Routes.static_page_path(conn, :index)
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
