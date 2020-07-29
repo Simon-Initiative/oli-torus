@@ -82,7 +82,7 @@ function unregisterUnload(listener: any) {
 
 export function registerKeydown(self: ResourceEditor) {
   return window.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (e.keyCode === toKeyCode('mod')) {
+    if (e.keyCode === toKeyCode('mod') && !e.repeat) {
       self.setState({ metaModifier: true });
     }
   });
