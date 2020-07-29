@@ -7,7 +7,7 @@
     width: 400px;
     padding: 10px;
     border-radius: 4px;
-    background-color: rgba(247, 247, 247, 0.8);
+    background-color: transparentize($color: $gray-200, $amount: 0.1);
     backdrop-filter: blur(16px);
   }
 }
