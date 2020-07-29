@@ -1,5 +1,5 @@
 /*
- * Default delivery theme - built on top of Bootstrap 4 (https://getbootstrap.com)
+ * Base delivery styles - built on top of Bootstrap 4 (https://getbootstrap.com)
  */
 
 html,
@@ -13,7 +13,7 @@ body {
 
 .delivery {
   @import 'delivery/variables';
-  @import 'delivery/mixins';
   @import '../node_modules/bootstrap/scss/bootstrap';
   @import 'delivery/**/*.scss';
+  @import 'components/activities/**/*.scss';
 }

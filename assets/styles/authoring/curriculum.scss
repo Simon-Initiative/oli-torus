@@ -23,6 +23,15 @@
   }
 
   .resource-label {
-    font-size: 20pt;
+    font-size: 1.4em;
+  }
+
+  .curriculum-entry {
+    border-radius: 3px;
+    cursor: pointer;
+
+    &.active {
+      background-color: $gray-300;
+    }
   }
 }

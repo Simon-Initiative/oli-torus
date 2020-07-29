@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import * as Immutable from 'immutable';
 import { Objective, ObjectiveSlug } from 'data/content/objective';
-import './ObjectiveSelection.scss';
 
 export type ObjectiveSelectionProps = {
   objectives: Immutable.List<Objective>;

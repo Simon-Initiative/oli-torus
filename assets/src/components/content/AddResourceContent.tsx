@@ -15,7 +15,6 @@ import * as Immutable from 'immutable';
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
 
-import './AddResourceContent.scss';
 import { classNames } from 'utils/classNames';
 import { ObjectiveSelection } from 'components/resource/ObjectiveSelection';
 import ModalSelection from 'components/modal/ModalSelection';
@@ -184,9 +183,9 @@ export const AddResourceContent = (
 
             {isLast && (
               <div className="insert-label mt-4 text-center">
-                <div className="btn btn-sm btn-light">
+                <button className="btn btn-sm btn-light">
                   Add Content or Activity
-                </div>
+                </button>
               </div>
             )}
           </React.Fragment>

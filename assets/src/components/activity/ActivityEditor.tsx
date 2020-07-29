@@ -21,8 +21,6 @@ import { PartObjectives } from 'components/activity/PartObjectives';
 import { valueOr } from 'utils/common';
 import { isFirefox } from 'utils/browser';
 
-import './ActivityEditor.scss';
-
 export interface ActivityEditorProps extends ActivityContext {
 
 }

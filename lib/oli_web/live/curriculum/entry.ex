@@ -72,7 +72,7 @@ defmodule OliWeb.Curriculum.Entry do
 
   def render(assigns) do
 
-    active = if assigns.selected do "background-color: #eee;" else "" end
+    active_class = if assigns.selected do "active" else "" end
 
     count = length(assigns.activity_ids)
     objectives = if count > 0 do
@@ -88,13 +88,12 @@ defmodule OliWeb.Curriculum.Entry do
       phx-keydown="keydown"
       id="<%= @page.resource_id %>"
       draggable="true"
-      style="cursor: pointer; border-radius: 3px; <%= active %>"
       phx-click="select"
       phx-value-slug="<%= @page.slug %>"
       phx-value-index="<%= assigns.index %>"
       data-drag-index="<%= assigns.index %>"
       phx-hook="DragSource"
-      class="p-1 d-flex justify-content-start curriculum-entry">
+      class="p-1 d-flex justify-content-start curriculum-entry <%= active_class %>">
 
       <div class="drag-handle">
         <div class="grip"></div>

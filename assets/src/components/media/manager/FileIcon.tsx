@@ -1,8 +1,6 @@
 import * as React from 'react';
 import { getFileExtensionGlyph, getFileExtensionColor } from './utils';
 
-// import './FileIcon.scss';
-
 export interface FileIconProps {
   className?: string;
   filename: string;

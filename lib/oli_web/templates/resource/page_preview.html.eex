@@ -12,5 +12,6 @@
 </div>
 
 <script>
+  MathJax && MathJax.startup && MathJax.startup.defaultReady && MathJax.startup.defaultReady();
   OLI.initPreviewActivityBridge('eventIntercept');
 </script>

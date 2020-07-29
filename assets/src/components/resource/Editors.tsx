@@ -16,7 +16,6 @@ import { DeleteButton } from '../misc/DeleteButton';
 import * as Persistence from 'data/persistence/activity';
 import { EditLink } from '../misc/EditLink';
 import { Objective, ObjectiveSlug } from 'data/content/objective';
-import './Editors.scss';
 import { getContentDescription } from 'data/content/utils';
 import { toSimpleText } from 'data/content/text';
 import { DragHandle } from './DragHandle';

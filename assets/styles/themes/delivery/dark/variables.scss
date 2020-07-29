@@ -1,0 +1,195 @@
+/** Theme-specific variables for delivery **/
+
+// Overwrite Bootstrap and Torus delivery variables here
+// You can find them in node_modules/bootstrap/scss/_variables.scss and styles/authoring/variables.scss
+// Copy the variables you need into this file, don't modify files under node_modules/ or styles/authoring
+
+$white:    #fff;
+$gray-100: #f8f9fa;
+$gray-200: #ebebeb;
+$gray-300: #dee2e6;
+$gray-400: #ced4da;
+$gray-500: #adb5bd;
+$gray-600: #888;
+$gray-700: #444;
+$gray-800: #303030;
+$gray-900: #222;
+$black:    #000;
+
+$blue:    #0d6efd;
+$indigo:  #6610f2;
+$purple:  #6f42c1;
+$pink:    #d63384;
+$red:     #dc3545;
+$orange:  #fd7e14;
+$yellow:  #ffc107;
+$green:   #28a745;
+$teal:    #20c997;
+$cyan:    #17a2b8;
+
+$primary:       #2C67C4;
+$secondary:     $gray-600;
+$success:       $green;
+$info:          $cyan;
+$warning:       $yellow;
+$danger:        $red;
+$light:         $gray-500;
+$dark:          $gray-800;
+
+$yiq-contrasted-threshold:  175;
+
+// Body
+
+$body-bg: $gray-900;
+$body-color: $white;
+
+// Links
+
+$link-color: $primary;
+
+// Fonts
+
+$text-muted: $gray-600;
+
+// Tables
+
+$table-accent-bg: $gray-800;
+
+$table-border-color: $gray-700;
+
+// Forms
+
+$input-border-color: $body-bg;
+
+$input-group-addon-color: $gray-500;
+$input-group-addon-bg: $gray-700;
+
+$custom-file-color: $gray-500;
+$custom-file-border-color: $body-bg;
+
+// Dropdowns
+
+$dropdown-bg: $gray-900;
+$dropdown-border-color: $gray-700;
+$dropdown-divider-bg: $gray-700;
+
+$dropdown-link-color: $white;
+$dropdown-link-hover-color: $white;
+$dropdown-link-hover-bg: $primary;
+
+// Navs
+
+$nav-link-padding-x: 2rem;
+$nav-link-disabled-color: $gray-500;
+
+$nav-tabs-border-color: $gray-700;
+$nav-tabs-link-hover-border-color: $nav-tabs-border-color $nav-tabs-border-color transparent;
+$nav-tabs-link-active-color: $white;
+$nav-tabs-link-active-border-color: $nav-tabs-border-color $nav-tabs-border-color transparent;
+
+// Navbar
+
+$navbar-padding-y: 1rem;
+
+$navbar-dark-color: rgba($white,.6);
+$navbar-dark-hover-color: $white;
+
+$navbar-light-color: rgba($gray-900, .7);
+$navbar-light-hover-color: $gray-900;
+$navbar-light-active-color: $gray-900;
+$navbar-light-toggler-border-color: rgba($gray-900, .1);
+
+// Pagination
+
+$pagination-color: $white;
+$pagination-bg: $gray-800;
+$pagination-border-width: 0;
+$pagination-border-color: transparent;
+
+$pagination-hover-color: $white;
+$pagination-hover-bg: lighten($gray-800, 10%);
+$pagination-hover-border-color: transparent;
+
+$pagination-active-bg: $pagination-hover-bg;
+$pagination-active-border-color: transparent;
+
+$pagination-disabled-color: $white;
+$pagination-disabled-bg: darken($gray-800, 15%);
+$pagination-disabled-border-color: transparent;
+
+// Jumbotron
+
+$jumbotron-bg: $gray-800;
+
+// Cards
+
+$card-cap-bg: $gray-700;
+$card-bg: $gray-800;
+
+// Popovers
+
+$popover-bg: $gray-800;
+$popover-header-bg: $gray-700;
+
+// Toasts
+
+$toast-background-color: $gray-700;
+
+$toast-header-background-color: $gray-800;
+
+// Modals
+
+$modal-content-bg: $gray-800;
+$modal-content-border-color: $gray-700;
+
+$modal-header-border-color: $gray-700;
+
+// Progress bars
+
+$progress-bg: $gray-700;
+
+// List group
+
+$list-group-color: $body-color;
+$list-group-bg: $gray-800;
+$list-group-border-color: $gray-700;
+
+$list-group-action-color: $body-color;
+$list-group-hover-bg: $gray-700;
+$list-group-action-active-bg: $gray-600;
+
+// Breadcrumbs
+
+$breadcrumb-bg: $gray-700;
+
+// Close
+
+$close-color: $white;
+$close-text-shadow: none;
+
+// Code
+
+$pre-color: inherit;
+
+/** OLI specific variables **/
+$choice-selected-bg: lighten($primary, 42%);
+$choice-selected-bg-hover: darken($choice-selected-bg, 42%);
+$choice-selected-color: $primary;
+$choice-selected-border-color: $primary;
+
+$feedback-correct-bg: lighten($green, 45%);
+$feedback-correct-color: $green;
+$feedback-incorrect-bg: lighten($red, 40%);
+$feedback-incorrect-color: $red;
+$feedback-error-bg: lighten($orange, 42%);
+$feedback-error-color: $orange;
+
+$hint-bg: lighten($yellow, 45%);
+$hint-border-color: $yellow;
+
+$content-purpose-example-color: lighten($blue, 20%);
+$content-purpose-learn-more-color: lighten($teal, 20%);
+$activity-purpose-checkpoint-color: lighten($blue, 10%);
+$activity-purpose-didigetthis-color: lighten($purple, 10%);
+$activity-purpose-learnbydoing-color: lighten($green, 10%);
+$activity-purpose-manystudentswonder-color: lighten($cyan, 10%);

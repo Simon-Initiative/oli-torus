@@ -113,7 +113,7 @@ blockquote {
   padding: 5px 10px 5px 50px;
   background: $gray-100;
   border: 1px solid $gray-200;
-  border-left-color: $blue;
+  border-left-color: $purple;
   border-left-width: 3px;
   font-family: 'Times New Roman', Times, serif;
   font-style: italic;
@@ -126,5 +126,10 @@ blockquote {
     top: -20px;
     left: 0;
     color: $gray-400;
+    max-height: 50px;
   }
+}
+
+.custom-select {
+  -webkit-appearance: none;
 }

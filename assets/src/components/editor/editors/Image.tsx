@@ -12,7 +12,6 @@ import { MediaManager } from 'components/media/manager/MediaManager.controller';
 import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
 import * as Settings from './Settings';
-import './Settings.scss';
 import { media } from 'state/media';
 
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
