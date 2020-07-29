@@ -1,7 +1,5 @@
 import * as React from 'react';
 
-import './AudioIcon.scss';
-
 export interface AudioIconProps {
   className?: string;
 }

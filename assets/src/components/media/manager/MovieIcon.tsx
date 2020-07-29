@@ -1,7 +1,5 @@
 import * as React from 'react';
 
-import './MovieIcon.scss';
-
 export interface MovieIconProps {
   className?: string;
 }

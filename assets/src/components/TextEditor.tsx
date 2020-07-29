@@ -113,7 +113,7 @@ export const TextEditor = (props: TextEditorProps) => {
       whiteSpace: 'normal',
       textAlign: 'left',
       fontWeight: 'normal',
-      fontSize: props.size === 'large' ? '18pt' : '12pt',
+      fontSize: props.size === 'large' ? '1.4em' : '1em',
     };
 
     return (

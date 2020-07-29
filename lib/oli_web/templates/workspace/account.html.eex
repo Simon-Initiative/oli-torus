@@ -77,20 +77,19 @@
     </div>
   </div>
 
-  <%# Custom theming disabled %>
-  <%# <div class="row my-4"> %>
-    <%# <div class="col-3"> %>
-      <%# <h4 class="mb-3">Editor Theme</h4> %>
-        <%# <%= form_for @conn, Routes.workspace_path(@conn, :update_theme), fn f -> %>
-          <%# <%= select f, %>
-            <%# :id, %>
-            <%# Enum.map(@themes, fn t -> if t.default, do: {"#{t.name} (Default)", t.id}, else: {t.name, t.id} end), %>
-            <%# value: @active_theme.id, %>
-            <%# class: "form-control", %>
-            <%# onchange: "this.form.submit();" %>
-        <%# <% end %>
-    <%# </div> %>
-  <%# </div> %>
+  <div class="row my-4">
+    <div class="col-3">
+      <h4 class="mb-3">Editor Theme</h4>
+        <%= form_for @conn, Routes.workspace_path(@conn, :update_theme), fn f -> %>
+          <%= select f,
+            :id,
+            Enum.map(@themes, fn t -> if t.default, do: {"#{t.name} (Default)", t.id}, else: {t.name, t.id} end),
+            value: @active_theme.id,
+            class: "form-control",
+            onchange: "this.form.submit();" %>
+        <% end %>
+    </div>
+  </div>
 </div>
 
 <div class="modal fade" id="modal-change-name" tabindex="-1" role="dialog" aria-labelledby="change-name-modal" aria-hidden="true">

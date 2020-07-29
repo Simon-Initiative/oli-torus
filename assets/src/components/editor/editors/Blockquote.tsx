@@ -32,15 +32,9 @@ export interface BlockQuoteProps extends EditorProps<ContentModel.Blockquote> {
 export const BlockQuoteEditor = (props: BlockQuoteProps) => {
 
   const { attributes, children } = props;
-  const style = {
-    margin: '30px',
-    backgroundColor: '#EEEEEE',
-    borderLeft: 'solid 1px blue',
-    padding: '5px',
-  };
 
   return (
-    <blockquote style={style} className="blockquote" {...attributes}>
+    <blockquote className="blockquote ml-4 mr-4" {...attributes}>
       {children}
     </blockquote>
   );

@@ -14,6 +14,6 @@ defmodule Oli.Authoring.Theme do
   def changeset(theme, attrs \\ %{}) do
     theme
     |> cast(attrs, [:name, :url, :default])
-    |> validate_required([:name, :url])
+    |> validate_required([:name])
   end
 end

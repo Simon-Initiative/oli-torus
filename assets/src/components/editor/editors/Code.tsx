@@ -7,8 +7,6 @@ import { Command, CommandDesc } from '../interfaces';
 import { EditorProps, CommandContext } from './interfaces';
 import guid from 'utils/guid';
 import * as Settings from './Settings';
-import './Settings.scss';
-import './Code.scss';
 
 const languages = Object
   .keys(ContentModel.CodeLanguages)

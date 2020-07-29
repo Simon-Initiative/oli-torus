@@ -8,6 +8,7 @@
 
     <!-- Theme CSS (contains all bootstrap styles as well as custom styles for a specific theme) -->
     <link id="delivery-theme" rel="stylesheet" href="<%= theme_url(@conn, :delivery) %>"/>
+    <link id="delivery-theme-dark" rel="stylesheet" href="/css/delivery_theme_dark.css" media="screen and (prefers-color-scheme: dark)"/>
 
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>

@@ -10,7 +10,6 @@ import guid from 'utils/guid';
 import ModalSelection from 'components/modal/ModalSelection';
 import * as Settings from './Settings';
 import { getQueryVariableFromString } from 'utils/params';
-import './Settings.scss';
 
 import { modalActions } from 'actions/modal';
 

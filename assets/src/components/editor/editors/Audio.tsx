@@ -7,7 +7,6 @@ import { Command, CommandDesc } from '../interfaces';
 import { EditorProps, CommandContext } from './interfaces';
 import guid from 'utils/guid';
 import * as Settings from './Settings';
-import './Settings.scss';
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
 import ModalSelection from 'components/modal/ModalSelection';
 import { MediaManager } from 'components/media/manager/MediaManager.controller';

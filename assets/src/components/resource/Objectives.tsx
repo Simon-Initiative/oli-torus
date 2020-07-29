@@ -5,7 +5,6 @@ import { Objective, ObjectiveSlug } from 'data/content/objective';
 import { ProjectSlug } from 'data/types';
 import { create } from 'data/persistence/objective';
 import guid from 'utils/guid';
-import './Objectives.scss';
 import { valueOr } from 'utils/common';
 
 export type ObjectivesProps = {

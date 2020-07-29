@@ -7,7 +7,6 @@ import guid from 'utils/guid';
 import { convert, stringFormat } from 'utils/format';
 import * as persistence from 'data/persistence/media';
 import { OrderedMediaLibrary } from '../OrderedMediaLibrary';
-import './MediaManager.scss';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 import { relativeToNow } from 'utils/date';
 

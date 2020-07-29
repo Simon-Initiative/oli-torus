@@ -1,6 +1,4 @@
 import * as React from 'react';
-
-import './AbbreviatedActivity.scss';
 import { Objectives } from './Objectives';
 
 

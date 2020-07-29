@@ -15,7 +15,6 @@ import * as Immutable from 'immutable';
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
 
-import './AddResourceContent.scss';
 import { classNames } from 'utils/classNames';
 import { ObjectiveSelection } from 'components/resource/ObjectiveSelection';
 import ModalSelection from 'components/modal/ModalSelection';
