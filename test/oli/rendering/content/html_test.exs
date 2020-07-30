@@ -21,7 +21,7 @@ defmodule Oli.Content.Content.HtmlTest do
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
 
       assert rendered_html_string =~ "<h3>Introduction</h3>"
-      assert rendered_html_string =~ "<img class=\"img-fluid img-thumbnail\" style=\"display: block; max-height: 500px; margin-left: auto; margin-right: auto;\" src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg/480px-Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg\"/>"
+      assert rendered_html_string =~ ~r/<img.*src="https:\/\/upload.wikimedia.org\/wikipedia\/commons\/thumb\/f\/f9\/Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg\/480px-Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg\"\/>/
       assert rendered_html_string =~ "<p>The American colonials proclaimed &quot;no taxation without representation"
       assert rendered_html_string =~ "<a href=\"https://en.wikipedia.org/wiki/Stamp_Act_Congress\">Stamp Act Congress</a>"
       assert rendered_html_string =~ "<h3>1651–1748: Early seeds</h3>"
