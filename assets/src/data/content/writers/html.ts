@@ -27,11 +27,10 @@ export class HtmlParser implements WriterImpl {
       .filter(attr => textEntity[attr] === true)
       .map(attr => supportedMarkTags[attr])
       .filter(mark => mark)
-      // .reverse()
       .reduce((acc, mark) => `<${mark}>${acc}</${mark}>`, text);
   }
 
-  private wrapWithFigure(attrs: any, content: any) {
+  private wrapWithFigure(attrs: any, content: string) {
     if (!attrs.caption) {
       return content;
     }
@@ -58,12 +57,12 @@ export class HtmlParser implements WriterImpl {
   img = (context: WriterContext, next: Next, attrs: Image) => {
     let heightWidth = '';
     if (attrs.height && attrs.width) {
-      heightWidth = `height="${attrs.height}" width="${attrs.width}`;
+      heightWidth = ` height="${attrs.height}" width="${attrs.width}`;
     }
 
     return this.wrapWithFigure(
       attrs,
-      `<img ${heightWidth} style="display: block; max-width: 100%; max-height: 800px; margin-left: auto; margin-right: auto;" src="${attrs.src}"/>\n`,
+      `<img${heightWidth} style="display: block; max-width: 100%; max-height: 800px; margin-left: auto; margin-right: auto;" src="${attrs.src}"/>\n`,
     );
   }
 
@@ -72,8 +71,7 @@ export class HtmlParser implements WriterImpl {
       Object.assign(attrs, { 'full-width': true }),
       `
       <div class="embed-responsive embed-responsive-16by9 img-thumbnail">
-        <iframe class="embed-responsive-item" id="${attrs.src}" allowfullscreen src="https://www.youtube.com/embed/${attrs.src}">
-        </iframe>
+        <iframe class="embed-responsive-item" id="${attrs.src}" allowfullscreen src="https://www.youtube.com/embed/${attrs.src}"></iframe>
       </div>
       `,
     )
@@ -100,9 +98,8 @@ export class HtmlParser implements WriterImpl {
   code = (context: WriterContext, next: Next, attrs: Code) =>
     this.wrapWithFigure(
       attrs,
-      `<pre><code class="language-${attrs.language}">${next()}</code></pre>\n"`,
+      `<pre><code class="language-${attrs.language}">${next()}</code></pre>\n`,
     )
-  `<pre><code>${next()}</code></pre>\n`
   codeLine = (context: WriterContext, next: Next, x: CodeLine) => `${next()}\n`;
   blockquote = (context: WriterContext, next: Next, x: Blockquote) =>
     `<blockquote>${next()}</blockquote>\n`
