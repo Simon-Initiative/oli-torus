@@ -1,5 +1,7 @@
 /** Theme-specific custom styles for authoring **/
 
+/** override form control color so that text can be seen easier */
+
 .resource-editor {
   .resource-content-frame {
     &.card {
@@ -25,7 +27,7 @@
 
 .review .reviews .review-links .review-link {
   .review-link-header {
-    color: $gray-700;
+    color: $gray-600;
   }
 
   &.active {
@@ -67,48 +69,6 @@
   .settings-editor {
     color: $gray-900;
   }
-}
-
-
-
-
-@import "delivery/variables";
-
-/**
- * Inlined react-bootstrap-typeahead styles
- */
-
-.rbt .rbt-input-main::-ms-clear {
-  display: none;
-}
-
-/**
- * Menu
- */
-.rbt-menu {
-  margin-bottom: 2px;
-}
-
-.rbt-menu > .dropdown-item {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: $gray-900;
-}
-
-.rbt-menu > .dropdown-item.active {
-  color: $white;
-}
-
-.rbt-menu > .dropdown-item:hover {
-  color: $white;
-}
-
-.rbt-menu > .dropdown-item:focus {
-  outline: none;
-}
-
-.rbt-menu-pagination-option {
-  text-align: center;
 }
 
 /**
@@ -173,4 +133,14 @@
 
 .rbt-token-active {
   background-color: #007bff;
+}
+
+.objective-selection {
+  .existing-objectives {
+    background-color: $body-bg;
+
+    .selected {
+      background-color: lighten($color: $body-bg, $amount: 30%);
+    }
+  }
 }
