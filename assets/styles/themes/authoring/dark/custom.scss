@@ -52,3 +52,109 @@
     color: $gray-900;
   }
 }
+
+
+
+
+@import "delivery/variables";
+
+/**
+ * Inlined react-bootstrap-typeahead styles
+ */
+
+.rbt .rbt-input-main::-ms-clear {
+  display: none;
+}
+
+/**
+ * Menu
+ */
+.rbt-menu {
+  margin-bottom: 2px;
+}
+
+.rbt-menu > .dropdown-item {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: $gray-900;
+}
+
+.rbt-menu > .dropdown-item.active {
+  color: $white;
+}
+
+.rbt-menu > .dropdown-item:hover {
+  color: $white;
+}
+
+.rbt-menu > .dropdown-item:focus {
+  outline: none;
+}
+
+.rbt-menu-pagination-option {
+  text-align: center;
+}
+
+/**
+ * Multi-select Input
+ */
+.rbt-input-multi.form-control.rbt-input {
+  background-color: $body-bg;
+  border-color: $gray-700;
+
+  input {
+    color: $body-color;
+  }
+}
+
+.rbt-input-multi.focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.rbt-input-multi.form-control[disabled] {
+  background-color: $body-bg;
+}
+
+.rbt-input-multi.is-invalid.focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.rbt-input-multi.is-valid.focus {
+  border-color: #28a745;
+  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.rbt-input-multi input::-moz-placeholder {
+  color: $gray-100;
+}
+
+.rbt-input-multi input:-ms-input-placeholder {
+  color: $gray-100;
+}
+
+.rbt-input-multi input::-webkit-input-placeholder {
+  color: $gray-100;
+}
+
+.rbt-menu.dropdown-menu .dropdown-item {
+  color: $body-color;
+}
+
+/**
+ * Token
+ */
+.rbt-token {
+  background-color: darken(#007bff, 20%);
+  color: $white;
+}
+
+.rbt-token-disabled {
+  background-color: $gray-800;
+  color: $gray-200;
+}
+
+.rbt-token-active {
+  background-color: #007bff;
+}
