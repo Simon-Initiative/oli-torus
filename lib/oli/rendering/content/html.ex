@@ -52,12 +52,11 @@ defmodule Oli.Rendering.Content.Html do
 
     wrap_with_figure(attrs, ["<img"]
       ++ height_width
-      ++ [" class=\"img-fluid img-thumbnail\""]
-      ++ [" style=\"display: block; max-height: 500px; margin-left: auto; margin-right: auto;\" src=\"", src, "\"/>\n"])
+      ++ [" style=\"display: block; max-height: 800px; margin-left: auto; margin-right: auto;\" src=\"", src, "\"/>\n"])
   end
 
   def youtube(%Context{} = _context, _, %{"src" => src} = attrs) do
-    wrap_with_figure(attrs, [
+    wrap_with_figure(Map.put(attrs, "full-width", true), [
     """
     <div class="embed-responsive embed-responsive-16by9 img-thumbnail">
       <iframe class="embed-responsive-item" id="#{src}" allowfullscreen src="https://www.youtube.com/embed/#{src}">
@@ -73,7 +72,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def table(%Context{} = _context, next, attrs) do
     caption = case attrs do
-      %{"caption" => caption} -> "<caption>#{caption}</caption>"
+      %{"caption" => caption} -> "<caption style=\"text-align: center;\">#{caption}</caption>"
       _ -> ""
     end
     ["<table class=\"table table-bordered\">#{caption}", next.(), "</table>\n"]
@@ -186,8 +185,15 @@ defmodule Oli.Rendering.Content.Html do
 
 
   # Accessible captions are created using a combination of the <figure /> and <figcaption /> elements.
-  defp wrap_with_figure(%{"caption" => caption}, content) do
-    ["<figure>"] ++ content ++ ["<figcaption>#{caption}</figcaption></figure>"]
+  defp wrap_with_figure(%{"caption" => caption} = attrs, content) do
+    ["<div style=\"text-align: center;\">"]
+      ++ ["<figure style=\"display: inline-block; background-color: rgb(241, 243, 244);\" class=\"#{if attrs["full-width"] do "embed-responsive " else "" end}img-fluid img-thumbnail\">"]
+        ++ content
+        ++ ["<figcaption style=\"display: inline-block; margin-top: #{if attrs["full-width"] do "8px" else "calc(8px + 0.25rem)" end}; margin-bottom: 8px; text-align: center;\">"]
+          ++ [caption]
+        ++ ["</figcaption>"]
+      ++ ["</figure>"]
+    ++ ["</div>"]
   end
   defp wrap_with_figure(_attrs, content), do: content
 end
