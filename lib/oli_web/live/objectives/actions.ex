@@ -8,7 +8,7 @@ defmodule OliWeb.Objectives.Actions do
     ~L"""
 
     <div style="min-width: 50px">
-      <div>
+      <div phx-update="ignore">
         <button
           title="Edit the selected objecive"
           id="action_edit"
