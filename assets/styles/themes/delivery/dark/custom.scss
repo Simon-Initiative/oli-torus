@@ -1,1 +1,9 @@
 /** Theme-specific custom styles for delivery **/
+
+.blockquote {
+  border-color: $gray-600;
+
+  &::before {
+    color: transparentize($color: $gray-600, $amount: 0.3);
+  }
+}

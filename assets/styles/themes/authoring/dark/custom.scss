@@ -28,8 +28,14 @@
 .container-editor {
   .curriculum-entry {
     &.active {
-      background-color: $gray-700;
+      background-color: $gray-600;
     }
+  }
+}
+
+.code-editor {
+  .code-editor-content {
+    background: $gray-700;
   }
 }
 
