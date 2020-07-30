@@ -51,7 +51,7 @@ export class HtmlParser implements WriterImpl {
   frameBorder="0"
   style="display: block; margin-left: auto; margin-right: auto;"></iframe>`
   audio = (context: WriterContext, next: Next, { src }: Audio) => `<audio src="${src}"/>\n`;
-  table = (context: WriterContext, next: Next, x: Table) => `<table>${next()}</table>\n`;
+  table = (context: WriterContext, next: Next, x: Table) => `<table class=\"table table-bordered\">${next()}</table>\n`;
   tr = (context: WriterContext, next: Next, x: TableRow) => `<tr>${next()}</tr>\n`;
   th = (context: WriterContext, next: Next, x: TableHeader) => `<th>${next()}</th>\n`;
   td = (context: WriterContext, next: Next, x: TableData) => `<td>${next()}</td>\n`;
