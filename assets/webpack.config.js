@@ -56,6 +56,7 @@ const populateEntries = () => {
 };
 
 module.exports = (env, options) => ({
+  devtool: 'source-map',
   optimization: {
     chunkIds: "named",
 		splitChunks: {
@@ -112,17 +113,17 @@ module.exports = (env, options) => ({
             },
           },
           {
-              loader: 'sass-loader',
-              options: {
-                sassOptions: {
-                  includePaths: [
-                    path.join(__dirname, 'src'),
-                    path.join(__dirname, 'styles'),
-                  ],
-                  importer: globImporter(),
-                },
-                sourceMap: true
-              }
+            loader: 'sass-loader',
+            options: {
+              sassOptions: {
+                includePaths: [
+                  path.join(__dirname, 'src'),
+                  path.join(__dirname, 'styles'),
+                ],
+                importer: globImporter(),
+              },
+              sourceMap: true
+            }
           }
         ],
       },
