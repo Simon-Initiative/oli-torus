@@ -33,14 +33,12 @@
   }
 }
 
-.code-editor {
-  background-color: $gray-600;
-}
-
 .blockquote {
-  background-color: $gray-600;
-  border-color: $gray-500;
-  border-left-color: $purple;
+  border-color: $gray-600;
+
+  &::before {
+    color: transparentize($color: $gray-600, $amount: 0.3);
+  }
 }
 
 .settings-editor-wrapper {
