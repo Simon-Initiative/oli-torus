@@ -6,6 +6,9 @@ import { ModelElement, Image, HeadingSix, Paragraph, HeadingOne,
 import { Text } from 'slate';
 import { WriterContext } from './context';
 
+// Important: any changes to this file must be replicated
+// in content/html.ex for non-activity rendering.
+
 export class HtmlParser implements WriterImpl {
   private escapeXml = (text: string) => decodeURI(encodeURI(text));
 
@@ -28,6 +31,23 @@ export class HtmlParser implements WriterImpl {
       .reduce((acc, mark) => `<${mark}>${acc}</${mark}>`, text);
   }
 
+  private wrapWithFigure(attrs: any, content: any) {
+    if (!attrs.caption) {
+      return content;
+    }
+
+    return (
+      `
+      <div style="text-align: center;">
+        <figure style="display: inline-block; background-color: rgb(241, 243, 244);" class="${attrs['full-width'] ? 'embed-responsive ' : ''}img-fluid img-thumbnail">
+          ${content}
+          <figcaption style="margin-top: ${attrs['full-width'] ? '8px' : 'calc(8px + 0.25rem)'}; margin-bottom: 8px; text-align: center;">${attrs.caption}</figcaption>
+        </figure>
+      </div>
+      `
+    );
+  }
+
   p = (context: WriterContext, next: Next, x: Paragraph) => `<p>${next()}</p>\n`;
   h1 = (context: WriterContext, next: Next, x: HeadingOne) => `<h1>${next()}</h1>\n`;
   h2 = (context: WriterContext, next: Next, x: HeadingTwo) => `<h2>${next()}</h2>\n`;
@@ -40,18 +60,35 @@ export class HtmlParser implements WriterImpl {
     if (attrs.height && attrs.width) {
       heightWidth = `height="${attrs.height}" width="${attrs.width}`;
     }
-    return `<img ${heightWidth} style="display: block; max-height: 500px; margin-left: auto; margin-right: auto;" src="${attrs.src}"/>\n`;
+
+    return this.wrapWithFigure(
+      attrs,
+      `<img ${heightWidth} style="display: block; max-width: 100%; max-height: 800px; margin-left: auto; margin-right: auto;" src="${attrs.src}"/>\n`,
+    );
   }
 
-  youtube = (context: any, next: Next, { src }: YouTube) => `<iframe
-  id="${src}"
-  width="640"
-  height="476"
-  src="https://www.youtube.com/embed/${src}"
-  frameBorder="0"
-  style="display: block; margin-left: auto; margin-right: auto;"></iframe>`
-  audio = (context: WriterContext, next: Next, { src }: Audio) => `<audio src="${src}"/>\n`;
-  table = (context: WriterContext, next: Next, x: Table) => `<table>${next()}</table>\n`;
+  youtube = (context: any, next: Next, attrs: YouTube) =>
+    this.wrapWithFigure(
+      Object.assign(attrs, { 'full-width': true }),
+      `
+      <div class="embed-responsive embed-responsive-16by9 img-thumbnail">
+        <iframe class="embed-responsive-item" id="${attrs.src}" allowfullscreen src="https://www.youtube.com/embed/${attrs.src}">
+        </iframe>
+      </div>
+      `,
+    )
+  audio = (context: WriterContext, next: Next, attrs: Audio) =>
+    this.wrapWithFigure(
+      attrs,
+      `<audio controls src="${attrs.src}">Your browser does not support the <code>audio</code> element.</audio>\n`,
+    )
+  table = (context: WriterContext, next: Next, attrs: Table) => {
+    const caption = attrs.caption
+      ? `<caption style="text-align: center;">${attrs.caption}</caption>`
+      : '';
+
+    return `<table style="table-layout: fixed;" class="table table-bordered">${caption}${next()}</table>\n`;
+  }
   tr = (context: WriterContext, next: Next, x: TableRow) => `<tr>'${next()}</tr>\n`;
   th = (context: WriterContext, next: Next, x: TableHeader) => `<th>${next()}</th>\n`;
   td = (context: WriterContext, next: Next, x: TableData) => `<td>${next()}</td>\n`;
@@ -60,9 +97,12 @@ export class HtmlParser implements WriterImpl {
   li = (context: WriterContext, next: Next, x: ListItem) => `<li>${next()}</li>\n`;
   math = (context: WriterContext, next: Next, x: Math) => `<div>${next()}</div>\n`;
   mathLine = (context: WriterContext, next: Next, x: MathLine) => `${next()}\n`;
-  code = (context: WriterContext, next: Next,
-    { language, startingLineNumberr, showNumbers }: Code) =>
-    `<pre><code>${next()}</code></pre>\n`
+  code = (context: WriterContext, next: Next, attrs: Code) =>
+    this.wrapWithFigure(
+      attrs,
+      `<pre><code class="language-${attrs.language}">${next()}</code></pre>\n"`,
+    )
+  `<pre><code>${next()}</code></pre>\n`
   codeLine = (context: WriterContext, next: Next, x: CodeLine) => `${next()}\n`;
   blockquote = (context: WriterContext, next: Next, x: Blockquote) =>
     `<blockquote>${next()}</blockquote>\n`

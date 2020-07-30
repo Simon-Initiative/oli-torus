@@ -1,6 +1,8 @@
 defmodule Oli.Rendering.Content.Html do
   @moduledoc """
-  Implements the Html writer for Oli content rendering
+  Implements the Html writer for Oli content rendering.
+
+  Important: any changes to this file must be replicated in writers/html.ts for activity rendering.
   """
   alias Oli.Rendering.Context
   alias Phoenix.HTML
@@ -52,7 +54,7 @@ defmodule Oli.Rendering.Content.Html do
 
     wrap_with_figure(attrs, ["<img"]
       ++ height_width
-      ++ [" style=\"display: block; max-height: 800px; margin-left: auto; margin-right: auto;\" src=\"", src, "\"/>\n"])
+      ++ [" style=\"display: block; max-width: 100%; max-height: 800px; margin-left: auto; margin-right: auto;\" src=\"", src, "\"/>\n"])
   end
 
   def youtube(%Context{} = _context, _, %{"src" => src} = attrs) do
@@ -75,7 +77,7 @@ defmodule Oli.Rendering.Content.Html do
       %{"caption" => caption} -> "<caption style=\"text-align: center;\">#{caption}</caption>"
       _ -> ""
     end
-    ["<table class=\"table table-bordered\">#{caption}", next.(), "</table>\n"]
+    ["<table style=\"table-layout: fixed;\" class=\"table table-bordered\">#{caption}", next.(), "</table>\n"]
   end
 
   def tr(%Context{} = _context, next, _) do
@@ -189,7 +191,7 @@ defmodule Oli.Rendering.Content.Html do
     ["<div style=\"text-align: center;\">"]
       ++ ["<figure style=\"display: inline-block; background-color: rgb(241, 243, 244);\" class=\"#{if attrs["full-width"] do "embed-responsive " else "" end}img-fluid img-thumbnail\">"]
         ++ content
-        ++ ["<figcaption style=\"display: inline-block; margin-top: #{if attrs["full-width"] do "8px" else "calc(8px + 0.25rem)" end}; margin-bottom: 8px; text-align: center;\">"]
+        ++ ["<figcaption style=\"margin-top: #{if attrs["full-width"] do "8px" else "calc(8px + 0.25rem)" end}; margin-bottom: 8px; text-align: center;\">"]
           ++ [caption]
         ++ ["</figcaption>"]
       ++ ["</figure>"]
