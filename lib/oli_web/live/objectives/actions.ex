@@ -12,7 +12,6 @@ defmodule OliWeb.Objectives.Actions do
         <button
           title="Edit the selected objecive"
           id="action_edit"
-          phx-hook="TooltipInit"
           <%= if @selected != nil do "" else "disabled" end %>
           data-toggle="tooltip"
           class="ml-1 btn btn-sm btn-outline-primary"
@@ -25,7 +24,6 @@ defmodule OliWeb.Objectives.Actions do
         <button
           title="Add a new child objective"
           id="action_sub"
-          phx-hook="TooltipInit"
           data-toggle="tooltip"
           <%= if @is_root? and @selected != nil do "" else "disabled" end %>
           class="ml-1 btn btn-sm btn-outline-primary"
@@ -38,7 +36,6 @@ defmodule OliWeb.Objectives.Actions do
         <button
           title="Delete the selected objective"
           id="action_delete"
-          phx-hook="TooltipInit"
           <%= if @selected != nil and @can_delete? do "" else "disabled" end %>
           data-toggle="tooltip"
           phx-click="prepare_delete"
