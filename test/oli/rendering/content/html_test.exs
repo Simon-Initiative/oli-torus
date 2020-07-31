@@ -20,14 +20,16 @@ defmodule Oli.Content.Content.HtmlTest do
       rendered_html = Content.render(context, content, Content.Html)
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
 
+      IO.inspect(rendered_html_string, printable_limit: :infinity)
+
       assert rendered_html_string =~ "<h3>Introduction</h3>"
-      assert rendered_html_string =~ ~r/<img.*src="https:\/\/upload.wikimedia.org\/wikipedia\/commons\/thumb\/f\/f9\/Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg\/480px-Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg\"\/>/
+      assert rendered_html_string =~ ~r/<img.*src="https:\/\/upload.wikimedia.org\/wikipedia\/commons\/thumb\/f\/f9\/Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg\/480px-Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg"\/>/
       assert rendered_html_string =~ "<p>The American colonials proclaimed &quot;no taxation without representation"
       assert rendered_html_string =~ "<a href=\"https://en.wikipedia.org/wiki/Stamp_Act_Congress\">Stamp Act Congress</a>"
       assert rendered_html_string =~ "<h3>1651–1748: Early seeds</h3>"
       assert rendered_html_string =~ "<ol><li>one</li>\n<li><em>two</em></li>\n<li><em><strong>three</strong></em></li>\n</ol>"
       assert rendered_html_string =~ "<ul><li>alpha</li>\n<li>beta</li>\n<li>gamma</li>\n</ul>"
-      assert rendered_html_string =~ "<div class=\"embed-responsive embed-responsive-16by9 img-thumbnail\">\n  <iframe class=\"embed-responsive-item\" id=\"fhdCslFcKFU\" allowfullscreen src=\"https://www.youtube.com/embed/fhdCslFcKFU\">\n  </iframe>\n</div>"
+      assert rendered_html_string =~ ~r/<div class="youtube-wrapper">\s*<iframe.* id="fhdCslFcKFU".* src="https:\/\/www.youtube.com\/embed\/fhdCslFcKFU"><\/iframe>\s*<\/div>/
       assert rendered_html_string =~ "<pre><code class=\"language-python\">import fresh-pots\n</code></pre>"
     end
 
