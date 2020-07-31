@@ -55,7 +55,7 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
             _unregistered -> "Input in unregistered activity type: " <> input
           end
         "RESULT" ->
-          part_attempt.feedback["content"]
+          part_attempt.feedback["content"]["model"]
           |> Utils.parse_content
       end
     rescue
