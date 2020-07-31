@@ -63,13 +63,18 @@ $table-border-color: $gray-700;
 
 // Forms
 
-$input-border-color: $body-bg;
+$input-bg:                              $body-bg;
+$input-disabled-bg:                     $gray-700;
+
+$input-color:                           $body-color;
+$input-border-color:                    $gray-800;
 
 $input-group-addon-color: $gray-500;
 $input-group-addon-bg: $gray-700;
 
 $custom-file-color: $gray-500;
 $custom-file-border-color: $body-bg;
+
 
 // Dropdowns
 

@@ -1,5 +1,23 @@
 /** Theme-specific custom styles for authoring **/
 
+/** override form control color so that text can be seen easier */
+
+.resource-editor {
+  .resource-content-frame {
+    &.card {
+      .card-body {
+        background-color: $body-bg;
+      }
+    }
+  }
+
+  .toolbar {
+    .toolbar-buttons {
+      background-color: transparentize($color: $gray-700, $amount: 0);
+    }
+  }
+}
+
 .table {
   .thead-light th {
     background-color: $gray-800;
@@ -9,7 +27,7 @@
 
 .review .reviews .review-links .review-link {
   .review-link-header {
-    color: $gray-700;
+    color: $gray-600;
   }
 
   &.active {
@@ -28,23 +46,101 @@
 .container-editor {
   .curriculum-entry {
     &.active {
-      background-color: $gray-700;
+      background-color: $gray-600;
     }
   }
 }
 
 .code-editor {
-  background-color: $gray-600;
+  .code-editor-content {
+    background: #282c34;
+  }
 }
 
 .blockquote {
-  background-color: $gray-600;
-  border-color: $gray-500;
-  border-left-color: $purple;
+  border-color: $gray-600;
+
+  &::before {
+    color: transparentize($color: $gray-600, $amount: 0.3);
+  }
 }
 
 .settings-editor-wrapper {
   .settings-editor {
     color: $gray-900;
+  }
+}
+
+/**
+ * Multi-select Input
+ */
+.rbt-input-multi.form-control.rbt-input {
+  background-color: $body-bg;
+  border-color: $gray-700;
+
+  input {
+    color: $body-color;
+  }
+}
+
+.rbt-input-multi.focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.rbt-input-multi.form-control[disabled] {
+  background-color: $body-bg;
+}
+
+.rbt-input-multi.is-invalid.focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.rbt-input-multi.is-valid.focus {
+  border-color: #28a745;
+  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.rbt-input-multi input::-moz-placeholder {
+  color: $gray-100;
+}
+
+.rbt-input-multi input:-ms-input-placeholder {
+  color: $gray-100;
+}
+
+.rbt-input-multi input::-webkit-input-placeholder {
+  color: $gray-100;
+}
+
+.rbt-menu.dropdown-menu .dropdown-item {
+  color: $body-color;
+}
+
+/**
+ * Token
+ */
+.rbt-token {
+  background-color: darken(#007bff, 20%);
+  color: $white;
+}
+
+.rbt-token-disabled {
+  background-color: $gray-800;
+  color: $gray-200;
+}
+
+.rbt-token-active {
+  background-color: #007bff;
+}
+
+.objective-selection {
+  .existing-objectives {
+    background-color: $body-bg;
+
+    .selected {
+      background-color: lighten($color: $body-bg, $amount: 30%);
+    }
   }
 }
