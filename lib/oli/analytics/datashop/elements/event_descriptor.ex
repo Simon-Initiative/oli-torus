@@ -49,14 +49,21 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
             # for multiple choice questions, the input is a string id that refers to the selected choice
             "oli_multiple_choice" ->
               choices = part_attempt.activity_attempt.transformed_model["choices"]
-              Enum.find(choices, & &1["id"] == input)["content"]
-              |> Utils.parse_content
+              content = Enum.find(choices, & &1["id"] == input)["content"]
+
+              case content do
+                %{"model" => model} -> Utils.parse_content(model)
+                _ -> Utils.parse_content(content)
+              end
             # fallback for future activity types
             _unregistered -> "Input in unregistered activity type: " <> input
           end
         "RESULT" ->
-          part_attempt.feedback["content"]["model"]
-          |> Utils.parse_content
+          content = part_attempt.feedback["content"]
+          case content do
+            %{"model" => model} -> Utils.parse_content(model)
+            _ -> Utils.parse_content(content)
+          end
       end
     rescue
       _e -> Logger.error("Error in EventDescriptor.get_input. Type: #{type}, part attempt: #{Kernel.inspect(part_attempt)}")
