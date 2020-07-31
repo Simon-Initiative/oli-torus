@@ -1,7 +1,11 @@
 @use 'delivery/variables' as delivery;
 
 .code-editor {
-  padding: 10px;
-  border-left: 2px solid delivery.$blue;
-  background: $gray-200;
+  margin-bottom: 10px;
+
+  .code-editor-content {
+    padding: 10px;
+    border-left: 2px solid delivery.$blue;
+    background: #fafafa;
+  }
 }
