@@ -117,7 +117,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def blockquote(%Context{} = _context, next, _) do
-    ["<blockquote>", next.(), "</blockquote>\n"]
+    ["<blockquote class=\"blockquote\"><p class=\"mb-0\">", next.(), "</p></blockquote>\n"]
   end
 
   def a(%Context{} = _context, next, %{"href" => href}) do

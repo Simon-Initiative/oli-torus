@@ -412,7 +412,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 
     if (state.previewMode) {
       return (
-        <div className="row">
+        <div className="resource-editor row">
           <div className="col-12 d-flex flex-column">
             <Banner
               dismissMessage={msg => this.setState(
@@ -447,7 +447,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     }
 
     return (
-      <div className="row">
+      <div className="resource-editor row">
         <div className="col-12">
           <Banner
             dismissMessage={msg => this.setState(

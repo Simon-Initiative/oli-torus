@@ -34,7 +34,7 @@ export const BlockQuoteEditor = (props: BlockQuoteProps) => {
   const { attributes, children } = props;
 
   return (
-    <blockquote className="blockquote ml-4 mr-4" {...attributes}>
+    <blockquote className="blockquote" {...attributes}>
       {children}
     </blockquote>
   );
