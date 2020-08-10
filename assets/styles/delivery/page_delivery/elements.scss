@@ -1,0 +1,76 @@
+@import 'bootstrap';
+
+blockquote {
+  &.blockquote {
+    position: relative;
+    padding: 1.8rem 1.5rem;
+    border: 2px solid $gray-400;
+
+    &::before {
+      content: "“";
+      font-family: 'Epilogue', sans-serif;
+      font-size: 84px;
+      position: absolute;
+      top: -16px;
+      left: 4px;
+      color: transparentize($color: $gray-400, $amount: 0.3);
+      max-height: 50px;
+    }
+  }
+}
+
+table {
+  table-layout: fixed;
+  @extend .table;
+  @extend .table-bordered;
+
+  caption {
+    @extend .text-center;
+  }
+}
+
+img {
+  &.block {
+    display: block;
+    max-width: 100%;
+    max-height: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.youtube-wrapper {
+  @extend .embed-responsive;
+  @extend .embed-responsive-16by9;
+  @extend .img-thumbnail;
+}
+
+iframe {
+  @extend .embed-responsive-item;
+}
+
+.figure-wrapper {
+  @extend .text-center;
+
+  figure {
+    display: inline-block;
+    background-color: darken($body-bg, 5%);
+    @extend .img-fluid;
+    @extend .img-thumbnail;
+
+    &.full-width {
+      @extend .embed-responsive;
+    }
+
+    figcaption {
+      margin-bottom: 8px;
+      text-align: center;
+      margin-top: calc(8px + 0.25rem);
+      color: black;
+
+      &.full-width {
+        margin-top: 8px;
+      }
+    }
+  }
+}

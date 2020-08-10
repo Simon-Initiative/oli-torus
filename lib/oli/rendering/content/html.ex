@@ -1,6 +1,8 @@
 defmodule Oli.Rendering.Content.Html do
   @moduledoc """
-  Implements the Html writer for Oli content rendering
+  Implements the Html writer for Oli content rendering.
+
+  Important: any changes to this file must be replicated in writers/html.ts for activity rendering.
   """
   alias Oli.Rendering.Context
   alias Phoenix.HTML
@@ -8,11 +10,11 @@ defmodule Oli.Rendering.Content.Html do
   @behaviour Oli.Rendering.Content
 
   def example(%Context{} = _context, next, _) do
-    ["<div class=\"content-purpose example\"><div class=\"content-purpose-label\">Example</div><div class=\"content-purpose-content\">", next.(), "</div></div>\n"]
+    [~s|<div class="content-purpose example"><div class="content-purpose-label">Example</div><div class="content-purpose-content">|, next.(), "</div></div>\n"]
   end
 
   def learn_more(%Context{} = _context, next, _) do
-    ["<div class=\"content-purpose learn-more\"><div class=\"content-purpose-label\">Learn more</div><div class=\"content-purpose-content\">", next.(), "</div></div>\n"]
+    [~s|<div class="content-purpose learn-more"><div class="content-purpose-label">Learn more</div><div class="content-purpose-content">|, next.(), "</div></div>\n"]
   end
 
   def p(%Context{} = _context, next, _) do
@@ -44,31 +46,22 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def img(%Context{} = _context, _, %{"src" => src} = attrs) do
-
-    height_width = case attrs do
-      %{"height" => height, "width" => width} -> [" height=#{height} width=#{width}"]
-      _ -> []
-    end
-
-    wrap_with_figure(attrs, ["<img"]
-      ++ height_width
-      ++ [" class=\"img-fluid img-thumbnail\""]
-      ++ [" style=\"display: block; max-height: 500px; margin-left: auto; margin-right: auto;\" src=\"", src, "\"/>\n"])
+    figure(attrs, [~s|<img class="block" src="#{src}"/>\n|])
   end
 
   def youtube(%Context{} = _context, _, %{"src" => src} = attrs) do
-    wrap_with_figure(attrs, [
+    figure(Map.put(attrs, "full-width", true), [
     """
-    <div class="embed-responsive embed-responsive-16by9 img-thumbnail">
-      <iframe class="embed-responsive-item" id="#{src}" allowfullscreen src="https://www.youtube.com/embed/#{src}">
-      </iframe>
+    <div class="youtube-wrapper">
+      <iframe id="#{src}" allowfullscreen src="https://www.youtube.com/embed/#{src}"></iframe>
     </div>
     """])
   end
 
   def audio(%Context{} = _context, _, %{"src" => src} = attrs) do
-    wrap_with_figure(attrs, ["<audio controls src=\"", src, "\">Your browser does not support the
-    <code>audio</code> element.</audio>\n"])
+    figure(attrs, [~s|<audio controls src="#{src}">
+      Your browser does not support the <code>audio</code> element.
+    </audio>\n|])
   end
 
   def table(%Context{} = _context, next, attrs) do
@@ -76,7 +69,7 @@ defmodule Oli.Rendering.Content.Html do
       %{"caption" => caption} -> "<caption>#{caption}</caption>"
       _ -> ""
     end
-    ["<table class=\"table table-bordered\">#{caption}", next.(), "</table>\n"]
+    ["<table>#{caption}", next.(), "</table>\n"]
   end
 
   def tr(%Context{} = _context, next, _) do
@@ -116,7 +109,7 @@ defmodule Oli.Rendering.Content.Html do
     "startingLineNumber" => _startingLineNumber,
     "showNumbers" => _showNumbers
   } = attrs) do
-    wrap_with_figure(attrs, ["<pre><code class=\"language-", language, "\">", next.(), "</code></pre>\n"])
+    figure(attrs, [~s|<pre><code class="language-#{language}">|, next.(), "</code></pre>\n"])
   end
 
   def code_line(%Context{} = _context, next, _) do
@@ -128,7 +121,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def a(%Context{} = _context, next, %{"href" => href}) do
-    ["<a href=\"#{escape_xml!(href)}\">", next.(), "</a>\n"]
+    [~s|<a href="#{escape_xml!(href)}">|, next.(), "</a>\n"]
   end
 
   def definition(%Context{} = _context, next, _) do
@@ -142,11 +135,11 @@ defmodule Oli.Rendering.Content.Html do
   def error(%Context{} = _context, element, error) do
     case error do
       {:unsupported, error_id, _error_msg} ->
-        ["<div class=\"content unsupported\">Content element type '", element["type"] ,"' is not supported. Please contact support with issue ##{error_id}</div>\n"]
+        [~s|<div class="content unsupported">Content element type '#{element["type"]}' is not supported. Please contact support with issue ##{error_id}</div>\n|]
       {:invalid, error_id, _error_msg} ->
-        ["<div class=\"content invalid\">Content element is invalid. Please contact support with issue ##{error_id}</div>\n"]
+        [~s|<div class="content invalid">Content element is invalid. Please contact support with issue ##{error_id}</div>\n|]
       {_, error_id, _error_msg} ->
-        ["<div class=\"content invalid\">An error occurred while rendering content . Please contact support with issue ##{error_id}</div>\n"]
+        [~s|<div class="content invalid">An error occurred while rendering content. Please contact support with issue ##{error_id}</div>\n|]
     end
   end
 
@@ -184,10 +177,16 @@ defmodule Oli.Rendering.Content.Html do
     )
   end
 
-
   # Accessible captions are created using a combination of the <figure /> and <figcaption /> elements.
-  defp wrap_with_figure(%{"caption" => caption}, content) do
-    ["<figure>"] ++ content ++ ["<figcaption>#{caption}</figcaption></figure>"]
+  defp figure(%{"caption" => caption} = attrs, content) do
+    [~s|<div class="figure-wrapper">|]
+      ++ ["<figure#{if attrs["full-width"] do " class=\"full-width\"" else "" end}>"]
+        ++ content
+        ++ ["<figcaption#{if attrs["full-width"] do " class=\"full-width\"" else "" end}>"]
+          ++ [caption]
+        ++ ["</figcaption>"]
+      ++ ["</figure>"]
+    ++ ["</div>"]
   end
-  defp wrap_with_figure(_attrs, content), do: content
+  defp figure(_attrs, content), do: content
 end
