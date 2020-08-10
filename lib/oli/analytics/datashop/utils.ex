@@ -20,9 +20,9 @@ defmodule Oli.Analytics.Datashop.Utils do
   end
 
   # parse_content: make a cdata element from a parsed HTML string
-  def parse_content(content) when is_binary(content) do
-    {:cdata, content}
-  end
+  def parse_content(%{"content" => content}), do: parse_content(content)
+  def parse_content(%{"model" => model}), do: parse_content(model)
+  def parse_content(content) when is_binary(content), do: {:cdata, content}
   def parse_content(content) do
     Content.render(%Context{}, content, Content.Html)
     |> Phoenix.HTML.raw
@@ -59,7 +59,7 @@ defmodule Oli.Analytics.Datashop.Utils do
   end
 
   def make_problem_name(activity_slug, part_id) do
-    "Activity " <> activity_slug <> ", part " <> part_id
+    activity_slug <> if part_id == 1 do "" else ", part " <> part_id end
   end
 
   # For now, the dataset name is scoped to the project. Uploading datasets with the same name will

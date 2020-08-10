@@ -515,6 +515,12 @@ defmodule Oli.Publishing do
     |> Enum.map(& Map.get(&1, :revision))
     |> Enum.filter(& !&1.deleted)
   end
+  def get_published_revisions(publication_id, resource_ids) do
+    Repo.all from mapping in PublishedResource,
+      join: rev in Revision, on: mapping.revision_id == rev.id,
+      where: mapping.resource_id in ^resource_ids and mapping.publication_id == ^publication_id,
+      select: rev
+  end
 
   @doc """
   Returns a map of resource ids to {resource, revision} tuples for a publication

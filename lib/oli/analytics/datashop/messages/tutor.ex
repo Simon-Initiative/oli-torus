@@ -42,7 +42,6 @@ defmodule Oli.Analytics.Datashop.Messages.Tutor do
     problem_name: problem_name,
     part_attempt: part_attempt
   } = context) do
-
     element(:tutor_message, %{context_message_id: context_message_id}, [
       Meta.setup(meta_element_context),
       ProblemName.setup(%{ name: problem_name }),
