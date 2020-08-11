@@ -19,7 +19,7 @@ defmodule OliWeb.Qa.WarningFilter do
         </div>
         <span class="form-control d-flex align-items-center">
           <span class="badge badge-info"><%= length(@warnings) %></span>&nbsp;
-          <%= title_case(@type) %>
+          <%= String.capitalize(@type) %>
         </span>
       </div>
     </div>
