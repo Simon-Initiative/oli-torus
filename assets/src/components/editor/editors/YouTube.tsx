@@ -16,7 +16,7 @@ import { modalActions } from 'actions/modal';
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
 
-const YOUTUBE_PLACEHOLDER = 'zHIIzcWqsP0';
+const CUTE_OTTERS = 'zHIIzcWqsP0';
 
 export function selectYouTube(): Promise<string | null> {
 
@@ -28,7 +28,7 @@ export function selectYouTube(): Promise<string | null> {
         <ModalSelection title="Insert YouTube video"
           onInsert={() => {
             dismiss();
-            resolve(selected.src ? selected.src : YOUTUBE_PLACEHOLDER);
+            resolve(selected.src ? selected.src : CUTE_OTTERS);
           }}
           onCancel={() => dismiss()}
         >
@@ -107,7 +107,7 @@ type YouTubeSettingsProps = {
 };
 
 const toLink = (src: string) =>
-  'https://www.youtube.com/embed/' + (src === '' ? YOUTUBE_PLACEHOLDER : src);
+  'https://www.youtube.com/embed/' + (src === '' ? CUTE_OTTERS : src);
 
 
 const YouTubeSettings = (props: YouTubeSettingsProps) => {
