@@ -17,19 +17,6 @@ defmodule OliWeb.Qa.Utils do
     ~s|<i style="color: #{color}" class="material-icons-outlined icon">#{name}</i>|
   end
 
-  def title_case(string) do
-    String.capitalize(string)
-
-    # Unsure whether it's better to titlecase or capitalize
-    # |> String.split(" ")
-    # |> Enum.map(& String.capitalize(&1))
-    # |> Enum.join(" ")
-  end
-
-  def type_selected?(_type, _params) do
-    # Placeholder for where the logic for filtering reviews of a certain type will go
-  end
-
   def warning_selected?(selected, warning) do
     case selected == warning do
       true -> " active"
@@ -37,7 +24,7 @@ defmodule OliWeb.Qa.Utils do
     end
   end
 
-  def explanatory_text(subtype) do
+  def explanatory_text(subtype, context \\ %{}) do
     case subtype do
       "missing alt text" ->
         """
@@ -82,23 +69,32 @@ defmodule OliWeb.Qa.Utils do
           <a href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">guide on learning objectives</a> from the CMU Eberly Center.
         </p>
         """
-      "no practice opportunities" ->
-        """
-        <p>
-          This page does not provide any practice opportunities in the form of activities for the material students may have learned on the page.
-          That's fine for introductory or conclusory pages, but pages with learning content should generally provide practice opportunities.
-        </p>
-        <p>
-          For more information on the importance of providing practice opportunities in pages, see the
-          <a href="https://www.cmu.edu/teaching/designteach/design/assessments.html" target="_blank">guide on assessments</a> from the CMU Eberly Center.
-        </p>
-        """
+      "no attached activities" ->
+        case context[:graded] do
+          true ->
+            """
+            <p>
+              This graded page does not have any attached activities. In order to provide a grade, the page must have at least one activity.
+            </p>
+            """
+          _ ->
+            """
+            <p>
+              This page does not provide any practice opportunities in the form of activities for the material students may have learned on the page.
+              That's fine for introductory or conclusory pages, but pages with learning content should generally provide practice opportunities.
+            </p>
+            <p>
+              For more information on the importance of providing practice opportunities in pages, see the
+              <a href="https://www.cmu.edu/teaching/designteach/design/assessments.html" target="_blank">guide on assessments</a> from the CMU Eberly Center.
+            </p>
+            """
+        end
       _ -> ""
     end
     |> raw()
   end
 
-  def action_item(subtype) do
+  def action_item(subtype, context \\ %{}) do
     case subtype do
       "missing alt text" ->
         """
@@ -116,10 +112,17 @@ defmodule OliWeb.Qa.Utils do
         """
         <p>Attach a learning objective to this page or activity</p>
         """
-      "no practice opportunities" ->
-        """
-        <p>Consider adding an activity to this page if it provides learning content</p>
-        """
+      "no attached activities" ->
+        case context[:graded] do
+          true ->
+            """
+            <p>Add an activity to this page or change it to an ungraded page</p>
+            """
+          _ ->
+            """
+            <p>Consider adding an activity to this page if it provides learning content</p>
+            """
+        end
       _ ->
         """
         <p>This content has an issue</p>
