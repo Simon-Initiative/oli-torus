@@ -24,7 +24,8 @@ export const Evaluation = ({ attemptState } : { attemptState : ActivityTypes.Act
     <div className={`evaluation feedback ${resultClass} my-1`}>
         <div className="result">
           <span className="score">{score}</span>
-          <span className="out-of">{` / ${outOf}`}</span>
+          <span className="result-divider">/</span>
+          <span className="out-of">{outOf}</span>
         </div>
       <HtmlContentModelRenderer text={error ? errorText : feedback} />
     </div>
