@@ -24,7 +24,6 @@ defmodule OliWeb.Curriculum.Settings do
     <%= _ = form_for @changeset, "#", [phx_change: :save] %>
 
       <a
-        tabindex="-1"
         class="btn btn-primary"
         onClick="event.stopPropagation();"
         href="<%= Routes.resource_path(OliWeb.Endpoint, :edit, @project.slug, @page.slug) %>">
