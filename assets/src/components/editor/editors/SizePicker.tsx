@@ -7,19 +7,27 @@ type Size = {
 
 const initialSize: Size = { rows: 1, columns: 1 };
 
-const maxRows = 10;
-const maxCols = 8;
+const minRows = 5;
+const minCols = 5;
+const maxRows = 15;
+const maxCols = 15;
 
 const cellContainerStyle = {
   padding: '2px',
   display: 'inline-block',
   cursor: 'pointer',
+  lineHeight: '0',
 };
 
+const DEFAULT_BORDER_COLOR = '#ededed';
+const HIGHLIGHTED_BORDER_COLOR = '#ccdefb';
+const DEFAULT_BACKGROUND_COLOR = '#f8f8f8';
+const HIGHLIGHTED_BACKGROUND_COLOR = '#e0eafb';
+
 const cellStyle = (isHighlighted: boolean) => ({
-  backgroundColor: isHighlighted ? '#81abef' : '#DDDDDD',
-  border: '1px solid #DDDDDD',
-  borderRadius: '3px',
+  backgroundColor: isHighlighted ? HIGHLIGHTED_BACKGROUND_COLOR : DEFAULT_BACKGROUND_COLOR,
+  border: `1px solid ${isHighlighted ? HIGHLIGHTED_BORDER_COLOR : DEFAULT_BORDER_COLOR}`,
+  borderRadius: '2px',
   padding: '0px',
   margin: '0px',
   display: 'inline-block',
@@ -41,14 +49,14 @@ export const SizePicker = (props: SizePickerProps) => {
 
   const isHighlighted = (row: number, col: number) => size.rows >= row && size.columns >= col;
 
-  const numRows = maxRows;
-  const numCols = maxCols;
+  const numRows = Math.min(Math.max(size.rows, minRows) + 1, maxRows);
+  const numCols = Math.min(Math.max(size.columns, minCols) + 1, maxCols);
 
   const rows = range(numRows);
   const cols = range(numCols);
 
-  const width = (maxCols * 19 + 10) + 'px';
-  const height = (maxRows * 25 + 35) + 'px';
+  const width = (numCols * 19 + 15) + 'px';
+  const height = (numRows * 25 + 35) + 'px';
 
   const mapRow = (row: number) => {
     const cells = cols.map((col: number) => (
@@ -76,8 +84,10 @@ export const SizePicker = (props: SizePickerProps) => {
   const gridStyle = {
     height,
     width,
-    paddingLeft: '5px',
-    backgroundColor: '#f0f0f0',
+    padding: '5px',
+    backgroundColor: 'white',
+    borderRadius: '4px',
+    border: '1px solid #eee',
   } as any;
 
   const labelStyle = {
