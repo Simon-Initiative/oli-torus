@@ -7,8 +7,8 @@ type Size = {
 
 const initialSize: Size = { rows: 1, columns: 1 };
 
-const minRows = 5;
-const minCols = 5;
+const minRows = 4;
+const minCols = 4;
 const maxRows = 15;
 const maxCols = 15;
 
