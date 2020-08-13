@@ -4,6 +4,7 @@ import { useSlate } from 'slate-react';
 import { hoverMenuCommands } from '../editors';
 import { CommandContext } from '../interfaces';
 import { showToolbar, isToolbarHidden, shouldHideToolbar, hideToolbar, ToolbarButton } from './common';
+import { textNodesInSelection, marksInSelection, marksInEntireSelection } from '../utils';
 
 function positionHovering(el: HTMLElement) {
   const menu = el;
@@ -69,7 +70,7 @@ export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
           const buttons = buttonGroup.map(button =>
             <ToolbarButton
               style="btn-dark"
-              active={button.active}
+              active={button.active ? button.active(marksInEntireSelection(editor)) : false}
               key={button.icon}
               icon={button.icon}
               command={button.command}

@@ -49,6 +49,9 @@
       line-height: 46px;
       font-size: 16px;
     }
+    &.active {
+      color: $cyan;
+    }
   }
   .button-separator {
     display: inline-block;

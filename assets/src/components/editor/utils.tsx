@@ -8,8 +8,42 @@ export function hasMark(textNode: Text): boolean {
   return Object.keys(textNode).some(k => k in Marks);
 }
 
-export function hasMarkOfType(textNode: Text, mark: Mark): boolean {
-  return Object.keys(textNode).some(k => k === mark);
+export function textNodesInSelection(editor: ReactEditor) {
+  const selection = editor.selection;
+  if (!selection) {
+    return [];
+  }
+
+  return Node.fragment(editor, selection)
+    .map(node => Array.from(Node.descendants(node))
+      .reduce((acc: Text[], [node]) => {
+        return Text.isText(node) ? acc.concat(node) : acc;
+      }, []))
+    .reduce((acc, curr) => acc.concat(curr), []);
+}
+
+export function marksInEntireSelection(editor: ReactEditor) {
+  const marks: any = {};
+  const textNodes = textNodesInSelection(editor);
+  textNodes.forEach((text) => {
+    Object.keys(text)
+      .filter(k => k in Marks)
+      .forEach(mark => marks[mark] ? marks[mark] += 1 : marks[mark] = 1);
+  });
+  return Object.entries(marks)
+    .filter(([, v]) => v === textNodes.length)
+    .map(([k]) => k);
+}
+
+export function marksInPartOfSelection(editor: ReactEditor) {
+  const marks: any = {};
+  textNodesInSelection(editor)
+    .forEach((text) => {
+      Object.keys(text)
+        .filter(k => k in Marks)
+        .forEach(mark => marks[mark] = true);
+    });
+  return Object.keys(marks);
 }
 
 // Extracts the text from a hierarchy of nodes

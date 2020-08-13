@@ -1,13 +1,11 @@
 import { ReactEditor } from 'slate-react';
-import { Mark } from 'data/content/model';
-import { Text } from 'slate';
 
 export type CommandDesc = {
   type: 'CommandDesc',
   icon: string,
   command: Command,
   description: string,
-  active?: (mark: Mark) => (text: Text) => boolean;
+  active?: (marks: string[]) => boolean;
 };
 
 export interface CommandContext {

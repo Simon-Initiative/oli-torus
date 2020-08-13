@@ -1,6 +1,7 @@
 import React from 'react';
 import { ReactEditor, useSlate } from 'slate-react';
-import { Editor as SlateEditor, Range } from 'slate';
+import { Editor as SlateEditor, Range, Node } from 'slate';
+import { textNodesInSelection } from '../utils';
 
 export function hideToolbar(el: HTMLElement) {
   el.style.display = 'none';
@@ -32,12 +33,13 @@ export function showToolbar(el: HTMLElement) {
   el.style.display = 'block';
 }
 
-export const ToolbarButton = ({ icon, command, style, context, tooltip }: any) => {
+export const ToolbarButton = ({ icon, command, style, context, tooltip, active }: any) => {
   const editor = useSlate();
+
   return (
     <button
       data-toggle="tooltip" data-placement="top" title={tooltip}
-      className={`btn btn-sm btn-light ${style}`}
+      className={`btn btn-sm btn-light ${style} ${active && 'active'}`}
       onMouseDown={(event) => {
         event.preventDefault();
         command.execute(context, editor);
