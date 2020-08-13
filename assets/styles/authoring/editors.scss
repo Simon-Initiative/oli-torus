@@ -31,3 +31,12 @@
     pointer-events: none;
   }
 }
+
+.caption-editor {
+  text-align: center;
+  border: 0;
+  width: 100%;
+  font-feature-settings: 'liga', 'lnum';
+  color: rgba(0,0,0,.68);
+  outline: none;
+}

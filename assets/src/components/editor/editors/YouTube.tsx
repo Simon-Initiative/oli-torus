@@ -82,7 +82,7 @@ const command: Command = {
 
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'fab fa-youtube-square',
+  icon: 'play_circle_filled',
   description: 'YouTube',
   command,
 };

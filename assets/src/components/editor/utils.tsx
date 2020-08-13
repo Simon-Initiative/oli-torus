@@ -1,11 +1,15 @@
-import { Node, Editor } from 'slate';
+import { Node, Editor, Text } from 'slate';
 import { ReactEditor } from 'slate-react';
-import { Marks, schema } from 'data/content/model';
+import { Marks, schema, Mark } from 'data/content/model';
 import { Maybe } from 'tsmonad';
 
 // Returns true if a text node contains at least one mark
 export function hasMark(textNode: Text): boolean {
   return Object.keys(textNode).some(k => k in Marks);
+}
+
+export function hasMarkOfType(textNode: Text, mark: Mark): boolean {
+  return Object.keys(textNode).some(k => k === mark);
 }
 
 // Extracts the text from a hierarchy of nodes

@@ -8,13 +8,14 @@ import {
 } from 'data/content/model';
 import { editorFor, markFor } from './editors';
 import { ToolbarItem, CommandContext } from './interfaces';
-import { FixedToolbar, HoveringToolbar, ToolbarPosition } from './Toolbars';
 import { onKeyDown as listOnKeyDown } from './editors/Lists';
 import { commandDesc as linkCmd } from './editors/Link';
 import { getRootOfText } from './utils';
 import { toggleMark } from './commands';
 import { installNormalizer } from './normalizer';
 import guid from 'utils/guid';
+import { ToolbarPosition, FixedToolbar } from './toolbars/Fixed';
+import { HoveringToolbar } from './toolbars/Hovering';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor (including selection state)

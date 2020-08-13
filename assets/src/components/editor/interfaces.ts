@@ -1,10 +1,13 @@
 import { ReactEditor } from 'slate-react';
+import { Mark } from 'data/content/model';
+import { Text } from 'slate';
 
 export type CommandDesc = {
   type: 'CommandDesc',
   icon: string,
   command: Command,
   description: string,
+  active?: (mark: Mark) => (text: Text) => boolean;
 };
 
 export interface CommandContext {
@@ -17,10 +20,6 @@ export type Command = {
   obtainParameters?: (
     editor: ReactEditor, onDone: (params: any) => void, onCancel: () => void) => JSX.Element,
 };
-
-// Width of padding on right hand side to allow toolbar toggler
-// to never obstruct text
-export const gutterWidth = 18;
 
 export type GroupDivider = {
   type: 'GroupDivider',

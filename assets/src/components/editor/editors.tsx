@@ -104,9 +104,13 @@ export function markFor(mark: ContentModel.Mark, children: any): JSX.Element {
 }
 
 export const hoverMenuCommands = [
-  format('fas fa-bold', 'strong', 'Bold'),
-  format('fas fa-italic', 'em', 'Italic'),
-  format('fas fa-code', 'code', 'Code'),
-  linkCmd,
+  [
+    format('format_bold', 'strong', 'Bold'),
+    format('format_italic', 'em', 'Italic'),
+    linkCmd,
+  ],
+  [
+    format('code', 'code', 'Code'),
+  ],
 ];
 

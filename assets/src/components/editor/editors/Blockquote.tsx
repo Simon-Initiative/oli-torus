@@ -21,7 +21,7 @@ const command: Command = {
 
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'fas fa-quote-right',
+  icon: 'format_quote',
   description: 'Quote',
   command,
 };

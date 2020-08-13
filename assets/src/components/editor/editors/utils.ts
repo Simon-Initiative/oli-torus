@@ -11,7 +11,13 @@ import { Transforms } from 'slate';
 export function updateModel<T extends ContentModel.ModelElement>(
   editor: ReactEditor, model: T, changes: Partial<T>) {
   const path = ReactEditor.findPath(editor, model);
+  const selection = editor.selection;
   Transforms.setNodes(editor, changes, { at: path });
+  // console.log(selection)
+  if (selection) {
+    // console.log('setting focus', selection)
+    Transforms.select(editor, selection.focus);
+  }
 }
 
 /**

@@ -6,7 +6,7 @@ import { Editor } from 'components/editor/Editor';
 import { ToolbarItem } from 'components/resource/toolbar';
 import { ProjectSlug } from 'data/types';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
-import { ToolbarPosition } from 'components/editor/Toolbars';
+import { ToolbarPosition } from 'components/editor/toolbars/Fixed';
 
 export type StructuredContentEditor = {
   editMode: boolean,              // Whether or not we can edit

@@ -33,7 +33,7 @@ const command: Command = {
 
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'fas fa-laptop-code',
+  icon: 'code',
   description: 'Code',
   command,
 };

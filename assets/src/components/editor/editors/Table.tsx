@@ -276,7 +276,7 @@ const DropdownMenu = (props: any) => {
 
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'fas fa-table',
+  icon: 'grid_on',
   description: 'Table',
   command,
 };

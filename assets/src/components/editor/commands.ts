@@ -2,6 +2,7 @@ import { Editor } from 'slate';
 import { Mark } from 'data/content/model';
 import { ReactEditor } from 'slate-react';
 import { CommandDesc } from './interfaces';
+import { hasMarkOfType } from './utils';
 
 function isMarkActive(editor: ReactEditor, mark: Mark): boolean {
 
@@ -29,6 +30,7 @@ export function createToggleFormatCommand(icon: string, mark: Mark, description:
     type: 'CommandDesc',
     icon,
     description,
+    active: mark => text => hasMarkOfType(text, mark),
     command: {
       execute: (context, editor: ReactEditor) => toggleMark(editor, mark),
       precondition: (editor: ReactEditor) => {

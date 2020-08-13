@@ -63,7 +63,7 @@ const command: Command = {
 
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'fas fa-music',
+  icon: 'audiotrack',
   description: 'Audio Clip',
   command,
 };

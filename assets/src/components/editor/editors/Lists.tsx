@@ -75,14 +75,14 @@ const olCommand: Command = listCommandMaker('ol');
 
 export const ulCommanDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'fas fa-list-ul',
+  icon: 'format_list_bulleted',
   description: 'Unordered List',
   command: ulCommand,
 };
 
 export const olCommandDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'fas fa-list-ol',
+  icon: 'format_list_numbered',
   description: 'Ordered List',
   command: olCommand,
 };

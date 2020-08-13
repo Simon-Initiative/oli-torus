@@ -1,6 +1,5 @@
 import React from 'react';
 import Popover from 'react-tiny-popover';
-import { valueOr } from 'utils/common';
 
 // Reusable components for settings UIs
 
@@ -22,7 +21,7 @@ export const Action = ({ icon, onClick, tooltip, id }: any) => {
 export const Caption = ({ caption }: any) => {
   return (
     <p className="text-muted">
-      {caption === undefined || caption === '' ? <em>No caption set</em> : caption}
+      {caption === undefined || caption === '' ? <em>Type caption</em> : caption}
     </p>
   );
 };

@@ -1,7 +1,7 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React from 'react';
 import { ReactEditor, useFocused, useSelected } from 'slate-react';
 import { Transforms } from 'slate';
-import { updateModel, getEditMode } from './utils';
+import { updateModel } from './utils';
 import * as ContentModel from 'data/content/model';
 import { Command, CommandDesc } from '../interfaces';
 import { EditorProps } from './interfaces';
@@ -11,8 +11,6 @@ import ModalSelection from 'components/modal/ModalSelection';
 import { MediaManager } from 'components/media/manager/MediaManager.controller';
 import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
-import * as Settings from './Settings';
-import { media } from 'state/media';
 
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
@@ -64,92 +62,9 @@ const command: Command = {
 
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'fas fa-image',
+  icon: 'image',
   description: 'Image',
   command,
-};
-
-
-type ImageSettingsProps = {
-  model: ContentModel.Image,
-  onEdit: (model: ContentModel.Image) => void,
-  onRemove: () => void,
-  editMode: boolean,
-  projectSlug: string,
-};
-
-const ImageSettings = (props: ImageSettingsProps) => {
-
-  const [model, setModel] = useState(props.model);
-  const ref = useRef();
-
-  useEffect(() => {
-
-    // Inits the tooltips, since this popover rendres in a react portal
-    // this was necessary
-    if (ref !== null && ref.current !== null) {
-      ((window as any).$('[data-toggle="tooltip"]')).tooltip();
-    }
-  });
-
-  const setSrc = (src: string) => {
-    props.onEdit(Object.assign({}, model, { src }));
-  };
-  const setCaption = (caption: string) => setModel(Object.assign({}, model, { caption }));
-  const setAlt = (alt: string) => setModel(Object.assign({}, model, { alt }));
-
-  const applyButton = (disabled: boolean) => <button onClick={(e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    props.onEdit(model);
-  }}
-  disabled={disabled}
-  className="btn btn-primary ml-1">Apply</button>;
-
-  const fileName = model.src.substr(model.src.lastIndexOf('/') + 1);
-
-  return (
-    <div className="settings-editor-wrapper">
-      <div className="settings-editor" ref={ref as any}>
-
-        <div className="d-flex justify-content-between mb-2">
-          <div>
-            Image
-          </div>
-
-          <div>
-            <Settings.Action icon="fas fa-trash" tooltip="Remove Image" id="remove-button"
-              onClick={() => props.onRemove()}/>
-          </div>
-        </div>
-
-        <form className="form">
-          <label>File</label>
-          <div className="input-group mb-3 mr-sm-2">
-            <input type="text" readOnly value={fileName} className="form-control"/>
-            <div className="input-group-append">
-              <button
-                onClick={() => selectImage(props.projectSlug, model).then(img => setSrc(img.src))}
-                className="btn btn-outline-primary" type="button">Select</button>
-            </div>
-          </div>
-
-          <label>Caption</label>
-          <input type="text" value={model.caption} onChange={e => setCaption(e.target.value)}
-            onKeyPress={e => Settings.onEnterApply(e, () => props.onEdit(model))}
-            className="form-control mr-sm-2"/>
-
-          <label>Alt Text</label>
-          <input type="text" value={model.alt} onChange={e => setAlt(e.target.value)}
-            onKeyPress={e => Settings.onEnterApply(e, () => props.onEdit(model))}
-            className="form-control mr-sm-2"/>
-        </form>
-
-        {applyButton(!props.editMode)}
-
-      </div>
-    </div>
-  );
 };
 
 export interface ImageProps extends EditorProps<ContentModel.Image> {
@@ -160,35 +75,18 @@ export interface ImageState {
 
 export const ImageEditor = (props: ImageProps) => {
 
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const { attributes, children, editor } = props;
   const { model } = props;
 
   const focused = useFocused();
   const selected = useSelected();
 
-  const editMode = getEditMode(editor);
-
   const onEdit = (updated: ContentModel.Image) => {
     updateModel<ContentModel.Image>(editor, props.model, updated);
-    setIsPopoverOpen(false);
   };
 
-  const onRemove = () => {
-    ($('#remove-button') as any).tooltip('hide');
-
-    const path = ReactEditor.findPath(editor, model);
-    Transforms.removeNodes(editor, { at: path });
-
-    setIsPopoverOpen(false);
-  };
-
-  const contentFn = () => <ImageSettings
-    projectSlug={props.commandContext.projectSlug}
-    model={model}
-    editMode={editMode}
-    onRemove={onRemove}
-    onEdit={onEdit}/>;
+  const setCaptionAndAlt = (text: string) =>
+    onEdit(Object.assign({}, model, { caption: text, alt: text }));
 
   const imageStyle = focused && selected
   ? { border: 'solid 2px lightblue' } : {};
@@ -203,19 +101,28 @@ export const ImageEditor = (props: ImageProps) => {
 
       <div contentEditable={false} style={{ userSelect: 'none' }}>
         <div className="ml-4 mr-4 text-center">
-          <img
-            style={imageStyle}
-            className="img-fluid img-thumbnail"
-            src={model.src}
-            draggable={false}
-          />
+          <figure>
+            <img
+              style={imageStyle}
+              className="img-fluid img-thumbnail"
+              src={model.src}
+              draggable={false}
+            />
+            <figcaption>
+              <input
+                type="text"
+                value={model.caption}
+                placeholder="Type caption for image"
+                onChange={e => {
+                  setCaptionAndAlt(e.target.value)
+                }}
+                // onKeyPress={e => e.key === 'Enter' ?  : null}
+                // onKeyPress={e => Settings.onEnterApply(e, () => onEdit(model))}
+                className="caption-editor"
+              />
+            </figcaption>
+          </figure>
         </div>
-        <Settings.ToolPopupButton
-          contentFn={contentFn}
-          setIsPopoverOpen={setIsPopoverOpen}
-          isPopoverOpen={isPopoverOpen}
-          label="Image"/>
-        <Settings.Caption caption={model.caption}/>
       </div>
 
       {children}
