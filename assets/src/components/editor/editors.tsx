@@ -12,6 +12,7 @@ import * as Table from './editors/Table';
 import { EditorProps } from './editors/interfaces';
 import { createToggleFormatCommand as format } from './commands';
 import { CommandContext } from './interfaces';
+import { commandDesc as titleCmd } from './toolbars/TextFormatter';
 
 export function editorFor(
   element: ContentModel.ModelElement,
@@ -110,6 +111,7 @@ export const hoverMenuCommands = [
     linkCmd,
   ],
   [
+    titleCmd,
     format('code', 'code', 'Code'),
   ],
 ];

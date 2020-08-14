@@ -233,7 +233,7 @@ export const YouTubeEditor = (props: YouTubeProps) => {
   // events.
 
   const { src } = model;
-  const fullSrc = 'https://www.youtube.com/embed/' + (src === '' ? 'zHIIzcWqsP0' : src) + '?disablekb=1&modestbranding=1&showinfo=0&rel=0';
+  const fullSrc = 'https://www.youtube.com/embed/' + (src === '' ? CUTE_OTTERS : src) + '?disablekb=1&modestbranding=1&showinfo=0&rel=0';
 
   const onEdit = (updated: ContentModel.YouTube) => {
     updateModel<ContentModel.YouTube>(editor, model, updated);

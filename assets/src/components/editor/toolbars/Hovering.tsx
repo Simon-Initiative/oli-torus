@@ -4,7 +4,7 @@ import { useSlate } from 'slate-react';
 import { hoverMenuCommands } from '../editors';
 import { CommandContext } from '../interfaces';
 import { showToolbar, isToolbarHidden, shouldHideToolbar, hideToolbar, ToolbarButton } from './common';
-import { textNodesInSelection, marksInSelection, marksInEntireSelection } from '../utils';
+import { marksInEntireSelection } from '../utils';
 
 function positionHovering(el: HTMLElement) {
   const menu = el;
@@ -67,15 +67,23 @@ export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
     <div ref={(ref as any)} className="hovering-toolbar" style={{ display: 'none', position: 'relative' }}>
       <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>
         {hoverMenuCommands.map((buttonGroup, buttonGroupIndex) => {
-          const buttons = buttonGroup.map(button =>
-            <ToolbarButton
+          const buttons = buttonGroup.map((button) => {
+            const icon = typeof button.icon === 'string' ? button.icon : button.icon(editor);
+            const active = button.active
+              ? button.description === 'Title'
+                ? button.active(editor)
+                : button.active(marksInEntireSelection(editor))
+              : false;
+
+            return <ToolbarButton
               style="btn-dark"
-              active={button.active ? button.active(marksInEntireSelection(editor)) : false}
-              key={button.icon}
-              icon={button.icon}
+              active={active}
+              key={button.description}
+              icon={icon}
               command={button.command}
               context={props.commandContext}
-            />);
+            />;
+          });
 
           const buttonSeparator = <div className="button-separator"></div>;
 

@@ -6,7 +6,6 @@ import { olCommandDesc as olCmd, ulCommanDesc as ulCmd } from './editors/Lists';
 import { commandDesc as youtubeCommandDesc } from './editors/YouTube';
 import { commandDesc as quoteCommandDesc } from './editors/Blockquote';
 import { commandDesc as audioCommandDesc } from './editors/Audio';
-import { commandDesc as codeCommandDesc } from './editors/Code';
 import { commandDesc as tableCommandDesc } from './editors/Table';
 import { RichText } from 'components/activities/types';
 import { ModelElement } from 'data/content/model';
@@ -44,7 +43,6 @@ const toolbarItems: ToolbarItem[] = [
   {
     type: 'GroupDivider',
   },
-  codeCommandDesc,
   tableCommandDesc,
 ];
 

@@ -95,11 +95,9 @@ const command: Command = {
     // LOGIC
 
     if (isLinkPresent()) {
-      console.log('Link present');
       return removeLinks(editor, selection);
     }
 
-    console.log('No link present');
     return addLink();
   },
   precondition: (editor: ReactEditor) => {

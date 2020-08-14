@@ -47,7 +47,6 @@ export const FixedToolbar = React.memo((props: FixedToolbarProps) => {
   });
 
   const buttons = [
-    <TextFormatter key="text" />,
     ...toolbarItems.map((t, i) => {
       if (t.type === 'CommandDesc' && t.command.obtainParameters === undefined) {
         return <ToolbarButton
@@ -98,9 +97,7 @@ const DropdownToolbarButton = ({ icon, command, style, context, tooltip }: any) 
 
   return (
     <Popover
-      onClickOutside={() => {
-        setIsPopoverOpen(false);
-      }}
+      onClickOutside={() => setIsPopoverOpen(false)}
       isOpen={isPopoverOpen}
       padding={5}
       position={['bottom', 'top', 'left', 'right']}

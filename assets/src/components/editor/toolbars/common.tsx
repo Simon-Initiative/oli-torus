@@ -45,7 +45,7 @@ export const ToolbarButton = ({ icon, command, style, context, tooltip, active }
         command.execute(context, editor);
       }}
     >
-      <span className="material-icons">{icon}</span>
+      <span className="material-icons" data-icon={icon}>{icon}</span>
     </button>
   );
 };

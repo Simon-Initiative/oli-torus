@@ -8,6 +8,7 @@ export function hasMark(textNode: Text): boolean {
   return Object.keys(textNode).some(k => k in Marks);
 }
 
+// Returns all the Text nodes in the current selection
 export function textNodesInSelection(editor: ReactEditor) {
   const selection = editor.selection;
   if (!selection) {
@@ -22,6 +23,7 @@ export function textNodesInSelection(editor: ReactEditor) {
     .reduce((acc, curr) => acc.concat(curr), []);
 }
 
+// Returns a Mark[] that apply to the entire current selection
 export function marksInEntireSelection(editor: ReactEditor) {
   const marks: any = {};
   const textNodes = textNodesInSelection(editor);
@@ -35,6 +37,7 @@ export function marksInEntireSelection(editor: ReactEditor) {
     .map(([k]) => k);
 }
 
+// Returns a Mark[] of all marks that exist in any part of the current selection
 export function marksInPartOfSelection(editor: ReactEditor) {
   const marks: any = {};
   textNodesInSelection(editor)
