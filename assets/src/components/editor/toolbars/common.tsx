@@ -33,19 +33,22 @@ export function showToolbar(el: HTMLElement) {
   el.style.display = 'block';
 }
 
-export const ToolbarButton = ({ icon, command, style, context, tooltip, active }: any) => {
+export const ToolbarButton =
+({ icon, command, style, context, tooltip, active, description }: any) => {
   const editor = useSlate();
 
   return (
     <button
-      data-toggle="tooltip" data-placement="top" title={tooltip}
+      data-toggle="tooltip"
+      data-placement="top"
+      title={tooltip}
       className={`btn btn-sm btn-light ${style} ${active && 'active'}`}
       onMouseDown={(event) => {
         event.preventDefault();
         command.execute(context, editor);
       }}
     >
-      <span className="material-icons" data-icon={icon}>{icon}</span>
+      <span className="material-icons" data-icon={description}>{icon}</span>
     </button>
   );
 };

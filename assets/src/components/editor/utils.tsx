@@ -34,7 +34,7 @@ export function marksInEntireSelection(editor: ReactEditor) {
   });
   return Object.entries(marks)
     .filter(([, v]) => v === textNodes.length)
-    .map(([k]) => k);
+    .map(([k]) => k as Mark);
 }
 
 // Returns a Mark[] of all marks that exist in any part of the current selection
@@ -68,10 +68,38 @@ function toSimpleTextHelper(node: Node, text: string): string {
   }, text);
 }
 
+export const getHighestTopLevel = (editor: ReactEditor): Maybe<Node> => {
+  if (!editor.selection) {
+    return Maybe.nothing();
+  }
+  let [node, path] = Editor.node(editor, editor.selection);
+  while (true) {
+    // TopLevel node is selected, only Editor node as parent
+    if (path.length === 1) {
+      return Maybe.maybe(node);
+    }
+    // Editor is selected
+    if (path.length === 0) {
+      return Maybe.nothing();
+    }
+    const [nextNode, nextPath] = Editor.parent(editor, path);
+    path = nextPath;
+    node = nextNode;
+  }
+};
+
+// For the current selection, find the containing TopLevel node
+export const getNearestTopLevel = (editor: ReactEditor): Maybe<Node> => {
+  return getParentHelper(editor, 'isTopLevel');
+};
+
 // For the current selection, walk up through the data model to find the
 // immediate block parent.
-export const getRootOfText = (editor: ReactEditor): Maybe<Node> => {
+export const getNearestBlock = (editor: ReactEditor): Maybe<Node> => {
+  return getParentHelper(editor, 'isBlock');
+};
 
+const getParentHelper = (editor: ReactEditor, property: string): Maybe<Node> => {
   if (editor.selection) {
     let [node, path] = Editor.node(editor, editor.selection);
 
@@ -80,7 +108,7 @@ export const getRootOfText = (editor: ReactEditor): Maybe<Node> => {
       if (node.text === undefined) {
         if (node.type !== undefined) {
           if ((schema as any)[node.type as string] !== undefined) {
-            if ((schema as any)[node.type as string].isBlock) {
+            if ((schema as any)[node.type as string][property]) {
               return Maybe.just(node);
             }
             if (Editor.isEditor(node)) {
@@ -100,5 +128,4 @@ export const getRootOfText = (editor: ReactEditor): Maybe<Node> => {
 
   }
   return Maybe.nothing();
-
 };

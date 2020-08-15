@@ -14,21 +14,36 @@
   }
 }
 
-.blockquote {
-  position: relative;
-  padding: 1.8rem 1.5rem;
-  border: 2px solid $gray-400;
+blockquote {
+  &.blockquote {
+    margin-top: 12px;
+    font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+    font-size: 1.3em;
+    line-height: 1.5em;
+    letter-spacing: -.003em;
+    color: rgba(0,0,0,.84);
 
-  &::before {
-    content: "“";
-    font-family: 'Epilogue', sans-serif;
-    font-size: 84px;
-    position: absolute;
-    top: -16px;
-    left: 4px;
-    color: transparentize($color: $gray-400, $amount: 0.3);
-    max-height: 50px;
-    pointer-events: none;
+    border-left: 3px solid rgba(0,0,0,.84);
+    padding-left: 10px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    word-break: break-word;
+
+    // position: relative;
+    // padding: 1.8rem 1.5rem;
+    // border: 2px solid $gray-400;
+
+    // &::before {
+    //   content: "“";
+    //   font-family: 'Epilogue', sans-serif;
+    //   font-size: 84px;
+    //   position: absolute;
+    //   top: -16px;
+    //   left: 4px;
+    //   color: transparentize($color: $gray-400, $amount: 0.3);
+    //   max-height: 50px;
+    //   pointer-events: none;
+    // }
   }
 }
 

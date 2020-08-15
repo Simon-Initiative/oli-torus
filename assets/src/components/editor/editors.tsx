@@ -13,6 +13,9 @@ import { EditorProps } from './editors/interfaces';
 import { createToggleFormatCommand as format } from './commands';
 import { CommandContext } from './interfaces';
 import { commandDesc as titleCmd } from './toolbars/TextFormatter';
+import { commandDesc as codeCmd } from 'components/editor/editors/Code';
+import { olCommandDesc as olCmd, ulCommandDesc as ulCmd } from 'components/editor/editors/Lists';
+import { commandDesc as quoteCmd } from '../editor/editors/Blockquote';
 
 export function editorFor(
   element: ContentModel.ModelElement,
@@ -111,8 +114,13 @@ export const hoverMenuCommands = [
     linkCmd,
   ],
   [
+    olCmd,
+    ulCmd,
+  ],
+  [
     titleCmd,
-    format('code', 'code', 'Code'),
+    quoteCmd,
+    codeCmd,
   ],
 ];
 

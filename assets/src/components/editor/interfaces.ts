@@ -5,7 +5,7 @@ export type CommandDesc = {
   type: 'CommandDesc',
   icon: string | ((editor: ReactEditor) => string),
   command: Command,
-  description: string,
+  description: string | ((editor: ReactEditor) => string),
   // Is the formatting is applied to the current selection?
   active?: (...args: any) => boolean;
 };

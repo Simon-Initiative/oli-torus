@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Editor } from './Editor';
 import { ToolbarItem } from './interfaces';
 import { commandDesc as imageCommandDesc } from './editors/Image';
-import { olCommandDesc as olCmd, ulCommanDesc as ulCmd } from './editors/Lists';
+import { olCommandDesc as olCmd, ulCommandDesc as ulCmd } from './editors/Lists';
 import { commandDesc as youtubeCommandDesc } from './editors/YouTube';
 import { commandDesc as quoteCommandDesc } from './editors/Blockquote';
 import { commandDesc as audioCommandDesc } from './editors/Audio';

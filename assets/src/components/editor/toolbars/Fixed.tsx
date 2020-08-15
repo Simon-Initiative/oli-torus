@@ -3,7 +3,6 @@ import { ReactEditor, useSlate } from 'slate-react';
 import { ToolbarItem, CommandContext } from '../interfaces';
 import Popover from 'react-tiny-popover';
 import { hideToolbar, showToolbar, ToolbarButton } from './common';
-import { TextFormatter } from './TextFormatter';
 
 function shouldHideFixedToolbar(editor: ReactEditor) {
   return !ReactEditor.isFocused(editor);

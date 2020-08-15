@@ -52,10 +52,17 @@
         font-size: 16px;
         &.active {
           color: $cyan;
-          & > [data-icon="code"] {
-            background: -moz-linear-gradient(90deg, $cyan 0%, $cyan 37%, white 40%, white 100%);
-            background: -webkit-linear-gradient(90deg, $cyan 0%, $cyan 37%, white 40%, white 100%);
-            background: linear-gradient(90deg, $cyan 0%, $cyan 37%, white 40%, white 100%);
+          & > [data-icon="Code"] {
+            background: -moz-linear-gradient(90deg, $cyan 0%, $cyan 39%, white 41%, white 100%);
+            background: -webkit-linear-gradient(90deg, $cyan 0%, $cyan 39%, white 41%, white 100%);
+            background: linear-gradient(90deg, $cyan 0%, $cyan 39%, white 41%, white 100%);
+            -webkit-background-clip: text;
+            -moz-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+          }
+          & > [data-icon="Code-line"] {
+            background: $cyan;
             -webkit-background-clip: text;
             -moz-background-clip: text;
             background-clip: text;

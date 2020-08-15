@@ -69,8 +69,14 @@ export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
         {hoverMenuCommands.map((buttonGroup, buttonGroupIndex) => {
           const buttons = buttonGroup.map((button) => {
             const icon = typeof button.icon === 'string' ? button.icon : button.icon(editor);
+            const description = typeof button.description === 'string'
+              ? button.description : button.description(editor);
+
+            const blockLevelItems = ['Title', 'Ordered List', 'Unordered List', 'Quote'];
+
             const active = button.active
-              ? button.description === 'Title'
+              ? typeof button.description === 'string' &&
+                blockLevelItems.indexOf(button.description) > -1
                 ? button.active(editor)
                 : button.active(marksInEntireSelection(editor))
               : false;
@@ -78,7 +84,8 @@ export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
             return <ToolbarButton
               style="btn-dark"
               active={active}
-              key={button.description}
+              key={description}
+              description={description}
               icon={icon}
               command={button.command}
               context={props.commandContext}

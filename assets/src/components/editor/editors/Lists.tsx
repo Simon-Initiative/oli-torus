@@ -4,6 +4,7 @@ import * as ContentModel from 'data/content/model';
 import { Command, CommandDesc, CommandContext } from '../interfaces';
 import guid from 'utils/guid';
 import { KeyboardEvent } from 'react';
+import { getNearestBlock, getNearestTopLevel } from '../utils';
 
 const li = () => ContentModel.create<ContentModel.ListItem>(
   { type: 'li', children: [{ text: '' }], id: guid() });
@@ -73,11 +74,15 @@ const listCommandMaker = (listType: string) => {
 const ulCommand: Command = listCommandMaker('ul');
 const olCommand: Command = listCommandMaker('ol');
 
-export const ulCommanDesc: CommandDesc = {
+export const ulCommandDesc: CommandDesc = {
   type: 'CommandDesc',
   icon: 'format_list_bulleted',
   description: 'Unordered List',
   command: ulCommand,
+  active: (editor: ReactEditor) => getNearestTopLevel(editor).caseOf({
+    just: n => n.type === 'ul',
+    nothing: () => false,
+  }),
 };
 
 export const olCommandDesc: CommandDesc = {
@@ -85,6 +90,10 @@ export const olCommandDesc: CommandDesc = {
   icon: 'format_list_numbered',
   description: 'Ordered List',
   command: olCommand,
+  active: (editor: ReactEditor) => getNearestTopLevel(editor).caseOf({
+    just: n => n.type === 'ol',
+    nothing: () => false,
+  }),
 };
 
 const isList = (n: Node) => n.type === 'ul' || n.type === 'ol';

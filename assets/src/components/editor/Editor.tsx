@@ -10,7 +10,7 @@ import { editorFor, markFor } from './editors';
 import { ToolbarItem, CommandContext } from './interfaces';
 import { onKeyDown as listOnKeyDown } from './editors/Lists';
 import { commandDesc as linkCmd } from './editors/Link';
-import { getRootOfText } from './utils';
+import { getNearestBlock } from './utils';
 import { toggleMark } from './commands';
 import { installNormalizer } from './normalizer';
 import guid from 'utils/guid';
@@ -45,7 +45,7 @@ const voidOnKeyDown = (editor: ReactEditor, e: React.KeyboardEvent) => {
   if (e.key === 'Enter') {
     if (editor.selection && Range.isCollapsed(editor.selection)) {
 
-      getRootOfText(editor).lift((node: Node) => {
+      getNearestBlock(editor).lift((node: Node) => {
 
         const nodeType = node.type as string;
         const schemaItem : SchemaConfig = (schema as any)[nodeType];

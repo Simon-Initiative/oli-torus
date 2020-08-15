@@ -1,6 +1,6 @@
 import { ReactEditor } from 'slate-react';
 import { Node, Transforms } from 'slate';
-import { getRootOfText } from '../utils';
+import { getNearestBlock } from '../utils';
 import { Command, CommandDesc } from '../interfaces';
 
 const parentTextTypes = {
@@ -13,7 +13,7 @@ const parentTextTypes = {
   h6: true,
 };
 
-const selectedType = (editor: ReactEditor) => getRootOfText(editor).caseOf({
+const selectedType = (editor: ReactEditor) => getNearestBlock(editor).caseOf({
   just: n => (parentTextTypes as any)[n.type as string] ? n.type as string : 'p',
   nothing: () => 'p',
 });
@@ -33,7 +33,7 @@ const command: Command = {
       }
     })(selectedType(editor));
 
-    getRootOfText(editor).lift((n: Node) => {
+    getNearestBlock(editor).lift((n: Node) => {
       if ((parentTextTypes as any)[n.type as string]) {
         const path = ReactEditor.findPath(editor, n);
         Transforms.setNodes(editor, { type: nextType }, { at: path });
