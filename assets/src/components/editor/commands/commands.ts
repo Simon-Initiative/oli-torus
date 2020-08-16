@@ -27,8 +27,8 @@ export function createToggleFormatCommand(icon: string, mark: Mark, description:
   : CommandDesc {
   return {
     type: 'CommandDesc',
-    icon,
-    description,
+    icon: () => icon,
+    description: () => description,
     active: marks => marks.indexOf(mark) !== -1,
     command: {
       execute: (context, editor: ReactEditor) => toggleMark(editor, mark),

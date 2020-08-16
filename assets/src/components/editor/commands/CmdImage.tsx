@@ -58,7 +58,7 @@ const command: Command = {
 
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'image',
-  description: 'Image',
+  icon: () => 'image',
+  description: () => 'Image',
   command,
 };

@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import * as ReactDOM from 'react-dom';
 import { useSlate } from 'slate-react';
-import { CommandContext } from '../../commands/interfaces';
+import { CommandContext, CommandDesc } from '../../commands/interfaces';
 import { showToolbar, isToolbarHidden, hideToolbar, ToolbarButton } from '../common';
 import { marksInEntireSelection } from '../../utils';
 import { hoverMenuCommands } from './hoveringToolbarItems';
@@ -48,19 +48,17 @@ export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
   return ReactDOM.createPortal(
     <div ref={(ref as any)} className="hovering-toolbar" style={{ display: 'none', position: 'relative' }}>
       <div style={style} className="btn-group btn-group-sm" role="group" ref={(ref as any)}>
-        {hoverMenuCommands.map((buttonGroup, buttonGroupIndex) => {
-          const buttons = buttonGroup.map((button) => {
-            const icon = typeof button.icon === 'string' ? button.icon : button.icon(editor);
-            const description = typeof button.description === 'string'
-              ? button.description : button.description(editor);
+        {hoverMenuCommands.map((cmdDescs: CommandDesc[], cmdDescsIndex) => {
+          const buttons = cmdDescs.map((cmdDesc) => {
+            const icon = cmdDesc.icon(editor);
+            const description = cmdDesc.description(editor);
 
             const blockLevelItems = ['Title', 'Ordered List', 'Unordered List', 'Quote'];
 
-            const active = button.active
-              ? typeof button.description === 'string' &&
-                blockLevelItems.indexOf(button.description) > -1
-                ? button.active(editor)
-                : button.active(marksInEntireSelection(editor))
+            const active = cmdDesc.active
+              ? blockLevelItems.indexOf(description) > -1
+                ? cmdDesc.active(editor)
+                : cmdDesc.active(marksInEntireSelection(editor))
               : false;
 
             return <ToolbarButton
@@ -69,14 +67,15 @@ export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
               key={description}
               description={description}
               icon={icon}
-              command={button.command}
+              command={cmdDesc.command}
               context={props.commandContext}
             />;
           });
 
-          const buttonSeparator = <div className="button-separator"></div>;
+          const buttonSeparator =
+            <div key={'spacer-' + cmdDescsIndex} className="button-separator"></div>;
 
-          return isLastInList(hoverMenuCommands, buttonGroupIndex)
+          return isLastInList(hoverMenuCommands, cmdDescsIndex)
             ? buttons
             : buttons.concat(buttonSeparator);
         })}

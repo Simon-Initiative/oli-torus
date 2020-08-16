@@ -3,9 +3,9 @@ import { ReactEditor } from 'slate-react';
 // For toolbar buttons
 export type CommandDesc = {
   type: 'CommandDesc',
-  icon: string | ((editor: ReactEditor) => string),
+  icon: (editor: ReactEditor) => string,
   command: Command,
-  description: string | ((editor: ReactEditor) => string),
+  description: (editor: ReactEditor) => string,
   // Is the formatting is applied to the current selection?
   active?: (...args: any) => boolean;
 };

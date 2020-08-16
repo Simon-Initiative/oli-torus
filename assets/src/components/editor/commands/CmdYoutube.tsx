@@ -104,7 +104,7 @@ const command: Command = {
 
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'play_circle_filled',
-  description: 'YouTube',
+  icon: () => 'play_circle_filled',
+  description: () => 'YouTube',
   command,
 };

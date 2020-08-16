@@ -70,7 +70,7 @@ const command: Command = {
 
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'insert_link',
-  description: 'Link',
+  icon: () => 'insert_link',
+  description: () => 'Link',
   command,
 };

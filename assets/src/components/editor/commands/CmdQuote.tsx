@@ -26,8 +26,8 @@ const command: Command = {
 
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'format_quote',
-  description: 'Quote',
+  icon: () => 'format_quote',
+  description: () => 'Quote',
   command,
   active: (editor: ReactEditor) => getHighestTopLevel(editor).caseOf({
     just: n => n.type === 'blockquote',

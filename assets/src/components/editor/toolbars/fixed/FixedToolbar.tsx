@@ -44,18 +44,24 @@ export const FixedToolbar = React.memo((props: FixedToolbarProps) => {
 
   const buttons = [
     ...toolbarItems.map((t, i) => {
-      if (t.type === 'CommandDesc' && t.command.obtainParameters === undefined) {
+      if (t.type !== 'CommandDesc') {
+        return <Spacer key={'spacer-' + i} />;
+      }
+
+      const icon = t.icon(editor);
+      const description = t.description(editor);
+
+      if (t.command.obtainParameters === undefined) {
         return <ToolbarButton
-          tooltip={t.description}
-          style="mr-1" key={t.icon} icon={t.icon}
+          tooltip={description}
+          style="mr-1" key={description} icon={icon}
           command={t.command} context={props.commandContext} />;
       }
-      if (t.type === 'CommandDesc' && t.command.obtainParameters !== undefined) {
-        return <DropdownToolbarButton style="mr-1" key={t.icon} icon={t.icon}
-          tooltip={t.description}
+      if (t.command.obtainParameters !== undefined) {
+        return <DropdownToolbarButton style="mr-1" key={description} icon={icon}
+          tooltip={description}
           command={t.command} context={props.commandContext} />;
       }
-      return <Spacer key={'spacer-' + i} />;
     }),
   ];
 

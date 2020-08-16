@@ -163,7 +163,7 @@ const description = (editor: ReactEditor) => {
 
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'code',
+  icon: () => 'code',
   description,
   command,
   active: marks => marks.indexOf('code') !== -1,

@@ -36,7 +36,7 @@ const command: Command = {
 
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'grid_on',
-  description: 'Table',
+  icon: () => 'grid_on',
+  description: () => 'Table',
   command,
 };

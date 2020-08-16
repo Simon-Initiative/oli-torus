@@ -63,8 +63,8 @@ const olCommand: Command = listCommandMaker('ol');
 
 export const ulCommandDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'format_list_bulleted',
-  description: 'Unordered List',
+  icon: () => 'format_list_bulleted',
+  description: () => 'Unordered List',
   command: ulCommand,
   active: (editor: ReactEditor) => getNearestTopLevel(editor).caseOf({
     just: n => n.type === 'ul',
@@ -74,8 +74,8 @@ export const ulCommandDesc: CommandDesc = {
 
 export const olCommandDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'format_list_numbered',
-  description: 'Ordered List',
+  icon: () => 'format_list_numbered',
+  description: () => 'Ordered List',
   command: olCommand,
   active: (editor: ReactEditor) => getNearestTopLevel(editor).caseOf({
     just: n => n.type === 'ol',
