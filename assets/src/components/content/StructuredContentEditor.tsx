@@ -3,10 +3,10 @@ import { Node } from 'slate';
 import { StructuredContent } from 'data/content/resource';
 import { Selection } from 'data/content/model';
 import { Editor } from 'components/editor/Editor';
-import { ToolbarItem } from 'components/editor/toolbars/toolbar';
+import { ToolbarItem } from 'components/editor/toolbars/fixed/fixedToolbarItems';
 import { ProjectSlug } from 'data/types';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
-import { ToolbarPosition } from 'components/editor/toolbars/Fixed';
+import { ToolbarPosition } from 'components/editor/toolbars/fixed/FixedToolbar';
 
 export type StructuredContentEditor = {
   editMode: boolean,              // Whether or not we can edit

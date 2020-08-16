@@ -8,36 +8,36 @@ import ModalSelection from 'components/modal/ModalSelection';
 import { MediaManager } from 'components/media/manager/MediaManager.controller';
 import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
-import { Command, CommandDesc } from 'components/editor/toolbars/interfaces';
+import { Command, CommandDesc } from 'components/editor/commands/interfaces';
 
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
 
-export function selectAudio(projectSlug: string,
-  model: ContentModel.Audio): Promise<ContentModel.Audio> {
+export function selectImage(projectSlug: string,
+  model: ContentModel.Image): Promise<ContentModel.Image> {
 
   return new Promise((resolve, reject) => {
 
     const selected = { img: null };
 
     const mediaLibrary =
-      <ModalSelection title="Select audio"
-        onInsert={() => { dismiss(); resolve(selected.img as any); }}
-        onCancel={() => dismiss()}
-        disableInsert={true}
-      >
-        <MediaManager model={model}
-          projectSlug={projectSlug}
-          onEdit={() => { }}
-          mimeFilter={MIMETYPE_FILTERS.AUDIO}
-          selectionType={SELECTION_TYPES.SINGLE}
-          initialSelectionPaths={[model.src]}
-          onSelectionChange={(images: MediaItem[]) => {
-            const first : ContentModel.Audio = { type: 'audio', src: images[0].url,
-              children: [{ text: '' }], id: guid() };
-            (selected as any).img = first;
-          }} />
-      </ModalSelection>;
+        <ModalSelection title="Select an image"
+          onInsert={() => { dismiss(); resolve(selected.img as any); }}
+          onCancel={() => dismiss()}
+          disableInsert={true}
+        >
+          <MediaManager model={model}
+            projectSlug={projectSlug}
+            onEdit={() => { }}
+            mimeFilter={MIMETYPE_FILTERS.IMAGE}
+            selectionType={SELECTION_TYPES.SINGLE}
+            initialSelectionPaths={model.src ? [model.src] : [selected.img as any]}
+            onSelectionChange={(images: MediaItem[]) => {
+              const first : ContentModel.Image = { type: 'img', src: images[0].url,
+                children: [{ text: '' }], id: guid()};
+              (selected as any).img = first;
+            }} />
+        </ModalSelection>;
 
     display(mediaLibrary);
   });
@@ -45,7 +45,7 @@ export function selectAudio(projectSlug: string,
 
 const command: Command = {
   execute: (context, editor: ReactEditor) => {
-    selectAudio(context.projectSlug, ContentModel.audio())
+    selectImage(context.projectSlug, ContentModel.image())
     .then((img) => {
       Transforms.insertNodes(editor, img);
     });
@@ -58,7 +58,7 @@ const command: Command = {
 
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
-  icon: 'audiotrack',
-  description: 'Audio Clip',
+  icon: 'image',
+  description: 'Image',
   command,
 };

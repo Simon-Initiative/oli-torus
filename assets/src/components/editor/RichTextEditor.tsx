@@ -1,7 +1,7 @@
 import React from 'react';
 import { RichText } from 'components/activities/types';
 import { Editor } from 'components/editor/Editor';
-import { getToolbarForResourceType } from 'components/editor/toolbars/toolbar';
+import { getToolbarForResourceType } from 'components/editor/toolbars/fixed/fixedToolbarItems';
 import { ProjectSlug } from 'data/types';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import { classNames } from 'utils/classNames';

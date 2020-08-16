@@ -1,4 +1,4 @@
-import { CommandDesc, Command } from 'components/editor/toolbars/interfaces';
+import { CommandDesc, Command } from 'components/editor/commands/interfaces';
 import { ReactEditor } from 'slate-react';
 import { Transforms } from 'slate';
 import * as ContentModel from 'data/content/model';

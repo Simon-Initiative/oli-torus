@@ -8,7 +8,7 @@ import { AudioEditor } from './editors/Audio';
 import { CodeEditor, CodeBlockLine } from './editors/Code';
 import * as Table from './editors/Table';
 import { EditorProps } from './editors/interfaces';
-import { CommandContext } from './toolbars/interfaces';
+import { CommandContext } from './commands/interfaces';
 
 export function editorFor(
   element: ContentModel.ModelElement,

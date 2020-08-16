@@ -14,8 +14,8 @@ import { getNearestBlock } from './utils';
 import { toggleMark } from './commands/commands';
 import { installNormalizer } from './normalizer';
 import guid from 'utils/guid';
-import { ToolbarPosition, FixedToolbar } from './toolbars/Fixed';
-import { HoveringToolbar } from './toolbars/Hovering';
+import { ToolbarPosition, FixedToolbar } from './toolbars/fixed/FixedToolbar';
+import { HoveringToolbar } from './toolbars/hovering/HoveringToolbar';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor (including selection state)

@@ -1,8 +1,8 @@
 
 import { ReactEditor } from 'slate-react';
 import * as ContentModel from 'data/content/model';
-import { CommandContext } from '../toolbars/interfaces';
-export { CommandContext } from '../toolbars/interfaces';
+import { CommandContext } from '../commands/interfaces';
+export { CommandContext } from '../commands/interfaces';
 
 // This is the interface that all editing components must implement.
 // Note the lack of an onEdit callback. The components instead directly

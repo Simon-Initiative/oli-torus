@@ -1,8 +1,8 @@
 import React, { useRef, useEffect } from 'react';
 import { ReactEditor, useSlate } from 'slate-react';
-import { ToolbarItem, CommandContext } from '../commands/interfaces';
+import { ToolbarItem, CommandContext } from '../../commands/interfaces';
 import Popover from 'react-tiny-popover';
-import { hideToolbar, showToolbar, ToolbarButton } from './common';
+import { hideToolbar, showToolbar, ToolbarButton } from '../common';
 import { Editor, Range, Text } from 'slate';
 
 function shouldShowFixedToolbar(editor: ReactEditor) {

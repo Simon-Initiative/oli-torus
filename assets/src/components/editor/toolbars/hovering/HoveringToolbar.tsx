@@ -1,37 +1,19 @@
 import React, { useRef, useEffect } from 'react';
 import * as ReactDOM from 'react-dom';
 import { useSlate } from 'slate-react';
-import { CommandContext } from '../commands/interfaces';
-import { showToolbar, isToolbarHidden, shouldHideToolbar, hideToolbar, ToolbarButton } from './common';
-import { marksInEntireSelection } from '../utils';
+import { CommandContext } from '../../commands/interfaces';
+import { showToolbar, isToolbarHidden, hideToolbar, ToolbarButton } from '../common';
+import { marksInEntireSelection } from '../../utils';
 import { hoverMenuCommands } from './hoveringToolbarItems';
-
-function positionHovering(el: HTMLElement) {
-  const menu = el;
-  const native = window.getSelection() as any;
-  const range = native.getRangeAt(0);
-  const rect = (range as any).getBoundingClientRect();
-
-  (menu as any).style.position = 'absolute';
-  (menu as any).style.top =
-    ((rect as any).top + (window as any).pageYOffset) - 30 + 'px';
-
-  const left = ((rect as any).left +
-    window.pageXOffset -
-    (menu as any).offsetWidth / 2 +
-    (rect as any).width / 2) - 50;
-
-  (menu as any).style.left = `${left}px`;
-}
-
-type HoveringToolbarProps = {
-  commandContext: CommandContext;
-};
+import { shouldHideToolbar, positionHovering } from './utils';
 
 function hoveringAreEqual(prevProps: HoveringToolbarProps, nextProps: HoveringToolbarProps) {
   return prevProps.commandContext === nextProps.commandContext;
 }
 
+export type HoveringToolbarProps = {
+  commandContext: CommandContext;
+};
 export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
   const ref = useRef();
   const editor = useSlate();

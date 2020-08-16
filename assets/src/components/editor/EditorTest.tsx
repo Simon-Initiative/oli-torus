@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Editor } from './Editor';
-import { ToolbarItem } from './toolbars/interfaces';
-import { commandDesc as imageCommandDesc } from 'components/editor/toolbars/buttons/Image';
-import { olCommandDesc as olCmd, ulCommandDesc as ulCmd } from 'components/editor/toolbars/buttons/Lists';
-import { commandDesc as youtubeCommandDesc } from 'components/editor/toolbars/buttons/YouTube';
-import { commandDesc as quoteCommandDesc } from 'components/editor/toolbars/buttons/Blockquote';
-import { commandDesc as audioCommandDesc } from 'components/editor/toolbars/buttons/Audio';
-import { commandDesc as tableCommandDesc } from 'components/editor/toolbars/buttons/Table';
+import { ToolbarItem } from './commands/interfaces';
+import { commandDesc as imageCommandDesc } from 'components/editor/commands/CmdImage';
+import { olCommandDesc as olCmd, ulCommandDesc as ulCmd }
+  from 'components/editor/commands/CmdLists';
+import { commandDesc as youtubeCommandDesc } from 'components/editor/commands/CmdYouTube';
+import { commandDesc as quoteCommandDesc } from 'components/editor/commands/CmdQuote';
+import { commandDesc as audioCommandDesc } from 'components/editor/commands/CmdAudio';
+import { commandDesc as tableCommandDesc } from 'components/editor/commands/CmdTable';
 import { RichText } from 'components/activities/types';
 import { ModelElement } from 'data/content/model';
 

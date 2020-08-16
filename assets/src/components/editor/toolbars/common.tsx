@@ -1,6 +1,5 @@
 import React from 'react';
-import { ReactEditor, useSlate } from 'slate-react';
-import { Editor as SlateEditor, Range } from 'slate';
+import { useSlate } from 'slate-react';
 
 export function hideToolbar(el: HTMLElement) {
   el.style.display = 'none';
@@ -8,24 +7,6 @@ export function hideToolbar(el: HTMLElement) {
 
 export function isToolbarHidden(el: HTMLElement) {
   return el.style.display === 'none';
-}
-
-export function shouldHideToolbar(editor: ReactEditor) {
-  const { selection } = editor;
-
-  // Hide the toolbar where there is either:
-  // 1. No selection
-  // 2. The editor is not currently in focus
-  // 3. The selection range is collapsed
-  // 4. The selection current text is only whitespace or
-  //    is the empty string
-
-  // TODO: Prevent selections across block level elements
-
-  return !selection ||
-    !ReactEditor.isFocused(editor) ||
-    Range.isCollapsed(selection) ||
-    SlateEditor.string(editor, selection).trim() === '';
 }
 
 export function showToolbar(el: HTMLElement) {

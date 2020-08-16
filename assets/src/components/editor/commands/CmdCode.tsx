@@ -2,9 +2,9 @@ import { ReactEditor } from 'slate-react';
 import { Transforms, Editor as SlateEditor, Node, Path } from 'slate';
 import * as ContentModel from 'data/content/model';
 import guid from 'utils/guid';
-import { Command, CommandDesc } from 'components/editor/toolbars/interfaces';
+import { Command, CommandDesc } from 'components/editor/commands/interfaces';
 import { getNearestBlock } from 'components/editor/utils';
-import { toggleMark } from 'components/editor/commands';
+import { toggleMark } from 'components/editor/commands/commands';
 
 const parentTextTypes = {
   p: true,

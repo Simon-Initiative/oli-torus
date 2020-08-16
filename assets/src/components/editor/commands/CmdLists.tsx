@@ -1,6 +1,6 @@
 import { ReactEditor } from 'slate-react';
 import { Transforms, Editor as SlateEditor } from 'slate';
-import { CommandContext, Command, CommandDesc } from 'components/editor/toolbars/interfaces';
+import { CommandContext, Command, CommandDesc } from 'components/editor/commands/interfaces';
 import { getNearestTopLevel } from 'components/editor/utils';
 
 const toggleList = (editor: ReactEditor, listType: string) => {

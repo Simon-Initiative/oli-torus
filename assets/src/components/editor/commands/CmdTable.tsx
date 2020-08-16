@@ -1,6 +1,6 @@
 import { ReactEditor } from 'slate-react';
-import { SizePicker } from 'components/editor/toolbars/buttons/SizePicker';
-import { CommandDesc, Command } from 'components/editor/toolbars/interfaces';
+import { SizePicker } from 'components/editor/commands/buttons/SizePicker';
+import { CommandDesc, Command } from 'components/editor/commands/interfaces';
 import { Transforms } from 'slate';
 import { td, tr, table } from 'data/content/model';
 
