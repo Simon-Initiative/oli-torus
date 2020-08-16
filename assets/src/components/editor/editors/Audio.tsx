@@ -5,7 +5,7 @@ import { updateModel, getEditMode } from './utils';
 import * as ContentModel from 'data/content/model';
 import { EditorProps, CommandContext } from './interfaces';
 import * as Settings from './Settings';
-import { selectAudio } from '../commands/buttons/Audio';
+import { selectAudio } from '../commands/CmdAudio';
 
 
 type AudioSettingsProps = {

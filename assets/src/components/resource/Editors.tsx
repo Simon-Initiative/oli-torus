@@ -7,7 +7,7 @@ import {
 } from 'data/content/resource';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { UnsupportedActivity } from './UnsupportedActivity';
-import { getToolbarForResourceType } from '../editor/toolbars/fixedToolbarItems';
+import { getToolbarForResourceType } from '../editor/toolbars/fixed/fixedToolbarItems';
 import { StructuredContentEditor } from 'components/content/StructuredContentEditor';
 import { ProjectSlug, ResourceSlug } from 'data/types';
 import { AbbreviatedActivity } from './AbbreviatedActivity';

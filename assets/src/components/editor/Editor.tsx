@@ -9,7 +9,7 @@ import {
 import { editorFor, markFor } from './editors';
 import { ToolbarItem, CommandContext } from './commands/interfaces';
 import { onKeyDown as listOnKeyDown } from './editors/Lists';
-import { commandDesc as linkCmd } from 'components/editor/commands/buttons/Link';
+import { commandDesc as linkCmd } from 'components/editor/commands/CmdLink';
 import { getNearestBlock } from './utils';
 import { toggleMark } from './commands/commands';
 import { installNormalizer } from './normalizer';

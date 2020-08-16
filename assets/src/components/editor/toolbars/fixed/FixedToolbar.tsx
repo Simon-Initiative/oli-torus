@@ -1,31 +1,9 @@
 import React, { useRef, useEffect } from 'react';
-import { ReactEditor, useSlate } from 'slate-react';
+import { useSlate } from 'slate-react';
 import { ToolbarItem, CommandContext } from '../../commands/interfaces';
 import Popover from 'react-tiny-popover';
 import { hideToolbar, showToolbar, ToolbarButton } from '../common';
-import { Editor, Range, Text } from 'slate';
-
-function shouldShowFixedToolbar(editor: ReactEditor) {
-  const { selection } = editor;
-
-  if (!selection) return false;
-
-  // True if the cursor is in a paragraph at the toplevel with no content
-  const isCursorAtEmptyLine = () => {
-    const nodes = Array.from(Editor.nodes(editor, { at: selection }));
-    if (nodes.length !== 3) {
-      return false;
-    }
-    const [[first], [second], [third]] = nodes;
-    return Editor.isEditor(first) &&
-      second.type === 'p' &&
-      Text.isText(third) && third.text === '';
-  };
-
-  return ReactEditor.isFocused(editor) &&
-    Range.isCollapsed(selection);
-    // isCursorAtEmptyLine();
-}
+import { shouldShowFixedToolbar } from './utils';
 
 export type ToolbarPosition = {
   top?: number,

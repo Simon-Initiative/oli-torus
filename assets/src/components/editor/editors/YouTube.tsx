@@ -5,7 +5,8 @@ import { updateModel, getEditMode } from './utils';
 import * as ContentModel from 'data/content/model';
 import { EditorProps, CommandContext } from './interfaces';
 import * as Settings from './Settings';
-import { CUTE_OTTERS } from 'components/editor/commands/buttons/Youtube';
+
+export const CUTE_OTTERS = 'zHIIzcWqsP0';
 
 export interface YouTubeProps extends EditorProps<ContentModel.YouTube> {
 }

@@ -7,6 +7,7 @@ import ModalSelection from 'components/modal/ModalSelection';
 import { useRef, useState } from 'react';
 import * as Settings from 'components/editor/editors/Settings';
 import { getQueryVariableFromString } from 'utils/params';
+import { CUTE_OTTERS } from '../editors/YouTube';
 
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
@@ -41,8 +42,6 @@ const YouTubeCreation = (props: YouTubeCreationProps) => {
     </div>
   );
 };
-
-export const CUTE_OTTERS = 'zHIIzcWqsP0';
 
 export function selectYouTube(): Promise<string | null> {
 
