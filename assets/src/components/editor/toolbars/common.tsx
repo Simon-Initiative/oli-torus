@@ -1,7 +1,6 @@
 import React from 'react';
 import { ReactEditor, useSlate } from 'slate-react';
-import { Editor as SlateEditor, Range, Node } from 'slate';
-import { textNodesInSelection } from '../utils';
+import { Editor as SlateEditor, Range } from 'slate';
 
 export function hideToolbar(el: HTMLElement) {
   el.style.display = 'none';

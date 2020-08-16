@@ -7,11 +7,11 @@ import {
   SchemaConfig, Selection,
 } from 'data/content/model';
 import { editorFor, markFor } from './editors';
-import { ToolbarItem, CommandContext } from './interfaces';
+import { ToolbarItem, CommandContext } from './commands/interfaces';
 import { onKeyDown as listOnKeyDown } from './editors/Lists';
-import { commandDesc as linkCmd } from './editors/Link';
+import { commandDesc as linkCmd } from 'components/editor/commands/buttons/Link';
 import { getNearestBlock } from './utils';
-import { toggleMark } from './commands';
+import { toggleMark } from './commands/commands';
 import { installNormalizer } from './normalizer';
 import guid from 'utils/guid';
 import { ToolbarPosition, FixedToolbar } from './toolbars/Fixed';

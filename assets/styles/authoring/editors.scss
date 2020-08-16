@@ -47,6 +47,14 @@ blockquote {
   }
 }
 
+.youtube-editor {
+  max-width: 700px;
+  margin: 0 auto;
+  iframe {
+    pointer-events: none;
+  }
+}
+
 .caption-editor {
   text-align: center;
   border: 0;

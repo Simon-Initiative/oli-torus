@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Editor } from './Editor';
-import { ToolbarItem } from './interfaces';
-import { commandDesc as imageCommandDesc } from './editors/Image';
-import { olCommandDesc as olCmd, ulCommandDesc as ulCmd } from './editors/Lists';
-import { commandDesc as youtubeCommandDesc } from './editors/YouTube';
-import { commandDesc as quoteCommandDesc } from './editors/Blockquote';
-import { commandDesc as audioCommandDesc } from './editors/Audio';
-import { commandDesc as tableCommandDesc } from './editors/Table';
+import { ToolbarItem } from './toolbars/interfaces';
+import { commandDesc as imageCommandDesc } from 'components/editor/toolbars/buttons/Image';
+import { olCommandDesc as olCmd, ulCommandDesc as ulCmd } from 'components/editor/toolbars/buttons/Lists';
+import { commandDesc as youtubeCommandDesc } from 'components/editor/toolbars/buttons/YouTube';
+import { commandDesc as quoteCommandDesc } from 'components/editor/toolbars/buttons/Blockquote';
+import { commandDesc as audioCommandDesc } from 'components/editor/toolbars/buttons/Audio';
+import { commandDesc as tableCommandDesc } from 'components/editor/toolbars/buttons/Table';
 import { RichText } from 'components/activities/types';
 import { ModelElement } from 'data/content/model';
 

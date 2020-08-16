@@ -1,23 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ReactEditor, useFocused, useSelected, useSlate } from 'slate-react';
-import { Transforms, Node, Editor, Path, Editor as SlateEditor } from 'slate';
+import { Transforms, Node, Editor, Path } from 'slate';
 import { updateModel, getEditMode } from './utils';
 import * as ContentModel from 'data/content/model';
-import { Command, CommandDesc } from '../interfaces';
 import { EditorProps, CommandContext } from './interfaces';
-import guid from 'utils/guid';
-import { SizePicker } from './SizePicker';
 import * as Settings from './Settings';
-
-// Helper functions for creating tables and its parts
-const td = (text: string) => ContentModel.create<ContentModel.TableData>(
-  { type: 'td', children: [{ type: 'p', children: [{ text }] }], id: guid() });
-
-const tr = (children: ContentModel.TableData[]) => ContentModel.create<ContentModel.TableRow>(
-  { type: 'tr', children, id: guid() });
-
-const table = (children: ContentModel.TableRow[]) => ContentModel.create<ContentModel.Table>(
-  { type: 'table', children, id: guid() });
 
 export const normalize = (editor: ReactEditor, node: Node, path: Path) => {
 
@@ -56,7 +43,7 @@ export const normalize = (editor: ReactEditor, node: Node, path: Path) => {
         // Add as many empty td elements to bring this row back up to
         // the max td count
         while (count < max) {
-          Transforms.insertNodes(editor, td(''), { at: thisPath });
+          Transforms.insertNodes(editor, ContentModel.td(''), { at: thisPath });
           count = count + 1;
         }
 
@@ -65,37 +52,6 @@ export const normalize = (editor: ReactEditor, node: Node, path: Path) => {
 
   }
 
-};
-
-
-// The UI command for creating tables
-const command: Command = {
-  execute: (context: any, editor: ReactEditor, params: any) => {
-
-    const rows: any = [];
-
-    for (let i = 0; i < params.rows; i += 1) {
-      const tds = [];
-      for (let j = 0; j < params.columns; j += 1) {
-        tds.push(td(''));
-      }
-      rows.push(tr(tds));
-    }
-
-    const t = table(rows);
-    Transforms.insertNodes(editor, t);
-  },
-  precondition: (editor: ReactEditor) => {
-
-    return true;
-  },
-
-  obtainParameters: (editor: ReactEditor,
-    onDone: (params: any) => void, onCancel: () => void) => {
-
-    return <SizePicker onHide={onCancel}
-      onTableCreate={(rows, columns) => onDone({ rows, columns })} />;
-  },
 };
 
 // Dropdown menu that appears in each table cell.
@@ -126,9 +82,9 @@ const DropdownMenu = (props: any) => {
     const count = parent.children.length;
     const tds = [];
     for (let i = 0; i < count; i += 1) {
-      tds.push(td(''));
+      tds.push(ContentModel.td(''));
     }
-    const row: ContentModel.TableRow = tr(tds);
+    const row: ContentModel.TableRow = ContentModel.tr(tds);
 
     Transforms.insertNodes(editor, row, { at: parentPath });
   };
@@ -141,9 +97,9 @@ const DropdownMenu = (props: any) => {
     const count = parent.children.length;
     const tds = [];
     for (let i = 0; i < count; i += 1) {
-      tds.push(td(''));
+      tds.push(ContentModel.td(''));
     }
-    const row: ContentModel.TableRow = tr(tds);
+    const row: ContentModel.TableRow = ContentModel.tr(tds);
     Transforms.insertNodes(editor, row, { at: Path.next(parentPath) });
 
   };
@@ -185,7 +141,7 @@ const DropdownMenu = (props: any) => {
       const rows = table.children.length;
       for (let i = 0; i < rows; i += 1) {
         path[path.length - 2] = i;
-        Transforms.insertNodes(editor, td(''), { at: path });
+        Transforms.insertNodes(editor, ContentModel.td(''), { at: path });
       }
     });
 
@@ -202,7 +158,7 @@ const DropdownMenu = (props: any) => {
       const rows = table.children.length;
       for (let i = 0; i < rows; i += 1) {
         path[path.length - 2] = i;
-        Transforms.insertNodes(editor, td(''), { at: Path.next(path) });
+        Transforms.insertNodes(editor, ContentModel.td(''), { at: Path.next(path) });
       }
     });
 
@@ -272,13 +228,6 @@ const DropdownMenu = (props: any) => {
       </div>
     </div>
   );
-};
-
-export const commandDesc: CommandDesc = {
-  type: 'CommandDesc',
-  icon: 'grid_on',
-  description: 'Table',
-  command,
 };
 
 export interface TableProps extends EditorProps<ContentModel.Table> {

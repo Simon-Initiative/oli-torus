@@ -1,10 +1,10 @@
 import React, { useRef, useEffect } from 'react';
 import * as ReactDOM from 'react-dom';
 import { useSlate } from 'slate-react';
-import { hoverMenuCommands } from '../editors';
-import { CommandContext } from '../interfaces';
+import { CommandContext } from '../commands/interfaces';
 import { showToolbar, isToolbarHidden, shouldHideToolbar, hideToolbar, ToolbarButton } from './common';
 import { marksInEntireSelection } from '../utils';
+import { hoverMenuCommands } from './hoveringToolbarItems';
 
 function positionHovering(el: HTMLElement) {
   const menu = el;

@@ -1,8 +1,31 @@
 import { Element, Range } from 'slate';
+import guid from 'utils/guid';
+import { normalizeHref } from 'components/editor/editors/Link';
 
 export function create<ModelElement>(params: ModelElement): ModelElement {
   return (params as ModelElement);
 }
+
+// Helper functions for creating ModelElements
+export const td = (text: string) =>
+  create<TableData>({ type: 'td', children: [{ type: 'p', children: [{ text }] }], id: guid() });
+export const tr = (children: TableData[]) => create<TableRow>({ type: 'tr', children, id: guid() });
+export const table = (children: TableRow[]) =>
+  create<Table>({ type: 'table', children, id: guid() });
+export const li = () => create<ListItem>({ type: 'li', children: [{ text: '' }], id: guid() });
+export const ol = () => create<OrderedList>({ type: 'ol', children: [li()], id: guid() });
+export const ul = () => create<UnorderedList>({ type: 'ul', children: [li()], id: guid() });
+export const youtube = (src: string) =>
+  create<YouTube>({ type: 'youtube', src, children: [{ text: '' }], id: guid() });
+export const link = (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href),
+  target: 'self', children: [{ text: '' }], id: guid() });
+export const image = () =>
+  create<Image>({ type: 'img', src: '', children: [{ text: '' }], id: guid() });
+export const quote = () => create<Blockquote>({ children: [], type: 'blockquote', id: guid() });
+export const audio = (src = '') =>
+  create<Audio>({ type: 'audio', src, children: [{ text: '' }], id: guid() });
+export const p = () =>
+  create<Paragraph>({ type: 'p', children: [{ text: '' }], id: guid() });
 
 export function mutate<ModelElement>(obj: ModelElement, changes: Object): ModelElement {
   return Object.assign({}, obj, changes) as ModelElement;

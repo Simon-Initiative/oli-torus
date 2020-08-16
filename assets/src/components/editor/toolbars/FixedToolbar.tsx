@@ -1,11 +1,30 @@
 import React, { useRef, useEffect } from 'react';
 import { ReactEditor, useSlate } from 'slate-react';
-import { ToolbarItem, CommandContext } from '../interfaces';
+import { ToolbarItem, CommandContext } from '../commands/interfaces';
 import Popover from 'react-tiny-popover';
 import { hideToolbar, showToolbar, ToolbarButton } from './common';
+import { Editor, Range, Text } from 'slate';
 
-function shouldHideFixedToolbar(editor: ReactEditor) {
-  return !ReactEditor.isFocused(editor);
+function shouldShowFixedToolbar(editor: ReactEditor) {
+  const { selection } = editor;
+
+  if (!selection) return false;
+
+  // True if the cursor is in a paragraph at the toplevel with no content
+  const isCursorAtEmptyLine = () => {
+    const nodes = Array.from(Editor.nodes(editor, { at: selection }));
+    if (nodes.length !== 3) {
+      return false;
+    }
+    const [[first], [second], [third]] = nodes;
+    return Editor.isEditor(first) &&
+      second.type === 'p' &&
+      Text.isText(third) && third.text === '';
+  };
+
+  return ReactEditor.isFocused(editor) &&
+    Range.isCollapsed(selection);
+    // isCursorAtEmptyLine();
 }
 
 export type ToolbarPosition = {
@@ -38,10 +57,10 @@ export const FixedToolbar = React.memo((props: FixedToolbarProps) => {
       return;
     }
 
-    if (shouldHideFixedToolbar(editor)) {
-      hideToolbar(el);
-    } else {
+    if (shouldShowFixedToolbar(editor)) {
       showToolbar(el);
+    } else {
+      hideToolbar(el);
     }
   });
 
@@ -56,7 +75,7 @@ export const FixedToolbar = React.memo((props: FixedToolbarProps) => {
       if (t.type === 'CommandDesc' && t.command.obtainParameters !== undefined) {
         return <DropdownToolbarButton style="mr-1" key={t.icon} icon={t.icon}
           tooltip={t.description}
-          command={t.command} context={props.commandContext}/>;
+          command={t.command} context={props.commandContext} />;
       }
       return <Spacer key={'spacer-' + i} />;
     }),

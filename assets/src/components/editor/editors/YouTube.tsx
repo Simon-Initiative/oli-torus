@@ -1,91 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ReactEditor, useSelected, useFocused } from 'slate-react';
 import { Transforms } from 'slate';
-
 import { updateModel, getEditMode } from './utils';
 import * as ContentModel from 'data/content/model';
-import { Command, CommandDesc } from '../interfaces';
 import { EditorProps, CommandContext } from './interfaces';
-import guid from 'utils/guid';
-import ModalSelection from 'components/modal/ModalSelection';
 import * as Settings from './Settings';
-import { getQueryVariableFromString } from 'utils/params';
-
-import { modalActions } from 'actions/modal';
-
-const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
-const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
-
-const CUTE_OTTERS = 'zHIIzcWqsP0';
-
-export function selectYouTube(): Promise<string | null> {
-
-  return new Promise((resolve, reject) => {
-
-    const selected = { src: null };
-
-    const mediaLibrary =
-        <ModalSelection title="Insert YouTube video"
-          onInsert={() => {
-            dismiss();
-            resolve(selected.src ? selected.src : CUTE_OTTERS);
-          }}
-          onCancel={() => dismiss()}
-        >
-          <YouTubeCreation
-            onEdit={(src: string) => { dismiss(); resolve(src); }}
-            onChange={(src: string) => { selected.src = src as any; }}/>
-        </ModalSelection>;
-
-    display(mediaLibrary);
-  });
-}
-
-const command: Command = {
-  execute: (context, editor: ReactEditor) => {
-
-    const selection = editor.selection;
-
-    selectYouTube()
-    .then((selectedSrc) => {
-      if (selectedSrc !== null) {
-
-        let src = selectedSrc;
-        const hasParams = src.includes('?');
-
-        if (hasParams) {
-          const queryString = src.substr(src.indexOf('?') + 1);
-          src = getQueryVariableFromString('v', queryString);
-        } else if (src.indexOf('/youtu.be/') !== -1) {
-          src = src.substr(src.lastIndexOf('/') + 1);
-        }
-
-        const youtube = ContentModel.create<ContentModel.YouTube>(
-          { type: 'youtube', src, children: [{ text: '' }], id: guid() });
-
-        if (selection !== null) {
-          Transforms.insertNodes(editor, youtube, { at: selection });
-        } else {
-          Transforms.insertNodes(editor, youtube);
-        }
-
-      }
-    });
-
-  },
-  precondition: (editor: ReactEditor) => {
-
-    return true;
-  },
-
-};
-
-export const commandDesc: CommandDesc = {
-  type: 'CommandDesc',
-  icon: 'play_circle_filled',
-  description: 'YouTube',
-  command,
-};
+import { CUTE_OTTERS } from 'components/editor/toolbars/buttons/Youtube';
 
 export interface YouTubeProps extends EditorProps<ContentModel.YouTube> {
 }
@@ -186,37 +106,6 @@ const YouTubeSettings = (props: YouTubeSettingsProps) => {
 };
 
 
-export type YouTubeCreationProps = {
-  onChange: (src: string) => void;
-  onEdit: (src: string) => void;
-};
-const YouTubeCreation = (props: YouTubeCreationProps) => {
-
-  const [src, setSrc] = useState('');
-  const ref = useRef();
-
-  return (
-    <div>
-
-      <p className="mb-4">Not sure which video you want to use?
-        Visit <a href="https://www.youtube.com" target="_blank">YouTube</a> to search and find it.
-      </p>
-
-      <form className="form">
-        <label>Enter the YouTube Video ID (or just the entire video URL):</label>
-        <input type="text" value={src}
-          onChange={(e) => { props.onChange(e.target.value); setSrc(e.target.value); }}
-          onKeyPress={e => Settings.onEnterApply(e, () => props.onEdit(src))}
-          className="form-control mr-sm-2"/>
-        <div className="mb-2">
-          <small>e.g. https://www.youtube.com/watch?v=<strong>zHIIzcWqsP0</strong></small>
-        </div>
-      </form>
-
-    </div>
-  );
-};
-
 export const YouTubeEditor = (props: YouTubeProps) => {
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
@@ -233,7 +122,9 @@ export const YouTubeEditor = (props: YouTubeProps) => {
   // events.
 
   const { src } = model;
-  const fullSrc = 'https://www.youtube.com/embed/' + (src === '' ? CUTE_OTTERS : src) + '?disablekb=1&modestbranding=1&showinfo=0&rel=0';
+  const parameters = 'disablekb=1&modestbranding=1&showinfo=0&rel=0&controls=0';
+  const fullSrc = 'https://www.youtube.com/embed/' +
+    (src === '' ? CUTE_OTTERS : src) + '?' + parameters;
 
   const onEdit = (updated: ContentModel.YouTube) => {
     updateModel<ContentModel.YouTube>(editor, model, updated);
@@ -259,7 +150,7 @@ export const YouTubeEditor = (props: YouTubeProps) => {
 
 
   const borderStyle = focused && selected
-    ? { border: 'solid 2px lightblue' } : {};
+    ? { border: 'solid 3px lightblue', borderRadius: 0 } : { border: 'solid 3px transparent' };
 
 
   return (
@@ -268,8 +159,10 @@ export const YouTubeEditor = (props: YouTubeProps) => {
       <div contentEditable={false} style={{ userSelect: 'none' }}
         className="youtube-editor">
 
-        <div className="embed-responsive embed-responsive-16by9 img-thumbnail">
-          <iframe className="embed-responsive-item" style={borderStyle}
+        <div
+          onClick={e => Transforms.select(editor, ReactEditor.findPath(editor, model))}
+          className="embed-responsive embed-responsive-16by9 img-thumbnail" style={borderStyle}>
+          <iframe className="embed-responsive-item"
             src={fullSrc} allowFullScreen></iframe>
         </div>
         <Settings.ToolPopupButton

@@ -1,7 +1,7 @@
 import { ReactEditor } from 'slate-react';
 import { Node, Transforms } from 'slate';
 import { getNearestBlock } from '../utils';
-import { Command, CommandDesc } from '../interfaces';
+import { Command, CommandDesc } from '../commands/interfaces';
 
 const parentTextTypes = {
   p: true,

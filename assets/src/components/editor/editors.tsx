@@ -1,21 +1,14 @@
 import * as React from 'react';
-
 import * as ContentModel from 'data/content/model';
-
 import { ImageEditor } from './editors/Image';
 import { YouTubeEditor } from './editors/YouTube';
 import { BlockQuoteEditor } from './editors/Blockquote';
-import { LinkEditor, commandDesc as linkCmd } from './editors/Link';
+import { LinkEditor } from 'components/editor/editors/Link';
 import { AudioEditor } from './editors/Audio';
 import { CodeEditor, CodeBlockLine } from './editors/Code';
 import * as Table from './editors/Table';
 import { EditorProps } from './editors/interfaces';
-import { createToggleFormatCommand as format } from './commands';
-import { CommandContext } from './interfaces';
-import { commandDesc as titleCmd } from './toolbars/TextFormatter';
-import { commandDesc as codeCmd } from 'components/editor/editors/Code';
-import { olCommandDesc as olCmd, ulCommandDesc as ulCmd } from 'components/editor/editors/Lists';
-import { commandDesc as quoteCmd } from '../editor/editors/Blockquote';
+import { CommandContext } from './toolbars/interfaces';
 
 export function editorFor(
   element: ContentModel.ModelElement,
@@ -106,21 +99,3 @@ export function markFor(mark: ContentModel.Mark, children: any): JSX.Element {
       return <span>{children}</span>;
   }
 }
-
-export const hoverMenuCommands = [
-  [
-    format('format_bold', 'strong', 'Bold'),
-    format('format_italic', 'em', 'Italic'),
-    linkCmd,
-  ],
-  [
-    olCmd,
-    ulCmd,
-  ],
-  [
-    titleCmd,
-    quoteCmd,
-    codeCmd,
-  ],
-];
-
