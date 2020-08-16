@@ -1,10 +1,10 @@
 import { createToggleFormatCommand as format } from 'components/editor/commands/commands';
-import { commandDesc as titleCmd } from 'components/editor/commands/CmdTitle';
-import { commandDesc as codeCmd } from 'components/editor/commands/CmdCode';
+import { commandDesc as titleCmd } from 'components/editor/commands/TitleCmd';
+import { commandDesc as codeCmd } from 'components/editor/commands/CodeCmd';
 import { olCommandDesc as olCmd, ulCommandDesc as ulCmd }
-  from 'components/editor/commands/CmdLists';
-import { commandDesc as quoteCmd } from 'components/editor/commands/CmdQuote';
-import { commandDesc as linkCmd } from 'components/editor/commands/CmdLink';
+  from 'components/editor/commands/ListsCmd';
+import { commandDesc as quoteCmd } from 'components/editor/commands/QuoteCmd';
+import { commandDesc as linkCmd } from 'components/editor/commands/LinkCmd';
 
 export const hoverMenuCommands = [
   [

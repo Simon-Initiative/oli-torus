@@ -2,6 +2,17 @@ import { Transforms, Range, Node, Point, Path, Editor as SlateEditor } from 'sla
 import * as ContentModel from 'data/content/model';
 import { KeyboardEvent } from 'react';
 
+// The key down handler required to allow special list processing.
+export const onKeyDown = (editor: SlateEditor, e: KeyboardEvent) => {
+  if (e.key === 'Tab' && e.shiftKey) {
+    handleOutdent(editor, e);
+  } else if (e.key === 'Tab' && !e.shiftKey) {
+    handleIndent(editor, e);
+  } else if (e.key === 'Enter') {
+    handleTermination(editor, e);
+  }
+};
+
 const isList = (n: Node) => n.type === 'ul' || n.type === 'ol';
 
 // Handles a 'tab' key down event that may indent a list item.
@@ -127,15 +138,3 @@ function handleTermination(editor: SlateEditor, e: KeyboardEvent) {
     }
   }
 }
-
-// The key down handler required to allow special list processing.
-export const onKeyDown = (editor: SlateEditor, e: KeyboardEvent) => {
-  if (e.key === 'Tab' && e.shiftKey) {
-    handleOutdent(editor, e);
-  } else if (e.key === 'Tab' && !e.shiftKey) {
-    handleIndent(editor, e);
-  } else if (e.key === 'Enter') {
-    handleTermination(editor, e);
-  }
-};
-

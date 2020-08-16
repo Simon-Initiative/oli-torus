@@ -1,6 +1,6 @@
 import { Element, Range } from 'slate';
 import guid from 'utils/guid';
-import { normalizeHref } from 'components/editor/editors/Link';
+import { normalizeHref } from 'components/editor/editors/link/utils';
 
 export function create<ModelElement>(params: ModelElement): ModelElement {
   return (params as ModelElement);

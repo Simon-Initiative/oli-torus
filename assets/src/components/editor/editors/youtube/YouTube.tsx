@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ReactEditor, useSelected, useFocused } from 'slate-react';
 import { Transforms } from 'slate';
-import { updateModel, getEditMode } from './utils';
+import { updateModel, getEditMode } from 'components/editor/editors/utils';
 import * as ContentModel from 'data/content/model';
-import { EditorProps, CommandContext } from './interfaces';
-import * as Settings from './Settings';
+import { EditorProps, CommandContext } from 'components/editor/editors/interfaces';
+import * as Settings from 'components/editor/editors/settings/Settings';
 
 export const CUTE_OTTERS = 'zHIIzcWqsP0';
 

@@ -2,7 +2,7 @@ import { ReactEditor } from 'slate-react';
 import { CommandDesc, Command } from 'components/editor/commands/interfaces';
 import { Transforms } from 'slate';
 import { td, tr, table } from 'data/content/model';
-import { SizePicker } from './utils/SizePicker';
+import { SizePicker } from './SizePicker';
 
 // The UI command for creating tables
 const command: Command = {

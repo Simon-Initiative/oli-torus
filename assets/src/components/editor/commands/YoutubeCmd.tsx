@@ -5,9 +5,9 @@ import * as ContentModel from 'data/content/model';
 import { modalActions } from 'actions/modal';
 import ModalSelection from 'components/modal/ModalSelection';
 import { useRef, useState } from 'react';
-import * as Settings from 'components/editor/editors/Settings';
+import * as Settings from 'components/editor/editors/settings/Settings';
 import { getQueryVariableFromString } from 'utils/params';
-import { CUTE_OTTERS } from '../editors/YouTube';
+import { CUTE_OTTERS } from '../editors/youtube/YouTube';
 
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));

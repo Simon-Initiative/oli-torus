@@ -1,14 +1,17 @@
 import * as React from 'react';
 import * as ContentModel from 'data/content/model';
-import { ImageEditor } from './editors/Image';
-import { YouTubeEditor } from './editors/YouTube';
-import { BlockQuoteEditor } from './editors/Blockquote';
-import { LinkEditor } from 'components/editor/editors/Link';
-import { AudioEditor } from './editors/Audio';
-import { CodeEditor, CodeBlockLine } from './editors/Code';
-import * as Table from './editors/Table';
+import { ImageEditor } from './editors/image/ImageEditor';
+import { YouTubeEditor } from './editors/youtube/YouTube';
+import { BlockQuoteEditor } from './editors/blockquote/BlockquoteEditor';
+import { LinkEditor } from 'components/editor/editors/link/LinkEditor';
+import { AudioEditor } from './editors/audio/AudioEditor';
+import { CodeEditor, CodeBlockLine } from './editors/code/CodeEditor';
 import { EditorProps } from './editors/interfaces';
 import { CommandContext } from './commands/interfaces';
+import { TableEditor } from 'components/editor/editors/table/TableEditor';
+import { ThEditor } from 'components/editor/editors/table/ThEditor';
+import { TdEditor } from 'components/editor/editors/table/TdEditor';
+import { TrEditor } from 'components/editor/editors/table/TrEditor';
 
 export function editorFor(
   element: ContentModel.ModelElement,
@@ -62,13 +65,13 @@ export function editorFor(
     case 'code_line':
       return <CodeBlockLine {...(editorProps as EditorProps<ContentModel.CodeLine>)} />;
     case 'table':
-      return <Table.TableEditor {...(editorProps as EditorProps<ContentModel.Table>)} />;
+      return <TableEditor {...(editorProps as EditorProps<ContentModel.Table>)} />;
     case 'tr':
-      return <Table.TrEditor {...(editorProps as EditorProps<ContentModel.TableRow>)} />;
+      return <TrEditor {...(editorProps as EditorProps<ContentModel.TableRow>)} />;
     case 'td':
-      return <Table.TdEditor {...(editorProps as EditorProps<ContentModel.TableData>)} />;
+      return <TdEditor {...(editorProps as EditorProps<ContentModel.TableData>)} />;
     case 'th':
-      return <Table.ThEditor {...(editorProps as EditorProps<ContentModel.TableHeader>)} />;
+      return <ThEditor {...(editorProps as EditorProps<ContentModel.TableHeader>)} />;
     case 'math':
     case 'math_line':
       return <span {...attributes}>Not implemented</span>;

@@ -1,5 +1,5 @@
 import * as ContentModel from 'data/content/model';
-import { EditorProps } from './interfaces';
+import { EditorProps } from 'components/editor/editors/interfaces';
 
 export interface BlockQuoteProps extends EditorProps<ContentModel.Blockquote> {
 }

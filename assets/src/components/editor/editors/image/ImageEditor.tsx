@@ -1,9 +1,9 @@
 import React from 'react';
 import { ReactEditor, useFocused, useSelected } from 'slate-react';
 import { Transforms } from 'slate';
-import { updateModel } from './utils';
+import { updateModel } from 'components/editor/editors/utils';
 import * as ContentModel from 'data/content/model';
-import { EditorProps } from './interfaces';
+import { EditorProps } from 'components/editor/editors/interfaces';
 
 export interface ImageProps extends EditorProps<ContentModel.Image> {
 }

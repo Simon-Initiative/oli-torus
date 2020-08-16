@@ -2,7 +2,7 @@
 import { ReactEditor } from 'slate-react';
 import * as Immutable from 'immutable';
 import { Node, NodeEntry, Editor as SlateEditor, Transforms, Path } from 'slate';
-import { normalize as tableNormalize } from './editors/Table';
+import { normalize as tableNormalize } from './editors/table/utils';
 import { create, schema, Paragraph, SchemaConfig } from 'data/content/model';
 import guid from 'utils/guid';
 
