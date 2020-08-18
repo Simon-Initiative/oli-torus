@@ -1,4 +1,4 @@
-defmodule Oli.Lti.ProviderTest do
+defmodule Oli.Delivery.Lti.ProviderTest do
   alias Oli.Delivery.Lti.Provider
   import Phoenix.ConnTest
 

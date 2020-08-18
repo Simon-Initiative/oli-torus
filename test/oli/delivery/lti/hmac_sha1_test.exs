@@ -1,4 +1,4 @@
-defmodule Oli.Lti.HmacSHA1Test do
+defmodule Oli.Delivery.Lti.HmacSHA1Test do
   alias Oli.Delivery.Lti.HmacSHA1
 
   use ExUnit.Case, async: true

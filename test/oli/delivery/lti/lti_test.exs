@@ -1,4 +1,4 @@
-defmodule Oli.LtiTest do
+defmodule Oli.Delivery.Lti.LtiTest do
   use Oli.DataCase
 
   alias Oli.Delivery.Lti
