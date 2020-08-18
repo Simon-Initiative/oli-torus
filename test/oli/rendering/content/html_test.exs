@@ -20,8 +20,6 @@ defmodule Oli.Content.Content.HtmlTest do
       rendered_html = Content.render(context, content, Content.Html)
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
 
-      IO.inspect(rendered_html_string, printable_limit: :infinity)
-
       assert rendered_html_string =~ "<h3>Introduction</h3>"
       assert rendered_html_string =~ ~r/<img.*src="https:\/\/upload.wikimedia.org\/wikipedia\/commons\/thumb\/f\/f9\/Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg\/480px-Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg"\/>/
       assert rendered_html_string =~ "<p>The American colonials proclaimed &quot;no taxation without representation"

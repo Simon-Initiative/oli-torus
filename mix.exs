@@ -60,6 +60,7 @@ defmodule Oli.MixProject do
       {:ecto_sql, "~> 3.1"},
       {:ex_aws, "~> 2.1"},
       {:ex_aws_s3, "~> 2.0"},
+      {:ex_crypto, "~> 0.10.0"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
       {:floki, ">= 0.26.0", only: :test},
       {:gettext, "~> 0.11"},
