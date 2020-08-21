@@ -67,6 +67,7 @@ defmodule Oli.MixProject do
       {:hackney, "~> 1.9"},
       {:httpoison, "~> 1.6"},
       {:jason, "~> 1.0"},
+      {:jose, "~> 1.10"},
       {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:nimble_parsec, "~> 0.5"},

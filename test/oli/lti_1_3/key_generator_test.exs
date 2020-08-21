@@ -10,8 +10,13 @@ defmodule Oli.LtiTest do
 
     test "generate_key_pair/0 generates a public and private key pair" do
       keypair = Lti.generate_key_pair
+
+      IO.inspect keypair, label: "keypair"
+
       assert Map.has_key?(keypair, :public_key)
       assert Map.has_key?(keypair, :private_key)
+      assert Map.has_key?(keypair, :key_id)
+
     end
 
   end
