@@ -1,116 +1,21 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ReactEditor, useSelected, useFocused } from 'slate-react';
 import { Transforms } from 'slate';
 import { updateModel, getEditMode } from 'components/editor/editors/utils';
 import * as ContentModel from 'data/content/model';
-import { EditorProps, CommandContext } from 'components/editor/editors/interfaces';
+import { EditorProps } from 'components/editor/editors/interfaces';
 import * as Settings from 'components/editor/editors/settings/Settings';
+import { YouTubeSettings } from 'components/editor/editors/youtube/YoutubeSettings';
 
 export const CUTE_OTTERS = 'zHIIzcWqsP0';
 
-export interface YouTubeProps extends EditorProps<ContentModel.YouTube> {
-}
-
-const onVisit = (href: string) => {
-  window.open(href, '_blank');
-};
-
-const onCopy = (href: string) => {
-  navigator.clipboard.writeText(href);
-};
-
-type YouTubeSettingsProps = {
-  model: ContentModel.YouTube,
-  onEdit: (model: ContentModel.YouTube) => void,
-  onRemove: () => void,
-  commandContext: CommandContext,
-  editMode: boolean,
-};
-
-const toLink = (src: string) =>
-  'https://www.youtube.com/embed/' + (src === '' ? CUTE_OTTERS : src);
-
-
-const YouTubeSettings = (props: YouTubeSettingsProps) => {
-
-  // Which selection is active, URL or in course page
-  const [model, setModel] = useState(props.model);
-
-  const ref = useRef();
-
-  useEffect(() => {
-
-    // Inits the tooltips, since this popover rendres in a react portal
-    // this was necessary
-    if (ref !== null && ref.current !== null) {
-      ((window as any).$('[data-toggle="tooltip"]')).tooltip();
-    }
-  });
-
-  const setSrc = (src: string) => setModel(Object.assign({}, model, { src }));
-  const setCaption = (caption: string) => setModel(Object.assign({}, model, { caption }));
-  const setAlt = (alt: string) => setModel(Object.assign({}, model, { alt }));
-
-  const applyButton = (disabled: boolean) => <button onClick={(e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    props.onEdit(model);
-  }}
-  disabled={disabled}
-  className="btn btn-primary ml-1">Apply</button>;
-
-  return (
-    <div className="settings-editor-wrapper">
-      <div className="settings-editor" ref={ref as any}>
-
-        <div className="d-flex justify-content-between mb-2">
-          <div>
-            YouTube
-          </div>
-
-          <div>
-            <Settings.Action icon="fab fa-youtube" tooltip="Open YouTube to Find a Video"
-              onClick={() => onVisit('https://www.youtube.com')}/>
-            <Settings.Action icon="fas fa-external-link-alt" tooltip="Open link"
-              onClick={() => onVisit(toLink(model.src))}/>
-            <Settings.Action icon="far fa-copy" tooltip="Copy link"
-              onClick={() => onCopy(toLink(model.src))}/>
-            <Settings.Action icon="fas fa-trash" tooltip="Remove YouTube Video" id="remove-button"
-              onClick={() => props.onRemove()}/>
-          </div>
-        </div>
-
-        <form className="form">
-          <label>YouTube Video ID</label>
-          <input type="text" value={model.src} onChange={e => setSrc(e.target.value)}
-            className="form-control mr-sm-2"/>
-          <div className="mb-2">
-            <small>e.g. https://www.youtube.com/watch?v=<strong>zHIIzcWqsP0</strong></small>
-          </div>
-
-          <label>Caption</label>
-          <input type="text" value={model.caption} onChange={e => setCaption(e.target.value)}
-            onKeyPress={e => Settings.onEnterApply(e, () => props.onEdit(model))}
-            className="form-control mr-sm-2"/>
-
-          <label>Alt Text</label>
-          <input type="text" value={model.alt} onChange={e => setAlt(e.target.value)}
-            onKeyPress={e => Settings.onEnterApply(e, () => props.onEdit(model))}
-            className="form-control mr-sm-2"/>
-        </form>
-
-        {applyButton(!props.editMode)}
-
-      </div>
-    </div>
-  );
-};
-
+export interface YouTubeProps extends EditorProps<ContentModel.YouTube> {}
 
 export const YouTubeEditor = (props: YouTubeProps) => {
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const { attributes, children, editor, model } = props;
+  const { attributes, children, editor } = props;
+  const [model, setModel] = useState(props.model);
 
   const editMode = getEditMode(editor);
 
@@ -149,6 +54,8 @@ export const YouTubeEditor = (props: YouTubeProps) => {
     onRemove={onRemove}
     onEdit={onEdit}/>;
 
+  const setCaption = (caption: string) => setModel(Object.assign({}, model, { caption }));
+
 
   const borderStyle = focused && selected
     ? { border: 'solid 3px lightblue', borderRadius: 0 } : { border: 'solid 3px transparent' };
@@ -171,7 +78,13 @@ export const YouTubeEditor = (props: YouTubeProps) => {
           setIsPopoverOpen={setIsPopoverOpen}
           isPopoverOpen={isPopoverOpen}
           label="YouTube" />
-        <Settings.Caption caption={model.caption}/>
+        <Settings.Input
+          value={model.caption}
+          onChange={value => setCaption(value)}
+          editor={editor}
+          model={model}
+          placeholder="Type caption for YouTube video"
+        />
 
       </div>
 

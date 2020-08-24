@@ -5,7 +5,7 @@ import { commandDesc as imageCommandDesc } from 'components/editor/commands/Imag
 import { olCommandDesc as olCmd, ulCommandDesc as ulCmd }
   from 'components/editor/commands/ListsCmd';
 import { commandDesc as youtubeCommandDesc } from 'components/editor/commands/YoutubeCmd';
-import { commandDesc as quoteCommandDesc } from 'components/editor/commands/QuoteCmd';
+import { commandDesc as quoteCommandDesc } from 'components/editor/commands/BlockquoteCmd';
 import { commandDesc as audioCommandDesc } from 'components/editor/commands/AudioCmd';
 import { commandDesc as tableCommandDesc } from 'components/editor/commands/table/TableCmd';
 import { RichText } from 'components/activities/types';

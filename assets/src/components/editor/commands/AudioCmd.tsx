@@ -51,7 +51,6 @@ const command: Command = {
     });
   },
   precondition: (editor: ReactEditor) => {
-
     return true;
   },
 };

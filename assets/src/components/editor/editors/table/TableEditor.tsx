@@ -15,7 +15,9 @@ export const TableEditor = (props: TableProps) => {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const { attributes, children, editor } = props;
-  const { model } = props;
+
+  const [model, setModel] = useState(props.model);
+  const setCaption = (caption: string) => setModel(Object.assign({}, model, { caption }));
 
   const editMode = getEditMode(editor);
 
@@ -57,12 +59,18 @@ export const TableEditor = (props: TableProps) => {
         </table>
       </div>
       <div contentEditable={false} style={{ userSelect: 'none' }}>
-        <Settings.ToolPopupButton
+        {/* <Settings.ToolPopupButton
           contentFn={contentFn}
           setIsPopoverOpen={setIsPopoverOpen}
           isPopoverOpen={isPopoverOpen}
-          label="Table" />
-        <Settings.Caption caption={model.caption}/>
+          label="Table" /> */}
+        <Settings.Input
+          value={model.caption}
+          onChange={value => setCaption(value)}
+          editor={editor}
+          model={model}
+          placeholder="Type caption for table"
+        />
       </div>
     </div>
   );

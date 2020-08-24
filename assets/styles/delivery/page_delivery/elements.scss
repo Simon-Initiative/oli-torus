@@ -17,6 +17,18 @@ blockquote {
   }
 }
 
+code {
+  font-family: "Source Code Pro", "Courier New", Courier, monospace;
+  color: rgba(0,0,0,.84);
+  background: rgba(0,0,0,.05);
+  letter-spacing: -.003em;
+  text-align: left;
+}
+
+ul li, ol li {
+  margin-bottom: 14px;
+}
+
 table {
   table-layout: fixed;
   @extend .table;
@@ -48,8 +60,8 @@ iframe {
 }
 
 .figure-wrapper {
-  @extend .text-center;
-
+  display: flex;
+  justify-content: center;
   figure {
     display: inline-block;
     background-color: darken($body-bg, 5%);

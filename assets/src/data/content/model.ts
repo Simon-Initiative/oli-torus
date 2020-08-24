@@ -39,6 +39,9 @@ export type ModelElement
   | Audio | Table | TableRow | TableHeader | TableData | OrderedList | UnorderedList
   | ListItem | Math | MathLine | Code | CodeLine | Blockquote | Hyperlink;
 
+export type TextElement = Paragraph | HeadingOne | HeadingTwo | HeadingThree
+  | HeadingFour | HeadingFive | HeadingSix;
+
 export interface Identifiable {
   id: string;
 }
@@ -234,7 +237,7 @@ const tableCell = {
   isBlock: true,
   isTopLevel: false,
   validChildren: toObj(['p', 'img', 'youtube', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    'ul', 'audio', 'math', 'code', 'blockquote']),
+    'ul', 'audio', 'math', 'code']),
 };
 
 const list = {
@@ -280,8 +283,7 @@ export const schema = {
     isVoid: false,
     isBlock: true,
     isTopLevel: false,
-    validChildren: toObj(['img', 'youtube', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'ul', 'audio', 'math', 'code', 'blockquote']),
+    validChildren: toObj(['img', 'youtube', 'ol', 'ul', 'audio', 'math', 'code']),
   },
   math: {
     isVoid: false,

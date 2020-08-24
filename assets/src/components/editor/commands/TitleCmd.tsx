@@ -1,6 +1,6 @@
 import { ReactEditor } from 'slate-react';
-import { Node, Transforms } from 'slate';
-import { getNearestBlock } from '../utils';
+import { Node, Transforms, Editor } from 'slate';
+import { getNearestBlock, isActive, isTopLevel } from '../utils';
 import { Command, CommandDesc } from 'components/editor/commands/interfaces';
 
 const parentTextTypes = {
@@ -29,19 +29,16 @@ const command: Command = {
         case 'h5':
         case 'h6': return 'p';
         case 'h1': return 'h2';
-        case 'p': return 'h1';
+        default: return 'h1';
       }
     })(selectedType(editor));
 
-    getNearestBlock(editor).lift((n: Node) => {
-      if ((parentTextTypes as any)[n.type as string]) {
-        const path = ReactEditor.findPath(editor, n);
-        Transforms.setNodes(editor, { type: nextType }, { at: path });
-      }
-    });
+    Transforms.setNodes(editor,
+      { type: nextType },
+      { match: n => (parentTextTypes as any)[n.type as string] });
   },
   precondition: (editor: ReactEditor) => {
-    return true;
+    return isTopLevel(editor) && isActive(editor, ['p', 'h1', 'h2']);
   },
 };
 
@@ -59,5 +56,5 @@ export const commandDesc: CommandDesc = {
   icon,
   description: () => 'Title',
   command,
-  active: (editor: ReactEditor) => selectedType(editor) === 'h1' || selectedType(editor) === 'h2',
+  active: editor => isActive(editor, ['h1', 'h2']),
 };

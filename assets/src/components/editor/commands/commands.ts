@@ -1,7 +1,8 @@
 import { Editor } from 'slate';
 import { Mark } from 'data/content/model';
 import { ReactEditor } from 'slate-react';
-import { CommandDesc } from './interfaces';
+import { CommandDesc, CommandContext, Command } from './interfaces';
+import { marksInEntireSelection } from '../utils';
 
 function isMarkActive(editor: ReactEditor, mark: Mark): boolean {
 
@@ -23,18 +24,41 @@ export function toggleMark(editor: ReactEditor, mark: Mark) {
   }
 }
 
-export function createToggleFormatCommand(icon: string, mark: Mark, description: string)
-  : CommandDesc {
+export function createToggleFormatCommand(icon: string, mark: Mark, description: string) {
+  return createCommandDesc(
+    icon,
+    description,
+    (context, editor) => toggleMark(editor, mark),
+    editor => marksInEntireSelection(editor).indexOf(mark) !== -1,
+  );
+}
+
+export function createButtonCommandDesc(
+  icon: string,
+  description: string,
+  execute: Command['execute'],
+  active: CommandDesc['active'] = undefined) {
+  return createCommandDesc(
+    icon,
+    description,
+    execute,
+    active,
+  );
+}
+
+function createCommandDesc(
+  icon: string,
+  description: string,
+  execute: Command['execute'],
+  active: CommandDesc['active'] = undefined): CommandDesc {
   return {
     type: 'CommandDesc',
     icon: () => icon,
     description: () => description,
-    active: marks => marks.indexOf(mark) !== -1,
+    ...(active ? { active } : {}),
     command: {
-      execute: (context, editor: ReactEditor) => toggleMark(editor, mark),
-      precondition: (editor: ReactEditor) => {
-        return true;
-      },
+      execute: (context, editor: ReactEditor) => execute(context, editor),
+      precondition: editor => true,
     },
   };
 }

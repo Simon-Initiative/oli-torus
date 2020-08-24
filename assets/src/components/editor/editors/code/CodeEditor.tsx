@@ -1,27 +1,26 @@
 import React, { useState } from 'react';
 import { ReactEditor } from 'slate-react';
-import { Transforms } from 'slate';
+import { Transforms, Editor } from 'slate';
 import { updateModel, getEditMode } from 'components/editor/editors/utils';
 import * as ContentModel from 'data/content/model';
 import { EditorProps } from 'components/editor/editors/interfaces';
 import * as Settings from 'components/editor/editors/settings/Settings';
 import { CodeSettings } from 'components/editor/editors/code/CodeSettings';
 
-
-export interface CodeProps extends EditorProps<ContentModel.Code> {
-}
+export interface CodeProps extends EditorProps<ContentModel.Code> { }
 
 export const CodeEditor = (props: CodeProps) => {
 
-  const { editor } = props;
-  const { model } = props;
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const { model, editor } = props;
 
   const editMode = getEditMode(editor);
 
+  const updateProperty = (value: string, key: string) =>
+    onEdit(Object.assign({}, model, { [key]: value }));
+
   const onEdit = (updated: ContentModel.Code) => {
+    console.log('updated', updated)
     updateModel<ContentModel.Code>(editor, model, updated);
-    setIsPopoverOpen(false);
   };
 
   const onRemove = () => {
@@ -29,8 +28,6 @@ export const CodeEditor = (props: CodeProps) => {
 
     const path = ReactEditor.findPath(editor, model);
     Transforms.removeNodes(editor, { at: path });
-
-    setIsPopoverOpen(false);
   };
 
   const contentFn = () => <CodeSettings
@@ -41,22 +38,36 @@ export const CodeEditor = (props: CodeProps) => {
     onEdit={onEdit} />;
 
   return (
-    <div {...props.attributes} className="code-editor">
-      <div className="code-editor-content">
-        <pre style={{ fontFamily: 'Menlo, Monaco, Courier New, monospace' }} >
-          <code className={`language-${model.language}`}>{props.children}</code>
-        </pre>
+    <React.Fragment>
+      <div {...props.attributes} className="code-editor">
+        <div contentEditable={false} style={{ userSelect: 'none' }}>
+          <Settings.Select
+            value={model.language}
+            onChange={value => updateProperty(value, 'language')}
+            editor={editor}
+            options={Object
+              .keys(ContentModel.CodeLanguages)
+              .filter(k => typeof ContentModel.CodeLanguages[k as any] === 'number')
+              .sort()}
+          />
+        </div>
+        <div className="code-editor-content">
+          <pre style={{ fontFamily: 'Menlo, Monaco, Courier New, monospace' }} >
+            <code className={`language-${model.language}`}>{props.children}</code>
+          </pre>
+        </div>
       </div>
 
       <div contentEditable={false} style={{ userSelect: 'none' }}>
-        <Settings.ToolPopupButton
-          contentFn={contentFn}
-          setIsPopoverOpen={setIsPopoverOpen}
-          isPopoverOpen={isPopoverOpen}
-          label="Code" />
-        <Settings.Caption caption={model.caption} />
+        <Settings.Input
+          value={model.caption}
+          onChange={value => updateProperty(value, 'caption')}
+          editor={editor}
+          model={model}
+          placeholder="Type caption for code block"
+        />
       </div>
-    </div>
+    </React.Fragment>
   );
 };
 

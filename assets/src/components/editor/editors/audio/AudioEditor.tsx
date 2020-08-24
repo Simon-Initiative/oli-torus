@@ -13,10 +13,11 @@ export interface AudioProps extends EditorProps<ContentModel.Audio> {
 export const AudioEditor = (props: AudioProps) => {
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const { attributes, children, editor } = props;
-  const { model } = props;
+  const { attributes, children, editor, model } = props;
 
   const editMode = getEditMode(editor);
+
+  const setCaption = (caption: string) => onEdit(Object.assign({}, model, { caption }));
 
   const onEdit = (updated: ContentModel.Audio) => {
     updateModel<ContentModel.Audio>(editor, model, updated);
@@ -44,25 +45,31 @@ export const AudioEditor = (props: AudioProps) => {
     model={model}
     editMode={editMode}
     onRemove={onRemove}
-    onEdit={onEdit}/>;
+    onEdit={onEdit} />;
 
   return (
     <div {...attributes} className="ml-4 mr-4">
-
       <div contentEditable={false} style={{ userSelect: 'none' }}>
-
-        <div className="ml-4">
-          <audio src={src} controls />
+        <div className="ml-4 mr-4 text-center">
+          <figure>
+            <audio style={{ margin: 'auto' }} src={src} controls />
+            <figcaption contentEditable={false} style={{ userSelect: 'none' }}>
+              <Settings.Input
+                value={model.caption}
+                onChange={value => setCaption(value)}
+                editor={editor}
+                model={model}
+                placeholder="Type caption for audio file"
+              />
+            </figcaption>
+          </figure>
         </div>
-        <Settings.ToolPopupButton
-          contentFn={contentFn}
-          setIsPopoverOpen={setIsPopoverOpen}
-          isPopoverOpen={isPopoverOpen}
-          label="Audio" />
-        <Settings.Caption caption={model.caption}/>
-
       </div>
-
+      <Settings.ToolPopupButton
+        contentFn={contentFn}
+        setIsPopoverOpen={setIsPopoverOpen}
+        isPopoverOpen={isPopoverOpen}
+        label="Audio" />
       {children}
     </div>
   );

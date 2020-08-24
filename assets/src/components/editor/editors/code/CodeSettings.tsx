@@ -4,11 +4,6 @@ import { CommandContext } from 'components/editor/editors/interfaces';
 import guid from 'utils/guid';
 import * as Settings from 'components/editor/editors/settings/Settings';
 
-const languages = Object
-  .keys(ContentModel.CodeLanguages)
-  .filter(k => typeof ContentModel.CodeLanguages[k as any] === 'number')
-  .sort();
-
 type CodeSettingsProps = {
   model: ContentModel.Code,
   onEdit: (model: ContentModel.Code) => void,
@@ -70,23 +65,11 @@ export const CodeSettings = (props: CodeSettingsProps) => {
 
         <form className="form">
 
-          <label>Source Language</label>
-          <select
-            className="form-control form-control-sm mb-2"
-            value={model.language} onChange={onChange}>
-            {languages.map(lang => <option key={lang} value={lang}>{lang}</option>)}
-          </select>
-
           <div className="form-check mb-2">
             <input onChange={onNumbersChange}
               checked={model.showNumbers} type="checkbox" className="form-check-input" id={checkId + ''} />
             <label className="form-check-label" htmlFor={checkId + ''}>Show line numbers</label>
           </div>
-
-          <label>Caption</label>
-          <input type="text" value={model.caption} onChange={e => setCaption(e.target.value)}
-            onKeyPress={e => Settings.onEnterApply(e, () => props.onEdit(model))}
-            className="form-control mr-sm-2" />
 
         </form>
 

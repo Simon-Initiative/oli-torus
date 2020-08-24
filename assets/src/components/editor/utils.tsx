@@ -3,9 +3,18 @@ import { ReactEditor } from 'slate-react';
 import { Marks, schema, Mark } from 'data/content/model';
 import { Maybe } from 'tsmonad';
 
-// Returns true if a text node contains at least one mark
-export function hasMark(textNode: Text): boolean {
-  return Object.keys(textNode).some(k => k in Marks);
+// Native input selection -- not slate
+export const cursorAtEndOfInput = (input: HTMLInputElement) => {
+  return input.selectionStart === input.selectionEnd
+    && input.selectionStart === input.value.length;
+};
+export const cursorAtBeginningOfInput = (input: HTMLInputElement) => {
+  return input.selectionStart === input.selectionEnd && input.selectionStart === 0;
+};
+
+// Returns true if a text node contains the mark string key
+export function hasMark(textNode: Text, mark: string): boolean {
+  return Object.keys(textNode).some(k => k === mark);
 }
 
 // Returns all the Text nodes in the current selection
@@ -68,6 +77,14 @@ function toSimpleTextHelper(node: Node, text: string): string {
   }, text);
 }
 
+export const isTopLevel = (editor: ReactEditor) => {
+  const [maybeEditor, maybeBlock] = Array.from(Editor.nodes(editor));
+  return maybeEditor && Editor.isEditor(maybeEditor[0]) && getNearestBlock(editor).caseOf({
+    just: n => maybeBlock && n === maybeBlock[0],
+    nothing: () => false,
+  });
+};
+
 export const getHighestTopLevel = (editor: ReactEditor): Maybe<Node> => {
   if (!editor.selection) {
     return Maybe.nothing();
@@ -128,4 +145,20 @@ const getParentHelper = (editor: ReactEditor, property: string): Maybe<Node> => 
 
   }
   return Maybe.nothing();
+};
+
+export const isActive = (editor: ReactEditor, types: string[]) => {
+  const [match] = Editor.nodes(editor, {
+    match: n => types.indexOf(n.type as string) > -1,
+  });
+
+  return !!match;
+};
+
+export const isActiveList = (editor: ReactEditor) => {
+  return isActive(editor, ['ul', 'ol']);
+};
+
+export const isActiveQuote = (editor: ReactEditor) => {
+  return isActive(editor, ['blockquote']);
 };

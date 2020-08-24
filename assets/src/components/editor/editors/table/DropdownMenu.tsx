@@ -7,6 +7,7 @@ import * as ContentModel from 'data/content/model';
 export const DropdownMenu = (props: any) => {
 
   const ref = useRef();
+  const { editor } = props.editor;
 
   // There has to be a better way to do this.
   useEffect(() => {
@@ -53,35 +54,9 @@ export const DropdownMenu = (props: any) => {
 
   };
 
-  // Wraps a table editing function so that the execution of the edits
-  // within it operate outside of slate normalization.  This is to allow
-  // edit sequences that would put the document in intermediate states
-  // that normalization would seek to adjust to execute without that
-  // adjustment.
-
-  const withoutNormalization = (fn: any) => {
-    const editor: ReactEditor = props.editor;
-
-    try {
-
-      (editor as any).suspendNormalization = true;
-
-      fn(editor);
-
-    } catch (error) {
-      // tslint:disable-next-line
-      console.error(error);
-
-    } finally {
-      // Whether the operation succeeded or failed, we restore
-      // normalization
-      (editor as any).suspendNormalization = false;
-    }
-  };
-
   const onAddColumnBefore = () => {
 
-    withoutNormalization((editor: ReactEditor) => {
+    Editor.withoutNormalizing(editor, () => {
 
       const path = ReactEditor.findPath(editor, props.model);
       const [, parentPath] = Editor.parent(editor, path);
@@ -98,7 +73,7 @@ export const DropdownMenu = (props: any) => {
 
   const onAddColumnAfter = () => {
 
-    withoutNormalization((editor: ReactEditor) => {
+    Editor.withoutNormalizing(editor, () => {
 
       const path = ReactEditor.findPath(editor, props.model);
       const [, parentPath] = Editor.parent(editor, path);
@@ -122,7 +97,7 @@ export const DropdownMenu = (props: any) => {
 
   const onDeleteColumn = () => {
 
-    withoutNormalization((editor: ReactEditor) => {
+    Editor.withoutNormalizing(editor, () => {
 
       const path = ReactEditor.findPath(editor, props.model);
       const [, parentPath] = Editor.parent(editor, path);

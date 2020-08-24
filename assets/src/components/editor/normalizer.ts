@@ -1,10 +1,11 @@
 
 import { ReactEditor } from 'slate-react';
 import * as Immutable from 'immutable';
-import { Node, NodeEntry, Editor as SlateEditor, Transforms, Path } from 'slate';
+import { Node, NodeEntry, Editor as SlateEditor, Transforms, Path, Element, Editor, Text } from 'slate';
 import { normalize as tableNormalize } from './editors/table/utils';
 import { create, schema, Paragraph, SchemaConfig } from 'data/content/model';
 import guid from 'utils/guid';
+import { hasMark } from './utils';
 
 const spacesRequiredBetween = Immutable.Set<string>(['image', 'youtube', 'audio', 'blockquote', 'code', 'table']);
 
@@ -12,11 +13,6 @@ export function installNormalizer(editor: SlateEditor & ReactEditor) {
 
   const { normalizeNode } = editor;
   editor.normalizeNode = (entry: NodeEntry<Node>) => {
-
-    if ((editor as any).suspendNormalization) {
-      normalizeNode(entry);
-      return;
-    }
 
     try {
       const [node, path] = entry;
@@ -40,8 +36,42 @@ export function installNormalizer(editor: SlateEditor & ReactEditor) {
       if (SlateEditor.isBlock(editor, node)) {
         const [parent] = SlateEditor.parent(editor, path);
         if (!SlateEditor.isEditor(parent)) {
-          const config : SchemaConfig = (schema as any)[parent.type as string];
-          if (!(config.validChildren as any)[node.type as string]) {
+          const config: SchemaConfig = (schema as any)[parent.type as string];
+          if (Element.isElement(node) && !(config.validChildren as any)[node.type as string]) {
+
+            // if (parent.type === 'li' && node.type !== 'li') {
+            //   console.log('setting li node', node)
+            //   console.log('parent', parent)
+            //   console.log('nodes before lifting', Array.from(Editor.nodes(editor, { at: path })))
+            //   Transforms.liftNodes(editor, { at: path });
+            //   console.log('nodes after lifting', Array.from(Editor.nodes(editor)))
+            //   Transforms.setNodes(editor, { type: 'li' });
+            //   return;
+            // }
+
+            // if ((parent.type === 'ul' || parent.type === 'ol') && node.type !== 'li') {
+            //   console.log('setting ul node', node)
+            //   Transforms.setNodes(editor, { type: 'li' });
+            //   return;
+            // }
+
+            // Special case for code blocks -- they have two wrappers (code, code_line)
+            // if (node.type === 'code') {
+            //   Editor.withoutNormalizing(editor, () => {
+            //     console.log('path', path)
+            //     // unwrap all child code_lines
+            //     for (const [, childPath] of Node.children(editor, path)) {
+            //       console.log('childpath', childPath)
+            //       Transforms.unwrapNodes(editor, { at: childPath });
+            //     }
+            //     // unwrap code
+            //     Transforms.unwrapNodes(editor, { at: path });
+            //   });
+            //   return;
+            // }
+            console.log(Array.from(Editor.nodes(editor, { at: path })));
+
+            console.log('removing node in parent', node)
             Transforms.removeNodes(editor, { at: path });
             return; // Return here is necessary to enable multi-pass normalization
           }
@@ -53,14 +83,14 @@ export function installNormalizer(editor: SlateEditor & ReactEditor) {
       if (SlateEditor.isBlock(editor, node) && !(schema as any)[node.type as string].isTopLevel) {
         const [parent] = SlateEditor.parent(editor, path);
         if (SlateEditor.isEditor(parent)) {
-          Transforms.removeNodes(editor, { at: path });
+          console.log('removing top level node', node);
+          Transforms.unwrapNodes(editor, { at: path });
           return; // Return here is necessary to enable multi-pass normalization
         }
       }
 
       // Ensure that certain blocks types, when found next to each other,
       // get a paragraph inserted in between them
-
 
       const [parent] = SlateEditor.parent(editor, path);
 

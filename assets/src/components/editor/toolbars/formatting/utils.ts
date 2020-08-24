@@ -1,25 +1,22 @@
 import { ReactEditor } from 'slate-react';
 import { Editor as SlateEditor, Range } from 'slate';
 
-export function shouldHideToolbar(editor: ReactEditor) {
+export function shouldHideFormattingToolbar(editor: ReactEditor) {
   const { selection } = editor;
 
   // Hide the toolbar where there is either:
   // 1. No selection
   // 2. The editor is not currently in focus
   // 3. The selection range is collapsed
-  // 4. The selection current text is only whitespace or
-  //    is the empty string
 
-  // TODO: Prevent selections across block level elements
+  // TODO: Prevent selections across void level elements
 
   return !selection ||
     !ReactEditor.isFocused(editor) ||
-    Range.isCollapsed(selection) ||
-    SlateEditor.string(editor, selection).trim() === '';
+    Range.isCollapsed(selection);
 }
 
-export function positionHovering(el: HTMLElement) {
+export function positionFormatting(el: HTMLElement) {
   const menu = el;
   const native = window.getSelection() as any;
   const range = native.getRangeAt(0);

@@ -36,7 +36,7 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
         projectSlug={props.projectSlug}
         editMode={props.editMode}
         stem={props.model.stem}
-        onEditStem={content => dispatch(MCActions.editStem(content))} />
+        onEditStem={content => console.log('content', content) || dispatch(MCActions.editStem(content))} />
       <Choices {...sharedProps}
         onAddChoice={() => dispatch(MCActions.addChoice())}
         onEditChoice={(id, content) => dispatch(MCActions.editChoice(id, content))}

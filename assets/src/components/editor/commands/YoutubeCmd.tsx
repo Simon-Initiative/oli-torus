@@ -4,7 +4,7 @@ import { Transforms } from 'slate';
 import * as ContentModel from 'data/content/model';
 import { modalActions } from 'actions/modal';
 import ModalSelection from 'components/modal/ModalSelection';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import * as Settings from 'components/editor/editors/settings/Settings';
 import { getQueryVariableFromString } from 'utils/params';
 import { CUTE_OTTERS } from '../editors/youtube/YouTube';
@@ -19,7 +19,6 @@ export type YouTubeCreationProps = {
 const YouTubeCreation = (props: YouTubeCreationProps) => {
 
   const [src, setSrc] = useState('');
-  const ref = useRef();
 
   return (
     <div>

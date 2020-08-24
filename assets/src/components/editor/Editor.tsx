@@ -9,13 +9,16 @@ import {
 import { editorFor, markFor } from './editors';
 import { ToolbarItem, CommandContext } from './commands/interfaces';
 import { onKeyDown as listOnKeyDown } from './editors/lists/ListsOverride';
+import { onKeyDown as quoteOnKeyDown } from './editors/blockquote/BlockquoteOverrides';
 import { commandDesc as linkCmd } from 'components/editor/commands/LinkCmd';
 import { getNearestBlock } from './utils';
 import { toggleMark } from './commands/commands';
 import { installNormalizer } from './normalizer';
 import guid from 'utils/guid';
-import { ToolbarPosition, FixedToolbar } from './toolbars/fixed/FixedToolbar';
-import { HoveringToolbar } from './toolbars/hovering/HoveringToolbar';
+import { ToolbarPosition, InsertionToolbar } from './toolbars/insertion/InsertionToolbar';
+import { FormattingToolbar } from './toolbars/formatting/FormattingToolbar';
+import { formatMenuCommands } from './toolbars/formatting/formattingToolbarItems';
+import { shouldHideFormattingToolbar } from './toolbars/formatting/utils';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor (including selection state)
@@ -27,7 +30,7 @@ export type EditorProps = {
   // The current selection
   selection: Selection;
 
-  // The fixed toolbar configuration
+  // The insertion toolbar configuration
   toolbarItems: ToolbarItem[];
 
   // Whether or not editing is allowed
@@ -191,6 +194,7 @@ export const Editor = React.memo((props: EditorProps) => {
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     voidOnKeyDown(editor, e);
     listOnKeyDown(editor, e);
+    quoteOnKeyDown(editor, e);
     handleFormattingTermination(editor, e);
     hotkeyHandler(editor, e.nativeEvent);
   }, []);
@@ -218,12 +222,16 @@ export const Editor = React.memo((props: EditorProps) => {
       <Slate
         editor={editor as any}
         value={props.value}
-        onChange={onChange}
-        >
-        <FixedToolbar position={props.toolbarPosition} toolbarItems={props.toolbarItems}
+        onChange={onChange}>
+
+        <InsertionToolbar position={props.toolbarPosition} toolbarItems={props.toolbarItems}
           commandContext={props.commandContext} />
 
-        <HoveringToolbar commandContext={props.commandContext}/>
+        <FormattingToolbar
+          commandDescs={formatMenuCommands}
+          commandContext={props.commandContext}
+          shouldHideToolbar={shouldHideFormattingToolbar}
+        />
 
         <Editable
           className="slate-editor"

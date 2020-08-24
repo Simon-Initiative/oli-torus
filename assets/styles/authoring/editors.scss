@@ -2,6 +2,8 @@
 
 .table-editor {
   table {
+    clear: both;
+    margin-bottom: 0;
     .table-dropdown {
       user-select: none;
       float: right;
@@ -16,6 +18,7 @@
 
 blockquote {
   &.blockquote {
+    clear: both;
     margin-top: 12px;
     font-family: Georgia, Cambria, "Times New Roman", Times, serif;
     font-size: 1.3em;
@@ -47,6 +50,19 @@ blockquote {
   }
 }
 
+code {
+  clear: both;
+  font-family: "Source Code Pro", "Courier New", Courier, monospace;
+  color: rgba(0,0,0,.84);
+  background: rgba(0,0,0,.05);
+  letter-spacing: -.003em;
+  text-align: left;
+}
+
+ul li, ol li {
+  margin-bottom: 14px;
+}
+
 .youtube-editor {
   max-width: 700px;
   margin: 0 auto;
@@ -55,7 +71,7 @@ blockquote {
   }
 }
 
-.caption-editor {
+.settings-input {
   text-align: center;
   border: 0;
   width: 100%;
