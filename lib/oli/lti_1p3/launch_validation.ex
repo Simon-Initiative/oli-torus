@@ -1,6 +1,6 @@
-defmodule Oli.Lti_1_3.LaunchValidation do
+defmodule Oli.Lti_1p3.LaunchValidation do
   @message_validators [
-    Oli.Lti_1_3.MessageValidators.ResourceMessageValidator
+    Oli.Lti_1p3.MessageValidators.ResourceMessageValidator
   ]
 
   @doc """
@@ -39,7 +39,7 @@ defmodule Oli.Lti_1_3.LaunchValidation do
   end
 
   defp validate_registration(conn, jwt) do
-    case Oli.Lti_1_3.get_registration_by_kid(jwt["header"]["kid"]) do
+    case Oli.Lti_1p3.get_registration_by_kid(jwt["header"]["kid"]) do
       {:ok, registration} ->
         {:ok, conn, registration}
       _ ->
@@ -75,8 +75,8 @@ defmodule Oli.Lti_1_3.LaunchValidation do
     end
   end
 
-  @spec get_public_key(%Oli.Lti_1_3.Registration{}, String.t()) :: {:ok, JOSE.JWK.t()}
-  defp get_public_key(%Oli.Lti_1_3.Registration{key_set_url: key_set_url}, kid) do
+  @spec get_public_key(%Oli.Lti_1p3.Registration{}, String.t()) :: {:ok, JOSE.JWK.t()}
+  defp get_public_key(%Oli.Lti_1p3.Registration{key_set_url: key_set_url}, kid) do
     public_key_set = case HTTPoison.get(key_set_url) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         Jason.decode!(body)
@@ -109,17 +109,17 @@ defmodule Oli.Lti_1_3.LaunchValidation do
   end
 
   defp validate_nonce(conn, jwt) do
-    if Oli.Lti_1_3.NonceCacheAgent.has(jwt["body"]["nonce"]) do
+    if Oli.Lti_1p3.NonceCacheAgent.has(jwt["body"]["nonce"]) do
       {:error, "Duplicate nonce"}
     else
-      Oli.Lti_1_3.NonceCacheAgent.put(jwt["body"]["nonce"])
+      Oli.Lti_1p3.NonceCacheAgent.put(jwt["body"]["nonce"])
       {:ok, conn}
     end
   end
 
   defp validate_deployment(conn, registration, jwt) do
     deployment_id = jwt["body"]["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
-    deployment = Oli.Lti_1_3.get_deployment(registration, deployment_id)
+    deployment = Oli.Lti_1p3.get_deployment(registration, deployment_id)
 
     case deployment do
       nil ->

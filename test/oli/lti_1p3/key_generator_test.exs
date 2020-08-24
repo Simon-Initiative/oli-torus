@@ -1,4 +1,4 @@
-defmodule Oli.LtiTest do
+defmodule Oli.Lti_1p3.KeyGeneratorTest do
   use Oli.DataCase
 
   alias Oli.Lti

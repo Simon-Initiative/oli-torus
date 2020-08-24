@@ -1,4 +1,4 @@
-defmodule Oli.Lti_1_3.NonceCacheAgent do
+defmodule Oli.Lti_1p3.NonceCacheAgent do
   use Agent
 
   @doc """
@@ -12,14 +12,14 @@ defmodule Oli.Lti_1_3.NonceCacheAgent do
   Checks the cache for a given nonce
   """
   def has(nonce) do
-    Agent.get(:lti_1_3_nonces, &Map.has_key?(&1, nonce))
+    Agent.get(:lti_1p3_nonces, &Map.has_key?(&1, nonce))
   end
 
   @doc """
   Puts a nonce into the cache
   """
   def put(nonce) do
-    Agent.update(:lti_1_3_nonces, &Map.put(&1, nonce, Timex.now))
+    Agent.update(:lti_1p3_nonces, &Map.put(&1, nonce, Timex.now))
   end
 
   @doc """

@@ -2,7 +2,7 @@ defmodule Oli.Repo.Migrations.AddLti13RegistrationTable do
   use Ecto.Migration
 
   def change do
-    create table(:lti_1_3_registrations) do
+    create table(:lti_1p3_registrations) do
       add :issuer, :string
       add :client_id, :string
       add :key_set_url, :string
@@ -15,10 +15,9 @@ defmodule Oli.Repo.Migrations.AddLti13RegistrationTable do
       timestamps(type: :timestamptz)
     end
 
-    create table(:lti_1_3_deployments) do
+    create table(:lti_1p3_deployments) do
       add :deployment_id, :string
-      add :registration_id, :string
-      add :author_id, references(:authors)
+      add :registration_id, references(:lti_1p3_registrations)
 
       timestamps(type: :timestamptz)
     end
