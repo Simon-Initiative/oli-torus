@@ -21,6 +21,7 @@ defmodule Oli.Application do
 
       # Starts a worker by calling: Oli.Worker.start_link(arg)
       # {Oli.Worker, arg},
+      {Oli.Lti_1_3.NonceCacheAgent, []}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
