@@ -41,7 +41,7 @@ export const TableEditor = (props: TableProps) => {
     editMode={editMode}
     commandContext={props.commandContext}
     onRemove={onRemove}
-    onEdit={onEdit}/>;
+    onEdit={onEdit} />;
 
   // Note that it is important that any interactive portions of a void editor
   // must be enclosed inside of a "contentEditable=false" container. Otherwise,
@@ -50,14 +50,11 @@ export const TableEditor = (props: TableProps) => {
 
   return (
     <div className="table-editor ml-4 mr-4">
-
-      <div>
-        <table className="table table-bordered">
-          <tbody {...attributes} >
-            {children}
-          </tbody>
-        </table>
-      </div>
+      <table {...attributes} className="table w-auto table-bordered">
+        <tbody>
+          {children}
+        </tbody>
+      </table>
       <div contentEditable={false} style={{ userSelect: 'none' }}>
         {/* <Settings.ToolPopupButton
           contentFn={contentFn}

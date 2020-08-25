@@ -1,6 +1,6 @@
 import { CommandDesc, Command } from 'components/editor/commands/interfaces';
 import { ReactEditor } from 'slate-react';
-import { Transforms } from 'slate';
+import { Transforms, Editor } from 'slate';
 import * as ContentModel from 'data/content/model';
 import { modalActions } from 'actions/modal';
 import ModalSelection from 'components/modal/ModalSelection';
@@ -8,6 +8,7 @@ import { useState } from 'react';
 import * as Settings from 'components/editor/editors/settings/Settings';
 import { getQueryVariableFromString } from 'utils/params';
 import { CUTE_OTTERS } from '../editors/youtube/YouTube';
+import { isActiveList } from '../utils';
 
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
@@ -32,7 +33,7 @@ const YouTubeCreation = (props: YouTubeCreationProps) => {
         <input type="text" value={src}
           onChange={(e) => { props.onChange(e.target.value); setSrc(e.target.value); }}
           onKeyPress={e => Settings.onEnterApply(e, () => props.onEdit(src))}
-          className="form-control mr-sm-2"/>
+          className="form-control mr-sm-2" />
         <div className="mb-2">
           <small>e.g. https://www.youtube.com/watch?v=<strong>zHIIzcWqsP0</strong></small>
         </div>
@@ -49,17 +50,17 @@ export function selectYouTube(): Promise<string | null> {
     const selected = { src: null };
 
     const mediaLibrary =
-        <ModalSelection title="Insert YouTube video"
-          onInsert={() => {
-            dismiss();
-            resolve(selected.src ? selected.src : CUTE_OTTERS);
-          }}
-          onCancel={() => dismiss()}
-        >
-          <YouTubeCreation
-            onEdit={(src: string) => { dismiss(); resolve(src); }}
-            onChange={(src: string) => { selected.src = src as any; }}/>
-        </ModalSelection>;
+      <ModalSelection title="Insert YouTube video"
+        onInsert={() => {
+          dismiss();
+          resolve(selected.src ? selected.src : CUTE_OTTERS);
+        }}
+        onCancel={() => dismiss()}
+      >
+        <YouTubeCreation
+          onEdit={(src: string) => { dismiss(); resolve(src); }}
+          onChange={(src: string) => { selected.src = src as any; }} />
+      </ModalSelection>;
 
     display(mediaLibrary);
   });
@@ -67,32 +68,30 @@ export function selectYouTube(): Promise<string | null> {
 
 const command: Command = {
   execute: (context, editor: ReactEditor) => {
-
-    const selection = editor.selection;
-
     selectYouTube()
-    .then((selectedSrc) => {
-      if (selectedSrc !== null) {
+      .then((selectedSrc) => {
+        if (selectedSrc !== null) {
 
-        let src = selectedSrc;
-        const hasParams = src.includes('?');
+          let src = selectedSrc;
+          const hasParams = src.includes('?');
 
-        if (hasParams) {
-          const queryString = src.substr(src.indexOf('?') + 1);
-          src = getQueryVariableFromString('v', queryString);
-        } else if (src.indexOf('/youtu.be/') !== -1) {
-          src = src.substr(src.lastIndexOf('/') + 1);
+          if (hasParams) {
+            const queryString = src.substr(src.indexOf('?') + 1);
+            src = getQueryVariableFromString('v', queryString);
+          } else if (src.indexOf('/youtu.be/') !== -1) {
+            src = src.substr(src.lastIndexOf('/') + 1);
+          }
+
+          Editor.withoutNormalizing(editor, () => {
+            Transforms.insertNodes(editor, ContentModel.youtube(src));
+            if (isActiveList(editor)) {
+              Transforms.wrapNodes(editor,
+                { type: 'li', children: [] },
+                { match: n => n.type === 'youtube' });
+            }
+          });
         }
-
-        if (selection !== null) {
-          Transforms.insertNodes(editor, ContentModel.youtube(src), { at: selection });
-        } else {
-          Transforms.insertNodes(editor, ContentModel.youtube(src));
-        }
-
-      }
-    });
-
+      });
   },
   precondition: (editor: ReactEditor) => {
 

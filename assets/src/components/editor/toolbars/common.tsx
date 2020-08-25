@@ -49,7 +49,15 @@ export const ToolbarButton = ({ icon, command, style, context, tooltip, active,
   );
 };
 
-export const DropdownToolbarButton = ({ icon, command, style, context, tooltip }: any) => {
+interface DropdownToolbarButtonProps {
+  icon: string;
+  command: Command;
+  context: CommandContext;
+  tooltip?: string;
+  style?: string;
+}
+export const DropdownToolbarButton = ({ icon, command, style, context, tooltip }:
+  DropdownToolbarButtonProps) => {
 
   const editor = useSlate();
   const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
@@ -65,16 +73,26 @@ export const DropdownToolbarButton = ({ icon, command, style, context, tooltip }
       onClickOutside={() => setIsPopoverOpen(false)}
       isOpen={isPopoverOpen}
       padding={5}
-      position={['bottom', 'top', 'left', 'right']}
-      content={() => (command as any).obtainParameters(editor, onDone, onCancel)}>
+      position={['right']}
+      content={() => (command as any).obtainParameters(editor, onDone, onCancel)}
+      // contentLocation={{ left: 20, top: 0 }}
+    >
       {ref => <button
         ref={ref}
-        data-toggle="tooltip" data-placement="top" title={tooltip}
+        data-toggle="tooltip"
+        data-placement="top"
+        title={tooltip}
         className={`btn btn-sm btn-light ${style}`}
         onClick={() => setIsPopoverOpen(!isPopoverOpen)}
         type="button">
         <i className="material-icons">{icon}</i>
       </button>}
     </Popover>
+  );
+};
+
+export const Spacer = () => {
+  return (
+    <span style={{ minWidth: '5px', maxWidth: '5px' }} />
   );
 };

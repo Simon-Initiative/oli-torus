@@ -1,11 +1,32 @@
 import { ReactEditor } from 'slate-react';
 import { Editor, Range, Text } from 'slate';
-import { getHighestTopLevel } from 'components/editor/utils';
+import { getHighestTopLevel, getNearestBlock, isActive, isTopLevel, getNearestTopLevel } from 'components/editor/utils';
 
 export function shouldShowInsertionToolbar(editor: ReactEditor) {
   const { selection } = editor;
+  const isSelectionCollapsed = selection
+    && ReactEditor.isFocused(editor)
+    && Range.isCollapsed(selection);
 
-  if (!selection) return false;
+  const isInParagraph = isActive(editor, ['p']);
+
+  const isTopLevelOrInTable = isTopLevel(editor) || getHighestTopLevel(editor).caseOf({
+    just: n => n.type === 'table',
+    nothing: () => false,
+  });
+
+  const isInList = getNearestTopLevel(editor).caseOf({
+    just: n => ['ul', 'ol'].indexOf(n.type as string) > -1,
+    nothing: () => false,
+  });
+
+  // paragraph at top level or in table, or inside a list
+  const isInValidParents = isInParagraph && isTopLevelOrInTable
+    || isInList;
+  // || isActive(editor, ['table'])
+  // || isActive(editor, ['li']);
+
+  return isSelectionCollapsed && isInValidParents;
 
   // True if the cursor is in a paragraph at the toplevel with no content
   const isCursorAtEmptyLine = () => {
@@ -19,38 +40,33 @@ export function shouldShowInsertionToolbar(editor: ReactEditor) {
       Text.isText(third) && third.text === '';
   };
 
-  return ReactEditor.isFocused(editor) &&
-    Range.isCollapsed(selection);
-    // isCursorAtEmptyLine();
+  console.log('range collapsed', Range.isCollapsed(selection))
+
+  // isCursorAtEmptyLine();
 }
 
 export function positionInsertion(el: HTMLElement, editor: ReactEditor) {
-  const menu = el;
+  getNearestBlock(editor).lift((block) => {
+    el.style.position = 'absolute';
+    el.style.opacity = '1';
+    const blockNode = $(ReactEditor.toDOMNode(editor, block));
+    const editorNode = $(ReactEditor.toDOMNode(editor, editor));
 
-  getHighestTopLevel(editor).lift((n) => {
-    const node = ReactEditor.toDOMNode(editor, n);
-    menu.style.position = 'absolute';
-    menu.style.opacity = '1';
-    menu.style.top = node.offsetTop + 'px';
-    menu.style.left = node.offsetLeft - 20 + 'px';
+    el.style.top = blockNode.position().top + 'px';
+    el.style.left = editorNode.position().left - 5 + 'px';
+
+    // There may be a better way to do this, but for now we're special-casing tables
+    if (isActive(editor, ['table'])) {
+      getHighestTopLevel(editor).lift((topLevel) => {
+        const [match] = Editor.nodes(editor, { match: n => n.type === 'tr' });
+        if (!match) {
+          return;
+        }
+        const [tr] = match;
+        el.style.top = blockNode.position().top +
+          $(ReactEditor.toDOMNode(editor, topLevel)).position().top +
+          $(ReactEditor.toDOMNode(editor, tr)).position().top + 'px';
+      });
+    }
   });
-
-  // const native = window.getSelection() as any;
-  // const range = native.getRangeAt(0);
-  // const rect = range.getBoundingClientRect();
-
-  // // menu.style.position = 'absolute';
-  // // menu.style.top = rect.top + window.pageYOffset - 30 + 'px';
-  // // menu.style.left = rect.left + window.pageXOffset + 'px';
-  // // menu.style.top = window.pageYOffset + 'px';
-  // // menu.style.left = window.pageXOffset + 'px';
-
-  // menu.style.position = 'absolute';
-  // menu.style.top = (rect.top + window.pageYOffset) - 30 + 'px';
-
-  // const left = (rect.left +
-  //   window.pageXOffset -
-  //   menu.offsetWidth / 2) - 50;
-
-  // menu.style.left = `${left}px`;
 }

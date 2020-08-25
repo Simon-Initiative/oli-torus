@@ -24,33 +24,27 @@ export function toggleMark(editor: ReactEditor, mark: Mark) {
   }
 }
 
-export function createToggleFormatCommand(icon: string, mark: Mark, description: string) {
-  return createCommandDesc(
-    icon,
-    description,
-    (context, editor) => toggleMark(editor, mark),
-    editor => marksInEntireSelection(editor).indexOf(mark) !== -1,
-  );
+export function createToggleFormatCommand(attrs: any) {
+  return createCommandDesc({
+    ...attrs,
+    execute: (context, editor) => toggleMark(editor, attrs.mark),
+    active: editor => marksInEntireSelection(editor).indexOf(attrs.mark) !== -1,
+  });
 }
 
-export function createButtonCommandDesc(
-  icon: string,
-  description: string,
-  execute: Command['execute'],
-  active: CommandDesc['active'] = undefined) {
-  return createCommandDesc(
-    icon,
-    description,
-    execute,
-    active,
-  );
+export function createButtonCommandDesc(attrs: any) {
+  return createCommandDesc(attrs);
 }
 
-function createCommandDesc(
-  icon: string,
-  description: string,
-  execute: Command['execute'],
-  active: CommandDesc['active'] = undefined): CommandDesc {
+function createCommandDesc({ icon, description, execute, active, precondition }:
+  {
+    icon: string,
+    mark: Mark,
+    description: string,
+    execute: Command['execute'],
+    active?: CommandDesc['active'],
+    precondition?: Command['precondition'],
+  }): CommandDesc {
   return {
     type: 'CommandDesc',
     icon: () => icon,
@@ -58,7 +52,7 @@ function createCommandDesc(
     ...(active ? { active } : {}),
     command: {
       execute: (context, editor: ReactEditor) => execute(context, editor),
-      precondition: editor => true,
+      ...(precondition ? { precondition } : { precondition: editor => true }),
     },
   };
 }

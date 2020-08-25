@@ -4,13 +4,18 @@ import { olCommandDesc as olCmd, ulCommandDesc as ulCmd }
   from 'components/editor/commands/ListsCmd';
 import { commandDesc as quoteCmd } from 'components/editor/commands/BlockquoteCmd';
 import { commandDesc as linkCmd } from 'components/editor/commands/LinkCmd';
+import { isActive } from 'components/editor/utils';
+import { ReactEditor } from 'slate-react';
 
 export const formatMenuCommands = [
   [
-    format('format_bold', 'strong', 'Bold'),
-    format('format_italic', 'em', 'Italic'),
+    format({ icon: 'format_bold', mark: 'strong', description: 'Bold' }),
+    format({ icon: 'format_italic', mark: 'em', description: 'Italic' }),
     linkCmd,
-    format('code', 'code', 'Code'),
+    format({
+      icon: 'code', mark: 'code', description: 'Code',
+      precondition: (editor: ReactEditor) => !isActive(editor, ['code']),
+    }),
   ],
   [
     olCmd,

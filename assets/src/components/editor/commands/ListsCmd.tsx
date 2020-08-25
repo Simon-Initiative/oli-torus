@@ -30,7 +30,7 @@ const listCommandMaker = (listType: string): Command => {
       if (isActiveList(editor)) {
         return isActive(editor, [listType]);
       }
-      return isTopLevel(editor) && isActive(editor, ['p']);
+      return (isTopLevel(editor) || isActive(editor, ['table'])) && isActive(editor, ['p']);
     },
   };
 };

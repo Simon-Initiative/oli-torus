@@ -34,7 +34,7 @@ export function installNormalizer(editor: SlateEditor & ReactEditor) {
 
       // Check this node's parent constraints
       if (SlateEditor.isBlock(editor, node)) {
-        const [parent] = SlateEditor.parent(editor, path);
+        const [parent, parentPath] = SlateEditor.parent(editor, path);
         if (!SlateEditor.isEditor(parent)) {
           const config: SchemaConfig = (schema as any)[parent.type as string];
           if (Element.isElement(node) && !(config.validChildren as any)[node.type as string]) {
@@ -54,8 +54,13 @@ export function installNormalizer(editor: SlateEditor & ReactEditor) {
             //   Transforms.setNodes(editor, { type: 'li' });
             //   return;
             // }
+            // Special case for code blocks -- they have two wrappers (code, code_line),
+            // so deletion removes the inner block and causes validation errors
+            if (node.type === 'p' && parent.type === 'code') {
+              Transforms.removeNodes(editor, { at: parentPath });
+              return;
+            }
 
-            // Special case for code blocks -- they have two wrappers (code, code_line)
             // if (node.type === 'code') {
             //   Editor.withoutNormalizing(editor, () => {
             //     console.log('path', path)

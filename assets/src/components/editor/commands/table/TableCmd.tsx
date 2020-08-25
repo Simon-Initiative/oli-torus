@@ -1,8 +1,9 @@
 import { ReactEditor } from 'slate-react';
 import { CommandDesc, Command } from 'components/editor/commands/interfaces';
-import { Transforms, Editor, Node } from 'slate';
-import { td, tr, table, Paragraph } from 'data/content/model';
+import { Transforms } from 'slate';
+import { td, tr, table } from 'data/content/model';
 import { SizePicker } from './SizePicker';
+import { isTopLevel } from 'components/editor/utils';
 
 // The UI command for creating tables
 const command: Command = {
@@ -20,29 +21,10 @@ const command: Command = {
 
     const t = table(rows);
     if (!editor.selection) return;
-    console.log('next', Editor.after(editor, editor.selection));
     Transforms.insertNodes(editor, t);
-    Editor
   },
   precondition: (editor: ReactEditor) => {
-    //
-
-
-    if (!editor.selection) {
-      return false;
-    }
-    // Must be toplevel and inside paragraph node
-    const nodes = Array.from(Editor.nodes(editor, { at: editor.selection }));
-    console.log('nodes', nodes)
-    // Only allow table insertion when inside a paragraph at the top-level
-    if (nodes.length < 2) {
-      return false;
-    }
-    const parent = nodes[1];
-    const grandParent = nodes[0];
-    return parent && grandParent && Editor.isEditor(grandParent[0]) && parent[0].type === 'p'
-
-    return true;
+    return isTopLevel(editor);
   },
 
   obtainParameters: (editor: ReactEditor,

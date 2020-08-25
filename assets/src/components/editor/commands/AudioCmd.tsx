@@ -1,6 +1,6 @@
 import React from 'react';
 import { ReactEditor } from 'slate-react';
-import { Transforms } from 'slate';
+import { Transforms, Editor } from 'slate';
 import * as ContentModel from 'data/content/model';
 import guid from 'utils/guid';
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
@@ -9,6 +9,7 @@ import { MediaManager } from 'components/media/manager/MediaManager.controller';
 import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
 import { Command, CommandDesc } from 'components/editor/commands/interfaces';
+import { isActiveList } from '../utils';
 
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
@@ -33,8 +34,10 @@ export function selectAudio(projectSlug: string,
           selectionType={SELECTION_TYPES.SINGLE}
           initialSelectionPaths={[model.src]}
           onSelectionChange={(images: MediaItem[]) => {
-            const first : ContentModel.Audio = { type: 'audio', src: images[0].url,
-              children: [{ text: '' }], id: guid() };
+            const first: ContentModel.Audio = {
+              type: 'audio', src: images[0].url,
+              children: [{ text: '' }], id: guid()
+            };
             (selected as any).img = first;
           }} />
       </ModalSelection>;
@@ -46,9 +49,16 @@ export function selectAudio(projectSlug: string,
 const command: Command = {
   execute: (context, editor: ReactEditor) => {
     selectAudio(context.projectSlug, ContentModel.audio())
-    .then((img) => {
-      Transforms.insertNodes(editor, img);
-    });
+      .then((img) => {
+        Editor.withoutNormalizing(editor, () => {
+          Transforms.insertNodes(editor, img);
+          if (isActiveList(editor)) {
+            Transforms.wrapNodes(editor,
+              { type: 'li', children: [] },
+              { match: n => n.type === 'audio' });
+          }
+        });
+      });
   },
   precondition: (editor: ReactEditor) => {
     return true;

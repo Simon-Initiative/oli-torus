@@ -2,6 +2,7 @@ import * as ContentModel from 'data/content/model';
 import { ReactEditor } from 'slate-react';
 import { Transforms, Node, Range, Path, Editor, Text } from 'slate';
 import { Command, CommandDesc } from 'components/editor/commands/interfaces';
+import { isActive } from '../utils';
 
 export const isLinkPresent = (editor: ReactEditor) => {
   if (!editor.selection) {
@@ -60,7 +61,7 @@ const command: Command = {
     return addLink();
   },
   precondition: (editor: ReactEditor) => {
-    return true;
+    return !isActive(editor, ['code']);
   },
 };
 

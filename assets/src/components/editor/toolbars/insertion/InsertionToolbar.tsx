@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useSlate } from 'slate-react';
 import { ToolbarItem, CommandContext } from '../../commands/interfaces';
 import Popover from 'react-tiny-popover';
-import { hideToolbar, showToolbar, ToolbarButton } from '../common';
+import { hideToolbar, showToolbar, ToolbarButton, Spacer, DropdownToolbarButton } from '../common';
 import { shouldShowInsertionToolbar, positionInsertion } from './utils';
 import { classNames } from 'utils/classNames';
 
@@ -53,28 +53,6 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
     }
   });
 
-  const buttons = [
-    ...toolbarItems.map((t, i) => {
-      if (t.type !== 'CommandDesc') {
-        return <Spacer key={'spacer-' + i} />;
-      }
-      const icon = t.icon(editor);
-      const description = t.description(editor);
-
-      if (t.command.obtainParameters === undefined) {
-        return <ToolbarButton
-          tooltip={description}
-          style="mr-1" key={description} icon={icon}
-          command={t.command} context={props.commandContext} />;
-      }
-      if (t.command.obtainParameters !== undefined) {
-        return <DropdownToolbarButton style="mr-1" key={description} icon={icon}
-          tooltip={description}
-          command={t.command} context={props.commandContext} />;
-      }
-    }),
-  ];
-
   // const content =
   //   <div className="insert-item list-group-item list-group-item-action" key="content"
   //     onClick={() => onAddItem(createDefaultStructuredContent(), index)}>
@@ -91,7 +69,7 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
       onMouseDown={e => e.preventDefault()}
       ref={ref as any}
       className={classNames(['toolbar add-resource-content', isPopoverOpen ? 'active' : ''])}
-      onClick={togglePopover}>
+    >
       <div className="insert-button-container">
         <Popover
           containerClassName="add-resource-popover"
@@ -108,11 +86,31 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
           content={
             <div className="add-resource-popover-content">
               <div className="list-group">
-                {buttons}
+                {[...toolbarItems.map((t, i) => {
+                  if (t.type !== 'CommandDesc') {
+                    return <Spacer key={'spacer-' + i} />;
+                  }
+                  if (!t.command.precondition(editor)) {
+                    return null;
+                  }
+
+                  const shared = {
+                    key: t.description(editor),
+                    icon: t.icon(editor),
+                    tooltip: t.description(editor),
+                    command: t.command,
+                    context: props.commandContext,
+                  };
+
+                  if (t.command.obtainParameters === undefined) {
+                    return <ToolbarButton {...shared} />;
+                  }
+                  return <DropdownToolbarButton {...shared} />;
+                })].filter(x => x)}
               </div>
             </div>
           }>
-          {ref => <div ref={ref} className="insert-button">
+          {ref => <div ref={ref} className="insert-button" onClick={togglePopover}>
             <i className="fa fa-plus"></i>
           </div>}
         </Popover>
@@ -120,39 +118,3 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
     </div>
   );
 }, insertionAreEqual);
-
-const DropdownToolbarButton = ({ icon, command, style, context, tooltip }: any) => {
-
-  const editor = useSlate();
-  const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
-
-  const onDone = (params: any) => {
-    setIsPopoverOpen(false);
-    command.execute(context, editor, params);
-  };
-  const onCancel = () => setIsPopoverOpen(false);
-
-  return (
-    <Popover
-      onClickOutside={() => setIsPopoverOpen(false)}
-      isOpen={isPopoverOpen}
-      padding={5}
-      position={['bottom', 'top', 'left', 'right']}
-      content={() => (command as any).obtainParameters(editor, onDone, onCancel)}>
-      {ref => <button
-        ref={ref}
-        data-toggle="tooltip" data-placement="top" title={tooltip}
-        className={`btn btn-sm btn-light ${style}`}
-        onClick={() => setIsPopoverOpen(!isPopoverOpen)}
-        type="button">
-        <i className="material-icons">{icon}</i>
-      </button>}
-    </Popover>
-  );
-};
-
-const Spacer = () => {
-  return (
-    <span style={{ minWidth: '5px', maxWidth: '5px' }} />
-  );
-};

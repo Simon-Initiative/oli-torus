@@ -217,8 +217,7 @@ export const Editor = React.memo((props: EditorProps) => {
   };
 
   return (
-    <div>
-
+    <React.Fragment>
       <Slate
         editor={editor as any}
         value={props.value}
@@ -242,6 +241,6 @@ export const Editor = React.memo((props: EditorProps) => {
           onKeyDown={onKeyDown}
         />
       </Slate>
-    </div>
+    </React.Fragment>
   );
 }, areEqual);

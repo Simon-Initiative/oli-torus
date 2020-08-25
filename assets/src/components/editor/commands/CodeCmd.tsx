@@ -17,10 +17,7 @@ const command: Command = {
   execute: (context, editor: ReactEditor) => {
 
     Editor.withoutNormalizing(editor, () => {
-      if (!editor.selection) {
-        return;
-      }
-      console.log('adding code')
+      if (!editor.selection) return;
 
       const Code = ContentModel.create<ContentModel.Code>(
         {

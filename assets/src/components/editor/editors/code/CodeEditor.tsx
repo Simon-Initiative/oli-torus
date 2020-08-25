@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ReactEditor } from 'slate-react';
-import { Transforms, Editor } from 'slate';
+import { Transforms } from 'slate';
 import { updateModel, getEditMode } from 'components/editor/editors/utils';
 import * as ContentModel from 'data/content/model';
 import { EditorProps } from 'components/editor/editors/interfaces';
@@ -19,7 +19,6 @@ export const CodeEditor = (props: CodeProps) => {
     onEdit(Object.assign({}, model, { [key]: value }));
 
   const onEdit = (updated: ContentModel.Code) => {
-    console.log('updated', updated)
     updateModel<ContentModel.Code>(editor, model, updated);
   };
 
@@ -30,17 +29,12 @@ export const CodeEditor = (props: CodeProps) => {
     Transforms.removeNodes(editor, { at: path });
   };
 
-  const contentFn = () => <CodeSettings
-    model={model}
-    editMode={editMode}
-    commandContext={props.commandContext}
-    onRemove={onRemove}
-    onEdit={onEdit} />;
-
   return (
     <React.Fragment>
       <div {...props.attributes} className="code-editor">
-        <div contentEditable={false} style={{ userSelect: 'none' }}>
+        <div
+          contentEditable={false}
+          style={{ userSelect: 'none', display: 'flex', justifyContent: 'space-between' }}>
           <Settings.Select
             value={model.language}
             onChange={value => updateProperty(value, 'language')}
@@ -50,6 +44,11 @@ export const CodeEditor = (props: CodeProps) => {
               .filter(k => typeof ContentModel.CodeLanguages[k as any] === 'number')
               .sort()}
           />
+          <Settings.ActionMaterial
+            icon="delete"
+            tooltip="Remove Code Block"
+            id="remove-button"
+            onClick={onRemove} />
         </div>
         <div className="code-editor-content">
           <pre style={{ fontFamily: 'Menlo, Monaco, Courier New, monospace' }} >

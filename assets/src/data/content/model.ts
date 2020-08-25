@@ -236,8 +236,7 @@ const tableCell = {
   isVoid: false,
   isBlock: true,
   isTopLevel: false,
-  validChildren: toObj(['p', 'img', 'youtube', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    'ul', 'audio', 'math', 'code']),
+  validChildren: toObj(['p', 'img', 'youtube', 'ol', 'ul', 'audio', 'math', 'code']),
 };
 
 const list = {
