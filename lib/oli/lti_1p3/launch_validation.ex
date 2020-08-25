@@ -6,44 +6,42 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   @doc """
   Validates all aspects of an incoming LTI message launch and caches the launch params in the session if successful.
   """
-  @spec validate(Plug.Conn.t()) :: {:ok} | {:error, String.t()}
-  def validate(conn) do
+  @spec validate(Plug.Conn.t(), (Oli.Lti_1p3.Registration, String.t()-> {:ok, JOSE.JWK.t()})) :: {:ok} | {:error, String.t()}
+  def validate(conn, get_public_key) do
     with {:ok, conn} <- validate_oidc_state(conn),
-         {:ok, conn, jwt} <- validate_jwt_format(conn),
-         {:ok, conn, registration} <- validate_registration(conn, jwt),
-         {:ok, conn} <- validate_jwt_signature(conn, registration, jwt),
-         {:ok, conn} <- validate_nonce(conn, jwt),
-         {:ok, conn} <- validate_deployment(conn, registration, jwt),
-         {:ok, conn} <- validate_message(conn, jwt),
+         {:ok, kid} <- peek_jwt_kid(conn),
+         {:ok, conn, registration} <- validate_registration(conn, kid),
+         {:ok, conn, claims} <- validate_jwt(conn, registration, kid, get_public_key),
+         {:ok, conn} <- validate_nonce(conn, claims),
+         {:ok, conn} <- validate_deployment(conn, registration, claims),
+         {:ok, conn} <- validate_message(conn, claims),
          {:ok, _conn} <- cache_launch_params(conn)
     do
       {:ok}
-    else
-      {:error, error} -> {:error, error}
     end
   end
 
   # Validate that the state sent with an OIDC launch matches the state that was sent in the OIDC response
   # returns a boolean on whether it is valid or not
   defp validate_oidc_state(conn) do
-    case Plug.Conn.get_session(conn, :login_response) do
-      %{:state => state} ->
+    case Plug.Conn.get_session(conn, :lti1p3_state) do
+      nil ->
+        {:error, "State from OIDC request is missing"}
+      state ->
         if conn.params["state"] == state do
           {:ok, conn}
         else
           {:error, "State from OIDC request does not match"}
         end
-      _ ->
-        {:error, "State from OIDC request is missing"}
     end
   end
 
-  defp validate_registration(conn, jwt) do
-    case Oli.Lti_1p3.get_registration_by_kid(jwt["header"]["kid"]) do
-      {:ok, registration} ->
+  defp validate_registration(conn, kid) do
+    case Oli.Lti_1p3.get_registration_by_kid(kid) do
+      nil ->
+        {:error, "Registration with kid \"#{kid}\" not found"}
+        registration ->
         {:ok, conn, registration}
-      _ ->
-        {:error, "Registration with kid not found"}
     end
   end
 
@@ -56,69 +54,81 @@ defmodule Oli.Lti_1p3.LaunchValidation do
     end
   end
 
-  defp jwt_from_string(jwt_string) do
-    try do
-      {:ok, JOSE.JWT.from(jwt_string)}
-    rescue
+  @doc """
+  Expands a signed token into its 3 parts: protected, payload and signature.
+  Protected is also called the JOSE header. It contains metadata only like:
+    - "typ": the token type
+    - "kid": an id for the key used in the signing
+    - "alg": the algorithm used to sign a token
+  Payload is the set of claims and signature is, well, the signature.
+  """
+  def expand(signed_token) do
+    case String.split(signed_token, ".") do
+      [header, payload, signature] ->
+        {:ok,
+         %{
+           "protected" => header,
+           "payload" => payload,
+           "signature" => signature
+         }}
+
       _ ->
-        {:error, "Invalid id_token"}
+        {:error, :token_malformed}
     end
   end
 
-  defp validate_jwt_format(conn) do
+  defp peek_jwt_kid(conn) do
     with {:ok, jwt_string} <- decode_id_token(conn),
-         {:ok, jwt} <- jwt_from_string(jwt_string)
+         {:ok, claims} <- Joken.peek_header(jwt_string)
     do
-      {:ok, conn, jwt}
-    else
-      {:error, e} -> {:error, e}
+      {:ok, claims["kid"]}
     end
   end
 
-  @spec get_public_key(%Oli.Lti_1p3.Registration{}, String.t()) :: {:ok, JOSE.JWK.t()}
-  defp get_public_key(%Oli.Lti_1p3.Registration{key_set_url: key_set_url}, kid) do
-    public_key_set = case HTTPoison.get(key_set_url) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        Jason.decode!(body)
-      _ ->
-        {:error, "Failed to fetch public key from registered platform url"}
-    end
+  # @spec get_public_key(%Oli.Lti_1p3.Registration{}, String.t()) :: {:ok, JOSE.JWK.t()}
+  # defp get_public_key(%Oli.Lti_1p3.Registration{key_set_url: key_set_url}, kid) do
+  #   public_key_set = case HTTPoison.get(key_set_url) do
+  #     {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+  #       Jason.decode!(body)
+  #     _ ->
+  #       {:error, "Failed to fetch public key from registered platform url"}
+  #   end
 
-    public_key = Enum.find(public_key_set["keys"], fn key -> key["kid"] == kid end)
-    |> JOSE.JWK.from
+  #   public_key = Enum.find(public_key_set["keys"], fn key -> key["kid"] == kid end)
+  #   |> JOSE.JWK.from
 
-    {:ok, public_key}
-  end
+  #   {:ok, public_key}
+  # end
 
-  defp validate_jwt_signature(conn, registration, jwt) do
+  defp validate_jwt(conn, registration, kid, get_public_key) do
     with {:ok, jwt_string} <- decode_id_token(conn),
-         {:ok, public_key} <- get_public_key(registration, jwt["header"]["kid"])
+         {:ok, public_key} <- get_public_key.(registration, kid)
     do
-      # TODO: REMOVE
-      # JOSE.JWT.verify_strict(public_key, "RS256", jwt)
+      {_kty, pk} = JOSE.JWK.to_map(public_key)
 
-      case JOSE.JWT.verify_strict(public_key, "RS256", jwt_string) do
-        {true, _} ->
-          {:ok, conn}
-        _ ->
+      signer = Joken.Signer.create("RS256", pk)
+
+      case Joken.verify_and_validate(%{}, jwt_string, signer) do
+        {:ok, jwt} ->
+          {:ok, conn, jwt}
+        {:error, :signature_error} ->
           {:error, "Invalid signature on id_token"}
+        error -> error
       end
-    else
-      {:error, e} -> {:error, e}
     end
   end
 
-  defp validate_nonce(conn, jwt) do
-    if Oli.Lti_1p3.NonceCacheAgent.has(jwt["body"]["nonce"]) do
+  defp validate_nonce(conn, claims) do
+    if Oli.Lti_1p3.NonceCacheAgent.has(claims["nonce"]) do
       {:error, "Duplicate nonce"}
     else
-      Oli.Lti_1p3.NonceCacheAgent.put(jwt["body"]["nonce"])
+      Oli.Lti_1p3.NonceCacheAgent.put(claims["nonce"])
       {:ok, conn}
     end
   end
 
-  defp validate_deployment(conn, registration, jwt) do
-    deployment_id = jwt["body"]["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
+  defp validate_deployment(conn, registration, claims) do
+    deployment_id = claims["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
     deployment = Oli.Lti_1p3.get_deployment(registration, deployment_id)
 
     case deployment do
@@ -129,16 +139,16 @@ defmodule Oli.Lti_1p3.LaunchValidation do
     end
   end
 
-  defp validate_message(conn, jwt) do
-    case jwt["body"]["https://purl.imsglobal.org/spec/lti/claim/message_type"] do
+  defp validate_message(conn, claims) do
+    case claims["https://purl.imsglobal.org/spec/lti/claim/message_type"] do
       nil ->
         {:error, "Invalid message type"}
       message_type ->
         # no more than one message validator should apply for a given mesage,
         # so use the first validator we find that applies
-        validation_result = case Enum.find(@message_validators, fn mv -> mv.can_validate(jwt["body"]) end) do
+        validation_result = case Enum.find(@message_validators, fn mv -> mv.can_validate(claims) end) do
           nil -> nil
-          validator -> validator.validate(jwt["body"])
+          validator -> validator.validate(claims)
         end
 
         case validation_result do

@@ -1,4 +1,4 @@
-defmodule Oli.Lti do
+defmodule Oli.Lti_1p3.KeyGenerator do
 
   @chars "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" |> String.split("", trim: true)
 

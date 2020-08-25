@@ -1,17 +1,15 @@
 defmodule Oli.Lti_1p3.KeyGeneratorTest do
   use Oli.DataCase
 
-  alias Oli.Lti
+  alias Oli.Lti_1p3.KeyGenerator
 
   describe "key generator" do
     test "passphrase/0 generates a random passphrase of size 256" do
-      assert String.length(Lti.passphrase) == 256
+      assert String.length(KeyGenerator.passphrase) == 256
     end
 
     test "generate_key_pair/0 generates a public and private key pair" do
-      keypair = Lti.generate_key_pair
-
-      IO.inspect keypair, label: "keypair"
+      keypair = KeyGenerator.generate_key_pair
 
       assert Map.has_key?(keypair, :public_key)
       assert Map.has_key?(keypair, :private_key)

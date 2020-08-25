@@ -5,21 +5,21 @@ defmodule Oli.Lti_1p3.NonceCacheAgent do
   Starts a new cache instance
   """
   def start_link(_opts) do
-    Agent.start_link(fn -> %{} end)
+    Agent.start_link(fn -> %{} end, name: __MODULE__)
   end
 
   @doc """
   Checks the cache for a given nonce
   """
   def has(nonce) do
-    Agent.get(:lti_1p3_nonces, &Map.has_key?(&1, nonce))
+    Agent.get(__MODULE__, &Map.has_key?(&1, nonce))
   end
 
   @doc """
   Puts a nonce into the cache
   """
   def put(nonce) do
-    Agent.update(:lti_1p3_nonces, &Map.put(&1, nonce, Timex.now))
+    Agent.update(__MODULE__, &Map.put(&1, nonce, Timex.now))
   end
 
   @doc """

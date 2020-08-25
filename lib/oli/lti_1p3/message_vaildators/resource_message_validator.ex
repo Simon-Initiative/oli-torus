@@ -1,4 +1,8 @@
-defimpl Oli.Lti_1p3.MessageValidator, for: Oli.Lti_1p3.MessageValidators.ResourceMessageValidator do
+# defimpl Oli.Lti_1p3.MessageValidator, for: Oli.Lti_1p3.MessageValidators.ResourceMessageValidator do
+  defmodule Oli.Lti_1p3.MessageValidators.ResourceMessageValidator do
+
+  @behaviour Oli.Lti_1p3.MessageValidator
+
   def can_validate(jwt_body) do
     jwt_body["https://purl.imsglobal.org/spec/lti/claim/message_type"] == "LtiResourceLinkRequest"
   end
