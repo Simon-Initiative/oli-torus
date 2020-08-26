@@ -8,7 +8,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   @doc """
   Validates all aspects of an incoming LTI message launch and caches the launch params in the session if successful.
   """
-  @spec validate(Plug.Conn.t(), get_public_key_callback()) :: {:ok} | {:error, String.t()}
+  @spec validate(Plug.Conn.t(), get_public_key_callback()) :: {:ok, Plug.Conn.t()} | {:error, String.t()}
   def validate(conn, get_public_key) do
     with {:ok, conn} <- validate_oidc_state(conn),
          {:ok, kid} <- peek_jwt_kid(conn),
@@ -17,9 +17,9 @@ defmodule Oli.Lti_1p3.LaunchValidation do
          {:ok, conn} <- validate_nonce(conn, claims),
          {:ok, conn} <- validate_deployment(conn, registration, claims),
          {:ok, conn} <- validate_message(conn, claims),
-         {:ok, _conn} <- cache_launch_params(conn)
+         {:ok, conn} <- cache_launch_params(conn)
     do
-      {:ok}
+      {:ok, conn}
     end
   end
 
@@ -53,29 +53,6 @@ defmodule Oli.Lti_1p3.LaunchValidation do
         {:error, "Missing id_token"}
       id_token ->
         {:ok, id_token}
-    end
-  end
-
-  @doc """
-  Expands a signed token into its 3 parts: protected, payload and signature.
-  Protected is also called the JOSE header. It contains metadata only like:
-    - "typ": the token type
-    - "kid": an id for the key used in the signing
-    - "alg": the algorithm used to sign a token
-  Payload is the set of claims and signature is, well, the signature.
-  """
-  def expand(signed_token) do
-    case String.split(signed_token, ".") do
-      [header, payload, signature] ->
-        {:ok,
-         %{
-           "protected" => header,
-           "payload" => payload,
-           "signature" => signature
-         }}
-
-      _ ->
-        {:error, :token_malformed}
     end
   end
 
@@ -136,7 +113,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
 
     case deployment do
       nil ->
-        {:error, "Unable to find deployment"}
+        {:error, "Deployment with id \"#{deployment_id}\" not found"}
       _deployment ->
         {:ok, conn}
     end
@@ -145,7 +122,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   defp validate_message(conn, claims) do
     case claims["https://purl.imsglobal.org/spec/lti/claim/message_type"] do
       nil ->
-        {:error, "Invalid message type"}
+        {:error, "Missing message type"}
       message_type ->
         # no more than one message validator should apply for a given mesage,
         # so use the first validator we find that applies
@@ -166,7 +143,9 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   end
 
   defp cache_launch_params(conn) do
-    Plug.Conn.put_session(conn, :lti1p3_launch_params, conn.params)
+    conn = conn
+    |> Plug.Conn.put_session(:lti1p3_launch_params, conn.params)
+
     {:ok, conn}
   end
 
