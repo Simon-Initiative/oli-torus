@@ -1,10 +1,9 @@
-import { ReactEditor } from 'slate-react';
 import { Transforms, Editor } from 'slate';
 import { isActiveQuote, isTopLevel, isActive } from 'components/editor/utils';
 import { CommandDesc, Command } from 'components/editor/commands/interfaces';
 
 const command: Command = {
-  execute: (context, editor: ReactEditor) => {
+  execute: (context, editor) => {
 
     Editor.withoutNormalizing(editor, () => {
       const isActive = isActiveQuote(editor);
@@ -16,7 +15,7 @@ const command: Command = {
       Transforms.wrapNodes(editor, { type: 'blockquote', children: [] });
     });
   },
-  precondition: (editor: ReactEditor) => {
+  precondition: (editor) => {
     return isTopLevel(editor) && isActive(editor, ['p'])
       || isActive(editor, ['blockquote']);
   },

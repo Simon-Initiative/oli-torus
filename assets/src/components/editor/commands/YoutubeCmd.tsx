@@ -1,14 +1,12 @@
 import { CommandDesc, Command } from 'components/editor/commands/interfaces';
-import { ReactEditor } from 'slate-react';
-import { Transforms, Editor } from 'slate';
+import { Transforms } from 'slate';
 import * as ContentModel from 'data/content/model';
 import { modalActions } from 'actions/modal';
 import ModalSelection from 'components/modal/ModalSelection';
 import { useState } from 'react';
 import * as Settings from 'components/editor/editors/settings/Settings';
 import { getQueryVariableFromString } from 'utils/params';
-import { CUTE_OTTERS } from '../editors/youtube/YouTube';
-import { isActiveList } from '../utils';
+import { CUTE_OTTERS } from '../editors/youtube/YouTubeEditor';
 
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
@@ -67,7 +65,7 @@ export function selectYouTube(): Promise<string | null> {
 }
 
 const command: Command = {
-  execute: (context, editor: ReactEditor) => {
+  execute: (context, editor) => {
     selectYouTube()
       .then((selectedSrc) => {
         if (selectedSrc !== null) {
@@ -82,19 +80,11 @@ const command: Command = {
             src = src.substr(src.lastIndexOf('/') + 1);
           }
 
-          Editor.withoutNormalizing(editor, () => {
-            Transforms.insertNodes(editor, ContentModel.youtube(src));
-            if (isActiveList(editor)) {
-              Transforms.wrapNodes(editor,
-                { type: 'li', children: [] },
-                { match: n => n.type === 'youtube' });
-            }
-          });
+          Transforms.insertNodes(editor, ContentModel.youtube(src));
         }
       });
   },
-  precondition: (editor: ReactEditor) => {
-
+  precondition: (editor) => {
     return true;
   },
 

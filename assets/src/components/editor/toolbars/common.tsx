@@ -15,6 +15,11 @@ export function showToolbar(el: HTMLElement) {
   el.style.display = 'block';
 }
 
+const buttonContent = (icon: string, description: string | undefined) =>
+  icon
+    ? <span className="material-icons">{icon}</span>
+    : <span className="toolbar-button-text">{description}</span>;
+
 interface ToolbarButtonProps {
   icon: string;
   command: Command;
@@ -24,40 +29,30 @@ interface ToolbarButtonProps {
   style?: string;
   active?: boolean;
   disabled?: boolean;
+  position?: 'left' | 'right' | 'top' | 'bottom';
 }
-export const ToolbarButton = ({ icon, command, style, context, tooltip, active,
-  description, disabled }: ToolbarButtonProps) => {
+
+export const ToolbarButton = ({ icon, command, style, context, active,
+  description }: ToolbarButtonProps) => {
   const editor = useSlate();
 
   return (
     <button
       data-toggle="tooltip"
       data-placement="top"
-      title={tooltip}
-      disabled={disabled || false}
-      className={`btn btn-sm btn-light ${style} ${active && 'active'}`}
+      className={`btn btn-sm btn-light ${style} ${!!active && 'active'}`}
       onMouseDown={e => e.preventDefault()}
       onMouseUp={(event) => {
         event.preventDefault();
         command.execute(context, editor);
-      }}
-    >
-      {icon
-        ? <span className="material-icons" data-icon={description}>{icon}</span>
-        : <span className="toolbar-button-text">{description}</span>}
+      }}>
+      {buttonContent(icon, description)}
     </button>
   );
 };
 
-interface DropdownToolbarButtonProps {
-  icon: string;
-  command: Command;
-  context: CommandContext;
-  tooltip?: string;
-  style?: string;
-}
-export const DropdownToolbarButton = ({ icon, command, style, context, tooltip }:
-  DropdownToolbarButtonProps) => {
+export const DropdownToolbarButton = ({ icon, command, style, context, active, description,
+  position }: ToolbarButtonProps) => {
 
   const editor = useSlate();
   const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
@@ -70,29 +65,31 @@ export const DropdownToolbarButton = ({ icon, command, style, context, tooltip }
 
   return (
     <Popover
-      onClickOutside={() => setIsPopoverOpen(false)}
+      onClickOutside={() => {
+        if ((command as any).obtainParameters) {
+          return;
+        }
+        setIsPopoverOpen(false);
+      }}
       isOpen={isPopoverOpen}
       padding={5}
-      position={['right']}
-      content={() => (command as any).obtainParameters(editor, onDone, onCancel)}
-      // contentLocation={{ left: 20, top: 0 }}
+      position={position || 'right'}
+      content={() => (command as any).obtainParameters(context, editor, onDone, onCancel)}
+    // contentLocation={{ left: 20, top: 0 }}
     >
       {ref => <button
         ref={ref}
         data-toggle="tooltip"
         data-placement="top"
-        title={tooltip}
-        className={`btn btn-sm btn-light ${style}`}
+        className={`btn btn-sm btn-light ${style} ${!!active && 'active'}`}
         onClick={() => setIsPopoverOpen(!isPopoverOpen)}
         type="button">
-        <i className="material-icons">{icon}</i>
+        {buttonContent(icon, description)}
       </button>}
     </Popover>
   );
 };
 
 export const Spacer = () => {
-  return (
-    <span style={{ minWidth: '5px', maxWidth: '5px' }} />
-  );
+  return <span style={{ minWidth: '5px', maxWidth: '5px' }} />;
 };

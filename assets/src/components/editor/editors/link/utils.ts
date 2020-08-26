@@ -1,5 +1,15 @@
 import * as Persistence from 'data/persistence/resource';
 
+interface Waiting {
+  type: 'Waiting';
+}
+
+interface Uninitialized {
+  type: 'Uninitialized';
+}
+
+export type LinkablePages = Uninitialized | Waiting | Persistence.PagesReceived;
+
 export const internalLinkPrefix = '/course/link';
 
 export const isInternalLink = (href: string) => href.startsWith(internalLinkPrefix);
@@ -26,13 +36,3 @@ export const translateDeliveryToAuthoring = (href: string, projectSlug: string) 
 };
 
 export const normalizeHref = (href: string) => addProtocol(href.trim());
-
-interface Waiting {
-  type: 'Waiting';
-}
-
-interface Uninitialized {
-  type: 'Uninitialized';
-}
-
-export type LinkablePages = Uninitialized | Waiting | Persistence.PagesReceived;

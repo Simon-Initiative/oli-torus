@@ -5,7 +5,6 @@ import { updateModel, getEditMode } from 'components/editor/editors/utils';
 import * as ContentModel from 'data/content/model';
 import { EditorProps } from 'components/editor/editors/interfaces';
 import * as Settings from 'components/editor/editors/settings/Settings';
-import { CodeSettings } from 'components/editor/editors/code/CodeSettings';
 
 export interface CodeProps extends EditorProps<ContentModel.Code> { }
 
@@ -44,11 +43,6 @@ export const CodeEditor = (props: CodeProps) => {
               .filter(k => typeof ContentModel.CodeLanguages[k as any] === 'number')
               .sort()}
           />
-          <Settings.ActionMaterial
-            icon="delete"
-            tooltip="Remove Code Block"
-            id="remove-button"
-            onClick={onRemove} />
         </div>
         <div className="code-editor-content">
           <pre style={{ fontFamily: 'Menlo, Monaco, Courier New, monospace' }} >

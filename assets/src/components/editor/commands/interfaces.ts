@@ -6,6 +6,7 @@ export type CommandDesc = {
   icon: (editor: ReactEditor) => string,
   command: Command,
   description: (editor: ReactEditor) => string,
+  // active: is the item in the cursor's selection
   active?: (editor: ReactEditor) => boolean;
 };
 
@@ -14,12 +15,16 @@ export interface CommandContext {
 }
 
 export type Command = {
-  // The condition that must be satisfied for the button to be enabled
+  // precondition: must be satisfied for the command to be enabled
+  // (prevents commands from violating model constraints)
   precondition: (editor: ReactEditor) => boolean,
-  // The function to run when the button is pressed
+  // execute: run when the command is called (usually to create an element and insert it)
   execute: (context: CommandContext, editor: ReactEditor, params?: Object) => void,
-  obtainParameters?: (
-    editor: ReactEditor, onDone: (params: any) => void, onCancel: () => void) => JSX.Element,
+  // obtainParameters: allow the command to gather additional info before running the command
+  // (for example, show a size picker for table insertion)
+  // Returns a JSX element that will be inserted in a popover
+  obtainParameters?: (context: CommandContext, editor: ReactEditor, onDone: (params: any) => void,
+    onCancel: () => void) => JSX.Element,
 };
 
 export type GroupDivider = {

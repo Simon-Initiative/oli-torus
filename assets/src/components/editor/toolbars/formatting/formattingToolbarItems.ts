@@ -3,9 +3,8 @@ import { commandDesc as titleCmd } from 'components/editor/commands/TitleCmd';
 import { olCommandDesc as olCmd, ulCommandDesc as ulCmd }
   from 'components/editor/commands/ListsCmd';
 import { commandDesc as quoteCmd } from 'components/editor/commands/BlockquoteCmd';
-import { commandDesc as linkCmd } from 'components/editor/commands/LinkCmd';
+import { commandDesc as linkCmd } from 'components/editor/commands/link/LinkCmd';
 import { isActive } from 'components/editor/utils';
-import { ReactEditor } from 'slate-react';
 
 export const formatMenuCommands = [
   [
@@ -13,8 +12,7 @@ export const formatMenuCommands = [
     format({ icon: 'format_italic', mark: 'em', description: 'Italic' }),
     linkCmd,
     format({
-      icon: 'code', mark: 'code', description: 'Code',
-      precondition: (editor: ReactEditor) => !isActive(editor, ['code']),
+      icon: 'code', mark: 'code', description: 'Code', precondition: editor => !isActive(editor, ['code']),
     }),
   ],
   [

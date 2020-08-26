@@ -2,10 +2,9 @@ import { ReactEditor } from 'slate-react';
 import { CommandDesc, Command } from 'components/editor/commands/interfaces';
 import { Transforms } from 'slate';
 import { td, tr, table } from 'data/content/model';
-import { SizePicker } from './SizePicker';
+import { SizePicker } from 'components/editor/commands/table/SizePicker';
 import { isTopLevel } from 'components/editor/utils';
 
-// The UI command for creating tables
 const command: Command = {
   execute: (context: any, editor: ReactEditor, params: any) => {
 
@@ -20,18 +19,14 @@ const command: Command = {
     }
 
     const t = table(rows);
-    if (!editor.selection) return;
     Transforms.insertNodes(editor, t);
   },
   precondition: (editor: ReactEditor) => {
     return isTopLevel(editor);
   },
 
-  obtainParameters: (editor: ReactEditor,
-    onDone: (params: any) => void, onCancel: () => void) => {
-
-    return <SizePicker onHide={onCancel}
-      onTableCreate={(rows, columns) => onDone({ rows, columns })} />;
+  obtainParameters: (context, editor, onDone, onCancel) => {
+    return <SizePicker onTableCreate={(rows, columns) => onDone({ rows, columns })} />;
   },
 };
 

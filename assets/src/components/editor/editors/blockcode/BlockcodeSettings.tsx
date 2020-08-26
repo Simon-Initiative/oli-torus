@@ -36,10 +36,6 @@ export const CodeSettings = (props: CodeSettingsProps) => {
     setModel(Object.assign({}, model, { language }));
   };
 
-  const onNumbersChange = () => {
-    setModel(Object.assign({}, model, { showNumbers: !model.showNumbers }));
-  };
-
   const applyButton = (disabled: boolean) => <button onClick={(e) => {
     e.stopPropagation();
     e.preventDefault();
@@ -64,12 +60,6 @@ export const CodeSettings = (props: CodeSettingsProps) => {
         </div>
 
         <form className="form">
-
-          <div className="form-check mb-2">
-            <input onChange={onNumbersChange}
-              checked={model.showNumbers} type="checkbox" className="form-check-input" id={checkId + ''} />
-            <label className="form-check-label" htmlFor={checkId + ''}>Show line numbers</label>
-          </div>
 
         </form>
 

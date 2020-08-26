@@ -93,8 +93,6 @@ defmodule Oli.Rendering.Content.Plaintext do
 
   def code(%Context{} = _context, next, %{
     "language" => _language,
-    "startingLineNumber" => _startingLineNumber,
-    "showNumbers" => _showNumbers
   }) do
     ["[Code]: ", next.(), " "]
   end

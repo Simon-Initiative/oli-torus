@@ -1,8 +1,9 @@
 import * as ContentModel from 'data/content/model';
 import { ReactEditor } from 'slate-react';
-import { Transforms, Node, Range, Path, Editor, Text } from 'slate';
+import { Transforms, Node, Range, Editor, Text } from 'slate';
 import { Command, CommandDesc } from 'components/editor/commands/interfaces';
-import { isActive } from '../utils';
+import { isActive } from '../../utils';
+import { EditLinkWrapper } from './EditLinkWrapper';
 
 export const isLinkPresent = (editor: ReactEditor) => {
   if (!editor.selection) {
@@ -16,7 +17,11 @@ export const isLinkPresent = (editor: ReactEditor) => {
 };
 
 const command: Command = {
-  execute: (context, editor: ReactEditor) => {
+  execute: (context, editor, params) => {
+
+    // Wrap link node around selection
+    // Open popup to set link href
+
 
     const selection = editor.selection;
     if (selection === null) return;
@@ -60,16 +65,21 @@ const command: Command = {
 
     return addLink();
   },
-  precondition: (editor: ReactEditor) => {
+  precondition: (editor) => {
     return !isActive(editor, ['code']);
   },
+  obtainParameters: (context, editor, onDone, onCancel) => {
+    return <EditLinkWrapper
+      projectSlug={context.projectSlug}
+      onEdit={onDone}
+    />;
+  },
 };
-
 
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
   icon: () => 'insert_link',
   description: () => 'Link',
   command,
-  active: editor => isLinkPresent(editor),
+  active: isLinkPresent,
 };

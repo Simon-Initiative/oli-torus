@@ -1,5 +1,5 @@
 import { ReactEditor } from 'slate-react';
-import { Node, Transforms, Editor } from 'slate';
+import { Transforms } from 'slate';
 import { getNearestBlock, isActive, isTopLevel } from '../utils';
 import { Command, CommandDesc } from 'components/editor/commands/interfaces';
 
@@ -19,7 +19,7 @@ const selectedType = (editor: ReactEditor) => getNearestBlock(editor).caseOf({
 });
 
 const command: Command = {
-  execute: (context, editor: ReactEditor) => {
+  execute: (context, editor) => {
 
     const nextType = ((selected) => {
       switch (selected) {
@@ -37,7 +37,7 @@ const command: Command = {
       { type: nextType },
       { match: n => (parentTextTypes as any)[n.type as string] });
   },
-  precondition: (editor: ReactEditor) => {
+  precondition: (editor) => {
     return isTopLevel(editor) && isActive(editor, ['p', 'h1', 'h2']);
   },
 };

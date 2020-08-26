@@ -53,18 +53,7 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
     }
   });
 
-  // const content =
-  //   <div className="insert-item list-group-item list-group-item-action" key="content"
-  //     onClick={() => onAddItem(createDefaultStructuredContent(), index)}>
-  //     Content
-  //   </div>;
-
   return (
-    // <div ref={(ref as any)} className="toolbar fixed-toolbar" style={style}>
-    //   <div className="toolbar-buttons btn-group btn-group-sm" role="group" ref={(ref as any)}>
-    //     {buttons.filter(x => x)}
-    //   </div>
-    // </div>
     <div
       onMouseDown={e => e.preventDefault()}
       ref={ref as any}
@@ -74,7 +63,6 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
         <Popover
           containerClassName="add-resource-popover"
           onClickOutside={(e) => {
-            console.log('click outside')
             if (e !== latestClickEvent) {
               setIsPopoverOpen(false);
             }

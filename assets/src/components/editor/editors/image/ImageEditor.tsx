@@ -38,8 +38,7 @@ export const ImageEditor = (props: ImageProps) => {
     <div {...attributes} className="ml-4 mr-4">
 
       <div contentEditable={false} style={{ userSelect: 'none' }}>
-        <div
-          className="ml-4 mr-4 text-center">
+        <div className="ml-4 mr-4 text-center">
           <figure>
             <img
               onClick={(e) => {

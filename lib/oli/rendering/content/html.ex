@@ -106,8 +106,6 @@ defmodule Oli.Rendering.Content.Html do
 
   def code(%Context{} = _context, next, %{
     "language" => language,
-    "startingLineNumber" => _startingLineNumber,
-    "showNumbers" => _showNumbers
   } = attrs) do
     figure(attrs, [~s|<pre><code class="language-#{language}">|, next.(), "</code></pre>\n"])
   end

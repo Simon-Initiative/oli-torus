@@ -1,15 +1,12 @@
 import React from 'react';
-import { ReactEditor } from 'slate-react';
-import { Transforms, Editor } from 'slate';
+import { Transforms } from 'slate';
 import * as ContentModel from 'data/content/model';
-import guid from 'utils/guid';
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
 import ModalSelection from 'components/modal/ModalSelection';
 import { MediaManager } from 'components/media/manager/MediaManager.controller';
 import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
 import { Command, CommandDesc } from 'components/editor/commands/interfaces';
-import { isActiveList } from '../utils';
 
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
@@ -34,9 +31,7 @@ export function selectImage(projectSlug: string,
             selectionType={SELECTION_TYPES.SINGLE}
             initialSelectionPaths={model.src ? [model.src] : [selected.img as any]}
             onSelectionChange={(images: MediaItem[]) => {
-              const first : ContentModel.Image = { type: 'img', src: images[0].url,
-                children: [{ text: '' }], id: guid()};
-              (selected as any).img = first;
+              (selected as any).img = ContentModel.image(images[0].url);
             }} />
         </ModalSelection>;
 
@@ -45,23 +40,11 @@ export function selectImage(projectSlug: string,
 }
 
 const command: Command = {
-  execute: (context, editor: ReactEditor) => {
+  execute: (context, editor) => {
     selectImage(context.projectSlug, ContentModel.image())
-    .then((img) => {
-      Editor.withoutNormalizing(editor, () => {
-
-        Transforms.insertNodes(editor, img);
-
-        if (isActiveList(editor)) {
-          Transforms.wrapNodes(editor,
-            { type: 'li', children: [] },
-            { match: n => n.type === 'img' });
-        }
-      });
-    });
+    .then(img =>  Transforms.insertNodes(editor, img));
   },
-  precondition: (editor: ReactEditor) => {
-
+  precondition: (editor) => {
     return true;
   },
 };

@@ -39,7 +39,6 @@ const range = (n: number) =>
   Array.apply(null, { length: n }).map(Number.call, Number).map((v: any) => v + 1);
 
 export type SizePickerProps = {
-  onHide: () => void;
   onTableCreate: (rows: number, columns: number) => void;
 };
 

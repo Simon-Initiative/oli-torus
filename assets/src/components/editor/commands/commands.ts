@@ -1,7 +1,7 @@
 import { Editor } from 'slate';
 import { Mark } from 'data/content/model';
 import { ReactEditor } from 'slate-react';
-import { CommandDesc, CommandContext, Command } from './interfaces';
+import { CommandDesc, Command } from './interfaces';
 import { marksInEntireSelection } from '../utils';
 
 function isMarkActive(editor: ReactEditor, mark: Mark): boolean {
@@ -14,6 +14,14 @@ function isMarkActive(editor: ReactEditor, mark: Mark): boolean {
   return !!match;
 }
 
+interface CommandWrapperProps {
+  icon: string;
+  description: string;
+  execute: Command['execute'];
+  mark?: Mark;
+  active?: CommandDesc['active'];
+  precondition?: Command['precondition'];
+}
 export function toggleMark(editor: ReactEditor, mark: Mark) {
   const isActive = isMarkActive(editor, mark);
 
@@ -24,7 +32,8 @@ export function toggleMark(editor: ReactEditor, mark: Mark) {
   }
 }
 
-export function createToggleFormatCommand(attrs: any) {
+export function createToggleFormatCommand(attrs:
+  { icon: string, description: string, mark: Mark, precondition?: Command['precondition'] }) {
   return createCommandDesc({
     ...attrs,
     execute: (context, editor) => toggleMark(editor, attrs.mark),
@@ -32,19 +41,12 @@ export function createToggleFormatCommand(attrs: any) {
   });
 }
 
-export function createButtonCommandDesc(attrs: any) {
+export function createButtonCommandDesc(attrs: CommandWrapperProps) {
   return createCommandDesc(attrs);
 }
 
 function createCommandDesc({ icon, description, execute, active, precondition }:
-  {
-    icon: string,
-    mark: Mark,
-    description: string,
-    execute: Command['execute'],
-    active?: CommandDesc['active'],
-    precondition?: Command['precondition'],
-  }): CommandDesc {
+  CommandWrapperProps): CommandDesc {
   return {
     type: 'CommandDesc',
     icon: () => icon,

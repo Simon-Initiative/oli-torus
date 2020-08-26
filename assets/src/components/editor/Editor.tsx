@@ -10,7 +10,7 @@ import { editorFor, markFor } from './editors';
 import { ToolbarItem, CommandContext } from './commands/interfaces';
 import { onKeyDown as listOnKeyDown } from './editors/lists/ListsOverride';
 import { onKeyDown as quoteOnKeyDown } from './editors/blockquote/BlockquoteOverrides';
-import { commandDesc as linkCmd } from 'components/editor/commands/LinkCmd';
+import { commandDesc as linkCmd } from 'components/editor/commands/link/LinkCmd';
 import { getNearestBlock } from './utils';
 import { toggleMark } from './commands/commands';
 import { installNormalizer } from './normalizer';

@@ -1,6 +1,6 @@
 import { ReactEditor } from 'slate-react';
-import { Editor, Range, Text } from 'slate';
-import { getHighestTopLevel, getNearestBlock, isActive, isTopLevel, getNearestTopLevel } from 'components/editor/utils';
+import { Editor, Range } from 'slate';
+import { getHighestTopLevel, getNearestBlock, isActive, isTopLevel } from 'components/editor/utils';
 
 export function shouldShowInsertionToolbar(editor: ReactEditor) {
   const { selection } = editor;
@@ -8,41 +8,17 @@ export function shouldShowInsertionToolbar(editor: ReactEditor) {
     && ReactEditor.isFocused(editor)
     && Range.isCollapsed(selection);
 
-  const isInParagraph = isActive(editor, ['p']);
+  const isInParagraph = Array.from(Editor.nodes(editor,
+    { match: n => n.type === 'p' && (n.children as any)[0].text === '' })).length > 0;
 
   const isTopLevelOrInTable = isTopLevel(editor) || getHighestTopLevel(editor).caseOf({
     just: n => n.type === 'table',
     nothing: () => false,
   });
 
-  const isInList = getNearestTopLevel(editor).caseOf({
-    just: n => ['ul', 'ol'].indexOf(n.type as string) > -1,
-    nothing: () => false,
-  });
-
-  // paragraph at top level or in table, or inside a list
-  const isInValidParents = isInParagraph && isTopLevelOrInTable
-    || isInList;
-  // || isActive(editor, ['table'])
-  // || isActive(editor, ['li']);
+  const isInValidParents = isInParagraph && isTopLevelOrInTable;
 
   return isSelectionCollapsed && isInValidParents;
-
-  // True if the cursor is in a paragraph at the toplevel with no content
-  const isCursorAtEmptyLine = () => {
-    const nodes = Array.from(Editor.nodes(editor, { at: selection }));
-    if (nodes.length !== 3) {
-      return false;
-    }
-    const [[first], [second], [third]] = nodes;
-    return Editor.isEditor(first) &&
-      second.type === 'p' &&
-      Text.isText(third) && third.text === '';
-  };
-
-  console.log('range collapsed', Range.isCollapsed(selection))
-
-  // isCursorAtEmptyLine();
 }
 
 export function positionInsertion(el: HTMLElement, editor: ReactEditor) {

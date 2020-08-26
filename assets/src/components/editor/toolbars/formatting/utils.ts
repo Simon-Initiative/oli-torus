@@ -1,5 +1,5 @@
 import { ReactEditor } from 'slate-react';
-import { Editor as SlateEditor, Range } from 'slate';
+import { Range } from 'slate';
 
 export function shouldHideFormattingToolbar(editor: ReactEditor) {
   const { selection } = editor;

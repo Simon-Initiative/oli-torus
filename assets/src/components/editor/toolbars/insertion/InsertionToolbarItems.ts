@@ -4,7 +4,7 @@ import { commandDesc as audioCmdDesc } from 'components/editor/commands/AudioCmd
 import { commandDesc as tableCommandDesc } from 'components/editor/commands/table/TableCmd';
 import { ResourceType } from 'data/content/resource';
 import { ToolbarItem } from 'components/editor/commands/interfaces';
-import { commandDesc as codeCmd } from 'components/editor/commands/CodeCmd';
+import { commandDesc as codeCmd } from 'components/editor/commands/BlockcodeCmd';
 
 const toolbarItems: ToolbarItem[] = [
   tableCommandDesc,

@@ -1,11 +1,10 @@
-import { ReactEditor } from 'slate-react';
 import { Transforms, Editor as SlateEditor } from 'slate';
-import { CommandContext, Command, CommandDesc } from 'components/editor/commands/interfaces';
+import { Command, CommandDesc } from 'components/editor/commands/interfaces';
 import { isActiveList, isActive, isTopLevel } from 'components/editor/utils';
 
 const listCommandMaker = (listType: string): Command => {
   return {
-    execute: (context: CommandContext, editor: ReactEditor) => {
+    execute: (context, editor) => {
       SlateEditor.withoutNormalizing(editor, () => {
 
         const active = isActiveList(editor);
@@ -26,23 +25,20 @@ const listCommandMaker = (listType: string): Command => {
         }
       });
     },
-    precondition: (editor: ReactEditor) => {
+    precondition: (editor) => {
       if (isActiveList(editor)) {
-        return isActive(editor, [listType]);
+        return isActive(editor, [listType]) && !isActive(editor, ['code']);
       }
       return (isTopLevel(editor) || isActive(editor, ['table'])) && isActive(editor, ['p']);
     },
   };
 };
 
-const ulCommand: Command = listCommandMaker('ul');
-const olCommand: Command = listCommandMaker('ol');
-
 export const ulCommandDesc: CommandDesc = {
   type: 'CommandDesc',
   icon: () => 'format_list_bulleted',
   description: () => 'Unordered List',
-  command: ulCommand,
+  command: listCommandMaker('ul'),
   active: editor => isActive(editor, ['ul']),
 };
 
@@ -50,6 +46,6 @@ export const olCommandDesc: CommandDesc = {
   type: 'CommandDesc',
   icon: () => 'format_list_numbered',
   description: () => 'Ordered List',
-  command: olCommand,
+  command: listCommandMaker('ol'),
   active: editor => isActive(editor, ['ol']),
 };

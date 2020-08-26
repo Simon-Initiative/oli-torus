@@ -3,7 +3,7 @@ import * as ReactDOM from 'react-dom';
 import { useSlate, ReactEditor } from 'slate-react';
 import { CommandContext } from 'components/editor/editors/interfaces';
 import { CommandDesc } from 'components/editor/commands/interfaces';
-import { showToolbar, isToolbarHidden, hideToolbar, ToolbarButton } from 'components/editor/toolbars/common';
+import { showToolbar, hideToolbar } from 'components/editor/toolbars/common';
 import { positionFormatting } from 'components/editor/toolbars/formatting/utils';
 import { HoveringToolbar } from 'components/editor/toolbars/HoveringToolbar';
 

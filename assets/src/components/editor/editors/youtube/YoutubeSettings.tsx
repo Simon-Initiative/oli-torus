@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import * as ContentModel from 'data/content/model';
 import { CommandContext } from 'components/editor/editors/interfaces';
 import * as Settings from 'components/editor/editors/settings/Settings';
-import { CUTE_OTTERS } from './YouTube';
+import { CUTE_OTTERS } from './YouTubeEditor';
 
 const onVisit = (href: string) => {
   window.open(href, '_blank');

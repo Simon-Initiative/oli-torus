@@ -1,11 +1,11 @@
 import * as React from 'react';
 import * as ContentModel from 'data/content/model';
 import { ImageEditor } from './editors/image/ImageEditor';
-import { YouTubeEditor } from './editors/youtube/YouTube';
+import { YouTubeEditor } from './editors/youtube/YouTubeEditor';
 import { BlockQuoteEditor } from './editors/blockquote/BlockquoteEditor';
 import { LinkEditor } from 'components/editor/editors/link/LinkEditor';
 import { AudioEditor } from './editors/audio/AudioEditor';
-import { CodeEditor, CodeBlockLine } from './editors/code/CodeEditor';
+import { CodeEditor, CodeBlockLine } from './editors/blockcode/BlockcodeEditor';
 import { EditorProps } from './editors/interfaces';
 import { CommandContext } from './commands/interfaces';
 import { TableEditor } from 'components/editor/editors/table/TableEditor';
