@@ -14,7 +14,6 @@ defmodule Oli.Lti_1p3.KeyGeneratorTest do
       assert Map.has_key?(keypair, :public_key)
       assert Map.has_key?(keypair, :private_key)
       assert Map.has_key?(keypair, :key_id)
-
     end
 
   end

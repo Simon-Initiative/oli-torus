@@ -3,10 +3,12 @@ defmodule Oli.Lti_1p3.LaunchValidation do
     Oli.Lti_1p3.MessageValidators.ResourceMessageValidator
   ]
 
+  @type get_public_key_callback() :: (%Oli.Lti_1p3.Registration{}, String.t() -> {:ok, JOSE.JWK.t()})
+
   @doc """
   Validates all aspects of an incoming LTI message launch and caches the launch params in the session if successful.
   """
-  @spec validate(Plug.Conn.t(), (Oli.Lti_1p3.Registration, String.t()-> {:ok, JOSE.JWK.t()})) :: {:ok} | {:error, String.t()}
+  @spec validate(Plug.Conn.t(), get_public_key_callback()) :: {:ok} | {:error, String.t()}
   def validate(conn, get_public_key) do
     with {:ok, conn} <- validate_oidc_state(conn),
          {:ok, kid} <- peek_jwt_kid(conn),
@@ -85,6 +87,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
     end
   end
 
+  # TODO: REMOVE
   # @spec get_public_key(%Oli.Lti_1p3.Registration{}, String.t()) :: {:ok, JOSE.JWK.t()}
   # defp get_public_key(%Oli.Lti_1p3.Registration{key_set_url: key_set_url}, kid) do
   #   public_key_set = case HTTPoison.get(key_set_url) do
