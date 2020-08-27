@@ -17,11 +17,7 @@ defmodule Oli.TestHelpers.Lti_1p3 do
       state: state,
       lti1p3_state: lti1p3_state,
     } = %{
-      claims: all_default_claims()
-        |> put_in(["nonce"], case args[:nonce] do
-          nil -> UUID.uuid4()
-          nonce -> nonce
-        end),
+      claims: all_default_claims(),
       registration_params: %{
         issuer: "some issuer",
         client_id: "some client_id",
@@ -91,9 +87,9 @@ defmodule Oli.TestHelpers.Lti_1p3 do
       "iss" => "https://lti-ri.imsglobal.org",
       "sub" => "a73d59affc5b2c4cd493",
       "aud" => "12345",
-      "exp" => 1598304320,
-      "iat" => 1598304020,
-      "nonce" => "d86799f51ff0d9178b39",
+      "exp" => Timex.now |> Timex.add(Timex.Duration.from_minutes(5)) |> Timex.to_unix,
+      "iat" => Timex.now |> Timex.to_unix,
+      "nonce" => UUID.uuid4(),
     }
   end
 

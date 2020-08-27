@@ -67,13 +67,43 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
     assert LaunchValidation.validate(conn, get_public_key) == {:error, "Invalid signature on id_token"}
   end
 
+  test "fails validation on expired exp" do
+    claims = TestHelpers.Lti_1p3.all_default_claims()
+      |> put_in(["exp"], Timex.now |> Timex.subtract(Timex.Duration.from_minutes(5)) |> Timex.to_unix)
+
+    %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims})
+
+    assert LaunchValidation.validate(conn, get_public_key) == {:error, "Token exp is expired"}
+  end
+
+  test "fails validation on token iat invalid" do
+    claims = TestHelpers.Lti_1p3.all_default_claims()
+      |> put_in(["iat"], Timex.now |> Timex.add(Timex.Duration.from_minutes(5)) |> Timex.to_unix)
+
+    %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims})
+
+    assert LaunchValidation.validate(conn, get_public_key) == {:error, "Token iat is invalid"}
+  end
+
+  test "fails validation on both expired exp and iat invalid" do
+    claims = TestHelpers.Lti_1p3.all_default_claims()
+      |> put_in(["exp"], Timex.now |> Timex.subtract(Timex.Duration.from_minutes(5)) |> Timex.to_unix)
+      |> put_in(["iat"], Timex.now |> Timex.add(Timex.Duration.from_minutes(5)) |> Timex.to_unix)
+
+    %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims})
+
+    assert LaunchValidation.validate(conn, get_public_key) == {:error, "Token is exp and iat are invalid"}
+  end
+
   test "fails validation on duplicate nonce" do
-    %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{kid: "one", nonce: "duplicate nonce"})
+    claims = TestHelpers.Lti_1p3.all_default_claims()
+      |> put_in(["nonce"], "duplicate nonce")
+    %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims, kid: "one"})
 
     # passes on first attempt with a given nonce
     assert {:ok, conn} = LaunchValidation.validate(conn, get_public_key)
 
-    %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{kid: "two", nonce: "duplicate nonce"})
+    %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims, kid: "two"})
 
     # fails on second attempt with a duplicate nonce
     assert LaunchValidation.validate(conn, get_public_key) == {:error, "Duplicate nonce"}
