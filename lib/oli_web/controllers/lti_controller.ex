@@ -9,6 +9,7 @@ defmodule OliWeb.LtiController do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionRoles
   alias Oli.Grading.CanvasApi
+  alias Oli.Lti_1p3
 
   @doc """
   Handles an LTI basic launch
@@ -124,4 +125,36 @@ defmodule OliWeb.LtiController do
     end
   end
 
+  ## LTI 1.3
+  def login(conn, _params) do
+    case Lti_1p3.OidcLogin.oidc_login_redirect_url(conn, "/lti/launch") do
+      {:ok, conn, redirect_url} ->
+        conn
+        |> redirect(to: redirect_url)
+      # {:error, error} ->
+    end
+  end
+
+  def launch(conn, _params) do
+    case Lti_1p3.LaunchValidation.validate(conn, &get_public_key/2) do
+      {:ok, conn} ->
+        render(conn, "lti_test.html")
+      # {:error, error} ->
+    end
+  end
+
+  @spec get_public_key(%Lti_1p3.Registration{}, String.t()) :: {:ok, JOSE.JWK.t()}
+  defp get_public_key(%Lti_1p3.Registration{key_set_url: key_set_url}, kid) do
+    public_key_set = case HTTPoison.get(key_set_url) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        Jason.decode!(body)
+      _ ->
+        {:error, "Failed to fetch public key from registered platform url"}
+    end
+
+    public_key = Enum.find(public_key_set["keys"], fn key -> key["kid"] == kid end)
+    |> JOSE.JWK.from
+
+    {:ok, public_key}
+  end
 end

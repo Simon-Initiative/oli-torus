@@ -65,22 +65,6 @@ defmodule Oli.Lti_1p3.LaunchValidation do
     end
   end
 
-  # TODO: REMOVE
-  # @spec get_public_key(%Oli.Lti_1p3.Registration{}, String.t()) :: {:ok, JOSE.JWK.t()}
-  # defp get_public_key(%Oli.Lti_1p3.Registration{key_set_url: key_set_url}, kid) do
-  #   public_key_set = case HTTPoison.get(key_set_url) do
-  #     {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-  #       Jason.decode!(body)
-  #     _ ->
-  #       {:error, "Failed to fetch public key from registered platform url"}
-  #   end
-
-  #   public_key = Enum.find(public_key_set["keys"], fn key -> key["kid"] == kid end)
-  #   |> JOSE.JWK.from
-
-  #   {:ok, public_key}
-  # end
-
   defp validate_jwt(conn, registration, kid, get_public_key) do
     with {:ok, jwt_string} <- decode_id_token(conn),
          {:ok, public_key} <- get_public_key.(registration, kid)

@@ -15,6 +15,10 @@ defmodule Oli.Lti_1p3 do
     Repo.one(from r in Registration, where: r.kid == ^kid)
   end
 
+  def get_registration_by_issuer(issuer) do
+    Repo.one(from r in Registration, where: r.issuer == ^issuer)
+  end
+
   def create_new_deployment(attrs) do
     %Deployment{}
     |> Deployment.changeset(attrs)

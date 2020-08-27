@@ -220,6 +220,9 @@ defmodule OliWeb.Router do
     pipe_through [:lti, :www_url_form]
 
     post "/basic_launch", LtiController, :basic_launch
+
+    post "/login", LtiController, :login
+    post "/1p3-test", LtiController, :launch
   end
 
   scope "/course", OliWeb do
