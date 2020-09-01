@@ -210,7 +210,6 @@ defmodule Oli.Rendering.Content.Html do
 
   defp display_class(%{"display" => display}), do: display_class(display)
   defp display_class(display) do
-    IO.inspect(display, label: "Display")
     case display do
       "float_left" -> "float-md-left"
       "float_right" -> "float-md-right"
