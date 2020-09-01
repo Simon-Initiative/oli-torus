@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   ResourceContent, Activity, ResourceContext, ActivityReference,
-  createDefaultStructuredContent
+  createDefaultStructuredContent,
 } from 'data/content/resource';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { ActivityModelSchema } from 'components/activities/types';
@@ -94,7 +94,8 @@ export const AddResourceContent = (
           model = createdModel;
           selectedObjectives = objectives;
 
-          return Persistence.create(resourceContext.projectSlug, editorDesc.slug, model, objectives);
+          return Persistence.create(
+            resourceContext.projectSlug, editorDesc.slug, model, objectives);
         })
         .then((result: Persistence.Created) => {
 
