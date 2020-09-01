@@ -1,17 +1,5 @@
 @import "authoring/variables";
 
-.formatting-toolbar {
-  display: none;
-  position: relative;
-  margin-top: -18px;
-  .btn-group {
-    position: absolute;
-    z-index: 1;
-    top: 0px;
-    left: 0px;
-  }
-}
-
 .hovering-toolbar {
 
   .btn-group {
@@ -36,6 +24,7 @@
       background-color: transparent;
       border: none;
       height: 42px;
+      min-width: 32px;
       font-size: 16px;
       span {
         line-height: 42px;

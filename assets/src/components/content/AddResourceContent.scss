@@ -63,15 +63,8 @@
   }
 
   .insert-label {
+    padding-bottom: 100px;
     transition: opacity 200ms ease-out;
-  }
-}
-
-
-.add-resource-content-last {
-  padding-bottom: 100px;
-  .insert-label {
-    opacity: 1;
   }
 }
 

@@ -56,7 +56,6 @@ export const ContentPurposes: Purpose[] = [
 
 
 
-
 export const createDefaultStructuredContent = () => {
   return {
     type: 'content',

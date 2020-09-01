@@ -1,6 +1,6 @@
 import React from 'react';
 import { Heading } from 'components/misc/Heading';
-import { RichTextEditor } from 'components/editor/RichTextEditor';
+import { RichTextEditor } from 'components/content/RichTextEditor';
 import { ModelEditorProps } from '../schema';
 import { RichText } from '../../types';
 import { Description } from 'components/misc/Description';

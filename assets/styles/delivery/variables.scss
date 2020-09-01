@@ -8,6 +8,9 @@
 @import '../../node_modules/bootstrap/scss/_variables.scss';
 
 /** OLI specific variables **/
+$code-color: rgba(0,0,0,.84);
+$font-family-monospace: "Source Code Pro", "Courier New", Courier, monospace;
+
 $choice-selected-bg: lighten($primary, 42%) !default;
 $choice-selected-bg-hover: lighten($choice-selected-bg, 5%) !default;
 $choice-selected-color: $primary !default;

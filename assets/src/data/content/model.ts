@@ -1,6 +1,6 @@
 import { Element, Range } from 'slate';
 import guid from 'utils/guid';
-import { normalizeHref } from 'components/editor/editors/link/utils';
+import { normalizeHref } from 'components/editing/models/link/utils';
 
 export function create<ModelElement>(params: Partial<ModelElement>): ModelElement {
   return Object.assign({
@@ -19,7 +19,7 @@ export const ol = () => create<OrderedList>({ type: 'ol', children: [li()] });
 export const ul = () => create<UnorderedList>({ type: 'ul', children: [li()] });
 export const youtube = (src: string) => create<YouTube>({ type: 'youtube', src });
 export const link = (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' });
-export const image = (src = '') => create<Image>({ type: 'img', src });
+export const image = (src = '') => create<Image>({ type: 'img', src, display: 'block' });
 export const audio = (src = '') => create<Audio>({ type: 'audio', src });
 export const p = () => create<Paragraph>({ type: 'p' });
 export const code = () => ({
@@ -33,6 +33,8 @@ export function mutate<ModelElement>(obj: ModelElement, changes: Object): ModelE
 }
 
 export type Selection = Range | null;
+
+export type MediaDisplayMode = 'float_left' | 'float_right' | 'block';
 
 export type ModelElement
   = Paragraph | HeadingOne | HeadingTwo | HeadingThree
@@ -82,6 +84,7 @@ export interface Image extends Element, Identifiable {
   width?: number;
   alt?: string;
   caption?: string;
+  display?: MediaDisplayMode;
 }
 
 export interface YouTube extends Element, Identifiable {
@@ -91,6 +94,7 @@ export interface YouTube extends Element, Identifiable {
   width?: number;
   alt?: string;
   caption?: string;
+  display?: MediaDisplayMode;
 }
 
 export interface Audio extends Element, Identifiable {

@@ -1,3 +1,4 @@
+@import 'bootstrap';
 
 nav .nav-item a.user {
   color: inherit;
@@ -74,6 +75,7 @@ nav.navbar .user img {
 }
 
 main.container {
+  @include clearfix;
   padding-right: 0;
   padding-left: 0;
 }

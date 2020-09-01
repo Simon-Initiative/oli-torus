@@ -1,12 +1,11 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-
 import { Provider } from 'react-redux';
 import { Maybe, maybe } from 'tsmonad';
-import { Editor } from 'components/editor/Editor';
+import { Editor } from 'components/editing/editor/Editor';
 import { configureStore } from 'state/store';
-import { TestEditor } from 'components/editor/EditorTest';
-import { ResourceEditor } from 'components/resource/ResourceEditor';
+import { TestEditor } from 'components/editing/EditorTest';
+import { ResourceEditor } from 'components/resource/resourceEditor/ResourceEditor';
 import { ActivityEditor } from 'components/activity/ActivityEditor';
 
 export const registry = {

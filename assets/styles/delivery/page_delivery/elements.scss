@@ -1,20 +1,31 @@
 @import 'bootstrap';
 
-blockquote {
-  &.blockquote {
-    margin-top: 12px;
-    font-family: Georgia, Cambria, "Times New Roman", Times, serif;
-    font-size: 1.3em;
-    line-height: 1.5em;
-    letter-spacing: -.003em;
-    color: rgba(0,0,0,.84);
+h1, h2, h3, h4, h5, h6 {
+  clear: both;
+}
 
-    border-left: 3px solid rgba(0,0,0,.84);
-    padding-left: 20px;
-    margin-left: -23px;
-    padding-bottom: 2px;
-    word-break: break-word;
+blockquote {
+  clear: both;
+  margin-top: 12px;
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+  font-size: 1.3em;
+  line-height: 1.5em;
+  letter-spacing: -.003em;
+  color: rgba(0,0,0,.84);
+
+  border-left: 3px solid rgba(0,0,0,.84);
+  padding-left: 20px;
+  margin-left: -23px;
+  padding-bottom: 2px;
+  word-break: break-word;
+  p:last-of-type {
+    margin-bottom: 0;
   }
+}
+
+pre {
+  clear: both;
+  text-align: left;
 }
 
 code {
@@ -22,7 +33,6 @@ code {
   color: rgba(0,0,0,.84);
   background: rgba(0,0,0,.05);
   letter-spacing: -.003em;
-  text-align: left;
 }
 
 ul li, ol li {
@@ -30,23 +40,60 @@ ul li, ol li {
 }
 
 table {
-  table-layout: fixed;
-  @extend .table;
   @extend .table-bordered;
+  @extend .table;
+  clear: both;
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  th {
+    background-color: rgb(232, 244, 250);
+  }
 
   caption {
     @extend .text-center;
   }
 }
 
-img {
-  &.block {
-    display: block;
-    max-width: 100%;
-    max-height: 800px;
-    margin-left: auto;
-    margin-right: auto;
+img.d-block,
+iframe.d-block {
+  max-width: 100%;
+  max-height: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img.float-md-right,
+img.float-md-left,
+iframe.float-md-right,
+iframe.float-md-left {
+  max-width: 400px;
+  @extend .mb-2;
+}
+img.float-md-left,
+iframe.float-md-left,
+div.float-md-left {
+  @extend .mr-4;
+}
+img.float-md-right,
+iframe.float-md-right,
+div.float-md-right {
+  @extend .ml-4;
+}
+div.float-md-left,
+div.float-md-right {
+  max-width: 410px;
+  img.float-md-right,
+  img.float-md-left,
+  iframe.float-md-right,
+  iframe.float-md-left {
+    @extend .ml-0;
+    @extend .mr-0;
+    @extend .mb-0;
   }
+}
+
+img {
+  @extend .img-fluid;
 }
 
 .youtube-wrapper {
@@ -56,10 +103,12 @@ img {
 }
 
 iframe {
+  clear: both;
   @extend .embed-responsive-item;
 }
 
 .figure-wrapper {
+  clear: both;
   display: flex;
   justify-content: center;
   figure {
