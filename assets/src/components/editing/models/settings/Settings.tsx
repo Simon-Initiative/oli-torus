@@ -87,6 +87,7 @@ export const Input = (props: InputProps) => {
         setValue(e.target.value);
         onChange(e.target.value);
       }}
+      onBlur={e => ReactEditor.deselect(editor)}
       onKeyDown={(e) => {
         const input = ref.current;
         if (!input) {
