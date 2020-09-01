@@ -69,36 +69,5 @@ export const withMarkdown = (context: CommandContext) => (editor: Editor & React
     insertText(text);
   };
 
-  // editor.deleteBackward = (...args) => {
-  //   const { selection } = editor;
-
-  //   if (selection && Range.isCollapsed(selection)) {
-  //     const match = Editor.above(editor, {
-  //       match: n => Editor.isBlock(editor, n),
-  //     });
-
-  //     // Fix this
-  //     if (match) {
-  //       const [block, path] = match;
-  //       const start = Editor.start(editor, path);
-
-  //       if (block.type !== 'p' && Point.equals(selection.anchor, start)) {
-  //         Transforms.setNodes(editor, { type: 'p' });
-
-  //         if (block.type === 'li') {
-  //           Transforms.unwrapNodes(editor, {
-  //             match: n => n.type === 'ul',
-  //             split: true,
-  //           });
-  //         }
-
-  //         return;
-  //       }
-  //     }
-
-  //     deleteBackward(...args);
-  //   }
-  // };
-
   return editor;
 };
