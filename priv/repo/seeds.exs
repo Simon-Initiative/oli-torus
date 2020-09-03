@@ -146,4 +146,38 @@ if Application.fetch_env!(:oli, :env) == :dev do
     Oli.Publishing.publish_project(seeds.project)
   end
 
+  # REMOVE ME
+  %{private_key: private_key, public_key: public_key} = Oli.Lti_1p3.KeyGenerator.generate_key_pair()
+  # {:ok, registration} = Oli.Lti_1p3.create_new_registration(%{
+  #   issuer: "https://lti-ri.imsglobal.org",
+  #   client_id: "12345",
+  #   key_set_url: "https://lti-ri.imsglobal.org/platforms/1237/platform_keys/1231.json",
+  #   auth_token_url: "https://lti-ri.imsglobal.org/platforms/1237/access_tokens",
+  #   auth_login_url: "https://lti-ri.imsglobal.org/platforms/1237/authorizations/new",
+  #   auth_server: "https://lti-ri.imsglobal.org",
+  #   tool_private_key: private_key,
+  #   kid: "0ijoZKpZWSJQ07b22gbdaCDmglc7BzwyeiQMvK8u-Gk",
+  # })
+  {:ok, registration} = Oli.Lti_1p3.create_new_registration(%{
+    issuer: "https://sandbox.moodledemo.net",
+    client_id: "12345",
+    key_set_url: "https://lti-ri.imsglobal.org/platforms/1237/platform_keys/1231.json",
+    auth_token_url: "https://lti-ri.imsglobal.org/platforms/1237/access_tokens",
+    auth_login_url: "https://lti-ri.imsglobal.org/platforms/1237/authorizations/new",
+    auth_server: "https://lti-ri.imsglobal.org",
+    tool_private_key: private_key,
+    kid: "0ijoZKpZWSJQ07b22gbdaCDmglc7BzwyeiQMvK8u-Gk",
+  })
+
+  public_jwt = JOSE.JWK.from_pem(public_key)
+    |> JOSE.JWK.to_map()
+    |> (fn {_kty, public_jwt} -> public_jwt end).()
+    |> Jason.encode!
+  IO.puts public_jwt
+
+  Oli.Lti_1p3.create_new_deployment(%{
+    deployment_id: "1",
+    registration_id: registration.id,
+  })
+
 end

@@ -8,7 +8,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   @doc """
   Validates all aspects of an incoming LTI message launch and caches the launch params in the session if successful.
   """
-  @spec validate(Plug.Conn.t(), get_public_key_callback()) :: {:ok, Plug.Conn.t()} | {:error, String.t()}
+  @spec validate(Plug.Conn.t(), get_public_key_callback()) :: {:ok, Plug.Conn.t(), any()} | {:error, String.t()}
   def validate(conn, get_public_key) do
     with {:ok, conn} <- validate_oidc_state(conn),
          {:ok, kid} <- peek_jwt_kid(conn),
@@ -18,23 +18,28 @@ defmodule Oli.Lti_1p3.LaunchValidation do
          {:ok, conn} <- validate_nonce(conn, jwt_body),
          {:ok, conn} <- validate_deployment(conn, registration, jwt_body),
          {:ok, conn} <- validate_message(conn, jwt_body),
-         {:ok, conn} <- cache_launch_params(conn)
+         {:ok, conn} <- cache_launch_params(conn, jwt_body)
     do
-      {:ok, conn}
+      {:ok, conn, jwt_body}
     end
   end
 
   # Validate that the state sent with an OIDC launch matches the state that was sent in the OIDC response
   # returns a boolean on whether it is valid or not
   defp validate_oidc_state(conn) do
-    case Plug.Conn.get_session(conn, :lti1p3_state) do
+    case Plug.Conn.get_session(conn, "state") do
       nil ->
-        {:error, "State from OIDC request is missing"}
-      state ->
-        if conn.params["state"] == state do
-          {:ok, conn}
-        else
-          {:error, "State from OIDC request does not match"}
+        {:error, "State from session is missing"}
+      session_state ->
+        case conn.params["state"] do
+          nil ->
+            {:error, "State from OIDC request is missing"}
+          request_state ->
+            if request_state == session_state do
+              {:ok, conn}
+            else
+              {:error, "State from OIDC request does not match session"}
+            end
         end
     end
   end
@@ -150,9 +155,12 @@ defmodule Oli.Lti_1p3.LaunchValidation do
     end
   end
 
-  defp cache_launch_params(conn) do
+  defp cache_launch_params(conn, jwt_body) do
+    ## TODO: params exceeds cookie size limit 4096. We must determine which params are necessary to keep
+    # conn = conn
+    # |> Plug.Conn.put_session(:lti1p3_launch_params, conn.params)
     conn = conn
-    |> Plug.Conn.put_session(:lti1p3_launch_params, conn.params)
+    |> Plug.Conn.put_session(:lti1p3_launch_params, jwt_body)
 
     {:ok, conn}
   end

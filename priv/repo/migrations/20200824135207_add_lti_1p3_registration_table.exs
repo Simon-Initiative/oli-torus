@@ -9,7 +9,7 @@ defmodule Oli.Repo.Migrations.AddLti13RegistrationTable do
       add :auth_token_url, :string
       add :auth_login_url, :string
       add :auth_server, :string
-      add :tool_private_key, :string
+      add :tool_private_key, :text
       add :kid, :string
 
       timestamps(type: :timestamptz)

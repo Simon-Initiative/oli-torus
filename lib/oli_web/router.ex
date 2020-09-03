@@ -32,6 +32,7 @@ defmodule OliWeb.Router do
   pipeline :lti do
     plug :fetch_session
     plug :fetch_flash
+    plug :put_root_layout, {OliWeb.LayoutView, "default.html"}
     plug Oli.Plugs.SetCurrentUser
   end
 
@@ -222,7 +223,8 @@ defmodule OliWeb.Router do
     post "/basic_launch", LtiController, :basic_launch
 
     post "/login", LtiController, :login
-    post "/1p3-test", LtiController, :launch
+    get "/login", LtiController, :login
+    post "/launch", LtiController, :launch
   end
 
   scope "/course", OliWeb do

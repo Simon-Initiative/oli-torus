@@ -130,16 +130,18 @@ defmodule OliWeb.LtiController do
     case Lti_1p3.OidcLogin.oidc_login_redirect_url(conn, "/lti/launch") do
       {:ok, conn, redirect_url} ->
         conn
-        |> redirect(to: redirect_url)
+        |> redirect(external: redirect_url)
       # {:error, error} ->
     end
   end
 
-  def launch(conn, _params) do
+  def launch(conn, params) do
+    IO.inspect params, label: "params"
     case Lti_1p3.LaunchValidation.validate(conn, &get_public_key/2) do
-      {:ok, conn} ->
-        render(conn, "lti_test.html")
-      # {:error, error} ->
+      {:ok, conn, lti_params} ->
+        render(conn, "lti_test.html", lti_params: lti_params)
+      {:error, reason} ->
+        render(conn, "basic_launch_invalid.html", reason: reason)
     end
   end
 
