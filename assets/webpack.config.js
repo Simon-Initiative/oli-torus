@@ -135,14 +135,7 @@ module.exports = (env, options) => ({
         }
       },
       { test: /\.(png|gif|jpg|jpeg|svg)$/, use: 'file-loader' },
-      { test: /\.ts$/, use: [
-        {
-          loader: 'babel-loader',
-          options: {
-            cacheDirectory: true,
-            sourceMap: true,
-          }
-        }, 'ts-loader'], exclude: /node_modules/ },
+      { test: /\.ts$/, use: ['babel-loader','ts-loader'], exclude: /node_modules/ },
       {
         test: /\.tsx$/, use: [
           {
@@ -152,7 +145,6 @@ module.exports = (env, options) => ({
               // It enables caching results in ./node_modules/.cache/babel-loader/
               // directory for faster rebuilds.
               cacheDirectory: true,
-              sourceMap: true,
             },
           },
           { loader: 'ts-loader' }
