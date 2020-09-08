@@ -1,11 +1,10 @@
-import { Range, Editor, Point, Transforms } from 'slate';
+import { Range, Editor, Transforms } from 'slate';
 import { olCommandDesc as olCmd, ulCommandDesc as ulCmd }
   from 'components/editing/commands/ListsCmd';
 import { commandDesc as codeCmd } from 'components/editing/commands/BlockcodeCmd';
 import { commandDesc as quoteCmd } from 'components/editing/commands/BlockquoteCmd';
 import { CommandContext } from 'components/editing/models/interfaces';
 import { ReactEditor } from 'slate-react';
-import { toggleMark } from 'components/editing/commands/commands';
 import { isTopLevel } from 'components/editing/utils';
 
 const SHORTCUTS = {
@@ -21,7 +20,7 @@ const SHORTCUTS = {
 };
 
 export const withMarkdown = (context: CommandContext) => (editor: Editor & ReactEditor) => {
-  const { deleteBackward, insertText } = editor;
+  const { insertText } = editor;
   const blockTrigger = ' ';
   const codeTrigger = '`';
   const triggers = [blockTrigger, codeTrigger];
