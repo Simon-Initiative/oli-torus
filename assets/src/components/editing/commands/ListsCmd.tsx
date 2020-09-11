@@ -45,7 +45,7 @@ const listCommandMaker = (listType: string): Command => {
 export const ulCommandDesc: CommandDesc = {
   type: 'CommandDesc',
   icon: () => 'format_list_bulleted',
-  description: () => 'Unordered List',
+  description: () => 'Unordered List (* )',
   command: listCommandMaker('ul'),
   active: editor => isActive(editor, ['ul']),
 };
@@ -53,7 +53,7 @@ export const ulCommandDesc: CommandDesc = {
 export const olCommandDesc: CommandDesc = {
   type: 'CommandDesc',
   icon: () => 'format_list_numbered',
-  description: () => 'Ordered List',
+  description: () => 'Ordered List (1. )',
   command: listCommandMaker('ol'),
   active: editor => isActive(editor, ['ol']),
 };

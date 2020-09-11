@@ -15,6 +15,6 @@ const command: Command = {
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
   icon: () => 'code',
-  description: () => 'Code',
+  description: () => 'Code (```)',
   command,
 };

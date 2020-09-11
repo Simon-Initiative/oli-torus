@@ -34,13 +34,14 @@ interface ToolbarButtonProps {
 }
 
 export const ToolbarButton = ({ icon, command, style, context, active,
-  description, setParentPopoverOpen }: ToolbarButtonProps) => {
+  description, setParentPopoverOpen, tooltip }: ToolbarButtonProps) => {
   const editor = useSlate();
 
   return (
     <button
       data-toggle="tooltip"
       data-placement="top"
+      title={tooltip}
       className={`btn btn-sm btn-light ${style || ''} ${active && 'active' || ''}`}
       onMouseDown={(e) => {
         e.preventDefault();
@@ -58,7 +59,7 @@ export const ToolbarButton = ({ icon, command, style, context, active,
 };
 
 export const DropdownToolbarButton = ({ icon, command, style, context, active, description,
-  position, setParentPopoverOpen }: ToolbarButtonProps) => {
+  position, setParentPopoverOpen, tooltip }: ToolbarButtonProps) => {
 
   const editor = useSlate();
   const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
@@ -89,6 +90,7 @@ export const DropdownToolbarButton = ({ icon, command, style, context, active, d
         ref={ref}
         data-toggle="tooltip"
         data-placement="top"
+        title={tooltip}
         className={`btn btn-sm btn-light ${style || ''} ${active && 'active' || ''}`}
         onClick={() => setIsPopoverOpen(!isPopoverOpen)}
         type="button">

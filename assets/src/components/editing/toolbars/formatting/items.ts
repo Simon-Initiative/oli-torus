@@ -8,11 +8,12 @@ import { isActive } from 'components/editing/utils';
 
 export const formatMenuCommands = [
   [
-    format({ icon: 'format_bold', mark: 'strong', description: 'Bold' }),
-    format({ icon: 'format_italic', mark: 'em', description: 'Italic' }),
+    format({ icon: 'format_bold', mark: 'strong', description: 'Bold (⌘B)' }),
+    format({ icon: 'format_italic', mark: 'em', description: 'Italic (⌘I)' }),
     linkCmd,
     format({
-      icon: 'code', mark: 'code', description: 'Code', precondition: editor => !isActive(editor, ['code']),
+      icon: 'code', mark: 'code', description: 'Code (⌘;)',
+      precondition: editor => !isActive(editor, ['code']),
     }),
   ],
   [

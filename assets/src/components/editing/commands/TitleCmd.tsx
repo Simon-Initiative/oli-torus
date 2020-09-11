@@ -55,7 +55,7 @@ const icon = (editor: ReactEditor) => {
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
   icon,
-  description: () => 'Title',
+  description: () => 'Title (# or ##)',
   command,
   active: editor => isActive(editor, ['h1', 'h2']),
 };

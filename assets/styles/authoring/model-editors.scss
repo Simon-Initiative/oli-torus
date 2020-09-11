@@ -151,3 +151,10 @@ div.float-md-right {
   color: rgba(0,0,0,.68);
   outline: none;
 }
+.settings-input::placeholder {
+  color: #b3b3b1;
+}
+.settings-input:active::placeholder,
+.settings-input:focus::placeholder {
+  color: transparent;
+}

@@ -35,9 +35,7 @@ interface SelectProps {
   value: string | undefined;
   onChange: (s: string) => void;
   options: string[];
-  // placeholder: string;
   editor: ReactEditor;
-  // model: ModelElement;
   style?: React.CSSProperties;
 }
 
@@ -82,7 +80,7 @@ export const Input = (props: InputProps) => {
       }}
       ref={ref}
       value={value || ''}
-      placeholder={placeholder}
+      placeholder={placeholder + ' (optional)'}
       onChange={(e) => {
         setValue(e.target.value);
         onChange(e.target.value);

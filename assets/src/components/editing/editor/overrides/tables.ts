@@ -1,4 +1,4 @@
-import { Range, Editor, Point, Path } from 'slate';
+import { Range, Editor, Point, Path, Node } from 'slate';
 
 export const withTables = (editor: Editor) => {
   const { deleteBackward, deleteForward, deleteFragment } = editor;
@@ -6,28 +6,14 @@ export const withTables = (editor: Editor) => {
   editor.deleteFragment = () => {
     const { selection } = editor;
     if (selection) {
-      const [...blocks] = Editor.nodes(editor, {
-        match: n => ['tr', 'th', 'td'].indexOf(n.type as string) > -1,
-        mode: 'lowest',
-      });
-      if (blocks.length > 0) {
+      const [start, end] = Range.edges(selection);
 
-        const [start, end] = Range.edges(selection);
-        const startBlock = Editor.above(editor, {
-          match: n => Editor.isBlock(editor, n),
-          at: start,
-        });
-        const endBlock = Editor.above(editor, {
-          match: n => Editor.isBlock(editor, n),
-          at: end,
-        });
-
-        const isAcrossBlocks =
-          startBlock && endBlock && !Path.equals(startBlock[1], endBlock[1]);
-
-        if (isAcrossBlocks) {
-          return;
-        }
+      // Prevent deletion if start or end of selection is inside a table.
+      const isInsideTable = (n: Node) => ['tr', 'th', 'td'].indexOf(n.type as string) > -1;
+      const [...startNodes] = Editor.nodes(editor, { at: start, match: isInsideTable });
+      const [...endNodes] = Editor.nodes(editor, { at: end, match: isInsideTable });
+      if (startNodes.length > 0 || endNodes.length > 0) {
+        return;
       }
     }
 

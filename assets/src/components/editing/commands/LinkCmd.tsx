@@ -23,7 +23,7 @@ const command: Command = {
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
   icon: () => 'insert_link',
-  description: () => 'Link',
+  description: () => 'Link (⌘L)',
   command,
   active: e => isActive(e, 'a'),
 };

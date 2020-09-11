@@ -24,7 +24,7 @@ const command: Command = {
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
   icon: () => 'format_quote',
-  description: () => 'Quote',
+  description: () => 'Quote (> )',
   command,
   active: e => isActive(e, 'blockquote'),
 };
