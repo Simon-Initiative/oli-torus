@@ -35,17 +35,14 @@ export const ContentCard = (props: ContentCardProps) => {
       <div id={id} className="card-header pl-2"
       >
         <div className="d-flex flex-row align-items-center">
-          <div className="flex-column flex-grow-1">
+          <div className="d-flex align-items-center flex-grow-1">
             <DragHandle style={{ height: 24, marginRight: 10 }} />
-            <span>
-              Section {props.index + 1}
-            </span>
+            <Purpose
+              purpose={props.contentItem.purpose}
+              purposes={props.purposes}
+              editMode={props.editMode}
+              onEdit={props.onEditPurpose} />
           </div>
-          <Purpose
-            purpose={props.contentItem.purpose}
-            purposes={props.purposes}
-            editMode={props.editMode}
-            onEdit={props.onEditPurpose} />
           <DeleteButton
             editMode={props.content.size > 1}
             onClick={props.onRemove} />

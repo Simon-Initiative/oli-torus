@@ -31,7 +31,7 @@
         background-color: white;
         padding: 1.3em 10px;
         &.structured-content {
-          padding: 1.3em calc(50% - 350px);
+          padding: 1.3em max(calc(50% - 340px), 20px);
         }
       }
     }

@@ -30,12 +30,17 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
       return;
     }
 
+    const reposition = () => positionInsertion(el, editor);
+
     if (shouldShowInsertionToolbar(editor)) {
-      positionInsertion(el, editor);
+      reposition();
       showToolbar(el);
     } else {
       hideToolbar(el);
     }
+
+    window.addEventListener('resize', reposition);
+    return () => window.removeEventListener('resize', reposition);
   });
 
   return (
