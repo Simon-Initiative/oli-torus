@@ -1,35 +1,47 @@
 @import "authoring/variables";
 
-.toolbar {
-  &.fixed-toolbar {
-    position: absolute;
-    height: 100%;
-    width: 0;
-    top: 0;
-    left: 0;
-    display: inline-block;
+.hovering-toolbar {
 
-    .toolbar-buttons {
-      position: sticky;
-      top: 20px;
-      margin-bottom: 100px;
-      padding: 5px 10px;
+  .btn-group {
+    padding-left: 5px;
+    padding-right: 5px;
+    border-radius: 4px;
+    background-image: linear-gradient(to bottom,rgba(49,49,47,.99),#262625);
+  }
 
-      background-color: rgba(247, 247, 247, 0.8);
-      backdrop-filter: blur(16px);
-      border-radius: 4px;
-      z-index: 1;
+  button {
+    .toolbar-button-text {
+      font-size: 12px;
+    }
 
-      .text-formatter {
-        min-width: 160px;
+    &.btn-dark:not(:disabled):not(.disabled),
+    &.btn-dark:disabled,
+    &.btn-dark:hover {
+      white-space: nowrap;
+      padding: 0 .25rem;
+      display: inline-block;
+      vertical-align: middle;
+      background-color: transparent;
+      border: none;
+      height: 42px;
+      min-width: 32px;
+      font-size: 16px;
+      span {
+        line-height: 42px;
       }
-
-      button {
-        border-top-left-radius: 3.2px !important;
-        border-top-right-radius: 3.2px !important;
-        border-bottom-left-radius: 3.2px !important;
-        border-bottom-right-radius: 3.2px !important;
+      &.active {
+        color: $cyan;
       }
     }
+    &.btn-dark:disabled {
+      color: #7b8a8b;
+    }
+  }
+  .button-separator {
+    display: inline-block;
+    width: 1px;
+    margin: auto 6px;
+    height: 24px;
+    background: rgba(255,255,255,.2);
   }
 }

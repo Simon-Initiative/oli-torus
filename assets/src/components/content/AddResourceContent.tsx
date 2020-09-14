@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { ResourceContent, Activity, ResourceContext, ActivityReference,
-  createDefaultStructuredContent } from 'data/content/resource';
+import {
+  ResourceContent, Activity, ResourceContext, ActivityReference,
+  createDefaultStructuredContent,
+} from 'data/content/resource';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { ActivityModelSchema } from 'components/activities/types';
 import { invokeCreationFunc } from 'components/activities/creation';
@@ -19,7 +21,7 @@ import { classNames } from 'utils/classNames';
 import { ObjectiveSelection } from 'components/resource/ObjectiveSelection';
 import ModalSelection from 'components/modal/ModalSelection';
 
-type AddCallback = (content: ResourceContent, index: number, a? : Activity) => void;
+type AddCallback = (content: ResourceContent, index: number, a?: Activity) => void;
 
 
 const promptForObjectiveSelection
@@ -29,13 +31,13 @@ const promptForObjectiveSelection
 
     return new Promise((resolve, reject) => {
 
-      const onRegister = (title: string) : Promise<Objective> => {
+      const onRegister = (title: string): Promise<Objective> => {
         return new Promise((inner, reject) => {
           onRegisterNewObjective(title)
-          .then((objective) => {
-            dismiss();
-            resolve(Immutable.List<ObjectiveSlug>([objective.slug]));
-          });
+            .then((objective) => {
+              dismiss();
+              resolve(Immutable.List<ObjectiveSlug>([objective.slug]));
+            });
         });
       };
 
@@ -53,7 +55,7 @@ const promptForObjectiveSelection
         <ObjectiveSelection objectives={objectives}
           childrenObjectives={childrenObjectives}
           onUseSelected={onUseSelected}
-          onRegisterNewObjective={onRegister}/>
+          onRegisterNewObjective={onRegister} />
       </ModalSelection>);
     });
 
@@ -62,66 +64,74 @@ const promptForObjectiveSelection
 
 // Component that presents a drop down to use to add structure
 // content or the any of the registered activities
+interface AddResourceContentProps {
+  editMode: boolean;
+  index: number;
+  onAddItem: AddCallback;
+  isLast: boolean;
+  objectives: Immutable.List<Objective>;
+  childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>;
+  onRegisterNewObjective: (text: string) => Promise<Objective>;
+  editorMap: ActivityEditorMap;
+  resourceContext: ResourceContext;
+}
 export const AddResourceContent = (
   { editMode, index, onAddItem, editorMap, resourceContext, isLast,
     objectives, onRegisterNewObjective, childrenObjectives }
-  : {editMode: boolean, index: number, onAddItem: AddCallback, isLast: boolean,
-    objectives: Immutable.List<Objective>,
-    childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>,
-    onRegisterNewObjective: (text: string) => Promise<Objective>,
-    editorMap: ActivityEditorMap, resourceContext: ResourceContext  }) => {
+    : AddResourceContentProps) => {
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const handleAdd = (editorDesc: EditorDesc) => {
 
-    let model : ActivityModelSchema;
-    let selectedObjectives : string[];
+    let model: ActivityModelSchema;
+    let selectedObjectives: string[];
 
     promptForObjectiveSelection(objectives, childrenObjectives, onRegisterNewObjective)
-    .then((objectives: string[]) => invokeCreationFunc(editorDesc.slug, resourceContext)
-      .then((createdModel) => {
+      .then((objectives: string[]) => invokeCreationFunc(editorDesc.slug, resourceContext)
+        .then((createdModel) => {
 
-        model = createdModel;
-        selectedObjectives = objectives;
+          model = createdModel;
+          selectedObjectives = objectives;
 
-        return Persistence.create(resourceContext.projectSlug, editorDesc.slug, model, objectives);
-      })
-      .then((result: Persistence.Created) => {
+          return Persistence.create(
+            resourceContext.projectSlug, editorDesc.slug, model, objectives);
+        })
+        .then((result: Persistence.Created) => {
 
-        const resourceContent : ActivityReference = {
-          type: 'activity-reference',
-          id: guid(),
-          activitySlug: result.revisionSlug,
-          purpose: 'none',
-          children: [],
-        };
+          const resourceContent: ActivityReference = {
+            type: 'activity-reference',
+            id: guid(),
+            activitySlug: result.revisionSlug,
+            purpose: 'none',
+            children: [],
+          };
 
-        // For every part that we find in the model, we attach the selected
-        // objectives to it
-        const objectives = model.authoring.parts.map((p: any) => p.id)
-          .reduce(
-            (p: any, id: string) => {
-              p[id] = selectedObjectives;
-              return p;
-            },
-            {});
+          // For every part that we find in the model, we attach the selected
+          // objectives to it
+          const objectives = model.authoring.parts.map((p: any) => p.id)
+            .reduce(
+              (p: any, id: string) => {
+                p[id] = selectedObjectives;
+                return p;
+              },
+              {});
 
-        const activity : Activity = {
-          type: 'activity',
-          activitySlug: result.revisionSlug,
-          typeSlug: editorDesc.slug,
-          model,
-          objectives,
-        };
+          const activity: Activity = {
+            type: 'activity',
+            activitySlug: result.revisionSlug,
+            typeSlug: editorDesc.slug,
+            model,
+            objectives,
+          };
 
-        onAddItem(resourceContent, index, activity);
-      })
-      .catch((err) => {
-        // tslint:disable-next-line
-        console.error(err);
-      }),
-    );
+          onAddItem(resourceContent, index, activity);
+        })
+        .catch((err) => {
+          // tslint:disable-next-line
+          console.error(err);
+        }),
+      );
   };
 
   const content =
@@ -133,21 +143,21 @@ export const AddResourceContent = (
   const activityEntries = Object
     .keys(editorMap)
     .map((k: string) => {
-      const editorDesc : EditorDesc = editorMap[k];
+      const editorDesc: EditorDesc = editorMap[k];
       return (
         <div className="insert-item list-group-item list-group-item-action" key={editorDesc.slug}
-            onClick={handleAdd.bind(this, editorDesc)}>
-            {editorDesc.friendlyName}
+          onClick={handleAdd.bind(this, editorDesc)}>
+          {editorDesc.friendlyName}
         </div>
       );
     });
 
   const contentFn = () =>
-      <div className="add-resource-popover-content">
-        <div className="list-group">
-          {[content, ...activityEntries]}
-        </div>
-      </div>;
+    <div className="add-resource-popover-content">
+      <div className="list-group">
+        {[content, ...activityEntries]}
+      </div>
+    </div>;
 
   const [latestClickEvent, setLatestClickEvent] = useState<MouseEvent>();
   const togglePopover = (e: React.MouseEvent) => {
@@ -156,6 +166,7 @@ export const AddResourceContent = (
   };
 
   return (
+    <React.Fragment>
       <div className={classNames(['add-resource-content', isPopoverOpen ? 'active' : '', isLast ? 'add-resource-content-last' : ''])}
         onClick={togglePopover}>
 
@@ -171,26 +182,27 @@ export const AddResourceContent = (
                 }}
                 isOpen={isPopoverOpen}
                 align="start"
-                transitionDuration={0.25}
+                transitionDuration={0}
                 position={['bottom', 'top']}
                 content={contentFn}>
-                  {ref => <div ref={ref} className="insert-button">
-                    <i className="fa fa-plus"></i>
-                  </div>}
+                {ref => <div ref={ref} className="insert-button">
+                  <i className="fa fa-plus"></i>
+                </div>}
               </Popover>
             </div>
             <div className="insert-adornment"></div>
-
-            {isLast && (
-              <div className="insert-label mt-4 text-center">
-                <button className="btn btn-sm btn-light">
-                  Add Content or Activity
-                </button>
-              </div>
-            )}
           </React.Fragment>
         }
-
       </div>
+      {isLast && (
+        <div className="insert-label mt-4 text-center">
+          <button
+            onClick={togglePopover}
+            className="btn btn-sm btn-light">
+            Add Content or Activity
+          </button>
+        </div>
+      )}
+    </React.Fragment>
   );
 };

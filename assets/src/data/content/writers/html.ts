@@ -1,8 +1,10 @@
 import { WriterImpl, Next } from './writer';
-import { ModelElement, Image, HeadingSix, Paragraph, HeadingOne,
+import {
+  ModelElement, Image, HeadingSix, Paragraph, HeadingOne,
   HeadingTwo, HeadingThree, HeadingFour, HeadingFive, YouTube, Audio,
   Table, TableRow, TableHeader, TableData, OrderedList, UnorderedList,
-  ListItem, Math, MathLine, Code, CodeLine, Blockquote, Hyperlink } from '../model';
+  ListItem, Math, MathLine, Code, CodeLine, Blockquote, Hyperlink,
+} from '../model';
 import { Text } from 'slate';
 import { WriterContext } from './context';
 
@@ -13,7 +15,7 @@ export class HtmlParser implements WriterImpl {
   private escapeXml = (text: string) => decodeURI(encodeURI(text));
 
   private wrapWithMarks(text: string, textEntity: Text): string {
-    const supportedMarkTags: { [key: string]: string} = {
+    const supportedMarkTags: { [key: string]: string } = {
       em: 'em',
       strong: 'strong',
       mark: 'mark',
@@ -30,13 +32,25 @@ export class HtmlParser implements WriterImpl {
       .reduce((acc, mark) => `<${mark}>${acc}</${mark}>`, text);
   }
 
+  private displayClass(attrs: any) {
+    if (attrs.display) {
+      switch (attrs.display) {
+        case 'float_left': return 'float-md-left';
+        case 'float_right': return 'float-md-right';
+        case 'block':
+        default: return 'd-block';
+      }
+    }
+    return '';
+  }
+
   private figure(attrs: any, content: string) {
     if (!attrs.caption) {
       return content;
     }
 
     return (
-      `<div class="figure-wrapper">
+      `<div class="figure-wrapper ${this.displayClass(attrs)}">
         <figure${attrs['full-width'] ? ' class="full-width"' : ''}>
           ${content}
           <figcaption${attrs['full-width'] ? ' class="full-width"' : ''}>${attrs.caption}</figcaption>
@@ -52,16 +66,18 @@ export class HtmlParser implements WriterImpl {
   h4 = (context: WriterContext, next: Next, x: HeadingFour) => `<h4>${next()}</h4>\n`;
   h5 = (context: WriterContext, next: Next, x: HeadingFive) => `<h5>${next()}</h5>\n`;
   h6 = (context: WriterContext, next: Next, x: HeadingSix) => `<h6>${next()}</h6>\n`;
-  img = (context: WriterContext, next: Next, attrs: Image) =>
-    this.figure(attrs, `<img class="block" src="${attrs.src}"/>\n`)
-
-  youtube = (context: any, next: Next, attrs: YouTube) =>
-    this.figure(
+  img = (context: WriterContext, next: Next, attrs: Image) => {
+    const alt = attrs.alt ? ` alt="${attrs.alt}"` : '';
+    return this.figure(attrs, `<img class="${this.displayClass(attrs)}"${alt} src="${attrs.src}"/>\n`);
+  }
+  youtube = (context: any, next: Next, attrs: YouTube) => {
+    return this.figure(
       Object.assign(attrs, { 'full-width': true }),
-      `<div class="youtube-wrapper">
-        <iframe id="${attrs.src}" allowfullscreen src="https://www.youtube.com/embed/${attrs.src}"></iframe>
-      </div>`,
-    )
+      `<div class="youtube-wrapper ${this.displayClass(attrs)}">
+          <iframe id="${attrs.src}" allowfullscreen src="https://www.youtube.com/embed/${attrs.src}"></iframe>
+        </div>`,
+    );
+  }
   audio = (context: WriterContext, next: Next, attrs: Audio) =>
     this.figure(
       attrs,
@@ -87,7 +103,7 @@ export class HtmlParser implements WriterImpl {
   codeLine = (context: WriterContext, next: Next, x: CodeLine) => `${next()}\n`;
   blockquote = (context: WriterContext, next: Next, x: Blockquote) =>
     `<blockquote>${next()}</blockquote>\n`
-  a = (context: WriterContext, next: Next,  { href } : Hyperlink) =>
+  a = (context: WriterContext, next: Next, { href }: Hyperlink) =>
     `<a href="${this.escapeXml(href)}">${next()}</a>\n`
   text = (context: WriterContext, textEntity: Text) =>
     this.wrapWithMarks(this.escapeXml(textEntity.text), textEntity)
