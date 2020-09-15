@@ -1,8 +1,32 @@
 import { Element, Range } from 'slate';
+import guid from 'utils/guid';
+import { normalizeHref } from 'components/editing/models/link/utils';
 
-export function create<ModelElement>(params: ModelElement): ModelElement {
-  return (params as ModelElement);
+export function create<ModelElement>(params: Partial<ModelElement>): ModelElement {
+  return Object.assign({
+    id: guid(),
+    children: [{ text: '' }],
+  } as any, params) as ModelElement;
 }
+
+// Helper functions for creating ModelElements
+export const td = (text: string) =>
+  create<TableData>({ type: 'td', children: [{ type: 'p', children: [{ text }] }] });
+export const tr = (children: TableData[]) => create<TableRow>({ type: 'tr', children });
+export const table = (children: TableRow[]) => create<Table>({ type: 'table', children });
+export const li = () => create<ListItem>({ type: 'li' });
+export const ol = () => create<OrderedList>({ type: 'ol', children: [li()] });
+export const ul = () => create<UnorderedList>({ type: 'ul', children: [li()] });
+export const youtube = (src: string) => create<YouTube>({ type: 'youtube', src });
+export const link = (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' });
+export const image = (src = '') => create<Image>({ type: 'img', src, display: 'block' });
+export const audio = (src = '') => create<Audio>({ type: 'audio', src });
+export const p = () => create<Paragraph>({ type: 'p' });
+export const code = () => ({
+  type: 'code',
+  language: 'python',
+  children: [{ type: 'code_line', children: [{ text: '' }] }],
+});
 
 export function mutate<ModelElement>(obj: ModelElement, changes: Object): ModelElement {
   return Object.assign({}, obj, changes) as ModelElement;
@@ -10,11 +34,16 @@ export function mutate<ModelElement>(obj: ModelElement, changes: Object): ModelE
 
 export type Selection = Range | null;
 
+export type MediaDisplayMode = 'float_left' | 'float_right' | 'block';
+
 export type ModelElement
   = Paragraph | HeadingOne | HeadingTwo | HeadingThree
   | HeadingFour | HeadingFive | HeadingSix | Image | YouTube
   | Audio | Table | TableRow | TableHeader | TableData | OrderedList | UnorderedList
   | ListItem | Math | MathLine | Code | CodeLine | Blockquote | Hyperlink;
+
+export type TextElement = Paragraph | HeadingOne | HeadingTwo | HeadingThree
+  | HeadingFour | HeadingFive | HeadingSix;
 
 export interface Identifiable {
   id: string;
@@ -55,6 +84,7 @@ export interface Image extends Element, Identifiable {
   width?: number;
   alt?: string;
   caption?: string;
+  display?: MediaDisplayMode;
 }
 
 export interface YouTube extends Element, Identifiable {
@@ -64,6 +94,7 @@ export interface YouTube extends Element, Identifiable {
   width?: number;
   alt?: string;
   caption?: string;
+  display?: MediaDisplayMode;
 }
 
 export interface Audio extends Element, Identifiable {
@@ -113,8 +144,6 @@ export interface MathLine extends Element, Identifiable {
 export interface Code extends Element, Identifiable {
   type: 'code';
   language: string;
-  startingLineNumber: number;
-  showNumbers: boolean;
   caption?: string;
 }
 
@@ -210,8 +239,7 @@ const tableCell = {
   isVoid: false,
   isBlock: true,
   isTopLevel: false,
-  validChildren: toObj(['p', 'img', 'youtube', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    'ul', 'audio', 'math', 'code', 'blockquote']),
+  validChildren: toObj(['p', 'img', 'youtube', 'audio', 'math']),
 };
 
 const list = {
@@ -257,8 +285,7 @@ export const schema = {
     isVoid: false,
     isBlock: true,
     isTopLevel: false,
-    validChildren: toObj(['img', 'youtube', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'ul', 'audio', 'math', 'code', 'blockquote']),
+    validChildren: toObj(['ol', 'ul']),
   },
   math: {
     isVoid: false,

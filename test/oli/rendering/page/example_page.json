@@ -294,8 +294,6 @@
     {
       "type": "code",
       "language": "python",
-      "showNumbers": false,
-      "startingLineNumber": 1,
       "children": [
         {
           "type": "code_line",

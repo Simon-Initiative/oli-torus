@@ -1,22 +1,38 @@
 @use 'delivery/variables' as delivery;
+@import 'bootstrap';
 @import "authoring/variables.scss";
 
 .editors {
 
   .resource-content-frame {
+    cursor: grab;
     width: 100%;
 
+    &.card {
+      border-radius: 3px;
+      border: none;
+    }
+
     .card-header {
+      border-bottom: 0;
       .description {
         display: none;
       }
     }
 
     .card-body {
-      padding: 0;
+      padding: 0 20px 20px 20px;
+      background-color: rgba(0, 0, 0, 0.03);
 
       .slate-editor {
-        padding: 1.3em;
+        @include clearfix;
+        border-radius: 3px;
+        cursor: initial;
+        background-color: white;
+        padding: 1.3em 10px;
+        &.structured-content {
+          padding: 1.3em max(calc(50% - 340px), 20px);
+        }
       }
     }
 
