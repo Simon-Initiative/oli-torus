@@ -46,16 +46,36 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def img(%Context{} = _context, _, %{"src" => src} = attrs) do
-    figure(attrs, [~s|<img class="block" src="#{src}"/>\n|])
+    alt = case attrs do
+      %{"alt" => alt} -> " alt=#{alt}"
+      _ -> ""
+    end
+
+    # if attrs["caption"]
+    figure(attrs, [~s|<img class="#{display_class(attrs)}"#{alt} src="#{src}"/>\n|])
+    # else [~s|<img class="#{display_class(attrs)}"#{alt} src="#{src}"/>\n|]
+    # end
   end
 
   def youtube(%Context{} = _context, _, %{"src" => src} = attrs) do
-    figure(Map.put(attrs, "full-width", true), [
-    """
-    <div class="youtube-wrapper">
-      <iframe id="#{src}" allowfullscreen src="https://www.youtube.com/embed/#{src}"></iframe>
-    </div>
-    """])
+    # if attrs["caption"]
+    # do
+      figure(Map.put(attrs, "full-width", true), [
+        """
+        <div class="youtube-wrapper">
+          <iframe id="#{src}" class="#{display_class(attrs)}" allowfullscreen src="https://www.youtube.com/embed/#{src}"></iframe>
+        </div>
+        """])
+    # else
+    #   [
+    #     """
+    #     <div class="youtube-wrapper #{display_class(attrs)}">
+    #       <iframe id="#{src}" allowfullscreen src="https://www.youtube.com/embed/#{src}"></iframe>
+    #     </div>
+    #     """
+    #   ]
+    # end
+
   end
 
   def audio(%Context{} = _context, _, %{"src" => src} = attrs) do
@@ -106,8 +126,6 @@ defmodule Oli.Rendering.Content.Html do
 
   def code(%Context{} = _context, next, %{
     "language" => language,
-    "startingLineNumber" => _startingLineNumber,
-    "showNumbers" => _showNumbers
   } = attrs) do
     figure(attrs, [~s|<pre><code class="language-#{language}">|, next.(), "</code></pre>\n"])
   end
@@ -117,7 +135,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def blockquote(%Context{} = _context, next, _) do
-    ["<blockquote class=\"blockquote\"><p class=\"mb-0\">", next.(), "</p></blockquote>\n"]
+    ["<blockquote>", next.(), "</blockquote>\n"]
   end
 
   def a(%Context{} = _context, next, %{"href" => href}) do
@@ -179,7 +197,7 @@ defmodule Oli.Rendering.Content.Html do
 
   # Accessible captions are created using a combination of the <figure /> and <figcaption /> elements.
   defp figure(%{"caption" => caption} = attrs, content) do
-    [~s|<div class="figure-wrapper">|]
+    [~s|<div class="figure-wrapper #{display_class(attrs)}">|]
       ++ ["<figure#{if attrs["full-width"] do " class=\"full-width\"" else "" end}>"]
         ++ content
         ++ ["<figcaption#{if attrs["full-width"] do " class=\"full-width\"" else "" end}>"]
@@ -189,4 +207,14 @@ defmodule Oli.Rendering.Content.Html do
     ++ ["</div>"]
   end
   defp figure(_attrs, content), do: content
+
+  defp display_class(%{"display" => display}), do: display_class(display)
+  defp display_class(display) do
+    case display do
+      "float_left" -> "float-md-left"
+      "float_right" -> "float-md-right"
+      "block" -> "d-block"
+      _ -> "d-block"
+    end
+  end
 end

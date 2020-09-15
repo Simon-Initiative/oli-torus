@@ -7,11 +7,14 @@ export type DeleteButtonProps = {
 
 export const DeleteButton = (props: DeleteButtonProps) => (
   <button
+    style={{
+      height: 31,
+    }}
     disabled={!props.editMode}
     type="button"
-    className="btn btn-sm btn-outline-danger"
+    className="p-0 d-flex align-items-center justify-content-center btn btn-sm"
     aria-label="delete"
     onClick={props.onClick}>
-    <i className="fa fa-trash" aria-hidden="true"></i> Delete
+    <span className="material-icons" aria-hidden="true">delete</span>
   </button>
 );

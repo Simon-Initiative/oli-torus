@@ -121,17 +121,21 @@
 
     .result {
       display: inline-flex;
+      flex-shrink: 0;
       align-items: center;
       justify-content: center;
       border: 1px solid $gray-500;
       border-radius: 2px;
       color: $gray-600;
       height: 24px;
-      width: 50px;
+      flex-basis: 50px;
       margin-right: 16px;
       font-weight: bold;
+      padding-left: 3px;
+      padding-right: 3px;
 
-      .score {
+      .result-divider {
+        margin-left: 3px;
         margin-right: 3px;
       }
     }

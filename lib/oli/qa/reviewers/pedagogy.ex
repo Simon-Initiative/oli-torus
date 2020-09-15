@@ -46,7 +46,7 @@ defmodule Oli.Qa.Reviewers.Pedagogy do
     |> Enum.each(&Warnings.create_warning(%{
       review_id: review.id,
       revision_id: &1.id,
-      subtype: "no practice opportunities"
+      subtype: "no attached activities"
     }))
 
     review
