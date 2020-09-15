@@ -1,7 +1,17 @@
 import { StructuredContent } from './resource';
 import { toSimpleText } from './text';
+import { MediaDisplayMode } from './model';
 
 const textLimit = 25;
+
+export function displayModelToClassName(display: MediaDisplayMode | undefined) {
+  switch (display) {
+    case 'float_left': return 'float-md-left';
+    case 'float_right': return 'float-md-right';
+    case 'block': return 'd-block';
+    default: return 'd-block';
+  }
+}
 
 export function getContentDescription(content: StructuredContent) : JSX.Element {
 

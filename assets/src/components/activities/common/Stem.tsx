@@ -1,6 +1,6 @@
 import React from 'react';
 import { Heading } from 'components/misc/Heading';
-import { RichTextEditor } from 'components/editor/RichTextEditor';
+import { RichTextEditor } from 'components/content/RichTextEditor';
 import { RichText, Stem as StemType } from '../types';
 import { ProjectSlug } from 'data/types';
 

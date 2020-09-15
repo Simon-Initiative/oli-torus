@@ -16,11 +16,11 @@ defmodule OliWeb.Qa.WarningDetails do
         </button>
       </h4>
       <div class="bd-callout bd-callout-info">
-        <h3><%= title_case(@selected.subtype) %> on <%= @selected.revision.resource_type.type %></h3>
-        <%= explanatory_text(@selected.subtype) %>
+        <h3><%= String.capitalize(@selected.subtype) %> on <%= @selected.revision.resource_type.type %></h3>
+        <%= explanatory_text(@selected.subtype, %{ graded: @selected.revision.graded }) %>
       </div>
       <div class="alert alert-info">
-        <strong>Action item</strong> <%= action_item(@selected.subtype) %>
+        <strong>Action item</strong> <%= action_item(@selected.subtype, %{ graded: @selected.revision.graded }) %>
         <%= if @selected.content do %>
           <%= Phoenix.HTML.raw(Oli.Rendering.Content.render(%Oli.Rendering.Context{user: @author}, @selected.content, Oli.Rendering.Content.Html)) %>
         <% end %>
