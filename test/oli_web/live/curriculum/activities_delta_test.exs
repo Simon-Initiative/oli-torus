@@ -4,11 +4,7 @@ defmodule OliWeb.Curriculum.ActivityDeltaTest do
 
   alias OliWeb.Curriculum.ActivityDelta
 
-  def merge_changes(changes, state) do
-    Map.merge(state, Enum.reduce(changes, %{}, fn {k, v}, m -> Map.put(m, k, v) end))
-  end
-
-  describe "qa live state" do
+  describe "activity delta test setup" do
     setup do
       Seeder.base_project_with_resource2()
       |> Seeder.add_page(%{
