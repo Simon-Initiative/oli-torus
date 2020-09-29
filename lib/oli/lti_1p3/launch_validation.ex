@@ -29,7 +29,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   defp validate_oidc_state(conn) do
     case Plug.Conn.get_session(conn, "state") do
       nil ->
-        {:error, "State from session is missing"}
+        {:error, "State from session is missing. Make sure cookies are enabled and configured correctly"}
       session_state ->
         case conn.params["state"] do
           nil ->
@@ -103,7 +103,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
           {false, _} ->
             {:error, "Token iat is invalid"}
           _ ->
-            {:error, "Token is exp and iat are invalid"}
+            {:error, "Token exp and iat are invalid"}
         end
       end
     rescue
@@ -155,12 +155,12 @@ defmodule Oli.Lti_1p3.LaunchValidation do
     end
   end
 
-  defp cache_launch_params(conn, jwt_body) do
-    ## TODO: params exceeds cookie size limit 4096. We must determine which params are necessary to keep
+  defp cache_launch_params(conn, _jwt_body) do
+    ## TODO: params exceeds cookie size limit 4096. Create a lti_params cache for later access using a unique key
     # conn = conn
     # |> Plug.Conn.put_session(:lti1p3_launch_params, conn.params)
-    conn = conn
-    |> Plug.Conn.put_session(:lti1p3_launch_params, jwt_body)
+    # conn = conn
+    # |> Plug.Conn.put_session(:lti1p3_launch_params, jwt_body)
 
     {:ok, conn}
   end

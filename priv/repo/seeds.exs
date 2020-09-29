@@ -53,12 +53,6 @@ if !Oli.Repo.get_by(Oli.Authoring.Authors.ProjectRole, id: 1) do
     type: "contributor"
   }
 end
-# create section roles
-if !Oli.Repo.get_by(Oli.Delivery.Sections.SectionRole, id: 1) do
-
-  Oli.Delivery.Sections.SectionRoles.list()
-  |> Enum.map(&Oli.Repo.insert!/1)
-end
 
 # create resource types
 if !Oli.Repo.get_by(Oli.Resources.ResourceType, id: 1) do
@@ -103,23 +97,36 @@ end
 |> Enum.map(&Oli.Authoring.Theme.changeset/1)
 |> Enum.map(fn t -> Oli.Repo.insert!(t, on_conflict: :replace_all, conflict_target: :id) end)
 
+# create an active lti_1p3 jwk
+if !Oli.Repo.get_by(Oli.Lti_1p3.Jwk, id: 1) do
+  %{private_key: private_key} = Oli.Lti_1p3.KeyGenerator.generate_key_pair()
+  Oli.Lti_1p3.create_new_jwk(%{
+    pem: private_key,
+    typ: "JWT",
+    alg: "RS256",
+    kid: UUID.uuid4(),
+    active: true,
+  })
+end
+
+# create default open and free institution
+if !Oli.Repo.get_by(Oli.Accounts.Institution, id: 1) do
+  Oli.Accounts.create_institution(%{
+    id: 1,
+    country_code: "US",
+    institution_email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),
+    institution_url: "oli.cmu.edu",
+    name: "Open Learning Initiative",
+    timezone: "US/Eastern",
+    # TODO change these to env configs
+    consumer_key: "0527416a-29ec-4537-b560-6897286a33ec",
+    shared_secret: "4FE4F15E33AACCD85D7E198055B2FE83",
+    author_id: 1,
+  })
+end
+
 # only seed with sample data if in development mode
 if Application.fetch_env!(:oli, :env) == :dev do
-  # create an example institution
-  if !Oli.Repo.get_by(Oli.Accounts.Institution, id: 1) do
-    {:ok, _institution} = Oli.Accounts.create_institution(%{
-      country_code: "US",
-      institution_email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),
-      institution_url: "oli.cmu.edu",
-      name: "Open Learning Initiative",
-      timezone: "US/Eastern",
-      consumer_key: "0527416a-29ec-4537-b560-6897286a33ec",
-      shared_secret: "4FE4F15E33AACCD85D7E198055B2FE83",
-      author_id: 1,
-    })
-  end
-
-
   if !Oli.Repo.get_by(Oli.Accounts.Author, email: "test@oli.cmu.edu") do
     Oli.Repo.insert! %Oli.Accounts.Author{
       email: "test@oli.cmu.edu",
@@ -146,8 +153,7 @@ if Application.fetch_env!(:oli, :env) == :dev do
     Oli.Publishing.publish_project(seeds.project)
   end
 
-  # REMOVE ME
-  %{private_key: private_key, public_key: public_key} = Oli.Lti_1p3.KeyGenerator.generate_key_pair()
+  # TODO: REMOVE ME/CLEANUP   ########################
   # {:ok, registration} = Oli.Lti_1p3.create_new_registration(%{
   #   issuer: "https://lti-ri.imsglobal.org",
   #   client_id: "12345",
@@ -158,26 +164,36 @@ if Application.fetch_env!(:oli, :env) == :dev do
   #   tool_private_key: private_key,
   #   kid: "0ijoZKpZWSJQ07b22gbdaCDmglc7BzwyeiQMvK8u-Gk",
   # })
-  {:ok, registration} = Oli.Lti_1p3.create_new_registration(%{
-    issuer: "https://sandbox.moodledemo.net",
-    client_id: "12345",
-    key_set_url: "https://lti-ri.imsglobal.org/platforms/1237/platform_keys/1231.json",
-    auth_token_url: "https://lti-ri.imsglobal.org/platforms/1237/access_tokens",
-    auth_login_url: "https://lti-ri.imsglobal.org/platforms/1237/authorizations/new",
-    auth_server: "https://lti-ri.imsglobal.org",
-    tool_private_key: private_key,
-    kid: "0ijoZKpZWSJQ07b22gbdaCDmglc7BzwyeiQMvK8u-Gk",
-  })
 
-  public_jwt = JOSE.JWK.from_pem(public_key)
-    |> JOSE.JWK.to_map()
-    |> (fn {_kty, public_jwt} -> public_jwt end).()
-    |> Jason.encode!
-  IO.puts public_jwt
+  %{id: jwk_id, pem: pem, typ: typ, alg: alg, kid: kid} = Oli.Lti_1p3.get_active_jwk()
+
+  {:ok, registration} = Oli.Lti_1p3.create_new_registration(%{
+    issuer: "https://canvas.oli.cmu.edu",
+    client_id: "10000000000031",
+    key_set_url: "https://canvas.oli.cmu.edu/api/lti/security/jwks",
+    auth_token_url: "https://canvas.oli.cmu.edu/login/oauth2/token",
+    auth_login_url: "https://canvas.oli.cmu.edu/api/lti/authorize_redirect",
+    auth_server: "https://canvas.oli.cmu.edu",
+    tool_jwk_id: jwk_id,
+    institution_id: 1,
+    kid: "2018-05-18T22:33:20Z",
+  })
 
   Oli.Lti_1p3.create_new_deployment(%{
-    deployment_id: "1",
+    deployment_id: "41:4dde05e8ca1973bcca9bffc13e1548820eee93a3",
     registration_id: registration.id,
   })
+
+  public_jwk = pem |> JOSE.JWK.from_pem |> JOSE.JWK.to_public
+    |> JOSE.JWK.to_map()
+    |> (fn {_kty, public_jwk} -> public_jwk end).()
+    |> Map.put("typ", typ)
+    |> Map.put("alg", alg)
+    |> Map.put("kid", kid)
+    |> Jason.encode!
+
+  IO.puts "Public Key: #{public_jwk}"
+
+  ########################
 
 end

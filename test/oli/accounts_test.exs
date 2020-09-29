@@ -46,17 +46,8 @@ defmodule Oli.AccountsTest do
     setup do
       author = author_fixture()
       institution = institution_fixture(%{ author_id: author.id })
-      {:ok, lti_tool_consumer} = Accounts.insert_or_update_lti_tool_consumer(%{
-        info_product_family_code: "tool_consumer_info_product_family_code",
-        info_version: "tool_consumer_info_version",
-        instance_contact_email: "tool_consumer_instance_contact_email",
-        instance_guid: "tool_consumer_instance_guid",
-        instance_name: "tool_consumer_instance_name",
-        institution_id: institution.id,
-      })
       valid_attrs = @valid_attrs
         |> Map.put(:author_id, author.id)
-        |> Map.put(:lti_tool_consumer_id, lti_tool_consumer.id)
       {:ok, user} = valid_attrs |> Accounts.create_user()
 
       {:ok, %{user: user, author: author, valid_attrs: valid_attrs}}

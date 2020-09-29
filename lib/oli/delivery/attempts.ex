@@ -2,7 +2,7 @@ defmodule Oli.Delivery.Attempts do
 
   import Ecto.Query, warn: false
   alias Oli.Repo
-  alias Oli.Delivery.Sections.{Section, SectionRoles, Enrollment}
+  alias Oli.Delivery.Sections.{Section, Enrollment}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.{PartAttempt, ResourceAccess, ResourceAttempt, ActivityAttempt, Snapshot}
   alias Oli.Delivery.Evaluation.{EvaluationContext}
@@ -326,7 +326,7 @@ defmodule Oli.Delivery.Attempts do
   end
 
   def get_part_attempts_and_users_for_publication(publication_id) do
-    student_role_id = SectionRoles.get_by_type("student").id
+    # student_role_id = SectionRoles.get_by_type("student").id
     Repo.all(
       from section in Section,
       join: enrollment in Enrollment, on: enrollment.section_id == section.id,
@@ -336,7 +336,8 @@ defmodule Oli.Delivery.Attempts do
       join: aattempt in ActivityAttempt, on: rattempt.id == aattempt.resource_attempt_id,
       join: pattempt in PartAttempt, on: aattempt.id == pattempt.activity_attempt_id,
       where: section.publication_id == ^publication_id,
-      where: enrollment.section_role_id == ^student_role_id,
+      # TODO: this needs to be implemented as an embedded query in the section roles json
+      # where: enrollment.section_role_id == ^student_role_id,
       select: %{ part_attempt: pattempt, user: user })
       # TODO: This should be done in the query, but can't get the syntax right
     |> Enum.map(& %{ user: &1.user, part_attempt: Repo.preload(&1.part_attempt, [activity_attempt: [:revision, revision: :activity_type, resource_attempt: :revision]]) })
@@ -696,8 +697,8 @@ defmodule Oli.Delivery.Attempts do
 
   On failure returns `{:error, error}`
   """
-  @spec submit_part_evaluations(atom(), String.t, String.t, [map()]) :: {:ok, [map()]} | {:error, any}
-  def submit_part_evaluations(role, context_id, activity_attempt_guid, part_inputs) do
+  @spec submit_part_evaluations(String.t, String.t, [map()]) :: {:ok, [map()]} | {:error, any}
+  def submit_part_evaluations(context_id, activity_attempt_guid, part_inputs) do
 
     Repo.transaction(fn ->
 
@@ -716,7 +717,7 @@ defmodule Oli.Delivery.Attempts do
 
       case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
       |> persist_evaluations(part_inputs, roll_up_fn)
-      |> generate_snapshots(role, context_id, part_inputs) do
+      |> generate_snapshots(context_id, part_inputs) do
 
         {:ok, results} -> results
         {:error, error} -> Repo.rollback(error)
@@ -727,7 +728,7 @@ defmodule Oli.Delivery.Attempts do
 
   end
 
-  def submit_graded_page(role, context_id, resource_attempt_guid) do
+  def submit_graded_page(context_id, resource_attempt_guid) do
 
     Repo.transaction(fn ->
 
@@ -740,7 +741,7 @@ defmodule Oli.Delivery.Attempts do
           # some activities will finalize themselves ahead of a graded page
           # submission.  so we only submit those that are still yet to be finalized.
           if a.date_evaluated == nil do
-            submit_graded_page_activity(role, context_id, a.attempt_guid)
+            submit_graded_page_activity(context_id, a.attempt_guid)
           end
         end)
 
@@ -800,7 +801,7 @@ defmodule Oli.Delivery.Attempts do
 
   end
 
-  defp submit_graded_page_activity(role, context_id, activity_attempt_guid) do
+  defp submit_graded_page_activity(context_id, activity_attempt_guid) do
 
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
@@ -817,7 +818,7 @@ defmodule Oli.Delivery.Attempts do
 
       case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
       |> persist_evaluations(part_inputs, roll_up_fn)
-      |> generate_snapshots(role, context_id, part_inputs) do
+      |> generate_snapshots(context_id, part_inputs) do
 
         {:ok, results} -> results
         {:error, error} -> Repo.rollback(error)
@@ -831,7 +832,7 @@ defmodule Oli.Delivery.Attempts do
   end
 
 
-  def generate_snapshots({:ok, _} = previous_in_pipline, :student, context_id, part_inputs) do
+  def generate_snapshots({:ok, _} = previous_in_pipline, context_id, part_inputs) do
 
     part_attempt_guids = Enum.map(part_inputs, fn %{attempt_guid: attempt_guid} -> attempt_guid end)
 
@@ -872,7 +873,7 @@ defmodule Oli.Delivery.Attempts do
     previous_in_pipline
   end
 
-  def generate_snapshots(previous, _, _, _), do: previous
+  def generate_snapshots(previous, _, _), do: previous
 
   defp create_individual_snapshot({part_attempt, activity_attempt, resource_attempt, resource_access, resource_revision, activity_revision}, objective_id, revision_id) do
 

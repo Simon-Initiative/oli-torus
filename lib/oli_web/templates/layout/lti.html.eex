@@ -1,0 +1,9 @@
+<%= render_layout "delivery.html", assigns do %>
+
+<div>
+
+  <%= @inner_content %>
+
+</div>
+
+<% end  %>

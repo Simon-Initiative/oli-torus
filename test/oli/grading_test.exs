@@ -17,7 +17,6 @@ defmodule Oli.GradingTest do
       Oli.Seeder.base_project_with_resource2()
       |> set_resources_as_graded
       |> Oli.Seeder.create_section
-      |> Oli.Seeder.add_lti_consumer(%{}, :lti_consumer)
       |> Oli.Seeder.add_users_to_section(:section, [:user1, :user2, :user3])
       |> Oli.Seeder.add_resource_accesses(:section, %{
         revision1: %{

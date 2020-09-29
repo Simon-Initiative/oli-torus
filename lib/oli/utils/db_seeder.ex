@@ -1,5 +1,4 @@
 defmodule Oli.Seeder do
-
   alias Oli.Publishing
   alias Oli.Repo
   alias Oli.Accounts.{SystemRole, ProjectRole, Institution, Author}
@@ -9,7 +8,6 @@ defmodule Oli.Seeder do
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
   alias Oli.Authoring.Course.{Project, Family}
   alias Oli.Publishing.Publication
-  alias Oli.Accounts.LtiToolConsumer
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -52,7 +50,6 @@ defmodule Oli.Seeder do
       |> Map.put(:page2, page2)
       |> Map.put(:revision1, revision1)
       |> Map.put(:revision2, revision2)
-      |> add_lti_consumer(%{}, :lti_consumer)
 
   end
 
@@ -109,7 +106,6 @@ defmodule Oli.Seeder do
       |> Map.put(:page2, page2)
       |> Map.put(:revision1, revision1)
       |> Map.put(:revision2, revision2)
-      |> add_lti_consumer(%{}, :lti_consumer)
 
   end
 
@@ -250,26 +246,21 @@ defmodule Oli.Seeder do
   end
 
   def add_user(map, attrs, tag \\ nil) do
-
-    consumer = map.lti_consumer
     institution = map.institution
 
-    params =
-      attrs
-      |> Enum.into(%{
+    {:ok, user} =
+      User.changeset(%User{
         email: "ironman#{System.unique_integer([:positive])}@example.com",
         first_name: "Tony",
         last_name: "Stark",
         user_id: "2u9dfh7979hfd",
         user_image: "none",
-        roles: "none",
-        lti_tool_consumer_id: consumer.id,
+        platform_roles: [
+          Oli.Lti_1p3.PlatformRoles.get_role(:system_administrator)
+        ],
         institution_id: institution.id
-      })
-
-    {:ok, user} =
-      User.changeset(%User{}, params)
-      |> Repo.insert()
+      }, attrs)
+      |> Repo.insert
 
     case tag do
       nil -> map
@@ -294,29 +285,6 @@ defmodule Oli.Seeder do
     |> Enum.each(fn user_tag -> Sections.enroll(map[user_tag].id, map[section_tag].id, 2) end)
 
     map
-  end
-
-  def add_lti_consumer(map, attrs, tag \\ nil) do
-    params =
-      attrs
-      |> Enum.into(%{
-        info_product_family_code: "code",
-        info_version: "1",
-        instance_contact_email: "example@example.com",
-        instance_guid: "2u9dfh7979hfd",
-        instance_name: "none",
-        institution_id: map.institution.id,
-        author_id: map.author.id
-      })
-
-    {:ok, consumer} =
-      LtiToolConsumer.changeset(%LtiToolConsumer{}, params)
-      |> Repo.insert()
-
-    case tag do
-      nil -> map
-      t -> Map.put(map, t, consumer)
-    end
   end
 
   def add_page(map, attrs, container_tag \\ :container, tag) do

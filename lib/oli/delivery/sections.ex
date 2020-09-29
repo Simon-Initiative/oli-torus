@@ -8,40 +8,23 @@ defmodule Oli.Delivery.Sections do
 
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.Enrollment
-  alias Oli.Delivery.Sections.SectionRole
 
   @doc """
   Enrolls a user in a course section.
 
   """
-  def enroll(user_id, section_id, section_role_id) do
+  def enroll(user_id, section_id, context_roles) do
 
     case Repo.one(from(e in Enrollment, where: e.user_id == ^user_id and e.section_id == ^section_id, select: e)) do
 
       # Enrollment doesn't exist, we are creating it
-      nil  -> %Enrollment{user_id: user_id, section_id: section_id, section_role_id: section_role_id}
+      nil  -> %Enrollment{user_id: user_id, section_id: section_id, context_roles: context_roles}
 
       # Enrollment exists, we are potentially just updating it
       e -> e
     end
-    |> Enrollment.changeset(%{ section_role_id: section_role_id})
+    |> Enrollment.changeset(%{section_id: section_id, context_roles: context_roles})
     |> Repo.insert_or_update
-  end
-
-  @doc """
-  Determines if a particular user is enrolled in a section with a given role.
-
-  """
-  def is_enrolled_as?(user_id, context_id, %SectionRole{id: id}) do
-    query = from(
-      e in Enrollment,
-      join: s in Section, on: e.section_id == s.id,
-      where: e.user_id == ^user_id and s.context_id == ^context_id and e.section_role_id == ^id)
-
-    case Repo.one(query) do
-      nil -> false
-      _ -> true
-    end
   end
 
   @doc """

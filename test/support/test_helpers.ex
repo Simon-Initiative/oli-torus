@@ -41,24 +41,6 @@ defmodule Oli.TestHelpers do
     section
   end
 
-  def lti_consumer_fixture(attrs \\ %{}) do
-    params =
-      attrs
-      |> Enum.into(%{
-        info_product_family_code: "code",
-        info_version: "1",
-        instance_contact_email: "example@example.com",
-        instance_guid: "2u9dfh7979hfd",
-        instance_name: "none"
-      })
-
-    {:ok, consumer} =
-      LtiToolConsumer.changeset(%LtiToolConsumer{}, params)
-      |> Repo.insert()
-
-      consumer
-  end
-
   def user_fixture(attrs \\ %{}) do
     params =
       attrs
@@ -134,7 +116,6 @@ defmodule Oli.TestHelpers do
 
   def url_from_conn(conn) do
     scheme = if conn.scheme == :https, do: "https", else: "http"
-    scheme = System.get_env("LTI_PROTOCOL", scheme)
     port = if conn.port == 80 or conn.port == 443, do: "", else: ":#{conn.port}"
 
     "#{scheme}://#{conn.host}#{port}/lti/basic_launch"

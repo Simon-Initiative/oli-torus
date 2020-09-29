@@ -11,111 +11,7 @@ defmodule Oli.Grading do
   alias Oli.Publishing
   alias Oli.Grading.GradebookRow
   alias Oli.Grading.GradebookScore
-  alias Oli.Grading.CanvasApi
-  alias Oli.Delivery.Sections.SectionRoles
-  alias Oli.Utils.Common
-
-  @doc """
-  Sync all scores from the gradebook with LMS
-
-  This function currently uses the Canvas API and only supports canvas. This will later
-  be replaced with an LTI 1.3 GS implementation
-  """
-  def sync_grades(%Section{} = section, opts \\ []) do
-    {gradebook, _labels} = generate_gradebook_for_section(section)
-
-    gradebook_columns = gradebook
-      |> Enum.reduce(%{}, fn row, acc ->
-        Enum.reduce(row.scores, acc, fn score, acc ->
-          case score do
-            nil -> acc
-            score ->
-              Map.put_new(acc, "#{score.resource_id}", %{
-                label: score.label,
-                resource_id: score.resource_id,
-                out_of: score.out_of,
-              })
-          end
-        end)
-      end)
-
-    # delete all assignments if option is specified
-    if Keyword.has_key?(opts, :delete_all_assignments) do
-      CanvasApi.get_assignments(section)
-      |> Enum.each(fn assignment -> CanvasApi.delete_assignment(section, assignment["id"]) end)
-    end
-
-    # get current canvas assignments
-    assignments = CanvasApi.get_assignments(section)
-    current_columns_map = assignments
-      |> Enum.filter(fn assignment -> is_torus?(assignment) end)
-      |> Enum.reduce(%{}, fn assignment, acc ->
-        Map.put(acc, get_grading_id(assignment), %{
-          label: assignment["name"],
-          resource_id: get_grading_id(assignment),
-          out_of: assignment["points_possible"],
-        })
-      end)
-
-    # determine what columns need to be created from what already exist
-    columns_to_create = gradebook_columns
-      |> Enum.filter(fn {id, _} -> !Map.has_key?(current_columns_map, id) end)
-
-    # create columns
-    columns_to_create
-      |> Enum.each(fn {_id, r} -> CanvasApi.create_assignment(section, %{
-        "external_tool_tag_attributes" => %{"url" => "#{Common.get_base_url}/course/#{section.context_id}/page/#{Publishing.get_published_revision(section.publication_id, r.resource_id).slug}?grading_id=#{r.resource_id}"},
-        "name" => r.label,
-        "submission_types" => [
-          "external_tool"
-        ],
-        "points_possible" => r.out_of,
-        "grading_type" => "points",
-        "published" => "true"
-      }) end)
-
-    # get all assignments including new created columns,
-    # create a map from resource id to assignment
-    assignments_by_resource_id = CanvasApi.get_assignments(section)
-    |> Enum.filter(fn assignment -> is_torus?(assignment) end)
-    |> Enum.reduce(%{}, fn assignment, acc ->
-      Map.put(acc, get_grading_id(assignment), assignment)
-    end)
-
-    # submit grades
-    gradebook
-      |> Enum.each(fn row ->
-        Enum.each(row.scores, fn score ->
-          case score do
-            nil -> nil
-            score ->
-              assignment_id = assignments_by_resource_id["#{score.resource_id}"]["id"]
-              user_id = row.user.canvas_id
-              CanvasApi.submit_score(section, assignment_id, user_id, score.score)
-          end
-        end)
-      end)
-  end
-
-  defp is_torus?(assignment) do
-    case assignment["external_tool_tag_attributes"] do
-      %{"url" => url} -> String.contains?(url, Common.get_base_url)
-      _ -> false
-    end
-  end
-
-  defp get_grading_id(assignment) do
-    case assignment["external_tool_tag_attributes"] do
-      %{"url" => url} ->
-        case Regex.named_captures(~r/grading_id=(?<grading_id>[^&]+)/, url) do
-          %{"grading_id" => grading_id} ->
-            grading_id
-          _ ->
-            nil
-        end
-      _ -> nil
-    end
-  end
+  alias Oli.Lti_1p3.ContextRoles
 
   @doc """
   Exports the gradebook for the provided section in CSV format
@@ -185,7 +81,7 @@ defmodule Oli.Grading do
 
     # get students enrolled in the section, filter by role: student
     students = Sections.list_enrollments(section.context_id)
-      |> Enum.filter(fn e -> e.section_role_id == SectionRoles.get_by_type("student").id end)
+      |> Enum.filter(fn e -> ContextRoles.has_role?(e.context_roles, :context_learner) end)
       |> Enum.map(fn e -> e.user end)
 
     # create a map of all resource accesses, keyed off resource id

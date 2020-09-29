@@ -8,9 +8,11 @@ defmodule Oli.Accounts.Institution do
     field :institution_url, :string
     field :name, :string
     field :timezone, :string
-    field :consumer_key, :string
-    field :shared_secret, :string
+
     belongs_to :author, Oli.Accounts.Author, foreign_key: :author_id
+
+    # LTI 1.3 Deployments
+    has_many :registrations, Oli.Lti_1p3.Registration
     has_many :sections, Oli.Delivery.Sections.Section
     has_many :users, Oli.Accounts.User
 
@@ -26,8 +28,6 @@ defmodule Oli.Accounts.Institution do
       :institution_email,
       :institution_url,
       :timezone,
-      :consumer_key,
-      :shared_secret,
       :author_id,
     ])
     |> validate_required([
@@ -36,9 +36,7 @@ defmodule Oli.Accounts.Institution do
       :institution_email,
       :institution_url,
       :timezone,
-      :consumer_key,
-      :shared_secret,
-      :author_id
+      :author_id,
     ])
   end
 end

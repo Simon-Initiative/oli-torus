@@ -3,7 +3,7 @@ defmodule Oli.Accounts do
   import Ecto.Query, warn: false
 
   alias Oli.Repo
-  alias Oli.Accounts.{User, Author, Institution, LtiToolConsumer, SystemRole}
+  alias Oli.Accounts.{User, Author, Institution, SystemRole}
 
   @doc """
   Returns the list of users.
@@ -343,22 +343,4 @@ defmodule Oli.Accounts do
     |> Repo.insert_or_update
   end
 
-  @doc """
-  Returns lti tool consumer if a record matches instance_guid, or creates and returns a new lti tool consumer
-
-  ## Examples
-
-      iex> insert_or_update_lti_tool_consumer(%{field: value})
-      {:ok, %LtiToolConsumer{}}    -> # Inserted or updated with success
-      {:error, changeset}          -> # Something went wrong
-
-  """
-  def insert_or_update_lti_tool_consumer(%{ instance_guid: instance_guid } = changes) do
-    case Repo.get_by(LtiToolConsumer, instance_guid: instance_guid) do
-      nil -> %LtiToolConsumer{}
-      lti_tool_consumer -> lti_tool_consumer
-    end
-    |> LtiToolConsumer.changeset(changes)
-    |> Repo.insert_or_update
-  end
 end

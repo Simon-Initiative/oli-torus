@@ -3,10 +3,9 @@ defmodule Oli.Lti_1p3.OidcLogin do
 
   alias Oli.Lti_1p3
 
-  def oidc_login_redirect_url(conn, launch_url) do
+  def oidc_login_redirect_url(conn, params) do
     with {:ok, conn, _issuer, login_hint, registration} <- validate_oidc_login(conn) do
-      # create OIDC auth response
-
+      # craft OIDC auth response
       # create unique state
       state =  UUID.uuid4()
       conn = conn
@@ -17,8 +16,8 @@ defmodule Oli.Lti_1p3.OidcLogin do
         "response_type" => "id_token",
         "response_mode" => "form_post",
         "prompt" => "none",
-        "client_id" => registration.client_id,
-        "redirect_url" => launch_url,
+        "client_id" => params["client_id"],
+        "redirect_uri" => params["target_link_uri"],
         "state" => state,
         "nonce" => UUID.uuid4(),
         "login_hint" => login_hint,
@@ -37,29 +36,29 @@ defmodule Oli.Lti_1p3.OidcLogin do
   end
 
   defp validate_oidc_login(conn) do
-    with {:ok, conn, issuer} <- get_issuer(conn),
-         {:ok, conn, login_hint} <- get_login_hint(conn),
-         {:ok, conn, registration} <- get_registration(conn)
+    with {:ok, conn, issuer} <- validate_issuer(conn),
+         {:ok, conn, login_hint} <- validate_login_hint(conn),
+         {:ok, conn, registration} <- validate_registration(conn)
     do
       {:ok, conn, issuer, login_hint, registration}
     end
   end
 
-  defp get_issuer(conn) do
+  defp validate_issuer(conn) do
     case conn.params["iss"] do
       nil -> {:error, "Request does not have an issuer (iss)"}
       issuer -> {:ok, conn, issuer}
     end
   end
 
-  defp get_login_hint(conn) do
+  defp validate_login_hint(conn) do
     case conn.params["login_hint"] do
       nil -> {:error, "Request does not have a login hint (login_hint)"}
       login_hint -> {:ok, conn, login_hint}
     end
   end
 
-  defp get_registration(conn) do
+  defp validate_registration(conn) do
     case Lti_1p3.get_registration_by_issuer(conn.params["iss"]) do
       nil -> {:error, "No registration exists for issuer (iss): #{conn.params["iss"]}"}
       registration -> {:ok, conn, registration}

@@ -17,9 +17,8 @@ defmodule OliWeb.AttemptController do
 
     lti_params = Plug.Conn.get_session(conn, :lti_params)
     context_id = lti_params["context_id"]
-    role = Oli.Delivery.Lti.parse_lti_role(lti_params["roles"])
 
-    case Attempts.submit_part_evaluations(role, context_id, activity_attempt_guid, [%{attempt_guid: attempt_guid, input: input}]) do
+    case Attempts.submit_part_evaluations(context_id, activity_attempt_guid, [%{attempt_guid: attempt_guid, input: input}]) do
       {:ok, evaluations} -> json conn, %{ "type" => "success", "evaluations" => evaluations}
       {:error, _} -> error(conn, 500, "server error")
     end
@@ -58,12 +57,11 @@ defmodule OliWeb.AttemptController do
 
     lti_params = Plug.Conn.get_session(conn, :lti_params)
     context_id = lti_params["context_id"]
-    role = Oli.Delivery.Lti.parse_lti_role(lti_params["roles"])
 
     parsed = Enum.map(part_inputs, fn %{"attemptGuid" => attempt_guid, "response" => input} ->
       %{attempt_guid: attempt_guid, input: %StudentInput{input: Map.get(input, "input")}} end)
 
-    case Attempts.submit_part_evaluations(role, context_id, activity_attempt_guid, parsed) do
+    case Attempts.submit_part_evaluations(context_id, activity_attempt_guid, parsed) do
       {:ok, evaluations} -> json conn, %{ "type" => "success", "evaluations" => evaluations}
       {:error, _} -> error(conn, 500, "server error")
     end

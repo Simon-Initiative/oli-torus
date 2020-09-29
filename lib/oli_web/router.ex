@@ -32,7 +32,7 @@ defmodule OliWeb.Router do
   pipeline :lti do
     plug :fetch_session
     plug :fetch_flash
-    plug :put_root_layout, {OliWeb.LayoutView, "default.html"}
+    plug :put_root_layout, {OliWeb.LayoutView, "lti.html"}
     plug Oli.Plugs.SetCurrentUser
   end
 
@@ -96,6 +96,12 @@ defmodule OliWeb.Router do
     pipe_through [:browser, :csrf_always]
 
     get "/", StaticPageController, :index
+  end
+
+  scope "/.well-known", OliWeb do
+    pipe_through [:browser, :csrf_always]
+
+    get "/jwks.json", LtiController, :jwks
   end
 
   # authorization protected routes
@@ -220,11 +226,10 @@ defmodule OliWeb.Router do
   scope "/lti", OliWeb do
     pipe_through [:lti, :www_url_form]
 
-    post "/basic_launch", LtiController, :basic_launch
-
     post "/login", LtiController, :login
     get "/login", LtiController, :login
     post "/launch", LtiController, :launch
+    post "/test", LtiController, :test
   end
 
   scope "/course", OliWeb do
@@ -247,14 +252,6 @@ defmodule OliWeb.Router do
     get "/:context_id/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt
 
     get "/:context_id/grades/export", PageDeliveryController, :export_gradebook
-  end
-
-  scope "/api/v1/course", OliWeb do
-    # pipe_through [:api, :protected, Oli.Plugs.SetCurrentUser]
-    pipe_through [:set_user]
-
-    post "/:context_id/grades/sync", PageDeliveryController, :sync_gradebook
-    put "/:context_id/grades/canvas_token", PageDeliveryController, :update_canvas_token
   end
 
   scope "/admin", OliWeb do

@@ -20,10 +20,9 @@ defmodule Oli.SectionsTest do
         |> Map.put(:project_id, project.id)
         |> Map.put(:publication_id, publication.id)
 
-      consumer = lti_consumer_fixture(%{institution_id: institution.id})
-      user1 = user_fixture(%{lti_tool_consumer_id: consumer.id, institution_id: institution.id})
-      user2 = user_fixture(%{lti_tool_consumer_id: consumer.id, institution_id: institution.id})
-      user3 = user_fixture(%{lti_tool_consumer_id: consumer.id, institution_id: institution.id})
+      user1 = user_fixture(%{institution_id: institution.id})
+      user2 = user_fixture(%{institution_id: institution.id})
+      user3 = user_fixture(%{institution_id: institution.id})
 
       {:ok, section} = valid_attrs |> Sections.create_section()
 
@@ -78,23 +77,6 @@ defmodule Oli.SectionsTest do
 
 
     end
-
-    test "is_enrolled_as?/3 works", %{section: section, user1: user1, user2: user2} do
-
-      assert Sections.list_enrollments("context_id") == []
-
-      # Enroll a user as instructor
-      Sections.enroll(user1.id, section.id, SectionRoles.get_by_type("instructor").id)
-
-      # Now check for enrollment
-      assert Sections.is_enrolled_as?(user1.id, "context_id", SectionRoles.get_by_type("instructor"))
-      refute Sections.is_enrolled_as?(user1.id, "context_id", SectionRoles.get_by_type("student"))
-      refute Sections.is_enrolled_as?(user2.id, "context_id", SectionRoles.get_by_type("instructor"))
-      refute Sections.is_enrolled_as?(user2.id, "context_id", SectionRoles.get_by_type("student"))
-
-    end
-
-
 
   end
 

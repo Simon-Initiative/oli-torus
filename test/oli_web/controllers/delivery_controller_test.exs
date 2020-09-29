@@ -54,14 +54,6 @@ defmodule OliWeb.DeliveryControllerTest do
     institution = institution_fixture(%{ author_id: author.id })
     lti_params = build_lti_request(url_from_conn(conn), "some-secret")
 
-    {:ok, lti_tool_consumer} = Accounts.insert_or_update_lti_tool_consumer(%{
-      info_product_family_code: lti_params["tool_consumer_info_product_family_code"],
-      info_version: lti_params["tool_consumer_info_version"],
-      instance_contact_email: lti_params["tool_consumer_instance_contact_email"],
-      instance_guid: lti_params["tool_consumer_instance_guid"],
-      instance_name: lti_params["tool_consumer_instance_name"],
-      institution_id: institution.id,
-    })
     {:ok, user } = Accounts.insert_or_update_user(%{
       email: lti_params["lis_person_contact_email_primary"],
       first_name: lti_params["lis_person_name_given"],
@@ -69,7 +61,6 @@ defmodule OliWeb.DeliveryControllerTest do
       user_id: lti_params["user_id"],
       user_image: lti_params["user_image"],
       roles: lti_params["roles"],
-      lti_tool_consumer_id: lti_tool_consumer.id,
       institution_id: institution.id,
     })
 
