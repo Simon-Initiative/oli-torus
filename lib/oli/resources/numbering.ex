@@ -6,12 +6,6 @@ defmodule Oli.Resources.Numbering do
     count: 0,
     container: nil
 
-  def number_path(root_container, containers, node_to_path) do
-
-
-  end
-
-
   @doc """
   Generates a level-based numbering of the containers found in a course hierarchy.
 
@@ -32,7 +26,7 @@ defmodule Oli.Resources.Numbering do
     numberings
   end
 
-  # recursive helper to assemble the numberings
+  # recursive helper to assemble the full hierarchy numberings
   defp number_helper(container, by_id, level, level_counts, numberings) do
 
     Enum.filter(container.children, fn id -> Map.has_key?(by_id, id) end)
