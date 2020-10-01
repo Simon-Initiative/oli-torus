@@ -1,6 +1,7 @@
 defmodule Oli.Lti_1p3Test do
   use Oli.DataCase
 
+  alias Oli.TestHelpers
   alias Oli.Lti_1p3
 
   describe "lti 1.3 library" do
@@ -47,5 +48,25 @@ defmodule Oli.Lti_1p3Test do
 
       assert Lti_1p3.get_deployment(registration, deployment.deployment_id) == deployment
     end
+  end
+
+  describe "LtiParams cache" do
+
+    test "should cache new lti_params" do
+      lti_params = TestHelpers.Lti_1p3.all_default_claims()
+      {:ok, created} = Lti_1p3.cache_lti_params("some-key", lti_params)
+
+      assert created.data == lti_params
+    end
+
+    test "should fetch lti_params using key" do
+      lti_params = TestHelpers.Lti_1p3.all_default_claims()
+      {:ok, _created} = Lti_1p3.cache_lti_params("some-key", lti_params)
+
+      fetched = Lti_1p3.fetch_lti_params("some-key")
+      assert fetched != nil
+      assert fetched.data == lti_params
+    end
+
   end
 end

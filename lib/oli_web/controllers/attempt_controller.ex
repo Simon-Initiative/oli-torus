@@ -15,8 +15,8 @@ defmodule OliWeb.AttemptController do
 
   def submit_part(conn, %{"activity_attempt_guid" => activity_attempt_guid, "part_attempt_guid" => attempt_guid, "input" => input}) do
 
-    lti_params = Plug.Conn.get_session(conn, :lti_params)
-    context_id = lti_params["context_id"]
+    lti_params = conn.assigns.lti_params
+    context_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"]
 
     case Attempts.submit_part_evaluations(context_id, activity_attempt_guid, [%{attempt_guid: attempt_guid, input: input}]) do
       {:ok, evaluations} -> json conn, %{ "type" => "success", "evaluations" => evaluations}
@@ -55,8 +55,8 @@ defmodule OliWeb.AttemptController do
 
   def submit_activity(conn, %{"activity_attempt_guid" => activity_attempt_guid, "partInputs" => part_inputs}) do
 
-    lti_params = Plug.Conn.get_session(conn, :lti_params)
-    context_id = lti_params["context_id"]
+    lti_params = conn.assigns.lti_params
+    context_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"]
 
     parsed = Enum.map(part_inputs, fn %{"attemptGuid" => attempt_guid, "response" => input} ->
       %{attempt_guid: attempt_guid, input: %StudentInput{input: Map.get(input, "input")}} end)
@@ -69,8 +69,8 @@ defmodule OliWeb.AttemptController do
 
   def new_activity(conn, %{"activity_attempt_guid" => attempt_guid}) do
 
-    lti_params = Plug.Conn.get_session(conn, :lti_params)
-    context_id = lti_params["context_id"]
+    lti_params = conn.assigns.lti_params
+    context_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"]
 
     case Attempts.reset_activity(context_id, attempt_guid) do
       {:ok, {attempt_state, model}} -> json conn, %{ "type" => "success", "attemptState" => attempt_state, "model" => model}

@@ -8,12 +8,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "handles student with no section", %{conn: conn} do
       conn = conn
-      # TODO replace with lti_params cache key
-      |> put_session(:lti_params, %{
-        "context_id" => "some-context-id",
-        "context_title" => "some-title",
-        "https://purl.imsglobal.org/spec/lti/claim/roles" => ["http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"],
-      })
+      |> put_session(:lti_1p3_sub, "student-sub")
       |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~ "Your instructor has not configured this course section. Please check back soon."
@@ -21,12 +16,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "handles student with section", %{conn: conn, project: project, publication: publication} do
       conn = conn
-      # TODO replace with lti_params cache key
-      |> put_session(:lti_params, %{
-        "context_id" => "some-context-id",
-        "context_title" => "some-title",
-        "https://purl.imsglobal.org/spec/lti/claim/roles" => ["http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"],
-      })
+      |> put_session(:lti_1p3_sub, "student-sub")
       |> post(Routes.delivery_path(conn, :create_section, %{ project_id: project.id, publication_id: publication.id }))
       |> get(Routes.delivery_path(conn, :index))
 
@@ -35,12 +25,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "handles instructor with no linked account", %{conn: conn, user: _user} do
       conn = conn
-      # TODO replace with lti_params cache key
-      |> put_session(:lti_params, %{
-        "context_id" => "some-context-id",
-        "context_title" => "some-title",
-        "https://purl.imsglobal.org/spec/lti/claim/roles" => ["http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"],
-      })
+      |> put_session(:lti_1p3_sub, "instructor-sub")
       |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~ "<h3>Getting Started</h3>"
@@ -50,12 +35,7 @@ defmodule OliWeb.DeliveryControllerTest do
     test "handles instructor with no section", %{conn: conn, user: user} do
       {:ok, _user} = Accounts.update_user(user, %{author_id: 1})
       conn = conn
-      # TODO replace with lti_params cache key
-      |> put_session(:lti_params, %{
-        "context_id" => "some-context-id",
-        "context_title" => "some-title",
-        "https://purl.imsglobal.org/spec/lti/claim/roles" => ["http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"],
-      })
+      |> put_session(:lti_1p3_sub, "instructor-sub")
       |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~ "<h3>Select a Project</h3>"
@@ -64,12 +44,7 @@ defmodule OliWeb.DeliveryControllerTest do
     test "handles instructor with section", %{conn: conn, project: project, user: user, publication: publication} do
       {:ok, _user} = Accounts.update_user(user, %{author_id: 1})
       conn = conn
-      # TODO replace with lti_params cache key
-      |> put_session(:lti_params, %{
-        "context_id" => "some-context-id",
-        "context_title" => "some-title",
-        "https://purl.imsglobal.org/spec/lti/claim/roles" => ["http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"],
-      })
+      |> put_session(:lti_1p3_sub, "instructor-sub")
       |> post(Routes.delivery_path(conn, :create_section, %{ project_id: project.id, publication_id: publication.id }))
       |> get(Routes.delivery_path(conn, :index))
 
@@ -85,10 +60,31 @@ defmodule OliWeb.DeliveryControllerTest do
 
     %{ project: project, publication: publication } = project_fixture(author)
 
+    Oli.Lti_1p3.cache_lti_params("student-sub", %{
+      "sub" => "student-sub",
+      "exp" => Timex.now |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix,
+      "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+        "id" => "some-context-id",
+        "title" => "some-title",
+      },
+      "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+        "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner",
+      ],
+    })
+    Oli.Lti_1p3.cache_lti_params("instructor-sub", %{
+      "sub" => "instructor-sub",
+      "exp" => Timex.now |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix,
+      "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+        "id" => "some-context-id",
+        "title" => "some-title",
+      },
+      "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+        "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor",
+      ],
+    })
+
     conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
       |> put_session(:current_user_id, user.id)
-      # TODO replace with lti_params cache key
-      |> put_session(:lti_params, %{"context_id" => "some-context-id"})
 
     {:ok,
       conn: conn,

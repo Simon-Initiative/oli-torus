@@ -51,8 +51,8 @@ defmodule OliWeb.PageDeliveryController do
   # the appropriate section resource
   def link(conn, %{"revision_slug" => revision_slug}) do
 
-    lti_params = Plug.Conn.get_session(conn, :lti_params)
-    context_id = lti_params["context_id"]
+    lti_params = conn.assigns.lti_params
+    context_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"]
 
     redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
   end
@@ -141,8 +141,8 @@ defmodule OliWeb.PageDeliveryController do
 
     user = conn.assigns.current_user
 
-    lti_params = Plug.Conn.get_session(conn, :lti_params)
-    context_id = lti_params["context_id"]
+    lti_params = conn.assigns.lti_params
+    context_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"]
 
     if ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_learner)) do
 

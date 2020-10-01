@@ -4,11 +4,9 @@ defmodule OliWeb.DeliveryView do
   alias Oli.Lti_1p3.ContextRoles
 
   def get_context_id(conn) do
-    case Plug.Conn.get_session(conn, :lti_params) do
-      %{context_id: context_id} ->
-        context_id
-      _ ->
-        nil
+    case conn.assigns.lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"] do
+      nil -> nil
+      context_id -> context_id
     end
   end
 

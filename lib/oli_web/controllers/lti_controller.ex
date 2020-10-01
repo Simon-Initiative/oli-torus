@@ -111,13 +111,6 @@ defmodule OliWeb.LtiController do
         # sign current user in and redirect to home page
         conn
         |> put_session(:current_user_id, user.id)
-        # TODO - store all lti_params in a cache agent for later use
-        # |> put_session(:lti_params, lti_params)
-        |> put_session(:lti_params, %{
-          "context_id" => context_id,
-          "context_title" => context_title,
-          "https://purl.imsglobal.org/spec/lti/claim/roles" => lti_roles
-        })
         |> redirect(to: Routes.delivery_path(conn, :index))
 
         _ ->

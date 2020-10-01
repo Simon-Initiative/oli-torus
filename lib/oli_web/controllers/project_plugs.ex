@@ -28,22 +28,21 @@ defmodule OliWeb.ProjectPlugs do
   end
 
   def ensure_context_id_matches(conn, _) do
+    context_id = conn.assigns.lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"]
 
-    # TODO: Reneable after lti_params caching is implemented
+    # Verify that the context_id found as a parameter in the route
+    # matches the one found in the LTI launch from the session
+    case conn.params do
+      %{"context_id" => ^context_id} -> conn
+      _ -> signin_required(conn)
+    end
+  end
+
+  defp signin_required(conn) do
     conn
-
-    # lti_params = Plug.Conn.get_session(conn, :lti_params)
-    # context_id = lti_params["context_id"]
-
-    # # Verify that the context_id found as a parameter in the route
-    # # matches the one found in the LTI launch from the session
-    # case conn.params do
-    #   %{"context_id" => ^context_id} -> conn
-    #   _ -> conn
-    #     |> Phoenix.Controller.put_view(OliWeb.DeliveryView)
-    #     |> Phoenix.Controller.render("signin_required.html")
-    #     |> Plug.Conn.halt()
-    # end
+    |> Phoenix.Controller.put_view(OliWeb.DeliveryView)
+    |> Phoenix.Controller.render("signin_required.html")
+    |> Plug.Conn.halt()
   end
 
 end

@@ -155,12 +155,13 @@ defmodule Oli.Lti_1p3.LaunchValidation do
     end
   end
 
-  defp cache_launch_params(conn, _jwt_body) do
-    ## TODO: params exceeds cookie size limit 4096. Create a lti_params cache for later access using a unique key
-    # conn = conn
-    # |> Plug.Conn.put_session(:lti1p3_launch_params, conn.params)
-    # conn = conn
-    # |> Plug.Conn.put_session(:lti1p3_launch_params, jwt_body)
+  defp cache_launch_params(conn, jwt_body) do
+    # LTI 1.3 params are too big to store in the session cookie. Therefore, we must
+    # cache all lti_params key'd on the sub value in database for use in other views
+    Oli.Lti_1p3.cache_lti_params(jwt_body["sub"], jwt_body)
+
+    conn = conn
+    |> Plug.Conn.put_session(:lti_1p3_sub, jwt_body["sub"])
 
     {:ok, conn}
   end

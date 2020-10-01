@@ -48,6 +48,7 @@ defmodule OliWeb.Router do
   pipeline :delivery do
     plug Oli.Plugs.RemoveXFrameOptions
     plug Oli.Plugs.VerifyUser
+    plug Oli.Plugs.LoadLtiParams
     plug :put_root_layout, {OliWeb.LayoutView, "delivery.html"}
   end
 

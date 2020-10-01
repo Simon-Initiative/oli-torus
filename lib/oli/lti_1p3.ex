@@ -5,6 +5,7 @@ defmodule Oli.Lti_1p3 do
   alias Oli.Lti_1p3.Registration
   alias Oli.Lti_1p3.Deployment
   alias Oli.Lti_1p3.Jwk
+  alias Oli.Lti_1p3.LtiParams
 
   def create_new_registration(attrs) do
     %Registration{}
@@ -78,4 +79,30 @@ defmodule Oli.Lti_1p3 do
     |> Repo.insert_or_update
   end
 
+  @doc """
+  Caches LTI 1.3 params map using the given key. Assumes lti_params contains standard LTI fields
+  including "exp" for expiration date
+  ## Examples
+      iex> cache_lti_params(key, lti_params)
+      {:ok, %LtiParams{}}
+      iex> create_nonce(key, bad_params)
+      {:error, %Ecto.Changeset{}}
+  """
+  def cache_lti_params(key, lti_params) do
+    exp = Timex.from_unix(lti_params["exp"])
+    %LtiParams{}
+    |> LtiParams.changeset(%{key: key, data: lti_params, exp: exp})
+    |> Repo.insert()
+  end
+
+  @doc """
+  Gets a user's cached lti_params from the database using the given key.
+  Returns `nil` if the lti_params do not exist.
+  ## Examples
+      iex> fetch_lti_params("some-key")
+      %LtiParams{}
+      iex> fetch_lti_params("bad-key")
+      nil
+  """
+  def fetch_lti_params(key), do: Repo.get_by(LtiParams, key: key)
 end

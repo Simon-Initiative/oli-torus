@@ -8,9 +8,9 @@ defmodule OliWeb.DeliveryController do
 
   def index(conn, _params) do
     user = conn.assigns.current_user
-    lti_params = get_session(conn, :lti_params)
+    lti_params = conn.assigns.lti_params
 
-    context_id = lti_params["context_id"]
+    context_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"]
     section = Sections.get_section_by(context_id: context_id)
 
     lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
@@ -79,15 +79,15 @@ defmodule OliWeb.DeliveryController do
   end
 
   def create_section(conn, %{"publication_id" => publication_id}) do
-    lti_params = get_session(conn, :lti_params)
+    lti_params = conn.assigns.lti_params
     user = conn.assigns.current_user
     institution = Accounts.get_institution!(user.institution_id)
     publication = Publishing.get_publication!(publication_id)
 
     {:ok, %Section{id: section_id}} = Sections.create_section(%{
       time_zone: institution.timezone,
-      title: lti_params["context_title"],
-      context_id: lti_params["context_id"],
+      title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
+      context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
       institution_id: user.institution_id,
       project_id: publication.project_id,
       publication_id: publication_id,
