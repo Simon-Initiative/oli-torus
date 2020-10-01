@@ -112,11 +112,11 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   end
 
   defp validate_nonce(conn, jwt_body) do
-    if Oli.Lti_1p3.NonceCacheAgent.has(jwt_body["nonce"]) do
-      {:error, "Duplicate nonce"}
-    else
-      Oli.Lti_1p3.NonceCacheAgent.put(jwt_body["nonce"])
-      {:ok, conn}
+    case Oli.Lti_1p3.Nonces.create_nonce(%{value: jwt_body["nonce"]}) do
+      {:ok, _nonce} ->
+        {:ok, conn}
+      {:error, %{ errors: [ value: { _msg, [{:constraint, :unique} | _]}]}} ->
+        {:error, "Duplicate nonce"}
     end
   end
 
