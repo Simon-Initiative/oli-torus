@@ -319,6 +319,44 @@ defmodule Oli.Seeder do
     end
   end
 
+  def create_hierarchy(map, nodes) do
+
+    author = map.author
+    project = map.project
+    publication = map.publication
+    container_revision = map.container.revision
+    container_resource = map.container.resource
+
+    children = Enum.map(nodes, fn n -> create_hierarchy_helper(author, project, publication, n) end)
+    |> Enum.map(fn rev -> rev.resource_id end)
+
+    {:ok, container_revision} = Oli.Resources.update_revision(container_revision, %{children: children})
+
+    publish_resource(publication, container_resource, container_revision)
+
+    Map.put(map, :container, %{ resource: container_resource, revision: container_revision })
+
+  end
+
+  def create_hierarchy_helper(author, project, publication, node) do
+
+    created = Enum.map(node.children, fn node -> create_hierarchy_helper(author, project, publication, node) end)
+    children = Enum.map(created, fn rev -> rev.resource_id end)
+
+    {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
+
+    attrs = %{author_id: author.id, objectives: %{}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"), children: children, content: %{}, deleted: false, title: node.title, resource_id: resource.id}
+    {:ok, revision} = Oli.Resources.create_revision(attrs)
+
+    {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: resource.id}) |> Repo.insert
+    publish_resource(publication, resource, revision)
+
+    revision
+
+  end
+
+
+
   def add_page(map, attrs, container_tag \\ :container, tag) do
 
     author = map.author
