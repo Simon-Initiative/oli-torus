@@ -14,9 +14,9 @@ defmodule OliWeb.DeliveryController do
     section = Sections.get_section_by(context_id: context_id)
 
     lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
-    context_roles = ContextRoles.gets_roles_by_uris(lti_roles)
+    context_roles = ContextRoles.get_roles_by_uris(lti_roles)
 
-    is_student = ContextRoles.has_role?(context_roles, :context_learner)
+    is_student = ContextRoles.contains_role?(context_roles, ContextRoles.get_role(:context_learner))
     case {is_student, user.author, section} do
       {true, _author, nil} ->
         render(conn, "course_not_configured.html", context_id: context_id)
@@ -95,7 +95,7 @@ defmodule OliWeb.DeliveryController do
 
     # Enroll this user with their proper roles (instructor)
     lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
-    context_roles = ContextRoles.gets_roles_by_uris(lti_roles)
+    context_roles = ContextRoles.get_roles_by_uris(lti_roles)
     Sections.enroll(user.id, section_id, context_roles)
 
     conn

@@ -1,4 +1,5 @@
 defmodule Oli.TestHelpers.Lti_1p3 do
+  import Oli.TestHelpers
 
   alias Oli.Lti_1p3
   alias Oli.Lti_1p3.KeyGenerator
@@ -8,6 +9,8 @@ defmodule Oli.TestHelpers.Lti_1p3 do
           get_public_key: (any, any -> {any, any})
         }
   def generate_lti_stubs(args \\ %{}) do
+    institution = institution_fixture()
+    jwk = jwk_fixture()
     state_uuid = UUID.uuid4()
     %{
       claims: claims,
@@ -25,11 +28,12 @@ defmodule Oli.TestHelpers.Lti_1p3 do
         auth_token_url: "some auth_token_url",
         auth_login_url: "some auth_login_url",
         auth_server: "some auth_server",
-        tool_private_key: "some tool_private_key",
         kid: case args[:kid] do
           nil -> "some kid"
           kid -> kid
         end,
+        tool_jwk_id: jwk.id,
+        institution_id: institution.id,
       },
       deployment_id: "1",
       state: state_uuid,
@@ -64,14 +68,14 @@ defmodule Oli.TestHelpers.Lti_1p3 do
 
     # stub conn
     conn = Plug.Test.conn(:post, "/", %{"state" => state, "id_token" => token})
-      |> Plug.Test.init_test_session(%{lti1p3_state: lti1p3_state})
+      |> Plug.Test.init_test_session(%{state: lti1p3_state})
 
     # stub a get_public_key callback
     get_public_key = fn _registration, _kid ->
       {:ok, JOSE.JWK.from_pem(public_key)}
     end
 
-    %{conn: conn, get_public_key: get_public_key}
+    %{conn: conn, get_public_key: get_public_key, institution: institution, jwk: jwk, state_uuid: state_uuid}
   end
 
   def all_default_claims() do

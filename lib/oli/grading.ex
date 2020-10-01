@@ -81,7 +81,7 @@ defmodule Oli.Grading do
 
     # get students enrolled in the section, filter by role: student
     students = Sections.list_enrollments(section.context_id)
-      |> Enum.filter(fn e -> ContextRoles.has_role?(e.context_roles, :context_learner) end)
+      |> Enum.filter(fn e -> ContextRoles.contains_role?(e.context_roles, ContextRoles.get_role(:context_learner)) end)
       |> Enum.map(fn e -> e.user end)
 
     # create a map of all resource accesses, keyed off resource id

@@ -24,7 +24,7 @@ defmodule Oli.Seeder do
     {:ok, _} = AuthorProject.changeset(%AuthorProject{}, %{author_id: author.id, project_id: project.id, project_role_id: ProjectRole.role_id.owner}) |> Repo.insert
     {:ok, _} = AuthorProject.changeset(%AuthorProject{}, %{author_id: author2.id, project_id: project.id, project_role_id: ProjectRole.role_id.owner}) |> Repo.insert
 
-    {:ok, institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
+    {:ok, institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", author_id: author.id}) |> Repo.insert
 
     # A single container resource with a mapped revision
     {:ok, container_resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
@@ -255,9 +255,6 @@ defmodule Oli.Seeder do
         last_name: "Stark",
         user_id: "2u9dfh7979hfd",
         user_image: "none",
-        platform_roles: [
-          Oli.Lti_1p3.PlatformRoles.get_role(:system_administrator)
-        ],
         institution_id: institution.id
       }, attrs)
       |> Repo.insert
@@ -282,7 +279,7 @@ defmodule Oli.Seeder do
 
     # Enroll users
     user_tags
-    |> Enum.each(fn user_tag -> Sections.enroll(map[user_tag].id, map[section_tag].id, 2) end)
+    |> Enum.each(fn user_tag -> Sections.enroll(map[user_tag].id, map[section_tag].id, [Oli.Lti_1p3.ContextRoles.get_role(:context_learner)]) end)
 
     map
   end

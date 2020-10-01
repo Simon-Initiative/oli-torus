@@ -39,13 +39,12 @@ defmodule Oli.AccountsTest do
   describe "users" do
     alias Oli.Accounts.User
 
-    @valid_attrs %{email: "some email", first_name: "some first_name", last_name: "some last_name", user_id: "some user_id", user_image: "some user_image", roles: "some roles"}
-    @update_attrs %{email: "some updated email", first_name: "some updated first_name", last_name: "some updated last_name", user_id: "some updated user_id", user_image: "some updated user_image", roles: "some updated roles"}
-    @invalid_attrs %{email: nil, first_name: nil, last_name: nil, user_id: nil, user_image: nil, roles: nil}
+    @valid_attrs %{email: "some email", first_name: "some first_name", last_name: "some last_name", user_id: "some user_id", user_image: "some user_image"}
+    @update_attrs %{email: "some updated email", first_name: "some updated first_name", last_name: "some updated last_name", user_id: "some updated user_id", user_image: "some updated user_image"}
+    @invalid_attrs %{email: nil, first_name: nil, last_name: nil, user_id: nil, user_image: nil}
 
     setup do
       author = author_fixture()
-      institution = institution_fixture(%{ author_id: author.id })
       valid_attrs = @valid_attrs
         |> Map.put(:author_id, author.id)
       {:ok, user} = valid_attrs |> Accounts.create_user()
@@ -64,7 +63,6 @@ defmodule Oli.AccountsTest do
       assert user.last_name == "some last_name"
       assert user.user_id == "some user_id"
       assert user.user_image == "some user_image"
-      assert user.roles == "some roles"
     end
 
     test "create_user/1 with invalid data returns error changeset" do
@@ -78,7 +76,6 @@ defmodule Oli.AccountsTest do
       assert user.last_name == "some updated last_name"
       assert user.user_id == "some updated user_id"
       assert user.user_image == "some updated user_image"
-      assert user.roles == "some updated roles"
     end
 
     test "update_user/2 with invalid data returns error changeset", %{user: user} do
@@ -99,7 +96,7 @@ defmodule Oli.AccountsTest do
   describe "institutions" do
     alias Oli.Accounts.Institution
 
-    @valid_attrs %{country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", name: "some name", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret"}
+    @valid_attrs %{country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", name: "some name", timezone: "some timezone"}
     @update_attrs %{country_code: "some updated country_code", institution_email: "some updated institution_email", institution_url: "some updated institution_url", name: "some updated name", timezone: "some updated timezone"}
     @invalid_attrs %{country_code: nil, institution_email: nil, institution_url: nil, name: nil, timezone: nil}
 
@@ -111,8 +108,9 @@ defmodule Oli.AccountsTest do
       {:ok, %{institution: institution, author: author, valid_attrs: valid_attrs}}
     end
 
-    test "list_institutions/0 returns all institutions", %{institution: institution} do
-      assert Accounts.list_institutions() == [institution]
+    test "list_institutions/0 returns all institutions", %{institution: _institution} do
+      # there should be 2 institutions. One created in the seed.exs and one created here
+      assert Accounts.list_institutions() |> Enum.count == 2
     end
 
     test "get_institution!/1 returns the institution with given id", %{institution: institution} do

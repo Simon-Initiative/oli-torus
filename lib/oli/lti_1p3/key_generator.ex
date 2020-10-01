@@ -3,11 +3,10 @@ defmodule Oli.Lti_1p3.KeyGenerator do
   @chars "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" |> String.split("", trim: true)
 
   @doc """
-  Create a random passphrase of size 256
+  Create a random passphrase of size given (defaults to 256)
   """
-  def passphrase do
-    # Enum.map((1..256), fn _i -> Enum.random(@chars) end)
-    Enum.map((1..128), fn _i -> Enum.random(@chars) end)
+  def passphrase(len \\ 256) do
+    Enum.map((1..len), fn _i -> Enum.random(@chars) end)
       |> Enum.join("")
   end
 

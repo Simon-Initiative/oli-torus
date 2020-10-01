@@ -61,8 +61,6 @@
               <td><%= institution.institution_email %></td>
               <td><%= institution.institution_url %></td>
               <td><%= institution.timezone %></td>
-              <td><%= institution.consumer_key %></td>
-              <td><%= institution.shared_secret %></td>
 
               <td>
                 <span><%= link "Show", to: Routes.institution_path(@conn, :show, institution), class: "btn btn-xs btn-outline-primary my-2" %></span>

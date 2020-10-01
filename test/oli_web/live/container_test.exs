@@ -1,6 +1,5 @@
 defmodule OliWeb.ContainerLiveTest do
   use OliWeb.ConnCase
-  alias Oli.Accounts
   alias Oli.Seeder
 
   import Plug.Conn
@@ -41,19 +40,7 @@ defmodule OliWeb.ContainerLiveTest do
   end
 
   defp setup_session(%{conn: conn}) do
-    author = author_fixture()
-    institution = institution_fixture(%{ author_id: author.id })
-    lti_params = build_lti_request(url_from_conn(conn), "some-secret")
-
-    {:ok, user } = Accounts.insert_or_update_user(%{
-      email: lti_params["lis_person_contact_email_primary"],
-      first_name: lti_params["lis_person_name_given"],
-      last_name: lti_params["lis_person_name_family"],
-      user_id: lti_params["user_id"],
-      user_image: lti_params["user_image"],
-      roles: lti_params["roles"],
-      institution_id: institution.id,
-    })
+    user = user_fixture()
 
     map = Seeder.base_project_with_resource2()
 
@@ -66,14 +53,14 @@ defmodule OliWeb.ContainerLiveTest do
 
     conn = Plug.Test.init_test_session(conn, current_author_id: map.author.id)
       |> put_session(:current_user_id, user.id)
-      |> put_session(:lti_params, lti_params)
+      # TODO replace with lti_params cache key
+      |> put_session(:lti_params, %{"context_id" => section.context_id})
 
     {:ok,
       conn: conn,
       map: map,
       author: map.author,
       institution: map.institution,
-      lti_params: lti_params,
       user: user,
       project: map.project,
       publication: map.publication,

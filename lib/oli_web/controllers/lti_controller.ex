@@ -81,7 +81,7 @@ defmodule OliWeb.LtiController do
       last_name: lti_params["family_name"],
       user_image: lti_params["picture"],
       institution_id: institution.id,
-      lms_system_roles: lti_roles |> PlatformRoles.gets_roles_by_uris(),
+      lms_system_roles: lti_roles |> PlatformRoles.get_roles_by_uris(),
     }) do
       {:ok, user} ->
         # TODO: context is considered optional according to IMS, this statement should safeguard against that case
@@ -94,7 +94,7 @@ defmodule OliWeb.LtiController do
         with {:ok, section} <- get_existing_section(context_id)
         do
           # transform lti_roles to a list only containing valid context roles (exclude all system and institution roles)
-          context_roles = ContextRoles.gets_roles_by_uris(lti_roles)
+          context_roles = ContextRoles.get_roles_by_uris(lti_roles)
 
           enroll_user(user.id, section.id, context_roles)
           update_section_details(context_title, section)

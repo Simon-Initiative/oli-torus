@@ -144,9 +144,10 @@ defmodule OliWeb.PageDeliveryController do
     lti_params = Plug.Conn.get_session(conn, :lti_params)
     context_id = lti_params["context_id"]
 
-    if ContextRoles.has_role?(user, context_id, :context_learner) do
+    if ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_learner)) do
 
       case Attempts.submit_graded_page(context_id, attempt_guid) do
+        # TODO: fix "this function call will not succeed"
         {:ok, _} -> after_finalized(conn, context_id, revision_slug, user)
         {:error, {:not_all_answered}} ->
           put_flash(conn, :error, "You have not answered all questions")
@@ -197,7 +198,7 @@ defmodule OliWeb.PageDeliveryController do
   def export_gradebook(conn, %{"context_id" => context_id}) do
     user = conn.assigns.current_user
 
-    if ContextRoles.has_role?(user, context_id, :context_instructor) do
+    if ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_instructor)) do
       section = Sections.get_section_by(context_id: context_id)
 
       gradebook_csv = Grading.export_csv(section) |> Enum.join("")

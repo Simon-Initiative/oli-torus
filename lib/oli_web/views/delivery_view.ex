@@ -14,12 +14,12 @@ defmodule OliWeb.DeliveryView do
 
   def user_role_is_student(conn, user) do
     context_id = get_context_id(conn)
-    ContextRoles.has_role?(user, context_id, :context_learner)
+    ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_learner))
   end
 
   def user_role_text(conn, user) do
     context_id = get_context_id(conn)
-    if ContextRoles.has_role?(user, context_id, :context_learner) do
+    if ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_learner)) do
       "Student"
     else
       "Instructor"
@@ -28,7 +28,7 @@ defmodule OliWeb.DeliveryView do
 
   def user_role_color(conn, user) do
     context_id = get_context_id(conn)
-    if ContextRoles.has_role?(user, context_id, :context_learner) do
+    if ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_learner)) do
       "#3498db"
     else
       "#2ecc71"

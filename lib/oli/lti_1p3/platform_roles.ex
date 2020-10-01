@@ -165,25 +165,35 @@ defmodule Oli.Lti_1p3.PlatformRoles do
   @doc """
   Returns all valid roles from a list of uris
   """
-  def gets_roles_by_uris(uris) do
+  @spec get_roles_by_uris([String.t()]) :: [%PlatformRole{}]
+  def get_roles_by_uris(uris) do
     # create a list only containing valid roles
     uris
       |> Enum.map(&(get_role_by_uri(&1)))
       |> Enum.filter(&(&1 != nil))
   end
 
+  @doc """
+  Returns true if a list of roles contains a given role
+  """
+  @spec contains_role?([PlatformRole.t()], PlatformRole.t()) :: boolean()
+  def contains_role?(roles, role) when is_list(roles) do
+    Enum.any?(roles, fn r -> r.uri == role.uri end)
+  end
 
   @doc """
   Returns true if a user has a given role
   """
+  @spec has_role?(Lti_1p3_User.t(), PlatformRole.t()) :: boolean()
   def has_role?(user, role) do
     roles = Lti_1p3_User.get_platform_roles(user)
-    Enum.any?(roles, fn r -> r.uri == get_role(role).uri end)
+    Enum.any?(roles, fn r -> r.uri == role.uri end)
   end
 
   @doc """
   Returns true if a user has any of the given roles
   """
+  @spec has_roles?(Lti_1p3_User.t(), [PlatformRole.t()], :any) :: boolean()
   def has_roles?(user, roles, :any) when is_list(roles) do
     user_roles_map = get_user_roles_map(user)
     Enum.any?(roles, fn r -> user_roles_map[r.uri] == true end)
@@ -192,6 +202,7 @@ defmodule Oli.Lti_1p3.PlatformRoles do
   @doc """
   Returns true if a user has all of the given roles
   """
+  @spec has_roles?(Lti_1p3_User.t(), [PlatformRole.t()], :all) :: boolean()
   def has_roles?(user, roles, :all) when is_list(roles) do
     user_roles_map = get_user_roles_map(user)
     Enum.all?(roles, fn r -> user_roles_map[r.uri] == true end)

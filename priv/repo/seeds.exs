@@ -118,9 +118,6 @@ if !Oli.Repo.get_by(Oli.Accounts.Institution, id: 1) do
     institution_url: "oli.cmu.edu",
     name: "Open Learning Initiative",
     timezone: "US/Eastern",
-    # TODO change these to env configs
-    consumer_key: "0527416a-29ec-4537-b560-6897286a33ec",
-    shared_secret: "4FE4F15E33AACCD85D7E198055B2FE83",
     author_id: 1,
   })
 end
@@ -180,7 +177,7 @@ if Application.fetch_env!(:oli, :env) == :dev do
   })
 
   Oli.Lti_1p3.create_new_deployment(%{
-    deployment_id: "41:4dde05e8ca1973bcca9bffc13e1548820eee93a3",
+    deployment_id: "43:4dde05e8ca1973bcca9bffc13e1548820eee93a3",
     registration_id: registration.id,
   })
 

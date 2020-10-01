@@ -8,11 +8,13 @@ defmodule Oli.Delivery.Sections do
 
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.Enrollment
+  alias Oli.Lti_1p3.ContextRole
 
   @doc """
   Enrolls a user in a course section.
 
   """
+  @spec enroll(number(), number(), [%ContextRole{}]) :: {:ok, %Enrollment{}}
   def enroll(user_id, section_id, context_roles) do
 
     case Repo.one(from(e in Enrollment, where: e.user_id == ^user_id and e.section_id == ^section_id, select: e)) do
@@ -23,7 +25,8 @@ defmodule Oli.Delivery.Sections do
       # Enrollment exists, we are potentially just updating it
       e -> e
     end
-    |> Enrollment.changeset(%{section_id: section_id, context_roles: context_roles})
+    |> Enrollment.changeset(%{section_id: section_id})
+    |> Ecto.Changeset.put_embed(:context_roles, context_roles)
     |> Repo.insert_or_update
   end
 
