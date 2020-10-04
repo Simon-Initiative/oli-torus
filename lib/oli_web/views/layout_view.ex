@@ -4,6 +4,11 @@ defmodule OliWeb.LayoutView do
   import OliWeb.DeliveryView, only: [user_role: 1, user_role_text: 1, user_role_color: 1, account_linked?: 1]
   alias Oli.Authoring
   alias Oli.Accounts.AuthorPreferences
+  alias Oli.Publishing.AuthoringResolver
+
+  def root_container(project_slug) do
+    AuthoringResolver.root_container(project_slug)
+  end
 
   def get_title(assigns) do
     live_title_tag assigns[:page_title] || assigns[:title] || "Open Learning Initiative", suffix: ""

@@ -70,7 +70,7 @@ defmodule Oli.Publishing.DeliveryResolver do
   end
 
   @impl Resolver
-  def root_resource(context_id) do
+  def root_container(context_id) do
     fn ->
       Repo.one(from s in Section,
         join: p in Publication, on: p.id == s.publication_id,

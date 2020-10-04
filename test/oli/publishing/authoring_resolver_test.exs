@@ -119,10 +119,10 @@ defmodule Oli.Publishing.AuthoringResolverTest do
 
     end
 
-    test "root_resource/1 resolves the root revision", %{ container: %{ revision: container_revision }, project: project } do
+    test "root_container/1 resolves the root container revision", %{ container: %{ revision: container_revision }, project: project } do
 
-      assert AuthoringResolver.root_resource(project.slug) == container_revision
-      assert AuthoringResolver.root_resource("invalid") == nil
+      assert AuthoringResolver.root_container(project.slug) == container_revision
+      assert AuthoringResolver.root_container("invalid") == nil
 
     end
 

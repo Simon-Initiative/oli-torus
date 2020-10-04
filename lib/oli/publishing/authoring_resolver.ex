@@ -77,7 +77,7 @@ defmodule Oli.Publishing.AuthoringResolver do
   end
 
   @impl Resolver
-  def root_resource(project_slug) do
+  def root_container(project_slug) do
 
     fn ->
       Repo.one(from m in PublishedResource,

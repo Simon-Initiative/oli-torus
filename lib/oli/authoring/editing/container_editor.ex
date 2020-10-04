@@ -58,7 +58,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   Lists all top level resource revisions contained in a container.
   """
   def list_all_pages(%Project{} = project) do
-    AuthoringResolver.root_resource(project.slug)
+    AuthoringResolver.root_container(project.slug)
     |> list_all_pages(project)
   end
 
@@ -75,7 +75,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     %Author{} = author,
     %Project{} = project
   ) do
-    AuthoringResolver.root_resource(project.slug)
+    AuthoringResolver.root_container(project.slug)
     |> add_new(attrs, author, project)
   end
 
@@ -126,7 +126,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   Removes a child from a container, and marks that child as deleted.
   """
   def remove_child(project, author, revision_slug) do
-    AuthoringResolver.root_resource(project.slug)
+    AuthoringResolver.root_container(project.slug)
     |> remove_child(project, author, revision_slug)
   end
 
@@ -192,7 +192,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   children.
   """
   def reorder_child(project, author, source, index) do
-    AuthoringResolver.root_resource(project.slug)
+    AuthoringResolver.root_container(project.slug)
     |> reorder_child(project, author, source, index)
   end
 

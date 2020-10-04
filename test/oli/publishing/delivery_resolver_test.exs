@@ -158,10 +158,10 @@ defmodule Oli.Publishing.DeliveryResolverTest do
 
     end
 
-    test "root_resource/1 resolves the root revision", %{ container: %{ revision: container_revision } } do
+    test "root_container/1 resolves the root container revision", %{ container: %{ revision: container_revision } } do
 
-      assert DeliveryResolver.root_resource("1") == container_revision
-      assert DeliveryResolver.root_resource("2") == container_revision
+      assert DeliveryResolver.root_container("1") == container_revision
+      assert DeliveryResolver.root_container("2") == container_revision
 
     end
 

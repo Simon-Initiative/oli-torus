@@ -36,7 +36,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
 
       assert revision.title == "New Page"
 
-      container = AuthoringResolver.root_resource(project.slug)
+      container = AuthoringResolver.root_container(project.slug)
 
       # Ensure that the edit has inserted the new page reference
       # first in the collection
@@ -50,7 +50,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       {:ok, _} = ContainerEditor.remove_child(project, author, revision1.slug)
 
       # Verify we have removed it from the container
-      container = AuthoringResolver.root_resource(project.slug)
+      container = AuthoringResolver.root_container(project.slug)
       assert length(container.children) == 1
       assert Enum.find_index(container.children, fn c -> revision1.resource_id == c end) == nil
 
@@ -99,22 +99,22 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       # we now have three pages to reorder with:
 
       {:ok, _} = ContainerEditor.reorder_child(project, author, revision.slug, 2)
-      container = AuthoringResolver.root_resource(project.slug)
+      container = AuthoringResolver.root_container(project.slug)
       assert length(container.children) == 3
       assert Enum.find_index(container.children, fn c -> revision.resource_id == c end) == 2
 
       {:ok, _} = ContainerEditor.reorder_child(project, author, revision.slug, 3)
-      container = AuthoringResolver.root_resource(project.slug)
+      container = AuthoringResolver.root_container(project.slug)
       assert length(container.children) == 3
       assert Enum.find_index(container.children, fn c -> revision.resource_id == c end) == 2
 
       {:ok, _} = ContainerEditor.reorder_child(project, author, revision.slug, 100)
-      container = AuthoringResolver.root_resource(project.slug)
+      container = AuthoringResolver.root_container(project.slug)
       assert length(container.children) == 3
       assert Enum.find_index(container.children, fn c -> revision.resource_id == c end) == 2
 
       {:ok, _} = ContainerEditor.reorder_child(project, author, revision.slug, 0)
-      container = AuthoringResolver.root_resource(project.slug)
+      container = AuthoringResolver.root_container(project.slug)
       assert length(container.children) == 3
       assert Enum.find_index(container.children, fn c -> revision.resource_id == c end) == 0
 

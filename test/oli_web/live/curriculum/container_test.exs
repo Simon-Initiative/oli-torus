@@ -2,6 +2,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
   use OliWeb.ConnCase
   alias Oli.Accounts
   alias Oli.Seeder
+  alias Oli.Publishing.AuthoringResolver
 
   import Plug.Conn
   import Phoenix.ConnTest
@@ -12,7 +13,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     setup [:setup_session]
 
     test "disconnected and connected mount", %{conn: conn, project: project, map: map} do
-      conn = get(conn, "/project/#{project.slug}/curriculum")
+      conn = get(conn, "/project/#{project.slug}/curriculum/#{AuthoringResolver.root_container(project.slug).slug}")
 
       {:ok, view, _} = live(conn)
 
