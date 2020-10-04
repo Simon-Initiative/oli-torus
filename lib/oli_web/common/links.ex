@@ -12,7 +12,7 @@ defmodule OliWeb.Common.Links do
           nil -> revision.title
           parent_page -> link revision.title, to: Routes.resource_path(OliWeb.Endpoint, :edit, project, parent_page.slug)
         end
-      "container" -> link revision.title, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project.slug)
+      "container" -> link revision.title, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project.slug, revision.slug)
     end
 
   end
