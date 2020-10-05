@@ -68,12 +68,12 @@
 1. Install server and client dependencies:
     ```
     $ mix deps.get
-    $ cd assets && npm install
+    $ cd assets && yarn
     ```
 
 1. Create database
     ```
-    $ mix ecto.create
+    $ cd ../ && mix ecto.create
     ```
 
 1. Run migration to create schema
