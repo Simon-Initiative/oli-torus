@@ -6,8 +6,8 @@ defmodule OliWeb.LayoutView do
   alias Oli.Accounts.AuthorPreferences
   alias Oli.Publishing.AuthoringResolver
 
-  def root_container(project_slug) do
-    AuthoringResolver.root_container(project_slug)
+  def root_container_slug(project_slug) do
+    AuthoringResolver.root_container(project_slug).slug
   end
 
   def get_title(assigns) do

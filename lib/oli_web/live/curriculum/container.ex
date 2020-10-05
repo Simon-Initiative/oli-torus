@@ -1,11 +1,7 @@
 defmodule OliWeb.Curriculum.Container do
 
   @moduledoc """
-  LiveView implementation of a container editor. Given that we only
-  support one fixed top-level container this view ultimately is the
-  entire Curriculum editor.  At some point in the future this implementation
-  can be generalized a bit further to allow it to operate as an editor
-  for any container - not just the root container.
+  LiveView implementation of a container editor.
   """
 
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
@@ -26,17 +22,14 @@ defmodule OliWeb.Curriculum.Container do
   alias Phoenix.PubSub
 
   def mount(%{"project_id" => project_id, "container_slug" => container_slug}, %{"current_author_id" => author_id}, socket) do
-
     author = Repo.get(Author, author_id)
     project = Course.get_project_by_slug(project_id)
     pages = ContainerEditor.list_all_pages(project)
 
-    # root_resource_revision
-    # take the container slug
-    container_revision = AuthoringResolver.from_revision_slug(project.slug, container_slug)
+    container = AuthoringResolver.from_revision_slug(project.slug, container_slug)
     {:ok, rollup} = Rollup.new(pages, project.slug)
 
-    subscriptions = subscribe(container_revision, pages, rollup, project.slug)
+    subscriptions = subscribe(container, pages, rollup, project.slug)
 
     {:ok, assign(socket,
       pages: pages,
@@ -44,7 +37,7 @@ defmodule OliWeb.Curriculum.Container do
       breadcrumbs: [{"Curriculum", nil}],
       rollup: rollup,
       changeset: Resources.change_revision(%Revision{}),
-      container_revision: container_revision,
+      container: container,
       project: project,
       subscriptions: subscriptions,
       author: author,
@@ -101,12 +94,12 @@ defmodule OliWeb.Curriculum.Container do
   end
 
   # spin up subscriptions for the container and for all of its pages, activities and attached objectives
-  defp subscribe(container_revision, pages, %Rollup{activity_map: activity_map, objective_map: objective_map}, project_slug) do
+  defp subscribe(container, pages, %Rollup{activity_map: activity_map, objective_map: objective_map}, project_slug) do
 
     activity_ids = Enum.map(activity_map, fn {id, _} -> id end)
     objective_ids = Enum.map(objective_map, fn {id, _} -> id end)
 
-    ids = [container_revision.resource_id] ++ Enum.map(pages, fn p -> p.resource_id end) ++ activity_ids ++ objective_ids
+    ids = [container.resource_id] ++ Enum.map(pages, fn p -> p.resource_id end) ++ activity_ids ++ objective_ids
     Enum.each(ids, fn id -> PubSub.subscribe(Oli.PubSub, "resource:" <> Integer.to_string(id) <> ":project:" <> project_slug) end)
     PubSub.subscribe(Oli.PubSub, "new_resource:resource_type:" <> Integer.to_string(Oli.Resources.ResourceType.get_id_by_type("objective")) <> ":project:" <> project_slug)
 
@@ -288,7 +281,7 @@ defmodule OliWeb.Curriculum.Container do
       s -> Enum.find(pages, fn r -> r.resource_id == s.resource_id end)
     end
 
-    assign(socket, selected: selected, container_revision: revision, pages: pages, rollup: rollup)
+    assign(socket, selected: selected, container: revision, pages: pages, rollup: rollup)
 
   end
 
@@ -305,7 +298,7 @@ defmodule OliWeb.Curriculum.Container do
 
     # redo all subscriptions
     unsubscribe(socket.assigns.subscriptions, socket.assigns.project.slug)
-    subscriptions = subscribe(socket.assigns.container_revision, socket.assigns.pages, socket.assigns.rollup, socket.assigns.project.slug)
+    subscriptions = subscribe(socket.assigns.container, socket.assigns.pages, socket.assigns.rollup, socket.assigns.project.slug)
 
     {:noreply, assign(socket, subscriptions: subscriptions)}
   end
