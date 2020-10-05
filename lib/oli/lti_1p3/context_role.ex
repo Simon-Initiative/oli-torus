@@ -2,8 +2,7 @@ defmodule Oli.Lti_1p3.ContextRole do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @primary_key false
-  embedded_schema do
+  schema "lti_1p3_context_roles" do
     field :uri, :string
   end
 
@@ -12,6 +11,7 @@ defmodule Oli.Lti_1p3.ContextRole do
     context_role
     |> cast(attrs, [:uri])
     |> validate_required([:uri])
+    |> unique_constraint(:uri)
   end
 
 

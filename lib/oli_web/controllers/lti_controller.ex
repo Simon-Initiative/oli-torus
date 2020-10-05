@@ -89,7 +89,6 @@ defmodule OliWeb.LtiController do
         %{"id" => context_id} = lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]
         %{"title" => context_title} = lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]
 
-
         # Update section specifics - if one exists. Enroll the user and also update the section details
         with {:ok, section} <- get_existing_section(context_id)
         do
@@ -121,7 +120,6 @@ defmodule OliWeb.LtiController do
   # If a course section exists for the context_id, ensure that
   # this user has an enrollment in this section
   defp enroll_user(user_id, section_id, context_roles) do
-
     Sections.enroll(user_id, section_id, context_roles)
   end
 

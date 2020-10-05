@@ -2,8 +2,7 @@ defmodule Oli.Lti_1p3.PlatformRole do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @primary_key false
-  embedded_schema do
+  schema "lti_1p3_platform_roles" do
     field :uri, :string
   end
 
@@ -12,6 +11,7 @@ defmodule Oli.Lti_1p3.PlatformRole do
     platform_role
     |> cast(attrs, [:uri])
     |> validate_required([:uri])
+    |> unique_constraint(:uri)
   end
 
 end

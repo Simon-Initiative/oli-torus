@@ -34,6 +34,18 @@ defmodule Oli.Repo.Migrations.AddLti13RegistrationTable do
       timestamps(type: :timestamptz)
     end
 
+    create table(:lti_1p3_platform_roles) do
+      add :uri, :string
+    end
+
+    create unique_index(:lti_1p3_platform_roles, [:uri])
+
+    create table(:lti_1p3_context_roles) do
+      add :uri, :string
+    end
+
+    create unique_index(:lti_1p3_context_roles, [:uri])
+
     create table(:lti_1p3_params) do
       add :key, :string
       add :data, :map

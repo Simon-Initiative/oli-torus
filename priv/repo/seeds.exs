@@ -122,6 +122,16 @@ if !Oli.Repo.get_by(Oli.Accounts.Institution, id: 1) do
   })
 end
 
+# create lti_1p3 platform roles
+if !Oli.Repo.get_by(Oli.Lti_1p3.PlatformRole, id: 1) do
+  Oli.Repo.insert_all(Oli.Lti_1p3.PlatformRole, Oli.Lti_1p3.PlatformRoles.list_roles())
+end
+
+# create lti_1p3 context roles
+if !Oli.Repo.get_by(Oli.Lti_1p3.ContextRole, id: 1) do
+  Oli.Repo.insert_all(Oli.Lti_1p3.ContextRole, Oli.Lti_1p3.ContextRoles.list_roles())
+end
+
 # only seed with sample data if in development mode
 if Application.fetch_env!(:oli, :env) == :dev do
   if !Oli.Repo.get_by(Oli.Accounts.Author, email: "test@oli.cmu.edu") do
