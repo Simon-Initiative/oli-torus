@@ -17,16 +17,16 @@ defmodule Oli.Delivery.Sections do
   @spec enroll(number(), number(), [%ContextRole{}]) :: {:ok, %Enrollment{}}
   def enroll(user_id, section_id, context_roles) do
 
-    case Repo.one(from(e in Enrollment, where: e.user_id == ^user_id and e.section_id == ^section_id, select: e)) do
+    case Repo.one(from(e in Enrollment, preload: [:context_roles], where: e.user_id == ^user_id and e.section_id == ^section_id, select: e)) do
 
       # Enrollment doesn't exist, we are creating it
-      nil  -> %Enrollment{user_id: user_id, section_id: section_id, context_roles: context_roles}
+      nil  -> %Enrollment{user_id: user_id, section_id: section_id}
 
       # Enrollment exists, we are potentially just updating it
       e -> e
     end
     |> Enrollment.changeset(%{section_id: section_id})
-    |> Ecto.Changeset.put_embed(:context_roles, context_roles)
+    |> Ecto.Changeset.put_assoc(:context_roles, context_roles)
     |> Repo.insert_or_update
   end
 
@@ -55,7 +55,7 @@ defmodule Oli.Delivery.Sections do
       e in Enrollment,
       join: s in Section, on: e.section_id == s.id,
       where: s.context_id == ^context_id,
-      preload: [:user],
+      preload: [:user, :context_roles],
       select: e)
     Repo.all(query)
   end

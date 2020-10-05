@@ -13,7 +13,7 @@ defmodule Oli.Accounts.User do
     belongs_to :author, Oli.Accounts.Author
     belongs_to :institution, Oli.Accounts.Institution
     has_many :enrollments, Oli.Delivery.Sections.Enrollment
-    embeds_many :platform_roles, Oli.Lti_1p3.PlatformRole, on_replace: :delete
+    many_to_many :platform_roles, Oli.Lti_1p3.PlatformRole, join_through: "users_platform_roles", on_replace: :delete
 
     timestamps(type: :utc_datetime)
   end
@@ -32,17 +32,21 @@ defimpl Oli.Lti_1p3.Lti_1p3_User, for: Oli.Accounts.User do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.Enrollment
 
-  def get_platform_roles(user), do: user.platform_roles
+  def get_platform_roles(user) do
+    user
+    |> preload([:platform_roles])
+    |> select([u], u.platform_roles)
+  end
   def get_context_roles(user, context_id) do
     user_id = user.id
-    query = from e in Enrollment,
+    query = from e in Enrollment, preload: [:context_roles],
       join: s in Section, on: e.section_id == s.id,
       where: e.user_id == ^user_id and s.context_id == ^context_id,
-      select: e.context_roles
+      select: e
 
     case Repo.one query do
       nil -> []
-      context_roles -> context_roles
+      enrollment -> enrollment.context_roles
     end
   end
 end

@@ -1,7 +1,38 @@
 defmodule Oli.Repo.Migrations.AddLti13RegistrationTable do
   use Ecto.Migration
 
+  # def up do
+  #   alter table(:enrollments) do
+  #     # modify :user_id, references(:users), primary_key: false
+  #     # modify :section_id, references(:sections), primary_key: false
+
+  #     # flush()
+  #     drop(constraint(:enrollments, :index_user_section))
+  #     create index(:enrollments, [:user_id, :section_id])
+  #     # create unique_index(:enrollments, [:user_id, :section_id], name: :index_user_section)
+
+  #     modify :id, :integer, primary_key: true
+  #   end
+  # end
+
+  # def down do
+  #   alter table(:enrollments) do
+  #     modify :id, :integer, primary_key: false
+
+  #     flush()
+
+  #     modify :user_id, references(:users), primary_key: true
+  #     modify :section_id, references(:sections), primary_key: true
+  #   end
+  # end
+
   def change do
+    drop(constraint(:enrollments, "enrollments_pkey"))
+
+    alter table(:enrollments) do
+      modify :id, :integer, primary_key: true
+    end
+
     create table(:lti_1p3_jwks) do
       add :pem, :text
       add :typ, :string
@@ -56,6 +87,16 @@ defmodule Oli.Repo.Migrations.AddLti13RegistrationTable do
 
     create unique_index(:lti_1p3_params, [:key])
 
+    create table(:users_platform_roles, primary_key: false) do
+      add :user_id, references(:users)
+      add :platform_role_id, references(:lti_1p3_platform_roles)
+    end
+
+    create table(:enrollments_context_roles, primary_key: false) do
+      add :enrollment_id, references(:enrollments)
+      add :context_role_id, references(:lti_1p3_context_roles)
+    end
+
     alter table(:sections) do
       remove :lti_lineitems_url, :string
       remove :lti_lineitems_token, :string
@@ -75,14 +116,10 @@ defmodule Oli.Repo.Migrations.AddLti13RegistrationTable do
       remove :roles, :string
       remove :canvas_id, :string
       remove :lti_tool_consumer_id, references(:lti_tool_consumers)
-
-      add :platform_roles, {:array, :jsonb}, default: []
     end
 
     alter table(:enrollments) do
       remove :section_role_id, references(:section_roles)
-
-      add :context_roles, {:array, :jsonb}, default: []
     end
 
     alter table(:authors_sections) do

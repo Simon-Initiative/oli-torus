@@ -124,12 +124,16 @@ end
 
 # create lti_1p3 platform roles
 if !Oli.Repo.get_by(Oli.Lti_1p3.PlatformRole, id: 1) do
-  Oli.Repo.insert_all(Oli.Lti_1p3.PlatformRole, Oli.Lti_1p3.PlatformRoles.list_roles())
+  Oli.Lti_1p3.PlatformRoles.list_roles()
+  |> Enum.map(&Oli.Lti_1p3.PlatformRole.changeset/1)
+  |> Enum.map(fn t -> Oli.Repo.insert!(t, on_conflict: :replace_all, conflict_target: :id) end)
 end
 
 # create lti_1p3 context roles
 if !Oli.Repo.get_by(Oli.Lti_1p3.ContextRole, id: 1) do
-  Oli.Repo.insert_all(Oli.Lti_1p3.ContextRole, Oli.Lti_1p3.ContextRoles.list_roles())
+  Oli.Lti_1p3.ContextRoles.list_roles()
+  |> Enum.map(&Oli.Lti_1p3.ContextRole.changeset/1)
+  |> Enum.map(fn t -> Oli.Repo.insert!(t, on_conflict: :replace_all, conflict_target: :id) end)
 end
 
 # only seed with sample data if in development mode
@@ -187,7 +191,7 @@ if Application.fetch_env!(:oli, :env) == :dev do
   })
 
   Oli.Lti_1p3.create_new_deployment(%{
-    deployment_id: "43:4dde05e8ca1973bcca9bffc13e1548820eee93a3",
+    deployment_id: "53:4dde05e8ca1973bcca9bffc13e1548820eee93a3",
     registration_id: registration.id,
   })
 
