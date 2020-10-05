@@ -135,13 +135,16 @@ OLI Torus      </a>
 </li>
 <li><p>Install server and client dependencies:</p>
 <pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">mix</span><span class="w"> </span><span class="n">deps</span><span class="o">.</span><span class="n">get</span><span class="w">
- </span><span class="err">$</span><span class="w"> </span><span class="n">cd</span><span class="w"> </span><span class="n">assets</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">npm</span><span class="w"> </span><span class="n">install</span></code></pre>
+ </span><span class="err">$</span><span class="w"> </span><span class="n">cd</span><span class="w"> </span><span class="n">assets</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">yarn</span></code></pre>
 </li>
 <li><p>Create database</p>
-<pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">mix</span><span class="w"> </span><span class="n">ecto</span><span class="o">.</span><span class="n">create</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">cd</span><span class="w"> </span><span class="o">.</span><span class="o">.</span><span class="o">/</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">mix</span><span class="w"> </span><span class="n">ecto</span><span class="o">.</span><span class="n">create</span></code></pre>
 </li>
 <li><p>Run migration to create schema</p>
 <pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">mix</span><span class="w"> </span><span class="n">ecto</span><span class="o">.</span><span class="n">migrate</span></code></pre>
+</li>
+<li><p>Seed the database</p>
+<pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">mix</span><span class="w"> </span><span class="n">run</span><span class="w"> </span><span class="n">priv</span><span class="o">/</span><span class="n">repo</span><span class="o">/</span><span class="n">seeds</span><span class="o">.</span><span class="n">exs</span></code></pre>
 </li>
 <li><p>Configure bash to properly source environment variable configurations</p>
 </li>
