@@ -81,37 +81,44 @@ defmodule OliWeb.LtiController do
       last_name: lti_params["family_name"],
       user_image: lti_params["picture"],
       institution_id: institution.id,
-      lms_system_roles: lti_roles |> PlatformRoles.get_roles_by_uris(),
     }) do
       {:ok, user} ->
-        # TODO: context is considered optional according to IMS, this statement should safeguard against that case
-        # http://www.imsglobal.org/spec/lti/v1p3/#context-claim
-        %{"id" => context_id} = lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]
-        %{"title" => context_title} = lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]
+        # update user platform roles
+        Accounts.update_user_platform_roles(user, PlatformRoles.get_roles_by_uris(lti_roles))
 
-        # Update section specifics - if one exists. Enroll the user and also update the section details
-        with {:ok, section} <- get_existing_section(context_id)
-        do
-          # transform lti_roles to a list only containing valid context roles (exclude all system and institution roles)
-          context_roles = ContextRoles.get_roles_by_uris(lti_roles)
+        # context claim is considered optional according to IMS http://www.imsglobal.org/spec/lti/v1p3/#context-claim
+        # safeguard against the case that context is missing
+        case lti_params["https://purl.imsglobal.org/spec/lti/claim/context"] do
+          nil ->
+            throw "Error getting context information from launch params"
+          context ->
+            %{"id" => context_id} = context
+            %{"title" => context_title} = context
 
-          enroll_user(user.id, section.id, context_roles)
-          update_section_details(context_title, section)
+            # Update section specifics - if one exists. Enroll the user and also update the section details
+            with {:ok, section} <- get_existing_section(context_id)
+            do
+              # transform lti_roles to a list only containing valid context roles (exclude all system and institution roles)
+              context_roles = ContextRoles.get_roles_by_uris(lti_roles)
+
+              enroll_user(user.id, section.id, context_roles)
+              update_section_details(context_title, section)
+            end
+
+            # if account is linked to an author, sign them in
+            conn = if user.author_id != nil do
+              conn
+              |> put_session(:current_author_id, user.author_id)
+            else
+              conn
+            end
+
+            # sign current user in and redirect to home page
+            conn
+            |> put_session(:current_user_id, user.id)
+            |> redirect(to: Routes.delivery_path(conn, :index))
+
         end
-
-        # if account is linked to an author, sign them in
-        conn = if user.author_id != nil do
-          conn
-          |> put_session(:current_author_id, user.author_id)
-        else
-          conn
-        end
-
-        # sign current user in and redirect to home page
-        conn
-        |> put_session(:current_user_id, user.id)
-        |> redirect(to: Routes.delivery_path(conn, :index))
-
         _ ->
           throw "Error creating user"
     end

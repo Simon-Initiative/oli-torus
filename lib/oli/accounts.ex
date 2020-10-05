@@ -99,6 +99,39 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  Returns user details if a record matches user_id, or creates and returns a new user
+
+  ## Examples
+
+      iex> insert_or_update_user(%{field: value})
+      {:ok, %User{}}    -> # Inserted or updated with success
+      {:error, changeset}         -> # Something went wrong
+
+  """
+  def insert_or_update_user(%{ user_id: user_id } = changes) do
+    case Repo.get_by(User, user_id: user_id) do
+      nil -> %User{}
+      user -> user
+    end
+    |> User.changeset(changes)
+    |> Repo.insert_or_update
+  end
+
+  @doc """
+  Updates the platform roles associated with a user
+  ## Examples
+      iex> update_user_platform_roles(user, roles)
+      %Ecto.Changeset{source: %User{}}
+  """
+  def update_user_platform_roles(%User{} = user, roles) do
+    user
+    |> Repo.preload([:platform_roles])
+    |> User.changeset()
+    |> Ecto.Changeset.put_assoc(:platform_roles, roles)
+    |> Repo.update()
+  end
+
+  @doc """
   Links a User to Author account
 
   ## Examples
@@ -322,25 +355,6 @@ defmodule Oli.Accounts do
   """
   def change_institution(%Institution{} = institution) do
     Institution.changeset(institution, %{})
-  end
-
-  @doc """
-  Returns lti author details if a record matches author_id, or creates and returns a new lti author details
-
-  ## Examples
-
-      iex> insert_or_update_user(%{field: value})
-      {:ok, %User{}}    -> # Inserted or updated with success
-      {:error, changeset}         -> # Something went wrong
-
-  """
-  def insert_or_update_user(%{ user_id: user_id } = changes) do
-    case Repo.get_by(User, user_id: user_id) do
-      nil -> %User{}
-      user -> user
-    end
-    |> User.changeset(changes)
-    |> Repo.insert_or_update
   end
 
 end
