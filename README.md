@@ -80,6 +80,11 @@
     ```
     $ mix ecto.migrate
     ```
+    
+1. Seed the database
+    ```
+    $ mix run priv/repo/seeds.exs
+    ```
 
 1. Configure bash to properly source environment variable configurations
    ```
