@@ -113,7 +113,6 @@ defmodule OliWeb.Router do
     get "/account", WorkspaceController, :account
     put "/account", WorkspaceController, :update_author
     post "/account/theme", WorkspaceController, :update_theme
-    resources "/institutions", InstitutionController
   end
 
   scope "/project", OliWeb do
@@ -263,6 +262,16 @@ defmodule OliWeb.Router do
   scope "/admin", OliWeb do
     pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring, :admin]
     live "/accounts", Accounts.AccountsLive
+
+    resources "/institutions", InstitutionController
+
+    resources "/institutions", InstitutionController do
+      resources "/registrations", RegistrationController, except: [:index, :show]
+
+      resources "/registrations", RegistrationController do
+        resources "/deployments", DeploymentController, except: [:index, :show]
+      end
+    end
   end
 
   scope "/project", OliWeb do

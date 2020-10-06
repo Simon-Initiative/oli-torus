@@ -110,7 +110,7 @@ if !Oli.Repo.get_by(Oli.Lti_1p3.Jwk, id: 1) do
 end
 
 # create default open and free institution
-if !Oli.Repo.get_by(Oli.Accounts.Institution, id: 1) do
+if !Oli.Repo.get_by(Oli.Institutions.Institution, id: 1) do
   Oli.Accounts.create_institution(%{
     id: 1,
     country_code: "US",

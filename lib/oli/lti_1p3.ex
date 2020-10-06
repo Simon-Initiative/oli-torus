@@ -47,7 +47,7 @@ defmodule Oli.Lti_1p3 do
   end
 
   def get_ird_by_deployment_id(deployment_id) do
-    Repo.one from institution in Oli.Accounts.Institution,
+    Repo.one from institution in Oli.Institutions.Institution,
       join: registration in Registration, on: registration.institution_id == institution.id,
       join: deployment in Deployment, on: deployment.registration_id == registration.id,
       where: deployment.deployment_id == ^deployment_id,

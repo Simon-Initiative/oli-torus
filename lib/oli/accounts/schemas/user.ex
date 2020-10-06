@@ -11,7 +11,7 @@ defmodule Oli.Accounts.User do
 
     # A user may optionally be linked to an author account
     belongs_to :author, Oli.Accounts.Author
-    belongs_to :institution, Oli.Accounts.Institution
+    belongs_to :institution, Oli.Institutions.Institution
     has_many :enrollments, Oli.Delivery.Sections.Enrollment
     many_to_many :platform_roles, Oli.Lti_1p3.PlatformRole, join_through: "users_platform_roles", on_replace: :delete
 

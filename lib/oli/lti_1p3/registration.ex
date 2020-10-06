@@ -13,7 +13,7 @@ defmodule Oli.Lti_1p3.Registration do
 
     has_many :deployments, Oli.Lti_1p3.Deployment
     belongs_to :tool_jwk, Oli.Lti_1p3.Jwk, foreign_key: :tool_jwk_id
-    belongs_to :institution, Oli.Accounts.Institution
+    belongs_to :institution, Oli.Institutions.Institution
 
     timestamps(type: :utc_datetime)
   end

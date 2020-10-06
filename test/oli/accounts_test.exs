@@ -94,7 +94,7 @@ defmodule Oli.AccountsTest do
   end
 
   describe "institutions" do
-    alias Oli.Accounts.Institution
+    alias Oli.Institutions.Institution
 
     @valid_attrs %{country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", name: "some name", timezone: "some timezone"}
     @update_attrs %{country_code: "some updated country_code", institution_email: "some updated institution_email", institution_url: "some updated institution_url", name: "some updated name", timezone: "some updated timezone"}

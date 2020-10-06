@@ -12,7 +12,7 @@ defmodule Oli.Delivery.Sections.Section do
 
     belongs_to :lti_1p3_deployment, Oli.Lti_1p3.Deployment, foreign_key: :lti_1p3_deployment_id
 
-    belongs_to :institution, Oli.Accounts.Institution
+    belongs_to :institution, Oli.Institutions.Institution
     belongs_to :project, Oli.Authoring.Course.Project
     belongs_to :publication, Oli.Publishing.Publication
 

@@ -39,6 +39,10 @@
   </div>
 
   <div>
-    <%= submit "Register", class: "btn btn-md btn-primary btn-block" %>
+    <%= submit "Save", class: "btn btn-md btn-primary btn-block" %>
+
+    <%= if Map.has_key?(assigns, :cancel_action) do %>
+      <%= link "Cancel", class: "btn btn-md btn-secondary btn-block", to: @cancel_action %>
+    <% end %>
   </div>
 <% end %>

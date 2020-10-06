@@ -1,0 +1,7 @@
+<span>
+  <%= link to: Routes.institution_path(@conn, :show, @institution_id) do %>
+    <i class="las la-arrow-left"></i> Back
+  <% end %>
+</span>
+
+<%= render "form.html", Map.put(assigns, :action, Routes.institution_registration_path(@conn, :create, @institution_id)) %>

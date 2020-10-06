@@ -1,4 +1,4 @@
-defmodule Oli.Accounts.Institution do
+defmodule Oli.Institutions.Institution do
   use Ecto.Schema
   import Ecto.Changeset
 
