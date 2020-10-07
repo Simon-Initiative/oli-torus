@@ -9,8 +9,8 @@
   <div class="row">
     <div class="col-12">
       <div class="entry-selection d-flex align-items-center flex-row">
-        <button phx-click="change-view" phx-value-view="Simple" class="view-selection-item pl-3 pr-3<%= active_class(assigns.active_view)("Simple")%>">Simple</button>
-        <button phx-click="change-view" phx-value-view="Learning Summary" class="view-selection-item mr-auto pl-3 pr-3<%= active_class(assigns.active_view)("Learning Summary")%>">Learning Summary</button>
+        <button phx-click="change-view" phx-value-view="Simple" class="view-selection-item pl-3 pr-3<%= active_class(@active_view, "Simple")%>">Simple</button>
+        <button phx-click="change-view" phx-value-view="Learning Summary" class="view-selection-item mr-auto pl-3 pr-3<%= active_class(@active_view, "Learning Summary")%>">Learning Summary</button>
       </div>
     </div>
   </div>
@@ -21,15 +21,16 @@
           <%= live_component @socket, DropTarget, index: index %>
           <%= live_component @socket, Entry, %{
                   id: child.slug,
-                  editor: Map.get(assigns.resources_being_edited, child.resource_id),
-                  selected: child == assigns.selected,
+                  editor: Map.get(@resources_being_edited, child.resource_id),
+                  selected: child == @selected,
                   child: child,
-                  activity_ids: Map.get(assigns.rollup.page_activity_map, child.resource_id),
-                  activity_map: assigns.rollup.activity_map,
-                  objective_map: assigns.rollup.objective_map,
+                  activity_ids: Map.get(@rollup.page_activity_map, child.resource_id),
+                  activity_map: @rollup.activity_map,
+                  objective_map: @rollup.objective_map,
                   index: index,
-                  project: assigns.project,
-                  active_view: assigns.active_view
+                  project: @project,
+                  active_view: @active_view,
+                  changeset: @changeset
                 } %>
         <% end %>
         <%= live_component @socket, DropTarget, index: length(@children) %>
@@ -46,11 +47,6 @@
           Module
         </button>
       </div>
-    </div>
-    <div class="col-12 col-md-4">
-      <%= if @selected != nil do %>
-        <%= live_component @socket, Settings, child: @selected, changeset: @changeset, project: @project %>
-      <% end %>
     </div>
   </div>
 </div>

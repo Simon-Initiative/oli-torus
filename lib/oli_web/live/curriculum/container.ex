@@ -7,7 +7,7 @@ defmodule OliWeb.Curriculum.Container do
 
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Authoring.Course
-  alias OliWeb.Curriculum.{Rollup, ActivityDelta, DropTarget, Entry, Settings}
+  alias OliWeb.Curriculum.{Rollup, ActivityDelta, DropTarget, Entry}
   alias Oli.Resources
   alias Oli.Resources.{ScoringStrategy, Revision}
   alias Oli.Publishing.AuthoringResolver
@@ -286,12 +286,17 @@ defmodule OliWeb.Curriculum.Container do
     {:noreply, socket}
   end
 
+  def handle_event("toggle_settings", _params, socket) do
+    IO.inspect(!socket.assigns.modal_shown)
+    {:noreply, assign(socket, modal_shown: !socket.assigns.modal_shown)}
+  end
+
   def handle_event("change-view", %{"view" => view}, socket) do
     {:noreply, assign(socket, :active_view, view)}
   end
 
-  def active_class(active_view) do
-    &if &1 == active_view do
+  def active_class(active_view, view) do
+    if view == active_view do
       " active"
     else
       ""

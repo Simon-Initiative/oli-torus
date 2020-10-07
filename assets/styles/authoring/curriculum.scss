@@ -73,9 +73,24 @@
     cursor: grab;
     font-weight: 12px;
 
+    .curriculum-title-line {
+      line-height: 1;
+    }
+
     .entry-title {
       font-size: 14px;
       font-weight: 600;
+    }
+
+    .entry-settings {
+      position: relative;
+    }
+
+    .entry-options {
+      position: absolute;
+      top: 0;
+      right: 10px;
+      z-index: 1;
     }
 
     &.active {
