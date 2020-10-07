@@ -240,7 +240,7 @@ defmodule OliWeb.Curriculum.Container do
         case type do
           "Scored" -> true
           "Unscored" -> false
-          "Container" -> nil
+          "Container" -> false
         end,
       max_attempts:
         case type do
@@ -264,7 +264,7 @@ defmodule OliWeb.Curriculum.Container do
         case type do
           "Scored" -> Oli.Resources.ResourceType.get_id_by_type("page")
           "Unscored" -> Oli.Resources.ResourceType.get_id_by_type("page")
-          "Container" -> nil
+          "Container" -> Oli.Resources.ResourceType.get_id_by_type("container")
         end
     }
 
@@ -280,14 +280,13 @@ defmodule OliWeb.Curriculum.Container do
 
         {:error, %Ecto.Changeset{} = _changeset} ->
           socket
-          |> put_flash(:error, "Could not create page")
+          |> put_flash(:error, "Could not create new item")
       end
 
     {:noreply, socket}
   end
 
   def handle_event("toggle_settings", _params, socket) do
-    IO.inspect(!socket.assigns.modal_shown)
     {:noreply, assign(socket, modal_shown: !socket.assigns.modal_shown)}
   end
 

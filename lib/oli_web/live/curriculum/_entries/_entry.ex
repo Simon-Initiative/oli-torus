@@ -51,18 +51,13 @@ defmodule OliWeb.Curriculum.Entry do
                     <a
                       class="ml-1 mr-1 entry-title"
                       onClick="event.stopPropagation();"
-                      href="<%= Routes.resource_path(OliWeb.Endpoint, :edit, @project.slug, @child.slug) %>">
+                      href="<%= resource_link(assigns, @child.resource_type_id) %>">
                       <%= @child.title %>
                     </a>
                     <%= if @editor do %>
-                    <a
-                      href="#"
-                      data-toggle="tooltip"
-                      onClick="event.preventDefault();"
-                      title="<%= @editor.first_name <> " " <> @editor.last_name %> is editing this"
-                      class="list-unstyled">
-                      <%= live_component @socket, AuthorInitials, author: @editor, size: 24 %>
-                    </a>
+                      <span class="badge">
+                        <%= @editor.first_name %> is editing this
+                      </span>
                     <% end %>
                   </div>
                   <a
@@ -92,6 +87,14 @@ defmodule OliWeb.Curriculum.Entry do
       </div>
     </div>
     """
+  end
+
+  def resource_link(assigns, resource_type_id) do
+    case ResourceType.get_type_by_id(resource_type_id) do
+      "page" -> Routes.resource_path(OliWeb.Endpoint, :edit, assigns.project.slug, assigns.child.slug)
+      "container" -> Routes.live_path(assigns.socket, OliWeb.Curriculum.Container, assigns.project.slug, assigns.child.slug)
+      _ -> "#"
+    end
   end
 
   def icon(rev) do

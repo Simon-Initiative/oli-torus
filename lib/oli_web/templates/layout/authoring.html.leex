@@ -71,7 +71,7 @@
       window.$ = $;
       $('.dropdown-toggle').dropdown();
       $(function () {
-        $(document.body).tooltip({ selector: "[title]" });
+        $('[data-toggle="tooltip"]').tooltip();
       });
     </script>
   </body>

@@ -93,12 +93,11 @@
       z-index: 1;
     }
 
-    &.active {
-      background-color: $gray-300;
-      cursor: grabbing;
-    }
-    &:active {
-      cursor: grabbing;
+    .badge {
+      border-radius: .3em;
+      background-color: #e8e8e8;
+      color: rgba(0,0,0,.6);
+      font-weight: 700;
     }
   }
 }

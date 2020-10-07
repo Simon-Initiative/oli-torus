@@ -15,7 +15,7 @@
     </div>
   </div>
   <div class="row" phx-window-keydown="keydown">
-    <div class="col-12 col-md-8">
+    <div class="col-12">
       <div class="curriculum-entries">
         <%= for {child, index} <- Enum.with_index(@children) do %>
           <%= live_component @socket, DropTarget, index: index %>
