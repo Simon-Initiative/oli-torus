@@ -3,7 +3,7 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing
-  alias Oli.Accounts
+  alias Oli.Institutions
   alias Oli.Lti_1p3.ContextRoles
 
   def index(conn, _params) do
@@ -81,7 +81,7 @@ defmodule OliWeb.DeliveryController do
   def create_section(conn, %{"publication_id" => publication_id}) do
     lti_params = conn.assigns.lti_params
     user = conn.assigns.current_user
-    institution = Accounts.get_institution!(user.institution_id)
+    institution = Institutions.get_institution!(user.institution_id)
     publication = Publishing.get_publication!(publication_id)
 
     {:ok, %Section{id: section_id}} = Sections.create_section(%{

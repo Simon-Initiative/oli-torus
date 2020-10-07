@@ -1,7 +1,8 @@
 defmodule Oli.Seeder do
   alias Oli.Publishing
   alias Oli.Repo
-  alias Oli.Accounts.{SystemRole, ProjectRole, Institution, Author}
+  alias Oli.Accounts.{SystemRole, ProjectRole, Author}
+  alias Oli.Institutions.Institution
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Attempts.{ResourceAccess}
   alias Oli.Activities.Model.Part

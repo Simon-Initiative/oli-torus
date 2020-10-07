@@ -39,7 +39,10 @@ defmodule Oli.Lti_1p3 do
   end
 
   def get_active_jwk() do
-    Repo.one(from k in Jwk, where: k.active == true)
+    case Repo.all(from k in Jwk, where: k.active == true, order_by: [desc: k.id], limit: 1) do
+      [head | _] -> head
+      _ -> []
+    end
   end
 
   def get_all_jwks() do

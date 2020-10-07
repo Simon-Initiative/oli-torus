@@ -5,11 +5,16 @@
     </div>
   <% end %>
 
-  <%= label f, :deployment_id %>
-  <%= text_input f, :deployment_id %>
-  <%= error_tag f, :deployment_id %>
+  <div class="form-label-group">
+    <%= text_input f, :deployment_id, class: "form-control " <> error_class(f, :deployment_id, "is-invalid"),
+      placeholder: "Deployment ID", required: true, autofocus: focusHelper(f, :deployment_id) %>
+    <%= label f, :deployment_id, "Deployment ID", class: "control-label" %>
+    <%= error_tag f, :deployment_id %>
+  </div>
+
+  <%= hidden_input f, :registration_id, value: @registration_id %>
 
   <div>
-    <%= submit "Save" %>
+    <%= submit "Save", class: "btn btn-md btn-primary btn-block" %>
   </div>
 <% end %>

@@ -33,22 +33,37 @@
 
       <tr>
         <td><strong>LTI 1.3 Registrations:</strong></td>
-        <td>
+        <td style="width: 80%;">
           <%= for registration <- @institution.registrations do %>
             <div class="registrations-accordion my-2" id="registrationsAccordian">
-              <div class="card">
-                <div class="card-header" id="headingOne">
-                  <h2 class="mb-0">
-                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                      <%= registration.client_id %>
+              <div class="registration card">
+                <div class="card-header" id="heading<%= registration.id %>">
+                  <div class="mb-0 d-flex">
+                    <button class="registration-title btn btn-link" type="button" data-toggle="collapse" data-target="#collapse<%= registration.id %>" aria-expanded="true" aria-controls="collapse<%= registration.id %>">
+                      <%= registration.issuer %> - <%= registration.client_id %>
                     </button>
-                  </h2>
+                    <div class="flex-fill"></div>
+                    <div>
+                      <%= link "Edit Details", to: Routes.institution_registration_path(@conn, :edit, @institution.id, registration.id), class: "btn btn-sm btn-outline-primary ml-2" %>
+                      <%= link to: Routes.institution_registration_path(@conn, :delete, @institution.id, registration.id),
+                        method: :delete,
+                        class: "btn btn-sm btn-outline-danger ml-2",
+                        data: [confirm: "Are you sure you want to permanently remove this registration? \"#{registration.issuer} - #{registration.client_id}\""] do %>
+                          <i class="lar la-trash-alt"></i> Remove
+                      <% end %>
+                    </div>
+                  </div>
                 </div>
 
-                <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#registrationsAccordian">
+                <div id="collapse<%= registration.id %>" class="collapse" aria-labelledby="heading<%= registration.id %>" data-parent="#registrationsAccordian">
                   <div class="card-body">
                     <table class="table table-sm">
                       <tbody>
+                        <tr>
+                          <td><strong>Issuer:</strong></td>
+                          <td><%= registration.issuer %></td>
+                        </tr>
+
                         <tr>
                           <td><strong>Client ID:</strong></td>
                           <td><%= registration.client_id %></td>
@@ -84,7 +99,15 @@
                           <td>
                             <%= for deployment <- registration.deployments do %>
                               <ul>
-                                <li><%= deployment.deployment_id %></li>
+                                <li>
+                                  <%= deployment.deployment_id %>
+                                  <%= link to: Routes.institution_registration_deployment_path(@conn, :delete, @institution.id, registration.id, deployment.id),
+                                    method: :delete,
+                                    class: "btn btn-xs btn-danger ml-2 float-right",
+                                    data: [confirm: "Are you sure you want to permanently remove this deployment? \"#{deployment.deployment_id}\""] do %>
+                                      <i class="lar la-trash-alt"></i> Remove
+                                  <% end %>
+                                </li>
                               </ul>
                             <% end %>
 

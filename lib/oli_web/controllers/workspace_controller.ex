@@ -2,11 +2,12 @@ defmodule OliWeb.WorkspaceController do
   use OliWeb, :controller
   alias Oli.Authoring
   alias Oli.Accounts
+  alias Oli.Institutions
   alias Oli.Accounts.Author
 
   def account(conn, _params) do
     author = conn.assigns.current_author
-    institutions = Accounts.list_institutions() |> Enum.filter(fn i -> i.author_id == conn.assigns.current_author.id end)
+    institutions = Institutions.list_institutions() |> Enum.filter(fn i -> i.author_id == conn.assigns.current_author.id end)
     themes = Authoring.list_themes()
     active_theme = case author.preferences do
       nil ->

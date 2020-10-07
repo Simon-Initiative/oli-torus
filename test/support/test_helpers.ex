@@ -1,6 +1,7 @@
 defmodule Oli.TestHelpers do
   alias Oli.Repo
   alias Oli.Accounts
+  alias Oli.Institutions
   alias Oli.Accounts.User
   alias Oli.Accounts.Author
   alias Oli.Authoring.Course
@@ -86,9 +87,39 @@ defmodule Oli.TestHelpers do
         author_id: 1,
       })
 
-    {:ok, institution} = Accounts.create_institution(params)
+    {:ok, institution} = Institutions.create_institution(params)
 
     institution
+  end
+
+  def registration_fixture(attrs \\ %{}) do
+    params =
+      attrs
+      |> Enum.into(%{
+        auth_login_url: "some auth_login_url",
+        auth_server: "some auth_server",
+        auth_token_url: "some auth_token_url",
+        client_id: "some client_id",
+        issuer: "some issuer",
+        key_set_url: "some key_set_url",
+        kid: "some kid"
+      })
+
+    {:ok, registration} = Institutions.create_registration(params)
+
+    registration
+  end
+
+  def deployment_fixture(attrs \\ %{}) do
+    params =
+      attrs
+      |> Enum.into(%{
+        deployment_id: "some deployment_id"
+      })
+
+    {:ok, deployment} = Institutions.create_deployment(params)
+
+    deployment
   end
 
   def jwk_fixture() do

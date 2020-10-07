@@ -10,6 +10,9 @@ defmodule OliWeb.DeploymentController do
   end
 
   def create(conn, %{"institution_id" => institution_id, "registration_id" => registration_id, "deployment" => deployment_params}) do
+    deployment_params = deployment_params
+      |> Map.put("registration_id", registration_id)
+
     case Institutions.create_deployment(deployment_params) do
       {:ok, _deployment} ->
         conn
