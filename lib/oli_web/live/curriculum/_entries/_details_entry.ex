@@ -1,4 +1,4 @@
-defmodule OliWeb.Curriculum.Entry do
+defmodule OliWeb.Curriculum.DetailsEntry do
 
   @moduledoc """
   Curriculum item entry component.
@@ -102,9 +102,7 @@ defmodule OliWeb.Curriculum.Entry do
       <div class="mt-1 ml-2 mr-2 mb-2 text-truncate" style="width: 100%;">
 
         <div class="d-flex justify-content-between align-items-top">
-          <div class="resource-label">
             <%= @page.title %>
-          </div>
           <%= render_counts(assigns, objectives) %>
         </div>
 

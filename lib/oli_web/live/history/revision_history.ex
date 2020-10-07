@@ -7,7 +7,6 @@ defmodule OliWeb.RevisionHistory do
   alias Oli.Resources.Revision
   alias Oli.Resources
   alias Oli.Publishing
-  alias Phoenix.PubSub
 
   alias OliWeb.RevisionHistory.Details
   alias OliWeb.RevisionHistory.Graph
@@ -16,6 +15,7 @@ defmodule OliWeb.RevisionHistory do
   alias OliWeb.RevisionHistory.Pagination
   alias Oli.Authoring.Broadcaster
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.Authoring.Broadcaster.Subscriber
 
   @page_size 15
 
@@ -26,8 +26,8 @@ defmodule OliWeb.RevisionHistory do
       where: rev.slug == ^slug,
       select: {rev.resource_id})
 
-    PubSub.subscribe Oli.PubSub, "resource:" <> Integer.to_string(resource_id)
-    PubSub.subscribe Oli.PubSub, "new_publication:project:" <> project_slug
+    Subscriber.subscribe_to_new_revisions(resource_id)
+    Subscriber.subscribe_to_new_publications(project_slug)
 
     revisions = Repo.all(from rev in Revision,
       where: rev.resource_id == ^resource_id,

@@ -13,7 +13,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
 
     test "list_all_pages/1 returns the pages", %{project: project, revision2: revision2, revision1: revision1 } do
 
-      pages = ContainerEditor.list_all_pages(project)
+      pages = ContainerEditor.list_all_container_children(project)
 
       assert length(pages) == 2
       assert hd(pages).id == revision1.id

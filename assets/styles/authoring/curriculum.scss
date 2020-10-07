@@ -1,6 +1,7 @@
 @import "authoring/variables";
 
-.container-editor {
+.container.container-editor {
+  max-width: 700px;
 
   .targeted-objectives {
 
@@ -22,16 +23,67 @@
 
   }
 
-  .resource-label {
-    font-size: 1.4em;
+  .entry-selection {
+    border-color: rgba(34, 36, 38, 0.15);
+    border-radius: 1px;
+    box-shadow: 0 1px 2px 0 rgba(34,36,38,.15);
+    border-radius: .28571429rem;
+
+    button.view-selection-item {
+      height: 30px;
+      outline: none;
+      position: relative;
+      background-color: #f2f2f2;
+      border: none;
+      color: inherit;
+      &:hover:not(.active) {
+        cursor: pointer;
+        background: rgba(0,0,0,.03);
+        color: rgba(0,0,0,.95);
+      }
+      &:before {
+        position: absolute;
+        content: '';
+        top: 0;
+        right: 0;
+        height: 100%;
+        width: 1px;
+        background: rgba(34,36,38,.1);
+      }
+      &.active:after {
+        background-color: #f2f2f2;
+        position: absolute;
+        content: '';
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(-50%) rotate(45deg);
+        margin: .5px 0 0;
+        width: .57142857em;
+        height: .57142857em;
+        border-bottom: 1px solid #d4d4d5;
+        border-right: 1px solid #d4d4d5;
+        z-index: 1;
+      }
+    }
   }
 
   .curriculum-entry {
-    border-radius: 3px;
-    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.24);
+    border-radius: 2px;
+    cursor: grab;
+    font-weight: 12px;
+
+    .entry-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
 
     &.active {
       background-color: $gray-300;
+      cursor: grabbing;
+    }
+    &:active {
+      cursor: grabbing;
     }
   }
 }

@@ -57,12 +57,12 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   @doc """
   Lists all top level resource revisions contained in a container.
   """
-  def list_all_pages(%Project{} = project) do
+  def list_all_container_children(%Project{} = project) do
     AuthoringResolver.root_container(project.slug)
-    |> list_all_pages(project)
+    |> list_all_container_children(project)
   end
 
-  def list_all_pages(container, %Project{} = project) do
+  def list_all_container_children(container, %Project{} = project) do
     AuthoringResolver.from_resource_id(project.slug, container.children)
   end
 

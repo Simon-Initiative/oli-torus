@@ -18,38 +18,29 @@ defmodule OliWeb.Curriculum.Settings do
 
   def render(assigns) do
 
-    type = if assigns.page.graded do "Assessment" else "Page" end
+    type = if assigns.child.graded do "Assessment" else "Page" end
 
     ~L"""
     <%= _ = form_for @changeset, "#", [phx_change: :save] %>
 
-      <a
-        class="btn btn-primary"
-        onClick="event.stopPropagation();"
-        href="<%= Routes.resource_path(OliWeb.Endpoint, :edit, @project.slug, @page.slug) %>">
-        Edit <%= type %> Contents
-      </a>
-
-      <hr/>
-
       <div><small>Grading Type:</small></div>
 
       <select class="custom-select" name="graded">
-        <option <%= selected_attr(@page.graded, true) %> value="true">Graded Assessment</option>
-        <option <%= selected_attr(@page.graded, false) %> value="false">Ungraded Practice Page</option>
+        <option <%= selected_attr(@child.graded, true) %> value="true">Graded Assessment</option>
+        <option <%= selected_attr(@child.graded, false) %> value="false">Ungraded Practice Page</option>
       </select>
       <small class="text-muted">
       Graded assessments report a grade to the gradebook, while practice pages do not.
       </small>
 
       <div class="mt-4"><small>Number of Attempts:</small></div>
-      <select <%= disabled_attr(@page.graded) %> class="custom-select" name="max_attempts">
+      <select <%= disabled_attr(@child.graded) %> class="custom-select" name="max_attempts">
         <%= for c <- 1..10 do %>
-        <option value="<%= c %>" <%= selected_attr(@page.max_attempts, c) %>>
+        <option value="<%= c %>" <%= selected_attr(@child.max_attempts, c) %>>
           <%= c %>
         </option>
         <% end %>
-        <option <%= selected_attr(@page.max_attempts, 0) %> value="0">Unlimited</option>
+        <option <%= selected_attr(@child.max_attempts, 0) %> value="0">Unlimited</option>
       </select>
       <small class="text-muted">
       Graded assessments allow a configurable number of attempts, while practice pages
@@ -57,9 +48,9 @@ defmodule OliWeb.Curriculum.Settings do
       </small>
 
       <div class="mt-4"><small>Scoring Strategy</small></div>
-      <select <%= disabled_attr(@page.graded) %> class="custom-select" name="scoring_strategy_id">
+      <select <%= disabled_attr(@child.graded) %> class="custom-select" name="scoring_strategy_id">
         <%= for %{id: id, type: type} <- ScoringStrategy.get_types() do %>
-          <option value="<%= id %>" <%= selected_attr(@page.scoring_strategy_id, id) %>>
+          <option value="<%= id %>" <%= selected_attr(@child.scoring_strategy_id, id) %>>
             <%= Oli.Utils.snake_case_to_friendly(type) %>
           </option>
         <% end %>

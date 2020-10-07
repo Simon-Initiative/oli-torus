@@ -1,0 +1,56 @@
+<div id="curriculum-container" class="container container-editor">
+  <div class="row">
+    <div class="col-12">
+      <p class="text-secondary mb-3">
+        Create and arrange items to form your project curriculum, which determines the order that pages will appear to students.
+      </p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-12">
+      <div class="entry-selection d-flex align-items-center flex-row">
+        <button phx-click="change-view" phx-value-view="Simple" class="view-selection-item pl-3 pr-3<%= active_class(assigns.active_view)("Simple")%>">Simple</button>
+        <button phx-click="change-view" phx-value-view="Learning Summary" class="view-selection-item mr-auto pl-3 pr-3<%= active_class(assigns.active_view)("Learning Summary")%>">Learning Summary</button>
+      </div>
+    </div>
+  </div>
+  <div class="row" phx-window-keydown="keydown">
+    <div class="col-12 col-md-8">
+      <div class="curriculum-entries">
+        <%= for {child, index} <- Enum.with_index(@children) do %>
+          <%= live_component @socket, DropTarget, index: index %>
+          <%= live_component @socket, Entry, %{
+                  id: child.slug,
+                  editor: Map.get(assigns.resources_being_edited, child.resource_id),
+                  selected: child == assigns.selected,
+                  child: child,
+                  activity_ids: Map.get(assigns.rollup.page_activity_map, child.resource_id),
+                  activity_map: assigns.rollup.activity_map,
+                  objective_map: assigns.rollup.objective_map,
+                  index: index,
+                  project: assigns.project,
+                  active_view: assigns.active_view
+                } %>
+        <% end %>
+        <%= live_component @socket, DropTarget, index: length(@children) %>
+      </div>
+      <div class="mt-5">
+        Add new
+        <button phx-click="add" phx-value-type="Unscored" class="btn btn-sm btn-outline-primary ml-2" type="button">
+          Practice Page
+        </button>
+        <button phx-click="add" phx-value-type="Scored" class="btn btn-sm btn-outline-primary ml-2" type="button">
+          Graded Assessment
+        </button>
+        <button phx-click="add" phx-value-type="Container" class="btn btn-sm btn-outline-primary ml-2" type="button">
+          Module
+        </button>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <%= if @selected != nil do %>
+        <%= live_component @socket, Settings, child: @selected, changeset: @changeset, project: @project %>
+      <% end %>
+    </div>
+  </div>
+</div>
