@@ -91,6 +91,24 @@ defmodule Oli.Publishing.AuthoringResolver do
   end
 
   @impl Resolver
+  def hierarchy(project_slug) do
+
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    container_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
+    fn ->
+      Repo.all(from m in PublishedResource,
+        join: rev in Revision, on: rev.id == m.revision_id,
+        join: p in Publication, on: p.id == m.publication_id,
+        join: c in Project, on: p.project_id == c.id,
+        where: p.published == false and (rev.resource_type_id == ^page_id or rev.resource_type_id == ^container_id) and c.slug == ^project_slug,
+        select: rev)
+    end
+    |> run() |> emit([:oli, :resolvers, :authoring], :duration)
+
+  end
+
+  @impl Resolver
   def find_parent_objectives(_, []), do: []
   def find_parent_objectives(project_slug, resource_ids) do
 

@@ -83,6 +83,24 @@ defmodule Oli.Publishing.DeliveryResolver do
   end
 
   @impl Resolver
+  def hierarchy(context_id) do
+
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+    container_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
+    fn ->
+      Repo.all(from s in Section,
+        join: p in Publication, on: p.id == s.publication_id,
+        join: m in PublishedResource, on: m.publication_id == p.id,
+        join: rev in Revision, on: rev.id == m.revision_id,
+        where: (rev.resource_type_id == ^page_id or rev.resource_type_id == ^container_id) and s.context_id == ^context_id,
+        select: rev)
+    end
+    |> run() |> emit([:oli, :resolvers, :delivery], :duration)
+
+  end
+
+  @impl Resolver
   def find_parent_objectives(_, []), do: []
   def find_parent_objectives(context_id, resource_ids) do
 
