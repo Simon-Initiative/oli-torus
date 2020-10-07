@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Publishing.Resolver — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-698b4f24ca.js"></script>
+    <script src="dist/sidebar_items-feeff0b667.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -112,6 +112,12 @@ Returns nil if a revision cannot be resolved.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#c:hierarchy/1">hierarchy(arg1)</a>
+  </div>
+    <div class="summary-synopsis"><p>Resolves the revisions of all containers and pages</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#c:publication/1">publication(arg1)</a>
   </div>
     <div class="summary-synopsis"><p>Returns the publication that is used for resolution.</p></div>
@@ -140,7 +146,7 @@ Callbacks          </h1>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">find_parent_objectives(arg1, list)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/resolver.ex#L42" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/resolver.ex#L48" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -285,6 +291,55 @@ revision.</p>
   <section class="docstring">
 <p>Resolves a revision from a revision slug.
 Returns nil if a revision cannot be resolved.</p>
+  </section>
+</section>
+<section class="detail" id="c:hierarchy/1">
+  <div class="detail-header">
+    <a href="#c:hierarchy/1" class="detail-link" title="Link to this callback">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature">hierarchy(arg1)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/resolver.ex#L39" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+      <div class="specs">
+          <pre>hierarchy(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()) :: [
+  %Oli.Resources.Revision{
+    __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_type: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_type_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    author: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    author_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    children: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    content: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    deleted: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    graded: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    inserted_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    max_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    objectives: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    previous_revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    previous_revision_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    recommended_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    resource_type: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    resource_type_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    scoring_strategy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    scoring_strategy_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    time_limit: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    title: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    warnings: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+  }
+]</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Resolves the revisions of all containers and pages</p>
   </section>
 </section>
 <section class="detail" id="c:publication/1">

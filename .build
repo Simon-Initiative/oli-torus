@@ -1,4 +1,4 @@
-dist/search_items-c0fdb8e7ef.js
+dist/search_items-e3f08633e9.js
 dist/app-a225d03098e64fef431a.js
 dist/elixir-0ab8a6a80ebaaa287431.css
 dist/erlang-bd206729da4d0d280293.css
@@ -6,7 +6,7 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/sidebar_items-698b4f24ca.js
+dist/sidebar_items-feeff0b667.js
 api-reference.html
 readme.html
 license.html
@@ -160,6 +160,7 @@ Oli.Repo.html
 Oli.Resources.html
 Oli.Resources.Activity.html
 Oli.Resources.Container.html
+Oli.Resources.Numbering.html
 Oli.Resources.Objective.html
 Oli.Resources.Page.html
 Oli.Resources.Resource.html
@@ -172,6 +173,7 @@ Oli.Snapshots.SnapshotSeeder.html
 Oli.Timing.html
 Oli.Utils.html
 Oli.Utils.Common.html
+Oli.Utils.HierarchyNode.html
 Oli.Utils.Purposes.html
 Oli.Utils.Recaptcha.html
 Oli.Utils.Slug.html
