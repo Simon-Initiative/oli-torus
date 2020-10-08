@@ -14,13 +14,13 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
   end
 
   test "fails validation on missing oidc state" do
-    %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{state: nil, lti1p3_state: nil})
+    %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{state: nil, lti_1p3_state: nil})
 
     assert LaunchValidation.validate(conn, get_public_key) == {:error, "State from session is missing. Make sure cookies are enabled and configured correctly"}
   end
 
   test "fails validation on invalid oidc state" do
-    %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{state: "doesnt", lti1p3_state: "match"})
+    %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{state: "doesnt", lti_1p3_state: "match"})
 
     assert LaunchValidation.validate(conn, get_public_key) == {:error, "State from OIDC request does not match session"}
   end
@@ -143,13 +143,12 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
   end
 
   # TODO: fix this test by adding lti_param caching
-  @tag :skip
   test "caches lti launch params" do
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs()
 
     assert {:ok, conn, _jwt_body} = LaunchValidation.validate(conn, get_public_key)
 
-    assert Map.has_key?(Plug.Conn.get_session(conn), "lti1p3_launch_params")
+    assert Map.has_key?(Plug.Conn.get_session(conn), "lti_1p3_sub")
   end
 
 end

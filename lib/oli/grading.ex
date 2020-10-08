@@ -24,7 +24,7 @@ defmodule Oli.Grading do
     table_data = gradebook
       |> Enum.map(fn %GradebookRow{user: user, scores: scores} ->
         [
-          "#{user.first_name} #{user.last_name} (#{user.email})"
+          "#{user.given_name} #{user.family_name} (#{user.email})"
           | Enum.map(scores, fn gradebook_score ->
             case gradebook_score do
               nil -> nil

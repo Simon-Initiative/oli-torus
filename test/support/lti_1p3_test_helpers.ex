@@ -18,7 +18,7 @@ defmodule Oli.TestHelpers.Lti_1p3 do
       deployment_id: deployment_id,
       kid: kid,
       state: state,
-      lti1p3_state: lti1p3_state,
+      lti_1p3_state: lti_1p3_state,
     } = %{
       claims: all_default_claims(),
       registration_params: %{
@@ -37,7 +37,7 @@ defmodule Oli.TestHelpers.Lti_1p3 do
       },
       deployment_id: "1",
       state: state_uuid,
-      lti1p3_state: state_uuid,
+      lti_1p3_state: state_uuid,
       kid: "some kid",
     } |> Map.merge(args)
 
@@ -68,7 +68,7 @@ defmodule Oli.TestHelpers.Lti_1p3 do
 
     # stub conn
     conn = Plug.Test.conn(:post, "/", %{"state" => state, "id_token" => token})
-      |> Plug.Test.init_test_session(%{state: lti1p3_state})
+      |> Plug.Test.init_test_session(%{state: lti_1p3_state})
 
     # stub a get_public_key callback
     get_public_key = fn _registration, _kid ->

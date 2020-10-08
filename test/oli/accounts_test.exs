@@ -39,9 +39,9 @@ defmodule Oli.AccountsTest do
   describe "users" do
     alias Oli.Accounts.User
 
-    @valid_attrs %{email: "some email", first_name: "some first_name", last_name: "some last_name", user_id: "some user_id", user_image: "some user_image"}
-    @update_attrs %{email: "some updated email", first_name: "some updated first_name", last_name: "some updated last_name", user_id: "some updated user_id", user_image: "some updated user_image"}
-    @invalid_attrs %{email: nil, first_name: nil, last_name: nil, user_id: nil, user_image: nil}
+    @valid_attrs %{email: "some email", given_name: "some given_name", family_name: "some family_name", sub: "some sub", picture: "some picture"}
+    @update_attrs %{email: "some updated email", given_name: "some updated given_name", family_name: "some updated family_name", sub: "some updated sub", picture: "some updated picture"}
+    @invalid_attrs %{email: nil, given_name: nil, family_name: nil, sub: nil, picture: nil}
 
     setup do
       author = author_fixture()
@@ -59,10 +59,10 @@ defmodule Oli.AccountsTest do
     test "create_user/1 with valid data creates a user", %{valid_attrs: valid_attrs} do
       assert {:ok, %User{} = user} = Accounts.create_user(valid_attrs)
       assert user.email == "some email"
-      assert user.first_name == "some first_name"
-      assert user.last_name == "some last_name"
-      assert user.user_id == "some user_id"
-      assert user.user_image == "some user_image"
+      assert user.given_name == "some given_name"
+      assert user.family_name == "some family_name"
+      assert user.sub == "some sub"
+      assert user.picture == "some picture"
     end
 
     test "create_user/1 with invalid data returns error changeset" do
@@ -72,10 +72,10 @@ defmodule Oli.AccountsTest do
     test "update_user/2 with valid data updates the user", %{user: user} do
       assert {:ok, %User{} = user} = Accounts.update_user(user, @update_attrs)
       assert user.email == "some updated email"
-      assert user.first_name == "some updated first_name"
-      assert user.last_name == "some updated last_name"
-      assert user.user_id == "some updated user_id"
-      assert user.user_image == "some updated user_image"
+      assert user.given_name == "some updated given_name"
+      assert user.family_name == "some updated family_name"
+      assert user.sub == "some updated sub"
+      assert user.picture == "some updated picture"
     end
 
     test "update_user/2 with invalid data returns error changeset", %{user: user} do
