@@ -23,12 +23,12 @@ defmodule OliWeb.LtiController do
       {:ok, conn, lti_params} ->
         deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
         case Lti_1p3.get_ird_by_deployment_id(deployment_id) do
-          nil ->
-            handle_valid_lti_1p3_launch(conn, lti_params, deployment_id)
           {institution, registration, deployment} ->
             handle_valid_lti_1p3_launch(conn, lti_params, institution, registration, deployment)
         end
-      {:error, reason} ->
+      {:error, %{code: :invalid_deployment, reason: _reason, deployment_id: deployment_id}} ->
+        handle_no_deployment(conn, deployment_id)
+      {:error, %{code: _code, reason: reason}} ->
         render(conn, "basic_launch_invalid.html", reason: reason)
     end
   end
@@ -37,7 +37,7 @@ defmodule OliWeb.LtiController do
     case Lti_1p3.LaunchValidation.validate(conn, &get_public_key/2) do
       {:ok, conn, lti_params} ->
         render(conn, "lti_test.html", lti_params: lti_params)
-      {:error, reason} ->
+      {:error, %{code: _code, reason: reason}} ->
         render(conn, "basic_launch_invalid.html", reason: reason)
     end
   end
@@ -63,12 +63,9 @@ defmodule OliWeb.LtiController do
     |> json(key_map)
   end
 
-  defp handle_valid_lti_1p3_launch(conn, _lti_params, deployment_id) do
+  defp handle_no_deployment(conn, deployment_id) do
     # TODO: add ability to configure a deployment from the LTI launch when the deployment does not exist
-    #render(conn, "configure_deployment.html")
-
-    # for now, just show an error when the deployment does not exist
-    render(conn, "basic_launch_invalid.html", reason: "Deployment with deployment_id '#{deployment_id}' does not exist")
+    render(conn, "configure_deployment.html", deployment_id: deployment_id)
   end
 
   defp handle_valid_lti_1p3_launch(conn, lti_params, institution, _registration, _deployment) do

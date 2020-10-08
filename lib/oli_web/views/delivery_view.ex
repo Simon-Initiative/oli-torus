@@ -2,6 +2,7 @@ defmodule OliWeb.DeliveryView do
   use OliWeb, :view
 
   alias Oli.Lti_1p3.ContextRoles
+  alias Oli.Lti_1p3.PlatformRoles
 
   def get_context_id(conn) do
     case conn.assigns.lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"] do
@@ -17,10 +18,15 @@ defmodule OliWeb.DeliveryView do
 
   def user_role_text(conn, user) do
     context_id = get_context_id(conn)
-    if ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_learner)) do
-      "Student"
-    else
-      "Instructor"
+    cond do
+      PlatformRoles.has_role?(user, PlatformRoles.get_role(:system_administrator))
+      || PlatformRoles.has_role?(user, PlatformRoles.get_role(:institution_administrator))
+      || ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_administrator)) ->
+        "Administrator"
+      ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_instructor)) ->
+        "Instructor"
+      ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_student)) ->
+        "Student"
     end
   end
 
@@ -30,6 +36,17 @@ defmodule OliWeb.DeliveryView do
       "#3498db"
     else
       "#2ecc71"
+    end
+
+    cond do
+      PlatformRoles.has_role?(user, PlatformRoles.get_role(:system_administrator))
+      || PlatformRoles.has_role?(user, PlatformRoles.get_role(:institution_administrator))
+      || ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_administrator)) ->
+        "#f39c12"
+      ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_instructor)) ->
+        "#2ecc71"
+      ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_student)) ->
+        "#3498db"
     end
   end
 

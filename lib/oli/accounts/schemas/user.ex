@@ -73,10 +73,10 @@ defimpl Oli.Lti_1p3.Lti_1p3_User, for: Oli.Accounts.User do
   alias Oli.Delivery.Sections.Enrollment
 
   def get_platform_roles(user) do
-    user
-    |> preload([:platform_roles])
-    |> select([u], u.platform_roles)
+    # %User{} being passed in here is expected to have platform_roles preloaded
+    user.platform_roles
   end
+
   def get_context_roles(user, context_id) do
     user_id = user.id
     query = from e in Enrollment, preload: [:context_roles],

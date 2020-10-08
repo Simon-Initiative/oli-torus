@@ -8,7 +8,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   @doc """
   Validates all aspects of an incoming LTI message launch and caches the launch params in the session if successful.
   """
-  @spec validate(Plug.Conn.t(), get_public_key_callback()) :: {:ok, Plug.Conn.t(), any()} | {:error, String.t()}
+  @spec validate(Plug.Conn.t(), get_public_key_callback()) :: {:ok, Plug.Conn.t(), any()} | {:error, %{optional(atom()) => any(), code: atom(), reason: String.t()}}
   def validate(conn, get_public_key) do
     with {:ok, conn} <- validate_oidc_state(conn),
          {:ok, kid} <- peek_jwt_kid(conn),
@@ -29,16 +29,16 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   defp validate_oidc_state(conn) do
     case Plug.Conn.get_session(conn, "state") do
       nil ->
-        {:error, "State from session is missing. Make sure cookies are enabled and configured correctly"}
+        {:error, %{code: :invalid_oidc_state, reason: "State from session is missing. Make sure cookies are enabled and configured correctly"}}
       session_state ->
         case conn.params["state"] do
           nil ->
-            {:error, "State from OIDC request is missing"}
+            {:error, %{code: :invalid_oidc_state, reason: "State from OIDC request is missing"}}
           request_state ->
             if request_state == session_state do
               {:ok, conn}
             else
-              {:error, "State from OIDC request does not match session"}
+              {:error, %{code: :invalid_oidc_state, reason: "State from OIDC request does not match session"}}
             end
         end
     end
@@ -47,7 +47,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   defp validate_registration(conn, kid) do
     case Oli.Lti_1p3.get_registration_by_kid(kid) do
       nil ->
-        {:error, "Registration with kid \"#{kid}\" not found"}
+        {:error, %{code: :invalid_registration, reason: "Registration with kid \"#{kid}\" not found", kid: kid}}
         registration ->
         {:ok, conn, registration}
     end
@@ -56,7 +56,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   defp decode_id_token(conn) do
     case conn.params["id_token"] do
       nil ->
-        {:error, "Missing id_token"}
+        {:error, %{code: :missing_id_token, reason: "Missing id_token"}}
       id_token ->
         {:ok, id_token}
     end
@@ -82,7 +82,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
         {:ok, jwt} ->
           {:ok, conn, jwt}
         {:error, :signature_error} ->
-          {:error, "Invalid signature on id_token"}
+          {:error, %{code: :invalid_jwt, reason: "Invalid signature on id_token"}}
         error -> error
       end
     end
@@ -99,11 +99,11 @@ defmodule Oli.Lti_1p3.LaunchValidation do
           {false, false} ->
             {:ok, conn}
           {_, false} ->
-            {:error, "Token exp is expired"}
+            {:error, %{code: :invalid_token_timstamp, reason: "Token exp is expired"}}
           {false, _} ->
-            {:error, "Token iat is invalid"}
+            {:error, %{code: :invalid_token_timstamp, reason: "Token iat is invalid"}}
           _ ->
-            {:error, "Token exp and iat are invalid"}
+            {:error, %{code: :invalid_token_timstamp, reason: "Token exp and iat are invalid"}}
         end
       end
     rescue
@@ -116,7 +116,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
       {:ok, _nonce} ->
         {:ok, conn}
       {:error, %{ errors: [ value: { _msg, [{:constraint, :unique} | _]}]}} ->
-        {:error, "Duplicate nonce"}
+        {:error, %{code: :invalid_nonce, reason: "Duplicate nonce"}}
     end
   end
 
@@ -126,7 +126,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
 
     case deployment do
       nil ->
-        {:error, "Deployment with id \"#{deployment_id}\" not found"}
+        {:error, %{code: :invalid_deployment, reason: "Deployment with id \"#{deployment_id}\" not found", deployment_id: deployment_id}}
       _deployment ->
         {:ok, conn}
     end
@@ -135,7 +135,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   defp validate_message(conn, jwt_body) do
     case jwt_body["https://purl.imsglobal.org/spec/lti/claim/message_type"] do
       nil ->
-        {:error, "Missing message type"}
+        {:error, %{code: :invalid_message_type, reason: "Missing message type"}}
       message_type ->
         # no more than one message validator should apply for a given mesage,
         # so use the first validator we find that applies
@@ -146,9 +146,9 @@ defmodule Oli.Lti_1p3.LaunchValidation do
 
         case validation_result do
           nil ->
-            {:error, "Invalid or unsupported message type \"#{message_type}\""}
+            {:error, %{code: :invalid_message_type, reason: "Invalid or unsupported message type \"#{message_type}\""}}
           {:error, error} ->
-            {:error, "Message validation failed: (\"#{message_type}\") #{error}"}
+            {:error, %{code: :invalid_message, reason: "Message validation failed: (\"#{message_type}\") #{error}"}}
           _ ->
             {:ok, conn}
         end
