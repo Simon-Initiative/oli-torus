@@ -142,7 +142,6 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
     assert LaunchValidation.validate(conn, get_public_key) == {:error, "Invalid or unsupported message type \"InvalidMessageType\""}
   end
 
-  # TODO: fix this test by adding lti_param caching
   test "caches lti launch params" do
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs()
 

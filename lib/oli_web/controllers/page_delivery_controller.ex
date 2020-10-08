@@ -147,7 +147,6 @@ defmodule OliWeb.PageDeliveryController do
     if ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_learner)) do
 
       case Attempts.submit_graded_page(context_id, attempt_guid) do
-        # TODO: fix "this function call will not succeed"
         {:ok, _} -> after_finalized(conn, context_id, revision_slug, user)
         {:error, {:not_all_answered}} ->
           put_flash(conn, :error, "You have not answered all questions")

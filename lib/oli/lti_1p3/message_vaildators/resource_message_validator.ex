@@ -1,5 +1,4 @@
-# defimpl Oli.Lti_1p3.MessageValidator, for: Oli.Lti_1p3.MessageValidators.ResourceMessageValidator do
-  defmodule Oli.Lti_1p3.MessageValidators.ResourceMessageValidator do
+defmodule Oli.Lti_1p3.MessageValidators.ResourceMessageValidator do
 
   @behaviour Oli.Lti_1p3.MessageValidator
 

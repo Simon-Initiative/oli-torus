@@ -43,7 +43,6 @@ defmodule OliWeb.LtiController do
   end
 
   def jwks(conn, _params) do
-    # TODO: only display relavant jwks, not all - check the standard
     all_jwks = Oli.Lti_1p3.get_all_jwks()
       |> Enum.map(fn %{pem: pem, typ: typ, alg: alg, kid: kid} ->
         pem
@@ -65,7 +64,10 @@ defmodule OliWeb.LtiController do
   end
 
   defp handle_valid_lti_1p3_launch(conn, _lti_params, deployment_id) do
-    # TODO: render(conn, "configure_deployment.html")
+    # TODO: add ability to configure a deployment from the LTI launch when the deployment does not exist
+    #render(conn, "configure_deployment.html")
+
+    # for now, just show an error when the deployment does not exist
     render(conn, "basic_launch_invalid.html", reason: "Deployment with deployment_id '#{deployment_id}' does not exist")
   end
 

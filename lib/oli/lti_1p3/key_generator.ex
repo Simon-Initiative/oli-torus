@@ -21,17 +21,10 @@ defmodule Oli.Lti_1p3.KeyGenerator do
   def generate_key_pair do
     key_id = passphrase()
 
-    # TODO: Look into private key encryption using key_id?
-    # {:ok, aes_256_key} = ExCrypto.generate_aes_key(:aes_256, :bytes)
-
     {:ok, rsa_priv_key} = ExPublicKey.generate_key(4096)
     {:ok, public_key} = ExPublicKey.public_key_from_private_key(rsa_priv_key)
-
     {:ok, private_key_pem} = ExPublicKey.pem_encode(rsa_priv_key)
     {:ok, public_key_pem} = ExPublicKey.pem_encode(public_key)
-
-    # {:ok, {_iv, encrypted_private_key_pem}} = ExCrypto.encrypt(aes_256_key, private_key_pem)
-    # {:ok, encrypted_private_key_pem} = ExPublicKey.pem_encode(encrypted_private_key)
 
     %{public_key: public_key_pem, private_key: private_key_pem, key_id: key_id}
   end

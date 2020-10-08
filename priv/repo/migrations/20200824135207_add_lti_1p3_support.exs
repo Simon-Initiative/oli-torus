@@ -1,32 +1,6 @@
 defmodule Oli.Repo.Migrations.AddLti13RegistrationTable do
   use Ecto.Migration
 
-  # TODO: REMOVE
-  # def up do
-  #   alter table(:enrollments) do
-  #     # modify :user_id, references(:users), primary_key: false
-  #     # modify :section_id, references(:sections), primary_key: false
-
-  #     # flush()
-  #     drop(constraint(:enrollments, :index_user_section))
-  #     create index(:enrollments, [:user_id, :section_id])
-  #     # create unique_index(:enrollments, [:user_id, :section_id], name: :index_user_section)
-
-  #     modify :id, :integer, primary_key: true
-  #   end
-  # end
-
-  # def down do
-  #   alter table(:enrollments) do
-  #     modify :id, :integer, primary_key: false
-
-  #     flush()
-
-  #     modify :user_id, references(:users), primary_key: true
-  #     modify :section_id, references(:sections), primary_key: true
-  #   end
-  # end
-
   def change do
     drop(constraint(:enrollments, "enrollments_pkey"))
 

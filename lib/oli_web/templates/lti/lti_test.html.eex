@@ -6,20 +6,15 @@
 <table class="table">
   <thead>
     <tr>
-      <th>Name</th>
+      <th>Claim</th>
       <th>Value</th>
     </tr>
   </thead>
   <tbody>
     <%= Map.keys(@lti_params) |> Enum.map(fn key -> %>
       <tr>
-        <td><%= key %></td>
-        <%= case @lti_params[key] do %>
-          <% %{} = _map_value -> %>
-            <td>%{...}</td>
-          <% value -> %>
-            <td><%= value %></td>
-        <% end %>
+        <td class="text-break"><%= key %></td>
+        <td class="text-break"><%= Kernel.inspect(@lti_params[key]) %></td>
       </tr>
     <% end) %>
   </tbody>

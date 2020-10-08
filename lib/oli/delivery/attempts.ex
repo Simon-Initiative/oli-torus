@@ -326,7 +326,7 @@ defmodule Oli.Delivery.Attempts do
   end
 
   def get_part_attempts_and_users_for_publication(publication_id) do
-    # student_role_id = SectionRoles.get_by_type("student").id
+    student_role_id = Oli.Lti_1p3.ContextRoles.get_role(:context_learner).id
     Repo.all(
       from section in Section,
       join: enrollment in Enrollment, on: enrollment.section_id == section.id,
@@ -336,8 +336,11 @@ defmodule Oli.Delivery.Attempts do
       join: aattempt in ActivityAttempt, on: rattempt.id == aattempt.resource_attempt_id,
       join: pattempt in PartAttempt, on: aattempt.id == pattempt.activity_attempt_id,
       where: section.publication_id == ^publication_id,
-      # TODO: this needs to be implemented as an embedded query in the section roles json
-      # where: enrollment.section_role_id == ^student_role_id,
+
+      # only fetch records for users enrolled as students
+      left_join: er in "enrollments_context_roles", on: enrollment.id == er.enrollment_id,
+      left_join: context_role in Oli.Lti_1p3.ContextRole, on: er.context_role_id == context_role.id and context_role.id == ^student_role_id,
+
       select: %{ part_attempt: pattempt, user: user })
       # TODO: This should be done in the query, but can't get the syntax right
     |> Enum.map(& %{ user: &1.user, part_attempt: Repo.preload(&1.part_attempt, [activity_attempt: [:revision, revision: :activity_type, resource_attempt: :revision]]) })

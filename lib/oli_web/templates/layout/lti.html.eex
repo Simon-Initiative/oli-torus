@@ -1,9 +1,36 @@
-<%= render_layout "delivery.html", assigns do %>
+<!DOCTYPE html>
+<html lang="en" class="delivery">
+  <head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <%= get_title(assigns) %>
 
-<div>
+    <!-- Theme CSS (contains all bootstrap styles as well as custom styles for a specific theme) -->
+    <link id="delivery-theme" rel="stylesheet" href="<%= theme_url(@conn, :delivery) %>"/>
+    <link id="delivery-theme-dark" rel="stylesheet" href="/css/delivery_theme_dark.css" media="screen and (prefers-color-scheme: dark)"/>
 
-  <%= @inner_content %>
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
 
-</div>
+    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/vendor.js") %>"></script>
 
-<% end  %>
+    <%# Use this top <link when all 'fa fa-' are converted to 'fa fa-' regex: FIND=la([^l]*)la- REPLACE=fa$1fa- %>
+    <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+    <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/font-awesome-line-awesome/css/all.min.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&family=Inter:wght@400;700;900&family=Muli:wght@300;400;700&family=Source+Code+Pro:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap" rel="stylesheet">
+
+  </head>
+  <body>
+
+    <main role="main" class="container">
+
+      <%= Map.get(assigns, :inner_layout) || @inner_content %>
+
+    </main>
+
+  </body>
+</html>
