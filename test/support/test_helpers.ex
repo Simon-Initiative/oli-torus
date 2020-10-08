@@ -42,11 +42,14 @@ defmodule Oli.TestHelpers do
     params =
       attrs
       |> Enum.into(%{
-        email: "ironman#{System.unique_integer([:positive])}@example.com",
-        first_name: "Tony",
-        last_name: "Stark",
-        user_id: "2u9dfh7979hfd",
-        user_image: "none",
+        sub: "a6d5c443-1f51-4783-ba1a-7686ffe3b54a",
+        name: "Ms Jane Marie Doe",
+        given_name: "Jane",
+        family_name: "Doe",
+        middle_name: "Marie",
+        picture: "https://platform.example.edu/jane.jpg",
+        email: "jane#{System.unique_integer([:positive])}@platform.example.edu",
+        locale: "en-US",
       })
 
     {:ok, user} =

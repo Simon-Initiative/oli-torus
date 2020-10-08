@@ -11,10 +11,10 @@
         <div class="nav-item dropdown form-inline my-2 my-lg-0">
           <a class="user block nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="block lg:inline-block lg:mt-0 text-grey-darkest no-underline hover:underline my-1 mr-3">
-              <%= "#{@current_user.first_name} #{@current_user.last_name}" %>
+              <%= "#{@current_user.given_name} #{@current_user.family_name}" %>
             </span>
             <div class="user-icon">
-              <img src="<%= @current_user.user_image %>" class="rounded-circle" />
+              <img src="<%= @current_user.picture %>" class="rounded-circle" />
             </div>
           </a>
           <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
@@ -26,14 +26,14 @@
           <a class="user nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <div class="block lg:inline-block lg:mt-0 text-grey-darkest no-underline hover:underline mr-4">
               <div class="username">
-                <%= "#{@current_user.first_name} #{@current_user.last_name}" %>
+                <%= "#{@current_user.given_name} #{@current_user.family_name}" %>
               </div>
               <div class="role text-right" style="color: <%= user_role_color @conn, @current_user %>;">
                 <%= user_role_text @conn, @current_user %>
               </div>
             </div>
             <div class="user-icon">
-              <img src="<%= @current_user.user_image%>" class="rounded-circle" />
+              <img src="<%= @current_user.picture %>" class="rounded-circle" />
             </div>
           </a>
           <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">

@@ -263,12 +263,8 @@ defmodule OliWeb.Router do
     pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring, :admin]
     live "/accounts", Accounts.AccountsLive
 
-    resources "/institutions", InstitutionController
-
     resources "/institutions", InstitutionController do
-      resources "/registrations", RegistrationController, except: [:index, :show]
-
-      resources "/registrations", RegistrationController do
+      resources "/registrations", RegistrationController, except: [:index, :show] do
         resources "/deployments", DeploymentController, except: [:index, :show]
       end
     end

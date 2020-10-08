@@ -251,11 +251,14 @@ defmodule Oli.Seeder do
 
     {:ok, user} =
       User.changeset(%User{
-        email: "ironman#{System.unique_integer([:positive])}@example.com",
-        first_name: "Tony",
-        last_name: "Stark",
-        user_id: "2u9dfh7979hfd",
-        user_image: "none",
+        sub: "a6d5c443-1f51-4783-ba1a-7686ffe3b54a",
+        name: "Ms Jane Marie Doe",
+        given_name: "Jane",
+        family_name: "Doe",
+        middle_name: "Marie",
+        picture: "https://platform.example.edu/jane.jpg",
+        email: "jane#{System.unique_integer([:positive])}@platform.example.edu",
+        locale: "en-US",
         institution_id: institution.id
       }, attrs)
       |> Repo.insert
@@ -272,11 +275,11 @@ defmodule Oli.Seeder do
     |> Enum.with_index
     |> Enum.reduce(map,
       fn {tag, index}, acc -> add_user(acc, %{
-          user_id: Atom.to_string(tag),
-          first_name: "Tony",
-          last_name: "Stark",
-          email: "t.stark+#{index}@avengers.com"},
-        tag) end)
+          sub: Atom.to_string(tag),
+          given_name: "Jane",
+          family_name: "Doe",
+          email: "jane#{index}@platform.example.edu"
+      }, tag) end)
 
     # Enroll users
     user_tags

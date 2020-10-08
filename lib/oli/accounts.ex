@@ -41,9 +41,9 @@ defmodule Oli.Accounts do
   @doc """
   Gets a single user by query parameter
   ## Examples
-      iex> get_user_by(user_id: "123")
+      iex> get_user_by(sub: "123")
       %User{}
-      iex> get_user_by(user_id: "111")
+      iex> get_user_by(sub: "111")
       nil
   """
   def get_user_by(clauses), do: Repo.get_by(User, clauses)
@@ -99,7 +99,7 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Returns user details if a record matches user_id, or creates and returns a new user
+  Returns user details if a record matches sub, or creates and returns a new user
 
   ## Examples
 
@@ -108,8 +108,8 @@ defmodule Oli.Accounts do
       {:error, changeset}         -> # Something went wrong
 
   """
-  def insert_or_update_user(%{ user_id: user_id } = changes) do
-    case Repo.get_by(User, user_id: user_id) do
+  def insert_or_update_user(%{ sub: sub } = changes) do
+    case Repo.get_by(User, sub: sub) do
       nil -> %User{}
       user -> user
     end

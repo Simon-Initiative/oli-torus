@@ -72,14 +72,28 @@ defmodule OliWeb.LtiController do
   defp handle_valid_lti_1p3_launch(conn, lti_params, institution, _registration, _deployment) do
     lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
 
-    # TODO: change database user model to more accurately resemble OIDC standard values
+    # update user values defined by the oidc standard per LTI 1.3 standard user identity claims
     # http://www.imsglobal.org/spec/lti/v1p3/#user-identity-claims
     case Accounts.insert_or_update_user(%{
-      user_id: lti_params["sub"],
+      sub: lti_params["sub"],
+      name: lti_params["name"],
+      given_name: lti_params["given_name"],
+      family_name: lti_params["family_name"],
+      middle_name: lti_params["middle_name"],
+      nickname: lti_params["nickname"],
+      preferred_username:  lti_params["preferred_username"],
+      profile: lti_params["profile"],
+      picture: lti_params["picture"],
+      website: lti_params["website"],
       email: lti_params["email"],
-      first_name: lti_params["given_name"],
-      last_name: lti_params["family_name"],
-      user_image: lti_params["picture"],
+      email_verified: lti_params["email_verified"],
+      gender: lti_params["gender"],
+      birthdate: lti_params["birthdate"],
+      zoneinfo: lti_params["zoneinfo"],
+      locale: lti_params["locale"],
+      phone_number: lti_params["phone_number"],
+      phone_number_verified: lti_params["phone_number_verified"],
+      address: lti_params["address"],
       institution_id: institution.id,
     }) do
       {:ok, user} ->

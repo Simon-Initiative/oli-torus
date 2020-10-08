@@ -97,18 +97,17 @@ end
 |> Enum.map(&Oli.Authoring.Theme.changeset/1)
 |> Enum.map(fn t -> Oli.Repo.insert!(t, on_conflict: :replace_all, conflict_target: :id) end)
 
-# TODO: REMOVE
-# # create an active lti_1p3 jwk
-# if !Oli.Repo.get_by(Oli.Lti_1p3.Jwk, id: 1) do
-#   %{private_key: private_key} = Oli.Lti_1p3.KeyGenerator.generate_key_pair()
-#   Oli.Lti_1p3.create_new_jwk(%{
-#     pem: private_key,
-#     typ: "JWT",
-#     alg: "RS256",
-#     kid: UUID.uuid4(),
-#     active: true,
-#   })
-# end
+# create a default active lti_1p3 jwk
+if !Oli.Repo.get_by(Oli.Lti_1p3.Jwk, id: 1) do
+  %{private_key: private_key} = Oli.Lti_1p3.KeyGenerator.generate_key_pair()
+  Oli.Lti_1p3.create_new_jwk(%{
+    pem: private_key,
+    typ: "JWT",
+    alg: "RS256",
+    kid: UUID.uuid4(),
+    active: true,
+  })
+end
 
 # create default open and free institution
 if !Oli.Repo.get_by(Oli.Institutions.Institution, id: 1) do
@@ -164,48 +163,5 @@ if Application.fetch_env!(:oli, :env) == :dev do
 
     Oli.Publishing.publish_project(seeds.project)
   end
-
-  # TODO: REMOVE ME/CLEANUP   ########################
-  # {:ok, registration} = Oli.Lti_1p3.create_new_registration(%{
-  #   issuer: "https://lti-ri.imsglobal.org",
-  #   client_id: "12345",
-  #   key_set_url: "https://lti-ri.imsglobal.org/platforms/1237/platform_keys/1231.json",
-  #   auth_token_url: "https://lti-ri.imsglobal.org/platforms/1237/access_tokens",
-  #   auth_login_url: "https://lti-ri.imsglobal.org/platforms/1237/authorizations/new",
-  #   auth_server: "https://lti-ri.imsglobal.org",
-  #   tool_private_key: private_key,
-  #   kid: "0ijoZKpZWSJQ07b22gbdaCDmglc7BzwyeiQMvK8u-Gk",
-  # })
-
-  # %{id: jwk_id, pem: pem, typ: typ, alg: alg, kid: kid} = Oli.Lti_1p3.get_active_jwk()
-
-  # {:ok, registration} = Oli.Lti_1p3.create_new_registration(%{
-  #   issuer: "https://canvas.oli.cmu.edu",
-  #   client_id: "10000000000031",
-  #   key_set_url: "https://canvas.oli.cmu.edu/api/lti/security/jwks",
-  #   auth_token_url: "https://canvas.oli.cmu.edu/login/oauth2/token",
-  #   auth_login_url: "https://canvas.oli.cmu.edu/api/lti/authorize_redirect",
-  #   auth_server: "https://canvas.oli.cmu.edu",
-  #   tool_jwk_id: jwk_id,
-  #   institution_id: 1,
-  #   kid: "2018-05-18T22:33:20Z",
-  # })
-
-  # Oli.Lti_1p3.create_new_deployment(%{
-  #   deployment_id: "53:4dde05e8ca1973bcca9bffc13e1548820eee93a3",
-  #   registration_id: registration.id,
-  # })
-
-  # public_jwk = pem |> JOSE.JWK.from_pem |> JOSE.JWK.to_public
-  #   |> JOSE.JWK.to_map()
-  #   |> (fn {_kty, public_jwk} -> public_jwk end).()
-  #   |> Map.put("typ", typ)
-  #   |> Map.put("alg", alg)
-  #   |> Map.put("kid", kid)
-  #   |> Jason.encode!
-
-  # IO.puts "Public Key: #{public_jwk}"
-
-  ########################
 
 end

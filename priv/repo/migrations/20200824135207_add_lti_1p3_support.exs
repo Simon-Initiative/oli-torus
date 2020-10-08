@@ -1,6 +1,7 @@
 defmodule Oli.Repo.Migrations.AddLti13RegistrationTable do
   use Ecto.Migration
 
+  # TODO: REMOVE
   # def up do
   #   alter table(:enrollments) do
   #     # modify :user_id, references(:users), primary_key: false
@@ -112,10 +113,29 @@ defmodule Oli.Repo.Migrations.AddLti13RegistrationTable do
       remove :shared_secret, :string
     end
 
+    rename table(:users), :first_name, to: :given_name
+    rename table(:users), :last_name, to: :family_name
+    rename table(:users), :user_id, to: :sub
+    rename table(:users), :user_image, to: :picture
+
     alter table(:users) do
       remove :roles, :string
       remove :canvas_id, :string
       remove :lti_tool_consumer_id, references(:lti_tool_consumers)
+      add :name, :string
+      add :middle_name, :string
+      add :nickname, :string
+      add :preferred_username, :string
+      add :profile, :string
+      add :website, :string
+      add :email_verified, :boolean
+      add :gender, :string
+      add :birthdate, :string
+      add :zoneinfo, :string
+      add :locale, :string
+      add :phone_number, :string
+      add :phone_number_verified, :boolean
+      add :address, :string
     end
 
     alter table(:enrollments) do

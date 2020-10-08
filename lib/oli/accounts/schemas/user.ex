@@ -3,14 +3,31 @@ defmodule Oli.Accounts.User do
   import Ecto.Changeset
 
   schema "users" do
-    field :email, :string, default: ""
-    field :first_name, :string, default: ""
-    field :last_name, :string, default: ""
-    field :user_id, :string
-    field :user_image, :string
+    # user fields are based on the openid connect core standard, most of which are provided via LTI 1.3
+    # see https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims for full descriptions
+    field :sub, :string
+    field :name, :string
+    field :given_name, :string
+    field :family_name, :string
+    field :middle_name, :string
+    field :nickname, :string
+    field :preferred_username, :string
+    field :profile, :string
+    field :picture, :string
+    field :website, :string
+    field :email, :string
+    field :email_verified, :boolean
+    field :gender, :string
+    field :birthdate, :string
+    field :zoneinfo, :string
+    field :locale, :string
+    field :phone_number, :string
+    field :phone_number_verified, :boolean
+    field :address, :string
 
     # A user may optionally be linked to an author account
     belongs_to :author, Oli.Accounts.Author
+
     belongs_to :institution, Oli.Institutions.Institution
     has_many :enrollments, Oli.Delivery.Sections.Enrollment
     many_to_many :platform_roles, Oli.Lti_1p3.PlatformRole, join_through: "users_platform_roles", on_replace: :delete
@@ -21,11 +38,34 @@ defmodule Oli.Accounts.User do
   @doc false
   def changeset(user, attrs \\ %{}) do
     user
-    |> cast(attrs, [:email, :first_name, :last_name, :user_id, :user_image, :institution_id, :author_id])
-    |> validate_required([:user_id])
+    |> cast(attrs, [
+      :sub,
+      :name,
+      :given_name,
+      :family_name,
+      :middle_name,
+      :nickname,
+      :preferred_username,
+      :profile,
+      :picture,
+      :website,
+      :email,
+      :email_verified,
+      :gender,
+      :birthdate,
+      :zoneinfo,
+      :locale,
+      :phone_number,
+      :phone_number_verified,
+      :address,
+      :author_id,
+      :institution_id,
+    ])
+    |> validate_required([:sub])
   end
 end
 
+# define implementations required for LTI 1.3 library integration
 defimpl Oli.Lti_1p3.Lti_1p3_User, for: Oli.Accounts.User do
   import Ecto.Query, warn: false
   alias Oli.Repo
