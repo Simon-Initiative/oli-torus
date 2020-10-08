@@ -2,7 +2,7 @@
 
 Torus supports LTI 1.3 integration and leverages the Learning Management System (LMS) for course delivery. The philosophy of Torus is to focus and excel at what it is specifically designed for, which is rich course content authoring and data-driven continuous improvement. Many of the necessary features of course delivery such as roster management, gradebook management and scheduling are deferred to the LMS, which is what it is specifically designed for. These aspects of the student and instructor experience are crucial and require tight integration which is enabled by the LTI 1.3 standard.
 
-Many LMSs currently support the LTI 1.3 standard including Canvas, Blackboard, Moodle, Brightspace D2L, and more. Each LMS may have a slightly different method of configuring an external tool such as Torus, but the general process is similar and is driven from the [LTI 1.3 Specification](http://www.imsglobal.org/spec/lti/v1p3/).
+Many LMSs currently support the LTI 1.3 standard including Canvas, Blackboard, Moodle, Brightspace D2L, and more. Each LMS may have a slightly different method of configuring an external tool like Torus, but in general the process is similar between them and is driven by the [LTI 1.3 Specification](http://www.imsglobal.org/spec/lti/v1p3/).
 
 ## Concepts
 
