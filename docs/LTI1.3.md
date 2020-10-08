@@ -1,5 +1,3 @@
-<style>img { border: 3px solid #ddd}</style>
-
 # LTI 1.3
 
 Torus supports LTI 1.3 integration and leverages the Learning Management System (LMS) for course delivery. The philosophy of Torus is to focus and excel at what it is specifically designed for, which is rich course content authoring and data-driven continuous improvement. Many of the necessary features of course delivery such as roster management, gradebook management and scheduling are deferred to the LMS, which is what it is specifically designed for. These aspects of the student and instructor experience are crucial and require tight integration which is enabled by the LTI 1.3 standard.
@@ -36,7 +34,7 @@ To configure an LTI 1.3 integration in Torus, we need to gather some important L
 
 1. In Torus as an Administrator, select "Institutions" from the sidebar on the left of the workspace, then click "Register New Institution"
 
-    ![img](./images/institutions_link.png =300x)
+    <img src="./images/institutions_link.png" width="300px" />
 
 1. Enter your Institution's details and click "Save"
 
