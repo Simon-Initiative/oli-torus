@@ -8,7 +8,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   @doc """
   Validates all aspects of an incoming LTI message launch and caches the launch params in the session if successful.
   """
-  @spec validate(Plug.Conn.t(), get_public_key_callback()) :: {:ok, Plug.Conn.t(), any()} | {:error, %{optional(atom()) => any(), code: atom(), reason: String.t()}}
+  @spec validate(Plug.Conn.t(), get_public_key_callback()) :: {:ok, Plug.Conn.t(), any()} | {:error, %{optional(atom()) => any(), reason: atom(), msg: String.t()}}
   def validate(conn, get_public_key) do
     with {:ok, conn} <- validate_oidc_state(conn),
          {:ok, kid} <- peek_jwt_kid(conn),
@@ -29,16 +29,16 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   defp validate_oidc_state(conn) do
     case Plug.Conn.get_session(conn, "state") do
       nil ->
-        {:error, %{code: :invalid_oidc_state, reason: "State from session is missing. Make sure cookies are enabled and configured correctly"}}
+        {:error, %{reason: :invalid_oidc_state, msg: "State from session is missing. Make sure cookies are enabled and configured correctly"}}
       session_state ->
         case conn.params["state"] do
           nil ->
-            {:error, %{code: :invalid_oidc_state, reason: "State from OIDC request is missing"}}
+            {:error, %{reason: :invalid_oidc_state, msg: "State from OIDC request is missing"}}
           request_state ->
             if request_state == session_state do
               {:ok, conn}
             else
-              {:error, %{code: :invalid_oidc_state, reason: "State from OIDC request does not match session"}}
+              {:error, %{reason: :invalid_oidc_state, msg: "State from OIDC request does not match session"}}
             end
         end
     end
@@ -47,31 +47,40 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   defp validate_registration(conn, kid) do
     case Oli.Lti_1p3.get_registration_by_kid(kid) do
       nil ->
-        {:error, %{code: :invalid_registration, reason: "Registration with kid \"#{kid}\" not found", kid: kid}}
+        {:error, %{reason: :invalid_registration, msg: "Registration with kid \"#{kid}\" not found", kid: kid}}
         registration ->
         {:ok, conn, registration}
     end
   end
 
-  defp decode_id_token(conn) do
+  defp extract_id_token(conn) do
     case conn.params["id_token"] do
       nil ->
-        {:error, %{code: :missing_id_token, reason: "Missing id_token"}}
+        {:error, %{reason: :missing_id_token, msg: "Missing id_token"}}
       id_token ->
         {:ok, id_token}
     end
   end
 
+  defp peek_header(jwt_string) do
+    case Joken.peek_header(jwt_string) do
+      {:ok, jwt_body} ->
+        {:ok, jwt_body}
+      {:error, reason} ->
+        {:error, %{reason: reason, msg: "Invalid id_token"}}
+    end
+  end
+
   defp peek_jwt_kid(conn) do
-    with {:ok, jwt_string} <- decode_id_token(conn),
-         {:ok, jwt_body} <- Joken.peek_header(jwt_string)
+    with {:ok, jwt_string} <- extract_id_token(conn),
+         {:ok, jwt_body} <- peek_header(jwt_string)
     do
       {:ok, jwt_body["kid"]}
     end
   end
 
   defp validate_jwt(conn, registration, kid, get_public_key) do
-    with {:ok, jwt_string} <- decode_id_token(conn),
+    with {:ok, jwt_string} <- extract_id_token(conn),
          {:ok, public_key} <- get_public_key.(registration, kid)
     do
       {_kty, pk} = JOSE.JWK.to_map(public_key)
@@ -81,9 +90,8 @@ defmodule Oli.Lti_1p3.LaunchValidation do
       case Joken.verify_and_validate(%{}, jwt_string, signer) do
         {:ok, jwt} ->
           {:ok, conn, jwt}
-        {:error, :signature_error} ->
-          {:error, %{code: :invalid_jwt, reason: "Invalid signature on id_token"}}
-        error -> error
+        {:error, reason} ->
+          {:error, %{reason: reason, msg: "Invalid id_token"}}
       end
     end
   end
@@ -99,15 +107,15 @@ defmodule Oli.Lti_1p3.LaunchValidation do
           {false, false} ->
             {:ok, conn}
           {_, false} ->
-            {:error, %{code: :invalid_token_timstamp, reason: "Token exp is expired"}}
+            {:error, %{reason: :invalid_token_timstamp, msg: "Token exp is expired"}}
           {false, _} ->
-            {:error, %{code: :invalid_token_timstamp, reason: "Token iat is invalid"}}
+            {:error, %{reason: :invalid_token_timstamp, msg: "Token iat is invalid"}}
           _ ->
-            {:error, %{code: :invalid_token_timstamp, reason: "Token exp and iat are invalid"}}
+            {:error, %{reason: :invalid_token_timstamp, msg: "Token exp and iat are invalid"}}
         end
       end
     rescue
-      _error -> {:error, "Timestamps are invalid"}
+      _error -> {:error, %{reason: :invalid_token_timstamp, msg: "Timestamps are invalid"}}
     end
   end
 
@@ -116,7 +124,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
       {:ok, _nonce} ->
         {:ok, conn}
       {:error, %{ errors: [ value: { _msg, [{:constraint, :unique} | _]}]}} ->
-        {:error, %{code: :invalid_nonce, reason: "Duplicate nonce"}}
+        {:error, %{reason: :invalid_nonce, msg: "Duplicate nonce"}}
     end
   end
 
@@ -126,7 +134,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
 
     case deployment do
       nil ->
-        {:error, %{code: :invalid_deployment, reason: "Deployment with id \"#{deployment_id}\" not found", deployment_id: deployment_id}}
+        {:error, %{reason: :invalid_deployment, msg: "Deployment with id \"#{deployment_id}\" not found", deployment_id: deployment_id}}
       _deployment ->
         {:ok, conn}
     end
@@ -135,7 +143,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   defp validate_message(conn, jwt_body) do
     case jwt_body["https://purl.imsglobal.org/spec/lti/claim/message_type"] do
       nil ->
-        {:error, %{code: :invalid_message_type, reason: "Missing message type"}}
+        {:error, %{reason: :invalid_message_type, msg: "Missing message type"}}
       message_type ->
         # no more than one message validator should apply for a given mesage,
         # so use the first validator we find that applies
@@ -146,9 +154,9 @@ defmodule Oli.Lti_1p3.LaunchValidation do
 
         case validation_result do
           nil ->
-            {:error, %{code: :invalid_message_type, reason: "Invalid or unsupported message type \"#{message_type}\""}}
+            {:error, %{reason: :invalid_message_type, msg: "Invalid or unsupported message type \"#{message_type}\""}}
           {:error, error} ->
-            {:error, %{code: :invalid_message, reason: "Message validation failed: (\"#{message_type}\") #{error}"}}
+            {:error, %{reason: :invalid_message, msg: "Message validation failed: (\"#{message_type}\") #{error}"}}
           _ ->
             {:ok, conn}
         end

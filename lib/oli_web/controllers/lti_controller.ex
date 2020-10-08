@@ -26,10 +26,10 @@ defmodule OliWeb.LtiController do
           {institution, registration, deployment} ->
             handle_valid_lti_1p3_launch(conn, lti_params, institution, registration, deployment)
         end
-      {:error, %{code: :invalid_deployment, reason: _reason, deployment_id: deployment_id}} ->
+      {:error, %{reason: :invalid_deployment, msg: _msg, deployment_id: deployment_id}} ->
         handle_no_deployment(conn, deployment_id)
-      {:error, %{code: _code, reason: reason}} ->
-        render(conn, "basic_launch_invalid.html", reason: reason)
+      {:error, %{reason: _reason, msg: msg}} ->
+        render(conn, "basic_launch_invalid.html", reason: msg)
     end
   end
 
@@ -37,8 +37,8 @@ defmodule OliWeb.LtiController do
     case Lti_1p3.LaunchValidation.validate(conn, &get_public_key/2) do
       {:ok, conn, lti_params} ->
         render(conn, "lti_test.html", lti_params: lti_params)
-      {:error, %{code: _code, reason: reason}} ->
-        render(conn, "basic_launch_invalid.html", reason: reason)
+      {:error, %{reason: _reason, msg: msg}} ->
+        render(conn, "basic_launch_invalid.html", reason: msg)
     end
   end
 
