@@ -10,14 +10,14 @@ Many LMSs currently support the LTI 1.3 standard including Canvas, Blackboard, M
 Torus has the concept of an **Institution** which represents an organization whom wishes to use Torus, typically from their own LMS or a cloud hosted one. For example, Carnegie Mellon University would be considered an intitution, and so is The Open Learning Initiative (OLI) itself. OLI operates Open and Free courses from Torus using a self hosted version of canvas at canvas.oli.cmu.edu.
 
 ### Registrations
-A **Registration** is a regestered integration point for an instition into Torus for content delivery. For example, an institution may have multiple LMSs. Each one of these LMSs may share an **Institution** but will have separate registrations. In the LTI standard, institutions are represented using the `issuer` field (typically a URL e.g. https://canvas.oli.cmu.edu), and `client_id` represents a unique registration within the institution.
+A **Registration** is a regestered integration point for an institution into Torus. For example, an institution may have multiple LMSs. Each one of these LMSs may belong to the same **Institution** but will have separate registrations. Institutions in the LTI standard are also referred to as Platforms and are represented using the `issuer` field. (typically a URL e.g. https://canvas.oli.cmu.edu). The `client_id` represents a unique registration within the institution.
 
 ### Deployments
-A **Deployment** is a specific instance of _, and can simply be thought of as the next tier below registrations. A registration may have many deployments, for example one deployment for every course.
+A **Deployment** can be simply thought of as the next tier below registrations. A registration may have many deployments, for example one deployment for every course, or a single deployment shared gloablly across the entire LMS.
 
 There is some flexibility to how these concepts could be represetented for an organization, but typically an orgainization will have a single **Institution**, with a single **Registration** for their LMS, and they may have one or many **Deployments** within their LMS depending on if the tool is configure globally or for an individual department/course.
 
-Currently, Institutions, registrations and deployments are created and managed by a Torus administrator. In the future, we plan to add more flexibility on how these entities can be registered and approved. For now, please contact OLI if you wish to deliver a Torus course from your orgainization's LMS. If you are running your own instance of Torus, the steps below outline the process for creating these entities for LTI 1.3 integration with an LMS.
+Currently, Institutions, registrations and deployments are created and managed by a Torus administrator. In the future, we plan to add more flexibility on how these entities can be registered and approved. For now, please contact OLI if you wish to deliver a Torus course from your orgainization's LMS. If you are running your own instance of Torus, the steps below outline the process for creating these entities required for LTI 1.3 integration with an LMS.
 
 ## Configuring LTI 1.3 in Torus
 
