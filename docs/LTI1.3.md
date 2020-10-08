@@ -107,6 +107,7 @@ Canvas requires ceratin elevated privledges to configure LTI 1.3 Developer Keys 
     <img src="./images/add_app.png" width="800px" />
 
 1. We must configure this specific deployment with torus, as mentioned in the previous section 'Configuring LTI 1.3 in Torus'. To do this, we must get the **Deployment ID** created by Canvas by Selecting the "gear" menu > Deployment ID.
+
     <img src="./images/deployment_gear_icon.png" width="200px" />
 
     <img src="./images/deployment_id.png" width="500px" />
