@@ -7,7 +7,7 @@ Many LMSs currently support the LTI 1.3 standard including Canvas, Blackboard, M
 ## Concepts
 
 ### Institutions
-Torus has the concept of an **Institution** which represents an organization whom wishes to use Torus, typically from their own LMS or a cloud hosted one. For example, Carnegie Mellon University would be considered an intitution, and so is The Open Learning Initiative (OLI) itself. OLI operates Open and Free courses from Torus using a separate instance of canvas at canvas.oli.cmu.edu.
+Torus has the concept of an **Institution** which represents an organization whom wishes to use Torus, typically from their own LMS or a cloud hosted one. For example, Carnegie Mellon University would be considered an intitution, and so is The Open Learning Initiative (OLI) itself. OLI operates some of it's paid and open + free courses from Torus using a separate instance of canvas at canvas.oli.cmu.edu.
 
 ### Registrations
 A **Registration** is a regestered integration point for an institution into Torus. For example, an institution may have multiple LMSs. Each one of these LMSs may belong to the same **Institution** but will have separate registrations. Institutions in the LTI standard are also referred to as Platforms and are represented using the `issuer` field. (typically a URL e.g. https://canvas.oli.cmu.edu). The `client_id` represents a unique registration within the institution.
