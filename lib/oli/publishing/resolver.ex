@@ -34,6 +34,12 @@ defmodule Oli.Publishing.Resolver do
   @callback root_resource(String.t) :: %Revision{}
 
   @doc """
+  Resolves the revisions of all containers and pages
+  """
+  @callback hierarchy(String.t) :: [%Revision{}]
+
+
+  @doc """
   Finds the parent objectives for a list of objective resource ids that
   might be child objectives.  Returns a map of the child objective resource id
   to the parent objective.  There will not be an entry in this map if

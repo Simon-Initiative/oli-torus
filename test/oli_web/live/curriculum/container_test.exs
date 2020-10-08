@@ -1,4 +1,4 @@
-defmodule OliWeb.ContainerLiveTest do
+defmodule OliWeb.Curriculum.ContainerLiveTest do
   use OliWeb.ConnCase
   alias Oli.Seeder
 

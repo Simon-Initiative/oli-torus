@@ -66,8 +66,9 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     AuthoringResolver.from_resource_id(project.slug, container.children)
   end
 
+
   @doc """
-  Creates and adds a new page as a child of a container.
+  Creates and adds a new page or container as a child of a container.
   """
   def add_new(
     %{objectives: _, children: _, content: _, title: _} = attrs,
