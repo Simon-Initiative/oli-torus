@@ -1,0 +1,10 @@
+{
+    "editor.tabSize": 2,
+    "files.trimTrailingWhitespace": true,
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "jest.rootPath": "./assets",
+    "files.associations": {
+        "*.eex": "eex",
+        "*.leex": "eex"
+    }
+}
