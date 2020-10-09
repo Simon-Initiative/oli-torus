@@ -16,8 +16,6 @@ defmodule OliWeb.Curriculum.Settings do
 
   def render(assigns) do
 
-    type = if assigns.child.graded do "Assessment" else "Page" end
-
     ~L"""
     <%= _ = form_for @changeset, "#", [phx_submit: "save"] %>
 

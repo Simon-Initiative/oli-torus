@@ -23,20 +23,6 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       assert view |> element("##{Integer.to_string(page1.id)}") |> has_element?()
       assert view |> element("##{Integer.to_string(page2.id)}") |> has_element?()
-
-      # click the first item to select it, this would makde the Settings view visible
-      view
-       |> element("##{Integer.to_string(page1.id)}")
-       |> render_click() =~ "Grading Type"
-
-      # delete the selected page
-      view
-       |> element(".btn-danger")
-       |> render_click() =~ "The temperature is: 30℉"
-
-      refute view |> element("##{Integer.to_string(page1.id)}") |> has_element?()
-      assert view |> element("##{Integer.to_string(page2.id)}") |> has_element?()
-
     end
 
   end

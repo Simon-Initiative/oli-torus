@@ -43,6 +43,8 @@ defmodule Oli.Resources.NumberingTest do
       # do the numbering, then programatically compare it to the titles of the
       # containers, which contain the correct numbering and level names
       Numbering.number_full_tree(root, hierarchy_nodes)
+      |> Enum.to_list()
+      |> Enum.map(& elem(&1, 1))
       |> Enum.each(fn n ->
 
         level = case n.level do
@@ -51,7 +53,7 @@ defmodule Oli.Resources.NumberingTest do
           3 -> "Section"
         end
 
-        assert Numbering.number_prefix(n) == n.container.title
+        assert Numbering.prefix(n) == n.container.title
         assert n.container.title == "#{level} #{n.count}"
 
       end)
