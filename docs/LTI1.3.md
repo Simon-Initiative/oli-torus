@@ -58,6 +58,8 @@ To configure an LTI 1.3 integration in Torus, we need to gather some important L
 
 #### Create LTI 1.3 Developer Key
 
+Canvas Docs: https://community.canvaslms.com/t5/Admin-Guide/How-do-I-configure-an-LTI-key-for-an-account/ta-p/140
+
 Canvas requires elevated privledges to configure LTI 1.3 Developer Keys and Apps. Canvas administrators should have the necessary privledges. If you don't see the options mentioned below, you may not have proper privledges or your canvas instance may be an older version which does not support LTI 1.3. In either case, you should check with your LMS administrator.
 
 1. In Canvas using the left main menu, select Admin > [Admin Account Name].
@@ -98,6 +100,8 @@ Canvas requires elevated privledges to configure LTI 1.3 Developer Keys and Apps
     <img src="./images/client_id.png" width="200px" />
 
 #### Add Torus as an External Tool link in your Canvas course
+
+Canvas Docs: https://community.canvaslms.com/t5/Admin-Guide/How-do-I-configure-an-external-app-for-an-account-using-a-client/ta-p/202
 
 1.  Navigate to your course and click "Settings" > "Apps"
 
