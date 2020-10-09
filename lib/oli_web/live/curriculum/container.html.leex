@@ -2,21 +2,26 @@
   <div class="row">
     <div class="col-12">
       <p class="text-secondary mb-3">
-        Create and arrange items to form your project curriculum, which determines the order that pages will appear to students.
+        Create and arrange items in your curriculum to arrange the material for students.
       </p>
     </div>
   </div>
   <div class="row">
     <div class="col-12">
       <div class="entry-selection d-flex align-items-center flex-row">
-        <button phx-click="change-view" phx-value-view="Simple" class="view-selection-item pl-3 pr-3<%= active_class(@active_view, "Simple")%>">Simple</button>
-        <button phx-click="change-view" phx-value-view="Learning Summary" class="view-selection-item mr-auto pl-3 pr-3<%= active_class(@active_view, "Learning Summary")%>">Learning Summary</button>
+        <button phx-click="change-view" phx-value-view="Simple" class="view-selection-item pl-3 pr-3<%= active_class(@view, "Simple")%>">Simple</button>
+        <button phx-click="change-view" phx-value-view="Learning Summary" class="view-selection-item mr-auto pl-3 pr-3<%= active_class(@view, "Learning Summary")%>">Learning Summary</button>
       </div>
     </div>
   </div>
   <div class="row" phx-window-keydown="keydown">
     <div class="col-12">
       <div class="curriculum-entries">
+        <%= if Enum.count(@children) == 0 do %>
+          <div style="margin-top: 15px">
+            <p>There's nothing here.</p>
+          </div>
+        <% end %>
         <%= for {child, index} <- Enum.with_index(@children) do %>
           <%= live_component @socket, DropTarget, index: index %>
           <%= live_component @socket, Entry, %{
@@ -29,8 +34,9 @@
                   objective_map: @rollup.objective_map,
                   index: index,
                   project: @project,
-                  active_view: @active_view,
-                  changeset: @changeset
+                  view: @view,
+                  changeset: @changeset,
+                  numbering: @numbering
                 } %>
         <% end %>
         <%= live_component @socket, DropTarget, index: length(@children) %>

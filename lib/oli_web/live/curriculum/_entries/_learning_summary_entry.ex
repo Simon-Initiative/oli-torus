@@ -6,10 +6,13 @@ defmodule OliWeb.Curriculum.LearningSummaryEntry do
 
   use Phoenix.LiveComponent
 
+  defp determine_activities(activity_ids, activity_map) do
+    Enum.map(activity_ids, fn id -> Map.get(activity_map, id) end)
+  end
+
   # For the given list of activity ids, find and return the set of objective revisions
   # that these activities have attached.
   defp determine_objectives(activity_ids, activity_map, objective_map) do
-
     Enum.map(activity_ids, fn id -> Map.get(activity_map, id) end)
     |> Enum.reduce(MapSet.new(), fn %{objectives: objectives}, map_set ->
 
@@ -23,94 +26,53 @@ defmodule OliWeb.Curriculum.LearningSummaryEntry do
     |> Enum.map(fn id -> Map.get(objective_map, id) end)
   end
 
-  defp render_objectives_count(assigns, objectives) do
+  defp render_activities(assigns, activities) do
+    count = length(activities)
 
-    count = length(objectives)
-
-    objs = if count == 1 do "objective" else "objectives" end
+    type = if assigns.child.graded do "summative" else "formative" end
 
     ~L"""
-    <%= count %> <%= objs %>
+    <small>
+      <%= if count == 0 do %>
+        No <%= type %> activities
+      <% else %>
+        <%= for %{title: title} <- activities do %>
+          <div>
+            <%= title %>
+          </div>
+        <% end %>
+      <% end %>
+    </small>
     """
-  end
-
-  defp render_counts(assigns, objectives) do
-
-    count = length(assigns.activity_ids)
-
-    type = if assigns.page.graded do "summative" else "practice" end
-    activities = if count == 1 do "activity" else "activities" end
-    muted = if assigns.selected do "" else "text-muted" end
-
-    if (count > 0) do
-      ~L"""
-      <div><small class="<%= muted %>"><%= count %> <%= type %> <%= activities %> targeting
-        <%= render_objectives_count(assigns, objectives) %></small>
-      </div>
-      """
-    else
-      ~L"""
-      <small class="<%= muted %>">No <%= type %> activities</small>
-      """
-    end
-
   end
 
   defp render_objectives(assigns, objectives) do
     ~L"""
-    <div class="targeted-objectives">
-
-      <%= for %{title: title} <- objectives do %>
-        <div class="objective"><%= title %></div>
-      <% end %>
-
-    </div>
+    <%= if Enum.count(objectives) > 0 do %>
+      <div class="targeted-objectives">
+        <%= for %{title: title} <- objectives do %>
+          <div class="objective">
+            <small>
+              <%= title %>
+            </small>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <small class="no-objectives">
+        No targeted objectives
+      </small>
+    <% end %>
     """
-
-
   end
 
   def render(assigns) do
-
-    active_class = if assigns.selected do "active" else "" end
-
-    count = length(assigns.activity_ids)
-    objectives = if count > 0 do
-      determine_objectives(assigns.activity_ids, assigns.activity_map, assigns.objective_map)
-    else
-      []
-    end
-
-
     ~L"""
-    <div
-      tabindex="0"
-      phx-keydown="keydown"
-      id="<%= @page.resource_id %>"
-      draggable="true"
-      phx-click="select"
-      phx-value-slug="<%= @page.slug %>"
-      phx-value-index="<%= assigns.index %>"
-      data-drag-index="<%= assigns.index %>"
-      phx-hook="DragSource"
-      class="p-1 d-flex justify-content-start curriculum-entry <%= active_class %>">
-
-      <div class="drag-handle">
-        <div class="grip"></div>
-      </div>
-
-      <div class="text-truncate" style="width: 100%;">
-
-        <div class="d-flex justify-content-between align-items-top">
-            <%= @page.title %>
-          <%= render_counts(assigns, objectives) %>
-        </div>
-
-        <div>
-          <%= render_objectives(assigns, objectives) %>
-        </div>
-      </div>
-
+    <div class="col-4 entry-section">
+      <%= render_objectives(assigns, determine_objectives(assigns.activity_ids, assigns.activity_map, assigns.objective_map)) %>
+    </div>
+    <div class="col-4 entry-section">
+      <%= render_activities(assigns, determine_activities(assigns.activity_ids, assigns.activity_map)) %>
     </div>
     """
   end

@@ -8,8 +8,6 @@ defmodule OliWeb.Curriculum.Settings do
   use Phoenix.HTML
   alias Oli.Resources.ScoringStrategy
 
-  alias OliWeb.Router.Helpers, as: Routes
-
   defp selected_attr(item, item), do: "selected=\"selected\""
   defp selected_attr(_, _), do: ""
 
@@ -21,7 +19,7 @@ defmodule OliWeb.Curriculum.Settings do
     type = if assigns.child.graded do "Assessment" else "Page" end
 
     ~L"""
-    <%= _ = form_for @changeset, "#", [phx_change: :save] %>
+    <%= _ = form_for @changeset, "#", [phx_submit: "save"] %>
 
       <div><small>Grading Type:</small></div>
 

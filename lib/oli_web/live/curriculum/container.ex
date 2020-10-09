@@ -16,6 +16,8 @@ defmodule OliWeb.Curriculum.Container do
   alias Oli.Publishing
   alias Oli.Accounts
   alias Oli.Authoring.Broadcaster.Subscriber
+  alias Oli.Resources.Numbering
+  alias OliWeb.Router.Helpers, as: Routes
 
   # Resources currently being edited by an author (has a lock present)
   # : %{ resource_id => author }
@@ -34,12 +36,8 @@ defmodule OliWeb.Curriculum.Container do
         %{"current_author_id" => author_id},
         socket
       ) do
-    author = Repo.get(Author, author_id)
     project = Course.get_project_by_slug(project_slug)
-
     container = AuthoringResolver.from_revision_slug(project.slug, container_slug)
-    resources_being_edited = get_resources_being_edited(container.children, project.id)
-
     children =
       ContainerEditor.list_all_container_children(container, project)
       |> Repo.preload([:resource, :author])
@@ -58,12 +56,18 @@ defmodule OliWeb.Curriculum.Container do
        container: container,
        project: project,
        subscriptions: subscriptions,
-       author: author,
-       active_view: "Simple",
+       author: Repo.get(Author, author_id),
+       view: "Simple",
        selected: nil,
-       resources_being_edited: resources_being_edited
+       resources_being_edited: get_resources_being_edited(container.children, project.id),
+       numbering: Numbering.number_full_tree(
+         AuthoringResolver.root_container(project_slug),
+         Numbering.fetch_hierarchy(project_slug))
      )}
   end
+
+  def handle_params(%{ "view" => view }, _, socket), do: {:noreply, assign(socket, view: view)}
+  def handle_params(_, _, socket), do: {:noreply, socket}
 
   # spin up subscriptions for the container and for all of its children, activities and attached objectives
   defp subscribe(
@@ -109,6 +113,7 @@ defmodule OliWeb.Curriculum.Container do
 
   # process form submission to save page settings
   def handle_event("save", params, socket) do
+    IO.inspect("here")
     params =
       Enum.reduce(params, %{}, fn {k, v}, m ->
         case MapSet.member?(MapSet.new(["_csrf_token", "_target"]), k) do
@@ -234,7 +239,7 @@ defmodule OliWeb.Curriculum.Container do
         case type do
           "Scored" -> "New Assessment"
           "Unscored" -> "New Page"
-          "Container" -> "Module"
+          "Container" -> "New Grouping"
         end,
       graded:
         case type do
@@ -283,19 +288,24 @@ defmodule OliWeb.Curriculum.Container do
           |> put_flash(:error, "Could not create new item")
       end
 
-    {:noreply, socket}
-  end
-
-  def handle_event("toggle_settings", _params, socket) do
-    {:noreply, assign(socket, modal_shown: !socket.assigns.modal_shown)}
+    {:noreply, assign(socket,
+      numbering: Numbering.number_full_tree(
+        AuthoringResolver.root_container(socket.assigns.project.slug),
+        Numbering.fetch_hierarchy(socket.assigns.project.slug))
+    )}
   end
 
   def handle_event("change-view", %{"view" => view}, socket) do
-    {:noreply, assign(socket, :active_view, view)}
+    {:noreply, push_patch(socket, to: Routes.live_path(
+      socket,
+      OliWeb.Curriculum.Container,
+      socket.assigns.project.slug,
+      socket.assigns.container.slug,
+      %{ view: view }))}
   end
 
   def active_class(active_view, view) do
-    if view == active_view do
+    if active_view == view do
       " active"
     else
       ""
@@ -368,11 +378,17 @@ defmodule OliWeb.Curriculum.Container do
     # in the case of a change to the container, we simplify by just pulling a new view of
     # the container and its contents. This handles addition, removal, reordering from the
     # local user as well as a collaborator
+    IO.inspect(revision.children, label: "Revision children")
     children =
       ContainerEditor.list_all_container_children(revision, socket.assigns.project)
       |> Repo.preload([:resource, :author])
+    IO.inspect(Enum.map(children, & {&1.resource_id, &1.title}), label: "new children")
 
     {:ok, rollup} = Rollup.new(children, socket.assigns.project.slug)
+
+    numbering = Numbering.number_full_tree(
+      AuthoringResolver.root_container(socket.assigns.project.slug),
+      Numbering.fetch_hierarchy(socket.assigns.project.slug))
 
     selected =
       case socket.assigns.selected do
@@ -380,7 +396,7 @@ defmodule OliWeb.Curriculum.Container do
         s -> Enum.find(children, fn r -> r.resource_id == s.resource_id end)
       end
 
-    assign(socket, selected: selected, container: revision, children: children, rollup: rollup)
+    assign(socket, selected: selected, container: revision, children: children, rollup: rollup, numbering: numbering)
   end
 
   # Here we respond to notifications for edits made

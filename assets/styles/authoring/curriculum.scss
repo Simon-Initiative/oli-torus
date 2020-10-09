@@ -4,51 +4,35 @@
   max-width: 700px;
 
   .targeted-objectives {
-
     .objective {
-      margin-left: 20px;
-      color: $info;
-      font-size: 0.9em;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-
   }
 
   .no-objectives {
-    margin-left: 20px;
     color: $warning;
-    font-size: 0.9em;
-
   }
 
   .entry-selection {
-    border-color: rgba(34, 36, 38, 0.15);
-    border-radius: 1px;
-    box-shadow: 0 1px 2px 0 rgba(34,36,38,.15);
-    border-radius: .28571429rem;
+    .entry-section {
+      white-space: pre-wrap;
+    }
 
     button.view-selection-item {
+      border-radius: .3em;
       height: 30px;
       outline: none;
       position: relative;
       background-color: #f2f2f2;
       border: none;
       color: inherit;
+      margin-right: 3px;
       &:hover:not(.active) {
         cursor: pointer;
         background: rgba(0,0,0,.03);
         color: rgba(0,0,0,.95);
-      }
-      &:before {
-        position: absolute;
-        content: '';
-        top: 0;
-        right: 0;
-        height: 100%;
-        width: 1px;
-        background: rgba(34,36,38,.1);
       }
       &.active:after {
         background-color: #f2f2f2;
@@ -60,8 +44,6 @@
         margin: .5px 0 0;
         width: .57142857em;
         height: .57142857em;
-        border-bottom: 1px solid #d4d4d5;
-        border-right: 1px solid #d4d4d5;
         z-index: 1;
       }
     }
@@ -80,17 +62,6 @@
     .entry-title {
       font-size: 14px;
       font-weight: 600;
-    }
-
-    .entry-settings {
-      position: relative;
-    }
-
-    .entry-options {
-      position: absolute;
-      top: 0;
-      right: 10px;
-      z-index: 1;
     }
 
     .badge {

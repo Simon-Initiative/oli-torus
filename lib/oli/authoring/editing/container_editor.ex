@@ -238,13 +238,13 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       }
 
       # Apply that change to the container, generating a new revision
-      result = ChangeTracker.track_revision(project.slug, container, reordering)
-
-      updated_container = Oli.Repo.get(Oli.Resources.Revision, container.id)
-
-      Broadcaster.broadcast_revision(updated_container, project.slug)
-
-      result
+      case ChangeTracker.track_revision(project.slug, container, reordering) do
+        {:ok, rev} ->
+          updated_container = Oli.Repo.get(Oli.Resources.Revision, rev.revision_id)
+          Broadcaster.broadcast_revision(updated_container, project.slug)
+          {:ok, rev}
+        result -> result
+      end
 
     else
       _ -> {:error, :not_found}
