@@ -21,7 +21,6 @@ defmodule OliWeb.Curriculum.Entry do
   end
 
   def render(assigns) do
-    IO.inspect(assigns.modal_shown)
     ~L"""
     <div
       tabindex="0"
@@ -78,6 +77,12 @@ defmodule OliWeb.Curriculum.Entry do
         </div>
       </div>
     </div>
+
+    <%= if @modal_shown do %>
+      <%= live_component @socket, ManualModal, title: "#{@child.title} settings", modal_id: "entry-settings", ok_action: "save", ok_label: "Save" do %>
+        <%= live_component @socket, Settings, child: @child, changeset: @changeset, project: @project %>
+      <% end %>
+    <% end %>
     """
   end
 
@@ -122,10 +127,6 @@ defmodule OliWeb.Curriculum.Entry do
       end
     }</i>|
     |> raw()
-  end
-
-  def handle_event("save", _, _) do
-    IO.inspect("entry")
   end
 
   def handle_event("toggle_settings", _params, socket) do

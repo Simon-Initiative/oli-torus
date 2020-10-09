@@ -113,7 +113,6 @@ defmodule OliWeb.Curriculum.Container do
 
   # process form submission to save page settings
   def handle_event("save", params, socket) do
-    IO.inspect("here")
     params =
       Enum.reduce(params, %{}, fn {k, v}, m ->
         case MapSet.member?(MapSet.new(["_csrf_token", "_target"]), k) do
@@ -378,11 +377,9 @@ defmodule OliWeb.Curriculum.Container do
     # in the case of a change to the container, we simplify by just pulling a new view of
     # the container and its contents. This handles addition, removal, reordering from the
     # local user as well as a collaborator
-    IO.inspect(revision.children, label: "Revision children")
     children =
       ContainerEditor.list_all_container_children(revision, socket.assigns.project)
       |> Repo.preload([:resource, :author])
-    IO.inspect(Enum.map(children, & {&1.resource_id, &1.title}), label: "new children")
 
     {:ok, rollup} = Rollup.new(children, socket.assigns.project.slug)
 
