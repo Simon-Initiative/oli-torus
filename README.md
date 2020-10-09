@@ -80,7 +80,7 @@
     ```
     $ mix ecto.migrate
     ```
-    
+
 1. Seed the database
     ```
     $ mix run priv/repo/seeds.exs
@@ -129,3 +129,9 @@ When making an LTI connection from an LMS such as Canvas, we need an internet ac
         ngrok http 4000
         ```
 1. Access your running webapp using the generated https address (shown in console after `Forwarding`). This will be the same address used to configure the LMS LTI connection
+
+### Configuring an LTI 1.3 Connection
+
+Torus supports LTI 1.3 integration and leverages the Learning Management System for course delivery.
+
+To configure an LTI connection, refer to the [LTI 1.3 Integration document](./docs/lti1.3.md).
