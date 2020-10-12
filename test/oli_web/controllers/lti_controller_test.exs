@@ -68,6 +68,28 @@ defmodule OliWeb.LtiControllerTest do
 
     end
 
+    test "returns developer key json", %{conn: conn} do
+      conn = get(conn, Routes.lti_path(conn, :developer_key_json))
+
+      active_jwk = Oli.Lti_1p3.get_active_jwk()
+
+      public_jwk = JOSE.JWK.from_pem(active_jwk.pem) |> JOSE.JWK.to_public()
+      |> JOSE.JWK.to_map()
+      |> (fn {_kty, public_jwk} -> public_jwk end).()
+      |> Map.put("kid", active_jwk.kid)
+
+      assert json_response(conn, 200) != nil
+      assert json_response(conn, 200) |> Map.get("extensions") |> Enum.find(fn %{"platform" => p} -> p == "canvas.instructure.com" end) |> Map.get("privacy_level") =~ "public"
+      assert json_response(conn, 200) |> Map.get("title") =~ "OLI Torus"
+      assert json_response(conn, 200) |> Map.get("description") =~ "Create, deliver and iteratively improve course content with Torus, through the Open Learning Initiative"
+      assert json_response(conn, 200) |> Map.get("oidc_initiation_url") =~ "https://localhost/lti/login"
+      assert json_response(conn, 200) |> Map.get("target_link_uri") =~ "https://localhost/lti/launch"
+      assert json_response(conn, 200) |> Map.get("public_jwk_url") =~ "https://localhost/.well-known/jwks.json"
+      assert json_response(conn, 200) |> Map.get("scopes") == []
+      assert json_response(conn, 200) |> Map.get("public_jwk") |> Map.get("kid") == public_jwk["kid"]
+      assert json_response(conn, 200) |> Map.get("public_jwk") |> Map.get("n") == public_jwk["n"]
+    end
+
   end
 
   defp create_fixtures(%{conn: conn}) do
