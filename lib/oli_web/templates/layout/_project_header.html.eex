@@ -1,6 +1,8 @@
 <div class="workspace-header">
 
-  <nav aria-label="breadcrumb">
+  <%= live_render(@conn, OliWeb.BreadcrumbLive) %>
+
+  <%# <nav aria-label="breadcrumb">
     <ol class="breadcrumb custom-breadcrumb">
       <li class="breadcrumb-item crumb-item"><%= link @project.title, to: Routes.project_path(@conn, :overview, @project) %></li>
 
@@ -13,6 +15,6 @@
         <% end %>
       <% end %>
     </ol>
-  </nav>
+  </nav> %>
 
 </div>
