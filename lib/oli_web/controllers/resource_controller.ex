@@ -30,7 +30,7 @@ defmodule OliWeb.ResourceController do
           slug -> {AuthoringResolver.from_revision_slug(project_slug, slug), slug}
         end
 
-        pages = ContainerEditor.list_all_pages(project)
+        pages = ContainerEditor.list_all_container_children(project)
         |> Enum.map(fn r -> %{
           id: if r.resource_id == linked_resource_id do slug else r.slug end,
           title: r.title

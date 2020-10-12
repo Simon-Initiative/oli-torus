@@ -11,7 +11,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       Seeder.base_project_with_resource2()
     end
 
-    test "list_all_pages/1 returns the pages", %{project: project, revision2: revision2, revision1: revision1 } do
+    test "list_all_container_children/1 returns the pages", %{project: project, revision2: revision2, revision1: revision1 } do
 
       pages = ContainerEditor.list_all_container_children(project)
 
