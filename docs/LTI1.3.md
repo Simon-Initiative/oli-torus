@@ -44,7 +44,7 @@ To configure an LTI 1.3 integration in Torus, we need to gather some important L
 
     <img src="./images/institution_details_link.png" width="150px" />
 
-1. Click "Add Registration" and enter registration details, which are outlined above and should be provided by your LMS administrator. You may use a placeholder value for Client ID if you haven't configured an LTI Key in your LMS yet, but it is very important you return and update this value before launching into Torus. When finished, click on the registration labeled by it's **Issuer - Client ID** to expand it.
+1. Click "Add Registration" and enter registration details, which are outlined above and should be provided by your LMS administrator. You may use a placeholder value for Client ID if you haven't configured an LTI Key in your LMS yet, but it is very important you return and update this value before launching into Torus. When finished, click on the registration labeled by it's **[Issuer - Client ID]** to expand it.
 
     ![img](./images/institution_example.png)
 
@@ -72,22 +72,39 @@ Canvas requires elevated privledges to configure LTI 1.3 Developer Keys and Apps
 
     <img src="./images/developer_keys.png" width="800px" />
 
-1. Configure the following fields with values that correspond to your torus deployment. For example, if you are running torus and tunneling locally using a service such as ngrok, you will want to replace all instances of `torus.oli.cmu.edu` with your ngrok address e.g. `ba7c432acd17.ngrok.io`. (\* Required Fields)
+1. You have two options when configuring an LTI 1.3 Developer Key in Canvas:
 
-    - **Key Name:** Torus
-    - **Owner Email:** admin@torus.oli.cmu.edu
-    - **\* Redirect URIs:** https://torus.oli.cmu.edu/lti/launch
-    - **\* Title:** Torus
-    - **\* Description:** Torus - Open Learning Initiative
-    - **\* Target Link URI:** https://torus.oli.cmu.edu/lti/launch
-    - **\* OpenID Connect Initiation Url:** https://torus.oli.cmu.edu/lti/login
-    - **\* JWK Method:** Public JWK URL
-    - **Public JWK URL:** https://torus.oli.cmu.edu/.well-known/jwks.json
-    - **Placements:** Configure depending on your needs, or leave defaults
+    - **OPTION 1 (Recommended)** - Automatic Configuration using JSON URL
 
-    ![img](./images/key_settings.png)
+        1. Select **Enter URL** for the method
 
-    Click "Save".
+        1. Configure the following fields with values that correspond to your torus deployment. For example, if you are hosting torus at a specific domain or in a development environemnt using a service such as ngrok, you will want to replace all instances of `torus.oli.cmu.edu` with your domain or ngrok address e.g. `ba7c432acd17.ngrok.io`.
+
+        - **Redirect URIs:** https://torus.oli.cmu.edu/lti/launch
+        - **Developer Key JSON URL:** https://torus.oli.cmu.edu/lti/developer_key.json
+
+        ![img](./images/developer_key_json_url.png)
+
+        Click "Save"
+
+    - **OPTION 2** - Manual Entry
+
+        1. Configure the following fields with values that correspond to your torus deployment. For example, if you are hosting torus at a specific domain or in a development environemnt using a service such as ngrok, you will want to replace all instances of `torus.oli.cmu.edu` with your domain or ngrok address e.g. `ba7c432acd17.ngrok.io`.
+
+        - **Key Name:** OLI Torus
+        - **Owner Email:** admin@torus.oli.cmu.edu
+        - **Redirect URIs:** https://torus.oli.cmu.edu/lti/launch
+        - **Title:** Torus
+        - **Description:** Create, deliver and iteratively improve course content with Torus, through the Open Learning Initiative
+        - **Target Link URI:** https://torus.oli.cmu.edu/lti/launch
+        - **OpenID Connect Initiation Url:** https://torus.oli.cmu.edu/lti/login
+        - **JWK Method:** Public JWK URL
+        - **Public JWK URL:** https://torus.oli.cmu.edu/.well-known/jwks.json
+        - **Placements:** Configure depending on your needs, or leave defaults
+
+        ![img](./images/key_settings.png)
+
+        Click "Save".
 
 1. Enable the newly created LTI Key by setting it to "ON". Your LTI 1.3 key is now configured and ready to use!
 

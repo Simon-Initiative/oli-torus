@@ -230,6 +230,8 @@ defmodule OliWeb.Router do
     get "/login", LtiController, :login
     post "/launch", LtiController, :launch
     post "/test", LtiController, :test
+
+    get "/developer_key.json", LtiController, :developer_key_json
   end
 
   scope "/course", OliWeb do

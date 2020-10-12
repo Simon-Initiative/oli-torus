@@ -34,7 +34,14 @@ defmodule OliWeb.InstitutionController do
 
   def show(conn, %{"id" => id}) do
     institution = Institutions.get_institution!(id)
-    render conn, "show.html", institution: institution, title: "Institutions"
+
+    host = Application.get_env(:oli, OliWeb.Endpoint)
+      |> Keyword.get(:url)
+      |> Keyword.get(:host)
+
+    developer_key_url = "https://#{host}/lti/developer_key.json"
+
+    render conn, "show.html", institution: institution, developer_key_url: developer_key_url, title: "Institutions"
   end
 
   def edit(conn, %{"id" => id}) do

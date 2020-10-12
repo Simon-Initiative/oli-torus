@@ -42,6 +42,83 @@ defmodule OliWeb.LtiController do
     end
   end
 
+  def developer_key_json(conn, _params) do
+    active_jwk = Lti_1p3.get_active_jwk()
+
+    public_jwk = JOSE.JWK.from_pem(active_jwk.pem) |> JOSE.JWK.to_public()
+      |> JOSE.JWK.to_map()
+      |> (fn {_kty, public_jwk} -> public_jwk end).()
+      |> Map.put("typ", active_jwk.typ)
+      |> Map.put("alg", active_jwk.alg)
+      |> Map.put("kid", active_jwk.kid)
+
+    host = Application.get_env(:oli, OliWeb.Endpoint)
+      |> Keyword.get(:url)
+      |> Keyword.get(:host)
+
+    developer_key_config = %{
+      "title" => "OLI Torus",
+      "scopes" => [],
+      ## TODO: add scopes for LTI services in the future
+      # "scopes":[
+      #   "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
+      #   "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly"
+      #   ...
+      # ],
+      "extensions" => [
+        %{
+          "platform" => "canvas.instructure.com",
+          "settings" => %{
+            "platform" => "canvas.instructure.com",
+            "placements" => [
+              %{
+                "placement" => "link_selection",
+                "message_type" => "LtiResourceLinkRequest",
+                "icon_url" => "https://#{host}/images/oli-icon.png"
+              },
+              %{
+                "placement" => "course_navigation",
+                "message_type" => "LtiResourceLinkRequest"
+              },
+              ## TODO: add support for more placement types in the future, possibly configurable by LMS admin
+              # %{
+              #   "placement" => "assignment_selection",
+              #   "message_type" => "LtiResourceLinkRequest"
+              # },
+              # %{
+              #   "placement" => "homework_submission",
+              #   "message_type" => "LtiDeepLinkingRequest"
+              # },
+              # %{
+              #   "placement" => "tool_configuration",
+              #   "message_type" => "LtiResourceLinkRequest",
+              #   "target_link_uri" => "https://#{host}/lti/configure"
+              # },
+              # ...
+            ]
+          },
+          "privacy_level" => "public"
+        }
+      ],
+      "public_jwk" => %{
+        "e" => public_jwk["e"],
+        "n" => public_jwk["n"],
+        "alg" => public_jwk["alg"],
+        "kid" => public_jwk["kid"],
+        "kty" => "RSA",
+        "use" => "sig"
+      },
+      "description" => "Create, deliver and iteratively improve course content with Torus, through the Open Learning Initiative",
+      "custom_fields" => %{},
+      "public_jwk_url" => "https://#{host}/.well-known/jwks.json",
+      "target_link_uri" => "https://#{host}/lti/launch",
+      "oidc_initiation_url" => "https://#{host}/lti/login"
+    }
+
+    conn
+    |> json(developer_key_config)
+  end
+
   def jwks(conn, _params) do
     all_jwks = Oli.Lti_1p3.get_all_jwks()
       |> Enum.map(fn %{pem: pem, typ: typ, alg: alg, kid: kid} ->
