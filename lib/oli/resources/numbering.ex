@@ -1,26 +1,11 @@
 defmodule Oli.Resources.Numbering do
 
   alias Oli.Resources.ResourceType
-  alias Oli.Resources.Revision
-  alias Oli.Repo
-  import Ecto.Query, warn: false
+  alias Oli.Publishing.AuthoringResolver
 
   defstruct level: 0,
     count: 0,
     container: nil
-
-  def fetch_hierarchy(project_slug) do
-
-    container_id = ResourceType.get_id_by_type("container")
-
-    Repo.all(from m in "published_resources",
-      join: rev in Revision, on: rev.id == m.revision_id,
-      join: p in "publications", on: p.id == m.publication_id,
-      join: c in "projects", on: p.project_id == c.id,
-      where: p.published == false and rev.resource_type_id == ^container_id and c.slug == ^project_slug,
-      select: rev)
-
-  end
 
   def prefix(numbering) do
     case numbering.level do
@@ -35,6 +20,11 @@ defmodule Oli.Resources.Numbering do
 
   This method returns a list of %Numbering structs.
   """
+  def number_full_tree(project_slug) do
+    number_full_tree(
+      AuthoringResolver.root_container(project_slug),
+      AuthoringResolver.hierarchy(project_slug))
+  end
   def number_full_tree(root_container, resources) do
 
     # for all resources, map them by their ids

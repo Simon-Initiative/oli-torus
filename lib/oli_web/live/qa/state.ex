@@ -1,5 +1,7 @@
 defmodule OliWeb.Qa.State do
 
+  alias OliWeb.Breadcrumb.BreadcrumbProvider
+
   @default_filters MapSet.new(["pedagogy", "content", "accessibility"])
 
   @default_state %{
@@ -11,7 +13,7 @@ defmodule OliWeb.Qa.State do
     parent_pages: %{},
     warnings_by_type: %{},
     warning_types: [],
-    breadcrumbs: [{"Review", nil}],
+    breadcrumbs: [BreadcrumbProvider.new(%{full_title: "Review"})],
     project: nil,
     author: nil
   }

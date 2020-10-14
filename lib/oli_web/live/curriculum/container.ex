@@ -18,6 +18,7 @@ defmodule OliWeb.Curriculum.Container do
   alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Resources.Numbering
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Breadcrumb.BreadcrumbProvider
 
   # Resources currently being edited by an author (has a lock present)
   # : %{ resource_id => author }
@@ -38,6 +39,7 @@ defmodule OliWeb.Curriculum.Container do
       ) do
     project = Course.get_project_by_slug(project_slug)
     container = AuthoringResolver.from_revision_slug(project.slug, container_slug)
+
     children =
       ContainerEditor.list_all_container_children(container, project)
       |> Repo.preload([:resource, :author])
@@ -50,7 +52,18 @@ defmodule OliWeb.Curriculum.Container do
      assign(socket,
        children: children,
        active: :curriculum,
-       breadcrumbs: [{"Curriculum", nil}],
+       breadcrumbs: [
+         BreadcrumbProvider.new(%{
+           full_title: "Curriculum",
+           link:
+             Routes.live_path(
+               OliWeb.Endpoint,
+               OliWeb.Curriculum.Container,
+               project_slug,
+               AuthoringResolver.root_container(project_slug).slug
+             )
+         })
+       ] ++ BreadcrumbProvider.build_trail_to(project_slug, container.slug),
        rollup: rollup,
        changeset: Resources.change_revision(%Revision{}),
        container: container,
@@ -60,13 +73,11 @@ defmodule OliWeb.Curriculum.Container do
        view: "Simple",
        selected: nil,
        resources_being_edited: get_resources_being_edited(container.children, project.id),
-       numbering: Numbering.number_full_tree(
-         AuthoringResolver.root_container(project_slug),
-         Numbering.fetch_hierarchy(project_slug))
+       numbering: Numbering.number_full_tree(project_slug)
      )}
   end
 
-  def handle_params(%{ "view" => view }, _, socket), do: {:noreply, assign(socket, view: view)}
+  def handle_params(%{"view" => view}, _, socket), do: {:noreply, assign(socket, view: view)}
   def handle_params(_, _, socket), do: {:noreply, socket}
 
   # spin up subscriptions for the container and for all of its children, activities and attached objectives
@@ -84,21 +95,31 @@ defmodule OliWeb.Curriculum.Container do
     activity_ids = Enum.map(activity_map, fn {id, _} -> id end)
     objective_ids = Enum.map(objective_map, fn {id, _} -> id end)
 
-    ids = [container.resource_id] ++ Enum.map(children, fn c -> c.resource_id end) ++ activity_ids ++ objective_ids
+    ids =
+      [container.resource_id] ++
+        Enum.map(children, fn c -> c.resource_id end) ++ activity_ids ++ objective_ids
 
     Enum.each(ids, fn id ->
       Subscriber.subscribe_to_new_revisions_in_project(id, project_slug)
     end)
 
-    Subscriber.subscribe_to_new_resources_of_type(Oli.Resources.ResourceType.get_id_by_type("objective"), project_slug)
+    Subscriber.subscribe_to_new_resources_of_type(
+      Oli.Resources.ResourceType.get_id_by_type("objective"),
+      project_slug
+    )
 
     ids
   end
 
   # release a collection of subscriptions
   defp unsubscribe(ids, children, project_slug) do
-    Subscriber.unsubscribe_to_new_resources_of_type(Oli.Resources.ResourceType.get_id_by_type("objective"), project_slug)
-    Enum.each(ids, & Subscriber.unsubscribe_to_new_revisions_in_project(&1, project_slug))
+    Subscriber.unsubscribe_to_new_resources_of_type(
+      Oli.Resources.ResourceType.get_id_by_type("objective"),
+      project_slug
+    )
+
+    Enum.each(ids, &Subscriber.unsubscribe_to_new_revisions_in_project(&1, project_slug))
+
     Enum.each(children, fn child ->
       Subscriber.unsubscribe_to_locks_acquired(child.resource_id)
       Subscriber.unsubscribe_to_locks_released(child.resource_id)
@@ -287,20 +308,24 @@ defmodule OliWeb.Curriculum.Container do
           |> put_flash(:error, "Could not create new item")
       end
 
-    {:noreply, assign(socket,
-      numbering: Numbering.number_full_tree(
-        AuthoringResolver.root_container(socket.assigns.project.slug),
-        Numbering.fetch_hierarchy(socket.assigns.project.slug))
-    )}
+    {:noreply,
+     assign(socket,
+       numbering: Numbering.number_full_tree(socket.assigns.project.slug)
+     )}
   end
 
   def handle_event("change-view", %{"view" => view}, socket) do
-    {:noreply, push_patch(socket, to: Routes.live_path(
-      socket,
-      OliWeb.Curriculum.Container,
-      socket.assigns.project.slug,
-      socket.assigns.container.slug,
-      %{ view: view }))}
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Curriculum.Container,
+           socket.assigns.project.slug,
+           socket.assigns.container.slug,
+           %{view: view}
+         )
+     )}
   end
 
   def active_class(active_view, view) do
@@ -383,9 +408,7 @@ defmodule OliWeb.Curriculum.Container do
 
     {:ok, rollup} = Rollup.new(children, socket.assigns.project.slug)
 
-    numbering = Numbering.number_full_tree(
-      AuthoringResolver.root_container(socket.assigns.project.slug),
-      Numbering.fetch_hierarchy(socket.assigns.project.slug))
+    numbering = Numbering.number_full_tree(socket.assigns.project.slug)
 
     selected =
       case socket.assigns.selected do
@@ -393,7 +416,13 @@ defmodule OliWeb.Curriculum.Container do
         s -> Enum.find(children, fn r -> r.resource_id == s.resource_id end)
       end
 
-    assign(socket, selected: selected, container: revision, children: children, rollup: rollup, numbering: numbering)
+    assign(socket,
+      selected: selected,
+      container: revision,
+      children: children,
+      rollup: rollup,
+      numbering: numbering
+    )
   end
 
   # Here we respond to notifications for edits made
@@ -408,7 +437,11 @@ defmodule OliWeb.Curriculum.Container do
       end
 
     # redo all subscriptions
-    unsubscribe(socket.assigns.subscriptions, socket.assigns.children, socket.assigns.project.slug)
+    unsubscribe(
+      socket.assigns.subscriptions,
+      socket.assigns.children,
+      socket.assigns.project.slug
+    )
 
     subscriptions =
       subscribe(
@@ -427,7 +460,10 @@ defmodule OliWeb.Curriculum.Container do
     rollup = Rollup.objective_updated(socket.assigns.rollup, revision)
 
     # now listen to it for future edits
-    Subscriber.subscribe_to_new_revisions_in_project(revision.resource_id, socket.assigns.project.slug)
+    Subscriber.subscribe_to_new_revisions_in_project(
+      revision.resource_id,
+      socket.assigns.project.slug
+    )
 
     subscriptions = [revision.resource_id | socket.assigns.subscriptions]
 

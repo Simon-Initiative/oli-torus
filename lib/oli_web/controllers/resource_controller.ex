@@ -8,6 +8,7 @@ defmodule OliWeb.ResourceController do
   alias Oli.Activities
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Editing.ObjectiveEditor
+  alias OliWeb.Breadcrumb.BreadcrumbProvider
 
   import OliWeb.ProjectPlugs
 
@@ -47,13 +48,25 @@ defmodule OliWeb.ResourceController do
 
     case PageEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
       {:ok, context} -> render(conn, "edit.html", active: :curriculum,
-        breadcrumbs: [{"Curriculum", Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project_slug, AuthoringResolver.root_container(project_slug).slug)}, {context.title, nil}],
-        is_admin?: is_admin?, context: Jason.encode!(context), scripts: Activities.get_activity_scripts(), project_slug: project_slug, revision_slug: revision_slug)
+        breadcrumbs: [
+          BreadcrumbProvider.new(%{
+            full_title: "Curriculum",
+            link: Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project_slug, AuthoringResolver.root_container(project_slug).slug)})]
+            ++ BreadcrumbProvider.build_trail_to(project_slug, revision_slug),
+        is_admin?: is_admin?,
+        context: Jason.encode!(context),
+        scripts: Activities.get_activity_scripts(),
+        project_slug: project_slug,
+        revision_slug: revision_slug)
 
       {:error, :not_found} ->
         conn
         |> put_view(OliWeb.SharedView)
-        |> render("_not_found.html", title: "Not Found", breadcrumbs: [{"Curriculum", Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project_slug, AuthoringResolver.root_container(project_slug).slug)}, {"Not Found", nil}])
+        |> render("_not_found.html", title: "Not Found", breadcrumbs: [
+          BreadcrumbProvider.new(%{
+            full_title: "Curriculum",
+            link: Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project_slug, AuthoringResolver.root_container(project_slug).slug)}),
+          BreadcrumbProvider.new(%{full_title: "Not Found"})])
     end
 
   end
@@ -68,7 +81,11 @@ defmodule OliWeb.ResourceController do
     case PageEditor.create_context(project_slug, revision_slug, author) do
       {:ok, context} ->
         render(conn, "page_preview.html",
-          breadcrumbs: [{"Curriculum", Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project_slug, AuthoringResolver.root_container(project_slug).slug)}, {context.title, nil}],
+          breadcrumbs: [
+            BreadcrumbProvider.new(%{
+              full_title: "Curriculum",
+              link: Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project_slug, AuthoringResolver.root_container(project_slug).slug)})]
+            ++ BreadcrumbProvider.build_trail_to(project_slug, revision_slug),
           objectives: Oli.Delivery.Page.ObjectivesRollup.rollup_objectives(activity_revisions, AuthoringResolver, project_slug),
           content_html: PageEditor.render_page_html(project_slug, revision_slug, author, preview: true),
           context: context,
@@ -78,7 +95,12 @@ defmodule OliWeb.ResourceController do
       {:error, :not_found} ->
         conn
         |> put_view(OliWeb.SharedView)
-        |> render("_not_found.html", title: "Not Found", breadcrumbs: [{"Curriculum", Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project_slug, AuthoringResolver.root_container(project_slug).slug)}, {"Not Found", nil}])
+        |> render("_not_found.html", title: "Not Found", breadcrumbs: [
+          BreadcrumbProvider.new(%{
+            full_title: "Curriculum",
+            link: Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project_slug, AuthoringResolver.root_container(project_slug).slug)}),
+          BreadcrumbProvider.new(%{full_title: "Not Found"})
+        ])
     end
   end
 

@@ -1,20 +1,5 @@
 <div class="workspace-header">
-
-  <%= live_render(@conn, OliWeb.BreadcrumbLive) %>
-
-  <%# <nav aria-label="breadcrumb">
-    <ol class="breadcrumb custom-breadcrumb">
-      <li class="breadcrumb-item crumb-item"><%= link @project.title, to: Routes.project_path(@conn, :overview, @project) %></li>
-
-      <%= for {{label, route}, index} <- Enum.with_index(@breadcrumbs) do %>
-
-        <%= if length(@breadcrumbs) - 1 == index do %>
-          <li class="breadcrumb-item crumb-item active" aria-current="page"><%= label %></li>
-        <% else %>
-          <li class="breadcrumb-item"><%= link label, to: route, class: "crumb-link" %></li>
-        <% end %>
-      <% end %>
-    </ol>
-  </nav> %>
-
+  <%= live_render(@conn, BreadcrumbTrailLive, session: %{
+     "project_slug" => @project.slug,
+     "breadcrumbs" => @breadcrumbs }) %>
 </div>

@@ -5,6 +5,7 @@ defmodule OliWeb.LayoutView do
   alias Oli.Authoring
   alias Oli.Accounts.AuthorPreferences
   alias Oli.Publishing.AuthoringResolver
+  alias OliWeb.Breadcrumb.BreadcrumbTrailLive
 
   def root_container_slug(project_slug) do
     AuthoringResolver.root_container(project_slug).slug

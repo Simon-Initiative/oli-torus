@@ -16,6 +16,7 @@ defmodule OliWeb.RevisionHistory do
   alias Oli.Authoring.Broadcaster
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Broadcaster.Subscriber
+  alias OliWeb.Breadcrumb.BreadcrumbProvider
 
   @page_size 15
 
@@ -41,7 +42,7 @@ defmodule OliWeb.RevisionHistory do
     selected = hd(revisions)
 
     {:ok, assign(socket,
-      breadcrumbs: [{"Revision History", nil}],
+      breadcrumbs: [BreadcrumbProvider.new(%{full_title: "Revision History"})],
       view: "table",
       resource_id: resource_id,
       mappings: mappings_by_revision,

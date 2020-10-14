@@ -109,6 +109,31 @@ defmodule Oli.Publishing.AuthoringResolver do
   end
 
   @impl Resolver
+  def path_to(project_slug, resource_id) do
+    revisions = for rev <- hierarchy(project_slug), into: %{}, do: {rev.resource_id, rev}
+    path_to_go(resource_id, [root_container(project_slug).resource_id], revisions, [])
+  end
+
+  def path_to_go(_target_resource_id, [], _revisions, _path) do
+    {:error, :target_resource_not_found}
+  end
+  def path_to_go(target_resource_id, [resource_id | rest], revisions, path) do
+    revision_id = Map.get(revisions, resource_id).id
+    if target_resource_id == resource_id
+    do {:ok, path ++ [revision_id]}
+    else
+      case path_to_go(
+          target_resource_id,
+          Map.get(revisions, resource_id).children,
+          revisions,
+          path ++ [revision_id]) do
+        {:ok, path} -> {:ok, path}
+        _ -> path_to_go(target_resource_id, rest, revisions, path)
+      end
+    end
+  end
+
+  @impl Resolver
   def find_parent_objectives(_, []), do: []
   def find_parent_objectives(project_slug, resource_ids) do
 
