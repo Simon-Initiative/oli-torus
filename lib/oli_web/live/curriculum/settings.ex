@@ -17,60 +17,51 @@ defmodule OliWeb.Curriculum.Settings do
   def render(assigns) do
 
     ~L"""
-    <%= _ = form_for @changeset, "#", [phx_submit: "save"] %>
+    <%= f = form_for @changeset, "#", [phx_submit: "save"] %>
 
       <div><small>Grading Type:</small></div>
 
-      <select class="custom-select" name="graded">
-        <option <%= selected_attr(@child.graded, true) %> value="true">Graded Assessment</option>
-        <option <%= selected_attr(@child.graded, false) %> value="false">Ungraded Practice Page</option>
-      </select>
+      <%= hidden_input(f, :id, id: "id-#{@child.id}") %>
+
+      <%= select(f, :graded, ["Graded Assessment": "true", "Ungraded Practice Page": "false"],
+      id: "graded-#{@child.id}", class: "custom-select") %>
       <small class="text-muted">
-      Graded assessments report a grade to the gradebook, while practice pages do not.
+        Graded assessments report a grade to the gradebook, while practice pages do not.
       </small>
 
       <div class="mt-4"><small>Number of Attempts:</small></div>
-      <select <%= disabled_attr(@child.graded) %> class="custom-select" name="max_attempts">
-        <%= for c <- 1..10 do %>
-        <option value="<%= c %>" <%= selected_attr(@child.max_attempts, c) %>>
-          <%= c %>
-        </option>
-        <% end %>
-        <option <%= selected_attr(@child.max_attempts, 0) %> value="0">Unlimited</option>
-      </select>
+      <%= select(f, :max_attempts, 1..10, id: "attempts-#{@child.id}") %>
       <small class="text-muted">
-      Graded assessments allow a configurable number of attempts, while practice pages
-      offer unlimited attempts.
+        Graded assessments allow a configurable number of attempts, while practice pages
+        offer unlimited attempts.
       </small>
 
       <div class="mt-4"><small>Scoring Strategy</small></div>
-      <select <%= disabled_attr(@child.graded) %> class="custom-select" name="scoring_strategy_id">
-        <%= for %{id: id, type: type} <- ScoringStrategy.get_types() do %>
-          <option value="<%= id %>" <%= selected_attr(@child.scoring_strategy_id, id) %>>
-            <%= Oli.Utils.snake_case_to_friendly(type) %>
-          </option>
-        <% end %>
-      </select>
+      <%= select(f, :scoring_strategy_id,
+      Enum.map(ScoringStrategy.get_types(), & {"#{Oli.Utils.snake_case_to_friendly(&1[:type])}", &1[:id]}),
+      id: "strategy-#{@child.id}") %>
       <small class="text-muted">
       The scoring strategy determines how to calculate the final gradebook score across
       all attempts.
       </small>
+
+      <%= submit "Save" %>
 
     </form>
 
     <hr/>
 
     <div class="mt-4">
-      <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#exampleModalCenter">
+      <button type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#delete-<%= @child.slug %>">
         Delete this Curriculum Item
       </button>
     </div>
 
-    <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal fade" id="delete-<%= @child.slug %> " tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLongTitle">Delete Curriculum Item</h5>
+            <h5 class="modal-title">Delete Curriculum Item</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>

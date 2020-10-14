@@ -52,7 +52,6 @@ defmodule OliWeb.Curriculum.Container do
        active: :curriculum,
        breadcrumbs: [{"Curriculum", nil}],
        rollup: rollup,
-       changeset: Resources.change_revision(%Revision{}),
        container: container,
        project: project,
        subscriptions: subscriptions,
@@ -112,17 +111,10 @@ defmodule OliWeb.Curriculum.Container do
   end
 
   # process form submission to save page settings
-  def handle_event("save", params, socket) do
-    params =
-      Enum.reduce(params, %{}, fn {k, v}, m ->
-        case MapSet.member?(MapSet.new(["_csrf_token", "_target"]), k) do
-          true -> m
-          false -> Map.put(m, String.to_existing_atom(k), v)
-        end
-      end)
-
+  def handle_event("save", %{"revision" => revision_params}, socket) do
+    revision = Resources.get_revision!(revision_params["id"])
     socket =
-      case ContainerEditor.edit_page(socket.assigns.project, socket.assigns.selected.slug, params) do
+      case ContainerEditor.edit_page(socket.assigns.project, revision.slug, revision_params) do
         {:ok, _} ->
           socket
 
@@ -332,6 +324,7 @@ defmodule OliWeb.Curriculum.Container do
   end
 
   defp handle_updated_page(socket, revision) do
+    IO.inspect("handling updated page")
     id = revision.resource_id
 
     old_page =

@@ -7,18 +7,12 @@ defmodule OliWeb.Curriculum.Entry do
   use Phoenix.HTML
   alias OliWeb.Curriculum.{LearningSummaryEntry}
   alias Oli.Resources.ResourceType
+  alias Oli.Resources
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Curriculum.Settings
-  alias OliWeb.Common.ManualModal
+  alias OliWeb.Common.MinimalModal
   import OliWeb.Projects.Table, only: [time_ago: 2]
   alias Oli.Resources.Numbering
-
-  def mount(socket) do
-    {:ok,
-     assign(socket,
-       modal_shown: false
-     )}
-  end
 
   def render(assigns) do
     ~L"""
@@ -52,15 +46,13 @@ defmodule OliWeb.Curriculum.Entry do
                   </span>
                 <% end %>
               </div>
-              <a
-                href="#"
-                phx-click="toggle_settings"
-                phx-target="<%= @myself %>"
-                onClick="event.preventDefault();"
+              <button
+                data-toggle="modal"
+                data-target="#settings-<%= @child.slug %>"
                 class="list-unstyled"
-                style="color: #212529">
+                style="border:none; background: none; color: #212529">
                 <i class="material-icons">more_vert</i>
-              </a>
+              </button>
             </div>
             <div class="container">
               <div class="row">
@@ -78,10 +70,10 @@ defmodule OliWeb.Curriculum.Entry do
       </div>
     </div>
 
-    <%= if @modal_shown do %>
-      <%= live_component @socket, ManualModal, title: "#{@child.title} settings", modal_id: "entry-settings", ok_action: "save", ok_label: "Save" do %>
-        <%= live_component @socket, Settings, child: @child, changeset: @changeset, project: @project %>
-      <% end %>
+    <%= live_component @socket, MinimalModal,
+    title: "#{@child.title} Settings",
+    modal_id: "settings-#{@child.slug}" do %>
+      <%= live_component @socket, Settings, child: @child, changeset: Resources.change_revision(@child), project: @project %>
     <% end %>
     """
   end
@@ -129,7 +121,4 @@ defmodule OliWeb.Curriculum.Entry do
     |> raw()
   end
 
-  def handle_event("toggle_settings", _params, socket) do
-    {:noreply, assign(socket, modal_shown: true)}
-  end
 end
