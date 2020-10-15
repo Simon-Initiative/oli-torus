@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.21.3">
     <meta name="project" content="OLI Torus v0.1.0">
-    <title>Oli.Delivery.Sections.SectionRoles — OLI Torus v0.1.0</title>
+    <title>Oli.Lti_1p3.MessageValidators.ResourceMessageValidator — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-feeff0b667.js"></script>
+    <script src="dist/sidebar_items-5f8c261abf.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -68,7 +68,7 @@ OLI Torus      </a>
 
       <h1>
         <small class="app-vsn">OLI Torus v0.1.0</small>
-Oli.Delivery.Sections.SectionRoles          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/section_roles.ex#L1" title="View Source" class="view-source" rel="help">
+Oli.Lti_1p3.MessageValidators.ResourceMessageValidator          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/message_vaildators/resource_message_validator.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -90,18 +90,15 @@ Oli.Delivery.Sections.SectionRoles          <a href="https://github.com/Simon-In
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#get_by_id/1">get_by_id(int)</a>
+    <a href="#can_validate/1">can_validate(jwt_body)</a>
   </div>
+    <div class="summary-synopsis"><p>Callback implementation for <code class="inline">Oli.Lti_1p3.MessageValidator.can_validate/1</code>.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#get_by_type/1">get_by_type(binary)</a>
+    <a href="#validate/1">validate(jwt_body)</a>
   </div>
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#list/0">list()</a>
-  </div>
+    <div class="summary-synopsis"><p>Callback implementation for <code class="inline">Oli.Lti_1p3.MessageValidator.validate/1</code>.</p></div>
 </div>
   </div>
         </section>
@@ -114,49 +111,36 @@ Oli.Delivery.Sections.SectionRoles          <a href="https://github.com/Simon-In
             </a>
 Functions          </h1>
           <div class="functions-list">
-<section class="detail" id="get_by_id/1">
+<section class="detail" id="can_validate/1">
   <div class="detail-header">
-    <a href="#get_by_id/1" class="detail-link" title="Link to this function">
+    <a href="#can_validate/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">get_by_id(int)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/section_roles.ex#L15" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">can_validate(jwt_body)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/message_vaildators/resource_message_validator.ex#L5" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
   </div>
   <section class="docstring">
+<p>Callback implementation for <code class="inline">Oli.Lti_1p3.MessageValidator.can_validate/1</code>.</p>
   </section>
 </section>
-<section class="detail" id="get_by_type/1">
+<section class="detail" id="validate/1">
   <div class="detail-header">
-    <a href="#get_by_type/1" class="detail-link" title="Link to this function">
+    <a href="#validate/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">get_by_type(binary)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/section_roles.ex#L18" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">validate(jwt_body)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/message_vaildators/resource_message_validator.ex#L9" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
   </div>
   <section class="docstring">
-  </section>
-</section>
-<section class="detail" id="list/0">
-  <div class="detail-header">
-    <a href="#list/0" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">list()</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/section_roles.ex#L13" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-  </div>
-  <section class="docstring">
+<p>Callback implementation for <code class="inline">Oli.Lti_1p3.MessageValidator.validate/1</code>.</p>
   </section>
 </section>
           </div>

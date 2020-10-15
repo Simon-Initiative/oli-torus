@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>OliWeb.LtiController — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-feeff0b667.js"></script>
+    <script src="dist/sidebar_items-5f8c261abf.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -90,9 +90,28 @@ OliWeb.LtiController          <a href="https://github.com/Simon-Initiative/oli-t
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#basic_launch/2">basic_launch(conn, params)</a>
+    <a href="#developer_key_json/2">developer_key_json(conn, params)</a>
   </div>
-    <div class="summary-synopsis"><p>Handles an LTI basic launch</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#jwks/2">jwks(conn, params)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#launch/2">launch(conn, params)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#login/2">login(conn, params)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#test/2">test(conn, params)</a>
+  </div>
 </div>
   </div>
         </section>
@@ -105,23 +124,79 @@ OliWeb.LtiController          <a href="https://github.com/Simon-Initiative/oli-t
             </a>
 Functions          </h1>
           <div class="functions-list">
-<section class="detail" id="basic_launch/2">
+<section class="detail" id="developer_key_json/2">
   <div class="detail-header">
-    <a href="#basic_launch/2" class="detail-link" title="Link to this function">
+    <a href="#developer_key_json/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">basic_launch(conn, params)</h1>
+    <h1 class="signature">developer_key_json(conn, params)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L45" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="jwks/2">
+  <div class="detail-header">
+    <a href="#jwks/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">jwks(conn, params)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L122" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="launch/2">
+  <div class="detail-header">
+    <a href="#launch/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">launch(conn, params)</h1>
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L21" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
   </div>
   <section class="docstring">
-<p>Handles an LTI basic launch</p>
-<p>If the LTI launch is valid, this will redirect to the delivery controller, ensuring a user is
-enrolled in the section corresponding to the context_id</p>
-<p>If the LTI Launch is invalid, an invalid lti error page will be displayed</p>
+  </section>
+</section>
+<section class="detail" id="login/2">
+  <div class="detail-header">
+    <a href="#login/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">login(conn, params)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L11" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="test/2">
+  <div class="detail-header">
+    <a href="#test/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">test(conn, params)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L36" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
   </section>
 </section>
           </div>

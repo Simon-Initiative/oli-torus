@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>OliWeb.DeliveryView — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-feeff0b667.js"></script>
+    <script src="dist/sidebar_items-5f8c261abf.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -96,7 +96,12 @@ OliWeb.DeliveryView          <a href="https://github.com/Simon-Initiative/oli-to
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#account_linked?/1">account_linked?(current_user)</a>
+    <a href="#account_linked?/1">account_linked?(user)</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_context_id/1">get_context_id(conn)</a>
   </div>
 </div>
 <div class="summary-row">
@@ -115,17 +120,17 @@ to render a particular template.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#user_role/1">user_role(current_user)</a>
+    <a href="#user_role_color/2">user_role_color(conn, user)</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#user_role_color/1">user_role_color(current_user)</a>
+    <a href="#user_role_is_student/2">user_role_is_student(conn, user)</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#user_role_text/1">user_role_text(current_user)</a>
+    <a href="#user_role_text/2">user_role_text(conn, user)</a>
   </div>
 </div>
   </div>
@@ -161,8 +166,23 @@ Functions          </h1>
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">account_linked?(current_user)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/delivery_view.ex#L26" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">account_linked?(user)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/delivery_view.ex#L51" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="get_context_id/1">
+  <div class="detail-header">
+    <a href="#get_context_id/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_context_id(conn)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/delivery_view.ex#L7" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -208,14 +228,14 @@ By default it raises but can be customized
 to render a particular template.</p>
   </section>
 </section>
-<section class="detail" id="user_role/1">
+<section class="detail" id="user_role_color/2">
   <div class="detail-header">
-    <a href="#user_role/1" class="detail-link" title="Link to this function">
+    <a href="#user_role_color/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">user_role(current_user)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/delivery_view.ex#L6" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">user_role_color(conn, user)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/delivery_view.ex#L35" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -223,14 +243,14 @@ to render a particular template.</p>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="user_role_color/1">
+<section class="detail" id="user_role_is_student/2">
   <div class="detail-header">
-    <a href="#user_role_color/1" class="detail-link" title="Link to this function">
+    <a href="#user_role_is_student/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">user_role_color(current_user)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/delivery_view.ex#L17" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">user_role_is_student(conn, user)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/delivery_view.ex#L14" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -238,14 +258,14 @@ to render a particular template.</p>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="user_role_text/1">
+<section class="detail" id="user_role_text/2">
   <div class="detail-header">
-    <a href="#user_role_text/1" class="detail-link" title="Link to this function">
+    <a href="#user_role_text/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">user_role_text(current_user)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/delivery_view.ex#L8" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">user_role_text(conn, user)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/delivery_view.ex#L19" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

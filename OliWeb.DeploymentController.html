@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.21.3">
     <meta name="project" content="OLI Torus v0.1.0">
-    <title>Oli.Grading.CanvasApi — OLI Torus v0.1.0</title>
+    <title>OliWeb.DeploymentController — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-feeff0b667.js"></script>
+    <script src="dist/sidebar_items-5f8c261abf.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -68,7 +68,7 @@ OLI Torus      </a>
 
       <h1>
         <small class="app-vsn">OLI Torus v0.1.0</small>
-Oli.Grading.CanvasApi          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading/canvas_api.ex#L1" title="View Source" class="view-source" rel="help">
+OliWeb.DeploymentController          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/deployment_controller.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -90,32 +90,27 @@ Oli.Grading.CanvasApi          <a href="https://github.com/Simon-Initiative/oli-
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#create_assignment/2">create_assignment(section, assignment)</a>
+    <a href="#create/2">create(conn, map)</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#delete_assignment/2">delete_assignment(section, assignment_id)</a>
+    <a href="#delete/2">delete(conn, map)</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#get_assignments/1">get_assignments(section)</a>
+    <a href="#edit/2">edit(conn, map)</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#handle_basic_launch/2">handle_basic_launch(lti_params, user)</a>
+    <a href="#new/2">new(conn, map)</a>
   </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#submit_grade_data/2">submit_grade_data(section, grade_data)</a>
-  </div>
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#submit_score/4">submit_score(section, assignment_id, user_id, score)</a>
+    <a href="#update/2">update(conn, map)</a>
   </div>
 </div>
   </div>
@@ -129,14 +124,14 @@ Oli.Grading.CanvasApi          <a href="https://github.com/Simon-Initiative/oli-
             </a>
 Functions          </h1>
           <div class="functions-list">
-<section class="detail" id="create_assignment/2">
+<section class="detail" id="create/2">
   <div class="detail-header">
-    <a href="#create_assignment/2" class="detail-link" title="Link to this function">
+    <a href="#create/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">create_assignment(section, assignment)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading/canvas_api.ex#L32" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">create(conn, map)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/deployment_controller.ex#L12" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -144,14 +139,14 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="delete_assignment/2">
+<section class="detail" id="delete/2">
   <div class="detail-header">
-    <a href="#delete_assignment/2" class="detail-link" title="Link to this function">
+    <a href="#delete/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">delete_assignment(section, assignment_id)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading/canvas_api.ex#L40" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">delete(conn, map)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/deployment_controller.ex#L47" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -159,14 +154,14 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="get_assignments/1">
+<section class="detail" id="edit/2">
   <div class="detail-header">
-    <a href="#get_assignments/1" class="detail-link" title="Link to this function">
+    <a href="#edit/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">get_assignments(section)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading/canvas_api.ex#L25" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">edit(conn, map)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/deployment_controller.ex#L27" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -174,14 +169,14 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="handle_basic_launch/2">
+<section class="detail" id="new/2">
   <div class="detail-header">
-    <a href="#handle_basic_launch/2" class="detail-link" title="Link to this function">
+    <a href="#new/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">handle_basic_launch(lti_params, user)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading/canvas_api.ex#L6" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">new(conn, map)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/deployment_controller.ex#L7" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -189,29 +184,14 @@ Functions          </h1>
   <section class="docstring">
   </section>
 </section>
-<section class="detail" id="submit_grade_data/2">
+<section class="detail" id="update/2">
   <div class="detail-header">
-    <a href="#submit_grade_data/2" class="detail-link" title="Link to this function">
+    <a href="#update/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">submit_grade_data(section, grade_data)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading/canvas_api.ex#L55" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-  </div>
-  <section class="docstring">
-  </section>
-</section>
-<section class="detail" id="submit_score/4">
-  <div class="detail-header">
-    <a href="#submit_score/4" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">submit_score(section, assignment_id, user_id, score)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading/canvas_api.ex#L47" class="view-source" rel="help" title="View Source">
+    <h1 class="signature">update(conn, map)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/deployment_controller.ex#L33" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
