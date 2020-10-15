@@ -1,15 +1,14 @@
 defmodule Oli.Seeder do
-
   alias Oli.Publishing
   alias Oli.Repo
-  alias Oli.Accounts.{SystemRole, ProjectRole, Institution, Author}
+  alias Oli.Accounts.{SystemRole, ProjectRole, Author}
+  alias Oli.Institutions.Institution
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Attempts.{ResourceAccess}
   alias Oli.Activities.Model.Part
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
   alias Oli.Authoring.Course.{Project, Family}
   alias Oli.Publishing.Publication
-  alias Oli.Accounts.LtiToolConsumer
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -26,7 +25,7 @@ defmodule Oli.Seeder do
     {:ok, _} = AuthorProject.changeset(%AuthorProject{}, %{author_id: author.id, project_id: project.id, project_role_id: ProjectRole.role_id.owner}) |> Repo.insert
     {:ok, _} = AuthorProject.changeset(%AuthorProject{}, %{author_id: author2.id, project_id: project.id, project_role_id: ProjectRole.role_id.owner}) |> Repo.insert
 
-    {:ok, institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret", author_id: author.id}) |> Repo.insert
+    {:ok, institution} = Institution.changeset(%Institution{}, %{name: "CMU", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", author_id: author.id}) |> Repo.insert
 
     # A single container resource with a mapped revision
     {:ok, container_resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
@@ -52,7 +51,6 @@ defmodule Oli.Seeder do
       |> Map.put(:page2, page2)
       |> Map.put(:revision1, revision1)
       |> Map.put(:revision2, revision2)
-      |> add_lti_consumer(%{}, :lti_consumer)
 
   end
 
@@ -109,7 +107,6 @@ defmodule Oli.Seeder do
       |> Map.put(:page2, page2)
       |> Map.put(:revision1, revision1)
       |> Map.put(:revision2, revision2)
-      |> add_lti_consumer(%{}, :lti_consumer)
 
   end
 
@@ -250,26 +247,21 @@ defmodule Oli.Seeder do
   end
 
   def add_user(map, attrs, tag \\ nil) do
-
-    consumer = map.lti_consumer
     institution = map.institution
 
-    params =
-      attrs
-      |> Enum.into(%{
-        email: "ironman#{System.unique_integer([:positive])}@example.com",
-        first_name: "Tony",
-        last_name: "Stark",
-        user_id: "2u9dfh7979hfd",
-        user_image: "none",
-        roles: "none",
-        lti_tool_consumer_id: consumer.id,
-        institution_id: institution.id
-      })
-
     {:ok, user} =
-      User.changeset(%User{}, params)
-      |> Repo.insert()
+      User.changeset(%User{
+        sub: "a6d5c443-1f51-4783-ba1a-7686ffe3b54a",
+        name: "Ms Jane Marie Doe",
+        given_name: "Jane",
+        family_name: "Doe",
+        middle_name: "Marie",
+        picture: "https://platform.example.edu/jane.jpg",
+        email: "jane#{System.unique_integer([:positive])}@platform.example.edu",
+        locale: "en-US",
+        institution_id: institution.id
+      }, attrs)
+      |> Repo.insert
 
     case tag do
       nil -> map
@@ -283,40 +275,53 @@ defmodule Oli.Seeder do
     |> Enum.with_index
     |> Enum.reduce(map,
       fn {tag, index}, acc -> add_user(acc, %{
-          user_id: Atom.to_string(tag),
-          first_name: "Tony",
-          last_name: "Stark",
-          email: "t.stark+#{index}@avengers.com"},
-        tag) end)
+          sub: Atom.to_string(tag),
+          given_name: "Jane",
+          family_name: "Doe",
+          email: "jane#{index}@platform.example.edu"
+      }, tag) end)
 
     # Enroll users
     user_tags
-    |> Enum.each(fn user_tag -> Sections.enroll(map[user_tag].id, map[section_tag].id, 2) end)
+    |> Enum.each(fn user_tag -> Sections.enroll(map[user_tag].id, map[section_tag].id, [Oli.Lti_1p3.ContextRoles.get_role(:context_learner)]) end)
 
     map
   end
 
-  def add_lti_consumer(map, attrs, tag \\ nil) do
-    params =
-      attrs
-      |> Enum.into(%{
-        info_product_family_code: "code",
-        info_version: "1",
-        instance_contact_email: "example@example.com",
-        instance_guid: "2u9dfh7979hfd",
-        instance_name: "none",
-        institution_id: map.institution.id,
-        author_id: map.author.id
-      })
+  def create_hierarchy(map, nodes) do
 
-    {:ok, consumer} =
-      LtiToolConsumer.changeset(%LtiToolConsumer{}, params)
-      |> Repo.insert()
+    author = map.author
+    project = map.project
+    publication = map.publication
+    container_revision = map.container.revision
+    container_resource = map.container.resource
 
-    case tag do
-      nil -> map
-      t -> Map.put(map, t, consumer)
-    end
+    children = Enum.map(nodes, fn n -> create_hierarchy_helper(author, project, publication, n) end)
+    |> Enum.map(fn rev -> rev.resource_id end)
+
+    {:ok, container_revision} = Oli.Resources.update_revision(container_revision, %{children: children})
+
+    publish_resource(publication, container_resource, container_revision)
+
+    Map.put(map, :container, %{ resource: container_resource, revision: container_revision })
+
+  end
+
+  def create_hierarchy_helper(author, project, publication, node) do
+
+    created = Enum.map(node.children, fn node -> create_hierarchy_helper(author, project, publication, node) end)
+    children = Enum.map(created, fn rev -> rev.resource_id end)
+
+    {:ok, resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
+
+    attrs = %{author_id: author.id, objectives: %{}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"), children: children, content: %{}, deleted: false, title: node.title, resource_id: resource.id}
+    {:ok, revision} = Oli.Resources.create_revision(attrs)
+
+    {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: resource.id}) |> Repo.insert
+    publish_resource(publication, resource, revision)
+
+    revision
+
   end
 
   def add_page(map, attrs, container_tag \\ :container, tag) do

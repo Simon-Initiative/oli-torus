@@ -53,7 +53,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
 
       {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id} }]}
-        = Attempts.submit_part_evaluations(:student, section.context_id, activity_attempt.attempt_guid, part_inputs)
+        = Attempts.submit_part_evaluations(section.context_id, activity_attempt.attempt_guid, part_inputs)
 
       # verify the returned feedback was what we expected
       assert attempt_guid == part_attempt.attempt_guid
@@ -114,7 +114,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # Submit in tab A:
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
-      {:ok, _} = Attempts.submit_part_evaluations(:student, section.context_id, activity_attempt.attempt_guid, part_inputs)
+      {:ok, _} = Attempts.submit_part_evaluations(section.context_id, activity_attempt.attempt_guid, part_inputs)
 
       # now reset the activity, this is a simulation of the student
       # opening the resource in tab B.
@@ -172,7 +172,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
     test "processing a submission", %{ part1_attempt1: part_attempt, section: section, activity_attempt1: activity_attempt} do
 
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
-      {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id} }]} = Attempts.submit_part_evaluations(:student, section.context_id, activity_attempt.attempt_guid, part_inputs)
+      {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id} }]} = Attempts.submit_part_evaluations(section.context_id, activity_attempt.attempt_guid, part_inputs)
 
       # verify the returned feedback was what we expected
       assert attempt_guid == part_attempt.attempt_guid
@@ -197,7 +197,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
     test "processing a different submission", %{ part1_attempt1: part_attempt, section: section, activity_attempt1: activity_attempt} do
 
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "b"}}]
-      {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id} }]} = Attempts.submit_part_evaluations(:student, section.context_id, activity_attempt.attempt_guid, part_inputs)
+      {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id} }]} = Attempts.submit_part_evaluations(section.context_id, activity_attempt.attempt_guid, part_inputs)
 
       assert attempt_guid == part_attempt.attempt_guid
       assert score == 1
@@ -209,7 +209,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
     test "processing a submission whose input matches no response", %{ section: section, part1_attempt1: part_attempt, activity_attempt1: activity_attempt} do
 
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "d"}}]
-      {:error, error} = Attempts.submit_part_evaluations(:student, section.context_id, activity_attempt.attempt_guid, part_inputs)
+      {:error, error} = Attempts.submit_part_evaluations(section.context_id, activity_attempt.attempt_guid, part_inputs)
 
       assert error == "no matching response found"
 
@@ -266,7 +266,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
     test "processing a submission with just one of the parts submitted", %{ section: section, part1_attempt1: part_attempt, activity_attempt1: activity_attempt} do
 
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
-      {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id} }]} = Attempts.submit_part_evaluations(:student, section.context_id, activity_attempt.attempt_guid, part_inputs)
+      {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id} }]} = Attempts.submit_part_evaluations(section.context_id, activity_attempt.attempt_guid, part_inputs)
 
       # verify the returned feedback was what we expected
       assert attempt_guid == part_attempt.attempt_guid
@@ -297,7 +297,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       {:ok, [
         %{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id} },
         %{attempt_guid: attempt_guid2, out_of: out_of2, score: score2, feedback: %{id: id2} },
-      ]} = Attempts.submit_part_evaluations(:student, section.context_id, activity_attempt.attempt_guid, part_inputs)
+      ]} = Attempts.submit_part_evaluations(section.context_id, activity_attempt.attempt_guid, part_inputs)
 
       # verify the returned feedback was what we expected
       assert attempt_guid == part_attempt.attempt_guid

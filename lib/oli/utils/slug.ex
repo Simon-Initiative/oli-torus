@@ -1,6 +1,6 @@
 defmodule Oli.Utils.Slug do
 
-  @chars "abcdefghijklmnopqrstuvwxyz1234567890" |> String.split("")
+  @chars "abcdefghijklmnopqrstuvwxyz1234567890" |> String.split("", trim: true)
 
   @doc """
   Updates the slug from the title for a table if the title has not

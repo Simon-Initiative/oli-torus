@@ -2,34 +2,38 @@ defmodule OliWeb.DeliveryController do
   use OliWeb, :controller
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
-  alias Oli.Delivery.Sections.SectionRoles
   alias Oli.Publishing
-  alias Oli.Accounts
-  alias Oli.Delivery.Lti
+  alias Oli.Institutions
+  alias Oli.Lti_1p3.ContextRoles
 
   def index(conn, _params) do
     user = conn.assigns.current_user
-    lti_params = get_session(conn, :lti_params)
+    lti_params = conn.assigns.lti_params
 
-    section = Sections.get_section_by(context_id: lti_params["context_id"])
+    context_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"]
+    section = Sections.get_section_by(context_id: context_id)
 
-    case {Lti.parse_lti_role(user.roles), user.author, section} do
-      {:student, _author, nil} ->
-        render(conn, "course_not_configured.html")
+    lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
+    context_roles = ContextRoles.get_roles_by_uris(lti_roles)
 
-      {:student, _author, section} ->
+    is_student = ContextRoles.contains_role?(context_roles, ContextRoles.get_role(:context_learner))
+    case {is_student, user.author, section} do
+      {true, _author, nil} ->
+        render(conn, "course_not_configured.html", context_id: context_id)
+
+      {true, _author, section} ->
         redirect(conn, to: Routes.page_delivery_path(conn, :index, section.context_id))
 
-      {role, nil, nil} when role == :administrator or role == :instructor ->
-        render(conn, "getting_started.html")
+      {false, nil, nil} ->
+        render(conn, "getting_started.html", context_id: context_id)
 
-      {role, author, nil} when role == :administrator or role == :instructor ->
+      {false, author, nil} ->
         publications = Publishing.available_publications(author)
         my_publications = publications |> Enum.filter(fn p -> !p.open_and_free && p.published end)
         open_and_free_publications = publications |> Enum.filter(fn p -> p.open_and_free && p.published end)
-        render(conn, "configure_section.html", author: author, my_publications: my_publications, open_and_free_publications: open_and_free_publications)
+        render(conn, "configure_section.html", context_id: context_id, author: author, my_publications: my_publications, open_and_free_publications: open_and_free_publications)
 
-      {role, _author, section} when role == :administrator or role == :instructor ->
+      {false, _author, section} ->
         redirect(conn, to: Routes.page_delivery_path(conn, :index, section.context_id))
     end
 
@@ -75,23 +79,24 @@ defmodule OliWeb.DeliveryController do
   end
 
   def create_section(conn, %{"publication_id" => publication_id}) do
-    lti_params = get_session(conn, :lti_params)
+    lti_params = conn.assigns.lti_params
     user = conn.assigns.current_user
-    institution = Accounts.get_institution!(user.institution_id)
+    institution = Institutions.get_institution!(user.institution_id)
     publication = Publishing.get_publication!(publication_id)
 
-    {:ok, %Section{id: id}} = Sections.create_section(%{
+    {:ok, %Section{id: section_id}} = Sections.create_section(%{
       time_zone: institution.timezone,
-      title: lti_params["context_title"],
-      context_id: lti_params["context_id"],
+      title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
+      context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
       institution_id: user.institution_id,
       project_id: publication.project_id,
       publication_id: publication_id,
-      lti_lineitems_url: parse_lti_lineitems_url_from_lti_params(lti_params),
     })
 
-    # Enroll this user as an instructor
-    Sections.enroll(user.id, id, SectionRoles.get_by_type("instructor").id)
+    # Enroll this user with their proper roles (instructor)
+    lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
+    context_roles = ContextRoles.get_roles_by_uris(lti_roles)
+    Sections.enroll(user.id, section_id, context_roles)
 
     conn
     |> redirect(to: Routes.delivery_path(conn, :index))
@@ -103,28 +108,4 @@ defmodule OliWeb.DeliveryController do
     |> redirect(to: Routes.delivery_path(conn, :index))
   end
 
-  # This is a helper function to try and determine the lti lineitems url for the given
-  # section using the lti_params. The LTI spec specifies that this url should be provided as
-  # part of the parameters, but this may be only applicable for LTI version 2.0 or some other
-  # method of fetching this information that we dont know about. For now, we will manually
-  # spec out the path for each LMS we plan to support
-  defp parse_lti_lineitems_url_from_lti_params(lti_params) do
-    context_id = lti_params["context_id"]
-    launch_presentation_return_url = lti_params["launch_presentation_return_url"]
-
-    # for now, we simply hard code the lti lineitems path prefix for all supported LMSs
-    lineitems_api_path = case lti_params["tool_consumer_info_product_family_code"] do
-      "canvas" -> "/api/lti/courses"
-      _ -> "/"
-    end
-
-    case Regex.named_captures(~r/(?<protocol>https?)?[:\/\/]*(?<host>[^\/]+)/, launch_presentation_return_url) do
-      %{"protocol" => protocol,"host" => host} ->
-       "#{protocol}://#{host}#{lineitems_api_path}/#{context_id}/lineitems"
-      %{"host" => host} ->
-       "#{host}#{lineitems_api_path}/#{context_id}/lineitems"
-      _ ->
-       nil
-    end
-  end
 end
