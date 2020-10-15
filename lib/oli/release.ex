@@ -82,20 +82,23 @@ defmodule Oli.ReleaseTasks do
     for repo <- repos() do
       {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
     end
+
+    IO.puts "migrate complete."
   end
 
-  def migrate_and_seed do
+  def seed do
     load_app()
 
     for repo <- repos() do
-      Ecto.Migrator.with_repo(repo, fn repo ->
-        # migrate
-        {:ok, _, _} = Ecto.Migrator.run(repo, :up, all: true)
-
-        # seed
-        {:ok, _, _} = eval_seed(repo, "seeds.exs")
-      end)
+      {:ok, _, _} = Ecto.Migrator.with_repo(repo, &eval_seed(&1, "seeds.exs"))
     end
+
+    IO.puts "seed complete."
+  end
+
+  def migrate_and_seed do
+    migrate()
+    seed()
   end
 
   def rollback(repo, version) do
@@ -121,7 +124,7 @@ defmodule Oli.ReleaseTasks do
     if File.regular?(seeds_file) do
       {:ok, Code.eval_file(seeds_file)}
     else
-      {:error, "Seeds file not found."}
+      {:error, "Seed file '#{seeds_file}' not found."}
     end
   end
 
