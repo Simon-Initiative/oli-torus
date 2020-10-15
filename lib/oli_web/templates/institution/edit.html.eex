@@ -1,5 +1,20 @@
-<h1>Edit Institution</h1>
+<span>
+  <%= link to: Routes.institution_path(@conn, :show, @institution) do %>
+    <i class="las la-arrow-left"></i> Back
+  <% end %>
+</span>
 
-<%= render "form.html", Map.put(assigns, :action, Routes.institution_path(@conn, :update, @institution)) %>
+<div class="container signin">
+  <div class="row">
+    <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
+      <div class="card card-signin my-5">
+        <div class="card-body">
+          <h5 class="card-title text-center">Edit Institution</h5>
 
-<span><%= link "Back", to: Routes.institution_path(@conn, :index) %></span>
+            <%= render "form.html", Map.put(assigns, :action, Routes.institution_path(@conn, :update, @institution)) %>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

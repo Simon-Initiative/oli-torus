@@ -9,7 +9,7 @@ $(function() {
 <div class="configure-section mt-5">
   <h3>Getting Started</h3>
   <p class="mt-3">
-    Welcome <%= @current_user.first_name%>!
+    Welcome <%= @current_user.given_name%>!
     <br />
     Let's get started by creating a section for your course. Please select one of the options below:
   </p>

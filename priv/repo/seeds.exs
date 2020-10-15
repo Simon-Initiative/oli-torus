@@ -53,12 +53,6 @@ if !Oli.Repo.get_by(Oli.Authoring.Authors.ProjectRole, id: 1) do
     type: "contributor"
   }
 end
-# create section roles
-if !Oli.Repo.get_by(Oli.Delivery.Sections.SectionRole, id: 1) do
-
-  Oli.Delivery.Sections.SectionRoles.list()
-  |> Enum.map(&Oli.Repo.insert!/1)
-end
 
 # create resource types
 if !Oli.Repo.get_by(Oli.Resources.ResourceType, id: 1) do
@@ -103,23 +97,47 @@ end
 |> Enum.map(&Oli.Authoring.Theme.changeset/1)
 |> Enum.map(fn t -> Oli.Repo.insert!(t, on_conflict: :replace_all, conflict_target: :id) end)
 
+# create a default active lti_1p3 jwk
+if !Oli.Repo.get_by(Oli.Lti_1p3.Jwk, id: 1) do
+  %{private_key: private_key} = Oli.Lti_1p3.KeyGenerator.generate_key_pair()
+  Oli.Lti_1p3.create_new_jwk(%{
+    pem: private_key,
+    typ: "JWT",
+    alg: "RS256",
+    kid: UUID.uuid4(),
+    active: true,
+  })
+end
+
+# create default open and free institution
+if !Oli.Repo.get_by(Oli.Institutions.Institution, id: 1) do
+  Oli.Institutions.create_institution(%{
+    id: 1,
+    country_code: "US",
+    institution_email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),
+    institution_url: "oli.cmu.edu",
+    name: "Open Learning Initiative",
+    timezone: "US/Eastern",
+    author_id: 1,
+  })
+end
+
+# create lti_1p3 platform roles
+if !Oli.Repo.get_by(Oli.Lti_1p3.PlatformRole, id: 1) do
+  Oli.Lti_1p3.PlatformRoles.list_roles()
+  |> Enum.map(&Oli.Lti_1p3.PlatformRole.changeset/1)
+  |> Enum.map(fn t -> Oli.Repo.insert!(t, on_conflict: :replace_all, conflict_target: :id) end)
+end
+
+# create lti_1p3 context roles
+if !Oli.Repo.get_by(Oli.Lti_1p3.ContextRole, id: 1) do
+  Oli.Lti_1p3.ContextRoles.list_roles()
+  |> Enum.map(&Oli.Lti_1p3.ContextRole.changeset/1)
+  |> Enum.map(fn t -> Oli.Repo.insert!(t, on_conflict: :replace_all, conflict_target: :id) end)
+end
+
 # only seed with sample data if in development mode
 if Application.fetch_env!(:oli, :env) == :dev do
-  # create an example institution
-  if !Oli.Repo.get_by(Oli.Accounts.Institution, id: 1) do
-    {:ok, _institution} = Oli.Accounts.create_institution(%{
-      country_code: "US",
-      institution_email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),
-      institution_url: "oli.cmu.edu",
-      name: "Open Learning Initiative",
-      timezone: "US/Eastern",
-      consumer_key: "0527416a-29ec-4537-b560-6897286a33ec",
-      shared_secret: "4FE4F15E33AACCD85D7E198055B2FE83",
-      author_id: 1,
-    })
-  end
-
-
   if !Oli.Repo.get_by(Oli.Accounts.Author, email: "test@oli.cmu.edu") do
     Oli.Repo.insert! %Oli.Accounts.Author{
       email: "test@oli.cmu.edu",

@@ -11,7 +11,8 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Grading
   alias Oli.Utils.Slug
   alias Oli.Utils.Time
-  alias Oli.Delivery.Lti
+  alias Oli.Delivery.Sections
+  alias Oli.Lti_1p3.ContextRoles
 
   plug :ensure_context_id_matches when action not in [:link]
 
@@ -50,8 +51,8 @@ defmodule OliWeb.PageDeliveryController do
   # the appropriate section resource
   def link(conn, %{"revision_slug" => revision_slug}) do
 
-    lti_params = Plug.Conn.get_session(conn, :lti_params)
-    context_id = lti_params["context_id"]
+    lti_params = conn.assigns.lti_params
+    context_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"]
 
     redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
   end
@@ -140,13 +141,12 @@ defmodule OliWeb.PageDeliveryController do
 
     user = conn.assigns.current_user
 
-    lti_params = Plug.Conn.get_session(conn, :lti_params)
-    context_id = lti_params["context_id"]
-    role = Oli.Delivery.Lti.parse_lti_role(lti_params["roles"])
+    lti_params = conn.assigns.lti_params
+    context_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"]
 
-    if Sections.is_enrolled?(user.id, context_id) do
+    if ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_learner)) do
 
-      case Attempts.submit_graded_page(role, context_id, attempt_guid) do
+      case Attempts.submit_graded_page(context_id, attempt_guid) do
         {:ok, _} -> after_finalized(conn, context_id, revision_slug, user)
         {:error, {:not_all_answered}} ->
           put_flash(conn, :error, "You have not answered all questions")
@@ -196,56 +196,19 @@ defmodule OliWeb.PageDeliveryController do
 
   def export_gradebook(conn, %{"context_id" => context_id}) do
     user = conn.assigns.current_user
-    case {Sections.is_enrolled?(user.id, context_id), Lti.parse_lti_role(user.roles)} do
-      {true, role} when role == :administrator or role == :instructor ->
-        section = Sections.get_section_by(context_id: context_id)
 
-        gradebook_csv = Grading.export_csv(section) |> Enum.join("")
-        filename = "#{Slug.slugify(section.title)}-#{Timex.format!(Time.now(), "{YYYY}-{M}-{D}")}.csv"
+    if ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_instructor)) do
+      section = Sections.get_section_by(context_id: context_id)
 
-        conn
-        |> put_resp_content_type("text/csv")
-        |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
-        |> send_resp(200, gradebook_csv)
+      gradebook_csv = Grading.export_csv(section) |> Enum.join("")
+      filename = "#{Slug.slugify(section.title)}-#{Timex.format!(Time.now(), "{YYYY}-{M}-{D}")}.csv"
 
-      _ ->
+      conn
+      |> put_resp_content_type("text/csv")
+      |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
+      |> send_resp(200, gradebook_csv)
+    else
         render conn, "not_authorized.html"
-    end
-  end
-
-  def sync_gradebook(conn, %{"context_id" => context_id}) do
-    user = conn.assigns.current_user
-    case {Sections.is_enrolled?(user.id, context_id), Lti.parse_lti_role(user.roles)} do
-      {true, role} when role == :administrator or role == :instructor ->
-        section = Sections.get_section_by(context_id: context_id)
-
-        # TODO case _ do handle error
-        Grading.sync_grades(section)
-
-        conn
-        |> send_resp(200, "sync complete")
-
-      _ ->
-        conn
-        |> send_resp(403, "Must be an administrator or instructor to perform this action")
-    end
-  end
-
-  def update_canvas_token(conn, %{"context_id" => context_id}) do
-    user = conn.assigns.current_user
-    case {Sections.is_enrolled?(user.id, context_id), Lti.parse_lti_role(user.roles)} do
-      {true, role} when role == :administrator or role == :instructor ->
-        section = Sections.get_section_by(context_id: context_id)
-        token = conn.params["token"]
-
-        Sections.update_section(section, %{canvas_token: token})
-
-        conn
-        |> send_resp(200, "token updated")
-
-      _ ->
-        conn
-        |> send_resp(403, "Must be an administrator or instructor to perform this action")
     end
   end
 

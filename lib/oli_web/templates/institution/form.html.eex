@@ -7,7 +7,7 @@
 
   <div class="form-label-group">
     <%= text_input f, :name, class: "form-control " <> error_class(f, :name, "is-invalid"),
-      placeholder: "Institution Name", required: true, autofocus: focusHelper(f, :first_name, default: true) %>
+      placeholder: "Institution Name", required: true, autofocus: focusHelper(f, :name, default: true) %>
     <%= label f, :name, "Institution Name", class: "control-label" %>
     <%= error_tag f, :name %>
   </div>
@@ -39,6 +39,6 @@
   </div>
 
   <div>
-    <%= submit "Register", class: "btn btn-md btn-primary btn-block" %>
+    <%= submit "Save", class: "btn btn-md btn-primary btn-block" %>
   </div>
 <% end %>
