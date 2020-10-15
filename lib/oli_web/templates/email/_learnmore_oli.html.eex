@@ -1,0 +1,30 @@
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #a5ca64;">
+    <tr>
+        <td>
+            <div align="center" style="max-width: 600px; margin: auto;" class="email-container">
+                <!--[if mso]>
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" align="center">
+                <tr>
+                <td>
+                <![endif]-->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                    <tr>
+                        <td style="padding: 20px; text-align: left; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #ffffff;">
+                            <p style="margin: 0;">
+                            OLI provides a platform that enables research and experimentation with any aspect of the learning experience.
+                            As a leader in higher education's innovation of online learning, we're a growing research-and-production project exploring effective approaches since the early 2000s.
+                            <br><br>
+                            To learn more about our platform and learning engineering, visit <a href="https://oli.cmu.edu" style="color: #2c66c4">oli.cmu.edu</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+                <!--[if mso]>
+                </td>
+                </tr>
+                </table>
+                <![endif]-->
+            </div>
+        </td>
+    </tr>
+</table>

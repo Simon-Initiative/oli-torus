@@ -7,6 +7,8 @@ defmodule OliWeb.AuthController do
   alias Oli.Accounts.SystemRole
   alias Oli.Repo
   alias Oli.Utils.Recaptcha
+  alias Oli.Email
+  alias Oli.Mailer
 
   def signin(conn, _params) do
     actions = %{
@@ -82,6 +84,12 @@ defmodule OliWeb.AuthController do
           email_verified: false,
           system_role_id: SystemRole.role_id.author
         }
+
+        # TODO: Only send if the account was newly created
+        # send welcome email in the background
+        Email.welcome_author_email(email)
+        |> IO.inspect
+        |> Mailer.deliver_later()
 
         case Accounts.create_author(author_params) do
           {:ok, author} ->
@@ -167,6 +175,13 @@ defmodule OliWeb.AuthController do
 
     case Accounts.authorize_author(email, password) do
       { :ok, author } ->
+
+        # TODO: Only send if the account was newly created
+        # send welcome email in the background
+        Email.welcome_author_email(author.email)
+        |> IO.inspect
+        |> Mailer.deliver_later()
+
         case params do
           %{"type" => "link-account"} ->
             link_account_callback(conn, author)

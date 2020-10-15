@@ -53,6 +53,7 @@ defmodule Oli.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:bamboo, "~> 1.6"},
       {:bcrypt_elixir, "~> 2.2"},
       {:credo, "~> 1.1.0", only: [:dev, :test], runtime: true},
       {:csv, "~> 2.3"},
@@ -61,7 +62,7 @@ defmodule Oli.MixProject do
       {:ex_aws, "~> 2.1"},
       {:ex_aws_s3, "~> 2.0"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
-      {:floki, ">= 0.26.0", only: :test},
+      {:floki, ">= 0.26.0"},
       {:gettext, "~> 0.11"},
       {:hackney, "~> 1.9"},
       {:httpoison, "~> 1.6"},
@@ -79,6 +80,7 @@ defmodule Oli.MixProject do
       {:plug_cowboy, "~> 2.1"},
       {:poison, "~> 3.1"},
       {:postgrex, ">= 0.0.0"},
+      {:premailex, "~> 0.3.0"},
       {:shortuuid, "~> 2.1"},
       {:telemetry, "~> 0.4.1"},
       {:telemetry_poller, "~> 0.4"},

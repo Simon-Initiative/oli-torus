@@ -36,6 +36,18 @@ host =
     For example: host.example.com
     """
 
+email_from =
+  System.get_env("EMAIL_FROM") ||
+    raise """
+    environment variable HOST is missing.
+    For example: host.example.com
+    """
+
+# General OLI app config
+config :oli,
+  email_from: email_from,
+  email_reply_to: System.get_env("EMAIL_REPLY_TO", email_from)
+
 # Configure reCAPTCHA
 config :oli, :recaptcha,
   verify_url: "https://www.google.com/recaptcha/api/siteverify",

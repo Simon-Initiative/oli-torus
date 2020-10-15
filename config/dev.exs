@@ -3,7 +3,9 @@ use Mix.Config
 config :oli,
   env: :dev,
   s3_media_bucket_name: "torus-media-dev",
-  media_url: "torus-media-dev.s3.amazonaws.com"
+  media_url: "torus-media-dev.s3.amazonaws.com",
+  email_from: System.get_env("EMAIL_FROM", "admin@example.edu"),
+  email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu")
 
 # Configure your database
 config :oli, Oli.Repo,
@@ -13,6 +15,10 @@ config :oli, Oli.Repo,
   hostname: System.get_env("DB_HOST", "localhost"),
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
+
+# Configure Email
+config :oli, Oli.Mailer,
+  adapter: Bamboo.LocalAdapter
 
 force_ssl = case System.get_env("FORCE_SSL", "true") do
   "true" -> [rewrite_on: [:x_forwarded_proto]]
