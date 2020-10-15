@@ -27,7 +27,7 @@ defmodule Oli.MixProject do
       releases: [
         oli: [
           include_executables_for: [:unix],
-          applications: [runtime_tools: :permanent]
+          extra_applications: [:logger, :os_mon, runtime_tools: :permanent]
         ]
       ],
       default_release: :oli
