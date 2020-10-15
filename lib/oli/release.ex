@@ -84,21 +84,18 @@ defmodule Oli.ReleaseTasks do
     end
   end
 
-  def seed do
+  def migrate_and_seed do
     load_app()
-    start_repos()
 
-    # Run the seed script if it exists
-    seed_script = seed_path(:oli)
-    if File.exists?(seed_script) do
-      IO.puts "Running seed script.."
-      Code.eval_file(seed_script)
+    for repo <- repos() do
+      Ecto.Migrator.with_repo(repo, fn repo ->
+        # migrate
+        {:ok, _, _} = Ecto.Migrator.run(repo, :up, all: true)
 
-      IO.puts "seed complete."
-    else
-      IO.puts :stderr, "seed script does not exist."
+        # seed
+        {:ok, _, _} = eval_seed(repo, "seeds.exs")
+      end)
     end
-
   end
 
   def rollback(repo, version) do
@@ -110,17 +107,34 @@ defmodule Oli.ReleaseTasks do
     Application.fetch_env!(@app, :ecto_repos)
   end
 
+  @spec load_app() :: :ok | {:error, term()}
   defp load_app do
     Application.load(@app)
   end
 
-  defp start_repos() do
-    # Start the Repo(s) for app
-    IO.puts "Starting repos.."
-    Enum.each(repos(), &(&1.start_link(pool_size: 1)))
+  @spec eval_seed(Ecto.Repo.t(), String.t()) :: any()
+  defp eval_seed(repo, filename) do
+    # if in the future more seed files are added, replace "" with
+    # the subdirectory name containing seed files
+    seeds_file = get_path(repo, "", filename)
+
+    if File.regular?(seeds_file) do
+      {:ok, Code.eval_file(seeds_file)}
+    else
+      {:error, "Seeds file not found."}
+    end
   end
 
-  defp priv_dir(app), do: "#{:code.priv_dir(app)}"
-  defp seed_path(app), do: Path.join([priv_dir(app), "repo", "seeds.exs"])
+  @spec get_path(Ecto.Repo.t(), String.t(), String.t()) :: String.t()
+  defp get_path(repo, directory, filename) do
+    priv_dir = "#{:code.priv_dir(@app)}"
 
+    repo_underscore =
+      repo
+      |> Module.split()
+      |> List.last()
+      |> Macro.underscore()
+
+    Path.join([priv_dir, repo_underscore, directory, filename])
+  end
 end
