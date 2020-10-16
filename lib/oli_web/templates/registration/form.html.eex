@@ -1,0 +1,62 @@
+<%= form_for @changeset, @action, fn f -> %>
+  <%= if @changeset.action do %>
+    <div class="alert alert-danger">
+      <p>Oops, something went wrong! Please check the errors below.</p>
+    </div>
+  <% end %>
+
+  <div class="form-label-group">
+    <%= text_input f, :issuer, class: "form-control " <> error_class(f, :issuer, "is-invalid"),
+      placeholder: "Issuer", required: true, autofocus: focusHelper(f, :issuer, default: true) %>
+    <%= label f, :issuer, "Issuer", class: "control-label" %>
+    <%= error_tag f, :issuer %>
+  </div>
+
+  <div class="form-label-group">
+    <%= text_input f, :client_id, class: "form-control " <> error_class(f, :client_id, "is-invalid"),
+      placeholder: "Client ID", required: true, autofocus: focusHelper(f, :client_id) %>
+    <%= label f, :client_id, "Client ID", class: "control-label" %>
+    <%= error_tag f, :client_id %>
+  </div>
+
+  <div class="form-label-group">
+    <%= text_input f, :kid, class: "form-control " <> error_class(f, :kid, "is-invalid"),
+      placeholder: "KID", required: true, autofocus: focusHelper(f, :kid) %>
+    <%= label f, :kid, "KID", class: "control-label" %>
+    <%= error_tag f, :kid %>
+  </div>
+
+  <div class="form-label-group">
+    <%= text_input f, :key_set_url, class: "form-control " <> error_class(f, :key_set_url, "is-invalid"),
+      placeholder: "Keyset URL", required: true, autofocus: focusHelper(f, :key_set_url) %>
+    <%= label f, :key_set_url, "Keyset URL", class: "control-label" %>
+    <%= error_tag f, :key_set_url %>
+  </div>
+
+  <div class="form-label-group">
+    <%= text_input f, :auth_token_url, class: "form-control " <> error_class(f, :auth_token_url, "is-invalid"),
+      placeholder: "Auth Token URL", required: true, autofocus: focusHelper(f, :auth_token_url) %>
+    <%= label f, :auth_token_url, "Auth Token URL", class: "control-label" %>
+    <%= error_tag f, :auth_token_url %>
+  </div>
+
+  <div class="form-label-group">
+    <%= text_input f, :auth_login_url, class: "form-control " <> error_class(f, :auth_login_url, "is-invalid"),
+      placeholder: "Auth Login URL", required: true, autofocus: focusHelper(f, :auth_login_url) %>
+    <%= label f, :auth_login_url, "Auth Login URL", class: "control-label" %>
+    <%= error_tag f, :auth_login_url %>
+  </div>
+
+  <div class="form-label-group">
+    <%= text_input f, :auth_server, class: "form-control " <> error_class(f, :auth_server, "is-invalid"),
+      placeholder: "Auth Server URL", required: true, autofocus: focusHelper(f, :auth_server) %>
+    <%= label f, :auth_server, "Auth Server URL", class: "control-label" %>
+    <%= error_tag f, :auth_server %>
+  </div>
+
+  <%= hidden_input f, :institution_id, value: @institution_id  %>
+
+  <div>
+    <%= submit "Save", class: "btn btn-md btn-primary btn-block" %>
+  </div>
+<% end %>

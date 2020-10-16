@@ -119,6 +119,13 @@ defmodule Oli.Publishing.AuthoringResolverTest do
 
     end
 
+    test "hierarchy/1 resolves the all hierarchy nodes", %{ project: project } do
+
+      nodes = AuthoringResolver.hierarchy(project.slug)
+      assert length(nodes) == 3
+
+    end
+
     test "root_resource/1 resolves the root revision", %{ container: %{ revision: container_revision }, project: project } do
 
       assert AuthoringResolver.root_resource(project.slug) == container_revision

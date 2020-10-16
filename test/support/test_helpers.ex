@@ -1,12 +1,9 @@
 defmodule Oli.TestHelpers do
-  import Oli.Utils
-
   alias Oli.Repo
   alias Oli.Accounts
+  alias Oli.Institutions
   alias Oli.Accounts.User
-  alias Oli.Accounts.LtiToolConsumer
   alias Oli.Accounts.Author
-  alias Oli.Delivery.Lti.HmacSHA1
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
@@ -41,34 +38,18 @@ defmodule Oli.TestHelpers do
     section
   end
 
-  def lti_consumer_fixture(attrs \\ %{}) do
-    params =
-      attrs
-      |> Enum.into(%{
-        info_product_family_code: "code",
-        info_version: "1",
-        instance_contact_email: "example@example.com",
-        instance_guid: "2u9dfh7979hfd",
-        instance_name: "none"
-      })
-
-    {:ok, consumer} =
-      LtiToolConsumer.changeset(%LtiToolConsumer{}, params)
-      |> Repo.insert()
-
-      consumer
-  end
-
   def user_fixture(attrs \\ %{}) do
     params =
       attrs
       |> Enum.into(%{
-        email: "ironman#{System.unique_integer([:positive])}@example.com",
-        first_name: "Tony",
-        last_name: "Stark",
-        user_id: "2u9dfh7979hfd",
-        user_image: "none",
-        roles: "none"
+        sub: "a6d5c443-1f51-4783-ba1a-7686ffe3b54a",
+        name: "Ms Jane Marie Doe",
+        given_name: "Jane",
+        family_name: "Doe",
+        middle_name: "Marie",
+        picture: "https://platform.example.edu/jane.jpg",
+        email: "jane#{System.unique_integer([:positive])}@platform.example.edu",
+        locale: "en-US",
       })
 
     {:ok, user} =
@@ -106,14 +87,55 @@ defmodule Oli.TestHelpers do
         institution_url: "institution.example.edu",
         name: "Example Institution",
         timezone: "US/Eastern",
-        consumer_key: "test-consumer-key",
-        shared_secret: "test-secret",
         author_id: 1,
       })
 
-    {:ok, institution} = Accounts.create_institution(params)
+    {:ok, institution} = Institutions.create_institution(params)
 
     institution
+  end
+
+  def registration_fixture(attrs \\ %{}) do
+    params =
+      attrs
+      |> Enum.into(%{
+        auth_login_url: "some auth_login_url",
+        auth_server: "some auth_server",
+        auth_token_url: "some auth_token_url",
+        client_id: "some client_id",
+        issuer: "some issuer",
+        key_set_url: "some key_set_url",
+        kid: "some kid"
+      })
+
+    {:ok, registration} = Institutions.create_registration(params)
+
+    registration
+  end
+
+  def deployment_fixture(attrs \\ %{}) do
+    params =
+      attrs
+      |> Enum.into(%{
+        deployment_id: "some deployment_id"
+      })
+
+    {:ok, deployment} = Institutions.create_deployment(params)
+
+    deployment
+  end
+
+  def jwk_fixture() do
+    %{private_key: private_key} = Oli.Lti_1p3.KeyGenerator.generate_key_pair()
+    {:ok, jwk} = Oli.Lti_1p3.create_new_jwk(%{
+      pem: private_key,
+      typ: "JWT",
+      alg: "RS256",
+      kid: UUID.uuid4(),
+      active: true,
+    })
+
+    jwk
   end
 
   def project_fixture(author) do
@@ -134,53 +156,9 @@ defmodule Oli.TestHelpers do
 
   def url_from_conn(conn) do
     scheme = if conn.scheme == :https, do: "https", else: "http"
-    scheme = System.get_env("LTI_PROTOCOL", scheme)
     port = if conn.port == 80 or conn.port == 443, do: "", else: ":#{conn.port}"
 
     "#{scheme}://#{conn.host}#{port}/lti/basic_launch"
-  end
-
-  def build_lti_request(req_url, shared_secret, attrs \\ %{}) do
-    lti_params = attrs |> Enum.into(%{
-      "oauth_consumer_key" => "test-consumer-key",
-      "oauth_signature_method" => "HMAC-SHA1",
-      "oauth_timestamp" => DateTime.utc_now() |> DateTime.to_unix() |> Integer.to_string,
-      "oauth_nonce" => random_string(16),
-      "oauth_version" => "1.0",
-      "context_id" => "some-context-id",
-      "context_label" => "Torus",
-      "context_title" => "Torus Test",
-      "ext_roles" => "urn:lti:instrole:ims/lis/Student,urn:lti:role:ims/lis/Learner,urn:lti:sysrole:ims/lis/User",
-      "launch_presentation_document_target" => "iframe",
-      "launch_presentation_locale" => "en",
-      "launch_presentation_return_url" => "https://canvas.oli.cmu.edu/courses/1/external_content/success/external_tool_redirect",
-      "lis_person_contact_email_primary" => "exampleuser@example.edu",
-      "lis_person_name_family" => "User",
-      "lis_person_name_full" => "Example User",
-      "lis_person_name_given" => "Example",
-      "lti_message_type" => "basic-lti-launch-request",
-      "lti_version" => "LTI-1p0",
-      "oauth_callback" => "about:blank",
-      "resource_link_id" => "82f5cc6b61288d047fc5213547ac8fba4790bffa",
-      "resource_link_title" => "Torus OLI",
-      "roles" => "Learner",
-      "tool_consumer_info_product_family_code" => "canvas",
-      "tool_consumer_info_version" => "cloud",
-      "tool_consumer_instance_contact_email" => "admin@canvas.oli.cmu.edu",
-      "tool_consumer_instance_guid" => "8865aa05b4b79b64a91a86042e43af5ea8ae79eb.localhost:8900",
-      "tool_consumer_instance_name" => "OLI Canvas Admin",
-      "user_id" => "dc86d3e58c1025af0b2cce49205ad2cb1019d546",
-      "user_image" => "https://canvas.oli.cmu.edu/images/messages/avatar-50.png",
-    })
-
-    oauth_signature = HmacSHA1.build_signature(
-      req_url,
-      "POST",
-      lti_params,
-      shared_secret
-    )
-
-    Map.put(lti_params, "oauth_signature", oauth_signature)
   end
 
   def make_n_projects(0, _author), do: []

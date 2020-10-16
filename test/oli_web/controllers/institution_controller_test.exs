@@ -4,9 +4,10 @@ defmodule OliWeb.InstitutionControllerTest do
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Accounts.Author
+  alias Oli.Institutions
 
-  @create_attrs %{country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", name: "some name", timezone: "some timezone", consumer_key: "some key", shared_secret: "some secret"}
-  @update_attrs %{country_code: "some updated country_code", institution_email: "some updated institution_email", institution_url: "some updated institution_url", name: "some updated name", timezone: "some updated timezone", consumer_key: "some updated key", shared_secret: "some updated secret"}
+  @create_attrs %{country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", name: "some name", timezone: "some timezone"}
+  @update_attrs %{country_code: "some updated country_code", institution_email: "some updated institution_email", institution_url: "some updated institution_url", name: "some updated name", timezone: "some updated timezone"}
   @invalid_attrs %{country_code: nil, institution_email: nil, institution_url: nil, name: nil, timezone: nil}
 
   describe "index" do
@@ -14,7 +15,7 @@ defmodule OliWeb.InstitutionControllerTest do
 
     test "lists all institutions", %{conn: conn} do
       conn = get(conn, Routes.institution_path(conn, :index))
-      assert html_response(conn, 200) =~ "My Institutions"
+      assert html_response(conn, 200) =~ "some name"
     end
   end
 
@@ -81,9 +82,9 @@ defmodule OliWeb.InstitutionControllerTest do
   end
 
   defp create_institution(%{ conn: conn  }) do
-    {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: Accounts.SystemRole.role_id.author}) |> Repo.insert
+    {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: Accounts.SystemRole.role_id.admin}) |> Repo.insert
     create_attrs = Map.put(@create_attrs, :author_id, author.id)
-    {:ok, institution} = create_attrs |> Accounts.create_institution()
+    {:ok, institution} = create_attrs |> Institutions.create_institution()
 
     conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
 
