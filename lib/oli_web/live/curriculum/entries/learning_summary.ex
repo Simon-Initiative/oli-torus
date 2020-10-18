@@ -1,4 +1,4 @@
-defmodule OliWeb.Curriculum.LearningSummaryEntry do
+defmodule OliWeb.Curriculum.LearningSummaryEntryLive do
 
   @moduledoc """
   Curriculum item entry component.

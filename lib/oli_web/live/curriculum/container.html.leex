@@ -24,7 +24,7 @@
         <% end %>
         <%= for {child, index} <- Enum.with_index(@children) do %>
           <%= live_component @socket, DropTarget, index: index %>
-          <%= live_component @socket, Entry, %{
+          <%= live_component @socket, EntryLive, %{
                   id: child.slug,
                   editor: Map.get(@resources_being_edited, child.resource_id),
                   selected: child == @selected,

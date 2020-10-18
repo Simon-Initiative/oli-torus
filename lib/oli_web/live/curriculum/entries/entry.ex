@@ -1,4 +1,4 @@
-defmodule OliWeb.Curriculum.Entry do
+defmodule OliWeb.Curriculum.EntryLive do
   @moduledoc """
   Curriculum item entry component.
   """
@@ -89,7 +89,7 @@ defmodule OliWeb.Curriculum.Entry do
     if is_container?(resource_type_id) do
       Routes.live_path(
         assigns.socket,
-        OliWeb.Curriculum.Container,
+        OliWeb.Curriculum.ContainerLive,
         assigns.project.slug,
         assigns.child.slug
       )

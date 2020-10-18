@@ -1,4 +1,4 @@
-defmodule OliWeb.Curriculum.Container do
+defmodule OliWeb.Curriculum.ContainerLive do
   @moduledoc """
   LiveView implementation of a container editor.
   """
@@ -289,7 +289,7 @@ defmodule OliWeb.Curriculum.Container do
   def handle_event("change-view", %{"view" => view}, socket) do
     {:noreply, push_patch(socket, to: Routes.live_path(
       socket,
-      OliWeb.Curriculum.Container,
+      OliWeb.Curriculum.ContainerLive,
       socket.assigns.project.slug,
       socket.assigns.container.slug,
       %{ view: view }))}
