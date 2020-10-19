@@ -86,12 +86,10 @@ defmodule Oli.Lti_1p3 do
   Caches LTI 1.3 params map using the given key. Assumes lti_params contains standard LTI fields
   including "exp" for expiration date
   ## Examples
-      iex> cache_lti_params(key, lti_params)
-      {:ok, %LtiParams{}}
-      iex> create_nonce(key, bad_params)
-      {:error, %Ecto.Changeset{}}
+      iex> cache_lti_params!(key, lti_params)
+      %LtiParams{}
   """
-  def cache_lti_params(key, lti_params) do
+  def cache_lti_params!(key, lti_params) do
     exp = Timex.from_unix(lti_params["exp"])
 
     case Repo.get_by(LtiParams, key: key) do

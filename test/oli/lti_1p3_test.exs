@@ -54,14 +54,14 @@ defmodule Oli.Lti_1p3Test do
 
     test "should cache new lti_params" do
       lti_params = TestHelpers.Lti_1p3.all_default_claims()
-      created = Lti_1p3.cache_lti_params("some-key", lti_params)
+      created = Lti_1p3.cache_lti_params!("some-key", lti_params)
 
       assert created.data == lti_params
     end
 
     test "should fetch lti_params using key" do
       lti_params = TestHelpers.Lti_1p3.all_default_claims()
-      Lti_1p3.cache_lti_params("some-key", lti_params)
+      Lti_1p3.cache_lti_params!("some-key", lti_params)
 
       fetched = Lti_1p3.fetch_lti_params("some-key")
       assert fetched != nil
@@ -70,7 +70,7 @@ defmodule Oli.Lti_1p3Test do
 
     test "should update lti_params using key" do
       lti_params = TestHelpers.Lti_1p3.all_default_claims()
-      Lti_1p3.cache_lti_params("some-key", lti_params)
+      Lti_1p3.cache_lti_params!("some-key", lti_params)
 
       fetched = Lti_1p3.fetch_lti_params("some-key")
       assert fetched != nil
@@ -83,7 +83,7 @@ defmodule Oli.Lti_1p3Test do
         "type" => ["Course"]
       }
       updated_lti_params = Map.put(lti_params, "https://purl.imsglobal.org/spec/lti/claim/context", new_context)
-      Lti_1p3.cache_lti_params("some-key", updated_lti_params)
+      Lti_1p3.cache_lti_params!("some-key", updated_lti_params)
       updated_fetched = Lti_1p3.fetch_lti_params("some-key")
 
       assert updated_fetched != nil

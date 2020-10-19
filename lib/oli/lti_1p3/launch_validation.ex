@@ -166,7 +166,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   defp cache_launch_params(conn, jwt_body) do
     # LTI 1.3 params are too big to store in the session cookie. Therefore, we must
     # cache all lti_params key'd on the sub value in database for use in other views
-    Oli.Lti_1p3.cache_lti_params(jwt_body["sub"], jwt_body)
+    Oli.Lti_1p3.cache_lti_params!(jwt_body["sub"], jwt_body)
 
     conn = conn
     |> Plug.Conn.put_session(:lti_1p3_sub, jwt_body["sub"])
