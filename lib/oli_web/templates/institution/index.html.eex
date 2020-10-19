@@ -1,6 +1,6 @@
 <%= if Enum.count(@institutions) == 0 do %>
   <div class="my-5 text-center">
-    <%= "#{@current_author.first_name} #{@current_author.last_name}" %> has no registered institutions
+    There are no registered institutions
   </div>
 <% else %>
   <table class="table table-striped table-bordered">
