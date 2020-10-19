@@ -93,9 +93,13 @@ defmodule Oli.Lti_1p3 do
   """
   def cache_lti_params(key, lti_params) do
     exp = Timex.from_unix(lti_params["exp"])
-    %LtiParams{}
+
+    case Repo.get_by(LtiParams, key: key) do
+      nil  -> %LtiParams{}
+      lti_params -> lti_params
+    end
     |> LtiParams.changeset(%{key: key, data: lti_params, exp: exp})
-    |> Repo.insert()
+    |> Repo.insert_or_update()
   end
 
   @doc """
