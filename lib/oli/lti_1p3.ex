@@ -99,7 +99,7 @@ defmodule Oli.Lti_1p3 do
       lti_params -> lti_params
     end
     |> LtiParams.changeset(%{key: key, data: lti_params, exp: exp})
-    |> Repo.insert_or_update()
+    |> Repo.insert_or_update!()
   end
 
   @doc """
