@@ -9,6 +9,7 @@ defmodule OliWeb.Curriculum.EntryLive do
   alias Oli.Resources.ResourceType
   alias Oli.Resources
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Common.Links
   alias OliWeb.Curriculum.Settings
   alias OliWeb.Common.MinimalModal
   import OliWeb.Projects.Table, only: [time_ago: 2]
@@ -34,12 +35,7 @@ defmodule OliWeb.Curriculum.EntryLive do
             <div class="d-flex justify-content-between">
               <div class="curriculum-title-line d-flex align-items-center">
                 <%= icon(@child) %>
-                <a
-                  class="ml-1 mr-1 entry-title"
-                  onClick="event.stopPropagation();"
-                  href="<%= resource_link(assigns, @child.resource_type_id) %>">
-                  <%= title(@numbering, @child) %>
-                </a>
+                <%= Links.resource_link(@child, [], @project, "ml-1 mr-1 entry-title") %>
                 <%= if @editor do %>
                   <span class="badge">
                     <%= @editor.first_name %> is editing this
@@ -82,19 +78,6 @@ defmodule OliWeb.Curriculum.EntryLive do
     case ResourceType.get_type_by_id(resource_type_id) do
       "container" -> true
       _ -> false
-    end
-  end
-
-  defp resource_link(assigns, resource_type_id) do
-    if is_container?(resource_type_id) do
-      Routes.live_path(
-        assigns.socket,
-        OliWeb.Curriculum.ContainerLive,
-        assigns.project.slug,
-        assigns.child.slug
-      )
-    else
-      Routes.resource_path(OliWeb.Endpoint, :edit, assigns.project.slug, assigns.child.slug)
     end
   end
 

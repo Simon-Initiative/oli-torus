@@ -1,15 +1,15 @@
-defmodule OliWeb.Curriculum.ContainerLive do
+defmodule OliWeb.CurriculumLive.Index do
   @moduledoc """
   LiveView implementation of a container editor.
   """
 
-  use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use OliWeb, :live_view
 
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Authoring.Course
-  alias OliWeb.Curriculum.{Rollup, ActivityDelta, DropTarget, Entry}
+  alias OliWeb.Curriculum.{Rollup, ActivityDelta, DropTarget, EntryLive}
   alias Oli.Resources
-  alias Oli.Resources.{ScoringStrategy, Revision}
+  alias Oli.Resources.{ScoringStrategy}
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Accounts.Author
   alias Oli.Repo
@@ -38,6 +38,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
       ) do
     project = Course.get_project_by_slug(project_slug)
     container = AuthoringResolver.from_revision_slug(project.slug, container_slug)
+
     children =
       ContainerEditor.list_all_container_children(container, project)
       |> Repo.preload([:resource, :author])
@@ -59,14 +60,35 @@ defmodule OliWeb.Curriculum.ContainerLive do
        view: "Simple",
        selected: nil,
        resources_being_edited: get_resources_being_edited(container.children, project.id),
-       numbering: Numbering.number_full_tree(
-         AuthoringResolver.root_container(project_slug),
-         Numbering.fetch_hierarchy(project_slug))
+       numbering:
+         Numbering.number_full_tree(
+           AuthoringResolver.root_container(project_slug),
+           Numbering.fetch_hierarchy(project_slug)
+         )
      )}
   end
 
-  def handle_params(%{ "view" => view }, _, socket), do: {:noreply, assign(socket, view: view)}
-  def handle_params(_, _, socket), do: {:noreply, socket}
+  def handle_params(params, _url, %{assigns: %{live_action: live_action}} = socket) do
+    {:noreply, apply_action(socket, live_action, params)}
+  end
+  def handle_params(%{"view" => view}, _, socket) do
+    {:noreply, assign(socket, view: view)}
+  end
+  def handle_params(_, _, socket) do
+    {:noreply, socket}
+  end
+
+  defp apply_action(socket, :index, _params) do
+    socket
+    |> assign(:page_title, "Curriculum")
+    |> assign(:revision, nil)
+  end
+
+  defp apply_action(socket, :edit, %{"project_id" => project_id, "revision_slug" => revision_slug}) do
+    socket
+   |> assign(:page_title, "Change settings")
+   |> assign(:revision, AuthoringResolver.from_revision_slug(project_id, revision_slug))
+  end
 
   # spin up subscriptions for the container and for all of its children, activities and attached objectives
   defp subscribe(
@@ -83,21 +105,31 @@ defmodule OliWeb.Curriculum.ContainerLive do
     activity_ids = Enum.map(activity_map, fn {id, _} -> id end)
     objective_ids = Enum.map(objective_map, fn {id, _} -> id end)
 
-    ids = [container.resource_id] ++ Enum.map(children, fn c -> c.resource_id end) ++ activity_ids ++ objective_ids
+    ids =
+      [container.resource_id] ++
+        Enum.map(children, fn c -> c.resource_id end) ++ activity_ids ++ objective_ids
 
     Enum.each(ids, fn id ->
       Subscriber.subscribe_to_new_revisions_in_project(id, project_slug)
     end)
 
-    Subscriber.subscribe_to_new_resources_of_type(Oli.Resources.ResourceType.get_id_by_type("objective"), project_slug)
+    Subscriber.subscribe_to_new_resources_of_type(
+      Oli.Resources.ResourceType.get_id_by_type("objective"),
+      project_slug
+    )
 
     ids
   end
 
   # release a collection of subscriptions
   defp unsubscribe(ids, children, project_slug) do
-    Subscriber.unsubscribe_to_new_resources_of_type(Oli.Resources.ResourceType.get_id_by_type("objective"), project_slug)
-    Enum.each(ids, & Subscriber.unsubscribe_to_new_revisions_in_project(&1, project_slug))
+    Subscriber.unsubscribe_to_new_resources_of_type(
+      Oli.Resources.ResourceType.get_id_by_type("objective"),
+      project_slug
+    )
+
+    Enum.each(ids, &Subscriber.unsubscribe_to_new_revisions_in_project(&1, project_slug))
+
     Enum.each(children, fn child ->
       Subscriber.unsubscribe_to_locks_acquired(child.resource_id)
       Subscriber.unsubscribe_to_locks_released(child.resource_id)
@@ -108,22 +140,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
   def handle_event("select", %{"slug" => slug}, socket) do
     selected = Enum.find(socket.assigns.children, fn r -> r.slug == slug end)
     {:noreply, assign(socket, :selected, selected)}
-  end
-
-  # process form submission to save page settings
-  def handle_event("save", %{"revision" => revision_params}, socket) do
-    revision = Resources.get_revision!(revision_params["id"])
-    socket =
-      case ContainerEditor.edit_page(socket.assigns.project, revision.slug, revision_params) do
-        {:ok, _} ->
-          socket
-
-        {:error, _} ->
-          socket
-          |> put_flash(:error, "Could not edit page")
-      end
-
-    {:noreply, socket}
   end
 
   def handle_event("keydown", %{"key" => key, "shiftKey" => shiftKeyPressed?} = params, socket) do
@@ -279,20 +295,28 @@ defmodule OliWeb.Curriculum.ContainerLive do
           |> put_flash(:error, "Could not create new item")
       end
 
-    {:noreply, assign(socket,
-      numbering: Numbering.number_full_tree(
-        AuthoringResolver.root_container(socket.assigns.project.slug),
-        Numbering.fetch_hierarchy(socket.assigns.project.slug))
-    )}
+    {:noreply,
+     assign(socket,
+       numbering:
+         Numbering.number_full_tree(
+           AuthoringResolver.root_container(socket.assigns.project.slug),
+           Numbering.fetch_hierarchy(socket.assigns.project.slug)
+         )
+     )}
   end
 
   def handle_event("change-view", %{"view" => view}, socket) do
-    {:noreply, push_patch(socket, to: Routes.live_path(
-      socket,
-      OliWeb.Curriculum.ContainerLive,
-      socket.assigns.project.slug,
-      socket.assigns.container.slug,
-      %{ view: view }))}
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.curriculum_index_path(
+           socket,
+           :index,
+           socket.assigns.project.slug,
+           socket.assigns.container.slug,
+           %{view: view}
+         )
+     )}
   end
 
   def active_class(active_view, view) do
@@ -376,9 +400,11 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     {:ok, rollup} = Rollup.new(children, socket.assigns.project.slug)
 
-    numbering = Numbering.number_full_tree(
-      AuthoringResolver.root_container(socket.assigns.project.slug),
-      Numbering.fetch_hierarchy(socket.assigns.project.slug))
+    numbering =
+      Numbering.number_full_tree(
+        AuthoringResolver.root_container(socket.assigns.project.slug),
+        Numbering.fetch_hierarchy(socket.assigns.project.slug)
+      )
 
     selected =
       case socket.assigns.selected do
@@ -386,7 +412,13 @@ defmodule OliWeb.Curriculum.ContainerLive do
         s -> Enum.find(children, fn r -> r.resource_id == s.resource_id end)
       end
 
-    assign(socket, selected: selected, container: revision, children: children, rollup: rollup, numbering: numbering)
+    assign(socket,
+      selected: selected,
+      container: revision,
+      children: children,
+      rollup: rollup,
+      numbering: numbering
+    )
   end
 
   # Here we respond to notifications for edits made
@@ -401,7 +433,11 @@ defmodule OliWeb.Curriculum.ContainerLive do
       end
 
     # redo all subscriptions
-    unsubscribe(socket.assigns.subscriptions, socket.assigns.children, socket.assigns.project.slug)
+    unsubscribe(
+      socket.assigns.subscriptions,
+      socket.assigns.children,
+      socket.assigns.project.slug
+    )
 
     subscriptions =
       subscribe(
@@ -420,7 +456,10 @@ defmodule OliWeb.Curriculum.ContainerLive do
     rollup = Rollup.objective_updated(socket.assigns.rollup, revision)
 
     # now listen to it for future edits
-    Subscriber.subscribe_to_new_revisions_in_project(revision.resource_id, socket.assigns.project.slug)
+    Subscriber.subscribe_to_new_revisions_in_project(
+      revision.resource_id,
+      socket.assigns.project.slug
+    )
 
     subscriptions = [revision.resource_id | socket.assigns.subscriptions]
 

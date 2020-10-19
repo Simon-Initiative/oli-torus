@@ -1,3 +1,13 @@
+<%= if @live_action in [:edit] do %>
+ <%= live_modal @socket, OliWeb.CurriculumLive.FormComponent,
+   id: @revision.id,
+   title: @page_title,
+   action: @live_action,
+   revision: @revision,
+   return_to: Routes.curriculum_index_path(@socket, :index, @project, @container) %>
+<% end %>
+
+
 <div id="curriculum-container" class="container container-editor">
   <div class="row">
     <div class="col-12">

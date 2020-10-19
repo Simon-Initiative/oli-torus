@@ -12,43 +12,86 @@ defmodule OliWeb.ActivityController do
   plug :fetch_project when action in [:edit]
   plug :authorize_project when action in [:edit]
 
-  def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug, "activity_slug" => activity_slug}) do
-
+  def edit(conn, %{
+        "project_id" => project_slug,
+        "revision_slug" => revision_slug,
+        "activity_slug" => activity_slug
+      }) do
     author = conn.assigns[:current_author]
     is_admin? = Accounts.is_admin?(author)
 
     case ActivityEditor.create_context(project_slug, revision_slug, activity_slug, author) do
-      {:ok, context} -> render(conn, "edit.html", active: :curriculum,
-        breadcrumbs: [
-          {"Curriculum", Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project_slug, AuthoringResolver.root_container(project_slug).slug)},
-          {context.resourceTitle, Routes.resource_path(OliWeb.Endpoint, :edit, project_slug, context.resourceSlug)},
-          {context.title, nil}],
-        project_slug: project_slug, is_admin?: is_admin?, activity_slug: activity_slug, script: context.authoringScript, context: Jason.encode!(context))
-      {:error, :not_found} -> render conn, OliWeb.SharedView, "_not_found.html", breadcrumbs: [
-        {"Curriculum", Routes.live_path(OliWeb.Endpoint, OliWeb.Curriculum.Container, project_slug, AuthoringResolver.root_container(project_slug).slug)},
-        {"Not Found", nil}]
-    end
+      {:ok, context} ->
+        render(conn, "edit.html",
+          active: :curriculum,
+          breadcrumbs: [
+            {"Curriculum",
+             Routes.curriculum_index_path(
+               OliWeb.Endpoint,
+               :index,
+               project_slug,
+               AuthoringResolver.root_container(project_slug).slug
+             )},
+            {context.resourceTitle,
+             Routes.resource_path(OliWeb.Endpoint, :edit, project_slug, context.resourceSlug)},
+            {context.title, nil}
+          ],
+          project_slug: project_slug,
+          is_admin?: is_admin?,
+          activity_slug: activity_slug,
+          script: context.authoringScript,
+          context: Jason.encode!(context)
+        )
 
+      {:error, :not_found} ->
+        render(conn, OliWeb.SharedView, "_not_found.html",
+          breadcrumbs: [
+            {"Curriculum",
+             Routes.curriculum_index_path(
+               OliWeb.Endpoint,
+               :index,
+               project_slug,
+               AuthoringResolver.root_container(project_slug).slug
+             )},
+            {"Not Found", nil}
+          ]
+        )
+    end
   end
 
-  def create(conn, %{"project" => project_slug, "activity_type" => activity_type_slug, "model" => model, "objectives" => objectives}) do
-
+  def create(conn, %{
+        "project" => project_slug,
+        "activity_type" => activity_type_slug,
+        "model" => model,
+        "objectives" => objectives
+      }) do
     author = conn.assigns[:current_author]
 
     case ActivityEditor.create(project_slug, activity_type_slug, author, model, objectives) do
-      {:ok, {%{slug: slug}, transformed}} -> json conn, %{ "type" => "success", "revisionSlug" => slug, "transformed" => transformed}
-      {:error, {:not_found}} -> error(conn, 404, "not found")
-      {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
-      _ -> error(conn, 500, "server error")
-    end
+      {:ok, {%{slug: slug}, transformed}} ->
+        json(conn, %{"type" => "success", "revisionSlug" => slug, "transformed" => transformed})
 
+      {:error, {:not_found}} ->
+        error(conn, 404, "not found")
+
+      {:error, {:not_authorized}} ->
+        error(conn, 403, "unauthorized")
+
+      _ ->
+        error(conn, 500, "server error")
+    end
   end
 
-  def update(conn, %{"project" => project_slug, "resource" => resource_slug, "activity" => activity_slug, "update" => update }) do
+  def update(conn, %{
+        "project" => project_slug,
+        "resource" => resource_slug,
+        "activity" => activity_slug,
+        "update" => update
+      }) do
     author = conn.assigns[:current_author]
 
     case ActivityEditor.edit(project_slug, resource_slug, activity_slug, author.email, update) do
-      {:ok, %{slug: slug}} -> json conn, %{ "type" => "success", "revisionSlug" => slug}
+      {:ok, %{slug: slug}} -> json(conn, %{"type" => "success", "revisionSlug" => slug})
       {:error, {:not_found}} -> error(conn, 404, "not found")
       {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
       _ -> error(conn, 500, "server error")
@@ -57,26 +100,26 @@ defmodule OliWeb.ActivityController do
 
   # endpoint for test mode evaluation
   def evaluate(conn, %{"model" => model, "partResponses" => part_inputs}) do
-    parsed = Enum.map(part_inputs, fn %{"attemptGuid" => part_id, "response" => input} ->
-      %{part_id: part_id, input: %StudentInput{input: Map.get(input, "input")}} end)
+    parsed =
+      Enum.map(part_inputs, fn %{"attemptGuid" => part_id, "response" => input} ->
+        %{part_id: part_id, input: %StudentInput{input: Map.get(input, "input")}}
+      end)
 
     case Attempts.perform_test_evaluation(model, parsed) do
-      {:ok, evaluations} -> json conn, %{ "type" => "success", "evaluations" => evaluations}
+      {:ok, evaluations} -> json(conn, %{"type" => "success", "evaluations" => evaluations})
       {:error, _} -> error(conn, 500, "server error")
     end
   end
 
   def transform(conn, %{"model" => model}) do
     case Attempts.perform_test_transformation(model) do
-      {:ok, transformed} -> json conn, %{ "type" => "success", "transformed" => transformed}
+      {:ok, transformed} -> json(conn, %{"type" => "success", "transformed" => transformed})
       {:error, _} -> error(conn, 500, "server error")
     end
   end
 
-  def delete(conn, %{"project" => _project_slug, "activity" => _activity_slug }) do
-
+  def delete(conn, %{"project" => _project_slug, "activity" => _activity_slug}) do
     _author = conn.assigns[:current_author]
-
   end
 
   defp error(conn, code, reason) do
@@ -84,5 +127,4 @@ defmodule OliWeb.ActivityController do
     |> send_resp(code, reason)
     |> halt()
   end
-
 end
