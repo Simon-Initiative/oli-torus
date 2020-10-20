@@ -5,7 +5,6 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
   alias OliWeb.Breadcrumb.BreadcrumbLive
   alias Oli.Utils.Breadcrumb
 
-  # Takes a list of BreadcrumbProviders, lays them out in a line, and delegates rendering/functionality to the breadcrumb (given the provider)
   def mount(
         _params,
         %{"project_slug" => project_slug, "breadcrumbs" => breadcrumbs},
