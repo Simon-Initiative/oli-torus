@@ -1,15 +1,14 @@
-defmodule OliWeb.Curriculum.Container do
+defmodule OliWeb.Curriculum.ContainerLive do
   @moduledoc """
   LiveView implementation of a container editor.
   """
 
-  use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use OliWeb, :live_view
 
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Authoring.Course
-  alias OliWeb.Curriculum.{Rollup, ActivityDelta, DropTarget, Entry}
-  alias Oli.Resources
-  alias Oli.Resources.{ScoringStrategy, Revision}
+  alias OliWeb.Curriculum.{Rollup, ActivityDelta, DropTarget, EntryLive}
+  alias Oli.Resources.ScoringStrategy
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Accounts.Author
   alias Oli.Repo
@@ -18,7 +17,7 @@ defmodule OliWeb.Curriculum.Container do
   alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Resources.Numbering
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Breadcrumb.BreadcrumbProvider
+  alias Oli.Utils.Breadcrumb
 
   # Resources currently being edited by an author (has a lock present)
   # : %{ resource_id => author }
@@ -52,20 +51,8 @@ defmodule OliWeb.Curriculum.Container do
      assign(socket,
        children: children,
        active: :curriculum,
-       breadcrumbs: [
-         BreadcrumbProvider.new(%{
-           full_title: "Curriculum",
-           link:
-             Routes.live_path(
-               OliWeb.Endpoint,
-               OliWeb.Curriculum.Container,
-               project_slug,
-               AuthoringResolver.root_container(project_slug).slug
-             )
-         })
-       ] ++ BreadcrumbProvider.build_trail_to(project_slug, container.slug),
+       breadcrumbs: Breadcrumb.trail_to(project_slug, container.slug),
        rollup: rollup,
-       changeset: Resources.change_revision(%Revision{}),
        container: container,
        project: project,
        subscriptions: subscriptions,
@@ -77,8 +64,27 @@ defmodule OliWeb.Curriculum.Container do
      )}
   end
 
-  def handle_params(%{"view" => view}, _, socket), do: {:noreply, assign(socket, view: view)}
-  def handle_params(_, _, socket), do: {:noreply, socket}
+  def handle_params(%{"view" => view}, _, socket) do
+    {:noreply, assign(socket, view: view)}
+  end
+  def handle_params(params, _url, %{assigns: %{live_action: live_action}} = socket) do
+    {:noreply, apply_action(socket, live_action, params)}
+  end
+  def handle_params(_, _, socket) do
+    {:noreply, socket}
+  end
+
+  defp apply_action(socket, :index, _params) do
+    socket
+    |> assign(:page_title, "Curriculum")
+    |> assign(:revision, nil)
+  end
+
+  defp apply_action(socket, :edit, %{"project_id" => project_id, "revision_slug" => revision_slug}) do
+    socket
+   |> assign(:page_title, "Change settings")
+   |> assign(:revision, AuthoringResolver.from_revision_slug(project_id, revision_slug))
+  end
 
   # spin up subscriptions for the container and for all of its children, activities and attached objectives
   defp subscribe(
@@ -130,29 +136,6 @@ defmodule OliWeb.Curriculum.Container do
   def handle_event("select", %{"slug" => slug}, socket) do
     selected = Enum.find(socket.assigns.children, fn r -> r.slug == slug end)
     {:noreply, assign(socket, :selected, selected)}
-  end
-
-  # process form submission to save page settings
-  def handle_event("save", params, socket) do
-    params =
-      Enum.reduce(params, %{}, fn {k, v}, m ->
-        case MapSet.member?(MapSet.new(["_csrf_token", "_target"]), k) do
-          true -> m
-          false -> Map.put(m, String.to_existing_atom(k), v)
-        end
-      end)
-
-    socket =
-      case ContainerEditor.edit_page(socket.assigns.project, socket.assigns.selected.slug, params) do
-        {:ok, _} ->
-          socket
-
-        {:error, _} ->
-          socket
-          |> put_flash(:error, "Could not edit page")
-      end
-
-    {:noreply, socket}
   end
 
   def handle_event("keydown", %{"key" => key, "shiftKey" => shiftKeyPressed?} = params, socket) do
@@ -230,25 +213,6 @@ defmodule OliWeb.Curriculum.Container do
     {:noreply, socket}
   end
 
-  # handle processing deletion of currently selected item
-  def handle_event("delete", _, socket) do
-    socket =
-      case ContainerEditor.remove_child(
-             socket.assigns.project,
-             socket.assigns.author,
-             socket.assigns.selected.slug
-           ) do
-        {:ok, _} ->
-          socket
-
-        {:error, _} ->
-          socket
-          |> put_flash(:error, "Could not remove page")
-      end
-
-    {:noreply, socket}
-  end
-
   # handle clicking of the "Add Graded Assessment" or "Add Practice Page" buttons
   def handle_event("add", %{"type" => type}, socket) do
     attrs = %{
@@ -318,9 +282,9 @@ defmodule OliWeb.Curriculum.Container do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.live_path(
+         Routes.container_path(
            socket,
-           OliWeb.Curriculum.Container,
+           :index,
            socket.assigns.project.slug,
            socket.assigns.container.slug,
            %{view: view}

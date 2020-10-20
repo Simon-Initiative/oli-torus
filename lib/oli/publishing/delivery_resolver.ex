@@ -83,7 +83,7 @@ defmodule Oli.Publishing.DeliveryResolver do
   end
 
   @impl Resolver
-  def hierarchy(context_id) do
+  def all_revisions_in_hierarchy(context_id) do
 
     page_id = Oli.Resources.ResourceType.get_id_by_type("page")
     container_id = Oli.Resources.ResourceType.get_id_by_type("container")

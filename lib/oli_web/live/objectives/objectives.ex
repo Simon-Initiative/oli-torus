@@ -21,7 +21,7 @@ defmodule OliWeb.Objectives.Objectives do
   alias Oli.Resources.ResourceType
   alias Oli.Repo
   alias Oli.Authoring.Broadcaster.Subscriber
-  alias OliWeb.Breadcrumb.BreadcrumbProvider
+  alias Oli.Utils.Breadcrumb
 
   @default_attachment_summary %{attachments: {[], []}, locked_by: %{}, parent_pages: %{}}
 
@@ -45,7 +45,7 @@ defmodule OliWeb.Objectives.Objectives do
       active: :objectives,
       objective_mappings: objective_mappings,
       objectives_tree: objectives_tree,
-      breadcrumbs: [BreadcrumbProvider.new(%{full_title: "Objectives"})],
+      breadcrumbs: [Breadcrumb.new(%{full_title: "Objectives"})],
       changeset: Resources.change_revision(%Revision{}),
       project: project,
       subscriptions: subscriptions,

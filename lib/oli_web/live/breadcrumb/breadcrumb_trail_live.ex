@@ -2,7 +2,8 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
   use Phoenix.LiveView
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Authoring.Course
-  alias OliWeb.Breadcrumb.{BreadcrumbProvider, BreadcrumbLive}
+  alias OliWeb.Breadcrumb.BreadcrumbLive
+  alias Oli.Utils.Breadcrumb
 
   # Takes a list of BreadcrumbProviders, lays them out in a line, and delegates rendering/functionality to the breadcrumb (given the provider)
   def mount(
@@ -24,13 +25,23 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb custom-breadcrumb">
 
-        <%= live_component @socket, BreadcrumbLive, breadcrumb: BreadcrumbProvider.new(%{
-          full_title: @project.title,
-          link: Routes.project_path(@socket, :overview, @project)}),
-          last: false %>
+        <%= live_component @socket,
+          BreadcrumbLive,
+          breadcrumb: Breadcrumb.new(%{
+            full_title: @project.title,
+            link: Routes.project_path(@socket, :overview, @project)
+          }),
+          is_last: false,
+          show_short: false
+        %>
 
         <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
-          <%= live_component @socket, BreadcrumbLive, breadcrumb: breadcrumb, last: length(@breadcrumbs) - 1 == index %>
+          <%= live_component @socket,
+            BreadcrumbLive,
+            breadcrumb: breadcrumb,
+            is_last: length(@breadcrumbs) - 1 == index,
+            show_short: length(@breadcrumbs) > 3
+          %>
         <% end %>
       </ol>
     </nav>

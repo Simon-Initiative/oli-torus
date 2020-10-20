@@ -158,9 +158,9 @@ defmodule Oli.Publishing.DeliveryResolverTest do
 
     end
 
-    test "hierarchy/1 resolves the all hierarchy nodes", %{} do
+    test "all_revisions_in_hierarchy/1 resolves the all hierarchy nodes", %{} do
 
-      nodes = DeliveryResolver.hierarchy("1")
+      nodes = DeliveryResolver.all_revisions_in_hierarchy("1")
       assert length(nodes) == 3
 
     end

@@ -1,3 +1,15 @@
+<%= if @live_action in [:edit] do %>
+ <%= live_modal @socket, OliWeb.Curriculum.Settings,
+   id: @revision.id,
+   title: @page_title,
+   action: @live_action,
+   revision: @revision,
+   project: @project,
+   author: @author,
+   return_to: Routes.container_path(@socket, :index, @project.slug, @container.slug) %>
+<% end %>
+
+
 <div id="curriculum-container" class="container container-editor">
   <div class="row">
     <div class="col-12">
@@ -24,10 +36,11 @@
         <% end %>
         <%= for {child, index} <- Enum.with_index(@children) do %>
           <%= live_component @socket, DropTarget, index: index %>
-          <%= live_component @socket, Entry, %{
+          <%= live_component @socket, EntryLive, %{
                   id: child.slug,
                   editor: Map.get(@resources_being_edited, child.resource_id),
                   selected: child == @selected,
+                  container: @container,
                   child: child,
                   activity_ids: Map.get(@rollup.page_activity_map, child.resource_id),
                   activity_map: @rollup.activity_map,
@@ -35,7 +48,6 @@
                   index: index,
                   project: @project,
                   view: @view,
-                  changeset: @changeset,
                   numbering: @numbering
                 } %>
         <% end %>
@@ -50,7 +62,7 @@
           Graded Assessment
         </button>
         <button phx-click="add" phx-value-type="Container" class="btn btn-sm btn-outline-primary ml-2" type="button">
-          Module
+          Grouping
         </button>
       </div>
     </div>

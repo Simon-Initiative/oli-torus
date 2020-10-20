@@ -119,9 +119,9 @@ defmodule Oli.Publishing.AuthoringResolverTest do
 
     end
 
-    test "hierarchy/1 resolves the all hierarchy nodes", %{ project: project } do
+    test "all_revisions_in_hierarchy/1 resolves the all hierarchy nodes", %{ project: project } do
 
-      nodes = AuthoringResolver.hierarchy(project.slug)
+      nodes = AuthoringResolver.all_revisions_in_hierarchy(project.slug)
       assert length(nodes) == 3
 
     end

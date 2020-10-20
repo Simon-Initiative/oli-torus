@@ -22,7 +22,11 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   def edit_page(%Project{} = project, revision_slug, change) do
 
     # safe guard that we do never allow content or title or objective changes
-    change = Map.delete(change, :content)
+    atomized_change = for {key, val} <- change,
+      into: %{},
+      do: {if is_binary(key) do String.to_atom(key) else key end, val}
+    change = atomized_change
+    |> Map.delete(:content)
     |> Map.delete(:title)
     |> Map.delete(:objectives)
 
