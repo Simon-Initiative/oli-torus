@@ -28,6 +28,4 @@ defmodule OliWeb.Breadcrumb.BreadcrumbLive do
 
   defp get_title(breadcrumb, true = _show_short), do: breadcrumb.short_title
   defp get_title(breadcrumb, false = _show_short), do: breadcrumb.full_title
-
-  # Add drop down options to last entry
 end
