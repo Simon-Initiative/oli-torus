@@ -80,7 +80,7 @@
     ```
     $ mix ecto.migrate
     ```
-    
+
 1. Seed the database
     ```
     $ mix run priv/repo/seeds.exs
@@ -121,7 +121,7 @@ If using docker-compose, you can start a bash session to execute any of the foll
 
 ### Tunneling localhost connection for LTI development
 
-When making an LTI connection from an LMS such as Canvas, we need an internet accessible FQDN with SSL to properly configure a connection. The service ngrok offers an easy to use commandline tool that does just this (ngrok - secure introspectable tunnels to ngrok.
+When making an LTI connection from an LMS such as Canvas, we need an internet accessible FQDN with SSL to properly configure a connection. The service ngrok offers an easy to use commandline tool that does just this.
 
 1. [Download ngrok](https://ngrok.com/) and install using their instructions (Create a free account if required)
 1. Run ngrok locally to tunnel to phoenix app on port 4000
@@ -129,3 +129,9 @@ When making an LTI connection from an LMS such as Canvas, we need an internet ac
         ngrok http 4000
         ```
 1. Access your running webapp using the generated https address (shown in console after `Forwarding`). This will be the same address used to configure the LMS LTI connection
+
+### Configuring an LTI 1.3 Connection
+
+Torus supports LTI 1.3 integration and leverages the Learning Management System for course delivery.
+
+To configure an LTI connection, refer to the [LTI 1.3 Integration document](./docs/lti1.3.md).

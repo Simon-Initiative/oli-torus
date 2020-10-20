@@ -1,17 +1,16 @@
 defmodule OliWeb.PageDeliveryControllerTest do
   use OliWeb.ConnCase
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.SectionRoles
-  alias Oli.Accounts
   alias Oli.Seeder
   alias Oli.Delivery.Attempts.{ResourceAttempt, PartAttempt, ResourceAccess}
+  alias Oli.Lti_1p3.ContextRoles
 
   describe "page_delivery_controller index" do
     setup [:setup_session]
 
     test "handles student access by an enrolled student", %{conn: conn, user: user, section: section} do
 
-      Sections.enroll(user.id, section.id, SectionRoles.get_by_type("student").id)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       conn = conn
       |> get(Routes.page_delivery_path(conn, :index, section.context_id))
@@ -21,7 +20,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     test "handles student page access by an enrolled student", %{conn: conn, revision: revision, user: user, section: section} do
 
-      Sections.enroll(user.id, section.id, SectionRoles.get_by_type("student").id)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       conn = conn
       |> get(Routes.page_delivery_path(conn, :page, section.context_id, revision.slug))
@@ -47,7 +46,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     test "shows the prologue page on an assessment", %{user: user, conn: conn, section: section, page_revision: page_revision} do
 
-      Sections.enroll(user.id, section.id, SectionRoles.get_by_type("student").id)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       conn = conn
       |> get(Routes.page_delivery_path(conn, :page, section.context_id, page_revision.slug))
@@ -62,7 +61,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 302) =~ "redirected"
       redir_path = redirected_to(conn, 302)
 
-      # and then the rendering of teh page, which should contain a button
+      # and then the rendering of the page, which should contain a button
       # that says 'Submit Assessment'
       conn = get(recycle(conn), redir_path)
       assert html_response(conn, 200) =~  "Submit Assessment"
@@ -97,28 +96,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   end
 
   defp setup_session(%{conn: conn}) do
-    author = author_fixture()
-    institution = institution_fixture(%{ author_id: author.id })
-    lti_params = build_lti_request(url_from_conn(conn), "some-secret")
-
-    {:ok, lti_tool_consumer} = Accounts.insert_or_update_lti_tool_consumer(%{
-      info_product_family_code: lti_params["tool_consumer_info_product_family_code"],
-      info_version: lti_params["tool_consumer_info_version"],
-      instance_contact_email: lti_params["tool_consumer_instance_contact_email"],
-      instance_guid: lti_params["tool_consumer_instance_guid"],
-      instance_name: lti_params["tool_consumer_instance_name"],
-      institution_id: institution.id,
-    })
-    {:ok, user } = Accounts.insert_or_update_user(%{
-      email: lti_params["lis_person_contact_email_primary"],
-      first_name: lti_params["lis_person_name_given"],
-      last_name: lti_params["lis_person_name_family"],
-      user_id: lti_params["user_id"],
-      user_image: lti_params["user_image"],
-      roles: lti_params["roles"],
-      lti_tool_consumer_id: lti_tool_consumer.id,
-      institution_id: institution.id,
-    })
+    user = user_fixture()
 
     content = %{
       "stem" => "1",
@@ -160,16 +138,20 @@ defmodule OliWeb.PageDeliveryControllerTest do
       institution_id: map.institution.id
     })
 
+    lti_params = Oli.TestHelpers.Lti_1p3.all_default_claims()
+      |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
+
+    Oli.Lti_1p3.cache_lti_params!(lti_params["sub"], lti_params)
+
     conn = Plug.Test.init_test_session(conn, current_author_id: map.author.id)
       |> put_session(:current_user_id, user.id)
-      |> put_session(:lti_params, lti_params)
+      |> put_session(:lti_1p3_sub, lti_params["sub"])
 
     {:ok,
       conn: conn,
       map: map,
       author: map.author,
       institution: map.institution,
-      lti_params: lti_params,
       user: user,
       project: map.project,
       publication: map.publication,

@@ -4,7 +4,9 @@ defmodule OliWeb.Endpoint do
   @session_options [
     store: :cookie,
     key: "_oli_key",
-    signing_salt: "KydU49lB"
+    signing_salt: "KydU49lB",
+    same_site: "None",
+    secure: true,
   ]
 
   socket "/socket", OliWeb.UserSocket,

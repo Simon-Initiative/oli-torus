@@ -2,9 +2,10 @@ defmodule Oli.SectionsTest do
   use Oli.DataCase
 
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{Section, SectionRoles}
+  alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Course.Project
   alias Oli.Publishing.Publication
+  alias Oli.Lti_1p3.ContextRoles
 
   describe "enrollments" do
     @valid_attrs %{end_date: ~D[2010-04-17], open_and_free: true, registration_open: true, start_date: ~D[2010-04-17], time_zone: "some time_zone", title: "some title", context_id: "context_id"}
@@ -20,10 +21,9 @@ defmodule Oli.SectionsTest do
         |> Map.put(:project_id, project.id)
         |> Map.put(:publication_id, publication.id)
 
-      consumer = lti_consumer_fixture(%{institution_id: institution.id})
-      user1 = user_fixture(%{lti_tool_consumer_id: consumer.id, institution_id: institution.id})
-      user2 = user_fixture(%{lti_tool_consumer_id: consumer.id, institution_id: institution.id})
-      user3 = user_fixture(%{lti_tool_consumer_id: consumer.id, institution_id: institution.id})
+      user1 = user_fixture(%{institution_id: institution.id})
+      user2 = user_fixture(%{institution_id: institution.id})
+      user3 = user_fixture(%{institution_id: institution.id})
 
       {:ok, section} = valid_attrs |> Sections.create_section()
 
@@ -35,9 +35,9 @@ defmodule Oli.SectionsTest do
 
       assert Sections.list_enrollments("context_id") == []
 
-      Sections.enroll(user1.id, section.id, SectionRoles.get_by_type("instructor").id)
-      Sections.enroll(user2.id, section.id, SectionRoles.get_by_type("student").id)
-      Sections.enroll(user3.id, section.id, SectionRoles.get_by_type("student").id)
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user2.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user3.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       assert length(Sections.list_enrollments("context_id")) == 3
 
@@ -51,9 +51,9 @@ defmodule Oli.SectionsTest do
       assert two.section_id == section.id
       assert three.section_id == section.id
 
-      assert one.section_role_id == SectionRoles.get_by_type("instructor").id
-      assert two.section_role_id == SectionRoles.get_by_type("student").id
-      assert three.section_role_id == SectionRoles.get_by_type("student").id
+      assert ContextRoles.has_role?(user1, section.context_id, ContextRoles.get_role(:context_instructor))
+      assert ContextRoles.has_role?(user2, section.context_id, ContextRoles.get_role(:context_learner))
+      assert ContextRoles.has_role?(user3, section.context_id, ContextRoles.get_role(:context_learner))
 
     end
 
@@ -62,39 +62,19 @@ defmodule Oli.SectionsTest do
       assert Sections.list_enrollments("context_id") == []
 
       # Enroll a user as instructor
-      Sections.enroll(user1.id, section.id, SectionRoles.get_by_type("instructor").id)
-      [one] = Sections.list_enrollments("context_id")
-      assert one.section_role_id == SectionRoles.get_by_type("instructor").id
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      assert ContextRoles.has_role?(user1, section.context_id, ContextRoles.get_role(:context_instructor))
 
       # Now enroll again as same role, this should be idempotent
-      Sections.enroll(user1.id, section.id, SectionRoles.get_by_type("instructor").id)
-      [one] = Sections.list_enrollments("context_id")
-      assert one.section_role_id == SectionRoles.get_by_type("instructor").id
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      assert ContextRoles.has_role?(user1, section.context_id, ContextRoles.get_role(:context_instructor))
 
       # Now enroll again with different role, this should update the role
-      Sections.enroll(user1.id, section.id, SectionRoles.get_by_type("student").id)
-      [one] = Sections.list_enrollments("context_id")
-      assert one.section_role_id == SectionRoles.get_by_type("student").id
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      assert ContextRoles.has_role?(user1, section.context_id, ContextRoles.get_role(:context_learner))
 
 
     end
-
-    test "is_enrolled_as?/3 works", %{section: section, user1: user1, user2: user2} do
-
-      assert Sections.list_enrollments("context_id") == []
-
-      # Enroll a user as instructor
-      Sections.enroll(user1.id, section.id, SectionRoles.get_by_type("instructor").id)
-
-      # Now check for enrollment
-      assert Sections.is_enrolled_as?(user1.id, "context_id", SectionRoles.get_by_type("instructor"))
-      refute Sections.is_enrolled_as?(user1.id, "context_id", SectionRoles.get_by_type("student"))
-      refute Sections.is_enrolled_as?(user2.id, "context_id", SectionRoles.get_by_type("instructor"))
-      refute Sections.is_enrolled_as?(user2.id, "context_id", SectionRoles.get_by_type("student"))
-
-    end
-
-
 
   end
 

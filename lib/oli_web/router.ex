@@ -32,6 +32,7 @@ defmodule OliWeb.Router do
   pipeline :lti do
     plug :fetch_session
     plug :fetch_flash
+    plug :put_root_layout, {OliWeb.LayoutView, "lti.html"}
     plug Oli.Plugs.SetCurrentUser
   end
 
@@ -47,6 +48,7 @@ defmodule OliWeb.Router do
   pipeline :delivery do
     plug Oli.Plugs.RemoveXFrameOptions
     plug Oli.Plugs.VerifyUser
+    plug Oli.Plugs.LoadLtiParams
     plug :put_root_layout, {OliWeb.LayoutView, "delivery.html"}
   end
 
@@ -97,6 +99,12 @@ defmodule OliWeb.Router do
     get "/", StaticPageController, :index
   end
 
+  scope "/.well-known", OliWeb do
+    pipe_through [:browser, :csrf_always]
+
+    get "/jwks.json", LtiController, :jwks
+  end
+
   # authorization protected routes
   scope "/", OliWeb do
     pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring]
@@ -105,7 +113,6 @@ defmodule OliWeb.Router do
     get "/account", WorkspaceController, :account
     put "/account", WorkspaceController, :update_author
     post "/account/theme", WorkspaceController, :update_theme
-    resources "/institutions", InstitutionController
   end
 
   scope "/project", OliWeb do
@@ -219,7 +226,12 @@ defmodule OliWeb.Router do
   scope "/lti", OliWeb do
     pipe_through [:lti, :www_url_form]
 
-    post "/basic_launch", LtiController, :basic_launch
+    post "/login", LtiController, :login
+    get "/login", LtiController, :login
+    post "/launch", LtiController, :launch
+    post "/test", LtiController, :test
+
+    get "/developer_key.json", LtiController, :developer_key_json
   end
 
   scope "/course", OliWeb do
@@ -244,14 +256,6 @@ defmodule OliWeb.Router do
     get "/:context_id/grades/export", PageDeliveryController, :export_gradebook
   end
 
-  scope "/api/v1/course", OliWeb do
-    # pipe_through [:api, :protected, Oli.Plugs.SetCurrentUser]
-    pipe_through [:set_user]
-
-    post "/:context_id/grades/sync", PageDeliveryController, :sync_gradebook
-    put "/:context_id/grades/canvas_token", PageDeliveryController, :update_canvas_token
-  end
-
   scope "/admin", OliWeb do
     pipe_through [:browser, :csrf_always, :protected, :admin]
     live_dashboard "/dashboard", metrics: OliWeb.Telemetry
@@ -260,6 +264,12 @@ defmodule OliWeb.Router do
   scope "/admin", OliWeb do
     pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring, :admin]
     live "/accounts", Accounts.AccountsLive
+
+    resources "/institutions", InstitutionController do
+      resources "/registrations", RegistrationController, except: [:index, :show] do
+        resources "/deployments", DeploymentController, except: [:index, :show]
+      end
+    end
   end
 
   scope "/project", OliWeb do

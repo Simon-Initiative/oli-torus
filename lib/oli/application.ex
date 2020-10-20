@@ -19,8 +19,8 @@ defmodule Oli.Application do
       # Start the endpoint when the application starts
       OliWeb.Endpoint,
 
-      # Starts a worker by calling: Oli.Worker.start_link(arg)
-      # {Oli.Worker, arg},
+      # Starts the nonce cleanup task, call Oli.Lti_1p3.Nonces.cleanup_nonce_store/0 at 1:01 UTC every day
+      %{ id: "cleanup_nonce_store_daily", start: {SchedEx, :run_every, [Oli.Lti_1p3.Nonces, :cleanup_nonce_store, [], "1 1 * * *"]} },
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

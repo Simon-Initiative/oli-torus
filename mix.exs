@@ -40,7 +40,7 @@ defmodule Oli.MixProject do
   def application do
     [
       mod: {Oli.Application, []},
-      extra_applications: [:logger, :runtime_tools, :os_mon]
+      extra_applications: [:logger, :crypto, :public_key, :runtime_tools, :os_mon]
     ]
   end
 
@@ -67,6 +67,8 @@ defmodule Oli.MixProject do
       {:hackney, "~> 1.9"},
       {:httpoison, "~> 1.6"},
       {:jason, "~> 1.0"},
+      {:joken, "~> 2.2.0"},
+      {:jose, "~> 1.10"},
       {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:nimble_parsec, "~> 0.5"},
@@ -81,6 +83,7 @@ defmodule Oli.MixProject do
       {:poison, "~> 3.1"},
       {:postgrex, ">= 0.0.0"},
       {:premailex, "~> 0.3.0"},
+      {:sched_ex, "~> 1.1"},
       {:shortuuid, "~> 2.1"},
       {:telemetry, "~> 0.4.1"},
       {:telemetry_poller, "~> 0.4"},
