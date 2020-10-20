@@ -54,7 +54,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     lti_params = Oli.TestHelpers.Lti_1p3.all_default_claims()
       |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
 
-    Oli.Lti_1p3.cache_lti_params(lti_params["sub"], lti_params)
+    Oli.Lti_1p3.cache_lti_params!(lti_params["sub"], lti_params)
 
     conn = Plug.Test.init_test_session(conn, current_author_id: map.author.id)
       |> put_session(:current_user_id, user.id)
