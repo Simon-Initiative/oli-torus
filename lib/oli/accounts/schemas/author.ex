@@ -1,20 +1,17 @@
 defmodule Oli.Accounts.Author do
   use Ecto.Schema
+  use Pow.Ecto.Schema
   import Ecto.Changeset
 
   alias Oli.Accounts.SystemRole
 
   schema "authors" do
-    field :email, :string
+    pow_user_fields()
+
     field :first_name, :string
     field :last_name, :string
-    field :provider, :string
-    field :token, :string
-    # virtual fields are NOT persisted to the database
-    field :password, :string, virtual: true
-    field :password_confirmation, :string, virtual: true
-    field :password_hash, :string
     field :email_verified, :boolean, default: false
+
     embeds_one :preferences, Oli.Accounts.AuthorPreferences
     belongs_to :system_role, Oli.Accounts.SystemRole
     has_many :institutions, Oli.Institutions.Institution
@@ -33,27 +30,24 @@ defmodule Oli.Accounts.Author do
     end
 
     author
+    |> pow_changeset(attrs)
     |> cast(attrs, [
-      :email,
       :first_name,
       :last_name,
-      :provider,
-      :token,
-      :password,
       :email_verified,
       :system_role_id,
     ])
     |> cast_embed(:preferences)
-    |> validate_required(
-      [:email, :first_name, :last_name, :provider]
-      |> filter_ignored_fields(ignore_required)
-    )
+    # |> validate_required(
+    #   [:email, :first_name, :last_name, :provider]
+    #   |> filter_ignored_fields(ignore_required)
+    # )
     |> default_system_role()
-    |> unique_constraint(:email)
-    |> validate_length(:password, min: 6)
-    |> validate_confirmation(:password, message: "does not match password")
+    # |> unique_constraint(:email)
+    # |> validate_length(:password, min: 6)
+    # |> validate_confirmation(:password, message: "does not match password")
     |> lowercase_email()
-    |> hash_password()
+    # |> hash_password()
   end
 
   defp filter_ignored_fields(fields, nil), do: fields

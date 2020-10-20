@@ -82,6 +82,7 @@ defmodule Oli.MixProject do
       {:plug_cowboy, "~> 2.1"},
       {:poison, "~> 3.1"},
       {:postgrex, ">= 0.0.0"},
+      {:pow, "~> 1.0.21"},
       {:premailex, "~> 0.3.0"},
       {:sched_ex, "~> 1.1"},
       {:shortuuid, "~> 2.1"},

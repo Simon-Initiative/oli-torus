@@ -45,37 +45,37 @@ defmodule OliWeb.DeliveryController do
   end
 
   def link_account(conn, _params) do
-    actions = %{
-      google: Routes.auth_path(conn, :request, "google", type: "link-account"),
-      facebook: Routes.auth_path(conn, :request, "facebook", type: "link-account"),
-      identity: Routes.auth_path(conn, :identity_callback, type: "link-account"),
-    }
+    # actions = %{
+    #   google: Routes.auth_path(conn, :request, "google", type: "link-account"),
+    #   facebook: Routes.auth_path(conn, :request, "facebook", type: "link-account"),
+    #   identity: Routes.auth_path(conn, :identity_callback, type: "link-account"),
+    # }
 
     assigns = conn.assigns
-    |> Map.put(:title, "Link Existing Account")
-    |> Map.put(:actions, actions)
-    |> Map.put(:show_remember_password, false)
+    # |> Map.put(:title, "Link Existing Account")
+    # |> Map.put(:actions, actions)
+    # |> Map.put(:show_remember_password, false)
 
     conn
-    |> put_view(OliWeb.AuthView)
-    |> render("signin.html", assigns)
+    |> put_view(OliWeb.Pow.SessionView)
+    |> render("new.html", assigns)
   end
 
   def create_and_link_account(conn, _params) do
-    actions = %{
-      google: Routes.auth_path(conn, :request, "google", type: "link-account"),
-      facebook: Routes.auth_path(conn, :request, "facebook", type: "link-account"),
-      identity: Routes.auth_path(conn, :register_email_form, type: "link-account"),
-    }
+    # actions = %{
+    #   google: Routes.auth_path(conn, :request, "google", type: "link-account"),
+    #   facebook: Routes.auth_path(conn, :request, "facebook", type: "link-account"),
+    #   identity: Routes.auth_path(conn, :register_email_form, type: "link-account"),
+    # }
 
     assigns = conn.assigns
-    |> Map.put(:title, "Create and Link Account")
-    |> Map.put(:actions, actions)
-    |> Map.put(:show_remember_password, false)
+    # |> Map.put(:title, "Create and Link Account")
+    # |> Map.put(:actions, actions)
+    # |> Map.put(:show_remember_password, false)
 
     conn
-    |> put_view(OliWeb.AuthView)
-    |> render("register.html", assigns)
+    |> put_view(OliWeb.Pow.RegistrationView)
+    |> render("new.html", assigns)
   end
 
   def create_section(conn, %{"publication_id" => publication_id}) do

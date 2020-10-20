@@ -5,12 +5,12 @@
       <div class="card card-signin my-5">
         <div class="card-body">
           <h5 class="card-title text-center">Create Account</h5>
-          <%= form_for @changeset, @actions.submit, fn f -> %>
+          <%= form_for @changeset, @action, [as: :user], fn f -> %>
             <div class="form-label-group">
-              <%= email_input f, :email, class: "form-control " <> error_class(f, :email, "is-invalid"),
-                placeholder: "Email", required: true, autofocus: focusHelper(f, :email, default: true) %>
-              <%= label f, :email, class: "control-label" %>
-              <%= error_tag f, :email %>
+              <%= email_input f, Pow.Ecto.Schema.user_id_field(@changeset), class: "form-control " <> error_class(f, Pow.Ecto.Schema.user_id_field(@changeset), "is-invalid"),
+                placeholder: "Email", required: true, autofocus: focusHelper(f, Pow.Ecto.Schema.user_id_field(@changeset), default: true) %>
+              <%= label f, Pow.Ecto.Schema.user_id_field(@changeset), class: "control-label" %>
+              <%= error_tag f, Pow.Ecto.Schema.user_id_field(@changeset) %>
             </div>
 
             <div class="form-label-group">
@@ -46,7 +46,8 @@
             </div>
 
             <%= submit "Register", class: "btn btn-md btn-primary btn-block" %>
-            <%= link "Cancel", to: @actions.cancel, class: "btn btn-md btn-outline-secondary btn-block mt-4" %>
+            <%= link "Cancel", to: Routes.static_page_path(@conn, :index), class: "btn btn-md btn-outline-secondary btn-block mt-4" %>
+            <%= link "Sign in to Existing Account", to: Routes.pow_session_path(@conn, :new), class: "btn btn-md btn-link btn-block" %>
           <% end %>
         </div>
       </div>

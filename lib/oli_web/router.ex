@@ -1,5 +1,6 @@
 defmodule OliWeb.Router do
   use OliWeb, :router
+  use Pow.Phoenix.Router
 
   import Phoenix.LiveDashboard.Router
 
@@ -75,7 +76,8 @@ defmodule OliWeb.Router do
 
   # Ensure that we have a logged in user
   pipeline :protected do
-    plug Oli.Plugs.Protect
+    plug Pow.Plug.RequireAuthenticated,
+      error_handler: Pow.Phoenix.PlugErrorHandler
   end
 
   # Disable caching of resources in authoring
@@ -90,6 +92,16 @@ defmodule OliWeb.Router do
 
   pipeline :authorize_project do
     plug Oli.Plugs.AuthorizeProject
+  end
+
+  def with_session(conn) do
+    %{"current_author_id" => conn.assigns.current_author.id}
+  end
+
+  scope "/" do
+    pipe_through :browser
+
+    pow_routes()
   end
 
   # open access routes
@@ -109,7 +121,7 @@ defmodule OliWeb.Router do
   scope "/", OliWeb do
     pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring]
 
-    live "/projects", Projects.ProjectsLive
+    live "/projects", Projects.ProjectsLive, session: {__MODULE__, :with_session, []}
     get "/account", WorkspaceController, :account
     put "/account", WorkspaceController, :update_author
     post "/account/theme", WorkspaceController, :update_theme
@@ -134,13 +146,13 @@ defmodule OliWeb.Router do
     delete "/:project_id", ProjectController, :delete
 
     # Objectives
-    live "/:project_id/objectives", Objectives.Objectives
+    live "/:project_id/objectives", Objectives.Objectives, session: {__MODULE__, :with_session, []}
 
     # Curriculum
-    live "/:project_id/curriculum", Curriculum.Container
+    live "/:project_id/curriculum", Curriculum.Container, session: {__MODULE__, :with_session, []}
 
     # Review/QA
-    live "/:project_id/review", Qa.QaLive
+    live "/:project_id/review", Qa.QaLive, session: {__MODULE__, :with_session, []}
 
     # Editors
     get "/:project_id/resource/:revision_slug", ResourceController, :edit
@@ -158,7 +170,7 @@ defmodule OliWeb.Router do
     # Ideally, analytics should be live-routed to preserve forward/back button when toggling
     # between analytics groupings and sorting. I could not get it to run through the project authorization
     # plugs when live-routing, however.
-    # live "/:project_id/insights", Insights
+    # live "/:project_id/insights", Insights, session: {__MODULE__, :with_session, []}
   end
 
   scope "/api/v1/project", OliWeb do
@@ -201,27 +213,6 @@ defmodule OliWeb.Router do
 
   end
 
-  # auth routes, only accessable to guest users who are not logged in
-  scope "/auth", OliWeb do
-    pipe_through [:browser, :csrf_always, OliWeb.Plugs.Guest]
-
-    get "/signin", AuthController, :signin
-
-    get "/register", AuthController, :register
-    get "/register/email", AuthController, :register_email_form
-    post "/register/email", AuthController, :register_email_submit
-  end
-
-  scope "/auth", OliWeb do
-    pipe_through [:browser, :csrf_in_prod]
-
-    get "/signout", AuthController, :signout
-
-    get "/:provider", AuthController, :request
-    get "/:provider/callback", AuthController, :callback
-    post "/identity/callback", AuthController, :identity_callback
-  end
-
   # LTI routes
   scope "/lti", OliWeb do
     pipe_through [:lti, :www_url_form]
@@ -258,12 +249,12 @@ defmodule OliWeb.Router do
 
   scope "/admin", OliWeb do
     pipe_through [:browser, :csrf_always, :protected, :admin]
-    live_dashboard "/dashboard", metrics: OliWeb.Telemetry
+    live_dashboard "/dashboard", metrics: OliWeb.Telemetry, session: {__MODULE__, :with_session, []}
   end
 
   scope "/admin", OliWeb do
     pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring, :admin]
-    live "/accounts", Accounts.AccountsLive
+    live "/accounts", Accounts.AccountsLive, session: {__MODULE__, :with_session, []}
 
     resources "/institutions", InstitutionController do
       resources "/registrations", RegistrationController, except: [:index, :show] do
@@ -274,7 +265,7 @@ defmodule OliWeb.Router do
 
   scope "/project", OliWeb do
     pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring, :authorize_project, :admin]
-    live "/:project_id/history/:slug", RevisionHistory
+    live "/:project_id/history/:slug", RevisionHistory, session: {__MODULE__, :with_session, []}
   end
 
   # routes only accessible to developers

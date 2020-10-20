@@ -15,6 +15,41 @@ defmodule Oli.Seeder do
   alias Oli.Delivery.Attempts.Snapshot
   alias Oli.Qa.Reviews
 
+  def base_project_with_resource(author) do
+
+    {:ok, family} = Family.changeset(%Family{}, %{description: "description", title: "title"}) |> Repo.insert
+    {:ok, project} = Project.changeset(%Project{}, %{description: "description", title: "Example Open and Free Course", version: "1", family_id: family.id}) |> Repo.insert
+
+    {:ok, _} = AuthorProject.changeset(%AuthorProject{}, %{author_id: author.id, project_id: project.id, project_role_id: ProjectRole.role_id.owner}) |> Repo.insert
+
+    {:ok, institution} = Institution.changeset(%Institution{}, %{name: "Example Institution", country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", timezone: "some timezone", author_id: author.id}) |> Repo.insert
+
+    # A single container resource with a mapped revision
+    {:ok, container_resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert
+    {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: container_resource.id}) |> Repo.insert
+    {:ok, container_revision} = Oli.Resources.create_revision(%{author_id: author.id, objectives: %{}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"), children: [], content: %{}, deleted: false, slug: "example_page", title: "Example Page", resource_id: container_resource.id})
+
+    {:ok, publication} = Publication.changeset(%Publication{}, %{description: "An example course", published: false, open_and_free: true, root_resource_id: container_resource.id, project_id: project.id}) |> Repo.insert
+
+    publish_resource(publication, container_resource, container_revision)
+
+    %{resource: page1, revision: revision1} = create_page("Page one", publication, project, author)
+    %{resource: page2, revision: revision2} = create_page("Page two", publication, project, author, create_sample_content())
+    container_revision = attach_pages_to([page1, page2], container_resource, container_revision, publication)
+
+    Map.put(%{}, :family, family)
+      |> Map.put(:project, project)
+      |> Map.put(:author, author)
+      |> Map.put(:institution, institution)
+      |> Map.put(:publication, publication)
+      |> Map.put(:container, %{ resource: container_resource, revision: container_revision })
+      |> Map.put(:page1, page1)
+      |> Map.put(:page2, page2)
+      |> Map.put(:revision1, revision1)
+      |> Map.put(:revision2, revision2)
+
+  end
+
   def base_project_with_resource2() do
 
     {:ok, family} = Family.changeset(%Family{}, %{description: "description", title: "title"}) |> Repo.insert

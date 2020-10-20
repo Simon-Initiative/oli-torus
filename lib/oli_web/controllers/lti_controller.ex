@@ -197,8 +197,9 @@ defmodule OliWeb.LtiController do
 
             # if account is linked to an author, sign them in
             conn = if user.author_id != nil do
-              conn
-              |> put_session(:current_author_id, user.author_id)
+              # TODO: Sign in author using Pow
+              # conn
+              # |> put_session(:current_author_id, user.author_id)
             else
               conn
             end

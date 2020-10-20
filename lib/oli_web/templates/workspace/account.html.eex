@@ -7,7 +7,8 @@
         <p class="mb-2">
           <%= "#{@current_author.first_name} #{@current_author.last_name}" %>
         </p>
-        <%= if @current_author.provider == "identity" do %>
+        <%# TODO %>
+        <%# <%= if @current_author.provider == "identity" do
           <a href="#" onclick="function(e) { e.preventDefault()}" data-toggle="modal" data-target="#modal-change-name" id="change-name">Change name</a>
         <% end %>
       </div>
@@ -18,7 +19,8 @@
         <p class="mb-2">
           <%= "#{@current_author.email}" %>
         </p>
-        <%= case @current_author.provider do
+        <%# TODO %>
+        <%# <%= case @current_author.provider do
           "facebook" -> "Managed by Facebook"
           "google" -> "Managed by Google"
           _ -> ""
