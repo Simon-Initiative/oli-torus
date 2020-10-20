@@ -23,11 +23,7 @@ defmodule Oli.Accounts.Author do
   end
 
   @doc false
-  def changeset(author, attrs \\ %{}, opts \\ []) do
-    ignore_required = case opts do
-      [ ignore_required: ignore_required ] -> ignore_required
-      _ -> nil
-    end
+  def changeset(author, attrs \\ %{}) do
 
     author
     |> pow_changeset(attrs)
@@ -38,23 +34,8 @@ defmodule Oli.Accounts.Author do
       :system_role_id,
     ])
     |> cast_embed(:preferences)
-    # |> validate_required(
-    #   [:email, :first_name, :last_name, :provider]
-    #   |> filter_ignored_fields(ignore_required)
-    # )
     |> default_system_role()
-    # |> unique_constraint(:email)
-    # |> validate_length(:password, min: 6)
-    # |> validate_confirmation(:password, message: "does not match password")
     |> lowercase_email()
-    # |> hash_password()
-  end
-
-  defp filter_ignored_fields(fields, nil), do: fields
-  defp filter_ignored_fields(fields, ignored_fields) do
-    Enum.filter(fields, fn field ->
-      if Enum.member?(ignored_fields, field), do: false, else: true
-    end)
   end
 
   defp default_system_role(changeset) do
@@ -68,17 +49,6 @@ defmodule Oli.Accounts.Author do
           _ ->
             changeset
         end
-
-      _ ->
-        changeset
-    end
-  end
-
-  defp hash_password(changeset) do
-    case changeset do
-      # if changeset is valid and has a password, we want to convert it to a hash
-      %Ecto.Changeset{valid?: true, changes: %{password: pass}} ->
-        put_change(changeset, :password_hash, Bcrypt.hash_pwd_salt(pass))
 
       _ ->
         changeset
