@@ -41,7 +41,7 @@ if ! docker-compose ps | grep -iq "oli_postgres.\+Up"; then
   docker-compose up -d postgres && sleep 5
 fi
 
-echo "## NOTICE: Running `reload-env` will apply any configuration set in oli.env"
+echo "## NOTICE: Running 'reload-env' will apply any configuration set in oli.env"
 echo "## "
 echo "## Use the command 'exit' to leave anytime."
 echo "## To get started, run 'mix phx.server'"
