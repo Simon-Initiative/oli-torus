@@ -21,13 +21,12 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   @spec edit_page(Oli.Authoring.Course.Project.t(), any, map) :: any
   def edit_page(%Project{} = project, revision_slug, change) do
 
-    # safe guard that we do never allow content or title or objective changes
+    # safe guard that we do never allow content or objective changes
     atomized_change = for {key, val} <- change,
       into: %{},
       do: {if is_binary(key) do String.to_atom(key) else key end, val}
     change = atomized_change
     |> Map.delete(:content)
-    |> Map.delete(:title)
     |> Map.delete(:objectives)
 
     # ensure that changing a page to practice resets the max attempts to 0

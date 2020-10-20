@@ -45,6 +45,7 @@ defmodule OliWeb.Curriculum.Settings do
   end
 
   defp save_revision(socket, :edit, revision_params) do
+    IO.inspect(revision_params)
     case ContainerEditor.edit_page(
            socket.assigns.project,
            socket.assigns.revision.slug,
