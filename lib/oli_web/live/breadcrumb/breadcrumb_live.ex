@@ -1,5 +1,5 @@
 defmodule OliWeb.Breadcrumb.BreadcrumbLive do
-  use Phoenix.LiveComponent
+  use OliWeb, :live_component
   import Phoenix.HTML.Link
 
   def render(assigns) do
@@ -9,7 +9,10 @@ defmodule OliWeb.Breadcrumb.BreadcrumbLive do
   defp render_breadcrumb(%{is_last: true} = assigns) do
     ~L"""
     <li class="breadcrumb-item active" aria-current="page">
-      <%= get_title(assigns.breadcrumb, assigns.show_short) %>
+      <%= get_title(@breadcrumb, @show_short) %>
+      <%= if !Enum.empty?(@breadcrumb.action_descriptions) do %>
+        <i class="material-icons">arrow_drop_down</i>
+      <% end %>
     </li>
     """
   end
@@ -17,8 +20,8 @@ defmodule OliWeb.Breadcrumb.BreadcrumbLive do
   defp render_breadcrumb(%{is_last: false} = assigns) do
     ~L"""
     <li class="breadcrumb-item">
-      <%= link get_title(assigns.breadcrumb, assigns.show_short),
-          to: assigns.breadcrumb.link %>
+      <%= link get_title(@breadcrumb, @show_short),
+          to: @breadcrumb.link %>
     </li>
     """
   end

@@ -38,16 +38,14 @@ defmodule OliWeb.Curriculum.EntryLive do
                   </span>
                 <% end %>
               </div>
-              <%= if !is_container?(@child) do %>
-                <%= live_patch to: Routes.container_path(@socket, :edit, @project.slug, @container.slug, @child.slug),
-                  class: "button" do %>
-                  <button
-                  class="list-unstyled"
-                  style="border:none; background: none; color: #212529">
-                    <i class="material-icons">more_vert</i>
-                  </button>
-                <% end %>
-               <% end %>
+              <%= live_patch to: Routes.container_path(@socket, :edit, @project.slug, @container.slug, @child.slug),
+                class: "button" do %>
+                <button
+                class="list-unstyled"
+                style="border:none; background: none; color: #212529">
+                  <i class="material-icons">more_vert</i>
+                </button>
+              <% end %>
             </div>
             <div class="container">
               <div class="row">
@@ -67,7 +65,7 @@ defmodule OliWeb.Curriculum.EntryLive do
     """
   end
 
-  defp is_container?(rev) do
+  def is_container?(rev) do
     ResourceType.get_type_by_id(rev.resource_type_id) == "container"
   end
 

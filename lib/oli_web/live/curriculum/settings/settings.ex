@@ -3,6 +3,7 @@ defmodule OliWeb.Curriculum.Settings do
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Resources.ScoringStrategy
   alias Oli.Resources
+  alias OliWeb.Curriculum.EntryLive
 
   @impl true
   def update(%{revision: revision} = assigns, socket) do

@@ -38,9 +38,7 @@ defmodule Oli.Utils.Breadcrumb do
           new(%{
             full_title: Numbering.prefix(numbering) <> ": " <> revision.title,
             short_title: Numbering.prefix(numbering),
-            action_descriptions: [
-
-            ],
+            action_descriptions: [placeholder: true],
             link: link
           })
 
