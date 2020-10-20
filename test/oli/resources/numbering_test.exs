@@ -65,45 +65,6 @@ defmodule Oli.Resources.NumberingTest do
       ])
     end
 
-    # test "path_from_root_to/2 returns the root container as the first item in the path", %{
-    #   project: project,
-    #   container: %{revision: root}
-    # } do
-    #   {:ok, path_1} = Numbering.path_from_root_to(project.slug, "page_1", root)
-    #   {:ok, path_2} = Numbering.path_from_root_to(project.slug, "page_2", root)
-
-    #   [head_1 | _rest] = path_1
-    #   [head_2 | _rest] = path_2
-
-    #   assert head_1.slug == root.slug
-    #   assert head_2.slug == root.slug
-    # end
-
-    # test "path_from_root_to/2 returns the resource as the last item in the path", %{
-    #   project: project,
-    #   container: %{revision: root}
-    # } do
-    #   {:ok, path_1} = Numbering.path_from_root_to(project.slug, "page_1", root)
-    #   {:ok, path_2} = Numbering.path_from_root_to(project.slug, "page_2", root)
-
-    #   assert List.last(path_1).slug == "page_1"
-    #   assert List.last(path_2).slug == "page_2"
-    # end
-
-    # test "path_from_root_to/2 returns the full path from the root container to the resource", %{
-    #   project: project,
-    #   container: %{revision: root}
-    # } do
-    #   {:ok, path_2} = Numbering.path_from_root_to(project.slug, "page_2", root)
-    #   correct_titles = [root.title, "Unit 1", "Module 1", "Section 1", "Page 2"]
-
-    #   path_2
-    #   |> Enum.map(& &1.title)
-    #   |> Enum.zip(correct_titles)
-    #   |> Enum.each(fn {path_title, correct_title} ->
-    #     assert path_title == correct_title end)
-    # end
-
     test "number_full_tree/2 numbers the containers correctly", %{
       project: project,
       container: %{revision: root}

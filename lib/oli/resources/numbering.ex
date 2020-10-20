@@ -58,22 +58,6 @@ defmodule Oli.Resources.Numbering do
     end
   end
 
-  # def path_from_root_to(project_slug, revision_slug, root_container) do
-  #   with path <-
-  #          path_helper(
-  #            revision_slug,
-  #            root_container.children,
-  #            resource_id_to_revision_map(project_slug),
-  #            [root_container]
-  #          ) do
-
-  #     case path do
-  #       [] -> {:error, :target_resource_not_found}
-  #       list -> {:ok, Enum.reverse(list)}
-  #     end
-  #   end
-  # end
-
   @spec resource_id_to_revision_map(project_slug) :: %{resource_id => %Revision{}}
   defp resource_id_to_revision_map(project_slug) do
     for rev <- AuthoringResolver.all_revisions_in_hierarchy(project_slug),

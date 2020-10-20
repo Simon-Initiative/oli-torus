@@ -65,7 +65,4 @@ defmodule Oli.Utils.Breadcrumb do
         )
     })
   end
-
-  # Add ability to make a list of providers as a BreadcrumbTrail (maybe make new module)
-  # Each controller using the breadcrumb trail will make a list of providers and send the BreadCrumbTrail as an assign to the _project_header
 end
