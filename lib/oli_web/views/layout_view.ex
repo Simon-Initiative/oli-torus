@@ -7,6 +7,10 @@ defmodule OliWeb.LayoutView do
   alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
 
+  def container_slug(assigns) do
+    if assigns[:container] do assigns.container.slug else nil end
+  end
+
   def root_container_slug(project_slug) do
     AuthoringResolver.root_container(project_slug).slug
   end
