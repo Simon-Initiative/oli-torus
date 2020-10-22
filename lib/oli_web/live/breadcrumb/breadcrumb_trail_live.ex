@@ -7,7 +7,11 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
 
   def mount(
         _params,
-        %{"project_slug" => project_slug, "breadcrumbs" => breadcrumbs},
+        %{
+          "project_slug" => project_slug,
+          "container_slug" => container_slug,
+          "breadcrumbs" => breadcrumbs
+        },
         socket
       ) do
     project = Course.get_project_by_slug(project_slug)
@@ -15,6 +19,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
     {:ok,
      assign(socket,
        project: project,
+       container_slug: container_slug,
        breadcrumbs: breadcrumbs
      )}
   end
@@ -26,6 +31,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
 
         <%= live_component @socket,
           BreadcrumbLive,
+          id: "breadcrumb-project",
           breadcrumb: Breadcrumb.new(%{
             full_title: @project.title,
             link: Routes.project_path(@socket, :overview, @project)
@@ -37,7 +43,10 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
         <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
           <%= live_component @socket,
             BreadcrumbLive,
+            id: "breadcrumb-#{index}",
             breadcrumb: breadcrumb,
+            project: @project,
+            container_slug: @container_slug,
             is_last: length(@breadcrumbs) - 1 == index,
             show_short: length(@breadcrumbs) > 3
           %>

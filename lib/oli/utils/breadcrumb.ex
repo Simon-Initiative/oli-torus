@@ -8,6 +8,7 @@ defmodule Oli.Utils.Breadcrumb do
   defstruct full_title: "",
             short_title: "",
             link: nil,
+            slug: nil,
             action_descriptions: []
 
   def new(%{full_title: _full_title, short_title: _short_title} = params) do
@@ -38,7 +39,10 @@ defmodule Oli.Utils.Breadcrumb do
           new(%{
             full_title: Numbering.prefix(numbering) <> ": " <> revision.title,
             short_title: Numbering.prefix(numbering),
-            action_descriptions: [placeholder: true],
+            slug: revision.slug,
+            action_descriptions: [
+              "Rename"
+            ],
             link: link
           })
 

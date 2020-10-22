@@ -32,19 +32,31 @@ defmodule OliWeb.Curriculum.EntryLive do
               <div class="curriculum-title-line d-flex align-items-center">
                 <%= icon(assigns) %>
                 <%= Links.resource_link(@child, [], @project, "ml-1 mr-1 entry-title") %>
+                <%= if is_container?(@child) do %>
+                  <%= live_patch to: Routes.container_path(@socket, :edit, @project.slug, @container.slug, @child.slug),
+                  class: "button" do %>
+                    <button
+                    class="list-unstyled"
+                    style="border:none; background: none; color: #212529">
+                      <i class="material-icons">arrow_drop_down</i>
+                    </button>
+                  <% end %>
+                <% end %>
                 <%= if @editor do %>
                   <span class="badge">
                     <%= @editor.first_name %> is editing this
                   </span>
                 <% end %>
               </div>
-              <%= live_patch to: Routes.container_path(@socket, :edit, @project.slug, @container.slug, @child.slug),
-                class: "button" do %>
-                <button
-                class="list-unstyled"
-                style="border:none; background: none; color: #212529">
-                  <i class="material-icons">more_vert</i>
-                </button>
+              <%= if !is_container?(@child) do %>
+                <%= live_patch to: Routes.container_path(@socket, :edit, @project.slug, @container.slug, @child.slug),
+                  class: "button" do %>
+                  <button
+                  class="list-unstyled"
+                  style="border:none; background: none; color: #212529">
+                    <i class="material-icons">more_vert</i>
+                  </button>
+                <% end %>
               <% end %>
             </div>
             <div class="container">

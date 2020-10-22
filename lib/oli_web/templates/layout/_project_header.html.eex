@@ -1,5 +1,6 @@
 <div class="workspace-header">
   <%= live_render(@conn, BreadcrumbTrailLive, session: %{
+     "container_slug" => @container.slug || nil,
      "project_slug" => @project.slug,
      "breadcrumbs" => @breadcrumbs }) %>
 </div>
