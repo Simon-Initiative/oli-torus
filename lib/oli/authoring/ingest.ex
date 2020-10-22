@@ -1,0 +1,168 @@
+defmodule Oli.Authoring.Ingest do
+
+  alias Oli.Repo
+  alias Oli.Publishing.ChangeTracker
+
+  @project_key "_project"
+  @hierarchy_key "_hierarchy"
+  @media_key "_media-manifest"
+
+  def ingest(file, as_author) do
+
+    case :zip.unzip(to_charlist(file), [:memory]) do
+      {:ok, entries} -> process(entries, as_author)
+      _ -> {:error, "error processing archive file"}
+    end
+
+  end
+
+  defp is_valid_archive?(map) do
+    Map.has_key?(map, @project_key) && Map.has_key?(map, @hierarchy_key) && Map.has_key?(map, @media_key)
+  end
+
+  defp process(entries, as_author) do
+
+    resource_map = to_map(entries)
+
+    if is_valid_archive?(resource_map) do
+
+      Repo.transaction(fn _ ->
+
+        project_details = Map.get(resource_map, @project_key)
+        media_details = Map.get(resource_map, @media_key)
+        hierarchy_details = Map.get(resource_map, @hierarchy_key)
+
+        with {:ok, %{project: project, resource_revision: root_revision}} <- create_project(project_details, as_author),
+          {:ok, page_map} <- create_pages(project, resource_map, as_author),
+          {:ok, _} <- create_media(project, media_details, as_author),
+          {:ok, _} <- create_hierarchy(project, root_revision, page_map, hierarchy_details, as_author)
+        do
+          project
+        else
+          error -> Repo.rollback(error)
+        end
+
+      end)
+    else
+      {:error, "invalid archive"}
+    end
+  end
+
+  defp create_project(project_details, as_author) do
+
+    case Map.get(project_details, "title") do
+      nil -> {:error, "no project title found"}
+      title -> Oli.Authoring.Course.create_project(title, as_author)
+    end
+
+  end
+
+  defp create_pages(project, resource_map, as_author) do
+
+    pages = Map.keys(resource_map)
+    |> Enum.map(fn k -> {k, Map.get(resource_map, k)} end)
+    |> Enum.filter(fn {_, content} -> Map.get(content, "type") == "Page" end)
+
+    Repo.transaction(fn ->
+
+      case Enum.reduce_while(pages, %{}, fn {id, page}, map ->
+
+        case create_page(project, page, as_author) do
+          {:ok, revision} -> {:cont, Map.put(map, id, revision)}
+          {:error, e} -> {:halt, {:error, e}}
+        end
+
+      end) do
+
+        {:error, e} -> Repo.rollback(e)
+        map -> map
+      end
+
+    end)
+
+  end
+
+  defp create_page(project, page, as_author) do
+
+    attrs = %{
+      title: Map.get(page, "title"),
+      content: Map.get(page, "content"),
+      author_id: as_author.id,
+      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+      graded: false
+    }
+
+    with {:ok, %{revision: revision}} <- Oli.Authoring.Course.create_and_attach_resource(project, attrs),
+          {:ok, _} <- ChangeTracker.track_revision(project.slug, revision)
+    do
+      {:ok, revision}
+    else
+      {:error, e} -> {:error, e}
+    end
+
+  end
+
+
+  defp create_media(_project, _media_details, _as_author) do
+    {:ok, %{}}
+  end
+
+  # create the course hierarchy
+  defp create_hierarchy(project, root_revision, page_map, hierarchy_details, as_author) do
+
+    # filter for the top-level containers, add recursively add them
+    children = Map.get(hierarchy_details, "children")
+    |> Enum.filter(fn c -> Map.get(c, "type") == "container" end)
+    |> Enum.map(fn c -> create_container(project, page_map, as_author, c) end)
+
+    # wire those newly created top-level containers into the root resource
+    ChangeTracker.track_revision(project.slug, root_revision, %{children: children})
+
+  end
+
+  # This is the recursive container creation routine.  It processes a hierarchy by
+  # descending through the tree and processing the leaves first, and then back upwards.
+  defp create_container(project, page_map, as_author, container) do
+
+
+    # recursively visit item container in the hierarchy, and via bottom
+    # up approach create resource and revisions for each container, while
+    # substituting page references for resource ids and container references
+    # for container resource ids
+
+    children_ids = Map.get(container, "children")
+    |> Enum.map(fn c ->
+
+      case Map.get(c, "type") do
+        "item" -> Map.get(page_map, Map.get(c, "idref")).resource_id
+        "container" -> create_container(project, page_map, as_author, c)
+      end
+
+    end)
+
+    attrs = %{
+      title: Map.get(container, "title"),
+      children: children_ids,
+      author_id: as_author.id,
+      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
+    }
+
+    {:ok, %{revision: revision}} = Oli.Authoring.Course.create_and_attach_resource(project, attrs)
+    {:ok, _} = ChangeTracker.track_revision(project.slug, revision)
+    revision.resource_id
+
+  end
+
+  defp to_map(entries) do
+
+    Enum.reduce(entries, %{}, fn {file, content}, map ->
+
+      f = List.to_string(file)
+      id = String.slice(f, 0, String.length(f) - 5)
+
+      Map.put(map, id, Poison.decode!(content))
+    end)
+
+  end
+
+end
