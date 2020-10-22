@@ -5,6 +5,8 @@
 [![Build & Test CI](https://github.com/Simon-Initiative/oli-torus/workflows/Build%20&%20Test%20CI/badge.svg?branch=master)](https://github.com/Simon-Initiative/oli-torus/actions?query=workflow%3A%22Build+%26+Test+CI%22)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/Simon-Initiative/authoring-client/blob/master/LICENSE)
 
+Full Documentation: [simon-initiative.github.io/oli-torus](https://simon-initiative.github.io/oli-torus/Oli.html)
+
 ## Getting Started
 
 ### Setup
