@@ -1,5 +1,6 @@
 <%= if @live_action in [:edit] do %>
- <%= live_modal @socket, OliWeb.Curriculum.Settings,
+  <%= live_modal @socket, OliWeb.Curriculum.Settings,
+   container: @container,
    id: @revision.id,
    title: @page_title,
    action: @live_action,
@@ -8,8 +9,6 @@
    author: @author,
    return_to: Routes.container_path(@socket, :index, @project.slug, @container.slug) %>
 <% end %>
-
-
 <div id="curriculum-container" class="container container-editor">
   <div class="row">
     <div class="col-12">
@@ -20,9 +19,39 @@
   </div>
   <div class="row">
     <div class="col-12">
-      <div class="entry-selection d-flex align-items-center flex-row">
-        <button phx-click="change-view" phx-value-view="Simple" class="view-selection-item pl-3 pr-3<%= active_class(@view, "Simple")%>">Simple</button>
-        <button phx-click="change-view" phx-value-view="Learning Summary" class="view-selection-item mr-auto pl-3 pr-3<%= active_class(@view, "Learning Summary")%>">Learning Summary</button>
+      <div class="change-view-buttons">
+        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+          <label
+            title="Simple"
+            data-toggle="tooltip"
+            phx-click="change-view"
+            phx-value-view="Simple"
+            class="btn btn-sm btn-secondary <%= if @view == "Simple" do "active" else "" end %> %>">
+            <input type="radio" name="options" id="view-1"
+              <%= if @view == "Simple" do "checked" else "" end %>
+            > <span><i class="far fa-square"></i></span>
+          </label>
+
+          <label
+            title="Details"
+            data-toggle="tooltip"
+            phx-click="change-view"
+            phx-value-view="Details" class="btn btn-sm btn-secondary <%= if @view == "Details" do "active" else "" end %>">
+            <input type="radio" name="options" id="view-2"
+              <%= if @view == "Details" do "checked" else "" end %>
+            > <span><i class="fas fa-th-large"></i></span>
+          </label>
+
+          <label
+            title="Learning Summary"
+            data-toggle="tooltip"
+            phx-click="change-view"
+            phx-value-view="Learning Summary" class="btn btn-sm btn-secondary <%= if @view == "Learning Summary" do "active" else "" end %>">
+            <input type="radio" name="options" id="view-3"
+              <%= if @view == "Learning Summary" do "checked" else "" end %>
+            > <span><i class="fas fa-table"></i></span>
+          </label>
+        </div>
       </div>
     </div>
   </div>
@@ -48,7 +77,7 @@
                   index: index,
                   project: @project,
                   view: @view,
-                  numbering: @numbering
+                  numberings: @numberings
                 } %>
         <% end %>
         <%= live_component @socket, DropTarget, index: length(@children) %>
@@ -62,7 +91,7 @@
           Graded Assessment
         </button>
         <button phx-click="add" phx-value-type="Container" class="btn btn-sm btn-outline-primary ml-2" type="button">
-          Grouping
+          <%= new_container_name(@numberings, @container) %>
         </button>
       </div>
     </div>

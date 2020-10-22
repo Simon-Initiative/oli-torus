@@ -7,12 +7,16 @@ defmodule Oli.Resources.Numbering do
             count: 0,
             container: nil
 
-  def prefix(numbering) do
-    case numbering.level do
+  def container_type(level) do
+    case level do
       1 -> "Unit"
       2 -> "Module"
       _ -> "Section"
-    end <> " #{numbering.count}"
+    end
+  end
+
+  def prefix(numbering) do
+    container_type(numbering.level) <> " #{numbering.count}"
   end
 
   @typep project_slug :: String.t()
@@ -99,7 +103,7 @@ defmodule Oli.Resources.Numbering do
   @doc """
   Generates a level-based numbering of the containers found in a course hierarchy.
 
-  This method returns a list of %Numbering structs.
+  This method returns a map of revision id to %Numbering structs.
   """
   def number_full_tree(project_slug) do
     number_full_tree(

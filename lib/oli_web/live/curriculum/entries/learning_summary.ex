@@ -1,10 +1,11 @@
-defmodule OliWeb.Curriculum.LearningSummaryEntryLive do
+defmodule OliWeb.Curriculum.LearningSummaryLive do
 
   @moduledoc """
   Curriculum item entry component.
   """
 
   use Phoenix.LiveComponent
+  alias OliWeb.Curriculum.EntryLive
 
   defp determine_activities(activity_ids, activity_map) do
     Enum.map(activity_ids, fn id -> Map.get(activity_map, id) end)
@@ -68,12 +69,16 @@ defmodule OliWeb.Curriculum.LearningSummaryEntryLive do
 
   def render(assigns) do
     ~L"""
-    <div class="col-4 entry-section">
-      <%= render_objectives(assigns, determine_objectives(assigns.activity_ids, assigns.activity_map, assigns.objective_map)) %>
-    </div>
-    <div class="col-4 entry-section">
-      <%= render_activities(assigns, determine_activities(assigns.activity_ids, assigns.activity_map)) %>
-    </div>
+    <%= if !EntryLive.is_container?(@child) do %>
+      <div class="col-4 entry-section">
+        <%= render_objectives(assigns, determine_objectives(@activity_ids, @activity_map, @objective_map)) %>
+      </div>
+      <div class="col-4 entry-section">
+        <%= render_activities(assigns, determine_activities(@activity_ids, @activity_map)) %>
+      </div>
+    <% else %>
+      <div></div>
+    <% end %>
     """
   end
 end

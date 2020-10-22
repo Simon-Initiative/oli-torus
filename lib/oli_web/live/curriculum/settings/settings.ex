@@ -32,6 +32,7 @@ defmodule OliWeb.Curriculum.Settings do
 
   def handle_event("delete", %{"slug" => slug}, socket) do
     case ContainerEditor.remove_child(
+           socket.assigns.container,
            socket.assigns.project,
            socket.assigns.author,
            slug

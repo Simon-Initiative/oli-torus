@@ -19,18 +19,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Utils.Breadcrumb
 
-  # Resources currently being edited by an author (has a lock present)
-  # : %{ resource_id => author }
-  def get_resources_being_edited(resource_ids, project_id) do
-    project_id
-    |> Publishing.get_unpublished_publication_id!()
-    |> (&Publishing.retrieve_lock_info(resource_ids, &1)).()
-    |> Enum.map(fn published_resource ->
-      {published_resource.resource_id, published_resource.author}
-    end)
-    |> Enum.into(%{})
-  end
-
   def mount(
         %{"project_id" => project_slug, "container_slug" => container_slug},
         %{"current_author_id" => author_id},
@@ -60,7 +48,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
        view: "Simple",
        selected: nil,
        resources_being_edited: get_resources_being_edited(container.children, project.id),
-       numbering: Numbering.number_full_tree(project_slug)
+       numberings: Numbering.number_full_tree(project_slug)
      )}
   end
 
@@ -197,6 +185,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     socket =
       case ContainerEditor.reorder_child(
+             socket.assigns.container,
              socket.assigns.project,
              socket.assigns.author,
              source.slug,
@@ -223,7 +212,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
         case type do
           "Scored" -> "New Assessment"
           "Unscored" -> "New Page"
-          "Container" -> "New Grouping"
+          "Container" -> new_container_name(socket.assigns.numberings, socket.assigns.container)
         end,
       graded:
         case type do
@@ -274,7 +263,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     {:noreply,
      assign(socket,
-       numbering: Numbering.number_full_tree(socket.assigns.project.slug)
+       numberings: Numbering.number_full_tree(socket.assigns.project.slug)
      )}
   end
 
@@ -372,7 +361,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     {:ok, rollup} = Rollup.new(children, socket.assigns.project.slug)
 
-    numbering = Numbering.number_full_tree(socket.assigns.project.slug)
+    numberings = Numbering.number_full_tree(socket.assigns.project.slug)
 
     selected =
       case socket.assigns.selected do
@@ -385,7 +374,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
       container: revision,
       children: children,
       rollup: rollup,
-      numbering: numbering
+      numberings: numberings
     )
   end
 
@@ -439,6 +428,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
         %{assigns: %{resources_being_edited: resources_being_edited}} = socket
       ) do
     author = Accounts.get_user!(author_id)
+    |> Repo.preload(:author)
     new_resources_being_edited = Map.put(resources_being_edited, resource_id, author)
     {:noreply, assign(socket, resources_being_edited: new_resources_being_edited)}
   end
@@ -449,5 +439,26 @@ defmodule OliWeb.Curriculum.ContainerLive do
       ) do
     new_resources_being_edited = Map.delete(resources_being_edited, resource_id)
     {:noreply, assign(socket, resources_being_edited: new_resources_being_edited)}
+  end
+
+  # Resources currently being edited by an author (has a lock present)
+  # : %{ resource_id => author }
+  def get_resources_being_edited(resource_ids, project_id) do
+    project_id
+    |> Publishing.get_unpublished_publication_id!()
+    |> (&Publishing.retrieve_lock_info(resource_ids, &1)).()
+    |> Enum.map(fn published_resource ->
+      {published_resource.resource_id, published_resource.author}
+    end)
+    |> Enum.into(%{})
+  end
+
+  def new_container_name(numberings, parent_container) do
+    numbering = Map.get(numberings, parent_container.id)
+    if numbering do
+      Numbering.container_type(numbering.level + 1)
+    else
+      "Unit"
+    end
   end
 end

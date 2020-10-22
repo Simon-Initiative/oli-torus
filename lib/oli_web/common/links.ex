@@ -1,6 +1,7 @@
 defmodule OliWeb.Common.Links do
   use Phoenix.HTML
   alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Resources.Numbering
 
   def resource_path(revision, parent_pages, project_slug) do
     case Oli.Resources.ResourceType.get_type_by_id(revision.resource_type_id) do
@@ -43,7 +44,7 @@ defmodule OliWeb.Common.Links do
     end
   end
 
-  def resource_link(revision, parent_pages, project, class \\ nil) do
+  def resource_link(revision, parent_pages, project, numberings \\ %{}, class \\ nil) do
     with path <- resource_path(revision, parent_pages, project.slug),
          resource_type <- Oli.Resources.ResourceType.get_type_by_id(revision.resource_type_id) do
       case resource_type do
@@ -58,6 +59,18 @@ defmodule OliWeb.Common.Links do
                 class: class
               )
           end
+
+        "container" ->
+          numbering = Map.get(numberings, revision.id)
+
+          title =
+            if numbering do
+              Numbering.prefix(numbering) <> ": " <> revision.title
+            else
+              revision.title
+            end
+
+          link(title, to: path, class: class)
 
         _ ->
           link(revision.title,

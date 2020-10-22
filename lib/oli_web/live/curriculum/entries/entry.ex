@@ -5,11 +5,10 @@ defmodule OliWeb.Curriculum.EntryLive do
 
   use Phoenix.LiveComponent
   use Phoenix.HTML
-  alias OliWeb.Curriculum.LearningSummaryEntryLive
+  alias OliWeb.Curriculum.{DetailsLive, LearningSummaryLive}
   alias Oli.Resources.ResourceType
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Links
-  import OliWeb.Projects.Table, only: [time_ago: 2]
 
   def render(assigns) do
     ~L"""
@@ -31,7 +30,7 @@ defmodule OliWeb.Curriculum.EntryLive do
             <div class="d-flex justify-content-between">
               <div class="curriculum-title-line d-flex align-items-center">
                 <%= icon(assigns) %>
-                <%= Links.resource_link(@child, [], @project, "ml-1 mr-1 entry-title") %>
+                <%= Links.resource_link(@child, [], @project, @numberings, "ml-1 mr-1 entry-title") %>
                 <%= if is_container?(@child) do %>
                   <%= live_patch to: Routes.container_path(@socket, :edit, @project.slug, @container.slug, @child.slug),
                   class: "button" do %>
@@ -44,7 +43,7 @@ defmodule OliWeb.Curriculum.EntryLive do
                 <% end %>
                 <%= if @editor do %>
                   <span class="badge">
-                    <%= @editor.first_name %> is editing this
+                    <%= Map.get(@editor, :first_name) || Map.get(@editor, :given_name) || "A user" %> is editing this
                   </span>
                 <% end %>
               </div>
@@ -61,13 +60,14 @@ defmodule OliWeb.Curriculum.EntryLive do
             </div>
             <div class="container">
               <div class="row">
-                <div class="entry-section d-flex flex-column <%= if @view == "Simple" do "col-12" else "col-4" end %>">
-                  <small class="text-muted">Created <%= time_ago(assigns, @child.resource.inserted_at) %></small>
-                  <small class="text-muted">Updated <%= time_ago(assigns, @child.inserted_at) %> <%= if @view == "Simple" do "by #{@child.author.first_name}" else "" end %></small>
-                </div>
-                <%= if @view == "Learning Summary" && !is_container?(@child) do %>
-                  <%= live_component @socket, LearningSummaryEntryLive, assigns %>
-                <% end %>
+                <%= case @view do
+                  "Details" ->
+                    live_component @socket, DetailsLive, assigns
+                  "Learning Summary" ->
+                    live_component @socket, LearningSummaryLive, assigns
+                  _ ->
+                    nil
+                end %>
               </div>
             </div>
           </div>

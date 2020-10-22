@@ -2,7 +2,6 @@ defmodule OliWeb.ResourceController do
   use OliWeb, :controller
 
   alias Oli.Authoring.Editing.PageEditor
-  alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Authoring.Course
   alias Oli.Accounts
   alias Oli.Activities
@@ -31,7 +30,7 @@ defmodule OliWeb.ResourceController do
           end
 
         pages =
-          ContainerEditor.list_all_container_children(project)
+          AuthoringResolver.all_revisions_in_hierarchy(project.slug)
           |> Enum.map(fn r ->
             %{
               id:
