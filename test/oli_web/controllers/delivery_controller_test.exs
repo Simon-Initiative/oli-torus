@@ -93,7 +93,7 @@ defmodule OliWeb.DeliveryControllerTest do
         "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor",
       ],
     })
-    Oli.Lti_1p3.cache_lti_params("student-instructor-sub", %{
+    Oli.Lti_1p3.cache_lti_params!("student-instructor-sub", %{
       "sub" => "instructor-sub",
       "exp" => Timex.now |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix,
       "https://purl.imsglobal.org/spec/lti/claim/context" => %{
