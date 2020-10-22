@@ -135,12 +135,13 @@ defmodule Oli.Accounts do
   Links a User to Author account
 
   ## Examples
-      iex> link_user_author_account(user, author)
+      iex> link_user_author_account(user, author_id)
       {:ok, %User{}}
       iex> update_user(user, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
   def link_user_author_account(nil, _author), do: throw "No current_user to link to author. This function should only be called in an LTI context"
+  def link_user_author_account(_user, nil), do: throw "No author to link. This function should only be called after an author is logged in"
   def link_user_author_account(user, author) do
     update_user(user, %{ author_id: author.id})
   end
@@ -196,11 +197,23 @@ defmodule Oli.Accounts do
       iex> create_author(%{field: value})
       {:ok, %Author{}}
   """
-  def create_author(params \\ %{}, opts \\ []) do
+  def create_author(params \\ %{}) do
     %Author{}
-    |> Author.changeset(params, opts)
+    |> Author.changeset(params)
     |> Repo.insert()
   end
+
+  @doc """
+  Gets a single author.
+  Raises `Ecto.NoResultsError` if the Author does not exist.
+  ## Examples
+      iex> get_author!(123)
+      %Author{}
+      iex> get_author!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_author!(id), do: Repo.get!(Author, id)
 
   @doc """
   Gets a single author with the given email

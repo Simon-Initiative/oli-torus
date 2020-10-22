@@ -23,6 +23,7 @@ defmodule OliWeb do
 
       import Plug.Conn
       import OliWeb.Gettext
+      import OliWeb.Pow.PowHelpers
       import Phoenix.LiveView.Controller
       alias OliWeb.Router.Helpers, as: Routes
     end
@@ -47,7 +48,7 @@ defmodule OliWeb do
       alias OliWeb.Router.Helpers, as: Routes
 
       import Oli.Accounts, only: [author_signed_in?: 1, user_signed_in?: 1]
-      import Oli.Utils, only: [format_datetime: 1]
+      import Oli.Utils, only: [format_datetime: 1, value_or: 2]
     end
   end
 

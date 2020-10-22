@@ -27,12 +27,6 @@ config :oli, OliWeb.Endpoint,
   render_errors: [view: OliWeb.ErrorView, accepts: ~w(html json)],
   pubsub_server: Oli.PubSub
 
-config :oli, :pow,
-  user: Oli.Accounts.Author,
-  repo: Oli.Repo,
-  current_user_assigns_key: :current_author,
-  web_module: OliWeb
-
 # Configure reCAPTCHA
 config :oli, :recaptcha,
   verify_url: "https://www.google.com/recaptcha/api/siteverify",

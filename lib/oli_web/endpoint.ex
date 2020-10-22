@@ -55,7 +55,9 @@ defmodule OliWeb.Endpoint do
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
   plug Plug.Session, @session_options
-  plug Pow.Plug.Session, otp_app: :oli
+
+  plug Pow.Plug.Session, OliWeb.Pow.PowHelpers.get_pow_config(:author)
+  plug Pow.Plug.Session, OliWeb.Pow.PowHelpers.get_pow_config(:user)
 
   plug OliWeb.Router
 end
