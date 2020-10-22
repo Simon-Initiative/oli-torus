@@ -143,7 +143,7 @@ defmodule Oli.Accounts do
   def link_user_author_account(nil, _author), do: throw "No current_user to link to author. This function should only be called in an LTI context"
   def link_user_author_account(_user, nil), do: throw "No author to link. This function should only be called after an author is logged in"
   def link_user_author_account(user, author) do
-    update_user(user, %{ author_id: author.id})
+    update_user(user, %{author_id: author.id})
   end
 
   @doc """
