@@ -8,7 +8,7 @@
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Lti_1p3.ContextRoles — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-bb8c5b5ec3.js"></script>
+    <script src="dist/sidebar_items-bf69ec526e.js"></script>
       <script src="docs_config.js"></script>
     <script async src="dist/app-a225d03098e64fef431a.js"></script>
   </head>
@@ -96,6 +96,13 @@ Oli.Lti_1p3.ContextRoles          <a href="https://github.com/Simon-Initiative/o
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#get_highest_role/1">get_highest_role(roles)</a>
+  </div>
+    <div class="summary-synopsis"><p>Returns the highest level role from a list of roles. This function assumes roles have an
+ordinality which is defined by list_roles()</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#get_role/1">get_role(arg1)</a>
   </div>
     <div class="summary-synopsis"><p>Returns a role from a given atom if it is valid, otherwise returns nil</p></div>
@@ -129,6 +136,11 @@ Oli.Lti_1p3.ContextRoles          <a href="https://github.com/Simon-Initiative/o
     <a href="#list_roles/0">list_roles()</a>
   </div>
 </div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#list_roles/1">list_roles(atom)</a>
+  </div>
+</div>
   </div>
         </section>
 
@@ -147,7 +159,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">contains_role?(roles, role)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/context_roles.ex#L99" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/context_roles.ex#L101" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -160,6 +172,26 @@ Functions          </h1>
 <p>Returns true if a list of roles contains a given role</p>
   </section>
 </section>
+<section class="detail" id="get_highest_role/1">
+  <div class="detail-header">
+    <a href="#get_highest_role/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_highest_role(roles)</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/context_roles.ex#L110" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+      <div class="specs">
+          <pre>get_highest_role([<a href="Oli.Lti_1p3.ContextRole.html#t:t/0">Oli.Lti_1p3.ContextRole.t</a>()]) :: <a href="Oli.Lti_1p3.ContextRole.html#t:t/0">Oli.Lti_1p3.ContextRole.t</a>()</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Returns the highest level role from a list of roles. This function assumes roles have an
+ordinality which is defined by list_roles()</p>
+  </section>
+</section>
 <section class="detail" id="get_role/1">
   <div class="detail-header">
     <a href="#get_role/1" class="detail-link" title="Link to this function">
@@ -167,7 +199,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_role(arg1)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/context_roles.ex#L61" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/context_roles.ex#L63" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -183,7 +215,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_role_by_uri(arg1)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/context_roles.ex#L74" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/context_roles.ex#L76" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -199,7 +231,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_roles_by_uris(uris)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/context_roles.ex#L88" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/context_roles.ex#L90" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -218,7 +250,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">has_role?(user, context_id, role)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/context_roles.ex#L107" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/context_roles.ex#L119" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -238,7 +270,7 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">has_roles?(user, context_id, roles, atom)</h1>
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/context_roles.ex#L116" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/context_roles.ex#L128" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -268,6 +300,21 @@ Functions          </h1>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">list_roles()</h1>
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/context_roles.ex#L58" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
+<section class="detail" id="list_roles/1">
+  <div class="detail-header">
+    <a href="#list_roles/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">list_roles(atom)</h1>
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/context_roles.ex#L47" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
