@@ -14,6 +14,16 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 200) =~ "Your instructor has not configured this course section. Please check back soon."
     end
 
+    test "handles user with student and instructor roles with no section", %{conn: conn} do
+      conn = conn
+      |> put_session(:lti_1p3_sub, "student-instructor-sub")
+      |> get(Routes.delivery_path(conn, :index))
+
+      assert html_response(conn, 200) =~ "<h3>Getting Started</h3>"
+      assert html_response(conn, 200) =~ "Let's get started by creating a section for your course."
+      assert html_response(conn, 200) =~ "Link an Existing Account"
+    end
+
     test "handles student with section", %{conn: conn, project: project, publication: publication} do
       conn = conn
       |> put_session(:lti_1p3_sub, "student-sub")
@@ -29,6 +39,7 @@ defmodule OliWeb.DeliveryControllerTest do
       |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~ "<h3>Getting Started</h3>"
+      assert html_response(conn, 200) =~ "Let's get started by creating a section for your course."
       assert html_response(conn, 200) =~ "Link an Existing Account"
     end
 
@@ -80,6 +91,18 @@ defmodule OliWeb.DeliveryControllerTest do
       },
       "https://purl.imsglobal.org/spec/lti/claim/roles" => [
         "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor",
+      ],
+    })
+    Oli.Lti_1p3.cache_lti_params!("student-instructor-sub", %{
+      "sub" => "instructor-sub",
+      "exp" => Timex.now |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix,
+      "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+        "id" => "some-context-id",
+        "title" => "some-title",
+      },
+      "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+        "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor",
+        "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner",
       ],
     })
 

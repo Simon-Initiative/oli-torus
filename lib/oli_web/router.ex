@@ -137,7 +137,9 @@ defmodule OliWeb.Router do
     live "/:project_id/objectives", Objectives.Objectives
 
     # Curriculum
-    live "/:project_id/curriculum", Curriculum.Container
+    live "/:project_id/curriculum/:container_slug/edit/:revision_slug", Curriculum.ContainerLive, :edit
+    live "/:project_id/curriculum/:container_slug", Curriculum.ContainerLive, :index
+    live "/:project_id/curriculum/", Curriculum.ContainerLive, :index
 
     # Review/QA
     live "/:project_id/review", Qa.QaLive
@@ -155,10 +157,6 @@ defmodule OliWeb.Router do
 
     # Insights
     get "/:project_id/insights", ProjectController, :insights
-    # Ideally, analytics should be live-routed to preserve forward/back button when toggling
-    # between analytics groupings and sorting. I could not get it to run through the project authorization
-    # plugs when live-routing, however.
-    # live "/:project_id/insights", Insights
   end
 
   scope "/api/v1/project", OliWeb do
