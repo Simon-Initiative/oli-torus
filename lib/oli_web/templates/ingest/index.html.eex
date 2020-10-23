@@ -1,12 +1,90 @@
 
-<%= form_for @conn, "ingest", [as: :upload, multipart: true], fn f -> %>
 
-  <div class="form-group">
-    <label>Course Archive</label>
-    <%= file_input f, :digest, class: "form-control" %>
-  </div>
+  <h3 class="display-6">Course Ingestion</h3>
+  <p class="lead">Upload a course digest archive and convert into a Torus course project.</p>
+  <hr class="my-4">
 
-  <div class="form-group">
-    <%= submit "Submit", class: "btn btn-primary" %>
-  </div>
-<% end %>
+    <%= form_for @conn, "ingest", [as: :upload, multipart: true], fn f -> %>
+
+      <div class="form-group">
+        <label>Step 1. Select a Course Archive</label>
+        <%= file_input f, :digest, class: "form-control" %>
+      </div>
+
+      <div class="form-group">
+        <label>Step 2. Upload Course Archive for Ingestion</label>
+        <div><%= submit "Ingest", class: "btn btn-primary" %></div>
+      </div>
+
+      <div class="form-group">
+        <label>Step 3. Upon successful ingestion, you will then be redirected
+        to the Overview page of the new course project.</label>
+      </div>
+    <% end %>
+
+    <hr class="my-4">
+
+    <h3 class="display-5">FAQ</h3>
+
+    <div class="accordion" id="accordionExample">
+      <div class="card">
+        <div class="card-header" id="headingOne">
+          <h2 class="mb-0">
+            <button class="btn btn-link btn-block text-left" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+              How long does the ingestion process take?
+            </button>
+          </h2>
+        </div>
+
+        <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
+          <div class="card-body">
+              Only a second or two.  If the ingestion succeeds you will be redirected to the Project Overview of the new course project.
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header" id="headingTwo">
+          <h2 class="mb-0">
+            <button class="btn btn-link btn-block text-left collapsed" type="button" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+              Where does one get a course digest archive?
+            </button>
+          </h2>
+        </div>
+        <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionExample">
+          <div class="card-body">
+            An archive can be created manually or created from an OLI Legacy course using the <code>course-digest</code> creation tool at
+    <a href="https://github.com/Simon-Initiative/course-digest">https://github.com/Simon-Initiative/course-digest</a>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header" id="headingThree">
+          <h2 class="mb-0">
+            <button class="btn btn-link btn-block text-left collapsed" type="button" data-toggle="collapse" data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+              How do I add authors to the course?
+            </button>
+          </h2>
+        </div>
+        <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
+          <div class="card-body">
+            After the course is created, from the <code>Overveiw</code> page, add additional authors.
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header" id="four">
+          <h2 class="mb-0">
+            <button class="btn btn-link btn-block text-left collapsed" type="button" data-toggle="collapse" data-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+              How does the ingestion process handle media items?
+            </button>
+          </h2>
+        </div>
+        <div id="collapseFour" class="collapse" aria-labelledby="four" data-parent="#accordionExample">
+          <div class="card-body">
+            The course ingestion tool expects that media items referenced in the course material have already been
+            pre-positioned into a Torus AWS S3 bucket folder.  That bucket folder name must be specified in the
+            <code>s3-folder-name</code> top-level key in the <code>_media-manifest.json</code>.
+          </div>
+        </div>
+      </div>
+    </div>
