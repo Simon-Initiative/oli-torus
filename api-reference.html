@@ -4,13 +4,13 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.21.3">
+    <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
     <title>API Reference — OLI Torus v0.1.0</title>
-    <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-bf69ec526e.js"></script>
+    <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
+    <script src="dist/sidebar_items-b0b2abcbe2.js"></script>
       <script src="docs_config.js"></script>
-    <script async src="dist/app-a225d03098e64fef431a.js"></script>
+    <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
   </head>
   <body data-type="extras">
     <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
@@ -22,14 +22,14 @@
 
 <section class="sidebar">
   <form class="sidebar-search" action="search.html">
-    <button type="submit" class="search-button">
-      <span class="icon-search" aria-hidden="true"></span>
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
     </button>
-    <button type="button" tabindex="-1" class="search-close-button">
-      <span class="icon-cross" title="Cancel search"></span>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
     </button>
     <label class="search-label">
-      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Search" autocomplete="off" />
+      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
     </label>
   </form>
 
@@ -42,9 +42,9 @@
     <div class="sidebar-projectDetails">
       <a href="http://oli.cmu.edu" class="sidebar-projectName">
 OLI Torus      </a>
-      <h2 class="sidebar-projectVersion">
+      <strong class="sidebar-projectVersion">
         v0.1.0
-      </h2>
+      </strong>
     </div>
       <a href="http://oli.cmu.edu">
         <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
@@ -67,8 +67,7 @@ OLI Torus      </a>
     <div id="content" class="content-inner">
 
 <h1>
-  <small class="app-vsn">OLI Torus v0.1.0</small>
-  API Reference
+  API Reference <small class="app-vsn">OLI Torus v0.1.0</small>
 </h1>
 
   <section class="details-list">
@@ -245,104 +244,67 @@ using criteria, etc.</p></div>
   <div class="summary-signature">
     <a href="Oli.Analytics.Datashop.Elements.ActionEvaluation.html">Oli.Analytics.Datashop.Elements.ActionEvaluation</a>
   </div>
-    <div class="summary-synopsis"><p><action_evaluation current_hint_number="1" total_hints_available="1">HINT</action_evaluation></p></div>
+    <div class="summary-synopsis"><action_evaluation current_hint_number="1" total_hints_available="1">HINT</action_evaluation><action_evaluation>CORRECT</action_evaluation></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="Oli.Analytics.Datashop.Elements.Dataset.html">Oli.Analytics.Datashop.Elements.Dataset</a>
   </div>
-    <div class="summary-synopsis"><dataset>
-  <name>example_open_and_free_course-TxE5btqmuCGYEmPUKfewoX</name>
-  <level type="Page">
-    <name>one</name>
-    <problem tutorFlag="tutor">
-      <name>one-part1</name>
-    </problem>
-  </level>
-</dataset></div>
+    <div class="summary-synopsis"><dataset>  &lt;name&gt;example_open_and_free_course-TxE5btqmuCGYEmPUKfewoX&lt;/name&gt;  &lt;level type=&quot;Page&quot;&gt;    &lt;name&gt;one&lt;/name&gt;    &lt;problem tutorFlag=&quot;tutor&quot;&gt;      &lt;name&gt;one-part1&lt;/name&gt;    &lt;/problem&gt;  &lt;/level&gt;</dataset></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="Oli.Analytics.Datashop.Elements.EventDescriptor.html">Oli.Analytics.Datashop.Elements.EventDescriptor</a>
   </div>
-    <div class="summary-synopsis"><event_descriptor>
-  <selection>(ARC-BD-MEASURE QUESTION1 REASON)</selection>
-  <action>INPUT-CELL-VALUE</action>
-  <input>HINT</input>
-</event_descriptor><event_descriptor>
-  <selection>(ARC-BD-MEASURE QUESTION1 REASON)</selection>
-  <action>INPUT-CELL-VALUE</action>
-  <input>given</input>
-</event_descriptor></div>
+    <div class="summary-synopsis"><event_descriptor>  &lt;selection&gt;(ARC-BD-MEASURE QUESTION1 REASON)&lt;/selection&gt;  &lt;action&gt;INPUT-CELL-VALUE&lt;/action&gt;  &lt;input&gt;HINT&lt;/input&gt;</event_descriptor><event_descriptor>  &lt;selection&gt;(ARC-BD-MEASURE QUESTION1 REASON)&lt;/selection&gt;  &lt;action&gt;INPUT-CELL-VALUE&lt;/action&gt;  &lt;input&gt;given&lt;/input&gt;</event_descriptor></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="Oli.Analytics.Datashop.Elements.Meta.html">Oli.Analytics.Datashop.Elements.Meta</a>
   </div>
-    <div class="summary-synopsis"><meta>
-  <user_id>t.stark+0@avengers.com</user_id>
-  <session_id>t.stark+0@avengers.com 2020-06-29 13:34</session_id>
-  <time>2020-06-29 13:34</time>
-  <time_zone>GMT</time_zone>
-</meta></div>
+    <div class="summary-synopsis"><meta>  &lt;user_id&gt;t.stark+0@avengers.com&lt;/user_id&gt;  &lt;session_id&gt;t.stark+0@avengers.com 2020-06-29 13:34&lt;/session_id&gt;  &lt;time&gt;2020-06-29 13:34&lt;/time&gt;  &lt;time_zone&gt;GMT&lt;/time_zone&gt;</meta></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="Oli.Analytics.Datashop.Elements.ProblemName.html">Oli.Analytics.Datashop.Elements.ProblemName</a>
   </div>
-    <div class="summary-synopsis"><p><problem_name>Activity slug, part 1</problem_name></p></div>
+    <div class="summary-synopsis"><problem_name>Activity slug, part 1</problem_name></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="Oli.Analytics.Datashop.Elements.SemanticEvent.html">Oli.Analytics.Datashop.Elements.SemanticEvent</a>
   </div>
-    <div class="summary-synopsis"><p><semantic_event transaction_id="mary-smith-MAJOR-ARC-BFD-2-0-2006-07-22-12-55-00-004s" name="HINT_REQUEST"/></p></div>
+    <div class="summary-synopsis"><semantic_event transaction_id="mary-smith-MAJOR-ARC-BFD-2-0-2006-07-22-12-55-00-004s" name="HINT_REQUEST"></semantic_event><semantic_event transaction_id="student-p1-MAJOR-ARC-BFD-2-0-2006-07-22-12-55-00-003s" name="ATTEMPT"></semantic_event></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="Oli.Analytics.Datashop.Elements.Skills.html">Oli.Analytics.Datashop.Elements.Skills</a>
   </div>
-    <div class="summary-synopsis"><skill>
-  <name>objective one</name>
-</skill><skill>
-  <name>objective two</name>
-</skill></div>
+    <div class="summary-synopsis"><skill>  &lt;name&gt;objective one&lt;/name&gt;</skill><skill>  &lt;name&gt;objective two&lt;/name&gt;</skill></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="Oli.Analytics.Datashop.Elements.TutorAdvice.html">Oli.Analytics.Datashop.Elements.TutorAdvice</a>
   </div>
-    <div class="summary-synopsis"><p><tutor_advice> Some useful information is highlighted in the problem statement. .</tutor_advice></p></div>
+    <div class="summary-synopsis"><tutor_advice>Some useful information is highlighted in the problem statement. .</tutor_advice></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="Oli.Analytics.Datashop.Messages.Context.html">Oli.Analytics.Datashop.Messages.Context</a>
   </div>
-    <div class="summary-synopsis"><context_message context_message_id="t.stark+0@avengers.com-one-part1" name="START_PROBLEM">
-  <meta>
-    <user_id>t.stark+0@avengers.com</user_id>
-    <session_id>t.stark+0@avengers.com 2020-06-30 00:18</session_id>
-    <time>2020-06-30 00:18</time>
-    <time_zone>GMT</time_zone>
-  </meta>
-  <dataset>
-    <name>example_open_and_free_course-XVeLxRjNVUdSnzsMuFeZNn</name>
-    <name>Activity one</name>
-    <problem_name>Activity one, part 1</problem_name>
-  </dataset>
-</context_message></div>
+    <div class="summary-synopsis"><context_message context_message_id="t.stark+0@avengers.com-one-part1" name="START_PROBLEM">  &lt;meta&gt;    &lt;user_id&gt;t.stark+0@avengers.com&lt;/user_id&gt;    &lt;session_id&gt;t.stark+0@avengers.com 2020-06-30 00:18&lt;/session_id&gt;    &lt;time&gt;2020-06-30 00:18&lt;/time&gt;    &lt;time_zone&gt;GMT&lt;/time_zone&gt;  &lt;/meta&gt;  &lt;dataset&gt;    &lt;name&gt;example_open_and_free_course-XVeLxRjNVUdSnzsMuFeZNn&lt;/name&gt;    &lt;name&gt;Activity one&lt;/name&gt;    &lt;problem_name&gt;Activity one, part 1&lt;/problem_name&gt;  &lt;/dataset&gt;</context_message></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="Oli.Analytics.Datashop.Messages.Tool.html">Oli.Analytics.Datashop.Messages.Tool</a>
   </div>
-    <div class="summary-synopsis"><p>  <tool_message context_message_id="student-p1-MAJOR-ARC-BFD-2-0"></p></div>
+    <div class="summary-synopsis"><p>  &lt;tool_message context_message_id=&quot;student-p1-MAJOR-ARC-BFD-2-0&quot;&gt;</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="Oli.Analytics.Datashop.Messages.Tutor.html">Oli.Analytics.Datashop.Messages.Tutor</a>
   </div>
-    <div class="summary-synopsis"><p>  <tutor_message context_message_id="mary-smith-MAJOR-ARC-BFD-2-0"></p></div>
+    <div class="summary-synopsis"><p>  &lt;tutor_message context_message_id=&quot;mary-smith-MAJOR-ARC-BFD-2-0&quot;&gt;</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
@@ -369,6 +331,16 @@ using criteria, etc.</p></div>
     <a href="Oli.Authoring.Broadcaster.html">Oli.Authoring.Broadcaster</a>
   </div>
     <div class="summary-synopsis"><p>This module encapsulates all broadcasting functionality for authoring events.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Authoring.Broadcaster.Messages.html">Oli.Authoring.Broadcaster.Messages</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Authoring.Broadcaster.Subscriber.html">Oli.Authoring.Broadcaster.Subscriber</a>
+  </div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
@@ -801,14 +773,13 @@ consumable by various tools such as Excel (CSV) or an LMS API</p></div>
   <div class="summary-signature">
     <a href="Oli.Publishing.Resolver.html">Oli.Publishing.Resolver</a>
   </div>
+    <div class="summary-synopsis"><p>The <code class="inline">AuthoringResolver</code> and <code class="inline">DeliveryResolver</code> implement</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="Oli.Qa.html">Oli.Qa</a>
   </div>
-    <div class="summary-synopsis"><p>Qa uses two tables:
-  1) Reviews
-  2) Warnings</p></div>
+    <div class="summary-synopsis"><p>Qa uses two tables</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
@@ -1095,7 +1066,28 @@ as controllers, views, channels and so on.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="OliWeb.Breadcrumb.BreadcrumbLive.html">OliWeb.Breadcrumb.BreadcrumbLive</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Breadcrumb.BreadcrumbTrailLive.html">OliWeb.Breadcrumb.BreadcrumbTrailLive</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="OliWeb.CollaboratorController.html">OliWeb.CollaboratorController</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Common.AuthorInitials.html">OliWeb.Common.AuthorInitials</a>
+  </div>
+    <div class="summary-synopsis"><p>Required properties</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Common.Breadcrumb.html">OliWeb.Common.Breadcrumb</a>
   </div>
 </div>
 <div class="summary-row">
@@ -1113,6 +1105,11 @@ must be added and removed from a parent LiveView programmatically when it needs 
 <div class="summary-row">
   <div class="summary-signature">
     <a href="OliWeb.Common.MaterialIcon.html">OliWeb.Common.MaterialIcon</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Common.MinimalModal.html">OliWeb.Common.MinimalModal</a>
   </div>
 </div>
 <div class="summary-row">
@@ -1145,13 +1142,15 @@ must be added and removed from a parent LiveView programmatically when it needs 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="OliWeb.Curriculum.Container.html">OliWeb.Curriculum.Container</a>
+    <a href="OliWeb.Curriculum.ContainerLive.html">OliWeb.Curriculum.ContainerLive</a>
   </div>
-    <div class="summary-synopsis"><p>LiveView implementation of a container editor. Given that we only
-support one fixed top-level container this view ultimately is the
-entire Curriculum editor.  At some point in the future this implementation
-can be generalized a bit further to allow it to operate as an editor
-for any container - not just the root container.</p></div>
+    <div class="summary-synopsis"><p>LiveView implementation of a container editor.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Curriculum.DetailsLive.html">OliWeb.Curriculum.DetailsLive</a>
+  </div>
+    <div class="summary-synopsis"><p>Curriculum item entry component.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
@@ -1161,7 +1160,13 @@ for any container - not just the root container.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="OliWeb.Curriculum.Entry.html">OliWeb.Curriculum.Entry</a>
+    <a href="OliWeb.Curriculum.EntryLive.html">OliWeb.Curriculum.EntryLive</a>
+  </div>
+    <div class="summary-synopsis"><p>Curriculum item entry component.</p></div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Curriculum.LearningSummaryLive.html">OliWeb.Curriculum.LearningSummaryLive</a>
   </div>
     <div class="summary-synopsis"><p>Curriculum item entry component.</p></div>
 </div>
@@ -1174,7 +1179,6 @@ for any container - not just the root container.</p></div>
   <div class="summary-signature">
     <a href="OliWeb.Curriculum.Settings.html">OliWeb.Curriculum.Settings</a>
   </div>
-    <div class="summary-synopsis"><p>Selected curriculum item settings editing component.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
@@ -1260,6 +1264,11 @@ for any container - not just the root container.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="OliWeb.LiveHelpers.html">OliWeb.LiveHelpers</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="OliWeb.LockController.html">OliWeb.LockController</a>
   </div>
 </div>
@@ -1281,6 +1290,11 @@ for any container - not just the root container.</p></div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="OliWeb.MediaView.html">OliWeb.MediaView</a>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.ModalComponent.html">OliWeb.ModalComponent</a>
   </div>
 </div>
 <div class="summary-row">
@@ -1542,14 +1556,16 @@ for any container - not just the root container.</p></div>
         <p>
           <span class="line">
             Built using
-            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.21.3),
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.23.0) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
           </span>
           <span class="line">
-            designed by
+            Designed by
             <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
           </span>
         </p>
         <p>
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
           <button class="line footer-button display-shortcuts-help">
             Display keyboard shortcuts
           </button>

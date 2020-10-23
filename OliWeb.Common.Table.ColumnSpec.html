@@ -4,13 +4,13 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.21.3">
+    <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
     <title>OliWeb.Common.Table.ColumnSpec — OLI Torus v0.1.0</title>
-    <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-bf69ec526e.js"></script>
+    <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
+    <script src="dist/sidebar_items-b0b2abcbe2.js"></script>
       <script src="docs_config.js"></script>
-    <script async src="dist/app-a225d03098e64fef431a.js"></script>
+    <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
   </head>
   <body data-type="modules">
     <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
@@ -22,14 +22,14 @@
 
 <section class="sidebar">
   <form class="sidebar-search" action="search.html">
-    <button type="submit" class="search-button">
-      <span class="icon-search" aria-hidden="true"></span>
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
     </button>
-    <button type="button" tabindex="-1" class="search-close-button">
-      <span class="icon-cross" title="Cancel search"></span>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
     </button>
     <label class="search-label">
-      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Search" autocomplete="off" />
+      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
     </label>
   </form>
 
@@ -42,9 +42,9 @@
     <div class="sidebar-projectDetails">
       <a href="http://oli.cmu.edu" class="sidebar-projectName">
 OLI Torus      </a>
-      <h2 class="sidebar-projectVersion">
+      <strong class="sidebar-projectVersion">
         v0.1.0
-      </h2>
+      </strong>
     </div>
       <a href="http://oli.cmu.edu">
         <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
@@ -67,8 +67,8 @@ OLI Torus      </a>
     <div id="content" class="content-inner">
 
       <h1>
-        <small class="app-vsn">OLI Torus v0.1.0</small>
-OliWeb.Common.Table.ColumnSpec          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/column_spec.ex#L1" title="View Source" class="view-source" rel="help">
+        OliWeb.Common.Table.ColumnSpec <small class="app-vsn">(OLI Torus v0.1.0)</small>
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/column_spec.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -76,22 +76,16 @@ OliWeb.Common.Table.ColumnSpec          <a href="https://github.com/Simon-Initia
 
 
         <section id="moduledoc">
-<p>A column specification for sortable tables.</p>
-<p>A column specification instructs the sortable table as to how to display a header,
-render row values, and sort columns.</p>
-<p>The <code class="inline">:name</code> attribute must be the property of a row item, where <code class="inline">Map.put(row, name)</code> allows access
-to the value of the item for that column.</p>
-<p>The <code class="inline">:label</code> attribute is a user friendly name that the table will display in the table header</p>
-<p>The <code class="inline">:sort_fn</code> is a function that takes two arguments, the current sort direction (:asc or :desc) and
+<p>A column specification for sortable tables.</p><p>A column specification instructs the sortable table as to how to display a header,
+render row values, and sort columns.</p><p>The <code class="inline">:name</code> attribute must be the property of a row item, where <code class="inline">Map.put(row, name)</code> allows access
+to the value of the item for that column.</p><p>The <code class="inline">:label</code> attribute is a user friendly name that the table will display in the table header</p><p>The <code class="inline">:sort_fn</code> is a function that takes two arguments, the current sort direction (:asc or :desc) and
 the column spec - and returns a comparator function that will be used to sort the table.  Leaving this
 set to <code class="inline">nil</code> instructs the sorted table to fall back to a default sort comparator that simply
 accesses the column values and compares using the less than and greater than operators. The fall back
-sort function is implemented to be a stable sort.</p>
-<p>The <code class="inline">:render_fn</code> is a function that takes three arguments, the current <code class="inline">assigns</code> for the parent LiveView,
+sort function is implemented to be a stable sort.</p><p>The <code class="inline">:render_fn</code> is a function that takes three arguments, the current <code class="inline">assigns</code> for the parent LiveView,
 the current row to be rendered, and the column spec to render.  Leaving this attribute set to nil
 instructs the sortable table to fall back to a default implementation that renders the result of
-<code class="inline">Map.get(row, column_spec.name)</code></p>
-        </section>
+<code class="inline">Map.get(row, column_spec.name)</code></p>        </section>
 
         <section id="summary" class="details-list">
           <h1 class="section-heading">
@@ -138,7 +132,9 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="default_sort_fn/2">
@@ -153,7 +149,9 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
+
   </section>
 </section>
           </div>
@@ -162,14 +160,16 @@ Functions          </h1>
         <p>
           <span class="line">
             Built using
-            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.21.3),
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.23.0) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
           </span>
           <span class="line">
-            designed by
+            Designed by
             <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
           </span>
         </p>
         <p>
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
           <button class="line footer-button display-shortcuts-help">
             Display keyboard shortcuts
           </button>

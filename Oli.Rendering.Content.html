@@ -4,13 +4,13 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.21.3">
+    <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Rendering.Content — OLI Torus v0.1.0</title>
-    <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-bf69ec526e.js"></script>
+    <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
+    <script src="dist/sidebar_items-b0b2abcbe2.js"></script>
       <script src="docs_config.js"></script>
-    <script async src="dist/app-a225d03098e64fef431a.js"></script>
+    <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
   </head>
   <body data-type="modules">
     <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
@@ -22,14 +22,14 @@
 
 <section class="sidebar">
   <form class="sidebar-search" action="search.html">
-    <button type="submit" class="search-button">
-      <span class="icon-search" aria-hidden="true"></span>
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
     </button>
-    <button type="button" tabindex="-1" class="search-close-button">
-      <span class="icon-cross" title="Cancel search"></span>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
     </button>
     <label class="search-label">
-      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Search" autocomplete="off" />
+      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
     </label>
   </form>
 
@@ -42,9 +42,9 @@
     <div class="sidebar-projectDetails">
       <a href="http://oli.cmu.edu" class="sidebar-projectName">
 OLI Torus      </a>
-      <h2 class="sidebar-projectVersion">
+      <strong class="sidebar-projectVersion">
         v0.1.0
-      </h2>
+      </strong>
     </div>
       <a href="http://oli.cmu.edu">
         <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
@@ -67,8 +67,8 @@ OLI Torus      </a>
     <div id="content" class="content-inner">
 
       <h1>
-        <small class="app-vsn">OLI Torus v0.1.0</small>
-Oli.Rendering.Content <small>behaviour</small>          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L1" title="View Source" class="view-source" rel="help">
+        Oli.Rendering.Content <small>behaviour</small> <small class="app-vsn">(OLI Torus v0.1.0)</small>
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -78,8 +78,7 @@ Oli.Rendering.Content <small>behaviour</small>          <a href="https://github.
         <section id="moduledoc">
 <p>This modules defines the rendering functionality for Oli structured content. Rendering is
 extensibile to any format which implements the behavior defined in this module, then specifying
-that format at render time. For an example of how exactly to extend this, see <code class="inline">content/html.ex</code>.</p>
-        </section>
+that format at render time. For an example of how exactly to extend this, see <code class="inline">content/html.ex</code>.</p>        </section>
 
         <section id="summary" class="details-list">
           <h1 class="section-heading">
@@ -277,11 +276,14 @@ Types          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>children() :: [%{}]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="t:next/0">
@@ -295,11 +297,14 @@ Types          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
-      <div class="specs">
-          <pre>next() :: (() -> <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>())</pre>
-      </div>
   </div>
+
   <section class="docstring">
+      <h2>Specs</h2>
+      <div class="specs">
+          <pre>next() :: (() -&gt; <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>())</pre>
+      </div>
+
   </section>
 </section>
           </div>
@@ -324,10 +329,11 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
+
 <p>Renders an error message if none of the signatures above match. Logging and rendering of errors
-can be configured using the render_opts in context</p>
-  </section>
+can be configured using the render_opts in context</p>  </section>
 </section>
           </div>
         </section>
@@ -350,6 +356,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>a(
   %Oli.Rendering.Context{
@@ -362,8 +372,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:audio/3">
@@ -377,6 +386,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>audio(
   %Oli.Rendering.Context{
@@ -389,8 +402,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:blockquote/3">
@@ -404,6 +416,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>blockquote(
   %Oli.Rendering.Context{
@@ -416,8 +432,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:code/3">
@@ -431,6 +446,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>code(
   %Oli.Rendering.Context{
@@ -443,8 +462,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:code_line/3">
@@ -458,6 +476,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>code_line(
   %Oli.Rendering.Context{
@@ -470,8 +492,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:error/3">
@@ -485,6 +506,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>error(
   %Oli.Rendering.Context{
@@ -494,11 +519,10 @@ Callbacks          </h1>
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
   %{},
-  {<a href="https://hexdocs.pm/elixir/Atom.html#t:t/0">Atom.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()}
+  {Atom.t(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:example/3">
@@ -512,6 +536,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>example(
   %Oli.Rendering.Context{
@@ -524,8 +552,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:h1/3">
@@ -539,6 +566,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>h1(
   %Oli.Rendering.Context{
@@ -551,8 +582,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:h2/3">
@@ -566,6 +596,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>h2(
   %Oli.Rendering.Context{
@@ -578,8 +612,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:h3/3">
@@ -593,6 +626,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>h3(
   %Oli.Rendering.Context{
@@ -605,8 +642,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:h4/3">
@@ -620,6 +656,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>h4(
   %Oli.Rendering.Context{
@@ -632,8 +672,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:h5/3">
@@ -647,6 +686,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>h5(
   %Oli.Rendering.Context{
@@ -659,8 +702,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:h6/3">
@@ -674,6 +716,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>h6(
   %Oli.Rendering.Context{
@@ -686,8 +732,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:img/3">
@@ -701,6 +746,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>img(
   %Oli.Rendering.Context{
@@ -713,8 +762,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:learn_more/3">
@@ -728,6 +776,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>learn_more(
   %Oli.Rendering.Context{
@@ -740,8 +792,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:li/3">
@@ -755,6 +806,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>li(
   %Oli.Rendering.Context{
@@ -767,8 +822,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:math/3">
@@ -782,6 +836,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>math(
   %Oli.Rendering.Context{
@@ -794,8 +852,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:math_line/3">
@@ -809,6 +866,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>math_line(
   %Oli.Rendering.Context{
@@ -821,8 +882,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:ol/3">
@@ -836,6 +896,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>ol(
   %Oli.Rendering.Context{
@@ -848,8 +912,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:p/3">
@@ -863,6 +926,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>p(
   %Oli.Rendering.Context{
@@ -875,8 +942,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:table/3">
@@ -890,6 +956,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>table(
   %Oli.Rendering.Context{
@@ -902,8 +972,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:td/3">
@@ -917,6 +986,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>td(
   %Oli.Rendering.Context{
@@ -929,8 +1002,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:text/2">
@@ -944,6 +1016,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>text(
   %Oli.Rendering.Context{
@@ -955,8 +1031,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:th/3">
@@ -970,6 +1045,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>th(
   %Oli.Rendering.Context{
@@ -982,8 +1061,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:tr/3">
@@ -997,6 +1075,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>tr(
   %Oli.Rendering.Context{
@@ -1009,8 +1091,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:ul/3">
@@ -1024,6 +1105,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>ul(
   %Oli.Rendering.Context{
@@ -1036,8 +1121,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="c:youtube/3">
@@ -1051,6 +1135,10 @@ Callbacks          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>youtube(
   %Oli.Rendering.Context{
@@ -1063,8 +1151,7 @@ Callbacks          </h1>
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
       </div>
-  </div>
-  <section class="docstring">
+
   </section>
 </section>
           </div>
@@ -1073,14 +1160,16 @@ Callbacks          </h1>
         <p>
           <span class="line">
             Built using
-            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.21.3),
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.23.0) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
           </span>
           <span class="line">
-            designed by
+            Designed by
             <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
           </span>
         </p>
         <p>
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
           <button class="line footer-button display-shortcuts-help">
             Display keyboard shortcuts
           </button>

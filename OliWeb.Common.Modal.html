@@ -4,13 +4,13 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.21.3">
+    <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
     <title>OliWeb.Common.Modal — OLI Torus v0.1.0</title>
-    <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-bf69ec526e.js"></script>
+    <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
+    <script src="dist/sidebar_items-b0b2abcbe2.js"></script>
       <script src="docs_config.js"></script>
-    <script async src="dist/app-a225d03098e64fef431a.js"></script>
+    <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
   </head>
   <body data-type="modules">
     <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
@@ -22,14 +22,14 @@
 
 <section class="sidebar">
   <form class="sidebar-search" action="search.html">
-    <button type="submit" class="search-button">
-      <span class="icon-search" aria-hidden="true"></span>
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
     </button>
-    <button type="button" tabindex="-1" class="search-close-button">
-      <span class="icon-cross" title="Cancel search"></span>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
     </button>
     <label class="search-label">
-      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Search" autocomplete="off" />
+      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
     </label>
   </form>
 
@@ -42,9 +42,9 @@
     <div class="sidebar-projectDetails">
       <a href="http://oli.cmu.edu" class="sidebar-projectName">
 OLI Torus      </a>
-      <h2 class="sidebar-projectVersion">
+      <strong class="sidebar-projectVersion">
         v0.1.0
-      </h2>
+      </strong>
     </div>
       <a href="http://oli.cmu.edu">
         <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
@@ -67,8 +67,8 @@ OLI Torus      </a>
     <div id="content" class="content-inner">
 
       <h1>
-        <small class="app-vsn">OLI Torus v0.1.0</small>
-OliWeb.Common.Modal          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/modal.ex#L1" title="View Source" class="view-source" rel="help">
+        OliWeb.Common.Modal <small class="app-vsn">(OLI Torus v0.1.0)</small>
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/modal.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -76,20 +76,11 @@ OliWeb.Common.Modal          <a href="https://github.com/Simon-Initiative/oli-to
 
 
         <section id="moduledoc">
-<p>A reusable LivewComponent for a Bootstrap modal.</p>
-<p>Minimal example usage specifying only the required properties:</p>
-<pre><code class="nohighlight makeup elixir"><span class="o">&lt;</span><span class="p">%</span><span class="o">=</span><span class="w"> </span><span class="n">live_component</span><span class="w"> </span><span class="na">@socket</span><span class="p">,</span><span class="w"> </span><span class="nc">Modal</span><span class="p">,</span><span class="w"> </span><span class="ss">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Confirm your request&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">modal_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;my_unique_modal_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">ok_action</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;confirm&quot;</span><span class="w"> </span><span class="k" data-group-id="7046932625-1">do</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span><span class="w">
-  </span><span class="o">&lt;</span><span class="n">p</span><span class="w"> </span><span class="n">class</span><span class="o">=</span><span class="s">&quot;mb-4&quot;</span><span class="o">&gt;</span><span class="nc">Are</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">sure</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">want</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="k" data-group-id="7046932625-2">do</span><span class="w"> </span><span class="n">this?</span><span class="o">&lt;</span><span class="o">/</span><span class="n">p</span><span class="o">&gt;</span><span class="w">
-</span><span class="o">&lt;</span><span class="p">%</span><span class="w"> </span><span class="k" data-group-id="7046932625-2">end</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span></code></pre>
-<p>Required properties:</p>
-<p><code class="inline">title</code>: The string title that the modal will display
-<code class="inline">modal_id</code>: The DOM id that will be attached to this modal. This is the id that another part of the UI needs</p>
-<pre><code class="nohighlight makeup elixir"><span class="w">        </span><span class="n">to</span><span class="w"> </span><span class="n">target</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">trigger</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">modal</span></code></pre>
-<p>&#39;ok_action&#39;: The phx-click action to invoke upon clicking the &#39;Ok&#39; button</p>
-<p>Optional properties:</p>
-<p><code class="inline">ok_label</code>: The label to use for the &#39;Ok&#39; button, defaults to &#39;Ok&#39;
-<code class="inline">ok_style</code>: The Bootstrap button style to use for the &#39;Ok&#39; button, defaults to <code class="inline">btn-primary</code></p>
-        </section>
+<p>A reusable LivewComponent for a Bootstrap modal.</p><p>Minimal example usage specifying only the required properties:</p><pre><code class="nohighlight makeup elixir"><span class="o">&lt;</span><span class="p">%</span><span class="o">=</span><span class="w"> </span><span class="n">live_component</span><span class="w"> </span><span class="na">@socket</span><span class="p">,</span><span class="w"> </span><span class="nc">Modal</span><span class="p">,</span><span class="w"> </span><span class="ss">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Confirm your request&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">modal_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;my_unique_modal_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">ok_action</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;confirm&quot;</span><span class="w"> </span><span class="k" data-group-id="9521087349-1">do</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span><span class="w">
+  </span><span class="o">&lt;</span><span class="n">p</span><span class="w"> </span><span class="n">class</span><span class="o">=</span><span class="s">&quot;mb-4&quot;</span><span class="o">&gt;</span><span class="nc">Are</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">sure</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">want</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="k" data-group-id="9521087349-2">do</span><span class="w"> </span><span class="n">this?</span><span class="o">&lt;</span><span class="o">/</span><span class="n">p</span><span class="o">&gt;</span><span class="w">
+</span><span class="o">&lt;</span><span class="p">%</span><span class="w"> </span><span class="k" data-group-id="9521087349-2">end</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span></code></pre><p>Required properties:</p><p><code class="inline">title</code>: The string title that the modal will display
+<code class="inline">modal_id</code>: The DOM id that will be attached to this modal. This is the id that another part of the UI needs</p><pre><code class="nohighlight makeup elixir"><span class="w">        </span><span class="n">to</span><span class="w"> </span><span class="n">target</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">trigger</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">modal</span></code></pre><p>'ok_action': The phx-click action to invoke upon clicking the 'Ok' button</p><p>Optional properties:</p><p><code class="inline">ok_label</code>: The label to use for the 'Ok' button, defaults to 'Ok'
+<code class="inline">ok_style</code>: The Bootstrap button style to use for the 'Ok' button, defaults to <code class="inline">btn-primary</code></p>        </section>
 
         <section id="summary" class="details-list">
           <h1 class="section-heading">
@@ -138,9 +129,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.14.0/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.14.0/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p>  </section>
 </section>
 <section class="detail" id="render/1">
   <div class="detail-header">
@@ -154,9 +146,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.14.0/Phoenix.LiveComponent.html#c:render/1"><code class="inline">Phoenix.LiveComponent.render/1</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.14.0/Phoenix.LiveComponent.html#c:render/1"><code class="inline">Phoenix.LiveComponent.render/1</code></a>.</p>  </section>
 </section>
           </div>
         </section>
@@ -164,14 +157,16 @@ Functions          </h1>
         <p>
           <span class="line">
             Built using
-            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.21.3),
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.23.0) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
           </span>
           <span class="line">
-            designed by
+            Designed by
             <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
           </span>
         </p>
         <p>
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
           <button class="line footer-button display-shortcuts-help">
             Display keyboard shortcuts
           </button>

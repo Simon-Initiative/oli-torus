@@ -4,13 +4,13 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.21.3">
+    <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Authoring.MediaLibrary — OLI Torus v0.1.0</title>
-    <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-bf69ec526e.js"></script>
+    <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
+    <script src="dist/sidebar_items-b0b2abcbe2.js"></script>
       <script src="docs_config.js"></script>
-    <script async src="dist/app-a225d03098e64fef431a.js"></script>
+    <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
   </head>
   <body data-type="modules">
     <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
@@ -22,14 +22,14 @@
 
 <section class="sidebar">
   <form class="sidebar-search" action="search.html">
-    <button type="submit" class="search-button">
-      <span class="icon-search" aria-hidden="true"></span>
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
     </button>
-    <button type="button" tabindex="-1" class="search-close-button">
-      <span class="icon-cross" title="Cancel search"></span>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
     </button>
     <label class="search-label">
-      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Search" autocomplete="off" />
+      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
     </label>
   </form>
 
@@ -42,9 +42,9 @@
     <div class="sidebar-projectDetails">
       <a href="http://oli.cmu.edu" class="sidebar-projectName">
 OLI Torus      </a>
-      <h2 class="sidebar-projectVersion">
+      <strong class="sidebar-projectVersion">
         v0.1.0
-      </h2>
+      </strong>
     </div>
       <a href="http://oli.cmu.edu">
         <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
@@ -67,8 +67,8 @@ OLI Torus      </a>
     <div id="content" class="content-inner">
 
       <h1>
-        <small class="app-vsn">OLI Torus v0.1.0</small>
-Oli.Authoring.MediaLibrary          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/media_library.ex#L1" title="View Source" class="view-source" rel="help">
+        Oli.Authoring.MediaLibrary <small class="app-vsn">(OLI Torus v0.1.0)</small>
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/media_library.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -104,7 +104,7 @@ Oli.Authoring.MediaLibrary          <a href="https://github.com/Simon-Initiative
   <div class="summary-signature">
     <a href="#items/2">items(project_slug, options)</a>
   </div>
-    <div class="summary-synopsis"><p>Access the items in a project&#39;s media library with support for paging
+    <div class="summary-synopsis"><p>Access the items in a project's media library with support for paging
 and filtering.</p></div>
 </div>
 <div class="summary-row">
@@ -112,7 +112,7 @@ and filtering.</p></div>
     <a href="#size/1">size(project_slug)</a>
   </div>
     <div class="summary-synopsis"><p>Returns the number of the non-deleted media items in a particular
-project&#39;s media library.</p></div>
+project's media library.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
@@ -142,6 +142,10 @@ Functions          </h1>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>add(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()) ::
   {:ok,
@@ -161,27 +165,18 @@ Functions          </h1>
    }}
   | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}</pre>
       </div>
-  </div>
-  <section class="docstring">
-<p>Adds an item to the media library for a specific project slug.</p>
-<p>The other supplied parameters are the file name, including extension
-and the contents of the file as a bitstring.</p>
-<p>An example of the format of the <code class="inline">file_name</code> param: <code class="inline">untitled.jpg</code></p>
-<p>Returns <code class="inline">{:ok, %MediaItem{}}</code> on success where <code class="inline">%MediaItem{}</code> is the
-meta data entry that was created.</p>
-<p>If the file was identified to be a duplicate via comparison of its MD5 hash
+
+<p>Adds an item to the media library for a specific project slug.</p><p>The other supplied parameters are the file name, including extension
+and the contents of the file as a bitstring.</p><p>An example of the format of the <code class="inline">file_name</code> param: <code class="inline">untitled.jpg</code></p><p>Returns <code class="inline">{:ok, %MediaItem{}}</code> on success where <code class="inline">%MediaItem{}</code> is the
+meta data entry that was created.</p><p>If the file was identified to be a duplicate via comparison of its MD5 hash
 to other items in the library in this project, <code class="inline">{:ok, %MediaItem{}}</code>
 will be returned with the existing <code class="inline">%MediaItem{}</code> entry, and not a newly
-created one.</p>
-<p>If another file already exists with the same name in the project
-<code class="inline">{:error, {:file_exists}}</code> is returned</p>
-<p>If a problem occurs in persisting the file
+created one.</p><p>If another file already exists with the same name in the project
+<code class="inline">{:error, {:file_exists}}</code> is returned</p><p>If a problem occurs in persisting the file
 <code class="inline">{:error, {:persistence}}</code> or <code class="inline">{:error, %Changeset{}}</code> is returned
 depending on whether it was a problem in persisting the file contents
-to storage or it was a problem saving file meta data</p>
-<p>If the project does not exist,
-<code class="inline">{:error, {:not_found}}</code> is returned</p>
-  </section>
+to storage or it was a problem saving file meta data</p><p>If the project does not exist,
+<code class="inline">{:error, {:not_found}}</code> is returned</p>  </section>
 </section>
 <section class="detail" id="create_media_item/1">
     <span id="create_media_item/0"></span>
@@ -196,18 +191,17 @@ to storage or it was a problem saving file meta data</p>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Creates a media item.</p>
-<h2 id="create_media_item/1-examples" class="section-heading">
+
+<p>Creates a media item.</p><h2 id="create_media_item/1-examples" class="section-heading">
   <a href="#create_media_item/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_media_item</span><span class="p" data-group-id="1777477546-1">(</span><span class="p" data-group-id="1777477546-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="1777477546-2">}</span><span class="p" data-group-id="1777477546-1">)</span><span class="w">
-</span><span class="p" data-group-id="1777477546-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1777477546-4">%</span><span class="nc" data-group-id="1777477546-4">MediaItem</span><span class="p" data-group-id="1777477546-4">{</span><span class="p" data-group-id="1777477546-4">}</span><span class="p" data-group-id="1777477546-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_media_item</span><span class="p" data-group-id="1777477546-5">(</span><span class="p" data-group-id="1777477546-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1777477546-6">}</span><span class="p" data-group-id="1777477546-5">)</span><span class="w">
-</span><span class="p" data-group-id="1777477546-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1777477546-8">%</span><span class="nc" data-group-id="1777477546-8">Ecto.Changeset</span><span class="p" data-group-id="1777477546-8">{</span><span class="p" data-group-id="1777477546-8">}</span><span class="p" data-group-id="1777477546-7">}</span></code></pre>
-  </section>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_media_item</span><span class="p" data-group-id="1743025164-1">(</span><span class="p" data-group-id="1743025164-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="1743025164-2">}</span><span class="p" data-group-id="1743025164-1">)</span><span class="w">
+</span><span class="p" data-group-id="1743025164-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1743025164-4">%</span><span class="nc" data-group-id="1743025164-4">MediaItem</span><span class="p" data-group-id="1743025164-4">{</span><span class="p" data-group-id="1743025164-4">}</span><span class="p" data-group-id="1743025164-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_media_item</span><span class="p" data-group-id="1743025164-5">(</span><span class="p" data-group-id="1743025164-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1743025164-6">}</span><span class="p" data-group-id="1743025164-5">)</span><span class="w">
+</span><span class="p" data-group-id="1743025164-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1743025164-8">%</span><span class="nc" data-group-id="1743025164-8">Ecto.Changeset</span><span class="p" data-group-id="1743025164-8">{</span><span class="p" data-group-id="1743025164-8">}</span><span class="p" data-group-id="1743025164-7">}</span></code></pre>  </section>
 </section>
 <section class="detail" id="items/2">
   <div class="detail-header">
@@ -220,6 +214,10 @@ to storage or it was a problem saving file meta data</p>
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>items(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), %Oli.Authoring.MediaLibrary.ItemOptions{
   limit: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -249,17 +247,13 @@ to storage or it was a problem saving file meta data</p>
     ], <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()}}
   | {:error, {:not_found}}</pre>
       </div>
-  </div>
-  <section class="docstring">
-<p>Access the items in a project&#39;s media library with support for paging
-and filtering.</p>
-<p>Returns <code class="inline">{:ok, {[%MediaItem{}], count}}</code> with the list of media items matching
-the paged and filtered request.</p>
-<p>The <code class="inline">count</code> is designed specifically to support client-side paging logic and is the
+
+<p>Access the items in a project's media library with support for paging
+and filtering.</p><p>Returns <code class="inline">{:ok, {[%MediaItem{}], count}}</code> with the list of media items matching
+the paged and filtered request.</p><p>The <code class="inline">count</code> is designed specifically to support client-side paging logic and is the
 count of the total number of items that would match the query absent any paging. As
 an example, if a client made a paged request for the first fifty items in a media
-library containing two-hundred items this count will read <code class="inline">200</code>.</p>
-  </section>
+library containing two-hundred items this count will read <code class="inline">200</code>.</p>  </section>
 </section>
 <section class="detail" id="size/1">
   <div class="detail-header">
@@ -272,18 +266,18 @@ library containing two-hundred items this count will read <code class="inline">2
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+  </div>
+
+  <section class="docstring">
+      <h2>Specs</h2>
       <div class="specs">
           <pre>size(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()} | {:error, {:not_found}}</pre>
       </div>
-  </div>
-  <section class="docstring">
+
 <p>Returns the number of the non-deleted media items in a particular
-project&#39;s media library.</p>
-<p>If the project matching the supplied slug exists, the following is returned:
-<code class="inline">{:ok, count</code>} where <code class="inline">count</code> is the number of non-deleted items in the library</p>
-<p>If the project does not exist,
-<code class="inline">{:error, {:not_found}}</code> is returned</p>
-  </section>
+project's media library.</p><p>If the project matching the supplied slug exists, the following is returned:
+<code class="inline">{:ok, count</code>} where <code class="inline">count</code> is the number of non-deleted items in the library</p><p>If the project does not exist,
+<code class="inline">{:error, {:not_found}}</code> is returned</p>  </section>
 </section>
 <section class="detail" id="update_media_item/2">
   <div class="detail-header">
@@ -297,18 +291,17 @@ project&#39;s media library.</p>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Updates a media item.</p>
-<h2 id="update_media_item/2-examples" class="section-heading">
+
+<p>Updates a media item.</p><h2 id="update_media_item/2-examples" class="section-heading">
   <a href="#update_media_item/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_media_item</span><span class="p" data-group-id="9965281536-1">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9965281536-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="9965281536-2">}</span><span class="p" data-group-id="9965281536-1">)</span><span class="w">
-</span><span class="p" data-group-id="9965281536-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9965281536-4">%</span><span class="nc" data-group-id="9965281536-4">MediaItem</span><span class="p" data-group-id="9965281536-4">{</span><span class="p" data-group-id="9965281536-4">}</span><span class="p" data-group-id="9965281536-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_media_item</span><span class="p" data-group-id="9965281536-5">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9965281536-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9965281536-6">}</span><span class="p" data-group-id="9965281536-5">)</span><span class="w">
-</span><span class="p" data-group-id="9965281536-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9965281536-8">%</span><span class="nc" data-group-id="9965281536-8">Ecto.Changeset</span><span class="p" data-group-id="9965281536-8">{</span><span class="p" data-group-id="9965281536-8">}</span><span class="p" data-group-id="9965281536-7">}</span></code></pre>
-  </section>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_media_item</span><span class="p" data-group-id="5407907464-1">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5407907464-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="5407907464-2">}</span><span class="p" data-group-id="5407907464-1">)</span><span class="w">
+</span><span class="p" data-group-id="5407907464-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5407907464-4">%</span><span class="nc" data-group-id="5407907464-4">MediaItem</span><span class="p" data-group-id="5407907464-4">{</span><span class="p" data-group-id="5407907464-4">}</span><span class="p" data-group-id="5407907464-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_media_item</span><span class="p" data-group-id="5407907464-5">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5407907464-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="5407907464-6">}</span><span class="p" data-group-id="5407907464-5">)</span><span class="w">
+</span><span class="p" data-group-id="5407907464-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5407907464-8">%</span><span class="nc" data-group-id="5407907464-8">Ecto.Changeset</span><span class="p" data-group-id="5407907464-8">{</span><span class="p" data-group-id="5407907464-8">}</span><span class="p" data-group-id="5407907464-7">}</span></code></pre>  </section>
 </section>
           </div>
         </section>
@@ -316,14 +309,16 @@ project&#39;s media library.</p>
         <p>
           <span class="line">
             Built using
-            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.21.3),
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.23.0) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
           </span>
           <span class="line">
-            designed by
+            Designed by
             <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
           </span>
         </p>
         <p>
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
           <button class="line footer-button display-shortcuts-help">
             Display keyboard shortcuts
           </button>

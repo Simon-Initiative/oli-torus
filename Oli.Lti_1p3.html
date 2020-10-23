@@ -4,13 +4,13 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.21.3">
+    <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Lti_1p3 — OLI Torus v0.1.0</title>
-    <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-bf69ec526e.js"></script>
+    <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
+    <script src="dist/sidebar_items-b0b2abcbe2.js"></script>
       <script src="docs_config.js"></script>
-    <script async src="dist/app-a225d03098e64fef431a.js"></script>
+    <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
   </head>
   <body data-type="modules">
     <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
@@ -22,14 +22,14 @@
 
 <section class="sidebar">
   <form class="sidebar-search" action="search.html">
-    <button type="submit" class="search-button">
-      <span class="icon-search" aria-hidden="true"></span>
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
     </button>
-    <button type="button" tabindex="-1" class="search-close-button">
-      <span class="icon-cross" title="Cancel search"></span>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
     </button>
     <label class="search-label">
-      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Search" autocomplete="off" />
+      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
     </label>
   </form>
 
@@ -42,9 +42,9 @@
     <div class="sidebar-projectDetails">
       <a href="http://oli.cmu.edu" class="sidebar-projectName">
 OLI Torus      </a>
-      <h2 class="sidebar-projectVersion">
+      <strong class="sidebar-projectVersion">
         v0.1.0
-      </h2>
+      </strong>
     </div>
       <a href="http://oli.cmu.edu">
         <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
@@ -67,8 +67,8 @@ OLI Torus      </a>
     <div id="content" class="content-inner">
 
       <h1>
-        <small class="app-vsn">OLI Torus v0.1.0</small>
-Oli.Lti_1p3          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L1" title="View Source" class="view-source" rel="help">
+        Oli.Lti_1p3 <small class="app-vsn">(OLI Torus v0.1.0)</small>
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -114,7 +114,7 @@ including &quot;exp&quot; for expiration date</p></div>
   <div class="summary-signature">
     <a href="#fetch_lti_params/1">fetch_lti_params(key)</a>
   </div>
-    <div class="summary-synopsis"><p>Gets a user&#39;s cached lti_params from the database using the given key.
+    <div class="summary-synopsis"><p>Gets a user's cached lti_params from the database using the given key.
 Returns <code class="inline">nil</code> if the lti_params do not exist.</p></div>
 </div>
 <div class="summary-row">
@@ -181,17 +181,16 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
+
 <p>Caches LTI 1.3 params map using the given key. Assumes lti_params contains standard LTI fields
-including &quot;exp&quot; for expiration date</p>
-<h2 id="cache_lti_params!/2-examples" class="section-heading">
+including &quot;exp&quot; for expiration date</p><h2 id="cache_lti_params!/2-examples" class="section-heading">
   <a href="#cache_lti_params!/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">cache_lti_params!</span><span class="p" data-group-id="6978880939-1">(</span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">lti_params</span><span class="p" data-group-id="6978880939-1">)</span><span class="w">
-</span><span class="p" data-group-id="6978880939-2">%</span><span class="nc" data-group-id="6978880939-2">LtiParams</span><span class="p" data-group-id="6978880939-2">{</span><span class="p" data-group-id="6978880939-2">}</span></code></pre>
-  </section>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">cache_lti_params!</span><span class="p" data-group-id="0178118622-1">(</span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">lti_params</span><span class="p" data-group-id="0178118622-1">)</span><span class="w">
+</span><span class="p" data-group-id="0178118622-2">%</span><span class="nc" data-group-id="0178118622-2">LtiParams</span><span class="p" data-group-id="0178118622-2">{</span><span class="p" data-group-id="0178118622-2">}</span></code></pre>  </section>
 </section>
 <section class="detail" id="create_new_deployment/1">
   <div class="detail-header">
@@ -205,7 +204,9 @@ including &quot;exp&quot; for expiration date</p>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="create_new_jwk/1">
@@ -220,7 +221,9 @@ including &quot;exp&quot; for expiration date</p>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="create_new_registration/1">
@@ -235,7 +238,9 @@ including &quot;exp&quot; for expiration date</p>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="fetch_lti_params/1">
@@ -250,19 +255,18 @@ including &quot;exp&quot; for expiration date</p>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Gets a user&#39;s cached lti_params from the database using the given key.
-Returns <code class="inline">nil</code> if the lti_params do not exist.</p>
-<h2 id="fetch_lti_params/1-examples" class="section-heading">
+
+<p>Gets a user's cached lti_params from the database using the given key.
+Returns <code class="inline">nil</code> if the lti_params do not exist.</p><h2 id="fetch_lti_params/1-examples" class="section-heading">
   <a href="#fetch_lti_params/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">fetch_lti_params</span><span class="p" data-group-id="2094391828-1">(</span><span class="s">&quot;some-key&quot;</span><span class="p" data-group-id="2094391828-1">)</span><span class="w">
-</span><span class="p" data-group-id="2094391828-2">%</span><span class="nc" data-group-id="2094391828-2">LtiParams</span><span class="p" data-group-id="2094391828-2">{</span><span class="p" data-group-id="2094391828-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">fetch_lti_params</span><span class="p" data-group-id="2094391828-3">(</span><span class="s">&quot;bad-key&quot;</span><span class="p" data-group-id="2094391828-3">)</span><span class="w">
-</span><span class="no">nil</span></code></pre>
-  </section>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">fetch_lti_params</span><span class="p" data-group-id="1305617241-1">(</span><span class="s">&quot;some-key&quot;</span><span class="p" data-group-id="1305617241-1">)</span><span class="w">
+</span><span class="p" data-group-id="1305617241-2">%</span><span class="nc" data-group-id="1305617241-2">LtiParams</span><span class="p" data-group-id="1305617241-2">{</span><span class="p" data-group-id="1305617241-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">fetch_lti_params</span><span class="p" data-group-id="1305617241-3">(</span><span class="s">&quot;bad-key&quot;</span><span class="p" data-group-id="1305617241-3">)</span><span class="w">
+</span><span class="no">nil</span></code></pre>  </section>
 </section>
 <section class="detail" id="get_active_jwk/0">
   <div class="detail-header">
@@ -276,7 +280,9 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="get_all_jwks/0">
@@ -291,7 +297,9 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="get_deployment/2">
@@ -306,7 +314,9 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="get_ird_by_deployment_id/1">
@@ -321,7 +331,9 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="get_registration_by_client_id/1">
@@ -336,7 +348,9 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="get_registration_by_issuer/1">
@@ -351,7 +365,9 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="get_registration_by_kid/1">
@@ -366,7 +382,9 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="insert_or_update_lti_1p3_deployment/1">
@@ -381,17 +399,16 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Returns lti_1p3 deployment if a record matches deployment_id, or creates and returns a new deployment</p>
-<h2 id="insert_or_update_lti_1p3_deployment/1-examples" class="section-heading">
+
+<p>Returns lti_1p3 deployment if a record matches deployment_id, or creates and returns a new deployment</p><h2 id="insert_or_update_lti_1p3_deployment/1-examples" class="section-heading">
   <a href="#insert_or_update_lti_1p3_deployment/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">insert_or_update_lti_1p3_deployment</span><span class="p" data-group-id="4445027656-1">(</span><span class="p" data-group-id="4445027656-2">%{</span><span class="ss">deployment_id</span><span class="p">:</span><span class="w"> </span><span class="n">deployment_id</span><span class="p" data-group-id="4445027656-2">}</span><span class="p" data-group-id="4445027656-1">)</span><span class="w">
-</span><span class="p" data-group-id="4445027656-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4445027656-4">%</span><span class="nc" data-group-id="4445027656-4">Oli.Lti_1p3.Deployment</span><span class="p" data-group-id="4445027656-4">{</span><span class="p" data-group-id="4445027656-4">}</span><span class="p" data-group-id="4445027656-3">}</span><span class="w">    </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Inserted or updated with success</span><span class="w">
-</span><span class="p" data-group-id="4445027656-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">changeset</span><span class="p" data-group-id="4445027656-5">}</span><span class="w">                 </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Something went wrong</span></code></pre>
-  </section>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">insert_or_update_lti_1p3_deployment</span><span class="p" data-group-id="0539484134-1">(</span><span class="p" data-group-id="0539484134-2">%{</span><span class="ss">deployment_id</span><span class="p">:</span><span class="w"> </span><span class="n">deployment_id</span><span class="p" data-group-id="0539484134-2">}</span><span class="p" data-group-id="0539484134-1">)</span><span class="w">
+</span><span class="p" data-group-id="0539484134-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0539484134-4">%</span><span class="nc" data-group-id="0539484134-4">Oli.Lti_1p3.Deployment</span><span class="p" data-group-id="0539484134-4">{</span><span class="p" data-group-id="0539484134-4">}</span><span class="p" data-group-id="0539484134-3">}</span><span class="w">    </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Inserted or updated with success</span><span class="w">
+</span><span class="p" data-group-id="0539484134-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">changeset</span><span class="p" data-group-id="0539484134-5">}</span><span class="w">                 </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Something went wrong</span></code></pre>  </section>
 </section>
           </div>
         </section>
@@ -399,14 +416,16 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p>
         <p>
           <span class="line">
             Built using
-            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.21.3),
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.23.0) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
           </span>
           <span class="line">
-            designed by
+            Designed by
             <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
           </span>
         </p>
         <p>
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
           <button class="line footer-button display-shortcuts-help">
             Display keyboard shortcuts
           </button>

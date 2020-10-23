@@ -4,13 +4,13 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.21.3">
+    <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
     <title>Oli.Rendering.Content.Plaintext — OLI Torus v0.1.0</title>
-    <link rel="stylesheet" href="dist/elixir-0ab8a6a80ebaaa287431.css" />
-    <script src="dist/sidebar_items-bf69ec526e.js"></script>
+    <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
+    <script src="dist/sidebar_items-b0b2abcbe2.js"></script>
       <script src="docs_config.js"></script>
-    <script async src="dist/app-a225d03098e64fef431a.js"></script>
+    <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
   </head>
   <body data-type="modules">
     <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
@@ -22,14 +22,14 @@
 
 <section class="sidebar">
   <form class="sidebar-search" action="search.html">
-    <button type="submit" class="search-button">
-      <span class="icon-search" aria-hidden="true"></span>
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
     </button>
-    <button type="button" tabindex="-1" class="search-close-button">
-      <span class="icon-cross" title="Cancel search"></span>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
     </button>
     <label class="search-label">
-      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Search" autocomplete="off" />
+      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
     </label>
   </form>
 
@@ -42,9 +42,9 @@
     <div class="sidebar-projectDetails">
       <a href="http://oli.cmu.edu" class="sidebar-projectName">
 OLI Torus      </a>
-      <h2 class="sidebar-projectVersion">
+      <strong class="sidebar-projectVersion">
         v0.1.0
-      </h2>
+      </strong>
     </div>
       <a href="http://oli.cmu.edu">
         <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
@@ -67,8 +67,8 @@ OLI Torus      </a>
     <div id="content" class="content-inner">
 
       <h1>
-        <small class="app-vsn">OLI Torus v0.1.0</small>
-Oli.Rendering.Content.Plaintext          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content/plaintext.ex#L1" title="View Source" class="view-source" rel="help">
+        Oli.Rendering.Content.Plaintext <small class="app-vsn">(OLI Torus v0.1.0)</small>
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content/plaintext.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -77,8 +77,7 @@ Oli.Rendering.Content.Plaintext          <a href="https://github.com/Simon-Initi
 
         <section id="moduledoc">
 <p>Implements the Plaintext writer for Oli content rendering.
-This was written quickly for simplicity. It leaves a trailing space at the end of the final string.</p>
-        </section>
+This was written quickly for simplicity. It leaves a trailing space at the end of the final string.</p>        </section>
 
         <section id="summary" class="details-list">
           <h1 class="section-heading">
@@ -282,9 +281,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:a/3"><code class="inline">Oli.Rendering.Content.a/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:a/3"><code class="inline">Oli.Rendering.Content.a/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="audio/3">
   <div class="detail-header">
@@ -298,9 +298,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:audio/3"><code class="inline">Oli.Rendering.Content.audio/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:audio/3"><code class="inline">Oli.Rendering.Content.audio/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="blockquote/3">
   <div class="detail-header">
@@ -314,9 +315,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:blockquote/3"><code class="inline">Oli.Rendering.Content.blockquote/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:blockquote/3"><code class="inline">Oli.Rendering.Content.blockquote/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="code/3">
   <div class="detail-header">
@@ -330,9 +332,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:code/3"><code class="inline">Oli.Rendering.Content.code/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:code/3"><code class="inline">Oli.Rendering.Content.code/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="code_line/3">
   <div class="detail-header">
@@ -346,9 +349,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:code_line/3"><code class="inline">Oli.Rendering.Content.code_line/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:code_line/3"><code class="inline">Oli.Rendering.Content.code_line/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="definition/3">
   <div class="detail-header">
@@ -362,7 +366,9 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
+
   </section>
 </section>
 <section class="detail" id="error/3">
@@ -377,9 +383,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:error/3"><code class="inline">Oli.Rendering.Content.error/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:error/3"><code class="inline">Oli.Rendering.Content.error/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="example/3">
   <div class="detail-header">
@@ -393,9 +400,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:example/3"><code class="inline">Oli.Rendering.Content.example/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:example/3"><code class="inline">Oli.Rendering.Content.example/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="h1/3">
   <div class="detail-header">
@@ -409,9 +417,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:h1/3"><code class="inline">Oli.Rendering.Content.h1/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:h1/3"><code class="inline">Oli.Rendering.Content.h1/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="h2/3">
   <div class="detail-header">
@@ -425,9 +434,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:h2/3"><code class="inline">Oli.Rendering.Content.h2/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:h2/3"><code class="inline">Oli.Rendering.Content.h2/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="h3/3">
   <div class="detail-header">
@@ -441,9 +451,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:h3/3"><code class="inline">Oli.Rendering.Content.h3/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:h3/3"><code class="inline">Oli.Rendering.Content.h3/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="h4/3">
   <div class="detail-header">
@@ -457,9 +468,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:h4/3"><code class="inline">Oli.Rendering.Content.h4/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:h4/3"><code class="inline">Oli.Rendering.Content.h4/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="h5/3">
   <div class="detail-header">
@@ -473,9 +485,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:h5/3"><code class="inline">Oli.Rendering.Content.h5/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:h5/3"><code class="inline">Oli.Rendering.Content.h5/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="h6/3">
   <div class="detail-header">
@@ -489,9 +502,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:h6/3"><code class="inline">Oli.Rendering.Content.h6/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:h6/3"><code class="inline">Oli.Rendering.Content.h6/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="img/3">
   <div class="detail-header">
@@ -505,9 +519,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:img/3"><code class="inline">Oli.Rendering.Content.img/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:img/3"><code class="inline">Oli.Rendering.Content.img/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="learn_more/3">
   <div class="detail-header">
@@ -521,9 +536,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:learn_more/3"><code class="inline">Oli.Rendering.Content.learn_more/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:learn_more/3"><code class="inline">Oli.Rendering.Content.learn_more/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="li/3">
   <div class="detail-header">
@@ -537,9 +553,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:li/3"><code class="inline">Oli.Rendering.Content.li/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:li/3"><code class="inline">Oli.Rendering.Content.li/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="math/3">
   <div class="detail-header">
@@ -553,9 +570,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:math/3"><code class="inline">Oli.Rendering.Content.math/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:math/3"><code class="inline">Oli.Rendering.Content.math/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="math_line/3">
   <div class="detail-header">
@@ -569,9 +587,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:math_line/3"><code class="inline">Oli.Rendering.Content.math_line/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:math_line/3"><code class="inline">Oli.Rendering.Content.math_line/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="ol/3">
   <div class="detail-header">
@@ -585,9 +604,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:ol/3"><code class="inline">Oli.Rendering.Content.ol/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:ol/3"><code class="inline">Oli.Rendering.Content.ol/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="p/3">
   <div class="detail-header">
@@ -601,9 +621,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:p/3"><code class="inline">Oli.Rendering.Content.p/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:p/3"><code class="inline">Oli.Rendering.Content.p/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="table/3">
   <div class="detail-header">
@@ -617,9 +638,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:table/3"><code class="inline">Oli.Rendering.Content.table/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:table/3"><code class="inline">Oli.Rendering.Content.table/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="td/3">
   <div class="detail-header">
@@ -633,9 +655,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:td/3"><code class="inline">Oli.Rendering.Content.td/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:td/3"><code class="inline">Oli.Rendering.Content.td/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="text/2">
   <div class="detail-header">
@@ -649,9 +672,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:text/2"><code class="inline">Oli.Rendering.Content.text/2</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:text/2"><code class="inline">Oli.Rendering.Content.text/2</code></a>.</p>  </section>
 </section>
 <section class="detail" id="th/3">
   <div class="detail-header">
@@ -665,9 +689,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:th/3"><code class="inline">Oli.Rendering.Content.th/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:th/3"><code class="inline">Oli.Rendering.Content.th/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="tr/3">
   <div class="detail-header">
@@ -681,9 +706,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:tr/3"><code class="inline">Oli.Rendering.Content.tr/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:tr/3"><code class="inline">Oli.Rendering.Content.tr/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="ul/3">
   <div class="detail-header">
@@ -697,9 +723,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:ul/3"><code class="inline">Oli.Rendering.Content.ul/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:ul/3"><code class="inline">Oli.Rendering.Content.ul/3</code></a>.</p>  </section>
 </section>
 <section class="detail" id="youtube/3">
   <div class="detail-header">
@@ -713,9 +740,10 @@ Functions          </h1>
        <span class="sr-only">View Source</span>
      </a>
   </div>
+
   <section class="docstring">
-<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:youtube/3"><code class="inline">Oli.Rendering.Content.youtube/3</code></a>.</p>
-  </section>
+
+<p>Callback implementation for <a href="Oli.Rendering.Content.html#c:youtube/3"><code class="inline">Oli.Rendering.Content.youtube/3</code></a>.</p>  </section>
 </section>
           </div>
         </section>
@@ -723,14 +751,16 @@ Functions          </h1>
         <p>
           <span class="line">
             Built using
-            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.21.3),
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.23.0) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
           </span>
           <span class="line">
-            designed by
+            Designed by
             <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
           </span>
         </p>
         <p>
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
           <button class="line footer-button display-shortcuts-help">
             Display keyboard shortcuts
           </button>
