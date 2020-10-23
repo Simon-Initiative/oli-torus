@@ -16,7 +16,7 @@ config :oli, Oli.Repo,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
-# Configure Email
+# Configure email for development
 config :oli, Oli.Mailer,
   adapter: Bamboo.LocalAdapter
 

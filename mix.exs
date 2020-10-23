@@ -54,6 +54,7 @@ defmodule Oli.MixProject do
   defp deps do
     [
       {:bamboo, "~> 1.6"},
+      {:bamboo_ses, "~> 0.1.0"},
       {:bcrypt_elixir, "~> 2.2"},
       {:credo, "~> 1.1.0", only: [:dev, :test], runtime: true},
       {:csv, "~> 2.3"},
@@ -61,6 +62,7 @@ defmodule Oli.MixProject do
       {:ecto_sql, "~> 3.1"},
       {:ex_aws, "~> 2.1"},
       {:ex_aws_s3, "~> 2.0"},
+      # {:ex_aws_ses, "~> 2.0"},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false},
       {:floki, ">= 0.26.0"},
       {:gettext, "~> 0.11"},
