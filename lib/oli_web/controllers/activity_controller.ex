@@ -5,7 +5,7 @@ defmodule OliWeb.ActivityController do
   alias Oli.Accounts
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Attempts.StudentInput
-  alias Oli.Utils.Breadcrumb
+  alias OliWeb.Common.Breadcrumb
 
   import OliWeb.ProjectPlugs
 

@@ -1,6 +1,6 @@
 defmodule OliWeb.Qa.State do
 
-  alias Oli.Utils.Breadcrumb
+  alias OliWeb.Common.Breadcrumb
 
   @default_filters MapSet.new(["pedagogy", "content", "accessibility"])
 

@@ -7,7 +7,7 @@ defmodule OliWeb.ResourceController do
   alias Oli.Activities
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Editing.ObjectiveEditor
-  alias Oli.Utils.Breadcrumb
+  alias OliWeb.Common.Breadcrumb
 
   import OliWeb.ProjectPlugs
 

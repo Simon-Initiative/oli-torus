@@ -3,7 +3,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Authoring.Course
   alias OliWeb.Breadcrumb.BreadcrumbLive
-  alias Oli.Utils.Breadcrumb
+  alias OliWeb.Common.Breadcrumb
 
   def mount(
         _params,

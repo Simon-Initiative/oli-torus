@@ -1,5 +1,4 @@
-defmodule Oli.Utils.Breadcrumb do
-  alias Oli.Publishing.AuthoringResolver
+defmodule OliWeb.Common.Breadcrumb do
   alias Oli.Resources.Numbering
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Links
@@ -11,14 +10,46 @@ defmodule Oli.Utils.Breadcrumb do
             slug: nil,
             action_descriptions: []
 
+  @doc """
+  Makes a new %Breadcrumb{}
+
+  ## Parameters
+
+    - attrs = %{
+      full_title: required string,
+      slug: required revision_slug (only for containers),
+      short_title: optional string,
+      link: optional Route,
+      action_descriptions: optional list of dropdown menu actions
+    }
+
+  ## Examples
+
+     iex> Breadcrumb.new(%{full_title: "Title"})
+     %Breadcrumb{ full_title: "Title", short_title: "Title" }
+
+  """
   def new(%{full_title: _full_title, short_title: _short_title} = params) do
     struct(__MODULE__, params)
   end
-
   def new(%{full_title: full_title} = params) do
     new(Map.put(params, :short_title, full_title))
   end
 
+  @doc """
+  Makes a breadcrumb trail (`%Breadcrumb{}[]`) from the curriculum through all the containers leading to the revision passed as an argument. A Breadcrumb is also created for the `revision_slug` at the end of the list.
+
+  ## Parameters
+
+    - project_slug
+    - revision_slug
+
+  ## Examples
+
+     iex> Breadcrumb.trail_to(project_slug, revision_slug)
+     [%Breadcrumb{ curriculum }, %Breadcrumb{ container_1 }, ..., %Breadcrumb{ revision_slug }]
+
+  """
   def trail_to(project_slug, revision_slug) do
     [curriculum(project_slug) | trail_to_helper(project_slug, revision_slug)]
   end
@@ -55,6 +86,19 @@ defmodule Oli.Utils.Breadcrumb do
     end
   end
 
+  @doc """
+  Makes a %Breadcrumb{} to the curriculum route.
+
+  ## Parameters
+
+    - project_slug
+
+  ## Examples
+
+     iex> Breadcrumb.curriculum(project_slug, revision_slug)
+     %Breadcrumb{ full_title: "Curriculum", link: curriculum_path }
+
+  """
   def curriculum(project_slug) do
     new(%{
       full_title: "Curriculum",
@@ -62,8 +106,7 @@ defmodule Oli.Utils.Breadcrumb do
         Routes.container_path(
           OliWeb.Endpoint,
           :index,
-          project_slug,
-          AuthoringResolver.root_container(project_slug).slug
+          project_slug
         )
     })
   end

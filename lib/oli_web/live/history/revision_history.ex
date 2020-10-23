@@ -16,7 +16,7 @@ defmodule OliWeb.RevisionHistory do
   alias Oli.Authoring.Broadcaster
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Broadcaster.Subscriber
-  alias Oli.Utils.Breadcrumb
+  alias OliWeb.Common.Breadcrumb
 
   @page_size 15
 

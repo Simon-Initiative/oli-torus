@@ -137,8 +137,9 @@ defmodule OliWeb.Router do
     live "/:project_id/objectives", Objectives.Objectives
 
     # Curriculum
-    live "/:project_id/curriculum/:container_slug", Curriculum.ContainerLive, :index
     live "/:project_id/curriculum/:container_slug/edit/:revision_slug", Curriculum.ContainerLive, :edit
+    live "/:project_id/curriculum/:container_slug", Curriculum.ContainerLive, :index
+    live "/:project_id/curriculum/", Curriculum.ContainerLive, :index
 
     # Review/QA
     live "/:project_id/review", Qa.QaLive

@@ -21,7 +21,7 @@ defmodule OliWeb.Objectives.Objectives do
   alias Oli.Resources.ResourceType
   alias Oli.Repo
   alias Oli.Authoring.Broadcaster.Subscriber
-  alias Oli.Utils.Breadcrumb
+  alias OliWeb.Common.Breadcrumb
 
   @default_attachment_summary %{attachments: {[], []}, locked_by: %{}, parent_pages: %{}}
 

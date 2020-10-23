@@ -10,10 +10,10 @@ defmodule OliWeb.LiveHelpers do
   ## Examples
 
       <%= live_modal @socket, OliWeb.TestXXLive.FormComponent,
-        id: @test_xx.id || :new,
+        id: @resource.id || :new,
         action: @live_action,
-        test_xx: @test_xx,
-        return_to: Routes.test_xx_index_path(@socket, :index) %>
+        resource: @resource,
+        return_to: Routes.resource_path(@socket, :index) %>
   """
   def live_modal(socket, component, opts) do
     path = Keyword.fetch!(opts, :return_to)

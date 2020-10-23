@@ -11,6 +11,11 @@
   }
 
   .change-view-buttons {
+
+    // Bootstrap override
+    .btn.active, .authoring .btn-group-vertical > .btn:focus, .authoring .btn-group-vertical > .btn:active, .authoring .btn-group-vertical > .btn.active {
+      z-index: inherit;
+    }
     display: flex;
     justify-content: flex-end;
   }

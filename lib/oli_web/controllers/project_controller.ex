@@ -8,7 +8,7 @@ defmodule OliWeb.ProjectController do
   alias Oli.Publishing
   alias Oli.Qa
   alias Oli.Analytics.Datashop
-  alias Oli.Utils.Breadcrumb
+  alias OliWeb.Common.Breadcrumb
 
   def overview(conn, project_params) do
     project = conn.assigns.project

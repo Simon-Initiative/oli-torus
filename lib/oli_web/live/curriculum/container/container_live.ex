@@ -17,47 +17,70 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Resources.Numbering
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Utils.Breadcrumb
+  alias OliWeb.Common.Breadcrumb
 
   def mount(
-        %{"project_id" => project_slug, "container_slug" => container_slug},
+        %{"project_id" => project_slug} = params,
         %{"current_author_id" => author_id},
         socket
       ) do
+    root_container = AuthoringResolver.root_container(project_slug)
+    container_slug = Map.get(params, "container_slug")
+
     project = Course.get_project_by_slug(project_slug)
-    container = AuthoringResolver.from_revision_slug(project.slug, container_slug)
 
-    children =
-      ContainerEditor.list_all_container_children(container, project)
-      |> Repo.preload([:resource, :author])
+    cond do
+      # Explicitly routing to root_container, strip off the container param
+      container_slug == root_container.slug && socket.assigns.live_action == :index ->
+        {:ok, redirect(socket, to: Routes.container_path(socket, :index, project_slug))}
 
-    {:ok, rollup} = Rollup.new(children, project.slug)
+      # Routing to missing container
+      container_slug && is_nil(AuthoringResolver.from_revision_slug(project_slug, container_slug)) ->
+        {:ok, redirect(socket, to: Routes.resource_path(socket, :edit, project_slug, container_slug))}
 
-    subscriptions = subscribe(container, children, rollup, project.slug)
+      # Implicitly routing to root container or explicitly routing to sub-container
+      true ->
+        container =
+          if is_nil(container_slug) do
+            root_container
+          else
+            AuthoringResolver.from_revision_slug(project_slug, container_slug)
+          end
 
-    {:ok,
-     assign(socket,
-       children: children,
-       active: :curriculum,
-       breadcrumbs: Breadcrumb.trail_to(project_slug, container.slug),
-       rollup: rollup,
-       container: container,
-       project: project,
-       subscriptions: subscriptions,
-       author: Repo.get(Author, author_id),
-       view: "Simple",
-       selected: nil,
-       resources_being_edited: get_resources_being_edited(container.children, project.id),
-       numberings: Numbering.number_full_tree(project_slug)
-     )}
+        children =
+          ContainerEditor.list_all_container_children(container, project)
+          |> Repo.preload([:resource, :author])
+
+        {:ok, rollup} = Rollup.new(children, project.slug)
+
+        subscriptions = subscribe(container, children, rollup, project.slug)
+
+        {:ok,
+         assign(socket,
+           children: children,
+           active: :curriculum,
+           breadcrumbs: Breadcrumb.trail_to(project_slug, container.slug),
+           rollup: rollup,
+           container: container,
+           project: project,
+           subscriptions: subscriptions,
+           author: Repo.get(Author, author_id),
+           view: "Simple",
+           selected: nil,
+           resources_being_edited: get_resources_being_edited(container.children, project.id),
+           numberings: Numbering.number_full_tree(project_slug)
+         )}
+    end
   end
 
   def handle_params(%{"view" => view}, _, socket) do
     {:noreply, assign(socket, view: view)}
   end
+
   def handle_params(params, _url, %{assigns: %{live_action: live_action}} = socket) do
     {:noreply, apply_action(socket, live_action, params)}
   end
+
   def handle_params(_, _, socket) do
     {:noreply, socket}
   end
@@ -70,8 +93,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   defp apply_action(socket, :edit, %{"project_id" => project_id, "revision_slug" => revision_slug}) do
     socket
-   |> assign(:page_title, "Change settings")
-   |> assign(:revision, AuthoringResolver.from_revision_slug(project_id, revision_slug))
+    |> assign(:page_title, "Change settings")
+    |> assign(:revision, AuthoringResolver.from_revision_slug(project_id, revision_slug))
   end
 
   # spin up subscriptions for the container and for all of its children, activities and attached objectives
@@ -427,8 +450,10 @@ defmodule OliWeb.Curriculum.ContainerLive do
         {:lock_acquired, resource_id, author_id},
         %{assigns: %{resources_being_edited: resources_being_edited}} = socket
       ) do
-    author = Accounts.get_user!(author_id)
-    |> Repo.preload(:author)
+    author =
+      Accounts.get_user!(author_id)
+      |> Repo.preload(:author)
+
     new_resources_being_edited = Map.put(resources_being_edited, resource_id, author)
     {:noreply, assign(socket, resources_being_edited: new_resources_being_edited)}
   end
@@ -455,6 +480,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   def new_container_name(numberings, parent_container) do
     numbering = Map.get(numberings, parent_container.id)
+
     if numbering do
       Numbering.container_type(numbering.level + 1)
     else
