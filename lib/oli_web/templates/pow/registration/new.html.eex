@@ -4,7 +4,13 @@
     <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
       <div class="card card-signin my-5">
         <div class="card-body">
-          <h5 class="card-title text-center"><%= value_or(assigns[:title], "Create Account") %></h5>
+          <h5 class="card-title text-center"><%= value_or(assigns[:title], "Create an Account") %></h5>
+
+          <%# social media sign in links %>
+          <% link_params = if assigns[:link_account], do: [type: "link_account"], else: []%>
+          <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn, link_params), do: raw link %>
+
+          <hr class="my-4">
           <%= form_for @changeset, @action, [as: :user], fn f -> %>
             <div class="form-label-group">
               <%= email_input f, Pow.Ecto.Schema.user_id_field(@changeset), class: "form-control " <> error_class(f, Pow.Ecto.Schema.user_id_field(@changeset), "is-invalid"),
@@ -50,7 +56,7 @@
             <% end %>
 
             <%= submit "Register", class: "btn btn-md btn-primary btn-block" %>
-            <%= link "Cancel", to: Routes.static_page_path(@conn, :index), class: "btn btn-md btn-outline-secondary btn-block mt-4" %>
+            <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.static_page_path(@conn, :index)), class: "btn btn-md btn-outline-secondary btn-block" %>
             <%= link "Sign in to Existing Account", to: value_or(assigns[:sign_in_path], Routes.pow_session_path(@conn, :new)), class: "btn btn-md btn-link btn-block" %>
           <% end %>
         </div>

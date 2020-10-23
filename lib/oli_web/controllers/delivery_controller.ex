@@ -45,24 +45,18 @@ defmodule OliWeb.DeliveryController do
   end
 
   def link_account(conn, _params) do
-    # actions = %{
-    #   google: Routes.auth_path(conn, :request, "google", type: "link-account"),
-    #   facebook: Routes.auth_path(conn, :request, "facebook", type: "link-account"),
-    #   identity: Routes.auth_path(conn, :identity_callback, type: "link-account"),
-    # }
-
     # sign out current author account
     conn = conn
       |> use_pow_config(:author)
       |> Pow.Plug.delete()
 
     assigns = conn.assigns
-    |> Map.put(:title, "Link Existing Account")
-    # |> Map.put(:actions, actions)
-    |> Map.put(:changeset, Oli.Accounts.Author.changeset(%Oli.Accounts.Author{}))
-    |> Map.put(:action, Routes.pow_session_path(conn, :create))
-    |> Map.put(:link_account, true)
-    |> Map.put(:create_account_path, Routes.delivery_path(conn, :create_and_link_account))
+      |> Map.put(:title, "Link Existing Account")
+      |> Map.put(:changeset, Oli.Accounts.Author.changeset(%Oli.Accounts.Author{}))
+      |> Map.put(:action, Routes.pow_session_path(conn, :create))
+      |> Map.put(:link_account, true)
+      |> Map.put(:create_account_path, Routes.delivery_path(conn, :create_and_link_account))
+      |> Map.put(:cancel_path, Routes.delivery_path(conn, :index))
 
     conn
     |> put_view(OliWeb.Pow.SessionView)
@@ -70,24 +64,18 @@ defmodule OliWeb.DeliveryController do
   end
 
   def create_and_link_account(conn, _params) do
-    # actions = %{
-    #   google: Routes.auth_path(conn, :request, "google", type: "link-account"),
-    #   facebook: Routes.auth_path(conn, :request, "facebook", type: "link-account"),
-    #   identity: Routes.auth_path(conn, :register_email_form, type: "link-account"),
-    # }
-
     # sign out current author account
     conn = conn
       |> use_pow_config(:author)
       |> Pow.Plug.delete()
 
     assigns = conn.assigns
-    |> Map.put(:title, "Create and Link Account")
-    # |> Map.put(:actions, actions)
-    |> Map.put(:changeset, Oli.Accounts.Author.changeset(%Oli.Accounts.Author{}))
-    |> Map.put(:action, Routes.pow_registration_path(conn, :create))
-    |> Map.put(:link_account, true)
-    |> Map.put(:sign_in_path, Routes.delivery_path(conn, :link_account))
+      |> Map.put(:title, "Create and Link Account")
+      |> Map.put(:changeset, Oli.Accounts.Author.changeset(%Oli.Accounts.Author{}))
+      |> Map.put(:action, Routes.pow_registration_path(conn, :create))
+      |> Map.put(:link_account, true)
+      |> Map.put(:sign_in_path, Routes.delivery_path(conn, :link_account))
+      |> Map.put(:cancel_path, Routes.delivery_path(conn, :index))
 
     conn
     |> put_view(OliWeb.Pow.RegistrationView)

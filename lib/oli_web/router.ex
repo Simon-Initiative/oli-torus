@@ -1,13 +1,13 @@
 defmodule OliWeb.Router do
   use OliWeb, :router
   use Pow.Phoenix.Router
+  use PowAssent.Phoenix.Router
 
   import Phoenix.LiveDashboard.Router
 
   ### BASE PIPELINES ###
-  # We have only three "base" pipelines:   :browser, :api, and :lti
-  # All of the other pipelines are to be used as additions onto
-  # one of these three base pipelines
+  # We have four "base" pipelines:   :browser, :api, :lti, and :skip_csrf_protection
+  # All of the other pipelines are to be used as additions onto one of these four base pipelines
 
   # pipeline for all browser based routes
   pipeline :browser do
@@ -38,6 +38,13 @@ defmodule OliWeb.Router do
     plug :fetch_session
     plug :fetch_flash
     plug :put_root_layout, {OliWeb.LayoutView, "lti.html"}
+  end
+
+  pipeline :skip_csrf_protection do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_flash
+    plug :put_secure_browser_headers
   end
 
   ### PIPELINE EXTENSIONS ###
@@ -96,9 +103,16 @@ defmodule OliWeb.Router do
   ### ROUTES ###
 
   scope "/" do
+    pipe_through :skip_csrf_protection
+
+    pow_assent_authorization_post_callback_routes()
+  end
+
+  scope "/" do
     pipe_through :browser
 
     pow_routes()
+    pow_assent_routes()
   end
 
   # open access routes

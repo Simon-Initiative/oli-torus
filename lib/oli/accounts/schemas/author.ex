@@ -1,16 +1,18 @@
 defmodule Oli.Accounts.Author do
   use Ecto.Schema
   use Pow.Ecto.Schema
+  use PowAssent.Ecto.Schema
+
   import Ecto.Changeset
 
   alias Oli.Accounts.SystemRole
 
   schema "authors" do
-    pow_user_fields()
-
     field :first_name, :string
     field :last_name, :string
     field :email_verified, :boolean, default: false
+
+    pow_user_fields()
 
     embeds_one :preferences, Oli.Accounts.AuthorPreferences
     belongs_to :system_role, Oli.Accounts.SystemRole
@@ -36,6 +38,12 @@ defmodule Oli.Accounts.Author do
     |> cast_embed(:preferences)
     |> default_system_role()
     |> lowercase_email()
+  end
+
+  def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
+    user_or_changeset
+    |> Ecto.Changeset.cast(attrs, [:first_name, :last_name])
+    |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
   end
 
   defp default_system_role(changeset) do

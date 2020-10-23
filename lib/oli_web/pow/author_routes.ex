@@ -27,7 +27,6 @@ defmodule OliWeb.Pow.AuthorRoutes do
 
   @impl true
   def after_registration_path(conn) do
-
     case conn do
       %Plug.Conn{params: %{"user" => %{"link_account" => "true"}}} ->
         %{current_user: current_user, current_author: current_author} = conn.assigns

@@ -46,26 +46,36 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-# Configure OAuth
-config :ueberauth, Ueberauth,
-  providers: [
-    google: {Ueberauth.Strategy.Google, [default_scope: "email profile", callback_params: ["type"]]},
-    facebook: {Ueberauth.Strategy.Facebook, [default_scope: "email,public_profile", callback_params: ["type"]]},
-    identity: {Ueberauth.Strategy.Identity, [
-      callback_methods: ["POST"],
-      uid_field: :email,
-      request_path: "/auth/identity",
-      callback_path: "/auth/identity/callback",
-    ]}
+config :oli, :pow,
+  repo: Oli.Repo,
+  user: Oli.Accounts.Author,
+  current_user_assigns_key: :current_author,
+  session_key: "author_auth",
+  web_module: OliWeb,
+  routes_backend: OliWeb.Pow.AuthorRoutes,
+  plug: Pow.Plug.Session,
+  pow_assent: [
+    providers: [
+      google: [
+        client_id: System.get_env("GOOGLE_CLIENT_ID"),
+        client_secret: System.get_env("GOOGLE_CLIENT_SECRET"),
+        strategy: Assent.Strategy.Google,
+        authorization_params: [
+          scope: "email profile"
+        ],
+        session_params: ["type"]
+      ],
+      facebook: [
+        client_id: System.get_env("FACEBOOK_CLIENT_ID"),
+        client_secret: System.get_env("FACEBOOK_CLIENT_SECRET"),
+        strategy: Assent.Strategy.Facebook,
+        authorization_params: [
+          scope: "email profile",
+        ],
+        session_params: ["type"]
+      ]
+    ]
   ]
-
-config :ueberauth, Ueberauth.Strategy.Google.OAuth,
-  client_id: System.get_env("GOOGLE_CLIENT_ID"),
-  client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
-
-config :ueberauth, Ueberauth.Strategy.Facebook.OAuth,
-  client_id: System.get_env("FACEBOOK_CLIENT_ID"),
-  client_secret: System.get_env("FACEBOOK_CLIENT_SECRET")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

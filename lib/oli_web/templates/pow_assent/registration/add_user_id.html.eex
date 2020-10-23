@@ -1,0 +1,28 @@
+<div class="container signin">
+  <div class="row">
+    <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
+      <div class="card card-signin my-5">
+        <div class="card-body">
+          <h5 class="card-title text-center"><%= value_or(assigns[:title], "Register Email") %></h5>
+
+          <%= form_for @changeset, @action, [as: :user], fn f -> %>
+            <%= if @changeset.action do %>
+              <div class="alert alert-danger">
+                <p>Oops, something went wrong! Please check the errors below.</p>
+              </div>
+            <% end %>
+
+            <div class="form-label-group">
+              <%= email_input f, Pow.Ecto.Schema.user_id_field(@changeset), class: "form-control", placeholder: "Email", required: true, autofocus: true %>
+              <%= label f, Pow.Ecto.Schema.user_id_field(@changeset), class: "control-label" %>
+              <%= error_tag f, Pow.Ecto.Schema.user_id_field(@changeset) %>
+            </div>
+
+            <%= submit "Submit", class: "btn btn-md btn-primary btn-block" %>
+
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

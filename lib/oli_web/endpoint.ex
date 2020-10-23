@@ -56,8 +56,8 @@ defmodule OliWeb.Endpoint do
   # Set :encryption_salt if you would also like to encrypt it.
   plug Plug.Session, @session_options
 
-  plug Pow.Plug.Session, OliWeb.Pow.PowHelpers.get_pow_config(:author)
   plug Pow.Plug.Session, OliWeb.Pow.PowHelpers.get_pow_config(:user)
+  plug Pow.Plug.Session, otp_app: :oli
 
   plug OliWeb.Router
 end
