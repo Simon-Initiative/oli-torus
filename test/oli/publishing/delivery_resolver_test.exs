@@ -158,17 +158,17 @@ defmodule Oli.Publishing.DeliveryResolverTest do
 
     end
 
-    test "hierarchy/1 resolves the all hierarchy nodes", %{} do
+    test "all_revisions_in_hierarchy/1 resolves the all hierarchy nodes", %{} do
 
-      nodes = DeliveryResolver.hierarchy("1")
+      nodes = DeliveryResolver.all_revisions_in_hierarchy("1")
       assert length(nodes) == 3
 
     end
 
     test "root_resource/1 resolves the root revision", %{ container: %{ revision: container_revision } } do
 
-      assert DeliveryResolver.root_resource("1") == container_revision
-      assert DeliveryResolver.root_resource("2") == container_revision
+      assert DeliveryResolver.root_container("1") == container_revision
+      assert DeliveryResolver.root_container("2") == container_revision
 
     end
 

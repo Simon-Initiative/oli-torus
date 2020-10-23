@@ -173,3 +173,24 @@ defmodule Oli.TestHelpers.Lti_1p3 do
   end
 
 end
+
+# notice: this protocol mock implementation must reside in this support directory
+# because of protocol consolidation. See https://hexdocs.pm/elixir/master/Protocol.html#module-consolidation
+defmodule Oli.Lti_1p3.Lti_1p3_User.Mock do
+  alias Oli.Lti_1p3.Lti_1p3_User
+  alias Oli.Lti_1p3.PlatformRoles
+  alias Oli.Lti_1p3.ContextRoles
+
+  defstruct [:platform_role_uris, :context_role_uris]
+
+  defimpl Lti_1p3_User do
+    def get_platform_roles(mock_user) do
+      mock_user.platform_role_uris |> PlatformRoles.get_roles_by_uris()
+    end
+
+    def get_context_roles(mock_user, _context_id) do
+      mock_user.context_role_uris |> ContextRoles.get_roles_by_uris()
+    end
+  end
+
+end

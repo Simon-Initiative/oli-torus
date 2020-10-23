@@ -30,6 +30,7 @@ defmodule Oli.Authoring.Locks do
 
   alias Oli.Publishing
   alias Oli.Repo
+  alias Oli.Authoring.Broadcaster
 
   # Locks that are not updated after 10 minutes are considered to be expired
   @ttl 10 * 60
@@ -153,7 +154,9 @@ defmodule Oli.Authoring.Locks do
   defp lock_action(mapping, current_user_id, predicate, success_result, failure_result, lock_updated_at) do
     case predicate.(mapping) do
       true -> case Publishing.update_resource_mapping(mapping, %{ locked_by_id: current_user_id, lock_updated_at: lock_updated_at}) do
-        {:ok, _} -> success_result
+        {:ok, _} ->
+          Broadcaster.broadcast_lock_acquired(mapping.resource_id, current_user_id)
+          success_result
         {:error, _} -> {:error}
       end
       false -> failure_result
@@ -186,7 +189,9 @@ defmodule Oli.Authoring.Locks do
 
   defp release_lock(mapping) do
     case Publishing.update_resource_mapping(mapping, %{ locked_by_id: nil, locked_at: nil}) do
-      {:ok, _} -> {:ok}
+      {:ok, _} ->
+        Broadcaster.broadcast_lock_released(mapping.resource_id)
+        {:ok}
       {:error, _} -> {:error}
     end
   end

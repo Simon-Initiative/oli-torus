@@ -21,9 +21,12 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   @spec edit_page(Oli.Authoring.Course.Project.t(), any, map) :: any
   def edit_page(%Project{} = project, revision_slug, change) do
 
-    # safe guard that we do never allow content or title or objective changes
-    change = Map.delete(change, :content)
-    |> Map.delete(:title)
+    # safe guard that we do never allow content or objective changes
+    atomized_change = for {key, val} <- change,
+      into: %{},
+      do: {if is_binary(key) do String.to_atom(key) else key end, val}
+    change = atomized_change
+    |> Map.delete(:content)
     |> Map.delete(:objectives)
 
     # ensure that changing a page to practice resets the max attempts to 0
@@ -57,12 +60,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   @doc """
   Lists all top level resource revisions contained in a container.
   """
-  def list_all_pages(%Project{} = project) do
-    AuthoringResolver.root_resource(project.slug)
-    |> list_all_pages(project)
-  end
-
-  def list_all_pages(container, %Project{} = project) do
+  def list_all_container_children(container, %Project{} = project) do
     AuthoringResolver.from_resource_id(project.slug, container.children)
   end
 
@@ -70,15 +68,6 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   @doc """
   Creates and adds a new page or container as a child of a container.
   """
-  def add_new(
-    %{objectives: _, children: _, content: _, title: _} = attrs,
-    %Author{} = author,
-    %Project{} = project
-  ) do
-    AuthoringResolver.root_resource(project.slug)
-    |> add_new(attrs, author, project)
-  end
-
   def add_new(
     %Revision{} = container,
     %{objectives: _, children: _, content: _, title: _} = attrs,
@@ -125,12 +114,6 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   @doc """
   Removes a child from a container, and marks that child as deleted.
   """
-  def remove_child(project, author, revision_slug) do
-    AuthoringResolver.root_resource(project.slug)
-    |> remove_child(project, author, revision_slug)
-  end
-
-
   def remove_child(container, project, author, revision_slug) do
 
     with {:ok, %{id: resource_id }} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil()
@@ -186,17 +169,6 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
   end
 
-  @doc """
-  Reorders the children of a container, based off of a source revision
-  to remove and an index where to insert it within the collection of
-  children.
-  """
-  def reorder_child(project, author, source, index) do
-    AuthoringResolver.root_resource(project.slug)
-    |> reorder_child(project, author, source, index)
-  end
-
-
   def reorder_child(container, project, author, source, index) do
 
     # Change here to enable "cross project drag and drop -> if resource is not found (nil),
@@ -238,13 +210,13 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       }
 
       # Apply that change to the container, generating a new revision
-      result = ChangeTracker.track_revision(project.slug, container, reordering)
-
-      updated_container = Oli.Repo.get(Oli.Resources.Revision, container.id)
-
-      Broadcaster.broadcast_revision(updated_container, project.slug)
-
-      result
+      case ChangeTracker.track_revision(project.slug, container, reordering) do
+        {:ok, rev} ->
+          updated_container = Oli.Repo.get(Oli.Resources.Revision, rev.revision_id)
+          Broadcaster.broadcast_revision(updated_container, project.slug)
+          {:ok, rev}
+        result -> result
+      end
 
     else
       _ -> {:error, :not_found}

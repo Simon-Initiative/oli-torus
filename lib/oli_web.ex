@@ -35,19 +35,26 @@ defmodule OliWeb do
         namespace: OliWeb
 
       # Import convenience functions from controllers
-      import Phoenix.Controller, only: [get_flash: 1, get_flash: 2, view_module: 1]
+      import Phoenix.Controller, only: [get_flash: 1, get_flash: 2, view_module: 1, view_template: 1]
 
-      # Use all HTML functionality (forms, tags, etc)
-      use Phoenix.HTML
+      unquote(view_helpers())
+    end
+  end
 
-      import Phoenix.LiveView.Helpers
+  def live_view do
+    quote do
+      use Phoenix.LiveView,
+        layout: {OliWeb.LayoutView, "live.html"}
 
-      import OliWeb.ErrorHelpers
-      import OliWeb.Gettext
-      alias OliWeb.Router.Helpers, as: Routes
+      unquote(view_helpers())
+    end
+  end
 
-      import Oli.Accounts, only: [author_signed_in?: 1, user_signed_in?: 1]
-      import Oli.Utils, only: [format_datetime: 1]
+  def live_component do
+    quote do
+      use Phoenix.LiveComponent
+
+      unquote(view_helpers())
     end
   end
 
@@ -64,6 +71,27 @@ defmodule OliWeb do
     quote do
       use Phoenix.Channel
       import OliWeb.Gettext
+    end
+  end
+
+  defp view_helpers do
+    quote do
+      # Use all HTML functionality (forms, tags, etc)
+      use Phoenix.HTML
+
+      # Import LiveView helpers (live_render, live_component, live_patch, etc)
+      import Phoenix.LiveView.Helpers
+      import OliWeb.LiveHelpers
+
+      # Import basic rendering functionality (render, render_layout, etc)
+      import Phoenix.View
+
+      import OliWeb.ErrorHelpers
+      import OliWeb.Gettext
+      alias OliWeb.Router.Helpers, as: Routes
+
+      import Oli.Accounts, only: [author_signed_in?: 1, user_signed_in?: 1]
+      import Oli.Utils, only: [format_datetime: 1]
     end
   end
 
