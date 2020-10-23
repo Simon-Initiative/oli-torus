@@ -14,6 +14,12 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     test "disconnected and connected mount", %{conn: conn, project: project, map: map} do
       conn = get(conn, "/project/#{project.slug}/curriculum/#{AuthoringResolver.root_container(project.slug).slug}")
 
+      # Routing to the root container redirects to the `curriculum` path
+      redir_path = "/project/#{project.slug}/curriculum"
+      assert redirected_to(conn, 302) =~ redir_path
+      conn = get(recycle(conn), redir_path)
+
+      # The implicit root container path (/curriculum/) should show the root container resources
       {:ok, view, _} = live(conn)
 
       # the container should have two pages
