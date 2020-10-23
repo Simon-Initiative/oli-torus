@@ -20,7 +20,8 @@ defmodule OliWeb.Objectives.Objectives do
   alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
   alias Oli.Repo
-  alias Phoenix.PubSub
+  alias Oli.Authoring.Broadcaster.Subscriber
+  alias OliWeb.Common.Breadcrumb
 
   @default_attachment_summary %{attachments: {[], []}, locked_by: %{}, parent_pages: %{}}
 
@@ -44,7 +45,7 @@ defmodule OliWeb.Objectives.Objectives do
       active: :objectives,
       objective_mappings: objective_mappings,
       objectives_tree: objectives_tree,
-      breadcrumbs: [{"Objectives", nil}],
+      breadcrumbs: [Breadcrumb.new(%{full_title: "Objectives"})],
       changeset: Resources.change_revision(%Revision{}),
       project: project,
       subscriptions: subscriptions,
@@ -149,17 +150,17 @@ defmodule OliWeb.Objectives.Objectives do
   # spin up subscriptions for the container and for all of its objectives
   defp subscribe(objective_mappings, project_slug) do
     ids = Enum.map(objective_mappings, fn p -> p.resource.id end)
-    Enum.each(ids, fn id -> PubSub.subscribe(Oli.PubSub, "resource:" <> Integer.to_string(id) <> ":project:" <> project_slug) end)
+    Enum.each(ids, & Subscriber.subscribe_to_new_revisions_in_project(&1, project_slug))
 
-    PubSub.subscribe(Oli.PubSub, "new_resource:resource_type:" <> Integer.to_string(ResourceType.get_id_by_type("objective")) <> ":project:" <> project_slug)
+    Subscriber.subscribe_to_new_resources_of_type(ResourceType.get_id_by_type("objective"), project_slug)
 
     ids
   end
 
   # release a collection of subscriptions
   defp unsubscribe(ids, project_slug) do
-    Enum.each(ids, fn id -> PubSub.unsubscribe(Oli.PubSub, "resource:" <> Integer.to_string(id) <> ":project:" <> project_slug) end)
-    PubSub.unsubscribe(Oli.PubSub, "new_resource:resource_type:" <> Integer.to_string(ResourceType.get_id_by_type("objective")) <> ":project:" <> project_slug)
+    Subscriber.unsubscribe_to_new_resources_of_type(ResourceType.get_id_by_type("objective"), project_slug)
+    Enum.each(ids, & Subscriber.unsubscribe_to_new_revisions_in_project(&1, project_slug))
   end
 
   def handle_event("keydown", %{"slug" => slug, "key" => key}, socket) do
