@@ -35,7 +35,6 @@ if !Oli.Repo.get_by(Oli.Accounts.Author, email: System.get_env("ADMIN_EMAIL", "a
     last_name: "Admin",
     password: System.get_env("ADMIN_PASSWORD", "changeme"),
     password_confirmation: System.get_env("ADMIN_PASSWORD", "changeme"),
-    email_verified: true,
     system_role_id: Oli.Accounts.SystemRole.role_id.admin
   }, otp_app: :oli)
 end

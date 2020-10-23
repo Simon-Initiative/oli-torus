@@ -11,11 +11,7 @@ defmodule Oli.Email do
     |> premail()
   end
 
-  def password_reset_email do
-    # TODO
-  end
-
-  defp base_email do
+  def base_email do
     from_email = Application.get_env(:oli, :email_from)
     email_reply_to = Application.get_env(:oli, :email_reply_to)
 
@@ -26,7 +22,7 @@ defmodule Oli.Email do
     |> put_layout({OliWeb.LayoutView, :email})
   end
 
-  defp premail(email) do
+  def premail(email) do
     html = Premailex.to_inline_css(email.html_body)
     text = Premailex.to_text(email.html_body)
 

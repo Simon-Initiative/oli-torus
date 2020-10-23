@@ -18,6 +18,14 @@ defmodule Oli.Utils do
     end
   end
 
+  @doc """
+  Renders the specified view template with inner content in the do: block
+  """
+  def render(view, template, assigns, do: content) do
+    Phoenix.View.render(view, template, Map.put(assigns, :inner_content, content))
+  end
+
+
   def snake_case_to_friendly(snake_input) do
     String.split(snake_input, "_")
     |> Enum.map(fn word -> String.capitalize(word) end)

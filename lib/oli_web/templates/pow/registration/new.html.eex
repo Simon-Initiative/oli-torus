@@ -1,66 +1,57 @@
 <script src="https://www.google.com/recaptcha/api.js"></script>
-<div class="container signin">
-  <div class="row">
-    <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
-      <div class="card card-signin my-5">
-        <div class="card-body">
-          <h5 class="card-title text-center"><%= value_or(assigns[:title], "Create an Account") %></h5>
 
-          <%# social media sign in links %>
-          <% link_params = if assigns[:link_account], do: [type: "link_account"], else: []%>
-          <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn, link_params), do: raw link %>
+<%= render OliWeb.SharedView, "_form_container.html", Map.put(assigns, :title, value_or(assigns[:title], "Create an Account")) do %>
+  <%# social media sign in links %>
+  <% link_params = if assigns[:link_account], do: [type: "link_account"], else: []%>
+  <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn, link_params), do: raw link %>
 
-          <hr class="my-4">
-          <%= form_for @changeset, @action, [as: :user], fn f -> %>
-            <div class="form-label-group">
-              <%= email_input f, Pow.Ecto.Schema.user_id_field(@changeset), class: "form-control " <> error_class(f, Pow.Ecto.Schema.user_id_field(@changeset), "is-invalid"),
-                placeholder: "Email", required: true, autofocus: focusHelper(f, Pow.Ecto.Schema.user_id_field(@changeset), default: true) %>
-              <%= label f, Pow.Ecto.Schema.user_id_field(@changeset), class: "control-label" %>
-              <%= error_tag f, Pow.Ecto.Schema.user_id_field(@changeset) %>
-            </div>
-
-            <div class="form-label-group">
-              <%= text_input f, :first_name, class: "form-control " <> error_class(f, :first_name, "is-invalid"),
-                placeholder: "First Name", required: true, autofocus: focusHelper(f, :first_name) %>
-              <%= label f, :first_name, class: "control-label" %>
-              <%= error_tag f, :first_name %>
-            </div>
-
-            <div class="form-label-group">
-              <%= text_input f, :last_name, class: "form-control " <> error_class(f, :last_name, "is-invalid"),
-                placeholder: "Last Name", required: true, autofocus: focusHelper(f, :last_name) %>
-              <%= label f, :last_name, class: "control-label" %>
-              <%= error_tag f, :last_name %>
-            </div>
-
-            <div class="form-label-group">
-              <%= password_input f, :password, class: "form-control " <> error_class(f, [:password, :password_confirmation], "is-invalid"),
-                placeholder: "Password", required: true, autofocus: focusHelper(f, [:password, :password_confirmation]) %>
-              <%= label f, :password, class: "control-label" %>
-              <%= error_tag f, :password %>
-            </div>
-
-            <div class="form-label-group">
-              <%= password_input f, :password_confirmation, class: "form-control " <> error_class(f, :password_confirmation, "is-invalid"),
-                placeholder: "Confirm Password", required: true, autofocus: focusHelper(f, :password_confirmation) %>
-              <%= label f, :password_confirmation, "Confirm Password", class: "control-label" %>
-              <%= error_tag f, :password_confirmation %>
-            </div>
-
-            <div class="form-label-group">
-              <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
-            </div>
-
-            <%= if assigns[:link_account] do %>
-              <%= hidden_input f, :link_account, value: @link_account %>
-            <% end %>
-
-            <%= submit "Register", class: "btn btn-md btn-primary btn-block" %>
-            <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.static_page_path(@conn, :index)), class: "btn btn-md btn-outline-secondary btn-block" %>
-            <%= link "Sign in to Existing Account", to: value_or(assigns[:sign_in_path], Routes.pow_session_path(@conn, :new)), class: "btn btn-md btn-link btn-block" %>
-          <% end %>
-        </div>
-      </div>
+  <hr class="my-4">
+  <%= form_for @changeset, @action, [as: :user], fn f -> %>
+    <div class="form-label-group">
+      <%= email_input f, Pow.Ecto.Schema.user_id_field(@changeset), class: "form-control " <> error_class(f, Pow.Ecto.Schema.user_id_field(@changeset), "is-invalid"),
+        placeholder: "Email", required: true, autofocus: focusHelper(f, Pow.Ecto.Schema.user_id_field(@changeset), default: true) %>
+      <%= label f, Pow.Ecto.Schema.user_id_field(@changeset), class: "control-label" %>
+      <%= error_tag f, Pow.Ecto.Schema.user_id_field(@changeset) %>
     </div>
-  </div>
-</div>
+
+    <div class="form-label-group">
+      <%= text_input f, :first_name, class: "form-control " <> error_class(f, :first_name, "is-invalid"),
+        placeholder: "First Name", required: true, autofocus: focusHelper(f, :first_name) %>
+      <%= label f, :first_name, class: "control-label" %>
+      <%= error_tag f, :first_name %>
+    </div>
+
+    <div class="form-label-group">
+      <%= text_input f, :last_name, class: "form-control " <> error_class(f, :last_name, "is-invalid"),
+        placeholder: "Last Name", required: true, autofocus: focusHelper(f, :last_name) %>
+      <%= label f, :last_name, class: "control-label" %>
+      <%= error_tag f, :last_name %>
+    </div>
+
+    <div class="form-label-group">
+      <%= password_input f, :password, class: "form-control " <> error_class(f, [:password, :password_confirmation], "is-invalid"),
+        placeholder: "Password", required: true, autofocus: focusHelper(f, [:password, :password_confirmation]) %>
+      <%= label f, :password, class: "control-label" %>
+      <%= error_tag f, :password %>
+    </div>
+
+    <div class="form-label-group">
+      <%= password_input f, :password_confirmation, class: "form-control " <> error_class(f, :password_confirmation, "is-invalid"),
+        placeholder: "Confirm Password", required: true, autofocus: focusHelper(f, :password_confirmation) %>
+      <%= label f, :password_confirmation, "Confirm Password", class: "control-label" %>
+      <%= error_tag f, :password_confirmation %>
+    </div>
+
+    <div class="form-label-group">
+      <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
+    </div>
+
+    <%= if assigns[:link_account] do %>
+      <%= hidden_input f, :link_account, value: @link_account %>
+    <% end %>
+
+    <%= submit "Register", class: "btn btn-md btn-primary btn-block" %>
+    <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.static_page_path(@conn, :index)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
+    <%= link "Sign in to Existing Account", to: value_or(assigns[:sign_in_path], Routes.pow_session_path(@conn, :new)), class: "btn btn-md btn-link btn-block" %>
+  <% end %>
+<% end %>

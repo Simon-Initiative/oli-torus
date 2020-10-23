@@ -2,6 +2,8 @@ defmodule Oli.Accounts.Author do
   use Ecto.Schema
   use Pow.Ecto.Schema
   use PowAssent.Ecto.Schema
+  use Pow.Extension.Ecto.Schema,
+    extensions: [PowResetPassword, PowEmailConfirmation]
 
   import Ecto.Changeset
 
@@ -10,7 +12,6 @@ defmodule Oli.Accounts.Author do
   schema "authors" do
     field :first_name, :string
     field :last_name, :string
-    field :email_verified, :boolean, default: false
 
     pow_user_fields()
 
@@ -29,10 +30,10 @@ defmodule Oli.Accounts.Author do
 
     author
     |> pow_changeset(attrs)
+    |> pow_extension_changeset(attrs)
     |> cast(attrs, [
       :first_name,
       :last_name,
-      :email_verified,
       :system_role_id,
     ])
     |> cast_embed(:preferences)

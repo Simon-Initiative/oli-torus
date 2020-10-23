@@ -7,7 +7,14 @@ defmodule Oli.Repo.Migrations.Pow do
       modify :email, :string, null: false
       remove :provider, :string
       remove :token, :string
+      remove :email_verified, :boolean
+
+      add :email_confirmation_token, :string
+      add :email_confirmed_at, :utc_datetime
+      add :unconfirmed_email, :string
     end
+
+    create unique_index(:authors, [:email_confirmation_token])
 
     # create user identities for pow_assent
     create table(:user_identities) do

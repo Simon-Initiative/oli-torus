@@ -54,6 +54,10 @@ config :oli, :pow,
   web_module: OliWeb,
   routes_backend: OliWeb.Pow.AuthorRoutes,
   plug: Pow.Plug.Session,
+  extensions: [PowResetPassword, PowEmailConfirmation],
+  controller_callbacks: Pow.Extension.Phoenix.ControllerCallbacks,
+  mailer_backend: OliWeb.Pow.Mailer,
+  web_mailer_module: OliWeb,
   pow_assent: [
     providers: [
       google: [

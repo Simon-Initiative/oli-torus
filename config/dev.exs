@@ -20,6 +20,9 @@ config :oli, Oli.Repo,
 config :oli, Oli.Mailer,
   adapter: Bamboo.LocalAdapter
 
+config :oli, OliWeb.Pow.Mailer,
+  adapter: Bamboo.LocalAdapter
+
 force_ssl = case System.get_env("FORCE_SSL", "true") do
   "true" -> [rewrite_on: [:x_forwarded_proto]]
   _ -> false

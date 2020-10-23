@@ -2,6 +2,8 @@ defmodule OliWeb.Router do
   use OliWeb, :router
   use Pow.Phoenix.Router
   use PowAssent.Phoenix.Router
+  use Pow.Extension.Phoenix.Router,
+    extensions: [PowResetPassword, PowEmailConfirmation]
 
   import Phoenix.LiveDashboard.Router
 
@@ -113,6 +115,7 @@ defmodule OliWeb.Router do
 
     pow_routes()
     pow_assent_routes()
+    pow_extension_routes()
   end
 
   # open access routes

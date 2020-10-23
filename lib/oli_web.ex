@@ -48,7 +48,17 @@ defmodule OliWeb do
       alias OliWeb.Router.Helpers, as: Routes
 
       import Oli.Accounts, only: [author_signed_in?: 1, user_signed_in?: 1]
-      import Oli.Utils, only: [format_datetime: 1, value_or: 2]
+      import Oli.Utils, only: [format_datetime: 1, value_or: 2, render: 4]
+    end
+  end
+
+  def mailer_view do
+    quote do
+      use Phoenix.View,
+        root: "lib/oli_web/templates",
+        namespace: OliWeb
+
+      use Phoenix.HTML
     end
   end
 
