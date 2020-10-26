@@ -63,13 +63,19 @@ config :oli, OliWeb.Endpoint,
   live_view: [signing_salt: live_view_salt]
 
 # OAuth secrets need to be loaded at runtime
-config :ueberauth, Ueberauth.Strategy.Google.OAuth,
-  client_id: System.get_env("GOOGLE_CLIENT_ID"),
-  client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
-
-config :ueberauth, Ueberauth.Strategy.Facebook.OAuth,
-  client_id: System.get_env("FACEBOOK_CLIENT_ID"),
-  client_secret: System.get_env("FACEBOOK_CLIENT_SECRET")
+config :oli, :pow,
+  pow_assent: [
+    providers: [
+      google: [
+        client_id: System.get_env("GOOGLE_CLIENT_ID"),
+        client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
+      ],
+      github: [
+        client_id: System.get_env("GITHUB_CLIENT_ID"),
+        client_secret: System.get_env("GITHUB_CLIENT_SECRET")
+      ]
+    ]
+  ]
 
 # Configure Joken, we can just reuse the secret key base
 config :joken, default_signer: secret_key_base

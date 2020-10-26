@@ -43,6 +43,7 @@ defmodule OliWeb.Pow.PowHelpers do
     available_providers
     |> Enum.map(&{&1, &1 in providers_for_user})
     |> Enum.map(fn
+      {provider, true} -> PowAssent.Phoenix.ViewHelpers.deauthorization_link(conn, provider, link_opts)
       {provider, false} -> authorization_link(conn, provider, link_params, link_opts)
     end)
   end
@@ -56,13 +57,8 @@ defmodule OliWeb.Pow.PowHelpers do
   def authorization_link(conn, provider, link_params \\ [], opts \\ []) do
     query_params = invitation_token_query_params(conn) ++ request_path_query_params(conn)
 
-    provider_classname = provider
-      |> Naming.humanize
-      |> String.downcase
-
     msg  = AuthorizationController.extension_messages(conn).login_with_provider(%{conn | params: %{"provider" => provider}})
-    icon = HTML.raw("<i class=\"fab #{provider_icon(provider)} fa-lg mr-2\"></i>")
-
+    icon = provider_icon(provider)
     path = AuthorizationController.routes(conn).path_for(conn, AuthorizationController, :new, [provider], query_params)
     path = case link_params do
       [] -> path
@@ -71,7 +67,7 @@ defmodule OliWeb.Pow.PowHelpers do
         |> String.trim("&")
     end
     opts = Keyword.merge(opts, to: path)
-    opts = Keyword.merge(opts, class: "btn btn-md btn-#{provider_classname} btn-block social-signin")
+    opts = Keyword.merge(opts, class: "btn btn-md btn-#{provider_class(provider)} btn-block social-signin")
 
     Link.link([icon, msg], opts)
   end
@@ -82,11 +78,26 @@ defmodule OliWeb.Pow.PowHelpers do
   defp request_path_query_params(%{assigns: %{request_path: request_path}}), do: [request_path: request_path]
   defp request_path_query_params(_conn), do: []
 
-  defp provider_icon(provider) do
+  def provider_icon(provider) do
     case provider do
-      :google -> "fa-google"
-      :facebook -> "fa-facebook-f"
+      :google ->
+        HTML.raw("<i class=\"fab fa-google fa-lg mr-2\"></i>")
+      :github ->
+        HTML.raw("<i class=\"fab fa-github fa-lg mr-2\"></i>")
       _ -> ""
+        HTML.raw(nil)
     end
+  end
+
+  def provider_class(provider) do
+    provider
+      |> Naming.humanize
+      |> String.downcase
+  end
+
+  def provider_name(provider) do
+    provider
+      |> Naming.humanize
+      |> String.upcase
   end
 end

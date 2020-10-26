@@ -69,12 +69,12 @@ config :oli, :pow,
         ],
         session_params: ["type"]
       ],
-      facebook: [
-        client_id: System.get_env("FACEBOOK_CLIENT_ID"),
-        client_secret: System.get_env("FACEBOOK_CLIENT_SECRET"),
-        strategy: Assent.Strategy.Facebook,
+      github: [
+        client_id: System.get_env("GITHUB_CLIENT_ID"),
+        client_secret: System.get_env("GITHUB_CLIENT_SECRET"),
+        strategy: Assent.Strategy.Github,
         authorization_params: [
-          scope: "email profile",
+          scope: "read:user user:email"
         ],
         session_params: ["type"]
       ]

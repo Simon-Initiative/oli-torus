@@ -87,33 +87,24 @@
     color: #777;
   }
 
-  .btn-google {
+  .btn-google, .badge-google {
     color: white;
     background-color: #ea4335;
   }
 
   a.btn-google:hover {
     color: white;
-    background-color: #ea4335;
+    background-color: #c0382c;
   }
 
-  .btn-facebook {
+  .btn-github, .badge-google {
     color: white;
-    background-color: #3b5998;
+    background-color: #24292e;
   }
 
-  a.btn-facebook:hover {
+  a.btn-github:hover {
     color: white;
-    background-color: #3b5998;
+    background-color: #000000;
   }
 
-  // .btn-identity {
-  //   color: white;
-  //   background-color: #3b5998;
-  // }
-
-  // a.btn-identity:hover {
-  //   color: white;
-  //   background-color: #3b5998;
-  // }
 }

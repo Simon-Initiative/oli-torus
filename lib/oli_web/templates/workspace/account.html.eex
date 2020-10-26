@@ -7,8 +7,7 @@
         <p class="mb-2">
           <%= "#{@current_author.first_name} #{@current_author.last_name}" %>
         </p>
-        <%# TODO %>
-        <%# <%= if @current_author.provider == "identity" do
+        <%= if Enum.count(PowAssent.Plug.providers_for_current_user(@conn)) < 1 do %>
           <a href="#" onclick="function(e) { e.preventDefault()}" data-toggle="modal" data-target="#modal-change-name" id="change-name">Change name</a>
         <% end %>
       </div>
@@ -19,12 +18,13 @@
         <p class="mb-2">
           <%= "#{@current_author.email}" %>
         </p>
-        <%# TODO %>
-        <%# <%= case @current_author.provider do
-          "facebook" -> "Managed by Facebook"
-          "google" -> "Managed by Google"
-          _ -> ""
-        end %>
+        <%= if Enum.count(PowAssent.Plug.providers_for_current_user(@conn)) > 0 do %>
+          <h6 class="mt-3">Profile Managed By:</h6>
+          <%= for provider <- PowAssent.Plug.providers_for_current_user(@conn) do %>
+            <div>
+              <span class="badge badge-<%= OliWeb.Pow.PowHelpers.provider_class(provider) %>"><%= OliWeb.Pow.PowHelpers.provider_icon(provider) %> <%= OliWeb.Pow.PowHelpers.provider_name(provider) %> </span> <%= PowAssent.Phoenix.ViewHelpers.deauthorization_link(@conn, provider, class: "btn btn-xs btn-link text-danger") %>
+          <% end %>
+        <% end %>
       </div>
     </div>
   </div>

@@ -95,10 +95,6 @@ defmodule Oli.MixProject do
       {:telemetry_poller, "~> 0.4"},
       {:telemetry_metrics, "~> 0.4"},
       {:timex, "~> 3.5"},
-      {:ueberauth, "~> 0.5"},
-      {:ueberauth_facebook, "~> 0.8"},
-      {:ueberauth_google, "~> 0.7"},
-      {:ueberauth_identity, "~> 0.2"},
       {:uuid, "~> 1.1" },
       {:xml_builder, "~> 2.1.1"}
     ]
