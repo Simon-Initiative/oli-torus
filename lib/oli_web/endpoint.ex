@@ -58,6 +58,7 @@ defmodule OliWeb.Endpoint do
 
   plug Pow.Plug.Session, OliWeb.Pow.PowHelpers.get_pow_config(:user)
   plug Pow.Plug.Session, otp_app: :oli
+  plug PowPersistentSession.Plug.Cookie
 
   plug OliWeb.Router
 end

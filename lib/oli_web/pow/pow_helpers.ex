@@ -2,7 +2,7 @@ defmodule OliWeb.Pow.PowHelpers do
 
   alias PowAssent.Plug
 
-  alias Phoenix.{HTML, HTML.Link, HTML.Tag, Naming}
+  alias Phoenix.{HTML, HTML.Link, Naming}
   alias PowAssent.Phoenix.AuthorizationController
 
   def get_pow_config(:user) do
