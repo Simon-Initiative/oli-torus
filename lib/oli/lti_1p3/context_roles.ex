@@ -131,9 +131,7 @@ defmodule Oli.Lti_1p3.ContextRoles do
     Enum.any?(roles, fn r -> context_roles_map[r.uri] == true end)
   end
 
-  @doc """
-  Returns true if a user has all of the given roles
-  """
+  # Returns true if a user has all of the given roles
   @spec has_roles?(Lti_1p3_User.t(), String.t(), [ContextRole.t()], :all) :: boolean()
   def has_roles?(user, context_id, roles, :all) when is_struct(user) and is_list(roles) do
     context_roles = Lti_1p3_User.get_context_roles(user, context_id)

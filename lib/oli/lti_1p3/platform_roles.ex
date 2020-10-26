@@ -233,9 +233,8 @@ defmodule Oli.Lti_1p3.PlatformRoles do
     Enum.any?(roles, fn r -> user_roles_map[r.uri] == true end)
   end
 
-  @doc """
-  Returns true if a user has all of the given roles
-  """
+
+  # Returns true if a user has all of the given roles
   @spec has_roles?(Lti_1p3_User.t(), [PlatformRole.t()], :all) :: boolean()
   def has_roles?(user, roles, :all) when is_list(roles) do
     user_roles = Lti_1p3_User.get_platform_roles(user)

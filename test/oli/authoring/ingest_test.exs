@@ -53,7 +53,7 @@ defmodule Oli.Authoring.IngestTest do
       assert length(c.children) == 2
       children = AuthoringResolver.from_resource_id(project.slug, c.children)
       assert Enum.at(children, 0).title == "Contents: Resources"
-      assert Enum.at(children, 1).title == "Sub Course Resources"
+      assert Enum.at(children, 1).title == "Module Course Resources"
 
       # check a leaf hierarchy node, one that contains only page references
       c = by_title(project, "Images")
@@ -64,10 +64,6 @@ defmodule Oli.Authoring.IngestTest do
       assert Enum.at(children, 2).title == "Image Loop"
       assert Enum.at(children, 3).title == "Image Expressions"
       assert Enum.at(children, 4).title == "Image Puzzles"
-
-      # check another leaf node, one with only a single page in it
-      c = by_title(project, "Module with one page")
-      assert length(c.children) == 1
 
     end
 
