@@ -7,6 +7,24 @@ defmodule Oli.Authoring.Ingest do
   @hierarchy_key "_hierarchy"
   @media_key "_media-manifest"
 
+  @doc """
+  Ingest a course digest archive that is sitting on the file system
+  and turn it into a course project.  Gives the author specied access
+  to the new project.
+
+  A course digest archive is a zip file containing a flat list of JSON files.
+
+  There are three required files in a course archive:
+
+  _project.json: a document containing top-level project meta data
+  _hierarchy.json: a document that specifies the course project container hierarchy
+  _media-manifest.json: a manifest listing all of the media items referenced by the digest
+
+  Any number of other JSON files corresponding to pages and activities can exist
+  in the digest archive.
+
+  Returns {:ok, project} on success and {:error, error} on failure
+  """
   def ingest(file, as_author) do
 
     case :zip.unzip(to_charlist(file), [:memory]) do
@@ -16,14 +34,18 @@ defmodule Oli.Authoring.Ingest do
 
   end
 
+  # verify that an in memory archive is valid by ensuring that it contains the three
+  # required keys (files): the "_project", the "_hierarchy" and the "_media-manifest"
   defp is_valid_archive?(map) do
     Map.has_key?(map, @project_key) && Map.has_key?(map, @hierarchy_key) && Map.has_key?(map, @media_key)
   end
 
+  # Process the unzipped entries of the archive
   defp process(entries, as_author) do
 
     resource_map = to_map(entries)
 
+    # Proceed only if the archive is valid
     if is_valid_archive?(resource_map) do
 
       Repo.transaction(fn _ ->
@@ -48,6 +70,7 @@ defmodule Oli.Authoring.Ingest do
     end
   end
 
+  # Process the _project file to create the project structure
   defp create_project(project_details, as_author) do
 
     case Map.get(project_details, "title") do
@@ -57,6 +80,7 @@ defmodule Oli.Authoring.Ingest do
 
   end
 
+  # Process each resource file of type "Page" to create pages
   defp create_pages(project, resource_map, as_author) do
 
     pages = Map.keys(resource_map)
@@ -82,6 +106,7 @@ defmodule Oli.Authoring.Ingest do
 
   end
 
+  # Create one page
   defp create_page(project, page, as_author) do
 
     attrs = %{
@@ -104,7 +129,7 @@ defmodule Oli.Authoring.Ingest do
 
   end
 
-
+  # Create the media entries
   defp create_media(_project, _media_details, _as_author) do
     {:ok, %{}}
   end
@@ -156,6 +181,9 @@ defmodule Oli.Authoring.Ingest do
 
   end
 
+  # Convert the list of tuples of unzipped entries into a map
+  # where the keys are the ids (with the .json extension dropped)
+  # and the values are the JSON content, parsed into maps
   defp to_map(entries) do
 
     Enum.reduce(entries, %{}, fn {file, content}, map ->
