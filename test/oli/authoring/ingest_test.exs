@@ -41,6 +41,9 @@ defmodule Oli.Authoring.IngestTest do
       |> Enum.filter(fn p -> !p.graded end)
       assert length(practice_pages) == 49
 
+      # verify that every practice page has a content attribute with a model
+      assert Enum.all?(practice_pages, fn p -> Map.has_key?(p.content, "model") end)
+
 
       # spot check some elements to ensure that they were correctly constructed:
 

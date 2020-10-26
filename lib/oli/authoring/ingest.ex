@@ -88,7 +88,9 @@ defmodule Oli.Authoring.Ingest do
       title: Map.get(page, "title"),
       content: Map.get(page, "content"),
       author_id: as_author.id,
+      objectives: %{"attached" => []},
       resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+      scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
       graded: false
     }
 
@@ -144,6 +146,7 @@ defmodule Oli.Authoring.Ingest do
       title: Map.get(container, "title"),
       children: children_ids,
       author_id: as_author.id,
+      content: %{"model" => []},
       resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
     }
 
