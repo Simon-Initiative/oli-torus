@@ -6,14 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
+
     <title>Oli.Authoring.Editing.ContainerEditor — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
-    <script src="dist/sidebar_items-b0b2abcbe2.js"></script>
+
+    <script src="dist/sidebar_items-f654a0af74.js"></script>
+
       <script src="docs_config.js"></script>
+
     <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+
   </head>
   <body data-type="modules">
     <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+
 <div class="main">
 
 <button class="sidebar-button sidebar-toggle">
@@ -41,14 +47,17 @@
   <div class="sidebar-header">
     <div class="sidebar-projectDetails">
       <a href="http://oli.cmu.edu" class="sidebar-projectName">
-OLI Torus      </a>
+OLI Torus
+      </a>
       <strong class="sidebar-projectVersion">
         v0.1.0
       </strong>
     </div>
+
       <a href="http://oli.cmu.edu">
         <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
       </a>
+
   </div>
 
   <ul class="sidebar-listNav">
@@ -56,7 +65,9 @@ OLI Torus      </a>
 
       <li><a id="modules-list" href="#full-list">Modules</a></li>
 
+
       <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+
   </ul>
   <div class="gradient"></div>
   <ul id="full-list" class="sidebar-fullList"></ul>
@@ -67,18 +78,22 @@ OLI Torus      </a>
     <div id="content" class="content-inner">
 
       <h1>
-        Oli.Authoring.Editing.ContainerEditor <small class="app-vsn">(OLI Torus v0.1.0)</small>
+Oli.Authoring.Editing.ContainerEditor <small class="app-vsn">(OLI Torus v0.1.0)</small>
+
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
+
       </h1>
 
 
         <section id="moduledoc">
 <p>This module provides high-level editing facilities for project
 containers, mainly around adding and removing and reording
-the items within a container.</p>        </section>
+the items within a container.</p>
+        </section>
+
 
         <section id="summary" class="details-list">
           <h1 class="section-heading">
@@ -88,6 +103,7 @@ the items within a container.</p>        </section>
             </a>
             Summary
           </h1>
+
   <div class="summary-functions summary">
     <h2>
       <a href="#functions">Functions</a>
@@ -95,38 +111,56 @@ the items within a container.</p>        </section>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#add_new/4">add_new(container, attrs, author, project)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Creates and adds a new page or container as a child of a container.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#broadcast_update/2">broadcast_update(resource_id, project_slug)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#edit_page/3">edit_page(project, revision_slug, change)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#list_all_container_children/2">list_all_container_children(container, project)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Lists all top level resource revisions contained in a container.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#remove_child/4">remove_child(container, project, author, revision_slug)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Removes a child from a container, and marks that child as deleted.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#reorder_child/5">reorder_child(container, project, author, source, index)</a>
+
   </div>
+
 </div>
+
   </div>
+
         </section>
+
 
         <section id="functions" class="details-list">
           <h1 class="section-heading">
@@ -134,116 +168,152 @@ the items within a container.</p>        </section>
               <span class="icon-link" aria-hidden="true"></span>
               <span class="sr-only">Link to this section</span>
             </a>
-Functions          </h1>
+Functions
+          </h1>
           <div class="functions-list">
 <section class="detail" id="add_new/4">
+
   <div class="detail-header">
     <a href="#add_new/4" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">add_new(container, attrs, author, project)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L71" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
-<p>Creates and adds a new page or container as a child of a container.</p>  </section>
+<p>Creates and adds a new page or container as a child of a container.</p>
+  </section>
 </section>
 <section class="detail" id="broadcast_update/2">
+
   <div class="detail-header">
     <a href="#broadcast_update/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">broadcast_update(resource_id, project_slug)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L106" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="edit_page/3">
+
   <div class="detail-header">
     <a href="#edit_page/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">edit_page(project, revision_slug, change)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L22" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>edit_page(Oli.Authoring.Course.Project.t(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="list_all_container_children/2">
+
   <div class="detail-header">
     <a href="#list_all_container_children/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">list_all_container_children(container, project)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L63" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
-<p>Lists all top level resource revisions contained in a container.</p>  </section>
+<p>Lists all top level resource revisions contained in a container.</p>
+  </section>
 </section>
 <section class="detail" id="remove_child/4">
+
   <div class="detail-header">
     <a href="#remove_child/4" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">remove_child(container, project, author, revision_slug)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L117" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
-<p>Removes a child from a container, and marks that child as deleted.</p>  </section>
+<p>Removes a child from a container, and marks that child as deleted.</p>
+  </section>
 </section>
 <section class="detail" id="reorder_child/5">
+
   <div class="detail-header">
     <a href="#reorder_child/5" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">reorder_child(container, project, author, source, index)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L172" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
+
           </div>
         </section>
+
       <footer class="footer">
         <p>
           <span class="line">
@@ -257,7 +327,9 @@ Functions          </h1>
           </span>
         </p>
         <p>
+
             <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
           <button class="line footer-button display-shortcuts-help">
             Display keyboard shortcuts
           </button>
@@ -277,5 +349,6 @@ Functions          </h1>
   </div>
 </section>
 </div>
+
   </body>
 </html>

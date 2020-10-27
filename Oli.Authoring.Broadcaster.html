@@ -6,14 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
+
     <title>Oli.Authoring.Broadcaster — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
-    <script src="dist/sidebar_items-b0b2abcbe2.js"></script>
+
+    <script src="dist/sidebar_items-f654a0af74.js"></script>
+
       <script src="docs_config.js"></script>
+
     <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+
   </head>
   <body data-type="modules">
     <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+
 <div class="main">
 
 <button class="sidebar-button sidebar-toggle">
@@ -41,14 +47,17 @@
   <div class="sidebar-header">
     <div class="sidebar-projectDetails">
       <a href="http://oli.cmu.edu" class="sidebar-projectName">
-OLI Torus      </a>
+OLI Torus
+      </a>
       <strong class="sidebar-projectVersion">
         v0.1.0
       </strong>
     </div>
+
       <a href="http://oli.cmu.edu">
         <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
       </a>
+
   </div>
 
   <ul class="sidebar-listNav">
@@ -56,7 +65,9 @@ OLI Torus      </a>
 
       <li><a id="modules-list" href="#full-list">Modules</a></li>
 
+
       <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+
   </ul>
   <div class="gradient"></div>
   <ul id="full-list" class="sidebar-fullList"></ul>
@@ -67,18 +78,22 @@ OLI Torus      </a>
     <div id="content" class="content-inner">
 
       <h1>
-        Oli.Authoring.Broadcaster <small class="app-vsn">(OLI Torus v0.1.0)</small>
+Oli.Authoring.Broadcaster <small class="app-vsn">(OLI Torus v0.1.0)</small>
+
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/broadcasting/broadcaster.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
+
       </h1>
 
 
         <section id="moduledoc">
 <p>This module encapsulates all broadcasting functionality for authoring events.</p><p>For some broadcast functions in this module, more than one actual PubSub broadcast is performed
 to allow clients to opt-in to receiving updates for a specific context, whether
-that is a specific project or a specific resource type.</p>        </section>
+that is a specific project or a specific resource type.</p>
+        </section>
+
 
         <section id="summary" class="details-list">
           <h1 class="section-heading">
@@ -88,6 +103,7 @@ that is a specific project or a specific resource type.</p>        </section>
             </a>
             Summary
           </h1>
+
   <div class="summary-functions summary">
     <h2>
       <a href="#functions">Functions</a>
@@ -95,47 +111,71 @@ that is a specific project or a specific resource type.</p>        </section>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#broadcast_dismiss_warning/2">broadcast_dismiss_warning(warning_id, project_slug)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Broadcasts that a warning has been dismissed for a project</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#broadcast_lock_acquired/2">broadcast_lock_acquired(resource_id, author_id)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Broadcasts that a lock has been acquired on a resource</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#broadcast_lock_released/1">broadcast_lock_released(resource_id)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Broadcasts that a lock has been released on a resource</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#broadcast_publication/2">broadcast_publication(publication, project_slug)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Broadcasts that the unpublished publication has been published</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#broadcast_resource/2">broadcast_resource(revision, project_slug)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Broadcasts that a new resource has been created.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#broadcast_review/1">broadcast_review(project_slug)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Broadcasts that a new review has been executed for a project</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#broadcast_revision/2">broadcast_revision(revision, project_slug)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Broadcasts that a revision for an existing resource has changed or been created.</p></div>
+
 </div>
+
   </div>
+
         </section>
+
 
         <section id="functions" class="details-list">
           <h1 class="section-heading">
@@ -143,129 +183,167 @@ that is a specific project or a specific resource type.</p>        </section>
               <span class="icon-link" aria-hidden="true"></span>
               <span class="sr-only">Link to this section</span>
             </a>
-Functions          </h1>
+Functions
+          </h1>
           <div class="functions-list">
 <section class="detail" id="broadcast_dismiss_warning/2">
+
   <div class="detail-header">
     <a href="#broadcast_dismiss_warning/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">broadcast_dismiss_warning(warning_id, project_slug)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/broadcasting/broadcaster.ex#L76" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
-<p>Broadcasts that a warning has been dismissed for a project</p>  </section>
+<p>Broadcasts that a warning has been dismissed for a project</p>
+  </section>
 </section>
 <section class="detail" id="broadcast_lock_acquired/2">
+
   <div class="detail-header">
     <a href="#broadcast_lock_acquired/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">broadcast_lock_acquired(resource_id, author_id)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/broadcasting/broadcaster.ex#L87" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
-<p>Broadcasts that a lock has been acquired on a resource</p>  </section>
+<p>Broadcasts that a lock has been acquired on a resource</p>
+  </section>
 </section>
 <section class="detail" id="broadcast_lock_released/1">
+
   <div class="detail-header">
     <a href="#broadcast_lock_released/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">broadcast_lock_released(resource_id)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/broadcasting/broadcaster.ex#L98" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
-<p>Broadcasts that a lock has been released on a resource</p>  </section>
+<p>Broadcasts that a lock has been released on a resource</p>
+  </section>
 </section>
 <section class="detail" id="broadcast_publication/2">
+
   <div class="detail-header">
     <a href="#broadcast_publication/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">broadcast_publication(publication, project_slug)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/broadcasting/broadcaster.ex#L54" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
-<p>Broadcasts that the unpublished publication has been published</p>  </section>
+<p>Broadcasts that the unpublished publication has been published</p>
+  </section>
 </section>
 <section class="detail" id="broadcast_resource/2">
+
   <div class="detail-header">
     <a href="#broadcast_resource/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">broadcast_resource(revision, project_slug)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/broadcasting/broadcaster.ex#L37" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
-<p>Broadcasts that a new resource has been created.</p>  </section>
+<p>Broadcasts that a new resource has been created.</p>
+  </section>
 </section>
 <section class="detail" id="broadcast_review/1">
+
   <div class="detail-header">
     <a href="#broadcast_review/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">broadcast_review(project_slug)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/broadcasting/broadcaster.ex#L65" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
-<p>Broadcasts that a new review has been executed for a project</p>  </section>
+<p>Broadcasts that a new review has been executed for a project</p>
+  </section>
 </section>
 <section class="detail" id="broadcast_revision/2">
+
   <div class="detail-header">
     <a href="#broadcast_revision/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">broadcast_revision(revision, project_slug)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/broadcasting/broadcaster.ex#L20" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
-<p>Broadcasts that a revision for an existing resource has changed or been created.</p>  </section>
+<p>Broadcasts that a revision for an existing resource has changed or been created.</p>
+  </section>
 </section>
+
           </div>
         </section>
+
       <footer class="footer">
         <p>
           <span class="line">
@@ -279,7 +357,9 @@ Functions          </h1>
           </span>
         </p>
         <p>
+
             <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
           <button class="line footer-button display-shortcuts-help">
             Display keyboard shortcuts
           </button>
@@ -299,5 +379,6 @@ Functions          </h1>
   </div>
 </section>
 </div>
+
   </body>
 </html>

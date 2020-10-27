@@ -6,14 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
+
     <title>OLI Authoring and Delivery — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
-    <script src="dist/sidebar_items-b0b2abcbe2.js"></script>
+
+    <script src="dist/sidebar_items-f654a0af74.js"></script>
+
       <script src="docs_config.js"></script>
+
     <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+
   </head>
   <body data-type="extras">
     <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+
 <div class="main">
 
 <button class="sidebar-button sidebar-toggle">
@@ -41,14 +47,17 @@
   <div class="sidebar-header">
     <div class="sidebar-projectDetails">
       <a href="http://oli.cmu.edu" class="sidebar-projectName">
-OLI Torus      </a>
+OLI Torus
+      </a>
       <strong class="sidebar-projectVersion">
         v0.1.0
       </strong>
     </div>
+
       <a href="http://oli.cmu.edu">
         <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
       </a>
+
   </div>
 
   <ul class="sidebar-listNav">
@@ -56,7 +65,9 @@ OLI Torus      </a>
 
       <li><a id="modules-list" href="#full-list">Modules</a></li>
 
+
       <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+
   </ul>
   <div class="gradient"></div>
   <ul id="full-list" class="sidebar-fullList"></ul>
@@ -78,7 +89,7 @@ OLI Torus      </a>
 <h4>(Quick Start) Run development server with docker-compose</h4><ol><li><p>Install dependencies:</p><ul><li><a href="https://www.docker.com/">Docker</a> and docker-compose</li></ul></li><li><p>Initial setup</p><pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="w"> </span><span class="n">up</span><span class="w"> </span><span class="o">-</span><span class="n">d</span><span class="w"> </span><span class="n">postgres</span><span class="w">
  </span><span class="err">$</span><span class="w"> </span><span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="w"> </span><span class="n">run</span><span class="w"> </span><span class="n">app</span><span class="w"> </span><span class="n">mix</span><span class="w"> </span><span class="n">ecto</span><span class="o">.</span><span class="n">create</span><span class="w">
  </span><span class="err">$</span><span class="w"> </span><span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="w"> </span><span class="n">run</span><span class="w"> </span><span class="n">app</span><span class="w"> </span><span class="n">mix</span><span class="w"> </span><span class="n">ecto</span><span class="o">.</span><span class="n">migrate</span><span class="w">
- </span><span class="err">$</span><span class="w"> </span><span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="w"> </span><span class="n">run</span><span class="w"> </span><span class="n">app</span><span class="w"> </span><span class="n">mix</span><span class="w"> </span><span class="n">run</span><span class="w"> </span><span class="n">priv</span><span class="o">/</span><span class="n">repo</span><span class="o">/</span><span class="n">seeds</span><span class="o">.</span><span class="n">exs</span></code></pre></li><li><p>Start Phoenix server</p><pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="w"> </span><span class="n">up</span><span class="w"> </span><span class="o">-</span><span class="n">d</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="w"> </span><span class="n">logs</span><span class="w"> </span><span class="o">-</span><span class="n">f</span></code></pre><blockquote><p>NOTE: Use Ctrl+c to exit log streaming and <code class="inline">docker-compose down</code> to stop the server.</p></blockquote></li><li><p>Open your web browser to <code class="inline">localhost:4000</code></p></li></ol><h4>Run development server natively</h4><ol><li><p>Install dependencies:</p><ul><li><a href="https://www.docker.com/">Docker</a> and docker-compose</li><li><a href="https://elixir-lang.org/">Elixir</a> (<code class="inline">$ brew install elixir</code>)</li><li><a href="https://www.phoenixframework.org/">Phoenix</a> (<code class="inline">$ mix archive.install hex phx_new 1.5.3</code>)</li></ul></li><li><p>Optionally, use the provided <code class="inline">devmode.sh</code> script to automatically run all the following steps and get started</p><pre><code class="nohighlight makeup elixir"><span class="err">$</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="o">.</span><span class="o">/</span><span class="n">devmode</span><span class="o">.</span><span class="n">sh</span></code></pre><p>Skip the remaining setup steps and use <a href="https://hexdocs.pm/phoenix/1.5.3/Mix.Tasks.Phx.Server.html"><code class="inline">mix phx.server</code></a> to run the server.</p></li><li><p>Create configuration env files:</p><pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">cp</span><span class="w"> </span><span class="n">oli</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">env</span><span class="w"> </span><span class="n">oli</span><span class="o">.</span><span class="n">env</span><span class="w">
+ </span><span class="err">$</span><span class="w"> </span><span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="w"> </span><span class="n">run</span><span class="w"> </span><span class="n">app</span><span class="w"> </span><span class="n">mix</span><span class="w"> </span><span class="n">run</span><span class="w"> </span><span class="n">priv</span><span class="o">/</span><span class="n">repo</span><span class="o">/</span><span class="n">seeds</span><span class="o">.</span><span class="n">exs</span></code></pre></li><li><p>Start Phoenix server</p><pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="w"> </span><span class="n">up</span><span class="w"> </span><span class="o">-</span><span class="n">d</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="w"> </span><span class="n">logs</span><span class="w"> </span><span class="o">-</span><span class="n">f</span></code></pre><blockquote><p>NOTE: Use Ctrl+c to exit log streaming and <code class="inline">docker-compose down</code> to stop the server.</p></blockquote></li><li><p>Open your web browser to <code class="inline">localhost:4000</code></p></li></ol><h4>Run development server natively</h4><ol><li><p>Install dependencies:</p><ul><li><a href="https://www.docker.com/">Docker</a> and docker-compose</li><li><a href="https://elixir-lang.org/">Elixir</a> (<code class="inline">$ brew install elixir</code>)</li><li><a href="https://www.phoenixframework.org/">Phoenix</a> (<code class="inline">$ mix archive.install hex phx_new 1.5.3</code>)</li></ul></li><li><p>Optionally, use the provided <code class="inline">devmode.sh</code> script to automatically run all the following steps and get started</p><pre><code class="nohighlight makeup elixir"><span class="err">$</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="o">.</span><span class="o">/</span><span class="n">devmode</span><span class="o">.</span><span class="n">sh</span></code></pre><p>Skip the remaining setup steps and use <a href="https://hexdocs.pm/phoenix/1.5.6/Mix.Tasks.Phx.Server.html"><code class="inline">mix phx.server</code></a> to run the server.</p></li><li><p>Create configuration env files:</p><pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">cp</span><span class="w"> </span><span class="n">oli</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">env</span><span class="w"> </span><span class="n">oli</span><span class="o">.</span><span class="n">env</span><span class="w">
  </span><span class="err">$</span><span class="w"> </span><span class="n">cp</span><span class="w"> </span><span class="n">postgres</span><span class="o">.</span><span class="n">example</span><span class="o">.</span><span class="n">env</span><span class="w"> </span><span class="n">postgres</span><span class="o">.</span><span class="n">env</span></code></pre></li><li><p>Configure <code class="inline">oli.env</code> for running natively:
  REPLACE:</p><pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="nc">DB_HOST</span><span class="o">=</span><span class="n">postgres</span></code></pre><p> WITH:</p><pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="nc">DB_HOST</span><span class="o">=</span><span class="n">localhost</span></code></pre></li><li><p>Start dockerized postgres 12 via the included docker-compose file:</p><pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="w"> </span><span class="n">up</span><span class="w"> </span><span class="o">-</span><span class="n">d</span><span class="w"> </span><span class="n">postgres</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="w"> </span><span class="n">logs</span><span class="w"> </span><span class="o">-</span><span class="n">f</span></code></pre></li><li><p>Install server and client dependencies:</p><pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">mix</span><span class="w"> </span><span class="n">deps</span><span class="o">.</span><span class="n">get</span><span class="w">
  </span><span class="err">$</span><span class="w"> </span><span class="n">cd</span><span class="w"> </span><span class="n">assets</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">yarn</span></code></pre></li><li><p>Create database</p><pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">cd</span><span class="w"> </span><span class="o">.</span><span class="o">.</span><span class="o">/</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">mix</span><span class="w"> </span><span class="n">ecto</span><span class="o">.</span><span class="n">create</span></code></pre></li><li><p>Run migration to create schema</p><pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">mix</span><span class="w"> </span><span class="n">ecto</span><span class="o">.</span><span class="n">migrate</span></code></pre></li><li><p>Seed the database</p><pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">mix</span><span class="w"> </span><span class="n">run</span><span class="w"> </span><span class="n">priv</span><span class="o">/</span><span class="n">repo</span><span class="o">/</span><span class="n">seeds</span><span class="o">.</span><span class="n">exs</span></code></pre></li><li><p>Configure bash to properly source environment variable configurations</p><pre><code class="nohighlight makeup elixir"><span class="err">$</span><span class="w"> </span><span class="n">set</span><span class="w"> </span><span class="o">-</span><span class="n">a</span></code></pre></li><li><p>Load phoenix app configuration from environment file. This step is necessary anytime you change a configuration variable</p><pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">source</span><span class="w"> </span><span class="n">oli</span><span class="o">.</span><span class="n">env</span></code></pre></li><li><p>Start Phoenix server</p><pre><code class="nohighlight makeup elixir"><span class="w"> </span><span class="err">$</span><span class="w"> </span><span class="n">mix</span><span class="w"> </span><span class="n">phx</span><span class="o">.</span><span class="n">server</span></code></pre><blockquote><p>NOTE: Use Ctrl+c to stop the Phoenix server</p></blockquote></li><li><p>Open your web browser to <code class="inline">localhost:4000</code></p></li></ol><h3 id="running-tests" class="section-heading">
@@ -95,7 +106,8 @@ OLI Torus      </a>
   <a href="#configuring-an-lti-1-3-connection" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Configuring an LTI 1.3 Connection
 </h3>
-<p>Torus supports LTI 1.3 integration and leverages the Learning Management System for course delivery.</p><p>To configure an LTI connection, refer to the <a href="./docs/lti1.3.md">LTI 1.3 Integration document</a>.</p>      <footer class="footer">
+<p>Torus supports LTI 1.3 integration and leverages the Learning Management System for course delivery.</p><p>To configure an LTI connection, refer to the <a href="./docs/lti1.3.md">LTI 1.3 Integration document</a>.</p>
+      <footer class="footer">
         <p>
           <span class="line">
             Built using
@@ -108,7 +120,9 @@ OLI Torus      </a>
           </span>
         </p>
         <p>
+
             <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
           <button class="line footer-button display-shortcuts-help">
             Display keyboard shortcuts
           </button>
@@ -128,5 +142,6 @@ OLI Torus      </a>
   </div>
 </section>
 </div>
+
   </body>
 </html>

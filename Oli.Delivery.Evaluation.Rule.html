@@ -6,14 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
+
     <title>Oli.Delivery.Evaluation.Rule — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
-    <script src="dist/sidebar_items-b0b2abcbe2.js"></script>
+
+    <script src="dist/sidebar_items-f654a0af74.js"></script>
+
       <script src="docs_config.js"></script>
+
     <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+
   </head>
   <body data-type="modules">
     <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+
 <div class="main">
 
 <button class="sidebar-button sidebar-toggle">
@@ -41,14 +47,17 @@
   <div class="sidebar-header">
     <div class="sidebar-projectDetails">
       <a href="http://oli.cmu.edu" class="sidebar-projectName">
-OLI Torus      </a>
+OLI Torus
+      </a>
       <strong class="sidebar-projectVersion">
         v0.1.0
       </strong>
     </div>
+
       <a href="http://oli.cmu.edu">
         <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
       </a>
+
   </div>
 
   <ul class="sidebar-listNav">
@@ -56,7 +65,9 @@ OLI Torus      </a>
 
       <li><a id="modules-list" href="#full-list">Modules</a></li>
 
+
       <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+
   </ul>
   <div class="gradient"></div>
   <ul id="full-list" class="sidebar-fullList"></ul>
@@ -67,11 +78,13 @@ OLI Torus      </a>
     <div id="content" class="content-inner">
 
       <h1>
-        Oli.Delivery.Evaluation.Rule <small class="app-vsn">(OLI Torus v0.1.0)</small>
+Oli.Delivery.Evaluation.Rule <small class="app-vsn">(OLI Torus v0.1.0)</small>
+
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/evaluation/rule.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
+
       </h1>
 
 
@@ -84,6 +97,7 @@ OLI Torus      </a>
             </a>
             Summary
           </h1>
+
   <div class="summary-functions summary">
     <h2>
       <a href="#functions">Functions</a>
@@ -91,26 +105,37 @@ OLI Torus      </a>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#evaluate/2">evaluate(tree, context)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#parse/1">parse(rule_as_string)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Parses a rule and returns <code class="inline">{:ok, tree}</code> when succesful, where <code class="inline">tree</code>
 is a series of nested tuples representing the parsed clauses in prefix notation, where
 the first tuple entry is the operation, the second is the left hand side
 operand and the third is the right hand side operand. An example</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#parse_and_evaluate/2">parse_and_evaluate(rule_as_string, context)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Parses and evaluates a rule and returns <code class="inline">{:ok, result}</code> when succesful, where <code class="inline">result</code>
 is is a boolean true or false indicating if the rule matched or not.</p></div>
+
 </div>
+
   </div>
+
         </section>
+
 
         <section id="functions" class="details-list">
           <h1 class="section-heading">
@@ -118,69 +143,90 @@ is is a boolean true or false indicating if the rule matched or not.</p></div>
               <span class="icon-link" aria-hidden="true"></span>
               <span class="sr-only">Link to this section</span>
             </a>
-Functions          </h1>
+Functions
+          </h1>
           <div class="functions-list">
 <section class="detail" id="evaluate/2">
+
   <div class="detail-header">
     <a href="#evaluate/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">evaluate(tree, context)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/evaluation/rule.ex#L39" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="parse/1">
+
   <div class="detail-header">
     <a href="#parse/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">parse(rule_as_string)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/evaluation/rule.ex#L31" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>parse(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) :: {:error, &lt;&lt;_::64, _::_*8&gt;&gt;} | {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}</pre>
+
       </div>
 
 <p>Parses a rule and returns <code class="inline">{:ok, tree}</code> when succesful, where <code class="inline">tree</code>
 is a series of nested tuples representing the parsed clauses in prefix notation, where
 the first tuple entry is the operation, the second is the left hand side
-operand and the third is the right hand side operand. An example:</p><p>, {:like, :input, &quot;some string here&quot;}}</p><p>Returns <code class="inline">{:error, reason}</code> when it fails to parse</p>  </section>
+operand and the third is the right hand side operand. An example:</p><p>, {:like, :input, &quot;some string here&quot;}}</p><p>Returns <code class="inline">{:error, reason}</code> when it fails to parse</p>
+  </section>
 </section>
 <section class="detail" id="parse_and_evaluate/2">
+
   <div class="detail-header">
     <a href="#parse_and_evaluate/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">parse_and_evaluate(rule_as_string, context)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/evaluation/rule.ex#L12" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
 <p>Parses and evaluates a rule and returns <code class="inline">{:ok, result}</code> when succesful, where <code class="inline">result</code>
-is is a boolean true or false indicating if the rule matched or not.</p><p>Returns <code class="inline">{:error, reason}</code> when it fails to parse or evaluate</p>  </section>
+is is a boolean true or false indicating if the rule matched or not.</p><p>Returns <code class="inline">{:error, reason}</code> when it fails to parse or evaluate</p>
+  </section>
 </section>
+
           </div>
         </section>
+
       <footer class="footer">
         <p>
           <span class="line">
@@ -194,7 +240,9 @@ is is a boolean true or false indicating if the rule matched or not.</p><p>Retur
           </span>
         </p>
         <p>
+
             <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
           <button class="line footer-button display-shortcuts-help">
             Display keyboard shortcuts
           </button>
@@ -214,5 +262,6 @@ is is a boolean true or false indicating if the rule matched or not.</p><p>Retur
   </div>
 </section>
 </div>
+
   </body>
 </html>

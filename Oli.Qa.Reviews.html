@@ -6,14 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
+
     <title>Oli.Qa.Reviews — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
-    <script src="dist/sidebar_items-b0b2abcbe2.js"></script>
+
+    <script src="dist/sidebar_items-f654a0af74.js"></script>
+
       <script src="docs_config.js"></script>
+
     <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+
   </head>
   <body data-type="modules">
     <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+
 <div class="main">
 
 <button class="sidebar-button sidebar-toggle">
@@ -41,14 +47,17 @@
   <div class="sidebar-header">
     <div class="sidebar-projectDetails">
       <a href="http://oli.cmu.edu" class="sidebar-projectName">
-OLI Torus      </a>
+OLI Torus
+      </a>
       <strong class="sidebar-projectVersion">
         v0.1.0
       </strong>
     </div>
+
       <a href="http://oli.cmu.edu">
         <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
       </a>
+
   </div>
 
   <ul class="sidebar-listNav">
@@ -56,7 +65,9 @@ OLI Torus      </a>
 
       <li><a id="modules-list" href="#full-list">Modules</a></li>
 
+
       <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+
   </ul>
   <div class="gradient"></div>
   <ul id="full-list" class="sidebar-fullList"></ul>
@@ -67,11 +78,13 @@ OLI Torus      </a>
     <div id="content" class="content-inner">
 
       <h1>
-        Oli.Qa.Reviews <small class="app-vsn">(OLI Torus v0.1.0)</small>
+Oli.Qa.Reviews <small class="app-vsn">(OLI Torus v0.1.0)</small>
+
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/qa/reviews.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
+
       </h1>
 
 
@@ -84,6 +97,7 @@ OLI Torus      </a>
             </a>
             Summary
           </h1>
+
   <div class="summary-functions summary">
     <h2>
       <a href="#functions">Functions</a>
@@ -91,54 +105,79 @@ OLI Torus      </a>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#change_review/1">change_review(review)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Returns an <code class="inline">%Ecto.Changeset{}</code> for tracking review changes.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#create_review/1">create_review(attrs \\ %{})</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Creates a review.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#create_review/2">create_review(project, type)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#delete_review/1">delete_review(review)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Deletes a review.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#delete_reviews/1">delete_reviews(project_id)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#get_review!/1">get_review!(id)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#list_reviews/1">list_reviews(project_id)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#mark_review_done/1">mark_review_done(review)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#update_review/2">update_review(review, attrs)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Updates a review.</p></div>
+
 </div>
+
   </div>
+
         </section>
+
 
         <section id="functions" class="details-list">
           <h1 class="section-heading">
@@ -146,19 +185,24 @@ OLI Torus      </a>
               <span class="icon-link" aria-hidden="true"></span>
               <span class="sr-only">Link to this section</span>
             </a>
-Functions          </h1>
+Functions
+          </h1>
           <div class="functions-list">
 <section class="detail" id="change_review/1">
+
   <div class="detail-header">
     <a href="#change_review/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">change_review(review)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/qa/reviews.ex#L60" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
@@ -167,21 +211,27 @@ Functions          </h1>
   <a href="#change_review/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_review</span><span class="p" data-group-id="0601569677-1">(</span><span class="n">review</span><span class="p" data-group-id="0601569677-1">)</span><span class="w">
-</span><span class="p" data-group-id="0601569677-2">%</span><span class="nc" data-group-id="0601569677-2">Ecto.Changeset</span><span class="p" data-group-id="0601569677-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0601569677-3">%</span><span class="nc" data-group-id="0601569677-3">Review</span><span class="p" data-group-id="0601569677-3">{</span><span class="p" data-group-id="0601569677-3">}</span><span class="p" data-group-id="0601569677-2">}</span></code></pre>  </section>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_review</span><span class="p" data-group-id="3501279606-1">(</span><span class="n">review</span><span class="p" data-group-id="3501279606-1">)</span><span class="w">
+</span><span class="p" data-group-id="3501279606-2">%</span><span class="nc" data-group-id="3501279606-2">Ecto.Changeset</span><span class="p" data-group-id="3501279606-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3501279606-3">%</span><span class="nc" data-group-id="3501279606-3">Review</span><span class="p" data-group-id="3501279606-3">{</span><span class="p" data-group-id="3501279606-3">}</span><span class="p" data-group-id="3501279606-2">}</span></code></pre>
+  </section>
 </section>
 <section class="detail" id="create_review/1">
+
     <span id="create_review/0"></span>
+
   <div class="detail-header">
     <a href="#create_review/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">create_review(attrs \\ %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/qa/reviews.ex#L34" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
@@ -190,39 +240,49 @@ Functions          </h1>
   <a href="#create_review/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_review</span><span class="p" data-group-id="4979903502-1">(</span><span class="p" data-group-id="4979903502-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="4979903502-2">}</span><span class="p" data-group-id="4979903502-1">)</span><span class="w">
-</span><span class="p" data-group-id="4979903502-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4979903502-4">%</span><span class="nc" data-group-id="4979903502-4">Review</span><span class="p" data-group-id="4979903502-4">{</span><span class="p" data-group-id="4979903502-4">}</span><span class="p" data-group-id="4979903502-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_review</span><span class="p" data-group-id="4979903502-5">(</span><span class="p" data-group-id="4979903502-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="4979903502-6">}</span><span class="p" data-group-id="4979903502-5">)</span><span class="w">
-</span><span class="p" data-group-id="4979903502-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4979903502-8">%</span><span class="nc" data-group-id="4979903502-8">Ecto.Changeset</span><span class="p" data-group-id="4979903502-8">{</span><span class="p" data-group-id="4979903502-8">}</span><span class="p" data-group-id="4979903502-7">}</span></code></pre>  </section>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_review</span><span class="p" data-group-id="3974194782-1">(</span><span class="p" data-group-id="3974194782-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="3974194782-2">}</span><span class="p" data-group-id="3974194782-1">)</span><span class="w">
+</span><span class="p" data-group-id="3974194782-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3974194782-4">%</span><span class="nc" data-group-id="3974194782-4">Review</span><span class="p" data-group-id="3974194782-4">{</span><span class="p" data-group-id="3974194782-4">}</span><span class="p" data-group-id="3974194782-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_review</span><span class="p" data-group-id="3974194782-5">(</span><span class="p" data-group-id="3974194782-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="3974194782-6">}</span><span class="p" data-group-id="3974194782-5">)</span><span class="w">
+</span><span class="p" data-group-id="3974194782-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3974194782-8">%</span><span class="nc" data-group-id="3974194782-8">Ecto.Changeset</span><span class="p" data-group-id="3974194782-8">{</span><span class="p" data-group-id="3974194782-8">}</span><span class="p" data-group-id="3974194782-7">}</span></code></pre>
+  </section>
 </section>
 <section class="detail" id="create_review/2">
+
   <div class="detail-header">
     <a href="#create_review/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">create_review(project, type)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/qa/reviews.ex#L6" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="delete_review/1">
+
   <div class="detail-header">
     <a href="#delete_review/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">delete_review(review)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/qa/reviews.ex#L72" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
@@ -231,90 +291,115 @@ Functions          </h1>
   <a href="#delete_review/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_review</span><span class="p" data-group-id="6986074943-1">(</span><span class="n">review</span><span class="p" data-group-id="6986074943-1">)</span><span class="w">
-</span><span class="p" data-group-id="6986074943-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6986074943-3">%</span><span class="nc" data-group-id="6986074943-3">Review</span><span class="p" data-group-id="6986074943-3">{</span><span class="p" data-group-id="6986074943-3">}</span><span class="p" data-group-id="6986074943-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_review</span><span class="p" data-group-id="6986074943-4">(</span><span class="n">review</span><span class="p" data-group-id="6986074943-4">)</span><span class="w">
-</span><span class="p" data-group-id="6986074943-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6986074943-6">%</span><span class="nc" data-group-id="6986074943-6">Ecto.Changeset</span><span class="p" data-group-id="6986074943-6">{</span><span class="p" data-group-id="6986074943-6">}</span><span class="p" data-group-id="6986074943-5">}</span></code></pre>  </section>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_review</span><span class="p" data-group-id="4558269303-1">(</span><span class="n">review</span><span class="p" data-group-id="4558269303-1">)</span><span class="w">
+</span><span class="p" data-group-id="4558269303-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4558269303-3">%</span><span class="nc" data-group-id="4558269303-3">Review</span><span class="p" data-group-id="4558269303-3">{</span><span class="p" data-group-id="4558269303-3">}</span><span class="p" data-group-id="4558269303-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_review</span><span class="p" data-group-id="4558269303-4">(</span><span class="n">review</span><span class="p" data-group-id="4558269303-4">)</span><span class="w">
+</span><span class="p" data-group-id="4558269303-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4558269303-6">%</span><span class="nc" data-group-id="4558269303-6">Ecto.Changeset</span><span class="p" data-group-id="4558269303-6">{</span><span class="p" data-group-id="4558269303-6">}</span><span class="p" data-group-id="4558269303-5">}</span></code></pre>
+  </section>
 </section>
 <section class="detail" id="delete_reviews/1">
+
   <div class="detail-header">
     <a href="#delete_reviews/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">delete_reviews(project_id)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/qa/reviews.ex#L76" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="get_review!/1">
+
   <div class="detail-header">
     <a href="#get_review!/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_review!(id)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/qa/reviews.ex#L18" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="list_reviews/1">
+
   <div class="detail-header">
     <a href="#list_reviews/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">list_reviews(project_id)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/qa/reviews.ex#L20" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="mark_review_done/1">
+
   <div class="detail-header">
     <a href="#mark_review_done/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">mark_review_done(review)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/qa/reviews.ex#L13" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="update_review/2">
+
   <div class="detail-header">
     <a href="#update_review/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">update_review(review, attrs)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/qa/reviews.ex#L48" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
@@ -323,13 +408,16 @@ Functions          </h1>
   <a href="#update_review/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_review</span><span class="p" data-group-id="6850396183-1">(</span><span class="n">qa_review</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6850396183-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="6850396183-2">}</span><span class="p" data-group-id="6850396183-1">)</span><span class="w">
-</span><span class="p" data-group-id="6850396183-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6850396183-4">%</span><span class="nc" data-group-id="6850396183-4">Review</span><span class="p" data-group-id="6850396183-4">{</span><span class="p" data-group-id="6850396183-4">}</span><span class="p" data-group-id="6850396183-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_review</span><span class="p" data-group-id="6850396183-5">(</span><span class="n">qa_review</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6850396183-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="6850396183-6">}</span><span class="p" data-group-id="6850396183-5">)</span><span class="w">
-</span><span class="p" data-group-id="6850396183-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6850396183-8">%</span><span class="nc" data-group-id="6850396183-8">Ecto.Changeset</span><span class="p" data-group-id="6850396183-8">{</span><span class="p" data-group-id="6850396183-8">}</span><span class="p" data-group-id="6850396183-7">}</span></code></pre>  </section>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_review</span><span class="p" data-group-id="1360047000-1">(</span><span class="n">qa_review</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1360047000-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="1360047000-2">}</span><span class="p" data-group-id="1360047000-1">)</span><span class="w">
+</span><span class="p" data-group-id="1360047000-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1360047000-4">%</span><span class="nc" data-group-id="1360047000-4">Review</span><span class="p" data-group-id="1360047000-4">{</span><span class="p" data-group-id="1360047000-4">}</span><span class="p" data-group-id="1360047000-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_review</span><span class="p" data-group-id="1360047000-5">(</span><span class="n">qa_review</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1360047000-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1360047000-6">}</span><span class="p" data-group-id="1360047000-5">)</span><span class="w">
+</span><span class="p" data-group-id="1360047000-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1360047000-8">%</span><span class="nc" data-group-id="1360047000-8">Ecto.Changeset</span><span class="p" data-group-id="1360047000-8">{</span><span class="p" data-group-id="1360047000-8">}</span><span class="p" data-group-id="1360047000-7">}</span></code></pre>
+  </section>
 </section>
+
           </div>
         </section>
+
       <footer class="footer">
         <p>
           <span class="line">
@@ -343,7 +431,9 @@ Functions          </h1>
           </span>
         </p>
         <p>
+
             <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
           <button class="line footer-button display-shortcuts-help">
             Display keyboard shortcuts
           </button>
@@ -363,5 +453,6 @@ Functions          </h1>
   </div>
 </section>
 </div>
+
   </body>
 </html>

@@ -6,14 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
+
     <title>Oli.Lti_1p3 — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
-    <script src="dist/sidebar_items-b0b2abcbe2.js"></script>
+
+    <script src="dist/sidebar_items-f654a0af74.js"></script>
+
       <script src="docs_config.js"></script>
+
     <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+
   </head>
   <body data-type="modules">
     <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+
 <div class="main">
 
 <button class="sidebar-button sidebar-toggle">
@@ -41,14 +47,17 @@
   <div class="sidebar-header">
     <div class="sidebar-projectDetails">
       <a href="http://oli.cmu.edu" class="sidebar-projectName">
-OLI Torus      </a>
+OLI Torus
+      </a>
       <strong class="sidebar-projectVersion">
         v0.1.0
       </strong>
     </div>
+
       <a href="http://oli.cmu.edu">
         <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
       </a>
+
   </div>
 
   <ul class="sidebar-listNav">
@@ -56,7 +65,9 @@ OLI Torus      </a>
 
       <li><a id="modules-list" href="#full-list">Modules</a></li>
 
+
       <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+
   </ul>
   <div class="gradient"></div>
   <ul id="full-list" class="sidebar-fullList"></ul>
@@ -67,11 +78,13 @@ OLI Torus      </a>
     <div id="content" class="content-inner">
 
       <h1>
-        Oli.Lti_1p3 <small class="app-vsn">(OLI Torus v0.1.0)</small>
+Oli.Lti_1p3 <small class="app-vsn">(OLI Torus v0.1.0)</small>
+
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
+
       </h1>
 
 
@@ -84,6 +97,7 @@ OLI Torus      </a>
             </a>
             Summary
           </h1>
+
   <div class="summary-functions summary">
     <h2>
       <a href="#functions">Functions</a>
@@ -91,75 +105,107 @@ OLI Torus      </a>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#cache_lti_params!/2">cache_lti_params!(key, lti_params)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Caches LTI 1.3 params map using the given key. Assumes lti_params contains standard LTI fields
 including &quot;exp&quot; for expiration date</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#create_new_deployment/1">create_new_deployment(attrs)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#create_new_jwk/1">create_new_jwk(attrs)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#create_new_registration/1">create_new_registration(attrs)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#fetch_lti_params/1">fetch_lti_params(key)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Gets a user's cached lti_params from the database using the given key.
 Returns <code class="inline">nil</code> if the lti_params do not exist.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#get_active_jwk/0">get_active_jwk()</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#get_all_jwks/0">get_all_jwks()</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#get_deployment/2">get_deployment(registration, deployment_id)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#get_ird_by_deployment_id/1">get_ird_by_deployment_id(deployment_id)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#get_registration_by_client_id/1">get_registration_by_client_id(client_id)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#get_registration_by_issuer/1">get_registration_by_issuer(issuer)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#get_registration_by_kid/1">get_registration_by_kid(kid)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#insert_or_update_lti_1p3_deployment/1">insert_or_update_lti_1p3_deployment(changes)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Returns lti_1p3 deployment if a record matches deployment_id, or creates and returns a new deployment</p></div>
+
 </div>
+
   </div>
+
         </section>
+
 
         <section id="functions" class="details-list">
           <h1 class="section-heading">
@@ -167,19 +213,24 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p></div
               <span class="icon-link" aria-hidden="true"></span>
               <span class="sr-only">Link to this section</span>
             </a>
-Functions          </h1>
+Functions
+          </h1>
           <div class="functions-list">
 <section class="detail" id="cache_lti_params!/2">
+
   <div class="detail-header">
     <a href="#cache_lti_params!/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">cache_lti_params!(key, lti_params)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L92" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
@@ -189,71 +240,91 @@ including &quot;exp&quot; for expiration date</p><h2 id="cache_lti_params!/2-exa
   <a href="#cache_lti_params!/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">cache_lti_params!</span><span class="p" data-group-id="0178118622-1">(</span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">lti_params</span><span class="p" data-group-id="0178118622-1">)</span><span class="w">
-</span><span class="p" data-group-id="0178118622-2">%</span><span class="nc" data-group-id="0178118622-2">LtiParams</span><span class="p" data-group-id="0178118622-2">{</span><span class="p" data-group-id="0178118622-2">}</span></code></pre>  </section>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">cache_lti_params!</span><span class="p" data-group-id="3344768535-1">(</span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">lti_params</span><span class="p" data-group-id="3344768535-1">)</span><span class="w">
+</span><span class="p" data-group-id="3344768535-2">%</span><span class="nc" data-group-id="3344768535-2">LtiParams</span><span class="p" data-group-id="3344768535-2">{</span><span class="p" data-group-id="3344768535-2">}</span></code></pre>
+  </section>
 </section>
 <section class="detail" id="create_new_deployment/1">
+
   <div class="detail-header">
     <a href="#create_new_deployment/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">create_new_deployment(attrs)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L24" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="create_new_jwk/1">
+
   <div class="detail-header">
     <a href="#create_new_jwk/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">create_new_jwk(attrs)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L35" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="create_new_registration/1">
+
   <div class="detail-header">
     <a href="#create_new_registration/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">create_new_registration(attrs)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L10" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="fetch_lti_params/1">
+
   <div class="detail-header">
     <a href="#fetch_lti_params/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">fetch_lti_params(key)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L112" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
@@ -263,141 +334,181 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p><h2 i
   <a href="#fetch_lti_params/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">fetch_lti_params</span><span class="p" data-group-id="1305617241-1">(</span><span class="s">&quot;some-key&quot;</span><span class="p" data-group-id="1305617241-1">)</span><span class="w">
-</span><span class="p" data-group-id="1305617241-2">%</span><span class="nc" data-group-id="1305617241-2">LtiParams</span><span class="p" data-group-id="1305617241-2">{</span><span class="p" data-group-id="1305617241-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">fetch_lti_params</span><span class="p" data-group-id="1305617241-3">(</span><span class="s">&quot;bad-key&quot;</span><span class="p" data-group-id="1305617241-3">)</span><span class="w">
-</span><span class="no">nil</span></code></pre>  </section>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">fetch_lti_params</span><span class="p" data-group-id="9325111436-1">(</span><span class="s">&quot;some-key&quot;</span><span class="p" data-group-id="9325111436-1">)</span><span class="w">
+</span><span class="p" data-group-id="9325111436-2">%</span><span class="nc" data-group-id="9325111436-2">LtiParams</span><span class="p" data-group-id="9325111436-2">{</span><span class="p" data-group-id="9325111436-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">fetch_lti_params</span><span class="p" data-group-id="9325111436-3">(</span><span class="s">&quot;bad-key&quot;</span><span class="p" data-group-id="9325111436-3">)</span><span class="w">
+</span><span class="no">nil</span></code></pre>
+  </section>
 </section>
 <section class="detail" id="get_active_jwk/0">
+
   <div class="detail-header">
     <a href="#get_active_jwk/0" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_active_jwk()</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L41" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="get_all_jwks/0">
+
   <div class="detail-header">
     <a href="#get_all_jwks/0" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_all_jwks()</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L48" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="get_deployment/2">
+
   <div class="detail-header">
     <a href="#get_deployment/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_deployment(registration, deployment_id)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L30" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="get_ird_by_deployment_id/1">
+
   <div class="detail-header">
     <a href="#get_ird_by_deployment_id/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_ird_by_deployment_id(deployment_id)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L52" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="get_registration_by_client_id/1">
+
   <div class="detail-header">
     <a href="#get_registration_by_client_id/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_registration_by_client_id(client_id)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L60" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="get_registration_by_issuer/1">
+
   <div class="detail-header">
     <a href="#get_registration_by_issuer/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_registration_by_issuer(issuer)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L20" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="get_registration_by_kid/1">
+
   <div class="detail-header">
     <a href="#get_registration_by_kid/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_registration_by_kid(kid)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L16" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="insert_or_update_lti_1p3_deployment/1">
+
   <div class="detail-header">
     <a href="#insert_or_update_lti_1p3_deployment/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">insert_or_update_lti_1p3_deployment(changes)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L76" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
@@ -406,12 +517,15 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p><h2 i
   <a href="#insert_or_update_lti_1p3_deployment/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">insert_or_update_lti_1p3_deployment</span><span class="p" data-group-id="0539484134-1">(</span><span class="p" data-group-id="0539484134-2">%{</span><span class="ss">deployment_id</span><span class="p">:</span><span class="w"> </span><span class="n">deployment_id</span><span class="p" data-group-id="0539484134-2">}</span><span class="p" data-group-id="0539484134-1">)</span><span class="w">
-</span><span class="p" data-group-id="0539484134-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0539484134-4">%</span><span class="nc" data-group-id="0539484134-4">Oli.Lti_1p3.Deployment</span><span class="p" data-group-id="0539484134-4">{</span><span class="p" data-group-id="0539484134-4">}</span><span class="p" data-group-id="0539484134-3">}</span><span class="w">    </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Inserted or updated with success</span><span class="w">
-</span><span class="p" data-group-id="0539484134-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">changeset</span><span class="p" data-group-id="0539484134-5">}</span><span class="w">                 </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Something went wrong</span></code></pre>  </section>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">insert_or_update_lti_1p3_deployment</span><span class="p" data-group-id="1609122084-1">(</span><span class="p" data-group-id="1609122084-2">%{</span><span class="ss">deployment_id</span><span class="p">:</span><span class="w"> </span><span class="n">deployment_id</span><span class="p" data-group-id="1609122084-2">}</span><span class="p" data-group-id="1609122084-1">)</span><span class="w">
+</span><span class="p" data-group-id="1609122084-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1609122084-4">%</span><span class="nc" data-group-id="1609122084-4">Oli.Lti_1p3.Deployment</span><span class="p" data-group-id="1609122084-4">{</span><span class="p" data-group-id="1609122084-4">}</span><span class="p" data-group-id="1609122084-3">}</span><span class="w">    </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Inserted or updated with success</span><span class="w">
+</span><span class="p" data-group-id="1609122084-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">changeset</span><span class="p" data-group-id="1609122084-5">}</span><span class="w">                 </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Something went wrong</span></code></pre>
+  </section>
 </section>
+
           </div>
         </section>
+
       <footer class="footer">
         <p>
           <span class="line">
@@ -425,7 +539,9 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p><h2 i
           </span>
         </p>
         <p>
+
             <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
           <button class="line footer-button display-shortcuts-help">
             Display keyboard shortcuts
           </button>
@@ -445,5 +561,6 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p><h2 i
   </div>
 </section>
 </div>
+
   </body>
 </html>

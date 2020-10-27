@@ -6,14 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
+
     <title>Oli.Authoring.Editing.ActivityEditor — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
-    <script src="dist/sidebar_items-b0b2abcbe2.js"></script>
+
+    <script src="dist/sidebar_items-f654a0af74.js"></script>
+
       <script src="docs_config.js"></script>
+
     <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+
   </head>
   <body data-type="modules">
     <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+
 <div class="main">
 
 <button class="sidebar-button sidebar-toggle">
@@ -41,14 +47,17 @@
   <div class="sidebar-header">
     <div class="sidebar-projectDetails">
       <a href="http://oli.cmu.edu" class="sidebar-projectName">
-OLI Torus      </a>
+OLI Torus
+      </a>
       <strong class="sidebar-projectVersion">
         v0.1.0
       </strong>
     </div>
+
       <a href="http://oli.cmu.edu">
         <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
       </a>
+
   </div>
 
   <ul class="sidebar-listNav">
@@ -56,7 +65,9 @@ OLI Torus      </a>
 
       <li><a id="modules-list" href="#full-list">Modules</a></li>
 
+
       <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+
   </ul>
   <div class="gradient"></div>
   <ul id="full-list" class="sidebar-fullList"></ul>
@@ -67,16 +78,20 @@ OLI Torus      </a>
     <div id="content" class="content-inner">
 
       <h1>
-        Oli.Authoring.Editing.ActivityEditor <small class="app-vsn">(OLI Torus v0.1.0)</small>
+Oli.Authoring.Editing.ActivityEditor <small class="app-vsn">(OLI Torus v0.1.0)</small>
+
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
+
       </h1>
 
 
         <section id="moduledoc">
-<p>This module provides content editing facilities for activities.</p>        </section>
+<p>This module provides content editing facilities for activities.</p>
+        </section>
+
 
         <section id="summary" class="details-list">
           <h1 class="section-heading">
@@ -86,6 +101,7 @@ OLI Torus      </a>
             </a>
             Summary
           </h1>
+
   <div class="summary-functions summary">
     <h2>
       <a href="#functions">Functions</a>
@@ -93,36 +109,52 @@ OLI Torus      </a>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#create/5">create(project_slug, activity_type_slug, author, model, objectives)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Attempts to process a request to create a new activity.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#create_context/4">create_context(project_slug, revision_slug, activity_slug, author)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Creates the context necessary to power a client side activity editor,
 where this activity is being editing within the context of being
 referenced from a resource.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#edit/5">edit(project_slug, revision_slug, activity_slug, author_email, update)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Attempts to process an edit for an activity specified by a given
 project and revision slug and activity slug for the author specified by email.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#get_latest_revision/2">get_latest_revision(publication_id, resource_id)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#translate_ids_to_slugs/2">translate_ids_to_slugs(project_slug, objectives)</a>
+
   </div>
+
 </div>
+
   </div>
+
         </section>
+
 
         <section id="functions" class="details-list">
           <h1 class="section-heading">
@@ -130,24 +162,31 @@ project and revision slug and activity slug for the author specified by email.</
               <span class="icon-link" aria-hidden="true"></span>
               <span class="sr-only">Link to this section</span>
             </a>
-Functions          </h1>
+Functions
+          </h1>
           <div class="functions-list">
 <section class="detail" id="create/5">
+
   <div class="detail-header">
     <a href="#create/5" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">create(project_slug, activity_type_slug, author, model, objectives)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L228" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>create(
   <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
   <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
@@ -209,48 +248,61 @@ Functions          </h1>
   | {:error, {:not_found}}
   | {:error, {:error}}
   | {:error, {:not_authorized}}</pre>
+
       </div>
 
 <p>Attempts to process a request to create a new activity.</p><p>Returns:</p><p>.<code class="inline">{:ok, %Activity{}}</code> when the creation processes succeeds
 .<code class="inline">{:error, {:not_found}}</code> if the project, resource, or user cannot be found
 .<code class="inline">{:error, {:not_authorized}}</code> if the user is not authorized to create this activity
-.<code class="inline">{:error, {:error}}</code> unknown error</p>  </section>
+.<code class="inline">{:error, {:error}}</code> unknown error</p>
+  </section>
 </section>
 <section class="detail" id="create_context/4">
+
   <div class="detail-header">
     <a href="#create_context/4" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">create_context(project_slug, revision_slug, activity_slug, author)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L258" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
 <p>Creates the context necessary to power a client side activity editor,
 where this activity is being editing within the context of being
-referenced from a resource.</p>  </section>
+referenced from a resource.</p>
+  </section>
 </section>
 <section class="detail" id="edit/5">
+
   <div class="detail-header">
     <a href="#edit/5" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">edit(project_slug, revision_slug, activity_slug, author_email, update)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L47" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>edit(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), %{}) ::
   {:ok,
    %Oli.Resources.Revision{
@@ -286,6 +338,7 @@ referenced from a resource.</p>  </section>
   | {:error, {:error}}
   | {:error, {:lock_not_acquired}}
   | {:error, {:not_authorized}}</pre>
+
       </div>
 
 <p>Attempts to process an edit for an activity specified by a given
@@ -298,44 +351,57 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
 .<code class="inline">{:error, {:lock_not_acquired}}</code> if the lock could not be acquired or updated
 .<code class="inline">{:error, {:not_found}}</code> if the project, resource, activity, or user cannot be found
 .<code class="inline">{:error, {:not_authorized}}</code> if the user is not authorized to edit this activity
-.<code class="inline">{:error, {:error}}</code> unknown error</p>  </section>
+.<code class="inline">{:error, {:error}}</code> unknown error</p>
+  </section>
 </section>
 <section class="detail" id="get_latest_revision/2">
+
   <div class="detail-header">
     <a href="#get_latest_revision/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_latest_revision(publication_id, resource_id)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L292" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="translate_ids_to_slugs/2">
+
   <div class="detail-header">
     <a href="#translate_ids_to_slugs/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">translate_ids_to_slugs(project_slug, objectives)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L142" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
+
           </div>
         </section>
+
       <footer class="footer">
         <p>
           <span class="line">
@@ -349,7 +415,9 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
           </span>
         </p>
         <p>
+
             <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
           <button class="line footer-button display-shortcuts-help">
             Display keyboard shortcuts
           </button>
@@ -369,5 +437,6 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
   </div>
 </section>
 </div>
+
   </body>
 </html>

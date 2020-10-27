@@ -6,14 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
+
     <title>Oli.Authoring.Locks — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
-    <script src="dist/sidebar_items-b0b2abcbe2.js"></script>
+
+    <script src="dist/sidebar_items-f654a0af74.js"></script>
+
       <script src="docs_config.js"></script>
+
     <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+
   </head>
   <body data-type="modules">
     <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+
 <div class="main">
 
 <button class="sidebar-button sidebar-toggle">
@@ -41,14 +47,17 @@
   <div class="sidebar-header">
     <div class="sidebar-projectDetails">
       <a href="http://oli.cmu.edu" class="sidebar-projectName">
-OLI Torus      </a>
+OLI Torus
+      </a>
       <strong class="sidebar-projectVersion">
         v0.1.0
       </strong>
     </div>
+
       <a href="http://oli.cmu.edu">
         <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
       </a>
+
   </div>
 
   <ul class="sidebar-listNav">
@@ -56,7 +65,9 @@ OLI Torus      </a>
 
       <li><a id="modules-list" href="#full-list">Modules</a></li>
 
+
       <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+
   </ul>
   <div class="gradient"></div>
   <ul id="full-list" class="sidebar-fullList"></ul>
@@ -67,11 +78,13 @@ OLI Torus      </a>
     <div id="content" class="content-inner">
 
       <h1>
-        Oli.Authoring.Locks <small class="app-vsn">(OLI Torus v0.1.0)</small>
+Oli.Authoring.Locks <small class="app-vsn">(OLI Torus v0.1.0)</small>
+
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
+
       </h1>
 
 
@@ -103,7 +116,9 @@ editing session without closing their browser.</p><h2 id="module-actions" class=
 results in the resource mapping record being stamped with the users id, but
 with an <code class="inline">nil</code> last updated at date.  Updating a lock sets the last updated at
 date. Releasing a lock sets both the user and last updated at to <code class="inline">nil</code>. Coupled
-with</p>        </section>
+with</p>
+        </section>
+
 
         <section id="summary" class="details-list">
           <h1 class="section-heading">
@@ -113,6 +128,7 @@ with</p>        </section>
             </a>
             Summary
           </h1>
+
   <div class="summary-functions summary">
     <h2>
       <a href="#functions">Functions</a>
@@ -120,36 +136,52 @@ with</p>        </section>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#acquire/3">acquire(publication_id, resource_id, user_id)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Attempts to acquire or update a lock for user <code class="inline">user_id</code> the resource mapping
 defined by <code class="inline">publication_id</code> and <code class="inline">resource_id</code>.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#expired_or_empty?/1">expired_or_empty?(mapping)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#expired_or_empty_predicate?/1">expired_or_empty_predicate?(mapping)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#release/3">release(publication_id, resource_id, user_id)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Releases a lock held by user <code class="inline">user_id</code> the resource mapping
 defined by <code class="inline">publication_id</code> and <code class="inline">resource_id</code>.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#update/3">update(publication_id, resource_id, user_id)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Attempts to acquire or update a lock for user <code class="inline">user_id</code> the resource mapping
 defined by <code class="inline">publication_id</code> and <code class="inline">resource_id</code>.</p></div>
+
 </div>
+
   </div>
+
         </section>
+
 
         <section id="functions" class="details-list">
           <h1 class="section-heading">
@@ -157,24 +189,31 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
               <span class="icon-link" aria-hidden="true"></span>
               <span class="sr-only">Link to this section</span>
             </a>
-Functions          </h1>
+Functions
+          </h1>
           <div class="functions-list">
 <section class="detail" id="acquire/3">
+
   <div class="detail-header">
     <a href="#acquire/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">acquire(publication_id, resource_id, user_id)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L64" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>acquire(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()) ::
   {:error}
   | {:acquired}
@@ -190,87 +229,113 @@ Functions          </h1>
         second: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
         year: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()
       }}}</pre>
+
       </div>
 
 <p>Attempts to acquire or update a lock for user <code class="inline">user_id</code> the resource mapping
 defined by <code class="inline">publication_id</code> and <code class="inline">resource_id</code>.</p><p>Returns:</p><p>.<code class="inline">{:acquired}</code> if the lock was acquired
 .<code class="inline">{:error}</code> if an internal error was encountered
-.<code class="inline">{:lock_not_acquired, {user_email, date_time}}</code> the date and user id of the existing lock</p>  </section>
+.<code class="inline">{:lock_not_acquired, {user_email, date_time}}</code> the date and user id of the existing lock</p>
+  </section>
 </section>
 <section class="detail" id="expired_or_empty?/1">
+
   <div class="detail-header">
     <a href="#expired_or_empty?/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">expired_or_empty?(mapping)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L182" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="expired_or_empty_predicate?/1">
+
   <div class="detail-header">
     <a href="#expired_or_empty_predicate?/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">expired_or_empty_predicate?(mapping)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L186" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="release/3">
+
   <div class="detail-header">
     <a href="#release/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">release(publication_id, resource_id, user_id)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L142" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>release(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()) :: {:error} | {:lock_not_held} | {:ok}</pre>
+
       </div>
 
 <p>Releases a lock held by user <code class="inline">user_id</code> the resource mapping
 defined by <code class="inline">publication_id</code> and <code class="inline">resource_id</code>.</p><p>Returns:</p><p>.<code class="inline">{:ok}</code> if the lock was released
 .<code class="inline">{:error}</code> if an internal error was encountered
-.<code class="inline">{:lock_not_held}</code> if the lock was not held by this user</p>  </section>
+.<code class="inline">{:lock_not_held}</code> if the lock was not held by this user</p>
+  </section>
 </section>
 <section class="detail" id="update/3">
+
   <div class="detail-header">
     <a href="#update/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">update(publication_id, resource_id, user_id)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L110" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>update(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()) ::
   {:error}
   | {:acquired}
@@ -287,16 +352,20 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
         second: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
         year: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()
       }}}</pre>
+
       </div>
 
 <p>Attempts to acquire or update a lock for user <code class="inline">user_id</code> the resource mapping
 defined by <code class="inline">publication_id</code> and <code class="inline">resource_id</code>.</p><p>Returns:</p><p>.<code class="inline">{:acquired}</code> if the lock was acquired
 .<code class="inline">{:updated}</code> if the lock was updated
 .<code class="inline">{:error}</code> if an internal error was encountered
-.<code class="inline">{:lock_not_acquired, {user_email, date_time}}</code> the date and user id of the existing lock</p>  </section>
+.<code class="inline">{:lock_not_acquired, {user_email, date_time}}</code> the date and user id of the existing lock</p>
+  </section>
 </section>
+
           </div>
         </section>
+
       <footer class="footer">
         <p>
           <span class="line">
@@ -310,7 +379,9 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
           </span>
         </p>
         <p>
+
             <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
           <button class="line footer-button display-shortcuts-help">
             Display keyboard shortcuts
           </button>
@@ -330,5 +401,6 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
   </div>
 </section>
 </div>
+
   </body>
 </html>

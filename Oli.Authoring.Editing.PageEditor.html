@@ -6,14 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
+
     <title>Oli.Authoring.Editing.PageEditor — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
-    <script src="dist/sidebar_items-b0b2abcbe2.js"></script>
+
+    <script src="dist/sidebar_items-f654a0af74.js"></script>
+
       <script src="docs_config.js"></script>
+
     <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+
   </head>
   <body data-type="modules">
     <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+
 <div class="main">
 
 <button class="sidebar-button sidebar-toggle">
@@ -41,14 +47,17 @@
   <div class="sidebar-header">
     <div class="sidebar-projectDetails">
       <a href="http://oli.cmu.edu" class="sidebar-projectName">
-OLI Torus      </a>
+OLI Torus
+      </a>
       <strong class="sidebar-projectVersion">
         v0.1.0
       </strong>
     </div>
+
       <a href="http://oli.cmu.edu">
         <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
       </a>
+
   </div>
 
   <ul class="sidebar-listNav">
@@ -56,7 +65,9 @@ OLI Torus      </a>
 
       <li><a id="modules-list" href="#full-list">Modules</a></li>
 
+
       <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+
   </ul>
   <div class="gradient"></div>
   <ul id="full-list" class="sidebar-fullList"></ul>
@@ -67,16 +78,20 @@ OLI Torus      </a>
     <div id="content" class="content-inner">
 
       <h1>
-        Oli.Authoring.Editing.PageEditor <small class="app-vsn">(OLI Torus v0.1.0)</small>
+Oli.Authoring.Editing.PageEditor <small class="app-vsn">(OLI Torus v0.1.0)</small>
+
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
+
       </h1>
 
 
         <section id="moduledoc">
-<p>This module provides content editing facilities for pages.</p>        </section>
+<p>This module provides content editing facilities for pages.</p>
+        </section>
+
 
         <section id="summary" class="details-list">
           <h1 class="section-heading">
@@ -86,6 +101,7 @@ OLI Torus      </a>
             </a>
             Summary
           </h1>
+
   <div class="summary-functions summary">
     <h2>
       <a href="#functions">Functions</a>
@@ -93,56 +109,81 @@ OLI Torus      </a>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#acquire_lock/3">acquire_lock(project_slug, revision_slug, author_email)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Attempts to lock a resource for editing.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#construct_parent_references/1">construct_parent_references(objectives)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#create_context/3">create_context(project_slug, revision_slug, author)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Creates the context necessary to power a client side resource editor
 for a specific resource / revision.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#create_new_revision/4">create_new_revision(arg, publication, resource, author_id)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#edit/4">edit(project_slug, revision_slug, author_email, update)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Attempts to process an edit for a resource specified by a given
 project and revision slug, for the author specified by email.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#get_latest_revision/2">get_latest_revision(publication, resource)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#id_to_slug/2">id_to_slug(attached_objectives, all_objectives)</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#release_lock/3">release_lock(project_slug, revision_slug, author_email)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Attempts to release an edit lock.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#render_page_html/4">render_page_html(project_slug, revision_slug, author, options \\ [])</a>
+
   </div>
+
 </div>
+
   </div>
+
         </section>
+
 
         <section id="functions" class="details-list">
           <h1 class="section-heading">
@@ -150,30 +191,38 @@ project and revision slug, for the author specified by email.</p></div>
               <span class="icon-link" aria-hidden="true"></span>
               <span class="sr-only">Link to this section</span>
             </a>
-Functions          </h1>
+Functions
+          </h1>
           <div class="functions-list">
 <section class="detail" id="acquire_lock/3">
+
   <div class="detail-header">
     <a href="#acquire_lock/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">acquire_lock(project_slug, revision_slug, author_email)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L120" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>acquire_lock(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()) ::
   {:acquired}
   | {:lock_not_acquired, <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()}
   | {:error, {:not_found}}
   | {:error, {:error}}
   | {:error, {:not_authorized}}</pre>
+
       </div>
 
 <p>Attempts to lock a resource for editing.</p><p>Not acquiring the lock here isn't considered a failure, as it is
@@ -181,76 +230,98 @@ an expected condition that a user could encounter.</p><p>Returns:</p><p>.<code c
 .<code class="inline">{:lock_not_acquired, user_email}</code> if the lock could not be acquired
 .<code class="inline">{:error, {:not_found}}</code> if the project, resource, or user cannot be found
 .<code class="inline">{:error, {:not_authorized}}</code> if the user is not authorized to edit this resource
-.<code class="inline">{:error, {:error}}</code> unknown error</p>  </section>
+.<code class="inline">{:error, {:error}}</code> unknown error</p>
+  </section>
 </section>
 <section class="detail" id="construct_parent_references/1">
+
   <div class="detail-header">
     <a href="#construct_parent_references/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">construct_parent_references(objectives)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L407" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="create_context/3">
+
   <div class="detail-header">
     <a href="#create_context/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">create_context(project_slug, revision_slug, author)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L178" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
 <p>Creates the context necessary to power a client side resource editor
-for a specific resource / revision.</p>  </section>
+for a specific resource / revision.</p>
+  </section>
 </section>
 <section class="detail" id="create_new_revision/4">
+
   <div class="detail-header">
     <a href="#create_new_revision/4" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">create_new_revision(arg, publication, resource, author_id)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L477" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="edit/4">
+
   <div class="detail-header">
     <a href="#edit/4" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">edit(project_slug, revision_slug, author_email, update)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L49" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>edit(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), %{}) ::
   {:ok,
    %Oli.Resources.Revision{
@@ -286,6 +357,7 @@ for a specific resource / revision.</p>  </section>
   | {:error, {:error}}
   | {:error, {:lock_not_acquired}}
   | {:error, {:not_authorized}}</pre>
+
       </div>
 
 <p>Attempts to process an edit for a resource specified by a given
@@ -298,90 +370,117 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
 .<code class="inline">{:error, {:lock_not_acquired}}</code> if the lock could not be acquired or updated
 .<code class="inline">{:error, {:not_found}}</code> if the project, resource, or user cannot be found
 .<code class="inline">{:error, {:not_authorized}}</code> if the user is not authorized to edit this resource
-.<code class="inline">{:error, {:error}}</code> unknown error</p>  </section>
+.<code class="inline">{:error, {:error}}</code> unknown error</p>
+  </section>
 </section>
 <section class="detail" id="get_latest_revision/2">
+
   <div class="detail-header">
     <a href="#get_latest_revision/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">get_latest_revision(publication, resource)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L460" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="id_to_slug/2">
+
   <div class="detail-header">
     <a href="#id_to_slug/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">id_to_slug(attached_objectives, all_objectives)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L426" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
 <section class="detail" id="release_lock/3">
+
   <div class="detail-header">
     <a href="#release_lock/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">release_lock(project_slug, revision_slug, author_email)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L156" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>release_lock(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()) ::
   {:ok, {:released}}
   | {:error, {:not_found}}
   | {:error, {:not_authorized}}
   | {:error, {:error}}</pre>
+
       </div>
 
 <p>Attempts to release an edit lock.</p><p>Returns:</p><p>.<code class="inline">{:ok, {:released}}</code> when the lock is acquired
 .<code class="inline">{:error, {:error}</code> if an unknown error encountered
 .<code class="inline">{:error, {:not_found}}</code> if the project, resource, or user cannot be found
-.<code class="inline">{:error, {:not_authorized}}</code> if the user is not authorized to edit this resource</p>  </section>
+.<code class="inline">{:error, {:not_authorized}}</code> if the user is not authorized to edit this resource</p>
+  </section>
 </section>
 <section class="detail" id="render_page_html/4">
+
     <span id="render_page_html/3"></span>
+
   <div class="detail-header">
     <a href="#render_page_html/4" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">render_page_html(project_slug, revision_slug, author, options \\ [])</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L195" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
+
   </section>
 </section>
+
           </div>
         </section>
+
       <footer class="footer">
         <p>
           <span class="line">
@@ -395,7 +494,9 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
           </span>
         </p>
         <p>
+
             <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
           <button class="line footer-button display-shortcuts-help">
             Display keyboard shortcuts
           </button>
@@ -415,5 +516,6 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
   </div>
 </section>
 </div>
+
   </body>
 </html>

@@ -6,14 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
+
     <title>Oli.Publishing.Resolver — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
-    <script src="dist/sidebar_items-b0b2abcbe2.js"></script>
+
+    <script src="dist/sidebar_items-f654a0af74.js"></script>
+
       <script src="docs_config.js"></script>
+
     <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+
   </head>
   <body data-type="modules">
     <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+
 <div class="main">
 
 <button class="sidebar-button sidebar-toggle">
@@ -41,14 +47,17 @@
   <div class="sidebar-header">
     <div class="sidebar-projectDetails">
       <a href="http://oli.cmu.edu" class="sidebar-projectName">
-OLI Torus      </a>
+OLI Torus
+      </a>
       <strong class="sidebar-projectVersion">
         v0.1.0
       </strong>
     </div>
+
       <a href="http://oli.cmu.edu">
         <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
       </a>
+
   </div>
 
   <ul class="sidebar-listNav">
@@ -56,7 +65,9 @@ OLI Torus      </a>
 
       <li><a id="modules-list" href="#full-list">Modules</a></li>
 
+
       <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+
   </ul>
   <div class="gradient"></div>
   <ul id="full-list" class="sidebar-fullList"></ul>
@@ -67,16 +78,20 @@ OLI Torus      </a>
     <div id="content" class="content-inner">
 
       <h1>
-        Oli.Publishing.Resolver <small>behaviour</small> <small class="app-vsn">(OLI Torus v0.1.0)</small>
+Oli.Publishing.Resolver <small>behaviour</small> <small class="app-vsn">(OLI Torus v0.1.0)</small>
+
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/resolver.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
+
       </h1>
 
 
         <section id="moduledoc">
-<p>The <code class="inline">AuthoringResolver</code> and <code class="inline">DeliveryResolver</code> implement</p>        </section>
+<p>The <code class="inline">AuthoringResolver</code> and <code class="inline">DeliveryResolver</code> implement</p>
+        </section>
+
 
         <section id="summary" class="details-list">
           <h1 class="section-heading">
@@ -86,6 +101,7 @@ OLI Torus      </a>
             </a>
             Summary
           </h1>
+
   <div class="summary-callbacks summary">
     <h2>
       <a href="#callbacks">Callbacks</a>
@@ -93,45 +109,66 @@ OLI Torus      </a>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:all_revisions_in_hierarchy/1">all_revisions_in_hierarchy(arg1)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Resolves the revisions of all containers and pages</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:find_parent_objectives/2">find_parent_objectives(arg1, list)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Finds the parent objectives for a list of objective resource ids that
 might be child objectives.  Returns a map of the child objective resource id
 to the parent objective.  There will not be an entry in this map if
 a given objective resource id is a root objective</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:from_resource_id/2">from_resource_id(arg1, list)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Resolves a revision from a list of resource ids and a given context slug.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:from_revision_slug/2">from_revision_slug(arg1, arg2)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Resolves a revision from a revision slug.
 Returns nil if a revision cannot be resolved.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:publication/1">publication(arg1)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Returns the publication that is used for resolution.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:root_container/1">root_container(arg1)</a>
+
   </div>
+
     <div class="summary-synopsis"><p>Resolves the revision of the root container.</p></div>
+
 </div>
+
   </div>
+
         </section>
+
 
         <section id="callbacks" class="details-list">
           <h1 class="section-heading">
@@ -139,24 +176,31 @@ Returns nil if a revision cannot be resolved.</p></div>
               <span class="icon-link" aria-hidden="true"></span>
               <span class="sr-only">Link to this section</span>
             </a>
-Callbacks          </h1>
+Callbacks
+          </h1>
           <div class="callbacks-list">
 <section class="detail" id="c:all_revisions_in_hierarchy/1">
+
   <div class="detail-header">
     <a href="#c:all_revisions_in_hierarchy/1" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">all_revisions_in_hierarchy(arg1)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/resolver.ex#L44" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>all_revisions_in_hierarchy(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()) :: [
   %Oli.Resources.Revision{
     __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -188,50 +232,66 @@ Callbacks          </h1>
     warnings: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   }
 ]</pre>
+
       </div>
 
-<p>Resolves the revisions of all containers and pages</p>  </section>
+<p>Resolves the revisions of all containers and pages</p>
+  </section>
 </section>
 <section class="detail" id="c:find_parent_objectives/2">
+
   <div class="detail-header">
     <a href="#c:find_parent_objectives/2" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">find_parent_objectives(arg1, list)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/resolver.ex#L53" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>find_parent_objectives(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), [<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()]) :: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()</pre>
+
       </div>
 
 <p>Finds the parent objectives for a list of objective resource ids that
 might be child objectives.  Returns a map of the child objective resource id
 to the parent objective.  There will not be an entry in this map if
-a given objective resource id is a root objective</p>  </section>
+a given objective resource id is a root objective</p>
+  </section>
 </section>
 <section class="detail" id="c:from_resource_id/2">
+
   <div class="detail-header">
     <a href="#c:from_resource_id/2" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">from_resource_id(arg1, list)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/resolver.ex#L21" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>from_resource_id(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), [<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()]) :: [
   %Oli.Resources.Revision{
     __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -263,6 +323,7 @@ a given objective resource id is a root objective</p>  </section>
     warnings: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   }
 ]</pre>
+
           <pre>from_resource_id(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()) :: %Oli.Resources.Revision{
   __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   activity_type: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -292,6 +353,7 @@ a given objective resource id is a root objective</p>  </section>
   updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   warnings: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
 }</pre>
+
       </div>
 
 <p>Resolves a revision from a list of resource ids and a given context slug.</p><p>Ensures that the ordering of the resolved revisions matches the
@@ -299,24 +361,31 @@ ordering of the input resource ids.  If any of the resource ids
 cannot be resolved, a nil will be present in the slot in the
 resultant list. In other words, this function can be viewed as a
 functional mapping of the list of resource ids to their resolved
-revision.</p>  </section>
+revision.</p>
+  </section>
 </section>
 <section class="detail" id="c:from_revision_slug/2">
+
   <div class="detail-header">
     <a href="#c:from_revision_slug/2" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">from_revision_slug(arg1, arg2)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/resolver.ex#L28" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>from_revision_slug(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()) :: %Oli.Resources.Revision{
   __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   activity_type: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -346,27 +415,35 @@ revision.</p>  </section>
   updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   warnings: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
 }</pre>
+
       </div>
 
 <p>Resolves a revision from a revision slug.
-Returns nil if a revision cannot be resolved.</p>  </section>
+Returns nil if a revision cannot be resolved.</p>
+  </section>
 </section>
 <section class="detail" id="c:publication/1">
+
   <div class="detail-header">
     <a href="#c:publication/1" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">publication(arg1)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/resolver.ex#L33" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>publication(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()) :: %Oli.Publishing.Publication{
   __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   description: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -380,26 +457,34 @@ Returns nil if a revision cannot be resolved.</p>  </section>
   root_resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
 }</pre>
+
       </div>
 
-<p>Returns the publication that is used for resolution.</p>  </section>
+<p>Returns the publication that is used for resolution.</p>
+  </section>
 </section>
 <section class="detail" id="c:root_container/1">
+
   <div class="detail-header">
     <a href="#c:root_container/1" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">root_container(arg1)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/resolver.ex#L39" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>root_container(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()) :: %Oli.Resources.Revision{
   __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   activity_type: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -429,12 +514,16 @@ Returns nil if a revision cannot be resolved.</p>  </section>
   updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   warnings: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
 }</pre>
+
       </div>
 
-<p>Resolves the revision of the root container.</p>  </section>
+<p>Resolves the revision of the root container.</p>
+  </section>
 </section>
+
           </div>
         </section>
+
       <footer class="footer">
         <p>
           <span class="line">
@@ -448,7 +537,9 @@ Returns nil if a revision cannot be resolved.</p>  </section>
           </span>
         </p>
         <p>
+
             <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
           <button class="line footer-button display-shortcuts-help">
             Display keyboard shortcuts
           </button>
@@ -468,5 +559,6 @@ Returns nil if a revision cannot be resolved.</p>  </section>
   </div>
 </section>
 </div>
+
   </body>
 </html>

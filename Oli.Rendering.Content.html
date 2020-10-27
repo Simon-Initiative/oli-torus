@@ -6,14 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
+
     <title>Oli.Rendering.Content — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
-    <script src="dist/sidebar_items-b0b2abcbe2.js"></script>
+
+    <script src="dist/sidebar_items-f654a0af74.js"></script>
+
       <script src="docs_config.js"></script>
+
     <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+
   </head>
   <body data-type="modules">
     <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+
 <div class="main">
 
 <button class="sidebar-button sidebar-toggle">
@@ -41,14 +47,17 @@
   <div class="sidebar-header">
     <div class="sidebar-projectDetails">
       <a href="http://oli.cmu.edu" class="sidebar-projectName">
-OLI Torus      </a>
+OLI Torus
+      </a>
       <strong class="sidebar-projectVersion">
         v0.1.0
       </strong>
     </div>
+
       <a href="http://oli.cmu.edu">
         <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
       </a>
+
   </div>
 
   <ul class="sidebar-listNav">
@@ -56,7 +65,9 @@ OLI Torus      </a>
 
       <li><a id="modules-list" href="#full-list">Modules</a></li>
 
+
       <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+
   </ul>
   <div class="gradient"></div>
   <ul id="full-list" class="sidebar-fullList"></ul>
@@ -67,18 +78,22 @@ OLI Torus      </a>
     <div id="content" class="content-inner">
 
       <h1>
-        Oli.Rendering.Content <small>behaviour</small> <small class="app-vsn">(OLI Torus v0.1.0)</small>
+Oli.Rendering.Content <small>behaviour</small> <small class="app-vsn">(OLI Torus v0.1.0)</small>
+
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
+
       </h1>
 
 
         <section id="moduledoc">
 <p>This modules defines the rendering functionality for Oli structured content. Rendering is
 extensibile to any format which implements the behavior defined in this module, then specifying
-that format at render time. For an example of how exactly to extend this, see <code class="inline">content/html.ex</code>.</p>        </section>
+that format at render time. For an example of how exactly to extend this, see <code class="inline">content/html.ex</code>.</p>
+        </section>
+
 
         <section id="summary" class="details-list">
           <h1 class="section-heading">
@@ -88,6 +103,7 @@ that format at render time. For an example of how exactly to extend this, see <c
             </a>
             Summary
           </h1>
+
   <div class="summary-types summary">
     <h2>
       <a href="#types">Types</a>
@@ -95,14 +111,20 @@ that format at render time. For an example of how exactly to extend this, see <c
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#t:children/0">children()</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#t:next/0">next()</a>
+
   </div>
+
 </div>
+
   </div>
+
   <div class="summary-functions summary">
     <h2>
       <a href="#functions">Functions</a>
@@ -110,11 +132,16 @@ that format at render time. For an example of how exactly to extend this, see <c
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#render/3">render(context, element, writer)</a>
+
   </div>
-    <div class="summary-synopsis"><p>Renders an error message if none of the signatures above match. Logging and rendering of errors
-can be configured using the render_opts in context</p></div>
+
+    <div class="summary-synopsis"><p>Renders an Oli content element that contains children.
+Returns an IO list of raw html strings to be futher processed by Phoenix/BEAM writev.</p></div>
+
 </div>
+
   </div>
+
   <div class="summary-callbacks summary">
     <h2>
       <a href="#callbacks">Callbacks</a>
@@ -122,140 +149,197 @@ can be configured using the render_opts in context</p></div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:a/3">a(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:audio/3">audio(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:blockquote/3">blockquote(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:code/3">code(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:code_line/3">code_line(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:error/3">error(%Oli.Rendering.Context{}, %{}, {})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:example/3">example(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:h1/3">h1(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:h2/3">h2(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:h3/3">h3(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:h4/3">h4(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:h5/3">h5(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:h6/3">h6(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:img/3">img(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:learn_more/3">learn_more(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:li/3">li(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:math/3">math(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:math_line/3">math_line(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:ol/3">ol(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:p/3">p(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:table/3">table(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:td/3">td(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:text/2">text(%Oli.Rendering.Context{}, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:th/3">th(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:tr/3">tr(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:ul/3">ul(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#c:youtube/3">youtube(%Oli.Rendering.Context{}, next, %{})</a>
+
   </div>
+
 </div>
+
   </div>
+
         </section>
+
 
         <section id="types" class="details-list">
           <h1 class="section-heading">
@@ -263,104 +347,138 @@ can be configured using the render_opts in context</p></div>
               <span class="icon-link" aria-hidden="true"></span>
               <span class="sr-only">Link to this section</span>
             </a>
-Types          </h1>
+Types
+          </h1>
           <div class="types-list">
 <section class="detail" id="t:children/0">
+
   <div class="detail-header">
     <a href="#t:children/0" class="detail-link" title="Link to this type">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this type</span>
     </a>
     <h1 class="signature">children()</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L14" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>children() :: [%{}]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="t:next/0">
+
   <div class="detail-header">
     <a href="#t:next/0" class="detail-link" title="Link to this type">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this type</span>
     </a>
     <h1 class="signature">next()</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L13" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>next() :: (() -&gt; <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>())</pre>
+
       </div>
+
 
   </section>
 </section>
+
           </div>
         </section>
+
         <section id="functions" class="details-list">
           <h1 class="section-heading">
             <a class="hover-link" href="#functions">
               <span class="icon-link" aria-hidden="true"></span>
               <span class="sr-only">Link to this section</span>
             </a>
-Functions          </h1>
+Functions
+          </h1>
           <div class="functions-list">
 <section class="detail" id="render/3">
+
   <div class="detail-header">
     <a href="#render/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">render(context, element, writer)</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L48" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
 
-<p>Renders an error message if none of the signatures above match. Logging and rendering of errors
-can be configured using the render_opts in context</p>  </section>
+<p>Renders an Oli content element that contains children.
+Returns an IO list of raw html strings to be futher processed by Phoenix/BEAM writev.</p>
+  </section>
 </section>
+
           </div>
         </section>
+
         <section id="callbacks" class="details-list">
           <h1 class="section-heading">
             <a class="hover-link" href="#callbacks">
               <span class="icon-link" aria-hidden="true"></span>
               <span class="sr-only">Link to this section</span>
             </a>
-Callbacks          </h1>
+Callbacks
+          </h1>
           <div class="callbacks-list">
 <section class="detail" id="c:a/3">
+
   <div class="detail-header">
     <a href="#c:a/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">a(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L41" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>a(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -371,26 +489,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:audio/3">
+
   <div class="detail-header">
     <a href="#c:audio/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">audio(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L28" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>audio(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -401,26 +527,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:blockquote/3">
+
   <div class="detail-header">
     <a href="#c:blockquote/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">blockquote(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L40" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>blockquote(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -431,26 +565,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:code/3">
+
   <div class="detail-header">
     <a href="#c:code/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">code(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L38" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>code(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -461,26 +603,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:code_line/3">
+
   <div class="detail-header">
     <a href="#c:code_line/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">code_line(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L39" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>code_line(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -491,26 +641,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:error/3">
+
   <div class="detail-header">
     <a href="#c:error/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">error(%Oli.Rendering.Context{}, %{}, {})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L42" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>error(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -521,26 +679,34 @@ Callbacks          </h1>
   %{},
   {Atom.t(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:example/3">
+
   <div class="detail-header">
     <a href="#c:example/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">example(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L16" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>example(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -551,26 +717,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:h1/3">
+
   <div class="detail-header">
     <a href="#c:h1/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">h1(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L20" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>h1(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -581,26 +755,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:h2/3">
+
   <div class="detail-header">
     <a href="#c:h2/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">h2(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L21" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>h2(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -611,26 +793,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:h3/3">
+
   <div class="detail-header">
     <a href="#c:h3/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">h3(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L22" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>h3(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -641,26 +831,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:h4/3">
+
   <div class="detail-header">
     <a href="#c:h4/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">h4(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L23" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>h4(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -671,26 +869,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:h5/3">
+
   <div class="detail-header">
     <a href="#c:h5/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">h5(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L24" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>h5(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -701,26 +907,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:h6/3">
+
   <div class="detail-header">
     <a href="#c:h6/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">h6(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L25" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>h6(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -731,26 +945,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:img/3">
+
   <div class="detail-header">
     <a href="#c:img/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">img(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L26" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>img(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -761,26 +983,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:learn_more/3">
+
   <div class="detail-header">
     <a href="#c:learn_more/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">learn_more(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L17" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>learn_more(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -791,26 +1021,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:li/3">
+
   <div class="detail-header">
     <a href="#c:li/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">li(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L35" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>li(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -821,26 +1059,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:math/3">
+
   <div class="detail-header">
     <a href="#c:math/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">math(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L36" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>math(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -851,26 +1097,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:math_line/3">
+
   <div class="detail-header">
     <a href="#c:math_line/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">math_line(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L37" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>math_line(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -881,26 +1135,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:ol/3">
+
   <div class="detail-header">
     <a href="#c:ol/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">ol(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L33" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>ol(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -911,26 +1173,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:p/3">
+
   <div class="detail-header">
     <a href="#c:p/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">p(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L19" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>p(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -941,26 +1211,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:table/3">
+
   <div class="detail-header">
     <a href="#c:table/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">table(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L29" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>table(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -971,26 +1249,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:td/3">
+
   <div class="detail-header">
     <a href="#c:td/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">td(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L32" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>td(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -1001,26 +1287,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:text/2">
+
   <div class="detail-header">
     <a href="#c:text/2" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">text(%Oli.Rendering.Context{}, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L18" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>text(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -1030,26 +1324,34 @@ Callbacks          </h1>
   },
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:th/3">
+
   <div class="detail-header">
     <a href="#c:th/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">th(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L31" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>th(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -1060,26 +1362,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:tr/3">
+
   <div class="detail-header">
     <a href="#c:tr/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">tr(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L30" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>tr(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -1090,26 +1400,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:ul/3">
+
   <div class="detail-header">
     <a href="#c:ul/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">ul(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L34" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>ul(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -1120,26 +1438,34 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
 <section class="detail" id="c:youtube/3">
+
   <div class="detail-header">
     <a href="#c:youtube/3" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
     <h1 class="signature">youtube(%Oli.Rendering.Context{}, next, %{})</h1>
+
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L27" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
+
+
   </div>
 
   <section class="docstring">
+
       <h2>Specs</h2>
       <div class="specs">
+
           <pre>youtube(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -1150,12 +1476,16 @@ Callbacks          </h1>
   <a href="#t:next/0">next</a>(),
   %{}
 ) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
       </div>
+
 
   </section>
 </section>
+
           </div>
         </section>
+
       <footer class="footer">
         <p>
           <span class="line">
@@ -1169,7 +1499,9 @@ Callbacks          </h1>
           </span>
         </p>
         <p>
+
             <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
           <button class="line footer-button display-shortcuts-help">
             Display keyboard shortcuts
           </button>
@@ -1189,5 +1521,6 @@ Callbacks          </h1>
   </div>
 </section>
 </div>
+
   </body>
 </html>
