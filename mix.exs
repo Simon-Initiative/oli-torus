@@ -64,7 +64,7 @@ defmodule Oli.MixProject do
       {:ex_aws_s3, "~> 2.0"},
       # {:ex_aws_ses, "~> 2.0"},
       {:ex_doc, "~> 0.23", only: :dev, runtime: false},
-      {:floki, ">= 0.26.0", only: :test},
+      {:floki, ">= 0.26.0"},
       {:gettext, "~> 0.11"},
       {:hackney, "~> 1.9"},
       {:httpoison, "~> 1.6"},
