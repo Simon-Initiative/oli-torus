@@ -5,7 +5,7 @@ defmodule Oli.MixProject do
     [
       app: :oli,
       version: "0.1.0",
-      elixir: "~> 1.10",
+      elixir: "~> 1.11",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
@@ -22,7 +22,7 @@ defmodule Oli.MixProject do
       docs: [
         main: "Oli", # The main page in the docs
         logo: "assets/static/images/oli-icon.png",
-        extras: ["README.md", "LICENSE.md", "docs/DEVELOPER.md"]
+        extras: ["README.md", "LICENSE.md", "docs/DEVELOPER.md", "docs/LTI1.3.md"]
       ],
       releases: [
         oli: [
@@ -71,7 +71,7 @@ defmodule Oli.MixProject do
       {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:nimble_parsec, "~> 0.5"},
-      {:phoenix, "~> 1.5.1"},
+      {:phoenix, "~> 1.5.6"},
       {:phoenix_ecto, "~> 4.0"},
       {:phoenix_html, "~> 2.11"},
       {:phoenix_live_dashboard, "~> 0.2.7"},
