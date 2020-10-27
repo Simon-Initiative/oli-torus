@@ -7,22 +7,22 @@ RUN yum install ncurses-devel openssl-devel -y
 RUN yum groupinstall "Development Tools" -y
 
 WORKDIR /tmp
-RUN wget "http://erlang.org/download/otp_src_22.2.tar.gz" -O otp22.tar.gz
-RUN tar xfz otp22.tar.gz
-WORKDIR /tmp/otp_src_22.2/
+RUN wget "http://erlang.org/download/otp_src_23.1.tar.gz" -O otp23.tar.gz
+RUN tar xfz otp23.tar.gz
+WORKDIR /tmp/otp_src_23.1/
 RUN ./configure
 RUN make && make install
 
 WORKDIR /tmp
-RUN wget "https://github.com/elixir-lang/elixir/archive/v1.10.2.tar.gz"
-RUN tar xfz v1.10.2.tar.gz
-WORKDIR /tmp/elixir-1.10.2/
+RUN wget "https://github.com/elixir-lang/elixir/archive/v1.11.1.tar.gz"
+RUN tar xfz v1.11.1.tar.gz
+WORKDIR /tmp/elixir-1.11.1/
 ENV PATH="${PATH}:/usr/local/bin"
 RUN make && make install
 
 RUN mix local.hex --force
 RUN mix local.rebar --force
-RUN mix archive.install hex phx_new 1.5.1
+RUN mix archive.install hex phx_new 1.5.6
 
 # install node
 RUN yum install -y gcc-c++ make

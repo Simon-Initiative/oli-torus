@@ -286,12 +286,12 @@ defmodule Oli.Resources do
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking revision changes.
   ## Examples
-      iex> change_revision(revision)
+      iex> change_revision(revision, params)
       %Ecto.Changeset{source: %Revision{}}
   """
-  def change_revision(revision) do
+  def change_revision(revision, params \\ %{}) do
     Oli.Resources.Utils.to_revision(revision)
-    |> Revision.changeset(%{})
+    |> Revision.changeset(params)
   end
 
 end

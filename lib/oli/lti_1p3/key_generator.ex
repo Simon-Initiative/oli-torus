@@ -33,7 +33,7 @@ defmodule Oli.Lti_1p3.KeyGenerator do
     {:ok, :public_key.generate_key({type, bits, public_exp})}
   catch
     kind, error ->
-      normalize_error(kind, error, System.stacktrace())
+      normalize_error(kind, error, __STACKTRACE__)
   end
 
   defp public_key_from_private_key(private_key) do
@@ -47,7 +47,7 @@ defmodule Oli.Lti_1p3.KeyGenerator do
     {:ok, :public_key.pem_encode([pem_entry])}
   catch
     kind, error ->
-      normalize_error(kind, error, System.stacktrace())
+      normalize_error(kind, error, __STACKTRACE__)
   end
 
   defp normalize_error(kind, error, stacktrace) do

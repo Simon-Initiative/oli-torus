@@ -1,6 +1,7 @@
 defmodule OliWeb.Curriculum.ContainerLiveTest do
   use OliWeb.ConnCase
   alias Oli.Seeder
+  alias Oli.Publishing.AuthoringResolver
 
   import Plug.Conn
   import Phoenix.ConnTest
@@ -11,8 +12,14 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     setup [:setup_session]
 
     test "disconnected and connected mount", %{conn: conn, project: project, map: map} do
-      conn = get(conn, "/project/#{project.slug}/curriculum")
+      conn = get(conn, "/project/#{project.slug}/curriculum/#{AuthoringResolver.root_container(project.slug).slug}")
 
+      # Routing to the root container redirects to the `curriculum` path
+      redir_path = "/project/#{project.slug}/curriculum"
+      assert redirected_to(conn, 302) =~ redir_path
+      conn = get(recycle(conn), redir_path)
+
+      # The implicit root container path (/curriculum/) should show the root container resources
       {:ok, view, _} = live(conn)
 
       # the container should have two pages
@@ -21,20 +28,6 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       assert view |> element("##{Integer.to_string(page1.id)}") |> has_element?()
       assert view |> element("##{Integer.to_string(page2.id)}") |> has_element?()
-
-      # click the first item to select it, this would makde the Settings view visible
-      view
-       |> element("##{Integer.to_string(page1.id)}")
-       |> render_click() =~ "Grading Type"
-
-      # delete the selected page
-      view
-       |> element(".btn-danger")
-       |> render_click() =~ "The temperature is: 30℉"
-
-      refute view |> element("##{Integer.to_string(page1.id)}") |> has_element?()
-      assert view |> element("##{Integer.to_string(page2.id)}") |> has_element?()
-
     end
 
   end

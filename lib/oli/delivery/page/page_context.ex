@@ -74,7 +74,7 @@ defmodule Oli.Delivery.Page.PageContext do
 
     # if container_id is nil we assume it is the root
     container = case container_id do
-      nil -> DeliveryResolver.root_resource(context_id)
+      nil -> DeliveryResolver.root_container(context_id)
       id -> DeliveryResolver.from_resource_id(context_id, id)
     end
 

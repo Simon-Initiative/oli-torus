@@ -6,6 +6,9 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Institutions
   alias Oli.Lti_1p3.ContextRoles
 
+  @context_administrator ContextRoles.get_role(:context_administrator)
+  @context_instructor ContextRoles.get_role(:context_instructor)
+
   def index(conn, _params) do
     user = conn.assigns.current_user
     lti_params = conn.assigns.lti_params
@@ -15,28 +18,45 @@ defmodule OliWeb.DeliveryController do
 
     lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
     context_roles = ContextRoles.get_roles_by_uris(lti_roles)
+    role = ContextRoles.get_highest_role(context_roles)
 
-    is_student = ContextRoles.contains_role?(context_roles, ContextRoles.get_role(:context_learner))
-    case {is_student, user.author, section} do
-      {true, _author, nil} ->
-        render(conn, "course_not_configured.html", context_id: context_id)
+    case {role, user.author, section} do
+      # author account has not been linked
+      {role, nil, nil} when role == @context_administrator or role == @context_instructor ->
+        render_getting_started(conn, context_id)
 
-      {true, _author, section} ->
-        redirect(conn, to: Routes.page_delivery_path(conn, :index, section.context_id))
+      # section has not been configured
+      {role, author, nil} when role == @context_administrator or role == @context_instructor ->
+        render_configure_section(conn, context_id, author)
 
-      {false, nil, nil} ->
-        render(conn, "getting_started.html", context_id: context_id)
+      {_role, _author, nil} ->
+        render_course_not_configured(conn, context_id)
 
-      {false, author, nil} ->
-        publications = Publishing.available_publications(author)
-        my_publications = publications |> Enum.filter(fn p -> !p.open_and_free && p.published end)
-        open_and_free_publications = publications |> Enum.filter(fn p -> p.open_and_free && p.published end)
-        render(conn, "configure_section.html", context_id: context_id, author: author, my_publications: my_publications, open_and_free_publications: open_and_free_publications)
-
-      {false, _author, section} ->
-        redirect(conn, to: Routes.page_delivery_path(conn, :index, section.context_id))
+      # section has been configured
+      {_role, _author, section} ->
+        redirect_to_page_delivery(conn, section)
     end
 
+  end
+
+  defp render_course_not_configured(conn, context_id) do
+    render(conn, "course_not_configured.html", context_id: context_id)
+  end
+
+
+  defp render_getting_started(conn, context_id) do
+    render(conn, "getting_started.html", context_id: context_id)
+  end
+
+  defp render_configure_section(conn, context_id, author) do
+    publications = Publishing.available_publications(author)
+    my_publications = publications |> Enum.filter(fn p -> !p.open_and_free && p.published end)
+    open_and_free_publications = publications |> Enum.filter(fn p -> p.open_and_free && p.published end)
+    render(conn, "configure_section.html", context_id: context_id, author: author, my_publications: my_publications, open_and_free_publications: open_and_free_publications)
+  end
+
+  defp redirect_to_page_delivery(conn, section) do
+    redirect(conn, to: Routes.page_delivery_path(conn, :index, section.context_id))
   end
 
   def list_open_and_free(conn, _params) do

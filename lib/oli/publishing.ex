@@ -126,7 +126,7 @@ defmodule Oli.Publishing do
       iex> get_unpublished_publication_id!(456)
       ** (Ecto.NoResultsError)
   """
-  def get_unpublished_publication_id!(project_id)do
+  def get_unpublished_publication_id!(project_id) do
     Repo.one(
       from p in Publication,
       where: p.project_id == ^project_id and p.published == false,

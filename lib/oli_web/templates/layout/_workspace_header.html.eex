@@ -8,31 +8,30 @@
         </button>
       </div>
       <%= form_for @changeset, Routes.project_path(@conn, :create), [id: "form-create-project"], fn f -> %>
-        <div class="modal-body">
-            <div class="form-label-group">
-              <%= text_input f,
+      <div class="modal-body">
+        <div class="form-label-group">
+          <%= text_input f,
                 :title,
                 class: "form-control input-bold " <> error_class(f, :title, "is-invalid"),
                 placeholder: "Introduction to Psychology",
                 id: "input-title",
                 required: true,
                 autofocus: focusHelper(f, :title, default: true) %>
-              <%= label f, :title, "This can be changed later", class: "control-label text-secondary" %>
-              <%= error_tag f, :title %>
-            </div>
+          <%= label f, :title, "This can be changed later", class: "control-label text-secondary" %>
+          <%= error_tag f, :title %>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Cancel</button>
-          <%= submit "Create Project",
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Cancel</button>
+        <%= submit "Create Project",
             id: "button-create-project",
             class: "btn btn-primary",
             phx_disable_with: "Creating Project..." %>
-        </div>
-      <% end %>
-    </div>
+      </div>
+    <% end %>
   </div>
 </div>
-
+</div>
 <div class="workspace-header d-flex justify-content-between">
   <div class="page-title"><%= @title %></div>
   <div class="page-controls">
@@ -44,7 +43,6 @@
     </button>
   </div>
 </div>
-
 <script>
   const createProjectButton = document.getElementById("button-create-project")
   const titleInput = document.getElementById("input-title")
@@ -52,5 +50,4 @@
   titleInput.addEventListener('input', () => titleInput.value.length > 0
     ? createProjectButton.disabled = false
     : createProjectButton.disabled = true)
-
 </script>

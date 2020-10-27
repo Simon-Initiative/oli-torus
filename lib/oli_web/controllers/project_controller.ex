@@ -8,11 +8,12 @@ defmodule OliWeb.ProjectController do
   alias Oli.Publishing
   alias Oli.Qa
   alias Oli.Analytics.Datashop
+  alias OliWeb.Common.Breadcrumb
 
   def overview(conn, project_params) do
     project = conn.assigns.project
     params = %{
-      breadcrumbs: [{"Overview", nil}],
+      breadcrumbs: [Breadcrumb.new(%{full_title: "Overview"})],
       active: :overview,
       collaborators: Accounts.project_authors(project),
       changeset: Utils.value_or(
@@ -58,7 +59,7 @@ defmodule OliWeb.ProjectController do
 
     render conn, "publish.html",
       # page
-      breadcrumbs: [{"Publish", nil}],
+      breadcrumbs: [Breadcrumb.new(%{full_title: "Publish"})],
       active: :publish,
 
       # publish
@@ -88,7 +89,7 @@ defmodule OliWeb.ProjectController do
   end
 
   def insights(conn, _project_params) do
-    render conn, "insights.html", breadcrumbs: [{"Insights", nil}], active: :insights
+    render conn, "insights.html", breadcrumbs: [Breadcrumb.new(%{full_title: "Insights"})], active: :insights
   end
 
   def create(conn, %{"project" => %{"title" => title} = _project_params}) do
@@ -112,7 +113,7 @@ defmodule OliWeb.ProjectController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         overview_params = %{
-          breadcrumbs: [{"Overview", nil}],
+          breadcrumbs: [Breadcrumb.new(%{full_title: "Overview"})],
           active: :overview,
           collaborators: Accounts.project_authors(project),
           changeset: changeset

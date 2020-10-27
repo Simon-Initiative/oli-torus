@@ -166,7 +166,9 @@ defmodule OliWeb.Router do
     live "/:project_id/objectives", Objectives.Objectives, session: {__MODULE__, :with_session, []}
 
     # Curriculum
-    live "/:project_id/curriculum", Curriculum.Container, session: {__MODULE__, :with_session, []}
+    live "/:project_id/curriculum/:container_slug/edit/:revision_slug", Curriculum.ContainerLive, :edit, session: {__MODULE__, :with_session, []}
+    live "/:project_id/curriculum/:container_slug", Curriculum.ContainerLive, :index, session: {__MODULE__, :with_session, []}
+    live "/:project_id/curriculum/", Curriculum.ContainerLive, :index, session: {__MODULE__, :with_session, []}
 
     # Review/QA
     live "/:project_id/review", Qa.QaLive, session: {__MODULE__, :with_session, []}
@@ -188,6 +190,7 @@ defmodule OliWeb.Router do
     # between analytics groupings and sorting. I could not get it to run through the project authorization
     # plugs when live-routing, however.
     # live "/:project_id/insights", Insights, session: {__MODULE__, :with_session, []}
+
   end
 
   scope "/api/v1/project", OliWeb do
@@ -278,6 +281,10 @@ defmodule OliWeb.Router do
         resources "/deployments", DeploymentController, except: [:index, :show]
       end
     end
+
+    get "/ingest", IngestController, :index
+    post "/ingest", IngestController, :upload
+
   end
 
   scope "/project", OliWeb do
