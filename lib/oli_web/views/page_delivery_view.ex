@@ -2,10 +2,19 @@ defmodule OliWeb.PageDeliveryView do
   use OliWeb, :view
 
   alias Oli.Lti_1p3.ContextRoles
+  alias Oli.Resources.ResourceType
 
   def is_instructor?(conn, context_id) do
     user = conn.assigns.current_user
     ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_instructor))
+  end
+
+  def container?(page) do
+    ResourceType.get_type_by_id(page.resource_type_id) == "container"
+  end
+
+  def container_prefix(page) do
+
   end
 
   def calculate_score_percentage(resource_access) do

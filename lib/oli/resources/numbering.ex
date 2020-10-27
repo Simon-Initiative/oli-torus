@@ -1,7 +1,7 @@
 defmodule Oli.Resources.Numbering do
   alias Oli.Resources.ResourceType
-  alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Revision
+  alias Oli.Publishing.Resolver
 
   defstruct level: 0,
             count: 0,
@@ -19,9 +19,10 @@ defmodule Oli.Resources.Numbering do
     container_type(numbering.level) <> " #{numbering.count}"
   end
 
-  @typep project_slug :: String.t()
+  @typep project_slug_or_context :: String.t()
   @typep revision_slug :: String.t()
   @typep resource_id :: Number.t()
+  @typep resolver :: Resolver.t()
   @doc """
   Returns the path from a project's root container to a requested revision slug.
 
@@ -37,15 +38,15 @@ defmodule Oli.Resources.Numbering do
      [root_container, container_revision, requested_revision]
 
   """
-  @spec path_from_root_to(project_slug, revision_slug) ::
+  @spec path_from_root_to(resolver, project_slug_or_context, revision_slug) ::
           {:ok, [%Revision{}]} | {:error, :target_resource_not_found}
-  def path_from_root_to(project_slug, revision_slug) do
-    with root_container <- AuthoringResolver.root_container(project_slug),
+  def path_from_root_to(resolver, project_slug_or_context, revision_slug) do
+    with root_container <- resolver.root_container(project_slug_or_context),
          path <-
            path_helper(
              revision_slug,
              root_container.children,
-             resource_id_to_revision_map(project_slug),
+             resource_id_to_revision_map(resolver, project_slug_or_context),
              [root_container]
            ) do
       case path do
@@ -62,9 +63,9 @@ defmodule Oli.Resources.Numbering do
     end
   end
 
-  @spec resource_id_to_revision_map(project_slug) :: %{resource_id => %Revision{}}
-  defp resource_id_to_revision_map(project_slug) do
-    for rev <- AuthoringResolver.all_revisions_in_hierarchy(project_slug),
+  @spec resource_id_to_revision_map(resolver, project_slug_or_context) :: %{resource_id => %Revision{}}
+  defp resource_id_to_revision_map(resolver, project_slug_or_context) do
+    for rev <- resolver.all_revisions_in_hierarchy(project_slug_or_context),
         into: %{},
         do: {rev.resource_id, rev}
   end
@@ -105,14 +106,16 @@ defmodule Oli.Resources.Numbering do
 
   This method returns a map of revision id to %Numbering structs.
   """
-  def number_full_tree(project_slug) do
-    number_full_tree(
-      AuthoringResolver.root_container(project_slug),
-      AuthoringResolver.all_revisions_in_hierarchy(project_slug)
+  @spec number_full_tree(resolver, project_slug_or_context) :: %{resource_id => %__MODULE__{}}
+  def number_full_tree(resolver, project_slug_or_context) do
+    number_tree_from(
+      resolver.root_container(project_slug_or_context),
+      resolver.all_revisions_in_hierarchy(project_slug_or_context)
     )
   end
 
-  def number_full_tree(root_container, resources) do
+  @spec number_tree_from(%Revision{}, [%Revision{}]) :: %{resource_id => %__MODULE__{}}
+  def number_tree_from(container, resources) do
     # for all resources, map them by their ids
     by_id =
       Enum.filter(resources, fn r ->
@@ -124,7 +127,7 @@ defmodule Oli.Resources.Numbering do
 
     # now recursively walk the tree structure, tracking level based numbering as we go
     level_counts = %{}
-    {_, numberings} = number_helper(root_container, by_id, 1, level_counts, numberings)
+    {_, numberings} = number_helper(container, by_id, 1, level_counts, numberings)
 
     numberings
   end

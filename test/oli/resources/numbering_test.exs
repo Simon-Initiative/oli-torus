@@ -65,14 +65,14 @@ defmodule Oli.Resources.NumberingTest do
       ])
     end
 
-    test "number_full_tree/2 numbers the containers correctly", %{
+    test "number_tree_from/2 numbers the containers correctly", %{
       project: project,
       container: %{revision: root}
     } do
 
       # do the numbering, then programatically compare it to the titles of the
       # containers, which contain the correct numbering and level names
-      Numbering.number_full_tree(root, fetch_hierarchy(project.slug))
+      Numbering.number_tree_from(root, fetch_hierarchy(project.slug))
       |> Enum.to_list()
       |> Enum.map(&elem(&1, 1))
       |> Enum.filter(& !Regex.match?(~r|page|, &1.container.slug))
