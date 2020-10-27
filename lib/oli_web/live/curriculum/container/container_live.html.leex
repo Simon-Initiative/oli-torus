@@ -1,0 +1,99 @@
+<%= if @live_action in [:edit] do %>
+  <%= live_modal @socket, OliWeb.Curriculum.Settings,
+   container: @container,
+   id: @revision.id,
+   title: @page_title,
+   action: @live_action,
+   revision: @revision,
+   project: @project,
+   author: @author,
+   return_to: Routes.container_path(@socket, :index, @project.slug, @container.slug) %>
+<% end %>
+<div id="curriculum-container" class="container container-editor">
+  <div class="row">
+    <div class="col-12">
+      <p class="text-secondary mb-3">
+        Create and arrange items in your curriculum to arrange the material for students.
+      </p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-12">
+      <div class="change-view-buttons">
+        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+          <label
+            title="Simple"
+            data-toggle="tooltip"
+            phx-click="change-view"
+            phx-value-view="Simple"
+            class="btn btn-sm btn-secondary <%= if @view == "Simple" do "active" else "" end %> %>">
+            <input type="radio" name="options" id="view-1"
+              <%= if @view == "Simple" do "checked" else "" end %>
+            > <span><i class="far fa-square"></i></span>
+          </label>
+
+          <label
+            title="Details"
+            data-toggle="tooltip"
+            phx-click="change-view"
+            phx-value-view="Details" class="btn btn-sm btn-secondary <%= if @view == "Details" do "active" else "" end %>">
+            <input type="radio" name="options" id="view-2"
+              <%= if @view == "Details" do "checked" else "" end %>
+            > <span><i class="fas fa-th-large"></i></span>
+          </label>
+
+          <label
+            title="Learning Summary"
+            data-toggle="tooltip"
+            phx-click="change-view"
+            phx-value-view="Learning Summary" class="btn btn-sm btn-secondary <%= if @view == "Learning Summary" do "active" else "" end %>">
+            <input type="radio" name="options" id="view-3"
+              <%= if @view == "Learning Summary" do "checked" else "" end %>
+            > <span><i class="fas fa-table"></i></span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row" phx-window-keydown="keydown">
+    <div class="col-12">
+      <div class="curriculum-entries">
+        <%= if Enum.count(@children) == 0 do %>
+          <div style="margin-top: 15px">
+            <p>There's nothing here.</p>
+          </div>
+        <% end %>
+        <%= for {child, index} <- Enum.with_index(@children) do %>
+          <%= live_component @socket, DropTarget, index: index %>
+          <%= live_component @socket, EntryLive, %{
+                  id: child.slug,
+                  editor: Map.get(@resources_being_edited, child.resource_id),
+                  selected: child == @selected,
+                  container: @container,
+                  child: child,
+                  activity_ids: Map.get(@rollup.page_activity_map, child.resource_id),
+                  activity_map: @rollup.activity_map,
+                  objective_map: @rollup.objective_map,
+                  index: index,
+                  project: @project,
+                  view: @view,
+                  numberings: @numberings
+                } %>
+        <% end %>
+        <%= live_component @socket, DropTarget, index: length(@children) %>
+      </div>
+      <div class="mt-5">
+        Add new
+        <button phx-click="add" phx-value-type="Unscored" class="btn btn-sm btn-outline-primary ml-2" type="button">
+          Practice Page
+        </button>
+        <button phx-click="add" phx-value-type="Scored" class="btn btn-sm btn-outline-primary ml-2" type="button">
+          Graded Assessment
+        </button>
+        <button phx-click="add" phx-value-type="Container" class="btn btn-sm btn-outline-primary ml-2" type="button">
+          <%= new_container_name(@numberings, @container) %>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,24 +1,26 @@
 <%= render_layout "authoring.html", assigns do %>
-
-<div class="workspace">
-  <a id='skip-nav' tabindex="1" class='screenreader-text' href='#main-content'>
-    Skip Navigation
-  </a>
-
-  <div class="workspace-left">
-    <%= render OliWeb.LayoutView, "_#{if @conn.params["project_id"] do "project" else "workspace" end}_sidebar.html", assigns %>
+  <div class="workspace">
+    <a id='skip-nav' tabindex="1" class='screenreader-text' href='#main-content'>
+      Skip Navigation
+    </a>
+    <div class="workspace-left">
+      <%= render OliWeb.LayoutView,
+        "_#{cond do
+          @conn.params["project_id"] -> "project" #_project_sidebar.html.eex   (template)
+          true -> "workspace"                     #_workspace_sidebar.html.eex (template)
+        end}_sidebar.html", assigns %>
+    </div>
+    <div class="workspace-right">
+      <%= render OliWeb.LayoutView,
+        "_#{cond do
+          @conn.params["project_id"] -> "project" #_project_header.html.eex   (template)
+          @title == "Projects" -> "workspace"     #_workspace_header.html.eex (template)
+          @title != "Projects" -> "account"       #_account_header.html.eex   (template)
+        end}_header.html", assigns %>
+      <main role="main" id="main-content">
+        <%= @inner_content %>
+      </main>
+      <%= render OliWeb.LayoutView, "_footer.html", assigns %>
+    </div>
   </div>
-
-  <div class="workspace-right">
-    <%= render OliWeb.LayoutView, "_#{if @conn.params["project_id"] do "project" else
-      if @title == "Projects" do "workspace" else "account" end end}_header.html", assigns %>
-
-    <main role="main" id="main-content">
-      <%= @inner_content %>
-    </main>
-
-    <%= render OliWeb.LayoutView, "_footer.html", assigns %>
-  </div>
-</div>
-
 <% end  %>

@@ -14,7 +14,6 @@ defmodule Oli.Publishing.AuthoringResolver do
 
 
 
-
   @impl Resolver
   def from_resource_id(project_slug, resource_ids) when is_list(resource_ids) do
 
@@ -77,7 +76,7 @@ defmodule Oli.Publishing.AuthoringResolver do
   end
 
   @impl Resolver
-  def root_resource(project_slug) do
+  def root_container(project_slug) do
 
     fn ->
       Repo.one(from m in PublishedResource,
@@ -91,7 +90,10 @@ defmodule Oli.Publishing.AuthoringResolver do
   end
 
   @impl Resolver
-  def hierarchy(project_slug) do
+  @doc """
+
+  """
+  def all_revisions_in_hierarchy(project_slug) do
 
     page_id = Oli.Resources.ResourceType.get_id_by_type("page")
     container_id = Oli.Resources.ResourceType.get_id_by_type("container")
