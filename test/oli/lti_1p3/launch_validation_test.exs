@@ -9,7 +9,7 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
     test "passes validation for a valid launch request" do
       %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs()
 
-      assert {:ok, conn, _jwt_body} = LaunchValidation.validate(conn, get_public_key)
+      assert {:ok, _, _jwt_body} = LaunchValidation.validate(conn, get_public_key)
     end
   end
 
@@ -104,7 +104,7 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims, kid: "one"})
 
     # passes on first attempt with a given nonce
-    assert {:ok, conn, _jwt_body} = LaunchValidation.validate(conn, get_public_key)
+    assert {:ok, _, _jwt_body} = LaunchValidation.validate(conn, get_public_key)
 
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims, kid: "two"})
 

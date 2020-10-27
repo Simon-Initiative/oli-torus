@@ -114,7 +114,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
 
       update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug, "purpose" => "none"}]}}
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
-      assert {:ok, updated_revision} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+      assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
       attachment = %{ "objectives" => %{ "1" => [ objective.slug ] },
         "content" => %{"authoring" => %{"parts" => [%{"id" => "1" }]}}}
 
@@ -138,7 +138,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
 
       update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug, "purpose" => "none"}]}}
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
-      assert {:ok, updated_revision} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+      assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
       attachment = %{ "objectives" => %{ "1" => [ objective.slug ] },
         "content" => %{"authoring" => %{"parts" => [%{"id" => "1" }]}}}
 

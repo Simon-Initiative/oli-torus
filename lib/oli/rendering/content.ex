@@ -59,24 +59,18 @@ defmodule Oli.Rendering.Content do
     Enum.map(children, fn child -> render(context, child, writer) end)
   end
 
-  @doc """
-  Renders an text content
-  """
+  # Renders an text content
   def render(%Context{} = context, %{"text" => _text} = text_element, writer) do
     writer.text(context, text_element)
   end
 
-  @doc """
-  Renders content children
-  """
+  # Renders content children
   def render(%Context{} = context, children, writer) when is_list(children) do
     Enum.map(children, fn child -> render(context, child, writer) end)
   end
 
-  @doc """
-  Renders a content element by calling the provided writer implementation on a
-  supported element type.
-  """
+  # Renders a content element by calling the provided writer implementation on a
+  # supported element type.
   def render(%Context{render_opts: render_opts} = context, %{"type" => type, "children" => children} = element, writer) do
     next = fn -> render(context, children, writer) end
 
@@ -117,10 +111,8 @@ defmodule Oli.Rendering.Content do
     end
   end
 
-  @doc """
-  Renders an error message if none of the signatures above match. Logging and rendering of errors
-  can be configured using the render_opts in context
-  """
+  # Renders an error message if none of the signatures above match. Logging and rendering of errors
+  # can be configured using the render_opts in context
   def render(%Context{render_opts: render_opts} = context, element, writer) do
     error_id = Utils.random_string(8)
     error_msg = "Content element is invalid: #{Kernel.inspect(element)}"

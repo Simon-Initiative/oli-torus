@@ -38,10 +38,9 @@ defmodule Oli.Rendering.Page do
     end)
   end
 
-  @doc """
-  Renders an error message if the signature above does not match. Logging and rendering of errors
-  can be configured using the render_opts in context
-  """
+
+  # Renders an error message if the signature above does not match. Logging and rendering of errors
+  # can be configured using the render_opts in context
   def render(%Context{render_opts: render_opts} = context, page_model, writer) do
     error_id = Utils.random_string(8)
     error_msg = "Page model is invalid: #{Kernel.inspect(page_model)}"
