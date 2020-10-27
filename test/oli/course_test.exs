@@ -32,7 +32,7 @@ defmodule Oli.CourseTest do
 
     test "create project with invalid data returns error changeset" do
       empty_title = ""
-      assert {:error, results} = Course.create_project(empty_title, author_fixture())
+      assert {:error, _} = Course.create_project(empty_title, author_fixture())
     end
 
     test "create_empty_project/1 with valid data creates a project", %{valid_attrs: valid_attrs} do

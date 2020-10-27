@@ -268,6 +268,10 @@ defmodule OliWeb.Router do
         resources "/deployments", DeploymentController, except: [:index, :show]
       end
     end
+
+    get "/ingest", IngestController, :index
+    post "/ingest", IngestController, :upload
+
   end
 
   scope "/project", OliWeb do
