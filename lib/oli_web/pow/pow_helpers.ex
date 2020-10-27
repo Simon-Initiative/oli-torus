@@ -43,7 +43,7 @@ defmodule OliWeb.Pow.PowHelpers do
     available_providers
     |> Enum.map(&{&1, &1 in providers_for_user})
     |> Enum.map(fn
-      {provider, true} -> PowAssent.Phoenix.ViewHelpers.deauthorization_link(conn, provider, link_opts)
+      {provider, true} -> deauthorization_link(conn, provider, link_opts)
       {provider, false} -> authorization_link(conn, provider, link_params, link_opts)
     end)
   end
@@ -78,6 +78,20 @@ defmodule OliWeb.Pow.PowHelpers do
   defp request_path_query_params(%{assigns: %{request_path: request_path}}), do: [request_path: request_path]
   defp request_path_query_params(_conn), do: []
 
+  @doc """
+  Generates a provider deauthorization link.
+  The link is used to remove authorization with the provider.
+  """
+  @spec deauthorization_link(Conn.t(), atom(), keyword()) :: HTML.safe()
+  def deauthorization_link(conn, provider, opts \\ []) do
+    msg  = AuthorizationController.extension_messages(conn).remove_provider_authentication(%{conn | params: %{"provider" => provider}})
+    icon = provider_icon(provider)
+    path = AuthorizationController.routes(conn).path_for(conn, AuthorizationController, :delete, [provider])
+    opts = Keyword.merge(opts, to: path, method: :delete)
+    opts = Keyword.merge(opts, class: "btn btn-md btn-#{provider_class(provider)} btn-block social-signin")
+
+    Link.link([icon, msg], opts)
+  end
   def provider_icon(provider) do
     case provider do
       :google ->

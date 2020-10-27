@@ -53,6 +53,6 @@
     <% end %>
 
     <%= submit "Update", class: "btn btn-md btn-primary btn-block" %>
-    <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.static_page_path(@conn, :index)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
+    <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.workspace_path(@conn, :account)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
   <% end %>
 <% end %>
