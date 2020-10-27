@@ -15,17 +15,17 @@
     </div>
 
     <div class="form-label-group">
-      <%= text_input f, :first_name, class: "form-control " <> error_class(f, :first_name, "is-invalid"),
-        placeholder: "First Name", required: true, autofocus: focusHelper(f, :first_name) %>
-      <%= label f, :first_name, class: "control-label" %>
-      <%= error_tag f, :first_name %>
+      <%= text_input f, :given_name, class: "form-control " <> error_class(f, :given_name, "is-invalid"),
+        placeholder: "First Name", required: true, autofocus: focusHelper(f, :given_name) %>
+      <%= label f, :given_name, class: "control-label" %>
+      <%= error_tag f, :given_name %>
     </div>
 
     <div class="form-label-group">
-      <%= text_input f, :last_name, class: "form-control " <> error_class(f, :last_name, "is-invalid"),
-        placeholder: "Last Name", required: true, autofocus: focusHelper(f, :last_name) %>
-      <%= label f, :last_name, class: "control-label" %>
-      <%= error_tag f, :last_name %>
+      <%= text_input f, :family_name, class: "form-control " <> error_class(f, :family_name, "is-invalid"),
+        placeholder: "Last Name", required: true, autofocus: focusHelper(f, :family_name) %>
+      <%= label f, :family_name, class: "control-label" %>
+      <%= error_tag f, :family_name %>
     </div>
 
     <div class="form-label-group">

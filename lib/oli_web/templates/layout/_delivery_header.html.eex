@@ -1,7 +1,7 @@
 
 <nav class="navbar navbar-expand">
   <div class="container">
-    <a class="navbar-brand oli-logo" href="<%= Routes.delivery_path(@conn, :index) %>">
+    <a class="navbar-brand oli-logo" href="<%= if assigns[:preview_mode], do: "#", else: Routes.delivery_path(@conn, :index) %>">
       <img src="/images/oli-icon.png" width="30" height="30" class="d-inline-block align-top mr-2" alt="">
       Open Learning <span style="font-weight: 200">Initiative</span>
     </a>

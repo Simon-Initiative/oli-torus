@@ -10,8 +10,8 @@ defmodule Oli.AccountsTest do
 
       {:ok, author} = Author.changeset(%Author{}, %{
         email: "ironman#{System.unique_integer([:positive])}@example.com",
-        first_name: "Tony",
-        last_name: "Stark",
+        given_name: "Tony",
+        family_name: "Stark",
         token: "2u9dfh7979hfd",
         provider: "google",
       })
@@ -23,8 +23,8 @@ defmodule Oli.AccountsTest do
     test "changeset accepts system role change", %{} do
       {:ok, author} = Author.changeset(%Author{}, %{
         email: "ironman#{System.unique_integer([:positive])}@example.com",
-        first_name: "Tony",
-        last_name: "Stark",
+        given_name: "Tony",
+        family_name: "Stark",
         token: "2u9dfh7979hfd",
         provider: "google",
       })

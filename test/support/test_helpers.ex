@@ -64,8 +64,8 @@ defmodule Oli.TestHelpers do
       attrs
       |> Enum.into(%{
         email: "ironman#{System.unique_integer([:positive])}@example.com",
-        first_name: "Tony",
-        last_name: "Stark",
+        given_name: "Tony",
+        family_name: "Stark",
         token: "2u9dfh7979hfd",
         provider: "google",
         system_role_id: Accounts.SystemRole.role_id.author,

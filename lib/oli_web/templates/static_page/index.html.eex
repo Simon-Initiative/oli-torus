@@ -1,7 +1,7 @@
 
 <section class="my-5" style="text-align: center">
   <%= if author_signed_in?(@conn) do %>
-    <h1><%= gettext "Welcome back %{name}!", name: @conn.assigns.current_author.first_name %></h1>
+    <h1><%= gettext "Welcome back %{name}!", name: @conn.assigns.current_author.given_name %></h1>
 
   <% else %>
     <h1><%= gettext "Welcome to %{name}!", name: "OLI Authoring" %></h1>

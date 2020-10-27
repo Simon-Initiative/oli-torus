@@ -30,9 +30,9 @@ defmodule OliWeb.WorkspaceController do
       changeset: Author.changeset(author)
   end
 
-  def update_author(conn, %{"author" => %{"first_name" => first_name, "last_name" => last_name}}) do
+  def update_author(conn, %{"author" => %{"given_name" => given_name, "family_name" => family_name}}) do
     author = conn.assigns.current_author
-    case Accounts.update_author(author, %{first_name: first_name, last_name: last_name}) do
+    case Accounts.update_author(author, %{given_name: given_name, family_name: family_name}) do
       {:ok, _author} ->
         conn
         |> redirect(to: Routes.workspace_path(conn, :account))

@@ -77,7 +77,7 @@ defmodule OliWeb.DeploymentControllerTest do
   end
 
   defp create_fixtures(%{conn: conn}) do
-    {:ok, admin} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.admin}) |> Repo.insert
+    {:ok, admin} = Author.changeset(%Author{}, %{email: "test@test.com", given_name: "First", family_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.admin}) |> Repo.insert
 
     jwk = jwk_fixture()
     institution = institution_fixture()

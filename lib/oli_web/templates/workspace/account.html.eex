@@ -5,7 +5,7 @@
       <div class="col-12">
         <h4 class="mb-3">Name</h4>
         <p class="mb-2">
-          <%= "#{@current_author.first_name} #{@current_author.last_name}" %>
+          <%= "#{@current_author.given_name} #{@current_author.family_name}" %>
         </p>
         <%= if Enum.count(PowAssent.Plug.providers_for_current_user(@conn)) < 1 do %>
           <a href="#" onclick="function(e) { e.preventDefault()}" data-toggle="modal" data-target="#modal-change-name" id="change-name">Change name</a>
@@ -21,7 +21,7 @@
         <%= if Enum.count(PowAssent.Plug.providers_for_current_user(@conn)) > 0 do %>
           <h4 class="mt-3">Credentials Managed By</h4>
           <%= for provider <- PowAssent.Plug.providers_for_current_user(@conn) do %>
-            <div>
+            <div class="my-2">
               <span class="provider provider-<%= OliWeb.Pow.PowHelpers.provider_class(provider) %>">
                 <%= OliWeb.Pow.PowHelpers.provider_icon(provider) %> <%= OliWeb.Pow.PowHelpers.provider_name(provider) %>
               </span>
@@ -65,25 +65,25 @@
         <div class="modal-body">
           <div class="form-label-group">
 
-            <%= label f, :first_name, "First name", class: "control-label text-secondary", for: "input-first-name" %>
+            <%= label f, :given_name, "First name", class: "control-label text-secondary", for: "input-first-name" %>
             <%= text_input f,
-              :first_name,
-              class: "form-control input-bold mb-3" <> error_class(f, :first_name, "is-invalid"),
+              :given_name,
+              class: "form-control input-bold mb-3" <> error_class(f, :given_name, "is-invalid"),
               placeholder: "Tony",
               id: "input-first-name",
               required: true,
-              autofocus: focusHelper(f, :first_name, default: true) %>
-            <%= error_tag f, :first_name %>
+              autofocus: focusHelper(f, :given_name, default: true) %>
+            <%= error_tag f, :given_name %>
 
-            <%= label f, :last_name, "Last name", class: "control-label text-secondary", for: "input-last-name" %>
+            <%= label f, :family_name, "Last name", class: "control-label text-secondary", for: "input-last-name" %>
             <%= text_input f,
-              :last_name,
-              class: "form-control input-bold mb-3" <> error_class(f, :last_name, "is-invalid"),
+              :family_name,
+              class: "form-control input-bold mb-3" <> error_class(f, :family_name, "is-invalid"),
               placeholder: "Stark",
               id: "input-last-name",
               required: true,
-              autofocus: focusHelper(f, :last_name, default: true) %>
-            <%= error_tag f, :last_name %>
+              autofocus: focusHelper(f, :family_name, default: true) %>
+            <%= error_tag f, :family_name %>
 
           </div>
         </div>

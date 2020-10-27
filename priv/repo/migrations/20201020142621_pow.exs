@@ -16,6 +16,9 @@ defmodule Oli.Repo.Migrations.Pow do
 
     create unique_index(:authors, [:email_confirmation_token])
 
+    rename table(:authors), :first_name, to: :given_name
+    rename table(:authors), :last_name, to: :family_name
+
     # create user identities for pow_assent
     create table(:user_identities) do
       add :provider, :string, null: false

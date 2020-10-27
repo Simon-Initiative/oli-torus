@@ -98,7 +98,7 @@ defmodule OliWeb.Pow.PowHelpers do
         HTML.raw("<i class=\"fab fa-google fa-lg mr-2\"></i>")
       :github ->
         HTML.raw("<i class=\"fab fa-github fa-lg mr-2\"></i>")
-      _ -> ""
+      _ ->
         HTML.raw(nil)
     end
   end
