@@ -9,7 +9,7 @@ defmodule Oli.Authoring.Ingest do
 
   @doc """
   Ingest a course digest archive that is sitting on the file system
-  and turn it into a course project.  Gives the author specied access
+  and turn it into a course project.  Gives the author specified access
   to the new project.
 
   A course digest archive is a zip file containing a flat list of JSON files.

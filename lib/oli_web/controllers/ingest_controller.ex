@@ -14,7 +14,7 @@ defmodule OliWeb.IngestController do
 
     case Oli.Authoring.Ingest.ingest(path_upload.path, author) do
       {:ok, project} -> redirect(conn, to: Routes.project_path(conn, :overview, project))
-      e -> render(conn, "error.html", title: "Ingest", error: e)
+      {:error, error} -> render(conn, "error.html", title: "Ingest", error: error)
     end
 
   end
