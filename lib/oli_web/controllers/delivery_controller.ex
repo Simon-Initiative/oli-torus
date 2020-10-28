@@ -83,6 +83,27 @@ defmodule OliWeb.DeliveryController do
     |> render("new.html", assigns)
   end
 
+  def process_link_account(conn, %{"provider" => provider}) do
+
+    IO.inspect provider, label: "process_link_account"
+
+    # PowAssent.Plug.authorize_url(conn, provider, conn.assigns.callback_url)
+    # PowAssent.Plug.authorize_url(conn, provider, "/auth/google/new?type=link_account")
+    PowAssent.Plug.authorize_url(conn, provider, Routes.delivery_path(conn, :link_account_callback, provider))
+    |> case do
+      {:ok, url, conn} ->
+      conn
+      |> redirect(to: url)
+    end
+  end
+
+  def link_account_callback(conn, %{"provider" => provider} = params) do
+
+    IO.inspect "link_account_callback"
+
+    PowAssent.Plug.callback_upsert(conn, provider, params, conn.assigns.callback_url)
+  end
+
   def create_and_link_account(conn, _params) do
     # sign out current author account
     conn = conn

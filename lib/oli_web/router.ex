@@ -116,6 +116,9 @@ defmodule OliWeb.Router do
     pow_routes()
     pow_assent_routes()
     pow_extension_routes()
+
+    get "/auth/:provider/link", OliWeb.DeliveryController, :process_link_account
+    get "/auth/:provider/link/callback", OliWeb.DeliveryController, :link_account_callback
   end
 
   # open access routes
