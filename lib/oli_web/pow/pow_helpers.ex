@@ -11,7 +11,6 @@ defmodule OliWeb.Pow.PowHelpers do
       user: Oli.Accounts.User,
       current_user_assigns_key: :current_user,
       session_key: "user_auth",
-      routes_backend: OliWeb.Pow.UserRoutes,
       plug: Pow.Plug.Session
     ]
   end
@@ -66,6 +65,7 @@ defmodule OliWeb.Pow.PowHelpers do
         Enum.reduce(link_params, "#{path}?", fn {key, val}, acc -> acc <> "#{key}=#{val}&" end)
         |> String.trim("&")
     end
+
     opts = Keyword.merge(opts, to: path)
     opts = Keyword.merge(opts, class: "btn btn-md btn-#{provider_class(provider)} btn-block social-signin")
 

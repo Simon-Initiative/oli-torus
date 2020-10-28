@@ -2,22 +2,24 @@ defmodule Oli.Repo.Migrations.Pow do
   use Ecto.Migration
 
   def change do
-    # modify users table for pow
+    # modify authors table for pow
+    rename table(:authors), :first_name, to: :given_name
+    rename table(:authors), :last_name, to: :family_name
+
     alter table(:authors) do
       modify :email, :string, null: false
       remove :provider, :string
       remove :token, :string
       remove :email_verified, :boolean
 
+      add :name, :string
+      add :picture, :string
       add :email_confirmation_token, :string
       add :email_confirmed_at, :utc_datetime
       add :unconfirmed_email, :string
     end
 
     create unique_index(:authors, [:email_confirmation_token])
-
-    rename table(:authors), :first_name, to: :given_name
-    rename table(:authors), :last_name, to: :family_name
 
     # create user identities for pow_assent
     create table(:user_identities) do

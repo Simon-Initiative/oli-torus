@@ -29,14 +29,17 @@ end
 
 # create admin author
 if !Oli.Repo.get_by(Oli.Accounts.Author, email: System.get_env("ADMIN_EMAIL", "admin@example.edu")) do
-  Pow.Ecto.Context.create(%{
+  case Pow.Ecto.Context.create(%{
     email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),
     given_name: "Administrator",
     family_name: "Admin",
     password: System.get_env("ADMIN_PASSWORD", "changeme"),
     password_confirmation: System.get_env("ADMIN_PASSWORD", "changeme"),
     system_role_id: Oli.Accounts.SystemRole.role_id.admin
-  }, otp_app: :oli)
+  }, otp_app: :oli) do
+    {:ok, user} ->
+      PowEmailConfirmation.Ecto.Context.confirm_email(user, %{}, otp_app: :oli)
+  end
 end
 
 # create project roles
@@ -104,19 +107,6 @@ if !Oli.Repo.get_by(Oli.Lti_1p3.Jwk, id: 1) do
     alg: "RS256",
     kid: UUID.uuid4(),
     active: true,
-  })
-end
-
-# create default open and free institution
-if !Oli.Repo.get_by(Oli.Institutions.Institution, id: 1) do
-  Oli.Institutions.create_institution(%{
-    id: 1,
-    country_code: "US",
-    institution_email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),
-    institution_url: "oli.cmu.edu",
-    name: "Open Learning Initiative",
-    timezone: "US/Eastern",
-    author_id: 1,
   })
 end
 

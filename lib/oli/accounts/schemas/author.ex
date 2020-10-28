@@ -10,8 +10,10 @@ defmodule Oli.Accounts.Author do
   alias Oli.Accounts.SystemRole
 
   schema "authors" do
+    field :name, :string
     field :given_name, :string
     field :family_name, :string
+    field :picture, :string
 
     pow_user_fields()
 
@@ -32,8 +34,10 @@ defmodule Oli.Accounts.Author do
     |> pow_changeset(attrs)
     |> pow_extension_changeset(attrs)
     |> cast(attrs, [
+      :name,
       :given_name,
       :family_name,
+      :picture,
       :system_role_id,
     ])
     |> cast_embed(:preferences)
@@ -43,7 +47,7 @@ defmodule Oli.Accounts.Author do
 
   def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
     user_or_changeset
-    |> Ecto.Changeset.cast(attrs, [:given_name, :family_name])
+    |> Ecto.Changeset.cast(attrs, [:name, :given_name, :family_name, :picture])
     |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
   end
 
