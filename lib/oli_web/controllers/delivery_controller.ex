@@ -6,6 +6,7 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Institutions
   alias Oli.Lti_1p3.ContextRoles
   alias Oli.Accounts
+  alias Oli.Accounts.Author
 
   @context_administrator ContextRoles.get_role(:context_administrator)
   @context_instructor ContextRoles.get_role(:context_instructor)
@@ -71,17 +72,26 @@ defmodule OliWeb.DeliveryController do
       |> use_pow_config(:author)
       |> Pow.Plug.delete()
 
-    assigns = conn.assigns
-      |> Map.put(:title, "Link Existing Account")
-      |> Map.put(:changeset, Oli.Accounts.Author.changeset(%Oli.Accounts.Author{}))
-      |> Map.put(:action, Routes.pow_session_path(conn, :create))
-      |> Map.put(:link_account, true)
-      |> Map.put(:create_account_path, Routes.delivery_path(conn, :create_and_link_account))
-      |> Map.put(:cancel_path, Routes.delivery_path(conn, :index))
+    conn
+    |> render_link_account_form()
+  end
+
+  def render_link_account_form(conn, opts \\ []) do
+    title = Keyword.get(opts, :title, "Link Existing Account")
+    changeset = Keyword.get(opts, :changeset, Author.changeset(%Author{}))
+    action = Keyword.get(opts, :action, Routes.pow_session_path(conn, :create))
+    sign_in_path = Keyword.get(opts, :sign_in_path, Routes.delivery_path(conn, :create_and_link_account))
+    cancel_path = Keyword.get(opts, :cancel_path, Routes.delivery_path(conn, :index))
 
     conn
+    |> assign(:title, title)
+    |> assign(:changeset, changeset)
+    |> assign(:action, action)
+    |> assign(:sign_in_path, sign_in_path)
+    |> assign(:cancel_path, cancel_path)
+    |> assign(:link_account, true)
     |> put_view(OliWeb.Pow.SessionView)
-    |> render("new.html", assigns)
+    |> render("new.html")
   end
 
   def process_link_account(conn, %{"provider" => provider}) do
@@ -124,17 +134,26 @@ defmodule OliWeb.DeliveryController do
       |> use_pow_config(:author)
       |> Pow.Plug.delete()
 
-    assigns = conn.assigns
-      |> Map.put(:title, "Create and Link Account")
-      |> Map.put(:changeset, Oli.Accounts.Author.changeset(%Oli.Accounts.Author{}))
-      |> Map.put(:action, Routes.pow_registration_path(conn, :create))
-      |> Map.put(:link_account, true)
-      |> Map.put(:sign_in_path, Routes.delivery_path(conn, :link_account))
-      |> Map.put(:cancel_path, Routes.delivery_path(conn, :index))
+    conn
+    |> render_create_and_link_form()
+  end
+
+  def render_create_and_link_form(conn, opts \\ []) do
+    title = Keyword.get(opts, :title, "Create and Link Account")
+    changeset = Keyword.get(opts, :changeset, Author.changeset(%Author{}))
+    action = Keyword.get(opts, :action, Routes.pow_registration_path(conn, :create))
+    sign_in_path = Keyword.get(opts, :sign_in_path, Routes.delivery_path(conn, :link_account))
+    cancel_path = Keyword.get(opts, :cancel_path, Routes.delivery_path(conn, :index))
 
     conn
+    |> assign(:title, title)
+    |> assign(:changeset, changeset)
+    |> assign(:action, action)
+    |> assign(:sign_in_path, sign_in_path)
+    |> assign(:cancel_path, cancel_path)
+    |> assign(:link_account, true)
     |> put_view(OliWeb.Pow.RegistrationView)
-    |> render("new.html", assigns)
+    |> render("new.html")
   end
 
   def create_section(conn, %{"publication_id" => publication_id}) do

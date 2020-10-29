@@ -95,6 +95,10 @@ defmodule OliWeb.Router do
     plug Oli.Plugs.AuthorizeProject
   end
 
+  pipeline :registration_captcha do
+    plug Oli.Plugs.RegistrationCaptcha
+  end
+
   ### HELPERS ###
 
   # with_session/1 used by authoring liveviews to load the current author id
@@ -111,12 +115,13 @@ defmodule OliWeb.Router do
   end
 
   scope "/" do
-    pipe_through :browser
+    pipe_through [:browser, :registration_captcha]
 
     pow_routes()
     pow_assent_routes()
     pow_extension_routes()
 
+    # handle linking accounts when using a social account provider to login
     get "/auth/:provider/link", OliWeb.DeliveryController, :process_link_account
     get "/auth/:provider/link/callback", OliWeb.DeliveryController, :link_account_callback
   end

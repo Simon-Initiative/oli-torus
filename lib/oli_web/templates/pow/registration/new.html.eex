@@ -2,8 +2,7 @@
 
 <%= render OliWeb.SharedView, "_form_container.html", Map.put(assigns, :title, value_or(assigns[:title], "Create an Account")) do %>
   <%# social media sign in links %>
-  <% link_params = if assigns[:link_account], do: [type: "link_account"], else: []%>
-  <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn, link_params), do: raw link %>
+  <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw link %>
 
   <hr class="my-4">
   <%= form_for @changeset, @action, [as: :user], fn f -> %>
