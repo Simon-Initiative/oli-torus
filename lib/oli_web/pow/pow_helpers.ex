@@ -27,6 +27,9 @@ defmodule OliWeb.Pow.PowHelpers do
     Pow.Plug.put_config(conn, get_pow_config(:author))
   end
 
+  ## provider_links forked from original pow_assent codebase to support custom styling for providers ##
+  # https://github.com/pow-auth/pow_assent/blob/master/lib/pow_assent/phoenix/views/view_helpers.ex
+
   @doc """
   Generates list of authorization links for all configured providers.
   The list of providers will be fetched from the PowAssent configuration, and
@@ -35,7 +38,7 @@ defmodule OliWeb.Pow.PowHelpers do
   be looked up with `PowAssent.Plug.providers_for_current_user/1`.
   `deauthorization_link/2` will be used for any already authorized providers.
   """
-  def provider_links(conn, link_params \\ [], link_opts \\ []) do
+  def provider_links(conn, link_opts \\ []) do
     available_providers = Plug.available_providers(conn)
     providers_for_user  = Plug.providers_for_current_user(conn)
 
@@ -43,7 +46,7 @@ defmodule OliWeb.Pow.PowHelpers do
     |> Enum.map(&{&1, &1 in providers_for_user})
     |> Enum.map(fn
       {provider, true} -> deauthorization_link(conn, provider, link_opts)
-      {provider, false} -> authorization_link(conn, provider, link_params, link_opts)
+      {provider, false} -> authorization_link(conn, provider, link_opts)
     end)
   end
 
@@ -53,21 +56,14 @@ defmodule OliWeb.Pow.PowHelpers do
   `:invited_user` is assigned to the conn, the invitation token will be passed
   on through the URL query params.
   """
-  def authorization_link(conn, provider, link_params \\ [], opts \\ []) do
+  def authorization_link(conn, provider, opts \\ []) do
     query_params = invitation_token_query_params(conn) ++ request_path_query_params(conn)
 
     msg  = AuthorizationController.extension_messages(conn).login_with_provider(%{conn | params: %{"provider" => provider}})
     icon = provider_icon(provider)
     path = AuthorizationController.routes(conn).path_for(conn, AuthorizationController, :new, [provider], query_params)
-    path = case link_params do
-      [] -> path
-      link_params ->
-        Enum.reduce(link_params, "#{path}?", fn {key, val}, acc -> acc <> "#{key}=#{val}&" end)
-        |> String.trim("&")
-    end
-
     opts = Keyword.merge(opts, to: path)
-    opts = Keyword.merge(opts, class: "btn btn-md btn-#{provider_class(provider)} btn-block social-signin")
+    opts = Keyword.merge(opts, class: "btn btn-md #{provider_class(provider)} btn-block social-signin")
 
     Link.link([icon, msg], opts)
   end
@@ -88,7 +84,7 @@ defmodule OliWeb.Pow.PowHelpers do
     icon = provider_icon(provider)
     path = AuthorizationController.routes(conn).path_for(conn, AuthorizationController, :delete, [provider])
     opts = Keyword.merge(opts, to: path, method: :delete)
-    opts = Keyword.merge(opts, class: "btn btn-md btn-#{provider_class(provider)} btn-block social-signin")
+    opts = Keyword.merge(opts, class: "btn btn-md #{provider_class(provider)} btn-block social-signin")
 
     Link.link([icon, msg], opts)
   end
@@ -107,6 +103,7 @@ defmodule OliWeb.Pow.PowHelpers do
     provider
       |> Naming.humanize
       |> String.downcase
+      |> (&("provider-#{&1}")).()
   end
 
   def provider_name(provider) do

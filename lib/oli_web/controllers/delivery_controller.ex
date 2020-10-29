@@ -5,6 +5,7 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Publishing
   alias Oli.Institutions
   alias Oli.Lti_1p3.ContextRoles
+  alias Oli.Accounts
 
   @context_administrator ContextRoles.get_role(:context_administrator)
   @context_instructor ContextRoles.get_role(:context_instructor)
@@ -84,24 +85,37 @@ defmodule OliWeb.DeliveryController do
   end
 
   def process_link_account(conn, %{"provider" => provider}) do
+    conn = conn
+      |> merge_assigns(callback_url: Routes.delivery_url(conn, :link_account_callback, provider))
 
-    IO.inspect provider, label: "process_link_account"
-
-    # PowAssent.Plug.authorize_url(conn, provider, conn.assigns.callback_url)
-    # PowAssent.Plug.authorize_url(conn, provider, "/auth/google/new?type=link_account")
-    PowAssent.Plug.authorize_url(conn, provider, Routes.delivery_path(conn, :link_account_callback, provider))
+    PowAssent.Plug.authorize_url(conn, provider, conn.assigns.callback_url)
     |> case do
       {:ok, url, conn} ->
       conn
-      |> redirect(to: url)
+      |> redirect(external: url)
     end
   end
 
   def link_account_callback(conn, %{"provider" => provider} = params) do
-
-    IO.inspect "link_account_callback"
+    conn = conn
+      |> merge_assigns(callback_url: Routes.delivery_url(conn, :link_account_callback, provider))
 
     PowAssent.Plug.callback_upsert(conn, provider, params, conn.assigns.callback_url)
+    |> (fn {:ok, conn} ->
+      %{current_user: current_user, current_author: current_author} = conn.assigns
+
+      conn = case Accounts.link_user_author_account(current_user, current_author) do
+        {:ok, _user} ->
+          conn
+          |> put_flash(:info, "Account '#{current_author.email}' is now linked")
+        _ ->
+          conn
+          |> put_flash(:error, "Failed to link user and author accounts for '#{current_author.email}'")
+      end
+
+      {:ok, conn}
+    end).()
+    |> PowAssent.Phoenix.AuthorizationController.respond_callback()
   end
 
   def create_and_link_account(conn, _params) do
@@ -149,7 +163,8 @@ defmodule OliWeb.DeliveryController do
 
   def signout(conn, _params) do
     conn
-    |> configure_session(drop: true)
+    |> use_pow_config(:user)
+    |> Pow.Plug.delete()
     |> redirect(to: Routes.delivery_path(conn, :index))
   end
 

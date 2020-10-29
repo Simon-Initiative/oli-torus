@@ -23,6 +23,12 @@
     font-weight: bold;
     transition: all 0.2s;
     text-transform: uppercase;
+    background-color: $secondary;
+    color: $white;
+
+    &:hover {
+      background-color: darken($secondary, 10%);
+    }
   }
 
   .form-label-group {
@@ -121,15 +127,27 @@
   text-align: center;
   vertical-align: middle;
   user-select: none;
+}
 
-  &.provider-google {
-    color: white;
-    background-color: #ea4335;
-  }
+.provider-google {
+  color: white !important;
+  background-color: #ea4335 !important;
 
-  &.provider-github {
-    color: white;
-    background-color: #24292e;
-
+  &.btn {
+    &:hover {
+      background-color: darken(#ea4335, 10%) !important;
+    }
   }
 }
+
+.provider-github {
+  color: white !important;
+  background-color: #24292e !important;
+
+  &.btn {
+    &:hover {
+      background-color: darken(#24292e, 10%) !important;
+    }
+  }
+}
+
