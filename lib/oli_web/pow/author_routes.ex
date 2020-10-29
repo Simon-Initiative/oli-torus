@@ -15,6 +15,8 @@ defmodule OliWeb.Pow.AuthorRoutes do
         _ ->
           Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
       end
+    else
+      Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
     end
   end
 

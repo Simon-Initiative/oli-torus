@@ -17,14 +17,14 @@
     <div class="form-label-group">
       <%= text_input f, :given_name, class: "form-control " <> error_class(f, :given_name, "is-invalid"),
         placeholder: "First Name", required: true, autofocus: focusHelper(f, :given_name) %>
-      <%= label f, :given_name, class: "control-label" %>
+      <%= label f, :given_name, "First Name", class: "control-label" %>
       <%= error_tag f, :given_name %>
     </div>
 
     <div class="form-label-group">
       <%= text_input f, :family_name, class: "form-control " <> error_class(f, :family_name, "is-invalid"),
         placeholder: "Last Name", required: true, autofocus: focusHelper(f, :family_name) %>
-      <%= label f, :family_name, class: "control-label" %>
+      <%= label f, :family_name, "Last Name", class: "control-label" %>
       <%= error_tag f, :family_name %>
     </div>
 
@@ -44,6 +44,7 @@
 
     <div class="form-label-group">
       <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
+      <%= error_tag f, :captcha %>
     </div>
 
     <%= if assigns[:link_account] do %>
