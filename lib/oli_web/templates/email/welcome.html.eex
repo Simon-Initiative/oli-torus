@@ -1,13 +1,8 @@
 <table align="center" role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: auto;">
-<!-- Email Header : BEGIN -->
-
-<%= render OliWeb.EmailView, "_header_logo.html" %>
-
-<!-- Email Header : END -->
 
     <!-- 1 Column Text + Button : BEGIN -->
     <tr>
-        <td style="background-color: #ffffff;">
+        <td style="background-color: #ffffff; padding: 20px 10px;">
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
                     <td style="padding: 20px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555;">
@@ -60,7 +55,7 @@
                         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                             <tr>
                                 <td style="text-align: center; padding: 0 10px;">
-                                    <img src="<%= Routes.static_path(OliWeb.Endpoint, "/images/email/block-tools-600x600.jpg") %>" width="200" height="" alt="toolkit" border="0" style="width: 100%; max-width: 200px; background: #dddddd; font-family: sans-serif; font-size: 15px; line-height: 15px; color: #555555;">
+                                    <img src="<%= Routes.static_url(OliWeb.Endpoint, "/images/email/block-tools-600x600.jpg") %>" width="200" height="" alt="toolkit" border="0" style="width: 100%; max-width: 200px; background: #dddddd; font-family: sans-serif; font-size: 15px; line-height: 15px; color: #555555;">
                                 </td>
                             </tr>
                             <tr>
@@ -74,7 +69,7 @@
                         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                             <tr>
                                 <td style="text-align: center; padding: 0 10px;">
-                                    <img src="<%= Routes.static_path(OliWeb.Endpoint, "/images/email/simon-painting-1-825x231.jpg") %>" width="200" height="" alt="simon" border="0" style="width: 100%; max-width: 200px; background: #dddddd; font-family: sans-serif; font-size: 15px; line-height: 15px; color: #555555;">
+                                    <img src="<%= Routes.static_url(OliWeb.Endpoint, "/images/email/simon-painting-1-825x231.jpg") %>" width="200" height="" alt="simon" border="0" style="width: 100%; max-width: 200px; background: #dddddd; font-family: sans-serif; font-size: 15px; line-height: 15px; color: #555555;">
                                 </td>
                             </tr>
                             <tr>

@@ -4,15 +4,13 @@ defmodule OliWeb.Pow.Mailer do
 
   import Bamboo.Email
 
-  alias Oli.Email
-
   @impl true
   def cast(%{user: user, subject: subject, text: _text, html: html}) do
-    Email.base_email()
+    Oli.Email.base_email()
     |> to(user.email)
     |> subject(subject)
-    |> html_body(Premailex.to_inline_css(html))
-    |> text_body(Premailex.to_text(html))
+    |> html_body(html)
+    |> Oli.Email.html_text_body()
   end
 
   @impl true
@@ -23,4 +21,5 @@ defmodule OliWeb.Pow.Mailer do
 
     deliver_later(email)
   end
+
 end

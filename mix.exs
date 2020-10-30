@@ -60,7 +60,7 @@ defmodule Oli.MixProject do
       {:csv, "~> 2.3"},
       {:dialyxir, "~> 0.5.0", only: [:dev], runtime: true},
       {:ecto_sql, "~> 3.1"},
-      {:ex_aws, "~> 2.1"},
+      {:ex_aws, "~> 2.1.6"},
       {:ex_aws_s3, "~> 2.0"},
       # TODO
       # {:ex_aws_ses, "~> 2.0"},

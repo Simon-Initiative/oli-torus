@@ -17,11 +17,14 @@ config :oli,
     env: Mix.env,
   },
   local_activity_manifests: Path.wildcard(File.cwd! <> "/assets/src/components/activities/*/manifest.json")
-    |> Enum.map(&File.read!/1)
+    |> Enum.map(&File.read!/1),
+  email_from_name: System.get_env("EMAIL_FROM_NAME", "OLI Torus"),
+  email_from_address: System.get_env("EMAIL_FROM_ADDRESS", "admin@example.edu"),
+  email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu")
 
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,
-  live_view: [signing_salt: System.get_env("LIVE_VIEW_SALT") || "LIVE_VIEW_SALT"],
+  live_view: [signing_salt: System.get_env("LIVE_VIEW_SALT", "LIVE_VIEW_SALT")],
   url: [host: "localhost"],
   secret_key_base: "GE9cpXBwVXNaplyUCYbIWqERmC/OlcR5iVMwLX9/W7gzQRxkD1ETjda9E0jW/BW1",
   render_errors: [view: OliWeb.ErrorView, accepts: ~w(html json)],

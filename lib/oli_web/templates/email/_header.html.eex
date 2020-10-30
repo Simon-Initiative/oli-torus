@@ -1,0 +1,7 @@
+<tr>
+    <a class="navbar-brand oli-logo" href="<%= Routes.static_page_url(OliWeb.Endpoint, :index) %>">
+        <td style="padding: 20px 0; text-align: center">
+            <img src="<%= Routes.static_url(OliWeb.Endpoint, "/images/oli-logo.png") %>" width="277" height="100" alt="oli-logo" border="0" style="height: auto;">
+        </td>
+    </a>
+</tr>

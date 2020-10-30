@@ -3,9 +3,7 @@ use Mix.Config
 config :oli,
   env: :dev,
   s3_media_bucket_name: "torus-media-dev",
-  media_url: "torus-media-dev.s3.amazonaws.com",
-  email_from: System.get_env("EMAIL_FROM", "admin@example.edu"),
-  email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu")
+  media_url: "torus-media-dev.s3.amazonaws.com"
 
 # Configure your database
 config :oli, Oli.Repo,

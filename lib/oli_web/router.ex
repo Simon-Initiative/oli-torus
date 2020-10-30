@@ -99,12 +99,18 @@ defmodule OliWeb.Router do
     plug Oli.Plugs.RegistrationCaptcha
   end
 
+  pipeline :pow_email_layout do
+    plug :put_pow_mailer_layout, {OliWeb.LayoutView, :email}
+  end
+
   ### HELPERS ###
 
   # with_session/1 used by authoring liveviews to load the current author id
   def with_session(conn) do
     %{"current_author_id" => conn.assigns.current_author.id}
   end
+
+  defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layout, layout)
 
   ### ROUTES ###
 
@@ -115,7 +121,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/" do
-    pipe_through [:browser, :registration_captcha]
+    pipe_through [:browser, :pow_email_layout, :registration_captcha]
 
     pow_routes()
     pow_assent_routes()
@@ -254,7 +260,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/course", OliWeb do
-    pipe_through [:browser, :delivery, :delivery_protected]
+    pipe_through [:browser, :delivery, :delivery_protected, :pow_email_layout]
 
     get "/", DeliveryController, :index
 
