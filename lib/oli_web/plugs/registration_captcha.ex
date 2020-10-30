@@ -7,17 +7,20 @@ defmodule Oli.Plugs.RegistrationCaptcha do
   def call(conn, _opts) do
     # plug is only applicable to registration POSTs
     register_path = Routes.pow_registration_path(conn, :create)
-    register_and_link_path = case conn do
+    register_and_link_provider_path = case conn do
       %{params: %{"provider" => provider}} ->
         Routes.pow_assent_registration_path(conn, :create, provider)
       _ ->
         nil
     end
+    register_and_link_user_path = Routes.delivery_path(conn, :process_create_and_link_account_user)
 
     case conn do
       %Plug.Conn{method: "POST", request_path: ^register_path} when register_path != nil ->
         verify_captcha(conn, :register)
-      %Plug.Conn{method: "POST", request_path: ^register_and_link_path} when register_and_link_path != nil ->
+      %Plug.Conn{method: "POST", request_path: ^register_and_link_provider_path} when register_and_link_provider_path != nil ->
+        verify_captcha(conn, :create_and_link_account)
+      %Plug.Conn{method: "POST", request_path: ^register_and_link_user_path} when register_and_link_user_path != nil ->
         verify_captcha(conn, :create_and_link_account)
       _ ->
         conn
@@ -40,6 +43,9 @@ defmodule Oli.Plugs.RegistrationCaptcha do
   end
 
   defp render_captcha_error(conn, purpose) do
+    conn = conn
+      |> OliWeb.Pow.PowHelpers.use_pow_config(:author)
+
     changeset = Pow.Plug.change_user(conn, conn.params["user"])
     changeset = Ecto.Changeset.add_error(changeset, :captcha, "failed, please try again")
 

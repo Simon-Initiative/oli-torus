@@ -24,20 +24,29 @@ defmodule OliWeb.Pow.AuthorRoutes do
     end
   end
 
+  # maybe links current user and author accounts depending on the route and request type. also handles
+  # the social provider case where accounts have already been linked and the user just needs to be directed
+  # back to delivery
   defp maybe_link_account_route(conn) do
     if conn.params["provider"] do
+      # this is a social provider login, we need to check if it is simply a login action or a link account action
       link_account_callback_path = Routes.delivery_path(conn, :link_account_callback, conn.params["provider"])
 
       case conn do
         %Plug.Conn{request_path: ^link_account_callback_path} ->
+          # action was link account, which already occurred in the custom controller method link_account
+          # in delivery_controller. now we just need to redirect back to delivery root
           conn
             |> Routes.delivery_path(:index)
         _ ->
+          # action is simply an account login, use the default routing mechanism
           nil
       end
     else
+      # this is an email login, check if the request is simply a login or part of account link action
       case conn do
         %Plug.Conn{params: %{"user" => %{"link_account" => "true"}}} ->
+          # action is to link account, so link the user and author accounts
           %{current_user: current_user, current_author: current_author} = conn.assigns
 
           case Accounts.link_user_author_account(current_user, current_author) do
@@ -51,6 +60,7 @@ defmodule OliWeb.Pow.AuthorRoutes do
               |> Routes.delivery_path(:index)
           end
         _ ->
+          # action is simply an account login, use the default routing mechanism
           nil
       end
     end
@@ -63,10 +73,10 @@ defmodule OliWeb.Pow.AuthorRoutes do
 
   @impl true
   def path_for(%Plug.Conn{assigns: %{link_account: true}} = conn, PowAssent.Phoenix.AuthorizationController, :new, [provider], _query_params) do
-    Routes.delivery_path(conn, :process_link_account, provider)
+    Routes.delivery_path(conn, :process_link_account_provider, provider)
   end
   def path_for(%Plug.Conn{assigns: %{link_account: true}} = conn, PowAssent.Phoenix.AuthorizationController, :create, [provider], _query_params) do
-    Routes.delivery_path(conn, :process_link_account, provider)
+    Routes.delivery_path(conn, :process_link_account_provider, provider)
   end
 
   def path_for(conn, plug, verb, vars, query_params),

@@ -11,6 +11,8 @@ defmodule OliWeb.DeliveryController do
   @context_administrator ContextRoles.get_role(:context_administrator)
   @context_instructor ContextRoles.get_role(:context_instructor)
 
+  plug Oli.Plugs.RegistrationCaptcha when action in [:process_create_and_link_account_user]
+
   def index(conn, _params) do
     user = conn.assigns.current_user
     lti_params = conn.assigns.lti_params
@@ -79,22 +81,22 @@ defmodule OliWeb.DeliveryController do
   def render_link_account_form(conn, opts \\ []) do
     title = Keyword.get(opts, :title, "Link Existing Account")
     changeset = Keyword.get(opts, :changeset, Author.changeset(%Author{}))
-    action = Keyword.get(opts, :action, Routes.pow_session_path(conn, :create))
-    sign_in_path = Keyword.get(opts, :sign_in_path, Routes.delivery_path(conn, :create_and_link_account))
+    action = Keyword.get(opts, :action, Routes.delivery_path(conn, :process_link_account_user))
+    create_account_path = Keyword.get(opts, :create_account_path, Routes.delivery_path(conn, :create_and_link_account))
     cancel_path = Keyword.get(opts, :cancel_path, Routes.delivery_path(conn, :index))
 
     conn
     |> assign(:title, title)
     |> assign(:changeset, changeset)
     |> assign(:action, action)
-    |> assign(:sign_in_path, sign_in_path)
+    |> assign(:create_account_path, create_account_path)
     |> assign(:cancel_path, cancel_path)
     |> assign(:link_account, true)
     |> put_view(OliWeb.Pow.SessionView)
     |> render("new.html")
   end
 
-  def process_link_account(conn, %{"provider" => provider}) do
+  def process_link_account_provider(conn, %{"provider" => provider}) do
     conn = conn
       |> merge_assigns(callback_url: Routes.delivery_url(conn, :link_account_callback, provider))
 
@@ -103,6 +105,23 @@ defmodule OliWeb.DeliveryController do
       {:ok, url, conn} ->
       conn
       |> redirect(external: url)
+    end
+  end
+
+  def process_link_account_user(conn, %{"user" => user_params}) do
+    conn
+    |> use_pow_config(:author)
+    |> Pow.Plug.authenticate_user(user_params)
+    |> case do
+      {:ok, conn} ->
+        conn
+        |> put_flash(:info, Pow.Phoenix.Controller.messages(conn, Pow.Phoenix.Messages).signed_in(conn))
+        |> redirect(to: Pow.Phoenix.Controller.routes(conn, Pow.Phoenix.Routes).after_sign_in_path(conn))
+
+      {:error, conn} ->
+        conn
+        |> put_flash(:error, Pow.Phoenix.Controller.messages(conn, Pow.Phoenix.Messages).invalid_credentials(conn))
+        |> render_link_account_form(changeset: PowAssent.Plug.change_user(conn, %{}, user_params))
     end
   end
 
@@ -138,10 +157,26 @@ defmodule OliWeb.DeliveryController do
     |> render_create_and_link_form()
   end
 
+  def process_create_and_link_account_user(conn, %{"user" => user_params}) do
+    conn
+    |> use_pow_config(:author)
+    |> Pow.Plug.create_user(user_params)
+    |> case do
+      {:ok, _user, conn} ->
+        conn
+        |> put_flash(:info, Pow.Phoenix.Controller.messages(conn, Pow.Phoenix.Messages).user_has_been_created(conn))
+        |> redirect(to: Pow.Phoenix.Controller.routes(conn, Pow.Phoenix.Routes).after_registration_path(conn))
+
+      {:error, changeset, conn} ->
+        conn
+        |> render_create_and_link_form(changeset: changeset)
+    end
+  end
+
   def render_create_and_link_form(conn, opts \\ []) do
     title = Keyword.get(opts, :title, "Create and Link Account")
     changeset = Keyword.get(opts, :changeset, Author.changeset(%Author{}))
-    action = Keyword.get(opts, :action, Routes.pow_registration_path(conn, :create))
+    action = Keyword.get(opts, :action, Routes.delivery_path(conn, :process_create_and_link_account_user))
     sign_in_path = Keyword.get(opts, :sign_in_path, Routes.delivery_path(conn, :link_account))
     cancel_path = Keyword.get(opts, :cancel_path, Routes.delivery_path(conn, :index))
 

@@ -122,7 +122,7 @@ defmodule OliWeb.Router do
     pow_extension_routes()
 
     # handle linking accounts when using a social account provider to login
-    get "/auth/:provider/link", OliWeb.DeliveryController, :process_link_account
+    get "/auth/:provider/link", OliWeb.DeliveryController, :process_link_account_provider
     get "/auth/:provider/link/callback", OliWeb.DeliveryController, :link_account_callback
   end
 
@@ -259,7 +259,10 @@ defmodule OliWeb.Router do
     get "/", DeliveryController, :index
 
     get "/link_account", DeliveryController, :link_account
+    post "/link_account", DeliveryController, :process_link_account_user
     get "/create_and_link_account", DeliveryController, :create_and_link_account
+    post "/create_and_link_account", DeliveryController, :process_create_and_link_account_user
+
     post "/section", DeliveryController, :create_section
     get "/signout", DeliveryController, :signout
     get "/open_and_free", DeliveryController, :list_open_and_free
