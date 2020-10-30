@@ -17,7 +17,7 @@ defmodule Oli.Accounts.Author do
 
     pow_user_fields()
 
-    embeds_one :preferences, Oli.Accounts.AuthorPreferences
+    embeds_one :preferences, Oli.Accounts.AuthorPreferences, on_replace: :delete
     belongs_to :system_role, Oli.Accounts.SystemRole
     has_many :institutions, Oli.Institutions.Institution
     has_many :users, Oli.Accounts.User
@@ -43,6 +43,22 @@ defmodule Oli.Accounts.Author do
     |> cast_embed(:preferences)
     |> default_system_role()
     |> lowercase_email()
+  end
+
+  @doc """
+  Creates a changeset that doesnt require a current password, used for lower risk changes to author
+  (as opposed to higher risk, like password and email changes)
+  """
+  def changeset(author, attrs, :noauth) do
+    author
+    |> cast(attrs, [
+      :name,
+      :given_name,
+      :family_name,
+      :picture,
+      :system_role_id,
+    ])
+    |> cast_embed(:preferences)
   end
 
   def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do

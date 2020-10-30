@@ -57,7 +57,7 @@ defmodule OliWeb.WorkspaceController do
         conn
         |> redirect(to: Routes.workspace_path(conn, :account))
 
-      {:error, _} ->
+      {:error, _changeset} ->
         conn
         |> put_flash(:error, "Failed to change theme")
         |> redirect(to: Routes.workspace_path(conn, :account))

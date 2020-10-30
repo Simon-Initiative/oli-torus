@@ -187,7 +187,7 @@ defmodule Oli.Accounts do
   """
   def update_author(%Author{} = author, attrs) do
     author
-    |> Author.changeset(attrs)
+    |> Author.changeset(attrs, :noauth)
     |> Repo.update()
   end
 
