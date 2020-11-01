@@ -12,7 +12,7 @@ defmodule Oli.Delivery.Student.Summary do
       get_summary(root_container, context_id, user)
     end
   end
-  def get_summary(root_container, context_id, user) do
+  def get_summary(container, context_id, user) do
 
     with {:ok, section} <- Sections.get_section_by(context_id: context_id) |> Oli.Utils.trap_nil(),
       resource_accesses <- Attempts.get_user_resource_accesses_for_context(context_id, user.id),
@@ -23,7 +23,7 @@ defmodule Oli.Delivery.Student.Summary do
       end)
 
       {:ok, %Oli.Delivery.Student.Summary{
-        pages: Resolver.from_resource_id(context_id, root_container.children),
+        pages: Resolver.from_resource_id(context_id, container.children),
         title: section.title,
         description: section.project.description,
         access_map: access_map,

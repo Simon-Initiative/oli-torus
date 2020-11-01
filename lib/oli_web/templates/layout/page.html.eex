@@ -10,12 +10,12 @@
         <div class="header d-flex flex-column">
           <div>
             <a href="<%= Routes.delivery_path(@conn, :index) %>" class="btn btn-link course-btn">
-              <i class="fa fa-arrow-left" aria-hidden="true"></i><i class="fa fa-book" aria-hidden="true"></i> <%= @summary.title %>
+              <i class="fa fa-arrow-left mr-1" aria-hidden="true"></i>Course Outline
             </a>
           </div>
           <div class="flex-fill"></div>
         </div>
-        <%= render OliWeb.PageDeliveryView, "_outline.html", conn: @conn, context_id: @context_id, summary: @summary, active_page: @slug %>
+        <%= render OliWeb.PageDeliveryView, "_outline.html", conn: @conn, context_id: @context_id, summary: @container_summary, active_page: @slug %>
       </nav>
 
       <!-- Page Content -->
@@ -30,4 +30,3 @@
   </div>
 
 <% end %>
-

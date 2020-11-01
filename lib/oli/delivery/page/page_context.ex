@@ -4,8 +4,8 @@ defmodule Oli.Delivery.Page.PageContext do
   Defines the context required to render a page in delivery mode.
   """
 
-  @enforce_keys [:summary, :page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page]
-  defstruct [:summary, :page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page]
+  @enforce_keys [:container_summary, :summary, :page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page, :numbering]
+  defstruct [:container_summary, :summary, :page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page, :numbering]
 
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Delivery.Page.PageContext
@@ -13,6 +13,7 @@ defmodule Oli.Delivery.Page.PageContext do
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Student.Summary
   alias Oli.Delivery.Page.ObjectivesRollup
+  alias Oli.Resources.Numbering
 
   @doc """
   Creates the page context required to render a page in delivery model, based
@@ -26,7 +27,7 @@ defmodule Oli.Delivery.Page.PageContext do
   to a renderer.
   """
   @spec create_page_context(String.t, String.t, Oli.Accounts.User) :: %PageContext{}
-  def create_page_context(context_id, page_slug, user, container_id \\ nil) do
+  def create_page_context(context_id, page_slug, user) do
 
     # resolve the page revision per context_id
     page_revision = DeliveryResolver.from_revision_slug(context_id, page_slug)
@@ -51,11 +52,16 @@ defmodule Oli.Delivery.Page.PageContext do
       page_revision
     end
 
-    {previous, next} = retrieve_previous_next(context_id, page_revision, container_id)
+    {:ok, path} = Numbering.path_from_root_to(DeliveryResolver, context_id, page_slug)
+    [_page | container] = Enum.reverse(path)
 
-    {:ok, summary} = Summary.get_summary(context_id, user)
+    {:ok, container_summary} = Summary.get_summary(container, context_id, user)
+    {:ok, summary} = Summary.get_summary(page_revision, context_id, user)
+
+    {previous, next} = retrieve_previous_next(context_id, page_revision, container.resource_id)
 
     %PageContext{
+      container_summary: container_summary,
       summary: summary,
       page: page_revision,
       progress_state: progress_state,
@@ -63,7 +69,8 @@ defmodule Oli.Delivery.Page.PageContext do
       activities: activities,
       objectives: rollup_objectives(latest_attempts, DeliveryResolver, context_id),
       previous_page: previous,
-      next_page: next
+      next_page: next,
+      numbering: Map.get(Numbering.number_full_tree(DeliveryResolver, context_id), page_revision.id)
     }
   end
 

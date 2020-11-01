@@ -3,6 +3,7 @@ defmodule OliWeb.PageDeliveryView do
 
   alias Oli.Lti_1p3.ContextRoles
   alias Oli.Resources.ResourceType
+  alias Oli.Resources.Numbering
 
   def is_instructor?(conn, context_id) do
     user = conn.assigns.current_user
@@ -13,8 +14,8 @@ defmodule OliWeb.PageDeliveryView do
     ResourceType.get_type_by_id(page.resource_type_id) == "container"
   end
 
-  def container_prefix(page) do
-
+  def container_title(numbering, revision) do
+    Numbering.prefix(numbering) <> ": " <> revision.title
   end
 
   def calculate_score_percentage(resource_access) do
