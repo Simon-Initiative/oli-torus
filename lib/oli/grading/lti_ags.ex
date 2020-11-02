@@ -26,11 +26,11 @@ defmodule Oli.Grading.LTI_AGS do
     headers = [{"Content-Type", "application/json"}]
 
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.post(url, body, headers),
-      {:ok, result} -> Jason.decode(body)
+      {:ok, result} <- Jason.decode(body)
     do
       {:ok, result}
     else
-      {:error, "Error posting score"}
+      _ -> {:error, "Error posting score"}
     end
 
   end
@@ -50,14 +50,14 @@ defmodule Oli.Grading.LTI_AGS do
     request_url = "#{line_items_service_url}?resource_id=#{resource_id}"
 
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(request_url),
-      {:ok, result} -> Jason.decode(body)
+      {:ok, result} <- Jason.decode(body)
     do
       case result do
-        [] -> create_line_item(context_id, line_items_service_url, resource_access)
+        [] -> create_line_item(line_items_service_url, resource_id, score_maximum, label)
         [line_item] -> {:ok, line_item}
       end
     else
-      {:error, "Error retrieving existing line items"}
+      _ -> {:error, "Error retrieving existing line items"}
     end
 
   end
@@ -66,28 +66,28 @@ defmodule Oli.Grading.LTI_AGS do
   Creates a line item for a resource id. Tthis function returns a line item struct wrapped
   in a {:ok, line_item} tuple.  On error, returns a {:error, error} tuple.
   """
-  defp create_line_item(line_items_service_url, resource_id, score_maximum, label) do
+  def create_line_item(line_items_service_url, resource_id, score_maximum, label) do
 
     line_item = %LineItem{
       scoreMaximum: score_maximum,
-      resource_id: resource_id,
+      resourceId: resource_id,
       label: label
     }
 
     body = Jason.encode([line_item])
     headers = [{"Content-Type", "application/json"}]
 
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.post(line_items_service_url, body, headers)
-      {:ok, result} -> Jason.decode(body)
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.post(line_items_service_url, body, headers),
+      {:ok, result} <- Jason.decode(body)
     do
       {:ok, %LineItem{
         id: Map.get(result, "id"),
         scoreMaximum: Map.get(result, "scoreMaximum"),
-        resource_id: Map.get(result, "resource_id"),
+        resourceId: Map.get(result, "resource_id"),
         label: Map.get(result, "label"),
       }}
     else
-      {:error, "Error creating new line item"}
+      _ -> {:error, "Error creating new line item"}
     end
 
   end
