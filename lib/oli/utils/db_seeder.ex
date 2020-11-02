@@ -54,8 +54,8 @@ defmodule Oli.Seeder do
 
     {:ok, family} = Family.changeset(%Family{}, %{description: "description", title: "title"}) |> Repo.insert
     {:ok, project} = Project.changeset(%Project{}, %{description: "description", title: "Example Open and Free Course", version: "1", family_id: family.id}) |> Repo.insert
-    {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", given_name: "First", family_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
-    {:ok, author2} = Author.changeset(%Author{}, %{email: "test2@test.com", given_name: "First", family_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
+    {:ok, author} = Author.noauth_changeset(%Author{}, %{email: "test@test.com", given_name: "First", family_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
+    {:ok, author2} = Author.noauth_changeset(%Author{}, %{email: "test2@test.com", given_name: "First", family_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
 
     {:ok, _} = AuthorProject.changeset(%AuthorProject{}, %{author_id: author.id, project_id: project.id, project_role_id: ProjectRole.role_id.owner}) |> Repo.insert
     {:ok, _} = AuthorProject.changeset(%AuthorProject{}, %{author_id: author2.id, project_id: project.id, project_role_id: ProjectRole.role_id.owner}) |> Repo.insert

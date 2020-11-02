@@ -80,7 +80,7 @@ defmodule OliWeb.DeliveryController do
 
   def render_link_account_form(conn, opts \\ []) do
     title = Keyword.get(opts, :title, "Link Existing Account")
-    changeset = Keyword.get(opts, :changeset, Author.changeset(%Author{}))
+    changeset = Keyword.get(opts, :changeset, Author.noauth_changeset(%Author{}))
     action = Keyword.get(opts, :action, Routes.delivery_path(conn, :process_link_account_user))
     create_account_path = Keyword.get(opts, :create_account_path, Routes.delivery_path(conn, :create_and_link_account))
     cancel_path = Keyword.get(opts, :cancel_path, Routes.delivery_path(conn, :index))
@@ -175,7 +175,7 @@ defmodule OliWeb.DeliveryController do
 
   def render_create_and_link_form(conn, opts \\ []) do
     title = Keyword.get(opts, :title, "Create and Link Account")
-    changeset = Keyword.get(opts, :changeset, Author.changeset(%Author{}))
+    changeset = Keyword.get(opts, :changeset, Author.noauth_changeset(%Author{}))
     action = Keyword.get(opts, :action, Routes.delivery_path(conn, :process_create_and_link_account_user))
     sign_in_path = Keyword.get(opts, :sign_in_path, Routes.delivery_path(conn, :link_account))
     cancel_path = Keyword.get(opts, :cancel_path, Routes.delivery_path(conn, :index))

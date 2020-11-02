@@ -2,7 +2,6 @@ defmodule OliWeb.ObjectivesLiveTest do
   use OliWeb.ConnCase
   alias Oli.Seeder
 
-  import Plug.Conn
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
   @endpoint OliWeb.Endpoint
@@ -63,9 +62,9 @@ defmodule OliWeb.ObjectivesLiveTest do
 
     Oli.Lti_1p3.cache_lti_params!(lti_params["sub"], lti_params)
 
-    conn = Plug.Test.init_test_session(conn, current_author_id: map.author.id)
-      |> put_session(:current_user_id, user.id)
-      |> put_session(:lti_1p3_sub, lti_params["sub"])
+    conn = Plug.Test.init_test_session(conn, lti_1p3_sub: lti_params["sub"])
+      |> Pow.Plug.assign_current_user(map.author, get_pow_config(:author))
+      |> Pow.Plug.assign_current_user(user, get_pow_config(:user))
 
     {:ok,
       conn: conn,

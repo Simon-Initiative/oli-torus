@@ -142,7 +142,7 @@ defmodule Oli.EditingTest do
 
       # try to make the edit using an unauthorized author
       content = %{ "model" => [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }] }
-      {:ok, author2} = Author.changeset(%Author{}, %{email: "test3@test.com", given_name: "First", family_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
+      {:ok, author2} = Author.noauth_changeset(%Author{}, %{email: "test3@test.com", given_name: "First", family_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.author}) |> Repo.insert
 
       result = PageEditor.edit(project.slug, revision1.slug, author2.email, %{ "content" => content })
 

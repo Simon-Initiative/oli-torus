@@ -72,7 +72,7 @@ defmodule Oli.TestHelpers do
       })
 
     {:ok, author} =
-      Author.changeset(%Author{}, params)
+      Author.noauth_changeset(%Author{}, params)
       |> Repo.insert()
 
     author
@@ -176,7 +176,7 @@ defmodule Oli.TestHelpers do
 
   def author_conn(%{conn: conn}) do
     author = author_fixture()
-    conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
+    conn = Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     {:ok, conn: conn, author: author}
   end
@@ -184,7 +184,7 @@ defmodule Oli.TestHelpers do
   def author_project_conn(%{conn: conn}) do
     author = author_fixture()
     [project | _rest] = make_n_projects(1, author)
-    conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
+    conn = Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     {:ok, conn: conn, author: author, project: project}
   end
@@ -201,7 +201,7 @@ defmodule Oli.TestHelpers do
     [project | _rest] = make_n_projects(1, author)
     objective = objective_fixture(project, author);
     objective_revision = objective.objective_revision
-    conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
+    conn = Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
     {:ok, conn: conn, author: author, project: project, objective_revision: objective_revision}
   end
 

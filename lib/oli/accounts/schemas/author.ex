@@ -47,11 +47,12 @@ defmodule Oli.Accounts.Author do
 
   @doc """
   Creates a changeset that doesnt require a current password, used for lower risk changes to author
-  (as opposed to higher risk, like password and email changes)
+  (as opposed to higher risk, like password changes)
   """
-  def changeset(author, attrs, :noauth) do
+  def noauth_changeset(author, attrs \\ %{}) do
     author
     |> cast(attrs, [
+      :email,
       :name,
       :given_name,
       :family_name,
@@ -59,6 +60,8 @@ defmodule Oli.Accounts.Author do
       :system_role_id,
     ])
     |> cast_embed(:preferences)
+    |> default_system_role()
+    |> lowercase_email()
   end
 
   def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do

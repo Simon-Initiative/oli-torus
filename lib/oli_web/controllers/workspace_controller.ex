@@ -27,7 +27,7 @@ defmodule OliWeb.WorkspaceController do
       themes: themes,
       active_theme: active_theme,
       title: "Account",
-      changeset: Author.changeset(author)
+      changeset: Author.noauth_changeset(author)
   end
 
   def update_author(conn, %{"author" => %{"given_name" => given_name, "family_name" => family_name}}) do

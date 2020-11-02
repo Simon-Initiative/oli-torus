@@ -173,7 +173,7 @@ defmodule Oli.Accounts do
       nil -> %Author{}
       author -> author
     end
-    |> Author.changeset(changes)
+    |> Author.noauth_changeset(changes)
     |> Repo.insert_or_update
   end
 
@@ -187,7 +187,7 @@ defmodule Oli.Accounts do
   """
   def update_author(%Author{} = author, attrs) do
     author
-    |> Author.changeset(attrs, :noauth)
+    |> Author.noauth_changeset(attrs)
     |> Repo.update()
   end
 
