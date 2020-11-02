@@ -5,7 +5,7 @@ defmodule Oli.Delivery.Student.Summary do
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Numbering
 
-  defstruct [:pages, :title, :description, :access_map, :numberings]
+  defstruct [:title, :description, :access_map, :hierarchy]
 
   def get_summary(context_id, user) do
     with {:ok, root_container} <- Resolver.root_container(context_id) |> Oli.Utils.trap_nil() do
@@ -16,18 +16,22 @@ defmodule Oli.Delivery.Student.Summary do
 
     with {:ok, section} <- Sections.get_section_by(context_id: context_id) |> Oli.Utils.trap_nil(),
       resource_accesses <- Attempts.get_user_resource_accesses_for_context(context_id, user.id),
-      numberings <- Numbering.number_full_tree(Oli.Publishing.DeliveryResolver, context_id)
+      [root_container_node] <- Numbering.full_hierarchy(Oli.Publishing.DeliveryResolver, context_id)
     do
       access_map = Enum.reduce(resource_accesses, %{}, fn ra, acc ->
         Map.put_new(acc, ra.resource_id, ra)
       end)
 
+      # IO.inspect(hierarchy)
+
+      # pages: all revisions in hierarchy
+      # need to make a tree of revisions
+      # numberings: map from revision id to numbering
       {:ok, %Oli.Delivery.Student.Summary{
-        pages: Resolver.from_resource_id(context_id, container.children),
         title: section.title,
         description: section.project.description,
         access_map: access_map,
-        numberings: numberings
+        hierarchy: root_container_node.children
       }}
     else
       _ -> {:error, :not_found}

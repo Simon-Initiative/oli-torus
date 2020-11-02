@@ -1,11 +1,8 @@
-<% link_class =  "list-group-item list-group-item-action " <> if @active_page == @page.slug, do: "active", else: "" %>
-<%= link to: Routes.page_delivery_path(@conn, :page, @context_id, @page.slug), class: link_class do %>
-  <div class="d-flex w-100 justify-content-between">
-    <span class="page-title">
-      <b><i class="fas fa-box mr-2"></i> <%= container_title(Map.get(@summary.numberings, @page.id), @page) %></b>
-    </span>
-    <%= if Map.has_key?(@summary.access_map, @page.resource_id) do %>
-      <small class="text-secondary"><i class="fa fa-check"></i></small>
-    <% end %>
-  </div>
-<% end %>
+<div class="d-flex w-100 justify-content-between">
+  <span class="page-title">
+    <b><i class="fas fa-box mr-2"></i> <%= container_title(@node) %></b>
+  </span>
+  <%= if Map.has_key?(@summary.access_map, @node.revision.resource_id) do %>
+    <small class="text-secondary"><i class="fa fa-check"></i></small>
+  <% end %>
+</div>

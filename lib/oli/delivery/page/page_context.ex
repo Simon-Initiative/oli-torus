@@ -4,8 +4,8 @@ defmodule Oli.Delivery.Page.PageContext do
   Defines the context required to render a page in delivery mode.
   """
 
-  @enforce_keys [:container_summary, :summary, :page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page, :numbering]
-  defstruct [:container_summary, :summary, :page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page, :numbering]
+  @enforce_keys [:summary, :page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page]
+  defstruct [:summary, :page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page]
 
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Delivery.Page.PageContext
@@ -13,7 +13,7 @@ defmodule Oli.Delivery.Page.PageContext do
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Student.Summary
   alias Oli.Delivery.Page.ObjectivesRollup
-  alias Oli.Resources.Numbering
+  alias Oli.Resources.ResourceType
 
   @doc """
   Creates the page context required to render a page in delivery model, based
@@ -52,16 +52,11 @@ defmodule Oli.Delivery.Page.PageContext do
       page_revision
     end
 
-    {:ok, path} = Numbering.path_from_root_to(DeliveryResolver, context_id, page_slug)
-    [_page | container] = Enum.reverse(path)
-
-    {:ok, container_summary} = Summary.get_summary(container, context_id, user)
     {:ok, summary} = Summary.get_summary(page_revision, context_id, user)
 
-    {previous, next} = retrieve_previous_next(context_id, page_revision, container.resource_id)
+    {previous, next} = determine_previous_next(flatten_hierarchy(summary.hierarchy), page_revision)
 
     %PageContext{
-      container_summary: container_summary,
       summary: summary,
       page: page_revision,
       progress_state: progress_state,
@@ -69,56 +64,36 @@ defmodule Oli.Delivery.Page.PageContext do
       activities: activities,
       objectives: rollup_objectives(latest_attempts, DeliveryResolver, context_id),
       previous_page: previous,
-      next_page: next,
-      numbering: Map.get(Numbering.number_full_tree(DeliveryResolver, context_id), page_revision.id)
+      next_page: next
     }
   end
 
-  # We combine retrieve objective titles and previous next page
-  # information in one step so that we can do all their revision
-  # resolution in one step.
-  defp retrieve_previous_next(context_id, page_revision, container_id) do
-
-    # if container_id is nil we assume it is the root
-    container = case container_id do
-      nil -> DeliveryResolver.root_container(context_id)
-      id -> DeliveryResolver.from_resource_id(context_id, id)
-    end
-
-    previous_next = determine_previous_next(container, page_revision.resource_id)
-
-    # resolve all of these references, all at once, storing
-    # them in a map based on their resource_id as the key
-    all_resources = Enum.filter(previous_next, fn a -> a != nil end)
-
-    revisions = DeliveryResolver.from_resource_id(context_id, all_resources)
-    |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
-
-    previous = Map.get(revisions, Enum.at(previous_next, 0))
-    next = Map.get(revisions, Enum.at(previous_next, 1))
-
-    {previous, next}
+  defp flatten_hierarchy([]), do: []
+  defp flatten_hierarchy([h | t]) do
+    if ResourceType.get_type_by_id(h.revision.resource_type_id) == "container" do
+      []
+    else
+      [h]
+    end ++ flatten_hierarchy(h.children) ++ flatten_hierarchy(t)
   end
 
   # for a map of activity ids to latest attempt tuples (where the first tuple item is the activity attempt)
   # return the parent objective revisions of all attached objectives
   # if an attached objective is a parent, include that in the return list
   defp rollup_objectives(latest_attempts, resolver, context_id) do
-
     Enum.map(latest_attempts, fn {_, {%{ revision: revision }, _}} -> revision end)
     |> ObjectivesRollup.rollup_objectives(resolver, context_id)
-
   end
 
-  defp determine_previous_next(%{children: children}, page_resource_id) do
+  defp determine_previous_next(hierarchy, revision) do
 
-    index = Enum.find_index(children, fn id -> id == page_resource_id end)
+    index = Enum.find_index(hierarchy, fn node -> node.revision.id == revision.id end)
 
-    case {index, length(children) - 1} do
-      {_, 0} -> [nil, nil]
-      {0, _} -> [nil, Enum.at(children, 1)]
-      {a, a} -> [Enum.at(children, a - 1), nil]
-      {a, _} -> [Enum.at(children, a - 1), Enum.at(children, a + 1)]
+    case {index, length(hierarchy) - 1} do
+      {_, 0} -> {nil, nil}
+      {0, _} -> {nil, Enum.at(hierarchy, 1).revision}
+      {a, a} -> {Enum.at(hierarchy, a - 1).revision, nil}
+      {a, _} -> {Enum.at(hierarchy, a - 1).revision, Enum.at(hierarchy, a + 1).revision}
     end
   end
 

@@ -2,6 +2,7 @@ defmodule Oli.Resources.Numbering do
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Revision
   alias Oli.Publishing.Resolver
+  alias Oli.Utils.HierarchyNode
 
   defstruct level: 0,
             count: 0,
@@ -22,7 +23,32 @@ defmodule Oli.Resources.Numbering do
   @typep project_slug_or_context :: String.t()
   @typep revision_slug :: String.t()
   @typep resource_id :: Number.t()
+  @typep revision_id :: Number.t()
   @typep resolver :: Resolver.t()
+
+  @spec full_hierarchy(resolver, project_slug_or_context) :: [%HierarchyNode{}]
+  def full_hierarchy(resolver, project_slug_or_context) do
+    full_hierarchy_helper(
+      number_full_tree(resolver, project_slug_or_context),
+      resolver.all_revisions_in_hierarchy(project_slug_or_context),
+      resolver.root_container(project_slug_or_context)
+    )
+  end
+
+  def full_hierarchy_helper(numberings, revisions, revision) do
+    [%HierarchyNode{
+      revision: revision,
+      children: Enum.flat_map(
+        revision.children,
+        fn resource_id -> full_hierarchy_helper(
+          numberings,
+          revisions,
+          Enum.find(revisions, fn rev -> rev.resource_id == resource_id end))
+        end),
+      numbering: Map.get(numberings, revision.id)
+    }]
+  end
+
   @doc """
   Returns the path from a project's root container to a requested revision slug.
 
@@ -76,7 +102,7 @@ defmodule Oli.Resources.Numbering do
 
   defp path_helper(
          target_slug,
-         [resource_id | rest] = _resource_ids_to_look_through,
+         [resource_id | rest],
          resource_id_to_revision_map,
          path
        ) do
@@ -106,7 +132,7 @@ defmodule Oli.Resources.Numbering do
 
   This method returns a map of revision id to %Numbering structs.
   """
-  @spec number_full_tree(resolver, project_slug_or_context) :: %{resource_id => %__MODULE__{}}
+  @spec number_full_tree(resolver, project_slug_or_context) :: %{revision_id => %__MODULE__{}}
   def number_full_tree(resolver, project_slug_or_context) do
     number_tree_from(
       resolver.root_container(project_slug_or_context),
@@ -114,7 +140,7 @@ defmodule Oli.Resources.Numbering do
     )
   end
 
-  @spec number_tree_from(%Revision{}, [%Revision{}]) :: %{resource_id => %__MODULE__{}}
+  @spec number_tree_from(%Revision{}, [%Revision{}]) :: %{revision_id => %__MODULE__{}}
   def number_tree_from(container, resources) do
     # for all resources, map them by their ids
     by_id =

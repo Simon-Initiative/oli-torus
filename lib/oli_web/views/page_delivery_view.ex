@@ -14,8 +14,8 @@ defmodule OliWeb.PageDeliveryView do
     ResourceType.get_type_by_id(page.resource_type_id) == "container"
   end
 
-  def container_title(numbering, revision) do
-    Numbering.prefix(numbering) <> ": " <> revision.title
+  def container_title(hierarchy_node) do
+    Numbering.prefix(hierarchy_node.numbering) <> ": " <> hierarchy_node.revision.title
   end
 
   def calculate_score_percentage(resource_access) do

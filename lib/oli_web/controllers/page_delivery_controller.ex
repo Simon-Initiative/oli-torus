@@ -58,7 +58,7 @@ defmodule OliWeb.PageDeliveryController do
     redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
   end
 
-  defp render_page(%PageContext{container_summary: container_summary, summary: summary, progress_state: :not_started, page: page, resource_attempts: resource_attempts} = context,
+  defp render_page(%PageContext{summary: summary, progress_state: :not_started, page: page, resource_attempts: resource_attempts} = context,
     conn, context_id, _) do
 
     attempts_taken = length(resource_attempts)
@@ -80,7 +80,6 @@ defmodule OliWeb.PageDeliveryController do
       context_id: context_id,
       scripts: Activities.get_activity_scripts(),
       summary: summary,
-      container_summary: container_summary,
       previous_page: context.previous_page,
       next_page: context.next_page,
       title: context.page.title,
@@ -109,7 +108,6 @@ defmodule OliWeb.PageDeliveryController do
       page: context.page,
       context_id: context_id,
       scripts: Activities.get_activity_scripts(),
-      container_summary: context.container_summary,
       summary: context.summary,
       previous_page: context.previous_page,
       next_page: context.next_page,
@@ -120,7 +118,6 @@ defmodule OliWeb.PageDeliveryController do
       objectives: context.objectives,
       slug: context.page.slug,
       attempt_guid: hd(context.resource_attempts).attempt_guid,
-      numbering: context.numbering
     })
   end
 
