@@ -26,6 +26,15 @@ defmodule Oli.Resources.Numbering do
   @typep revision_id :: Number.t()
   @typep resolver :: Resolver.t()
 
+  @doc """
+  Returns a [%HierarchyNode{}] representing the course's hierarchy structure.
+
+  ## Parameters
+
+    - resolver
+    - project_slug_or_context: The project slug or the context id.
+
+  """
   @spec full_hierarchy(resolver, project_slug_or_context) :: [%HierarchyNode{}]
   def full_hierarchy(resolver, project_slug_or_context) do
     full_hierarchy_helper(
@@ -54,7 +63,7 @@ defmodule Oli.Resources.Numbering do
 
   ## Parameters
 
-    - project_slug
+    - project_slug_or_context: The project slug or context id.
     - revision_slug: The revision slug we want to find from the root container.
 
   ## Examples
