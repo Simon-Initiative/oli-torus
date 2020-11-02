@@ -3,7 +3,6 @@ defmodule OliWeb.DeliveryView do
 
   alias Oli.Lti_1p3.ContextRoles
   alias Oli.Lti_1p3.PlatformRoles
-  alias Oli.Resources.Numbering
 
   def get_context_id(conn) do
     case conn.assigns.lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"] do
