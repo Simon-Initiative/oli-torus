@@ -201,7 +201,7 @@ defmodule OliWeb.Router do
 
   # auth routes, only accessable to guest users who are not logged in
   scope "/auth", OliWeb do
-    pipe_through [:browser, OliWeb.Plugs.Guest]
+    pipe_through [:browser, :csrf_always, OliWeb.Plugs.Guest]
 
     get "/signin", AuthController, :signin
 
