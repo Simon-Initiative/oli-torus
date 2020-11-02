@@ -22,11 +22,6 @@ defmodule Oli.Delivery.Student.Summary do
         Map.put_new(acc, ra.resource_id, ra)
       end)
 
-      # IO.inspect(hierarchy)
-
-      # pages: all revisions in hierarchy
-      # need to make a tree of revisions
-      # numberings: map from revision id to numbering
       {:ok, %Oli.Delivery.Student.Summary{
         title: section.title,
         description: section.project.description,
