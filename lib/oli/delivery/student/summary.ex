@@ -2,7 +2,6 @@ defmodule Oli.Delivery.Student.Summary do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts
-  alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Numbering
 
   defstruct [:title, :description, :access_map, :hierarchy]
