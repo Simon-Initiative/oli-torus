@@ -52,7 +52,7 @@ defmodule Oli.Delivery.Page.PageContext do
       page_revision
     end
 
-    {:ok, summary} = Summary.get_summary(page_revision, context_id, user)
+    {:ok, summary} = Summary.get_summary(context_id, user)
 
     {previous, next} = determine_previous_next(flatten_hierarchy(summary.hierarchy), page_revision)
 
