@@ -102,7 +102,10 @@ defmodule Oli.Grading.LTI_AGS do
 
     case Map.get(lti_launch_params, @lti_ags_claim_url) do
       nil -> false
-      config -> Map.has_key?(config, "lineitems") and has_scope?(config, @lineitem_scope_url) and has_scope?(config, @scores_scope_url)
+      config ->
+
+
+        Map.has_key?(config, "lineitems") and has_scope?(config, @lineitem_scope_url) and has_scope?(config, @scores_scope_url)
     end
 
   end
@@ -119,7 +122,7 @@ defmodule Oli.Grading.LTI_AGS do
   """
   def has_scope?(lti_ags_claim, scope_url) do
 
-    case Map.get(lti_ags_claim, "scopes", [])
+    case Map.get(lti_ags_claim, "scope", [])
     |> Enum.find(nil, fn url -> scope_url == url end) do
       nil -> false
       _ -> true
