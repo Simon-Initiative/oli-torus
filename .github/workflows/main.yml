@@ -11,6 +11,10 @@ jobs:
   elixir-build-test:
     runs-on: ubuntu-latest
 
+    env:
+      MIX_ENV: test
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     steps:
       - name: 🛎️ Checkout
         uses: actions/checkout@v2
@@ -36,8 +40,8 @@ jobs:
       - name: 🔨 Build project
         run: set -a;source oli.env && mix clean && mix compile --warnings-as-errors
 
-      - name: ⚙️ Run tests
-        run: set -a;source oli.env && mix test.coverage
+      - name: ▶️ Run tests
+        run: set -a;source oli.env && mix coveralls.github
 
   ts-build-test:
     runs-on: ubuntu-latest
