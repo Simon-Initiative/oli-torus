@@ -11,8 +11,12 @@ defmodule Oli.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
-        "test.coverage": :test,
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
       ],
 
       # Docs
@@ -62,6 +66,7 @@ defmodule Oli.MixProject do
       {:ecto_sql, "~> 3.1"},
       {:ex_aws, "~> 2.1.6"},
       {:ex_aws_s3, "~> 2.0"},
+      {:excoveralls, "~> 0.10", only: :test},
       {:ex_doc, "~> 0.23", only: :dev, runtime: false},
       {:floki, ">= 0.26.0"},
       {:gettext, "~> 0.11"},
@@ -112,7 +117,7 @@ defmodule Oli.MixProject do
       test: ["ecto.create --quiet", "ecto.migrate", "run priv/repo/seeds.exs", "test"],
 
       # runs tests and produces a coverage report
-      "test.coverage": ["ecto.create --quiet", "ecto.migrate", "run priv/repo/seeds.exs", "test --cover"],
+      "test.coverage": ["ecto.create --quiet", "ecto.migrate", "run priv/repo/seeds.exs", "coveralls.html"],
 
       # runs tests in deterministic order, only shows one failure at a time and reruns tests if any changes are made
       "test.watch": ["test.watch --stale --max-failures 1 --trace --seed 0"],
