@@ -1,23 +1,23 @@
 # LTI 1.3 Integration
 
-Torus supports LTI 1.3 integration and leverages the Learning Management System (LMS) for course delivery. The philosophy of Torus is to focus and excel at what it is specifically designed for, which is rich course content authoring and data-driven continuous improvement. Many of the necessary features of course delivery such as roster management, gradebook management and scheduling are deferred to the LMS, which is what it is specifically designed for. These aspects of the student and instructor experience are crucial and require tight integration which is enabled by the LTI 1.3 standard.
+Torus supports LTI 1.3 integration and leverages the Learning Management System (LMS) for course delivery. The philosophy of Torus is to focus and excel at what it is specifically designed for, which is rich course content authoring, delivery and data-driven continuous improvement. Many of the necessary features of course delivery such as roster management, grade book management and scheduling are deferred to the LMS, which is what it is specifically designed for. These aspects of the student and instructor experience are crucial and require tight integration which is enabled by the LTI 1.3 standard.
 
 Many LMSs currently support the LTI 1.3 standard including Canvas, Blackboard, Moodle, Brightspace D2L, and more. Each LMS may have a slightly different method of configuring an external tool like Torus, but in general the process is similar between them and is driven by the [LTI 1.3 Specification](http://www.imsglobal.org/spec/lti/v1p3/).
 
 ## Concepts
 
 ### Institutions
-Torus has the concept of an **Institution** which represents an organization whom wishes to use Torus, typically from their own LMS or a cloud hosted one. For example, Carnegie Mellon University would be considered an intitution, and so is The Open Learning Initiative (OLI) itself. OLI operates some of it's paid and open + free courses from Torus using a separate instance of canvas at canvas.oli.cmu.edu.
+Torus has the concept of an **Institution** which represents an organization whom wishes to use Torus, typically from their own self-hosted LMS or a cloud-hosted one. For example, Carnegie Mellon University would be considered an institution, and so is The Open Learning Initiative (OLI). OLI operates some of it's paid and open + free courses from Torus using a self-hosted instance of canvas at canvas.oli.cmu.edu. Institutions are also referred to as Platforms in the LTI standard and are represented by a unique `issuer` field. (typically a URL e.g. https://canvas.oli.cmu.edu).
 
 ### Registrations
-A **Registration** is the next level down from an institution in Torus. For example, an institution may have multiple LMSs. Each one of these LMSs may belong to the same **Institution** but will have separate registrations. Institutions are also referred to as Platforms in the LTI standard and are represented by the `issuer` field. (typically a URL e.g. https://canvas.oli.cmu.edu). The `client_id` represents a unique registration within the institution.
+A **Registration** is the next level down from an institution in Torus. An example of an institution with multiple registrations could be an organization that has multiple LMSs. Each one of these LMSs may belong to the same **Institution** but will have separate registrations. The `client_id` represents a unique registration within the institution.
 
 ### Deployments
-A **Deployment** can be simply thought of as the next tier below registrations. A registration may have many deployments, for example one deployment for every course, or a single deployment shared gloablly across the entire LMS.
+A **Deployment** can be thought of as the next tier below registrations. A registration may have many deployments. For example, a **Registration** may have one deployment for every course, or a single deployment shared globally across the entire LMS.
 
-There is some flexibility to how these concepts could be represetented for an organization, but typically an orgainization will have a single **Institution**, with a single **Registration** for their LMS, and they may have one or many **Deployments** within their LMS depending on if the tool is configure globally or for an individual department/course.
+There is some flexibility to how these concepts could be represented for an organization, but typically an organization will have a single **Institution**, with a single **Registration** for their LMS, and they may have one or many **Deployments** within their LMS depending on if the tool is configure globally or for an individual department/course.
 
-Institutions, registrations and deployments are currently created and managed by a Torus administrator. In the future, we plan to add more flexibility on how these entities can be registered and approved. For now, please contact OLI if you wish to deliver a Torus course from your orgainization's LMS. If you are running your own instance of Torus, the steps below outline the process for creating these entities required for LTI 1.3 integration with an LMS.
+Institutions, registrations and deployments are currently created and managed by a Torus administrator. In the future, we plan to add more flexibility on how these entities can be registered and approved. For now, please contact OLI if you wish to deliver a Torus course from your organization's LMS. If you are running your own instance of Torus, the steps below outline the process for creating these entities required for LTI 1.3 integration with an LMS.
 
 ## Configuring LTI 1.3 in Torus
 
@@ -60,7 +60,7 @@ To configure an LTI 1.3 integration in Torus, we need to gather some important L
 
 Canvas Docs: https://community.canvaslms.com/t5/Admin-Guide/How-do-I-configure-an-LTI-key-for-an-account/ta-p/140
 
-Canvas requires elevated privledges to configure LTI 1.3 Developer Keys and Apps. Canvas administrators should have the necessary privledges. If you don't see the options mentioned below, you may not have proper privledges or your canvas instance may be an older version which does not support LTI 1.3. In either case, you should check with your LMS administrator.
+Canvas requires elevated privileges to configure LTI 1.3 Developer Keys and Apps. Canvas administrators should have the necessary privileges. If you don't see the options mentioned below, you may not have proper privileges or your canvas instance may be an older version which does not support LTI 1.3. In either case, you should check with your LMS administrator.
 
 1. In Canvas using the left main menu, select Admin > [Admin Account Name].
 
@@ -80,7 +80,7 @@ Canvas requires elevated privledges to configure LTI 1.3 Developer Keys and Apps
 
         1. Select **Enter URL** for the method
 
-        1. Configure the following fields with values that correspond to your torus deployment. For example, if you are hosting torus at a specific domain or in a development environemnt using a service such as ngrok, you will want to replace all instances of `torus.oli.cmu.edu` with your domain or ngrok address e.g. `ba7c432acd17.ngrok.io`.
+        1. Configure the following fields with values that correspond to your torus deployment. For example, if you are hosting torus at a specific domain or in a development environment using a service such as ngrok, you will want to replace all instances of `torus.oli.cmu.edu` with your domain or ngrok address e.g. `ba7c432acd17.ngrok.io`.
 
         - **Redirect URIs:** https://torus.oli.cmu.edu/lti/launch
         - **Developer Key JSON URL:** https://torus.oli.cmu.edu/lti/developer_key.json
@@ -91,7 +91,7 @@ Canvas requires elevated privledges to configure LTI 1.3 Developer Keys and Apps
 
     - **OPTION 2** - Manual Entry
 
-        1. Configure the following fields with values that correspond to your torus deployment. For example, if you are hosting torus at a specific domain or in a development environemnt using a service such as ngrok, you will want to replace all instances of `torus.oli.cmu.edu` with your domain or ngrok address e.g. `ba7c432acd17.ngrok.io`.
+        1. Configure the following fields with values that correspond to your torus deployment. For example, if you are hosting torus at a specific domain or in a development environment using a service such as ngrok, you will want to replace all instances of `torus.oli.cmu.edu` with your domain or ngrok address e.g. `ba7c432acd17.ngrok.io`.
 
         - **Key Name:** OLI Torus
         - **Owner Email:** admin@torus.oli.cmu.edu
