@@ -26,7 +26,7 @@ defmodule Oli.MixProject do
       docs: [
         main: "Oli", # The main page in the docs
         logo: "assets/static/images/oli-icon.png",
-        extras: ["README.md", "LICENSE.md", "docs/DEVELOPER.md"]
+        extras: ["README.md", "LICENSE.md", "docs/DEVELOPER.md", "docs/LTI1.3.md"]
       ],
       releases: [
         oli: [
