@@ -123,7 +123,7 @@ If using docker-compose, you can start a bash session to execute any of the foll
 
 ### Tunneling localhost connection for LTI development
 
-When making an LTI connection from an LMS such as Canvas, we need an internet accessible FQDN with SSL to properly configure a connection. The service ngrok offers an easy to use commandline tool that does just this.
+When making an LTI connection from an LMS such as Canvas, we need an internet accessible FQDN with SSL to properly configure a connection. The service ngrok offers an easy to use command line tool that does just this.
 
 1. [Download ngrok](https://ngrok.com/) and install using their instructions (Create a free account if required)
 1. Run ngrok locally to tunnel to phoenix app on port 4000
