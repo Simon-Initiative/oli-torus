@@ -74,8 +74,110 @@ defmodule OliWeb.DeliveryControllerTest do
 
   end
 
+  describe "delivery_controller list_open_and_free" do
+    setup [:setup_session]
+
+    test "renders a list of all open and free courses", %{conn: conn, user: user, author: author} do
+
+      Oli.Accounts.link_user_author_account(user, author)
+
+      {:ok, _publication} = project_fixture(author, "Open and Free 1")
+        |> case do
+          %{project: project} -> project
+        end
+        |> Oli.Publishing.publish_project()
+        |> case do
+          {:ok, p} -> p
+        end
+        |> Oli.Publishing.update_publication(%{open_and_free: true})
+
+      {:ok, _publication} = project_fixture(author, "Open and Free 2")
+        |> case do
+          %{project: project} -> project
+        end
+        |> Oli.Publishing.publish_project()
+        |> case do
+          {:ok, p} -> p
+        end
+        |> Oli.Publishing.update_publication(%{open_and_free: true})
+
+      {:ok, _publication} = project_fixture(author, "Not Open and Free")
+        |> case do
+          %{project: project} -> project
+        end
+        |> Oli.Publishing.publish_project()
+        |> case do
+          {:ok, p} -> p
+        end
+        |> Oli.Publishing.update_publication(%{open_and_free: false})
+
+      conn = conn
+        |> get(Routes.delivery_path(conn, :list_open_and_free))
+
+      assert html_response(conn, 200) =~ "Open and Free 1"
+      assert html_response(conn, 200) =~ "Open and Free 2"
+      assert (html_response(conn, 200) =~ "Not Open and Free") == false
+    end
+  end
+
+  describe "delivery_controller link_account" do
+    setup [:setup_session]
+
+    test "renders link account form", %{conn: conn} do
+      conn = conn
+        |> get(Routes.delivery_path(conn, :link_account))
+
+      assert html_response(conn, 200) =~ "Link Existing Account"
+    end
+  end
+
+  describe "delivery_controller process_link_account_provider" do
+    setup [:setup_session]
+
+    test "processes link account for provider", %{conn: conn} do
+
+      conn = conn
+        |> get(Routes.delivery_path(conn, :process_link_account_provider, :google))
+
+      assert html_response(conn, 302) =~ "redirect"
+    end
+  end
+
+  describe "delivery_controller process_link_account_user" do
+    setup [:setup_session]
+
+    test "processes link account for user email authentication failure", %{conn: conn, author: author} do
+
+      author_params = author
+        |> Map.from_struct()
+        |> Map.put(:password, "wrong_password")
+        |> Map.put(:password_confirmation, "wrong_password")
+
+      conn = conn
+        |> post(Routes.delivery_path(conn, :process_link_account_user), user: author_params)
+
+      assert html_response(conn, 200) =~ "The provided login details did not work. Please verify your credentials, and try again."
+    end
+
+    test "processes link account for user email", %{conn: conn, author: author} do
+
+      author_params = author
+        |> Map.from_struct()
+        |> Map.put(:password, "password123")
+        |> Map.put(:password_confirmation, "password123")
+
+      conn = conn
+        |> post(Routes.delivery_path(conn, :process_link_account_user), user: author_params)
+
+      assert html_response(conn, 302) =~ "redirect"
+    end
+  end
+
   defp setup_session(%{conn: conn}) do
-    author = author_fixture()
+    author = author_fixture(%{
+      password: "password123",
+      password_confirmation: "password123",
+    })
     institution = institution_fixture(%{ author_id: author.id })
     user = user_fixture(%{institution_id: institution.id})
 

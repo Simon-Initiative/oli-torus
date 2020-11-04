@@ -108,10 +108,10 @@ defmodule OliWeb.DeliveryController do
     end
   end
 
-  def process_link_account_user(conn, %{"user" => user_params}) do
+  def process_link_account_user(conn, %{"user" => author_params}) do
     conn
     |> use_pow_config(:author)
-    |> Pow.Plug.authenticate_user(user_params)
+    |> Pow.Plug.authenticate_user(author_params)
     |> case do
       {:ok, conn} ->
         conn
@@ -121,7 +121,7 @@ defmodule OliWeb.DeliveryController do
       {:error, conn} ->
         conn
         |> put_flash(:error, Pow.Phoenix.Controller.messages(conn, Pow.Phoenix.Messages).invalid_credentials(conn))
-        |> render_link_account_form(changeset: PowAssent.Plug.change_user(conn, %{}, user_params))
+        |> render_link_account_form(changeset: PowAssent.Plug.change_user(conn, %{}, author_params))
     end
   end
 

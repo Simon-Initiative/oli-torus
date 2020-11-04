@@ -63,17 +63,20 @@ defmodule Oli.TestHelpers do
     params =
       attrs
       |> Enum.into(%{
-        email: "ironman#{System.unique_integer([:positive])}@example.com",
-        given_name: "Tony",
-        family_name: "Stark",
-        token: "2u9dfh7979hfd",
-        provider: "google",
+        email: "author#{System.unique_integer([:positive])}@example.edu",
+        given_name: "Test",
+        family_name: "Author",
         system_role_id: Accounts.SystemRole.role_id.author,
       })
 
-    {:ok, author} =
-      Author.noauth_changeset(%Author{}, params)
-      |> Repo.insert()
+    {:ok, author} = case attrs do
+      %{password: _password, password_confirmation: _password_confirmation} ->
+        Author.changeset(%Author{}, params)
+        |> Repo.insert()
+      _ ->
+        Author.noauth_changeset(%Author{}, params)
+        |> Repo.insert()
+    end
 
     author
   end
@@ -138,8 +141,8 @@ defmodule Oli.TestHelpers do
     jwk
   end
 
-  def project_fixture(author) do
-    {:ok, project} = Course.create_project("test project", author)
+  def project_fixture(author, title \\ "test project") do
+    {:ok, project} = Course.create_project(title, author)
     project
   end
 
