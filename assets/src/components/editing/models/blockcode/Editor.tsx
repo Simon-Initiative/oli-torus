@@ -51,7 +51,7 @@ export const CodeEditor = (props: CodeProps) => {
           onChange={value => updateProperty(value, 'caption')}
           editor={editor}
           model={model}
-          placeholder="Enter an optional caption for this code block"
+          placeholder="Set a caption for this code block"
         />
       </div>
     </React.Fragment>

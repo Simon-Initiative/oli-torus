@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import * as ContentModel from 'data/content/model';
 import { CommandContext } from 'components/editing/models/interfaces';
 import * as Settings from 'components/editing/models/settings/Settings';
-import { CUTE_OTTERS } from './Editor';
 
 const onVisit = (href: string) => {
   window.open(href, '_blank');
@@ -29,8 +28,7 @@ type YouTubeSettingsProps = {
   editMode: boolean,
 };
 
-const toLink = (src: string) =>
-  'https://www.youtube.com/embed/' + (src === '' ? CUTE_OTTERS : src);
+const toLink = (src: string) => src
 
 
 export const YouTubeSettings = (props: YouTubeSettingsProps) => {

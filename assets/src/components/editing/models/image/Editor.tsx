@@ -81,7 +81,7 @@ export const ImageEditor = (props: ImageProps) => {
             onChange={setCaption}
             editor={editor}
             model={model}
-            placeholder="Enter an optional caption for this image"
+            placeholder="Set a caption for this image"
           />
         </figcaption>
       </figure>

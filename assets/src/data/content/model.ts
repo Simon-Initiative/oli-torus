@@ -18,7 +18,7 @@ export const li = () => create<ListItem>({ type: 'li' });
 export const ol = () => create<OrderedList>({ type: 'ol', children: [li()] });
 export const ul = () => create<UnorderedList>({ type: 'ul', children: [li()] });
 export const youtube = (src: string) => create<YouTube>({ type: 'youtube', src });
-export const iframe = (src: string) => create<iFrame>({ type: 'iframe', src });
+export const webpage = (src: string) => create<Webpage>({ type: 'iframe', src });
 export const link = (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' });
 export const image = (src = '') => create<Image>({ type: 'img', src, display: 'block' });
 export const audio = (src = '') => create<Audio>({ type: 'audio', src });
@@ -39,7 +39,7 @@ export type MediaDisplayMode = 'float_left' | 'float_right' | 'block';
 
 export type ModelElement
   = Paragraph | HeadingOne | HeadingTwo | HeadingThree
-  | HeadingFour | HeadingFive | HeadingSix | Image | YouTube | iFrame
+  | HeadingFour | HeadingFive | HeadingSix | Image | YouTube | Webpage
   | Audio | Table | TableRow | TableHeader | TableData | OrderedList | UnorderedList
   | ListItem | Math | MathLine | Code | CodeLine | Blockquote | Hyperlink;
 
@@ -99,7 +99,7 @@ export interface YouTube extends Element, Identifiable {
 }
 
 // tslint:disable-next-line: class-name
-export interface iFrame extends Element, Identifiable {
+export interface Webpage extends Element, Identifiable {
   type: 'iframe';
   src: string;
   height?: number;

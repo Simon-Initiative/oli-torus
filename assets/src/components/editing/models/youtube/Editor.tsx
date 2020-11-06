@@ -62,7 +62,7 @@ export const YouTubeEditor = (props: YouTubeProps) => {
           onChange={setCaption}
           editor={editor}
           model={model}
-          placeholder="Enter an optional caption for this YouTube video"
+          placeholder="Set a caption for this YouTube video"
         />
       </div>
 

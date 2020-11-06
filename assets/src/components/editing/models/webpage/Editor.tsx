@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ReactEditor, useSelected, useFocused } from 'slate-react';
 import { Transforms } from 'slate';
 import { updateModel, getEditMode } from 'components/editing/models/utils';
@@ -7,10 +7,9 @@ import { EditorProps } from 'components/editing/models/interfaces';
 import * as Settings from 'components/editing/models/settings/Settings';
 import { displayModelToClassName } from 'data/content/utils';
 
-// tslint:disable-next-line: class-name
-export interface iFrameProps extends EditorProps<ContentModel.iFrame> { }
+export interface WebpageProps extends EditorProps<ContentModel.Webpage> { }
 
-export const iFrameEditor = (props: iFrameProps) => {
+export const WebpageEditor = (props: WebpageProps) => {
 
   const { attributes, children, editor, model } = props;
 
@@ -21,11 +20,11 @@ export const iFrameEditor = (props: iFrameProps) => {
 
   const { src } = model;
 
-  const onEdit = (updated: ContentModel.iFrame) => {
-    updateModel<ContentModel.iFrame>(editor, model, updated);
+  const onEdit = (updated: ContentModel.Webpage) => {
+    updateModel<ContentModel.Webpage>(editor, model, updated);
   };
 
-  const update = (attrs: Partial<ContentModel.iFrame>) =>
+  const update = (attrs: Partial<ContentModel.Webpage>) =>
     Object.assign({}, model, attrs);
 
   const setCaption = (caption: string) => {
@@ -44,11 +43,15 @@ export const iFrameEditor = (props: iFrameProps) => {
       {...attributes}
       contentEditable={false}
       style={{ userSelect: 'none' }}
-      className={'iFrame-editor ' + displayModelToClassName(model.display)}>
+      className={'Webpage-editor ' + displayModelToClassName(model.display)}>
       <div
-        onClick={e => Transforms.select(editor, ReactEditor.findPath(editor, model))}
-        className="embed-responsive embed-responsive-16by9 img-thumbnail" style={borderStyle}>
+        onClick={(e) => {
+          ReactEditor.focus(editor);
+          Transforms.select(editor, ReactEditor.findPath(editor, model));
+        }}
+        className="embed-responsive embed-responsive-16by9 img-thumbnail position-relative" style={borderStyle}>
         <iframe className="embed-responsive-item" src={src} allowFullScreen></iframe>
+        <div className="position-absolute"style={{top: 0, bottom: 0, left: 0, right: 0}}></div>
       </div>
       <div contentEditable={false}>
         <Settings.Input
@@ -57,7 +60,7 @@ export const iFrameEditor = (props: iFrameProps) => {
           onChange={setCaption}
           editor={editor}
           model={model}
-          placeholder="Enter an optional caption for iFrame video"
+          placeholder="Set a caption for this webpage"
         />
       </div>
 
