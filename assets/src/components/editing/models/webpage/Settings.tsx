@@ -28,7 +28,7 @@ type YouTubeSettingsProps = {
   editMode: boolean,
 };
 
-const toLink = (src: string) => src
+const toLink = (src: string) => src;
 
 
 export const YouTubeSettings = (props: YouTubeSettingsProps) => {

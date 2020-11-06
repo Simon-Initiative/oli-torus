@@ -64,7 +64,7 @@ const command: Command = {
         if (selectedSrc !== null) {
           let src = selectedSrc;
           if (!src.startsWith('http://') && !src.startsWith('https://')) {
-            src = 'https://' + src
+            src = 'https://' + src;
           }
 
           Transforms.insertNodes(editor, ContentModel.webpage(src));
