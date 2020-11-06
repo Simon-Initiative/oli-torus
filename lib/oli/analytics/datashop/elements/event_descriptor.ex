@@ -29,6 +29,7 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
     case activity_type(part_attempt) do
       "oli_short_answer" -> "Short answer input"
       "oli_multiple_choice" -> "Multiple choice selection"
+      "oli_check_all_that_apply" -> "Check all that apply selection"
       _unregistered -> "Action in unregistered activity type"
     end
   end

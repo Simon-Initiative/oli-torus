@@ -1,0 +1,17 @@
+{
+  "id": "oli_check_all_that_apply",
+  "friendlyName": "Check All That Apply",
+  "description": "A traditional check all that apply question with one correct answer",
+  "delivery": {
+    "element": "oli-check-all-that-apply-delivery",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "oli-check-all-that-apply-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "schemaPruning": {
+    "type": "keys",
+    "keys": ["feedback"]
+  }
+}
