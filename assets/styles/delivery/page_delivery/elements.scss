@@ -102,7 +102,13 @@ img {
   @extend .img-thumbnail;
 }
 
-iframe {
+.webpage-wrapper {
+  @extend .embed-responsive;
+  @extend .embed-responsive-16by9;
+  @extend .img-thumbnail;
+}
+
+.youtube-wrapper, .webpage-wrapper iframe {
   clear: both;
   @extend .embed-responsive-item;
 }
