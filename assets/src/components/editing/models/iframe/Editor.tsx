@@ -7,11 +7,10 @@ import { EditorProps } from 'components/editing/models/interfaces';
 import * as Settings from 'components/editing/models/settings/Settings';
 import { displayModelToClassName } from 'data/content/utils';
 
-export const CUTE_OTTERS = 'zHIIzcWqsP0';
+// tslint:disable-next-line: class-name
+export interface iFrameProps extends EditorProps<ContentModel.iFrame> { }
 
-export interface YouTubeProps extends EditorProps<ContentModel.YouTube> { }
-
-export const YouTubeEditor = (props: YouTubeProps) => {
+export const iFrameEditor = (props: iFrameProps) => {
 
   const { attributes, children, editor, model } = props;
 
@@ -21,15 +20,12 @@ export const YouTubeEditor = (props: YouTubeProps) => {
   const selected = useSelected();
 
   const { src } = model;
-  const parameters = 'disablekb=1&modestbranding=1&showinfo=0&rel=0&controls=0';
-  const fullSrc = 'https://www.youtube.com/embed/' +
-    (src === '' ? CUTE_OTTERS : src) + '?' + parameters;
 
-  const onEdit = (updated: ContentModel.YouTube) => {
-    updateModel<ContentModel.YouTube>(editor, model, updated);
+  const onEdit = (updated: ContentModel.iFrame) => {
+    updateModel<ContentModel.iFrame>(editor, model, updated);
   };
 
-  const update = (attrs: Partial<ContentModel.YouTube>) =>
+  const update = (attrs: Partial<ContentModel.iFrame>) =>
     Object.assign({}, model, attrs);
 
   const setCaption = (caption: string) => {
@@ -48,12 +44,11 @@ export const YouTubeEditor = (props: YouTubeProps) => {
       {...attributes}
       contentEditable={false}
       style={{ userSelect: 'none' }}
-      className={'youtube-editor ' + displayModelToClassName(model.display)}>
+      className={'iFrame-editor ' + displayModelToClassName(model.display)}>
       <div
         onClick={e => Transforms.select(editor, ReactEditor.findPath(editor, model))}
         className="embed-responsive embed-responsive-16by9 img-thumbnail" style={borderStyle}>
-        <iframe className="embed-responsive-item"
-          src={fullSrc} allowFullScreen></iframe>
+        <iframe className="embed-responsive-item" src={src} allowFullScreen></iframe>
       </div>
       <div contentEditable={false}>
         <Settings.Input
@@ -62,7 +57,7 @@ export const YouTubeEditor = (props: YouTubeProps) => {
           onChange={setCaption}
           editor={editor}
           model={model}
-          placeholder="Enter an optional caption for this YouTube video"
+          placeholder="Enter an optional caption for iFrame video"
         />
       </div>
 

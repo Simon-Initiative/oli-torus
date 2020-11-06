@@ -42,7 +42,7 @@ export const AudioEditor = (props: AudioProps) => {
                 onChange={value => setCaption(value)}
                 editor={editor}
                 model={model}
-                placeholder="Type caption for audio file"
+                placeholder="Enter an optional caption for this audio file"
               />
             </figcaption>
           </figure>
