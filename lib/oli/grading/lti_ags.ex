@@ -63,12 +63,21 @@ defmodule Oli.Grading.LTI_AGS do
     do
       case result do
         [] -> create_line_item(line_items_service_url, resource_id, score_maximum, label, access_token)
-        [line_item] -> {:ok, %LineItem{
-          id: Map.get(line_item, "id"),
-          scoreMaximum: Map.get(line_item, "scoreMaximum"),
-          resourceId: Map.get(line_item, "resource_id"),
-          label: Map.get(line_item, "label"),
-        }}
+        [raw_line_item] ->
+
+          line_item = %LineItem{
+            id: Map.get(raw_line_item, "id"),
+            scoreMaximum: Map.get(raw_line_item, "scoreMaximum"),
+            resourceId: Map.get(raw_line_item, "resource_id"),
+            label: Map.get(raw_line_item, "label"),
+          }
+
+          if line_item.label != label or line_item.scoreMaximum != score_maximum do
+            update_line_item line_item, %{resourceId: resource_id, scoreMaximum: score_maximum, label: label}, access_token
+          else
+            {:ok, line_item}
+          end
+
       end
     else
       e ->
@@ -107,6 +116,44 @@ defmodule Oli.Grading.LTI_AGS do
       e ->
         Logger.error("Error encountered creating line item for #{resource_id} #{label}: #{inspect e}")
         {:error, "Error creating new line item"}
+    end
+
+  end
+
+  @doc """
+  Updates an existing line item. On success returns
+  a {:ok, line_item} tuple.  On error, returns a {:error, error} tuple.
+  """
+  def update_line_item(%LineItem{} = line_item, changes, %AccessToken{} = access_token) do
+
+    Logger.debug("Updating line item #{line_item.id} for changes #{inspect changes}")
+
+    updated_line_item = %LineItem{
+      id: line_item.id,
+      scoreMaximum: Map.get(changes, :scoreMaximum, line_item.scoreMaximum),
+      resourceId: Map.get(changes, :resourceId, line_item.resourceId),
+      label: Map.get(changes, :label, line_item.label)
+    }
+
+    body = updated_line_item |> Jason.encode!()
+
+    # The line_item endpoint defines a PUT operation to update existing line items.  The
+    # url to use is the id of the line item
+    url = line_item.id
+
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.put(url, body, headers(access_token)),
+      {:ok, result} <- Jason.decode(body)
+    do
+      {:ok, %LineItem{
+        id: Map.get(result, "id"),
+        scoreMaximum: Map.get(result, "scoreMaximum"),
+        resourceId: Map.get(result, "resource_id"),
+        label: Map.get(result, "label"),
+      }}
+    else
+      e ->
+        Logger.error("Error encountered updating line item #{line_item.id} for changes #{inspect changes}")
+        {:error, "Error updating existing line item"}
     end
 
   end
