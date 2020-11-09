@@ -25,6 +25,7 @@ defmodule Oli.Rendering.Content do
   @callback h6(%Context{}, next, %{}) :: [any()]
   @callback img(%Context{}, next, %{}) :: [any()]
   @callback youtube(%Context{}, next, %{}) :: [any()]
+  @callback iframe(%Context{}, next, %{}) :: [any()]
   @callback audio(%Context{}, next, %{}) :: [any()]
   @callback table(%Context{}, next, %{}) :: [any()]
   @callback tr(%Context{}, next, %{}) :: [any()]
@@ -84,6 +85,7 @@ defmodule Oli.Rendering.Content do
       "h6" -> writer.h6(context, next, element)
       "img" -> writer.img(context, next, element)
       "youtube" -> writer.youtube(context, next, element)
+      "iframe" -> writer.iframe(context, next, element)
       "audio" -> writer.audio(context, next, element)
       "table" -> writer.table(context, next, element)
       "tr" -> writer.tr(context, next, element)

@@ -51,6 +51,10 @@ defmodule Oli.Rendering.Content.Plaintext do
     ["[youtube with src #{src}] "]
   end
 
+  def iframe(%Context{} = _context, _, %{"src" => src}) do
+    ["[iframe with src #{src}] "]
+  end
+
   def audio(%Context{} = _context, _, %{"src" => src}) do
     ["[audio with src #{src} "]
   end

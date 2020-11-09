@@ -78,6 +78,15 @@ defmodule Oli.Rendering.Content.Html do
 
   end
 
+  def iframe(%Context{} = _context, _, %{"src" => src} = attrs) do
+    figure(Map.put(attrs, "full-width", true), [
+      """
+      <div class="webpage-wrapper">
+        <iframe class="#{display_class(attrs)}" allowfullscreen src="#{src}"></iframe>
+      </div>
+      """])
+  end
+
   def audio(%Context{} = _context, _, %{"src" => src} = attrs) do
     figure(attrs, [~s|<audio controls src="#{src}">
       Your browser does not support the <code>audio</code> element.

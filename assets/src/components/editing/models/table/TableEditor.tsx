@@ -40,7 +40,7 @@ export const TableEditor = (props: Props) => {
           onChange={setCaption}
           editor={editor}
           model={model}
-          placeholder="Type caption for table"
+          placeholder="Set a caption for this table"
         />
       </div>
     </div>

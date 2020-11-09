@@ -33,7 +33,7 @@ defmodule OliWeb.Projects.State do
     end)
     # Sort the authors within each project by last name
     |> Enum.reduce(%{}, fn {k, v}, m ->
-      Map.put(m, k, Enum.sort(v, fn a1, a2 -> a1.last_name < a2.last_name end))
+      Map.put(m, k, Enum.sort(v, fn a1, a2 -> a1.family_name < a2.family_name end))
     end)
 
     is_admin = SystemRole.role_id().admin == author.system_role_id

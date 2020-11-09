@@ -13,7 +13,7 @@ defmodule OliWeb.Curriculum.DetailsLive do
         Created <%= time_ago(assigns, @child.resource.inserted_at) %>
       </small>
       <small class="text-muted">
-        Updated <%= time_ago(assigns, @child.inserted_at) %> by <%= @child.author.first_name %>
+        Updated <%= time_ago(assigns, @child.inserted_at) %> by <%= @child.author.given_name %>
       </small>
     </div>
     """

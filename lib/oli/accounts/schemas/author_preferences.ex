@@ -7,6 +7,7 @@ defmodule Oli.Accounts.AuthorPreferences do
   #   @primary_key {:id, :binary_id, autogenerate: true}
   #   schema "embedded Item" do
   #
+  @primary_key false
   embedded_schema do
     field :theme, :string
   end
