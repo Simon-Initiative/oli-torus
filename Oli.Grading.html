@@ -10,7 +10,7 @@
     <title>Oli.Grading — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-79e85dc6bd.js"></script>
+    <script src="dist/sidebar_items-eec651b78b.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -90,7 +90,7 @@ Oli.Grading <small class="app-vsn">(OLI Torus v0.1.0)</small>
 
         <section id="moduledoc">
 <p>Grading is responsible for compiling attempts into usable gradebook representation
-consumable by various tools such as Excel (CSV) or an LMS API</p>
+consumable by various tools such as Excel (CSV) or an LMS API.</p>
         </section>
 
 
@@ -107,6 +107,13 @@ consumable by various tools such as Excel (CSV) or an LMS API</p>
     <h2>
       <a href="#functions">Functions</a>
     </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#ags_scopes/0">ags_scopes()</a>
+
+  </div>
+
+</div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#export_csv/1">export_csv(section)</a>
@@ -126,6 +133,16 @@ consumable by various tools such as Excel (CSV) or an LMS API</p>
 and an ordered list of column labels</p></div>
 
 </div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#send_score_to_lms/3">send_score_to_lms(lti_launch_params, resource_access, access_token_provider)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>If grade passback services 2.0 is enabled, sends the current state of a ResourceAccess
+score for the current user to the LMS.</p></div>
+
+</div>
 
   </div>
 
@@ -141,6 +158,28 @@ and an ordered list of column labels</p></div>
 Functions
           </h1>
           <div class="functions-list">
+<section class="detail" id="ags_scopes/0">
+
+  <div class="detail-header">
+    <a href="#ags_scopes/0" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">ags_scopes()</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L46" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
 <section class="detail" id="export_csv/1">
 
   <div class="detail-header">
@@ -150,7 +189,7 @@ Functions
     </a>
     <h1 class="signature">export_csv(section)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L21" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L109" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -172,7 +211,7 @@ Functions
     </a>
     <h1 class="signature">generate_gradebook_for_section(section)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L72" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L160" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -184,6 +223,29 @@ Functions
 
 <p>Returns a tuple containing a list of GradebookRow for every enrolled user
 and an ordered list of column labels</p><p><code class="inline">{[%GradebookRow{user: %User{}, scores: [%GradebookScore{}, ...]}, ...], [&quot;Quiz 1&quot;, &quot;Quiz 2&quot;]}</code></p>
+  </section>
+</section>
+<section class="detail" id="send_score_to_lms/3">
+
+  <div class="detail-header">
+    <a href="#send_score_to_lms/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">send_score_to_lms(lti_launch_params, resource_access, access_token_provider)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L30" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>If grade passback services 2.0 is enabled, sends the current state of a ResourceAccess
+score for the current user to the LMS.</p><p>If sent successfully, returns {:ok, :synced}</p><p>If grade passback not enabled, returns {:ok, :not_synced}</p><p>If error encountered, returns {:error, error}</p>
   </section>
 </section>
 

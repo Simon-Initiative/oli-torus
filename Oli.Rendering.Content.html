@@ -10,7 +10,7 @@
     <title>Oli.Rendering.Content — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-79e85dc6bd.js"></script>
+    <script src="dist/sidebar_items-eec651b78b.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -239,6 +239,13 @@ Returns an IO list of raw html strings to be futher processed by Phoenix/BEAM wr
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#c:iframe/3">iframe(%Oli.Rendering.Context{}, next, %{})</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#c:img/3">img(%Oli.Rendering.Context{}, next, %{})</a>
 
   </div>
@@ -430,7 +437,7 @@ Functions
     </a>
     <h1 class="signature">render(context, element, writer)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L48" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L49" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -466,7 +473,7 @@ Callbacks
     </a>
     <h1 class="signature">a(%Oli.Rendering.Context{}, next, %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L41" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L42" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -504,7 +511,7 @@ Callbacks
     </a>
     <h1 class="signature">audio(%Oli.Rendering.Context{}, next, %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L28" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L29" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -542,7 +549,7 @@ Callbacks
     </a>
     <h1 class="signature">blockquote(%Oli.Rendering.Context{}, next, %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L40" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L41" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -580,7 +587,7 @@ Callbacks
     </a>
     <h1 class="signature">code(%Oli.Rendering.Context{}, next, %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L38" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L39" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -618,7 +625,7 @@ Callbacks
     </a>
     <h1 class="signature">code_line(%Oli.Rendering.Context{}, next, %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L39" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L40" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -656,7 +663,7 @@ Callbacks
     </a>
     <h1 class="signature">error(%Oli.Rendering.Context{}, %{}, {})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L42" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L43" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -951,6 +958,44 @@ Callbacks
 
   </section>
 </section>
+<section class="detail" id="c:iframe/3">
+
+  <div class="detail-header">
+    <a href="#c:iframe/3" class="detail-link" title="Link to this callback">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature">iframe(%Oli.Rendering.Context{}, next, %{})</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L28" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>iframe(
+  %Oli.Rendering.Context{
+    activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+  },
+  <a href="#t:next/0">next</a>(),
+  %{}
+) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
+      </div>
+
+
+  </section>
+</section>
 <section class="detail" id="c:img/3">
 
   <div class="detail-header">
@@ -1036,7 +1081,7 @@ Callbacks
     </a>
     <h1 class="signature">li(%Oli.Rendering.Context{}, next, %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L35" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L36" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1074,7 +1119,7 @@ Callbacks
     </a>
     <h1 class="signature">math(%Oli.Rendering.Context{}, next, %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L36" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L37" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1112,7 +1157,7 @@ Callbacks
     </a>
     <h1 class="signature">math_line(%Oli.Rendering.Context{}, next, %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L37" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L38" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1150,7 +1195,7 @@ Callbacks
     </a>
     <h1 class="signature">ol(%Oli.Rendering.Context{}, next, %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L33" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L34" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1226,7 +1271,7 @@ Callbacks
     </a>
     <h1 class="signature">table(%Oli.Rendering.Context{}, next, %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L29" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L30" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1264,7 +1309,7 @@ Callbacks
     </a>
     <h1 class="signature">td(%Oli.Rendering.Context{}, next, %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L32" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L33" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1339,7 +1384,7 @@ Callbacks
     </a>
     <h1 class="signature">th(%Oli.Rendering.Context{}, next, %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L31" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L32" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1377,7 +1422,7 @@ Callbacks
     </a>
     <h1 class="signature">tr(%Oli.Rendering.Context{}, next, %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L30" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L31" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1415,7 +1460,7 @@ Callbacks
     </a>
     <h1 class="signature">ul(%Oli.Rendering.Context{}, next, %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L34" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L35" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
