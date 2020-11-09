@@ -9,13 +9,12 @@ export class CATAActions {
   private static getById<T extends Identifiable>(slice: T[], id: string): Maybe<T> {
     return Maybe.maybe(slice.find(c => c.id === id));
   }
-  private static getChoice = (draftState: CheckAllThatApplyModelSchema,
-    id: string) => CATAActions.getById(draftState.choices, id)
-  private static getResponse = (draftState: CheckAllThatApplyModelSchema, id: string) => {
-    return CATAActions.getById(draftState.authoring.parts[0].responses, id);
-  }
-  private static getHint = (draftState: CheckAllThatApplyModelSchema,
-    id: string) => CATAActions.getById(draftState.authoring.parts[0].hints, id)
+  private static getChoice = (draftState: CheckAllThatApplyModelSchema, id: string) =>
+    CATAActions.getById(draftState.choices, id)
+  private static getResponse = (draftState: CheckAllThatApplyModelSchema, id: string) =>
+    CATAActions.getById(draftState.authoring.parts[0].responses, id)
+  private static getHint = (draftState: CheckAllThatApplyModelSchema, id: string) =>
+    CATAActions.getById(draftState.authoring.parts[0].hints, id)
 
   static editStem(content: RichText) {
     return (draftState: CheckAllThatApplyModelSchema) => {

@@ -29,7 +29,7 @@ export const Feedback = ({ onEditResponse, model, editMode, projectSlug }: Feedb
         question is one of the best ways to reinforce their understanding." id="feedback" />
       <div className="mb-3" key={correctResponse.id}>
         <Description>
-          <IconCorrect /> Feedback for Correct Choice
+          <IconCorrect /> Feedback for Correct Combination
         </Description>
         <RichTextEditor projectSlug={projectSlug}
           editMode={editMode} text={correctResponse.feedback.content}
@@ -38,7 +38,7 @@ export const Feedback = ({ onEditResponse, model, editMode, projectSlug }: Feedb
       {incorrectResponses.map((response, index) =>
         <div className="mb-3" key={response.id}>
           <Description>
-            <IconIncorrect /> Feedback for Incorrect Choice {index + 1}
+            <IconIncorrect /> Feedback for Incorrect Combination {index + 1}
           </Description>
           <RichTextEditor projectSlug={projectSlug}
             key={response.id} editMode={editMode} text={response.feedback.content}

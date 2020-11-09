@@ -18,58 +18,53 @@ export const Choices = ({ onAddChoice, onEditChoice, onRemoveChoice, editMode, m
   ChoicesProps) => {
 
   const { authoring: { parts }, choices } = model;
-  const isCorrect = (response: Response) => response.score === 1;
 
-  const correctChoice = choices.reduce((correct, choice) => {
-
+  const choicesWithResponses: [Choice, Response][] = choices.map((choice) => {
     const responseMatchesChoice = (response: Response, choice: Choice) =>
       response.rule === `input like {${choice.id}}`;
-    if (correct) return correct;
 
-    if (parts[0].responses.find(response =>
-      responseMatchesChoice(response, choice)
-      && isCorrect(response))) return choice;
+    const matchingResponse = parts[0].responses.find(response =>
+      responseMatchesChoice(response, choice));
 
-    throw new Error('Correct choice could not be found:' + JSON.stringify(choices));
+    if (!matchingResponse) {
+      throw new Error('Matching response not found for choice: ' + JSON.stringify(choice));
+    }
+
+    return [choice, matchingResponse];
   });
 
-  const incorrectChoices = choices.filter(choice => choice.id !== correctChoice.id);
+  const isCorrect = (response: Response) => response.score === 1;
+  const checkIcon = (isCorrect: boolean) => isCorrect ? 'check_circle' : 'check_circle_outline';
+  const toggleCorrectnessButton = <button className="list-unstyled" style={{}}>
+
+  </button>
 
   return (
     <div className="my-5">
       <Heading title="Answer Choices"
         subtitle="One correct answer choice and as many incorrect answer choices as you like." id="choices" />
-      <Description>
-        <IconCorrect /> Correct Choice
-      </Description>
-      <RichTextEditor
-        className="mb-3"
-        projectSlug={projectSlug}
-        key="correct" editMode={editMode} text={correctChoice.content}
-        onEdit={content => onEditChoice(correctChoice.id, content)} />
-      {incorrectChoices.map((choice, index) =>
+      {choicesWithResponses.map(([choice, response], index) =>
         <React.Fragment key={choice.id}>
-          <Description>
-            <IconIncorrect /> Incorrect Choice {index + 1}
-          </Description>
-          <div className="d-flex mb-3">
-            <RichTextEditor
-              className="flex-fill"
-              projectSlug={projectSlug}
-              editMode={editMode} text={choice.content}
-              onEdit={content => onEditChoice(choice.id, content)}/>
-            <CloseButton
-              className="pl-3 pr-1"
-              onClick={() => onRemoveChoice(choice.id)}
-              editMode={editMode} />
+          <div className="d-flex">
+            <div className="material-icons">{checkIcon(isCorrect(response))}</div>
+            <div className="d-flex mb-3" style={{ flex: 1 }}>
+              <RichTextEditor
+                className="flex-fill"
+                projectSlug={projectSlug}
+                editMode={editMode} text={choice.content}
+                onEdit={content => onEditChoice(choice.id, content)} />
+              <CloseButton
+                className="pl-3 pr-1"
+                onClick={() => onRemoveChoice(choice.id)}
+                editMode={editMode} />
+            </div>
           </div>
-        </React.Fragment>,
-      )}
+        </React.Fragment>)}
       <button
         className="btn btn-sm btn-primary my-2"
         disabled={!editMode}
-        onClick={onAddChoice}>Add incorrect answer choice
+        onClick={onAddChoice}>Add answer choice
       </button>
-    </div>
+    </div >
   );
 };
