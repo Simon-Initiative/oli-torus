@@ -7,6 +7,12 @@ defmodule Oli.Lti_1p3 do
   alias Oli.Lti_1p3.Jwk
   alias Oli.Lti_1p3.LtiParams
 
+  @deployment_id_key "https://purl.imsglobal.org/spec/lti/claim/deployment_id"
+
+  def get_deployment_id_from_launch(lti_launch_params) do
+    Map.get(lti_launch_params, @deployment_id_key)
+  end
+
   def create_new_registration(attrs) do
     %Registration{}
     |> Registration.changeset(attrs)

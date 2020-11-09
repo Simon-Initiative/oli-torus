@@ -142,6 +142,23 @@ defmodule OliWeb.PageDeliveryController do
 
   end
 
+  defp host() do
+    Application.get_env(:oli, OliWeb.Endpoint)
+    |> Keyword.get(:url)
+    |> Keyword.get(:host)
+  end
+
+  defp sync_grades(lti_launch_params, resource_access) do
+
+    access_token_provider = fn ->
+      deployment_id = Oli.Lti_1p3.get_deployment_id_from_launch(lti_launch_params)
+      Oli.Lti_1p3.AccessToken.fetch_access_token(deployment_id, Oli.Grading.ags_scopes(), host())
+    end
+
+    Oli.Grading.send_score_to_lms(lti_launch_params, resource_access, access_token_provider)
+
+  end
+
   def finalize_attempt(conn, %{"revision_slug" => revision_slug, "attempt_guid" => attempt_guid}) do
 
     user = conn.assigns.current_user
@@ -152,7 +169,11 @@ defmodule OliWeb.PageDeliveryController do
     if ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_learner)) do
 
       case Attempts.submit_graded_page(context_id, attempt_guid) do
-        {:ok, _} -> after_finalized(conn, context_id, revision_slug, user)
+        {:ok, resource_access} ->
+
+          grade_sync_result = sync_grades(lti_params, resource_access)
+          after_finalized(conn, context_id, revision_slug, user, grade_sync_result)
+
         {:error, {:not_all_answered}} ->
           put_flash(conn, :error, "You have not answered all questions")
           |> redirect(to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
@@ -168,7 +189,7 @@ defmodule OliWeb.PageDeliveryController do
 
   end
 
-  def after_finalized(conn, context_id, revision_slug, user) do
+  def after_finalized(conn, context_id, revision_slug, user, grade_sync_result) do
 
     context = PageContext.create_page_context(context_id, revision_slug, user)
 
@@ -182,8 +203,16 @@ defmodule OliWeb.PageDeliveryController do
       "You have taken #{taken} attempt#{plural(taken)} and have #{remaining} more attempt#{plural(remaining)} remaining"
     end
 
+    grade_message = case grade_sync_result do
+      {:ok, :synced} -> "Your grade has been updated in your LMS"
+      {:error, _} -> "There was a problem updating your grade in your LMS"
+      _ -> ""
+    end
+
+
     conn = put_root_layout conn, {OliWeb.LayoutView, "page.html"}
     render(conn, "after_finalized.html",
+      grade_message: grade_message,
       context_id: context_id,
       scripts: Activities.get_activity_scripts(),
       summary: context.summary,
