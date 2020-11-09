@@ -48,14 +48,14 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      conn = conn
-      |> get(Routes.page_delivery_path(conn, :page, section.context_id, page_revision.slug))
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.context_id, page_revision.slug))
 
       assert html_response(conn, 200) =~ "When you are ready to begin, you may"
 
       # now start the attempt
-      conn = conn
-      |> get(Routes.page_delivery_path(conn, :start_attempt, section.context_id, page_revision.slug))
+      conn = recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      conn = get(conn, Routes.page_delivery_path(conn, :start_attempt, section.context_id, page_revision.slug))
 
       # verify the redirection
       assert html_response(conn, 302) =~ "redirected"
@@ -63,7 +63,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       # and then the rendering of the page, which should contain a button
       # that says 'Submit Assessment'
-      conn = get(recycle(conn), redir_path)
+      conn = recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      conn = get(conn, redir_path)
       assert html_response(conn, 200) =~  "Submit Assessment"
 
       # fetch the resource attempt and part attempt that will have been created
@@ -76,8 +78,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
       })
 
       # Submit the assessment and verify we see the summary view
-      conn
-      |> get(Routes.page_delivery_path(conn, :finalize_attempt, section.context_id, page_revision.slug, attempt.attempt_guid))
+      conn = recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      conn = get(conn, Routes.page_delivery_path(conn, :finalize_attempt, section.context_id, page_revision.slug, attempt.attempt_guid))
 
       # fetch the resource id record and verify the grade rolled up
       [access] = Oli.Repo.all(ResourceAccess)
@@ -86,8 +89,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       # now visit the page again, verifying that we see the prologue, but this time it
       # does not allow us to start a new attempt
-      conn = conn
-      |> get(Routes.page_delivery_path(conn, :page, section.context_id, page_revision.slug))
+      conn = recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.context_id, page_revision.slug))
 
       assert html_response(conn, 200) =~ "You have 0 attempts remaining out of 1 total attempt"
 
@@ -143,9 +147,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     Oli.Lti_1p3.cache_lti_params!(lti_params["sub"], lti_params)
 
-    conn = Plug.Test.init_test_session(conn, current_author_id: map.author.id)
-      |> put_session(:current_user_id, user.id)
-      |> put_session(:lti_1p3_sub, lti_params["sub"])
+    conn = Plug.Test.init_test_session(conn, lti_1p3_sub: lti_params["sub"])
+      |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
     {:ok,
       conn: conn,

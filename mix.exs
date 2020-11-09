@@ -11,8 +11,12 @@ defmodule Oli.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
-        "test.coverage": :test,
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
       ],
 
       # Docs
@@ -53,15 +57,18 @@ defmodule Oli.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:bamboo, "~> 1.6"},
+      {:bamboo_ses, "~> 0.1.0"},
       {:bcrypt_elixir, "~> 2.2"},
       {:credo, "~> 1.1.0", only: [:dev, :test], runtime: true},
       {:csv, "~> 2.3"},
       {:dialyxir, "~> 0.5.0", only: [:dev], runtime: true},
       {:ecto_sql, "~> 3.1"},
-      {:ex_aws, "~> 2.1"},
+      {:ex_aws, "~> 2.1.6"},
       {:ex_aws_s3, "~> 2.0"},
+      {:excoveralls, "~> 0.10", only: :test},
       {:ex_doc, "~> 0.23", only: :dev, runtime: false},
-      {:floki, ">= 0.26.0", only: :test},
+      {:floki, ">= 0.26.0"},
       {:gettext, "~> 0.11"},
       {:hackney, "~> 1.9"},
       {:httpoison, "~> 1.6"},
@@ -81,16 +88,17 @@ defmodule Oli.MixProject do
       {:plug_cowboy, "~> 2.1"},
       {:poison, "~> 3.1"},
       {:postgrex, ">= 0.0.0"},
+      {:pow, "~> 1.0.21"},
+      {:pow_assent, "~> 0.4.9"},
+      {:certifi, "~> 2.4"},
+      {:ssl_verify_fun, "~> 1.1"},
+      {:premailex, "~> 0.3.0"},
       {:sched_ex, "~> 1.1"},
       {:shortuuid, "~> 2.1"},
       {:telemetry, "~> 0.4.1"},
       {:telemetry_poller, "~> 0.4"},
       {:telemetry_metrics, "~> 0.4"},
       {:timex, "~> 3.5"},
-      {:ueberauth, "~> 0.5"},
-      {:ueberauth_facebook, "~> 0.8"},
-      {:ueberauth_google, "~> 0.7"},
-      {:ueberauth_identity, "~> 0.2"},
       {:uuid, "~> 1.1" },
       {:xml_builder, "~> 2.1.1"}
     ]
@@ -109,7 +117,7 @@ defmodule Oli.MixProject do
       test: ["ecto.create --quiet", "ecto.migrate", "run priv/repo/seeds.exs", "test"],
 
       # runs tests and produces a coverage report
-      "test.coverage": ["ecto.create --quiet", "ecto.migrate", "run priv/repo/seeds.exs", "test --cover"],
+      "test.coverage": ["ecto.create --quiet", "ecto.migrate", "run priv/repo/seeds.exs", "coveralls.html"],
 
       # runs tests in deterministic order, only shows one failure at a time and reruns tests if any changes are made
       "test.watch": ["test.watch --stale --max-failures 1 --trace --seed 0"],

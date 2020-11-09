@@ -1,7 +1,7 @@
 
 <nav class="navbar navbar-expand">
   <div class="container">
-    <a class="navbar-brand oli-logo" href="<%= Routes.delivery_path(@conn, :index) %>">
+    <a class="navbar-brand oli-logo" href="<%= if assigns[:preview_mode], do: "#", else: Routes.delivery_path(@conn, :index) %>">
       <img src="/images/oli-icon.png" width="30" height="30" class="d-inline-block align-top mr-2" alt="">
       Open Learning <span style="font-weight: 200">Initiative</span>
     </a>
@@ -40,11 +40,11 @@
             <%= if account_linked?(@current_user) do %>
               <h6 class="dropdown-header">Linked: <%= @current_user.author.email %></h6>
               <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>" target="_blank">Go to Course Author <i class="fas fa-external-link-alt float-right" style="margin-top: 2px"></i></a>
-              <a class="dropdown-item" href="<%= Routes.delivery_path(@conn, :link_account) %>">Link a different account</a>
+              <a class="dropdown-item" href="<%= Routes.delivery_path(@conn, :link_account) %>" target="_blank">Link a different account</a>
               <div class="dropdown-divider"></div>
               <%= link "Sign out", to: Routes.delivery_path(@conn, :signout), id: "signout-link", class: "dropdown-item btn" %>
             <% else %>
-              <a class="dropdown-item" href="<%= Routes.delivery_path(@conn, :link_account) %>">Link Existing Account</a>
+              <a class="dropdown-item" href="<%= Routes.delivery_path(@conn, :link_account) %>" target="_blank">Link Existing Account</a>
             <% end %>
           </div>
         </div>

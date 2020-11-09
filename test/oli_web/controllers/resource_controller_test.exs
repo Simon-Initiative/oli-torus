@@ -45,7 +45,7 @@ defmodule OliWeb.ResourceControllerTest do
 
   def project_seed(%{conn: conn}) do
     seeds = Oli.Seeder.base_project_with_resource2()
-    conn = Plug.Test.init_test_session(conn, current_author_id: seeds.author.id)
+    conn = Pow.Plug.assign_current_user(conn, seeds.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     {:ok, Map.merge(%{conn: conn}, seeds)}
   end
