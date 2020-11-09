@@ -152,7 +152,7 @@ defmodule Oli.Grading.LTI_AGS do
       }}
     else
       e ->
-        Logger.error("Error encountered updating line item #{line_item.id} for changes #{inspect changes}")
+        Logger.error("Error encountered updating line item #{line_item.id} for changes #{inspect changes}: #{inspect e}")
         {:error, "Error updating existing line item"}
     end
 
