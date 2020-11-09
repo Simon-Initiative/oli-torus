@@ -145,16 +145,12 @@ defmodule OliWeb.PageDeliveryController do
 
   defp sync_grades(lti_launch_params, resource_access) do
 
-    # Fetch an access token, then sync the grade
-    deployment_id = Oli.Lti_1p3.get_deployment_id_from_launch(lti_launch_params)
-
-    case Oli.Lti_1p3.AccessToken.fetch_access_token(deployment_id, Oli.Grading.ags_scopes(), host()) do
-
-      {:ok, token} -> Oli.Grading.send_score_to_lms(lti_launch_params, resource_access, token)
-
-      e -> e |> IO.inspect
-
+    access_token_provider = fn ->
+      deployment_id = Oli.Lti_1p3.get_deployment_id_from_launch(lti_launch_params)
+      Oli.Lti_1p3.AccessToken.fetch_access_token(deployment_id, Oli.Grading.ags_scopes(), host())
     end
+
+    Oli.Grading.send_score_to_lms(lti_launch_params, resource_access, access_token_provider)
 
   end
 

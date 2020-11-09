@@ -27,12 +27,15 @@ defmodule Oli.Grading do
 
   If error encountered, returns {:error, error}
   """
-  def send_score_to_lms(lti_launch_params, %ResourceAccess{} = resource_access, access_token) do
+  def send_score_to_lms(lti_launch_params, %ResourceAccess{} = resource_access, access_token_provider) do
 
     # First check to see if grade passback is enabled
     if LTI_AGS.grade_passback_enabled?(lti_launch_params) do
 
-      send_score(lti_launch_params, resource_access, access_token)
+      case access_token_provider.() do
+        {:ok, access_token} -> send_score(lti_launch_params, resource_access, access_token)
+        e -> e
+      end
 
     else
       {:ok, :not_synced}
