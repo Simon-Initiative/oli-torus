@@ -137,6 +137,27 @@ defmodule OliWeb.PageDeliveryController do
 
   end
 
+  defp host() do
+    Application.get_env(:oli, OliWeb.Endpoint)
+    |> Keyword.get(:url)
+    |> Keyword.get(:host)
+  end
+
+  defp sync_grades(lti_launch_params, resource_access) do
+
+    # Fetch an access token, then sync the grade
+    deployment_id = Oli.Lti_1p3.get_deployment_id_from_launch(lti_launch_params)
+
+    case Oli.Lti_1p3.AccessToken.fetch_access_token(deployment_id, Oli.Grading.ags_scopes(), host()) do
+
+      {:ok, token} -> Oli.Grading.send_score_to_lms(lti_launch_params, resource_access, token)
+
+      e -> e |> IO.inspect
+
+    end
+
+  end
+
   def finalize_attempt(conn, %{"revision_slug" => revision_slug, "attempt_guid" => attempt_guid}) do
 
     user = conn.assigns.current_user
@@ -149,7 +170,7 @@ defmodule OliWeb.PageDeliveryController do
       case Attempts.submit_graded_page(context_id, attempt_guid) do
         {:ok, resource_access} ->
 
-          grade_sync_result = Oli.Grading.send_score_to_lms(lti_params, resource_access)
+          grade_sync_result = sync_grades(lti_params, resource_access)
           after_finalized(conn, context_id, revision_slug, user, grade_sync_result)
 
         {:error, {:not_all_answered}} ->

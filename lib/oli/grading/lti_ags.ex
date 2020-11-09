@@ -15,17 +15,17 @@ defmodule Oli.Grading.LTI_AGS do
 
   alias Oli.Grading.Score
   alias Oli.Grading.LineItem
+  alias Oli.Lti_1p3.AccessToken
 
   @doc """
   Post a score to an existing line item.
   """
-  def post_score(%Score{} = score, %LineItem{} = line_item) do
+  def post_score(%Score{} = score, %LineItem{} = line_item, %AccessToken{} = access_token) do
 
     url = "#{line_item.id}/scores"
-    body = Jason.encode(score)
-    headers = [{"Content-Type", "application/json"}]
+    body = score |> Jason.encode!()
 
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.post(url, body, headers),
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.post(url, body, headers(access_token)),
       {:ok, result} <- Jason.decode(body)
     do
       {:ok, result}
@@ -40,7 +40,7 @@ defmodule Oli.Grading.LTI_AGS do
   line item is created or already exists, this function returns a line item struct wrapped
   in a {:ok, line_item} tuple.  On error, returns a {:error, error} tuple.
   """
-  def fetch_or_create_line_item(line_items_service_url, resource_id, score_maximum, label) do
+  def fetch_or_create_line_item(line_items_service_url, resource_id, score_maximum, label, %AccessToken{} = access_token) do
 
     # Grade passback 2.0 lineitems endpoint allows a GET request with a query
     # param filter.  We use that to request only the lineitem that corresponds
@@ -49,12 +49,17 @@ defmodule Oli.Grading.LTI_AGS do
     # here as a Torus "resource_id" is strictly coincidence.
     request_url = "#{line_items_service_url}?resource_id=#{resource_id}"
 
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(request_url),
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(request_url, headers(access_token)),
       {:ok, result} <- Jason.decode(body)
     do
       case result do
-        [] -> create_line_item(line_items_service_url, resource_id, score_maximum, label)
-        [line_item] -> {:ok, line_item}
+        [] -> create_line_item(line_items_service_url, resource_id, score_maximum, label, access_token)
+        [line_item] -> {:ok, %LineItem{
+          id: Map.get(line_item, "id"),
+          scoreMaximum: Map.get(line_item, "scoreMaximum"),
+          resourceId: Map.get(line_item, "resource_id"),
+          label: Map.get(line_item, "label"),
+        }}
       end
     else
       _ -> {:error, "Error retrieving existing line items"}
@@ -66,7 +71,7 @@ defmodule Oli.Grading.LTI_AGS do
   Creates a line item for a resource id. Tthis function returns a line item struct wrapped
   in a {:ok, line_item} tuple.  On error, returns a {:error, error} tuple.
   """
-  def create_line_item(line_items_service_url, resource_id, score_maximum, label) do
+  def create_line_item(line_items_service_url, resource_id, score_maximum, label, %AccessToken{} = access_token) do
 
     line_item = %LineItem{
       scoreMaximum: score_maximum,
@@ -74,10 +79,9 @@ defmodule Oli.Grading.LTI_AGS do
       label: label
     }
 
-    body = Jason.encode([line_item])
-    headers = [{"Content-Type", "application/json"}]
+    body = line_item |> Jason.encode!()
 
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.post(line_items_service_url, body, headers),
+    with {:ok, %HTTPoison.Response{status_code: 201, body: body}} <- HTTPoison.post(line_items_service_url, body, headers(access_token)),
       {:ok, result} <- Jason.decode(body)
     do
       {:ok, %LineItem{
@@ -87,7 +91,7 @@ defmodule Oli.Grading.LTI_AGS do
         label: Map.get(result, "label"),
       }}
     else
-      _ -> {:error, "Error creating new line item"}
+      - -> {:error, "Error creating new line item"}
     end
 
   end
@@ -99,12 +103,9 @@ defmodule Oli.Grading.LTI_AGS do
   endpoint is present.
   """
   def grade_passback_enabled?(lti_launch_params) do
-
     case Map.get(lti_launch_params, @lti_ags_claim_url) do
       nil -> false
       config ->
-
-
         Map.has_key?(config, "lineitems") and has_scope?(config, @lineitem_scope_url) and has_scope?(config, @scores_scope_url)
     end
 
@@ -130,5 +131,8 @@ defmodule Oli.Grading.LTI_AGS do
 
   end
 
+  defp headers(%AccessToken{} = access_token) do
+    [{"Content-Type", "application/json"}, {"Authorization", "Bearer #{access_token.access_token}"}]
+  end
 
 end

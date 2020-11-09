@@ -1,5 +1,7 @@
 defmodule Oli.Grading.LineItem do
 
+
+  @derive Jason.Encoder
   @enforce_keys [:scoreMaximum, :label, :resourceId]
   defstruct [:id, :scoreMaximum, :label, :resourceId]
 

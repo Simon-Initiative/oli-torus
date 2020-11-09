@@ -1,7 +1,8 @@
 defmodule Oli.Grading.Score do
 
-  @enforce_keys [:timestamp, :scoreGiven, :scoreMaximum, :comment, :activityProgress, :gradingProgess, :userId]
-  defstruct [:timestamp, :scoreGiven, :scoreMaximum, :comment, :activityProgress, :gradingProgess, :userId]
+  @derive Jason.Encoder
+  @enforce_keys [:timestamp, :scoreGiven, :scoreMaximum, :comment, :activityProgress, :gradingProgress, :userId]
+  defstruct [:timestamp, :scoreGiven, :scoreMaximum, :comment, :activityProgress, :gradingProgress, :userId]
 
   @type t() :: %__MODULE__{
     timestamp: String.t(),
@@ -9,7 +10,7 @@ defmodule Oli.Grading.Score do
     scoreMaximum: float,
     comment: String.t(),
     activityProgress: String.t(),
-    gradingProgess: String.t(),
+    gradingProgress: String.t(),
     userId: String.t()
   }
 end

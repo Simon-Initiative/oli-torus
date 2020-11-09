@@ -27,38 +27,56 @@ defmodule Oli.Grading do
 
   If error encountered, returns {:error, error}
   """
-  def send_score_to_lms(lti_launch_params, %ResourceAccess{} = resource_access) do
+  def send_score_to_lms(lti_launch_params, %ResourceAccess{} = resource_access, access_token) do
 
     # First check to see if grade passback is enabled
     if LTI_AGS.grade_passback_enabled?(lti_launch_params) do
 
-      line_items_service_url = LTI_AGS.get_line_items_url(lti_launch_params)
-
-      context_id = Map.get(lti_launch_params, @context_url) |> Map.get("id")
-      label = DeliveryResolver.from_resource_id(context_id, resource_access.resource_id).title
-
-      # LTI AGS needs a resource identifier as a string
-      resource_id = Integer.to_string(resource_access.resource_id)
-
-      # Next, fetch (and possibly create) the line item associated with this resource
-      case  LTI_AGS.fetch_or_create_line_item(line_items_service_url, resource_id, resource_access.out_of, label) do
-
-        # Finally, post the score for this line item
-        {:ok, line_item} ->
-
-          {:ok, _} = to_score(lti_launch_params, resource_access)
-          |>  LTI_AGS.post_score(line_item)
-
-          {:ok, :synced}
-
-        e -> e
-
-      end
+      send_score(lti_launch_params, resource_access, access_token)
 
     else
       {:ok, :not_synced}
     end
 
+  end
+
+  def ags_scopes() do
+    [
+      "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
+      "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
+      "https://purl.imsglobal.org/spec/lti-ags/scope/score"
+    ]
+  end
+
+  defp send_score(lti_launch_params, %ResourceAccess{} = resource_access, token) do
+
+    line_items_service_url = LTI_AGS.get_line_items_url(lti_launch_params)
+
+    context_id = Map.get(lti_launch_params, @context_url) |> Map.get("id")
+    label = DeliveryResolver.from_resource_id(context_id, resource_access.resource_id).title
+
+    # LTI AGS needs a resource identifier as a string
+    resource_id = Integer.to_string(resource_access.resource_id)
+
+    # Next, fetch (and possibly create) the line item associated with this resource
+    case LTI_AGS.fetch_or_create_line_item(line_items_service_url, resource_id, resource_access.out_of, label, token) do
+
+      # Finally, post the score for this line item
+      {:ok, line_item} ->
+
+        case to_score(lti_launch_params, resource_access)
+        |>  LTI_AGS.post_score(line_item, token) do
+
+          {:ok, _} -> {:ok, :synced}
+
+          e -> e
+
+        end
+
+
+      e -> e |> IO.inspect
+
+    end
   end
 
   # helper to create an LTI AGS 2.0 compliant score from our launch params and
@@ -74,7 +92,7 @@ defmodule Oli.Grading do
       scoreMaximum: resource_access.out_of,
       comment: "",
       activityProgress: "Completed",
-      gradingProgess: "FullyGraded",
+      gradingProgress: "FullyGraded",
       userId: Map.get(lti_launch_params, "sub")
     }
 
