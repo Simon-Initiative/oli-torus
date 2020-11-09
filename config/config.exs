@@ -17,11 +17,14 @@ config :oli,
     env: Mix.env,
   },
   local_activity_manifests: Path.wildcard(File.cwd! <> "/assets/src/components/activities/*/manifest.json")
-    |> Enum.map(&File.read!/1)
+    |> Enum.map(&File.read!/1),
+  email_from_name: System.get_env("EMAIL_FROM_NAME", "OLI Torus"),
+  email_from_address: System.get_env("EMAIL_FROM_ADDRESS", "admin@example.edu"),
+  email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu")
 
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,
-  live_view: [signing_salt: System.get_env("LIVE_VIEW_SALT") || "LIVE_VIEW_SALT"],
+  live_view: [signing_salt: System.get_env("LIVE_VIEW_SALT", "LIVE_VIEW_SALT")],
   url: [host: "localhost"],
   secret_key_base: "GE9cpXBwVXNaplyUCYbIWqERmC/OlcR5iVMwLX9/W7gzQRxkD1ETjda9E0jW/BW1",
   render_errors: [view: OliWeb.ErrorView, accepts: ~w(html json)],
@@ -46,26 +49,45 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-# Configure OAuth
-config :ueberauth, Ueberauth,
-  providers: [
-    google: {Ueberauth.Strategy.Google, [default_scope: "email profile", callback_params: ["type"]]},
-    facebook: {Ueberauth.Strategy.Facebook, [default_scope: "email,public_profile", callback_params: ["type"]]},
-    identity: {Ueberauth.Strategy.Identity, [
-      callback_methods: ["POST"],
-      uid_field: :email,
-      request_path: "/auth/identity",
-      callback_path: "/auth/identity/callback",
-    ]}
+config :oli, :pow,
+  repo: Oli.Repo,
+  user: Oli.Accounts.Author,
+  current_user_assigns_key: :current_author,
+  session_key: "author_auth",
+  web_module: OliWeb,
+  routes_backend: OliWeb.Pow.AuthorRoutes,
+  plug: Pow.Plug.Session,
+  extensions: [PowResetPassword, PowEmailConfirmation, PowPersistentSession],
+  controller_callbacks: Pow.Extension.Phoenix.ControllerCallbacks,
+  mailer_backend: OliWeb.Pow.Mailer,
+  web_mailer_module: OliWeb,
+  pow_assent: [
+    providers: [
+      google: [
+        client_id: System.get_env("GOOGLE_CLIENT_ID"),
+        client_secret: System.get_env("GOOGLE_CLIENT_SECRET"),
+        strategy: Assent.Strategy.Google,
+        authorization_params: [
+          scope: "email profile"
+        ],
+        session_params: ["type"]
+      ],
+      github: [
+        client_id: System.get_env("GITHUB_CLIENT_ID"),
+        client_secret: System.get_env("GITHUB_CLIENT_SECRET"),
+        strategy: Assent.Strategy.Github,
+        authorization_params: [
+          scope: "read:user user:email"
+        ],
+        session_params: ["type"]
+      ]
+    ]
   ]
 
-config :ueberauth, Ueberauth.Strategy.Google.OAuth,
-  client_id: System.get_env("GOOGLE_CLIENT_ID"),
-  client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
-
-config :ueberauth, Ueberauth.Strategy.Facebook.OAuth,
-  client_id: System.get_env("FACEBOOK_CLIENT_ID"),
-  client_secret: System.get_env("FACEBOOK_CLIENT_SECRET")
+if Mix.env == :dev do
+  config :mix_test_watch,
+    clear: true
+end
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

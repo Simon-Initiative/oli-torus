@@ -22,10 +22,14 @@ defmodule OliWeb.RegistrationControllerTest do
   describe "create registration" do
     setup [:create_fixtures]
 
-    test "redirects to show when data is valid", %{conn: conn, institution: institution} do
+    test "redirects to show when data is valid", %{conn: conn, institution: institution, admin: admin} do
       conn = post(conn, Routes.institution_registration_path(conn, :create, institution.id), registration: @create_attrs)
 
       assert redirected_to(conn) == Routes.institution_path(conn, :show, institution.id)
+
+      conn = recycle(conn)
+        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
 
       conn = get(conn, Routes.institution_path(conn, :show, institution.id))
       assert html_response(conn, 200) =~ "some issuer - some client_id"
@@ -49,9 +53,12 @@ defmodule OliWeb.RegistrationControllerTest do
   describe "update registration" do
     setup [:create_fixtures]
 
-    test "redirects when data is valid", %{conn: conn, registration: registration, institution: institution} do
+    test "redirects when data is valid", %{conn: conn, registration: registration, institution: institution, admin: admin} do
       conn = put(conn, Routes.institution_registration_path(conn, :update, institution.id, registration), registration: @update_attrs)
       assert redirected_to(conn) == Routes.institution_path(conn, :show, institution.id)
+
+      conn = recycle(conn)
+        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
       conn = get(conn, Routes.institution_path(conn, :show, institution.id))
       assert html_response(conn, 200) =~ "some updated auth_login_url"
@@ -66,25 +73,28 @@ defmodule OliWeb.RegistrationControllerTest do
   describe "delete registration" do
     setup [:create_fixtures]
 
-    test "deletes chosen registration", %{conn: conn, registration: registration, institution: institution} do
+    test "deletes chosen registration", %{conn: conn, registration: registration, institution: institution, admin: admin} do
       conn = delete(conn, Routes.institution_registration_path(conn, :delete, institution.id, registration))
       assert redirected_to(conn) == Routes.institution_path(conn, :show, institution.id)
       assert_raise Ecto.NoResultsError, fn ->
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
         Institutions.get_registration!(registration.id)
       end
     end
   end
 
   defp create_fixtures(%{conn: conn}) do
-    {:ok, admin} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.admin}) |> Repo.insert
+    {:ok, admin} = Author.noauth_changeset(%Author{}, %{email: "test@test.com", given_name: "First", family_name: "Last", provider: "foo", system_role_id: SystemRole.role_id.admin}) |> Repo.insert
 
     jwk = jwk_fixture()
     institution = institution_fixture()
     registration = registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
 
     # sign admin author in
-    conn = conn
-    |> Plug.Test.init_test_session(current_author_id: admin.id)
+    conn = recycle(conn)
+      |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     %{conn: conn, registration: registration, institution: institution, admin: admin}
   end

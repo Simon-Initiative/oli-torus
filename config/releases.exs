@@ -36,6 +36,12 @@ host =
     For example: host.example.com
     """
 
+# General OLI app config
+config :oli,
+  email_from_name: System.get_env("EMAIL_FROM_NAME", Application.fetch_env!(:oli, :email_from_name)),
+  email_from_address: System.get_env("EMAIL_FROM_ADDRESS", Application.fetch_env!(:oli, :email_from_address)),
+  email_reply_to: System.get_env("EMAIL_REPLY_TO", email_from)
+
 # Configure reCAPTCHA
 config :oli, :recaptcha,
   verify_url: "https://www.google.com/recaptcha/api/siteverify",
@@ -51,13 +57,19 @@ config :oli, OliWeb.Endpoint,
   live_view: [signing_salt: live_view_salt]
 
 # OAuth secrets need to be loaded at runtime
-config :ueberauth, Ueberauth.Strategy.Google.OAuth,
-  client_id: System.get_env("GOOGLE_CLIENT_ID"),
-  client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
-
-config :ueberauth, Ueberauth.Strategy.Facebook.OAuth,
-  client_id: System.get_env("FACEBOOK_CLIENT_ID"),
-  client_secret: System.get_env("FACEBOOK_CLIENT_SECRET")
+config :oli, :pow,
+  pow_assent: [
+    providers: [
+      google: [
+        client_id: System.get_env("GOOGLE_CLIENT_ID"),
+        client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
+      ],
+      github: [
+        client_id: System.get_env("GITHUB_CLIENT_ID"),
+        client_secret: System.get_env("GITHUB_CLIENT_SECRET")
+      ]
+    ]
+  ]
 
 # Configure Joken, we can just reuse the secret key base
 config :joken, default_signer: secret_key_base

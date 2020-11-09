@@ -103,6 +103,7 @@ defmodule Oli.Authoring.Course do
   defp default_project(title, family) do
     %{
       title: title,
+      slug: Utils.generate_slug("projects", title),
       version: "1.0.0",
       family_id: family.id
     }

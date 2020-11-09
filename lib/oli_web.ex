@@ -23,6 +23,7 @@ defmodule OliWeb do
 
       import Plug.Conn
       import OliWeb.Gettext
+      import OliWeb.Pow.PowHelpers
       import Phoenix.LiveView.Controller
       alias OliWeb.Router.Helpers, as: Routes
     end
@@ -55,6 +56,16 @@ defmodule OliWeb do
       use Phoenix.LiveComponent
 
       unquote(view_helpers())
+    end
+  end
+
+  def mailer_view do
+    quote do
+      use Phoenix.View,
+        root: "lib/oli_web/templates",
+        namespace: OliWeb
+
+      use Phoenix.HTML
     end
   end
 
@@ -91,7 +102,7 @@ defmodule OliWeb do
       alias OliWeb.Router.Helpers, as: Routes
 
       import Oli.Accounts, only: [author_signed_in?: 1, user_signed_in?: 1]
-      import Oli.Utils, only: [format_datetime: 1]
+      import Oli.Utils, only: [format_datetime: 1, value_or: 2, render: 4]
     end
   end
 
