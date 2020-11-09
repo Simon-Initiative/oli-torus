@@ -7,10 +7,10 @@
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
 
-    <title>OliWeb.AuthController — OLI Torus v0.1.0</title>
+    <title>OliWeb.Pow.AuthorRoutes — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-861e213a55.js"></script>
+    <script src="dist/sidebar_items-79e85dc6bd.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -78,9 +78,9 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-OliWeb.AuthController <small class="app-vsn">(OLI Torus v0.1.0)</small>
+OliWeb.Pow.AuthorRoutes <small class="app-vsn">(OLI Torus v0.1.0)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/author_routes.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -104,65 +104,65 @@ OliWeb.AuthController <small class="app-vsn">(OLI Torus v0.1.0)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#callback/2">callback(conn, params)</a>
+    <a href="#after_sign_out_path/1">after_sign_out_path(conn)</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/pow/1.0.21/Pow.Phoenix.Routes.html#c:after_sign_out_path/1"><code class="inline">Pow.Phoenix.Routes.after_sign_out_path/1</code></a>.</p></div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#identity_callback/2">identity_callback(conn, params)</a>
+    <a href="#after_user_deleted_path/1">after_user_deleted_path(conn)</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/pow/1.0.21/Pow.Phoenix.Routes.html#c:after_user_deleted_path/1"><code class="inline">Pow.Phoenix.Routes.after_user_deleted_path/1</code></a>.</p></div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#link_account_callback/2">link_account_callback(conn, author)</a>
+    <a href="#registration_path/2">registration_path(conn, verb)</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/pow/1.0.21/Pow.Phoenix.Routes.html#c:registration_path/2"><code class="inline">Pow.Phoenix.Routes.registration_path/2</code></a>.</p></div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#register/2">register(conn, params)</a>
+    <a href="#session_path/3">session_path(conn, verb, query_params \\ [])</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/pow/1.0.21/Pow.Phoenix.Routes.html#c:session_path/3"><code class="inline">Pow.Phoenix.Routes.session_path/3</code></a>.</p></div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#register_email_form/2">register_email_form(conn, arg2)</a>
+    <a href="#url_for/5">url_for(conn, plug, verb, vars \\ [], query_params \\ [])</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/pow/1.0.21/Pow.Phoenix.Routes.html#c:url_for/5"><code class="inline">Pow.Phoenix.Routes.url_for/5</code></a>.</p></div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#register_email_submit/2">register_email_submit(conn, params)</a>
+    <a href="#user_already_authenticated_path/1">user_already_authenticated_path(conn)</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/pow/1.0.21/Pow.Phoenix.Routes.html#c:user_already_authenticated_path/1"><code class="inline">Pow.Phoenix.Routes.user_already_authenticated_path/1</code></a>.</p></div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#signin/2">signin(conn, params)</a>
+    <a href="#user_not_authenticated_path/1">user_not_authenticated_path(conn)</a>
 
   </div>
 
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#signin_callback/2">signin_callback(conn, author)</a>
-
-  </div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#signout/2">signout(conn, params)</a>
-
-  </div>
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/pow/1.0.21/Pow.Phoenix.Routes.html#c:user_not_authenticated_path/1"><code class="inline">Pow.Phoenix.Routes.user_not_authenticated_path/1</code></a>.</p></div>
 
 </div>
 
@@ -180,16 +180,16 @@ OliWeb.AuthController <small class="app-vsn">(OLI Torus v0.1.0)</small>
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="callback/2">
+<section class="detail" id="after_sign_out_path/1">
 
   <div class="detail-header">
-    <a href="#callback/2" class="detail-link" title="Link to this function">
+    <a href="#after_sign_out_path/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">callback(conn, params)</h1>
+    <h1 class="signature">after_sign_out_path(conn)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L108" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/author_routes.ex#L2" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -199,19 +199,19 @@ Functions
 
   <section class="docstring">
 
-
+<p>Callback implementation for <a href="https://hexdocs.pm/pow/1.0.21/Pow.Phoenix.Routes.html#c:after_sign_out_path/1"><code class="inline">Pow.Phoenix.Routes.after_sign_out_path/1</code></a>.</p>
   </section>
 </section>
-<section class="detail" id="identity_callback/2">
+<section class="detail" id="after_user_deleted_path/1">
 
   <div class="detail-header">
-    <a href="#identity_callback/2" class="detail-link" title="Link to this function">
+    <a href="#after_user_deleted_path/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">identity_callback(conn, params)</h1>
+    <h1 class="signature">after_user_deleted_path(conn)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L153" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/author_routes.ex#L2" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -221,19 +221,19 @@ Functions
 
   <section class="docstring">
 
-
+<p>Callback implementation for <a href="https://hexdocs.pm/pow/1.0.21/Pow.Phoenix.Routes.html#c:after_user_deleted_path/1"><code class="inline">Pow.Phoenix.Routes.after_user_deleted_path/1</code></a>.</p>
   </section>
 </section>
-<section class="detail" id="link_account_callback/2">
+<section class="detail" id="registration_path/2">
 
   <div class="detail-header">
-    <a href="#link_account_callback/2" class="detail-link" title="Link to this function">
+    <a href="#registration_path/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">link_account_callback(conn, author)</h1>
+    <h1 class="signature">registration_path(conn, verb)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L189" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/author_routes.ex#L2" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -243,19 +243,21 @@ Functions
 
   <section class="docstring">
 
-
+<p>Callback implementation for <a href="https://hexdocs.pm/pow/1.0.21/Pow.Phoenix.Routes.html#c:registration_path/2"><code class="inline">Pow.Phoenix.Routes.registration_path/2</code></a>.</p>
   </section>
 </section>
-<section class="detail" id="register/2">
+<section class="detail" id="session_path/3">
+
+    <span id="session_path/2"></span>
 
   <div class="detail-header">
-    <a href="#register/2" class="detail-link" title="Link to this function">
+    <a href="#session_path/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">register(conn, params)</h1>
+    <h1 class="signature">session_path(conn, verb, query_params \\ [])</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L26" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/author_routes.ex#L2" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -265,19 +267,23 @@ Functions
 
   <section class="docstring">
 
-
+<p>Callback implementation for <a href="https://hexdocs.pm/pow/1.0.21/Pow.Phoenix.Routes.html#c:session_path/3"><code class="inline">Pow.Phoenix.Routes.session_path/3</code></a>.</p>
   </section>
 </section>
-<section class="detail" id="register_email_form/2">
+<section class="detail" id="url_for/5">
+
+    <span id="url_for/3"></span>
+
+    <span id="url_for/4"></span>
 
   <div class="detail-header">
-    <a href="#register_email_form/2" class="detail-link" title="Link to this function">
+    <a href="#url_for/5" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">register_email_form(conn, arg2)</h1>
+    <h1 class="signature">url_for(conn, plug, verb, vars \\ [], query_params \\ [])</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L35" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/author_routes.ex#L2" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -287,19 +293,19 @@ Functions
 
   <section class="docstring">
 
-
+<p>Callback implementation for <a href="https://hexdocs.pm/pow/1.0.21/Pow.Phoenix.Routes.html#c:url_for/5"><code class="inline">Pow.Phoenix.Routes.url_for/5</code></a>.</p>
   </section>
 </section>
-<section class="detail" id="register_email_submit/2">
+<section class="detail" id="user_already_authenticated_path/1">
 
   <div class="detail-header">
-    <a href="#register_email_submit/2" class="detail-link" title="Link to this function">
+    <a href="#user_already_authenticated_path/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">register_email_submit(conn, params)</h1>
+    <h1 class="signature">user_already_authenticated_path(conn)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L53" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/author_routes.ex#L2" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -309,19 +315,19 @@ Functions
 
   <section class="docstring">
 
-
+<p>Callback implementation for <a href="https://hexdocs.pm/pow/1.0.21/Pow.Phoenix.Routes.html#c:user_already_authenticated_path/1"><code class="inline">Pow.Phoenix.Routes.user_already_authenticated_path/1</code></a>.</p>
   </section>
 </section>
-<section class="detail" id="signin/2">
+<section class="detail" id="user_not_authenticated_path/1">
 
   <div class="detail-header">
-    <a href="#signin/2" class="detail-link" title="Link to this function">
+    <a href="#user_not_authenticated_path/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">signin(conn, params)</h1>
+    <h1 class="signature">user_not_authenticated_path(conn)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L11" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/author_routes.ex#L2" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -331,51 +337,7 @@ Functions
 
   <section class="docstring">
 
-
-  </section>
-</section>
-<section class="detail" id="signin_callback/2">
-
-  <div class="detail-header">
-    <a href="#signin_callback/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">signin_callback(conn, author)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L183" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
-<section class="detail" id="signout/2">
-
-  <div class="detail-header">
-    <a href="#signout/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">signout(conn, params)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/auth_controller.ex#L20" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
+<p>Callback implementation for <a href="https://hexdocs.pm/pow/1.0.21/Pow.Phoenix.Routes.html#c:user_not_authenticated_path/1"><code class="inline">Pow.Phoenix.Routes.user_not_authenticated_path/1</code></a>.</p>
   </section>
 </section>
 

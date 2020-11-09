@@ -93,6 +93,7 @@ Oli.Delivery.Sections.html
 Oli.Delivery.Student.Summary.html
 Oli.Delivery.Timezones.html
 Oli.Delivery.html
+Oli.Email.html
 Oli.Grading.GradebookRow.html
 Oli.Grading.GradebookScore.html
 Oli.Grading.html
@@ -115,14 +116,15 @@ Oli.Lti_1p3.PlatformRole.html
 Oli.Lti_1p3.PlatformRoles.html
 Oli.Lti_1p3.Registration.html
 Oli.Lti_1p3.html
+Oli.Mailer.html
 Oli.Plugs.AuthorizeProject.html
 Oli.Plugs.EnsureAdmin.html
 Oli.Plugs.LoadLtiParams.html
 Oli.Plugs.NoCache.html
-Oli.Plugs.Protect.html
+Oli.Plugs.RegistrationCaptcha.html
 Oli.Plugs.RemoveXFrameOptions.html
 Oli.Plugs.SetCurrentUser.html
-Oli.Plugs.VerifyUser.html
+Oli.Plugs.SetDefaultPow.html
 Oli.Publishing.AuthoringResolver.html
 Oli.Publishing.ChangeTracker.html
 Oli.Publishing.DeliveryResolver.html
@@ -168,6 +170,7 @@ Oli.Resources.html
 Oli.Seeder.html
 Oli.Snapshots.SnapshotSeeder.html
 Oli.Timing.html
+Oli.UserIdentities.UserIdentity.html
 Oli.Utils.Common.html
 Oli.Utils.HierarchyNode.html
 Oli.Utils.Purposes.html
@@ -181,8 +184,6 @@ OliWeb.Accounts.AccountsModel.html
 OliWeb.ActivityController.html
 OliWeb.ActivityView.html
 OliWeb.AttemptController.html
-OliWeb.AuthController.html
-OliWeb.AuthView.html
 OliWeb.Breadcrumb.BreadcrumbLive.html
 OliWeb.Breadcrumb.BreadcrumbTrailLive.html
 OliWeb.CollaboratorController.html
@@ -210,6 +211,7 @@ OliWeb.DeploymentController.html
 OliWeb.DeploymentView.html
 OliWeb.EditorTestController.html
 OliWeb.EditorTestView.html
+OliWeb.EmailView.html
 OliWeb.Endpoint.html
 OliWeb.ErrorHelpers.html
 OliWeb.ErrorView.html
@@ -239,6 +241,16 @@ OliWeb.Objectives.Objectives.html
 OliWeb.PageDeliveryController.html
 OliWeb.PageDeliveryView.html
 OliWeb.Plugs.Guest.html
+OliWeb.Pow.AuthorRoutes.html
+OliWeb.Pow.Mailer.html
+OliWeb.Pow.PowHelpers.html
+OliWeb.Pow.RegistrationView.html
+OliWeb.Pow.SessionView.html
+OliWeb.Pow.UserAuthErrorHandler.html
+OliWeb.PowAssent.RegistrationView.html
+OliWeb.PowEmailConfirmation.MailerView.html
+OliWeb.PowResetPassword.MailerView.html
+OliWeb.PowResetPassword.ResetPasswordView.html
 OliWeb.ProjectController.html
 OliWeb.ProjectPlugs.html
 OliWeb.ProjectView.html
@@ -265,6 +277,7 @@ OliWeb.RevisionHistory.PaginationLink.html
 OliWeb.RevisionHistory.Table.html
 OliWeb.RevisionHistory.html
 OliWeb.Router.Helpers.html
+OliWeb.Router.PowExtensionRouter.html
 OliWeb.Router.html
 OliWeb.SharedView.html
 OliWeb.StaticPageController.html
@@ -285,8 +298,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-79aeb8c132.js
-dist/sidebar_items-861e213a55.js
+dist/search_items-94721ac49d.js
+dist/sidebar_items-79e85dc6bd.js
 index.html
 license.html
 lti1-3.html

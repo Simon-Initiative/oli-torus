@@ -10,7 +10,7 @@
     <title>Oli.Accounts.Author — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-861e213a55.js"></script>
+    <script src="dist/sidebar_items-79e85dc6bd.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -89,6 +89,620 @@ Oli.Accounts.Author <small class="app-vsn">(OLI Torus v0.1.0)</small>
 
 
 
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#confirm_email_changeset/2">confirm_email_changeset(changeset, attrs)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#noauth_changeset/2">noauth_changeset(author, attrs \\ %{})</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Creates a changeset that doesnt require a current password, used for lower risk changes to author
+(as opposed to higher risk, like password changes)</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#pow_assent_user_identity_changeset/4">pow_assent_user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#pow_changeset/2">pow_changeset(user_or_changeset, attrs)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#pow_confirm_email_changeset/2">pow_confirm_email_changeset(changeset, attrs)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>See <a href="https://hexdocs.pm/pow/1.0.21/PowEmailConfirmation.Ecto.Schema.html#confirm_email_changeset/2"><code class="inline">PowEmailConfirmation.Ecto.Schema.confirm_email_changeset/2</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#pow_current_password_changeset/2">pow_current_password_changeset(user_or_changeset, attrs)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#pow_extension_changeset/2">pow_extension_changeset(changeset, attrs)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#pow_extension_validate_after_compilation!/2">pow_extension_validate_after_compilation!(env, bytecode)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#pow_password_changeset/2">pow_password_changeset(user_or_changeset, attrs)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#pow_reset_password_changeset/2">pow_reset_password_changeset(changeset, attrs)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>See <code class="inline">PowResetPassword.Ecto.Schema.reset_password_changeset/2</code>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#pow_user_id_field/0">pow_user_id_field()</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#pow_user_id_field_changeset/2">pow_user_id_field_changeset(user_or_changeset, attrs)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#pow_validate_after_compilation!/2">pow_validate_after_compilation!(env, bytecode)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#pow_verify_password/2">pow_verify_password(user, password)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#reset_password_changeset/2">reset_password_changeset(changeset, attrs)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#user_identity_changeset/4">user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/pow_assent/0.4.9/PowAssent.Ecto.Schema.html#c:user_identity_changeset/4"><code class="inline">PowAssent.Ecto.Schema.user_identity_changeset/4</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#verify_password/2">verify_password(user, password)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/pow/1.0.21/Pow.Ecto.Schema.html#c:verify_password/2"><code class="inline">Pow.Ecto.Schema.verify_password/2</code></a>.</p></div>
+
+</div>
+
+  </div>
+
+        </section>
+
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions
+          </h1>
+          <div class="functions-list">
+<section class="detail" id="confirm_email_changeset/2">
+
+  <div class="detail-header">
+    <a href="#confirm_email_changeset/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">confirm_email_changeset(changeset, attrs)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L1" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="noauth_changeset/2">
+
+    <span id="noauth_changeset/1"></span>
+
+  <div class="detail-header">
+    <a href="#noauth_changeset/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">noauth_changeset(author, attrs \\ %{})</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L52" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Creates a changeset that doesnt require a current password, used for lower risk changes to author
+(as opposed to higher risk, like password changes)</p>
+  </section>
+</section>
+<section class="detail" id="pow_assent_user_identity_changeset/4">
+
+  <div class="detail-header">
+    <a href="#pow_assent_user_identity_changeset/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">pow_assent_user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L4" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>pow_assent_user_identity_changeset(
+  <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Schema.html#t:t/0">Ecto.Schema.t</a>() | <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>(),
+  <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Schema.html#t:t/0">Ecto.Schema.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | nil
+) :: <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="pow_changeset/2">
+
+  <div class="detail-header">
+    <a href="#pow_changeset/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">pow_changeset(user_or_changeset, attrs)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L3" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>pow_changeset(<a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Schema.html#t:t/0">Ecto.Schema.t</a>() | <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="pow_confirm_email_changeset/2">
+
+  <div class="detail-header">
+    <a href="#pow_confirm_email_changeset/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">pow_confirm_email_changeset(changeset, attrs)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L1" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>See <a href="https://hexdocs.pm/pow/1.0.21/PowEmailConfirmation.Ecto.Schema.html#confirm_email_changeset/2"><code class="inline">PowEmailConfirmation.Ecto.Schema.confirm_email_changeset/2</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="pow_current_password_changeset/2">
+
+  <div class="detail-header">
+    <a href="#pow_current_password_changeset/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">pow_current_password_changeset(user_or_changeset, attrs)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L3" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>pow_current_password_changeset(<a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Schema.html#t:t/0">Ecto.Schema.t</a>() | <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) ::
+  <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="pow_extension_changeset/2">
+
+  <div class="detail-header">
+    <a href="#pow_extension_changeset/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">pow_extension_changeset(changeset, attrs)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L5" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>pow_extension_changeset(<a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="pow_extension_validate_after_compilation!/2">
+
+  <div class="detail-header">
+    <a href="#pow_extension_validate_after_compilation!/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">pow_extension_validate_after_compilation!(env, bytecode)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L5" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="pow_password_changeset/2">
+
+  <div class="detail-header">
+    <a href="#pow_password_changeset/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">pow_password_changeset(user_or_changeset, attrs)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L3" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>pow_password_changeset(<a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Schema.html#t:t/0">Ecto.Schema.t</a>() | <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) ::
+  <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="pow_reset_password_changeset/2">
+
+  <div class="detail-header">
+    <a href="#pow_reset_password_changeset/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">pow_reset_password_changeset(changeset, attrs)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L1" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>See <code class="inline">PowResetPassword.Ecto.Schema.reset_password_changeset/2</code>.</p>
+  </section>
+</section>
+<section class="detail" id="pow_user_id_field/0">
+
+  <div class="detail-header">
+    <a href="#pow_user_id_field/0" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">pow_user_id_field()</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L3" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="pow_user_id_field_changeset/2">
+
+  <div class="detail-header">
+    <a href="#pow_user_id_field_changeset/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">pow_user_id_field_changeset(user_or_changeset, attrs)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L3" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>pow_user_id_field_changeset(<a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Schema.html#t:t/0">Ecto.Schema.t</a>() | <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) ::
+  <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="pow_validate_after_compilation!/2">
+
+  <div class="detail-header">
+    <a href="#pow_validate_after_compilation!/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">pow_validate_after_compilation!(env, bytecode)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L3" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="pow_verify_password/2">
+
+  <div class="detail-header">
+    <a href="#pow_verify_password/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">pow_verify_password(user, password)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L3" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>pow_verify_password(<a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Schema.html#t:t/0">Ecto.Schema.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="reset_password_changeset/2">
+
+  <div class="detail-header">
+    <a href="#reset_password_changeset/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">reset_password_changeset(changeset, attrs)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L1" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="user_identity_changeset/4">
+
+  <div class="detail-header">
+    <a href="#user_identity_changeset/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L67" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>user_identity_changeset(
+  <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Schema.html#t:t/0">Ecto.Schema.t</a>() | <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>(),
+  <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Schema.html#t:t/0">Ecto.Schema.t</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(),
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>() | nil
+) :: <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
+
+      </div>
+
+<p>Callback implementation for <a href="https://hexdocs.pm/pow_assent/0.4.9/PowAssent.Ecto.Schema.html#c:user_identity_changeset/4"><code class="inline">PowAssent.Ecto.Schema.user_identity_changeset/4</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="verify_password/2">
+
+  <div class="detail-header">
+    <a href="#verify_password/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">verify_password(user, password)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L3" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>verify_password(<a href="https://hexdocs.pm/ecto/3.3.2/Ecto.Schema.html#t:t/0">Ecto.Schema.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()) :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">boolean</a>()</pre>
+
+      </div>
+
+<p>Callback implementation for <a href="https://hexdocs.pm/pow/1.0.21/Pow.Ecto.Schema.html#c:verify_password/2"><code class="inline">Pow.Ecto.Schema.verify_password/2</code></a>.</p>
+  </section>
+</section>
+
+          </div>
+        </section>
 
       <footer class="footer">
         <p>

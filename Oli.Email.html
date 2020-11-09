@@ -7,10 +7,10 @@
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
 
-    <title>Oli.Plugs.Protect — OLI Torus v0.1.0</title>
+    <title>Oli.Email — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-861e213a55.js"></script>
+    <script src="dist/sidebar_items-79e85dc6bd.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -78,9 +78,9 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Plugs.Protect <small class="app-vsn">(OLI Torus v0.1.0)</small>
+Oli.Email <small class="app-vsn">(OLI Torus v0.1.0)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/plugs/protect.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/email.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -104,14 +104,30 @@ Oli.Plugs.Protect <small class="app-vsn">(OLI Torus v0.1.0)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#call/2">call(conn, opts)</a>
+    <a href="#base_email/0">base_email()</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#init/1">init(opts)</a>
+    <a href="#html_text_body/1">html_text_body(email)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#render/3">render(email, template, assigns \\ [])</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Render an Phoenix template and set the body on the email.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#welcome_author_email/1">welcome_author_email(recipient_email)</a>
 
   </div>
 
@@ -131,16 +147,16 @@ Oli.Plugs.Protect <small class="app-vsn">(OLI Torus v0.1.0)</small>
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="call/2">
+<section class="detail" id="base_email/0">
 
   <div class="detail-header">
-    <a href="#call/2" class="detail-link" title="Link to this function">
+    <a href="#base_email/0" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">call(conn, opts)</h1>
+    <h1 class="signature">base_email()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/plugs/protect.ex#L7" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/email.ex#L14" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -153,16 +169,16 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="init/1">
+<section class="detail" id="html_text_body/1">
 
   <div class="detail-header">
-    <a href="#init/1" class="detail-link" title="Link to this function">
+    <a href="#html_text_body/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">init(opts)</h1>
+    <h1 class="signature">html_text_body(email)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/plugs/protect.ex#L5" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/email.ex#L26" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -171,6 +187,61 @@ Functions
   </div>
 
   <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="render/3">
+
+    <span id="render/2"></span>
+
+  <div class="detail-header">
+    <a href="#render/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">render(email, template, assigns \\ [])</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/email.ex#L3" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Render an Phoenix template and set the body on the email.</p><p>Pass an atom as the template name (:welcome_email) to render HTML <em>and</em> plain
+text emails. Use a string if you only want to render one type, e.g.
+&quot;welcome_email.text&quot; or &quot;welcome_email.html&quot;. Scroll to the top for more examples.</p>
+  </section>
+</section>
+<section class="detail" id="welcome_author_email/1">
+
+  <div class="detail-header">
+    <a href="#welcome_author_email/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">welcome_author_email(recipient_email)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/email.ex#L6" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>welcome_author_email(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()) :: <a href="https://hexdocs.pm/bamboo/1.6.0/Bamboo.Email.html#t:t/0">Bamboo.Email.t</a>()</pre>
+
+      </div>
 
 
   </section>
