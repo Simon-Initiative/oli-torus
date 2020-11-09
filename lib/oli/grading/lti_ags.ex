@@ -17,10 +17,14 @@ defmodule Oli.Grading.LTI_AGS do
   alias Oli.Grading.LineItem
   alias Oli.Lti_1p3.AccessToken
 
+  require Logger
+
   @doc """
-  Post a score to an existing line item.
+  Post a score to an existing line item, using an already acquired access token.
   """
   def post_score(%Score{} = score, %LineItem{} = line_item, %AccessToken{} = access_token) do
+
+    Logger.debug("Posting score for user #{score.userId} for line item '#{line_item.label}'")
 
     url = "#{line_item.id}/scores"
     body = score |> Jason.encode!()
@@ -30,7 +34,10 @@ defmodule Oli.Grading.LTI_AGS do
     do
       {:ok, result}
     else
-      _ -> {:error, "Error posting score"}
+      e ->
+        Logger.error("Error encountered posting score for user #{score.userId} for line item '#{line_item.label}' #{inspect e}")
+
+        {:error, "Error posting score"}
     end
 
   end
@@ -41,6 +48,8 @@ defmodule Oli.Grading.LTI_AGS do
   in a {:ok, line_item} tuple.  On error, returns a {:error, error} tuple.
   """
   def fetch_or_create_line_item(line_items_service_url, resource_id, score_maximum, label, %AccessToken{} = access_token) do
+
+    Logger.debug("Fetch or create line item for #{resource_id} #{label}")
 
     # Grade passback 2.0 lineitems endpoint allows a GET request with a query
     # param filter.  We use that to request only the lineitem that corresponds
@@ -62,7 +71,9 @@ defmodule Oli.Grading.LTI_AGS do
         }}
       end
     else
-      _ -> {:error, "Error retrieving existing line items"}
+      e ->
+        Logger.error("Error encountered fetching line item for #{resource_id} #{label}: #{inspect e}")
+        {:error, "Error retrieving existing line items"}
     end
 
   end
@@ -72,6 +83,8 @@ defmodule Oli.Grading.LTI_AGS do
   in a {:ok, line_item} tuple.  On error, returns a {:error, error} tuple.
   """
   def create_line_item(line_items_service_url, resource_id, score_maximum, label, %AccessToken{} = access_token) do
+
+    Logger.debug("Create line item for #{resource_id} #{label}")
 
     line_item = %LineItem{
       scoreMaximum: score_maximum,
@@ -91,7 +104,9 @@ defmodule Oli.Grading.LTI_AGS do
         label: Map.get(result, "label"),
       }}
     else
-      _ -> {:error, "Error creating new line item"}
+      e ->
+        Logger.error("Error encountered creating line item for #{resource_id} #{label}: #{inspect e}")
+        {:error, "Error creating new line item"}
     end
 
   end

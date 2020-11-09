@@ -12,24 +12,28 @@ defmodule Oli.Lti_1p3.AccessToken do
     scope: String.t()
   }
 
+  require Logger
+
   @doc """
   Requests an OAuth2 access token. Returns {:ok, %AccessToken{}} on success, {:error, error}
   otherwise.
 
-  Expects the host name of this instance of Torus, the deployment id of the
-  registration from which an access token is being requested, and a list of
-  scopes being requested.
+  As parameters, expects:
+  1. The deployment id of the registration from which an access token is being requested
+  2. A list of scopes being requested
+  3. The host name of this instance of Torus
   """
-
   def fetch_access_token(nil, _, _), do: {:error, "bad deployment id"}
 
   def fetch_access_token(deployment_id, scopes, host) do
 
-    host = "https://c51bd1ea5000.ngrok.io"
+    Logger.debug("Fetching registration for deployment id #{deployment_id} and host '#{host}'")
 
     case Oli.Lti_1p3.get_ird_by_deployment_id(deployment_id) do
 
-      nil -> {:error, "bad deployment id"}
+      nil ->
+        Logger.error("Registration for deployment id #{deployment_id} not found")
+        {:error, "unknown deployment id"}
 
       {_, registration, _} ->
 
@@ -51,6 +55,10 @@ defmodule Oli.Lti_1p3.AccessToken do
 
     headers = %{"Content-Type" => "application/x-www-form-urlencoded"}
 
+    Logger.debug("Fetching access token with the following parameters")
+    Logger.debug("client_assertion: #{inspect client_assertion}")
+    Logger.debug("scopes #{inspect scopes}")
+
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.post(url, body, headers),
       {:ok, result} <- Jason.decode(body)
     do
@@ -61,7 +69,9 @@ defmodule Oli.Lti_1p3.AccessToken do
         scope: Map.get(result, "scope"),
       }}
     else
-      e -> {:error, "Error fetching access token"}
+      e ->
+        Logger.error("Error encountered fetching access token #{inspect e}")
+        {:error, "Error fetching access token"}
     end
 
   end
@@ -76,12 +86,13 @@ defmodule Oli.Lti_1p3.AccessToken do
     custom_header = %{"kid" => active_jwk.kid}
     signer = Joken.Signer.create("RS256", %{"pem" => active_jwk.pem}, custom_header)
 
+    # define our custom claims
     custom_claims = %{
       "iss" => host,
       "aud" => registration.auth_token_url,
       "sub" => registration.client_id
     }
-    {:ok, token, details} = Oli.Lti_1p3.JokenConfig.generate_and_sign(custom_claims, signer)
+    {:ok, token, _} = Oli.Lti_1p3.JokenConfig.generate_and_sign(custom_claims, signer)
 
     token
   end
