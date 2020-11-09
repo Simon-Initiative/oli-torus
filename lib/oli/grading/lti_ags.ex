@@ -91,7 +91,7 @@ defmodule Oli.Grading.LTI_AGS do
         label: Map.get(result, "label"),
       }}
     else
-      - -> {:error, "Error creating new line item"}
+      _ -> {:error, "Error creating new line item"}
     end
 
   end

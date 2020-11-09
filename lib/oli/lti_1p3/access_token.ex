@@ -71,13 +71,14 @@ defmodule Oli.Lti_1p3.AccessToken do
     # Get the active private key
     active_jwk = Oli.Lti_1p3.get_active_jwk()
 
-    # Sign and return the JWT
-    signer = Joken.Signer.create("RS256", %{"pem" => active_jwk.pem})
+    # Sign and return the JWT, include the kid of the key we are using
+    # in the header.
+    custom_header = %{"kid" => active_jwk.kid}
+    signer = Joken.Signer.create("RS256", %{"pem" => active_jwk.pem}, custom_header)
 
     custom_claims = %{
       "iss" => host,
       "aud" => registration.auth_token_url,
-      "kid" => active_jwk.kid,
       "sub" => registration.client_id
     }
     {:ok, token, details} = Oli.Lti_1p3.JokenConfig.generate_and_sign(custom_claims, signer)
