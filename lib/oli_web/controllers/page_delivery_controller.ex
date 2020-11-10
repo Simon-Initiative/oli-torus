@@ -13,6 +13,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Utils.Time
   alias Oli.Delivery.Sections
   alias Oli.Lti_1p3.ContextRoles
+  alias Oli.Resources.ResourceType
 
   plug :ensure_context_id_matches when action not in [:link]
 
@@ -100,7 +101,11 @@ defmodule OliWeb.PageDeliveryController do
     html = Page.render(render_context, page_model, Page.Html)
 
     conn = put_root_layout conn, {OliWeb.LayoutView, "page.html"}
-    render(conn, "page.html", %{
+    render(conn,
+      if ResourceType.get_type_by_id(context.page.resource_type_id) == "container" do
+        "container.html" else "page.html"
+      end, %{
+      page: context.page,
       context_id: context_id,
       scripts: Activities.get_activity_scripts(),
       summary: context.summary,
@@ -112,7 +117,7 @@ defmodule OliWeb.PageDeliveryController do
       html: html,
       objectives: context.objectives,
       slug: context.page.slug,
-      attempt_guid: hd(context.resource_attempts).attempt_guid
+      attempt_guid: hd(context.resource_attempts).attempt_guid,
     })
   end
 
