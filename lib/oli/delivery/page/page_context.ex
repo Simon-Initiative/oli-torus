@@ -90,6 +90,8 @@ defmodule Oli.Delivery.Page.PageContext do
     index = Enum.find_index(hierarchy, fn node -> node.revision.id == revision.id end)
 
     case {index, length(hierarchy) - 1} do
+      {nil, _} -> {nil, nil}
+      {_, nil} -> {nil, nil}
       {_, 0} -> {nil, nil}
       {0, _} -> {nil, Enum.at(hierarchy, 1).revision}
       {a, a} -> {Enum.at(hierarchy, a - 1).revision, nil}

@@ -5,20 +5,12 @@
   <% end %>
 
   <div id="wrapper">
-      <!-- Sidebar -->
-      <nav id="sidebar" class="outline">
-        <div class="header d-flex flex-column">
-          <div>
-            <a href="<%= Routes.delivery_path(@conn, :index) %>" class="btn btn-link course-btn">
-              <i class="fa fa-arrow-left mr-1" aria-hidden="true"></i>Course Outline
-            </a>
-          </div>
-          <div class="flex-fill"></div>
-        </div>
-      </nav>
 
       <!-- Page Content -->
       <div id="content">
+        <a href="<%= Routes.delivery_path(@conn, :index) %>" class="btn btn-link course-btn">
+          <i class="fa fa-arrow-left mr-1" aria-hidden="true"></i>Course Outline
+        </a>
 
         <%= @inner_content %>
 
