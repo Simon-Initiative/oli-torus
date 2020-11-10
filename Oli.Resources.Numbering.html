@@ -10,7 +10,7 @@
     <title>Oli.Resources.Numbering — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-eec651b78b.js"></script>
+    <script src="dist/sidebar_items-01b3e4f3fb.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -111,7 +111,23 @@ Oli.Resources.Numbering <small class="app-vsn">(OLI Torus v0.1.0)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#number_full_tree/1">number_full_tree(project_slug)</a>
+    <a href="#full_hierarchy/2">full_hierarchy(resolver, project_slug_or_context)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a [%HierarchyNode{}] representing the course's hierarchy structure.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#full_hierarchy_helper/3">full_hierarchy_helper(numberings, revisions, revision)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#number_full_tree/2">number_full_tree(resolver, project_slug_or_context)</a>
 
   </div>
 
@@ -120,14 +136,14 @@ Oli.Resources.Numbering <small class="app-vsn">(OLI Torus v0.1.0)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#number_full_tree/2">number_full_tree(root_container, resources)</a>
+    <a href="#number_tree_from/2">number_tree_from(container, resources)</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#path_from_root_to/2">path_from_root_to(project_slug, revision_slug)</a>
+    <a href="#path_from_root_to/3">path_from_root_to(resolver, project_slug_or_context, revision_slug)</a>
 
   </div>
 
@@ -165,7 +181,7 @@ Functions
     </a>
     <h1 class="signature">container_type(level)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L10" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L11" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -178,60 +194,16 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="number_full_tree/1">
+<section class="detail" id="full_hierarchy/2">
 
   <div class="detail-header">
-    <a href="#number_full_tree/1" class="detail-link" title="Link to this function">
+    <a href="#full_hierarchy/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">number_full_tree(project_slug)</h1>
+    <h1 class="signature">full_hierarchy(resolver, project_slug_or_context)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L108" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-<p>Generates a level-based numbering of the containers found in a course hierarchy.</p><p>This method returns a map of revision id to %Numbering structs.</p>
-  </section>
-</section>
-<section class="detail" id="number_full_tree/2">
-
-  <div class="detail-header">
-    <a href="#number_full_tree/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">number_full_tree(root_container, resources)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L115" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
-<section class="detail" id="path_from_root_to/2">
-
-  <div class="detail-header">
-    <a href="#path_from_root_to/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">path_from_root_to(project_slug, revision_slug)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L42" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L39" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -244,7 +216,199 @@ Functions
       <h2>Specs</h2>
       <div class="specs">
 
-          <pre>path_from_root_to(project_slug(), revision_slug()) ::
+          <pre>full_hierarchy(resolver(), project_slug_or_context()) :: [
+  %Oli.Utils.HierarchyNode{
+    children: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    numbering: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+  }
+]</pre>
+
+      </div>
+
+<p>Returns a [%HierarchyNode{}] representing the course's hierarchy structure.</p><h2 id="full_hierarchy/2-parameters" class="section-heading">
+  <a href="#full_hierarchy/2-parameters" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Parameters
+</h2>
+<ul><li>resolver</li><li>project_slug_or_context: The project slug or the context id.</li></ul>
+  </section>
+</section>
+<section class="detail" id="full_hierarchy_helper/3">
+
+  <div class="detail-header">
+    <a href="#full_hierarchy_helper/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">full_hierarchy_helper(numberings, revisions, revision)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L47" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="number_full_tree/2">
+
+  <div class="detail-header">
+    <a href="#number_full_tree/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">number_full_tree(resolver, project_slug_or_context)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L145" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>number_full_tree(resolver(), project_slug_or_context()) :: %{
+  required(revision_id()) =&gt; %Oli.Resources.Numbering{
+    container: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    count: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    level: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+  }
+}</pre>
+
+      </div>
+
+<p>Generates a level-based numbering of the containers found in a course hierarchy.</p><p>This method returns a map of revision id to %Numbering structs.</p>
+  </section>
+</section>
+<section class="detail" id="number_tree_from/2">
+
+  <div class="detail-header">
+    <a href="#number_tree_from/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">number_tree_from(container, resources)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L153" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>number_tree_from(
+  %Oli.Resources.Revision{
+    __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_type: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_type_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    author: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    author_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    children: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    content: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    deleted: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    graded: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    inserted_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    max_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    objectives: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    previous_revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    previous_revision_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    recommended_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    resource_type: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    resource_type_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    scoring_strategy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    scoring_strategy_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    time_limit: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    title: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    warnings: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+  },
+  [
+    %Oli.Resources.Revision{
+      __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      activity_type: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      activity_type_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      author: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      author_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      children: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      content: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      deleted: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      graded: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      inserted_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      max_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      objectives: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      previous_revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      previous_revision_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      recommended_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      resource_type: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      resource_type_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      scoring_strategy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      scoring_strategy_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      time_limit: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      title: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      warnings: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+    }
+  ]
+) :: %{
+  required(revision_id()) =&gt; %Oli.Resources.Numbering{
+    container: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    count: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    level: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+  }
+}</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="path_from_root_to/3">
+
+  <div class="detail-header">
+    <a href="#path_from_root_to/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">path_from_root_to(resolver, project_slug_or_context, revision_slug)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L78" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>path_from_root_to(resolver(), project_slug_or_context(), revision_slug()) ::
   {:ok,
    [
      %Oli.Resources.Revision{
@@ -281,12 +445,12 @@ Functions
 
       </div>
 
-<p>Returns the path from a project's root container to a requested revision slug.</p><h2 id="path_from_root_to/2-parameters" class="section-heading">
-  <a href="#path_from_root_to/2-parameters" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+<p>Returns the path from a project's root container to a requested revision slug.</p><h2 id="path_from_root_to/3-parameters" class="section-heading">
+  <a href="#path_from_root_to/3-parameters" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Parameters
 </h2>
-<ul><li>project_slug</li><li>revision_slug: The revision slug we want to find from the root container.</li></ul><h2 id="path_from_root_to/2-examples" class="section-heading">
-  <a href="#path_from_root_to/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+<ul><li>project_slug_or_context: The project slug or context id.</li><li>revision_slug: The revision slug we want to find from the root container.</li></ul><h2 id="path_from_root_to/3-examples" class="section-heading">
+  <a href="#path_from_root_to/3-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
 <p>   iex&gt; Numbering.path_from_root_to(project_slug, revision_slug)
@@ -303,7 +467,7 @@ Functions
     </a>
     <h1 class="signature">prefix(numbering)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L18" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L19" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
