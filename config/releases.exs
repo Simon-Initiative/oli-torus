@@ -38,9 +38,9 @@ host =
 
 # General OLI app config
 config :oli,
-  email_from_name: System.get_env("EMAIL_FROM_NAME", Application.fetch_env!(:oli, :email_from_name)),
-  email_from_address: System.get_env("EMAIL_FROM_ADDRESS", Application.fetch_env!(:oli, :email_from_address)),
-  email_reply_to: System.get_env("EMAIL_REPLY_TO", email_from)
+  email_from_name: System.get_env("EMAIL_FROM_NAME", "OLI Torus"),
+  email_from_address: System.get_env("EMAIL_FROM_ADDRESS", "admin@example.edu"),
+  email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu")
 
 # Configure reCAPTCHA
 config :oli, :recaptcha,
@@ -51,8 +51,8 @@ config :oli, :recaptcha,
 
 config :oli, OliWeb.Endpoint,
   server: true,
-  http: [:inet6, port: String.to_integer(System.get_env("PORT") || "80")],
-  url: [host: host, port: String.to_integer(System.get_env("PORT") || "80")],
+  http: [:inet6, port: String.to_integer(System.get_env("PORT", "80"))],
+  url: [host: host],
   secret_key_base: secret_key_base,
   live_view: [signing_salt: live_view_salt]
 

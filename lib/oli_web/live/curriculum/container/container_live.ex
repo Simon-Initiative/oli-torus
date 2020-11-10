@@ -68,7 +68,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
            view: "Simple",
            selected: nil,
            resources_being_edited: get_resources_being_edited(container.children, project.id),
-           numberings: Numbering.number_full_tree(project_slug)
+           numberings: Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug)
          )}
     end
   end
@@ -286,7 +286,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     {:noreply,
      assign(socket,
-       numberings: Numbering.number_full_tree(socket.assigns.project.slug)
+       numberings: Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
      )}
   end
 
@@ -384,7 +384,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     {:ok, rollup} = Rollup.new(children, socket.assigns.project.slug)
 
-    numberings = Numbering.number_full_tree(socket.assigns.project.slug)
+    numberings = Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
 
     selected =
       case socket.assigns.selected do

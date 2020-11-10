@@ -3,7 +3,6 @@ defmodule Oli.Resources.NumberingTest do
 
   alias Oli.Resources.Revision
   alias Oli.Resources.Numbering
-  alias Oli.Utils.HierarchyNode
   alias Oli.Repo
 
   defp fetch_hierarchy(project_slug) do
@@ -30,49 +29,50 @@ defmodule Oli.Resources.NumberingTest do
     setup do
       Seeder.base_project_with_resource2()
       |> Seeder.create_hierarchy([
-        %HierarchyNode{
+        %{
           title: "Unit 1",
           children: [
-            # HierarchyNode makes everything a container, so we're just simulating a page here
-            %HierarchyNode{title: "Page 1", slug: "page_1"},
-            %HierarchyNode{
+            #  makes everything a container, so we're just simulating a page here
+            %{title: "Page 1", slug: "page_1", children: []},
+            %{
               title: "Module 2",
               children: [
-                %HierarchyNode{
+                %{
                   title: "Section 1",
                   children: [
-                    # HierarchyNode makes everything a container, so we're just simulating a page here
-                    %HierarchyNode{title: "Page 2", slug: "page_2"}
+                    #  makes everything a container, so we're just simulating a page here
+                    %{title: "Page 2", slug: "page_2", children: []}
                   ]
                 },
-                %HierarchyNode{title: "Section 2"},
-                %HierarchyNode{title: "Section 3"}
+                %{title: "Section 2", children: []},
+                %{title: "Section 3", children: []}
               ]
             },
-            %HierarchyNode{
+            %{
               title: "Module 3",
               children: [
-                %HierarchyNode{title: "Section 4"},
-                %HierarchyNode{title: "Section 5"},
-                %HierarchyNode{title: "Section 6"}
+                %{title: "Section 4", children: []},
+                %{title: "Section 5", children: []},
+                %{title: "Section 6", children: []}
               ]
             }
           ]
         },
-        %HierarchyNode{
-          title: "Unit 2"
+        %{
+          title: "Unit 2",
+          children: []
         }
       ])
     end
 
-    test "number_full_tree/2 numbers the containers correctly", %{
+    test "number_tree_from/2 numbers the containers correctly", %{
       project: project,
       container: %{revision: root}
     } do
 
       # do the numbering, then programatically compare it to the titles of the
       # containers, which contain the correct numbering and level names
-      Numbering.number_full_tree(root, fetch_hierarchy(project.slug))
+      Numbering.number_tree_from(root, fetch_hierarchy(project.slug))
       |> Enum.to_list()
       |> Enum.map(&elem(&1, 1))
       |> Enum.filter(& !Regex.match?(~r|page|, &1.container.slug))
