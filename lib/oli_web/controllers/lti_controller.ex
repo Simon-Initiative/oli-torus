@@ -130,6 +130,7 @@ defmodule OliWeb.LtiController do
         |> Map.put("typ", typ)
         |> Map.put("alg", alg)
         |> Map.put("kid", kid)
+        |> Map.put("use", "sig")
       end)
 
     key_map = %{
@@ -138,6 +139,7 @@ defmodule OliWeb.LtiController do
 
     conn
     |> json(key_map)
+
   end
 
   defp handle_no_deployment(conn, deployment_id) do
@@ -197,15 +199,20 @@ defmodule OliWeb.LtiController do
 
             # if account is linked to an author, sign them in
             conn = if user.author_id != nil do
+              author = Accounts.get_author!(user.author_id)
+
+              # sign into authoring account using Pow
               conn
-              |> put_session(:current_author_id, user.author_id)
+              |> use_pow_config(:author)
+              |> Pow.Plug.create(author)
             else
               conn
             end
 
             # sign current user in and redirect to home page
             conn
-            |> put_session(:current_user_id, user.id)
+            |> use_pow_config(:user)
+            |> Pow.Plug.create(user)
             |> redirect(to: Routes.delivery_path(conn, :index))
 
         end

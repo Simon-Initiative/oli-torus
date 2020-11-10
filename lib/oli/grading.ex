@@ -1,9 +1,12 @@
 defmodule Oli.Grading do
   @moduledoc """
   Grading is responsible for compiling attempts into usable gradebook representation
-  consumable by various tools such as Excel (CSV) or an LMS API
+  consumable by various tools such as Excel (CSV) or an LMS API.
   """
 
+  @context_url "https://purl.imsglobal.org/spec/lti/claim/context"
+
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Attempts
@@ -12,6 +15,91 @@ defmodule Oli.Grading do
   alias Oli.Grading.GradebookRow
   alias Oli.Grading.GradebookScore
   alias Oli.Lti_1p3.ContextRoles
+  alias Oli.Grading.LTI_AGS
+
+  @doc """
+  If grade passback services 2.0 is enabled, sends the current state of a ResourceAccess
+  score for the current user to the LMS.
+
+  If sent successfully, returns {:ok, :synced}
+
+  If grade passback not enabled, returns {:ok, :not_synced}
+
+  If error encountered, returns {:error, error}
+  """
+  def send_score_to_lms(lti_launch_params, %ResourceAccess{} = resource_access, access_token_provider) do
+
+    # First check to see if grade passback is enabled
+    if LTI_AGS.grade_passback_enabled?(lti_launch_params) do
+
+      case access_token_provider.() do
+        {:ok, access_token} -> send_score(lti_launch_params, resource_access, access_token)
+        e -> e
+      end
+
+    else
+      {:ok, :not_synced}
+    end
+
+  end
+
+  def ags_scopes() do
+    [
+      "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
+      "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
+      "https://purl.imsglobal.org/spec/lti-ags/scope/score"
+    ]
+  end
+
+  defp send_score(lti_launch_params, %ResourceAccess{} = resource_access, token) do
+
+    line_items_service_url = LTI_AGS.get_line_items_url(lti_launch_params)
+
+    context_id = Map.get(lti_launch_params, @context_url) |> Map.get("id")
+    label = DeliveryResolver.from_resource_id(context_id, resource_access.resource_id).title
+
+    # LTI AGS needs a resource identifier as a string
+    resource_id = Integer.to_string(resource_access.resource_id)
+
+    # Next, fetch (and possibly create) the line item associated with this resource
+    case LTI_AGS.fetch_or_create_line_item(line_items_service_url, resource_id, resource_access.out_of, label, token) do
+
+      # Finally, post the score for this line item
+      {:ok, line_item} ->
+
+        case to_score(lti_launch_params, resource_access)
+        |>  LTI_AGS.post_score(line_item, token) do
+
+          {:ok, _} -> {:ok, :synced}
+
+          e -> e
+
+        end
+
+
+      e -> e |> IO.inspect
+
+    end
+  end
+
+  # helper to create an LTI AGS 2.0 compliant score from our launch params and
+  # our resource access
+  defp to_score(lti_launch_params, %ResourceAccess{} = resource_access) do
+
+    {:ok, dt} = DateTime.now("Etc/UTC")
+    timestamp = DateTime.to_iso8601(dt)
+
+    %Oli.Grading.Score{
+      timestamp: timestamp,
+      scoreGiven: resource_access.score,
+      scoreMaximum: resource_access.out_of,
+      comment: "",
+      activityProgress: "Completed",
+      gradingProgress: "FullyGraded",
+      userId: Map.get(lti_launch_params, "sub")
+    }
+
+  end
 
   @doc """
   Exports the gradebook for the provided section in CSV format

@@ -63,17 +63,20 @@ defmodule Oli.TestHelpers do
     params =
       attrs
       |> Enum.into(%{
-        email: "ironman#{System.unique_integer([:positive])}@example.com",
-        first_name: "Tony",
-        last_name: "Stark",
-        token: "2u9dfh7979hfd",
-        provider: "google",
+        email: "author#{System.unique_integer([:positive])}@example.edu",
+        given_name: "Test",
+        family_name: "Author",
         system_role_id: Accounts.SystemRole.role_id.author,
       })
 
-    {:ok, author} =
-      Author.changeset(%Author{}, params)
-      |> Repo.insert()
+    {:ok, author} = case attrs do
+      %{password: _password, password_confirmation: _password_confirmation} ->
+        Author.changeset(%Author{}, params)
+        |> Repo.insert()
+      _ ->
+        Author.noauth_changeset(%Author{}, params)
+        |> Repo.insert()
+    end
 
     author
   end
@@ -138,8 +141,8 @@ defmodule Oli.TestHelpers do
     jwk
   end
 
-  def project_fixture(author) do
-    {:ok, project} = Course.create_project("test project", author)
+  def project_fixture(author, title \\ "test project") do
+    {:ok, project} = Course.create_project(title, author)
     project
   end
 
@@ -176,7 +179,7 @@ defmodule Oli.TestHelpers do
 
   def author_conn(%{conn: conn}) do
     author = author_fixture()
-    conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
+    conn = Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     {:ok, conn: conn, author: author}
   end
@@ -184,7 +187,7 @@ defmodule Oli.TestHelpers do
   def author_project_conn(%{conn: conn}) do
     author = author_fixture()
     [project | _rest] = make_n_projects(1, author)
-    conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
+    conn = Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     {:ok, conn: conn, author: author, project: project}
   end
@@ -201,7 +204,7 @@ defmodule Oli.TestHelpers do
     [project | _rest] = make_n_projects(1, author)
     objective = objective_fixture(project, author);
     objective_revision = objective.objective_revision
-    conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
+    conn = Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
     {:ok, conn: conn, author: author, project: project, objective_revision: objective_revision}
   end
 

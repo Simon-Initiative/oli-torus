@@ -55,8 +55,9 @@ defmodule OliWeb.Common.Breadcrumb do
   end
 
   defp trail_to_helper(project_slug, revision_slug) do
-    with numberings <- Numbering.number_full_tree(project_slug),
-         {:ok, [_root | path]} = Numbering.path_from_root_to(project_slug, revision_slug) do
+    with numberings <- Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug),
+         {:ok, [_root | path]} = Numbering.path_from_root_to(
+           Oli.Publishing.AuthoringResolver, project_slug, revision_slug) do
       Enum.map(path, fn revision -> make_breadcrumb(project_slug, revision, numberings) end)
     end
   end

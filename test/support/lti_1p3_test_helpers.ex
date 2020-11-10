@@ -114,8 +114,7 @@ defmodule Oli.TestHelpers.Lti_1p3 do
       "https://purl.imsglobal.org/spec/lti-ags/claim/endpoint" => %{
         "lineitems" => "https://lti-ri.imsglobal.org/platforms/1237/contexts/10337/line_items",
         "scope" => ["https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
-        "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
-        "https://purl.imsglobal.org/spec/lti-ags/scope/score"]
+        "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly"]
       },
       "https://purl.imsglobal.org/spec/lti-ces/claim/caliper-endpoint-service" => %{
         "caliper_endpoint_url" => "https://lti-ri.imsglobal.org/platforms/1237/sensors",

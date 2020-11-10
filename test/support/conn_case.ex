@@ -23,6 +23,7 @@ defmodule OliWeb.ConnCase do
       alias OliWeb.Router.Helpers, as: Routes
 
       import Oli.TestHelpers
+      import OliWeb.Pow.PowHelpers
 
       # The default endpoint for testing
       @endpoint OliWeb.Endpoint
