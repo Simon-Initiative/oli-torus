@@ -40,7 +40,7 @@ host =
 config :oli,
   email_from_name: System.get_env("EMAIL_FROM_NAME", Application.fetch_env!(:oli, :email_from_name)),
   email_from_address: System.get_env("EMAIL_FROM_ADDRESS", Application.fetch_env!(:oli, :email_from_address)),
-  email_reply_to: System.get_env("EMAIL_REPLY_TO", email_from)
+  email_reply_to: System.get_env("EMAIL_REPLY_TO", Application.fetch_env!(:oli, :email_reply_to))
 
 # Configure reCAPTCHA
 config :oli, :recaptcha,
