@@ -33,8 +33,14 @@ end
 # watchers to your application. For example, we use it
 # with webpack to recompile .js and .css sources.
 config :oli, OliWeb.Endpoint,
-  http: [port: String.to_integer(System.get_env("PORT") || "4000")],
-  url: [host: System.get_env("HOST") || "localhost"],
+  http: [
+    port: String.to_integer(System.get_env("HTTP_PORT", System.get_env("PORT", "4000")))
+  ],
+  url: [
+    scheme: System.get_env("SCHEME", "https"),
+    host: System.get_env("HOST", "localhost"),
+    port: String.to_integer(System.get_env("PORT", "443"))
+  ],
   https: [
     port: 443,
     otp_app: :oli,
