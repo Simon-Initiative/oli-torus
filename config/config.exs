@@ -61,6 +61,7 @@ config :oli, :pow,
   controller_callbacks: Pow.Extension.Phoenix.ControllerCallbacks,
   mailer_backend: OliWeb.Pow.Mailer,
   web_mailer_module: OliWeb,
+  user_identities_context: OliWeb.Pow.UserIdentities,
   pow_assent: [
     providers: [
       google: [
