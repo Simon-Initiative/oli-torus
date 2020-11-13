@@ -110,6 +110,10 @@ defmodule OliWeb.Router do
     %{"current_author_id" => conn.assigns.current_author.id}
   end
 
+  def with_delivery(conn) do
+    %{"lti_params" => conn.assigns.lti_params, "current_user" => conn.assigns.current_user}
+  end
+
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layout, layout)
 
   ### ROUTES ###
@@ -273,6 +277,8 @@ defmodule OliWeb.Router do
     get "/signout", DeliveryController, :signout
     get "/open_and_free", DeliveryController, :list_open_and_free
 
+    get "/unauthorized", DeliveryController, :unauthorized
+
     # course link resolver
     get "/link/:revision_slug", PageDeliveryController, :link
 
@@ -281,7 +287,9 @@ defmodule OliWeb.Router do
     get "/:context_id/page/:revision_slug/attempt", PageDeliveryController, :start_attempt
     get "/:context_id/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt
 
+    live "/:context_id/grades", Grades.GradesLive, session: {__MODULE__, :with_delivery, []}
     get "/:context_id/grades/export", PageDeliveryController, :export_gradebook
+
   end
 
   scope "/admin", OliWeb do

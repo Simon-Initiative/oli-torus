@@ -16,6 +16,13 @@ defmodule Oli.Grading do
   alias Oli.Grading.GradebookScore
   alias Oli.Lti_1p3.ContextRoles
   alias Oli.Grading.LTI_AGS
+  alias Oli.Resources.Revision
+  alias Oli.Publishing.Publication
+  alias Oli.Publishing.PublishedResource
+  alias Oli.Resources.ResourceType
+  import Ecto.Query, warn: false
+  alias Oli.Repo
+
 
   @doc """
   If grade passback services 2.0 is enabled, sends the current state of a ResourceAccess
@@ -62,7 +69,7 @@ defmodule Oli.Grading do
     resource_id = Integer.to_string(resource_access.resource_id)
 
     # Next, fetch (and possibly create) the line item associated with this resource
-    case LTI_AGS.fetch_or_create_line_item(line_items_service_url, resource_id, resource_access.out_of, label, token) do
+    case LTI_AGS.fetch_or_create_line_item(line_items_service_url, resource_id, 1, label, token) do
 
       # Finally, post the score for this line item
       {:ok, line_item} ->
@@ -213,4 +220,20 @@ defmodule Oli.Grading do
     column_labels = Enum.map graded_pages, fn revision -> revision.title end
     {gradebook, column_labels}
   end
+
+  def fetch_graded_pages(context_id) do
+    resource_type_id = ResourceType.get_id_by_type("page")
+
+    Repo.all(from s in Section,
+      join: p in Publication, on: p.id == s.publication_id,
+      join: m in PublishedResource, on: m.publication_id == p.id,
+      join: rev in Revision, on: rev.id == m.revision_id,
+      where:
+        rev.deleted == false and
+        rev.graded == true and
+        rev.resource_type_id == ^resource_type_id and
+        s.context_id == ^context_id,
+      select: rev)
+  end
+
 end

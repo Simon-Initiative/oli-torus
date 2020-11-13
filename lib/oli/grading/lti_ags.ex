@@ -65,15 +65,10 @@ defmodule Oli.Grading.LTI_AGS do
         [] -> create_line_item(line_items_service_url, resource_id, score_maximum, label, access_token)
         [raw_line_item] ->
 
-          line_item = %LineItem{
-            id: Map.get(raw_line_item, "id"),
-            scoreMaximum: Map.get(raw_line_item, "scoreMaximum"),
-            resourceId: Map.get(raw_line_item, "resource_id"),
-            label: Map.get(raw_line_item, "label"),
-          }
+          line_item = to_line_item(raw_line_item)
 
-          if line_item.label != label or line_item.scoreMaximum != score_maximum do
-            update_line_item line_item, %{resourceId: resource_id, scoreMaximum: score_maximum, label: label}, access_token
+          if line_item.label != label do
+            update_line_item line_item, %{label: label}, access_token
           else
             {:ok, line_item}
           end
@@ -83,6 +78,32 @@ defmodule Oli.Grading.LTI_AGS do
       e ->
         Logger.error("Error encountered fetching line item for #{resource_id} #{label}: #{inspect e}")
         {:error, "Error retrieving existing line items"}
+    end
+
+  end
+
+
+  defp to_line_item(raw_line_item) do
+    %LineItem{
+      id: Map.get(raw_line_item, "id"),
+      scoreMaximum: Map.get(raw_line_item, "scoreMaximum"),
+      resourceId: Map.get(raw_line_item, "resourceId"),
+      label: Map.get(raw_line_item, "label"),
+    }
+  end
+
+  def fetch_line_items(line_items_service_url, %AccessToken{} = access_token) do
+
+    Logger.debug("Fetch line items from #{line_items_service_url}")
+
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(line_items_service_url, headers(access_token)),
+      {:ok, results} <- Jason.decode(body)
+    do
+      {:ok, Enum.map(results, fn r -> to_line_item(r) end)}
+    else
+      e ->
+        Logger.error("Error encountered fetching line items from #{line_items_service_url} #{inspect e}")
+        {:error, "Error retrieving all line items"}
     end
 
   end
@@ -106,12 +127,7 @@ defmodule Oli.Grading.LTI_AGS do
     with {:ok, %HTTPoison.Response{status_code: 201, body: body}} <- HTTPoison.post(line_items_service_url, body, headers(access_token)),
       {:ok, result} <- Jason.decode(body)
     do
-      {:ok, %LineItem{
-        id: Map.get(result, "id"),
-        scoreMaximum: Map.get(result, "scoreMaximum"),
-        resourceId: Map.get(result, "resource_id"),
-        label: Map.get(result, "label"),
-      }}
+      {:ok, to_line_item(result)}
     else
       e ->
         Logger.error("Error encountered creating line item for #{resource_id} #{label}: #{inspect e}")
@@ -144,12 +160,7 @@ defmodule Oli.Grading.LTI_AGS do
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.put(url, body, headers(access_token)),
       {:ok, result} <- Jason.decode(body)
     do
-      {:ok, %LineItem{
-        id: Map.get(result, "id"),
-        scoreMaximum: Map.get(result, "scoreMaximum"),
-        resourceId: Map.get(result, "resource_id"),
-        label: Map.get(result, "label"),
-      }}
+      {:ok, to_line_item(result)}
     else
       e ->
         Logger.error("Error encountered updating line item #{line_item.id} for changes #{inspect changes}: #{inspect e}")

@@ -8,12 +8,12 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Rendering.Page
   alias Oli.Activities
   alias Oli.Delivery.Attempts
-  alias Oli.Grading
   alias Oli.Utils.Slug
   alias Oli.Utils.Time
   alias Oli.Delivery.Sections
   alias Oli.Lti_1p3.ContextRoles
   alias Oli.Resources.ResourceType
+  alias Oli.Grading
 
   plug :ensure_context_id_matches when action not in [:link]
 
@@ -148,15 +148,15 @@ defmodule OliWeb.PageDeliveryController do
     |> Keyword.get(:host)
   end
 
-  defp sync_grades(lti_launch_params, resource_access) do
-
-    access_token_provider = fn ->
+  defp access_token_provider(lti_launch_params) do
+    fn ->
       deployment_id = Oli.Lti_1p3.get_deployment_id_from_launch(lti_launch_params)
       Oli.Lti_1p3.AccessToken.fetch_access_token(deployment_id, Oli.Grading.ags_scopes(), host())
     end
+  end
 
-    Oli.Grading.send_score_to_lms(lti_launch_params, resource_access, access_token_provider)
-
+  def send_one_grade(lti_launch_params, resource_access) do
+    Oli.Grading.send_score_to_lms(lti_launch_params, resource_access, access_token_provider(lti_launch_params))
   end
 
   def finalize_attempt(conn, %{"revision_slug" => revision_slug, "attempt_guid" => attempt_guid}) do
@@ -171,7 +171,7 @@ defmodule OliWeb.PageDeliveryController do
       case Attempts.submit_graded_page(context_id, attempt_guid) do
         {:ok, resource_access} ->
 
-          grade_sync_result = sync_grades(lti_params, resource_access)
+          grade_sync_result = send_one_grade(lti_params, resource_access)
           after_finalized(conn, context_id, revision_slug, user, grade_sync_result)
 
         {:error, {:not_all_answered}} ->
@@ -227,6 +227,7 @@ defmodule OliWeb.PageDeliveryController do
   defp plural(num) do
     if num == 1 do "" else "s" end
   end
+
 
   def export_gradebook(conn, %{"context_id" => context_id}) do
     user = conn.assigns.current_user
