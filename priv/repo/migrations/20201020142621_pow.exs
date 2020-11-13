@@ -34,6 +34,31 @@ defmodule Oli.Repo.Migrations.Pow do
 
     create unique_index(:authors, [:email_confirmation_token])
 
+    flush()
+
+    # populate all authors names using given_name and family_name if name is nil
+    authors = Oli.Repo.all(
+      from a in "authors",
+        where: is_nil(a.name),
+        select: %{id: a.id, given_name: a.given_name, family_name: a.family_name}
+    )
+
+    Enum.each(authors, fn author ->
+      from(a in "authors", where: a.id == ^author.id)
+      |> Oli.Repo.update_all(set: [name: "#{author.given_name} #{author.family_name}"])
+    end)
+
+    # populate all users names using given_name and family_name if name is nil
+    users = Oli.Repo.all(
+      from u in "users",
+        where: is_nil(u.name),
+        select: %{id: u.id, given_name: u.given_name, family_name: u.family_name}
+    )
+
+    Enum.each(users, fn user ->
+      from(u in "users", where: u.id == ^user.id)
+      |> Oli.Repo.update_all(set: [name: "#{user.given_name} #{user.family_name}"])
+    end)
   end
 
   def down do
