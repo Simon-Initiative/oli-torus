@@ -81,7 +81,7 @@ defmodule Oli.Repo.Migrations.Pow do
       %{
         provider: author.provider,
         user_id: author.id,
-        uid: "pending",
+        uid: "pending-#{UUID.uuid4()}",
         inserted_at: now,
         updated_at: now
       }
