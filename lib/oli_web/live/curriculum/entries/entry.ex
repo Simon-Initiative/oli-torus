@@ -43,7 +43,7 @@ defmodule OliWeb.Curriculum.EntryLive do
                 <% end %>
                 <%= if @editor do %>
                   <span class="badge">
-                    <%= Map.get(@editor, :given_name) || Map.get(@editor, :given_name) || "A user" %> is editing this
+                    <%= Map.get(@editor, :name) || "A user" %> is editing this
                   </span>
                 <% end %>
               </div>

@@ -30,20 +30,6 @@ defmodule OliWeb.WorkspaceController do
       changeset: Author.noauth_changeset(author)
   end
 
-  def update_author(conn, %{"author" => %{"given_name" => given_name, "family_name" => family_name}}) do
-    author = conn.assigns.current_author
-    case Accounts.update_author(author, %{given_name: given_name, family_name: family_name}) do
-      {:ok, _author} ->
-        conn
-        |> redirect(to: Routes.workspace_path(conn, :account))
-
-      {:error, _} ->
-        conn
-        |> put_flash(:error, "Failed to change name")
-        |> redirect(to: Routes.workspace_path(conn, :account))
-    end
-  end
-
   def update_theme(conn, %{"id" => theme_id} = _params) do
     author = conn.assigns.current_author
     theme = Authoring.get_theme!(String.to_integer(theme_id))

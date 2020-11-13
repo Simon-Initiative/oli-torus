@@ -1,6 +1,7 @@
 defmodule Oli.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
+  import Oli.Utils, only: [maybe_name_from_given_and_family: 1]
 
   schema "users" do
     # user fields are based on the openid connect core standard, most of which are provided via LTI 1.3
@@ -62,6 +63,7 @@ defmodule Oli.Accounts.User do
       :institution_id,
     ])
     |> validate_required([:sub])
+    |> maybe_name_from_given_and_family()
   end
 end
 

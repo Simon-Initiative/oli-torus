@@ -8,7 +8,7 @@ defmodule Oli.Accounts.Author do
     extensions: [PowResetPassword, PowEmailConfirmation]
 
   import Ecto.Changeset
-  import Oli.Utils, only: [value_or: 2]
+  import Oli.Utils, only: [maybe_name_from_given_and_family: 1]
 
   alias Oli.Accounts.SystemRole
 
@@ -95,21 +95,4 @@ defmodule Oli.Accounts.Author do
     update_change(changeset, :email, &String.downcase/1)
   end
 
-  defp maybe_name_from_given_and_family(changeset) do
-    case changeset do
-      # if changeset is valid and doesnt have a name in changes, derive name from given_name and family_name
-      %Ecto.Changeset{valid?: true, changes: changes, data: %Oli.Accounts.Author{given_name: given_name, family_name: family_name}} when given_name != nil or family_name != nil ->
-        case Map.get(changes, :name) do
-          nil ->
-            name = "#{value_or(given_name, "")} #{value_or(family_name, "")}"
-              |> String.trim()
-            put_change(changeset, :name, name)
-
-          _ ->
-            changeset
-        end
-      _ ->
-        changeset
-    end
-  end
 end
