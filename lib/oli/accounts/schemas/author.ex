@@ -1,11 +1,14 @@
 defmodule Oli.Accounts.Author do
   use Ecto.Schema
-  use Pow.Ecto.Schema
+  use Pow.Ecto.Schema,
+    password_hash_methods: {&Bcrypt.hash_pwd_salt/1,
+                            &Bcrypt.verify_pass/2}
   use PowAssent.Ecto.Schema
   use Pow.Extension.Ecto.Schema,
     extensions: [PowResetPassword, PowEmailConfirmation]
 
   import Ecto.Changeset
+  import Oli.Utils, only: [value_or: 2]
 
   alias Oli.Accounts.SystemRole
 
@@ -43,6 +46,7 @@ defmodule Oli.Accounts.Author do
     |> cast_embed(:preferences)
     |> default_system_role()
     |> lowercase_email()
+    |> maybe_name_from_given_and_family()
   end
 
   @doc """
@@ -89,5 +93,23 @@ defmodule Oli.Accounts.Author do
 
   defp lowercase_email(changeset) do
     update_change(changeset, :email, &String.downcase/1)
+  end
+
+  defp maybe_name_from_given_and_family(changeset) do
+    case changeset do
+      # if changeset is valid and doesnt have a name in changes, derive name from given_name and family_name
+      %Ecto.Changeset{valid?: true, changes: changes, data: %Oli.Accounts.Author{given_name: given_name, family_name: family_name}} when given_name != nil or family_name != nil ->
+        case Map.get(changes, :name) do
+          nil ->
+            name = "#{value_or(given_name, "")} #{value_or(family_name, "")}"
+              |> String.trim()
+            put_change(changeset, :name, name)
+
+          _ ->
+            changeset
+        end
+      _ ->
+        changeset
+    end
   end
 end

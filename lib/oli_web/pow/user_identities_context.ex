@@ -16,6 +16,8 @@ defmodule OliWeb.Pow.UserIdentities do
         # if an author with the given email already exists and the email is verified by the provider,
         # link the existing author account with that email to this social login provider
         pow_assent_upsert(user, user_identity_params)
+
+        {:ok, user}
     end
   end
 
