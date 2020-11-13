@@ -56,7 +56,9 @@ defmodule Oli.Grading.LTI_AGS do
     # to this particular resource_id.  "resource_id", from grade passback 2.0
     # perspective is simply an identifier that the tool uses for a lineitem and its use
     # here as a Torus "resource_id" is strictly coincidence.
-    request_url = "#{line_items_service_url}?resource_id=#{resource_id}"
+
+    prefixed_resource_id = LineItem.to_resource_id(resource_id)
+    request_url = "#{line_items_service_url}?resource_id=#{prefixed_resource_id}"
 
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(request_url, headers(access_token)),
       {:ok, result} <- Jason.decode(body)
@@ -118,7 +120,7 @@ defmodule Oli.Grading.LTI_AGS do
 
     line_item = %LineItem{
       scoreMaximum: score_maximum,
-      resourceId: resource_id,
+      resourceId: LineItem.to_resource_id(resource_id),
       label: label
     }
 
@@ -147,7 +149,7 @@ defmodule Oli.Grading.LTI_AGS do
     updated_line_item = %LineItem{
       id: line_item.id,
       scoreMaximum: Map.get(changes, :scoreMaximum, line_item.scoreMaximum),
-      resourceId: Map.get(changes, :resourceId, line_item.resourceId),
+      resourceId: line_item.resourceId,
       label: Map.get(changes, :label, line_item.label)
     }
 

@@ -65,11 +65,8 @@ defmodule Oli.Grading do
     context_id = Map.get(lti_launch_params, @context_url) |> Map.get("id")
     label = DeliveryResolver.from_resource_id(context_id, resource_access.resource_id).title
 
-    # LTI AGS needs a resource identifier as a string
-    resource_id = Integer.to_string(resource_access.resource_id)
-
     # Next, fetch (and possibly create) the line item associated with this resource
-    case LTI_AGS.fetch_or_create_line_item(line_items_service_url, resource_id, 1, label, token) do
+    case LTI_AGS.fetch_or_create_line_item(line_items_service_url, resource_access.resource_id, 1, label, token) do
 
       # Finally, post the score for this line item
       {:ok, line_item} ->

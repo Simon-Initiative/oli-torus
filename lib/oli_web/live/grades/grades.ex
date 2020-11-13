@@ -5,6 +5,7 @@ defmodule OliWeb.Grades.GradesLive do
 
   alias Oli.Grading
   alias Oli.Grading.LTI_AGS
+  alias Oli.Grading.LineItem
   alias Oli.Lti_1p3.AccessToken
   alias Oli.Lti_1p3.ContextRoles
 
@@ -17,8 +18,6 @@ defmodule OliWeb.Grades.GradesLive do
       {:ok, assign(socket,
         line_items_url: line_items_url,
         access_token: nil,
-        cancelled: false,
-        task_description: "",
         task_queue: [],
         progress_current: 0,
         progress_max: 0,
@@ -69,19 +68,18 @@ defmodule OliWeb.Grades.GradesLive do
     line_item_map = Enum.reduce(line_items, %{}, fn i, m -> Map.put(m, i.resourceId, i) end)
 
     # tasks to create line items for graded pages that do not have them
-    creation_tasks = Enum.filter(graded_pages, fn p -> !Map.has_key?(line_item_map, Integer.to_string(p.resource_id)) end)
+    creation_tasks = Enum.filter(graded_pages, fn p -> !Map.has_key?(line_item_map, LineItem.to_resource_id(p.resource_id)) end)
     |> Enum.map(fn p ->
       fn line_items_url, access_token ->
-        resource_id = Integer.to_string(p.resource_id)
-        LTI_AGS.create_line_item(line_items_url, resource_id, 1, p.title, access_token)
+        LTI_AGS.create_line_item(line_items_url, p.resource_id, 1, p.title, access_token)
       end
     end)
 
     # tasks to update the labels of line items whose corresponding graded page's title has changed
-    update_tasks = Enum.filter(graded_pages, fn p -> Map.has_key?(line_item_map, Integer.to_string(p.resource_id)) and Map.get(line_item_map, Integer.to_string(p.resource_id)).label != p.title end)
+    update_tasks = Enum.filter(graded_pages, fn p -> Map.has_key?(line_item_map, LineItem.to_resource_id(p.resource_id)) and Map.get(line_item_map, Integer.to_string(p.resource_id)).label != p.title end)
     |> Enum.map(fn p ->
       fn _, access_token ->
-        line_item = Map.get(line_item_map, Integer.to_string(p.resource_id))
+        line_item = Map.get(line_item_map, LineItem.to_resource_id(p.resource_id))
         LTI_AGS.update_line_item(line_item, %{label: p.title}, access_token)
       end
     end)
@@ -98,10 +96,6 @@ defmodule OliWeb.Grades.GradesLive do
   defp access_token_provider(lti_launch_params) do
     deployment_id = Oli.Lti_1p3.get_deployment_id_from_launch(lti_launch_params)
     AccessToken.fetch_access_token(deployment_id, Grading.ags_scopes(), host())
-  end
-
-  def handle_event("cancel", _, socket) do
-    {:noreply, assign(socket, :cancelled, true)}
   end
 
   def handle_event("send_line_items", _, socket) do
@@ -149,29 +143,23 @@ defmodule OliWeb.Grades.GradesLive do
 
   def handle_info(:pop_task_queue, socket) do
 
-    if socket.assigns.cancelled do
-      socket = put_flash(socket, :info, "Operation cancelled")
-      {:noreply, assign(socket, task_queue: [])}
-    else
+    [task | task_queue] = socket.assigns.task_queue
 
-      [task | task_queue] = socket.assigns.task_queue
+    case task.(socket.assigns.line_items_url, socket.assigns.access_token) do
+      {:ok, _} ->
 
-      case task.(socket.assigns.line_items_url, socket.assigns.access_token) do
-        {:ok, _} ->
+        socket = if length(task_queue) > 0 do
+          send(self(), :pop_task_queue)
+          socket
+        else
+          socket |> put_flash(:info, "LMS line items up to date")
+        end
 
-          socket = if length(task_queue) > 0 do
-            send(self(), :pop_task_queue)
-            socket
-          else
-            socket |> put_flash(:info, "LMS line items up to date")
-          end
+        {:noreply, assign(socket, task_queue: task_queue, progress_current: socket.assigns.progress_current + 1)}
 
-          {:noreply, assign(socket, task_queue: task_queue, progress_current: socket.assigns.progress_current + 1)}
-
-        {:error, e} ->
-          socket = socket |> put_flash(:error, e)
-          {:noreply, assign(socket, task_queue: [])}
-      end
+      {:error, e} ->
+        socket = socket |> put_flash(:error, e)
+        {:noreply, assign(socket, task_queue: [])}
     end
 
   end
