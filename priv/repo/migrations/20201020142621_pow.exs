@@ -2,8 +2,6 @@ defmodule Oli.Repo.Migrations.Pow do
   use Ecto.Migration
   import Ecto.Query, warn: false
 
-  alias Oli.Accounts.Author
-
   def up do
 
     # create user identities for pow_assent
