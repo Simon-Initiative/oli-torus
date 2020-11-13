@@ -7,9 +7,6 @@
         <p class="mb-2">
           <%= "#{@current_author.name}" %>
         </p>
-        <%= if Enum.count(PowAssent.Plug.providers_for_current_user(@conn)) < 1 do %>
-          <a href="#" onclick="function(e) { e.preventDefault()}" data-toggle="modal" data-target="#modal-change-name" id="change-name">Change name</a>
-        <% end %>
       </div>
     </div>
     <div class="row my-4">
