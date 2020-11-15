@@ -29,15 +29,19 @@ export const ActivityCard = (props: ActivityCardProps) => {
         onDragStart={e => props.onDragStart(e, id)}
         onDragEnd={props.onDragEnd}>
         <div className="d-flex flex-row align-items-center">
-          <div className="flex-grow-1">
+
+          <div className="d-flex align-items-center flex-grow-1">
             <DragHandle style={{ height: 24, marginRight: 10 }} />
+            <Purpose
+              purpose={props.contentItem.purpose}
+              purposes={props.purposes}
+              editMode={props.editMode}
+              onEdit={props.onEditPurpose} />
             <EditLink
-              label={'Edit this ' + props.label + ' Activity'}
-              href={`/project/${props.projectSlug}/resource/${props.resourceSlug}/activity/${props.contentItem.activitySlug}`}
-            />
+              label={props.label}
+              href={`/project/${props.projectSlug}/resource/${props.resourceSlug}/activity/${props.contentItem.activitySlug}`} />
           </div>
-          <Purpose purpose={props.contentItem.purpose} purposes={props.purposes}
-            editMode={props.editMode} onEdit={(p: string) => props.onEditPurpose(p)} />
+
           <DeleteButton editMode={props.content.size > 1} onClick={props.onRemove} />
         </div>
         {props.editor}

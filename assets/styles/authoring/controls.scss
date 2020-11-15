@@ -50,6 +50,20 @@
   border: 1px solid $gray-400;
   border-radius: 0.25rem;
   position: relative;
+
+  .toolbar.add-resource-content {
+    .insert-button-container {
+      left: -34px;
+      top: 0px;
+
+      .insert-button{
+        i {
+          margin-top: 1px;
+          margin-left: 0px;
+        }
+      }
+    }
+  }
 }
 
 .table-dropdown {

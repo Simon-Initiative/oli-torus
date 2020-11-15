@@ -30,10 +30,8 @@ export const ContentCard = (props: ContentCardProps) => {
     <div className="resource-content-frame card"
       draggable={true}
       onDragStart={e => props.onDragStart(e, id)}
-      onDragEnd={props.onDragEnd}
-    >
-      <div id={id} className="card-header pl-2"
-      >
+      onDragEnd={props.onDragEnd}>
+      <div id={id} className="card-header pl-2">
         <div className="d-flex flex-row align-items-center">
           <div className="d-flex align-items-center flex-grow-1">
             <DragHandle style={{ height: 24, marginRight: 10 }} />
