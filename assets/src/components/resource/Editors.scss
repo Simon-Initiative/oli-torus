@@ -72,7 +72,7 @@
       min-width: 100px;
     }
 
-    .btn-delete {
+    .btn-delete:not([disabled]) {
       &:hover {
         color: $danger;
       }
