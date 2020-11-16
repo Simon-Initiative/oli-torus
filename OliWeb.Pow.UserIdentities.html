@@ -7,7 +7,7 @@
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.1.0">
 
-    <title>Oli.Authoring.Course — OLI Torus v0.1.0</title>
+    <title>OliWeb.Pow.UserIdentities — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
     <script src="dist/sidebar_items-682323c3c2.js"></script>
@@ -78,9 +78,9 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Authoring.Course <small class="app-vsn">(OLI Torus v0.1.0)</small>
+OliWeb.Pow.UserIdentities <small class="app-vsn">(OLI Torus v0.1.0)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/user_identities_context.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -104,93 +104,104 @@ Oli.Authoring.Course <small class="app-vsn">(OLI Torus v0.1.0)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#attach_to_project/2">attach_to_project(resource, project)</a>
+    <a href="#all/1">all(user)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/pow_assent/0.4.9/PowAssent.Ecto.UserIdentities.Context.html#c:all/1"><code class="inline">PowAssent.Ecto.UserIdentities.Context.all/1</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create/2">create(user, user_identity_params)</a>
+
+      <span class="deprecated" title="Please use `upsert/2` instead">deprecated</span>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/pow_assent/0.4.9/PowAssent.Ecto.UserIdentities.Context.html#c:create/2"><code class="inline">PowAssent.Ecto.UserIdentities.Context.create/2</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create_user/3">create_user(user_identity_params, user_params, user_id_params)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/pow_assent/0.4.9/PowAssent.Ecto.UserIdentities.Context.html#c:create_user/3"><code class="inline">PowAssent.Ecto.UserIdentities.Context.create_user/3</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#delete/2">delete(user, provider)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/pow_assent/0.4.9/PowAssent.Ecto.UserIdentities.Context.html#c:delete/2"><code class="inline">PowAssent.Ecto.UserIdentities.Context.delete/2</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_user_by_provider_uid/2">get_user_by_provider_uid(provider, uid)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/pow_assent/0.4.9/PowAssent.Ecto.UserIdentities.Context.html#c:get_user_by_provider_uid/2"><code class="inline">PowAssent.Ecto.UserIdentities.Context.get_user_by_provider_uid/2</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#pow_assent_all/1">pow_assent_all(user)</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#create_and_attach_resource/2">create_and_attach_resource(project, attrs)</a>
+    <a href="#pow_assent_create/2">pow_assent_create(user, user_identity_params)</a>
+
+      <span class="deprecated" title="Please use `pow_assent_upsert/2` instead">deprecated</span>
+
+  </div>
+
+    <div class="summary-synopsis"><p>See <a href="#pow_assent_upsert/2"><code class="inline">OliWeb.Pow.UserIdentities.pow_assent_upsert/2</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#pow_assent_create_user/3">pow_assent_create_user(user_identity_params, user_params, user_id_params)</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#create_family/1">create_family(attrs \\ %{})</a>
+    <a href="#pow_assent_delete/2">pow_assent_delete(user, provider)</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#create_project/2">create_project(title, author)</a>
+    <a href="#pow_assent_get_user_by_provider_uid/2">pow_assent_get_user_by_provider_uid(provider, uid)</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#create_project_resource/1">create_project_resource(attrs)</a>
+    <a href="#pow_assent_upsert/2">pow_assent_upsert(user, user_identity_params)</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#get_family!/1">get_family!(id)</a>
+    <a href="#upsert/2">upsert(user, user_identity_params)</a>
 
   </div>
 
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#get_project!/1">get_project!(id)</a>
-
-  </div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#get_project_by_slug/1">get_project_by_slug(slug)</a>
-
-  </div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#get_projects_for_author/1">get_projects_for_author(author)</a>
-
-  </div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#initial_resource_setup/2">initial_resource_setup(author, project)</a>
-
-  </div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#list_projects/0">list_projects()</a>
-
-  </div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#update_family/2">update_family(family, attrs)</a>
-
-  </div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#update_project/2">update_project(project, attrs)</a>
-
-  </div>
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/pow_assent/0.4.9/PowAssent.Ecto.UserIdentities.Context.html#c:upsert/2"><code class="inline">PowAssent.Ecto.UserIdentities.Context.upsert/2</code></a>.</p></div>
 
 </div>
 
@@ -208,16 +219,130 @@ Oli.Authoring.Course <small class="app-vsn">(OLI Torus v0.1.0)</small>
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="attach_to_project/2">
+<section class="detail" id="all/1">
 
   <div class="detail-header">
-    <a href="#attach_to_project/2" class="detail-link" title="Link to this function">
+    <a href="#all/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">attach_to_project(resource, project)</h1>
+    <h1 class="signature">all(user)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L51" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/user_identities_context.ex#L2" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Callback implementation for <a href="https://hexdocs.pm/pow_assent/0.4.9/PowAssent.Ecto.UserIdentities.Context.html#c:all/1"><code class="inline">PowAssent.Ecto.UserIdentities.Context.all/1</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="create/2">
+
+  <div class="detail-header">
+    <a href="#create/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create(user, user_identity_params)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/user_identities_context.ex#L2" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+    <div class="deprecated">
+      This function is deprecated. Please use `upsert/2` instead.
+    </div>
+
+  <section class="docstring">
+
+<p>Callback implementation for <a href="https://hexdocs.pm/pow_assent/0.4.9/PowAssent.Ecto.UserIdentities.Context.html#c:create/2"><code class="inline">PowAssent.Ecto.UserIdentities.Context.create/2</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="create_user/3">
+
+  <div class="detail-header">
+    <a href="#create_user/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create_user(user_identity_params, user_params, user_id_params)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/user_identities_context.ex#L10" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Callback implementation for <a href="https://hexdocs.pm/pow_assent/0.4.9/PowAssent.Ecto.UserIdentities.Context.html#c:create_user/3"><code class="inline">PowAssent.Ecto.UserIdentities.Context.create_user/3</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="delete/2">
+
+  <div class="detail-header">
+    <a href="#delete/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">delete(user, provider)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/user_identities_context.ex#L2" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Callback implementation for <a href="https://hexdocs.pm/pow_assent/0.4.9/PowAssent.Ecto.UserIdentities.Context.html#c:delete/2"><code class="inline">PowAssent.Ecto.UserIdentities.Context.delete/2</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="get_user_by_provider_uid/2">
+
+  <div class="detail-header">
+    <a href="#get_user_by_provider_uid/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_user_by_provider_uid(provider, uid)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/user_identities_context.ex#L2" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Callback implementation for <a href="https://hexdocs.pm/pow_assent/0.4.9/PowAssent.Ecto.UserIdentities.Context.html#c:get_user_by_provider_uid/2"><code class="inline">PowAssent.Ecto.UserIdentities.Context.get_user_by_provider_uid/2</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="pow_assent_all/1">
+
+  <div class="detail-header">
+    <a href="#pow_assent_all/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">pow_assent_all(user)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/user_identities_context.ex#L2" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -230,16 +355,42 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="create_and_attach_resource/2">
+<section class="detail" id="pow_assent_create/2">
 
   <div class="detail-header">
-    <a href="#create_and_attach_resource/2" class="detail-link" title="Link to this function">
+    <a href="#pow_assent_create/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">create_and_attach_resource(project, attrs)</h1>
+    <h1 class="signature">pow_assent_create(user, user_identity_params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L41" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/user_identities_context.ex#L2" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+    <div class="deprecated">
+      This function is deprecated. Please use `pow_assent_upsert/2` instead.
+    </div>
+
+  <section class="docstring">
+
+<p>See <a href="#pow_assent_upsert/2"><code class="inline">OliWeb.Pow.UserIdentities.pow_assent_upsert/2</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="pow_assent_create_user/3">
+
+  <div class="detail-header">
+    <a href="#pow_assent_create_user/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">pow_assent_create_user(user_identity_params, user_params, user_id_params)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/user_identities_context.ex#L2" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -252,18 +403,16 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="create_family/1">
-
-    <span id="create_family/0"></span>
+<section class="detail" id="pow_assent_delete/2">
 
   <div class="detail-header">
-    <a href="#create_family/1" class="detail-link" title="Link to this function">
+    <a href="#pow_assent_delete/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">create_family(attrs \\ %{})</h1>
+    <h1 class="signature">pow_assent_delete(user, provider)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L126" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/user_identities_context.ex#L2" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -276,16 +425,16 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="create_project/2">
+<section class="detail" id="pow_assent_get_user_by_provider_uid/2">
 
   <div class="detail-header">
-    <a href="#create_project/2" class="detail-link" title="Link to this function">
+    <a href="#pow_assent_get_user_by_provider_uid/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">create_project(title, author)</h1>
+    <h1 class="signature">pow_assent_get_user_by_provider_uid(provider, uid)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L72" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/user_identities_context.ex#L2" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -298,16 +447,16 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="create_project_resource/1">
+<section class="detail" id="pow_assent_upsert/2">
 
   <div class="detail-header">
-    <a href="#create_project_resource/1" class="detail-link" title="Link to this function">
+    <a href="#pow_assent_upsert/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">create_project_resource(attrs)</h1>
+    <h1 class="signature">pow_assent_upsert(user, user_identity_params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L10" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/user_identities_context.ex#L2" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -320,16 +469,16 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="get_family!/1">
+<section class="detail" id="upsert/2">
 
   <div class="detail-header">
-    <a href="#get_family!/1" class="detail-link" title="Link to this function">
+    <a href="#upsert/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">get_family!(id)</h1>
+    <h1 class="signature">upsert(user, user_identity_params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L118" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/user_identities_context.ex#L2" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -339,161 +488,7 @@ Functions
 
   <section class="docstring">
 
-
-  </section>
-</section>
-<section class="detail" id="get_project!/1">
-
-  <div class="detail-header">
-    <a href="#get_project!/1" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">get_project!(id)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L36" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
-<section class="detail" id="get_project_by_slug/1">
-
-  <div class="detail-header">
-    <a href="#get_project_by_slug/1" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">get_project_by_slug(slug)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L37" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
-<section class="detail" id="get_projects_for_author/1">
-
-  <div class="detail-header">
-    <a href="#get_projects_for_author/1" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">get_projects_for_author(author)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L21" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
-<section class="detail" id="initial_resource_setup/2">
-
-  <div class="detail-header">
-    <a href="#initial_resource_setup/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">initial_resource_setup(author, project)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L60" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
-<section class="detail" id="list_projects/0">
-
-  <div class="detail-header">
-    <a href="#list_projects/0" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">list_projects()</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L16" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
-<section class="detail" id="update_family/2">
-
-  <div class="detail-header">
-    <a href="#update_family/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">update_family(family, attrs)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L120" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
-<section class="detail" id="update_project/2">
-
-  <div class="detail-header">
-    <a href="#update_project/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">update_project(project, attrs)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/course.ex#L112" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
+<p>Callback implementation for <a href="https://hexdocs.pm/pow_assent/0.4.9/PowAssent.Ecto.UserIdentities.Context.html#c:upsert/2"><code class="inline">PowAssent.Ecto.UserIdentities.Context.upsert/2</code></a>.</p>
   </section>
 </section>
 
