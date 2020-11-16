@@ -29,17 +29,19 @@ end
 
 # create admin author
 if !Oli.Repo.get_by(Oli.Accounts.Author, email: System.get_env("ADMIN_EMAIL", "admin@example.edu")) do
-  Oli.Repo.insert! %Oli.Accounts.Author{
+  case Pow.Ecto.Context.create(%{
     email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),
-    first_name: "Administrator",
-    last_name: "Admin",
-    provider: "identity",
-    password_hash: Bcrypt.hash_pwd_salt(System.get_env("ADMIN_PASSWORD", "admin")),
-    email_verified: true,
+    name: "Administrator",
+    given_name: "Administrator",
+    family_name: "",
+    password: System.get_env("ADMIN_PASSWORD", "changeme"),
+    password_confirmation: System.get_env("ADMIN_PASSWORD", "changeme"),
     system_role_id: Oli.Accounts.SystemRole.role_id.admin
-  }
+  }, otp_app: :oli) do
+    {:ok, user} ->
+      PowEmailConfirmation.Ecto.Context.confirm_email(user, %{}, otp_app: :oli)
+  end
 end
-
 
 # create project roles
 if !Oli.Repo.get_by(Oli.Authoring.Authors.ProjectRole, id: 1) do
@@ -109,19 +111,6 @@ if !Oli.Repo.get_by(Oli.Lti_1p3.Jwk, id: 1) do
   })
 end
 
-# create default open and free institution
-if !Oli.Repo.get_by(Oli.Institutions.Institution, id: 1) do
-  Oli.Institutions.create_institution(%{
-    id: 1,
-    country_code: "US",
-    institution_email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),
-    institution_url: "oli.cmu.edu",
-    name: "Open Learning Initiative",
-    timezone: "US/Eastern",
-    author_id: 1,
-  })
-end
-
 # create lti_1p3 platform roles
 if !Oli.Repo.get_by(Oli.Lti_1p3.PlatformRole, id: 1) do
   Oli.Lti_1p3.PlatformRoles.list_roles()
@@ -138,24 +127,11 @@ end
 
 # only seed with sample data if in development mode
 if Application.fetch_env!(:oli, :env) == :dev do
-  if !Oli.Repo.get_by(Oli.Accounts.Author, email: "test@oli.cmu.edu") do
-    Oli.Repo.insert! %Oli.Accounts.Author{
-      email: "test@oli.cmu.edu",
-      first_name: "Test",
-      last_name: "Test",
-      provider: "identity",
-      password_hash: Bcrypt.hash_pwd_salt("test"),
-      email_verified: true,
-      system_role_id: Oli.Accounts.SystemRole.role_id.admin
-    }
-  end
-
   if !Oli.Repo.get_by(Oli.Authoring.Course.Project, id: 1) do
     # create an example package and publication
     admin_author = Oli.Accounts.get_author_by_email(System.get_env("ADMIN_EMAIL", "admin@example.edu"))
-    _test_author = Oli.Accounts.get_author_by_email("test@oli.cmu.edu")
 
-    seeds = Seeder.base_project_with_resource2()
+    seeds = Seeder.base_project_with_resource(admin_author)
     |> Seeder.create_section()
     |> Seeder.add_activity(%{title: "Activity with with no attempts"}, :activity_no_attempts)
     |> SnapshotSeeder.setup_csv(Path.expand(__DIR__) <> "/test_snapshots.csv")

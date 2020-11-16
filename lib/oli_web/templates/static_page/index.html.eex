@@ -1,14 +1,14 @@
 
 <section class="my-5" style="text-align: center">
   <%= if author_signed_in?(@conn) do %>
-    <h1><%= gettext "Welcome back %{name}!", name: @conn.assigns.current_author.first_name %></h1>
+    <h1><%= gettext "Welcome back %{name}!", name: @conn.assigns.current_author.name %></h1>
 
   <% else %>
     <h1><%= gettext "Welcome to %{name}!", name: "OLI Authoring" %></h1>
     <p>Create, deliver and continuously improve your course content using your web browser.</p>
 
     <p>
-      <a href="/auth/register" class="btn btn-outline-primary">Create an Account <i class="fa fa-arrow-right"></i></a>
+      <a href="<%= Routes.pow_registration_path(@conn, :new) %>" class="btn btn-outline-primary">Create an Account <i class="fa fa-arrow-right"></i></a>
     </p>
   <% end %>
 </section>

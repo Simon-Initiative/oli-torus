@@ -135,14 +135,15 @@ defmodule Oli.Accounts do
   Links a User to Author account
 
   ## Examples
-      iex> link_user_author_account(user, author)
+      iex> link_user_author_account(user, author_id)
       {:ok, %User{}}
       iex> update_user(user, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
   def link_user_author_account(nil, _author), do: throw "No current_user to link to author. This function should only be called in an LTI context"
+  def link_user_author_account(_user, nil), do: throw "No author to link. This function should only be called after an author is logged in"
   def link_user_author_account(user, author) do
-    update_user(user, %{ author_id: author.id})
+    update_user(user, %{author_id: author.id})
   end
 
   @doc """
@@ -172,7 +173,7 @@ defmodule Oli.Accounts do
       nil -> %Author{}
       author -> author
     end
-    |> Author.changeset(changes)
+    |> Author.noauth_changeset(changes)
     |> Repo.insert_or_update
   end
 
@@ -186,7 +187,7 @@ defmodule Oli.Accounts do
   """
   def update_author(%Author{} = author, attrs) do
     author
-    |> Author.changeset(attrs)
+    |> Author.noauth_changeset(attrs)
     |> Repo.update()
   end
 
@@ -196,11 +197,23 @@ defmodule Oli.Accounts do
       iex> create_author(%{field: value})
       {:ok, %Author{}}
   """
-  def create_author(params \\ %{}, opts \\ []) do
+  def create_author(params \\ %{}) do
     %Author{}
-    |> Author.changeset(params, opts)
+    |> Author.changeset(params)
     |> Repo.insert()
   end
+
+  @doc """
+  Gets a single author.
+  Raises `Ecto.NoResultsError` if the Author does not exist.
+  ## Examples
+      iex> get_author!(123)
+      %Author{}
+      iex> get_author!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_author!(id), do: Repo.get!(Author, id)
 
   @doc """
   Gets a single author with the given email
@@ -225,23 +238,6 @@ defmodule Oli.Accounts do
   def author_signed_in?(conn) do
     conn.assigns[:current_author]
   end
-
-  @doc """
-  Authorizes a author with the given email and passord
-  """
-  def authorize_author(author_email, password) do
-    Repo.get_by(Author, email: author_email)
-      |> authorize(password)
-  end
-
-  defp authorize(nil, _password), do: {:error, "Invalid authorname or password"}
-  defp authorize(author, password) do
-    Bcrypt.check_pass(author, password, hash_key: :password_hash)
-    |> resolve_authorization(author)
-  end
-
-  defp resolve_authorization({:error, _reason}, _author), do: {:error, "Invalid authorname or password"}
-  defp resolve_authorization({:ok, author}, _author), do: {:ok, author}
 
   def can_access?(author, project) do
 

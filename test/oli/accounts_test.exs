@@ -9,11 +9,11 @@ defmodule Oli.AccountsTest do
     test "system role defaults to author", %{} do
 
       {:ok, author} = Author.changeset(%Author{}, %{
-        email: "ironman#{System.unique_integer([:positive])}@example.com",
-        first_name: "Tony",
-        last_name: "Stark",
-        token: "2u9dfh7979hfd",
-        provider: "google",
+        email: "user#{System.unique_integer([:positive])}@example.com",
+        given_name: "Test",
+        family_name: "User",
+        password: "password123",
+        password_confirmation: "password123",
       })
       |> Repo.insert()
 
@@ -21,12 +21,12 @@ defmodule Oli.AccountsTest do
     end
 
     test "changeset accepts system role change", %{} do
-      {:ok, author} = Author.changeset(%Author{}, %{
-        email: "ironman#{System.unique_integer([:positive])}@example.com",
-        first_name: "Tony",
-        last_name: "Stark",
-        token: "2u9dfh7979hfd",
-        provider: "google",
+      {:ok, author} = Author.noauth_changeset(%Author{}, %{
+        email: "user#{System.unique_integer([:positive])}@example.com",
+        given_name: "Test",
+        family_name: "User",
+        password: "password123",
+        password_confirmation: "password123",
       })
       |> Repo.insert()
 

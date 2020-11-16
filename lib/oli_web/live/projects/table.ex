@@ -31,11 +31,11 @@ defmodule OliWeb.Projects.Table do
       <tbody>
         <%= for project <- @projects do %>
           <td><a href="<%= Routes.project_path(OliWeb.Endpoint, :overview, project) %>"><%= project.title %></td>
-          <td><%= time(assigns, project.inserted_at) %></td>
+          <td><%= time_ago(assigns, project.inserted_at) %></td>
           <td>
             <ul>
             <%= for author <- authors(assigns, project.id) do %>
-              <li><%= author.last_name %>, <%= author.first_name %> (<%= author.email %>)</li>
+              <li><%= author.name %> (<%= author.email %>)</li>
             <% end %>
             </ul>
           </td>
@@ -46,7 +46,7 @@ defmodule OliWeb.Projects.Table do
     """
   end
 
-  defp time(assigns, time) do
+  def time_ago(assigns, time) do
     ~L"""
     <span><%= Timex.format!(time, "{relative}", :relative)%></span>
     """

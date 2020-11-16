@@ -114,8 +114,7 @@ defmodule Oli.TestHelpers.Lti_1p3 do
       "https://purl.imsglobal.org/spec/lti-ags/claim/endpoint" => %{
         "lineitems" => "https://lti-ri.imsglobal.org/platforms/1237/contexts/10337/line_items",
         "scope" => ["https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
-        "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
-        "https://purl.imsglobal.org/spec/lti-ags/scope/score"]
+        "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly"]
       },
       "https://purl.imsglobal.org/spec/lti-ces/claim/caliper-endpoint-service" => %{
         "caliper_endpoint_url" => "https://lti-ri.imsglobal.org/platforms/1237/sensors",
@@ -170,6 +169,27 @@ defmodule Oli.TestHelpers.Lti_1p3 do
     %{
       "https://www.example.com/extension" => %{"color" => "violet"},
     }
+  end
+
+end
+
+# notice: this protocol mock implementation must reside in this support directory
+# because of protocol consolidation. See https://hexdocs.pm/elixir/master/Protocol.html#module-consolidation
+defmodule Oli.Lti_1p3.Lti_1p3_User.Mock do
+  alias Oli.Lti_1p3.Lti_1p3_User
+  alias Oli.Lti_1p3.PlatformRoles
+  alias Oli.Lti_1p3.ContextRoles
+
+  defstruct [:platform_role_uris, :context_role_uris]
+
+  defimpl Lti_1p3_User do
+    def get_platform_roles(mock_user) do
+      mock_user.platform_role_uris |> PlatformRoles.get_roles_by_uris()
+    end
+
+    def get_context_roles(mock_user, _context_id) do
+      mock_user.context_role_uris |> ContextRoles.get_roles_by_uris()
+    end
   end
 
 end

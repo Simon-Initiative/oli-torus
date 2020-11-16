@@ -1,0 +1,5 @@
+<div class="mb-2 mt-2"><%= container_title(@node) %></div>
+
+<div class="course-outline" style="padding-left: <%= @node.numbering.level * 20 %>px">
+  <%= render "_outline.html", nodes: @node.children, conn: @conn, context_id: @context_id, summary: @summary, active_page: nil %>
+</div>

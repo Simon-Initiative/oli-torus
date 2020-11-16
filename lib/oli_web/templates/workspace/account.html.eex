@@ -5,11 +5,8 @@
       <div class="col-12">
         <h4 class="mb-3">Name</h4>
         <p class="mb-2">
-          <%= "#{@current_author.first_name} #{@current_author.last_name}" %>
+          <%= "#{@current_author.name}" %>
         </p>
-        <%= if @current_author.provider == "identity" do %>
-          <a href="#" onclick="function(e) { e.preventDefault()}" data-toggle="modal" data-target="#modal-change-name" id="change-name">Change name</a>
-        <% end %>
       </div>
     </div>
     <div class="row my-4">
@@ -18,11 +15,21 @@
         <p class="mb-2">
           <%= "#{@current_author.email}" %>
         </p>
-        <%= case @current_author.provider do
-          "facebook" -> "Managed by Facebook"
-          "google" -> "Managed by Google"
-          _ -> ""
-        end %>
+        <%= if Enum.count(PowAssent.Plug.providers_for_current_user(@conn)) > 0 do %>
+          <h4 class="mt-3">Credentials Managed By</h4>
+          <%= for provider <- PowAssent.Plug.providers_for_current_user(@conn) do %>
+            <div class="my-2">
+              <span class="provider provider-<%= OliWeb.Pow.PowHelpers.provider_class(provider) %>">
+                <%= OliWeb.Pow.PowHelpers.provider_icon(provider) %> <%= OliWeb.Pow.PowHelpers.provider_name(provider) %>
+              </span>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+    <div class="row my-4">
+      <div class="col-12">
+      <%= link "Change Account Details", to: Routes.pow_registration_path(@conn, :edit), class: "btn btn-outline-primary" %>
       </div>
     </div>
   </div>
@@ -38,52 +45,6 @@
             class: "form-control",
             onchange: "this.form.submit();" %>
         <% end %>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="modal-change-name" tabindex="-1" role="dialog" aria-labelledby="change-name-modal" aria-hidden="true">
-  <div class="modal-dialog modal-sm" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title" id="exampleModalLabel">Change your name</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <%= form_for @changeset, Routes.workspace_path(@conn, :update_author), [id: "form-create-project"], fn f -> %>
-        <div class="modal-body">
-          <div class="form-label-group">
-
-            <%= label f, :first_name, "First name", class: "control-label text-secondary", for: "input-first-name" %>
-            <%= text_input f,
-              :first_name,
-              class: "form-control input-bold mb-3" <> error_class(f, :first_name, "is-invalid"),
-              placeholder: "Tony",
-              id: "input-first-name",
-              required: true,
-              autofocus: focusHelper(f, :first_name, default: true) %>
-            <%= error_tag f, :first_name %>
-
-            <%= label f, :last_name, "Last name", class: "control-label text-secondary", for: "input-last-name" %>
-            <%= text_input f,
-              :last_name,
-              class: "form-control input-bold mb-3" <> error_class(f, :last_name, "is-invalid"),
-              placeholder: "Stark",
-              id: "input-last-name",
-              required: true,
-              autofocus: focusHelper(f, :last_name, default: true) %>
-            <%= error_tag f, :last_name %>
-
-          </div>
-        </div>
-        <div class="modal-footer">
-          <%= submit "Change name",
-            id: "button-change-name",
-            class: "btn btn-primary",
-            phx_disable_with: "Changing name..." %>
-        </div>
-      <% end %>
     </div>
   </div>
 </div>

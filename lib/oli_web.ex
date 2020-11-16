@@ -23,6 +23,7 @@ defmodule OliWeb do
 
       import Plug.Conn
       import OliWeb.Gettext
+      import OliWeb.Pow.PowHelpers
       import Phoenix.LiveView.Controller
       alias OliWeb.Router.Helpers, as: Routes
     end
@@ -35,19 +36,36 @@ defmodule OliWeb do
         namespace: OliWeb
 
       # Import convenience functions from controllers
-      import Phoenix.Controller, only: [get_flash: 1, get_flash: 2, view_module: 1]
+      import Phoenix.Controller, only: [get_flash: 1, get_flash: 2, view_module: 1, view_template: 1]
 
-      # Use all HTML functionality (forms, tags, etc)
+      unquote(view_helpers())
+    end
+  end
+
+  def live_view do
+    quote do
+      use Phoenix.LiveView,
+        layout: {OliWeb.LayoutView, "live.html"}
+
+      unquote(view_helpers())
+    end
+  end
+
+  def live_component do
+    quote do
+      use Phoenix.LiveComponent
+
+      unquote(view_helpers())
+    end
+  end
+
+  def mailer_view do
+    quote do
+      use Phoenix.View,
+        root: "lib/oli_web/templates",
+        namespace: OliWeb
+
       use Phoenix.HTML
-
-      import Phoenix.LiveView.Helpers
-
-      import OliWeb.ErrorHelpers
-      import OliWeb.Gettext
-      alias OliWeb.Router.Helpers, as: Routes
-
-      import Oli.Accounts, only: [author_signed_in?: 1, user_signed_in?: 1]
-      import Oli.Utils, only: [format_datetime: 1]
     end
   end
 
@@ -64,6 +82,27 @@ defmodule OliWeb do
     quote do
       use Phoenix.Channel
       import OliWeb.Gettext
+    end
+  end
+
+  defp view_helpers do
+    quote do
+      # Use all HTML functionality (forms, tags, etc)
+      use Phoenix.HTML
+
+      # Import LiveView helpers (live_render, live_component, live_patch, etc)
+      import Phoenix.LiveView.Helpers
+      import OliWeb.LiveHelpers
+
+      # Import basic rendering functionality (render, render_layout, etc)
+      import Phoenix.View
+
+      import OliWeb.ErrorHelpers
+      import OliWeb.Gettext
+      alias OliWeb.Router.Helpers, as: Routes
+
+      import Oli.Accounts, only: [author_signed_in?: 1, user_signed_in?: 1]
+      import Oli.Utils, only: [format_datetime: 1, value_or: 2, render: 4]
     end
   end
 

@@ -27,21 +27,7 @@ defmodule OliWeb.WorkspaceController do
       themes: themes,
       active_theme: active_theme,
       title: "Account",
-      changeset: Author.changeset(author)
-  end
-
-  def update_author(conn, %{"author" => %{"first_name" => first_name, "last_name" => last_name}}) do
-    author = conn.assigns.current_author
-    case Accounts.update_author(author, %{first_name: first_name, last_name: last_name}) do
-      {:ok, _author} ->
-        conn
-        |> redirect(to: Routes.workspace_path(conn, :account))
-
-      {:error, _} ->
-        conn
-        |> put_flash(:error, "Failed to change name")
-        |> redirect(to: Routes.workspace_path(conn, :account))
-    end
+      changeset: Author.noauth_changeset(author)
   end
 
   def update_theme(conn, %{"id" => theme_id} = _params) do
@@ -57,7 +43,7 @@ defmodule OliWeb.WorkspaceController do
         conn
         |> redirect(to: Routes.workspace_path(conn, :account))
 
-      {:error, _} ->
+      {:error, _changeset} ->
         conn
         |> put_flash(:error, "Failed to change theme")
         |> redirect(to: Routes.workspace_path(conn, :account))

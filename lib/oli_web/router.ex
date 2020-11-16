@@ -1,11 +1,15 @@
 defmodule OliWeb.Router do
   use OliWeb, :router
+  use Pow.Phoenix.Router
+  use PowAssent.Phoenix.Router
+  use Pow.Extension.Phoenix.Router,
+    extensions: [PowResetPassword, PowEmailConfirmation]
 
   import Phoenix.LiveDashboard.Router
 
-  # We have only three "base" pipelines:   :browser, :api, and :lti
-  # All of the other pipelines are to be used as additions onto
-  # one of these three base pipelines
+  ### BASE PIPELINES ###
+  # We have four "base" pipelines:   :browser, :api, :lti, and :skip_csrf_protection
+  # All of the other pipelines are to be used as additions onto one of these four base pipelines
 
   # pipeline for all browser based routes
   pipeline :browser do
@@ -15,8 +19,10 @@ defmodule OliWeb.Router do
     plug :put_root_layout, {OliWeb.LayoutView, "default.html"}
     plug :put_layout, {OliWeb.LayoutView, "app.html"}
     plug :put_secure_browser_headers
+    plug :protect_from_forgery
     plug Plug.Telemetry, event_prefix: [:oli, :plug]
     plug Oli.Plugs.SetCurrentUser
+    plug Oli.Plugs.SetDefaultPow, :author
   end
 
   # pipline for REST api endpoint routes
@@ -26,6 +32,7 @@ defmodule OliWeb.Router do
     plug :put_secure_browser_headers
     plug Plug.Telemetry, event_prefix: [:oli, :plug]
     plug :accepts, ["json"]
+    plug Oli.Plugs.SetDefaultPow, :author
   end
 
   # pipeline for LTI launch endpoints
@@ -33,22 +40,27 @@ defmodule OliWeb.Router do
     plug :fetch_session
     plug :fetch_flash
     plug :put_root_layout, {OliWeb.LayoutView, "lti.html"}
-    plug Oli.Plugs.SetCurrentUser
   end
 
-  pipeline :set_user do
+  pipeline :skip_csrf_protection do
+    plug :accepts, ["html"]
     plug :fetch_session
-    plug Oli.Plugs.SetCurrentUser
-    plug :accepts, ["json"]
+    plug :fetch_flash
+    plug :put_secure_browser_headers
   end
 
-  # Pipeline extensions:
+  ### PIPELINE EXTENSIONS ###
+  # Extend the base pipelines specific routes
 
-  # Extends the browser pipeline for delivery specific routes
+  pipeline :authoring do
+    # Disable caching of resources in authoring
+    plug Oli.Plugs.NoCache
+  end
+
   pipeline :delivery do
-    plug Oli.Plugs.RemoveXFrameOptions
-    plug Oli.Plugs.VerifyUser
+    plug Oli.Plugs.SetDefaultPow, :user
     plug Oli.Plugs.LoadLtiParams
+    plug Oli.Plugs.RemoveXFrameOptions
     plug :put_root_layout, {OliWeb.LayoutView, "delivery.html"}
   end
 
@@ -57,30 +69,21 @@ defmodule OliWeb.Router do
     plug :put_root_layout, {OliWeb.LayoutView, "workspace.html"}
   end
 
-  # Ensure that we always do csrf
-  pipeline :csrf_always do
-    plug :protect_from_forgery
+  # Ensure that we have a logged in user
+  pipeline :delivery_protected do
+    plug Pow.Plug.RequireAuthenticated,
+      error_handler: OliWeb.Pow.UserAuthErrorHandler
   end
 
-  # Do not include csrf protection in development mode. Certain
-  # LTI launch routes break in dev with csrf in place
-  pipeline :csrf_in_prod do
-    if Mix.env != :dev, do: plug :protect_from_forgery
+  # Ensure that we have a logged in user
+  pipeline :authoring_protected do
+    plug Pow.Plug.RequireAuthenticated,
+      error_handler: Pow.Phoenix.PlugErrorHandler
   end
 
   # Ensure that the user logged in is an admin user
   pipeline :admin do
     plug Oli.Plugs.EnsureAdmin
-  end
-
-  # Ensure that we have a logged in user
-  pipeline :protected do
-    plug Oli.Plugs.Protect
-  end
-
-  # Disable caching of resources in authoring
-  pipeline :authoring do
-    plug Oli.Plugs.NoCache
   end
 
   # parse url encoded forms
@@ -92,36 +95,76 @@ defmodule OliWeb.Router do
     plug Oli.Plugs.AuthorizeProject
   end
 
+  pipeline :registration_captcha do
+    plug Oli.Plugs.RegistrationCaptcha
+  end
+
+  pipeline :pow_email_layout do
+    plug :put_pow_mailer_layout, {OliWeb.LayoutView, :email}
+  end
+
+  ### HELPERS ###
+
+  # with_session/1 used by authoring liveviews to load the current author id
+  def with_session(conn) do
+    %{"current_author_id" => conn.assigns.current_author.id}
+  end
+
+  defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layout, layout)
+
+  ### ROUTES ###
+
+  scope "/" do
+    pipe_through :skip_csrf_protection
+
+    pow_assent_authorization_post_callback_routes()
+  end
+
+  scope "/" do
+    pipe_through [:browser, :pow_email_layout, :registration_captcha]
+
+    pow_routes()
+    pow_assent_routes()
+    pow_extension_routes()
+
+    # handle linking accounts when using a social account provider to login
+    get "/auth/:provider/link", OliWeb.DeliveryController, :process_link_account_provider
+    get "/auth/:provider/link/callback", OliWeb.DeliveryController, :link_account_callback
+  end
+
   # open access routes
   scope "/", OliWeb do
-    pipe_through [:browser, :csrf_always]
+    pipe_through [:browser]
 
     get "/", StaticPageController, :index
   end
 
   scope "/.well-known", OliWeb do
-    pipe_through [:browser, :csrf_always]
+    pipe_through [:browser]
 
     get "/jwks.json", LtiController, :jwks
   end
 
   # authorization protected routes
   scope "/", OliWeb do
-    pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring]
+    pipe_through [:browser, :authoring_protected, :workspace, :authoring]
 
-    live "/projects", Projects.ProjectsLive
+    live "/projects", Projects.ProjectsLive, session: {__MODULE__, :with_session, []}
     get "/account", WorkspaceController, :account
     put "/account", WorkspaceController, :update_author
     post "/account/theme", WorkspaceController, :update_theme
+
+    # keep a session active by periodically calling this endpoint
+    get "/keep-alive", StaticPageController, :keep_alive
   end
 
   scope "/project", OliWeb do
-    pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring]
+    pipe_through [:browser, :authoring_protected, :workspace, :authoring]
     post "/", ProjectController, :create
   end
 
   scope "/project", OliWeb do
-    pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring, :authorize_project]
+    pipe_through [:browser, :authoring_protected, :workspace, :authoring, :authorize_project]
 
     # Project display pages
     get "/:project_id", ProjectController, :overview
@@ -134,13 +177,15 @@ defmodule OliWeb.Router do
     delete "/:project_id", ProjectController, :delete
 
     # Objectives
-    live "/:project_id/objectives", Objectives.Objectives
+    live "/:project_id/objectives", Objectives.Objectives, session: {__MODULE__, :with_session, []}
 
     # Curriculum
-    live "/:project_id/curriculum", Curriculum.Container
+    live "/:project_id/curriculum/:container_slug/edit/:revision_slug", Curriculum.ContainerLive, :edit, session: {__MODULE__, :with_session, []}
+    live "/:project_id/curriculum/:container_slug", Curriculum.ContainerLive, :index, session: {__MODULE__, :with_session, []}
+    live "/:project_id/curriculum/", Curriculum.ContainerLive, :index, session: {__MODULE__, :with_session, []}
 
     # Review/QA
-    live "/:project_id/review", Qa.QaLive
+    live "/:project_id/review", Qa.QaLive, session: {__MODULE__, :with_session, []}
 
     # Editors
     get "/:project_id/resource/:revision_slug", ResourceController, :edit
@@ -158,11 +203,12 @@ defmodule OliWeb.Router do
     # Ideally, analytics should be live-routed to preserve forward/back button when toggling
     # between analytics groupings and sorting. I could not get it to run through the project authorization
     # plugs when live-routing, however.
-    # live "/:project_id/insights", Insights
+    # live "/:project_id/insights", Insights, session: {__MODULE__, :with_session, []}
+
   end
 
   scope "/api/v1/project", OliWeb do
-    pipe_through [:api, :protected]
+    pipe_through [:api, :authoring_protected]
 
     put "/:project/resource/:resource", ResourceController, :update
     get "/:project/link", ResourceController, :index
@@ -201,27 +247,6 @@ defmodule OliWeb.Router do
 
   end
 
-  # auth routes, only accessable to guest users who are not logged in
-  scope "/auth", OliWeb do
-    pipe_through [:browser, :csrf_always, OliWeb.Plugs.Guest]
-
-    get "/signin", AuthController, :signin
-
-    get "/register", AuthController, :register
-    get "/register/email", AuthController, :register_email_form
-    post "/register/email", AuthController, :register_email_submit
-  end
-
-  scope "/auth", OliWeb do
-    pipe_through [:browser, :csrf_in_prod]
-
-    get "/signout", AuthController, :signout
-
-    get "/:provider", AuthController, :request
-    get "/:provider/callback", AuthController, :callback
-    post "/identity/callback", AuthController, :identity_callback
-  end
-
   # LTI routes
   scope "/lti", OliWeb do
     pipe_through [:lti, :www_url_form]
@@ -235,12 +260,15 @@ defmodule OliWeb.Router do
   end
 
   scope "/course", OliWeb do
-    pipe_through [:browser, :csrf_always, :delivery]
+    pipe_through [:browser, :delivery, :delivery_protected, :pow_email_layout]
 
     get "/", DeliveryController, :index
 
     get "/link_account", DeliveryController, :link_account
+    post "/link_account", DeliveryController, :process_link_account_user
     get "/create_and_link_account", DeliveryController, :create_and_link_account
+    post "/create_and_link_account", DeliveryController, :process_create_and_link_account_user
+
     post "/section", DeliveryController, :create_section
     get "/signout", DeliveryController, :signout
     get "/open_and_free", DeliveryController, :list_open_and_free
@@ -257,36 +285,43 @@ defmodule OliWeb.Router do
   end
 
   scope "/admin", OliWeb do
-    pipe_through [:browser, :csrf_always, :protected, :admin]
-    live_dashboard "/dashboard", metrics: OliWeb.Telemetry
+    pipe_through [:browser, :authoring_protected, :admin]
+    live_dashboard "/dashboard", metrics: OliWeb.Telemetry, session: {__MODULE__, :with_session, []}
   end
 
   scope "/admin", OliWeb do
-    pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring, :admin]
-    live "/accounts", Accounts.AccountsLive
+    pipe_through [:browser, :authoring_protected, :workspace, :authoring, :admin]
+    live "/accounts", Accounts.AccountsLive, session: {__MODULE__, :with_session, []}
 
     resources "/institutions", InstitutionController do
       resources "/registrations", RegistrationController, except: [:index, :show] do
         resources "/deployments", DeploymentController, except: [:index, :show]
       end
     end
+
+    get "/ingest", IngestController, :index
+    post "/ingest", IngestController, :upload
+
   end
 
   scope "/project", OliWeb do
-    pipe_through [:browser, :csrf_always, :protected, :workspace, :authoring, :authorize_project, :admin]
-    live "/:project_id/history/:slug", RevisionHistory
+    pipe_through [:browser, :authoring_protected, :workspace, :authoring, :authorize_project, :admin]
+    live "/:project_id/history/:slug", RevisionHistory, session: {__MODULE__, :with_session, []}
   end
 
   # routes only accessible to developers
   if Application.fetch_env!(:oli, :env) == :dev or Application.fetch_env!(:oli, :env) == :test do
+    # web interface for viewing sent emails during development
+    forward "/dev/sent_emails", Bamboo.SentEmailViewerPlug
+
     scope "/dev", OliWeb do
-      pipe_through [:browser, :csrf_always]
+      pipe_through [:browser]
 
       get "/uipalette", UIPaletteController, :index
     end
 
     scope "/test", OliWeb do
-      pipe_through [:browser, :csrf_always]
+      pipe_through [:browser]
 
       get "/editor", EditorTestController, :index
 

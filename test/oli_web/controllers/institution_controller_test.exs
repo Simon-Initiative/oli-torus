@@ -55,9 +55,12 @@ defmodule OliWeb.InstitutionControllerTest do
   describe "update institution" do
     setup [:create_institution]
 
-    test "redirects when data is valid", %{conn: conn, institution: institution} do
+    test "redirects when data is valid", %{conn: conn, author: author, institution: institution} do
       conn = put(conn, Routes.institution_path(conn, :update, institution), institution: @update_attrs)
       assert redirected_to(conn) == Routes.institution_path(conn, :show, institution)
+
+      conn = recycle(conn)
+        |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
       conn = get(conn, Routes.institution_path(conn, :show, institution))
       assert html_response(conn, 200) =~ "some updated country_code"
@@ -72,21 +75,24 @@ defmodule OliWeb.InstitutionControllerTest do
   describe "delete institution" do
     setup [:create_institution]
 
-    test "deletes chosen institution", %{conn: conn, institution: institution} do
+    test "deletes chosen institution", %{conn: conn, author: author, institution: institution} do
       conn = delete(conn, Routes.institution_path(conn, :delete, institution))
       assert redirected_to(conn) == Routes.institution_path(conn, :index)
       assert_error_sent 404, fn ->
+        conn = recycle(conn)
+          |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
         get(conn, Routes.institution_path(conn, :show, institution))
       end
     end
   end
 
   defp create_institution(%{ conn: conn  }) do
-    {:ok, author} = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", provider: "foo", system_role_id: Accounts.SystemRole.role_id.admin}) |> Repo.insert
+    {:ok, author} = Author.noauth_changeset(%Author{}, %{email: "test@test.com", given_name: "First", family_name: "Last", provider: "foo", system_role_id: Accounts.SystemRole.role_id.admin}) |> Repo.insert
     create_attrs = Map.put(@create_attrs, :author_id, author.id)
     {:ok, institution} = create_attrs |> Institutions.create_institution()
 
-    conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
+    conn = Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     {:ok, conn: conn, author: author, institution: institution}
   end

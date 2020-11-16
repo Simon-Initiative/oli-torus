@@ -5,7 +5,7 @@ defmodule Oli.Accounts.AuthorTest do
     alias Oli.Accounts.Author
 
     test "changeset should be invalid if password and confirmation do not match" do
-      changeset = Author.changeset(%Author{}, %{email: "test@test.com", first_name: "First", last_name: "Last", password: "foo", password_confirmation: "bar"})
+      changeset = Author.changeset(%Author{}, %{email: "test@test.com", given_name: "First", family_name: "Last", password: "foo", password_confirmation: "bar"})
       refute changeset.valid?
     end
   end

@@ -15,7 +15,7 @@ defmodule OliWeb.Qa.QaLive do
   alias OliWeb.Qa.State
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Repo
-  alias Phoenix.PubSub
+  alias Oli.Authoring.Broadcaster.Subscriber
 
 
   def mount(%{"project_id" => project_slug}, %{"current_author_id" => author_id}, socket) do
@@ -30,8 +30,8 @@ defmodule OliWeb.Qa.QaLive do
 
   # spin up subscriptions for running of reviews and dismissal of warnings
   defp subscribe(project_slug) do
-    PubSub.subscribe(Oli.PubSub, "new_review:project:" <> project_slug)
-    PubSub.subscribe(Oli.PubSub, "dismiss_warning:project:" <> project_slug)
+    Subscriber.subscribe_to_new_reviews(project_slug)
+    Subscriber.subscribe_to_warning_dismissals(project_slug)
   end
 
   def read_current_review(project) do

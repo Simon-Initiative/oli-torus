@@ -1,5 +1,10 @@
 defmodule Oli.Publishing.Resolver do
 
+  @moduledoc """
+  The `AuthoringResolver` and `DeliveryResolver` implement
+
+  """
+
   alias Oli.Resources.Revision
   alias Oli.Publishing.Publication
 
@@ -29,14 +34,14 @@ defmodule Oli.Publishing.Resolver do
 
 
   @doc """
-  Resolves the revision of the root resource.
+  Resolves the revision of the root container.
   """
-  @callback root_resource(String.t) :: %Revision{}
+  @callback root_container(String.t) :: %Revision{}
 
   @doc """
   Resolves the revisions of all containers and pages
   """
-  @callback hierarchy(String.t) :: [%Revision{}]
+  @callback all_revisions_in_hierarchy(String.t) :: [%Revision{}]
 
 
   @doc """

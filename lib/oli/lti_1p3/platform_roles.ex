@@ -81,7 +81,7 @@ defmodule Oli.Lti_1p3.PlatformRoles do
     uri: "http://purl.imsglobal.org/vocab/lis/v2/institution/person#Alumni"
   }
 
-  @institution_instrcutor %PlatformRole{
+  @institution_instructor %PlatformRole{
     id: 16,
     uri: "http://purl.imsglobal.org/vocab/lis/v2/institution/person#Instructor"
   }
@@ -107,7 +107,7 @@ defmodule Oli.Lti_1p3.PlatformRoles do
     uri: "http://purl.imsglobal.org/vocab/lis/v2/institution/person#ProspectiveStudent"
   }
 
-  def list_roles(), do: [
+  def list_roles(:unloaded), do: [
     @system_administrator,
     @system_none,
     @system_account_admin,
@@ -123,13 +123,15 @@ defmodule Oli.Lti_1p3.PlatformRoles do
     @institution_staff,
     @institution_student,
     @institution_alumni,
-    @institution_instrcutor,
+    @institution_instructor,
     @institution_learner,
     @institution_member,
     @institution_mentor,
     @institution_observer,
     @institution_prospective_student,
   ]
+
+  def list_roles(), do: Enum.map list_roles(:unloaded), &role_as_loaded/1
 
   @doc """
   Returns a role from a given atom if it is valid, otherwise returns nil
@@ -149,7 +151,7 @@ defmodule Oli.Lti_1p3.PlatformRoles do
   def get_role(:institution_staff), do: @institution_staff |> role_as_loaded
   def get_role(:institution_student), do: @institution_student |> role_as_loaded
   def get_role(:institution_alumni), do: @institution_alumni |> role_as_loaded
-  def get_role(:institution_instrcutor), do: @institution_instrcutor |> role_as_loaded
+  def get_role(:institution_instructor), do: @institution_instructor |> role_as_loaded
   def get_role(:institution_learner), do: @institution_learner |> role_as_loaded
   def get_role(:institution_member), do: @institution_member |> role_as_loaded
   def get_role(:institution_mentor), do: @institution_mentor |> role_as_loaded
@@ -175,7 +177,7 @@ defmodule Oli.Lti_1p3.PlatformRoles do
   def get_role_by_uri("http://purl.imsglobal.org/vocab/lis/v2/institution/person#Staff"), do: @institution_staff |> role_as_loaded
   def get_role_by_uri("http://purl.imsglobal.org/vocab/lis/v2/institution/person#Student"), do: @institution_student |> role_as_loaded
   def get_role_by_uri("http://purl.imsglobal.org/vocab/lis/v2/institution/person#Alumni"), do: @institution_alumni |> role_as_loaded
-  def get_role_by_uri("http://purl.imsglobal.org/vocab/lis/v2/institution/person#Instructor"), do: @institution_instrcutor |> role_as_loaded
+  def get_role_by_uri("http://purl.imsglobal.org/vocab/lis/v2/institution/person#Instructor"), do: @institution_instructor |> role_as_loaded
   def get_role_by_uri("http://purl.imsglobal.org/vocab/lis/v2/institution/person#Learner"), do: @institution_learner |> role_as_loaded
   def get_role_by_uri("http://purl.imsglobal.org/vocab/lis/v2/institution/person#Member"), do: @institution_member |> role_as_loaded
   def get_role_by_uri("http://purl.imsglobal.org/vocab/lis/v2/institution/person#Mentor"), do: @institution_mentor |> role_as_loaded
@@ -203,6 +205,16 @@ defmodule Oli.Lti_1p3.PlatformRoles do
   end
 
   @doc """
+  Returns the highest level role from a list of roles. This function assumes roles have an
+  ordinality which is defined by list_roles()
+  """
+  @spec get_highest_role([PlatformRole.t()]) :: PlatformRole.t()
+  def get_highest_role(roles) when is_list(roles) do
+    roles_map = platform_roles_as_map(roles)
+    Enum.find(list_roles(), fn r -> roles_map[r.uri] == true end)
+  end
+
+  @doc """
   Returns true if a user has a given role
   """
   @spec has_role?(Lti_1p3_User.t(), PlatformRole.t()) :: boolean()
@@ -216,22 +228,22 @@ defmodule Oli.Lti_1p3.PlatformRoles do
   """
   @spec has_roles?(Lti_1p3_User.t(), [PlatformRole.t()], :any) :: boolean()
   def has_roles?(user, roles, :any) when is_list(roles) do
-    user_roles_map = get_user_roles_map(user)
+    user_roles = Lti_1p3_User.get_platform_roles(user)
+    user_roles_map = platform_roles_as_map(user_roles)
     Enum.any?(roles, fn r -> user_roles_map[r.uri] == true end)
   end
 
-  @doc """
-  Returns true if a user has all of the given roles
-  """
+
+  # Returns true if a user has all of the given roles
   @spec has_roles?(Lti_1p3_User.t(), [PlatformRole.t()], :all) :: boolean()
   def has_roles?(user, roles, :all) when is_list(roles) do
-    user_roles_map = get_user_roles_map(user)
+    user_roles = Lti_1p3_User.get_platform_roles(user)
+    user_roles_map = platform_roles_as_map(user_roles)
     Enum.all?(roles, fn r -> user_roles_map[r.uri] == true end)
   end
 
   # Returns a map with keys of all role uris with value true if the user has the role, false otherwise
-  defp get_user_roles_map(user) do
-    user_roles = Lti_1p3_User.get_platform_roles(user)
+  defp platform_roles_as_map(user_roles) do
     Enum.reduce(list_roles(), %{}, fn r, acc -> Map.put_new(acc, r.uri, Enum.any?(user_roles, &(&1.uri == r.uri))) end)
   end
 

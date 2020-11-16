@@ -4,6 +4,16 @@ defmodule OliWeb.LayoutView do
   import OliWeb.DeliveryView, only: [user_role_is_student: 2, user_role_text: 2, user_role_color: 2, account_linked?: 1]
   alias Oli.Authoring
   alias Oli.Accounts.AuthorPreferences
+  alias Oli.Publishing.AuthoringResolver
+  alias OliWeb.Breadcrumb.BreadcrumbTrailLive
+
+  def container_slug(assigns) do
+    if assigns[:container] do assigns.container.slug else nil end
+  end
+
+  def root_container_slug(project_slug) do
+    AuthoringResolver.root_container(project_slug).slug
+  end
 
   def get_title(assigns) do
     live_title_tag assigns[:page_title] || assigns[:title] || "Open Learning Initiative", suffix: ""
@@ -28,7 +38,7 @@ defmodule OliWeb.LayoutView do
 
   def account_link(%{:assigns => assigns} = conn) do
     current_author = assigns.current_author
-    full_name = "#{current_author.first_name} #{current_author.last_name}"
+    full_name = "#{current_author.name}"
     link full_name, to: Routes.workspace_path(conn, :account),
     class: "#{active_class(active_or_nil(assigns), :account)} account-link"
   end

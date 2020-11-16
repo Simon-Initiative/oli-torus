@@ -12,6 +12,7 @@ import { TableEditor } from 'components/editing/models/table/TableEditor';
 import { ThEditor } from 'components/editing/models/table/ThEditor';
 import { TdEditor } from 'components/editing/models/table/TdEditor';
 import { TrEditor } from 'components/editing/models/table/TrEditor';
+import { WebpageEditor } from '../models/webpage/Editor';
 
 export function editorFor(
   element: ContentModel.ModelElement,
@@ -56,6 +57,8 @@ export function editorFor(
       return <BlockQuoteEditor {...(editorProps as EditorProps<ContentModel.Blockquote>)} />;
     case 'youtube':
       return <YouTubeEditor {...(editorProps as EditorProps<ContentModel.YouTube>)} />;
+    case 'iframe':
+      return <WebpageEditor {...(editorProps as EditorProps<ContentModel.Webpage>)} />;
     case 'a':
       return <LinkEditor {...(editorProps as EditorProps<ContentModel.Hyperlink>)} />;
     case 'audio':

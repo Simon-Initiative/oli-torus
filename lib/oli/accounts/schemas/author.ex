@@ -1,21 +1,26 @@
 defmodule Oli.Accounts.Author do
   use Ecto.Schema
+  use Pow.Ecto.Schema,
+    password_hash_methods: {&Bcrypt.hash_pwd_salt/1,
+                            &Bcrypt.verify_pass/2}
+  use PowAssent.Ecto.Schema
+  use Pow.Extension.Ecto.Schema,
+    extensions: [PowResetPassword, PowEmailConfirmation]
+
   import Ecto.Changeset
+  import Oli.Utils, only: [maybe_name_from_given_and_family: 1]
 
   alias Oli.Accounts.SystemRole
 
   schema "authors" do
-    field :email, :string
-    field :first_name, :string
-    field :last_name, :string
-    field :provider, :string
-    field :token, :string
-    # virtual fields are NOT persisted to the database
-    field :password, :string, virtual: true
-    field :password_confirmation, :string, virtual: true
-    field :password_hash, :string
-    field :email_verified, :boolean, default: false
-    embeds_one :preferences, Oli.Accounts.AuthorPreferences
+    field :name, :string
+    field :given_name, :string
+    field :family_name, :string
+    field :picture, :string
+
+    pow_user_fields()
+
+    embeds_one :preferences, Oli.Accounts.AuthorPreferences, on_replace: :delete
     belongs_to :system_role, Oli.Accounts.SystemRole
     has_many :institutions, Oli.Institutions.Institution
     has_many :users, Oli.Accounts.User
@@ -26,41 +31,47 @@ defmodule Oli.Accounts.Author do
   end
 
   @doc false
-  def changeset(author, attrs \\ %{}, opts \\ []) do
-    ignore_required = case opts do
-      [ ignore_required: ignore_required ] -> ignore_required
-      _ -> nil
-    end
+  def changeset(author, attrs \\ %{}) do
 
     author
+    |> pow_changeset(attrs)
+    |> pow_extension_changeset(attrs)
     |> cast(attrs, [
-      :email,
-      :first_name,
-      :last_name,
-      :provider,
-      :token,
-      :password,
-      :email_verified,
+      :name,
+      :given_name,
+      :family_name,
+      :picture,
       :system_role_id,
     ])
     |> cast_embed(:preferences)
-    |> validate_required(
-      [:email, :first_name, :last_name, :provider]
-      |> filter_ignored_fields(ignore_required)
-    )
     |> default_system_role()
-    |> unique_constraint(:email)
-    |> validate_length(:password, min: 6)
-    |> validate_confirmation(:password, message: "does not match password")
     |> lowercase_email()
-    |> hash_password()
+    |> maybe_name_from_given_and_family()
   end
 
-  defp filter_ignored_fields(fields, nil), do: fields
-  defp filter_ignored_fields(fields, ignored_fields) do
-    Enum.filter(fields, fn field ->
-      if Enum.member?(ignored_fields, field), do: false, else: true
-    end)
+  @doc """
+  Creates a changeset that doesnt require a current password, used for lower risk changes to author
+  (as opposed to higher risk, like password changes)
+  """
+  def noauth_changeset(author, attrs \\ %{}) do
+    author
+    |> cast(attrs, [
+      :email,
+      :name,
+      :given_name,
+      :family_name,
+      :picture,
+      :system_role_id,
+    ])
+    |> cast_embed(:preferences)
+    |> default_system_role()
+    |> lowercase_email()
+  end
+
+  def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
+    user_or_changeset
+    |> Ecto.Changeset.cast(attrs, [:name, :given_name, :family_name, :picture])
+    |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
   end
 
   defp default_system_role(changeset) do
@@ -80,18 +91,8 @@ defmodule Oli.Accounts.Author do
     end
   end
 
-  defp hash_password(changeset) do
-    case changeset do
-      # if changeset is valid and has a password, we want to convert it to a hash
-      %Ecto.Changeset{valid?: true, changes: %{password: pass}} ->
-        put_change(changeset, :password_hash, Bcrypt.hash_pwd_salt(pass))
-
-      _ ->
-        changeset
-    end
-  end
-
   defp lowercase_email(changeset) do
     update_change(changeset, :email, &String.downcase/1)
   end
+
 end

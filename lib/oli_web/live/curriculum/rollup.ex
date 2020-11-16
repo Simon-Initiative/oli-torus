@@ -101,6 +101,7 @@ defmodule OliWeb.Curriculum.Rollup do
   defp build_activity_to_page_map(pages) do
 
     Enum.reduce(pages, %{}, fn %{resource_id: page_id} = revision, map ->
+
       activities = get_activities_from_page(revision)
       Map.put(map, page_id, activities)
     end)
