@@ -1,11 +1,14 @@
 defmodule Oli.Accounts.Author do
   use Ecto.Schema
-  use Pow.Ecto.Schema
+  use Pow.Ecto.Schema,
+    password_hash_methods: {&Bcrypt.hash_pwd_salt/1,
+                            &Bcrypt.verify_pass/2}
   use PowAssent.Ecto.Schema
   use Pow.Extension.Ecto.Schema,
     extensions: [PowResetPassword, PowEmailConfirmation]
 
   import Ecto.Changeset
+  import Oli.Utils, only: [maybe_name_from_given_and_family: 1]
 
   alias Oli.Accounts.SystemRole
 
@@ -43,6 +46,7 @@ defmodule Oli.Accounts.Author do
     |> cast_embed(:preferences)
     |> default_system_role()
     |> lowercase_email()
+    |> maybe_name_from_given_and_family()
   end
 
   @doc """
@@ -90,4 +94,5 @@ defmodule Oli.Accounts.Author do
   defp lowercase_email(changeset) do
     update_change(changeset, :email, &String.downcase/1)
   end
+
 end

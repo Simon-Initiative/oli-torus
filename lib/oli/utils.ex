@@ -49,4 +49,23 @@ defmodule Oli.Utils do
       _ -> {:ok, result}
     end
   end
+
+  def maybe_name_from_given_and_family(changeset) do
+    case changeset do
+      # if changeset is valid and doesnt have a name in changes, derive name from given_name and family_name
+      %Ecto.Changeset{valid?: true, changes: changes, data: data} ->
+        case Map.get(changes, :name) do
+          nil ->
+            name = "#{Map.get(changes, :given_name) |> value_or(Map.get(data, :given_name)) |> value_or("")} #{Map.get(changes, :family_name) |> value_or(Map.get(data, :family_name)) |> value_or("")}"
+              |> String.trim()
+
+            Ecto.Changeset.put_change(changeset, :name, name)
+
+          _ ->
+            changeset
+        end
+      _ ->
+        changeset
+    end
+  end
 end

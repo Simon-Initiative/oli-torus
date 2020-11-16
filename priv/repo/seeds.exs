@@ -31,8 +31,9 @@ end
 if !Oli.Repo.get_by(Oli.Accounts.Author, email: System.get_env("ADMIN_EMAIL", "admin@example.edu")) do
   case Pow.Ecto.Context.create(%{
     email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),
+    name: "Administrator",
     given_name: "Administrator",
-    family_name: "Admin",
+    family_name: "",
     password: System.get_env("ADMIN_PASSWORD", "changeme"),
     password_confirmation: System.get_env("ADMIN_PASSWORD", "changeme"),
     system_role_id: Oli.Accounts.SystemRole.role_id.admin
