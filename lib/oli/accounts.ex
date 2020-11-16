@@ -239,23 +239,6 @@ defmodule Oli.Accounts do
     conn.assigns[:current_author]
   end
 
-  @doc """
-  Authorizes a author with the given email and passord
-  """
-  def authorize_author(author_email, password) do
-    Repo.get_by(Author, email: author_email)
-      |> authorize(password)
-  end
-
-  defp authorize(nil, _password), do: {:error, "Invalid authorname or password"}
-  defp authorize(author, password) do
-    Bcrypt.check_pass(author, password, hash_key: :password_hash)
-    |> resolve_authorization(author)
-  end
-
-  defp resolve_authorization({:error, _reason}, _author), do: {:error, "Invalid authorname or password"}
-  defp resolve_authorization({:ok, author}, _author), do: {:ok, author}
-
   def can_access?(author, project) do
 
     admin_role_id = SystemRole.role_id().admin

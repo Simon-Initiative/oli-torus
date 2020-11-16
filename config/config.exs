@@ -62,6 +62,7 @@ config :oli, :pow,
   mailer_backend: OliWeb.Pow.Mailer,
   web_mailer_module: OliWeb,
   pow_assent: [
+    user_identities_context: OliWeb.Pow.UserIdentities,
     providers: [
       google: [
         client_id: System.get_env("GOOGLE_CLIENT_ID"),
