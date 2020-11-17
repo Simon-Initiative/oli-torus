@@ -44,7 +44,7 @@ Full Documentation: [simon-initiative.github.io/oli-torus](https://simon-initiat
    ```
 
    Verify the configurations in oli.env are correct for your setup, or leave the defaults. For certain features
-   you will need to configure OAuth credentials for login providers and an AWS credentials
+   you will need to configure OAuth credentials for login providers and AWS credentials
    with S3 permissions for media uploads to work properly.
 
    Skip the remaining setup steps and use `mix phx.server` to run the server.
