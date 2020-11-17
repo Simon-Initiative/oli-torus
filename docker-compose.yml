@@ -4,7 +4,8 @@ services:
     build: .
     container_name: oli_app
     ports:
-      - 4000:4000
+      - 80:80
+      - 443:443
     env_file: ./oli.env
     depends_on:
       - postgres
