@@ -1,0 +1,8 @@
+{
+  "skip_files": [
+    "deps",
+    "priv",
+    "test",
+    "lib/mix"
+  ]
+}
