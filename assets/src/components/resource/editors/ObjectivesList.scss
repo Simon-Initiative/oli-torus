@@ -1,7 +1,11 @@
 @import "authoring/variables.scss";
 
+.objectives-list-container {
+  background-color: $card-cap-bg;
+  padding: 0 4px;
+}
+
 .objectives-list {
-  margin-top: 1rem;
   padding: 6px 10px;
   font-size: 14px;
 
@@ -17,6 +21,7 @@
     @include ellipsis;
     max-width: 32%;
     vertical-align: middle;
+    cursor: pointer;
   }
 
   @include media-breakpoint-down(lg) {

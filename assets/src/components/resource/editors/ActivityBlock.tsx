@@ -25,7 +25,7 @@ export const ActivityBlock = (props: ActivityBlockProps) => {
   const id = `activity-header${props.contentItem.activitySlug}`;
   return (
     <div className="resource-content-frame card">
-      <div className="card-header px-2 pb-0"
+      <div className="card-header px-2"
         draggable={true}
         onDragStart={e => props.onDragStart(e, id)}
         onDragEnd={props.onDragEnd}>
@@ -45,9 +45,10 @@ export const ActivityBlock = (props: ActivityBlockProps) => {
 
           <DeleteButton editMode={props.content.size > 1} onClick={props.onRemove} />
         </div>
-
-        <ObjectivesList objectives={props.objectives} ></ObjectivesList>
       </div>
+
+      <ObjectivesList objectives={props.objectives} ></ObjectivesList>
+
       <div className="card-body">
 
         {props.children}
