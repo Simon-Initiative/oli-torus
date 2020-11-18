@@ -29,7 +29,7 @@ Full Documentation: [simon-initiative.github.io/oli-torus](https://simon-initiat
     ```
     > NOTE: Use Ctrl+c to exit log streaming and `docker-compose down` to stop the server.
 
-1. Open your web browser to `localhost:4000`
+1. Open your web browser to `https://localhost`
 
 #### Run development server natively
 
@@ -42,6 +42,10 @@ Full Documentation: [simon-initiative.github.io/oli-torus](https://simon-initiat
    ```
    $ sh ./devmode.sh
    ```
+
+   Verify the configurations in oli.env are correct for your setup, or leave the defaults. For certain features
+   you will need to configure OAuth credentials for login providers and AWS credentials
+   with S3 permissions for media uploads to work properly.
 
    Skip the remaining setup steps and use `mix phx.server` to run the server.
 
@@ -104,7 +108,7 @@ Full Documentation: [simon-initiative.github.io/oli-torus](https://simon-initiat
     ```
     > NOTE: Use Ctrl+c to stop the Phoenix server
 
-1. Open your web browser to `localhost:4000`
+1. Open your web browser to `https://localhost`
 
 
 ### Running Tests
@@ -119,6 +123,16 @@ If using docker-compose, you can start a bash session to execute any of the foll
 1. Run server tests
     ```
     $ mix test
+    ```
+
+1. Run server tests for a specific file, watch for changes and automatically re-run tests
+    ```
+    $ mix test.watch lib/some_dir/file_to_watch.ex
+    ```
+
+1. Generate an html coverage report
+    ```
+    $ mix test.coverage
     ```
 
 ### Tunneling localhost connection for LTI development

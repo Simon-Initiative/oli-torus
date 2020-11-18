@@ -24,8 +24,7 @@ if [ ! -f .devmode ]; then
   echo "## Creating database and running migration..."
   set -a
   source oli.env
-  mix ecto.create
-  mix ecto.migrate
+  mix ecto.setup
 
   touch .devmode
   echo "## All done. Let's write some code!" && sleep 1
