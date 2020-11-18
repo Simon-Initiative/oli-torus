@@ -5,6 +5,9 @@ defmodule Oli.Grading.LineItem do
   @enforce_keys [:scoreMaximum, :label, :resourceId]
   defstruct [:id, :scoreMaximum, :label, :resourceId]
 
+  # The javascript naming convention here is important to match what the
+  # LTI AGS standard expects
+
   @type t() :: %__MODULE__{
     id: String.t(),
     scoreMaximum: float,

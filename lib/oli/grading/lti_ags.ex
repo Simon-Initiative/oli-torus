@@ -58,14 +58,17 @@ defmodule Oli.Grading.LTI_AGS do
     # here as a Torus "resource_id" is strictly coincidence.
 
     prefixed_resource_id = LineItem.to_resource_id(resource_id)
-    request_url = "#{line_items_service_url}?resource_id=#{prefixed_resource_id}"
+    request_url = "#{line_items_service_url}?resource_id=#{prefixed_resource_id}&limit=1"
 
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(request_url, headers(access_token)),
       {:ok, result} <- Jason.decode(body)
     do
       case result do
         [] -> create_line_item(line_items_service_url, resource_id, score_maximum, label, access_token)
-        [raw_line_item] ->
+
+        # it is important to match against a possible array of items, in case an LMS does
+        # not properly support the limit parameter
+        [raw_line_item | _] ->
 
           line_item = to_line_item(raw_line_item)
 
@@ -98,13 +101,19 @@ defmodule Oli.Grading.LTI_AGS do
 
     Logger.debug("Fetch line items from #{line_items_service_url}")
 
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(line_items_service_url, headers(access_token)),
+    # Unfortunately, at least Canvas implements a default limit of 10 line items
+    # when one makes a request without a 'limit' parameter specified. Setting it explicity to 1000
+    # bypasses this default limit, of course, and works in all cases until a course more than
+    # a thousand gradebook entries.
+    url = line_items_service_url <> "?limit=1000"
+
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(url, headers(access_token)),
       {:ok, results} <- Jason.decode(body)
     do
       {:ok, Enum.map(results, fn r -> to_line_item(r) end)}
     else
       e ->
-        Logger.error("Error encountered fetching line items from #{line_items_service_url} #{inspect e}")
+        Logger.error("Error encountered fetching line items from #{url} #{inspect e}")
         {:error, "Error retrieving all line items"}
     end
 

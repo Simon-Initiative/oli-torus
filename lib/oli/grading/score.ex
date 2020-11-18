@@ -4,6 +4,9 @@ defmodule Oli.Grading.Score do
   @enforce_keys [:timestamp, :scoreGiven, :scoreMaximum, :comment, :activityProgress, :gradingProgress, :userId]
   defstruct [:timestamp, :scoreGiven, :scoreMaximum, :comment, :activityProgress, :gradingProgress, :userId]
 
+  # The javascript naming convention here is important to match what the
+  # LTI AGS standard expects
+
   @type t() :: %__MODULE__{
     timestamp: String.t(),
     scoreGiven: float,

@@ -71,7 +71,7 @@ defmodule Oli.Grading do
       # Finally, post the score for this line item
       {:ok, line_item} ->
 
-        case to_score(lti_launch_params, resource_access)
+        case to_score(Map.get(lti_launch_params, "sub"), resource_access)
         |>  LTI_AGS.post_score(line_item, token) do
 
           {:ok, _} -> {:ok, :synced}
@@ -88,7 +88,7 @@ defmodule Oli.Grading do
 
   # helper to create an LTI AGS 2.0 compliant score from our launch params and
   # our resource access
-  defp to_score(lti_launch_params, %ResourceAccess{} = resource_access) do
+  def to_score(sub, %ResourceAccess{} = resource_access) do
 
     {:ok, dt} = DateTime.now("Etc/UTC")
     timestamp = DateTime.to_iso8601(dt)
@@ -100,7 +100,7 @@ defmodule Oli.Grading do
       comment: "",
       activityProgress: "Completed",
       gradingProgress: "FullyGraded",
-      userId: Map.get(lti_launch_params, "sub")
+      userId: sub,
     }
 
   end
@@ -166,26 +166,13 @@ defmodule Oli.Grading do
     publication = Sections.get_section_publication!(section.id)
 
     # get publication page resources, filtered by graded: true
-    graded_pages = Publishing.get_resource_revisions_for_publication(publication)
-      |> Map.values
-      |> Enum.filter(fn {_resource, revision} -> revision.graded == true end)
-      |> Enum.map(fn {_resource, revision} -> revision end)
+    graded_pages = fetch_graded_pages(section.context_id)
 
     # get students enrolled in the section, filter by role: student
-    students = Sections.list_enrollments(section.context_id)
-      |> Enum.filter(fn e -> ContextRoles.contains_role?(e.context_roles, ContextRoles.get_role(:context_learner)) end)
-      |> Enum.map(fn e -> e.user end)
+    students = fetch_students(section.context_id)
 
     # create a map of all resource accesses, keyed off resource id
-    resource_accesses = Attempts.get_graded_resource_access_for_context(section.context_id)
-      |> Enum.reduce(%{}, fn resource_access, acc ->
-        case acc[resource_access.resource_id] do
-          nil ->
-            Map.put_new(acc, resource_access.resource_id, Map.put_new(%{}, resource_access.user_id, resource_access))
-          resource_accesses ->
-            Map.put(acc, resource_access.resource_id, Map.put_new(resource_accesses, resource_access.user_id, resource_access))
-        end
-      end)
+    resource_accesses = fetch_resource_accesses(section.context_id)
 
     # build gradebook map - for each user in the section, create a gradebook row. Using
     # resource_accesses, create a list of gradebook scores leaving scores null if they do not exist
@@ -216,6 +203,24 @@ defmodule Oli.Grading do
     # return gradebook
     column_labels = Enum.map graded_pages, fn revision -> revision.title end
     {gradebook, column_labels}
+  end
+
+  def fetch_students(context_id) do
+    Sections.list_enrollments(context_id)
+      |> Enum.filter(fn e -> ContextRoles.contains_role?(e.context_roles, ContextRoles.get_role(:context_learner)) end)
+      |> Enum.map(fn e -> e.user end)
+  end
+
+  def fetch_resource_accesses(context_id) do
+    Attempts.get_graded_resource_access_for_context(context_id)
+      |> Enum.reduce(%{}, fn resource_access, acc ->
+        case acc[resource_access.resource_id] do
+          nil ->
+            Map.put_new(acc, resource_access.resource_id, Map.put_new(%{}, resource_access.user_id, resource_access))
+          resource_accesses ->
+            Map.put(acc, resource_access.resource_id, Map.put_new(resource_accesses, resource_access.user_id, resource_access))
+        end
+      end)
   end
 
   def fetch_graded_pages(context_id) do

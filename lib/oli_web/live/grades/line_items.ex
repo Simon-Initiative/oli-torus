@@ -3,8 +3,7 @@ defmodule OliWeb.Grades.LineItems do
 
   def render(assigns) do
 
-    has_tasks? = length(assigns.task_queue) > 0
-    disabled = if has_tasks? do "disabled" else "" end
+    disabled = if length(assigns.task_queue) > 0 do "disabled" else "" end
 
     ~L"""
 
