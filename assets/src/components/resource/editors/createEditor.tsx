@@ -54,56 +54,56 @@ export const createEditor = (
 
   const activity = activities.get(content.activitySlug);
 
-  // if (activity !== undefined) {
+  if (activity !== undefined) {
 
-  //   const editor = editorMap[activity.typeSlug]
-  //     ? editorMap[activity.typeSlug]
-  //     : unsupported;
+    const editor = editorMap[activity.typeSlug]
+      ? editorMap[activity.typeSlug]
+      : unsupported;
 
-  //   const previewText = activity.model.authoring?.previewText;
+    const previewText = activity.model.authoring?.previewText;
 
-  //   // Test mode is supported by giving the delivery component a transformed
-  //   // instance of the activity model.  Recognizing that we are in an editing mode
-  //   // we make this robust to problems with transformation so we fallback to the raw
-  //   // model if the transformed model is null (which results from failure to transform)
-  //   const model = valueOr(activity.transformed, activity.model)
+    // Test mode is supported by giving the delivery component a transformed
+    // instance of the activity model.  Recognizing that we are in an editing mode
+    // we make this robust to problems with transformation so we fallback to the raw
+    // model if the transformed model is null (which results from failure to transform)
+    const model = valueOr(activity.transformed, activity.model)
 
-  //   const slugsAsKeys = Object.keys(activity.objectives)
-  //     .reduce((map: any, key) => {
-  //       (activity.objectives as any)[key as any].forEach((slug: string) => {
-  //         map[slug] = true;
-  //       });
-  //       return map;
-  //     },
-  //       {});
+    const slugsAsKeys = Object.keys(activity.objectives)
+      .reduce((map: any, key) => {
+        (activity.objectives as any)[key as any].forEach((slug: string) => {
+          map[slug] = true;
+        });
+        return map;
+      },
+        {});
 
-  //   const objectives = Object.keys(slugsAsKeys)
-  //     .map(slug => objectivesMap[slug]);
+    const objectives = Object.keys(slugsAsKeys)
+      .map(slug => objectivesMap[slug]);
 
-  //   const props = {
-  //     model: JSON.stringify(model),
-  //     activitySlug: activity.activitySlug,
-  //     state: JSON.stringify(defaultState(model)),
-  //     graded: false,
-  //   };
+    const props = {
+      model: JSON.stringify(model),
+      activitySlug: activity.activitySlug,
+      state: JSON.stringify(defaultState(model)),
+      graded: false,
+    };
 
-  //   return (
-  //     <ActivityBlock
-  //       {...editorProps}
-  //       contentItem={content}
-  //       label={editor.friendlyName}
-  //       projectSlug={projectSlug}
-  //       resourceSlug={resourceSlug}
-  //       objectives={objectives}>
+    return (
+      <ActivityBlock
+        {...editorProps}
+        contentItem={content}
+        label={editor.friendlyName}
+        projectSlug={projectSlug}
+        resourceSlug={resourceSlug}
+        objectives={objectives}>
 
-  //       <TestModeHandler model={model}>
-  //         {React.createElement(editor.deliveryElement, props as any)}
-  //       </TestModeHandler>
+        <TestModeHandler model={model}>
+          {React.createElement(editor.deliveryElement, props as any)}
+        </TestModeHandler>
 
-  //       <div className="activity-preview-info">This is a live preview of your activity. <a href="" className="ml-2"><i className="lar la-eye-slash"></i> Hide</a> </div>
-  //     </ActivityBlock>
-  //   );
-  // }
+        <div className="activity-preview-info">This is a live preview of your activity. <a href="" className="ml-2"><i className="lar la-eye-slash"></i> Hide</a> </div>
+      </ActivityBlock>
+    );
+  }
 
   return (
     <div className="alert alert-danger">There was a problem rendering this content block. The content type may not be supported.</div>
