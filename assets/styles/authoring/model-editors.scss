@@ -148,12 +148,9 @@
     border: 0;
     width: 100%;
     height: auto;
-    font-feature-settings: 'liga', 'lnum';
-    color: rgba(0,0,0,.68);
+    color: rgba($color: $body-color, $alpha: .68);
+    background: transparent;
     outline: none;
-  }
-  .settings-input::placeholder {
-    color: #b3b3b1;
   }
   .settings-input:active::placeholder,
   .settings-input:focus::placeholder {

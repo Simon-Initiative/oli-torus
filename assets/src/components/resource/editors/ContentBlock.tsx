@@ -12,26 +12,26 @@ const getDescription = (item: ResourceContent) => {
     : '';
 };
 
-interface ContentCardProps {
-  onDragStart: (e: React.DragEvent<HTMLDivElement>, id: string) => void;
-  onDragEnd: () => void;
+interface ContentBlockProps {
   editMode: boolean;
-  editor: JSX.Element;
-  onEditPurpose: (purpose: string) => void;
+  children?: JSX.Element | JSX.Element[] ;
   content: Immutable.List<ResourceContent>;
-  onRemove: () => void;
   purposes: PurposeType[];
   contentItem: StructuredContent;
   index: number;
+  onDragStart: (e: React.DragEvent<HTMLDivElement>, id: string) => void;
+  onDragEnd: () => void;
+  onEditPurpose: (purpose: string) => void;
+  onRemove: () => void;
 }
-export const ContentCard = (props: ContentCardProps) => {
+export const ContentBlock = (props: ContentBlockProps) => {
   const id = `content-header-${props.index}`;
   return (
     <div className="resource-content-frame card"
       draggable={true}
       onDragStart={e => props.onDragStart(e, id)}
       onDragEnd={props.onDragEnd}>
-      <div id={id} className="card-header pl-2">
+      <div id={id} className="card-header px-2">
         <div className="d-flex flex-row align-items-center">
           <div className="d-flex align-items-center flex-grow-1">
             <DragHandle style={{ height: 24, marginRight: 10 }} />
@@ -51,7 +51,9 @@ export const ContentCard = (props: ContentCardProps) => {
       </div>
       <div className="card-body">
         <div draggable={true} onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-          {props.editor}
+
+          {props.children}
+
         </div>
       </div>
     </div>

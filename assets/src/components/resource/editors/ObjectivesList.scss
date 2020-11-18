@@ -1,0 +1,34 @@
+@import "authoring/variables.scss";
+
+.objectives-list {
+  margin-top: 1rem;
+  padding: 6px 10px;
+  font-size: 14px;
+
+  &.no-objectives {
+    background-color: mix($warning, $body-bg, $weight: 5%);
+  }
+
+  &.with-objectives {
+    background-color: mix($info, $body-bg, $weight: 5%);
+  }
+
+  .objective-token {
+    @include ellipsis;
+    max-width: 32%;
+    vertical-align: middle;
+  }
+
+  @include media-breakpoint-down(lg) {
+    .objective-token {
+      max-width: 48%;
+    }
+  }
+
+  @include media-breakpoint-down(md) {
+    .objective-token {
+      max-width: 98%;
+    }
+  }
+
+}

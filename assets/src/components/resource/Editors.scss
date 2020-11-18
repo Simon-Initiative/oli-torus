@@ -5,7 +5,6 @@
 .editors {
 
   .resource-content-frame {
-    cursor: grab;
     width: 100%;
 
     &.card {
@@ -14,6 +13,7 @@
     }
 
     .card-header {
+      cursor: grab;
       border-bottom: 0;
       border-top-left-radius: 8px;
       border-top-right-radius: 8px;
@@ -25,7 +25,7 @@
 
     .card-body {
       padding: 0;
-      border: 4px solid rgba(0, 0, 0, 0.03);
+      border: 4px solid $card-cap-bg;
       border-bottom-left-radius: 8px;
       border-bottom-right-radius: 8px;
 
@@ -34,9 +34,18 @@
         border-radius: 3px;
         cursor: initial;
         padding: 1.3em 10px;
+
         &.structured-content {
           padding: 1.3em max(calc(50% - 340px), 20px);
         }
+      }
+
+      .activity-preview-info {
+        background-color: $card-cap-bg;
+        text-align: center;
+        font-style: italic;
+        font-size: 14px;
+        color: rgba($color: $body-color, $alpha: .8);
       }
     }
 
@@ -44,6 +53,7 @@
       padding: 10px;
       color: delivery.$body-color;
       background-color: delivery.$body-bg;
+      padding: 1.3em max(calc(50% - 340px), 20px);
     }
   }
 
