@@ -11,7 +11,6 @@ defmodule Oli.Grading do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Attempts.ResourceAccess
-  alias Oli.Publishing
   alias Oli.Grading.GradebookRow
   alias Oli.Grading.GradebookScore
   alias Oli.Lti_1p3.ContextRoles
@@ -162,8 +161,6 @@ defmodule Oli.Grading do
   `{[%GradebookRow{user: %User{}, scores: [%GradebookScore{}, ...]}, ...], ["Quiz 1", "Quiz 2"]}`
   """
   def generate_gradebook_for_section(%Section{} = section) do
-    # get publication for the section
-    publication = Sections.get_section_publication!(section.id)
 
     # get publication page resources, filtered by graded: true
     graded_pages = fetch_graded_pages(section.context_id)

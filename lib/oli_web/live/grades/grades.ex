@@ -3,7 +3,6 @@ defmodule OliWeb.Grades.GradesLive do
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   use Phoenix.HTML
 
-  alias Oli.Delivery.Sections.Section
   alias Oli.Grading
   alias Oli.Grading.LTI_AGS
   alias Oli.Grading.LineItem
@@ -110,13 +109,19 @@ defmodule OliWeb.Grades.GradesLive do
 
                 # Here we preprend a function that when invoked will
                 # post the score to the AGS endpoint
-                [fn assigns ->
-                  line_item = Map.get(assigns.cached_line_items, LineItem.to_resource_id(revision.resource_id))
+                if (score != nil and out_of != nil) do
 
-                  Grading.to_score(sub, student_resource_accesses)
-                  |> LTI_AGS.post_score(line_item, assigns.access_token)
+                  [fn assigns ->
+                    line_item = Map.get(assigns.cached_line_items, LineItem.to_resource_id(revision.resource_id))
 
-                end | acc]
+                    Grading.to_score(sub, student_resource_accesses)
+                    |> LTI_AGS.post_score(line_item, assigns.access_token)
+
+                  end | acc]
+
+                else
+                  acc
+                end
 
               _ -> acc
             end
