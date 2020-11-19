@@ -54,8 +54,8 @@ defmodule Oli.Authoring.Collaborators do
     Accounts.get_author_by_email(email)
     |> case do
          nil -> case PowInvitation.Plug.create_user(conn, %{email: email}) do
-                  {:ok, user, conn} -> {:ok, user, :invitation_new_user}
-                  {:error, changeset, conn} -> {:error, "Unable to create invitation for new author"}
+                  {:ok, user, _conn} -> {:ok, user, :invitation_new_user}
+                  {:error, _changeset, _conn} -> {:error, "Unable to create invitation for new author"}
                 end
          author -> {:ok, author, :invitation_existing_user}
        end
