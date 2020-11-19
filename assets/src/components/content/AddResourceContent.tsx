@@ -176,7 +176,7 @@ export const AddResourceContent = (
             'add-resource-content',
             isPopoverOpen ? 'active' : '',
             isLast ? 'add-resource-content-last' : '',
-            editMode ? '' : 'disabled'
+            editMode ? '' : 'disabled',
           ])}
         onClick={togglePopover}>
 
