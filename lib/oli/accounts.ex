@@ -262,8 +262,9 @@ defmodule Oli.Accounts do
   def project_author_count(project) do
     Repo.one(
       from assoc in "authors_projects",
-        where: assoc.project_id == ^project.id,
-        select: count(assoc))
+      join: author in Author, on: assoc.author_id == author.id,
+      where: assoc.project_id in ^project.id and (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
+        select: count(author))
   end
 
   def project_authors(project_ids) when is_list(project_ids) do

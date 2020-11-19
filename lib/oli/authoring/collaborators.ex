@@ -54,21 +54,20 @@ defmodule Oli.Authoring.Collaborators do
     Accounts.get_author_by_email(email)
     |> case do
          nil -> case PowInvitation.Plug.create_user(conn, %{email: email}) do
-                  {:ok, user, conn} -> {:ok, user, "new_user"}
-                  {:error, changeset, conn} -> {:error, "Unable to create new invitation"}
+                  {:ok, user, conn} -> {:ok, user, :invitation_new_user}
+                  {:error, changeset, conn} -> {:error, "Unable to create invitation for new author"}
                 end
-         author -> {:ok, author, "existing_user"}
+         author -> {:ok, author, :invitation_existing_user}
        end
   end
 
-  def add_collaborator(conn, email, project_id) do
+  def add_collaborator(conn, email, project_slug) do
     with {:ok, author, status} <- get_or_invite_author(conn, email),
-         {:ok, results} <- add_collaborator(email, project_id)
+         {:ok, results} <- add_collaborator(email, project_slug),
+         {:ok, project} <- Course.get_project_by_slug(project_slug)
+                           |> trap_nil("The project was not found."),
+         {:ok, _mail} <- deliver_invitation_email(conn, author, project, status)
       do
-      case status do
-        "new_user" -> deliver_invitation_email(conn, author, project_id, :invitation_new_user)
-        "existing_user" -> deliver_invitation_email(conn, author, project_id, :invitation_existing_user)
-      end
       {:ok, results}
     else
       {:error, message} -> {:error, message}
@@ -120,13 +119,13 @@ defmodule Oli.Authoring.Collaborators do
     end
   end
 
-  defp deliver_invitation_email(conn, user, project_id, view) do
+  defp deliver_invitation_email(conn, user, project, view) do
     invited_by = Pow.Plug.current_user(conn)
 
     url = case view do
       :invitation_new_user -> token = PowInvitation.Plug.sign_invitation_token(conn, user)
-                     Routes.pow_invitation_invitation_path(conn, :edit, token)
-      :invitation_existing_user -> Routes.project_path(conn, :overview, project_id)
+                              Routes.pow_invitation_invitation_path(conn, :edit, token)
+      :invitation_existing_user -> Routes.project_path(conn, :overview, project.slug)
     end
 
     invited_by_user_id = Map.get(invited_by, invited_by.__struct__.pow_user_id_field())
@@ -137,9 +136,10 @@ defmodule Oli.Authoring.Collaborators do
       invited_by: invited_by,
       invited_by_user_id: invited_by_user_id,
       url: Routes.url(conn) <> url,
-      project_id: project_id
+      project_title: project.title
     )
 
-    Pow.Phoenix.Mailer.deliver(conn, email)
+    mail = Pow.Phoenix.Mailer.deliver(conn, email)
+    {:ok, mail}
   end
 end
