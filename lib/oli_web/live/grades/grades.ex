@@ -163,7 +163,10 @@ defmodule OliWeb.Grades.GradesLive do
 
         {:ok, memberships} ->
 
-          subs = Enum.map(memberships, fn m -> m.user_id end) |> MapSet.new()
+          # get a set of the subs corresponding to Active students
+          subs = Enum.filter(memberships, fn m -> m.status == "Active" end)
+          |> Enum.map(fn m -> m.user_id end) |> MapSet.new()
+
           Enum.filter(students, fn s -> MapSet.member?(subs, s.sub) end)
 
         _ -> students
