@@ -14,7 +14,7 @@ defmodule Oli.Grading do
   alias Oli.Grading.GradebookRow
   alias Oli.Grading.GradebookScore
   alias Oli.Lti_1p3.ContextRoles
-  alias Oli.Grading.LTI_AGS
+  alias Oli.Lti.LTI_AGS
   alias Oli.Resources.Revision
   alias Oli.Publishing.Publication
   alias Oli.Publishing.PublishedResource
@@ -53,7 +53,8 @@ defmodule Oli.Grading do
     [
       "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
       "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
-      "https://purl.imsglobal.org/spec/lti-ags/scope/score"
+      "https://purl.imsglobal.org/spec/lti-ags/scope/score",
+      "https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly"
     ]
   end
 
@@ -92,7 +93,7 @@ defmodule Oli.Grading do
     {:ok, dt} = DateTime.now("Etc/UTC")
     timestamp = DateTime.to_iso8601(dt)
 
-    %Oli.Grading.Score{
+    %Oli.Lti.Score{
       timestamp: timestamp,
       scoreGiven: resource_access.score,
       scoreMaximum: resource_access.out_of,

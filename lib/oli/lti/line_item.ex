@@ -1,4 +1,4 @@
-defmodule Oli.Grading.LineItem do
+defmodule Oli.Lti.LineItem do
 
 
   @derive Jason.Encoder

@@ -4,10 +4,12 @@ defmodule OliWeb.Grades.GradesLive do
   use Phoenix.HTML
 
   alias Oli.Grading
-  alias Oli.Grading.LTI_AGS
-  alias Oli.Grading.LineItem
+  alias Oli.Lti.LTI_AGS
+  alias Oli.Lti.LineItem
+  alias Oli.Lti.LTI_NRPS
   alias Oli.Lti_1p3.AccessToken
   alias Oli.Lti_1p3.ContextRoles
+  alias Oli.Delivery.Attempts
   alias Oli.Delivery.Attempts.ResourceAccess
 
   def mount(%{"context_id" => context_id}, %{"lti_params" => lti_params, "current_user" => current_user}, socket) do
@@ -15,9 +17,12 @@ defmodule OliWeb.Grades.GradesLive do
     if ContextRoles.has_role?(current_user, context_id, ContextRoles.get_role(:context_instructor)) do
 
       line_items_url = LTI_AGS.get_line_items_url(lti_params)
+      graded_pages = Grading.fetch_graded_pages(context_id)
+      selected_page = if length(graded_pages) > 0 do hd(graded_pages).resource_id else nil end
 
       {:ok, assign(socket,
-        cached_line_items: %{},
+        graded_pages: graded_pages,
+        selected_page: selected_page,
         line_items_url: line_items_url,
         access_token: nil,
         task_queue: [],
@@ -89,46 +94,31 @@ defmodule OliWeb.Grades.GradesLive do
     creation_tasks ++ update_tasks
   end
 
-  defp determine_grade_sync_tasks(context_id, graded_pages) do
+  defp determine_grade_sync_tasks(context_id, graded_page, line_item, students) do
 
-    # get students enrolled in the section, filter by role: student
-    students = Grading.fetch_students(context_id)
+    # create a map of all resource accesses, keyed off of the student id
+    resource_accesses = Attempts.get_resource_access_for_page(context_id, graded_page.resource_id)
+    |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.user_id, r) end)
 
-    # create a map of all resource accesses, keyed off resource id
-    resource_accesses = Grading.fetch_resource_accesses(context_id)
-
-    # create a task to post a score for each student's resource_access record
+    # For each student, see if they have a finalized score in an access record
+    # If so, create add a task function that when invoked will post the score
     Enum.reduce(students, [], fn %{id: user_id, sub: sub}, tasks ->
 
-      Enum.reduce(graded_pages, tasks, fn revision, acc ->
+      case Map.get(resource_accesses, user_id) do
 
-        case resource_accesses[revision.resource_id] do
-          %{^user_id => student_resource_accesses} ->
-            case student_resource_accesses do
-              %ResourceAccess{score: score, out_of: out_of} ->
+        nil -> tasks
+        %ResourceAccess{score: nil} -> tasks
 
-                # Here we preprend a function that when invoked will
-                # post the score to the AGS endpoint
-                if (score != nil and out_of != nil) do
+        %ResourceAccess{} = resource_access ->
 
-                  [fn assigns ->
-                    line_item = Map.get(assigns.cached_line_items, LineItem.to_resource_id(revision.resource_id))
+          [fn assigns ->
 
-                    Grading.to_score(sub, student_resource_accesses)
-                    |> LTI_AGS.post_score(line_item, assigns.access_token)
+            Grading.to_score(sub, resource_access)
+            |> LTI_AGS.post_score(line_item, assigns.access_token)
 
-                  end | acc]
+          end | tasks]
+      end
 
-                else
-                  acc
-                end
-
-              _ -> acc
-            end
-          _ -> acc
-        end
-
-      end)
     end)
 
   end
@@ -142,6 +132,48 @@ defmodule OliWeb.Grades.GradesLive do
   defp access_token_provider(lti_launch_params) do
     deployment_id = Oli.Lti_1p3.get_deployment_id_from_launch(lti_launch_params)
     AccessToken.fetch_access_token(deployment_id, Grading.ags_scopes(), host())
+  end
+
+  defp send_grades(students, access_token, context_id, page, line_item, socket) do
+
+    task_queue = determine_grade_sync_tasks(context_id, page, line_item, students)
+
+    send(self(), :pop_task_queue)
+
+    {:noreply, assign(socket,
+      access_token: access_token,
+      task_queue: task_queue,
+      progress_max: length(task_queue), progress_current: 0)}
+  end
+
+  defp fetch_students(access_token, context_id, lti_params) do
+
+    # Query the db to find all enrolled students
+    students = Grading.fetch_students(context_id)
+
+    # If NRPS is enabled, request the latest view of the course membership
+    # and filter our enrolled students to that list.  This step avoids us
+    # ever sending grade posts for students that have dropped the class.
+    # Those requests would simply fail, but this extra step eliminates making
+    # those requests altogether.
+    if LTI_NRPS.nrps_enabled?(lti_params) do
+
+      case LTI_NRPS.get_context_memberships_url(lti_params)
+      |> LTI_NRPS.fetch_memberships(access_token) do
+
+        {:ok, memberships} ->
+
+          subs = Enum.map(memberships, fn m -> m.user_id end) |> MapSet.new()
+          Enum.filter(students, fn s -> MapSet.member?(subs, s.sub) end)
+
+        _ -> students
+
+      end
+
+    else
+      students
+    end
+
   end
 
   def handle_event("send_line_items", _, socket) do
@@ -172,31 +204,29 @@ defmodule OliWeb.Grades.GradesLive do
 
   end
 
+  def handle_event("select_page", %{"page" => resource_id}, socket) do
+    {:noreply, assign(socket, selected_page: resource_id)}
+  end
+
   def handle_event("send_grades", _, socket) do
 
-    case fetch_line_items(socket.assigns.lti_params, socket.assigns.line_items_url) do
+    page = Enum.find(socket.assigns.graded_pages, fn p -> p.resource_id == socket.assigns.selected_page end)
 
-      {:ok, line_items, access_token} ->
+    case access_token_provider(socket.assigns.lti_params) do
 
-        # cache all existing line items, we will need these to be able to
-        # support a full grade sync
-        cached_line_items = Enum.reduce(line_items, %{}, fn i, m -> Map.put(m, i.resourceId, i) end)
+      {:ok, access_token} ->
 
-        # determine the line item and score posting tasks
-        graded_pages = Grading.fetch_graded_pages(socket.assigns.context_id)
-        line_item_tasks = determine_line_item_tasks(graded_pages, line_items)
-        score_tasks = determine_grade_sync_tasks(socket.assigns.context_id, graded_pages)
+        case LTI_AGS.get_line_items_url(socket.assigns.lti_params)
+        |> LTI_AGS.fetch_or_create_line_item(page.resource_id, 1.0, page.title, access_token) do
 
-        # assemble the full queue of tasks and pop the first one to kick off
-        # the serial processing of these
-        task_queue = line_item_tasks ++ score_tasks
-        send(self(), :pop_task_queue)
+          {:ok, line_item} ->
 
-        {:noreply, assign(socket,
-          cached_line_items: cached_line_items,
-          access_token: access_token,
-          task_queue: task_queue,
-          progress_max: length(task_queue), progress_current: 0)}
+            fetch_students(access_token, socket.assigns.context_id, socket.assigns.lti_params)
+            |> send_grades(access_token, socket.assigns.context_id, page, line_item, socket)
+
+          {:error, e} -> {:noreply, put_flash(socket, :error, e)}
+
+        end
 
       {:error, e} -> {:noreply, put_flash(socket, :error, e)}
 
@@ -228,16 +258,12 @@ defmodule OliWeb.Grades.GradesLive do
     [task | task_queue] = socket.assigns.task_queue
 
     # and invoke the task, providing the current socket assigns
-    # as context
+    # as context. If any task fails we simply move on and execute the
+    # next one.  Failed tasks would be encountered, for instance, if NRPS was not enabled and
+    # score posts for students no longer enrolled are sent to the LMS.
     case task.(socket.assigns) do
-      {:ok, result} ->
 
-        # When we process a line item creation or update, we cache the result
-        # because a full grade sync will need these line items to issue the score post
-        cached_line_items = case result do
-          %LineItem{} = line_item -> Map.put(socket.assigns.cached_line_items, line_item.resourceId, line_item)
-          _ -> socket.assigns.cached_line_items
-        end
+      _ ->
 
         # See if there is another item in the queue to pop
         socket = if length(task_queue) > 0 do
@@ -247,12 +273,8 @@ defmodule OliWeb.Grades.GradesLive do
           socket |> put_flash(:info, "LMS up to date")
         end
 
-        {:noreply, assign(socket, cached_line_items: cached_line_items,
-          task_queue: task_queue, progress_current: socket.assigns.progress_current + 1)}
+        {:noreply, assign(socket, task_queue: task_queue, progress_current: socket.assigns.progress_current + 1)}
 
-      {:error, e} ->
-        socket = socket |> put_flash(:error, e)
-        {:noreply, assign(socket, task_queue: [])}
     end
 
   end

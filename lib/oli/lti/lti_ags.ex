@@ -1,4 +1,4 @@
-defmodule Oli.Grading.LTI_AGS do
+defmodule Oli.Lti.LTI_AGS do
 
   @moduledoc """
   Implementation of LTI Assignment and Grading Services (LTI AGS) version 2.0.
@@ -13,8 +13,8 @@ defmodule Oli.Grading.LTI_AGS do
   @lineitem_scope_url "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem"
   @scores_scope_url "https://purl.imsglobal.org/spec/lti-ags/scope/score"
 
-  alias Oli.Grading.Score
-  alias Oli.Grading.LineItem
+  alias Oli.Lti.Score
+  alias Oli.Lti.LineItem
   alias Oli.Lti_1p3.AccessToken
 
   require Logger
@@ -110,6 +110,10 @@ defmodule Oli.Grading.LTI_AGS do
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(url, headers(access_token)),
       {:ok, results} <- Jason.decode(body)
     do
+
+      IO.inspect headers(access_token)
+      IO.inspect results
+
       {:ok, Enum.map(results, fn r -> to_line_item(r) end)}
     else
       e ->

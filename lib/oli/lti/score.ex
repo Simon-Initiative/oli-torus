@@ -1,4 +1,4 @@
-defmodule Oli.Grading.Score do
+defmodule Oli.Lti.Score do
 
   @derive Jason.Encoder
   @enforce_keys [:timestamp, :scoreGiven, :scoreMaximum, :comment, :activityProgress, :gradingProgress, :userId]

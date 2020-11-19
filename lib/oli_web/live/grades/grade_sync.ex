@@ -3,7 +3,7 @@ defmodule OliWeb.Grades.GradeSync do
 
   def render(assigns) do
 
-    disabled = if length(assigns.task_queue) > 0 do "disabled" else "" end
+    disabled = if length(assigns.task_queue) > 0 or assigns.selected_page == nil do "disabled" else "" end
 
     ~L"""
 
@@ -13,7 +13,18 @@ defmodule OliWeb.Grades.GradeSync do
 
         <p class="card-text">
         If an instructor changes the maximum score for an LMS gradebook line item <b>after</b> students
-        have submitted an attempt, it is necessary to synchronize the OLI grades and the LMS gradebook.</p>
+        have submitted an attempt, it is necessary to synchronize the OLI grades for that LMS gradebook item.</p>
+
+        <div class="alert alert-danger" role="alert">
+          <strong>Warning!</strong> This operation will overwrite any grades in the LMS gradebook that
+          were manually adjusted or overridden by the instructor.
+        </div>
+
+        <select class="custom-select custom-select-lg mb-3">
+          <%= for page <- @graded_pages do %>
+            <option value="<%= page.resource_id %>" phx-click="select_page" phx-value-page="<%= page.resource_id %>"><%= page.title %></option>
+          <% end %>
+        </select>
 
       </div>
 
