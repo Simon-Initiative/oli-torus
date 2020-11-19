@@ -52,7 +52,7 @@ const ActivityBlock = (props: ActivityBlockProps) => {
     <div className="card-body">
       <div className="activity-preview-info">
         <button className="btn btn-xs btn-link ml-2" onClick={() => props.onUpdatePreferences({ live_preview_display: 'show' })}>
-          <i className="lar la-eye"></i> Activity Preview
+          <i className="lar la-eye"></i> Show Live Preview
         </button>
       </div>
     </div>

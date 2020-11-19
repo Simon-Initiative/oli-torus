@@ -153,6 +153,7 @@ defmodule OliWeb.Router do
     get "/account", WorkspaceController, :account
     put "/account", WorkspaceController, :update_author
     post "/account/theme", WorkspaceController, :update_theme
+    post "/account/live_preview_display", WorkspaceController, :update_live_preview_display
 
     # keep a session active by periodically calling this endpoint
     get "/keep-alive", StaticPageController, :keep_alive

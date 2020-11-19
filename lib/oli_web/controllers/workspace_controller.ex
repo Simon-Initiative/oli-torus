@@ -25,6 +25,7 @@ defmodule OliWeb.WorkspaceController do
       active: :account,
       institutions: institutions,
       themes: themes,
+      preferences: author.preferences,
       active_theme: active_theme,
       title: "Account",
       changeset: Author.noauth_changeset(author)
@@ -46,6 +47,27 @@ defmodule OliWeb.WorkspaceController do
       {:error, _changeset} ->
         conn
         |> put_flash(:error, "Failed to change theme")
+        |> redirect(to: Routes.workspace_path(conn, :account))
+    end
+  end
+
+  def update_live_preview_display(conn, %{"hide" => hide} = params) do
+    author = conn.assigns.current_author
+
+    live_preview_display = if hide == "true", do: "hidden", else: "show"
+
+    updated_preferences = (author.preferences || %Accounts.AuthorPreferences{})
+      |> Map.put(:live_preview_display, live_preview_display)
+      |> Map.from_struct
+
+    case Accounts.update_author(author, %{preferences: updated_preferences}) do
+      {:ok, _author} ->
+        conn
+        |> redirect(to: Routes.workspace_path(conn, :account))
+
+      {:error, _changeset} ->
+        conn
+        |> put_flash(:error, "Failed to update preview preference")
         |> redirect(to: Routes.workspace_path(conn, :account))
     end
   end
