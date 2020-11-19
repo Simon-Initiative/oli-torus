@@ -147,10 +147,6 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       failure => this.publishErrorMessage(failure),
       persistence => this.setState({ persistence }),
     ).then((editMode) => {
-
-      // TODO: REMOVE
-      editMode = false;
-
       this.setState({ editMode });
       if (editMode) {
         this.windowUnloadListener = registerUnload(this.persistence);
