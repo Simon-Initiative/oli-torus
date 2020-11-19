@@ -139,7 +139,7 @@ defmodule Oli.Authoring.Collaborators do
       project_title: project.title
     )
 
-    mail = Oli.Mailer.deliver(conn, email)
+    mail = Pow.Phoenix.Mailer.deliver(conn, email)
     {:ok, mail}
   end
 end
