@@ -94,7 +94,8 @@ export const createEditor = (
         label={editor.friendlyName}
         projectSlug={projectSlug}
         resourceSlug={resourceSlug}
-        objectives={objectives}>
+        objectives={objectives}
+        previewText={previewText}>
 
         <TestModeHandler model={model}>
           {React.createElement(editor.deliveryElement, props as any)}

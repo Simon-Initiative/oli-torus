@@ -25,7 +25,7 @@ export const Purpose = (props: PurposeProps) => {
           type="button"
           id="purposeTypeButton"
           disabled={!editMode}
-          className="btn btn-secondary btn-sm dropdown-toggle btn-purpose"
+          className="btn btn-sm dropdown-toggle btn-purpose mr-3"
           data-toggle="dropdown"
           aria-haspopup="true"
           aria-expanded="false">

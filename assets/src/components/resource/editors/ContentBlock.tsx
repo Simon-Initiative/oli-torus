@@ -4,7 +4,6 @@ import { getContentDescription } from 'data/content/utils';
 import { Purpose as PurposeType, ResourceContent, StructuredContent } from 'data/content/resource';
 import * as Immutable from 'immutable';
 import { Purpose } from 'components/content/Purpose';
-import { useEditor } from 'slate-react';
 
 const getDescription = (item: ResourceContent) => {
   return item.type === 'content'
@@ -35,18 +34,18 @@ export const ContentBlock = (props: ContentBlockProps) => {
         <div className="d-flex flex-row align-items-center">
           <div className="d-flex align-items-center flex-grow-1">
             <DragHandle style={{ height: 24, marginRight: 10 }} />
-            <Purpose
-              purpose={props.contentItem.purpose}
-              purposes={props.purposes}
-              editMode={props.editMode}
-              onEdit={props.onEditPurpose} />
+
           </div>
+
+          <Purpose
+            purpose={props.contentItem.purpose}
+            purposes={props.purposes}
+            editMode={props.editMode}
+            onEdit={props.onEditPurpose} />
+
           <DeleteButton
             editMode={props.content.size > 1}
             onClick={props.onRemove} />
-        </div>
-        <div className="description text-secondary ellipsize-overflow flex-1 mx-4 mt-2">
-          {getDescription(props.contentItem)}
         </div>
       </div>
       <div className="card-body">
@@ -55,6 +54,9 @@ export const ContentBlock = (props: ContentBlockProps) => {
           {props.children}
 
         </div>
+      </div>
+      <div className="reorder-mode-description">
+        {getDescription(props.contentItem)}
       </div>
     </div>
   );

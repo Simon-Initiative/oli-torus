@@ -13,6 +13,12 @@ import { Preferences } from 'data/persistence/preferences';
 import { valueOr } from 'utils/common';
 import { Maybe } from 'tsmonad';
 
+const getDescription = (props: ActivityBlockProps) => {
+  return props.previewText !== ''
+    ? props.previewText
+    : <i>Empty</i>;
+};
+
 interface ActivityBlockProps {
   children?: JSX.Element | JSX.Element[];
   editMode: boolean;
@@ -22,6 +28,7 @@ interface ActivityBlockProps {
   label: string;
   projectSlug: string;
   resourceSlug: string;
+  previewText: string;
   objectives: string[];
   preferences: Maybe<Preferences>;
   onDragStart: (e: React.DragEvent<HTMLDivElement>, id: string) => void;
@@ -51,8 +58,8 @@ const ActivityBlock = (props: ActivityBlockProps) => {
   const renderHidden = (props: ActivityBlockProps) => (
     <div className="card-body">
       <div className="activity-preview-info d-flex">
-        <div className="flex-grow-1"></div>
-        <button className="btn btn-xs btn-link ml-2" onClick={() => props.onUpdatePreferences({ live_preview_display: 'show' })}>
+        <div className="flex-grow-1 px-4 preview-text">{props.previewText}</div>
+        <button className="btn btn-xs btn-link flex-shrink-0 ml-2" onClick={() => props.onUpdatePreferences({ live_preview_display: 'show' })}>
           <i className="lar la-eye"></i> Live Preview
         </button>
       </div>
@@ -69,15 +76,18 @@ const ActivityBlock = (props: ActivityBlockProps) => {
 
           <div className="d-flex align-items-center flex-grow-1">
             <DragHandle style={{ height: 24, marginRight: 10 }} />
-            <Purpose
-              purpose={props.contentItem.purpose}
-              purposes={props.purposes}
-              editMode={props.editMode}
-              onEdit={props.onEditPurpose} />
+
             <EditLink
               label={props.label}
               href={`/project/${props.projectSlug}/resource/${props.resourceSlug}/activity/${props.contentItem.activitySlug}`} />
+
           </div>
+
+          <Purpose
+            purpose={props.contentItem.purpose}
+            purposes={props.purposes}
+            editMode={props.editMode}
+            onEdit={props.onEditPurpose} />
 
           <DeleteButton editMode={props.content.size > 1} onClick={props.onRemove} />
         </div>
@@ -91,6 +101,10 @@ const ActivityBlock = (props: ActivityBlockProps) => {
           : renderHidden(props),
         nothing: () => null,
       })}
+
+      <div className="reorder-mode-description">
+        {getDescription(props)}
+      </div>
     </div>
   );
 };

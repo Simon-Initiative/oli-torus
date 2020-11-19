@@ -17,15 +17,12 @@
       border-bottom: 0;
       border-top-left-radius: 8px;
       border-top-right-radius: 8px;
-
-      .description {
-        display: none;
-      }
     }
 
     .card-body {
       padding: 0;
       border: 4px solid $card-cap-bg;
+      border-top: none;
       border-bottom-left-radius: 8px;
       border-bottom-right-radius: 8px;
 
@@ -47,7 +44,26 @@
         font-style: italic;
         font-size: 14px;
         padding-top: 6px;
+
+        .preview-text {
+          font-style: normal;
+          text-align: left;
+          @include ellipsis;
+        }
       }
+    }
+
+    .reorder-mode-description {
+      display: none;
+      background-color: $card-cap-bg;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+      color: rgba($color: $body-color, $alpha: .8);
+      font-size: 14px;
+      padding: 6px 1.6rem;
+      font-style: normal;
+      text-align: left;
+      @include ellipsis;
     }
 
     .delivery {
@@ -67,23 +83,36 @@
   .resource-editor {
     &.reorder-mode {
       .resource-content-frame {
-        .card-header {
-          .description {
-            display: block;
-          }
-        }
-
         .card-body {
           display: none;
+        }
+
+        .reorder-mode-description {
+          display: block;
         }
       }
     }
 
     .btn-purpose {
-      min-width: 100px;
+      min-width: 150px;
+      border: 1px solid rgba($color: $body-color, $alpha: 0.1);
+      color: rgba($color: $body-color, $alpha: 0.8);
+
+      text-align: left;
+      &.dropdown-toggle::after {
+        float: right;
+        margin-top: .7em;
+      }
+
+      &:hover {
+        border-color: rgba($color: $body-color, $alpha: 0.6);
+        background:rgba($color: $body-color, $alpha: 0.05);
+      }
     }
 
     .btn-delete:not([disabled]) {
+      color: rgba($color: $body-color, $alpha: 0.8);
+
       &:hover {
         color: $danger;
       }
