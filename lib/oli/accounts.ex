@@ -270,15 +270,15 @@ defmodule Oli.Accounts do
     Repo.all(
       from assoc in "authors_projects",
         join: author in Author, on: assoc.author_id == author.id,
-        where: assoc.project_id in ^project_ids,
+        where: assoc.project_id in ^project_ids and (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
         select: [author, assoc.project_id])
   end
 
   def project_authors(project) do
     Repo.all(from assoc in "authors_projects",
-      where: assoc.project_id == ^project.id,
       join: author in Author,
       on: assoc.author_id == author.id,
+      where: assoc.project_id == ^project.id and (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
       select: author)
   end
 
