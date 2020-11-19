@@ -16,16 +16,20 @@ export const ObjectivesList = (props: ObjectivesListProps) => {
             </div>
           )
           : (
-            <div>
-              <i className="las la-graduation-cap mr-1 text-info"></i> <span className="mr-2">Targeted Objectives:</span>
+            <div className="d-flex flex-row">
+              <div className="pr-2">
+                <i className="las la-graduation-cap text-info"></i>
+              </div>
 
-              {props.objectives.map(o =>
-                <span key={o}
-                  className="objective-token rbt-token"
-                  data-toggle="popover"
-                  data-content={o}>
-                    {o}
-                </span>)}
+              <div className="flex-grow-1 overflow-hidden">
+                {props.objectives.map(o =>
+                  <span key={o}
+                    className="objective-token rbt-token"
+                    data-toggle="popover"
+                    data-content={o}>
+                      {o}
+                  </span>)}
+              </div>
             </div>
           )
         }

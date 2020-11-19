@@ -19,21 +19,8 @@
 
   .objective-token {
     @include ellipsis;
-    max-width: 32%;
+    max-width: 100%;
     vertical-align: middle;
     cursor: pointer;
   }
-
-  @include media-breakpoint-down(lg) {
-    .objective-token {
-      max-width: 48%;
-    }
-  }
-
-  @include media-breakpoint-down(md) {
-    .objective-token {
-      max-width: 98%;
-    }
-  }
-
 }

@@ -42,10 +42,11 @@
 
       .activity-preview-info {
         background-color: $card-cap-bg;
+        color: rgba($color: $body-color, $alpha: .8);
         text-align: center;
         font-style: italic;
         font-size: 14px;
-        color: rgba($color: $body-color, $alpha: .8);
+        padding-top: 6px;
       }
     }
 
