@@ -92,7 +92,7 @@ function mapChildrenObjectives(objectives: Objective[])
 }
 
 // The resource editor
-class ResourceEditor extends React.Component<ResourceEditorProps, ResourceEditorState> {
+export class ResourceEditor extends React.Component<ResourceEditorProps, ResourceEditorState> {
 
   persistence: PersistenceStrategy;
   windowUnloadListener: any;
@@ -147,6 +147,10 @@ class ResourceEditor extends React.Component<ResourceEditorProps, ResourceEditor
       failure => this.publishErrorMessage(failure),
       persistence => this.setState({ persistence }),
     ).then((editMode) => {
+
+      // TODO: REMOVE
+      editMode = false;
+
       this.setState({ editMode });
       if (editMode) {
         this.windowUnloadListener = registerUnload(this.persistence);
@@ -471,10 +475,7 @@ const mapDispatchToProps = (dispatch: Dispatch, ownProps: OwnProps): DispatchPro
   };
 };
 
-const controller = connect<StateProps, DispatchProps, OwnProps>(
+export default connect<StateProps, DispatchProps, OwnProps>(
   mapStateToProps,
   mapDispatchToProps,
 )(ResourceEditor);
-
-export { controller as ResourceEditor };
-

@@ -28,6 +28,10 @@
     }
   }
 
+  &.disabled {
+    cursor: default;
+  }
+
   .insert-button-container {
     position: absolute;
     left: -28px;

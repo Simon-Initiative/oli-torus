@@ -71,7 +71,7 @@ const ActivityBlock = (props: ActivityBlockProps) => {
   return (
     <div className="resource-content-frame card">
       <div className="card-header px-2"
-        draggable={true}
+        draggable={props.editMode}
         onDragStart={e => props.onDragStart(e, id)}
         onDragEnd={props.onDragEnd}>
         <div className="d-flex flex-row align-items-center">

@@ -27,7 +27,7 @@ export const ContentBlock = (props: ContentBlockProps) => {
   const id = `content-header-${props.index}`;
   return (
     <div className="resource-content-frame card"
-      draggable={true}
+      draggable={props.editMode}
       onDragStart={e => props.onDragStart(e, id)}
       onDragEnd={props.onDragEnd}>
       <div id={id} className="card-header px-2">
@@ -49,7 +49,8 @@ export const ContentBlock = (props: ContentBlockProps) => {
         </div>
       </div>
       <div className="card-body">
-        <div draggable={true} onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+        <div draggable={props.editMode}
+          onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}>
 
           {props.children}
 

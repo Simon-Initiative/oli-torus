@@ -51,7 +51,7 @@ defmodule OliWeb.WorkspaceController do
     end
   end
 
-  def update_live_preview_display(conn, %{"hide" => hide} = params) do
+  def update_live_preview_display(conn, %{"hide" => hide} = _params) do
     author = conn.assigns.current_author
 
     live_preview_display = if hide == "true", do: "hidden", else: "show"

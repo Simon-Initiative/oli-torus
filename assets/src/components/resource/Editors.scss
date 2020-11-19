@@ -97,6 +97,7 @@
       min-width: 150px;
       border: 1px solid rgba($color: $body-color, $alpha: 0.1);
       color: rgba($color: $body-color, $alpha: 0.8);
+      background-color: $body-bg;
 
       text-align: left;
       &.dropdown-toggle::after {
@@ -107,6 +108,15 @@
       &:hover {
         border-color: rgba($color: $body-color, $alpha: 0.6);
         background:rgba($color: $body-color, $alpha: 0.05);
+      }
+
+      &:disabled {
+        background-color: $card-cap-bg;
+
+        &:hover {
+          border-color: rgba($color: $body-color, $alpha: 0.1);
+          background: $card-cap-bg;
+        }
       }
     }
 

@@ -171,7 +171,13 @@ export const AddResourceContent = (
 
   return (
     <React.Fragment>
-      <div className={classNames(['add-resource-content', isPopoverOpen ? 'active' : '', isLast ? 'add-resource-content-last' : ''])}
+      <div className={
+          classNames([
+            'add-resource-content',
+            isPopoverOpen ? 'active' : '',
+            isLast ? 'add-resource-content-last' : '',
+            editMode ? '' : 'disabled'
+          ])}
         onClick={togglePopover}>
 
         {editMode &&
@@ -202,6 +208,7 @@ export const AddResourceContent = (
         <div className="insert-label my-4 text-center">
           <button
             onClick={togglePopover}
+            disabled={!editMode}
             className="btn btn-sm btn-light">
             Add Content or Activity
           </button>
