@@ -4,6 +4,9 @@ import { Identifiable } from 'data/content/model';
 
 export interface Choice extends Identifiable, HasContent {}
 
+export type CATACombination = Identifiable[];
+export type CATACombinations = CATACombination[];
+
 export interface CheckAllThatApplyModelSchema extends ActivityModelSchema {
   stem: Stem;
   choices: Choice[];

@@ -1,7 +1,7 @@
 import guid from 'utils/guid';
 import * as ContentModel from 'data/content/model';
 import { Choice, MultipleChoiceModelSchema } from './schema';
-import { RichText, Operation, ScoringStrategy, EvaluationStrategy } from '../types';
+import { RichText, Operation, ScoringStrategy } from '../types';
 
 export const makeResponse = (rule: string, score: number, text: '') =>
   ({ id: guid(), rule, score, feedback: fromText(text) });

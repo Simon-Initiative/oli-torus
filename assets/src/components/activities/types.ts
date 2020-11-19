@@ -78,7 +78,7 @@ export interface Response extends Identifiable {
 
   rule: string;
 
-  // `score == 1` indicates the feedback corresponds to a matching choice
+  // `score == 1` indicates the feedback corresponds to a correct choice
   score: number;
 
   feedback: Feedback;

@@ -7,22 +7,42 @@ import { Description } from 'components/misc/Description';
 import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 import { CloseButton } from 'components/misc/CloseButton';
 import { ProjectSlug } from 'data/types';
+import styled from 'styled-components';
+import { isCorrect } from 'components/activities/check_all_that_apply/utils';
 
-interface ChoicesProps extends ModelEditorProps {
+const ToggleCorrect = styled.button`
+  border: none;
+  background: none;
+`;
+
+interface Props extends ModelEditorProps {
   onAddChoice: () => void;
-  onEditChoice: (id: string, content: RichText) => void;
+  onEditChoiceContent: (id: string, content: RichText) => void;
+  onToggleChoiceCorrectness: (choice: Choice) => void;
   onRemoveChoice: (id: string) => void;
   projectSlug: ProjectSlug;
 }
-export const Choices = ({ onAddChoice, onEditChoice, onRemoveChoice, editMode, model, projectSlug }:
-  ChoicesProps) => {
+export const Choices = (props: Props) => {
+  const { onAddChoice, onEditChoiceContent, onRemoveChoice, onToggleChoiceCorrectness,
+    editMode, model, projectSlug } = props;
+
+  // A cata has two responses: Correct and incorrect. When making choices correct,
+  // add the ids to the correct response rule condition, and remove it from the incorrect?
+  // Check if legacy -> need some way of enabling advanced feedback for specific matches
+  // use ||
 
   const { authoring: { parts }, choices } = model;
 
-  const choicesWithResponses: [Choice, Response][] = choices.map((choice) => {
-    const responseMatchesChoice = (response: Response, choice: Choice) =>
-      response.rule === `input like {${choice.id}}`;
+  // One response will make to multiple choices that it corresponds to
+  // eg. correct choice 1 -> resp1
+  //     correct choice 2 -> resp1
+  //     incorrect choice -> resp2
 
+
+  // response with correct choice combination will be like `input like 13 && input like 14`
+  // make sure the question engine creates the right "input" -> it will need to be a list
+
+  const choicesWithResponses: [Choice, Response][] = choices.map((choice) => {
     const matchingResponse = parts[0].responses.find(response =>
       responseMatchesChoice(response, choice));
 
@@ -33,33 +53,38 @@ export const Choices = ({ onAddChoice, onEditChoice, onRemoveChoice, editMode, m
     return [choice, matchingResponse];
   });
 
-  const isCorrect = (response: Response) => response.score === 1;
-  const checkIcon = (isCorrect: boolean) => isCorrect ? 'check_circle' : 'check_circle_outline';
-  const toggleCorrectnessButton = <button className="list-unstyled" style={{}}>
+  // get correct choices, incorrect choices
+  // when toggling, updateResponseCorrectness(correctChoices, incorrectChoices)
+  // there are two responses, so we update both with the new lists
 
-  </button>
+  // correctness could be extended to partial credit and advanced scoring for specific
+  // combinations of choices. For simplicity, we're sticking to a simple correct/incorrect model
+  // for now.
+
 
   return (
     <div className="my-5">
       <Heading title="Answer Choices"
         subtitle="One correct answer choice and as many incorrect answer choices as you like." id="choices" />
       {choicesWithResponses.map(([choice, response], index) =>
-        <React.Fragment key={choice.id}>
-          <div className="d-flex">
-            <div className="material-icons">{checkIcon(isCorrect(response))}</div>
-            <div className="d-flex mb-3" style={{ flex: 1 }}>
-              <RichTextEditor
-                className="flex-fill"
-                projectSlug={projectSlug}
-                editMode={editMode} text={choice.content}
-                onEdit={content => onEditChoice(choice.id, content)} />
-              <CloseButton
-                className="pl-3 pr-1"
-                onClick={() => onRemoveChoice(choice.id)}
-                editMode={editMode} />
-            </div>
+        <div key={choice.id} className="d-flex align-items-center mb-3">
+          <div className="material-icons">
+            <ToggleCorrect onClick={() => onToggleChoiceCorrectness(choice)}>
+              {isCorrect(response) ? 'check_circle' : 'check_circle_outline'}
+            </ToggleCorrect>
           </div>
-        </React.Fragment>)}
+          <div className="d-flex" style={{ flex: 1 }}>
+            <RichTextEditor
+              className="flex-fill"
+              projectSlug={projectSlug}
+              editMode={editMode} text={choice.content}
+              onEdit={content => onEditChoiceContent(choice.id, content)} />
+            <CloseButton
+              className="pl-3 pr-1"
+              onClick={() => onRemoveChoice(choice.id)}
+              editMode={editMode} />
+          </div>
+        </div>)}
       <button
         className="btn btn-sm btn-primary my-2"
         disabled={!editMode}

@@ -6,7 +6,6 @@ import { CheckAllThatApplyModelSchema } from './schema';
 import { Choice } from 'components/activities/multiple_choice/schema';
 import * as ActivityTypes from '../types';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
-import { Maybe } from 'tsmonad';
 import { Stem } from '../common/DisplayedStem';
 import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
@@ -20,18 +19,19 @@ type Evaluation = {
 
 interface ChoicesProps {
   choices: Choice[];
-  selected: Maybe<string>;
+  selected: string[];
   onSelect: (id: string) => void;
   isEvaluated: boolean;
 }
 const Choices = ({ choices, selected, onSelect, isEvaluated }: ChoicesProps) => {
+  const isSelected = (choiceId: string) => !!selected.find(s => s === choiceId);
   return (
     <div className="choices">
     {choices.map((choice, index) =>
       <Choice
         key={choice.id}
         onClick={() => onSelect(choice.id)}
-        selected={selected.valueOr('') === choice.id}
+        selected={isSelected(choice.id)}
         choice={choice}
         isEvaluated={isEvaluated}
         index={index} />)}
@@ -63,30 +63,42 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
   const [attemptState, setAttemptState] = useState(props.state);
   const [hints, setHints] = useState(props.state.parts[0].hints);
   const [hasMoreHints, setHasMoreHints] = useState(props.state.parts[0].hasMoreHints);
-  const [selected, setSelected] = useState(
+  const [selected, setSelected] = useState<string[]>(
     props.state.parts[0].response === null
-    ? Maybe.nothing<string>()
-    : Maybe.just<string>(props.state.parts[0].response.input));
+    ? []
+    : props.state.parts[0].response.input.split('')
+      .reduce(
+        (acc: string[], curr: string) => acc.concat([curr]),
+        []));
 
   const { stem, choices } = model;
 
   const isEvaluated = attemptState.score !== null;
 
   const onSelect = (id: string) => {
-    // Update local state
-    setSelected(Maybe.just<string>(id));
+    // Update local state by adding or removing the id
+    const newSelection = !!selected.find(s => s === id)
+      ? selected.filter(s => s !== id)
+      : selected.concat([id]);
+    setSelected(newSelection);
+
+    const input = newSelection.join(' ');
 
     if (props.graded) {
 
       // In summative context, post the student response to save it
+      // Here we will make a list of the selected ids like { input: [id1, id2, id3].join(' ')}
+      // Then in the rule evaluator, we will say
+      // `input like id1 && input like id2 && input like id3`
       props.onSaveActivity(attemptState.attemptGuid,
-        [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: id } }]);
+        [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input } }]);
 
     } else {
 
       // Auto-submit our student reponse in formative context
       props.onSubmitActivity(attemptState.attemptGuid,
-        [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: id } }])
+        // update this input too
+        [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input } }])
         .then((response: EvaluationResponse) => {
           if (response.evaluations.length > 0) {
             const { score, out_of, feedback, error } = response.evaluations[0];
@@ -111,7 +123,7 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
   const onReset = () => {
     props.onResetActivity(attemptState.attemptGuid)
     .then((state: ResetActivityResponse) => {
-      setSelected(Maybe.nothing<string>());
+      setSelected([]);
       setAttemptState(state.attemptState);
       setModel(state.model as CheckAllThatApplyModelSchema);
       setHints([]);

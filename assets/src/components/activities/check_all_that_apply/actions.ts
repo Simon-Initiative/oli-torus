@@ -1,21 +1,13 @@
-import { CheckAllThatApplyModelSchema, Choice as ChoiceType } from './schema';
-import { fromText, makeResponse } from './utils';
+import { CheckAllThatApplyModelSchema, Choice, Choice as ChoiceType } from './schema';
+import { fromText, getChoice, getCorrectResponse, getHint,
+  getIncorrectResponses, getResponse, makeResponse } from './utils';
 import { RichText, Feedback as FeedbackType, Hint as HintType } from '../types';
-import { Maybe } from 'tsmonad';
 import { toSimpleText } from 'data/content/text';
 import { Identifiable } from 'data/content/model';
 
-export class CATAActions {
-  private static getById<T extends Identifiable>(slice: T[], id: string): Maybe<T> {
-    return Maybe.maybe(slice.find(c => c.id === id));
-  }
-  private static getChoice = (draftState: CheckAllThatApplyModelSchema, id: string) =>
-    CATAActions.getById(draftState.choices, id)
-  private static getResponse = (draftState: CheckAllThatApplyModelSchema, id: string) =>
-    CATAActions.getById(draftState.authoring.parts[0].responses, id)
-  private static getHint = (draftState: CheckAllThatApplyModelSchema, id: string) =>
-    CATAActions.getById(draftState.authoring.parts[0].hints, id)
 
+
+export class Actions {
   static editStem(content: RichText) {
     return (draftState: CheckAllThatApplyModelSchema) => {
       draftState.stem.content = content;
@@ -28,14 +20,15 @@ export class CATAActions {
     return (draftState: CheckAllThatApplyModelSchema) => {
       const newChoice: ChoiceType = fromText('');
       draftState.choices.push(newChoice);
+      // change Actions to add responses for all combinations of the existing choices + new choice
       draftState.authoring.parts[0].responses.push(
         makeResponse(`input like {${newChoice.id}}`, 0, ''));
     };
   }
 
-  static editChoice(id: string, content: RichText) {
+  static editChoiceContent(id: string, content: RichText) {
     return (draftState: CheckAllThatApplyModelSchema) => {
-      CATAActions.getChoice(draftState, id).lift(choice => choice.content = content);
+      getChoice(draftState, id).lift(choice => choice.content = content);
     };
   }
 
@@ -43,13 +36,57 @@ export class CATAActions {
     return (draftState: CheckAllThatApplyModelSchema) => {
       draftState.choices = draftState.choices.filter(c => c.id !== id);
       draftState.authoring.parts[0].responses = draftState.authoring.parts[0].responses
-        .filter(r => r.rule !== `input like {${id}}`);
+      // change Actions to remove all combinations that match the choice id being removed
+      .filter(r => r.rule !== `input like {${id}}`);
+
     };
   }
 
-  static editFeedback(id: string, content: RichText) {
+  // Fix this to include the full set of choices with or without the new choice
+  static toggleChoiceCorrectness(choice: Choice) {
     return (draftState: CheckAllThatApplyModelSchema) => {
-      CATAActions.getResponse(draftState, id).lift(r => r.feedback.content = content);
+
+    };
+  }
+
+  // generalize to work for targeted feedback too
+  // change join rules, add new helpers for inverting correct and targeted feedback
+  // input looks like "id1 id2", matches `input like {id1} && input like {id2}`
+  static editResponseCorrectness(correctChoices: Choice[], incorrectChoices : Choice[]) {
+    return (draftState: CheckAllThatApplyModelSchema) => {
+      const joinRules = (rule: string, choices: Choice[]) =>
+      choices.map(choice => rule + choice.id).join(' || ');
+      draftState.authoring.parts[0].responses.forEach((response) => {
+        // Simple model: one correct response, one incorrect response
+        // Could be extended here to add partial credit
+        response.rule = joinRules(
+          'input like ',
+          response.score === 1
+            ? correctChoices
+            : incorrectChoices);
+        console.log('response.rule', response.rule);
+      });
+    };
+  }
+
+  static editCorrectFeedback(content: RichText) {
+    return (draftState: CheckAllThatApplyModelSchema) => {
+      // There is only one correct response, for the correct combination of answer choices
+      getCorrectResponse(draftState).feedback.content = content;
+    };
+  }
+
+  static editIncorrectFeedback(content: RichText) {
+    return (draftState: CheckAllThatApplyModelSchema) => {
+      // There are many incorrect responses for each combination of answer choice
+      getIncorrectResponses(draftState).forEach(response =>
+        response.feedback.content = content);
+    };
+  }
+
+  static editResponseFeedback(id: string, content: RichText) {
+    return (draftState: CheckAllThatApplyModelSchema) => {
+      getResponse(draftState, id).lift(r => r.feedback.content = content);
     };
   }
 
@@ -65,7 +102,7 @@ export class CATAActions {
 
   static editHint(id: string, content: RichText) {
     return (draftState: CheckAllThatApplyModelSchema) => {
-      CATAActions.getHint(draftState, id).lift(hint => hint.content = content);
+      getHint(draftState, id).lift(hint => hint.content = content);
     };
   }
 
