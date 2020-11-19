@@ -50,9 +50,10 @@ const ActivityBlock = (props: ActivityBlockProps) => {
 
   const renderHidden = (props: ActivityBlockProps) => (
     <div className="card-body">
-      <div className="activity-preview-info">
+      <div className="activity-preview-info d-flex">
+        <div className="flex-grow-1"></div>
         <button className="btn btn-xs btn-link ml-2" onClick={() => props.onUpdatePreferences({ live_preview_display: 'show' })}>
-          <i className="lar la-eye"></i> Show Live Preview
+          <i className="lar la-eye"></i> Live Preview
         </button>
       </div>
     </div>
