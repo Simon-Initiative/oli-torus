@@ -49,7 +49,7 @@ export const createEditor = (
             graded ? ResourceType.assessment : ResourceType.page)}
           />
       </ContentBlock>
-    )
+    );
   }
 
   const activity = activities.get(content.activitySlug);
@@ -66,7 +66,7 @@ export const createEditor = (
     // instance of the activity model.  Recognizing that we are in an editing mode
     // we make this robust to problems with transformation so we fallback to the raw
     // model if the transformed model is null (which results from failure to transform)
-    const model = valueOr(activity.transformed, activity.model)
+    const model = valueOr(activity.transformed, activity.model);
 
     const slugsAsKeys = Object.keys(activity.objectives)
       .reduce((map: any, key) => {
@@ -106,6 +106,9 @@ export const createEditor = (
   }
 
   return (
-    <div className="alert alert-danger">There was a problem rendering this content block. The content type may not be supported.</div>
+    <div className="alert alert-danger">
+      There was a problem rendering this content block.
+      The content type may not be supported.
+    </div>
   );
 };

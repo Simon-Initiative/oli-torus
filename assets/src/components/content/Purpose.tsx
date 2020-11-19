@@ -14,7 +14,12 @@ export const Purpose = (props: PurposeProps) => {
   const { editMode, purpose, onEdit, purposes } = props;
 
   const options = purposes
-    .map(p => <button className="dropdown-item" key={p.value} onClick={() => onEdit(p.value)}>{p.label}</button>);
+    .map(p =>
+      <button className="dropdown-item"
+        key={p.value}
+        onClick={() => onEdit(p.value)}>
+          {p.label}
+      </button>);
 
   const purposeLabel = purposes.find(p => p.value === purpose)?.label;
 

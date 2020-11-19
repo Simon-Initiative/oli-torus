@@ -35,7 +35,7 @@ export const updatePreferences = (preferences: Partial<Preferences>) =>
 
       await updatePreferencesRequest(preferences);
     } catch (e) {
-      console.error(e)
+      console.error(e);
 
       // reset to original state before the error
       dispatch({
@@ -58,8 +58,6 @@ export const loadPreferences = () =>
   async (dispatch: Dispatch<Action>, getState: () => State) => {
     // dispatch any async actions such as AJAX calls, etc...
     const preferences = await fetchPreferencesRequest();
-
-    console.log('preferences', preferences)
 
     dispatch({
       type: LOAD_PREFERENCES,

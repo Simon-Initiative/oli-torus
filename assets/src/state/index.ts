@@ -27,6 +27,6 @@ export function initState(json: any = {}) {
   return {
     media: initMediaState(json),
     modal: initModalState(json),
-    preferences: new PreferencesState(json)
+    preferences: new PreferencesState(json),
   };
 }

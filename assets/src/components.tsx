@@ -15,7 +15,7 @@ export const registry = {
 
 export type ComponentName = keyof typeof registry;
 
-let store = configureStore();
+const store = configureStore();
 
 // Expose React/Redux APIs to server-side rendered templates
 (window as any).component = {

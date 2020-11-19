@@ -48,7 +48,8 @@ const ActivityBlock = (props: ActivityBlockProps) => {
 
       <div className="activity-preview-info">
         This is a live preview of your activity.
-        <button className="btn btn-xs btn-link ml-2" onClick={() => props.onUpdatePreferences({ live_preview_display: 'hidden' })}>
+        <button className="btn btn-xs btn-link ml-2"
+          onClick={() => props.onUpdatePreferences({ live_preview_display: 'hidden' })}>
           <i className="lar la-eye-slash"></i> Hide
         </button>
       </div>
@@ -59,7 +60,8 @@ const ActivityBlock = (props: ActivityBlockProps) => {
     <div className="card-body">
       <div className="activity-preview-info d-flex">
         <div className="flex-grow-1 px-4 preview-text">{props.previewText}</div>
-        <button className="btn btn-xs btn-link flex-shrink-0 ml-2" onClick={() => props.onUpdatePreferences({ live_preview_display: 'show' })}>
+        <button className="btn btn-xs btn-link flex-shrink-0 ml-2"
+          onClick={() => props.onUpdatePreferences({ live_preview_display: 'show' })}>
           <i className="lar la-eye"></i> Live Preview
         </button>
       </div>
