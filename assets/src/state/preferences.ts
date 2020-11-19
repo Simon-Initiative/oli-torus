@@ -105,11 +105,11 @@ export const preferences = (
   switch (action.type) {
     case UPDATE_PREFERENCES:
       return state.with({
-        preferences: Maybe.just(action.preferences),
+        preferences: Maybe.maybe(action.preferences),
       });
     case LOAD_PREFERENCES:
       return state.with({
-        preferences: Maybe.just(action.preferences),
+        preferences: Maybe.maybe(action.preferences),
       });
     default:
       return state;

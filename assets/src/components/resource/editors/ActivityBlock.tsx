@@ -101,7 +101,7 @@ const ActivityBlock = (props: ActivityBlockProps) => {
         just: ({ live_preview_display }) => live_preview_display !== 'hidden'
           ? renderLivePreview(props)
           : renderHidden(props),
-        nothing: () => null,
+        nothing: () => renderLivePreview(props),
       })}
 
       <div className="reorder-mode-description">
