@@ -153,7 +153,7 @@ export const AddResourceContent = (
         <button className="btn insert-content-btn"
           onClick={() => onAddItem(createDefaultStructuredContent(), index)}>
             <div className="content-icon">
-              <span className="material-icons">text_format</span>
+              <span className="material-icons">format_align_left</span>
             </div>
             <div className="content-label">Content</div>
         </button>
