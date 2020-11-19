@@ -1,5 +1,7 @@
-import * as Immutable from 'immutable';
 import React from 'react';
+import { connect } from 'react-redux';
+import { State, Dispatch } from 'state';
+import * as Immutable from 'immutable';
 import { PersistenceStrategy, PersistenceState } from 'data/persistence/PersistenceStrategy';
 import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
 import { ActivityContext } from 'data/content/activity';
@@ -20,9 +22,10 @@ import { Banner } from '../messages/Banner';
 import { PartObjectives } from 'components/activity/PartObjectives';
 import { valueOr } from 'utils/common';
 import { isFirefox } from 'utils/browser';
+import { loadPreferences } from 'state/preferences';
 
 export interface ActivityEditorProps extends ActivityContext {
-
+  onLoadPreferences: () => void;
 }
 
 // This is the state of our activity editing that is undoable
@@ -67,7 +70,7 @@ function unregisterUnload(listener: any) {
 }
 
 // The activity editor
-export class ActivityEditor extends React.Component<ActivityEditorProps, ActivityEditorState> {
+class ActivityEditor extends React.Component<ActivityEditorProps, ActivityEditorState> {
 
   persistence: PersistenceStrategy;
   windowUnloadListener: any;
@@ -104,7 +107,9 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
 
   componentDidMount() {
 
-    const { projectSlug, resourceSlug } = this.props;
+    const { projectSlug, resourceSlug, onLoadPreferences } = this.props;
+
+    onLoadPreferences();
 
     this.persistence.initialize(
       acquireLock.bind(undefined, projectSlug, resourceSlug),
@@ -267,3 +272,32 @@ export class ActivityEditor extends React.Component<ActivityEditorProps, Activit
     );
   }
 }
+
+interface StateProps {
+
+}
+
+interface DispatchProps {
+  onLoadPreferences: () => void;
+}
+
+type OwnProps = {
+
+};
+
+const mapStateToProps = (state: State, ownProps: OwnProps): StateProps => {
+  return {};
+};
+
+const mapDispatchToProps = (dispatch: Dispatch, ownProps: OwnProps): DispatchProps => {
+  return {
+    onLoadPreferences: () => dispatch(loadPreferences()),
+  };
+};
+
+const controller = connect<StateProps, DispatchProps, OwnProps>(
+  mapStateToProps,
+  mapDispatchToProps,
+)(ActivityEditor);
+
+export { controller as ActivityEditor };

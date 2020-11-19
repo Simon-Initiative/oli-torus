@@ -49,4 +49,33 @@ defmodule OliWeb.WorkspaceController do
         |> redirect(to: Routes.workspace_path(conn, :account))
     end
   end
+
+  def fetch_preferences(conn, _params) do
+    author = conn.assigns.current_author
+
+    case Accounts.get_author_by_email(author.email) do
+      author ->
+        conn
+        |> json(author.preferences)
+    end
+  end
+
+  def update_preferences(conn, preferences) do
+    author = conn.assigns.current_author
+
+    updated_preferences = Oli.Utils.value_or(author.preferences, %Accounts.AuthorPreferences{})
+      |> Accounts.AuthorPreferences.changeset(preferences)
+      |> Ecto.Changeset.apply_action!(:update)
+      |> Map.from_struct
+
+    case Accounts.update_author(author, %{preferences: updated_preferences}) do
+      {:ok, _author} ->
+        conn
+        |> send_resp(200, "Ok")
+
+      {:error, _changeset} ->
+        conn
+        |> send_resp(500, "Failed to update preferences")
+    end
+  end
 end

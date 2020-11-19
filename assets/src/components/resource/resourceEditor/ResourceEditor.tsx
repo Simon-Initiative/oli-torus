@@ -1,5 +1,8 @@
-import * as Immutable from 'immutable';
+
 import React from 'react';
+import { connect } from 'react-redux';
+import { State, Dispatch } from 'state';
+import * as Immutable from 'immutable';
 import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
 import {
@@ -26,10 +29,12 @@ import {
   registerUnload, registerKeydown, registerKeyup, registerWindowBlur, unregisterUnload,
   unregisterKeydown, unregisterKeyup, unregisterWindowBlur,
 } from './listeners';
+import { loadPreferences } from 'state/preferences';
 
 export interface ResourceEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap;   // Map of activity types to activity elements
   activities: ActivityMap;
+  onLoadPreferences: () => void;
 }
 
 // This is the state of our resource that is undoable
@@ -87,7 +92,7 @@ function mapChildrenObjectives(objectives: Objective[])
 }
 
 // The resource editor
-export class ResourceEditor extends React.Component<ResourceEditorProps, ResourceEditorState> {
+class ResourceEditor extends React.Component<ResourceEditorProps, ResourceEditorState> {
 
   persistence: PersistenceStrategy;
   windowUnloadListener: any;
@@ -131,7 +136,9 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 
   componentDidMount() {
 
-    const { projectSlug, resourceSlug } = this.props;
+    const { projectSlug, resourceSlug, onLoadPreferences } = this.props;
+
+    onLoadPreferences();
 
     this.persistence.initialize(
       acquireLock.bind(undefined, projectSlug, resourceSlug),
@@ -440,3 +447,34 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     );
   }
 }
+
+interface StateProps {
+
+}
+
+interface DispatchProps {
+  onLoadPreferences: () => void;
+}
+
+type OwnProps = {
+  editorMap: ActivityEditorMap;
+  activities: ActivityMap;
+};
+
+const mapStateToProps = (state: State, ownProps: OwnProps): StateProps => {
+  return {};
+};
+
+const mapDispatchToProps = (dispatch: Dispatch, ownProps: OwnProps): DispatchProps => {
+  return {
+    onLoadPreferences: () => dispatch(loadPreferences()),
+  };
+};
+
+const controller = connect<StateProps, DispatchProps, OwnProps>(
+  mapStateToProps,
+  mapDispatchToProps,
+)(ResourceEditor);
+
+export { controller as ResourceEditor };
+

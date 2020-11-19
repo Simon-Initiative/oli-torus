@@ -4,13 +4,11 @@ import { Provider } from 'react-redux';
 import { Maybe, maybe } from 'tsmonad';
 import { Editor } from 'components/editing/editor/Editor';
 import { configureStore } from 'state/store';
-import { TestEditor } from 'components/editing/EditorTest';
 import { ResourceEditor } from 'components/resource/resourceEditor/ResourceEditor';
 import { ActivityEditor } from 'components/activity/ActivityEditor';
 
 export const registry = {
   Editor,
-  TestEditor,
   ResourceEditor,
   ActivityEditor,
 } as any;
@@ -30,12 +28,6 @@ let store = configureStore();
         element,
       );
     });
-  },
-};
-
-(window as any).store = {
-  configureStore: (json: any) => {
-    store = configureStore(json);
   },
 };
 

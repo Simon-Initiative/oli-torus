@@ -100,7 +100,6 @@ export const createEditor = (
           {React.createElement(editor.deliveryElement, props as any)}
         </TestModeHandler>
 
-        <div className="activity-preview-info">This is a live preview of your activity. <a href="" className="ml-2"><i className="lar la-eye-slash"></i> Hide</a> </div>
       </ActivityBlock>
     );
   }

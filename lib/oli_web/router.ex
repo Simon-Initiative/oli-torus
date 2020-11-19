@@ -207,6 +207,13 @@ defmodule OliWeb.Router do
 
   end
 
+  scope "/api/v1/account", OliWeb do
+    pipe_through [:api, :authoring_protected]
+
+    get "/preferences", WorkspaceController, :fetch_preferences
+    post "/preferences", WorkspaceController, :update_preferences
+  end
+
   scope "/api/v1/project", OliWeb do
     pipe_through [:api, :authoring_protected]
 
