@@ -33,7 +33,7 @@ const maybeRenderDeliveryPurposeContainer = (props: PurposeContainerProps) => {
       </div>
     </div>
   );
-}
+};
 interface ContentBlockProps {
   editMode: boolean;
   children?: JSX.Element | JSX.Element[] ;
