@@ -26,17 +26,6 @@
       border-bottom-left-radius: 8px;
       border-bottom-right-radius: 8px;
 
-      .slate-editor {
-        @include clearfix;
-        border-radius: 3px;
-        cursor: initial;
-        padding: 1.3em 10px;
-
-        &.structured-content {
-          padding: 1.3em max(calc(50% - 340px), 20px);
-        }
-      }
-
       .activity-preview-info {
         background-color: $card-cap-bg;
         color: rgba($color: $body-color, $alpha: .8);
@@ -65,22 +54,43 @@
       text-align: left;
       @include ellipsis;
     }
+  }
 
-    .delivery {
-      padding: 10px;
-      color: delivery.$body-color;
-      background-color: delivery.$body-bg;
-      padding: 1.3em max(calc(50% - 340px), 20px);
+  .content-block {
+    .content-block-structured-content {
+      padding: 1.3em max(calc(50% - 400px), 50px);
+    }
+
+    // handle the special case when purpose type is none, apply the
+    // padding styles to slate editor itself. this allows slate to utilize
+    // the entire surrounding padding for cursor events and allow for easier
+    // selection etc..
+    &.purpose-none {
+      .slate-editor {
+        @include clearfix;
+        cursor: initial;
+        padding: 1.3em 10px;
+
+        &.structured-content {
+          padding: 1.3em max(calc(50% - 400px), 50px);
+        }
+      }
     }
   }
 
-  .resource-editor-and-controls {
+  .activity-block {
+    .test-mode-handler {
+      padding: 1.3em max(calc(50% - 400px), 50px);
+    }
+  }
+
+  .resource-block-editor-and-controls {
     &.is-dragging {
       display: none;
     }
   }
 
-  .resource-editor {
+  .resource-block-editor {
     &.reorder-mode {
       .resource-content-frame {
         .card-body {

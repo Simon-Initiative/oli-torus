@@ -4,6 +4,7 @@ import { getContentDescription } from 'data/content/utils';
 import { Purpose as PurposeType, ResourceContent, StructuredContent } from 'data/content/resource';
 import * as Immutable from 'immutable';
 import { Purpose } from 'components/content/Purpose';
+import { classNames } from 'utils/classNames';
 
 const getDescription = (item: ResourceContent) => {
   return item.type === 'content'
@@ -11,6 +12,28 @@ const getDescription = (item: ResourceContent) => {
     : '';
 };
 
+type PurposeContainerProps = {
+  children?: JSX.Element | JSX.Element[],
+  contentItem: StructuredContent;
+  purposes: PurposeType[],
+};
+
+const maybeRenderDeliveryPurposeContainer = (props: PurposeContainerProps) => {
+  const purposeLabel = props.purposes.find(p => p.value === props.contentItem.purpose)?.label;
+
+  if (props.contentItem.purpose === 'none') {
+    return props.children;
+  }
+
+  return (
+    <div className="content-block-structured-content delivery">
+      <div className={`content-purpose ${props.contentItem.purpose}`}>
+        <div className="content-purpose-label">{purposeLabel}</div>
+        <div className="content-purpose-content">{props.children}</div>
+      </div>
+    </div>
+  );
+}
 interface ContentBlockProps {
   editMode: boolean;
   children?: JSX.Element | JSX.Element[] ;
@@ -25,8 +48,14 @@ interface ContentBlockProps {
 }
 export const ContentBlock = (props: ContentBlockProps) => {
   const id = `content-header-${props.index}`;
+
   return (
-    <div className="resource-content-frame card"
+    <div className={classNames([
+      'content-block',
+      'resource-content-frame',
+      'card',
+      `purpose-${props.contentItem.purpose}`,
+    ])}
       draggable={props.editMode}
       onDragStart={e => props.onDragStart(e, id)}
       onDragEnd={props.onDragEnd}>
@@ -52,7 +81,7 @@ export const ContentBlock = (props: ContentBlockProps) => {
         <div draggable={props.editMode}
           onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}>
 
-          {props.children}
+          {maybeRenderDeliveryPurposeContainer(props)}
 
         </div>
       </div>

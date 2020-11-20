@@ -69,7 +69,7 @@ const ActivityBlock = (props: ActivityBlockProps) => {
   );
 
   return (
-    <div className="resource-content-frame card">
+    <div className="activity-block resource-content-frame card">
       <div className="card-header px-2"
         draggable={props.editMode}
         onDragStart={e => props.onDragStart(e, id)}

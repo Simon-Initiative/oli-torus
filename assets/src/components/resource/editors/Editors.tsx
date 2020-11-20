@@ -102,7 +102,7 @@ export const Editors = (props: EditorsProps) => {
       <div key={c.id}
         id={`re${c.id}`}
         className={classNames([
-          'resource-editor-and-controls',
+          'resource-block-editor-and-controls',
           c.id, c.id === activeDragId ? 'is-dragging' : '',
         ])}>
 
@@ -119,7 +119,7 @@ export const Editors = (props: EditorsProps) => {
           onAddItem={onAddItem}
           onDrop={onDrop} />
 
-        <div className={classNames(['resource-editor', isReorderMode ? 'reorder-mode' : ''])}
+        <div className={classNames(['resource-block-editor', isReorderMode ? 'reorder-mode' : ''])}
           onKeyDown={handleKeyDown}
           onFocus={e => onFocus(index)}
           role="option"
