@@ -5,7 +5,6 @@
 .editors {
 
   .resource-content-frame {
-    cursor: grab;
     width: 100%;
 
     &.card {
@@ -14,53 +13,128 @@
     }
 
     .card-header {
+      cursor: grab;
       border-bottom: 0;
-      .description {
-        display: none;
-      }
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
     }
 
     .card-body {
-      padding: 0 20px 20px 20px;
-      background-color: rgba(0, 0, 0, 0.03);
+      padding: 0;
+      border: 4px solid $card-cap-bg;
+      border-top: none;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
 
-      .slate-editor {
-        @include clearfix;
-        border-radius: 3px;
-        cursor: initial;
-        background-color: white;
-        padding: 1.3em 10px;
-        &.structured-content {
-          padding: 1.3em max(calc(50% - 340px), 20px);
+      .activity-preview-info {
+        background-color: $card-cap-bg;
+        color: rgba($color: $body-color, $alpha: .8);
+        text-align: center;
+        font-style: italic;
+        font-size: 14px;
+        padding-top: 6px;
+
+        .preview-text {
+          font-style: normal;
+          text-align: left;
+          @include ellipsis;
         }
       }
     }
 
-    .delivery {
-      padding: 10px;
-      color: delivery.$body-color;
-      background-color: delivery.$body-bg;
+    .reorder-mode-description {
+      display: none;
+      background-color: $card-cap-bg;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+      color: rgba($color: $body-color, $alpha: .8);
+      font-size: 14px;
+      padding: 6px 1.6rem;
+      font-style: normal;
+      text-align: left;
+      @include ellipsis;
     }
   }
 
-  .resource-editor-and-controls {
+  .content-block {
+    .content-block-structured-content {
+      padding: 1.3em max(calc(50% - 400px), 50px);
+    }
+
+    // handle the special case when purpose type is none, apply the
+    // padding styles to slate editor itself. this allows slate to utilize
+    // the entire surrounding padding for cursor events and allow for easier
+    // selection etc..
+    &.purpose-none {
+      .slate-editor {
+        @include clearfix;
+        cursor: initial;
+        padding: 1.3em 10px;
+
+        &.structured-content {
+          padding: 1.3em max(calc(50% - 400px), 50px);
+        }
+      }
+    }
+  }
+
+  .activity-block {
+    .test-mode-handler {
+      padding: 1.3em max(calc(50% - 400px), 50px);
+    }
+  }
+
+  .resource-block-editor-and-controls {
     &.is-dragging {
       display: none;
     }
   }
 
-  .resource-editor {
+  .resource-block-editor {
     &.reorder-mode {
       .resource-content-frame {
-        .card-header {
-          .description {
-            display: block;
-          }
-        }
-
         .card-body {
           display: none;
         }
+
+        .reorder-mode-description {
+          display: block;
+        }
+      }
+    }
+
+    .btn-purpose {
+      min-width: 150px;
+      border: 1px solid rgba($color: $body-color, $alpha: 0.1);
+      color: rgba($color: $body-color, $alpha: 0.8);
+      background-color: $body-bg;
+
+      text-align: left;
+      &.dropdown-toggle::after {
+        float: right;
+        margin-top: .7em;
+      }
+
+      &:hover {
+        border-color: rgba($color: $body-color, $alpha: 0.6);
+        background:rgba($color: $body-color, $alpha: 0.05);
+      }
+
+      &:disabled {
+        background-color: $card-cap-bg;
+
+        &:hover {
+          border-color: rgba($color: $body-color, $alpha: 0.1);
+          background: $card-cap-bg;
+        }
+      }
+    }
+
+    .btn-delete:not([disabled]) {
+      color: rgba($color: $body-color, $alpha: 0.8);
+
+      &:hover {
+        color: $danger;
       }
     }
   }

@@ -9,6 +9,8 @@
     all: initial;
     all: unset;
     flex: 1;
-    padding: 0 30px;
+    padding: 0 40px;
+    border: 1px solid $gray-200;
+    border-radius: 4px;
   }
 }

@@ -564,55 +564,55 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
             onClick={() => this.onUploadClick(id)}>
             <i className="fa fa-upload" /> Upload
           </button>
-          <div className="d-flex">
-            <div className="media-toolbar-item btn-group layout-control">
-              <button
-                className={`btn btn-outline-primary ${layout === LAYOUTS.GRID ? 'selected' : ''}`}
-                onClick={() => this.onChangeLayout(LAYOUTS.GRID)}>
-                <i className="fa fa-th" />
-              </button>
-              <button
-                className={`btn btn-outline-primary ${layout === LAYOUTS.LIST ? 'selected' : ''}`}
-                onClick={() => this.onChangeLayout(LAYOUTS.LIST)}>
-                <i className="fa fa-th-list" />
-              </button>
+          <div className="media-toolbar-item btn-group layout-control">
+            <button
+              className={`btn btn-outline-primary ${layout === LAYOUTS.GRID ? 'selected' : ''}`}
+              onClick={() => this.onChangeLayout(LAYOUTS.GRID)}>
+              <i className="fa fa-th" /> Grid
+            </button>
+            <button
+              className={`btn btn-outline-primary ${layout === LAYOUTS.LIST ? 'selected' : ''}`}
+              onClick={() => this.onChangeLayout(LAYOUTS.LIST)}>
+              <i className="fa fa-th-list" /> List
+            </button>
+          </div>
+
+          <div className="flex-grow-1"></div>
+
+          <div className="media-toolbar-item sort-control dropdown">
+            Sort by:&nbsp;
+            <span
+              className="dropdown-toggle sort-btn"
+              id="dropdownMenu2"
+              data-toggle="dropdown">
+              <i className={SORT_MAPPINGS[getSortMappingKey(orderBy, order) as any].icon} />
+              {` ${getSortMappingKey(orderBy, order)}`}
+            </span>
+            <div className="dropdown-menu">
+              {Object.keys(SORT_MAPPINGS).map(sortKey =>
+                <button
+                  key={sortKey}
+                  type="button"
+                  className="dropdown-item"
+                  onClick={() => this.onSortChange(sortKey)}>
+                  {sortKey}
+                </button>,
+              )}
             </div>
-            <div className="media-toolbar-item sort-control dropdown">
-              Sort By:&nbsp;
-              <span
-                className="dropdown-toggle sort-btn"
-                id="dropdownMenu2"
-                data-toggle="dropdown">
-                <i className={SORT_MAPPINGS[getSortMappingKey(orderBy, order) as any].icon} />
-                {` ${getSortMappingKey(orderBy, order)}`}
-              </span>
-              <div className="dropdown-menu">
-                {Object.keys(SORT_MAPPINGS).map(sortKey =>
-                  <button
-                    key={sortKey}
-                    type="button"
-                    className="dropdown-item"
-                    onClick={() => this.onSortChange(sortKey)}>
-                    {sortKey}
-                  </button>,
-                )}
-              </div>
-            </div>
-            <div className="media-toolbar-item search">
-              <div className="input-group">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Search"
-                  value={searchText}
-                  onChange={({ target: { value } }) => this.onSearch(value)} />
-              </div>
+          </div>
+          <div className="media-toolbar-item search">
+            <div className="input-group">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search"
+                value={searchText}
+                onChange={({ target: { value } }) => this.onSearch(value)} />
             </div>
           </div>
         </div>
         <div className="media-library">
           <ol className="media-sidebar text-center">
-            <li>Filter to:</li>
             <li className={this.mimeTypeFilter(MIMETYPE_FILTERS.ALL)}
               onClick={() => this.displayMediaOfType(MIMETYPE_FILTERS.ALL)}>
               All Media
@@ -625,9 +625,9 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
               onClick={() => this.displayMediaOfType(MIMETYPE_FILTERS.AUDIO)}>
               Audio
             </li>
-            <li className="d-flex flex-column">
+            <li className="video d-flex flex-column">
               <span>Video</span>
-              <small>Managed by Youtube</small>
+              <small>Managed by YouTube</small>
             </li>
           </ol>
           <div className="media-content">

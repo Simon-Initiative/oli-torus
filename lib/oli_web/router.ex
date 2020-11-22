@@ -153,6 +153,7 @@ defmodule OliWeb.Router do
     get "/account", WorkspaceController, :account
     put "/account", WorkspaceController, :update_author
     post "/account/theme", WorkspaceController, :update_theme
+    post "/account/live_preview_display", WorkspaceController, :update_live_preview_display
 
     # keep a session active by periodically calling this endpoint
     get "/keep-alive", StaticPageController, :keep_alive
@@ -205,6 +206,13 @@ defmodule OliWeb.Router do
     # plugs when live-routing, however.
     # live "/:project_id/insights", Insights, session: {__MODULE__, :with_session, []}
 
+  end
+
+  scope "/api/v1/account", OliWeb do
+    pipe_through [:api, :authoring_protected]
+
+    get "/preferences", WorkspaceController, :fetch_preferences
+    post "/preferences", WorkspaceController, :update_preferences
   end
 
   scope "/api/v1/project", OliWeb do

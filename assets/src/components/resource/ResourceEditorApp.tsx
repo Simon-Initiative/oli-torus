@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { ResourceEditor } from './resourceEditor/ResourceEditor';
+import ResourceEditor from './resourceEditor/ResourceEditor';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { Maybe } from 'tsmonad';

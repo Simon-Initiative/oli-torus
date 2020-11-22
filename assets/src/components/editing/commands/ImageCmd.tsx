@@ -2,7 +2,7 @@ import React from 'react';
 import { Transforms } from 'slate';
 import * as ContentModel from 'data/content/model';
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
-import ModalSelection from 'components/modal/ModalSelection';
+import ModalSelection, { sizes } from 'components/modal/ModalSelection';
 import { MediaManager } from 'components/media/manager/MediaManager.controller';
 import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
@@ -19,7 +19,7 @@ export function selectImage(projectSlug: string,
     const selected = { img: null };
 
     const mediaLibrary =
-        <ModalSelection title="Select an image"
+        <ModalSelection title="Select an image" size={sizes.extraLarge}
           onInsert={() => { dismiss(); resolve(selected.img as any); }}
           onCancel={() => dismiss()}
           disableInsert={true}

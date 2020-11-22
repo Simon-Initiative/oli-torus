@@ -9,8 +9,6 @@ import { ProjectSlug, ResourceSlug } from 'data/types';
 import { Objective, ObjectiveSlug } from 'data/content/objective';
 import { classNames } from 'utils/classNames';
 import { AddResourceOrDropTarget } from './AddResourceOrDropTarget';
-import { ContentCard } from './ContentBlock';
-import { ActivityCard } from './ActivityBlock';
 import { createEditor } from './createEditor';
 import { focusHandler } from './dragndrop/handlers/focus';
 import { moveHandler } from './dragndrop/handlers/move';
@@ -69,9 +67,6 @@ export const Editors = (props: EditorsProps) => {
       props.onEdit(Object.assign(c, { purpose }), index);
     };
 
-    const [editor, label] = createEditor(c, onEdit, activities, editorMap,
-      editMode, projectSlug, graded, objectivesMap);
-
     const purposes = c.type === 'activity-reference'
       ? ActivityPurposes : ContentPurposes;
 
@@ -90,22 +85,24 @@ export const Editors = (props: EditorsProps) => {
       }
     };
 
-    const commonCardProps = {
+    const editorProps = {
       purposes,
       onDragStart,
       onDragEnd,
       editMode,
-      editor,
       onEditPurpose,
       content,
       onRemove,
     };
 
+    const editor = createEditor(c, index, activities, editorMap,
+      editMode, resourceSlug,  projectSlug, graded, objectivesMap, editorProps, onEdit);
+
     return (
       <div key={c.id}
         id={`re${c.id}`}
         className={classNames([
-          'resource-editor-and-controls',
+          'resource-block-editor-and-controls',
           c.id, c.id === activeDragId ? 'is-dragging' : '',
         ])}>
 
@@ -122,17 +119,14 @@ export const Editors = (props: EditorsProps) => {
           onAddItem={onAddItem}
           onDrop={onDrop} />
 
-        <div className={classNames(['resource-editor', isReorderMode ? 'reorder-mode' : ''])}
+        <div className={classNames(['resource-block-editor', isReorderMode ? 'reorder-mode' : ''])}
           onKeyDown={handleKeyDown}
           onFocus={e => onFocus(index)}
           role="option"
           aria-describedby="content-list-operation"
           tabIndex={index + 1}>
 
-          {c.type === 'activity-reference'
-            ? <ActivityCard {...commonCardProps} contentItem={c}
-              label={label} projectSlug={projectSlug} resourceSlug={resourceSlug} />
-            : <ContentCard {...commonCardProps} contentItem={c} index={index} />}
+          {editor}
         </div>
       </div>
     );
