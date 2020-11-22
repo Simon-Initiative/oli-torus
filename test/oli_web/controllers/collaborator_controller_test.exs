@@ -25,7 +25,7 @@ defmodule OliWeb.CollaboratorControllerTest do
       conn = post(conn, Routes.collaborator_path(conn, :create, project), email: @invite_email)
       new_author = Accounts.get_author_by_email(@invite_email)
       token = PowInvitation.Plug.sign_invitation_token(conn, new_author)
-      conn = put(
+      put(
         conn,
         Routes.pow_invitation_invitation_path(conn, :update, token),
         %{

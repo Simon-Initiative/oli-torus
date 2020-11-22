@@ -4,8 +4,6 @@ defmodule Oli.Authoring.Collaborators do
   alias Oli.Accounts
   alias Oli.Authoring.Course
   alias OliWeb.Router.Helpers, as: Routes
-  alias Pow.Phoenix.Mailer.Mail
-  alias PowInvitation.Phoenix.MailerView
   import Oli.Utils
 
   def change_collaborator(email, project_slug) do
@@ -57,7 +55,12 @@ defmodule Oli.Authoring.Collaborators do
                   {:ok, user, _conn} -> {:ok, user, :invitation_new_user}
                   {:error, _changeset, _conn} -> {:error, "Unable to create invitation for new author"}
                 end
-         author -> {:ok, author, :invitation_existing_user}
+         author -> if not is_nil(author.invitation_token) and is_nil(author.invitation_accepted_at) do
+                     {:ok, author, :invitation_new_user}
+                   else
+                     {:ok, author, :invitation_existing_user}
+                   end
+
        end
   end
 
@@ -129,17 +132,19 @@ defmodule Oli.Authoring.Collaborators do
     end
 
     invited_by_user_id = Map.get(invited_by, invited_by.__struct__.pow_user_id_field())
-    email = Mail.new(
-      conn,
-      user,
-      {MailerView, view},
-      invited_by: invited_by,
-      invited_by_user_id: invited_by_user_id,
-      url: Routes.url(conn) <> url,
-      project_title: project.title
+
+    email = Oli.Email.invitation_email(
+      user.email,
+      view,
+      %{
+        invited_by: invited_by,
+        invited_by_user_id: invited_by_user_id,
+        url: Routes.url(conn) <> url,
+        project_title: project.title
+      }
     )
 
-    mail = Pow.Phoenix.Mailer.deliver(conn, email)
-    {:ok, mail}
+    Oli.Mailer.deliver_now(email)
+    {:ok, "email sent"}
   end
 end
