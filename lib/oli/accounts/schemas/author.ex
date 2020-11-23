@@ -5,7 +5,7 @@ defmodule Oli.Accounts.Author do
                             &Bcrypt.verify_pass/2}
   use PowAssent.Ecto.Schema
   use Pow.Extension.Ecto.Schema,
-    extensions: [PowResetPassword, PowEmailConfirmation]
+    extensions: [PowResetPassword, PowEmailConfirmation, PowInvitation]
 
   import Ecto.Changeset
   import Oli.Utils, only: [maybe_name_from_given_and_family: 1]
