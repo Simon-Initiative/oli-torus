@@ -166,25 +166,19 @@ defmodule OliWeb.PageDeliveryController do
     lti_params = conn.assigns.lti_params
     context_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"]
 
-    if ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_learner)) do
+    case Attempts.submit_graded_page(context_id, attempt_guid) do
+      {:ok, resource_access} ->
 
-      case Attempts.submit_graded_page(context_id, attempt_guid) do
-        {:ok, resource_access} ->
+        grade_sync_result = send_one_grade(lti_params, resource_access)
+        after_finalized(conn, context_id, revision_slug, user, grade_sync_result)
 
-          grade_sync_result = send_one_grade(lti_params, resource_access)
-          after_finalized(conn, context_id, revision_slug, user, grade_sync_result)
-
-        {:error, {:not_all_answered}} ->
-          put_flash(conn, :error, "You have not answered all questions")
-          |> redirect(to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
-        {:error, {:already_submitted}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
-        {:error, {:active_attempt_present}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
-        {:error, {:no_more_attempts}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
-        _ -> render(conn, "error.html")
-      end
-
-    else
-      render conn, "not_authorized.html"
+      {:error, {:not_all_answered}} ->
+        put_flash(conn, :error, "You have not answered all questions")
+        |> redirect(to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
+      {:error, {:already_submitted}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
+      {:error, {:active_attempt_present}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
+      {:error, {:no_more_attempts}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
+      _ -> render(conn, "error.html")
     end
 
   end
