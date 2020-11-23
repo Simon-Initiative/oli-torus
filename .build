@@ -255,6 +255,8 @@ OliWeb.Pow.UserAuthErrorHandler.html
 OliWeb.Pow.UserIdentities.html
 OliWeb.PowAssent.RegistrationView.html
 OliWeb.PowEmailConfirmation.MailerView.html
+OliWeb.PowInvitation.InvitationView.html
+OliWeb.PowInvitation.MailerView.html
 OliWeb.PowResetPassword.MailerView.html
 OliWeb.PowResetPassword.ResetPasswordView.html
 OliWeb.ProjectController.html
@@ -304,8 +306,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-ed0a208069.js
-dist/sidebar_items-b3204b6b88.js
+dist/search_items-97576abeec.js
+dist/sidebar_items-efa7fddc40.js
 index.html
 license.html
 lti1-3.html
