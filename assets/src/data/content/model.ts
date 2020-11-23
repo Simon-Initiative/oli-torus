@@ -46,8 +46,10 @@ export type ModelElement
 export type TextElement = Paragraph | HeadingOne | HeadingTwo | HeadingThree
   | HeadingFour | HeadingFive | HeadingSix;
 
+export type ID = string;
+
 export interface Identifiable {
-  id: string;
+  id: ID;
 }
 
 export interface Paragraph extends Element, Identifiable {

@@ -2,27 +2,19 @@ import React from 'react';
 import { Heading } from 'components/misc/Heading';
 import { RichTextEditor } from 'components/content/RichTextEditor';
 import { ModelEditorProps } from '../schema';
-import { RichText } from '../../types';
+import { ResponseId, RichText } from '../../types';
 import { Description } from 'components/misc/Description';
 import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 import { ProjectSlug } from 'data/types';
 import { classNames } from 'utils/classNames';
+import { getCorrectResponse, getIncorrectResponse } from '../utils'
 
 interface FeedbackProps extends ModelEditorProps {
-  onEditCorrectFeedback: (content: RichText) => void;
-  onEditIncorrectFeedback: (content: RichText) => void;
+  onEditResponseFeedback: (responseId: ResponseId, content: RichText) => void;
   projectSlug: ProjectSlug;
 }
 export const Feedback = (props: FeedbackProps) => {
-  const { onEditCorrectFeedback, onEditIncorrectFeedback, model, editMode, projectSlug } = props;
-  const { authoring: { parts } } = model;
-
-  const correctResponse = parts[0].responses.find(r => r.score === 1);
-  if (!correctResponse) {
-    throw new Error('Correct response could not be found:' + JSON.stringify(parts));
-  }
-  const firstIncorrectResponse = parts[0].responses
-    .filter(r => r.id !== correctResponse.id)[0];
+  const { onEditResponseFeedback, model, editMode, projectSlug } = props;
 
   return (
     <div className={'my-5 ' + classNames(['feedback'])}>
@@ -33,8 +25,8 @@ export const Feedback = (props: FeedbackProps) => {
           <IconCorrect /> Feedback for Correct Answer
         </Description>
         <RichTextEditor projectSlug={projectSlug}
-          editMode={editMode} text={correctResponse.feedback.content}
-          onEdit={content => onEditCorrectFeedback(content)}
+          editMode={editMode} text={getCorrectResponse(model).feedback.content}
+          onEdit={content => onEditResponseFeedback(getCorrectResponse(model).id, content)}
         />
       </div>
       <div className="mb-3" key={'incorrect feedback'}></div>
@@ -42,8 +34,8 @@ export const Feedback = (props: FeedbackProps) => {
           <IconIncorrect /> Feedback for Incorrect Answer
         </Description>
         <RichTextEditor projectSlug={projectSlug}
-          editMode={editMode} text={firstIncorrectResponse.feedback.content}
-          onEdit={content => onEditIncorrectFeedback(content)}
+          editMode={editMode} text={getIncorrectResponse(model).feedback.content}
+          onEdit={content => onEditResponseFeedback(getIncorrectResponse(model).id, content)}
         />
       </div>
   );

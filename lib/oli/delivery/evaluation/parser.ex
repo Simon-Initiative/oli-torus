@@ -9,7 +9,7 @@ defmodule Oli.Delivery.Evaluation.Parser do
 
   <rule> :== <expression> {<or> <expression>}
   <expression> :== <clause> {<and> <clause>}
-  <clause> :== <not> <clause> | "(" <rule> ")” | <criterion>
+  <clause> :== <not><clause> | "("<rule>")” | <criterion>
   <criterion> :== <component> <operator> <value>
   <component> :== "attemptNumber” | "input” | "length(input)"
   <operator> :== "<” | ">” | "=" | "like"

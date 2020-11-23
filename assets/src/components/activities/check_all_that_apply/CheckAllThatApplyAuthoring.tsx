@@ -7,33 +7,23 @@ import { Stem } from '../common/Stem';
 import { Choices } from './sections/Choices';
 import { Feedback } from './sections/Feedback';
 import { Hints } from '../common/Hints';
-import { Actions as CATAActions } from './actions';
+import { Actions } from './actions';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import produce from 'immer';
 import { TargetedFeedback } from 'components/activities/check_all_that_apply/sections/TargetedFeedback';
-import { getResponses } from 'components/activities/check_all_that_apply/utils';
+import { getHints, getResponses } from 'components/activities/check_all_that_apply/utils';
 
 const store = configureStore();
 
 const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSchema>) => {
 
-  // Simple Mode: correct response + incorrect response
-  // Targeted Feedback Mode: At least one other response
-  const checkTargetedFeedback = (model: CheckAllThatApplyModelSchema) =>
-    getResponses(model).length > 2;
-
   const dispatch = (action: any) => {
-    const newModel = produce(props.model, draftState => action(draftState));
-    setTargetedFeedbackMode(checkTargetedFeedback(newModel));
-    props.onEdit(newModel);
+    props.onEdit(produce(props.model, draftState => action(draftState)));
   };
 
   const { projectSlug } = props;
-
-  const [isInTargetedFeedbackMode, setTargetedFeedbackMode] =
-    useState(checkTargetedFeedback(props.model));
 
   const sharedProps = {
     model: props.model,
@@ -43,52 +33,52 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
 
   return (
     <React.Fragment>
-      <Stem
-        projectSlug={props.projectSlug}
-        editMode={props.editMode}
+      <Stem {...sharedProps}
         stem={props.model.stem}
-        onEditStem={content => dispatch(CATAActions.editStem(content))} />
-      <Choices {...sharedProps}
-        onAddChoice={() => dispatch(CATAActions.addChoice())}
-        onEditChoiceContent={(id, content) => dispatch(CATAActions.editChoiceContent(id, content))}
-        onRemoveChoice={id => dispatch(CATAActions.removeChoice(id))}
-        onToggleChoiceCorrectness={choice =>
-          dispatch(CATAActions.toggleChoiceCorrectness(choice))}
-        />
+        onEditStem={content => dispatch(Actions.editStem(content))}
+      />
 
-      <div className="input-group mb-3">
-        <div className="input-group-prepend">
-          <div className="input-group-text">
-            <input
-              name="targeted-feedback-toggle"
-              type="checkbox"
-              aria-label="Checkbox for targeted feedback mode"
-              checked={isInTargetedFeedbackMode}
-              onClick={() => setTargetedFeedbackMode(!isInTargetedFeedbackMode)} />
-          </div>
-        </div>
-        {/* Disable if > 5 answer choices */}
-        <label htmlFor="targeted-feedback-toggle">Targeted Feedback Mode</label>
+      <Choices {...sharedProps}
+        onAddChoice={() => dispatch(Actions.addChoice())}
+        onEditChoiceContent={(id, content) => dispatch(Actions.editChoiceContent(id, content))}
+        onRemoveChoice={id => dispatch(Actions.removeChoice(id))}
+        onToggleChoiceCorrectness={choiceId => dispatch(Actions.toggleChoiceCorrectness(choiceId))}
+      />
+
+      <Feedback {...sharedProps}
+        onEditResponseFeedback={(responseId, feedbackContent) =>
+          dispatch(Actions.editResponseFeedback(responseId, feedbackContent))}
+      />
+
+      {props.model.type === 'TargetedCATA' &&
+        <TargetedFeedback {...sharedProps}
+          model={props.model}
+          // onEditResponseFeedback={(responseId, feedbackContent) =>
+          //   dispatch(Actions.editResponseFeedback(responseId, feedbackContent))}
+        />}
+
+      <div className="form-check">
+        <input
+          className="form-check-input"
+          type="checkbox"
+          value=""
+          id="targeted-feedback-toggle"
+          aria-label="Checkbox for targeted feedback"
+          checked={props.model.type === 'TargetedCATA'}
+          onChange={() => dispatch(Actions.toggleType())}
+        />
+        <label className="form-check-label" htmlFor="targeted-feedback-toggle">
+          Targeted Feedback Mode
+        </label>
       </div>
-        {isInTargetedFeedbackMode
-        ? <TargetedFeedback {...sharedProps}
-            // onEditResponseFeedback={(responseId, feedbackContent) =>
-            //   dispatch(CATAActions.editResponseFeedback(responseId, feedbackContent))}
-          />
-        : <Feedback {...sharedProps}
-            onEditCorrectFeedback={feedbackContent =>
-              dispatch(CATAActions.editCorrectFeedback(feedbackContent))}
-            onEditIncorrectFeedback={feedbackContent =>
-              dispatch(CATAActions.editIncorrectFeedback(feedbackContent))}
-          />}
 
       <Hints
         projectSlug={props.projectSlug}
-        hints={props.model.authoring.parts[0].hints}
+        hints={getHints(props.model)}
         editMode={props.editMode}
-        onAddHint={() => dispatch(CATAActions.addHint())}
-        onEditHint={(id, content) => dispatch(CATAActions.editHint(id, content))}
-        onRemoveHint={id => dispatch(CATAActions.removeHint(id))} />
+        onAddHint={() => dispatch(Actions.addHint())}
+        onEditHint={(id, content) => dispatch(Actions.editHint(id, content))}
+        onRemoveHint={id => dispatch(Actions.removeHint(id))} />
     </React.Fragment>
   );
 };

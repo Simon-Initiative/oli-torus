@@ -1,41 +1,107 @@
 import guid from 'utils/guid';
 import * as ContentModel from 'data/content/model';
-import { Choice, CheckAllThatApplyModelSchema, CATACombinations, CATACombination } from './schema';
-import { RichText, Operation, ScoringStrategy, Response } from '../types';
+import { Choice, CheckAllThatApplyModelSchema as CATA, CATACombinations, CATACombination, ChoiceIdsToResponseId, TargetedCATA } from './schema';
+import { RichText, Operation, ScoringStrategy, Response, ChoiceId } from '../types';
 import { Maybe } from 'tsmonad';
 
-export function getById<T extends ContentModel.Identifiable>(slice: T[], id: string): Maybe<T> {
-  return Maybe.maybe(slice.find(c => c.id === id));
+// Assumes a correct ID is given
+export function getByIdUnsafe<T extends ContentModel.Identifiable>(slice: T[], id: string): T {
+  return slice.find(c => c.id === id) || slice[0];
 }
-export function getChoice(model: CheckAllThatApplyModelSchema, id: string) {
-  return getById(model.choices, id);
+export function getChoice(model: CATA, id: string) {
+  return getByIdUnsafe(model.choices, id);
 }
-export function getResponses(model: CheckAllThatApplyModelSchema) {
+export function getResponses(model: CATA) {
   return model.authoring.parts[0].responses;
 }
-export function getResponse(model: CheckAllThatApplyModelSchema, id: string) {
-  return getById(getResponses(model), id);
+export function getResponse(model: CATA, id: string) {
+  return getByIdUnsafe(getResponses(model), id);
 }
-export function getCorrectResponse(model: CheckAllThatApplyModelSchema) {
-  return getResponses(model).filter(r => r.score !== 0)[0];
+// Assumes there is one correct response. Change to support partial credit.
+export function getCorrectResponse(model: CATA) {
+  return getResponse(model, getResponseId(model.authoring.correct));
 }
-export function getIncorrectResponses(model: CheckAllThatApplyModelSchema) {
-  return getResponses(model).filter(r => r.score === 0);
+export function getIncorrectResponse(model: CATA) {
+  return getResponse(model, getResponseId(model.authoring.incorrect));
 }
-export function getHints(model: CheckAllThatApplyModelSchema) {
+export function getCorrectChoiceIds(model: CATA): ChoiceId[] {
+  return getChoiceIds(model.authoring.correct);
+}
+export function getIncorrectChoiceIds(model: CATA): ChoiceId[] {
+  return getChoiceIds(model.authoring.incorrect);
+}
+export function getTargetedChoiceIds(model: TargetedCATA): ChoiceId[][] {
+  return model.authoring.targeted.map(getChoiceIds);
+}
+export function getTargetedResponses(model: TargetedCATA): Response[] {
+  return model.authoring.targeted.map(assoc => getResponse(model, getResponseId(assoc)));
+}
+export function getHints(model: CATA) {
   return model.authoring.parts[0].hints;
 }
-export function getHint(model: CheckAllThatApplyModelSchema, id: string) {
-  return getById(getHints(model), id);
+export function getHint(model: CATA, id: string) {
+  return getByIdUnsafe(getHints(model), id);
 }
-export function isCorrect(response: Response) {
-  return response.score > 0;
+export function getChoiceIds(assoc: ChoiceIdsToResponseId) {
+  return assoc[0];
 }
-// A choice can
-export function getMatchingResponses(model: CheckAllThatApplyModelSchema, choice: Choice) {
-  return Maybe.maybe(getResponses(model).find(response =>
-    response.rule === `input like {${choice.id}}`));
+export function getResponseId(assoc: ChoiceIdsToResponseId) {
+  return assoc[1];
 }
+export function setDifference<T>(subtractedFrom: T[], toSubtract: T[]) {
+  return subtractedFrom.filter(x => !toSubtract.includes(x));
+}
+// export function getMatchingResponse(model: CATA, choiceIds: string[]) {
+//   return Maybe.maybe(model.authoring.choiceIdsToResponses.find(association => {
+//     // Matching response is found when the choiceIds has a perfect intersection
+//     // with a choiceIdsToResponses choiceId association list item
+//     return getChoiceIdsFromAssociation(association).every(id => choiceIds.includes(id))
+//       && choiceIds.every(id => getChoiceIdsFromAssociation(association).includes(id));
+//   }))
+//     .lift(association => getResponse(model, getResponseIdFromAssociation(association)));
+// }
+// export function getChoicesForResponse(model: CATA, response: Response) {
+//   return Maybe.maybe(model.authoring.choiceIdsToResponses.find(association =>
+//     response.id === getResponseIdFromAssociation(association)))
+//   .lift(association => getChoiceIdsFromAssociation(association))
+// }
+export function isCorrectChoice(model: CATA, choiceId: ChoiceId) {
+  return getCorrectChoiceIds(model).includes(choiceId);
+}
+
+// mutable, for use in immer actions
+export function addOrRemoveFromList<T>(item: T, list: T[]) {
+  if (list.find(x => x === item)) {
+    return removeFromList(item, list);
+  }
+  return list.push(item);
+}
+// mutable, for use in immer actions
+export function removeFromList<T>(item: T, list: T[]) {
+  const index = list.findIndex(x => x === item);
+  if (index > -1) {
+    list.splice(index, 1);
+  }
+}
+
+export function createRuleForIds(toMatch: string[], notToMatch: string[]) {
+  return unionRules(
+    toMatch.map(createMatchRule)
+    .concat(notToMatch.map(id => invertRule(createMatchRule(id)))));
+}
+export function createMatchRule(id: string) {
+  return `input like {${id}}`;
+}
+export function invertRule(rule: string) {
+  return `!(${rule})`;
+}
+export function unionRules(rules: string[]) {
+  return rules.join(' && ');
+}
+
+// correct response rule: input like {A} && input like {B} && ! input like {C}
+// write a rule matcher
+// [id] =>
 
 /*
 Simple:
@@ -88,9 +154,12 @@ export function combinationsWithout(
 export const makeResponse = (rule: string, score: number, text: '') =>
   ({ id: guid(), rule, score, feedback: fromText(text) });
 
-export const defaultCATAModel : () => CheckAllThatApplyModelSchema = () => {
+export const defaultCATAModel : () => CATA = () => {
   const choiceA: Choice = fromText('Choice A');
   const choiceB: Choice = fromText('Choice B');
+
+  const correctResponse = makeResponse(`input like {${choiceA.id}} && ! input like {${choiceB.id}}`, 1, '');
+  const incorrectResponse = makeResponse(`input like {${choiceB.id}} && ! input like {${choiceA.id}}`, 0, '');
 
   // const allCombinations = combinations([choiceA, choiceB]);
   // const correctCombination: CATACombination = [choiceA];
@@ -104,6 +173,7 @@ export const defaultCATAModel : () => CheckAllThatApplyModelSchema = () => {
   // combo.map(c => `input like ${c.id}`).join(' && ')),
 
   return {
+    type: 'SimpleCATA',
     stem: fromText(''),
     choices: [
       choiceA,
@@ -114,8 +184,8 @@ export const defaultCATAModel : () => CheckAllThatApplyModelSchema = () => {
         id: '1', // a only has one part, so it is safe to hardcode the id
         scoringStrategy: ScoringStrategy.average,
         responses: [
-          makeResponse(`input like {${choiceA.id}} && ! input like {${choiceB.id}}`, 1, ''),
-          makeResponse(`input like {${choiceB.id}} && ! input like {${choiceA.id}}`, 0, ''),
+          correctResponse,
+          incorrectResponse,
         ],
         hints: [
           fromText(''),
@@ -123,6 +193,8 @@ export const defaultCATAModel : () => CheckAllThatApplyModelSchema = () => {
           fromText(''),
         ],
       }],
+      correct: [[choiceA.id], correctResponse.id],
+      incorrect: [[choiceB.id], incorrectResponse.id],
       transformations: [
         { id: guid(), path: 'choices', operation: Operation.shuffle },
       ],

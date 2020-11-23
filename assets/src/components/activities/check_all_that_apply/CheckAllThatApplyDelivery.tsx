@@ -74,40 +74,41 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
   const { stem, choices } = model;
 
   const isEvaluated = attemptState.score !== null;
+  const selectedToInput = () => selected.join(' ');
 
-  const onSelect = (id: string) => {
-    // Update local state by adding or removing the id
+  const onSubmit = () => {
+    console.log('input', selectedToInput());
+    props.onSubmitActivity(attemptState.attemptGuid,
+      // update this input too
+      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: selectedToInput() } }])
+      .then((response: EvaluationResponse) => {
+        if (response.evaluations.length > 0) {
+          console.log('response.evaluations', response.evaluations)
+          const { score, out_of, feedback, error } = response.evaluations[0];
+          const parts = [Object.assign({}, attemptState.parts[0], { feedback, error })];
+          const updated = Object.assign({}, attemptState, { score, outOf: out_of, parts });
+          setAttemptState(updated);
+        }
+      });
+  };
+
+  const updateSelection = (id: string) => {
     const newSelection = !!selected.find(s => s === id)
       ? selected.filter(s => s !== id)
       : selected.concat([id]);
     setSelected(newSelection);
+  }
 
-    const input = newSelection.join(' ');
+  const onSelect = (id: string) => {
+    // Update local state by adding or removing the id
+    updateSelection(id);
 
-    if (props.graded) {
-
-      // In summative context, post the student response to save it
-      // Here we will make a list of the selected ids like { input: [id1, id2, id3].join(' ')}
-      // Then in the rule evaluator, we will say
-      // `input like id1 && input like id2 && input like id3`
-      props.onSaveActivity(attemptState.attemptGuid,
-        [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input } }]);
-
-    } else {
-
-      // Auto-submit our student reponse in formative context
-      props.onSubmitActivity(attemptState.attemptGuid,
-        // update this input too
-        [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input } }])
-        .then((response: EvaluationResponse) => {
-          if (response.evaluations.length > 0) {
-            const { score, out_of, feedback, error } = response.evaluations[0];
-            const parts = [Object.assign({}, attemptState.parts[0], { feedback, error })];
-            const updated = Object.assign({}, attemptState, { score, outOf: out_of, parts });
-            setAttemptState(updated);
-          }
-        });
-    }
+    // Post the student response to save it
+    // Here we will make a list of the selected ids like { input: [id1, id2, id3].join(' ')}
+    // Then in the rule evaluator, we will say
+    // `input like id1 && input like id2 && input like id3`
+    props.onSaveActivity(attemptState.attemptGuid,
+      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: selectedToInput() } }]);
   };
 
   const onRequestHint = () => {
@@ -148,6 +149,15 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
     <Hints key="hints" onClick={onRequestHint} hints={hints}
       hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>];
 
+  const maybeSubmitButton = props.graded
+    ? null
+    : (
+      <button
+        className="btn btn-primary mt-2" disabled={isEvaluated} onClick={onSubmit}>
+        Submit
+      </button>
+    );
+
   return (
     <div className={`activity multiple-choice-activity ${isEvaluated ? 'evaluated' : ''}`}>
       <div className="activity-content">
@@ -155,6 +165,7 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
         <Choices choices={choices} selected={selected}
           onSelect={onSelect} isEvaluated={isEvaluated}/>
         {ungradedDetails}
+        {maybeSubmitButton}
       </div>
       {reset}
     </div>
