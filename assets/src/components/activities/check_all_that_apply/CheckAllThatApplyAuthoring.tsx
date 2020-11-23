@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { CheckAllThatApplyModelSchema } from './schema';
@@ -13,22 +13,19 @@ import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import produce from 'immer';
 import { TargetedFeedback } from 'components/activities/check_all_that_apply/sections/TargetedFeedback';
-import { getHints, getResponses } from 'components/activities/check_all_that_apply/utils';
+import { getHints, isTargetedCATA } from 'components/activities/check_all_that_apply/utils';
 
 const store = configureStore();
 
 const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSchema>) => {
 
-  const dispatch = (action: any) => {
+  const dispatch = (action: any) =>
     props.onEdit(produce(props.model, draftState => action(draftState)));
-  };
-
-  const { projectSlug } = props;
 
   const sharedProps = {
     model: props.model,
     editMode: props.editMode,
-    projectSlug,
+    projectSlug: props.projectSlug,
   };
 
   return (
@@ -50,7 +47,7 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
           dispatch(Actions.editResponseFeedback(responseId, feedbackContent))}
       />
 
-      {props.model.type === 'TargetedCATA' &&
+      {isTargetedCATA(props.model) &&
         <TargetedFeedback {...sharedProps}
           model={props.model}
           // onEditResponseFeedback={(responseId, feedbackContent) =>

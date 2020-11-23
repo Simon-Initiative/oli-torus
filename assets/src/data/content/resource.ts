@@ -41,7 +41,7 @@ export type Purpose = {
 };
 
 export const ActivityPurposes: Purpose[] = [
-  { value: 'none', label: 'None' },
+  { value: 'none', label: 'Activity' },
   { value: 'checkpoint', label: 'Checkpoint' },
   { value: 'didigetthis', label: 'Did I get this?' },
   { value: 'learnbydoing', label: 'Learn by doing' },
@@ -49,7 +49,7 @@ export const ActivityPurposes: Purpose[] = [
 ];
 
 export const ContentPurposes: Purpose[] = [
-  { value: 'none', label: 'None' },
+  { value: 'none', label: 'Content' },
   { value: 'example', label: 'Example' },
   { value: 'learnmore', label: 'Learn more' },
 ];
@@ -89,6 +89,7 @@ export interface Activity {
   activitySlug: ActivitySlug;
   typeSlug: ActivityTypeSlug;
   model: ActivityModelSchema;
+  transformed: ActivityModelSchema | null;
   objectives: Object;
 }
 

@@ -239,23 +239,6 @@ defmodule Oli.Accounts do
     conn.assigns[:current_author]
   end
 
-  @doc """
-  Authorizes a author with the given email and passord
-  """
-  def authorize_author(author_email, password) do
-    Repo.get_by(Author, email: author_email)
-      |> authorize(password)
-  end
-
-  defp authorize(nil, _password), do: {:error, "Invalid authorname or password"}
-  defp authorize(author, password) do
-    Bcrypt.check_pass(author, password, hash_key: :password_hash)
-    |> resolve_authorization(author)
-  end
-
-  defp resolve_authorization({:error, _reason}, _author), do: {:error, "Invalid authorname or password"}
-  defp resolve_authorization({:ok, author}, _author), do: {:ok, author}
-
   def can_access?(author, project) do
 
     admin_role_id = SystemRole.role_id().admin
@@ -279,23 +262,24 @@ defmodule Oli.Accounts do
   def project_author_count(project) do
     Repo.one(
       from assoc in "authors_projects",
-        where: assoc.project_id == ^project.id,
-        select: count(assoc))
+      join: author in Author, on: assoc.author_id == author.id,
+      where: assoc.project_id in ^project.id and (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
+        select: count(author))
   end
 
   def project_authors(project_ids) when is_list(project_ids) do
     Repo.all(
       from assoc in "authors_projects",
         join: author in Author, on: assoc.author_id == author.id,
-        where: assoc.project_id in ^project_ids,
+        where: assoc.project_id in ^project_ids and (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
         select: [author, assoc.project_id])
   end
 
   def project_authors(project) do
     Repo.all(from assoc in "authors_projects",
-      where: assoc.project_id == ^project.id,
       join: author in Author,
       on: assoc.author_id == author.id,
+      where: assoc.project_id == ^project.id and (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
       select: author)
   end
 

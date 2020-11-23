@@ -40,7 +40,8 @@ export const ToolbarButton = ({ icon, command, style, context, active,
   return (
     <button
       data-toggle="tooltip"
-      data-placement="top"
+      ref={r => ($(r as any) as any).tooltip()}
+      data-placement="right"
       title={tooltip}
       className={`btn btn-sm btn-light ${style || ''} ${active && 'active' || ''}`}
       onMouseDown={(e) => {

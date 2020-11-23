@@ -13,7 +13,7 @@ const populateEntries = () => {
 
   // These are the non-activity bundles
   const initialEntries = {
-    app: ['./src/phoenix/app.ts'],
+    app: ['babel-polyfill', './src/phoenix/app.ts'],
     components: ['./src/components.tsx'],
     resourceeditor: ['./src/components/resource/ResourceEditorApp.tsx'],
     activityeditor: ['./src/components/activity/ActivityEditorApp.tsx'],

@@ -69,6 +69,7 @@ export interface ActivityState {
   hasMoreHints: boolean;
 }
 
+export interface Choice extends Identifiable, HasContent {}
 export interface Stem extends Identifiable, HasContent {}
 export interface Hint extends Identifiable, HasContent {}
 export interface Feedback extends Identifiable, HasContent {}

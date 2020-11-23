@@ -659,13 +659,11 @@ defmodule Oli.Delivery.Attempts do
         part_attempt_number: 1,
         input: input.input
       }
-      IO.inspect(part, label: "part")
 
       Oli.Delivery.Evaluation.Evaluator.evaluate(part, context)
 
     end)
     |> Enum.map(fn e ->
-      IO.inspect(e, label: "evaluation")
       case e do
         {:ok, {feedback, result}} -> %{feedback: feedback, result: result}
         {:error, _} -> %{error: "error in evaluation"}
@@ -704,7 +702,6 @@ defmodule Oli.Delivery.Attempts do
   """
   @spec submit_part_evaluations(String.t, String.t, [map()]) :: {:ok, [map()]} | {:error, any}
   def submit_part_evaluations(context_id, activity_attempt_guid, part_inputs) do
-    IO.inspect(part_inputs, label: "part_inputs")
 
     Repo.transaction(fn ->
 

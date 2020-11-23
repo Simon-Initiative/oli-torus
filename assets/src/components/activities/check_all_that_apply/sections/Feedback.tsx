@@ -7,7 +7,7 @@ import { Description } from 'components/misc/Description';
 import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 import { ProjectSlug } from 'data/types';
 import { classNames } from 'utils/classNames';
-import { getCorrectResponse, getIncorrectResponse } from '../utils'
+import { getCorrectResponse, getIncorrectResponse } from '../utils';
 
 interface FeedbackProps extends ModelEditorProps {
   onEditResponseFeedback: (responseId: ResponseId, content: RichText) => void;

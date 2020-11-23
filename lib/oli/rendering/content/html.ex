@@ -14,7 +14,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def learn_more(%Context{} = _context, next, _) do
-    [~s|<div class="content-purpose learn-more"><div class="content-purpose-label">Learn more</div><div class="content-purpose-content">|, next.(), "</div></div>\n"]
+    [~s|<div class="content-purpose learnmore"><div class="content-purpose-label">Learn more</div><div class="content-purpose-content">|, next.(), "</div></div>\n"]
   end
 
   def p(%Context{} = _context, next, _) do

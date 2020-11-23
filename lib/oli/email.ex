@@ -11,6 +11,15 @@ defmodule Oli.Email do
     |> html_text_body()
   end
 
+  @spec invitation_email(String.t(), atom(), map()) :: Bamboo.Email.t()
+  def invitation_email(recipient_email, view, assigns) do
+    base_email()
+    |> to(recipient_email)
+    |> subject("Collaborator Invitation")
+    |> render(view, assigns)
+    |> html_text_body()
+  end
+
   def base_email do
     from_email_name = Application.get_env(:oli, :email_from_name)
     from_email_address = Application.get_env(:oli, :email_from_address)

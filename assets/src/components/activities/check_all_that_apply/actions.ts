@@ -1,45 +1,18 @@
-import { CheckAllThatApplyModelSchema as CATA, Choice, Choice as ChoiceType } from './schema';
-import { addOrRemoveFromList, createRuleForIds, fromText, getChoice, getCorrectResponse, getHint, getResponse, makeResponse, getChoiceIds, getCorrectChoiceIds, getIncorrectChoiceIds, getIncorrectResponse, getTargetedChoiceIds, getTargetedResponses, getResponseId, setDifference, removeFromList, invertRule } from './utils';
-import { RichText, Feedback as FeedbackType, Hint as HintType, ChoiceId } from '../types';
+import { CheckAllThatApplyModelSchema as CATA } from './schema';
+import { createRuleForIds, fromText, getChoice, getCorrectResponse,
+  getHint, getResponse, getChoiceIds, getCorrectChoiceIds, getIncorrectChoiceIds,
+  getIncorrectResponse, getResponseId, setDifference, invertRule } from './utils';
+import { RichText, Hint as HintType, ChoiceId, Choice } from '../types';
 import { toSimpleText } from 'data/content/text';
 
-// Update all response rules based on a model with new choices that are not yet reflected in the rules
-const updateResponseRules = (model: CATA) => {
-
-  // update correct response rule
-  console.log('correct response rule before', getCorrectResponse(model).rule)
-  getCorrectResponse(model).rule = createRuleForIds(
-    getCorrectChoiceIds(model),
-    getIncorrectChoiceIds(model));
-  console.log('correct response rule after', getCorrectResponse(model).rule)
-
-  // update incorrect response rule
-  console.log('incorrect response rule before', getIncorrectResponse(model).rule)
-  getIncorrectResponse(model).rule = invertRule(getCorrectResponse(model).rule);
-  console.log('incorrect response rule after', getIncorrectResponse(model).rule)
-
-  // update targeted response rules
-  switch (model.type) {
-    case 'SimpleCATA': return;
-    case 'TargetedCATA':
-      const allChoiceIds = model.choices.map(choice => choice.id);
-      model.authoring.targeted.forEach(assoc =>
-        getResponse(model, getResponseId(assoc)).rule = createRuleForIds(
-          getChoiceIds(assoc),
-          setDifference(
-            allChoiceIds,
-            getChoiceIds(assoc))));
-      return;
-  }
-}
-
 export class Actions {
+
   static toggleType() {
     return (model: CATA) => {
       model.type = model.type === 'SimpleCATA'
         ? 'TargetedCATA'
         : 'SimpleCATA';
-    }
+    };
   }
 
   static editStem(content: RichText) {
@@ -52,7 +25,7 @@ export class Actions {
 
   static addChoice() {
     return (model: CATA) => {
-      const newChoice: ChoiceType = fromText('');
+      const newChoice: Choice = fromText('');
 
       model.choices.push(newChoice);
       getChoiceIds(model.authoring.incorrect).push(newChoice.id);
@@ -91,56 +64,14 @@ export class Actions {
     };
   }
 
-  // Fix this to include the full set of choices with or without the new choice
   static toggleChoiceCorrectness(choiceId: ChoiceId) {
     return (model: CATA) => {
       const addOrRemoveId = (list: string[]) => addOrRemoveFromList(choiceId, list);
-
-      // update correct response choices
-      addOrRemoveId(getChoiceIds(model.authoring.correct));
-
-      // update incorrect response choices
-      addOrRemoveId(getChoiceIds(model.authoring.incorrect));
-
       // targeted response choices do not need to change
 
-      // update response rules based on new choice correctness
+      addOrRemoveId(getChoiceIds(model.authoring.correct));
+      addOrRemoveId(getChoiceIds(model.authoring.incorrect));
       updateResponseRules(model);
-    };
-  }
-
-  // // generalize to work for targeted feedback too
-  // // change join rules, add new helpers for inverting correct and targeted feedback
-  // // input looks like "id1 id2", matches `input like {id1} && input like {id2}`
-  // static editResponseCorrectness(correctChoices: Choice[], incorrectChoices : Choice[]) {
-  //   return (model: CATA) => {
-  //     const joinRules = (rule: string, choices: Choice[]) =>
-  //     choices.map(choice => rule + choice.id).join(' || ');
-  //     model.authoring.parts[0].responses.forEach((response) => {
-  //       // Simple model: one correct response, one incorrect response
-  //       // Could be extended here to add partial credit
-  //       response.rule = joinRules(
-  //         'input like ',
-  //         response.score === 1
-  //           ? correctChoices
-  //           : incorrectChoices);
-  //       console.log('response.rule', response.rule);
-  //     });
-  //   };
-  // }
-
-  static editCorrectFeedback(content: RichText) {
-    return (model: CATA) => {
-      // There is only one correct response which matches the correct combination of answer choices
-      getCorrectResponse(model).feedback.content = content;
-    };
-  }
-
-  static editIncorrectFeedback(content: RichText) {
-    return (model: CATA) => {
-      // There is only one "catch all" incorrect response which matches the inverse combination
-      // of correct answer choices
-      getIncorrectResponse(model).feedback.content = content;
     };
   }
 
@@ -174,3 +105,41 @@ export class Actions {
   }
 }
 
+// mutable
+function addOrRemoveFromList<T>(item: T, list: T[]) {
+  if (list.find(x => x === item)) {
+    return removeFromList(item, list);
+  }
+  return list.push(item);
+}
+// mutable
+function removeFromList<T>(item: T, list: T[]) {
+  const index = list.findIndex(x => x === item);
+  if (index > -1) {
+    list.splice(index, 1);
+  }
+}
+
+// Update all response rules based on a model with new choices that
+// are not yet reflected by the rules.
+const updateResponseRules = (model: CATA) => {
+
+  getCorrectResponse(model).rule = createRuleForIds(
+    getCorrectChoiceIds(model),
+    getIncorrectChoiceIds(model));
+
+  getIncorrectResponse(model).rule = invertRule(getCorrectResponse(model).rule);
+
+  switch (model.type) {
+    case 'SimpleCATA': return;
+    case 'TargetedCATA':
+      const allChoiceIds = model.choices.map(choice => choice.id);
+      model.authoring.targeted.forEach(assoc =>
+        getResponse(model, getResponseId(assoc)).rule = createRuleForIds(
+          getChoiceIds(assoc),
+          setDifference(
+            allChoiceIds,
+            getChoiceIds(assoc))));
+      return;
+  }
+};

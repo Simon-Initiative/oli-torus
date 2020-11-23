@@ -17,3 +17,9 @@
             user-select: text; /* Non-prefixed version, currently
                                   supported by Chrome and Opera */
 }
+
+@mixin ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

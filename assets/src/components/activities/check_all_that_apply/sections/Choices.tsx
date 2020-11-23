@@ -6,7 +6,7 @@ import { ChoiceId, RichText } from '../../types';
 import { CloseButton } from 'components/misc/CloseButton';
 import { ProjectSlug } from 'data/types';
 import styled from 'styled-components';
-import { isCorrectChoice } from '../utils'
+import { isCorrectChoice } from '../utils';
 
 const ToggleCorrect = styled.button`
   border: none;

@@ -10,8 +10,8 @@ defmodule Oli.Delivery.Evaluation.Rule do
   Returns `{:error, reason}` when it fails to parse or evaluate
   """
   def parse_and_evaluate(rule_as_string, %EvaluationContext{} = context) do
-    with {:ok, tree} <- IO.inspect(parse(rule_as_string), label: "Parsed"),
-      {:ok, result} <- IO.inspect(evaluate(tree, context), label: "Evaluation")
+    with {:ok, tree} <- parse(rule_as_string)
+      {:ok, result} <- evaluate(tree, context)
     do
       {:ok, result}
     end

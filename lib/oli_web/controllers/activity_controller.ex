@@ -92,8 +92,6 @@ defmodule OliWeb.ActivityController do
         %{part_id: part_id, input: %StudentInput{input: Map.get(input, "input")}}
       end)
 
-    IO.inspect(parsed, label: "parsed")
-
     case Attempts.perform_test_evaluation(model, parsed) do
       {:ok, evaluations} -> json(conn, %{"type" => "success", "evaluations" => evaluations})
       {:error, _} -> error(conn, 500, "server error")

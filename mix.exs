@@ -16,7 +16,8 @@ defmodule Oli.MixProject do
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
-        "coveralls.html": :test
+        "coveralls.html": :test,
+        "coveralls.xml": :test
       ],
 
       # Docs
@@ -118,6 +119,9 @@ defmodule Oli.MixProject do
 
       # runs tests and produces a coverage report
       "test.coverage": ["ecto.create --quiet", "ecto.migrate", "run priv/repo/seeds.exs", "coveralls.html"],
+
+      # runs tests and produces a coverage report
+      "test.coverage.xml": ["ecto.create --quiet", "ecto.migrate", "run priv/repo/seeds.exs", "coveralls.xml"],
 
       # runs tests in deterministic order, only shows one failure at a time and reruns tests if any changes are made
       "test.watch": ["test.watch --stale --max-failures 1 --trace --seed 0"],

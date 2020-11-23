@@ -57,11 +57,12 @@ config :oli, :pow,
   web_module: OliWeb,
   routes_backend: OliWeb.Pow.AuthorRoutes,
   plug: Pow.Plug.Session,
-  extensions: [PowResetPassword, PowEmailConfirmation, PowPersistentSession],
+  extensions: [PowResetPassword, PowEmailConfirmation, PowPersistentSession, PowInvitation],
   controller_callbacks: Pow.Extension.Phoenix.ControllerCallbacks,
   mailer_backend: OliWeb.Pow.Mailer,
   web_mailer_module: OliWeb,
   pow_assent: [
+    user_identities_context: OliWeb.Pow.UserIdentities,
     providers: [
       google: [
         client_id: System.get_env("GOOGLE_CLIENT_ID"),

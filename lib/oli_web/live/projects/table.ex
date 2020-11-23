@@ -35,7 +35,7 @@ defmodule OliWeb.Projects.Table do
           <td>
             <ul>
             <%= for author <- authors(assigns, project.id) do %>
-              <li><%= author.family_name %>, <%= author.given_name %> (<%= author.email %>)</li>
+              <li><%= author.name %> (<%= author.email %>)</li>
             <% end %>
             </ul>
           </td>

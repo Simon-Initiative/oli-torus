@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import { DeliveryElement, DeliveryElementProps,
   EvaluationResponse, ResetActivityResponse, RequestHintResponse } from '../DeliveryElement';
 import { CheckAllThatApplyModelSchema } from './schema';
-import { Choice } from 'components/activities/multiple_choice/schema';
 import * as ActivityTypes from '../types';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { Stem } from '../common/DisplayedStem';
@@ -18,7 +17,7 @@ type Evaluation = {
 };
 
 interface ChoicesProps {
-  choices: Choice[];
+  choices: ActivityTypes.Choice[];
   selected: string[];
   onSelect: (id: string) => void;
   isEvaluated: boolean;
@@ -40,7 +39,7 @@ const Choices = ({ choices, selected, onSelect, isEvaluated }: ChoicesProps) => 
 };
 
 interface ChoiceProps {
-  choice: Choice;
+  choice: ActivityTypes.Choice;
   index: number;
   selected: boolean;
   onClick: () => void;
@@ -77,13 +76,11 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
   const selectedToInput = () => selected.join(' ');
 
   const onSubmit = () => {
-    console.log('input', selectedToInput());
     props.onSubmitActivity(attemptState.attemptGuid,
       // update this input too
       [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: selectedToInput() } }])
       .then((response: EvaluationResponse) => {
         if (response.evaluations.length > 0) {
-          console.log('response.evaluations', response.evaluations)
           const { score, out_of, feedback, error } = response.evaluations[0];
           const parts = [Object.assign({}, attemptState.parts[0], { feedback, error })];
           const updated = Object.assign({}, attemptState, { score, outOf: out_of, parts });
@@ -97,7 +94,7 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
       ? selected.filter(s => s !== id)
       : selected.concat([id]);
     setSelected(newSelection);
-  }
+  };
 
   const onSelect = (id: string) => {
     // Update local state by adding or removing the id

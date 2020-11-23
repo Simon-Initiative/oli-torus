@@ -18,8 +18,7 @@ defmodule OliWeb.Objectives.CreateNew do
 
     <div class="mb-2 mt-5 row">
         <div class="col-12">
-          <h2>New Objective</h2>
-          <p>At the end of the course, my students should be able to...</p>
+          <p>At the end of the course, students should be able to...</p>
         </div>
       </div>
       <div class="mb-2 row">
@@ -31,11 +30,11 @@ defmodule OliWeb.Objectives.CreateNew do
               :title,
               class: "form-control form-control-sm mb-2 mr-sm-2 mb-sm-0 title container-fluid form-grow" <> error_class(f, :title, "is-invalid"),
               id: "form-create-objective",
-              placeholder: "Enter a new objective...",
+              placeholder: "e.g. Recognize the structures of amino acids, carbohydrates, lipids, and nucleic acids",
               required: true %>
 
             <%= error_tag f, :title %>
-            <%= submit "Create new", class: "btn btn-primary ob-form-button btn-sm" %>
+            <%= submit "Create", class: "btn btn-primary ob-form-button btn-sm" %>
             </form>
           </div>
 

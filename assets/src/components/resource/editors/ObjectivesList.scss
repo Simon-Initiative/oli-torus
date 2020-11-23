@@ -1,0 +1,26 @@
+@import "authoring/variables.scss";
+
+.objectives-list-container {
+  background-color: $card-cap-bg;
+  padding: 0 4px;
+}
+
+.objectives-list {
+  padding: 6px 10px;
+  font-size: 14px;
+
+  &.no-objectives {
+    background-color: mix($warning, $body-bg, $weight: 5%);
+  }
+
+  &.with-objectives {
+    background-color: mix($info, $body-bg, $weight: 5%);
+  }
+
+  .objective-token {
+    @include ellipsis;
+    max-width: 100%;
+    vertical-align: middle;
+    cursor: pointer;
+  }
+}
