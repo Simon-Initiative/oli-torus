@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Attempts — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-efa7fddc40.js"></script>
+    <script src="dist/sidebar_items-468261814b.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -217,6 +217,15 @@ context id and user id.  If no attempts exist, returns nil.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#get_resource_access_for_page/2">get_resource_access_for_page(context_id, resource_id)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Retrieves all graded resource access for a given context</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#get_resource_attempt_by/1">get_resource_attempt_by(clauses)</a>
 
   </div>
@@ -406,7 +415,7 @@ Functions
     </a>
     <h1 class="signature">create_activity_attempt(attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L1058" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L1072" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -420,10 +429,10 @@ Functions
   <a href="#create_activity_attempt/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_activity_attempt</span><span class="p" data-group-id="9935953522-1">(</span><span class="p" data-group-id="9935953522-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="9935953522-2">}</span><span class="p" data-group-id="9935953522-1">)</span><span class="w">
-</span><span class="p" data-group-id="9935953522-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9935953522-4">%</span><span class="nc" data-group-id="9935953522-4">ActivityAttempt</span><span class="p" data-group-id="9935953522-4">{</span><span class="p" data-group-id="9935953522-4">}</span><span class="p" data-group-id="9935953522-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_activity_attempt</span><span class="p" data-group-id="9935953522-5">(</span><span class="p" data-group-id="9935953522-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9935953522-6">}</span><span class="p" data-group-id="9935953522-5">)</span><span class="w">
-</span><span class="p" data-group-id="9935953522-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9935953522-8">%</span><span class="nc" data-group-id="9935953522-8">Ecto.Changeset</span><span class="p" data-group-id="9935953522-8">{</span><span class="p" data-group-id="9935953522-8">}</span><span class="p" data-group-id="9935953522-7">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_activity_attempt</span><span class="p" data-group-id="1188256579-1">(</span><span class="p" data-group-id="1188256579-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="1188256579-2">}</span><span class="p" data-group-id="1188256579-1">)</span><span class="w">
+</span><span class="p" data-group-id="1188256579-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1188256579-4">%</span><span class="nc" data-group-id="1188256579-4">ActivityAttempt</span><span class="p" data-group-id="1188256579-4">{</span><span class="p" data-group-id="1188256579-4">}</span><span class="p" data-group-id="1188256579-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_activity_attempt</span><span class="p" data-group-id="1188256579-5">(</span><span class="p" data-group-id="1188256579-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1188256579-6">}</span><span class="p" data-group-id="1188256579-5">)</span><span class="w">
+</span><span class="p" data-group-id="1188256579-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1188256579-8">%</span><span class="nc" data-group-id="1188256579-8">Ecto.Changeset</span><span class="p" data-group-id="1188256579-8">{</span><span class="p" data-group-id="1188256579-8">}</span><span class="p" data-group-id="1188256579-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_new_attempt_tree/5">
@@ -435,7 +444,7 @@ Functions
     </a>
     <h1 class="signature">create_new_attempt_tree(old_resource_attempt, resource_revision, context_id, user_id, activity_provider)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L349" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L363" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -459,7 +468,7 @@ Functions
     </a>
     <h1 class="signature">create_part_attempt(attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L991" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L1005" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -473,10 +482,10 @@ Functions
   <a href="#create_part_attempt/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_part_attempt</span><span class="p" data-group-id="6023756120-1">(</span><span class="p" data-group-id="6023756120-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="6023756120-2">}</span><span class="p" data-group-id="6023756120-1">)</span><span class="w">
-</span><span class="p" data-group-id="6023756120-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6023756120-4">%</span><span class="nc" data-group-id="6023756120-4">PartAttempt</span><span class="p" data-group-id="6023756120-4">{</span><span class="p" data-group-id="6023756120-4">}</span><span class="p" data-group-id="6023756120-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_part_attempt</span><span class="p" data-group-id="6023756120-5">(</span><span class="p" data-group-id="6023756120-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="6023756120-6">}</span><span class="p" data-group-id="6023756120-5">)</span><span class="w">
-</span><span class="p" data-group-id="6023756120-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6023756120-8">%</span><span class="nc" data-group-id="6023756120-8">Ecto.Changeset</span><span class="p" data-group-id="6023756120-8">{</span><span class="p" data-group-id="6023756120-8">}</span><span class="p" data-group-id="6023756120-7">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_part_attempt</span><span class="p" data-group-id="8818862776-1">(</span><span class="p" data-group-id="8818862776-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="8818862776-2">}</span><span class="p" data-group-id="8818862776-1">)</span><span class="w">
+</span><span class="p" data-group-id="8818862776-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8818862776-4">%</span><span class="nc" data-group-id="8818862776-4">PartAttempt</span><span class="p" data-group-id="8818862776-4">{</span><span class="p" data-group-id="8818862776-4">}</span><span class="p" data-group-id="8818862776-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_part_attempt</span><span class="p" data-group-id="8818862776-5">(</span><span class="p" data-group-id="8818862776-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="8818862776-6">}</span><span class="p" data-group-id="8818862776-5">)</span><span class="w">
+</span><span class="p" data-group-id="8818862776-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8818862776-8">%</span><span class="nc" data-group-id="8818862776-8">Ecto.Changeset</span><span class="p" data-group-id="8818862776-8">{</span><span class="p" data-group-id="8818862776-8">}</span><span class="p" data-group-id="8818862776-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_resource_attempt/1">
@@ -490,7 +499,7 @@ Functions
     </a>
     <h1 class="signature">create_resource_attempt(attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L1018" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L1032" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -504,10 +513,10 @@ Functions
   <a href="#create_resource_attempt/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_resource_attempt</span><span class="p" data-group-id="4884300674-1">(</span><span class="p" data-group-id="4884300674-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="4884300674-2">}</span><span class="p" data-group-id="4884300674-1">)</span><span class="w">
-</span><span class="p" data-group-id="4884300674-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4884300674-4">%</span><span class="nc" data-group-id="4884300674-4">ResourceAttempt</span><span class="p" data-group-id="4884300674-4">{</span><span class="p" data-group-id="4884300674-4">}</span><span class="p" data-group-id="4884300674-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_resource_attempt</span><span class="p" data-group-id="4884300674-5">(</span><span class="p" data-group-id="4884300674-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="4884300674-6">}</span><span class="p" data-group-id="4884300674-5">)</span><span class="w">
-</span><span class="p" data-group-id="4884300674-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4884300674-8">%</span><span class="nc" data-group-id="4884300674-8">Ecto.Changeset</span><span class="p" data-group-id="4884300674-8">{</span><span class="p" data-group-id="4884300674-8">}</span><span class="p" data-group-id="4884300674-7">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_resource_attempt</span><span class="p" data-group-id="7773608155-1">(</span><span class="p" data-group-id="7773608155-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="7773608155-2">}</span><span class="p" data-group-id="7773608155-1">)</span><span class="w">
+</span><span class="p" data-group-id="7773608155-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7773608155-4">%</span><span class="nc" data-group-id="7773608155-4">ResourceAttempt</span><span class="p" data-group-id="7773608155-4">{</span><span class="p" data-group-id="7773608155-4">}</span><span class="p" data-group-id="7773608155-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_resource_attempt</span><span class="p" data-group-id="7773608155-5">(</span><span class="p" data-group-id="7773608155-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7773608155-6">}</span><span class="p" data-group-id="7773608155-5">)</span><span class="w">
+</span><span class="p" data-group-id="7773608155-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7773608155-8">%</span><span class="nc" data-group-id="7773608155-8">Ecto.Changeset</span><span class="p" data-group-id="7773608155-8">{</span><span class="p" data-group-id="7773608155-8">}</span><span class="p" data-group-id="7773608155-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_snapshot/1">
@@ -521,7 +530,7 @@ Functions
     </a>
     <h1 class="signature">create_snapshot(attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L1085" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L1099" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -535,10 +544,10 @@ Functions
   <a href="#create_snapshot/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_snapshot</span><span class="p" data-group-id="8989092522-1">(</span><span class="p" data-group-id="8989092522-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="8989092522-2">}</span><span class="p" data-group-id="8989092522-1">)</span><span class="w">
-</span><span class="p" data-group-id="8989092522-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8989092522-4">%</span><span class="nc" data-group-id="8989092522-4">Snapshot</span><span class="p" data-group-id="8989092522-4">{</span><span class="p" data-group-id="8989092522-4">}</span><span class="p" data-group-id="8989092522-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_snapshot</span><span class="p" data-group-id="8989092522-5">(</span><span class="p" data-group-id="8989092522-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="8989092522-6">}</span><span class="p" data-group-id="8989092522-5">)</span><span class="w">
-</span><span class="p" data-group-id="8989092522-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8989092522-8">%</span><span class="nc" data-group-id="8989092522-8">Ecto.Changeset</span><span class="p" data-group-id="8989092522-8">{</span><span class="p" data-group-id="8989092522-8">}</span><span class="p" data-group-id="8989092522-7">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_snapshot</span><span class="p" data-group-id="8123824002-1">(</span><span class="p" data-group-id="8123824002-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="8123824002-2">}</span><span class="p" data-group-id="8123824002-1">)</span><span class="w">
+</span><span class="p" data-group-id="8123824002-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8123824002-4">%</span><span class="nc" data-group-id="8123824002-4">Snapshot</span><span class="p" data-group-id="8123824002-4">{</span><span class="p" data-group-id="8123824002-4">}</span><span class="p" data-group-id="8123824002-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_snapshot</span><span class="p" data-group-id="8123824002-5">(</span><span class="p" data-group-id="8123824002-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="8123824002-6">}</span><span class="p" data-group-id="8123824002-5">)</span><span class="w">
+</span><span class="p" data-group-id="8123824002-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8123824002-8">%</span><span class="nc" data-group-id="8123824002-8">Ecto.Changeset</span><span class="p" data-group-id="8123824002-8">{</span><span class="p" data-group-id="8123824002-8">}</span><span class="p" data-group-id="8123824002-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="determine_resource_attempt_state/4">
@@ -692,7 +701,7 @@ has changed compared to the supplied resource_revision, returns a tuple of the f
     </a>
     <h1 class="signature">generate_snapshots(previous_in_pipline, context_id, part_inputs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L838" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L852" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -714,7 +723,7 @@ has changed compared to the supplied resource_revision, returns a tuple of the f
     </a>
     <h1 class="signature">get_activity_attempt_by(clauses)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L913" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L927" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -728,9 +737,9 @@ has changed compared to the supplied resource_revision, returns a tuple of the f
   <a href="#get_activity_attempt_by/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_activity_attempt_by</span><span class="p" data-group-id="2701080104-1">(</span><span class="ss">attempt_guid</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="2701080104-1">)</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_activity_attempt_by</span><span class="p" data-group-id="4502322217-1">(</span><span class="ss">attempt_guid</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="4502322217-1">)</span><span class="w">
 </span><span class="p">%</span><span class="nc">ActivityAttempt</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_activity_attempt_by</span><span class="p" data-group-id="2701080104-2">(</span><span class="ss">attempt_guid</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;111&quot;</span><span class="p" data-group-id="2701080104-2">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_activity_attempt_by</span><span class="p" data-group-id="4502322217-2">(</span><span class="ss">attempt_guid</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;111&quot;</span><span class="p" data-group-id="4502322217-2">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -765,7 +774,7 @@ has changed compared to the supplied resource_revision, returns a tuple of the f
     </a>
     <h1 class="signature">get_latest_attempts(resource_attempt_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L429" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L443" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -792,7 +801,7 @@ to their part attempts. As an example:</p><p>%{
     </a>
     <h1 class="signature">get_latest_resource_attempt(resource_id, context_id, user_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L464" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L478" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -815,7 +824,7 @@ context id and user id.  If no attempts exist, returns nil.</p>
     </a>
     <h1 class="signature">get_part_attempt_by(clauses)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L923" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L937" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -829,9 +838,9 @@ context id and user id.  If no attempts exist, returns nil.</p>
   <a href="#get_part_attempt_by/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_part_attempt_by</span><span class="p" data-group-id="8274378683-1">(</span><span class="ss">attempt_guid</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="8274378683-1">)</span><span class="w">
-</span><span class="p" data-group-id="8274378683-2">%</span><span class="nc" data-group-id="8274378683-2">PartAttempt</span><span class="p" data-group-id="8274378683-2">{</span><span class="p" data-group-id="8274378683-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_part_attempt_by</span><span class="p" data-group-id="8274378683-3">(</span><span class="ss">attempt_guid</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;111&quot;</span><span class="p" data-group-id="8274378683-3">)</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_part_attempt_by</span><span class="p" data-group-id="6616950446-1">(</span><span class="ss">attempt_guid</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="6616950446-1">)</span><span class="w">
+</span><span class="p" data-group-id="6616950446-2">%</span><span class="nc" data-group-id="6616950446-2">PartAttempt</span><span class="p" data-group-id="6616950446-2">{</span><span class="p" data-group-id="6616950446-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_part_attempt_by</span><span class="p" data-group-id="6616950446-3">(</span><span class="ss">attempt_guid</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;111&quot;</span><span class="p" data-group-id="6616950446-3">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -844,7 +853,7 @@ context id and user id.  If no attempts exist, returns nil.</p>
     </a>
     <h1 class="signature">get_part_attempts_and_users_for_publication(publication_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L328" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L342" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -857,6 +866,28 @@ context id and user id.  If no attempts exist, returns nil.</p>
 
   </section>
 </section>
+<section class="detail" id="get_resource_access_for_page/2">
+
+  <div class="detail-header">
+    <a href="#get_resource_access_for_page/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_resource_access_for_page(context_id, resource_id)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L302" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Retrieves all graded resource access for a given context</p><p><code class="inline">[%ResourceAccess{}, ...]</code></p>
+  </section>
+</section>
 <section class="detail" id="get_resource_attempt_by/1">
 
   <div class="detail-header">
@@ -866,7 +897,7 @@ context id and user id.  If no attempts exist, returns nil.</p>
     </a>
     <h1 class="signature">get_resource_attempt_by(clauses)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L933" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L947" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -880,9 +911,9 @@ context id and user id.  If no attempts exist, returns nil.</p>
   <a href="#get_resource_attempt_by/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_resource_attempt_by</span><span class="p" data-group-id="5449622071-1">(</span><span class="ss">attempt_guid</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="5449622071-1">)</span><span class="w">
-</span><span class="p" data-group-id="5449622071-2">%</span><span class="nc" data-group-id="5449622071-2">ResourceAttempt</span><span class="p" data-group-id="5449622071-2">{</span><span class="p" data-group-id="5449622071-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_resource_attempt_by</span><span class="p" data-group-id="5449622071-3">(</span><span class="ss">attempt_guid</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;111&quot;</span><span class="p" data-group-id="5449622071-3">)</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_resource_attempt_by</span><span class="p" data-group-id="0357889551-1">(</span><span class="ss">attempt_guid</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="0357889551-1">)</span><span class="w">
+</span><span class="p" data-group-id="0357889551-2">%</span><span class="nc" data-group-id="0357889551-2">ResourceAttempt</span><span class="p" data-group-id="0357889551-2">{</span><span class="p" data-group-id="0357889551-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_resource_attempt_by</span><span class="p" data-group-id="0357889551-3">(</span><span class="ss">attempt_guid</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;111&quot;</span><span class="p" data-group-id="0357889551-3">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -918,7 +949,7 @@ in a two element tuple of the form:</p><p><code class="inline">{%ResourceAccess,
     </a>
     <h1 class="signature">get_snapshots_for_publication(publication_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L319" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L333" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -940,7 +971,7 @@ in a two element tuple of the form:</p><p><code class="inline">{%ResourceAccess,
     </a>
     <h1 class="signature">get_user_resource_accesses_for_context(context_id, user_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L302" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L316" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -962,7 +993,7 @@ in a two element tuple of the form:</p><p><code class="inline">{%ResourceAccess,
     </a>
     <h1 class="signature">perform_test_evaluation(model, part_inputs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L641" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L655" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -991,7 +1022,7 @@ in a two element tuple of the form:</p><p><code class="inline">{%ResourceAccess,
     </a>
     <h1 class="signature">perform_test_transformation(model)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L682" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L696" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1062,7 +1093,7 @@ new part attempts.</p><p>The return value is of the form:</p><p><code class="inl
     </a>
     <h1 class="signature">rollup_part_attempt_evaluations(activity_attempt_guid)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L935" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L949" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1084,7 +1115,7 @@ new part attempts.</p><p>The return value is of the form:</p><p><code class="inl
     </a>
     <h1 class="signature">save_student_input(part_inputs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L523" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L537" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1107,7 +1138,7 @@ part attempt record.</p><p>On success returns a tuple of the form <code class="i
     </a>
     <h1 class="signature">start_resource_attempt(revision_slug, context_id, user_id, activity_provider)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L488" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L502" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1134,7 +1165,7 @@ in the specified context_id and for a specific user.</p><p>On success returns:
     </a>
     <h1 class="signature">submit_graded_page(context_id, resource_attempt_guid)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L734" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L748" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1156,7 +1187,7 @@ in the specified context_id and for a specific user.</p><p>On success returns:
     </a>
     <h1 class="signature">submit_part_evaluations(context_id, activity_attempt_guid, part_inputs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L704" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L718" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1192,7 +1223,7 @@ been evaluated.</p><p>On failure returns <code class="inline">{:error, error}</c
     </a>
     <h1 class="signature">track_access(resource_id, context_id, user_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L972" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L986" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1208,10 +1239,10 @@ access count is incremented.</p><h2 id="track_access/3-examples" class="section-
   <a href="#track_access/3-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">track_access</span><span class="p" data-group-id="3265402494-1">(</span><span class="n">resource_id</span><span class="p">,</span><span class="w"> </span><span class="n">context_id</span><span class="p">,</span><span class="w"> </span><span class="n">user_id</span><span class="p" data-group-id="3265402494-1">)</span><span class="w">
-</span><span class="p" data-group-id="3265402494-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3265402494-3">%</span><span class="nc" data-group-id="3265402494-3">ResourceAccess</span><span class="p" data-group-id="3265402494-3">{</span><span class="p" data-group-id="3265402494-3">}</span><span class="p" data-group-id="3265402494-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">track_access</span><span class="p" data-group-id="3265402494-4">(</span><span class="n">resource_id</span><span class="p">,</span><span class="w"> </span><span class="n">context_id</span><span class="p">,</span><span class="w"> </span><span class="n">user_id</span><span class="p" data-group-id="3265402494-4">)</span><span class="w">
-</span><span class="p" data-group-id="3265402494-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3265402494-6">%</span><span class="nc" data-group-id="3265402494-6">Ecto.Changeset</span><span class="p" data-group-id="3265402494-6">{</span><span class="p" data-group-id="3265402494-6">}</span><span class="p" data-group-id="3265402494-5">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">track_access</span><span class="p" data-group-id="6763472244-1">(</span><span class="n">resource_id</span><span class="p">,</span><span class="w"> </span><span class="n">context_id</span><span class="p">,</span><span class="w"> </span><span class="n">user_id</span><span class="p" data-group-id="6763472244-1">)</span><span class="w">
+</span><span class="p" data-group-id="6763472244-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6763472244-3">%</span><span class="nc" data-group-id="6763472244-3">ResourceAccess</span><span class="p" data-group-id="6763472244-3">{</span><span class="p" data-group-id="6763472244-3">}</span><span class="p" data-group-id="6763472244-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">track_access</span><span class="p" data-group-id="6763472244-4">(</span><span class="n">resource_id</span><span class="p">,</span><span class="w"> </span><span class="n">context_id</span><span class="p">,</span><span class="w"> </span><span class="n">user_id</span><span class="p" data-group-id="6763472244-4">)</span><span class="w">
+</span><span class="p" data-group-id="6763472244-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6763472244-6">%</span><span class="nc" data-group-id="6763472244-6">Ecto.Changeset</span><span class="p" data-group-id="6763472244-6">{</span><span class="p" data-group-id="6763472244-6">}</span><span class="p" data-group-id="6763472244-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_activity_attempt/2">
@@ -1223,7 +1254,7 @@ access count is incremented.</p><h2 id="track_access/3-examples" class="section-
     </a>
     <h1 class="signature">update_activity_attempt(activity_attempt, attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L1032" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L1046" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1237,10 +1268,10 @@ access count is incremented.</p><h2 id="track_access/3-examples" class="section-
   <a href="#update_activity_attempt/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_activity_attempt</span><span class="p" data-group-id="9771346355-1">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9771346355-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="9771346355-2">}</span><span class="p" data-group-id="9771346355-1">)</span><span class="w">
-</span><span class="p" data-group-id="9771346355-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9771346355-4">%</span><span class="nc" data-group-id="9771346355-4">ActivityAttempt</span><span class="p" data-group-id="9771346355-4">{</span><span class="p" data-group-id="9771346355-4">}</span><span class="p" data-group-id="9771346355-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_activity_attempt</span><span class="p" data-group-id="9771346355-5">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9771346355-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9771346355-6">}</span><span class="p" data-group-id="9771346355-5">)</span><span class="w">
-</span><span class="p" data-group-id="9771346355-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9771346355-8">%</span><span class="nc" data-group-id="9771346355-8">Ecto.Changeset</span><span class="p" data-group-id="9771346355-8">{</span><span class="p" data-group-id="9771346355-8">}</span><span class="p" data-group-id="9771346355-7">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_activity_attempt</span><span class="p" data-group-id="6218607040-1">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6218607040-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="6218607040-2">}</span><span class="p" data-group-id="6218607040-1">)</span><span class="w">
+</span><span class="p" data-group-id="6218607040-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6218607040-4">%</span><span class="nc" data-group-id="6218607040-4">ActivityAttempt</span><span class="p" data-group-id="6218607040-4">{</span><span class="p" data-group-id="6218607040-4">}</span><span class="p" data-group-id="6218607040-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_activity_attempt</span><span class="p" data-group-id="6218607040-5">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6218607040-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="6218607040-6">}</span><span class="p" data-group-id="6218607040-5">)</span><span class="w">
+</span><span class="p" data-group-id="6218607040-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6218607040-8">%</span><span class="nc" data-group-id="6218607040-8">Ecto.Changeset</span><span class="p" data-group-id="6218607040-8">{</span><span class="p" data-group-id="6218607040-8">}</span><span class="p" data-group-id="6218607040-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_part_attempt/2">
@@ -1252,7 +1283,7 @@ access count is incremented.</p><h2 id="track_access/3-examples" class="section-
     </a>
     <h1 class="signature">update_part_attempt(part_attempt, attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L1005" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L1019" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1266,10 +1297,10 @@ access count is incremented.</p><h2 id="track_access/3-examples" class="section-
   <a href="#update_part_attempt/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_part_attempt</span><span class="p" data-group-id="0812559802-1">(</span><span class="n">part_attempt</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0812559802-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="0812559802-2">}</span><span class="p" data-group-id="0812559802-1">)</span><span class="w">
-</span><span class="p" data-group-id="0812559802-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0812559802-4">%</span><span class="nc" data-group-id="0812559802-4">PartAttempt</span><span class="p" data-group-id="0812559802-4">{</span><span class="p" data-group-id="0812559802-4">}</span><span class="p" data-group-id="0812559802-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_part_attempt</span><span class="p" data-group-id="0812559802-5">(</span><span class="n">part_attempt</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0812559802-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="0812559802-6">}</span><span class="p" data-group-id="0812559802-5">)</span><span class="w">
-</span><span class="p" data-group-id="0812559802-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0812559802-8">%</span><span class="nc" data-group-id="0812559802-8">Ecto.Changeset</span><span class="p" data-group-id="0812559802-8">{</span><span class="p" data-group-id="0812559802-8">}</span><span class="p" data-group-id="0812559802-7">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_part_attempt</span><span class="p" data-group-id="1169232766-1">(</span><span class="n">part_attempt</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1169232766-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="1169232766-2">}</span><span class="p" data-group-id="1169232766-1">)</span><span class="w">
+</span><span class="p" data-group-id="1169232766-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1169232766-4">%</span><span class="nc" data-group-id="1169232766-4">PartAttempt</span><span class="p" data-group-id="1169232766-4">{</span><span class="p" data-group-id="1169232766-4">}</span><span class="p" data-group-id="1169232766-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_part_attempt</span><span class="p" data-group-id="1169232766-5">(</span><span class="n">part_attempt</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1169232766-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1169232766-6">}</span><span class="p" data-group-id="1169232766-5">)</span><span class="w">
+</span><span class="p" data-group-id="1169232766-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1169232766-8">%</span><span class="nc" data-group-id="1169232766-8">Ecto.Changeset</span><span class="p" data-group-id="1169232766-8">{</span><span class="p" data-group-id="1169232766-8">}</span><span class="p" data-group-id="1169232766-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_resource_access/2">
@@ -1281,7 +1312,7 @@ access count is incremented.</p><h2 id="track_access/3-examples" class="section-
     </a>
     <h1 class="signature">update_resource_access(activity_attempt, attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L1045" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L1059" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1295,10 +1326,10 @@ access count is incremented.</p><h2 id="track_access/3-examples" class="section-
   <a href="#update_resource_access/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_resource_access</span><span class="p" data-group-id="1198884785-1">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1198884785-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="1198884785-2">}</span><span class="p" data-group-id="1198884785-1">)</span><span class="w">
-</span><span class="p" data-group-id="1198884785-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1198884785-4">%</span><span class="nc" data-group-id="1198884785-4">ResourceAccess</span><span class="p" data-group-id="1198884785-4">{</span><span class="p" data-group-id="1198884785-4">}</span><span class="p" data-group-id="1198884785-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_resource_access</span><span class="p" data-group-id="1198884785-5">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1198884785-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1198884785-6">}</span><span class="p" data-group-id="1198884785-5">)</span><span class="w">
-</span><span class="p" data-group-id="1198884785-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1198884785-8">%</span><span class="nc" data-group-id="1198884785-8">Ecto.Changeset</span><span class="p" data-group-id="1198884785-8">{</span><span class="p" data-group-id="1198884785-8">}</span><span class="p" data-group-id="1198884785-7">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_resource_access</span><span class="p" data-group-id="3954493201-1">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3954493201-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="3954493201-2">}</span><span class="p" data-group-id="3954493201-1">)</span><span class="w">
+</span><span class="p" data-group-id="3954493201-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3954493201-4">%</span><span class="nc" data-group-id="3954493201-4">ResourceAccess</span><span class="p" data-group-id="3954493201-4">{</span><span class="p" data-group-id="3954493201-4">}</span><span class="p" data-group-id="3954493201-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_resource_access</span><span class="p" data-group-id="3954493201-5">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3954493201-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="3954493201-6">}</span><span class="p" data-group-id="3954493201-5">)</span><span class="w">
+</span><span class="p" data-group-id="3954493201-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3954493201-8">%</span><span class="nc" data-group-id="3954493201-8">Ecto.Changeset</span><span class="p" data-group-id="3954493201-8">{</span><span class="p" data-group-id="3954493201-8">}</span><span class="p" data-group-id="3954493201-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_resource_attempt/2">
@@ -1310,7 +1341,7 @@ access count is incremented.</p><h2 id="track_access/3-examples" class="section-
     </a>
     <h1 class="signature">update_resource_attempt(resource_attempt, attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L1072" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts.ex#L1086" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1324,10 +1355,10 @@ access count is incremented.</p><h2 id="track_access/3-examples" class="section-
   <a href="#update_resource_attempt/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_resource_attempt</span><span class="p" data-group-id="7478437435-1">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7478437435-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="7478437435-2">}</span><span class="p" data-group-id="7478437435-1">)</span><span class="w">
-</span><span class="p" data-group-id="7478437435-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7478437435-4">%</span><span class="nc" data-group-id="7478437435-4">ResourceAttempt</span><span class="p" data-group-id="7478437435-4">{</span><span class="p" data-group-id="7478437435-4">}</span><span class="p" data-group-id="7478437435-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_resource_attempt</span><span class="p" data-group-id="7478437435-5">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7478437435-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7478437435-6">}</span><span class="p" data-group-id="7478437435-5">)</span><span class="w">
-</span><span class="p" data-group-id="7478437435-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7478437435-8">%</span><span class="nc" data-group-id="7478437435-8">Ecto.Changeset</span><span class="p" data-group-id="7478437435-8">{</span><span class="p" data-group-id="7478437435-8">}</span><span class="p" data-group-id="7478437435-7">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_resource_attempt</span><span class="p" data-group-id="6761742987-1">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6761742987-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="6761742987-2">}</span><span class="p" data-group-id="6761742987-1">)</span><span class="w">
+</span><span class="p" data-group-id="6761742987-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6761742987-4">%</span><span class="nc" data-group-id="6761742987-4">ResourceAttempt</span><span class="p" data-group-id="6761742987-4">{</span><span class="p" data-group-id="6761742987-4">}</span><span class="p" data-group-id="6761742987-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_resource_attempt</span><span class="p" data-group-id="6761742987-5">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6761742987-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="6761742987-6">}</span><span class="p" data-group-id="6761742987-5">)</span><span class="w">
+</span><span class="p" data-group-id="6761742987-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6761742987-8">%</span><span class="nc" data-group-id="6761742987-8">Ecto.Changeset</span><span class="p" data-group-id="6761742987-8">{</span><span class="p" data-group-id="6761742987-8">}</span><span class="p" data-group-id="6761742987-7">}</span></code></pre>
   </section>
 </section>
 

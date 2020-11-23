@@ -10,7 +10,7 @@
     <title>Oli.Grading — OLI Torus v0.1.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-efa7fddc40.js"></script>
+    <script src="dist/sidebar_items-468261814b.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -125,6 +125,27 @@ consumable by various tools such as Excel (CSV) or an LMS API.</p>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#fetch_graded_pages/1">fetch_graded_pages(context_id)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#fetch_resource_accesses/1">fetch_resource_accesses(context_id)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#fetch_students/1">fetch_students(context_id)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#generate_gradebook_for_section/1">generate_gradebook_for_section(section)</a>
 
   </div>
@@ -141,6 +162,13 @@ and an ordered list of column labels</p></div>
 
     <div class="summary-synopsis"><p>If grade passback services 2.0 is enabled, sends the current state of a ResourceAccess
 score for the current user to the LMS.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#to_score/2">to_score(sub, resource_access)</a>
+
+  </div>
 
 </div>
 
@@ -167,7 +195,7 @@ Functions
     </a>
     <h1 class="signature">ags_scopes()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L46" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L52" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -189,7 +217,7 @@ Functions
     </a>
     <h1 class="signature">export_csv(section)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L109" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L113" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -202,6 +230,72 @@ Functions
 <p>Exports the gradebook for the provided section in CSV format</p><p>Returns a Stream which can be written to a file or other IO</p>
   </section>
 </section>
+<section class="detail" id="fetch_graded_pages/1">
+
+  <div class="detail-header">
+    <a href="#fetch_graded_pages/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">fetch_graded_pages(context_id)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L224" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="fetch_resource_accesses/1">
+
+  <div class="detail-header">
+    <a href="#fetch_resource_accesses/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">fetch_resource_accesses(context_id)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L212" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="fetch_students/1">
+
+  <div class="detail-header">
+    <a href="#fetch_students/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">fetch_students(context_id)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L206" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
 <section class="detail" id="generate_gradebook_for_section/1">
 
   <div class="detail-header">
@@ -211,7 +305,7 @@ Functions
     </a>
     <h1 class="signature">generate_gradebook_for_section(section)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L160" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L164" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -234,7 +328,7 @@ and an ordered list of column labels</p><p><code class="inline">{[%GradebookRow{
     </a>
     <h1 class="signature">send_score_to_lms(lti_launch_params, resource_access, access_token_provider)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L30" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L36" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -246,6 +340,28 @@ and an ordered list of column labels</p><p><code class="inline">{[%GradebookRow{
 
 <p>If grade passback services 2.0 is enabled, sends the current state of a ResourceAccess
 score for the current user to the LMS.</p><p>If sent successfully, returns {:ok, :synced}</p><p>If grade passback not enabled, returns {:ok, :not_synced}</p><p>If error encountered, returns {:error, error}</p>
+  </section>
+</section>
+<section class="detail" id="to_score/2">
+
+  <div class="detail-header">
+    <a href="#to_score/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">to_score(sub, resource_access)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L91" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
   </section>
 </section>
 
