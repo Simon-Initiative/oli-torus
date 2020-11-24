@@ -7,7 +7,7 @@ import { CloseButton } from 'components/misc/CloseButton';
 import { ProjectSlug } from 'data/types';
 import styled from 'styled-components';
 import { isCorrectChoice } from '../utils';
-import { Description } from 'components/misc/Description'
+import { Description } from 'components/misc/Description';
 
 const ToggleCorrect = styled.button`
   border: none;
@@ -35,7 +35,7 @@ export const Choices = (props: Props) => {
         <div key={choice.id} className="mb-3">
           <div className="d-flex align-items-center mb-2">
             <div className="material-icons mr-2">
-              <ToggleCorrect color={isCorrectChoice(model, choice.id) ? "#00bc8c" : "#888"}
+              <ToggleCorrect color={isCorrectChoice(model, choice.id) ? '#00bc8c' : '#888'}
                 onClick={() => onToggleChoiceCorrectness(choice.id)}>
                 {isCorrectChoice(model, choice.id) ? 'check_circle' : 'check_circle_outline'}
               </ToggleCorrect>

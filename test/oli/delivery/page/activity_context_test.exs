@@ -38,8 +38,8 @@ defmodule Oli.Delivery.Page.ActivityContextTest do
 
       assert length(Map.keys(m)) == 1
       assert Map.get(m, a1.resource.id).model == "{&quot;stem&quot;:&quot;1&quot;}"
-      assert Map.get(m, a1.resource.id).delivery_element == "oli-multiple-choice-delivery"
-      assert Map.get(m, a1.resource.id).script == "oli_multiple_choice_delivery.js"
+      assert Map.get(m, a1.resource.id).delivery_element == "oli-check-all-that-apply-delivery"
+      assert Map.get(m, a1.resource.id).script == "oli_check_all_that_apply_delivery.js"
 
     end
 

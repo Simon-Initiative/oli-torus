@@ -5,7 +5,7 @@ import { CheckAllThatApplyModelSchema } from 'components/activities/check_all_th
 import { createMatchRule, createRuleForIds, defaultCATAModel, getChoiceIds, getCorrectResponse,
   getIncorrectResponse, getResponseId, getResponses, getTargetedResponses,
   invertRule, unionRules,
-} from 'components/activities/check_all_that_apply/utils'
+} from 'components/activities/check_all_that_apply/utils';
 
 const applyAction = (
   model: CheckAllThatApplyModelSchema,
@@ -78,8 +78,8 @@ describe('check all that apply question', () => {
   it('can add a choice', () => {
     const withChoiceAdded = applyAction(model, Actions.addChoice());
     expect(withChoiceAdded.choices.length).toBeGreaterThan(model.choices.length);
-    expect(withChoiceAdded.authoring.incorrect).toHaveLength(2);
-    expect(withChoiceAdded.authoring.correct).toHaveLength(1);
+    expect(getChoiceIds(withChoiceAdded.authoring.incorrect)).toHaveLength(2);
+    expect(getChoiceIds(withChoiceAdded.authoring.correct)).toHaveLength(1);
   });
 
   it('can toggle choice correctness', () => {
@@ -110,7 +110,8 @@ describe('check all that apply question', () => {
 
   it('can remove a choice from targeted CATA responses', () => {
     const firstChoice = model.choices[0];
-    const newModel = applyAction(model, Actions.removeChoice(firstChoice.id));
+    const toggled = applyAction(model, Actions.toggleType());
+    const newModel = applyAction(toggled, Actions.removeChoice(firstChoice.id));
     newModel.authoring.targeted.forEach((assoc: any) => {
       expect(getChoiceIds(assoc)).not.toContain(firstChoice.id);
     })

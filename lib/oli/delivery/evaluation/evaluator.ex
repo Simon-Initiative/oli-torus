@@ -28,7 +28,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
     end
 
     matches = case Rule.parse_and_evaluate(rule, context) do
-      {:ok, result} -> IO.inspect(result, label: "Result")
+      {:ok, result} -> result
       {:error, _} -> false
     end
 

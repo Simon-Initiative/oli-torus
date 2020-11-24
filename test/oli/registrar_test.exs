@@ -8,7 +8,7 @@ defmodule Oli.RegistrarTest do
     test "register_local_activities/0 registers", _ do
 
       registrations = Activities.list_activity_registrations()
-      assert length(registrations) == 2
+      assert length(registrations) == 3
 
       r = hd(registrations)
 
@@ -25,7 +25,7 @@ defmodule Oli.RegistrarTest do
 
       map = Activities.create_registered_activity_map()
 
-      assert (Map.keys(map) |> length) == 2
+      assert (Map.keys(map) |> length) == 3
 
       r = Map.get(map, "oli_multiple_choice")
 

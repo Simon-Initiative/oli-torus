@@ -14,7 +14,7 @@ export class Actions {
       if (isSimpleCATA(model)) {
         (model as any).type = 'TargetedCATA';
         (model as any).authoring.targeted = [];
-        return
+        return;
       }
 
       (model as any).type = 'SimpleCATA';
@@ -100,7 +100,7 @@ export class Actions {
           model.authoring.targeted.push([[], response.id]);
           return;
       }
-    }
+    };
   }
 
   static removeTargetedFeedback(responseId: ResponseId) {
@@ -113,13 +113,13 @@ export class Actions {
             model.authoring.targeted.find(assoc => getResponseId(assoc) === responseId),
             model.authoring.targeted);
       }
-    }
+    };
   }
 
   static editTargetedFeedbackChoices(choiceIds: ChoiceId[]) {
     return (model: CATA) => {
 
-    }
+    };
   }
 
   static addHint() {
@@ -176,14 +176,15 @@ const updateResponseRules = (model: CATA) => {
     case 'TargetedCATA':
       const targetedRules: string[] = [];
       const allChoiceIds = model.choices.map(choice => choice.id);
-      model.authoring.targeted.forEach(assoc => {
+      model.authoring.targeted.forEach((assoc) => {
         const targetedRule = createRuleForIds(
           getChoiceIds(assoc),
           setDifference(
             allChoiceIds,
             getChoiceIds(assoc)));
         targetedRules.push(targetedRule);
-        getResponse(model, getResponseId(assoc)).rule = targetedRule});
+        getResponse(model, getResponseId(assoc)).rule = targetedRule;
+      });
       getIncorrectResponse(model).rule = unionRules(
         targetedRules.map(invertRule)
           .concat([invertRule(getCorrectResponse(model).rule)]));

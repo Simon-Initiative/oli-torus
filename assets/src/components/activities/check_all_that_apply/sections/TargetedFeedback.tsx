@@ -4,10 +4,10 @@ import { ChoiceIdsToResponseId, ModelEditorProps, TargetedCATA } from '../schema
 import { Description } from 'components/misc/Description';
 import { IconIncorrect } from 'components/misc/Icons';
 import { ProjectSlug } from 'data/types';
-import { getTargetedResponses } from '../utils';
+import { getChoiceIds, getTargetedResponses } from '../utils';
 import { Typeahead } from 'react-bootstrap-typeahead';
-import { ChoiceId, ResponseId, RichText } from 'components/activities/types'
-import { CloseButton } from 'components/misc/CloseButton'
+import { ChoiceId, ResponseId, RichText } from 'components/activities/types';
+import { CloseButton } from 'components/misc/CloseButton';
 
 interface Props extends ModelEditorProps {
   onEditResponseFeedback: (id: string, content: RichText) => void;
@@ -21,10 +21,13 @@ export const TargetedFeedback = (props: Props) => {
   const { model, editMode, projectSlug, onEditResponseFeedback, onAddTargetedFeedback,
     onRemoveTargetedFeedback, onEditTargetedFeedbackChoices } = props;
 
-  const getSelected = (assocs: ChoiceIdsToResponseId[]) => {
-    return assocs
-  }
-  const [selected, setSelected] = useState(getSelected(model.authoring.targeted))
+  const getSelected = (assocs: ChoiceIdsToResponseId[]) =>
+    assocs.map(assoc => toOptions(getChoiceIds(assoc)));
+
+  const toOptions = (choiceIds: ChoiceId[]) =>
+    choiceIds.map(id => ({ id, label: model.choices.findIndex(choice => choice.id === id) + 1 }));
+
+  const [selected, setSelected] = useState(getSelected(model.authoring.targeted));
 
   return (
     <>
@@ -33,10 +36,11 @@ export const TargetedFeedback = (props: Props) => {
           <Description>
             <IconIncorrect /> Feedback for Incorrect Combination
             <Typeahead
-              options={getOptions()}
+              options={toOptions(getChoiceIds())}
+              selected={selected}
               multiple
               onChange={(selected) => {
-                setSelected(Object.assign(selected, { [response.id]: selected }))
+                setSelected(Object.assign(selected, { [response.id]: selected }));
               }}
             />
           </Description>
