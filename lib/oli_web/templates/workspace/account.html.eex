@@ -53,7 +53,7 @@
           <div class="form-check mt-2">
             <%= checkbox f,
               :hide,
-              checked: @preferences[:live_preview_display] == "hidden",
+              checked: Map.get(@preferences, :live_preview_display) == "hidden",
               class: "form-check-input",
               onchange: "this.form.submit();" %>
             <%= label f, :id, "Hide Activity Previews", class: "form-check-label" %>
