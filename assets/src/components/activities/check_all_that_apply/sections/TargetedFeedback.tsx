@@ -47,7 +47,6 @@ export const TargetedFeedback = (props: Props) => {
   return (
     <>
       {model.authoring.targeted.map((assoc) => {
-        const responseChoiceIds = getChoiceIds(assoc);
         const response = getResponse(model, getResponseId(assoc));
         return (
           <div className="mb-3" key={response.id}>
@@ -62,7 +61,6 @@ export const TargetedFeedback = (props: Props) => {
                 selectHintOnEnter
                 multiple
                 onChange={(selection) => {
-                  console.log('selection', selection)
                   setSelected(Object.assign(selected, { [response.id]: selection }));
                   onEditTargetedFeedbackChoices(
                     response.id, selection.map(s => s.id));
