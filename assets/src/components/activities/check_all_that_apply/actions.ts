@@ -116,9 +116,18 @@ export class Actions {
     };
   }
 
-  static editTargetedFeedbackChoices(choiceIds: ChoiceId[]) {
+  static editTargetedFeedbackChoices(responseId: ResponseId, choiceIds: ChoiceId[]) {
     return (model: CATA) => {
-
+      switch (model.type) {
+        case 'SimpleCATA': break;
+        case 'TargetedCATA':
+          const assoc = model.authoring.targeted.find(assoc => getResponseId(assoc) === responseId);
+          if (!assoc) break;
+          assoc[0] = choiceIds;
+          console.log('assoc', assoc);
+          break;
+      }
+      updateResponseRules(model);
     };
   }
 

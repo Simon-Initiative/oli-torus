@@ -54,8 +54,9 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
               onAddTargetedFeedback={() => dispatch(Actions.addTargetedFeedback())}
               onRemoveTargetedFeedback={(responseId: ActivityTypes.ResponseId) =>
                 dispatch(Actions.removeTargetedFeedback(responseId))}
-              onEditTargetedFeedbackChoices={(choiceIds: ActivityTypes.ChoiceId[]) =>
-                dispatch(Actions.editTargetedFeedbackChoices(choiceIds))}
+              onEditTargetedFeedbackChoices={
+                (responseId: ActivityTypes.ResponseId, choiceIds: ActivityTypes.ChoiceId[]) =>
+                  dispatch(Actions.editTargetedFeedbackChoices(responseId, choiceIds))}
           />
           : null}
       </Feedback>
