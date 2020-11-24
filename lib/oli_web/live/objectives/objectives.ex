@@ -47,7 +47,7 @@ defmodule OliWeb.Objectives.Objectives do
       modal_shown: false,
       author: author,
       force_render: 0,
-      can_delete?: false,
+      can_delete?: true,
       edit: :none)
     }
   end
