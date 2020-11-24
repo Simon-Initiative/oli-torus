@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import { DeliveryElement, DeliveryElementProps,
   EvaluationResponse, ResetActivityResponse, RequestHintResponse } from '../DeliveryElement';
 import { MultipleChoiceModelSchema } from './schema';
-import { Choice } from 'components/activities/multiple_choice/schema';
 import * as ActivityTypes from '../types';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { Maybe } from 'tsmonad';
@@ -19,7 +18,7 @@ type Evaluation = {
 };
 
 interface ChoicesProps {
-  choices: Choice[];
+  choices: ActivityTypes.Choice[];
   selected: Maybe<string>;
   onSelect: (id: string) => void;
   isEvaluated: boolean;
@@ -40,7 +39,7 @@ const Choices = ({ choices, selected, onSelect, isEvaluated }: ChoicesProps) => 
 };
 
 interface ChoiceProps {
-  choice: Choice;
+  choice: ActivityTypes.Choice;
   index: number;
   selected: boolean;
   onClick: () => void;
