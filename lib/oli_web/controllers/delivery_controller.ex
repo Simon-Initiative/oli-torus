@@ -157,6 +157,10 @@ defmodule OliWeb.DeliveryController do
     |> render_create_and_link_form()
   end
 
+  def unauthorized(conn, _params) do
+    render conn, "unauthorized.html"
+  end
+
   def process_create_and_link_account_user(conn, %{"user" => user_params}) do
     conn
     |> use_pow_config(:author)

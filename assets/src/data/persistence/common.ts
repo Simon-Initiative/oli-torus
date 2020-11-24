@@ -12,6 +12,13 @@ export type HttpRequestParams = {
   hasTextResult?: boolean,
 };
 
+export type Ok<Result = any> = {
+  type: 'Ok',
+  status: string,
+  statusText: string,
+  result: Result,
+};
+
 export type ServerError = {
   type: 'ServerError',
   status: string,

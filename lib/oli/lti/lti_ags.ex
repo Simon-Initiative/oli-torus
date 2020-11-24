@@ -1,4 +1,4 @@
-defmodule Oli.Grading.LTI_AGS do
+defmodule Oli.Lti.LTI_AGS do
 
   @moduledoc """
   Implementation of LTI Assignment and Grading Services (LTI AGS) version 2.0.
@@ -13,8 +13,8 @@ defmodule Oli.Grading.LTI_AGS do
   @lineitem_scope_url "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem"
   @scores_scope_url "https://purl.imsglobal.org/spec/lti-ags/scope/score"
 
-  alias Oli.Grading.Score
-  alias Oli.Grading.LineItem
+  alias Oli.Lti.Score
+  alias Oli.Lti.LineItem
   alias Oli.Lti_1p3.AccessToken
 
   require Logger
@@ -56,24 +56,24 @@ defmodule Oli.Grading.LTI_AGS do
     # to this particular resource_id.  "resource_id", from grade passback 2.0
     # perspective is simply an identifier that the tool uses for a lineitem and its use
     # here as a Torus "resource_id" is strictly coincidence.
-    request_url = "#{line_items_service_url}?resource_id=#{resource_id}"
+
+    prefixed_resource_id = LineItem.to_resource_id(resource_id)
+    request_url = "#{line_items_service_url}?resource_id=#{prefixed_resource_id}&limit=1"
 
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(request_url, headers(access_token)),
       {:ok, result} <- Jason.decode(body)
     do
       case result do
         [] -> create_line_item(line_items_service_url, resource_id, score_maximum, label, access_token)
-        [raw_line_item] ->
 
-          line_item = %LineItem{
-            id: Map.get(raw_line_item, "id"),
-            scoreMaximum: Map.get(raw_line_item, "scoreMaximum"),
-            resourceId: Map.get(raw_line_item, "resource_id"),
-            label: Map.get(raw_line_item, "label"),
-          }
+        # it is important to match against a possible array of items, in case an LMS does
+        # not properly support the limit parameter
+        [raw_line_item | _] ->
 
-          if line_item.label != label or line_item.scoreMaximum != score_maximum do
-            update_line_item line_item, %{resourceId: resource_id, scoreMaximum: score_maximum, label: label}, access_token
+          line_item = to_line_item(raw_line_item)
+
+          if line_item.label != label do
+            update_line_item line_item, %{label: label}, access_token
           else
             {:ok, line_item}
           end
@@ -83,6 +83,42 @@ defmodule Oli.Grading.LTI_AGS do
       e ->
         Logger.error("Error encountered fetching line item for #{resource_id} #{label}: #{inspect e}")
         {:error, "Error retrieving existing line items"}
+    end
+
+  end
+
+
+  defp to_line_item(raw_line_item) do
+    %LineItem{
+      id: Map.get(raw_line_item, "id"),
+      scoreMaximum: Map.get(raw_line_item, "scoreMaximum"),
+      resourceId: Map.get(raw_line_item, "resourceId"),
+      label: Map.get(raw_line_item, "label"),
+    }
+  end
+
+  def fetch_line_items(line_items_service_url, %AccessToken{} = access_token) do
+
+    Logger.debug("Fetch line items from #{line_items_service_url}")
+
+    # Unfortunately, at least Canvas implements a default limit of 10 line items
+    # when one makes a request without a 'limit' parameter specified. Setting it explicity to 1000
+    # bypasses this default limit, of course, and works in all cases until a course more than
+    # a thousand gradebook entries.
+    url = line_items_service_url <> "?limit=1000"
+
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(url, headers(access_token)),
+      {:ok, results} <- Jason.decode(body)
+    do
+
+      IO.inspect headers(access_token)
+      IO.inspect results
+
+      {:ok, Enum.map(results, fn r -> to_line_item(r) end)}
+    else
+      e ->
+        Logger.error("Error encountered fetching line items from #{url} #{inspect e}")
+        {:error, "Error retrieving all line items"}
     end
 
   end
@@ -97,7 +133,7 @@ defmodule Oli.Grading.LTI_AGS do
 
     line_item = %LineItem{
       scoreMaximum: score_maximum,
-      resourceId: resource_id,
+      resourceId: LineItem.to_resource_id(resource_id),
       label: label
     }
 
@@ -106,12 +142,7 @@ defmodule Oli.Grading.LTI_AGS do
     with {:ok, %HTTPoison.Response{status_code: 201, body: body}} <- HTTPoison.post(line_items_service_url, body, headers(access_token)),
       {:ok, result} <- Jason.decode(body)
     do
-      {:ok, %LineItem{
-        id: Map.get(result, "id"),
-        scoreMaximum: Map.get(result, "scoreMaximum"),
-        resourceId: Map.get(result, "resource_id"),
-        label: Map.get(result, "label"),
-      }}
+      {:ok, to_line_item(result)}
     else
       e ->
         Logger.error("Error encountered creating line item for #{resource_id} #{label}: #{inspect e}")
@@ -131,7 +162,7 @@ defmodule Oli.Grading.LTI_AGS do
     updated_line_item = %LineItem{
       id: line_item.id,
       scoreMaximum: Map.get(changes, :scoreMaximum, line_item.scoreMaximum),
-      resourceId: Map.get(changes, :resourceId, line_item.resourceId),
+      resourceId: line_item.resourceId,
       label: Map.get(changes, :label, line_item.label)
     }
 
@@ -144,12 +175,7 @@ defmodule Oli.Grading.LTI_AGS do
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.put(url, body, headers(access_token)),
       {:ok, result} <- Jason.decode(body)
     do
-      {:ok, %LineItem{
-        id: Map.get(result, "id"),
-        scoreMaximum: Map.get(result, "scoreMaximum"),
-        resourceId: Map.get(result, "resource_id"),
-        label: Map.get(result, "label"),
-      }}
+      {:ok, to_line_item(result)}
     else
       e ->
         Logger.error("Error encountered updating line item #{line_item.id} for changes #{inspect changes}: #{inspect e}")

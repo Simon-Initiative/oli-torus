@@ -65,11 +65,10 @@ defmodule OliWeb.Objectives.Objectives do
     <div class="objectives container objectives-authoring">
       <div class="mb-2 row">
         <div class="col-12">
+          <h2>Learning Objectives</h2>
           <p class="text-secondary">
             Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies.
-          </p>
-          <p class="text-secondary">
-            Visit the <a href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">CMU Eberly Center guide on learning objectives</a> to learn more about the importance of attaching learning objectives to pages and activities.
+            <br/>Refer to the <a href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">CMU Eberly Center guide on learning objectives</a> to learn more about the importance of attaching learning objectives to pages and activities.
           </p>
         </div>
       </div>
@@ -79,7 +78,6 @@ defmodule OliWeb.Objectives.Objectives do
       <div class="mt-5 row">
         <div class="col-12">
           <div class="d-flex justify-content-between">
-            <h2>Existing Objectives</h2>
             <%= live_component @socket, Actions, selected: @selected, is_root?: @is_root_selected?, can_delete?: @can_delete? %>
           </div>
         </div>

@@ -131,7 +131,7 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
   ? null
   : (
     <button
-      className="btn btn-primary mt-2" disabled={isEvaluated} onClick={onSubmit}>
+      className="btn btn-primary mt-2 float-right" disabled={isEvaluated} onClick={onSubmit}>
       Submit
     </button>
   );

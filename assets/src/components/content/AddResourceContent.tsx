@@ -122,6 +122,7 @@ export const AddResourceContent = (
             activitySlug: result.revisionSlug,
             typeSlug: editorDesc.slug,
             model,
+            transformed: result.transformed,
             objectives,
           };
 
@@ -134,28 +135,31 @@ export const AddResourceContent = (
       );
   };
 
-  const content =
-    <div className="insert-item list-group-item list-group-item-action" key="content"
-      onClick={() => onAddItem(createDefaultStructuredContent(), index)}>
-      Content
-    </div>;
-
   const activityEntries = Object
     .keys(editorMap)
     .map((k: string) => {
       const editorDesc: EditorDesc = editorMap[k];
       return (
-        <div className="insert-item list-group-item list-group-item-action" key={editorDesc.slug}
+        <button className="btn btn-sm insert-activity-btn" key={editorDesc.slug}
           onClick={handleAdd.bind(this, editorDesc)}>
           {editorDesc.friendlyName}
-        </div>
+        </button>
       );
     });
 
   const contentFn = () =>
     <div className="add-resource-popover-content">
-      <div className="list-group">
-        {[content, ...activityEntries]}
+      <div className="content">
+        <button className="btn insert-content-btn"
+          onClick={() => onAddItem(createDefaultStructuredContent(), index)}>
+            <div className="content-icon">
+              <span className="material-icons">format_align_left</span>
+            </div>
+            <div className="content-label">Content</div>
+        </button>
+      </div>
+      <div className="activities">
+        {activityEntries}
       </div>
     </div>;
 
@@ -167,7 +171,13 @@ export const AddResourceContent = (
 
   return (
     <React.Fragment>
-      <div className={classNames(['add-resource-content', isPopoverOpen ? 'active' : '', isLast ? 'add-resource-content-last' : ''])}
+      <div className={
+          classNames([
+            'add-resource-content',
+            isPopoverOpen ? 'active' : '',
+            isLast ? 'add-resource-content-last' : '',
+            editMode ? '' : 'disabled',
+          ])}
         onClick={togglePopover}>
 
         {editMode &&
@@ -195,9 +205,10 @@ export const AddResourceContent = (
         }
       </div>
       {isLast && (
-        <div className="insert-label mt-4 text-center">
+        <div className="insert-label my-4 text-center">
           <button
             onClick={togglePopover}
+            disabled={!editMode}
             className="btn btn-sm btn-light">
             Add Content or Activity
           </button>

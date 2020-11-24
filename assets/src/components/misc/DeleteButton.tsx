@@ -12,7 +12,7 @@ export const DeleteButton = (props: DeleteButtonProps) => (
     }}
     disabled={!props.editMode}
     type="button"
-    className="p-0 d-flex align-items-center justify-content-center btn btn-sm"
+    className="p-0 mr-2 d-flex align-items-center justify-content-center btn btn-sm btn-delete"
     aria-label="delete"
     onClick={props.onClick}>
     <span className="material-icons" aria-hidden="true">delete</span>
