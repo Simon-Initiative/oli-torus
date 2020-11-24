@@ -33,6 +33,9 @@ defmodule Oli.Delivery.Attempts.ScoringTest do
 
   test "best" do
 
+    items = [%{score: 0, out_of: 1}]
+    assert %Result{score: 0, out_of: 1} = Scoring.calculate_score("best", items)
+
     items = [%{score: 5, out_of: 10}]
     assert %Result{score: 5, out_of: 10} = Scoring.calculate_score("best", items)
 

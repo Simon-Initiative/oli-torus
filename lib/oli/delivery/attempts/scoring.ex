@@ -43,7 +43,7 @@ defmodule Oli.Delivery.Attempts.Scoring do
   def calculate_score("best", items) do
 
     {score, out_of, _} = Enum.reduce(items, {0, 0, 0.0}, fn p, {score, out_of, best} ->
-      if safe_percentage(p.score, p.out_of) > best do
+      if safe_percentage(p.score, p.out_of) >= best do
         {p.score, p.out_of, safe_percentage(p.score, p.out_of)}
       else
         {score, out_of, best}

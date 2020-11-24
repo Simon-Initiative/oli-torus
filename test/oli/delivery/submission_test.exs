@@ -292,7 +292,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       part_inputs = [
         %{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}},
-        %{attempt_guid: part2_attempt.attempt_guid, input: %StudentInput{input: "a"}},
+        %{attempt_guid: part2_attempt.attempt_guid, input: %StudentInput{input: "b"}},
       ]
       {:ok, [
         %{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id} },
@@ -306,9 +306,9 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert id == "1"
 
       assert attempt_guid2 == part2_attempt.attempt_guid
-      assert score2 == 2
+      assert score2 == 1
       assert out_of2 == 2
-      assert id2 == "4"
+      assert id2 == "5"
 
       # verify the part attempt record was updated correctly
       updated_attempt = Oli.Repo.get!(PartAttempt, part_attempt.id)
@@ -317,7 +317,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       refute updated_attempt.date_evaluated == nil
 
       updated_attempt = Oli.Repo.get!(PartAttempt, part2_attempt.id)
-      assert updated_attempt.score == 2
+      assert updated_attempt.score == 1
       assert updated_attempt.out_of == 2
       refute updated_attempt.date_evaluated == nil
 
