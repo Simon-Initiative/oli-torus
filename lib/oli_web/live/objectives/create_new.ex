@@ -18,7 +18,7 @@ defmodule OliWeb.Objectives.CreateNew do
 
     <div class="mb-2 mt-5 row">
         <div class="col-12">
-          <p>At the end of the course, students should be able to...</p>
+          <p class="text-secondary">At the end of the course, students should be able to...</p>
         </div>
       </div>
       <div class="mb-2 row">

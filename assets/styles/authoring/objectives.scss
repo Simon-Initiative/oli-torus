@@ -1,11 +1,35 @@
-/** Custom theme-specific styles for authoring **/
+/** Learning objective styles **/
 
-.objectives-authoring {
+.objectives {
   .objective-selected {
     background-color: $gray-100;
   }
 
   .objective-title {
     cursor: pointer;
+  }
+
+  .objective {
+    border-top: 1px solid $gray-200;
+
+    .objective-actions {
+      display: none;
+    }
+
+    &:hover {
+      .objective-actions {
+        display: block;
+      }
+    }
+
+    &:focus-within {
+      .objective-actions {
+        display: block;
+      }
+    }
+  }
+
+  .create-sub-objective {
+
   }
 }

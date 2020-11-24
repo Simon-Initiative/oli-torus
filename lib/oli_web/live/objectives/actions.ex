@@ -6,48 +6,35 @@ defmodule OliWeb.Objectives.Actions do
 
   def render(assigns) do
     ~L"""
+      <div class="objective-actions p-2" phx-update="ignore">
 
-    <div style="min-width: 50px">
-      <div id="objective-actions" phx-update="ignore">
+        <%= if !@has_children and @depth < 2 do %>
+          <button
+            class="ml-1 btn btn-sm btn-light"
+            phx-click="add_sub"
+            phx-value-slug="add_sub_<%= @slug %>">
+            <i class="las la-sitemap"></i> Break down
+          </button>
+        <% end %>
+
         <button
-          title="Edit the selected objecive"
-          id="action_edit"
-          <%= if @selected != nil do "" else "disabled" end %>
-          data-toggle="tooltip"
-          class="ml-1 btn btn-sm btn-outline-primary"
+          class="ml-1 btn btn-sm btn-light"
           phx-click="modify"
-          phx-value-slug="<%= @selected %>"
-        >
-        <i class="fas fa-pencil-alt fa-lg"></i>
+          phx-value-slug="<%= @slug %>">
+        <i class="las la-i-cursor"></i> Reword
         </button>
 
         <button
-          title="Add a new child objective"
-          id="action_sub"
-          data-toggle="tooltip"
-          <%= if @is_root? and @selected != nil do "" else "disabled" end %>
-          class="ml-1 btn btn-sm btn-outline-primary"
-          phx-click="add_sub"
-          phx-value-slug="add_sub_<%= @selected %>"
-        >
-        <i class="fas fa-plus fa-lg"></i>
-        </button>
-
-        <button
-          title="Delete the selected objective"
-          id="action_delete"
-          <%= if @selected != nil and @can_delete? do "" else "disabled" end %>
-          data-toggle="tooltip"
+          <%= if @can_delete? do "" else "disabled" end %>
           phx-click="prepare_delete"
+          phx-value-slug="<%= @slug %>"
           data-backdrop="static"
           data-keyboard="false"
-          class="ml-1 btn btn-sm btn-outline-danger"
-        >
-        <i class="fas fa-trash fa-lg"></i>
+          class="ml-1 btn btn-sm btn-danger">
+        <i class="fas fa-trash-alt fa-lg"></i> Remove
         </button>
-      </div>
-    </div>
 
+      </div>
     """
 
   end
