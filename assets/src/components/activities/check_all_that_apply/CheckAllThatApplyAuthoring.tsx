@@ -45,16 +45,22 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
       <Feedback {...sharedProps}
         onEditResponseFeedback={(responseId, feedbackContent) =>
           dispatch(Actions.editResponseFeedback(responseId, feedbackContent))}
-      />
+      >
+        {isTargetedCATA(props.model)
+          ? <TargetedFeedback {...sharedProps}
+              model={props.model}
+              onEditResponseFeedback={(responseId, feedbackContent) =>
+                dispatch(Actions.editResponseFeedback(responseId, feedbackContent))}
+              onAddTargetedFeedback={() => dispatch(Actions.addTargetedFeedback())}
+              onRemoveTargetedFeedback={(responseId: ActivityTypes.ResponseId) =>
+                dispatch(Actions.removeTargetedFeedback(responseId))}
+              onEditTargetedFeedbackChoices={(choiceIds: ActivityTypes.ChoiceId[]) =>
+                dispatch(Actions.editTargetedFeedbackChoices(choiceIds))}
+          />
+          : null}
+      </Feedback>
 
-      {isTargetedCATA(props.model) &&
-        <TargetedFeedback {...sharedProps}
-          model={props.model}
-          // onEditResponseFeedback={(responseId, feedbackContent) =>
-          //   dispatch(Actions.editResponseFeedback(responseId, feedbackContent))}
-        />}
-
-      <div className="form-check">
+      <div className="form-check mb-5">
         <input
           className="form-check-input"
           type="checkbox"

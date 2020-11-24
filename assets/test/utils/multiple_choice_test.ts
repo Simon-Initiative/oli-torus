@@ -1,7 +1,7 @@
 import { MCActions } from 'components/activities/multiple_choice/actions';
 import * as ContentModel from 'data/content/model';
-import { MultipleChoiceModelSchema, Choice } from 'components/activities/multiple_choice/schema';
-import { ScoringStrategy } from 'components/activities/types';
+import { MultipleChoiceModelSchema } from 'components/activities/multiple_choice/schema';
+import { Choice, ScoringStrategy } from 'components/activities/types';
 import produce from 'immer';
 
 const applyAction = (

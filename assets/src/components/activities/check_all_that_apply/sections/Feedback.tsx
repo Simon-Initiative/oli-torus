@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { PropsWithChildren } from 'react';
 import { Heading } from 'components/misc/Heading';
 import { RichTextEditor } from 'components/content/RichTextEditor';
 import { ModelEditorProps } from '../schema';
@@ -13,11 +13,11 @@ interface FeedbackProps extends ModelEditorProps {
   onEditResponseFeedback: (responseId: ResponseId, content: RichText) => void;
   projectSlug: ProjectSlug;
 }
-export const Feedback = (props: FeedbackProps) => {
+export const Feedback = (props: PropsWithChildren<FeedbackProps>) => {
   const { onEditResponseFeedback, model, editMode, projectSlug } = props;
 
   return (
-    <div className={'my-5 ' + classNames(['feedback'])}>
+    <div className={'mt-5 ' + classNames(['feedback'])}>
       <Heading title="Answer Choice Feedback" subtitle="Providing feedback when a student answers a
         question is one of the best ways to reinforce their understanding." id="feedback" />
       <div className="mb-3" key={'correct feedback'}>
@@ -29,14 +29,16 @@ export const Feedback = (props: FeedbackProps) => {
           onEdit={content => onEditResponseFeedback(getCorrectResponse(model).id, content)}
         />
       </div>
-      <div className="mb-3" key={'incorrect feedback'}></div>
+      {props.children}
+      <div className="mb-3" key={'incorrect feedback'}>
         <Description>
-          <IconIncorrect /> Feedback for Incorrect Answer
+          <IconIncorrect /> Catch-all Feedback for Incorrect Answers
         </Description>
         <RichTextEditor projectSlug={projectSlug}
           editMode={editMode} text={getIncorrectResponse(model).feedback.content}
           onEdit={content => onEditResponseFeedback(getIncorrectResponse(model).id, content)}
         />
       </div>
+    </div>
   );
 };
