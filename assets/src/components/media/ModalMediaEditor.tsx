@@ -1,5 +1,5 @@
 import * as React from 'react';
-import ModalSelection from 'components/modal/ModalSelection';
+import ModalSelection, { sizes } from 'components/modal/ModalSelection';
 
 interface ModalMediaEditor {
 
@@ -48,7 +48,7 @@ class ModalMediaEditor extends React.PureComponent<ModalMediaEditorProps, ModalM
   render() {
 
     return (
-      <ModalSelection title="Edit"
+      <ModalSelection title="Edit" size={sizes.extraLarge}
         okLabel="Done" cancelLabel="Cancel"
         onCancel={this.props.onCancel}
         onInsert={() => this.props.onInsert(this.state.model)}>

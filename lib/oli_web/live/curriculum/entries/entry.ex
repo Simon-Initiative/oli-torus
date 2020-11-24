@@ -84,7 +84,7 @@ defmodule OliWeb.Curriculum.EntryLive do
   def icon(%{child: child} = assigns) do
     ~L"""
     <i class="material-icons-outlined">
-      <%= if is_container?(child) do "folder" else if child.graded do "check_box" else "assignment" end end %>
+      <%= if is_container?(child) do "folder" else if child.graded do "check_box" else "description" end end %>
     </i>
     """
   end

@@ -2,7 +2,7 @@ defmodule Oli.Grading.LTI_AGS_Test do
 
   use ExUnit.Case, async: true
 
-  alias Oli.Grading.LTI_AGS
+  alias Oli.Lti.LTI_AGS
 
   @lti_params %{
     "aud" => "10000000000041",

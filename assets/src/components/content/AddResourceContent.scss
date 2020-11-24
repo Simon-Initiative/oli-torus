@@ -28,6 +28,10 @@
     }
   }
 
+  &.disabled {
+    cursor: default;
+  }
+
   .insert-button-container {
     position: absolute;
     left: -28px;
@@ -39,13 +43,13 @@
       border-radius: 50%;
       width: 26px;
       height: 26px;
+      text-align: center;
       border: 2px solid $gray-500;
       color: $gray-500;
       opacity: inherit;
       transition: opacity 200ms ease-out;
 
       i {
-        margin-left: 3px;
         vertical-align: text-top;
         color: $gray-500;
         transition: transform 200ms ease-in-out;
@@ -68,20 +72,91 @@
   }
 }
 
+.toolbar.add-resource-content {
+  .insert-button-container {
+    top: 0px;
+
+    .insert-button {
+      border: 2px solid transparent;
+      background-color: $gray-600;
+      color: white;
+
+      i {
+        color: white;
+        margin-top: 0px;
+      }
+    }
+  }
+
+  &.active {
+    .insert-button-container {
+      .insert-button {
+        background-color: $primary;
+        border-color: transparent;
+      }
+    }
+  }
+}
+
 .add-resource-popover {
   z-index: 1;
+  box-shadow: 0 10px 15px rgba(0,0,0,0.05), 10px 0px 15px rgba(0,0,0,0.05), -10px 0px 15px rgba(0,0,0,0.05), 0px -5px 40px rgba(0,0,0,0.05);
+  border-radius: 6px;
 
   .add-resource-popover-content {
-    display: block;
-    box-shadow: 0 10px 15px rgba(0,0,0,0.05), 10px 0px 15px rgba(0,0,0,0.05), -10px 0px 15px rgba(0,0,0,0.05), 0px -5px 40px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: row;
+    background-color: $body-bg;
+    padding: 14px;
+    border-radius: 6px;
+    border: 1px solid rgba($color: $body-color, $alpha: .2);
 
-    .list-group {
-      .list-group-item-action {
-        cursor: pointer;
-        padding: 5px 10px;
-        color: $body-color;
-        font-size: 1em;
-        min-width: 200px;
+    .content {
+      padding-right: 5px;
+      border-right: 1px solid rgba($color: $body-color, $alpha: .2);
+
+      .insert-content-btn {
+        .content-icon {
+          width: 40px;
+          height: 36px;
+          margin: 6px;
+          border: 2px solid $body-color;
+          transition: border-color 0.15s ease-in-out;
+
+          .material-icons {
+            font-size: 30px;
+          }
+        }
+
+        .content-label {
+          margin: 6px 0;
+          text-align: center;
+          font-size: 0.875rem;
+        }
+
+        &:hover {
+          background-color: $primary;
+          color: $white;
+
+          .content-icon {
+            border-color: $white;
+          }
+        }
+      }
+    }
+    .activities {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding-left: 5px;
+
+      .insert-activity-btn {
+        text-align: left;
+
+        &:hover {
+          background-color: $primary;
+          color: $white;
+        }
       }
     }
   }

@@ -76,6 +76,9 @@ class ModalSelection extends React.PureComponent<ModalSelectionProps, ModalSelec
                 }))}
             </div>
             <div className="modal-footer">
+              <button type="button" className="btn btn-link"
+                onClick={this.onCancel}
+                data-dismiss="modal">{cancelLabel}</button>
               {this.props.hideOkButton === true
                 ? null
                 : <button
@@ -83,9 +86,6 @@ class ModalSelection extends React.PureComponent<ModalSelectionProps, ModalSelec
                   type="button"
                   onClick={this.onInsert}
                   className={`btn btn-${okClassName}`}>{okLabel}</button>}
-              <button type="button" className="btn btn-link"
-                onClick={this.onCancel}
-                data-dismiss="modal">{cancelLabel}</button>
             </div>
           </div>
         </div>

@@ -39,7 +39,8 @@ defmodule OliWeb.LayoutView do
   def account_link(%{:assigns => assigns} = conn) do
     current_author = assigns.current_author
     full_name = "#{current_author.name}"
-    link full_name, to: Routes.workspace_path(conn, :account),
+    icon = raw "<span class=\"material-icons mr-2 align-bottom\">account_circle</span>"
+    link [icon, full_name], to: Routes.workspace_path(conn, :account),
     class: "#{active_class(active_or_nil(assigns), :account)} account-link"
   end
 

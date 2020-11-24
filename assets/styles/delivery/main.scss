@@ -50,12 +50,12 @@ form .form-label-group .help-block {
     }
   }
 
-  &.learn-more {
-    border: 1px solid $content-purpose-learn-more-color;
+  &.learnmore {
+    border: 1px solid $content-purpose-learnmore-color;
     margin-bottom: 1rem;
 
     .content-purpose-label {
-      background-color: $content-purpose-learn-more-color;
+      background-color: $content-purpose-learnmore-color;
       color: $white;
     }
   }

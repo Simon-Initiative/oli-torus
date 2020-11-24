@@ -11,22 +11,8 @@
   height: 100%;
   background-image: -webkit-repeating-radial-gradient(
     center center,
-    rgba(0, 0, 0, 0.2),
-    rgba(0, 0, 0, 0.3) 1px,
-    transparent 1px,
-    transparent 100%
-  );
-  background-repeat: repeat;
-  background-size: 4px 4px;
-}
-
-.drag-handle .gripactive {
-  width: 12px;
-  height: 100%;
-  background-image: -webkit-repeating-radial-gradient(
-    center center,
-    rgba(255, 255, 255, 0.7),
-    rgba(255, 255, 255, 0.9) 1px,
+    rgba($color: $body-color, $alpha: 0.2),
+    rgba($color: $body-color, $alpha: 0.3),
     transparent 1px,
     transparent 100%
   );
@@ -50,6 +36,20 @@
   border: 1px solid $gray-400;
   border-radius: 0.25rem;
   position: relative;
+
+  .toolbar.add-resource-content {
+    .insert-button-container {
+      left: -34px;
+      top: 0px;
+
+      .insert-button{
+        i {
+          margin-top: 1px;
+          margin-left: 0px;
+        }
+      }
+    }
+  }
 }
 
 .table-dropdown {
