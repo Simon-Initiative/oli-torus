@@ -56,6 +56,14 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
                 %{"model" => model} -> Utils.parse_content(model)
                 _ -> Utils.parse_content(content)
               end
+            "oli_check_all_that_apply" ->
+              choices = part_attempt.activity_attempt.transformed_model["choices"]
+              content = Enum.find(choices, & &1["id"] == input)["content"]
+
+              case content do
+                %{"model" => model} -> Utils.parse_content(model)
+                _ -> Utils.parse_content(content)
+              end
             # fallback for future activity types
             _unregistered -> "Input in unregistered activity type: " <> input
           end
