@@ -3,6 +3,7 @@ import * as ContentModel from 'data/content/model';
 import produce from 'immer';
 import { CheckAllThatApplyModelSchema } from 'components/activities/check_all_that_apply/schema'
 import { createMatchRule, createRuleForIds, defaultCATAModel, getChoiceIds, getCorrectResponse,
+  getHints,
   getIncorrectResponse, getResponseId, getResponses, getTargetedResponses,
   invertRule, unionRules,
 } from 'components/activities/check_all_that_apply/utils';
@@ -157,42 +158,42 @@ describe('check all that apply question', () => {
   });
 
   it('can invert rules', () => {
-    expect(invertRule(createMatchRule('id'))).toBe(`!(input like {id})`);
+    expect(invertRule(createMatchRule('id'))).toBe(`(!(input like {id}))`);
   });
 
   it('can union rules', () => {
     expect(unionRules([createMatchRule('id1'), invertRule(createMatchRule('id2'))]))
-      .toBe('input like {id1} && !(input like {id2})');
+      .toBe('(!(input like {id2})) && (input like {id1})');
   });
 
   it('can create rules to match certain ids and not match others', () => {
     const toMatch = ['id1', 'id2'];
     const notToMatch = ['id3'];
     expect(createRuleForIds(toMatch, notToMatch))
-      .toEqual('input like {id1} && input like {id2} && !(input like {id3})');
+      .toEqual("(!(input like {id3})) && (input like {id2} && (input like {id1}))");
   });
 
   it('has at least 3 hints', () => {
-    expect(model.authoring.parts[0].hints.length).toBeGreaterThanOrEqual(3);
+    expect(getHints(model).length).toBeGreaterThanOrEqual(3);
   });
 
   it('can add a cognitive hint before the end of the array', () => {
-    expect(applyAction(model, Actions.addHint()).authoring.parts[0].hints.length)
-      .toBeGreaterThan(model.authoring.parts[0].hints.length);
+    expect(getHints(applyAction(model, Actions.addHint())).length)
+      .toBeGreaterThan(getHints(model).length);
   });
 
   it('can edit a hint', () => {
     const newHintContent = testFromText('new content').content;
-    const firstHint = model.authoring.parts[0].hints[0];
-    expect(applyAction(model,
-      Actions.editHint(firstHint.id, newHintContent)).authoring.parts[0].hints[0])
+    const firstHint = getHints(model)[0];
+    expect(getHints(applyAction(model,
+      Actions.editHint(firstHint.id, newHintContent)))[0])
       .toHaveProperty('content', newHintContent);
   });
 
   it('can remove a hint', () => {
-    const firstHint = model.authoring.parts[0].hints[0];
-    expect(applyAction(model,
-      Actions.removeHint(firstHint.id)).authoring.parts[0].hints).toHaveLength(2);
+    const firstHint = getHints(model)[0];
+    expect(getHints(applyAction(model, Actions.removeHint(firstHint.id))))
+      .toHaveLength(2);
   });
 
 });

@@ -3,7 +3,8 @@ import { createRuleForIds, fromText, getChoice, getCorrectResponse,
   getHint, getResponse, getChoiceIds, getCorrectChoiceIds, getIncorrectChoiceIds,
   getIncorrectResponse, getResponseId, setDifference, invertRule, unionRules, getResponses,
   makeResponse,
-  isSimpleCATA} from './utils';
+  isSimpleCATA,
+  getHints} from './utils';
 import { RichText, Hint as HintType, ChoiceId, Choice, ResponseId } from '../types';
 import { toSimpleText } from 'data/content/text';
 
@@ -49,24 +50,16 @@ export class Actions {
   static removeChoice(id: string) {
     return (model: CATA) => {
       const removeIdFrom = (list: string[]) => removeFromList(id, list);
-
-      // remove choice from model.choices
       model.choices = model.choices.filter(choice => choice.id !== id);
-
-      // remove choice from model.authoring.correct choice ids
       removeIdFrom(getChoiceIds(model.authoring.correct));
-
-      // remove choice from model.authoring.incorrect choice ids
       removeIdFrom(getChoiceIds(model.authoring.incorrect));
 
-      // if targeted, remove choice from all model.authoring.targeted
       switch (model.type) {
         case 'SimpleCATA': break;
         case 'TargetedCATA':
           model.authoring.targeted.forEach(assoc => removeIdFrom(getChoiceIds(assoc)));
       }
 
-      // update all response rules with new choice ids
       updateResponseRules(model);
     };
   }
@@ -124,7 +117,6 @@ export class Actions {
           const assoc = model.authoring.targeted.find(assoc => getResponseId(assoc) === responseId);
           if (!assoc) break;
           assoc[0] = choiceIds;
-          console.log('assoc', assoc);
           break;
       }
       updateResponseRules(model);
@@ -136,8 +128,8 @@ export class Actions {
       const newHint: HintType = fromText('');
       // new hints are always cognitive hints. they should be inserted
       // right before the bottomOut hint at the end of the list
-      const bottomOutIndex = model.authoring.parts[0].hints.length - 1;
-      model.authoring.parts[0].hints.splice(bottomOutIndex, 0, newHint);
+      const bottomOutIndex = getHints(model).length - 1;
+      getHints(model).splice(bottomOutIndex, 0, newHint);
     };
   }
 
@@ -149,8 +141,7 @@ export class Actions {
 
   static removeHint(id: string) {
     return (model: CATA) => {
-      model.authoring.parts[0].hints = model.authoring.parts[0].hints
-      .filter(h => h.id !== id);
+      model.authoring.parts[0].hints = getHints(model).filter(h => h.id !== id);
     };
   }
 }
@@ -188,9 +179,7 @@ const updateResponseRules = (model: CATA) => {
       model.authoring.targeted.forEach((assoc) => {
         const targetedRule = createRuleForIds(
           getChoiceIds(assoc),
-          setDifference(
-            allChoiceIds,
-            getChoiceIds(assoc)));
+          setDifference(allChoiceIds, getChoiceIds(assoc)));
         targetedRules.push(targetedRule);
         getResponse(model, getResponseId(assoc)).rule = targetedRule;
       });

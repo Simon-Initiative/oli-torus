@@ -9,7 +9,7 @@ defmodule Oli.Delivery.Evaluation.Parser do
 
   <rule> :== <expression> {<or> <expression>}
   <expression> :== <clause> {<and> <clause>}
-  <clause> :== <not><clause> | "("<rule>")” | <criterion>
+  <clause> :== <not> <clause> | "("<rule>")” | <criterion>
   <criterion> :== <component> <operator> <value>
   <component> :== "attemptNumber” | "input” | "length(input)"
   <operator> :== "<” | ">” | "=" | "like"
@@ -63,7 +63,7 @@ defmodule Oli.Delivery.Evaluation.Parser do
     |> reduce(:to_prefix_notation)
   )
 
-  # <clause> :== <not> <clause> | "(" <rule> ")" | <criterion>
+  # <clause> :== <not> <clause> | "("<rule>")" | <criterion>
   negation = not_ |> ignore |> parsec(:clause) |> tag(:!)
   grouping = ignore(lparen) |> parsec(:rule) |> ignore(rparen)
   criterion_ = parsec(:criterion)

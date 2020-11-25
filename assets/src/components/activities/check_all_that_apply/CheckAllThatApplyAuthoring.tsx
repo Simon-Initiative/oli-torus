@@ -43,6 +43,7 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
       />
 
       <Feedback {...sharedProps}
+        onToggleFeedbackMode={() => dispatch(Actions.toggleType())}
         onEditResponseFeedback={(responseId, feedbackContent) =>
           dispatch(Actions.editResponseFeedback(responseId, feedbackContent))}
       >
@@ -60,21 +61,6 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
           />
           : null}
       </Feedback>
-
-      <div className="form-check mb-5">
-        <input
-          className="form-check-input"
-          type="checkbox"
-          value=""
-          id="targeted-feedback-toggle"
-          aria-label="Checkbox for targeted feedback"
-          checked={props.model.type === 'TargetedCATA'}
-          onChange={() => dispatch(Actions.toggleType())}
-        />
-        <label className="form-check-label" htmlFor="targeted-feedback-toggle">
-          Targeted Feedback Mode
-        </label>
-      </div>
 
       <Hints
         projectSlug={props.projectSlug}

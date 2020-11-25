@@ -99,7 +99,6 @@ export class TestModeHandler extends React.Component<TestModelHandlerProps, Test
   handleSubmit(continuation: Continuation, partId: string, partInputs: PartResponse[]) {
     Persistence.evaluate(this.state.model, partInputs)
     .then((result: Persistence.Evaluated) => {
-      console.log('result', result)
 
       const evaluations = result.evaluations
         .map((e : any) => {

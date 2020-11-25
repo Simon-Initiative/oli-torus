@@ -25,7 +25,6 @@
     "@types/react-redux": "^7.1.7",
     "@types/react-transition-group": "~4.4.0",
     "@types/redux-logger": "^3.0.7",
-    "@types/styled-components": "^5.1.4",
     "bootstrap": "^4.5.0",
     "immer": "^6.0.3",
     "immutable": "^4.0.0-rc.12",
@@ -48,7 +47,6 @@
     "slate": "^0.58.1",
     "slate-history": "^0.58.1",
     "slate-react": "^0.58.1",
-    "styled-components": "^5.2.1",
     "tsmonad": "^0.8.0",
     "typescript": "^3.7.5",
     "whatwg-fetch": "^3.0.0"

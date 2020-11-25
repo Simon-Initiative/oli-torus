@@ -10,16 +10,31 @@ import { classNames } from 'utils/classNames';
 import { getCorrectResponse, getIncorrectResponse } from '../utils';
 
 interface FeedbackProps extends ModelEditorProps {
+  onToggleFeedbackMode: () => void;
   onEditResponseFeedback: (responseId: ResponseId, content: RichText) => void;
   projectSlug: ProjectSlug;
 }
 export const Feedback = (props: PropsWithChildren<FeedbackProps>) => {
-  const { onEditResponseFeedback, model, editMode, projectSlug } = props;
+  const { onEditResponseFeedback, onToggleFeedbackMode, model, editMode, projectSlug } = props;
 
   return (
     <div className={'mt-5 ' + classNames(['feedback'])}>
       <Heading title="Answer Choice Feedback" subtitle="Providing feedback when a student answers a
         question is one of the best ways to reinforce their understanding." id="feedback" />
+      <div className="form-check mb-2">
+        <input
+          className="form-check-input"
+          type="checkbox"
+          value=""
+          id="targeted-feedback-toggle"
+          aria-label="Checkbox for targeted feedback"
+          checked={props.model.type === 'TargetedCATA'}
+          onChange={onToggleFeedbackMode}
+        />
+        <label className="form-check-label" htmlFor="targeted-feedback-toggle">
+          Targeted Feedback Mode
+        </label>
+      </div>
       <div className="mb-3" key={'correct feedback'}>
         <Description>
           <IconCorrect /> Feedback for Correct Answer

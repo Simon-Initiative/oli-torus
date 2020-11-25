@@ -5,15 +5,7 @@ import { ModelEditorProps } from '../schema';
 import { ChoiceId, RichText } from '../../types';
 import { CloseButton } from 'components/misc/CloseButton';
 import { ProjectSlug } from 'data/types';
-import styled from 'styled-components';
 import { isCorrectChoice } from '../utils';
-import { Description } from 'components/misc/Description';
-
-const ToggleCorrect = styled.button`
-  border: none;
-  background: none;
-  color: ${props => props.color};
-`;
 
 interface Props extends ModelEditorProps {
   onAddChoice: () => void;
@@ -35,10 +27,11 @@ export const Choices = (props: Props) => {
         <div key={choice.id} className="mb-3">
           <div className="d-flex align-items-center mb-2">
             <div className="material-icons mr-2">
-              <ToggleCorrect color={isCorrectChoice(model, choice.id) ? '#00bc8c' : '#888'}
+              <button style={{ border: 'none', background: 'none',
+                color: isCorrectChoice(model, choice.id) ? '#00bc8c' : '#888' }}
                 onClick={() => onToggleChoiceCorrectness(choice.id)}>
                 {isCorrectChoice(model, choice.id) ? 'check_circle' : 'check_circle_outline'}
-              </ToggleCorrect>
+              </button>
             </div>
             Choice {index + 1}
           </div>
@@ -49,10 +42,10 @@ export const Choices = (props: Props) => {
               projectSlug={projectSlug}
               editMode={editMode} text={choice.content}
               onEdit={content => onEditChoiceContent(choice.id, content)} />
-            <CloseButton
+            {index > 0 && <CloseButton
               className="pl-3 pr-1"
               onClick={() => onRemoveChoice(choice.id)}
-              editMode={editMode} />
+              editMode={editMode} />}
           </div>
         </div>)}
       <button

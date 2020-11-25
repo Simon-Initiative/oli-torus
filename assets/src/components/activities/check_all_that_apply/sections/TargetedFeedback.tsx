@@ -41,8 +41,7 @@ export const TargetedFeedback = (props: Props) => {
     }));
 
   const allChoiceOptions = toOptions(model.choices.map(choice => choice.id));
-
-  const [selected, setSelected] = useState<OptionMap>(createSelection(model.authoring.targeted));
+  const selected = createSelection(model.authoring.targeted);
 
   return (
     <>
@@ -60,11 +59,8 @@ export const TargetedFeedback = (props: Props) => {
                 selected={selected[response.id]}
                 selectHintOnEnter
                 multiple
-                onChange={(selection) => {
-                  setSelected(Object.assign(selected, { [response.id]: selection }));
-                  onEditTargetedFeedbackChoices(
-                    response.id, selection.map(s => s.id));
-                }}
+                onChange={(selection) => onEditTargetedFeedbackChoices(
+                    response.id, selection.map(s => s.id))}
               />
             </Description>
             <div className="d-flex align-items-center" style={{ flex: 1 }}>

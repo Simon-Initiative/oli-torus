@@ -9,6 +9,7 @@ import { Stem } from '../common/DisplayedStem';
 import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/Evaluation';
+import { getCorrectResponse, getIncorrectResponse, getTargetedResponses, isTargetedCATA } from './utils';
 
 type Evaluation = {
   score: number,
@@ -150,7 +151,7 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
     ? null
     : (
       <button
-        className="btn btn-primary mt-2" disabled={isEvaluated} onClick={onSubmit}>
+        className="btn btn-primary mt-2 float-right" disabled={isEvaluated} onClick={onSubmit}>
         Submit
       </button>
     );
@@ -158,11 +159,13 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
   return (
     <div className={`activity multiple-choice-activity ${isEvaluated ? 'evaluated' : ''}`}>
       <div className="activity-content">
-        <Stem stem={stem} />
-        <Choices choices={choices} selected={selected}
-          onSelect={onSelect} isEvaluated={isEvaluated}/>
+        <div>
+          <Stem stem={stem} />
+          <Choices choices={choices} selected={selected}
+            onSelect={onSelect} isEvaluated={isEvaluated}/>
+          {maybeSubmitButton}
+        </div>
         {ungradedDetails}
-        {maybeSubmitButton}
       </div>
       {reset}
     </div>
