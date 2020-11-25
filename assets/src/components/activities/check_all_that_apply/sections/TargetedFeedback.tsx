@@ -59,8 +59,8 @@ export const TargetedFeedback = (props: Props) => {
                 selected={selected[response.id]}
                 selectHintOnEnter
                 multiple
-                onChange={(selection) => onEditTargetedFeedbackChoices(
-                    response.id, selection.map(s => s.id))}
+                onChange={selection => onEditTargetedFeedbackChoices(
+                  response.id, selection.map(s => s.id))}
               />
             </Description>
             <div className="d-flex align-items-center" style={{ flex: 1 }}>
