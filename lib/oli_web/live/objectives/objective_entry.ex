@@ -15,7 +15,7 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
     ~L"""
       <%= for child <- @children do %>
         <%= live_component @socket, ObjectiveEntry, changeset: @changeset, objective_mapping: child.mapping,
-              children: [], depth: @depth + 1, project: @project, can_delete?: @can_delete?, edit: @edit %>
+              children: [], depth: @depth + 1, project: @project, can_delete?: @can_delete?, edit: @edit, breakdown: @breakdown %>
       <% end %>
 
       <%= cond do %>
@@ -69,10 +69,10 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
           <% @edit == @objective_mapping.revision.slug -> %>
             <div class="py-2">
               <%= live_component @socket, ObjectiveRender, changeset: @changeset, objective_mapping: @objective_mapping, children: @children,
-              project: @project, slug: @objective_mapping.revision.slug, form_id: "edit-objective", place_holder: @objective_mapping.revision.title,
-              phx_disable_with: "Updating Objective...", button_text: "Save", parent_slug_value: "", depth: @depth,
-              title_value: @objective_mapping.revision.title, can_delete?: @can_delete?,
-              edit: @edit, method: "edit", mode: :edit %>
+                project: @project, slug: @objective_mapping.revision.slug, form_id: "edit-objective", place_holder: @objective_mapping.revision.title,
+                phx_disable_with: "Updating Objective...", button_text: "Save", parent_slug_value: "", depth: @depth,
+                title_value: @objective_mapping.revision.title, can_delete?: @can_delete?,
+                edit: @edit, method: "edit", mode: :edit %>
             </div>
           <% true -> %>
             <%= live_component @socket, ObjectiveRender, changeset: @changeset, objective_mapping: @objective_mapping, children: @children,

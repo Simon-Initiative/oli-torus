@@ -1,7 +1,7 @@
 defmodule OliWeb.Objectives.CreateNew do
 
   @moduledoc """
-  Curriculum item entry component.
+  Objective create component.
   """
 
   use Phoenix.LiveComponent

@@ -11,8 +11,8 @@ defmodule OliWeb.Objectives.Actions do
         <%= if !@has_children and @depth < 2 do %>
           <button
             class="ml-1 btn btn-sm btn-light"
-            phx-click="add_sub"
-            phx-value-slug="add_sub_<%= @slug %>">
+            phx-click="breakdown"
+            phx-value-slug="<%= @slug %>">
             <i class="las la-sitemap"></i> Break down
           </button>
         <% end %>

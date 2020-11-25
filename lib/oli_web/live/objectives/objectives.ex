@@ -10,6 +10,7 @@ defmodule OliWeb.Objectives.Objectives do
   alias OliWeb.Objectives.ObjectiveEntry
   alias OliWeb.Objectives.CreateNew
   alias OliWeb.Objectives.Attachments
+  alias OliWeb.Objectives.BreakdownModal
   alias OliWeb.Common.ManualModal
   alias Oli.Publishing.ObjectiveMappingTransfer
   alias Oli.Authoring.Course
@@ -48,7 +49,8 @@ defmodule OliWeb.Objectives.Objectives do
       author: author,
       force_render: 0,
       can_delete?: true,
-      edit: :none)
+      edit: :none,
+      breakdown: :none)
     }
   end
 
@@ -78,7 +80,7 @@ defmodule OliWeb.Objectives.Objectives do
         <div class="mt-3">
           <%= for {objective_tree, index} <- Enum.with_index(@objectives_tree) do %>
             <%= live_component @socket, ObjectiveEntry, changeset: @changeset, objective_mapping: objective_tree.mapping,
-              children: objective_tree.children, depth: 1, index: index, project: @project, edit: @edit, can_delete?: @can_delete? %>
+              children: objective_tree.children, depth: 1, index: index, project: @project, edit: @edit, breakdown: @breakdown, can_delete?: @can_delete? %>
           <% end %>
         </div>
 
@@ -87,8 +89,12 @@ defmodule OliWeb.Objectives.Objectives do
     </div>
 
     <%= if @modal_shown do %>
-      <%= live_component @socket, ManualModal, title: "Delete Objective", modal_id: "deleteModal", ok_action: "delete", ok_label: "Delete", ok_style: "btn-danger" do %>
-        <%= live_component @socket, Attachments, attachment_summary: @attachment_summary, project: @project %>
+      <%= if @breakdown == :none do %>
+        <%= live_component @socket, ManualModal, title: "Delete Objective", modal_id: "deleteModal", ok_action: "delete", ok_label: "Delete", ok_style: "btn-danger" do %>
+          <%= live_component @socket, Attachments, attachment_summary: @attachment_summary, project: @project %>
+        <% end %>
+      <% else %>
+        <%= live_component @socket, BreakdownModal, changeset: @changeset, slug: @breakdown %>
       <% end %>
     <% end %>
 
@@ -158,6 +164,11 @@ defmodule OliWeb.Objectives.Objectives do
     {:noreply, assign(socket, :edit, slug)}
   end
 
+  def handle_event("breakdown", %{"slug" => slug}, socket) do
+
+    {:noreply, assign(socket, breakdown: slug, modal_shown: true)}
+  end
+
 
   def handle_event("cancel", _, socket) do
     {:noreply, assign(socket, :edit, :none)}
@@ -190,6 +201,10 @@ defmodule OliWeb.Objectives.Objectives do
     {:noreply, assign(socket, modal_shown: false)}
   end
 
+  def handle_event("cancel_breakdown", _, socket) do
+    {:noreply, assign(socket, modal_shown: false, breakdown: :none)}
+  end
+
   # handle processing deletion of item
   def handle_event("delete", _, socket) do
 
@@ -207,6 +222,23 @@ defmodule OliWeb.Objectives.Objectives do
     end
 
     {:noreply, assign(socket, modal_shown: false)}
+  end
+
+  # handle clicking of the add objective
+  def handle_event("perform_breakdown", %{"revision" => objective_params}, socket) do
+    with_atom_keys = Map.keys(objective_params)
+                     |> Enum.reduce(%{}, fn k, m -> Map.put(m, String.to_existing_atom(k), Map.get(objective_params, k)) end)
+
+    slug = Map.get(objective_params, "slug")
+
+    socket = case ObjectiveEditor.add_new_parent_for_objective(with_atom_keys, socket.assigns.author, socket.assigns.project, slug) do
+      {:ok, _} -> socket
+      {:error, %Ecto.Changeset{} = _changeset} ->
+        socket
+        |> put_flash(:error, "Could not break down objective")
+    end
+
+    {:noreply, assign(socket, breakdown: :none, modal_shown: false, force_render: socket.assigns.force_render + 1)}
   end
 
   # handle clicking of the add objective

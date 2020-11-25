@@ -55,7 +55,50 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
         {:ok, full_result}
       e -> e
     end
+  end
 
+  def add_new_parent_for_objective(attrs, %Author{} = author, %Project{} = project, slug) do
+
+    attrs = Map.merge(attrs, %{
+      author_id: author.id,
+      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective")
+    })
+
+    result = Repo.transaction(fn ->
+
+      with {:ok, %{resource: resource, revision: revision}} <- Oli.Authoring.Course.create_and_attach_resource(project, attrs),
+          publication <- Publishing.get_unpublished_publication_by_slug!(project.slug),
+          {:ok, mapping} <- Publishing.upsert_published_resource(publication, revision),
+          {:ok, container_resource} <- Resources.get_resource_from_slug(slug) |> trap_nil(),
+          {:ok, container_revision} <- Publishing.get_published_revision(publication.id, container_resource.id) |> trap_nil(),
+          {:ok, container} <- maybe_append_to_container(revision.slug, publication, container_revision, project.slug, author)
+      do
+
+        %{
+          resource: resource,
+          revision: revision,
+          project: project,
+          mapping: mapping,
+          container: container
+        }
+
+      else
+        error -> Repo.rollback(error)
+      end
+
+    end)
+
+    case result do
+      {:ok, %{revision: revision, container: nil} = full_result} ->
+        Broadcaster.broadcast_resource(revision, project.slug)
+        {:ok, full_result}
+
+      {:ok, %{revision: revision, container: container} = full_result} ->
+        Broadcaster.broadcast_resource(revision, project.slug)
+        Broadcaster.broadcast_resource(container, project.slug)
+        {:ok, full_result}
+      e -> e
+    end
   end
 
   def edit(revision_slug, attrs, %Author{} = author, %Project{} = project) do

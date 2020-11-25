@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0" width="610.404" height="140.802" viewBox="0, 0, 610.404, 140.802">
+  <defs>
+    <clipPath id="Clip_1">
+      <path d="M137.249,206.552 L340.237,206.552 L340.237,253.798 L137.249,253.798 z M334.237,214.552 L143.249,214.552 L143.249,245.798 L334.237,245.798 L334.237,214.552 z"/>
+    </clipPath>
+    <filter id="Shadow_2">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.5"/>
+      <feOffset dx="0" dy="2" result="offsetblur"/>
+      <feFlood flood-color="#000000"/>
+      <feComposite in2="offsetblur" operator="in"/>
+    </filter>
+    <linearGradient id="Gradient_1" gradientUnits="userSpaceOnUse" x1="238.743" y1="216.052" x2="238.743" y2="244.298">
+      <stop offset="0" stop-color="#7DC6FD"/>
+      <stop offset="0.17" stop-color="#67BEFF"/>
+      <stop offset="0.809" stop-color="#67BEFF"/>
+      <stop offset="1" stop-color="#44A7F2"/>
+    </linearGradient>
+    <clipPath id="Clip_3">
+      <path d="M539.666,207.523 L742.654,207.523 L742.654,254.769 L539.666,254.769 z M736.654,215.523 L545.666,215.523 L545.666,246.769 L736.654,246.769 L736.654,215.523 z"/>
+    </clipPath>
+    <filter id="Shadow_4">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.5"/>
+      <feOffset dx="0" dy="2" result="offsetblur"/>
+      <feFlood flood-color="#000000"/>
+      <feComposite in2="offsetblur" operator="in"/>
+    </filter>
+    <linearGradient id="Gradient_2" gradientUnits="userSpaceOnUse" x1="641.16" y1="217.023" x2="641.16" y2="245.269">
+      <stop offset="0" stop-color="#7DC6FD"/>
+      <stop offset="0.17" stop-color="#67BEFF"/>
+      <stop offset="0.809" stop-color="#67BEFF"/>
+      <stop offset="1" stop-color="#44A7F2"/>
+    </linearGradient>
+    <clipPath id="Clip_5">
+      <path d="M539.666,251.83 L742.654,251.83 L742.654,299.076 L539.666,299.076 z M736.654,259.83 L545.666,259.83 L545.666,291.076 L736.654,291.076 L736.654,259.83 z"/>
+    </clipPath>
+    <filter id="Shadow_6">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.5"/>
+      <feOffset dx="0" dy="2" result="offsetblur"/>
+      <feFlood flood-color="#000000"/>
+      <feComposite in2="offsetblur" operator="in"/>
+    </filter>
+    <clipPath id="Clip_7">
+      <path d="M490.645,161.274 L742.654,161.274 L742.654,208.52 L490.645,208.52 z M736.654,169.274 L496.645,169.274 L496.645,200.52 L736.654,200.52 L736.654,169.274 z"/>
+    </clipPath>
+    <filter id="Shadow_8">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.5"/>
+      <feOffset dx="0" dy="2" result="offsetblur"/>
+      <feFlood flood-color="#000000"/>
+      <feComposite in2="offsetblur" operator="in"/>
+    </filter>
+  </defs>
+  <g id="Layer_1" transform="translate(-134.249, -160.274)">
+    <g>
+      <path d="M334.237,214.552 L334.237,245.798 L143.249,245.798 L143.249,214.552 L334.237,214.552 z" clip-path="url(#Clip_1)" filter="url(#Shadow_2)" fill="rgba(0,0,0,0.75)"/>
+      <path d="M144.749,216.052 L332.737,216.052 L332.737,244.298 L144.749,244.298 L144.749,216.052 z" fill="url(#Gradient_1)"/>
+      <path d="M144.749,216.052 L332.737,216.052 L332.737,244.298 L144.749,244.298 L144.749,216.052 z" fill-opacity="0" stroke="#FFFFFF" stroke-width="3"/>
+    </g>
+    <g>
+      <path d="M367.931,230.175 L450.488,230.175" fill-opacity="0" stroke="#7E7E7E" stroke-width="3"/>
+      <path d="M450.488,234.375 L461.688,230.175 L450.488,225.975 z" fill="#7E7E7E" fill-opacity="1" stroke="#7E7E7E" stroke-width="3" stroke-opacity="1"/>
+    </g>
+    <g>
+      <path d="M736.654,215.523 L736.654,246.769 L545.666,246.769 L545.666,215.523 L736.654,215.523 z" clip-path="url(#Clip_3)" filter="url(#Shadow_4)" fill="rgba(0,0,0,0.75)"/>
+      <path d="M547.166,217.023 L735.154,217.023 L735.154,245.269 L547.166,245.269 L547.166,217.023 z" fill="url(#Gradient_2)"/>
+      <path d="M547.166,217.023 L735.154,217.023 L735.154,245.269 L547.166,245.269 L547.166,217.023 z" fill-opacity="0" stroke="#FFFFFF" stroke-width="3"/>
+    </g>
+    <g>
+      <path d="M736.654,259.83 L736.654,291.076 L545.666,291.076 L545.666,259.83 L736.654,259.83 z" clip-path="url(#Clip_5)" filter="url(#Shadow_6)" fill="rgba(0,0,0,0.75)"/>
+      <path d="M547.166,261.33 L735.154,261.33 L735.154,289.576 L547.166,289.576 L547.166,261.33 z" fill="#DADADA"/>
+      <path d="M547.166,261.33 L735.154,261.33 L735.154,289.576 L547.166,289.576 L547.166,261.33 z" fill-opacity="0" stroke="#FFFFFF" stroke-width="3"/>
+    </g>
+    <g>
+      <path d="M736.654,169.274 L736.654,200.52 L496.645,200.52 L496.645,169.274 L736.654,169.274 z" clip-path="url(#Clip_7)" filter="url(#Shadow_8)" fill="rgba(0,0,0,0.75)"/>
+      <path d="M498.145,170.774 L735.154,170.774 L735.154,199.02 L498.145,199.02 L498.145,170.774 z" fill="#DADADA"/>
+      <path d="M498.145,170.774 L735.154,170.774 L735.154,199.02 L498.145,199.02 L498.145,170.774 z" fill-opacity="0" stroke="#FFFFFF" stroke-width="3"/>
+    </g>
+  </g>
+</svg>
