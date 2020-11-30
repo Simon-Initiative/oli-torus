@@ -30,6 +30,7 @@ defmodule OliWeb.Router do
     plug :fetch_session
     plug :fetch_flash
     plug :put_secure_browser_headers
+    plug OpenApiSpex.Plug.PutApiSpec, module: OliWeb.ApiSpec
     plug Plug.Telemetry, event_prefix: [:oli, :plug]
     plug :accepts, ["json"]
     plug Oli.Plugs.SetDefaultPow, :author
@@ -122,6 +123,8 @@ defmodule OliWeb.Router do
     pipe_through :skip_csrf_protection
 
     pow_assent_authorization_post_callback_routes()
+
+    get "/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/v1/openapi"
   end
 
   scope "/", PowInvitation.Phoenix, as: "pow_invitation" do
@@ -167,6 +170,8 @@ defmodule OliWeb.Router do
 
     # keep a session active by periodically calling this endpoint
     get "/keep-alive", StaticPageController, :keep_alive
+
+
   end
 
   scope "/project", OliWeb do
@@ -218,6 +223,14 @@ defmodule OliWeb.Router do
 
   end
 
+  scope "/api/v1" do
+    pipe_through [:api]
+
+    get "/openapi", OpenApiSpex.Plug.RenderSpec, []
+  end
+
+
+
   scope "/api/v1/account", OliWeb do
     pipe_through [:api, :authoring_protected]
 
@@ -245,7 +258,10 @@ defmodule OliWeb.Router do
     get "/:project/media", MediaController, :index
 
     post "/:project_id/objectives", ResourceController, :create_objective
+
   end
+
+
 
   scope "/api/v1/attempt", OliWeb do
     pipe_through [:api]
@@ -263,6 +279,7 @@ defmodule OliWeb.Router do
     put "/activity/:activity_attempt_guid", AttemptController, :submit_activity
     patch "/activity/:activity_attempt_guid", AttemptController, :save_activity
 
+    get "/openapi", OpenApiSpex.Plug.RenderSpec, []
   end
 
   # LTI routes
