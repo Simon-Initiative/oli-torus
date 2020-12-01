@@ -4,6 +4,7 @@
 
       <h2>Details</h2>
 
+
       <%= form_for @changeset, Routes.project_path(@conn, :update, @project), fn f -> %>
 
         <div class="form-label-group mb-3">
@@ -22,7 +23,7 @@
       <% end %>
 
       <h2>Collaborators</h2>
-
+      <script src="https://www.google.com/recaptcha/api.js"></script>
       <%= form_for @conn, Routes.collaborator_path(@conn, :create, @project), [id: "form-add-collaborator"], fn f -> %>
         <div class="form-group">
           <%= label f, :email, "Invite others to collaborate on your course", class: "control-label" %>
@@ -35,13 +36,17 @@
             required: true,
             autofocus: focusHelper(f, :email, default: false) %>
           <%= error_tag f, :email %>
-            <div class="input-group-append">
-              <%= submit "Send Invite",
-                id: "button-create-collaborator",
-                class: "btn btn-primary",
-                phx_disable_with: "Adding Collaborator...",
-                form: f.id %>
-            </div>
+          </div>
+          <div class="input-group mb-3">
+            <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
+            <%= error_tag f, :captcha %>
+          </div>
+          <div class="input-group-append">
+            <%= submit "Send Invite",
+              id: "button-create-collaborator",
+              class: "btn btn-primary",
+              phx_disable_with: "Adding Collaborator...",
+              form: f.id %>
           </div>
         </div>
       <% end %>
