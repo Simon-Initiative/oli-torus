@@ -145,14 +145,14 @@ defmodule OliWeb.MediaController do
   end
 
   @doc """
-  Create a new media library entry.
+  Create a new media library entry by uploading the encoded media file to an Amazon S3 storage bucket.
   """
   @doc parameters: [
     project: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The project slug"]
   ],
-  request_body: {"Request body to update a User", "application/json", OliWeb.MediaController.MediaItemUpload, required: true},
+  request_body: {"Request body to add a media library item", "application/json", OliWeb.MediaController.MediaItemUpload, required: true},
   responses: %{
-    200 => {"User", "application/json", OliWeb.MediaController.MediaItemUploadResponse}
+    200 => {"Media Item Upload Response", "application/json", OliWeb.MediaController.MediaItemUploadResponse}
   }
   def create(conn, %{"project" => project_slug, "file" => file, "name" => name}) do
 
