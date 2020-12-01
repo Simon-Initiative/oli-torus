@@ -6,7 +6,7 @@ defmodule OliWeb.Objectives.Actions do
 
   def render(assigns) do
     ~L"""
-      <div class="objective-actions p-2" phx-update="ignore">
+      <div class="objective-actions p-2">
 
         <%= if !@has_children and @depth < 2 do %>
           <button

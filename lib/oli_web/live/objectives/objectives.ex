@@ -45,7 +45,7 @@ defmodule OliWeb.Objectives.Objectives do
       project: project,
       subscriptions: subscriptions,
       attachment_summary: @default_attachment_summary,
-      modal_shown: false,
+      modal_shown: :none,
       author: author,
       force_render: 0,
       can_delete?: true,
@@ -69,6 +69,8 @@ defmodule OliWeb.Objectives.Objectives do
 
       <%= live_component @socket, CreateNew, changeset: @changeset, project: @project %>
 
+      <hr class="my-4" />
+
       <%= if Enum.count(@objective_mappings) == 0 do %>
         <div class="mt-3 row">
           <div class="col-12">
@@ -88,14 +90,15 @@ defmodule OliWeb.Objectives.Objectives do
 
     </div>
 
-    <%= if @modal_shown do %>
-      <%= if @breakdown == :none do %>
+    <%= case @modal_shown do %>
+      <% :delete -> %>
         <%= live_component @socket, ManualModal, title: "Delete Objective", modal_id: "deleteModal", ok_action: "delete", ok_label: "Delete", ok_style: "btn-danger" do %>
           <%= live_component @socket, Attachments, attachment_summary: @attachment_summary, project: @project %>
         <% end %>
-      <% else %>
+      <% :breakdown -> %>
         <%= live_component @socket, BreakdownModal, changeset: @changeset, slug: @breakdown %>
-      <% end %>
+      <% :none -> %>
+
     <% end %>
 
     """
@@ -164,15 +167,12 @@ defmodule OliWeb.Objectives.Objectives do
     {:noreply, assign(socket, :edit, slug)}
   end
 
-  def handle_event("breakdown", %{"slug" => slug}, socket) do
-
-    {:noreply, assign(socket, breakdown: slug, modal_shown: true)}
-  end
-
-
   def handle_event("cancel", _, socket) do
-    {:noreply, assign(socket, :edit, :none)}
+    {:noreply, assign(socket, edit: :none, breakdown: :none, modal_shown: :none)}
   end
+
+  # handle any cancel events a modal might generate from being closed
+  def handle_event("cancel_modal", params, socket), do: handle_event("cancel", params, socket)
 
   # process form submission to save page settings
   def handle_event("edit", %{"revision" => objective_params}, socket) do
@@ -191,18 +191,10 @@ defmodule OliWeb.Objectives.Objectives do
 
     if socket.assigns.can_delete? do
       attachment_summary = ObjectiveEditor.preview_objective_detatchment(slug, socket.assigns.project)
-      {:noreply, assign(socket, modal_shown: true, attachment_summary: attachment_summary, prepare_delete_slug: slug, force_render: socket.assigns.force_render + 1)}
+      {:noreply, assign(socket, modal_shown: :delete, attachment_summary: attachment_summary, prepare_delete_slug: slug, force_render: socket.assigns.force_render + 1)}
     else
       {:noreply, socket}
     end
-  end
-
-  def handle_event("cancel_modal", _, socket) do
-    {:noreply, assign(socket, modal_shown: false)}
-  end
-
-  def handle_event("cancel_breakdown", _, socket) do
-    {:noreply, assign(socket, modal_shown: false, breakdown: :none)}
   end
 
   # handle processing deletion of item
@@ -221,7 +213,11 @@ defmodule OliWeb.Objectives.Objectives do
       _ -> socket
     end
 
-    {:noreply, assign(socket, modal_shown: false)}
+    {:noreply, assign(socket, modal_shown: :none)}
+  end
+
+  def handle_event("breakdown", %{"slug" => slug}, socket) do
+    {:noreply, assign(socket, breakdown: slug, modal_shown: :breakdown)}
   end
 
   # handle clicking of the add objective
@@ -238,7 +234,7 @@ defmodule OliWeb.Objectives.Objectives do
         |> put_flash(:error, "Could not break down objective")
     end
 
-    {:noreply, assign(socket, breakdown: :none, modal_shown: false, force_render: socket.assigns.force_render + 1)}
+    {:noreply, assign(socket, breakdown: :none, modal_shown: :none)}
   end
 
   # handle clicking of the add objective
@@ -255,7 +251,7 @@ defmodule OliWeb.Objectives.Objectives do
         |> put_flash(:error, "Could not create objective")
     end
 
-    {:noreply, assign(socket, :edit, :none)}
+    {:noreply, assign(socket, edit: :none, changeset: Resources.change_revision(%Revision{}))}
   end
 
 

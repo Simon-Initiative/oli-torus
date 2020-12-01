@@ -23,11 +23,11 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
           <% # we are in create sub-objective mode, render an ObjectiveForm for the new objective %>
           <div class="row create-sub-objective py-1">
             <div class="col-12 pb-2">
-              <div style="margin-left: <%= @depth * 20 %>px">
+              <div style="margin-left: <%= @depth * 40 %>px">
 
               <%= live_component @socket, ObjectiveForm, changeset: @changeset,
                 project: @project, title_value: "", slug_value: "", parent_slug_value: @objective_mapping.revision.slug, depth: @depth,
-                form_id: "create-sub-objective", place_holder: "Enter sub-objective text...", phx_disable_with: "Creating Sub-Objective...", button_text: "Create", method: "new" %>
+                form_id: "create-sub-objective", place_holder: "", phx_disable_with: "Creating Sub-Objective...", button_text: "Create", method: "new" %>
 
               </div>
             </div>
@@ -37,13 +37,13 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
           <% # this objective has one or more children, it is a container objective and more sub-objectives can be created %>
           <div class="row create-sub-objective py-1">
             <div class="col-12 pb-2">
-              <div style="margin-left: <%= @depth * 20 %>px">
+              <div style="margin-left: <%= @depth * 40 %>px">
 
                 <button
                   class="ml-1 btn btn-xs btn-light"
                   phx-click="add_sub"
                   phx-value-slug="add_sub_<%= @objective_mapping.revision.slug %>">
-                  <i class="fas fa-plus fa-lg"></i> Create
+                  <i class="fas fa-plus fa-lg"></i> Create Sub-Objective
                 </button>
 
               </div>
@@ -57,14 +57,12 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
 
   def render(assigns) do
 
-    margin_for_depth = (assigns.depth - 1) * 20
+    margin_for_depth = (assigns.depth - 1) * 40
 
     ~L"""
 
-    <div class="row objective py-1" tabindex="0">
+    <div class="row objective py-1" tabindex="0" style="margin-left: <%= margin_for_depth %>px">
       <div class="col-12">
-        <div style="margin-left: <%= margin_for_depth %>px">
-
         <%= cond do %>
           <% @edit == @objective_mapping.revision.slug -> %>
             <div class="py-2">
@@ -78,8 +76,6 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
             <%= live_component @socket, ObjectiveRender, changeset: @changeset, objective_mapping: @objective_mapping, children: @children,
             project: @project, slug: @objective_mapping.revision.slug, depth: @depth, mode: :show, can_delete?: @can_delete?, edit: @edit %>
         <% end %>
-
-        </div>
       </div>
     </div>
 
