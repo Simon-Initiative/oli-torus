@@ -25,6 +25,7 @@ defmodule OliWeb.Objectives.Actions do
         </button>
 
         <button
+          id="delete_<%= @slug %>"
           <%= if @can_delete? do "" else "disabled" end %>
           phx-click="prepare_delete"
           phx-value-slug="<%= @slug %>"

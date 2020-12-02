@@ -92,7 +92,7 @@ defmodule OliWeb.Objectives.Objectives do
 
     <%= case @modal_shown do %>
       <% :delete -> %>
-        <%= live_component @socket, ManualModal, title: "Delete Objective", modal_id: "deleteModal", ok_action: "delete", ok_label: "Delete", ok_style: "btn-danger" do %>
+        <%= live_component @socket, ManualModal, title: "Delete Objective", modal_id: "deleteModal", ok_action: "delete", ok_label: "Delete", ok_style: "btn-danger confirm" do %>
           <%= live_component @socket, Attachments, attachment_summary: @attachment_summary, project: @project %>
         <% end %>
       <% :breakdown -> %>

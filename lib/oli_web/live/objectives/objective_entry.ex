@@ -61,7 +61,7 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
 
     ~L"""
 
-    <div class="row objective py-1" tabindex="0" style="margin-left: <%= margin_for_depth %>px">
+    <div id="<%= @objective_mapping.revision.slug %>" class="row objective py-1" tabindex="0" style="margin-left: <%= margin_for_depth %>px">
       <div class="col-12">
         <%= cond do %>
           <% @edit == @objective_mapping.revision.slug -> %>
