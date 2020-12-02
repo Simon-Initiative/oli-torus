@@ -124,7 +124,6 @@ defmodule OliWeb.Router do
 
     pow_assent_authorization_post_callback_routes()
 
-    get "/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/v1/openapi"
   end
 
   scope "/", PowInvitation.Phoenix, as: "pow_invitation" do
@@ -357,6 +356,13 @@ defmodule OliWeb.Router do
       pipe_through [:browser]
 
       get "/uipalette", UIPaletteController, :index
+
+    end
+
+    scope "/dev" do
+      pipe_through [:browser]
+
+      get "/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/v1/openapi"
     end
 
     scope "/test", OliWeb do
