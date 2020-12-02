@@ -1,5 +1,5 @@
 defmodule OliWeb.ApiSpec do
-  alias OpenApiSpex.{Components, Info, OpenApi, Paths, Server}
+  alias OpenApiSpex.{Info, OpenApi, Paths, Server}
   alias OliWeb.{Endpoint, Router}
   @behaviour OpenApi
 
