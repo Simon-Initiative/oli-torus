@@ -1,7 +1,6 @@
 defmodule OliWeb.Grades.GradesLive do
 
-  use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
-  use Phoenix.HTML
+  use OliWeb, :live_view
 
   alias Oli.Grading
   alias Oli.Lti.LTI_AGS
@@ -48,9 +47,11 @@ defmodule OliWeb.Grades.GradesLive do
     end
 
     ~L"""
-    <h2>Manage Grades</h2>
+    <h2><%= dgettext("grades", "Manage Grades") %></h2>
 
-    <p>Grades for OLI graded pages for this course are accessed by students and instructors from the LMS gradebook at <a href="<%= iss %>"><%= iss %></a>.</p>
+    <p>
+      <%= dgettext("grades", "Grades for OLI graded pages for this course are accessed by students and instructors from the LMS gradebook at") %> <a href="<%= iss %>"><%= iss %></a>.
+    </p>
 
     <div class="card-group">
 
@@ -61,7 +62,7 @@ defmodule OliWeb.Grades.GradesLive do
     </div>
 
     <div class="mt-4 <%= progress_visible %>">
-      <p>Do not leave this page until this operation completes.</p>
+      <p><%= dgettext("grades", "Do not leave this page until this operation completes.") %></p>
       <div class="progress">
         <div class="progress-bar" role="progressbar" style="width: <%= percent_progress %>%;" aria-valuenow="<%= percent_progress %>" aria-valuemin="0" aria-valuemax="100">
       </div>
@@ -189,7 +190,7 @@ defmodule OliWeb.Grades.GradesLive do
 
         case determine_line_item_tasks(graded_pages, line_items) do
 
-          [] -> {:noreply, put_flash(socket, :info, "LMS line items already up to date")}
+          [] -> {:noreply, put_flash(socket, :info, dgettext("grades", "LMS line items already up to date"))}
 
           task_queue ->
 
@@ -246,10 +247,10 @@ defmodule OliWeb.Grades.GradesLive do
         case LTI_AGS.fetch_line_items(line_items_url, access_token) do
 
           {:ok, line_items} -> {:ok, line_items, access_token}
-          _ -> {:error, "Error accessing LMS line items"}
+          _ -> {:error, dgettext("grades", "Error accessing LMS line items")}
         end
 
-      _ -> {:error, "Error getting LMS access token"}
+      _ -> {:error, dgettext("grades", "Error getting LMS access token")}
 
     end
 
@@ -273,7 +274,7 @@ defmodule OliWeb.Grades.GradesLive do
           send(self(), :pop_task_queue)
           socket
         else
-          socket |> put_flash(:info, "LMS up to date")
+          socket |> put_flash(:info, dgettext("grades", "LMS up to date"))
         end
 
         {:noreply, assign(socket, task_queue: task_queue, progress_current: socket.assigns.progress_current + 1)}
