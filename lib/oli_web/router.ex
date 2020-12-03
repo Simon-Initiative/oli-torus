@@ -324,6 +324,9 @@ defmodule OliWeb.Router do
     get "/ingest", IngestController, :index
     post "/ingest", IngestController, :upload
 
+    get "/invite", InviteController, :index
+    post "/invite", InviteController, :create
+
   end
 
   scope "/project", OliWeb do

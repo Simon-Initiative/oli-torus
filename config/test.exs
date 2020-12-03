@@ -13,6 +13,13 @@ config :oli, Oli.Repo,
   hostname: System.get_env("TEST_DB_HOST", "localhost"),
   pool: Ecto.Adapters.SQL.Sandbox
 
+# Configure reCAPTCHA
+config :oli, :recaptcha,
+  verify_url: "https://www.google.com/recaptcha/api/siteverify",
+  timeout: 5000,
+  site_key: System.get_env("RECAPTCHA_SITE_KEY", "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"),
+  secret: System.get_env("RECAPTCHA_PRIVATE_KEY", "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe")
+
 # Configure Email
 config :oli, Oli.Mailer,
   adapter: Bamboo.TestAdapter
