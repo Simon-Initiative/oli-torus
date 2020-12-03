@@ -41,4 +41,3 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   end
 
 end
-

@@ -1,5 +1,8 @@
 import { ResourceContext } from 'data/content/resource';
-import { Identifiable, ModelElement, Selection } from 'data/content/model';
+import { ID, Identifiable, ModelElement, Selection } from 'data/content/model';
+
+export type ChoiceId = ID;
+export type ResponseId = ID;
 
 export type RichText = {
   model: ModelElement[];
@@ -29,7 +32,7 @@ export type PartResponse = {
 };
 
 export type Manifest = {
-  id: string,
+  id: ID,
   friendlyName: string,
   description: string,
   delivery: ModeSpecification,
@@ -66,6 +69,7 @@ export interface ActivityState {
   hasMoreHints: boolean;
 }
 
+export interface Choice extends Identifiable, HasContent {}
 export interface Stem extends Identifiable, HasContent {}
 export interface Hint extends Identifiable, HasContent {}
 export interface Feedback extends Identifiable, HasContent {}
@@ -76,9 +80,10 @@ export interface Transformation extends Identifiable {
 
 export interface Response extends Identifiable {
 
+  // see `parser.ex` and `rule.ex`
   rule: string;
 
-  // `score == 1` indicates the feedback corresponds to a matching choice
+  // `score >= 0` indicates the feedback corresponds to a correct choice
   score: number;
 
   feedback: Feedback;
