@@ -1,8 +1,8 @@
 import React from 'react';
 import { Heading } from 'components/misc/Heading';
 import { RichTextEditor } from 'components/content/RichTextEditor';
-import { ModelEditorProps, Choice } from '../schema';
-import { Response, RichText } from '../../types';
+import { ModelEditorProps } from '../schema';
+import { Choice, Response, RichText } from '../../types';
 import { Description } from 'components/misc/Description';
 import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 import { CloseButton } from 'components/misc/CloseButton';

@@ -69,7 +69,8 @@ header {
   border-left: 0.4rem solid #4f8a10;
   padding-left: 0.5rem;
 }
-.summary-failed {
+.summary-failed,
+.summary-obsolete-snapshots {
   color: #d8000c;
   border-left: 0.4rem solid #d8000c;
   padding-left: 0.5rem;
@@ -134,6 +135,9 @@ header {
   margin-top: 1rem;
   border-top: 1px dashed #d8000c;
 }
+.failureMessages.suiteFailure {
+  border-top: none;
+}
 .failureMsg {
   white-space: pre-wrap;
   white-space: -moz-pre-wrap;
@@ -171,7 +175,7 @@ header {
 
 /* CONSOLE LOGS */
 .suite-consolelog {
-  margin-bottom: 2rem;
+  margin-bottom: 0.25rem;
   padding: 1rem;
   background-color: #efefef;
 }
@@ -198,4 +202,31 @@ header {
   font-size: 1rem;
   padding: 0 0.5rem;
 }
-</style></head><body><div id="jesthtml-content"><header><h1 id="title">Test Report</h1></header><div id="metadata-container"><div id="summary"><div id="suite-summary"><div class="summary-total">Suites (undefined)</div><div class="summary-passed">undefined passed</div><div class="summary-failed">undefined failed</div><div class="summary-pending">undefined pending</div></div><div id="test-summary"><div class="summary-total">Tests (undefined)</div><div class="summary-passed">undefined passed</div><div class="summary-failed">undefined failed</div><div class="summary-pending">undefined pending</div></div></div></div></div></body></html>
+
+/* OBSOLETE SNAPSHOTS */
+.suite-obsolete-snapshots {
+  margin-bottom: 0.25rem;
+  padding: 1rem;
+  background-color: #ffbaba;
+  color: #d8000c;
+}
+.suite-obsolete-snapshots-header {
+  font-weight: bold;
+}
+.suite-obsolete-snapshots-item {
+  padding: 0.5rem;
+}
+.suite-obsolete-snapshots-item pre {
+  margin: 0.5rem 0;
+  white-space: pre-wrap;
+  white-space: -moz-pre-wrap;
+  white-space: -pre-wrap;
+  white-space: -o-pre-wrap;
+  word-wrap: break-word;
+}
+.suite-obsolete-snapshots-item-message {
+  color: #000;
+  font-size: 1rem;
+  padding: 0 0.5rem;
+}
+</style></head><body/></html>

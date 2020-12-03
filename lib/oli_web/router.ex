@@ -73,6 +73,8 @@ defmodule OliWeb.Router do
   pipeline :delivery_protected do
     plug Pow.Plug.RequireAuthenticated,
       error_handler: OliWeb.Pow.UserAuthErrorHandler
+    plug Oli.Plugs.SetDefaultPow, :user
+    plug Oli.Plugs.LoadLtiParams
   end
 
   # Ensure that we have a logged in user
@@ -248,7 +250,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/api/v1/attempt", OliWeb do
-    pipe_through [:api]
+    pipe_through [:api, :delivery_protected]
 
     # post to create a new attempt
     # put to submit a response

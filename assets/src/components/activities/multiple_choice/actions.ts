@@ -1,6 +1,6 @@
-import { MultipleChoiceModelSchema, Choice as ChoiceType } from './schema';
+import { MultipleChoiceModelSchema } from './schema';
 import { fromText, makeResponse } from './utils';
-import { RichText, Feedback as FeedbackType, Hint as HintType } from '../types';
+import { RichText, Hint as HintType, Choice } from '../types';
 import { Maybe } from 'tsmonad';
 import { toSimpleText } from 'data/content/text';
 import { Identifiable } from 'data/content/model';
@@ -27,7 +27,7 @@ export class MCActions {
 
   static addChoice() {
     return (draftState: MultipleChoiceModelSchema) => {
-      const newChoice: ChoiceType = fromText('');
+      const newChoice: Choice = fromText('');
       draftState.choices.push(newChoice);
       draftState.authoring.parts[0].responses.push(
         makeResponse(`input like {${newChoice.id}}`, 0, ''));

@@ -2,7 +2,7 @@ import React from 'react';
 
 export type HeadingProps = {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   id: string;
 };
 export const Heading = ({ title, subtitle, id }: HeadingProps) => {
@@ -11,9 +11,9 @@ export const Heading = ({ title, subtitle, id }: HeadingProps) => {
       <h3 id={id}>
         {title}
       </h3>
-      <p className="text-secondary">
+      {subtitle && <p className="text-secondary">
         {subtitle}
-      </p>
+      </p>}
     </div>
   );
 };

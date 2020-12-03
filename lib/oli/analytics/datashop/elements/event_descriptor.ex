@@ -29,6 +29,7 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
     case activity_type(part_attempt) do
       "oli_short_answer" -> "Short answer input"
       "oli_multiple_choice" -> "Multiple choice selection"
+      "oli_check_all_that_apply" -> "Check all that apply selection"
       _unregistered -> "Action in unregistered activity type"
     end
   end
@@ -48,6 +49,14 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
               |> Utils.parse_content
             # for multiple choice questions, the input is a string id that refers to the selected choice
             "oli_multiple_choice" ->
+              choices = part_attempt.activity_attempt.transformed_model["choices"]
+              content = Enum.find(choices, & &1["id"] == input)["content"]
+
+              case content do
+                %{"model" => model} -> Utils.parse_content(model)
+                _ -> Utils.parse_content(content)
+              end
+            "oli_check_all_that_apply" ->
               choices = part_attempt.activity_attempt.transformed_model["choices"]
               content = Enum.find(choices, & &1["id"] == input)["content"]
 

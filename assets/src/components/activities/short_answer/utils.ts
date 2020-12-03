@@ -1,7 +1,6 @@
 import guid from 'utils/guid';
-import * as ContentModel from 'data/content/model';
 import { ShortAnswerModelSchema } from './schema';
-import { RichText, Operation, ScoringStrategy, EvaluationStrategy } from '../types';
+import { ScoringStrategy } from '../types';
 import { fromText } from '../common/utils';
 
 export const makeResponse = (rule: string, score: number, text: '') =>
