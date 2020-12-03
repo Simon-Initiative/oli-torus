@@ -20,8 +20,8 @@ defmodule OliWeb.CollaboratorControllerTest do
     end
   end
 
-  describe "accept_invite" do
-    test "accept new author invitation", %{conn: conn, project: project} do
+  describe "collaboration_invite" do
+    test "accept new collaboration invitation", %{conn: conn, project: project} do
       conn = post(conn, Routes.collaborator_path(conn, :create, project), email: @invite_email, "g-recaptcha-response": "any")
       new_author = Accounts.get_author_by_email(@invite_email)
       token = PowInvitation.Plug.sign_invitation_token(conn, new_author)
