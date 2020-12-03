@@ -39,6 +39,18 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
     assert eval("attemptNumber = {1} && (input like {cat} || input like {dog})", "dog")
   end
 
+  test "evaluating negation" do
+    assert eval("!(input like {cat})", "dog")
+    assert !eval("!(input like {cat})", "cat")
+  end
+
+  test "evaluating complex groupings" do
+    assert eval("input like {1} && (input like {2} && (!(input like {3})))", "1 2")
+    assert eval("!(input like {1} && (input like {2} && (!(input like {3}))))", "1 3")
+    assert eval("!(input like {1} && (input like {2} && (!(input like {3}))))", "1 2 3")
+    assert eval("(!(input like {1})) && (input like {2})", "2")
+  end
+
   test "evaluating input length" do
     assert eval("length(input) = {1}", "A")
     assert eval("length(input) < {10}", "Apple")

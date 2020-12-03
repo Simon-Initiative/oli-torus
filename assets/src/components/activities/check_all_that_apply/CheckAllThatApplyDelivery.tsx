@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { DeliveryElement, DeliveryElementProps,
   EvaluationResponse, ResetActivityResponse, RequestHintResponse } from '../DeliveryElement';
-import { MultipleChoiceModelSchema } from './schema';
+import { CheckAllThatApplyModelSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
-import { Maybe } from 'tsmonad';
 import { Stem } from '../common/DisplayedStem';
 import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/Evaluation';
+import { getCorrectResponse, getIncorrectResponse, getTargetedResponses, isTargetedCATA } from './utils';
 
 type Evaluation = {
   score: number,
@@ -19,18 +19,19 @@ type Evaluation = {
 
 interface ChoicesProps {
   choices: ActivityTypes.Choice[];
-  selected: Maybe<string>;
+  selected: string[];
   onSelect: (id: string) => void;
   isEvaluated: boolean;
 }
 const Choices = ({ choices, selected, onSelect, isEvaluated }: ChoicesProps) => {
+  const isSelected = (choiceId: string) => !!selected.find(s => s === choiceId);
   return (
     <div className="choices">
     {choices.map((choice, index) =>
       <Choice
         key={choice.id}
         onClick={() => onSelect(choice.id)}
-        selected={selected.valueOr('') === choice.id}
+        selected={isSelected(choice.id)}
         choice={choice}
         isEvaluated={isEvaluated}
         index={index} />)}
@@ -56,45 +57,56 @@ const Choice = ({ choice, index, selected, onClick, isEvaluated }: ChoiceProps) 
   );
 };
 
-const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) => {
+const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSchema>) => {
 
   const [model, setModel] = useState(props.model);
   const [attemptState, setAttemptState] = useState(props.state);
   const [hints, setHints] = useState(props.state.parts[0].hints);
   const [hasMoreHints, setHasMoreHints] = useState(props.state.parts[0].hasMoreHints);
-  const [selected, setSelected] = useState(
+  const [selected, setSelected] = useState<string[]>(
     props.state.parts[0].response === null
-    ? Maybe.nothing<string>()
-    : Maybe.just<string>(props.state.parts[0].response.input));
+    ? []
+    : props.state.parts[0].response.input.split('')
+      .reduce(
+        (acc: string[], curr: string) => acc.concat([curr]),
+        []));
 
   const { stem, choices } = model;
 
   const isEvaluated = attemptState.score !== null;
+  const selectedToInput = () => selected.join(' ');
+
+  const onSubmit = () => {
+    props.onSubmitActivity(attemptState.attemptGuid,
+      // update this input too
+      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: selectedToInput() } }])
+      .then((response: EvaluationResponse) => {
+        if (response.evaluations.length > 0) {
+          const { score, out_of, feedback, error } = response.evaluations[0];
+          const parts = [Object.assign({}, attemptState.parts[0], { feedback, error })];
+          const updated = Object.assign({}, attemptState, { score, outOf: out_of, parts });
+          setAttemptState(updated);
+        }
+      });
+  };
+
+  const updateSelection = (id: string) => {
+    const newSelection = !!selected.find(s => s === id)
+      ? selected.filter(s => s !== id)
+      : selected.concat([id]);
+    setSelected(newSelection);
+  };
 
   const onSelect = (id: string) => {
-    // Update local state
-    setSelected(Maybe.just<string>(id));
+    // Update local state by adding or removing the id
+    updateSelection(id);
 
-    if (props.graded) {
-
-      // In summative context, post the student response to save it
-      props.onSaveActivity(attemptState.attemptGuid,
-        [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: id } }]);
-
-    } else {
-
-      // Auto-submit our student reponse in formative context
-      props.onSubmitActivity(attemptState.attemptGuid,
-        [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: id } }])
-        .then((response: EvaluationResponse) => {
-          if (response.evaluations.length > 0) {
-            const { score, out_of, feedback, error } = response.evaluations[0];
-            const parts = [Object.assign({}, attemptState.parts[0], { feedback, error })];
-            const updated = Object.assign({}, attemptState, { score, outOf: out_of, parts });
-            setAttemptState(updated);
-          }
-        });
-    }
+    // Post the student response to save it
+    // Here we will make a list of the selected ids like { input: [id1, id2, id3].join(' ')}
+    // Then in the rule evaluator, we will say
+    // `input like id1 && input like id2 && input like id3`
+    props.onSaveActivity(attemptState.attemptGuid,
+      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: selectedToInput() } }]);
   };
 
   const onRequestHint = () => {
@@ -110,9 +122,9 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
   const onReset = () => {
     props.onResetActivity(attemptState.attemptGuid)
     .then((state: ResetActivityResponse) => {
-      setSelected(Maybe.nothing<string>());
+      setSelected([]);
       setAttemptState(state.attemptState);
-      setModel(state.model as MultipleChoiceModelSchema);
+      setModel(state.model as CheckAllThatApplyModelSchema);
       setHints([]);
       setHasMoreHints(props.state.parts[0].hasMoreHints);
     });
@@ -135,12 +147,24 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
     <Hints key="hints" onClick={onRequestHint} hints={hints}
       hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>];
 
+  const maybeSubmitButton = props.graded
+    ? null
+    : (
+      <button
+        className="btn btn-primary mt-2 float-right" disabled={isEvaluated} onClick={onSubmit}>
+        Submit
+      </button>
+    );
+
   return (
     <div className={`activity multiple-choice-activity ${isEvaluated ? 'evaluated' : ''}`}>
       <div className="activity-content">
-        <Stem stem={stem} />
-        <Choices choices={choices} selected={selected}
-          onSelect={onSelect} isEvaluated={isEvaluated}/>
+        <div>
+          <Stem stem={stem} />
+          <Choices choices={choices} selected={selected}
+            onSelect={onSelect} isEvaluated={isEvaluated}/>
+          {maybeSubmitButton}
+        </div>
         {ungradedDetails}
       </div>
       {reset}
@@ -149,12 +173,12 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
 };
 
 // Defines the web component, a simple wrapper over our React component above
-export class MultipleChoiceDelivery extends DeliveryElement<MultipleChoiceModelSchema> {
-  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MultipleChoiceModelSchema>) {
-    ReactDOM.render(<MultipleChoice {...props} />, mountPoint);
+export class CheckAllThatApplyDelivery extends DeliveryElement<CheckAllThatApplyModelSchema> {
+  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<CheckAllThatApplyModelSchema>) {
+    ReactDOM.render(<CheckAllThatApply {...props} />, mountPoint);
   }
 }
 
 // Register the web component:
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
-window.customElements.define(manifest.delivery.element, MultipleChoiceDelivery);
+window.customElements.define(manifest.delivery.element, CheckAllThatApplyDelivery);

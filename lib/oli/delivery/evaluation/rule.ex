@@ -90,4 +90,3 @@ defmodule Oli.Delivery.Evaluation.Rule do
   defp is_float?(str), do: String.contains?(str, ".")
 
 end
-
