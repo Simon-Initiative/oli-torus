@@ -234,6 +234,8 @@ OliWeb.Insights.TableRow.html
 OliWeb.Insights.html
 OliWeb.InstitutionController.html
 OliWeb.InstitutionView.html
+OliWeb.InviteController.html
+OliWeb.InviteView.html
 OliWeb.LayoutView.html
 OliWeb.LiveHelpers.html
 OliWeb.LockController.html
@@ -312,8 +314,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-57234a1d29.js
-dist/sidebar_items-468261814b.js
+dist/search_items-0977fccce9.js
+dist/sidebar_items-f9132c5e92.js
 index.html
 license.html
 lti1-3.html
