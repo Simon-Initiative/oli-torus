@@ -190,6 +190,7 @@ OliWeb.Accounts.AccountsLive.html
 OliWeb.Accounts.AccountsModel.html
 OliWeb.ActivityController.html
 OliWeb.ActivityView.html
+OliWeb.ApiSpec.html
 OliWeb.AttemptController.html
 OliWeb.Breadcrumb.BreadcrumbLive.html
 OliWeb.Breadcrumb.BreadcrumbTrailLive.html
@@ -241,6 +242,9 @@ OliWeb.LiveHelpers.html
 OliWeb.LockController.html
 OliWeb.LtiController.html
 OliWeb.LtiView.html
+OliWeb.MediaController.MediaItemPageSchema.html
+OliWeb.MediaController.MediaItemUpload.html
+OliWeb.MediaController.MediaItemUploadResponse.html
 OliWeb.MediaController.html
 OliWeb.MediaView.html
 OliWeb.ModalComponent.html
@@ -314,8 +318,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-0977fccce9.js
-dist/sidebar_items-f9132c5e92.js
+dist/search_items-50fca51198.js
+dist/sidebar_items-65246d97c4.js
 index.html
 license.html
 lti1-3.html
