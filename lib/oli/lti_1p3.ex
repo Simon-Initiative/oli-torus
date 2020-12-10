@@ -19,10 +19,6 @@ defmodule Oli.Lti_1p3 do
     |> Repo.insert()
   end
 
-  def get_registration_by_kid(kid) do
-    Repo.one(from r in Registration, where: r.kid == ^kid)
-  end
-
   def get_registration_by_issuer(issuer) do
     Repo.one(from r in Registration, where: r.issuer == ^issuer)
   end
@@ -63,9 +59,9 @@ defmodule Oli.Lti_1p3 do
       select: {institution, registration, deployment}
   end
 
-  def get_registration_by_client_id(client_id) do
+  def get_registration_by_issuer_client_id(issuer, client_id) do
     Repo.one from r in Registration,
-      where: r.client_id == ^client_id,
+      where: r.issuer == ^ issuer and r.client_id == ^client_id,
       select: r
   end
 

@@ -44,10 +44,10 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   end
 
   defp validate_registration(conn) do
-    with {:ok, client_id} <- peek_client_id(conn) do
-      case Oli.Lti_1p3.get_registration_by_client_id(client_id) do
+    with {:ok, issuer, client_id} <- peek_issuer_client_id(conn) do
+      case Oli.Lti_1p3.get_registration_by_issuer_client_id(issuer, client_id) do
         nil ->
-          {:error, %{reason: :invalid_registration, msg: "Registration with client id \"#{client_id}\" not found", client_id: client_id}}
+          {:error, %{reason: :invalid_registration, msg: "Registration with issuer \"#{issuer}\" and client id \"#{client_id}\" not found", issuer: issuer, client_id: client_id}}
           registration ->
           {:ok, conn, registration}
       end
@@ -89,11 +89,11 @@ defmodule Oli.Lti_1p3.LaunchValidation do
     end
   end
 
-  defp peek_client_id(conn) do
+  defp peek_issuer_client_id(conn) do
     with {:ok, jwt_string} <- extract_id_token(conn),
          {:ok, jwt_claims} <- peek_claims(jwt_string)
     do
-      {:ok, jwt_claims["aud"]}
+      {:ok, jwt_claims["iss"], jwt_claims["aud"]}
     end
   end
 
