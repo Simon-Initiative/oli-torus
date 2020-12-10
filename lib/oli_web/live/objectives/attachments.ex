@@ -43,7 +43,7 @@ defmodule OliWeb.Objectives.Attachments do
     <div>
 
       <%= if length(resources_not_locked) == 0 and length(resources_locked) == 0 do %>
-        <p class="mb-4">Are you sure you wish to delete this objective?</p>
+        <p class="mb-4">Are you sure you want to delete this objective? This action cannot be undone.</p>
       <% end %>
 
       <%= if length(resources_not_locked) > 0 do %>
@@ -51,13 +51,16 @@ defmodule OliWeb.Objectives.Attachments do
 
         <table class="table table-sm table-bordered">
           <thead class="thead-dark">
-            <tr><th>Resource</th><th>Title</th></tr>
+            <tr>
+              <th>Title</th>
+              <th>Resource Type</th>
+            </tr>
           </thead>
           <tbody>
           <%= for r <- resources_not_locked do %>
             <tr>
+              <td><a href="<%= link_route(@project.slug, parent_pages, r.resource_id, r.slug) %>" target="_blank"><%= r.title %></a></td>
               <td><%= get_type(r) %></td>
-              <td><a href="<%= link_route(@project.slug, parent_pages, r.resource_id, r.slug) %>"><%= r.title %></a></td>
             </tr>
           <% end %>
           </tbody>
@@ -70,14 +73,19 @@ defmodule OliWeb.Objectives.Attachments do
 
         <table class="table table-sm table-bordered">
           <thead class="thead-dark">
-            <tr><th>Resource</th><th>Title</th><th>Edited By</th></tr>
+            <tr>
+              <th>Title</th>
+              <th>Resource Type</th>
+              <th>Edited By</th>
+            </tr>
           </thead>
           <tbody>
           <%= for r <- resources_locked do %>
-            <tr><td><%= get_type(r) %></td>
+            <tr>
             <td>
-              <a href="<%= link_route(@project.slug, parent_pages, r.resource_id, r.slug) %>"><%= r.title %></a>
+              <a href="<%= link_route(@project.slug, parent_pages, r.resource_id, r.slug) %>" target="_blank"><%= r.title %></a>
             </td>
+            <td><%= get_type(r) %></td>
             <td><%= locked_by_email(parent_pages, locked_by, r.resource_id) %></td></tr>
           <% end %>
           </tbody>
