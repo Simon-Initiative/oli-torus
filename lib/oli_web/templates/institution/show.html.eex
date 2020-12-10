@@ -92,11 +92,6 @@
                       </tr>
 
                       <tr>
-                        <td><strong>KID:</strong></td>
-                        <td><%= registration.kid %></td>
-                      </tr>
-
-                      <tr>
                         <td><strong>Keyset URL:</strong></td>
                         <td><%= registration.key_set_url %></td>
                       </tr>

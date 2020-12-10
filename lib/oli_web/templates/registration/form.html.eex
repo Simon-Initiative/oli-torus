@@ -20,13 +20,6 @@
   </div>
 
   <div class="form-label-group">
-    <%= text_input f, :kid, class: "form-control " <> error_class(f, :kid, "is-invalid"),
-      placeholder: "KID", required: true, autofocus: focusHelper(f, :kid) %>
-    <%= label f, :kid, "KID", class: "control-label" %>
-    <%= error_tag f, :kid %>
-  </div>
-
-  <div class="form-label-group">
     <%= text_input f, :key_set_url, class: "form-control " <> error_class(f, :key_set_url, "is-invalid"),
       placeholder: "Keyset URL", required: true, autofocus: focusHelper(f, :key_set_url) %>
     <%= label f, :key_set_url, "Keyset URL", class: "control-label" %>
