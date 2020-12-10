@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.1 (2020-12-10)
+## 0.3.0 (2020-12-10)
 
 ### Enhancements
   - Improved objectives page with new "break down" feature
