@@ -1,6 +1,12 @@
 /** Authoring Styles **/
 @import "authoring/variables";
 
+/* fixes an issue with contenteditable (slate) not being selectable in safari */
+[contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 body {
   flex: 1;
   position: relative;

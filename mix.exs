@@ -4,7 +4,7 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.2.0",
+      version: "0.3.0",
       elixir: "~> 1.11",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
@@ -32,6 +32,7 @@ defmodule Oli.MixProject do
       releases: [
         oli: [
           include_executables_for: [:unix],
+          strip_beams: false,
           applications: [runtime_tools: :permanent]
         ]
       ],
@@ -79,6 +80,7 @@ defmodule Oli.MixProject do
       {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:nimble_parsec, "~> 0.5"},
+      {:open_api_spex, "~> 3.9"},
       {:phoenix, "~> 1.5.6"},
       {:phoenix_ecto, "~> 4.0"},
       {:phoenix_html, "~> 2.11"},

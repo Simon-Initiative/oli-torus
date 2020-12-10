@@ -6,9 +6,9 @@ defmodule OliWeb.RegistrationControllerTest do
   alias Oli.Accounts.Author
   alias Oli.Institutions
 
-  @create_attrs %{auth_login_url: "some auth_login_url", auth_server: "some auth_server", auth_token_url: "some auth_token_url", client_id: "some client_id", issuer: "some issuer", key_set_url: "some key_set_url", kid: "some kid"}
-  @update_attrs %{auth_login_url: "some updated auth_login_url", auth_server: "some updated auth_server", auth_token_url: "some updated auth_token_url", client_id: "some updated client_id", issuer: "some updated issuer", key_set_url: "some updated key_set_url", kid: "some updated kid"}
-  @invalid_attrs %{auth_login_url: nil, auth_server: nil, auth_token_url: nil, client_id: nil, issuer: nil, key_set_url: nil, kid: nil}
+  @create_attrs %{auth_login_url: "some auth_login_url", auth_server: "some auth_server", auth_token_url: "some auth_token_url", client_id: "some client_id", issuer: "some issuer", key_set_url: "some key_set_url"}
+  @update_attrs %{auth_login_url: "some updated auth_login_url", auth_server: "some updated auth_server", auth_token_url: "some updated auth_token_url", client_id: "some updated client_id", issuer: "some updated issuer", key_set_url: "some updated key_set_url"}
+  @invalid_attrs %{auth_login_url: nil, auth_server: nil, auth_token_url: nil, client_id: nil, issuer: nil, key_set_url: nil}
 
   describe "new registration" do
     setup [:create_fixtures]
@@ -23,7 +23,7 @@ defmodule OliWeb.RegistrationControllerTest do
     setup [:create_fixtures]
 
     test "redirects to show when data is valid", %{conn: conn, institution: institution, admin: admin} do
-      conn = post(conn, Routes.institution_registration_path(conn, :create, institution.id), registration: @create_attrs)
+      conn = post(conn, Routes.institution_registration_path(conn, :create, institution.id), registration: Map.put(@create_attrs, :issuer, "some other issuer"))
 
       assert redirected_to(conn) == Routes.institution_path(conn, :show, institution.id)
 

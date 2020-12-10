@@ -45,7 +45,7 @@ defmodule OliWeb.Common.ManualModal do
   def render(assigns) do
     ~L"""
     <div class="modal fade show" id="<%= @modal_id %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
-      <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title"><%= @title %></h5>

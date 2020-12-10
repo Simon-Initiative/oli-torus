@@ -4,3 +4,4 @@
 <%= sidebar_link @conn, "Accounts", :accounts, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Accounts.AccountsLive) %>
 <%= sidebar_link @conn, "Institutions", :institutions, to: Routes.institution_path(@conn, :index) %>
 <%= sidebar_link @conn, "Ingest", :ingest, to: Routes.ingest_path(@conn, :index) %>
+<%= sidebar_link @conn, "Invite", :invite, to: Routes.invite_path(@conn, :index) %>
