@@ -5,12 +5,12 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.23.0">
-    <meta name="project" content="OLI Torus v0.2.0">
+    <meta name="project" content="OLI Torus v0.3.0">
 
-    <title>Oli.Qa.Reviews — OLI Torus v0.2.0</title>
+    <title>Oli.Qa.Reviews — OLI Torus v0.3.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-c02fd7936d.js"></script>
+    <script src="dist/sidebar_items-ec483ebeaa.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -50,7 +50,7 @@
 OLI Torus
       </a>
       <strong class="sidebar-projectVersion">
-        v0.2.0
+        v0.3.0
       </strong>
     </div>
 
@@ -78,7 +78,7 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Qa.Reviews <small class="app-vsn">(OLI Torus v0.2.0)</small>
+Oli.Qa.Reviews <small class="app-vsn">(OLI Torus v0.3.0)</small>
 
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/qa/reviews.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
@@ -211,8 +211,8 @@ Functions
   <a href="#change_review/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_review</span><span class="p" data-group-id="8109014267-1">(</span><span class="n">review</span><span class="p" data-group-id="8109014267-1">)</span><span class="w">
-</span><span class="p" data-group-id="8109014267-2">%</span><span class="nc" data-group-id="8109014267-2">Ecto.Changeset</span><span class="p" data-group-id="8109014267-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="8109014267-3">%</span><span class="nc" data-group-id="8109014267-3">Review</span><span class="p" data-group-id="8109014267-3">{</span><span class="p" data-group-id="8109014267-3">}</span><span class="p" data-group-id="8109014267-2">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_review</span><span class="p" data-group-id="8530529851-1">(</span><span class="n">review</span><span class="p" data-group-id="8530529851-1">)</span><span class="w">
+</span><span class="p" data-group-id="8530529851-2">%</span><span class="nc" data-group-id="8530529851-2">Ecto.Changeset</span><span class="p" data-group-id="8530529851-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="8530529851-3">%</span><span class="nc" data-group-id="8530529851-3">Review</span><span class="p" data-group-id="8530529851-3">{</span><span class="p" data-group-id="8530529851-3">}</span><span class="p" data-group-id="8530529851-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_review/1">
@@ -240,10 +240,10 @@ Functions
   <a href="#create_review/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_review</span><span class="p" data-group-id="2470689256-1">(</span><span class="p" data-group-id="2470689256-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="2470689256-2">}</span><span class="p" data-group-id="2470689256-1">)</span><span class="w">
-</span><span class="p" data-group-id="2470689256-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2470689256-4">%</span><span class="nc" data-group-id="2470689256-4">Review</span><span class="p" data-group-id="2470689256-4">{</span><span class="p" data-group-id="2470689256-4">}</span><span class="p" data-group-id="2470689256-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_review</span><span class="p" data-group-id="2470689256-5">(</span><span class="p" data-group-id="2470689256-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="2470689256-6">}</span><span class="p" data-group-id="2470689256-5">)</span><span class="w">
-</span><span class="p" data-group-id="2470689256-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2470689256-8">%</span><span class="nc" data-group-id="2470689256-8">Ecto.Changeset</span><span class="p" data-group-id="2470689256-8">{</span><span class="p" data-group-id="2470689256-8">}</span><span class="p" data-group-id="2470689256-7">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_review</span><span class="p" data-group-id="9269181130-1">(</span><span class="p" data-group-id="9269181130-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="9269181130-2">}</span><span class="p" data-group-id="9269181130-1">)</span><span class="w">
+</span><span class="p" data-group-id="9269181130-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9269181130-4">%</span><span class="nc" data-group-id="9269181130-4">Review</span><span class="p" data-group-id="9269181130-4">{</span><span class="p" data-group-id="9269181130-4">}</span><span class="p" data-group-id="9269181130-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_review</span><span class="p" data-group-id="9269181130-5">(</span><span class="p" data-group-id="9269181130-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9269181130-6">}</span><span class="p" data-group-id="9269181130-5">)</span><span class="w">
+</span><span class="p" data-group-id="9269181130-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9269181130-8">%</span><span class="nc" data-group-id="9269181130-8">Ecto.Changeset</span><span class="p" data-group-id="9269181130-8">{</span><span class="p" data-group-id="9269181130-8">}</span><span class="p" data-group-id="9269181130-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_review/2">
@@ -291,10 +291,10 @@ Functions
   <a href="#delete_review/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_review</span><span class="p" data-group-id="3015148302-1">(</span><span class="n">review</span><span class="p" data-group-id="3015148302-1">)</span><span class="w">
-</span><span class="p" data-group-id="3015148302-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3015148302-3">%</span><span class="nc" data-group-id="3015148302-3">Review</span><span class="p" data-group-id="3015148302-3">{</span><span class="p" data-group-id="3015148302-3">}</span><span class="p" data-group-id="3015148302-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_review</span><span class="p" data-group-id="3015148302-4">(</span><span class="n">review</span><span class="p" data-group-id="3015148302-4">)</span><span class="w">
-</span><span class="p" data-group-id="3015148302-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3015148302-6">%</span><span class="nc" data-group-id="3015148302-6">Ecto.Changeset</span><span class="p" data-group-id="3015148302-6">{</span><span class="p" data-group-id="3015148302-6">}</span><span class="p" data-group-id="3015148302-5">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_review</span><span class="p" data-group-id="9747450810-1">(</span><span class="n">review</span><span class="p" data-group-id="9747450810-1">)</span><span class="w">
+</span><span class="p" data-group-id="9747450810-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9747450810-3">%</span><span class="nc" data-group-id="9747450810-3">Review</span><span class="p" data-group-id="9747450810-3">{</span><span class="p" data-group-id="9747450810-3">}</span><span class="p" data-group-id="9747450810-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_review</span><span class="p" data-group-id="9747450810-4">(</span><span class="n">review</span><span class="p" data-group-id="9747450810-4">)</span><span class="w">
+</span><span class="p" data-group-id="9747450810-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9747450810-6">%</span><span class="nc" data-group-id="9747450810-6">Ecto.Changeset</span><span class="p" data-group-id="9747450810-6">{</span><span class="p" data-group-id="9747450810-6">}</span><span class="p" data-group-id="9747450810-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_reviews/1">
@@ -408,10 +408,10 @@ Functions
   <a href="#update_review/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_review</span><span class="p" data-group-id="6462258049-1">(</span><span class="n">qa_review</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6462258049-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="6462258049-2">}</span><span class="p" data-group-id="6462258049-1">)</span><span class="w">
-</span><span class="p" data-group-id="6462258049-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6462258049-4">%</span><span class="nc" data-group-id="6462258049-4">Review</span><span class="p" data-group-id="6462258049-4">{</span><span class="p" data-group-id="6462258049-4">}</span><span class="p" data-group-id="6462258049-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_review</span><span class="p" data-group-id="6462258049-5">(</span><span class="n">qa_review</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6462258049-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="6462258049-6">}</span><span class="p" data-group-id="6462258049-5">)</span><span class="w">
-</span><span class="p" data-group-id="6462258049-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6462258049-8">%</span><span class="nc" data-group-id="6462258049-8">Ecto.Changeset</span><span class="p" data-group-id="6462258049-8">{</span><span class="p" data-group-id="6462258049-8">}</span><span class="p" data-group-id="6462258049-7">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_review</span><span class="p" data-group-id="7914013007-1">(</span><span class="n">qa_review</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7914013007-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="7914013007-2">}</span><span class="p" data-group-id="7914013007-1">)</span><span class="w">
+</span><span class="p" data-group-id="7914013007-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7914013007-4">%</span><span class="nc" data-group-id="7914013007-4">Review</span><span class="p" data-group-id="7914013007-4">{</span><span class="p" data-group-id="7914013007-4">}</span><span class="p" data-group-id="7914013007-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_review</span><span class="p" data-group-id="7914013007-5">(</span><span class="n">qa_review</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7914013007-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7914013007-6">}</span><span class="p" data-group-id="7914013007-5">)</span><span class="w">
+</span><span class="p" data-group-id="7914013007-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7914013007-8">%</span><span class="nc" data-group-id="7914013007-8">Ecto.Changeset</span><span class="p" data-group-id="7914013007-8">{</span><span class="p" data-group-id="7914013007-8">}</span><span class="p" data-group-id="7914013007-7">}</span></code></pre>
   </section>
 </section>
 
