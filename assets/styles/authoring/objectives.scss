@@ -1,11 +1,30 @@
-/** Custom theme-specific styles for authoring **/
+/** Learning objective styles **/
 
-.objectives-authoring {
+.objectives {
   .objective-selected {
     background-color: $gray-100;
   }
 
-  .objective-title {
-    cursor: pointer;
+  .objective {
+    border: 1px solid $gray-400;
+    border-radius: 4px;
+    margin: 5px 0;
+    box-shadow: 1px 1px 8px 1px rgba($color: $gray-400, $alpha: 0.33);
+
+    .objective-actions {
+      display: none;
+    }
+
+    &:hover {
+      .objective-actions {
+        display: block;
+      }
+    }
+
+    &:focus-within {
+      .objective-actions {
+        display: block;
+      }
+    }
   }
 }

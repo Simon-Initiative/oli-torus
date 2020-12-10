@@ -2,16 +2,16 @@ defmodule OliWeb.CollaboratorController do
   use OliWeb, :controller
   alias Oli.Authoring.Collaborators
 
-  def create(conn, %{"email" => email}) do
+  def create(conn, %{"email" => email, "g-recaptcha-response" => g_recaptcha_response}) do
     project_id = conn.params["project_id"]
 
-    case Collaborators.add_collaborator(conn, email, project_id) do
-      {:ok, _results} ->
-        redirect conn, to: Routes.project_path(conn, :overview, project_id)
-      {:error, message} ->
+    case Oli.Utils.Recaptcha.verify(g_recaptcha_response) do
+      {:success, :true} ->
+        add_collaborator(conn, email, project_id)
+      {:success, :false} ->
         conn
-          |> put_flash(:error, "We couldn't add that author to the project. #{message}")
-          |> redirect(to: Routes.project_path(conn, :overview, project_id))
+        |> put_flash(:error, "reCaptcha failed, please try again")
+        |> redirect(to: Routes.project_path(conn, :overview, project_id))
     end
   end
 
@@ -29,4 +29,16 @@ defmodule OliWeb.CollaboratorController do
           |> redirect(to: Routes.project_path(conn, :overview, project_id))
     end
   end
+
+  defp add_collaborator(conn, email, project_id) do
+    case Collaborators.add_collaborator(conn, email, project_id) do
+      {:ok, _results} ->
+        redirect conn, to: Routes.project_path(conn, :overview, project_id)
+      {:error, message} ->
+        conn
+        |> put_flash(:error, "We couldn't add that author to the project. #{message}")
+        |> redirect(to: Routes.project_path(conn, :overview, project_id))
+    end
+  end
+
 end

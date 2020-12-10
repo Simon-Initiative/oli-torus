@@ -1,0 +1,28 @@
+<h2>Authors</h2>
+<script src="https://www.google.com/recaptcha/api.js"></script>
+<%= form_for @conn, Routes.invite_path(@conn, :create), [id: "form-invite-author"], fn f -> %>
+<div class="form-group">
+    <%= label f, :email, "Invite new authors to the platform", class: "control-label" %>
+    <div class="input-group mb-3">
+        <%= text_input f,
+            :email,
+            class: "form-control" <> error_class(f, :title, "is-invalid"),
+            placeholder: "author@example.edu",
+            id: "input-title",
+            required: true,
+            autofocus: focusHelper(f, :email, default: false) %>
+        <%= error_tag f, :email %>
+    </div>
+    <div class="input-group mb-3">
+        <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
+        <%= error_tag f, :captcha %>
+    </div>
+    <div class="input-group-append">
+        <%= submit "Send Invite",
+              id: "button-create-author",
+              class: "btn btn-primary",
+              phx_disable_with: "Inviting Author...",
+              form: f.id %>
+    </div>
+</div>
+        <% end %>

@@ -10,7 +10,7 @@ defmodule OliWeb.Objectives.Objectives do
   alias OliWeb.Objectives.ObjectiveEntry
   alias OliWeb.Objectives.CreateNew
   alias OliWeb.Objectives.Attachments
-  alias OliWeb.Objectives.Actions
+  alias OliWeb.Objectives.BreakdownModal
   alias OliWeb.Common.ManualModal
   alias Oli.Publishing.ObjectiveMappingTransfer
   alias Oli.Authoring.Course
@@ -36,11 +36,6 @@ defmodule OliWeb.Objectives.Objectives do
 
     objectives_tree = to_objective_tree(objective_mappings)
 
-    selected = case length(objectives_tree) do
-      0 -> nil
-      _ -> hd(objectives_tree).mapping.revision.slug
-    end
-
     {:ok, assign(socket,
       active: :objectives,
       objective_mappings: objective_mappings,
@@ -50,19 +45,18 @@ defmodule OliWeb.Objectives.Objectives do
       project: project,
       subscriptions: subscriptions,
       attachment_summary: @default_attachment_summary,
-      modal_shown: false,
+      modal_shown: :none,
       author: author,
       force_render: 0,
-      is_root_selected?: false,
-      can_delete?: false,
-      selected: selected,
-      edit: :none)
+      can_delete?: true,
+      edit: :none,
+      breakdown: :none)
     }
   end
 
   def render(assigns) do
     ~L"""
-    <div class="objectives container objectives-authoring">
+    <div class="objectives container">
       <div class="mb-2 row">
         <div class="col-12">
           <h2>Learning Objectives</h2>
@@ -75,35 +69,36 @@ defmodule OliWeb.Objectives.Objectives do
 
       <%= live_component @socket, CreateNew, changeset: @changeset, project: @project %>
 
-      <div class="mt-5 row">
-        <div class="col-12">
-          <div class="d-flex justify-content-between">
-            <%= live_component @socket, Actions, selected: @selected, is_root?: @is_root_selected?, can_delete?: @can_delete? %>
-          </div>
-        </div>
-      </div>
+      <hr class="my-4" />
 
       <%= if Enum.count(@objective_mappings) == 0 do %>
-        <div class="mt-1 row">
+        <div class="mt-3 row">
           <div class="col-12">
             <p>This project has no objectives</p>
           </div>
         </div>
       <% else %>
 
-        <%= for {objective_tree, index} <- Enum.with_index(@objectives_tree) do %>
-          <%= live_component @socket, ObjectiveEntry, changeset: @changeset, objective_mapping: objective_tree.mapping,
-            children: objective_tree.children, depth: 1, index: index, project: @project, selected: @selected, edit: @edit %>
-        <% end %>
+        <div class="mt-3">
+          <%= for {objective_tree, index} <- Enum.with_index(@objectives_tree) do %>
+            <%= live_component @socket, ObjectiveEntry, changeset: @changeset, objective_mapping: objective_tree.mapping,
+              children: objective_tree.children, depth: 1, index: index, project: @project, edit: @edit, breakdown: @breakdown, can_delete?: @can_delete? %>
+          <% end %>
+        </div>
 
       <% end %>
 
     </div>
 
-    <%= if @modal_shown do %>
-      <%= live_component @socket, ManualModal, title: "Delete Objective", modal_id: "deleteModal", ok_action: "delete", ok_label: "Delete", ok_style: "btn-danger" do %>
-        <%= live_component @socket, Attachments, attachment_summary: @attachment_summary, project: @project %>
-      <% end %>
+    <%= case @modal_shown do %>
+      <% :delete -> %>
+        <%= live_component @socket, ManualModal, title: "Delete Objective", modal_id: "deleteModal", ok_action: "delete", ok_label: "Delete", ok_style: "btn-danger confirm" do %>
+          <%= live_component @socket, Attachments, attachment_summary: @attachment_summary, project: @project %>
+        <% end %>
+      <% :breakdown -> %>
+        <%= live_component @socket, BreakdownModal, changeset: @changeset, slug: @breakdown %>
+      <% :none -> %>
+
     <% end %>
 
     """
@@ -161,24 +156,6 @@ defmodule OliWeb.Objectives.Objectives do
     Enum.each(ids, & Subscriber.unsubscribe_to_new_revisions_in_project(&1, project_slug))
   end
 
-  def handle_event("keydown", %{"slug" => slug, "key" => key}, socket) do
-    case key do
-      "Enter" -> handle_event("select", %{"slug" => slug}, socket)
-      _ -> {:noreply, socket}
-    end
-  end
-
-  # handle change of selection
-  def handle_event("select", %{"slug" => slug}, socket) do
-
-    {is_root_selected?, can_delete?} = case Enum.find(socket.assigns.objectives_tree, fn %{mapping: mapping} -> mapping.revision.slug == slug end) do
-      nil -> {false, true}
-      %{mapping: mapping} -> {true, length(mapping.revision.children) == 0}
-    end
-
-    {:noreply, assign(socket, selected: slug, can_delete?: can_delete?, is_root_selected?: is_root_selected?, attachment_summary: @default_attachment_summary)}
-  end
-
   # handle change of edit
   def handle_event("modify", %{"slug" => slug}, socket) do
 
@@ -187,20 +164,15 @@ defmodule OliWeb.Objectives.Objectives do
 
   def handle_event("add_sub", %{"slug" => slug}, socket) do
 
-    # even though we disable the "add sub objective" button when a non-root is selected,
-    # LV seems to still send the add_sub message on click.  So we catch that case here
-    # and ignore it
-    case socket.assigns.is_root_selected? do
-      true -> {:noreply, assign(socket, :edit, slug)}
-      false -> {:noreply, socket}
-    end
-
+    {:noreply, assign(socket, :edit, slug)}
   end
-
 
   def handle_event("cancel", _, socket) do
-    {:noreply, assign(socket, :edit, :none)}
+    {:noreply, assign(socket, edit: :none, breakdown: :none, modal_shown: :none)}
   end
+
+  # handle any cancel events a modal might generate from being closed
+  def handle_event("cancel_modal", params, socket), do: handle_event("cancel", params, socket)
 
   # process form submission to save page settings
   def handle_event("edit", %{"revision" => objective_params}, socket) do
@@ -215,29 +187,25 @@ defmodule OliWeb.Objectives.Objectives do
     {:noreply, assign(socket, :edit, :none)}
   end
 
-  def handle_event("prepare_delete", _, socket) do
+  def handle_event("prepare_delete", %{"slug" => slug}, socket) do
 
     if socket.assigns.can_delete? do
-      attachment_summary = ObjectiveEditor.preview_objective_detatchment(socket.assigns.selected, socket.assigns.project)
-      {:noreply, assign(socket, modal_shown: true, attachment_summary: attachment_summary, force_render: socket.assigns.force_render + 1)}
+      attachment_summary = ObjectiveEditor.preview_objective_detatchment(slug, socket.assigns.project)
+      {:noreply, assign(socket, modal_shown: :delete, attachment_summary: attachment_summary, prepare_delete_slug: slug, force_render: socket.assigns.force_render + 1)}
     else
       {:noreply, socket}
     end
   end
 
-  def handle_event("cancel_modal", _, socket) do
-    {:noreply, assign(socket, modal_shown: false)}
-  end
-
   # handle processing deletion of item
   def handle_event("delete", _, socket) do
 
-    ObjectiveEditor.detach_objective(socket.assigns.selected, socket.assigns.project, socket.assigns.author)
+    ObjectiveEditor.detach_objective(socket.assigns.prepare_delete_slug, socket.assigns.project, socket.assigns.author)
 
-    parent_objective = determine_parent_objective(socket, socket.assigns.selected)
+    parent_objective = determine_parent_objective(socket, socket.assigns.prepare_delete_slug)
 
-    socket = case ObjectiveEditor.preview_objective_detatchment(socket.assigns.selected, socket.assigns.project) do
-      %{attachments: {[], []}} -> case ObjectiveEditor.delete(socket.assigns.selected, socket.assigns.author, socket.assigns.project, parent_objective) do
+    socket = case ObjectiveEditor.preview_objective_detatchment(socket.assigns.prepare_delete_slug, socket.assigns.project) do
+      %{attachments: {[], []}} -> case ObjectiveEditor.delete(socket.assigns.prepare_delete_slug, socket.assigns.author, socket.assigns.project, parent_objective) do
         {:ok, _} -> socket
         {:error, _} -> socket
         |> put_flash(:error, "Could not remove objective")
@@ -245,7 +213,28 @@ defmodule OliWeb.Objectives.Objectives do
       _ -> socket
     end
 
-    {:noreply, assign(socket, modal_shown: false)}
+    {:noreply, assign(socket, modal_shown: :none)}
+  end
+
+  def handle_event("breakdown", %{"slug" => slug}, socket) do
+    {:noreply, assign(socket, breakdown: slug, modal_shown: :breakdown)}
+  end
+
+  # handle clicking of the add objective
+  def handle_event("perform_breakdown", %{"revision" => objective_params}, socket) do
+    with_atom_keys = Map.keys(objective_params)
+                     |> Enum.reduce(%{}, fn k, m -> Map.put(m, String.to_existing_atom(k), Map.get(objective_params, k)) end)
+
+    slug = Map.get(objective_params, "slug")
+
+    socket = case ObjectiveEditor.add_new_parent_for_objective(with_atom_keys, socket.assigns.author, socket.assigns.project, slug) do
+      {:ok, _} -> socket
+      {:error, %Ecto.Changeset{} = _changeset} ->
+        socket
+        |> put_flash(:error, "Could not break down objective")
+    end
+
+    {:noreply, assign(socket, breakdown: :none, modal_shown: :none)}
   end
 
   # handle clicking of the add objective
@@ -262,7 +251,7 @@ defmodule OliWeb.Objectives.Objectives do
         |> put_flash(:error, "Could not create objective")
     end
 
-    {:noreply, assign(socket, :edit, :none)}
+    {:noreply, assign(socket, edit: :none, changeset: Resources.change_revision(%Revision{}))}
   end
 
 
