@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 (2020-12-10)
+### Enhancements
+
+### Bug fixes
+
+
 ## 0.3.0 (2020-12-10)
 
 ### Enhancements
