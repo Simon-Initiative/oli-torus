@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.0 (2020-12-10)
+## 0.4.0 (TBD)
 ### Enhancements
 
 ### Bug fixes
