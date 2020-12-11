@@ -10,3 +10,22 @@
 When the system generates email in production, generally it will be handed to an email service such as Amazon SES. Any email service supported by Bamboo can be configured in config/prod.exs. Refer to the Bamboo and Pow docs to see a list of all supported email adapters and how to configure them https://hexdocs.pm/pow/configuring_mailer.html#content, https://hexdocs.pm/bamboo/readme.html
 
 In development mode, the system will use the Bamboo.LocalAdapter mailer, which stores sent mail in memory and is accessible via web browser at `https://localhost/dev/sent_emails`. There is also a specific test adapter configured for unit testing.
+
+## Create Registrations from seed
+
+To ease the burden of creating a new registration after every database reset, there is the option to automatically create LTI registrations
+attached to the default institution in dev environment by creating a registrations.json file in the project root.
+
+Example:
+```
+[{
+  "issuer": "https://canvas.oli.cmu.edu",
+  "client_id": "XXXXXXXXXXXXX",
+  "key_set_url": "https://canvas.oli.cmu.edu/api/lti/security/jwks",
+  "auth_token_url": "https://canvas.oli.cmu.edu/login/oauth2/token",
+  "auth_login_url": "https://canvas.oli.cmu.edu/api/lti/authorize_redirect",
+  "auth_server": "https://canvas.oli.cmu.edu"
+}]
+```
+
+With this file, now when you run `mix ecto.seed` or `mix ecto.reset`, a registration with these details will be created for you.
