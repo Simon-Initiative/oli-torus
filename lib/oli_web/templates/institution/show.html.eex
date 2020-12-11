@@ -54,13 +54,13 @@
       <td><strong>LTI 1.3 Registrations:</strong></td>
       <td style="width: 80%;">
         <%= for registration <- @institution.registrations do %>
-          <div class="registrations-accordion my-2" id="registrationsAccordian">
+          <div class="registrations-accordion my-2">
             <div class="registration card">
               <div class="card-header" id="heading<%= registration.id %>">
                 <div class="mb-0 d-flex">
-                  <button class="registration-title btn btn-link" type="button" data-toggle="collapse" data-target="#collapse<%= registration.id %>" aria-expanded="true" aria-controls="collapse<%= registration.id %>">
+                  <div class="registration-title">
                     <%= registration.issuer %> - <%= registration.client_id %>
-                  </button>
+                  </div>
                   <div class="flex-fill"></div>
                   <div>
                     <%= link "Edit Details", to: Routes.institution_registration_path(@conn, :edit, @institution.id, registration.id), class: "btn btn-sm btn-outline-primary ml-2" %>
@@ -74,7 +74,7 @@
                 </div>
               </div>
 
-              <div id="collapse<%= registration.id %>" class="collapse" aria-labelledby="heading<%= registration.id %>" data-parent="#registrationsAccordian">
+              <div aria-labelledby="heading<%= registration.id %>">
                 <div class="card-body">
 
                   <h5 class="mb-4">Registration Details</h5>

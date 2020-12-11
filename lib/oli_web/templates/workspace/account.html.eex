@@ -53,7 +53,7 @@
           <%
           hide_previews_checked = case @preferences do
             nil ->
-              true
+              false
             %{live_preview_display: live_preview_display} ->
               live_preview_display == "hidden"
           end

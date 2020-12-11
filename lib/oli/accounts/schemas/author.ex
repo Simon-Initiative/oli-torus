@@ -22,7 +22,6 @@ defmodule Oli.Accounts.Author do
 
     embeds_one :preferences, Oli.Accounts.AuthorPreferences, on_replace: :delete
     belongs_to :system_role, Oli.Accounts.SystemRole
-    has_many :institutions, Oli.Institutions.Institution
     has_many :users, Oli.Accounts.User
     many_to_many :projects, Oli.Authoring.Course.Project, join_through: Oli.Authoring.Authors.AuthorProject, on_replace: :delete
     many_to_many :sections, Oli.Delivery.Sections.Section, join_through: Oli.Delivery.Sections.AuthorSection

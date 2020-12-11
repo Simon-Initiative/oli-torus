@@ -7,7 +7,7 @@ defmodule OliWeb.InstitutionController do
   import Oli.Delivery.{CountryCodes, Timezones}
 
   def index(conn, _params) do
-    institutions = Institutions.list_institutions() |> Enum.filter(fn i -> i.author_id == conn.assigns.current_author.id end)
+    institutions = Institutions.list_institutions()
     render_institution_page conn, "index.html", institutions: institutions, title: "Institutions"
   end
 
