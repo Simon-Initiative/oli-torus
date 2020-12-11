@@ -67,7 +67,7 @@ defmodule Oli.TestHelpers.Lti_1p3 do
       {:ok, JOSE.JWK.from_pem(public_key)}
     end
 
-    %{conn: conn, get_public_key: get_public_key, institution: institution, jwk: jwk, state_uuid: state_uuid}
+    %{conn: conn, get_public_key: get_public_key, institution: institution, registration: registration, jwk: jwk, state_uuid: state_uuid}
   end
 
   def all_default_claims() do

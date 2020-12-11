@@ -4,19 +4,23 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   ]
 
   @type get_public_key_callback() :: (%Oli.Lti_1p3.Registration{}, String.t() -> {:ok, JOSE.JWK.t()})
+  @type providers() :: %{get_public_key: get_public_key_callback()}
+  @type validate_opts() :: [{:providers, providers()}]
 
   @doc """
   Validates all aspects of an incoming LTI message launch and caches the launch params in the session if successful.
   """
-  @spec validate(Plug.Conn.t(), get_public_key_callback()) :: {:ok, Plug.Conn.t(), any()} | {:error, %{optional(atom()) => any(), reason: atom(), msg: String.t()}}
-  def validate(conn, get_public_key) do
+  @spec validate(Plug.Conn.t(), validate_opts()) :: {:ok, Plug.Conn.t(), any()} | {:error, %{optional(atom()) => any(), reason: atom(), msg: String.t()}}
+  def validate(conn, opts) do
+    %{get_public_key: get_public_key} = Keyword.get(opts, :providers)
+
     with {:ok, conn} <- validate_oidc_state(conn),
          {:ok, conn, registration} <- validate_registration(conn),
          {:ok, conn, jwt_body} <- validate_jwt(conn, registration, get_public_key),
          {:ok, conn} <- validate_token_timestamps(conn, jwt_body),
-         {:ok, conn} <- validate_nonce(conn, jwt_body),
          {:ok, conn} <- validate_deployment(conn, registration, jwt_body),
          {:ok, conn} <- validate_message(conn, jwt_body),
+         {:ok, conn} <- validate_nonce(conn, jwt_body),
          {:ok, conn} <- cache_launch_params(conn, jwt_body)
     do
       {:ok, conn, jwt_body}
@@ -157,7 +161,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
 
     case deployment do
       nil ->
-        {:error, %{reason: :invalid_deployment, msg: "Deployment with id \"#{deployment_id}\" not found", deployment_id: deployment_id}}
+        {:error, %{reason: :invalid_deployment, msg: "Deployment with id \"#{deployment_id}\" not found", registration_id: registration.id, deployment_id: deployment_id}}
       _deployment ->
         {:ok, conn}
     end

@@ -156,6 +156,7 @@ if Application.fetch_env!(:oli, :env) == :dev do
         end)
       _ ->
         # no registrations.json file, do nothing
+        nil
     end
   end
 
