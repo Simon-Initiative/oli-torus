@@ -58,6 +58,7 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
               end
             "oli_check_all_that_apply" ->
               choices = part_attempt.activity_attempt.transformed_model["choices"]
+
               content = Enum.find(choices, & &1["id"] == input)["content"]
 
               case content do

@@ -4,7 +4,11 @@ import { createRuleForIds, fromText, getChoice, getCorrectResponse,
   getIncorrectResponse, getResponseId, setDifference, invertRule, unionRules, getResponses,
   makeResponse,
   isSimpleOrdering,
-  getHints} from './utils';
+  getHints,
+  getChoiceIndex,
+  ChoiceMoveDirection,
+  canMoveChoiceUp,
+  canMoveChoiceDown} from './utils';
 import { RichText, Hint as HintType, ChoiceId, Choice, ResponseId } from '../types';
 import { toSimpleText } from 'data/content/text';
 
@@ -31,6 +35,7 @@ export class Actions {
     };
   }
 
+  // FIX
   static addChoice() {
     return (model: Ordering) => {
       const newChoice: Choice = fromText('');
@@ -47,9 +52,10 @@ export class Actions {
     };
   }
 
-  static removeChoice(id: string) {
+  // FIX
+  static removeChoice(id: ChoiceId) {
     return (model: Ordering) => {
-      const removeIdFrom = (list: string[]) => removeFromList(id, list);
+      const removeIdFrom = (list: ChoiceId[]) => removeFromList(id, list);
       model.choices = model.choices.filter(choice => choice.id !== id);
       removeIdFrom(getChoiceIds(model.authoring.correct));
       removeIdFrom(getChoiceIds(model.authoring.incorrect));
@@ -64,15 +70,23 @@ export class Actions {
     };
   }
 
-  static toggleChoiceCorrectness(choiceId: ChoiceId) {
+  static moveChoice(direction: ChoiceMoveDirection, id: ChoiceId) {
     return (model: Ordering) => {
-      const addOrRemoveId = (list: string[]) => addOrRemoveFromList(choiceId, list);
-      // targeted response choices do not need to change
+      const thisChoiceIndex = getChoiceIndex(model, id);
 
-      addOrRemoveId(getChoiceIds(model.authoring.correct));
-      addOrRemoveId(getChoiceIds(model.authoring.incorrect));
-      updateResponseRules(model);
-    };
+      const swap = (index1: number, index2: number) => {
+        const temp = model.choices[index1];
+        model.choices[index1] = model.choices[index2];
+        model.choices[index2] = temp;
+      }
+      const moveUp = () => swap(thisChoiceIndex, thisChoiceIndex - 1)
+      const moveDown = () => swap(thisChoiceIndex, thisChoiceIndex + 1)
+
+      switch (direction) {
+        case 'up': return canMoveChoiceUp(model, id) ? moveUp() : model;
+        case 'down': return canMoveChoiceDown(model, id) ? moveDown() : model;
+      }
+    }
   }
 
   static editResponseFeedback(responseId: ResponseId, content: RichText) {
@@ -81,6 +95,7 @@ export class Actions {
     };
   }
 
+  // FIX
   static addTargetedFeedback() {
     return (model: Ordering) => {
       switch (model.type) {
@@ -109,6 +124,7 @@ export class Actions {
     };
   }
 
+  // FIX?
   static editTargetedFeedbackChoices(responseId: ResponseId, choiceIds: ChoiceId[]) {
     return (model: Ordering) => {
       switch (model.type) {
@@ -163,6 +179,8 @@ function removeFromList<T>(item: T, list: T[]) {
 
 // Update all response rules based on a model with new choices that
 // are not yet reflected by the rules.
+
+// FIX
 const updateResponseRules = (model: Ordering) => {
 
   getCorrectResponse(model).rule = createRuleForIds(

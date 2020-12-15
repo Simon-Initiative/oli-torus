@@ -13,7 +13,7 @@ import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import produce from 'immer';
 import { TargetedFeedback } from 'components/activities/ordering/sections/TargetedFeedback';
-import { getHints, isTargetedOrdering } from 'components/activities/ordering/utils';
+import { canMoveChoice, getHints, isTargetedOrdering } from 'components/activities/ordering/utils';
 
 const store = configureStore();
 
@@ -39,7 +39,10 @@ const Ordering = (props: AuthoringElementProps<OrderingModelSchema>) => {
         onAddChoice={() => dispatch(Actions.addChoice())}
         onEditChoiceContent={(id, content) => dispatch(Actions.editChoiceContent(id, content))}
         onRemoveChoice={id => dispatch(Actions.removeChoice(id))}
-        onToggleChoiceCorrectness={choiceId => dispatch(Actions.toggleChoiceCorrectness(choiceId))}
+        canMoveChoiceUp={id => canMoveChoice(props.model, id, 'up')}
+        canMoveChoiceDown={id => canMoveChoice(props.model, id, 'down')}
+        onMoveChoiceUp={id => dispatch(Actions.moveChoice('up', id))}
+        onMoveChoiceDown={id => dispatch(Actions.moveChoice('down', id))}
       />
 
       <Feedback {...sharedProps}

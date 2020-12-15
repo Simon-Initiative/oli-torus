@@ -50,11 +50,12 @@ export const TargetedFeedback = (props: Props) => {
         return (
           <div className="mb-3" key={response.id}>
             <Description>
-              <IconIncorrect /> Feedback for Incorrect Combination
+              <IconIncorrect /> Feedback for Incorrect Answer
               <Typeahead
+                isInvalid={selected[response.id].length < allChoiceOptions.length}
                 id={response.id}
                 disabled={!props.editMode}
-                placeholder="Select choices..."
+                placeholder="Select the answer choices in the order that triggers this feedback"
                 options={allChoiceOptions}
                 selected={selected[response.id]}
                 selectHintOnEnter

@@ -40,6 +40,13 @@ function testResponse(text: string, rule: string, score: number = 0) {
   };
 }
 
+
+// Can move choice up
+// Move choice up
+// Can move choice down
+// Move choice down
+// Correct and incorrect feedback should have length === choices.length
+
 const testDefaultModel = defaultOrderingModel;
 
 describe('check all that apply question', () => {
@@ -81,17 +88,6 @@ describe('check all that apply question', () => {
     expect(withChoiceAdded.choices.length).toBeGreaterThan(model.choices.length);
     expect(getChoiceIds(withChoiceAdded.authoring.incorrect)).toHaveLength(2);
     expect(getChoiceIds(withChoiceAdded.authoring.correct)).toHaveLength(1);
-  });
-
-  it('can toggle choice correctness', () => {
-    // First choice is correct
-    const firstChoice = model.choices[0];
-    const modelWithFirstChoiceToggled = applyAction(
-      model, Actions.toggleChoiceCorrectness(firstChoice.id));
-    expect(getChoiceIds(modelWithFirstChoiceToggled.authoring.correct))
-      .not.toContain(firstChoice.id);
-    expect(getChoiceIds(modelWithFirstChoiceToggled.authoring.incorrect))
-      .toContain(firstChoice.id);
   });
 
   it('can edit a choice', () => {

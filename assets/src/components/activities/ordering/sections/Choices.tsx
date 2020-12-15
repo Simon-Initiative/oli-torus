@@ -5,33 +5,48 @@ import { ModelEditorProps } from '../schema';
 import { ChoiceId, RichText } from '../../types';
 import { CloseButton } from 'components/misc/CloseButton';
 import { ProjectSlug } from 'data/types';
-import { isCorrectChoice } from '../utils';
+import { canMoveChoiceUp, isCorrectChoice } from '../utils';
 
 interface Props extends ModelEditorProps {
   onAddChoice: () => void;
-  onEditChoiceContent: (id: string, content: RichText) => void;
-  onToggleChoiceCorrectness: (choiceId: ChoiceId) => void;
-  onRemoveChoice: (id: string) => void;
+  onEditChoiceContent: (id: ChoiceId, content: RichText) => void;
+  canMoveChoiceUp: (id: ChoiceId) => boolean;
+  onMoveChoiceUp: (id: ChoiceId) => void;
+  canMoveChoiceDown: (id: ChoiceId) => boolean;
+  onMoveChoiceDown: (id: ChoiceId) => void;
+  onRemoveChoice: (id: ChoiceId) => void;
   projectSlug: ProjectSlug;
 }
 export const Choices = (props: Props) => {
-  const { onAddChoice, onEditChoiceContent, onRemoveChoice, onToggleChoiceCorrectness,
-    editMode, model, projectSlug } = props;
+  const { onAddChoice, onEditChoiceContent, onRemoveChoice, onMoveChoiceUp, onMoveChoiceDown,
+    canMoveChoiceUp, canMoveChoiceDown, editMode, model, projectSlug } = props;
 
   const { choices } = model;
 
   return (
     <div className="my-5">
-      <Heading title="Answer Choices" id="choices" />
+      <Heading title="Answer Choices" subtitle="Arrange the answer choices to set the correct ordering." id="choices" />
+
       {choices.map((choice, index) =>
         <div key={choice.id} className="mb-3">
           <div className="d-flex align-items-center mb-2">
-            <div className="material-icons mr-2">
-              <button style={{ border: 'none', background: 'none',
-                color: isCorrectChoice(model, choice.id) ? '#00bc8c' : '#888' }}
-                onClick={() => onToggleChoiceCorrectness(choice.id)}>
-                {isCorrectChoice(model, choice.id) ? 'check_circle' : 'check_circle_outline'}
-              </button>
+            <div className="d-flex flex-column">
+              <div className="material-icons" style={{ height: 12, lineHeight: '12px' }}>
+                {canMoveChoiceUp(choice.id) &&
+                  <button
+                    style={{ border: 'none', background: 'none', height: '100%' }}
+                    onClick={() => onMoveChoiceUp(choice.id)}>
+                      arrow_drop_up
+                  </button>}
+              </div>
+              <div className="material-icons" style={{ height: 12, lineHeight: '12px' }}>
+                {canMoveChoiceDown(choice.id) &&
+                  <button
+                    style={{ border: 'none', background: 'none', height: '100%' }}
+                    onClick={() => onMoveChoiceDown(choice.id)}>
+                      arrow_drop_down
+                  </button>}
+              </div>
             </div>
             Choice {index + 1}
           </div>
