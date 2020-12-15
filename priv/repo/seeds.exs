@@ -11,6 +11,7 @@
 # and so on) as they will fail if something goes wrong.
 
 alias Oli.Seeder
+alias Oli.Utils
 alias Oli.Snapshots.SnapshotSeeder
 alias Oli.Authoring.Collaborators
 
@@ -138,6 +139,25 @@ if Application.fetch_env!(:oli, :env) == :dev do
     Collaborators.add_collaborator(admin_author, seeds.project)
 
     Oli.Publishing.publish_project(seeds.project)
+
+    # create any registrations defined in registrations.json
+    case Utils.read_json_file("./registrations.json") do
+      {:ok, json} ->
+        %{id: jwk_id} = Oli.Lti_1p3.get_active_jwk()
+
+        json
+        |> Enum.each(fn attrs ->
+          attrs = attrs
+          |> Map.merge(%{"tool_jwk_id" => jwk_id, "institution_id" => 1})
+
+          %Oli.Lti_1p3.Registration{}
+          |> Oli.Lti_1p3.Registration.changeset(attrs)
+          |> Oli.Repo.insert()
+        end)
+      _ ->
+        # no registrations.json file, do nothing
+        nil
+    end
   end
 
 end

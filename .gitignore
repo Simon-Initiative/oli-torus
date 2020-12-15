@@ -53,3 +53,4 @@ postgres.env
 assets/yarn.lock
 lib/oli/analytics/test.xml
 .devcontainer
+registrations.json
