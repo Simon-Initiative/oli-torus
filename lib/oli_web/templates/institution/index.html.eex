@@ -1,36 +1,39 @@
-<%= if Enum.count(@institutions) == 0 do %>
-  <div class="my-5 text-center">
-    There are no registered institutions
-  </div>
-<% else %>
-  <table class="table table-striped table-bordered">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Country Code</th>
-        <th>Email</th>
-        <th>URL</th>
-        <th>Timezone</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-  <%= for institution <- @institutions do %>
-      <tr>
-        <td><%= institution.name %></td>
-        <td><%= institution.country_code %></td>
-        <td><%= institution.institution_email %></td>
-        <td><%= institution.institution_url %></td>
-        <td><%= institution.timezone %></td>
+<div class="container">
+  <%= if Enum.count(@institutions) == 0 do %>
+    <div class="my-5 text-center">
+      There are no registered institutions
+    </div>
+  <% else %>
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Country Code</th>
+          <th>Email</th>
+          <th>URL</th>
+          <th>Timezone</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+    <%= for institution <- @institutions do %>
+        <tr>
+          <td><%= institution.name %></td>
+          <td><%= institution.country_code %></td>
+          <td><%= institution.institution_email %></td>
+          <td><%= institution.institution_url %></td>
+          <td><%= institution.timezone %></td>
 
-        <td>
-          <%= link "Details", to: Routes.institution_path(@conn, :show, institution), class: "btn btn-sm btn-outline-primary my-2" %>
-          <%= link "Remove", to: Routes.institution_path(@conn, :delete, institution), method: :delete, data: [confirm: "Are you sure you want to permanently remove this institution? \"#{institution.name}\""], class: "btn btn-sm btn-outline-danger my-2 ml-4" %>
-        </td>
-      </tr>
+          <td>
+            <%= link "Details", to: Routes.institution_path(@conn, :show, institution), class: "btn btn-sm btn-outline-primary my-2" %>
+            <%= link "Remove", to: Routes.institution_path(@conn, :delete, institution), method: :delete, data: [confirm: "Are you sure you want to permanently remove this institution? \"#{institution.name}\""], class: "btn btn-sm btn-outline-danger my-2 ml-4" %>
+          </td>
+        </tr>
+    <% end %>
+      </tbody>
+    </table>
   <% end %>
-    </tbody>
-  </table>
-<% end %>
 
-<span><%= link "Register New Institution", to: Routes.institution_path(@conn, :new), class: "btn btn-md btn-outline-primary" %></span>
+  <span><%= link "Register New Institution", to: Routes.institution_path(@conn, :new), class: "btn btn-md btn-outline-primary" %></span>
+
+</div>
