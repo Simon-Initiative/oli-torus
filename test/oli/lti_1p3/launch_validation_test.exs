@@ -25,7 +25,7 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
     assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_oidc_state, msg: "State from OIDC request does not match session"}}
   end
 
-  test "fails validation if registration doesnt exist for kid" do
+  test "fails validation if registration does not exist for client id" do
     institution = institution_fixture()
     jwk = jwk_fixture()
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{
@@ -37,13 +37,12 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
         auth_token_url: "some auth_token_url",
         auth_login_url: "some auth_login_url",
         auth_server: "some auth_server",
-        kid: "different kid",
         tool_jwk_id: jwk.id,
         institution_id: institution.id,
       },
     })
 
-    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_registration, msg: "Registration with kid \"one kid\" not found", kid: "one kid"}}
+    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_registration, msg: "Registration with issuer \"https://lti-ri.imsglobal.org\" and client id \"12345\" not found", issuer: "https://lti-ri.imsglobal.org", client_id: "12345"}}
   end
 
   test "fails validation on missing id_token" do
@@ -76,7 +75,7 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
 
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims})
 
-    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_token_timstamp, msg: "Token exp is expired"}}
+    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_token_timestamp, msg: "Token exp is expired"}}
   end
 
   test "fails validation on token iat invalid" do
@@ -85,7 +84,7 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
 
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims})
 
-    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_token_timstamp, msg: "Token iat is invalid"}}
+    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_token_timestamp, msg: "Token iat is invalid"}}
   end
 
   test "fails validation on both expired exp and iat invalid" do
@@ -95,18 +94,16 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
 
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims})
 
-    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_token_timstamp, msg: "Token exp and iat are invalid"}}
+    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_token_timestamp, msg: "Token exp and iat are invalid"}}
   end
 
   test "fails validation on duplicate nonce" do
     claims = TestHelpers.Lti_1p3.all_default_claims()
       |> put_in(["nonce"], "duplicate nonce")
-    %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims, kid: "one"})
+    %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims})
 
     # passes on first attempt with a given nonce
     assert {:ok, _, _jwt_body} = LaunchValidation.validate(conn, get_public_key)
-
-    %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims, kid: "two"})
 
     # fails on second attempt with a duplicate nonce
     assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_nonce, msg: "Duplicate nonce"}}

@@ -11,9 +11,8 @@ defmodule Oli.Lti_1p3.LaunchValidation do
   @spec validate(Plug.Conn.t(), get_public_key_callback()) :: {:ok, Plug.Conn.t(), any()} | {:error, %{optional(atom()) => any(), reason: atom(), msg: String.t()}}
   def validate(conn, get_public_key) do
     with {:ok, conn} <- validate_oidc_state(conn),
-         {:ok, kid} <- peek_jwt_kid(conn),
-         {:ok, conn, registration} <- validate_registration(conn, kid),
-         {:ok, conn, jwt_body} <- validate_jwt(conn, registration, kid, get_public_key),
+         {:ok, conn, registration} <- validate_registration(conn),
+         {:ok, conn, jwt_body} <- validate_jwt(conn, registration, get_public_key),
          {:ok, conn} <- validate_token_timestamps(conn, jwt_body),
          {:ok, conn} <- validate_nonce(conn, jwt_body),
          {:ok, conn} <- validate_deployment(conn, registration, jwt_body),
@@ -44,12 +43,14 @@ defmodule Oli.Lti_1p3.LaunchValidation do
     end
   end
 
-  defp validate_registration(conn, kid) do
-    case Oli.Lti_1p3.get_registration_by_kid(kid) do
-      nil ->
-        {:error, %{reason: :invalid_registration, msg: "Registration with kid \"#{kid}\" not found", kid: kid}}
-        registration ->
-        {:ok, conn, registration}
+  defp validate_registration(conn) do
+    with {:ok, issuer, client_id} <- peek_issuer_client_id(conn) do
+      case Oli.Lti_1p3.get_registration_by_issuer_client_id(issuer, client_id) do
+        nil ->
+          {:error, %{reason: :invalid_registration, msg: "Registration with issuer \"#{issuer}\" and client id \"#{client_id}\" not found", issuer: issuer, client_id: client_id}}
+          registration ->
+          {:ok, conn, registration}
+      end
     end
   end
 
@@ -64,8 +65,17 @@ defmodule Oli.Lti_1p3.LaunchValidation do
 
   defp peek_header(jwt_string) do
     case Joken.peek_header(jwt_string) do
-      {:ok, jwt_body} ->
-        {:ok, jwt_body}
+      {:ok, header} ->
+        {:ok, header}
+      {:error, reason} ->
+        {:error, %{reason: reason, msg: "Invalid id_token"}}
+    end
+  end
+
+  defp peek_claims(jwt_string) do
+    case Joken.peek_claims(jwt_string) do
+      {:ok, claims} ->
+        {:ok, claims}
       {:error, reason} ->
         {:error, %{reason: reason, msg: "Invalid id_token"}}
     end
@@ -79,8 +89,17 @@ defmodule Oli.Lti_1p3.LaunchValidation do
     end
   end
 
-  defp validate_jwt(conn, registration, kid, get_public_key) do
+  defp peek_issuer_client_id(conn) do
     with {:ok, jwt_string} <- extract_id_token(conn),
+         {:ok, jwt_claims} <- peek_claims(jwt_string)
+    do
+      {:ok, jwt_claims["iss"], jwt_claims["aud"]}
+    end
+  end
+
+  defp validate_jwt(conn, registration, get_public_key) do
+    with {:ok, jwt_string} <- extract_id_token(conn),
+         {:ok, kid} <- peek_jwt_kid(conn),
          {:ok, public_key} <- get_public_key.(registration, kid)
     do
       {_kty, pk} = JOSE.JWK.to_map(public_key)
@@ -100,22 +119,26 @@ defmodule Oli.Lti_1p3.LaunchValidation do
     try do
       case {Timex.from_unix(jwt_body["exp"]), Timex.from_unix(jwt_body["iat"])} do
       {exp, iat} ->
+        # get the current time with a buffer of a few seconds to account for clock skew and rounding
         now = Timex.now()
+        buffer_sec = 2
+        a_few_seconds_ago = now |> Timex.subtract(Timex.Duration.from_seconds(buffer_sec))
+        a_few_seconds_ahead = now |> Timex.add(Timex.Duration.from_seconds(buffer_sec))
 
         # check if token is expired and/or issued at invalid time
-        case {Timex.before?(exp, now), Timex.after?(iat, now)} do
+        case {Timex.before?(exp, a_few_seconds_ago), Timex.after?(iat, a_few_seconds_ahead)} do
           {false, false} ->
             {:ok, conn}
           {_, false} ->
-            {:error, %{reason: :invalid_token_timstamp, msg: "Token exp is expired"}}
+            {:error, %{reason: :invalid_token_timestamp, msg: "Token exp is expired"}}
           {false, _} ->
-            {:error, %{reason: :invalid_token_timstamp, msg: "Token iat is invalid"}}
+            {:error, %{reason: :invalid_token_timestamp, msg: "Token iat is invalid"}}
           _ ->
-            {:error, %{reason: :invalid_token_timstamp, msg: "Token exp and iat are invalid"}}
+            {:error, %{reason: :invalid_token_timestamp, msg: "Token exp and iat are invalid"}}
         end
       end
     rescue
-      _error -> {:error, %{reason: :invalid_token_timstamp, msg: "Timestamps are invalid"}}
+      _error -> {:error, %{reason: :invalid_token_timestamp, msg: "Timestamps are invalid"}}
     end
   end
 

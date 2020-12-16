@@ -20,12 +20,11 @@ defmodule Oli.Lti_1p3Test do
         auth_token_url: "some auth_token_url",
         auth_login_url: "some auth_login_url",
         auth_server: "some auth_server",
-        kid: "some kid",
         tool_jwk_id: jwk.id,
         institution_id: institution.id,
       })
 
-      assert Lti_1p3.get_registration_by_kid("some kid") == registration
+      assert Lti_1p3.get_registration_by_issuer_client_id("some issuer", "some client_id") == registration
     end
 
     test "create and get valid deployment", %{institution: institution, jwk: jwk} do
@@ -36,7 +35,6 @@ defmodule Oli.Lti_1p3Test do
         auth_token_url: "some auth_token_url",
         auth_login_url: "some auth_login_url",
         auth_server: "some auth_server",
-        kid: "some kid",
         tool_jwk_id: jwk.id,
         institution_id: institution.id,
       })
