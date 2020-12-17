@@ -1,0 +1,14 @@
+<%= render OliWeb.LayoutView, "_delivery_header.html", assigns %>
+
+<div class="container form-container">
+  <div class="row my-3">
+    <h2>Registration is pending approval</h2>
+  </div>
+
+  <div class="row">
+    <p>
+      Your institution's registration is currently pending approval. Your LMS administrator will receive an email once your registration has been approved.
+    </p>
+
+    <p>For more help and information regarding your request, please <a href="https://oli.cmu.edu/jcourse/webui/help.do" target="_blank">contact OLI Support</a>.</p>
+  </div>

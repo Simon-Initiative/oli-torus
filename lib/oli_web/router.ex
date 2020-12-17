@@ -292,6 +292,8 @@ defmodule OliWeb.Router do
     post "/test", LtiController, :test
 
     get "/developer_key.json", LtiController, :developer_key_json
+
+    post "/register", LtiController, :request_registration
   end
 
   scope "/course", OliWeb do

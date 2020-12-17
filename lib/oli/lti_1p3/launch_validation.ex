@@ -49,10 +49,10 @@ defmodule Oli.Lti_1p3.LaunchValidation do
 
   defp validate_registration(conn) do
     with {:ok, issuer, client_id} <- peek_issuer_client_id(conn) do
-      case Oli.Lti_1p3.get_registration_by_issuer_client_id(issuer, client_id) do
+      case Oli.Institutions.get_registration_by_issuer_client_id(issuer, client_id) do
         nil ->
           {:error, %{reason: :invalid_registration, msg: "Registration with issuer \"#{issuer}\" and client id \"#{client_id}\" not found", issuer: issuer, client_id: client_id}}
-          registration ->
+        registration ->
           {:ok, conn, registration}
       end
     end

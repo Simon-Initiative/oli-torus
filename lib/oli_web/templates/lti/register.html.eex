@@ -1,0 +1,111 @@
+<%= render OliWeb.LayoutView, "_delivery_header.html", assigns %>
+
+<div class="container form-container">
+  <div class="row my-3">
+    <h2>Welcome to the Open Learning Initiative!</h2>
+  </div>
+
+  <div class="row">
+    <p>
+      It looks like this is the first time you are accessing OLI from your institution's LMS. Before we can get started with setting up your course, you must first register your institution.
+    </p>
+    <p>
+      Please provide some details below to request a registration and we will approve your request or contact you for more information.
+    </p>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-12 col-md-8 col-lg-6 mx-auto">
+      <div class="card card-signin my-5">
+        <div class="card-body">
+          <h5 class="card-title text-center">Register Your Institution</h5>
+
+          <%= form_for @changeset, Routes.lti_path(@conn, :request_registration), fn f -> %>
+            <%= if @changeset.action do %>
+              <div class="alert alert-danger">
+                <p>Something went wrong, please check the errors below.</p>
+              </div>
+            <% end %>
+
+            <div class="form-label-group">
+              <%= text_input f, :name, class: "form-control " <> error_class(f, :name, "is-invalid"),
+                placeholder: "Institution Name", required: true, autofocus: focusHelper(f, :name, default: true) %>
+              <%= label f, :name, "Institution Name", class: "control-label" %>
+              <%= error_tag f, :name %>
+            </div>
+
+            <div class="form-label-group">
+              <%= text_input f, :institution_url, class: "form-control " <> error_class(f, :institution_url, "is-invalid"),
+                placeholder: "Institution URL", required: true, autofocus: focusHelper(f, :institution_url)  %>
+              <%= label f, :institution_url, "Institution URL" %>
+              <%= error_tag f, :institution_url %>
+            </div>
+
+            <div class="form-label-group">
+              <%= email_input f, :institution_email, class: "form-control " <> error_class(f, :institution_email, "is-invalid"),
+                placeholder: "Contact Email", required: true, autofocus: focusHelper(f, :institution_email) %>
+              <%= label f, :institution_email, "Contact Email", class: "control-label" %>
+              <%= error_tag f, :institution_email %>
+            </div>
+
+            <div class="form-label-group">
+              <%= select f, :country_code, @country_codes, prompt: "Select Country", class: "form-control " <> error_class(f, :country_code, "is-invalid"),
+                required: true, autofocus: focusHelper(f, :country_code) %>
+              <%= error_tag f, :country_code %>
+            </div>
+
+            <div class="form-label-group">
+              <%= select f, :timezone, @timezones, prompt: "Select Timezone", class: "form-control " <> error_class(f, :timezone, "is-invalid"),
+                required: true, autofocus: focusHelper(f, :timezone) %>
+              <%= error_tag f, :timezone %>
+            </div>
+
+            <hr class="my-4" />
+
+            <h6>LTI 1.3 Configuration</h6>
+            <p class="text-secondary mb-2">
+              Below are some suggested values based on your LMS. Please confirm these with your
+              LMS administrator and change as necessary before proceeding.
+            </p>
+
+            <%= hidden_input f, :issuer, value: @issuer  %>
+            <%= hidden_input f, :client_id, value: @client_id  %>
+
+            <div class="form-label-group">
+              <%= text_input f, :key_set_url, class: "form-control " <> error_class(f, :key_set_url, "is-invalid"),
+                placeholder: "Keyset URL", required: true, autofocus: focusHelper(f, :key_set_url) %>
+              <%= label f, :key_set_url, "Keyset URL", class: "control-label" %>
+              <%= error_tag f, :key_set_url %>
+            </div>
+
+            <div class="form-label-group">
+              <%= text_input f, :auth_token_url, class: "form-control " <> error_class(f, :auth_token_url, "is-invalid"),
+                placeholder: "Auth Token URL", required: true, autofocus: focusHelper(f, :auth_token_url) %>
+              <%= label f, :auth_token_url, "Auth Token URL", class: "control-label" %>
+              <%= error_tag f, :auth_token_url %>
+            </div>
+
+            <div class="form-label-group">
+              <%= text_input f, :auth_login_url, class: "form-control " <> error_class(f, :auth_login_url, "is-invalid"),
+                placeholder: "Auth Login URL", required: true, autofocus: focusHelper(f, :auth_login_url) %>
+              <%= label f, :auth_login_url, "Auth Login URL", class: "control-label" %>
+              <%= error_tag f, :auth_login_url %>
+            </div>
+
+            <div class="form-label-group">
+              <%= text_input f, :auth_server, class: "form-control " <> error_class(f, :auth_server, "is-invalid"),
+                placeholder: "Auth Server URL", required: true, autofocus: focusHelper(f, :auth_server) %>
+              <%= label f, :auth_server, "Auth Server URL", class: "control-label" %>
+              <%= error_tag f, :auth_server %>
+            </div>
+
+            <div>
+              <%= submit "Register", class: "btn btn-md btn-primary btn-block" %>
+            </div>
+          <% end %>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

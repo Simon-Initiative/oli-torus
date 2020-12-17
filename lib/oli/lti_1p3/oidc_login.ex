@@ -46,22 +46,32 @@ defmodule Oli.Lti_1p3.OidcLogin do
 
   defp validate_issuer(conn) do
     case conn.params["iss"] do
-      nil -> {:error, "Request does not have an issuer (iss)"}
+      nil -> {:error, %{reason: :missing_issuer, msg: "Request does not have an issuer (iss)"}}
       issuer -> {:ok, conn, issuer}
     end
   end
 
   defp validate_login_hint(conn) do
     case conn.params["login_hint"] do
-      nil -> {:error, "Request does not have a login hint (login_hint)"}
+      nil -> {:error, %{reason: :missing_login_hint, msg: "Request does not have a login hint (login_hint)"}}
       login_hint -> {:ok, conn, login_hint}
     end
   end
 
   defp validate_registration(conn) do
-    case Lti_1p3.get_registration_by_issuer(conn.params["iss"]) do
-      nil -> {:error, "No registration exists for issuer (iss): #{conn.params["iss"]}"}
-      registration -> {:ok, conn, registration}
+    issuer = conn.params["iss"]
+    client_id = conn.params["client_id"]
+
+    case Oli.Institutions.get_registration_by_issuer_client_id(issuer, client_id) do
+      nil ->
+        {:error, %{
+          reason: :invalid_registration,
+          msg: "Registration with issuer \"#{issuer}\" and client id \"#{client_id}\" not found",
+          issuer: issuer,
+          client_id: client_id,
+        }}
+      registration ->
+        {:ok, conn, registration}
     end
   end
 end

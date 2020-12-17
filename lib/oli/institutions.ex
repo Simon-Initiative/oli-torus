@@ -262,4 +262,19 @@ defmodule Oli.Institutions do
   def change_deployment(%Deployment{} = deployment, _attrs \\ %{}) do
     Deployment.changeset(deployment, %{})
   end
+
+  def get_registration_by_issuer_client_id(issuer, client_id) do
+    Repo.one from registration in Registration,
+      join: institution in Institution, on: registration.institution_id == institution.id,
+      where: registration.issuer == ^ issuer and registration.client_id == ^client_id and not is_nil(institution.approved_at),
+      select: registration
+  end
+
+  def get_pending_registration_by_issuer_client_id(issuer, client_id) do
+    Repo.one from registration in Registration,
+      join: institution in Institution, on: registration.institution_id == institution.id,
+      where: registration.issuer == ^ issuer and registration.client_id == ^client_id and is_nil(institution.approved_at),
+      select: registration
+  end
+
 end

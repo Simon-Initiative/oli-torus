@@ -4,9 +4,14 @@ defmodule OliWeb.LtiController do
   alias Oli.Accounts
   alias Oli.Delivery.Sections
   alias Oli.Institutions
+  alias Oli.Institutions.InstitutionRegistration
   alias Oli.Lti_1p3.ContextRoles
   alias Oli.Lti_1p3.PlatformRoles
   alias Oli.Lti_1p3
+
+  import Oli.Delivery.{CountryCodes, Timezones}
+
+  require Logger
 
   ## LTI 1.3
   def login(conn, params) do
@@ -14,6 +19,8 @@ defmodule OliWeb.LtiController do
       {:ok, conn, redirect_url} ->
         conn
         |> redirect(external: redirect_url)
+      {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
+        handle_invalid_registration(conn, issuer, client_id)
       {:error, reason} ->
         render(conn, "lti_error.html", reason: reason)
     end
@@ -24,9 +31,9 @@ defmodule OliWeb.LtiController do
       {:ok, conn, lti_params} ->
         handle_valid_lti_1p3_launch(conn, lti_params)
       {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
-        handle_no_registration(conn, issuer, client_id)
+        handle_invalid_registration(conn, issuer, client_id)
       {:error, %{reason: :invalid_deployment, msg: _msg, registration_id: registration_id, deployment_id: deployment_id}} ->
-        handle_no_deployment(conn, registration_id, deployment_id)
+        handle_invalid_deployment(conn, registration_id, deployment_id)
       {:error, %{reason: _reason, msg: msg}} ->
         render(conn, "lti_error.html", reason: msg)
     end
@@ -141,12 +148,55 @@ defmodule OliWeb.LtiController do
 
   end
 
-  defp handle_no_registration(conn, issuer, client_id) do
-    # TODO: Allow user to request a registration. For now, just show an error message
-    render(conn, "lti_error.html", reason: "Registration with issuer \"#{issuer}\" and client id \"#{client_id}\" not found")
+  def request_registration(conn, %{"institution_registration" => ir_attrs} = _params) do
+    case Ecto.Changeset.apply_action(InstitutionRegistration.changeset(%InstitutionRegistration{}, ir_attrs), :update) do
+      {:ok, _data} ->
+        with {:ok, institution} <- Institutions.create_institution(ir_attrs),
+             active_jwk = Oli.Lti_1p3.get_active_jwk(),
+             registration_attrs = Map.merge(ir_attrs, %{"institution_id" => institution.id, "tool_jwk_id" => active_jwk.id}),
+             {:ok, _registration} <- Oli.Institutions.create_registration(registration_attrs)
+        do
+          conn
+          |> render("registration_pending.html")
+
+        else
+          error ->
+            Logger.error("Failed to submit registration request", error)
+            conn
+            |> render("lti_error.html", reason: "Failed to submit registration request")
+        end
+      {:error, changeset} ->
+        conn
+        |> render("register.html",
+          conn: conn,
+          changeset: changeset,
+          country_codes: list_country_codes(),
+          timezones: list_timezones(),
+          issuer: ir_attrs["issuer"],
+          client_id: ir_attrs["client_id"])
+    end
   end
 
-  defp handle_no_deployment(conn, registration_id, deployment_id) do
+  defp handle_invalid_registration(conn, issuer, client_id) do
+    case Oli.Institutions.get_pending_registration_by_issuer_client_id(issuer, client_id) do
+      nil ->
+        changeset = InstitutionRegistration.changeset(%InstitutionRegistration{})
+        conn
+        |> render("register.html",
+          conn: conn,
+          changeset: changeset,
+          country_codes: list_country_codes(),
+          timezones: list_timezones(),
+          issuer: issuer,
+          client_id: client_id)
+
+      _registration ->
+        conn
+        |> render("registration_pending.html")
+    end
+  end
+
+  defp handle_invalid_deployment(conn, registration_id, deployment_id) do
     case Institutions.create_deployment(%{deployment_id: deployment_id, registration_id: registration_id}) do
       {:ok, _deployment} ->
         # try the LTI launch again now that deployment is created

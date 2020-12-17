@@ -76,4 +76,5 @@ defmodule OliWeb.InstitutionController do
   defp render_institution_page(conn, template, assigns) do
     render conn, template, Keyword.put_new(assigns, :active, :institutions)
   end
+
 end
