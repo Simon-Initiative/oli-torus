@@ -16,6 +16,26 @@ type Evaluation = {
   feedback: ActivityTypes.RichText,
 };
 
+// [id, index]
+type Selection = [ActivityTypes.ChoiceId, number]
+interface SelectionProps {
+  selected: Selection[];
+  onDeselect: (id: ActivityTypes.ChoiceId) => void;
+}
+const Selection = ({ selected, onDeselect }: SelectionProps) => {
+  const id = (selection: Selection) => selection[0];
+  const index = (selection: Selection) => selection[1];
+  return (
+    <div className="mb-2" style={{ height: 34, borderBottom: '3px solid #333' }}>
+      {selected.map(selection =>
+        <button onClick={() => onDeselect(id(selection))}
+          className="choice-index mr-1">
+            {index(selection) + 1}
+        </button>)}
+    </div>
+  );
+}
+
 interface ChoicesProps {
   choices: ActivityTypes.Choice[];
   selected: ActivityTypes.ChoiceId[];
@@ -63,12 +83,12 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
   const [attemptState, setAttemptState] = useState(props.state);
   const [hints, setHints] = useState(props.state.parts[0].hints);
   const [hasMoreHints, setHasMoreHints] = useState(props.state.parts[0].hasMoreHints);
-  const [selected, setSelected] = useState<string[]>(
+  const [selected, setSelected] = useState<ActivityTypes.ChoiceId[]>(
     props.state.parts[0].response === null
     ? []
-    : props.state.parts[0].response.input.split('')
+    : props.state.parts[0].response.input.split(' ')
       .reduce(
-        (acc: string[], curr: string) => acc.concat([curr]),
+        (acc: ActivityTypes.ChoiceId[], curr: ActivityTypes.ChoiceId) => acc.concat([curr]),
         []));
 
   const { stem, choices } = model;
@@ -151,7 +171,9 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
     ? null
     : (
       <button
-        className="btn btn-primary mt-2 float-right" disabled={isEvaluated} onClick={onSubmit}>
+        className="btn btn-primary mt-2 float-right"
+        disabled={isEvaluated || selected.length !== choices.length}
+        onClick={onSubmit}>
         Submit
       </button>
     );
@@ -161,6 +183,9 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
       <div className="activity-content">
         <div>
           <Stem stem={stem} />
+          <Selection
+            onDeselect={(id: ActivityTypes.ChoiceId) => updateSelection(id)}
+            selected={selected.map(s => [s, choices.findIndex(c => c.id === s)])} />
           <Choices choices={choices} selected={selected}
             onSelect={onSelect} isEvaluated={isEvaluated}/>
           {maybeSubmitButton}

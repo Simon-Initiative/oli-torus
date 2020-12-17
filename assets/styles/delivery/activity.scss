@@ -1,5 +1,30 @@
 @import "delivery/variables";
 
+.choice-index {
+  background-color: initial;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #e5e5e5;
+  color: #afafaf;
+  height: 30px;
+  width: 30px;
+  font-weight: bold;
+  margin-right: 16px;
+
+  &:hover {
+    background-color: $white;
+  }
+}
+
+.selected {
+  .choice-index {
+    background-color: $choice-selected-color;
+    border: 2px solid $choice-selected-color;
+    color: $white;
+  }
+}
+
 .activity {
   margin-top: 1em;
   margin-bottom: 4em;
@@ -11,16 +36,8 @@
       &:hover {
         background-color: initial;
 
-        .choice-index {
-          background-color: initial;
-        }
-
         &.selected {
           background-color: $choice-selected-bg;
-
-          .choice-index {
-            background-color: $choice-selected-color;
-          }
         }
       }
     }
@@ -51,34 +68,12 @@
 
     &:hover {
       background-color: $choice-selected-bg-hover;
-
-      .choice-index {
-        background-color: $white;
-      }
     }
 
     &.selected {
       color: $choice-selected-color;
       background-color: $choice-selected-bg;
       border-color: $choice-selected-border-color;
-
-      .choice-index {
-        border: 2px solid $choice-selected-color;
-        background-color: $choice-selected-color;
-        color: $white;
-      }
-    }
-
-    .choice-index {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border: 2px solid #e5e5e5;
-      color: #afafaf;
-      height: 30px;
-      width: 30px;
-      font-weight: bold;
-      margin-right: 16px;
     }
 
   }

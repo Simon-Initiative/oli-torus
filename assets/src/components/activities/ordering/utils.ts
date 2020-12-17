@@ -38,13 +38,11 @@ export const canMoveChoiceDown = (model: Ordering, id: ChoiceId) => canMoveChoic
 export const getChoiceIndex = (model: Ordering, id: ChoiceId) =>
   model.choices.findIndex(choice => choice.id === id)
 export const getChoice = (model: Ordering, id: ChoiceId) => getByIdUnsafe(model.choices, id);
+// FIX
 export const getChoiceIds = ([choiceIds]: ChoiceIdsToResponseId) => choiceIds;
-export const getCorrectChoiceIds = (model: Ordering) => getChoiceIds(model.authoring.correct);
-export const getIncorrectChoiceIds = (model: Ordering) => getChoiceIds(model.authoring.incorrect);
+export const getCorrectOrdering = (model: Ordering) => getChoiceIds(model.authoring.correct);
 export const getTargetedChoiceIds = (model: TargetedOrdering) =>
   model.authoring.targeted.map(getChoiceIds);
-export const isCorrectChoice = (model: Ordering, choiceId: ChoiceId) =>
-  getCorrectChoiceIds(model).includes(choiceId);
 
 // Responses
 export const getResponses = (model: Ordering) => model.authoring.parts[0].responses;
@@ -52,8 +50,18 @@ export const getResponse = (model: Ordering, id: string) => getByIdUnsafe(getRes
 export const getResponseId = ([, responseId]: ChoiceIdsToResponseId) => responseId;
 export const getCorrectResponse = (model: Ordering) =>
   getResponse(model, getResponseId(model.authoring.correct));
-export const getIncorrectResponse = (model: Ordering) =>
-  getResponse(model, getResponseId(model.authoring.incorrect));
+export const getIncorrectResponse = (model: Ordering) => {
+  const responsesWithoutCorrect = getResponses(model)
+    .filter(response => response.id !== getCorrectResponse(model).id);
+
+  switch (model.type) {
+    case 'SimpleOrdering':
+      return responsesWithoutCorrect[0];
+    case 'TargetedOrdering':
+      return responsesWithoutCorrect
+        .filter(r1 => !getTargetedResponses(model).find(r2 => r1.id === r2.id))[0];
+  }
+}
 export const getTargetedResponses = (model: TargetedOrdering) =>
   model.authoring.targeted.map(assoc => getResponse(model, getResponseId(assoc)));
 
@@ -62,6 +70,7 @@ export const getHints = (model: Ordering) => model.authoring.parts[0].hints;
 export const getHint = (model: Ordering, id: ID) => getByIdUnsafe(getHints(model), id);
 
 // Rules
+export const createMatchRule = (id: ID) => `input like {${id}}`;
 export const createRuleForIds = (orderedIds: ID[]) => `input like {${orderedIds.join(' ')}}`;
 export const invertRule = (rule: string) => `(!(${rule}))`;
 export const unionTwoRules = (rule1: string, rule2: string) => `${rule2} && (${rule1})`;

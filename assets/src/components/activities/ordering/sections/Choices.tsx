@@ -5,7 +5,27 @@ import { ModelEditorProps } from '../schema';
 import { ChoiceId, RichText } from '../../types';
 import { CloseButton } from 'components/misc/CloseButton';
 import { ProjectSlug } from 'data/types';
-import { canMoveChoiceUp, isCorrectChoice } from '../utils';
+
+interface MoveButtonProps {
+  choiceId: ChoiceId;
+  predicate: (choiceId: ChoiceId) => boolean;
+  onClick: (choiceId: ChoiceId) => void;
+  icon: string;
+}
+const MoveButton = ({ choiceId, predicate, onClick, icon }: MoveButtonProps) => {
+  if (!predicate(choiceId)) {
+    return null;
+  }
+  return (
+    <div className="material-icons" style={{ height: 12, lineHeight: '12px' }}>
+      <button
+        style={{ padding: 0, border: 'none', background: 'none', height: '100%' }}
+        onClick={() => onClick(choiceId)}>
+          {icon}
+      </button>
+    </div>
+  );
+}
 
 interface Props extends ModelEditorProps {
   onAddChoice: () => void;
@@ -29,29 +49,23 @@ export const Choices = (props: Props) => {
 
       {choices.map((choice, index) =>
         <div key={choice.id} className="mb-3">
-          <div className="d-flex align-items-center mb-2">
-            <div className="d-flex flex-column">
-              <div className="material-icons" style={{ height: 12, lineHeight: '12px' }}>
-                {canMoveChoiceUp(choice.id) &&
-                  <button
-                    style={{ border: 'none', background: 'none', height: '100%' }}
-                    onClick={() => onMoveChoiceUp(choice.id)}>
-                      arrow_drop_up
-                  </button>}
-              </div>
-              <div className="material-icons" style={{ height: 12, lineHeight: '12px' }}>
-                {canMoveChoiceDown(choice.id) &&
-                  <button
-                    style={{ border: 'none', background: 'none', height: '100%' }}
-                    onClick={() => onMoveChoiceDown(choice.id)}>
-                      arrow_drop_down
-                  </button>}
-              </div>
-            </div>
+          <div style={{ marginLeft: 24 }} className="d-flex align-items-center mb-2">
             Choice {index + 1}
           </div>
 
           <div className="d-flex" style={{ flex: 1 }}>
+            <div className="d-flex flex-column justify-content-center">
+              <MoveButton
+                choiceId={choice.id}
+                predicate={canMoveChoiceUp}
+                onClick={onMoveChoiceUp}
+                icon="arrow_drop_up" />
+              <MoveButton
+                choiceId={choice.id}
+                predicate={canMoveChoiceDown}
+                onClick={onMoveChoiceDown}
+                icon="arrow_drop_down" />
+            </div>
             <RichTextEditor
               className="flex-fill"
               projectSlug={projectSlug}
@@ -68,6 +82,6 @@ export const Choices = (props: Props) => {
         disabled={!editMode}
         onClick={onAddChoice}>Add answer choice
       </button>
-    </div >
+    </div>
   );
 };

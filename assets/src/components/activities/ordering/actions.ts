@@ -1,7 +1,7 @@
-import { OrderingModelSchema as Ordering, TargetedOrdering } from './schema';
+import { OrderingModelSchema as Ordering } from './schema';
 import { createRuleForIds, fromText, getChoice, getCorrectResponse,
-  getHint, getResponse, getChoiceIds, getCorrectChoiceIds, getIncorrectChoiceIds,
-  getIncorrectResponse, getResponseId, setDifference, invertRule, unionRules, getResponses,
+  getHint, getResponse, getChoiceIds, getCorrectOrdering,
+  getIncorrectResponse, getResponseId, invertRule, unionRules, getResponses,
   makeResponse,
   isSimpleOrdering,
   getHints,
@@ -35,13 +35,12 @@ export class Actions {
     };
   }
 
-  // FIX
   static addChoice() {
     return (model: Ordering) => {
       const newChoice: Choice = fromText('');
 
       model.choices.push(newChoice);
-      getChoiceIds(model.authoring.incorrect).push(newChoice.id);
+      getChoiceIds(model.authoring.correct).push(newChoice.id);
       updateResponseRules(model);
     };
   }
@@ -52,18 +51,25 @@ export class Actions {
     };
   }
 
-  // FIX
   static removeChoice(id: ChoiceId) {
     return (model: Ordering) => {
       const removeIdFrom = (list: ChoiceId[]) => removeFromList(id, list);
       model.choices = model.choices.filter(choice => choice.id !== id);
       removeIdFrom(getChoiceIds(model.authoring.correct));
-      removeIdFrom(getChoiceIds(model.authoring.incorrect));
 
       switch (model.type) {
-        case 'SimpleOrdering': break;
+        case 'SimpleOrdering':
+          break;
         case 'TargetedOrdering':
-          model.authoring.targeted.forEach(assoc => removeIdFrom(getChoiceIds(assoc)));
+          model.authoring.targeted.forEach(assoc => {
+            removeIdFrom(getChoiceIds(assoc));
+            // remove targeted feedback choice ids if they match the correct answer
+            if (getChoiceIds(assoc).every((id1, index) =>
+              getCorrectOrdering(model).findIndex(id2 => id1 === id2) === index)) {
+              assoc[0] = [];
+            }
+          });
+          break;
       }
 
       updateResponseRules(model);
@@ -95,14 +101,12 @@ export class Actions {
     };
   }
 
-  // FIX
   static addTargetedFeedback() {
     return (model: Ordering) => {
       switch (model.type) {
         case 'SimpleOrdering': return;
         case 'TargetedOrdering':
-          const response = makeResponse(
-            createRuleForIds([], model.choices.map(({ id }) => id)), 0, '');
+          const response = makeResponse(createRuleForIds([]), 0, '');
 
           getResponses(model).push(response);
           model.authoring.targeted.push([[], response.id]);
@@ -124,7 +128,6 @@ export class Actions {
     };
   }
 
-  // FIX?
   static editTargetedFeedbackChoices(responseId: ResponseId, choiceIds: ChoiceId[]) {
     return (model: Ordering) => {
       switch (model.type) {
@@ -163,13 +166,6 @@ export class Actions {
 }
 
 // mutable
-function addOrRemoveFromList<T>(item: T, list: T[]) {
-  if (list.find(x => x === item)) {
-    return removeFromList(item, list);
-  }
-  return list.push(item);
-}
-// mutable
 function removeFromList<T>(item: T, list: T[]) {
   const index = list.findIndex(x => x === item);
   if (index > -1) {
@@ -179,31 +175,24 @@ function removeFromList<T>(item: T, list: T[]) {
 
 // Update all response rules based on a model with new choices that
 // are not yet reflected by the rules.
-
-// FIX
 const updateResponseRules = (model: Ordering) => {
 
-  getCorrectResponse(model).rule = createRuleForIds(
-    getCorrectChoiceIds(model),
-    getIncorrectChoiceIds(model));
+  getCorrectResponse(model).rule = createRuleForIds(getCorrectOrdering(model));
 
   switch (model.type) {
     case 'SimpleOrdering':
       getIncorrectResponse(model).rule = invertRule(getCorrectResponse(model).rule);
-      break;
+      return;
     case 'TargetedOrdering':
       const targetedRules: string[] = [];
-      const allChoiceIds = model.choices.map(choice => choice.id);
       model.authoring.targeted.forEach((assoc) => {
-        const targetedRule = createRuleForIds(
-          getChoiceIds(assoc),
-          setDifference(allChoiceIds, getChoiceIds(assoc)));
+        const targetedRule = createRuleForIds(getChoiceIds(assoc));
         targetedRules.push(targetedRule);
         getResponse(model, getResponseId(assoc)).rule = targetedRule;
       });
       getIncorrectResponse(model).rule = unionRules(
         targetedRules.map(invertRule)
           .concat([invertRule(getCorrectResponse(model).rule)]));
-      break;
+      return;
   }
 };

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { RichTextEditor } from 'components/content/RichTextEditor';
 import { ChoiceIdsToResponseId, ModelEditorProps, TargetedOrdering } from '../schema';
 import { Description } from 'components/misc/Description';
 import { IconIncorrect } from 'components/misc/Icons';
 import { ProjectSlug } from 'data/types';
-import { getChoiceIds, getResponse, getResponseId, getTargetedResponses } from '../utils';
+import { getChoiceIds, getResponse, getResponseId } from '../utils';
 import { Typeahead } from 'react-bootstrap-typeahead';
 import { ChoiceId, ResponseId, RichText } from 'components/activities/types';
 import { CloseButton } from 'components/misc/CloseButton';
@@ -55,7 +55,7 @@ export const TargetedFeedback = (props: Props) => {
                 isInvalid={selected[response.id].length < allChoiceOptions.length}
                 id={response.id}
                 disabled={!props.editMode}
-                placeholder="Select the answer choices in the order that triggers this feedback"
+                placeholder="Order the choices to set the trigger for this feedback"
                 options={allChoiceOptions}
                 selected={selected[response.id]}
                 selectHintOnEnter

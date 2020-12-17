@@ -162,11 +162,13 @@ describe('check all that apply question', () => {
       .toBe('(!(input like {id2})) && (input like {id1})');
   });
 
-  it('can create rules to match certain ids and not match others', () => {
-    const toMatch = ['id1', 'id2'];
-    const notToMatch = ['id3'];
-    expect(createRuleForIds(toMatch, notToMatch))
-      .toEqual("(!(input like {id3})) && (input like {id2} && (input like {id1}))");
+  it('can create rules to to match choice orderings', () => {
+    const ordering1 = ['id1', 'id2', 'id3'];
+    const ordering2 = ['id3', 'id2', 'id1'];
+    expect(createRuleForIds(ordering1))
+      .toEqual("input like {id1} && input like {id2} && input like {id3})");
+    expect(createRuleForIds(ordering2))
+      .toEqual("input like {id3} && input like {id2} && input like {id1})");
   });
 
   it('has at least 3 hints', () => {

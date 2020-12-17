@@ -19,12 +19,12 @@ type Evaluation = {
 
 interface ChoicesProps {
   choices: ActivityTypes.Choice[];
-  selected: string[];
-  onSelect: (id: string) => void;
+  selected: ActivityTypes.ChoiceId[];
+  onSelect: (id: ActivityTypes.ChoiceId) => void;
   isEvaluated: boolean;
 }
 const Choices = ({ choices, selected, onSelect, isEvaluated }: ChoicesProps) => {
-  const isSelected = (choiceId: string) => !!selected.find(s => s === choiceId);
+  const isSelected = (choiceId: ActivityTypes.ChoiceId) => !!selected.find(s => s === choiceId);
   return (
     <div className="choices">
     {choices.map((choice, index) =>
@@ -63,12 +63,12 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
   const [attemptState, setAttemptState] = useState(props.state);
   const [hints, setHints] = useState(props.state.parts[0].hints);
   const [hasMoreHints, setHasMoreHints] = useState(props.state.parts[0].hasMoreHints);
-  const [selected, setSelected] = useState<string[]>(
+  const [selected, setSelected] = useState<ActivityTypes.ChoiceId[]>(
     props.state.parts[0].response === null
     ? []
-    : props.state.parts[0].response.input.split('')
+    : props.state.parts[0].response.input.split(' ')
       .reduce(
-        (acc: string[], curr: string) => acc.concat([curr]),
+        (acc: ActivityTypes.ChoiceId[], curr: ActivityTypes.ChoiceId) => acc.concat([curr]),
         []));
 
   const { stem, choices } = model;

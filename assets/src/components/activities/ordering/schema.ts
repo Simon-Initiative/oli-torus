@@ -3,21 +3,19 @@ import { Part, Transformation, ActivityModelSchema, Stem, ChoiceId, ResponseId, 
 
 export type OrderingModelSchema = SimpleOrdering | TargetedOrdering;
 
+export type ChoiceIdsToResponseId = [ChoiceId[], ResponseId];
+
 interface BaseOrdering extends ActivityModelSchema {
   stem: Stem;
   choices: Choice[];
   authoring: {
-    // An association list of correct choice ids to the matching response id
+    // An association list of the choice ids in the correct order to the matching response id
     correct: ChoiceIdsToResponseId;
-    // An association list of incorrect choice ids to the matching response id
-    incorrect: ChoiceIdsToResponseId;
     parts: Part[];
     transformations: Transformation[];
     previewText: string;
   };
 }
-
-export type ChoiceIdsToResponseId = [ChoiceId[], ResponseId];
 
 export type SimpleOrdering = BaseOrdering & {
   type: 'SimpleOrdering';
@@ -26,7 +24,7 @@ export type SimpleOrdering = BaseOrdering & {
 export type TargetedOrdering = BaseOrdering & {
   type: 'TargetedOrdering';
   authoring: {
-    // An association list of choice ids to the matching targeted response id
+    // An association list of choice id orderings to matching targeted response ids
     targeted: ChoiceIdsToResponseId[];
   }
 };
