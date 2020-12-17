@@ -2,7 +2,6 @@ defmodule OliWeb.WorkspaceController do
   use OliWeb, :controller
   alias Oli.Authoring
   alias Oli.Accounts
-  alias Oli.Institutions
   alias Oli.Accounts.Author
 
   def account(conn, _params) do

@@ -8,8 +8,7 @@ defmodule OliWeb.LtiController do
   alias Oli.Lti_1p3.ContextRoles
   alias Oli.Lti_1p3.PlatformRoles
   alias Oli.Lti_1p3
-
-  import Oli.Delivery.{CountryCodes, Timezones}
+  alias Oli.Predefined
 
   require Logger
 
@@ -170,8 +169,8 @@ defmodule OliWeb.LtiController do
         |> render("register.html",
           conn: conn,
           changeset: changeset,
-          country_codes: list_country_codes(),
-          timezones: list_timezones(),
+          country_codes: Predefined.country_codes(),
+          timezones: Predefined.timezones(),
           issuer: ir_attrs["issuer"],
           client_id: ir_attrs["client_id"])
     end
@@ -181,12 +180,15 @@ defmodule OliWeb.LtiController do
     case Oli.Institutions.get_pending_registration_by_issuer_client_id(issuer, client_id) do
       nil ->
         changeset = InstitutionRegistration.changeset(%InstitutionRegistration{})
+
         conn
         |> render("register.html",
           conn: conn,
           changeset: changeset,
-          country_codes: list_country_codes(),
-          timezones: list_timezones(),
+          country_codes: Predefined.country_codes(),
+          timezones: Predefined.timezones(),
+          world_universities_and_domains: Predefined.world_universities_and_domains(),
+          lti_config_defaults: Predefined.lti_config_defaults(),
           issuer: issuer,
           client_id: client_id)
 

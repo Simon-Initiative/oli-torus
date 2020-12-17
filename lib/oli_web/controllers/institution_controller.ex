@@ -3,8 +3,7 @@ defmodule OliWeb.InstitutionController do
 
   alias Oli.Institutions
   alias Oli.Institutions.Institution
-
-  import Oli.Delivery.{CountryCodes, Timezones}
+  alias Oli.Predefined
 
   def index(conn, _params) do
     institutions = Institutions.list_institutions()
@@ -13,7 +12,7 @@ defmodule OliWeb.InstitutionController do
 
   def new(conn, _params) do
     changeset = Institutions.change_institution(%Institution{})
-    render_institution_page conn, "new.html", changeset: changeset, country_codes: list_country_codes(), timezones: list_timezones(), title: "Institutions"
+    render_institution_page conn, "new.html", changeset: changeset, country_codes: Predefined.country_codes(), timezones: Predefined.timezones(), title: "Institutions"
   end
 
   def create(conn, %{"institution" => institution_params}) do
@@ -28,7 +27,7 @@ defmodule OliWeb.InstitutionController do
         |> redirect(to: Routes.static_page_path(conn, :index))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render_institution_page conn, "new.html", changeset: changeset, country_codes: list_country_codes(), timezones: list_timezones(), title: "Institutions"
+        render_institution_page conn, "new.html", changeset: changeset, country_codes: Predefined.country_codes(), timezones: Predefined.timezones(), title: "Institutions"
     end
   end
 
@@ -47,7 +46,7 @@ defmodule OliWeb.InstitutionController do
   def edit(conn, %{"id" => id}) do
     institution = Institutions.get_institution!(id)
     changeset = Institutions.change_institution(institution)
-    render_institution_page conn, "edit.html", institution: institution, changeset: changeset, country_codes: list_country_codes(), timezones: list_timezones(), title: "Institutions"
+    render_institution_page conn, "edit.html", institution: institution, changeset: changeset, country_codes: Predefined.country_codes(), timezones: Predefined.timezones(), title: "Institutions"
   end
 
   def update(conn, %{"id" => id, "institution" => institution_params}) do
@@ -60,7 +59,7 @@ defmodule OliWeb.InstitutionController do
         |> redirect(to: Routes.institution_path(conn, :show, institution))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render_institution_page conn, "edit.html", institution: institution, changeset: changeset, country_codes: list_country_codes(), timezones: list_timezones(), title: "Institutions"
+        render_institution_page conn, "edit.html", institution: institution, changeset: changeset, country_codes: Predefined.country_codes(), timezones: Predefined.timezones(), title: "Institutions"
     end
   end
 

@@ -1,5 +1,12 @@
 <%= render OliWeb.LayoutView, "_delivery_header.html", assigns %>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js" integrity="sha512-HWlJyU4ut5HkEj0QsK/IxBCY55n5ZpskyjVlAoV9Z7XQwwkqXoYdCIC93/htL3Gu5H3R4an/S0h2NXfbZk3g7w==" crossorigin="anonymous"></script>
+
+<script>
+  var world_universities_and_domains = <%= Poison.encode!(@world_universities_and_domains) |> raw %>;
+  var lti_config_defaults = <%= Poison.encode!(@lti_config_defaults) |> raw %>;
+</script>
+
 <div class="container form-container">
   <div class="row my-3">
     <h2>Welcome to the Open Learning Initiative!</h2>
@@ -28,28 +35,59 @@
             <% end %>
 
             <div class="form-label-group">
-              <%= text_input f, :name, class: "form-control " <> error_class(f, :name, "is-invalid"),
+              <%= text_input f, :name, class: "institution-name typeahead form-control " <> error_class(f, :name, "is-invalid"), data_provide: "typeahead",
                 placeholder: "Institution Name", required: true, autofocus: focusHelper(f, :name, default: true) %>
               <%= label f, :name, "Institution Name", class: "control-label" %>
               <%= error_tag f, :name %>
             </div>
 
+            <script>
+              var $input = $(".institution-name.typeahead");
+              $input.typeahead({
+                source: world_universities_and_domains,
+                autoSelect: true,
+                fitToElement: true,
+                afterSelect: function(sel) {
+                  $('input.institution-url').val(sel.institution_url);
+                  $('select.country-code').val(sel.country_code);
+
+                  setTimeout(function() {
+                    $('input.email').focus();
+                  });
+                },
+              });
+              $input.change(function() {
+                var current = $input.typeahead("getActive");
+                if (current) {
+                  // Some item from your model is active!
+                  if (current.name == $input.val()) {
+                    // This means the exact match is found. Use toLowerCase() if you want case insensitive match.
+                  } else {
+                    // This means it is only a partial match, you can either add a new item
+                    // or take the active if you don't want new items
+                  }
+                } else {
+                  // Nothing is active so it is a new value (or maybe empty value)
+                }
+              });
+            </script>
+
             <div class="form-label-group">
-              <%= text_input f, :institution_url, class: "form-control " <> error_class(f, :institution_url, "is-invalid"),
+              <%= text_input f, :institution_url, class: "institution-url form-control " <> error_class(f, :institution_url, "is-invalid"),
                 placeholder: "Institution URL", required: true, autofocus: focusHelper(f, :institution_url)  %>
               <%= label f, :institution_url, "Institution URL" %>
               <%= error_tag f, :institution_url %>
             </div>
 
             <div class="form-label-group">
-              <%= email_input f, :institution_email, class: "form-control " <> error_class(f, :institution_email, "is-invalid"),
+              <%= email_input f, :institution_email, class: "email form-control " <> error_class(f, :institution_email, "is-invalid"),
                 placeholder: "Contact Email", required: true, autofocus: focusHelper(f, :institution_email) %>
               <%= label f, :institution_email, "Contact Email", class: "control-label" %>
               <%= error_tag f, :institution_email %>
             </div>
 
             <div class="form-label-group">
-              <%= select f, :country_code, @country_codes, prompt: "Select Country", class: "form-control " <> error_class(f, :country_code, "is-invalid"),
+              <%= select f, :country_code, @country_codes, prompt: "Select Country", class: "country-code form-control " <> error_class(f, :country_code, "is-invalid"),
                 required: true, autofocus: focusHelper(f, :country_code) %>
               <%= error_tag f, :country_code %>
             </div>
@@ -63,7 +101,29 @@
             <hr class="my-4" />
 
             <h6>LTI 1.3 Configuration</h6>
-            <p class="text-secondary mb-2">
+
+            <select id="lms-family" class="form-control">
+              <option>Select LMS Family</option>
+              <%= for option <- @lti_config_defaults do %>
+                <option value="<%= option.product_family_code %>"><%= option.name %></option>
+              <% end %>
+              <option value="other">Other</option>
+            </select>
+
+            <script>
+              $('#lms-family').change(function(sel) {
+                selection = sel.val();
+
+                if (lti_config_defaults.find(c => c.product_family_code === selection)) {
+                  // TODO: show #suggestion-msg and set config values
+                } else {
+                  // TODO: hide #suggestion-msg and reset config values
+                }
+              })
+            </script>
+
+
+            <p id="suggestion-msg" class="text-secondary mb-2">
               Below are some suggested values based on your LMS. Please confirm these with your
               LMS administrator and change as necessary before proceeding.
             </p>

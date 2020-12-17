@@ -1,8 +1,6 @@
 defmodule Oli.Lti_1p3.OidcLogin do
   import Plug.Conn
 
-  alias Oli.Lti_1p3
-
   def oidc_login_redirect_url(conn, params) do
     with {:ok, conn, _issuer, login_hint, registration} <- validate_oidc_login(conn) do
       # craft OIDC auth response
