@@ -1,8 +1,8 @@
-defmodule Oli.Institutions.InstitutionRegistration do
+defmodule Oli.Institutions.PendingRegistration do
   use Ecto.Schema
   import Ecto.Changeset
 
-  embedded_schema do
+  schema "pending_registrations" do
     field :country_code, :string
     field :institution_email, :string
     field :institution_url, :string

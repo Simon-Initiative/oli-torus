@@ -4,7 +4,7 @@ defmodule OliWeb.LtiController do
   alias Oli.Accounts
   alias Oli.Delivery.Sections
   alias Oli.Institutions
-  alias Oli.Institutions.InstitutionRegistration
+  alias Oli.Institutions.PendingRegistration
   alias Oli.Lti_1p3.ContextRoles
   alias Oli.Lti_1p3.PlatformRoles
   alias Oli.Lti_1p3
@@ -147,23 +147,12 @@ defmodule OliWeb.LtiController do
 
   end
 
-  def request_registration(conn, %{"institution_registration" => ir_attrs} = _params) do
-    case Ecto.Changeset.apply_action(InstitutionRegistration.changeset(%InstitutionRegistration{}, ir_attrs), :update) do
-      {:ok, _data} ->
-        with {:ok, institution} <- Institutions.create_institution(ir_attrs),
-             active_jwk = Oli.Lti_1p3.get_active_jwk(),
-             registration_attrs = Map.merge(ir_attrs, %{"institution_id" => institution.id, "tool_jwk_id" => active_jwk.id}),
-             {:ok, _registration} <- Oli.Institutions.create_registration(registration_attrs)
-        do
-          conn
-          |> render("registration_pending.html")
+  def request_registration(conn, %{"pending_registration" => pending_registration_attrs} = _params) do
+    case Institutions.create_pending_registration(pending_registration_attrs) do
+      {:ok, _pending_registration} ->
+        conn
+        |> render("registration_pending.html")
 
-        else
-          error ->
-            Logger.error("Failed to submit registration request", error)
-            conn
-            |> render("lti_error.html", reason: "Failed to submit registration request")
-        end
       {:error, changeset} ->
         conn
         |> render("register.html",
@@ -171,20 +160,20 @@ defmodule OliWeb.LtiController do
           changeset: changeset,
           country_codes: Predefined.country_codes(),
           timezones: Predefined.timezones(),
-          issuer: ir_attrs["issuer"],
-          client_id: ir_attrs["client_id"])
+          world_universities_and_domains: Predefined.world_universities_and_domains(),
+          lti_config_defaults: Predefined.lti_config_defaults(),
+          issuer: pending_registration_attrs["issuer"],
+          client_id: pending_registration_attrs["client_id"])
     end
   end
 
   defp handle_invalid_registration(conn, issuer, client_id) do
     case Oli.Institutions.get_pending_registration_by_issuer_client_id(issuer, client_id) do
       nil ->
-        changeset = InstitutionRegistration.changeset(%InstitutionRegistration{})
-
         conn
         |> render("register.html",
           conn: conn,
-          changeset: changeset,
+          changeset: Institutions.change_pending_registration(%PendingRegistration{}),
           country_codes: Predefined.country_codes(),
           timezones: Predefined.timezones(),
           world_universities_and_domains: Predefined.world_universities_and_domains(),

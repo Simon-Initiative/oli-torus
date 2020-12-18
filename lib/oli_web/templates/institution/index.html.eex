@@ -1,39 +1,262 @@
+<script>
+  var world_universities_and_domains = <%= Poison.encode!(@world_universities_and_domains) |> raw %>;
+  var lti_config_defaults = <%= Poison.encode!(@lti_config_defaults) |> raw %>;
+  var existing_institutions = <%= Poison.encode!(@institutions |> Enum.map(fn i -> %{name: i.name, institution_url: i.institution_url} end)) |> raw %>;
+
+  function checkForExistingInstitutions(pendingRegistrationId) {
+    const name = $(`#review-${pendingRegistrationId} input.institution-name`).val();
+    const institution_url = $(`#review-${pendingRegistrationId} input.institution-url`).val();
+    const normalize_url = (url) => url.replace(/^https?\:\/\//, "").replace(/\/$/, "");
+
+    const institution_exists = existing_institutions.findIndex(i =>
+      i.name === name && normalize_url(i.institution_url) === normalize_url(institution_url)) > -1;
+
+    if (institution_exists) {
+      $(`#review-${pendingRegistrationId} #create-new-msg`).hide();
+      $(`#review-${pendingRegistrationId} #use-existing-msg`).show();
+    } else {
+      $(`#review-${pendingRegistrationId} #create-new-msg`).show();
+      $(`#review-${pendingRegistrationId} #use-existing-msg`).hide();
+    }
+  }
+</script>
+
 <div class="container">
-  <%= if Enum.count(@institutions) == 0 do %>
-    <div class="my-5 text-center">
-      There are no registered institutions
+
+  <ul class="nav nav-tabs mb-3" id="institutions-tab" role="tablist">
+    <li class="nav-item">
+      <a class="nav-link active" id="institutions-tab" data-toggle="tab" href="#institutions" role="tab" aria-controls="institutions" aria-selected="true">
+        Institutions
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="pending-registrations-tab" data-toggle="tab" href="#pending-registrations" role="tab" aria-controls="pending-registrations" aria-selected="false">
+        Pending Registrations
+
+        <%= case Enum.count(@pending_registrations) do %>
+        <% 0 -> %>
+          <span class="badge badge-pill badge-secondary">0</span>
+        <% count -> %>
+          <span class="badge badge-pill badge-primary"><%= count %></span>
+        <% end %>
+      </a>
+    </li>
+  </ul>
+  <div class="tab-content" id="institutions-tabContent">
+    <div class="tab-pane fade show active" id="institutions" role="tabpanel" aria-labelledby="institutions-tab">
+      <div class="d-flex flex-row mb-2">
+        <div class="flex-grow-1"></div>
+        <div><%= link "New Institution", to: Routes.institution_path(@conn, :new), class: "btn btn-md btn-outline-primary" %></div>
+      </div>
+
+      <%= if Enum.count(@institutions) == 0 do %>
+        <div class="my-5 text-center">
+          There are no registered institutions
+        </div>
+      <% else %>
+        <table class="table table-striped table-bordered">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Country Code</th>
+              <th>Email</th>
+              <th>URL</th>
+              <th>Timezone</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+        <%= for institution <- @institutions do %>
+            <tr>
+              <td><%= institution.name %></td>
+              <td><%= institution.country_code %></td>
+              <td><%= institution.institution_email %></td>
+              <td><%= institution.institution_url %></td>
+              <td><%= institution.timezone %></td>
+
+              <td>
+                <%= link "Details", to: Routes.institution_path(@conn, :show, institution), class: "btn btn-sm btn-outline-primary" %>
+                <%= link "Remove", to: Routes.institution_path(@conn, :delete, institution), method: :delete, data: [confirm: "Are you sure you want to permanently remove the institution \"#{institution.name}\"?"], class: "btn btn-sm btn-outline-danger ml-2" %>
+              </td>
+            </tr>
+        <% end %>
+          </tbody>
+        </table>
+      <% end %>
+
     </div>
-  <% else %>
-    <table class="table table-striped table-bordered">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Country Code</th>
-          <th>Email</th>
-          <th>URL</th>
-          <th>Timezone</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-    <%= for institution <- @institutions do %>
-        <tr>
-          <td><%= institution.name %></td>
-          <td><%= institution.country_code %></td>
-          <td><%= institution.institution_email %></td>
-          <td><%= institution.institution_url %></td>
-          <td><%= institution.timezone %></td>
+    <div class="tab-pane fade" id="pending-registrations" role="tabpanel" aria-labelledby="pending-registrations-tab">
 
-          <td>
-            <%= link "Details", to: Routes.institution_path(@conn, :show, institution), class: "btn btn-sm btn-outline-primary my-2" %>
-            <%= link "Remove", to: Routes.institution_path(@conn, :delete, institution), method: :delete, data: [confirm: "Are you sure you want to permanently remove this institution? \"#{institution.name}\""], class: "btn btn-sm btn-outline-danger my-2 ml-4" %>
-          </td>
-        </tr>
-    <% end %>
-      </tbody>
-    </table>
-  <% end %>
+      <%= if Enum.count(@pending_registrations) == 0 do %>
+        <div class="my-5 text-center">
+          There are no pending registrations
+        </div>
+      <% else %>
+        <table class="table table-striped table-bordered">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Country Code</th>
+              <th>Email</th>
+              <th>URL</th>
+              <th>Timezone</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+        <%= for pending_registration <- @pending_registrations do %>
+            <tr>
+              <td><%= pending_registration.name %></td>
+              <td><%= pending_registration.country_code %></td>
+              <td><%= pending_registration.institution_email %></td>
+              <td><%= pending_registration.institution_url %></td>
+              <td><%= pending_registration.timezone %></td>
 
-  <span><%= link "Register New Institution", to: Routes.institution_path(@conn, :new), class: "btn btn-md btn-outline-primary" %></span>
+              <td>
+                <a href="#review-<%= pending_registration.id %>" class="btn btn-sm btn-outline-primary ml-2" data-toggle="modal" data-target="#review-<%= pending_registration.id %>">Review</button>
+                <%= link "Remove", to: "#", method: :delete, data: [confirm: "Are you sure you want to remove this request for \"#{pending_registration.name}\"?"], class: "btn btn-sm btn-outline-danger ml-2" %>
+
+                <!-- Modal -->
+                <div class="modal fade" id="review-<%= pending_registration.id %>" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                  <div class="modal-dialog" role="document">
+                    <div class="modal-content ">
+                      <%= form_for Oli.Institutions.change_pending_registration(pending_registration), "#", fn f -> %>
+
+                        <%= hidden_input f, :id  %>
+
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="exampleModalLabel">Review Registration</h5>
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                          </button>
+                        </div>
+                        <div class="modal-body">
+                          <div class="form-container">
+
+                            <div class="form-label-group">
+                              <%= text_input f, :name, class: "institution-name typeahead form-control " <> error_class(f, :name, "is-invalid"),
+                                placeholder: "Institution Name", required: true %>
+                              <%= label f, :name, "Institution Name", class: "control-label" %>
+                              <%= error_tag f, :name %>
+                            </div>
+
+                            <script>
+                              const $input = $("#review-<%= pending_registration.id %> .institution-name.typeahead");
+                              $input.typeahead({
+                                source: world_universities_and_domains,
+                                autoSelect: true,
+                                fitToElement: true,
+                                afterSelect: function(sel) {
+                                  $('#review-<%= pending_registration.id %> input.institution-url').val(sel.institution_url);
+                                  checkForExistingInstitutions('<%= pending_registration.id %>');
+                                },
+                              });
+
+                              $(function() {
+                                $('#review-<%= pending_registration.id %> input.institution-name').change(checkForExistingInstitutions.bind(this, '<%= pending_registration.id %>'));
+                                $('#review-<%= pending_registration.id %> input.institution-url').change(checkForExistingInstitutions.bind(this, '<%= pending_registration.id %>'));
+
+                                checkForExistingInstitutions('<%= pending_registration.id %>');
+                              });
+                            </script>
+
+                            <div class="form-label-group">
+                              <%= text_input f, :institution_url, class: "institution-url form-control " <> error_class(f, :institution_url, "is-invalid"),
+                                placeholder: "Institution URL", required: true  %>
+                              <%= label f, :institution_url, "Institution URL" %>
+                              <%= error_tag f, :institution_url %>
+                            </div>
+
+                            <div id="use-existing-msg" class="mb-3 px-2">
+                              <div class="text-primary">An <b>existing</b> institution will be used for this registration.</div>
+                              <div class="text-dark">To create a new institution for this registration, the <b>Institution Name</b> and <b>URL</b> must be different from an existing institution.</div>
+                            </div>
+
+                            <div id="create-new-msg">
+                              <div class="mb-3 px-2">
+                                <div class="text-success">A <b>new</b> institution will be created for this registration.</div>
+                                <div class="text-dark">To create a registration for an existing institution, the <b>Institution Name</b> and <b>URL</b> must match an existing institution.</div>
+                              </div>
+
+                              <div class="form-label-group">
+                                <%= email_input f, :institution_email, class: "email form-control " <> error_class(f, :institution_email, "is-invalid"),
+                                  placeholder: "Contact Email", required: true %>
+                                <%= label f, :institution_email, "Contact Email", class: "control-label" %>
+                                <%= error_tag f, :institution_email %>
+                              </div>
+
+                              <div class="form-label-group">
+                                <%= select f, :country_code, @country_codes, prompt: "Select Country", class: "form-control " <> error_class(f, :country_code, "is-invalid"),
+                                  required: true %>
+                                <%= error_tag f, :country_code %>
+                              </div>
+
+                              <div class="form-label-group">
+                                <%= select f, :timezone, @timezones, prompt: "Select Timezone", class: "form-control " <> error_class(f, :timezone, "is-invalid"),
+                                  required: true %>
+                                <%= error_tag f, :timezone %>
+                              </div>
+                            </div>
+
+                            <hr class="my-4" />
+
+                            <h6>LTI 1.3 Configuration</h6>
+
+                            <div class="form-label-group">
+                              <%= text_input f, :issuer, class: "form-control ", readonly: true %>
+                              <%= label f, :key_set_url, "Issuer", class: "control-label" %>
+                            </div>
+
+                            <div class="form-label-group">
+                              <%= text_input f, :client_id, class: "form-control ", readonly: true %>
+                              <%= label f, :key_set_url, "Issuer", class: "control-label" %>
+                            </div>
+
+                            <div class="form-label-group">
+                              <%= text_input f, :key_set_url, class: "key_set_url form-control " <> error_class(f, :key_set_url, "is-invalid"),
+                                placeholder: "Keyset URL", required: true %>
+                              <%= label f, :key_set_url, "Keyset URL", class: "control-label" %>
+                              <%= error_tag f, :key_set_url %>
+                            </div>
+
+                            <div class="form-label-group">
+                              <%= text_input f, :auth_token_url, class: "auth_token_url form-control " <> error_class(f, :auth_token_url, "is-invalid"),
+                                placeholder: "Auth Token URL", required: true %>
+                              <%= label f, :auth_token_url, "Auth Token URL", class: "control-label" %>
+                              <%= error_tag f, :auth_token_url %>
+                            </div>
+
+                            <div class="form-label-group">
+                              <%= text_input f, :auth_login_url, class: "auth_login_url form-control " <> error_class(f, :auth_login_url, "is-invalid"),
+                                placeholder: "Auth Login URL", required: true %>
+                              <%= label f, :auth_login_url, "Auth Login URL", class: "control-label" %>
+                              <%= error_tag f, :auth_login_url %>
+                            </div>
+
+                            <div class="form-label-group">
+                              <%= text_input f, :auth_server, class: "auth_server form-control " <> error_class(f, :auth_server, "is-invalid"),
+                                placeholder: "Auth Server URL", required: true %>
+                              <%= label f, :auth_server, "Auth Server URL", class: "control-label" %>
+                              <%= error_tag f, :auth_server %>
+                            </div>
+
+                          </div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                          <%= submit "Approve", class: "submit btn btn-success" %>
+                        </div>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+        <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+  </div>
 
 </div>

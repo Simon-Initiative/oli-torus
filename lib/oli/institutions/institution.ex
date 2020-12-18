@@ -8,7 +8,6 @@ defmodule Oli.Institutions.Institution do
     field :institution_url, :string
     field :name, :string
     field :timezone, :string
-    field :approved_at, :utc_datetime
 
     # LTI 1.3 Deployments
     has_many :registrations, Oli.Lti_1p3.Registration
@@ -27,7 +26,6 @@ defmodule Oli.Institutions.Institution do
       :institution_email,
       :institution_url,
       :timezone,
-      :approved_at,
     ])
     |> validate_required([
       :name,

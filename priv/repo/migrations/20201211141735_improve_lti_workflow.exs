@@ -4,8 +4,24 @@ defmodule Oli.Repo.Migrations.UnlinkInstitutionAuthor do
   def change do
     alter table(:institutions) do
       remove :author_id, references(:authors)
-      add :approved_at, :utc_datetime
     end
+
+    create table(:pending_registrations) do
+      add :country_code, :string
+      add :institution_email, :string
+      add :institution_url, :string
+      add :name, :string
+      add :timezone, :string
+
+      add :issuer, :string
+      add :client_id, :string
+      add :key_set_url, :string
+      add :auth_token_url, :string
+      add :auth_login_url, :string
+      add :auth_server, :string
+    end
+
+    create unique_index(:pending_registrations, [:issuer, :client_id])
 
     alter table(:lti_1p3_deployments) do
       remove :registration_id, references(:lti_1p3_registrations)

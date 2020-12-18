@@ -7,6 +7,7 @@ defmodule Oli.Institutions do
   alias Oli.Repo
 
   alias Oli.Institutions.Institution
+  alias Oli.Institutions.PendingRegistration
   alias Oli.Lti_1p3.Registration
   alias Oli.Lti_1p3.Deployment
 
@@ -265,16 +266,94 @@ defmodule Oli.Institutions do
 
   def get_registration_by_issuer_client_id(issuer, client_id) do
     Repo.one from registration in Registration,
-      join: institution in Institution, on: registration.institution_id == institution.id,
-      where: registration.issuer == ^ issuer and registration.client_id == ^client_id and not is_nil(institution.approved_at),
+      where: registration.issuer == ^ issuer and registration.client_id == ^client_id,
       select: registration
   end
 
+  @doc """
+  Returns the list of pending_registrations.
+  ## Examples
+      iex> list_pending_registrations()
+      [%PendingRegistration{}, ...]
+  """
+  def list_pending_registrations do
+    Repo.all(PendingRegistration)
+  end
+
+  @doc """
+  Gets a single pending_registration.
+  Raises `Ecto.NoResultsError` if the PendingRegistration does not exist.
+  ## Examples
+      iex> get_pending_registration!(123)
+      %PendingRegistration{}
+      iex> get_pending_registration!(456)
+      ** (Ecto.NoResultsError)
+  """
+  def get_pending_registration!(id), do: Repo.get!(PendingRegistration, id)
+
+  @doc """
+  Gets a single pending_registration by the issuer and client_id.
+  Returns nil if the PendingRegistration does not exist.
+  ## Examples
+      iex> get_pending_registration_by_issuer_client_id(123)
+      %PendingRegistration{}
+      iex> get_pending_registration_by_issuer_client_id(456)
+      nil
+  """
   def get_pending_registration_by_issuer_client_id(issuer, client_id) do
-    Repo.one from registration in Registration,
-      join: institution in Institution, on: registration.institution_id == institution.id,
-      where: registration.issuer == ^ issuer and registration.client_id == ^client_id and is_nil(institution.approved_at),
-      select: registration
+    Repo.one from pr in PendingRegistration,
+      where: pr.issuer == ^ issuer and pr.client_id == ^client_id,
+      select: pr
+  end
+
+  @doc """
+  Creates a pending_registration.
+  ## Examples
+      iex> create_pending_registration(%{field: value})
+      {:ok, %PendingRegistration{}}
+      iex> create_pending_registration(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_pending_registration(attrs \\ %{}) do
+    %PendingRegistration{}
+    |> PendingRegistration.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a pending_registration.
+  ## Examples
+      iex> update_pending_registration(pending_registration, %{field: new_value})
+      {:ok, %PendingRegistration{}}
+      iex> update_pending_registration(pending_registration, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def update_pending_registration(%PendingRegistration{} = pending_registration, attrs) do
+    pending_registration
+    |> PendingRegistration.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a pending_registration.
+  ## Examples
+      iex> delete_pending_registration(pending_registration)
+      {:ok, %PendingRegistration{}}
+      iex> delete_pending_registration(pending_registration)
+      {:error, %Ecto.Changeset{}}
+  """
+  def delete_pending_registration(%PendingRegistration{} = pending_registration) do
+    Repo.delete(pending_registration)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking pending_registration changes.
+  ## Examples
+      iex> change_pending_registration(pending_registration)
+      %Ecto.Changeset{source: %PendingRegistration{}}
+  """
+  def change_pending_registration(%PendingRegistration{} = pending_registration) do
+    PendingRegistration.changeset(pending_registration, %{})
   end
 
 end

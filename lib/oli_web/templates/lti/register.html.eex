@@ -1,12 +1,5 @@
 <%= render OliWeb.LayoutView, "_delivery_header.html", assigns %>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js" integrity="sha512-HWlJyU4ut5HkEj0QsK/IxBCY55n5ZpskyjVlAoV9Z7XQwwkqXoYdCIC93/htL3Gu5H3R4an/S0h2NXfbZk3g7w==" crossorigin="anonymous"></script>
-
-<script>
-  var world_universities_and_domains = <%= Poison.encode!(@world_universities_and_domains) |> raw %>;
-  var lti_config_defaults = <%= Poison.encode!(@lti_config_defaults) |> raw %>;
-</script>
-
 <div class="container form-container">
   <div class="row my-3">
     <h2>Welcome to the Open Learning Initiative!</h2>
@@ -27,7 +20,12 @@
         <div class="card-body">
           <h5 class="card-title text-center">Register Your Institution</h5>
 
-          <%= form_for @changeset, Routes.lti_path(@conn, :request_registration), fn f -> %>
+          <script>
+            var world_universities_and_domains = <%= Poison.encode!(@world_universities_and_domains) |> raw %>;
+            var lti_config_defaults = <%= Poison.encode!(@lti_config_defaults) |> raw %>;
+          </script>
+
+          <%= form_for @changeset, @submit_action, fn f -> %>
             <%= if @changeset.action do %>
               <div class="alert alert-danger">
                 <p>Something went wrong, please check the errors below.</p>
@@ -55,20 +53,6 @@
                     $('input.email').focus();
                   });
                 },
-              });
-              $input.change(function() {
-                var current = $input.typeahead("getActive");
-                if (current) {
-                  // Some item from your model is active!
-                  if (current.name == $input.val()) {
-                    // This means the exact match is found. Use toLowerCase() if you want case insensitive match.
-                  } else {
-                    // This means it is only a partial match, you can either add a new item
-                    // or take the active if you don't want new items
-                  }
-                } else {
-                  // Nothing is active so it is a new value (or maybe empty value)
-                }
               });
             </script>
 
