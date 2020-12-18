@@ -22,9 +22,11 @@
     if (institution_exists) {
       $(`#review-${pendingRegistrationId} #create-new-msg`).hide();
       $(`#review-${pendingRegistrationId} #use-existing-msg`).show();
+      $(`#review-${pendingRegistrationId} #institution-details`).hide();
     } else {
       $(`#review-${pendingRegistrationId} #create-new-msg`).show();
       $(`#review-${pendingRegistrationId} #use-existing-msg`).hide();
+      $(`#review-${pendingRegistrationId} #institution-details`).show();
     }
   }
 </script>
@@ -161,8 +163,8 @@
                               });
 
                               $(function() {
-                                $('#review-<%= pending_registration.id %> input.institution-name').change(checkForExistingInstitutions.bind(this, '<%= pending_registration.id %>'));
-                                $('#review-<%= pending_registration.id %> input.institution-url').change(checkForExistingInstitutions.bind(this, '<%= pending_registration.id %>'));
+                                $('#review-<%= pending_registration.id %> input.institution-name').on('change keyup paste mouseup', checkForExistingInstitutions.bind(this, '<%= pending_registration.id %>'));
+                                $('#review-<%= pending_registration.id %> input.institution-url').on('change keyup paste mouseup', checkForExistingInstitutions.bind(this, '<%= pending_registration.id %>'));
 
                                 checkForExistingInstitutions('<%= pending_registration.id %>');
                               });
@@ -175,17 +177,17 @@
                               <%= error_tag f, :institution_url %>
                             </div>
 
-                            <div id="use-existing-msg" class="mb-3 px-2">
+                            <div id="create-new-msg" class="mb-3 px-2" style="display: none">
+                              <div class="text-success">A <b>new</b> institution will be created for this registration.</div>
+                              <div class="text-dark">To create a registration for an existing institution, the <b>Institution Name</b> and <b>URL</b> must match an existing institution.</div>
+                            </div>
+
+                            <div id="use-existing-msg" class="mb-3 px-2" style="display: none">
                               <div class="text-primary">An <b>existing</b> institution will be used for this registration.</div>
                               <div class="text-dark">To create a new institution for this registration, the <b>Institution Name</b> and <b>URL</b> must be different from an existing institution.</div>
                             </div>
 
-                            <div id="create-new-msg">
-                              <div class="mb-3 px-2">
-                                <div class="text-success">A <b>new</b> institution will be created for this registration.</div>
-                                <div class="text-dark">To create a registration for an existing institution, the <b>Institution Name</b> and <b>URL</b> must match an existing institution.</div>
-                              </div>
-
+                            <div id="institution-details">
                               <div class="form-label-group">
                                 <%= email_input f, :institution_email, class: "email form-control " <> error_class(f, :institution_email, "is-invalid"),
                                   placeholder: "Contact Email", required: true %>
