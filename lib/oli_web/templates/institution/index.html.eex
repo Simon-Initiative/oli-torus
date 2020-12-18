@@ -6,10 +6,18 @@
   function checkForExistingInstitutions(pendingRegistrationId) {
     const name = $(`#review-${pendingRegistrationId} input.institution-name`).val();
     const institution_url = $(`#review-${pendingRegistrationId} input.institution-url`).val();
-    const normalize_url = (url) => url.replace(/^https?\:\/\//, "").replace(/\/$/, "");
+    const normalize_name = (url) =>
+      url
+      .replace(/\s+/, " ")
+      .toLowerCase();
+    const normalize_url = (url) =>
+      url
+      .replace(/^https?\:\/\//, "")
+      .replace(/\/$/, "").toLowerCase();
 
     const institution_exists = existing_institutions.findIndex(i =>
-      i.name === name && normalize_url(i.institution_url) === normalize_url(institution_url)) > -1;
+      normalize_name(i.name) === normalize_name(name)
+      && normalize_url(i.institution_url) === normalize_url(institution_url)) > -1;
 
     if (institution_exists) {
       $(`#review-${pendingRegistrationId} #create-new-msg`).hide();
