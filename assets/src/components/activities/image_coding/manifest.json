@@ -1,0 +1,17 @@
+{
+  "id": "oli_image_coding",
+  "friendlyName": "Image Coding",
+  "description": "KTH Image Coding exercise",
+  "delivery": {
+    "element": "oli-image-coding-delivery",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "oli-image-coding-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "schemaPruning": {
+    "type": "keys",
+    "keys": ["feedback"]
+  }
+}
