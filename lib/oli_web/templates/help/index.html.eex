@@ -1,0 +1,51 @@
+
+<script src="https://www.google.com/recaptcha/api.js"></script>
+
+<div class="container form-container">
+    <div class="row">
+        <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
+<%= form_for @conn, Routes.help_path(@conn, :create), [id: "form-request-help"], fn f -> %>
+<div class="form-group">
+    <%= label f, :email, "Help Request", class: "control-label" %>
+    <div class="input-group mb-3">
+        <%= text_input f,
+            :name,
+            class: "form-control" <> error_class(f, :title, "is-invalid"),
+            placeholder: "John Dow",
+            id: "input-name",
+            required: true,
+            autofocus: focusHelper(f, :name, default: false) %>
+        <%= error_tag f, :name %>
+        <%= text_input f,
+            :email,
+            class: "form-control" <> error_class(f, :title, "is-invalid"),
+            placeholder: "author@example.edu",
+            id: "input-email",
+            required: true,
+            autofocus: focusHelper(f, :email, default: false) %>
+        <%= error_tag f, :email %>
+        <%= textarea f,
+            :message,
+            class: "form-control" <> error_class(f, :title, "is-invalid"),
+            id: "input-message",
+            required: false,
+            autofocus: focusHelper(f, :message, default: false) %>
+        <%= error_tag f, :message %>
+
+    </div>
+    <div class="input-group mb-3">
+        <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
+        <%= error_tag f, :captcha %>
+    </div>
+    <div class="input-group-append">
+        <%= submit "Send Request",
+              id: "button-create-author",
+              class: "btn btn-primary",
+              phx_disable_with: "Requesting help...",
+              form: f.id %>
+    </div>
+</div>
+        <% end %>
+    </div>
+</div>
+</div>

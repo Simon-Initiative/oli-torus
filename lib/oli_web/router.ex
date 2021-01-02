@@ -151,6 +151,7 @@ defmodule OliWeb.Router do
     pipe_through [:browser]
 
     get "/", StaticPageController, :index
+    resources "/help", HelpController, only: [:index, :create]
   end
 
   scope "/.well-known", OliWeb do
