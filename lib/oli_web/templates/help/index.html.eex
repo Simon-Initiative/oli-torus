@@ -3,35 +3,58 @@
 
 <div class="container form-container">
     <div class="row">
-        <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
+        <div class="col-lg-8 mx-auto">
 <%= form_for @conn, Routes.help_path(@conn, :create), [id: "form-request-help"], fn f -> %>
-<div class="form-group">
-    <%= label f, :email, "Help Request", class: "control-label" %>
-    <div class="input-group mb-3">
+
+    <div class="form-label-group">
         <%= text_input f,
-            :name,
-            class: "form-control" <> error_class(f, :title, "is-invalid"),
+            :full_name,
+            class: "form-control" <> error_class(f, :full_name, "is-invalid"),
             placeholder: "John Dow",
-            id: "input-name",
             required: true,
-            autofocus: focusHelper(f, :name, default: false) %>
-        <%= error_tag f, :name %>
-        <%= text_input f,
+            autofocus: true %>
+        <%= label f, :full_name, "Full Name", class: "control-label" %>
+        <%= error_tag f, :full_name %>
+    </div>
+    <div class="form-label-group">
+        <%= email_input f,
             :email,
-            class: "form-control" <> error_class(f, :title, "is-invalid"),
+            class: "form-control" <> error_class(f, :email, "is-invalid"),
             placeholder: "author@example.edu",
-            id: "input-email",
-            required: true,
-            autofocus: focusHelper(f, :email, default: false) %>
+            required: true %>
+        <%= label f, :email, "Email Address", class: "control-label" %>
         <%= error_tag f, :email %>
+    </div>
+    <%= label f, :subject, "Subject:", class: "control-label" %>
+    <div class="input-group mb-3">
+         <%= select f, :subject, ["- - - - - - - - -": [
+          [value: "help_credit", key: "How can I get credit for an OLI course?"],
+          [value: "help_courseKey", key: "Where do I find my course key?"],
+          [value: "help_charge", key: "My credit card was charged (multiple times, possibly) and I still cannot access my course"],
+          [value: "help_flash", key: "The Learn By Doing or Did I Get This? Exercises don't work properly, or the text is cut off"],
+          [value: "help_server", key: "The server timed out or I received an unknown error"]
+          ],
+          "- - - - - - - - -": [
+          [value: "help_tech", key: "Technical support"],
+          [value: "help_courseContent", key: "Course content"],
+          [value: "help_courseFeedback", key: "Feedback about a course or OLI"]
+          ],
+          "- - - - - - - - -": [
+          [value: "help_other", key: "Other questions or comments"]
+          ]
+          ],
+           prompt: "Select from the list of topics provided.",
+            class: "form-control" <> error_class(f, :message, "is-invalid"),
+            required: true %>
+    </div>
+    <%= label f, :message, "Questions or Comments:", class: "control-label" %>
+    <div class="input-group mb-3">
         <%= textarea f,
             :message,
-            class: "form-control" <> error_class(f, :title, "is-invalid"),
-            id: "input-message",
-            required: false,
-            autofocus: focusHelper(f, :message, default: false) %>
+            class: "form-control" <> error_class(f, :message, "is-invalid"),
+            required: true,
+            rows: 8 %>
         <%= error_tag f, :message %>
-
     </div>
     <div class="input-group mb-3">
         <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
@@ -44,7 +67,7 @@
               phx_disable_with: "Requesting help...",
               form: f.id %>
     </div>
-</div>
+
         <% end %>
     </div>
 </div>

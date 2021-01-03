@@ -37,6 +37,10 @@ config :oli, :recaptcha,
   site_key: System.get_env("RECAPTCHA_SITE_KEY"),
   secret: System.get_env("RECAPTCHA_PRIVATE_KEY")
 
+# Configure help
+config :oli, :help,
+  dispatcher: Oli.Help.Providers.FreshdeskHelp
+
 config :ex_aws,
   access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, :instance_role],
   secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, :instance_role]
