@@ -7,6 +7,7 @@ import { Description } from 'components/misc/Description';
 import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 import { CloseButton } from 'components/misc/CloseButton';
 import { ProjectSlug } from 'data/types';
+import * as Lang from 'utils/lang';
 
 interface ChoicesProps extends ModelEditorProps {
   onAddChoice: () => void;
@@ -37,10 +38,10 @@ export const Choices = ({ onAddChoice, onEditChoice, onRemoveChoice, editMode, m
 
   return (
     <div className="my-5">
-      <Heading title="Answer Choices"
-        subtitle="One correct answer choice and as many incorrect answer choices as you like." id="choices" />
+      <Heading title={Lang.dgettext('mcq', 'Answer Choices')}
+        subtitle={Lang.dgettext('mcq', 'One correct answer choice and as many incorrect answer choices as you like.')} id="choices" />
       <Description>
-        <IconCorrect /> Correct Choice
+        <IconCorrect /> {Lang.dgettext('mcq', 'Correct Choice')}
       </Description>
       <RichTextEditor
         className="mb-3"
@@ -50,7 +51,7 @@ export const Choices = ({ onAddChoice, onEditChoice, onRemoveChoice, editMode, m
       {incorrectChoices.map((choice, index) =>
         <React.Fragment key={choice.id}>
           <Description>
-            <IconIncorrect /> Incorrect Choice {index + 1}
+            <IconIncorrect /> {Lang.dgettext('mcq', 'Incorrect Choice')} {index + 1}
           </Description>
           <div className="d-flex mb-3">
             <RichTextEditor
@@ -68,7 +69,7 @@ export const Choices = ({ onAddChoice, onEditChoice, onRemoveChoice, editMode, m
       <button
         className="btn btn-sm btn-primary my-2"
         disabled={!editMode}
-        onClick={onAddChoice}>Add incorrect answer choice
+        onClick={onAddChoice}>{Lang.dgettext('mcq', 'Add incorrect answer choice')}
       </button>
     </div>
   );
