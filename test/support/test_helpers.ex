@@ -108,7 +108,6 @@ defmodule Oli.TestHelpers do
         client_id: "some client_id",
         issuer: "some issuer",
         key_set_url: "some key_set_url",
-        kid: "some kid"
       })
 
     {:ok, registration} = Institutions.create_registration(params)

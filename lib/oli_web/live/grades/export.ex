@@ -1,10 +1,10 @@
 defmodule OliWeb.Grades.Export do
-  use Phoenix.LiveComponent
-
-  use Phoenix.HTML
-  alias OliWeb.Router.Helpers, as: Routes
+  use OliWeb, :live_component
 
   def render(assigns) do
+
+    link_text = dgettext("grades", "Export and Download Gradebook")
+
     ~L"""
     <div class="card">
       <div class="card-body">
@@ -15,7 +15,7 @@ defmodule OliWeb.Grades.Export do
       </div>
 
       <div class="card-footer">
-       <%= link "Export and Download Gradebook", to: Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @context_id), class: "btn btn-primary" %>
+       <%= link link_text, to: Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @context_id), class: "btn btn-primary" %>
       </div>
     </div>
     """

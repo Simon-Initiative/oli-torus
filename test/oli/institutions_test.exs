@@ -16,9 +16,9 @@ defmodule Oli.InstitutionsTest do
       %{institution: institution, jwk: jwk, registration: registration}
     end
 
-    @valid_attrs %{auth_login_url: "some auth_login_url", auth_server: "some auth_server", auth_token_url: "some auth_token_url", client_id: "some client_id", issuer: "some issuer", key_set_url: "some key_set_url", kid: "some kid"}
-    @update_attrs %{auth_login_url: "some updated auth_login_url", auth_server: "some updated auth_server", auth_token_url: "some updated auth_token_url", client_id: "some updated client_id", issuer: "some updated issuer", key_set_url: "some updated key_set_url", kid: "some updated kid"}
-    @invalid_attrs %{auth_login_url: nil, auth_server: nil, auth_token_url: nil, client_id: nil, issuer: nil, key_set_url: nil, kid: nil}
+    @valid_attrs %{auth_login_url: "some auth_login_url", auth_server: "some auth_server", auth_token_url: "some auth_token_url", client_id: "some client_id", issuer: "some issuer", key_set_url: "some key_set_url"}
+    @update_attrs %{auth_login_url: "some updated auth_login_url", auth_server: "some updated auth_server", auth_token_url: "some updated auth_token_url", client_id: "some updated client_id", issuer: "some updated issuer", key_set_url: "some updated key_set_url"}
+    @invalid_attrs %{auth_login_url: nil, auth_server: nil, auth_token_url: nil, client_id: nil, issuer: nil, key_set_url: nil}
 
     test "list_registrations/0 returns all registrations", %{registration: registration} do
       assert Institutions.list_registrations() |> Enum.map(&(&1.id)) == [registration.id]
@@ -29,14 +29,13 @@ defmodule Oli.InstitutionsTest do
     end
 
     test "create_registration/1 with valid data creates a registration", %{institution: institution, jwk: jwk} do
-      assert {:ok, %Registration{} = registration} = Institutions.create_registration(@valid_attrs |> Enum.into(%{institution_id: institution.id, tool_jwk_id: jwk.id}))
+      assert {:ok, %Registration{} = registration} = Institutions.create_registration(Enum.into(%{institution_id: institution.id, tool_jwk_id: jwk.id, issuer: "some other issuer"}, @valid_attrs))
       assert registration.auth_login_url == "some auth_login_url"
       assert registration.auth_server == "some auth_server"
       assert registration.auth_token_url == "some auth_token_url"
       assert registration.client_id == "some client_id"
-      assert registration.issuer == "some issuer"
+      assert registration.issuer == "some other issuer"
       assert registration.key_set_url == "some key_set_url"
-      assert registration.kid == "some kid"
     end
 
     test "create_registration/1 with invalid data returns error changeset" do
@@ -51,7 +50,6 @@ defmodule Oli.InstitutionsTest do
       assert registration.client_id == "some updated client_id"
       assert registration.issuer == "some updated issuer"
       assert registration.key_set_url == "some updated key_set_url"
-      assert registration.kid == "some updated kid"
     end
 
     test "update_registration/2 with invalid data returns error changeset", %{registration: registration} do

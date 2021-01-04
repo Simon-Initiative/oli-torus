@@ -18,26 +18,21 @@ defmodule OliWeb.ObjectivesLiveTest do
       objective2 = Map.get(map, :objective2)
 
       # the container should have two objectives
-      assert view |> element("##{Integer.to_string(objective1.resource.id)}") |> has_element?()
-      assert view |> element("##{Integer.to_string(objective2.resource.id)}") |> has_element?()
-
-      # select objective
-      view
-      |> element("##{Integer.to_string(objective1.resource.id)}")
-      |> render_click()
+      assert view |> element("##{objective1.revision.slug}") |> has_element?()
+      assert view |> element("##{objective2.revision.slug}") |> has_element?()
 
       # delete the selected objective, which requires first clicking the delete button
       # which will display the modal, then we click the "Delete" button in the modal
       view
-       |> element("#action_delete")
+       |> element("#delete_#{objective1.revision.slug}")
        |> render_click()
 
       view
-       |> element(".btn-danger")
+       |> element(".btn-danger.confirm")
        |> render_click()
 
-      refute view |> element("##{Integer.to_string(objective1.resource.id)}") |> has_element?()
-      assert view |> element("##{Integer.to_string(objective2.resource.id)}") |> has_element?()
+      refute view |> element("##{objective1.revision.slug}") |> has_element?()
+      assert view |> element("##{objective2.revision.slug}") |> has_element?()
 
     end
 

@@ -4,10 +4,6 @@ defmodule Oli.TestHelpers.Lti_1p3 do
   alias Oli.Lti_1p3
   alias Oli.Lti_1p3.KeyGenerator
 
-  @spec generate_lti_stubs(map) :: %{
-          conn: Plug.Conn.t(),
-          get_public_key: (any, any -> {any, any})
-        }
   def generate_lti_stubs(args \\ %{}) do
     institution = institution_fixture()
     jwk = jwk_fixture()
@@ -22,16 +18,12 @@ defmodule Oli.TestHelpers.Lti_1p3 do
     } = %{
       claims: all_default_claims(),
       registration_params: %{
-        issuer: "some issuer",
-        client_id: "some client_id",
+        issuer: "https://lti-ri.imsglobal.org",
+        client_id: "12345",
         key_set_url: "some key_set_url",
         auth_token_url: "some auth_token_url",
         auth_login_url: "some auth_login_url",
         auth_server: "some auth_server",
-        kid: case args[:kid] do
-          nil -> "some kid"
-          kid -> kid
-        end,
         tool_jwk_id: jwk.id,
         institution_id: institution.id,
       },
