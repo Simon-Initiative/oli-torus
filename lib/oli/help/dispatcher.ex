@@ -7,11 +7,8 @@ defmodule Oli.Help.Dispatcher do
   """
   @callback dispatch(%HelpContent{}) :: {:ok, term} | {:error, String.t}
 
-  def dispatch!(implementation, %HelpContent{} = contents) do
-    case implementation.dispatch(contents) do
-      {:ok, data} -> data
-      {:error, error} -> raise ArgumentError, "dispatch error: #{error}"
-    end
+  def dispatch(implementation, %HelpContent{} = contents) do
+    implementation.dispatch(contents)
   end
 
 end

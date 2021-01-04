@@ -5,13 +5,12 @@ defmodule Oli.Help.Providers.EmailHelp do
 
   @impl Oli.Help.Dispatcher
   def dispatch(%HelpContent{} = contents) do
-#    IO.puts "email help dispatch #{inspect contents}"
-    help_desk_email = System.get_env("HELP_DESK_EMAIL", "oli-help@andrew.cmu.edu")
+    help_desk_email = System.get_env("HELP_DESK_EMAIL")
     email = Oli.Email.help_desk_email(
       contents.full_name,
       contents.email,
       help_desk_email,
-      contents.subject,
+      HelpContent.get_subject(contents.subject),
       :help_email,
       %{
         message: contents.message

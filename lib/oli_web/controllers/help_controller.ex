@@ -9,20 +9,26 @@ defmodule OliWeb.HelpController do
   end
 
   def create(conn, params) do
-    g_recaptcha_response = Map.get(params, "g-recaptcha-response")
-    help_content = HelpContent.parse(params)
-    IO.puts "help content #{inspect help_content}"
-    case Oli.Utils.Recaptcha.verify(g_recaptcha_response) do
-      {:success, :true} ->
-        help_dispatcher = Application.fetch_env!(:oli, :help)[:dispatcher]
-        Oli.Help.Dispatcher.dispatch!(help_dispatcher, help_content)
+    with {:ok, :true} <- validate_recapture(Map.get(params, "g-recaptcha-response")),
+         {:ok, help_content} <- HelpContent.parse(params),
+         {:ok, _} <- Oli.Help.Dispatcher.dispatch(Application.fetch_env!(:oli, :help)[:dispatcher], help_content)
+      do
+      conn
+      |> put_flash(:ok, "Your help request has been successfully submitted")
+      |> redirect(to: Routes.help_path(conn, :index))
+    else
+      {:error, message} ->
         conn
-        |> put_flash(:ok, "Your help request has been successfully submitted")
+        |> put_flash(:error, "Help request failed, please try again")
         |> redirect(to: Routes.help_path(conn, :index))
-      {:success, :false} ->
-        conn
-        |> put_flash(:error, "reCaptcha failed, please try again")
-        |> redirect(to: Routes.help_path(conn, :index))
+    end
+
+  end
+
+  defp validate_recapture(recaptcha) do
+    case Oli.Utils.Recaptcha.verify(recaptcha) do
+      {:success, :true} -> {:ok, :true}
+      {:success, :false} -> {:error, "reCaptcha failure"}
     end
   end
 

@@ -31,13 +31,13 @@
           [value: "help_credit", key: "How can I get credit for an OLI course?"],
           [value: "help_courseKey", key: "Where do I find my course key?"],
           [value: "help_charge", key: "My credit card was charged (multiple times, possibly) and I still cannot access my course"],
-          [value: "help_flash", key: "The Learn By Doing or Did I Get This? Exercises don't work properly, or the text is cut off"],
+          [value: "help_lbd", key: "The Learn By Doing or Did I Get This? Exercises don't work properly, or the text is cut off"],
           [value: "help_server", key: "The server timed out or I received an unknown error"]
           ],
           "- - - - - - - - -": [
           [value: "help_tech", key: "Technical support"],
-          [value: "help_courseContent", key: "Course content"],
-          [value: "help_courseFeedback", key: "Feedback about a course or OLI"]
+          [value: "help_course_content", key: "Course content"],
+          [value: "help_course_feedback", key: "Feedback about a course or OLI"]
           ],
           "- - - - - - - - -": [
           [value: "help_other", key: "Other questions or comments"]
