@@ -29,7 +29,7 @@
     <div class="input-group mb-3">
          <%= select f, :subject, ["- - - - - - - - -": [
           [value: "help_credit", key: "How can I get credit for an OLI course?"],
-          [value: "help_courseKey", key: "Where do I find my course key?"],
+          [value: "help_course_key", key: "Where do I find my course key?"],
           [value: "help_charge", key: "My credit card was charged (multiple times, possibly) and I still cannot access my course"],
           [value: "help_lbd", key: "The Learn By Doing or Did I Get This? Exercises don't work properly, or the text is cut off"],
           [value: "help_server", key: "The server timed out or I received an unknown error"]

@@ -39,8 +39,8 @@ defmodule Oli.Email do
     new_email()
     |> from({from_email_name, from_email_address})
     |> put_header("Reply-To", email_reply_to)
-    # render both email.html and email.text layouts using :email
-    |> put_layout({OliWeb.LayoutView, :email})
+    # render both email.html and email.text layouts using :help_email
+    |> put_layout({OliWeb.LayoutView, :help_email})
   end
 
   def html_text_body(email) do

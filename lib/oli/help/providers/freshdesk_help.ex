@@ -25,16 +25,16 @@ defmodule Oli.Help.Providers.FreshdeskHelp do
         }
       )
 
-    timeout = System.get_env("FRESHDESK_CALL_TIMEOUT")
-
-    case HTTPoison.post(url, body, @headers) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, body}
-      {:ok, %HTTPoison.Response{body: body}} ->
-        {:error, body}
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        {:error, reason}
-    end
+      IO.puts "freshdesk body #{inspect body}"
+    {:ok, "good"}
+#    case HTTPoison.post(url, body, @headers) do
+#      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+#        {:ok, body}
+#      {:ok, %HTTPoison.Response{body: body}} ->
+#        {:error, body}
+#      {:error, %HTTPoison.Error{reason: reason}} ->
+#        {:error, reason}
+#    end
   end
 
 end
