@@ -1,10 +1,12 @@
 # Changelog
 
-## 0.4.0 (TBD)
+## 0.4.0 (2021-1-4)
 ### Enhancements
+  - Add support for check all that apply activity
 
 ### Bug fixes
-
+  - Fix an issue where special characters in a course slug broke breadcrumb navigation in editor
+  - Fix some silently broken  unit tests
 
 ## 0.3.0 (2020-12-10)
 

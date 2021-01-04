@@ -45,7 +45,8 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
 
           case activity_type(part_attempt) do
             # for short answer questions, the input is the text the student entered in the field
-            "oli_short_answer" -> input
+            "oli_short_answer" ->
+              input
               |> Utils.parse_content
             # for multiple choice questions, the input is a string id that refers to the selected choice
             "oli_multiple_choice" ->
@@ -57,14 +58,21 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
                 _ -> Utils.parse_content(content)
               end
             "oli_check_all_that_apply" ->
+              # CATA Input includes all selected choices as "id1 id2 id3"
+              selected_choices = String.split(input, " ")
               choices = part_attempt.activity_attempt.transformed_model["choices"]
+              contents = choices
+              |> Enum.filter(fn choice -> Enum.find(selected_choices,
+                fn selected_id -> choice["id"] == selected_id end)
+              end)
+              |> Enum.map(fn choice -> choice["content"] end)
 
-              content = Enum.find(choices, & &1["id"] == input)["content"]
-
-              case content do
-                %{"model" => model} -> Utils.parse_content(model)
-                _ -> Utils.parse_content(content)
-              end
+              contents
+              |> Enum.map(fn content_item -> case content_item do
+                  %{"model" => model} -> Utils.parse_content(model)
+                  _ -> Utils.parse_content(content_item)
+                end
+              end)
             # fallback for future activity types
             _unregistered -> "Input in unregistered activity type: " <> input
           end
@@ -76,8 +84,13 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
           end
       end
     rescue
-      _e -> Logger.error("Error in EventDescriptor.get_input. Type: #{type}, part attempt: #{Kernel.inspect(part_attempt)}")
-      "The input that created this event could not be found."
+      e ->
+        Logger.error(e)
+        Logger.error("""
+        Error in EventDescriptor.get_input.
+        Type: #{type}, part attempt: #{Kernel.inspect(part_attempt)}"
+        The input that created this event could not be found.
+        """)
     end
   end
 
