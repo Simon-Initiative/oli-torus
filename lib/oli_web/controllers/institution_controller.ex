@@ -4,6 +4,7 @@ defmodule OliWeb.InstitutionController do
   alias Oli.Institutions
   alias Oli.Institutions.Institution
   alias Oli.Predefined
+  alias Oli.Institutions.PendingRegistration
 
   def index(conn, _params) do
     institutions = Institutions.list_institutions()
@@ -75,25 +76,26 @@ defmodule OliWeb.InstitutionController do
     |> redirect(to: Routes.institution_path(conn, :index))
   end
 
-  def approve_registration() do
+  def approve_registration(conn, %{pending_registration: pending_registration_attrs} = params) do
+    case Ecto.Changeset.apply_action(PendingRegistration.changeset(%PendingRegistration{}, pending_registration_attrs), :update) do
+      {:ok, _data} ->
+        with {:ok, institution} <- Institutions.create_institution(pending_registration_attrs),
+             active_jwk = Oli.Lti_1p3.get_active_jwk(),
+             registration_attrs = Map.merge(pending_registration_attrs, %{"institution_id" => institution.id, "tool_jwk_id" => active_jwk.id}),
+             {:ok, _registration} <- Oli.Institutions.create_registration(registration_attrs)
+        do
+          conn
+          |> render("registration_pending.html")
 
-    # case Ecto.Changeset.apply_action(PendingRegistration.changeset(%PendingRegistration{}, ir_attrs), :update) do
-    #   {:ok, _data} ->
-    #     with {:ok, institution} <- Institutions.create_institution(ir_attrs),
-    #          active_jwk = Oli.Lti_1p3.get_active_jwk(),
-    #          registration_attrs = Map.merge(ir_attrs, %{"institution_id" => institution.id, "tool_jwk_id" => active_jwk.id}),
-    #          {:ok, _registration} <- Oli.Institutions.create_registration(registration_attrs)
-    #     do
-    #       conn
-    #       |> render("registration_pending.html")
+        else
+          error ->
+            Logger.error("Failed to approve registration request", error)
 
-    #     else
-    #       error ->
-    #         Logger.error("Failed to submit registration request", error)
-    #         conn
-    #         |> render("lti_error.html", reason: "Failed to submit registration request")
-    #     end
-    # end
+            conn
+            |> put_flash(:error, "Failed to approve registration. Please double check your entries and try again.")
+            |> redirect(to: Routes.institution_path(conn, :index))
+        end
+    end
   end
 
   defp render_institution_page(conn, template, assigns) do
