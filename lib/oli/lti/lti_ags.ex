@@ -110,10 +110,6 @@ defmodule Oli.Lti.LTI_AGS do
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(url, headers(access_token)),
       {:ok, results} <- Jason.decode(body)
     do
-
-      IO.inspect headers(access_token)
-      IO.inspect results
-
       {:ok, Enum.map(results, fn r -> to_line_item(r) end)}
     else
       e ->
