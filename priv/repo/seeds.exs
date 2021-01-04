@@ -74,9 +74,7 @@ if !Oli.Repo.get_by(Oli.Resources.ScoringStrategy, id: 1) do
 end
 
 # Seed the database with the locally implemented activity types
-if Enum.empty?(Oli.Activities.list_activity_registrations()) do
-  Oli.Registrar.register_local_activities()
-end
+Oli.Registrar.register_local_activities()
 
 # create themes
 [%Oli.Authoring.Theme{

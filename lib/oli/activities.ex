@@ -10,7 +10,8 @@ defmodule Oli.Activities do
   alias Oli.Activities.Registration
 
   def register_activity(%Manifest{} = manifest) do
-    create_registration(%{
+
+    attrs = %{
       authoring_script: manifest.id <> "_authoring.js",
       authoring_element: manifest.authoring.element,
       delivery_script: manifest.id <> "_delivery.js",
@@ -19,7 +20,13 @@ defmodule Oli.Activities do
       title: manifest.friendlyName,
       icon: "nothing",
       slug: manifest.id,
-    })
+    }
+
+    case get_registration_by_slug(attrs.slug) do
+      nil -> create_registration(attrs)
+      registration -> update_registration(registration, attrs)
+    end
+
   end
 
   def create_registered_activity_map() do
