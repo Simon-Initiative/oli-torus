@@ -1,0 +1,84 @@
+## "msgid"s in this file come from POT (.pot) files.
+##
+## Do not add, change, or remove "msgid"s manually here as
+## they're tied to the ones in the corresponding POT file
+## (with the same domain).
+##
+## Use "mix gettext.extract --merge" or "mix gettext.merge"
+## to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Plural-Forms: nplurals=2\n"
+
+#, elixir-format
+#: lib/oli_web/live/grades/grade_sync.ex:13
+#: lib/oli_web/live/grades/grade_sync.ex:37
+msgid "Synchronize LMS Grades"
+msgstr ""
+
+#, elixir-format
+#: lib/oli_web/live/grades/grades.ex:65
+msgid "Do not leave this page until this operation completes."
+msgstr ""
+
+#, elixir-format
+#: lib/oli_web/live/grades/grades.ex:250
+msgid "Error accessing LMS line items"
+msgstr ""
+
+#, elixir-format
+#: lib/oli_web/live/grades/grades.ex:253
+msgid "Error getting LMS access token"
+msgstr ""
+
+#, elixir-format
+#: lib/oli_web/live/grades/export.ex:6
+msgid "Export and Download Gradebook"
+msgstr ""
+
+#, elixir-format
+#: lib/oli_web/live/grades/grades.ex:53
+msgid "Grades for OLI graded pages for this course are accessed by students and instructors from the LMS gradebook at"
+msgstr ""
+
+#, elixir-format
+#: lib/oli_web/live/grades/grade_sync.ex:16
+msgid "If an instructor changes the maximum score for an LMS gradebook line item after students\n      have submitted an attempt, it is necessary to synchronize the OLI grades for that LMS gradebook item."
+msgstr ""
+
+#, elixir-format
+#: lib/oli_web/live/grades/grades.ex:193
+msgid "LMS line items already up to date"
+msgstr ""
+
+#, elixir-format
+#: lib/oli_web/live/grades/grades.ex:277
+msgid "LMS up to date"
+msgstr ""
+
+#, elixir-format
+#: lib/oli_web/live/grades/grades.ex:50
+msgid "Manage Grades"
+msgstr ""
+
+#, elixir-format
+#: lib/oli_web/live/grades/grade_sync.ex:23
+msgid "This operation will overwrite any grades in the LMS gradebook that\n      were manually adjusted or overridden by the instructor."
+msgstr ""
+
+#, elixir-format
+#: lib/oli_web/live/grades/line_items.ex:12
+#: lib/oli_web/live/grades/line_items.ex:24
+msgid "Update LMS Line Items"
+msgstr ""
+
+#, elixir-format
+#: lib/oli_web/live/grades/grade_sync.ex:21
+msgid "Warning!"
+msgstr ""
+
+#, elixir-format
+#: lib/oli_web/live/grades/line_items.ex:16
+msgid "While OLI automatically will create LMS gradebook line items as students complete assignments,\n    in some circumstances an instructor may want to explicitly create gradebook line items or update them."
+msgstr ""

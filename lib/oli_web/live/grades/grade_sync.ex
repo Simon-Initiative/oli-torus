@@ -1,5 +1,6 @@
 defmodule OliWeb.Grades.GradeSync do
-  use Phoenix.LiveComponent
+
+  use OliWeb, :live_component
 
   def render(assigns) do
 
@@ -9,15 +10,18 @@ defmodule OliWeb.Grades.GradeSync do
 
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title">Synchronize LMS Grades</h5>
+        <h5 class="card-title"><%= dgettext("grades", "Synchronize LMS Grades") %></h5>
 
         <p class="card-text">
-        If an instructor changes the maximum score for an LMS gradebook line item <b>after</b> students
-        have submitted an attempt, it is necessary to synchronize the OLI grades for that LMS gradebook item.</p>
+          <%= dgettext("grades", "If an instructor changes the maximum score for an LMS gradebook line item after students
+          have submitted an attempt, it is necessary to synchronize the OLI grades for that LMS gradebook item.") %>
+        </p>
 
         <div class="alert alert-danger" role="alert">
-          <strong>Warning!</strong> This operation will overwrite any grades in the LMS gradebook that
-          were manually adjusted or overridden by the instructor.
+          <strong><%= dgettext("grades", "Warning!") %></strong>
+
+          <%= dgettext("grades", "This operation will overwrite any grades in the LMS gradebook that
+          were manually adjusted or overridden by the instructor.") %>
         </div>
 
         <select class="custom-select custom-select-lg mb-3">
@@ -30,7 +34,7 @@ defmodule OliWeb.Grades.GradeSync do
 
       <div class="card-footer">
 
-        <a class="btn btn-primary" phx-click="send_grades" <%= disabled %>>Synchronize LMS Grades</a>
+        <a class="btn btn-primary" phx-click="send_grades" <%= disabled %>><%= dgettext("grades", "Synchronize LMS Grades") %></a>
 
       </div>
     </div>
