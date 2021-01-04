@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.0 (TBD)
+## 0.4.0 (2021-1-4)
 ### Enhancements
   - Add support for check all that apply activity
 
