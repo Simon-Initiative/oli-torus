@@ -4,6 +4,7 @@ defmodule Oli.DatashopTest do
   alias Oli.Analytics.Datashop
   alias Oli.Activities.Model.Part
   alias Oli.Publishing
+  alias Oli.Activities
 
   describe "datashop" do
 
@@ -418,8 +419,8 @@ defmodule Oli.DatashopTest do
       |> Seeder.add_users_to_section(:section, [:user1, :user2, :user3])
 
       map = map
-      |> Seeder.add_activity(%{title: "one", content: mc_content, objectives: %{ "1" => [map.o1.resource.id] }}, :mc1)
-      |> Seeder.add_activity(%{title: "two", content: sa_content, objectives: %{ "1" => [map.o2.resource.id, map.o3.resource.id] }, activity_type_id: 2}, :sa1)
+      |> Seeder.add_activity(%{title: "one", content: mc_content, objectives: %{ "1" => [map.o1.resource.id] }, activity_type_id: Activities.get_registration_by_slug("oli_multiple_choice").id}, :mc1)
+      |> Seeder.add_activity(%{title: "two", content: sa_content, objectives: %{ "1" => [map.o2.resource.id, map.o3.resource.id] }, activity_type_id: Activities.get_registration_by_slug("oli_short_answer").id}, :sa1)
 
       Publishing.publish_project(map.project)
 

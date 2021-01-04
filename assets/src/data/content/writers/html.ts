@@ -90,7 +90,7 @@ export class HtmlParser implements WriterImpl {
 
     return `<table>${caption}${next()}</table>\n`;
   }
-  tr = (context: WriterContext, next: Next, x: TableRow) => `<tr>'${next()}</tr>\n`;
+  tr = (context: WriterContext, next: Next, x: TableRow) => `<tr>${next()}</tr>\n`;
   th = (context: WriterContext, next: Next, x: TableHeader) => `<th>${next()}</th>\n`;
   td = (context: WriterContext, next: Next, x: TableData) => `<td>${next()}</td>\n`;
   ol = (context: WriterContext, next: Next, x: OrderedList) => `<ol>${next()}</ol>\n`;
