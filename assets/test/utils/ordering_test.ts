@@ -2,11 +2,13 @@ import { Actions } from 'components/activities/ordering/actions';
 import * as ContentModel from 'data/content/model';
 import produce from 'immer';
 import { OrderingModelSchema } from 'components/activities/ordering/schema'
-import { createMatchRule, createRuleForIds, defaultOrderingModel, getChoiceIds, getCorrectResponse,
-  getHints,
+import { canMoveChoiceUp, canMoveChoiceDown, createMatchRule, createRuleForIds,
+  defaultOrderingModel, getChoiceIds, getCorrectResponse,
+  getHints, getTargetedChoiceIds,
   getIncorrectResponse, getResponseId, getResponses, getTargetedResponses,
-  invertRule, unionRules,
+  invertRule, unionRules, getCorrectOrdering,
 } from 'components/activities/ordering/utils';
+import {Choice} from 'components/activities/types'
 
 const applyAction = (
   model: OrderingModelSchema,
@@ -49,8 +51,44 @@ function testResponse(text: string, rule: string, score: number = 0) {
 
 const testDefaultModel = defaultOrderingModel;
 
-describe('check all that apply question', () => {
+describe('ordering question', () => {
   const model = testDefaultModel();
+
+  it('can move a choice up in authoring', () => {
+    const firstChoice = model.choices[0];
+    const lastChoice = model.choices[model.choices.length - 1];
+
+    expect(canMoveChoiceUp(model, firstChoice.id)).toBe(false);
+    expect(canMoveChoiceUp(model, lastChoice.id)).toBe(true);
+
+    const firstMovedUp = applyAction(model, Actions.moveChoice('up', firstChoice.id));
+    expect(model.choices.findIndex(c => c === lastChoice))
+      .toEqual(firstMovedUp.choices.findIndex((c: Choice) => c === lastChoice));
+
+    const lastMovedUp = applyAction(model, Actions.moveChoice('up', lastChoice.id));
+    expect(lastMovedUp.choices[lastMovedUp.choices.length - 2]).toBe(lastChoice);
+  });
+
+  it('can move a choice down in authoring', () => {
+    const firstChoice = model.choices[0];
+    const lastChoice = model.choices[model.choices.length - 1];
+
+    expect(canMoveChoiceDown(model, firstChoice.id)).toBe(true);
+    expect(canMoveChoiceDown(model, lastChoice.id)).toBe(false);
+
+    const firstMovedDown = applyAction(model, Actions.moveChoice('down', firstChoice.id));
+    expect(firstMovedDown.choices[1]).toBe(firstChoice);
+
+    const lastMovedDown = applyAction(model, Actions.moveChoice('down', lastChoice.id));
+    expect(model.choices.findIndex(c => c === lastChoice))
+      .toEqual(lastMovedDown.choices.findIndex((c: Choice) => c === lastChoice));
+  });
+
+  it('has correct feedback that correspond to all choices', () => {
+    expect(getCorrectOrdering(model)).toHaveLength(model.choices.length);
+    const toggled = applyAction(model, Actions.toggleType());
+    expect(getTargetedChoiceIds(toggled)).toHaveLength(0);
+  });
 
   it('can switch from simple to targeted feedback mode', () => {
     expect(model.type).toBe('SimpleOrdering');
@@ -84,10 +122,10 @@ describe('check all that apply question', () => {
   });
 
   it('can add a choice', () => {
+    // default model has 2 choices
     const withChoiceAdded = applyAction(model, Actions.addChoice());
     expect(withChoiceAdded.choices.length).toBeGreaterThan(model.choices.length);
-    expect(getChoiceIds(withChoiceAdded.authoring.incorrect)).toHaveLength(2);
-    expect(getChoiceIds(withChoiceAdded.authoring.correct)).toHaveLength(1);
+    expect(getChoiceIds(withChoiceAdded.authoring.correct)).toHaveLength(3);
   });
 
   it('can edit a choice', () => {
@@ -102,7 +140,6 @@ describe('check all that apply question', () => {
     const newModel = applyAction(model, Actions.removeChoice(firstChoice.id));
     expect(newModel.choices).toHaveLength(1);
     expect(getChoiceIds(newModel.authoring.correct)).not.toContain(firstChoice);
-    expect(getChoiceIds(newModel.authoring.incorrect)).not.toContain(firstChoice);
   });
 
   it('can remove a choice from targeted Ordering responses', () => {
@@ -165,10 +202,8 @@ describe('check all that apply question', () => {
   it('can create rules to to match choice orderings', () => {
     const ordering1 = ['id1', 'id2', 'id3'];
     const ordering2 = ['id3', 'id2', 'id1'];
-    expect(createRuleForIds(ordering1))
-      .toEqual("input like {id1} && input like {id2} && input like {id3})");
-    expect(createRuleForIds(ordering2))
-      .toEqual("input like {id3} && input like {id2} && input like {id1})");
+    expect(createRuleForIds(ordering1)).toEqual("input like {id1 id2 id3}");
+    expect(createRuleForIds(ordering2)).toEqual("input like {id3 id2 id1}");
   });
 
   it('has at least 3 hints', () => {
