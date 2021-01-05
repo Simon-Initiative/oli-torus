@@ -152,6 +152,7 @@ defmodule OliWeb.Router do
 
     get "/", StaticPageController, :index
     resources "/help", HelpController, only: [:index, :create]
+    get "/help/sent", HelpController, :sent
   end
 
   scope "/.well-known", OliWeb do

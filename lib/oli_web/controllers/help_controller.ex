@@ -9,38 +9,25 @@ defmodule OliWeb.HelpController do
     render_help_page(conn, "index.html", title: "Help")
   end
 
+  @spec sent(Plug.Conn.t(), any) :: Plug.Conn.t()
+  def sent(conn, _params) do
+    render_help_page(conn, "success.html", title: "Help")
+  end
+
   def create(conn, params) do
-    user_agent = get_req_header(conn, "user-agent")
-    accept = get_req_header(conn, "accept")
-    accept_language = get_req_header(conn, "accept-language")
-    referer = get_req_header(conn, "referer")
-    datetime = Timex.now(Timex.Timezone.local())
-    content_params = Map.merge(params, %{"user_agent": user_agent,
-      "ip_address": conn.remote_ip, "timestamp": datetime, "agent_accept": accept,
-      "agent_language": accept_language, "location": referer})
-    current_user = Pow.Plug.current_user(conn)
-    if current_user != nil do
-      current_user = current_user |> Repo.preload([:system_role])
-      IO.puts "Current user details #{inspect current_user}"
-
-      content_params = Map.merge(content_params, %{"account_email": current_user.email,
-        "account_name": current_user.given_name <> " " <> current_user.family_name,
-        "account_created": current_user.inserted_at, "agent_accept": accept})
-    end
-
-    #    :account_role,
     with {:ok, :true} <- validate_recapture(Map.get(params, "g-recaptcha-response")),
+         {:ok, content_params} <- additional_help_context(conn, params),
          {:ok, help_content} <- HelpContent.parse(content_params),
          {:ok, _} <- Oli.Help.Dispatcher.dispatch(Application.fetch_env!(:oli, :help)[:dispatcher], help_content)
       do
       conn
       |> put_flash(:ok, "Your help request has been successfully submitted")
-      |> redirect(to: Routes.help_path(conn, :index))
+      |> redirect(to: Routes.help_path(conn, :sent))
     else
       {:error, message} -> IO.puts "errors from dispatch #{inspect message}"
-        conn
-        |> put_flash(:error, "Help request failed, please try again")
-        |> redirect(to: Routes.help_path(conn, :index))
+                           conn
+                           |> put_flash(:error, "Help request failed, please try again")
+                           |> redirect(to: Routes.help_path(conn, :index))
     end
 
   end
@@ -54,6 +41,49 @@ defmodule OliWeb.HelpController do
 
   defp render_help_page(conn, page, keywords) do
     render conn, page, Keyword.put_new(keywords, :active, :help)
+  end
+
+  defp additional_help_context(conn, params) do
+    user_agent = Enum.at(get_req_header(conn, "user-agent"), 0)
+    accept = Enum.at(get_req_header(conn, "accept"), 0)
+    accept_language = Enum.at(get_req_header(conn, "accept-language"), 0)
+    remote_ip = conn.remote_ip
+                |> Tuple.to_list
+                |> Enum.join(".")
+    datetime = Timex.now(Timex.Timezone.local())
+    content_params = Map.merge(
+      params,
+      %{
+        "user_agent" => user_agent,
+        "ip_address" => remote_ip,
+        "timestamp" => DateTime.to_string(datetime),
+        "agent_accept" => accept,
+        "agent_language" => accept_language,
+        "account_email" => " ",
+        "account_name" => " ",
+        "account_created" => " "
+      }
+    )
+
+    current_user = Pow.Plug.current_user(conn)
+    if current_user != nil do
+      # :TODO: find a way to reliably get roles in both authoring and delivery contexts
+      #  current_user = current_user  |> Repo.preload([:system_role])
+      account_created_date = DateTime.to_string Timex.Timezone.convert(current_user.inserted_at, Timex.Timezone.local())
+      {
+        :ok,
+        Map.merge(
+          content_params,
+          %{
+            "account_email" => current_user.email,
+            "account_name" => current_user.given_name <> " " <> current_user.family_name,
+            "account_created" => account_created_date
+          }
+        )
+      }
+    else
+      {:ok, content_params}
+    end
   end
 
 end

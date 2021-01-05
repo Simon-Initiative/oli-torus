@@ -39,7 +39,7 @@ config :oli, :recaptcha,
 
 # Configure help
 config :oli, :help,
-  dispatcher: Oli.Help.Providers.FreshdeskHelp
+  dispatcher: Oli.Help.Providers.EmailHelp
 
 config :ex_aws,
   access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, :instance_role],

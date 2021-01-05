@@ -17,24 +17,38 @@ defmodule Oli.Help.Providers.FreshdeskHelp do
       Jason.encode(
         %{
           name: contents.full_name,
-          description: contents.message,
-          subject: HelpContent.get_subject(contents.subject),
+          description: build_help_message(contents),
+          subject: HelpContent.get_subject(contents.subject) <> "[" <> contents.full_name <> "]",
           email: contents.email,
           priority: 1,
           status: 2
         }
       )
 
-      IO.puts "freshdesk body #{inspect body}"
-    {:ok, "good"}
-#    case HTTPoison.post(url, body, @headers) do
-#      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-#        {:ok, body}
-#      {:ok, %HTTPoison.Response{body: body}} ->
-#        {:error, body}
-#      {:error, %HTTPoison.Error{reason: reason}} ->
-#        {:error, reason}
-#    end
+    case HTTPoison.post(url, body, @headers) do
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        {:ok, body}
+      {:ok, %HTTPoison.Response{body: body}} ->
+        {:error, body}
+      {:error, %HTTPoison.Error{reason: reason}} ->
+        {:error, reason}
+    end
+  end
+
+  defp build_help_message(contents) do
+    message = "On " <> contents.timestamp <> ", " <> contents.full_name <> " <&nbsp;" <> contents.email <> "&nbsp;>"
+    <> " wrote:<br><br>" <> contents.message <> "<br><br><br>----------------------------------------------"
+    <> "<br>Timestamp: " <> contents.timestamp <> "<br>Ip Address: " <> contents.ip_address
+    <> "<br>Location: " <> contents.location <> "<br><br><br> WEB BROWSER"
+    <> "<br>User Agent: " <> contents.user_agent <> "<br>Accept: " <> contents.agent_accept
+    <> "<br>Language: " <> contents.agent_language <> "<br><br> CAPABILITIES"
+    <> "<br>Cookies Enabled: " <> contents.cookies_enabled <> "<br><br> USER ACCOUNT"
+    <> "<br>Name: " <> contents.account_name <> "<br>Email: " <> contents.account_email
+    <> "<br>Created: " <> contents.account_created
+    IO.puts "Message after this #{inspect message}"
+    message
+    |> String.replace("\r", "")
+    |> String.replace("\n", "<br>")
   end
 
 end

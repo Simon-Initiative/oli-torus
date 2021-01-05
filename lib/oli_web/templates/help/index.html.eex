@@ -1,11 +1,20 @@
-
 <script src="https://www.google.com/recaptcha/api.js"></script>
-
+<script>
+  window.addEventListener('DOMContentLoaded', (event) => {
+    document.getElementById('location').value = document.referrer
+    if (typeof document.cookie == "undefined" || typeof navigator == "undefined" || !navigator.cookieEnabled) {
+      document.getElementById('cookies_enabled').value = false;
+    } else {
+      document.getElementById('cookies_enabled').value = true;
+    }
+  });
+</script>
 <div class="container form-container">
     <div class="row">
         <div class="col-lg-8 mx-auto">
 <%= form_for @conn, Routes.help_path(@conn, :create), [id: "form-request-help"], fn f -> %>
-
+            <%= hidden_input f, :location, id: "location"%>
+            <%= hidden_input f, :cookies_enabled, id: "cookies_enabled"%>
     <div class="form-label-group">
         <%= text_input f,
             :full_name,
@@ -27,11 +36,12 @@
     </div>
     <%= label f, :subject, "Subject:", class: "control-label" %>
     <div class="input-group mb-3">
-         <%= select f, :subject, ["- - - - - - - - -": [
+         <%= select f, :subject,
+          ["- - - - - - - - -": [
           [value: "help_credit", key: "How can I get credit for an OLI course?"],
           [value: "help_course_key", key: "Where do I find my course key?"],
           [value: "help_charge", key: "My credit card was charged (multiple times, possibly) and I still cannot access my course"],
-          [value: "help_lbd", key: "The Learn By Doing or Did I Get This? Exercises don't work properly, or the text is cut off"],
+          [value: "help_lbd", key: "The Learn By Doing or Did I Get This? Exercises don't work properly"],
           [value: "help_server", key: "The server timed out or I received an unknown error"]
           ],
           "- - - - - - - - -": [
