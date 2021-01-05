@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1 (2021-1-4)
+### Bug fixes
+  - Fix an issue where new local activities were not being registered on deployment
+
 ## 0.4.0 (2021-1-4)
 ### Enhancements
   - Add support for check all that apply activity
