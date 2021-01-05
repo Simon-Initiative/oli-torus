@@ -59,35 +59,6 @@ $(function() {
       </div>
     <% end %>
 
-    <div class="my-5">
-      <h4>Open and Free</h4>
-        <%= if Enum.count(@open_and_free_publications) > 0 do %>
-          <table class="table table-hover">
-            <thead>
-              <tr>
-                <th scope="col" style="width: 5%"></th>
-                <th scope="col" style="width: 50%">Title</th>
-                <th scope="col" style="width: 15%">Version</th>
-                <th scope="col" style="width: 30%">Date Published</th>
-              </tr>
-            </thead>
-            <tbody>
-              <%= for pub <- @open_and_free_publications do %>
-                <tr>
-                  <td><input type="checkbox" name="publication_id" value="<%= pub.id %>"></td>
-                  <td><%= pub.project.title %></td>
-                  <td><%= pub.project.version %></td>
-                  <td><%= format_datetime(pub.inserted_at) %></td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        <% else %>
-          <p class="my-3 text-center text-secondary">
-          There are no published open and free courses
-          </p>
-        <% end %>
-    </div>
     <div class="text-center">
       <%= submit "Select and Continue", id: "select-submit", class: "btn btn-primary", disabled: true %>
     </div>
