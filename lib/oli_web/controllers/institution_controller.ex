@@ -77,7 +77,7 @@ defmodule OliWeb.InstitutionController do
     |> redirect(to: Routes.institution_path(conn, :index))
   end
 
-  def approve_registration(conn, %{"pending_registration" => pending_registration_attrs} = params) do
+  def approve_registration(conn, %{"pending_registration" => pending_registration_attrs} = _params) do
     issuer = pending_registration_attrs["issuer"]
     client_id = pending_registration_attrs["client_id"]
 
