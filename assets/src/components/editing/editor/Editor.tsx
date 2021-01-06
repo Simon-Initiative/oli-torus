@@ -19,6 +19,7 @@ import { withVoids } from './overrides/voids';
 import { withInlines } from './overrides/inlines';
 import { withTables } from './overrides/tables';
 import { withMarkdown } from './overrides/markdown';
+import { onPaste } from './handlers/paste'
 
 export type EditorProps = {
   // Callback when there has been any change to the editor (including selection state)
@@ -128,7 +129,8 @@ export const Editor = React.memo((props: EditorProps) => {
           renderElement={renderElement}
           renderLeaf={renderLeaf}
           placeholder="Enter some content here..."
-          onKeyDown={onKeyDown} />
+          onKeyDown={onKeyDown}
+          onPaste={e => onPaste(editor, e)} />
       </Slate>
     </React.Fragment>
   );

@@ -98,7 +98,7 @@ export interface MediaManagerProps {
     mimeFilter: string[] | undefined, searchText: string,
     orderBy: string, order: string) => Promise<Maybe<Immutable.List<MediaItem>>>;
   onResetMedia: () => void;
-  onSelectionChange: (selection: MediaItem[]) => void;
+  onSelectionChange: (selection: MediaItem[] | string) => void;
   onLoadMediaItemByPath: (projectSlug: string, path: string) => Promise<Maybe<MediaItem>>;
   toggleDisableInsert?: (b: boolean) => void;
 }

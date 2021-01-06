@@ -20,7 +20,7 @@ export function selectAudio(projectSlug: string,
     const selected = { img: null };
 
     const mediaLibrary =
-      <ModalSelection title="Select audio"
+      <ModalSelection title="Embed audio"
         onInsert={() => { dismiss(); resolve(selected.img as any); }}
         onCancel={() => dismiss()}
         disableInsert={true}
@@ -31,8 +31,12 @@ export function selectAudio(projectSlug: string,
           mimeFilter={MIMETYPE_FILTERS.AUDIO}
           selectionType={SELECTION_TYPES.SINGLE}
           initialSelectionPaths={[model.src]}
-          onSelectionChange={(images: MediaItem[]) => {
-            (selected as any).img = ContentModel.audio(images[0].url);
+          onSelectionChange={(mediaOrUrl: MediaItem[] | string) => {
+            (selected as any).img = ContentModel.audio(
+              typeof mediaOrUrl === 'string'
+                ? mediaOrUrl
+                : mediaOrUrl[0].url
+            );
           }} />
       </ModalSelection>;
 

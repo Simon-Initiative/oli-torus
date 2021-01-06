@@ -7,6 +7,7 @@ import { MediaManager } from 'components/media/manager/MediaManager.controller';
 import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
 import { Command, CommandDesc } from 'components/editing/commands/interfaces';
+import {UrlOrUpload} from 'components/media/UrlOrUpload'
 
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
@@ -19,21 +20,27 @@ export function selectImage(projectSlug: string,
     const selected = { img: null };
 
     const mediaLibrary =
-        <ModalSelection title="Select an image" size={sizes.extraLarge}
-          onInsert={() => { dismiss(); resolve(selected.img as any); }}
-          onCancel={() => dismiss()}
-          disableInsert={true}
-        >
+      <ModalSelection title="Embed image" size={sizes.extraLarge}
+        onInsert={() => { dismiss(); resolve(selected.img as any); }}
+        onCancel={() => dismiss()}
+        disableInsert={true}
+      >
+        <UrlOrUpload mediaLibrary={
           <MediaManager model={model}
             projectSlug={projectSlug}
             onEdit={() => { }}
             mimeFilter={MIMETYPE_FILTERS.IMAGE}
             selectionType={SELECTION_TYPES.SINGLE}
             initialSelectionPaths={model.src ? [model.src] : [selected.img as any]}
-            onSelectionChange={(images: MediaItem[]) => {
-              (selected as any).img = ContentModel.image(images[0].url);
+            onSelectionChange={(mediaOrUrl: MediaItem[] | string) => {
+              (selected as any).img = ContentModel.image(
+                typeof mediaOrUrl === 'string'
+                  ? mediaOrUrl
+                  : mediaOrUrl[0].url
+              );
             }} />
-        </ModalSelection>;
+          } />
+      </ModalSelection>;
 
     display(mediaLibrary);
   });
@@ -42,7 +49,7 @@ export function selectImage(projectSlug: string,
 const command: Command = {
   execute: (context, editor) => {
     selectImage(context.projectSlug, ContentModel.image())
-    .then(img =>  Transforms.insertNodes(editor, img));
+    .then(img => Transforms.insertNodes(editor, img));
   },
   precondition: (editor) => {
     return true;
