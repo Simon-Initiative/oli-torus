@@ -4,7 +4,7 @@ defmodule Oli.Authoring.Course do
   alias Oli.Repo
   alias Oli.Publishing
   alias Oli.Authoring.{Collaborators}
-  alias Oli.Authoring.Course.{Utils, Project, Family, ProjectResource}
+  alias Oli.Authoring.Course.{Project, Family, ProjectResource}
   alias Oli.Accounts.{SystemRole}
 
   def create_project_resource(attrs) do
@@ -103,7 +103,6 @@ defmodule Oli.Authoring.Course do
   defp default_project(title, family) do
     %{
       title: title,
-      slug: Utils.generate_slug("projects", title),
       version: "1.0.0",
       family_id: family.id
     }
@@ -132,7 +131,6 @@ defmodule Oli.Authoring.Course do
   defp default_family(title) do
     %{
       title: title,
-      slug: Utils.generate_slug("families", title),
       description: "New family from project creation",
     }
   end
