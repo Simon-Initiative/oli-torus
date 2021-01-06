@@ -356,4 +356,47 @@ defmodule Oli.Institutions do
     PendingRegistration.changeset(pending_registration, %{})
   end
 
+  @doc false
+  # Returns the institution that has a similar (normalized) url. If no institutions or more
+  # than one exist with a similar url, then a new one is created.
+  # ## Examples
+  #     iex> find_or_create_institution_by_normalized_url(institution_attrs)
+  #     {:ok, %Institution{}}
+  def find_or_create_institution_by_normalized_url(institution_attrs) do
+    normalized_url = institution_attrs[:institution_url]
+      |> String.replace(~r/^https?\:\/\//i, "")
+      |> String.replace_trailing("/", "")
+
+    case Repo.all(from i in Institution, where: like(i.institution_url, ^normalized_url), select: i) do
+      [] -> create_institution(institution_attrs)
+      [institution] -> {:ok, institution}
+      [_ | _] -> create_institution(institution_attrs)
+    end
+  end
+
+  @doc """
+  Approves a pending registration request. If successful, a new registration will be created and attached
+  to a new or existing institution if one with a similar url already exists.
+  The operation guarantees all actions or none are performed.
+  ## Examples
+      iex> approve_pending_registration(pending_registration)
+      {:ok, {%Institution{}, %Registration{}}}
+      iex> approve_pending_registration(pending_registration)
+      {:error, reason}
+  """
+  def approve_pending_registration(%PendingRegistration{} = pending_registration) do
+    Repo.transaction(fn ->
+      with {:ok, institution} <- find_or_create_institution_by_normalized_url(PendingRegistration.institution_attrs(pending_registration)),
+        active_jwk = Oli.Lti_1p3.get_active_jwk(),
+        registration_attrs = Map.merge(PendingRegistration.registration_attrs(pending_registration), %{institution_id: institution.id, tool_jwk_id: active_jwk.id}),
+        {:ok, registration} <- create_registration(registration_attrs),
+        {:ok, _pending_registration} <- delete_pending_registration(pending_registration)
+      do
+        {institution, registration}
+      else
+        error -> Repo.rollback(error)
+      end
+    end)
+  end
+
 end

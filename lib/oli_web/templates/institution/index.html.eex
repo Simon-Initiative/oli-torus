@@ -6,26 +6,23 @@
   function checkForExistingInstitutions(pendingRegistrationId) {
     const name = $(`#review-${pendingRegistrationId} input.institution-name`).val();
     const institution_url = $(`#review-${pendingRegistrationId} input.institution-url`).val();
-    const normalize_name = (url) =>
-      url
-      .replace(/\s+/, " ")
-      .toLowerCase();
     const normalize_url = (url) =>
       url
       .replace(/^https?\:\/\//, "")
       .replace(/\/$/, "").toLowerCase();
 
-    const institution_exists = existing_institutions.findIndex(i =>
-      normalize_name(i.name) === normalize_name(name)
-      && normalize_url(i.institution_url) === normalize_url(institution_url)) > -1;
+    const existing_institution = existing_institutions.find(i =>
+      normalize_url(i.institution_url) === normalize_url(institution_url));
 
-    if (institution_exists) {
+    if (existing_institution) {
       $(`#review-${pendingRegistrationId} #create-new-msg`).hide();
       $(`#review-${pendingRegistrationId} #use-existing-msg`).show();
+      $(`#review-${pendingRegistrationId} #use-existing-name`).val(existing_institution.name);
       $(`#review-${pendingRegistrationId} #institution-details`).hide();
     } else {
       $(`#review-${pendingRegistrationId} #create-new-msg`).show();
       $(`#review-${pendingRegistrationId} #use-existing-msg`).hide();
+      $(`#review-${pendingRegistrationId} #use-existing-name`).val("");
       $(`#review-${pendingRegistrationId} #institution-details`).show();
     }
   }
@@ -86,7 +83,7 @@
 
               <td>
                 <%= link "Details", to: Routes.institution_path(@conn, :show, institution), class: "btn btn-sm btn-outline-primary" %>
-                <%= link "Remove", to: Routes.institution_path(@conn, :delete, institution), method: :delete, data: [confirm: "Are you sure you want to permanently remove the institution \"#{institution.name}\"?"], class: "btn btn-sm btn-outline-danger ml-2" %>
+                <%# <%= link "Remove", to: Routes.institution_path(@conn, :delete, institution), method: :delete, data: [confirm: "Are you sure you want to permanently remove the institution \"#{institution.name}\"?"], class: "btn btn-sm btn-outline-danger ml-2" %>
               </td>
             </tr>
         <% end %>
@@ -141,7 +138,7 @@
   <div class="modal fade" id="review-<%= pending_registration.id %>" tabindex="-1" role="dialog" aria-labelledby="modalLabel-<%= pending_registration.id %>" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content ">
-        <%= form_for Oli.Institutions.change_pending_registration(pending_registration), "#", fn f -> %>
+        <%= form_for Oli.Institutions.change_pending_registration(pending_registration), Routes.institution_path(@conn, :approve_registration), fn f -> %>
 
           <%= hidden_input f, :id  %>
 
@@ -166,7 +163,6 @@
                 $input.typeahead({
                   source: world_universities_and_domains,
                   autoSelect: true,
-                  fitToElement: true,
                   afterSelect: function(sel) {
                     $('#review-<%= pending_registration.id %> input.institution-url').val(sel.institution_url);
                     checkForExistingInstitutions('<%= pending_registration.id %>');
@@ -190,12 +186,13 @@
 
               <div id="create-new-msg" class="mb-3 px-2" style="display: none">
                 <div class="text-success">A <b>new</b> institution will be created for this registration.</div>
-                <div class="text-dark">To create a registration for an existing institution, the <b>Institution Name</b> and <b>URL</b> must match an existing institution.</div>
+                <div class="text-dark">To create a registration for an existing institution, the <b>Institution URL</b> must match an existing institution.</div>
               </div>
 
               <div id="use-existing-msg" class="mb-3 px-2" style="display: none">
-                <div class="text-primary">An <b>existing</b> institution will be used for this registration.</div>
-                <div class="text-dark">To create a new institution for this registration, the <b>Institution Name</b> and <b>URL</b> must be different from an existing institution.</div>
+                <div class="text-primary">An <b>existing</b> institution will be used for this registration:</div>
+                <div class="my-2"><input type="text" id="use-existing-name" class="form-control text-primary" readonly></input></div>
+                <div class="text-dark">To create a new institution for this registration, the <b>Institution URL</b> must be different from an existing institution.</div>
               </div>
 
               <div id="institution-details">

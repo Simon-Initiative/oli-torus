@@ -90,7 +90,6 @@ defmodule Oli.TestHelpers do
         institution_url: "institution.example.edu",
         name: "Example Institution",
         timezone: "US/Eastern",
-        author_id: 1,
       })
 
     {:ok, institution} = Institutions.create_institution(params)

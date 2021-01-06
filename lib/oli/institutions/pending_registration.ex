@@ -18,8 +18,8 @@ defmodule Oli.Institutions.PendingRegistration do
   end
 
   @doc false
-  def changeset(institution_registration, attrs \\ %{}) do
-    institution_registration
+  def changeset(pending_registration, attrs \\ %{}) do
+    pending_registration
     |> cast(attrs, [
       :name,
       :country_code,
@@ -39,6 +39,29 @@ defmodule Oli.Institutions.PendingRegistration do
       :institution_email,
       :institution_url,
       :timezone,
+      :issuer,
+      :client_id,
+      :key_set_url,
+      :auth_token_url,
+      :auth_login_url,
+      :auth_server
+    ])
+  end
+
+  def institution_attrs(%Oli.Institutions.PendingRegistration{} = pending_registration) do
+    Map.from_struct(pending_registration)
+    |> Map.take([
+      :name,
+      :country_code,
+      :institution_email,
+      :institution_url,
+      :timezone
+    ])
+  end
+
+  def registration_attrs(%Oli.Institutions.PendingRegistration{} = pending_registration) do
+    Map.from_struct(pending_registration)
+    |> Map.take([
       :issuer,
       :client_id,
       :key_set_url,

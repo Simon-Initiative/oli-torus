@@ -4,7 +4,6 @@ defmodule OliWeb.InstitutionController do
   alias Oli.Institutions
   alias Oli.Institutions.Institution
   alias Oli.Predefined
-  alias Oli.Institutions.PendingRegistration
 
   require Logger
 
@@ -78,20 +77,26 @@ defmodule OliWeb.InstitutionController do
     |> redirect(to: Routes.institution_path(conn, :index))
   end
 
-  def approve_registration(conn, %{pending_registration: pending_registration_attrs} = _params) do
+  def approve_registration(conn, %{"pending_registration" => pending_registration_attrs} = params) do
+    issuer = pending_registration_attrs["issuer"]
+    client_id = pending_registration_attrs["client_id"]
+
     # no need to persist the pending registration changes since we would just turn around
     # and delete it, but we do want to validate the changes using ecto apply_action
-    case Ecto.Changeset.apply_action(PendingRegistration.changeset(%PendingRegistration{}, pending_registration_attrs), :update) do
-      {:ok, _pending_registration} ->
-        with {:ok, institution} <- Institutions.create_institution(pending_registration_attrs),
-             active_jwk = Oli.Lti_1p3.get_active_jwk(),
-             registration_attrs = Map.merge(pending_registration_attrs, %{"institution_id" => institution.id, "tool_jwk_id" => active_jwk.id}),
-             {:ok, _registration} <- Oli.Institutions.create_registration(registration_attrs)
+    # case Ecto.Changeset.apply_action(PendingRegistration.changeset(%PendingRegistration{}, pending_registration_attrs), :update) do
+    case Institutions.get_pending_registration_by_issuer_client_id(issuer, client_id) do
+      nil ->
+        conn
+        |> put_flash(:error, "Pending registration with issuer '#{issuer}' and client_id '#{client_id}' does not exist")
+        |> redirect(to: Routes.institution_path(conn, :index))
+
+      pending_registration ->
+        with {:ok, pending_registration} <- Institutions.update_pending_registration(pending_registration, pending_registration_attrs),
+             {:ok, {institution, _registration}} <- Institutions.approve_pending_registration(pending_registration)
         do
           conn
-          |> put_flash(:info, "Registration successfully created")
+          |> put_flash(:info, "Registration approved")
           |> redirect(to: Routes.institution_path(conn, :show, institution))
-
         else
           error ->
             Logger.error("Failed to approve registration request", error)
@@ -100,9 +105,8 @@ defmodule OliWeb.InstitutionController do
             |> put_flash(:error, "Failed to approve registration. Please double check your entries and try again.")
             |> redirect(to: Routes.institution_path(conn, :index))
         end
-      {:error, changeset} ->
-
     end
+
   end
 
   defp render_institution_page(conn, template, assigns) do

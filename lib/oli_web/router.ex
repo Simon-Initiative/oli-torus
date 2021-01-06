@@ -346,6 +346,7 @@ defmodule OliWeb.Router do
     get "/invite", InviteController, :index
     post "/invite", InviteController, :create
 
+    put "/approve_registration", InstitutionController, :approve_registration
   end
 
   scope "/project", OliWeb do

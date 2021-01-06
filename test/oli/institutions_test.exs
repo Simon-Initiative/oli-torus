@@ -2,6 +2,9 @@ defmodule Oli.InstitutionsTest do
   use Oli.DataCase
 
   alias Oli.Institutions
+  alias Oli.Institutions.Institution
+  alias Oli.Institutions.PendingRegistration
+  alias Oli.Lti_1p3.Registration
 
   describe "registrations" do
     alias Oli.Lti_1p3.Registration
@@ -119,6 +122,141 @@ defmodule Oli.InstitutionsTest do
 
     test "change_deployment/1 returns a deployment changeset", %{deployment: deployment} do
       assert %Ecto.Changeset{} = Institutions.change_deployment(deployment)
+    end
+  end
+
+  describe "pending_registration" do
+    alias Oli.Lti_1p3.Deployment
+
+    setup do
+      institution = institution_fixture()
+      jwk = jwk_fixture()
+      registration = registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
+      deployment = deployment_fixture(%{registration_id: registration.id})
+
+      registration = registration |> Repo.preload([:deployments])
+
+      %{institution: institution, jwk: jwk, registration: registration, deployment: deployment}
+    end
+
+    # @valid_attrs %{deployment_id: "some deployment_id"}
+    # @update_attrs %{deployment_id: "some updated deployment_id"}
+    # @invalid_attrs %{deployment_id: nil, registration_id: nil}
+
+    # test "list_deployments/0 returns all deployments", %{deployment: deployment} do
+    #   assert Institutions.list_deployments() == [deployment]
+    # end
+
+    # test "get_deployment!/1 returns the deployment with given id", %{deployment: deployment} do
+    #   assert Institutions.get_deployment!(deployment.id) == deployment
+    # end
+
+    # test "create_deployment/1 with valid data creates a deployment", %{registration: registration} do
+    #   assert {:ok, %Deployment{} = deployment} = Institutions.create_deployment(@valid_attrs |> Enum.into(%{registration_id: registration.id}))
+    #   assert deployment.deployment_id == "some deployment_id"
+    # end
+
+    # test "create_deployment/1 with invalid data returns error changeset" do
+    #   assert {:error, %Ecto.Changeset{}} = Institutions.create_deployment(@invalid_attrs)
+    # end
+
+    # test "update_deployment/2 with valid data updates the deployment", %{deployment: deployment} do
+    #   assert {:ok, %Deployment{} = deployment} = Institutions.update_deployment(deployment, @update_attrs)
+    #   assert deployment.deployment_id == "some updated deployment_id"
+    # end
+
+    # test "update_deployment/2 with invalid data returns error changeset", %{deployment: deployment} do
+    #   assert {:error, %Ecto.Changeset{}} = Institutions.update_deployment(deployment, @invalid_attrs)
+    #   assert deployment == Institutions.get_deployment!(deployment.id)
+    # end
+
+    # test "delete_deployment/1 deletes the deployment", %{deployment: deployment} do
+    #   assert {:ok, %Deployment{}} = Institutions.delete_deployment(deployment)
+    #   assert_raise Ecto.NoResultsError, fn -> Institutions.get_deployment!(deployment.id) end
+    # end
+
+    # test "change_deployment/1 returns a deployment changeset", %{deployment: deployment} do
+    #   assert %Ecto.Changeset{} = Institutions.change_deployment(deployment)
+    # end
+
+    test "implement pending_registration tests" do
+      throw "TODO: Implement pending_registration tests"
+    end
+
+    test "find_or_create_institution_by_normalized_url/1 find an institution with a similar url", %{institution: institution} do
+      {:ok, same_institution} = Institutions.find_or_create_institution_by_normalized_url(%{
+        country_code: "US",
+        institution_email: "institution@example.edu",
+        institution_url: "https://institution.example.edu/",
+        name: "Example Institution",
+        timezone: "US/Eastern",
+      })
+
+      assert same_institution.id == institution.id
+
+      {:ok, same_institution} = Institutions.find_or_create_institution_by_normalized_url(%{
+        country_code: "US",
+        institution_email: "institution@example.edu",
+        institution_url: "http://institution.example.edu",
+        name: "Example Institution",
+        timezone: "US/Eastern",
+      })
+
+      assert same_institution.id == institution.id
+
+      {:ok, different_institution} = Institutions.find_or_create_institution_by_normalized_url(%{
+        country_code: "US",
+        institution_email: "institution@example.edu",
+        institution_url: "http://different.example.edu",
+        name: "Example Institution",
+        timezone: "US/Eastern",
+      })
+
+      assert different_institution.id != institution.id
+    end
+
+    test "approve_pending_registration/1 creates a new institution and registration and removes pending registration" do
+      {:ok, %PendingRegistration{} = pending_registration} = Institutions.create_pending_registration(%{
+        name: "New Institution",
+        country_code: "US",
+        institution_email: "institution@new.example.edu",
+        institution_url: "http://new.example.edu",
+        timezone: "US/Eastern",
+        issuer: "new issuer",
+        client_id: "new client_id",
+        key_set_url: "new key_set_url",
+        auth_token_url: "new auth_token_url",
+        auth_login_url: "new auth_login_url",
+        auth_server: "new auth_server",
+      })
+
+      {:ok, {%Institution{}, %Registration{}}} = Institutions.approve_pending_registration(pending_registration)
+
+      assert Institutions.list_institutions |> Enum.find(fn i -> i.institution_url == "http://new.example.edu" end) != nil
+      assert Institutions.list_registrations |> Enum.find(fn r -> r.issuer == "new issuer" end) != nil
+      assert Institutions.get_pending_registration_by_issuer_client_id("some issuer", "some client_id") == nil
+    end
+
+    test "approve_pending_registration/1 creates registration using existing institution for similar institution_url and removes pending registration" do
+      {:ok, %PendingRegistration{} = pending_registration} = Institutions.create_pending_registration(%{
+        name: "New Institution",
+        country_code: "US",
+        institution_email: "institution@new.example.edu",
+        institution_url: "http://institution.example.edu",
+        timezone: "US/Eastern",
+        issuer: "new issuer",
+        client_id: "new client_id",
+        key_set_url: "new key_set_url",
+        auth_token_url: "new auth_token_url",
+        auth_login_url: "new auth_login_url",
+        auth_server: "new auth_server",
+      })
+
+      {:ok, {%Institution{}, %Registration{}}} = Institutions.approve_pending_registration(pending_registration)
+
+      assert Institutions.list_institutions |> Enum.count == 1
+      assert Institutions.list_registrations |> Enum.find(fn r -> r.issuer == "new issuer" end) != nil
+      assert Institutions.get_pending_registration_by_issuer_client_id("some issuer", "some client_id") == nil
     end
   end
 end

@@ -47,7 +47,6 @@
               $input.typeahead({
                 source: world_universities_and_domains,
                 autoSelect: true,
-                fitToElement: true,
                 afterSelect: function(sel) {
                   $('input.institution-url').val(sel.institution_url);
                   $('select.country-code').val(sel.country_code);
