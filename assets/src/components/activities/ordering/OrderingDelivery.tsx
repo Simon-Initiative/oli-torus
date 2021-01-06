@@ -17,7 +17,7 @@ type Evaluation = {
 };
 
 // [id, index]
-type Selection = [ActivityTypes.ChoiceId, number]
+type Selection = [ActivityTypes.ChoiceId, number];
 interface SelectionProps {
   selected: Selection[];
   onDeselect: (id: ActivityTypes.ChoiceId) => void;
@@ -34,7 +34,7 @@ const Selection = ({ selected, onDeselect }: SelectionProps) => {
         </button>)}
     </div>
   );
-}
+};
 
 interface ChoicesProps {
   choices: ActivityTypes.Choice[];
@@ -126,7 +126,8 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
     // Then in the rule evaluator, we will say
     // `input like id1 && input like id2 && input like id3`
     props.onSaveActivity(attemptState.attemptGuid,
-      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: orderedChoiceIds() } }]);
+      [{ attemptGuid: attemptState.parts[0].attemptGuid,
+        response: { input: orderedChoiceIds() } }]);
   };
 
   const onRequestHint = () => {

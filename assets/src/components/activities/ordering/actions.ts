@@ -61,7 +61,7 @@ export class Actions {
         case 'SimpleOrdering':
           break;
         case 'TargetedOrdering':
-          model.authoring.targeted.forEach(assoc => {
+          model.authoring.targeted.forEach((assoc) => {
             removeIdFrom(getChoiceIds(assoc));
             // remove targeted feedback choice ids if they match the correct answer
             if (getChoiceIds(assoc).every((id1, index) =>
@@ -84,15 +84,15 @@ export class Actions {
         const temp = model.choices[index1];
         model.choices[index1] = model.choices[index2];
         model.choices[index2] = temp;
-      }
-      const moveUp = () => swap(thisChoiceIndex, thisChoiceIndex - 1)
-      const moveDown = () => swap(thisChoiceIndex, thisChoiceIndex + 1)
+      };
+      const moveUp = () => swap(thisChoiceIndex, thisChoiceIndex - 1);
+      const moveDown = () => swap(thisChoiceIndex, thisChoiceIndex + 1);
 
       switch (direction) {
         case 'up': return canMoveChoiceUp(model, id) ? moveUp() : model;
         case 'down': return canMoveChoiceDown(model, id) ? moveDown() : model;
       }
-    }
+    };
   }
 
   static editResponseFeedback(responseId: ResponseId, content: RichText) {

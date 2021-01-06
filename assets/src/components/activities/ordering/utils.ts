@@ -17,7 +17,7 @@ export function isTargetedOrdering(model: Ordering): model is TargetedOrdering {
   return model.type === 'TargetedOrdering';
 }
 
-export type ChoiceMoveDirection = 'up' | 'down'
+export type ChoiceMoveDirection = 'up' | 'down';
 
 // Choices
 export const canMoveChoice = (model: Ordering, id: ChoiceId, direction: ChoiceMoveDirection) => {
@@ -32,11 +32,13 @@ export const canMoveChoice = (model: Ordering, id: ChoiceId, direction: ChoiceMo
     case 'up': return canMoveUp;
     case 'down': return canMoveDown;
   }
-}
-export const canMoveChoiceUp = (model: Ordering, id: ChoiceId) => canMoveChoice(model, id, 'up');
-export const canMoveChoiceDown = (model: Ordering, id: ChoiceId) => canMoveChoice(model, id, 'down');
+};
+export const canMoveChoiceUp = (model: Ordering, id: ChoiceId) =>
+  canMoveChoice(model, id, 'up');
+export const canMoveChoiceDown = (model: Ordering, id: ChoiceId) =>
+  canMoveChoice(model, id, 'down');
 export const getChoiceIndex = (model: Ordering, id: ChoiceId) =>
-  model.choices.findIndex(choice => choice.id === id)
+  model.choices.findIndex(choice => choice.id === id);
 export const getChoice = (model: Ordering, id: ChoiceId) => getByIdUnsafe(model.choices, id);
 // FIX
 export const getChoiceIds = ([choiceIds]: ChoiceIdsToResponseId) => choiceIds;
@@ -61,7 +63,7 @@ export const getIncorrectResponse = (model: Ordering) => {
       return responsesWithoutCorrect
         .filter(r1 => !getTargetedResponses(model).find(r2 => r1.id === r2.id))[0];
   }
-}
+};
 export const getTargetedResponses = (model: TargetedOrdering) =>
   model.authoring.targeted.map(assoc => getResponse(model, getResponseId(assoc)));
 

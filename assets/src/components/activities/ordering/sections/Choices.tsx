@@ -25,7 +25,7 @@ const MoveButton = ({ choiceId, predicate, onClick, icon }: MoveButtonProps) => 
       </button>
     </div>
   );
-}
+};
 
 interface Props extends ModelEditorProps {
   onAddChoice: () => void;
