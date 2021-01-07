@@ -74,52 +74,6 @@ defmodule OliWeb.DeliveryControllerTest do
 
   end
 
-  describe "delivery_controller list_open_and_free" do
-    setup [:setup_session]
-
-    test "renders a list of all open and free courses", %{conn: conn, user: user, author: author} do
-
-      Oli.Accounts.link_user_author_account(user, author)
-
-      {:ok, _publication} = project_fixture(author, "Open and Free 1")
-        |> case do
-          %{project: project} -> project
-        end
-        |> Oli.Publishing.publish_project()
-        |> case do
-          {:ok, p} -> p
-        end
-        |> Oli.Publishing.update_publication(%{open_and_free: true})
-
-      {:ok, _publication} = project_fixture(author, "Open and Free 2")
-        |> case do
-          %{project: project} -> project
-        end
-        |> Oli.Publishing.publish_project()
-        |> case do
-          {:ok, p} -> p
-        end
-        |> Oli.Publishing.update_publication(%{open_and_free: true})
-
-      {:ok, _publication} = project_fixture(author, "Not Open and Free")
-        |> case do
-          %{project: project} -> project
-        end
-        |> Oli.Publishing.publish_project()
-        |> case do
-          {:ok, p} -> p
-        end
-        |> Oli.Publishing.update_publication(%{open_and_free: false})
-
-      conn = conn
-        |> get(Routes.delivery_path(conn, :list_open_and_free))
-
-      assert html_response(conn, 200) =~ "Open and Free 1"
-      assert html_response(conn, 200) =~ "Open and Free 2"
-      assert (html_response(conn, 200) =~ "Not Open and Free") == false
-    end
-  end
-
   describe "delivery_controller link_account" do
     setup [:setup_session]
 

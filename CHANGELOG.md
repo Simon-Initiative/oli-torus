@@ -4,6 +4,9 @@
 ### Enhancements
   - Add support for embedding images in structured content editors by external URL and by pasting a copied image
 
+### Bug fixes
+  - Fix a broken link to external learning objectives content
+
 ## 0.4.1 (2021-1-4)
 ### Bug fixes
   - Fix an issue where new local activities were not being registered on deployment
