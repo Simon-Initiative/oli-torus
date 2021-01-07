@@ -20,6 +20,10 @@ config :oli, :recaptcha,
   site_key: System.get_env("RECAPTCHA_SITE_KEY", "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"),
   secret: System.get_env("RECAPTCHA_PRIVATE_KEY", "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe")
 
+# Configure help
+config :oli, :help,
+  dispatcher: Oli.Help.Providers.EmailHelp
+
 # Configure Email
 config :oli, Oli.Mailer,
   adapter: Bamboo.TestAdapter

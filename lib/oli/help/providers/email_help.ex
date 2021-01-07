@@ -5,7 +5,7 @@ defmodule Oli.Help.Providers.EmailHelp do
 
   @impl Oli.Help.Dispatcher
   def dispatch(%HelpContent{} = contents) do
-    help_desk_email = System.get_env("HELP_DESK_EMAIL")
+    help_desk_email = System.get_env("HELP_DESK_EMAIL", "test@example.edu")
 
     email = Oli.Email.help_desk_email(
       contents.full_name,
@@ -32,7 +32,6 @@ defmodule Oli.Help.Providers.EmailHelp do
     <> "<br>Cookies Enabled: " <> contents.cookies_enabled <> "<br><br> USER ACCOUNT"
     <> "<br>Name: " <> contents.account_name <> "<br>Email: " <> contents.account_email
     <> "<br>Created: " <> contents.account_created
-    IO.puts "Message after this #{inspect message}"
     message
     |> String.replace("\r", "")
     |> String.replace("\n", "<br>")

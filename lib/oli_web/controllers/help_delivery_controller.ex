@@ -68,8 +68,6 @@ defmodule OliWeb.HelpDeliveryController do
     current_user = Pow.Plug.current_user(conn)
     if current_user != nil do
       # :TODO: find a way to reliably get roles in both authoring and delivery contexts
-      #  current_user = current_user  |> Repo.preload([:system_role])
-      IO.inspect current_user
       email = if current_user.email == nil, do: " ", else: " "
       given_name = if current_user.given_name == nil, do: " ", else: " "
       family_name = if current_user.family_name == nil, do: " ", else: " "

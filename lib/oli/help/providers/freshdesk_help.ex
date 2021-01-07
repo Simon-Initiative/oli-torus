@@ -6,7 +6,7 @@ defmodule Oli.Help.Providers.FreshdeskHelp do
   @headers [
     {"Content-type", "application/json"},
     {"Accept", "application/json"},
-    {"Authorization", "Basic " <> Base.encode64(System.get_env("FRESHDESK_API_KEY"))}
+    {"Authorization", "Basic " <> Base.encode64(System.get_env("FRESHDESK_API_KEY", "examplekey"))}
   ]
 
   @impl Oli.Help.Dispatcher
@@ -45,7 +45,6 @@ defmodule Oli.Help.Providers.FreshdeskHelp do
     <> "<br>Cookies Enabled: " <> contents.cookies_enabled <> "<br><br> USER ACCOUNT"
     <> "<br>Name: " <> contents.account_name <> "<br>Email: " <> contents.account_email
     <> "<br>Created: " <> contents.account_created
-    IO.puts "Message after this #{inspect message}"
     message
     |> String.replace("\r", "")
     |> String.replace("\n", "<br>")
