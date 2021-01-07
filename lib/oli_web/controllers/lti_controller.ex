@@ -9,6 +9,8 @@ defmodule OliWeb.LtiController do
   alias Oli.Lti_1p3.PlatformRoles
   alias Oli.Lti_1p3
   alias Oli.Predefined
+  alias Oli.Slack
+  alias Oli.Utils
 
   require Logger
 
@@ -149,7 +151,13 @@ defmodule OliWeb.LtiController do
 
   def request_registration(conn, %{"pending_registration" => pending_registration_attrs} = _params) do
     case Institutions.create_pending_registration(pending_registration_attrs) do
-      {:ok, _pending_registration} ->
+      {:ok, pending_registration} ->
+        # send a Slack notification regarding the new registration request
+        Slack.send( %{
+          "username" => "Registration Requested",
+          "text" => "Registration requested by *#{pending_registration.name}*. <#{Utils.get_base_url()}/admin/institutions#pending-registrations|Click here to review and approve>.",
+        })
+
         conn
         |> render("registration_pending.html")
 

@@ -346,6 +346,7 @@ defmodule OliWeb.Router do
     post "/invite", InviteController, :create
 
     put "/approve_registration", InstitutionController, :approve_registration
+    delete "/pending_registration/:id", InstitutionController, :remove_registration
   end
 
   scope "/project", OliWeb do

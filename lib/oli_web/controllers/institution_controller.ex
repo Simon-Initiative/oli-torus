@@ -1,9 +1,12 @@
 defmodule OliWeb.InstitutionController do
   use OliWeb, :controller
 
+  import Phoenix.HTML.Tag
+
   alias Oli.Institutions
   alias Oli.Institutions.Institution
   alias Oli.Predefined
+  alias Oli.Slack
 
   require Logger
 
@@ -28,7 +31,7 @@ defmodule OliWeb.InstitutionController do
     case Institutions.create_institution(institution_params) do
       {:ok, _institution} ->
         conn
-        |> put_flash(:info, "Institution created successfully.")
+        |> put_flash(:info, "Institution created")
         |> redirect(to: Routes.static_page_path(conn, :index))
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -60,7 +63,7 @@ defmodule OliWeb.InstitutionController do
     case Institutions.update_institution(institution, institution_params) do
       {:ok, institution} ->
         conn
-        |> put_flash(:info, "Institution updated successfully.")
+        |> put_flash(:info, "Institution updated")
         |> redirect(to: Routes.institution_path(conn, :show, institution))
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -73,7 +76,7 @@ defmodule OliWeb.InstitutionController do
     {:ok, _institution} = Institutions.delete_institution(institution)
 
     conn
-    |> put_flash(:info, "Institution deleted successfully.")
+    |> put_flash(:info, "Institution deleted")
     |> redirect(to: Routes.institution_path(conn, :index))
   end
 
@@ -102,8 +105,14 @@ defmodule OliWeb.InstitutionController do
 
           Oli.Mailer.deliver_now(registration_approved_email)
 
+          # send a Slack notification regarding the new registration approval
+          approving_admin = conn.assigns[:current_author]
+          Slack.send(%{
+            "text" => "Registration for *#{pending_registration.name}* was approved by #{approving_admin.name}.",
+          })
+
           conn
-          |> put_flash(:info, "Registration approved")
+          |> put_flash(:info, ["Registration for ", content_tag(:b, pending_registration.name), " approved"])
           |> redirect(to: Routes.institution_path(conn, :index) <> "#pending-registrations")
 
         else
@@ -116,6 +125,22 @@ defmodule OliWeb.InstitutionController do
         end
     end
 
+  end
+
+  def remove_registration(conn, %{"id" => id}) do
+    pending_registration = Institutions.get_pending_registration!(id)
+    {:ok, _pending_registration} = Institutions.delete_pending_registration(pending_registration)
+
+    # send a Slack notification regarding the new registration approval
+    approving_admin = conn.assigns[:current_author]
+    Slack.send(%{
+      "username" => "Registration Declined",
+      "text" => "Registration for *#{pending_registration.name}* was declined by #{approving_admin.name}.",
+    })
+
+    conn
+    |> put_flash(:info, ["Registration for ", content_tag(:b, pending_registration.name), " declined"])
+    |> redirect(to: Routes.institution_path(conn, :index))
   end
 
   defp render_institution_page(conn, template, assigns) do
