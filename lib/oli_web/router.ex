@@ -306,7 +306,6 @@ defmodule OliWeb.Router do
 
     post "/section", DeliveryController, :create_section
     get "/signout", DeliveryController, :signout
-    get "/open_and_free", DeliveryController, :list_open_and_free
 
     get "/unauthorized", DeliveryController, :unauthorized
 

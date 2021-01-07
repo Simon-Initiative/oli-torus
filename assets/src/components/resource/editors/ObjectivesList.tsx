@@ -14,8 +14,8 @@ export const ObjectivesList = (props: ObjectivesListProps) => {
             <div>
               <i className="las la-exclamation-triangle mr-2 text-warning"></i>
                 This activity doesn't target any
-                objectives. <a href="https://www.cmu.edu/teaching\
-                /designteach/design\/learningobjectives.html"
+                objectives. <a
+                href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html"
                 target="_blank">Learn more</a> about the importance
                 of attaching learning objectives to activities.
             </div>
