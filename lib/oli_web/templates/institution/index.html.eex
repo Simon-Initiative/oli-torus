@@ -81,7 +81,7 @@
               <td><%= institution.institution_url %></td>
               <td><%= institution.timezone %></td>
 
-              <td>
+              <td class="text-nowrap">
                 <%= link "Details", to: Routes.institution_path(@conn, :show, institution), class: "btn btn-sm btn-outline-primary" %>
                 <%# <%= link "Remove", to: Routes.institution_path(@conn, :delete, institution), method: :delete, data: [confirm: "Are you sure you want to permanently remove the institution \"#{institution.name}\"?"], class: "btn btn-sm btn-outline-danger ml-2" %>
               </td>
@@ -103,10 +103,9 @@
           <thead>
             <tr>
               <th>Name</th>
-              <th>Country Code</th>
-              <th>Email</th>
               <th>URL</th>
-              <th>Timezone</th>
+              <th>Contact Email</th>
+              <th>Requested</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -114,12 +113,11 @@
         <%= for pending_registration <- @pending_registrations do %>
             <tr>
               <td><%= pending_registration.name %></td>
-              <td><%= pending_registration.country_code %></td>
-              <td><%= pending_registration.institution_email %></td>
               <td><%= pending_registration.institution_url %></td>
-              <td><%= pending_registration.timezone %></td>
+              <td><%= pending_registration.institution_email %></td>
+              <td><%= pending_registration.inserted_at |> Timex.format!("{relative}", :relative) %></td>
 
-              <td>
+              <td class="text-nowrap">
                 <a href="#review-<%= pending_registration.id %>" class="btn btn-sm btn-outline-primary ml-2" data-toggle="modal" data-target="#review-<%= pending_registration.id %>">Review</button>
                 <%= link "Remove", to: "#", method: :delete, data: [confirm: "Are you sure you want to remove this request for \"#{pending_registration.name}\"?"], class: "btn btn-sm btn-outline-danger ml-2" %>
               </td>

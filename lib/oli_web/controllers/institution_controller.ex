@@ -92,11 +92,20 @@ defmodule OliWeb.InstitutionController do
 
       pending_registration ->
         with {:ok, pending_registration} <- Institutions.update_pending_registration(pending_registration, pending_registration_attrs),
-             {:ok, {institution, _registration}} <- Institutions.approve_pending_registration(pending_registration)
+             {:ok, {institution, registration}} <- Institutions.approve_pending_registration(pending_registration)
         do
+          registration_approved_email = Oli.Email.create_email(
+            institution.institution_email,
+            "Registration Approved",
+            "registration_approved.html",
+            %{institution: institution, registration: registration})
+
+          Oli.Mailer.deliver_now(registration_approved_email)
+
           conn
           |> put_flash(:info, "Registration approved")
-          |> redirect(to: Routes.institution_path(conn, :show, institution))
+          |> redirect(to: Routes.institution_path(conn, :index) <> "#pending-registrations")
+
         else
           error ->
             Logger.error("Failed to approve registration request", error)

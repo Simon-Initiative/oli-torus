@@ -19,6 +19,8 @@ defmodule Oli.Repo.Migrations.UnlinkInstitutionAuthor do
       add :auth_token_url, :string
       add :auth_login_url, :string
       add :auth_server, :string
+
+      timestamps()
     end
 
     create unique_index(:pending_registrations, [:issuer, :client_id])

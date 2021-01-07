@@ -15,6 +15,8 @@ defmodule Oli.Institutions.PendingRegistration do
     field :auth_token_url, :string
     field :auth_login_url, :string
     field :auth_server, :string
+
+    timestamps(type: :utc_datetime)
   end
 
   @doc false
