@@ -64,7 +64,8 @@ defmodule OliWeb.LtiControllerTest do
       }
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
-      assert html_response(conn, 200) =~ "No registration exists for issuer (iss): http://invalid.edu"
+      assert html_response(conn, 200) =~ "Welcome to the Open Learning Initiative!"
+      assert html_response(conn, 200) =~ "Register Your Institution"
 
     end
 
