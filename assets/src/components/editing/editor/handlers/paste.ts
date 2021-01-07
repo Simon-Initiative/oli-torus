@@ -18,4 +18,4 @@ export const onPaste = (editor: SlateEditor, e: React.ClipboardEvent<HTMLDivElem
     .map(URL.createObjectURL)
     .forEach(url =>
       Transforms.insertNodes(editor, ContentModel.image(url)));
-}
+};

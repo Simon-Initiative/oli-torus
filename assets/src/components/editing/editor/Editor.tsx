@@ -19,7 +19,7 @@ import { withVoids } from './overrides/voids';
 import { withInlines } from './overrides/inlines';
 import { withTables } from './overrides/tables';
 import { withMarkdown } from './overrides/markdown';
-import { onPaste } from './handlers/paste'
+import { onPaste } from './handlers/paste';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor (including selection state)

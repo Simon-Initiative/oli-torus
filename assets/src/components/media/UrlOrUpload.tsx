@@ -1,14 +1,22 @@
-import React, { useState } from 'react'
-import {valueOr} from 'utils/common'
+import React, { useState } from 'react';
+import { Media, MediaItem } from 'types/media';
+import { MediaManager, SELECTION_TYPES } from './manager/MediaManager.controller';
 
-type Source = 'upload' | 'url'
+type Source = 'upload' | 'url';
 interface Props {
-  mediaLibrary: JSX.Element;
   toggleDisableInsert?: (b: boolean) => void;
+  onUrlChange: (url: string) => void;
+  model: Media;
+  projectSlug: string;
+  mimeFilter?: string[] | undefined;
+  selectionType: SELECTION_TYPES;
+  initialSelectionPaths: string[];
+  onEdit: (updated: Media) => void;
+  onMediaSelectionChange: (items: MediaItem[]) => void;
 }
 export const UrlOrUpload = (props: Props) => {
 
-  const { mediaLibrary, toggleDisableInsert } = props;
+  const { toggleDisableInsert, onUrlChange } = props;
   const [source, setSource] = useState<Source>('url');
   const [url, setUrl] = useState('');
 
@@ -33,7 +41,7 @@ export const UrlOrUpload = (props: Props) => {
             id="inlineRadio2"
             value="url" />
           <label className="form-check-label" htmlFor="inlineRadio2">
-            Enter a URL to external media
+            External media item
           </label>
         </div>
         <div className="form-check">
@@ -51,23 +59,33 @@ export const UrlOrUpload = (props: Props) => {
         </div>
       </div>
       {source === 'upload'
-        ? mediaLibrary
+        ? <MediaManager model={props.model}
+            toggleDisableInsert={props.toggleDisableInsert}
+            projectSlug={props.projectSlug}
+            onEdit={() => { }}
+            mimeFilter={props.mimeFilter}
+            selectionType={SELECTION_TYPES.SINGLE}
+            initialSelectionPaths={props.initialSelectionPaths}
+            onSelectionChange={props.onMediaSelectionChange} />
         : <div className="media-url">
             <input
-              placeholder="URL"
+              className="w-100"
+              placeholder="Enter the media URL address"
               value={url}
               onChange={({ target: { value } }) => {
-                setUrl(value)
+                setUrl(value);
+                onUrlChange(value);
+
                 if (!toggleDisableInsert) {
                   return;
                 }
                 return value.trim()
                   ? toggleDisableInsert(false)
-                  : toggleDisableInsert(true)
+                  : toggleDisableInsert(true);
               }}
             />
           </div>
       }
     </>
-  )
-}
+  );
+};

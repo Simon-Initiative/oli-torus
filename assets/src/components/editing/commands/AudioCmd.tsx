@@ -31,12 +31,8 @@ export function selectAudio(projectSlug: string,
           mimeFilter={MIMETYPE_FILTERS.AUDIO}
           selectionType={SELECTION_TYPES.SINGLE}
           initialSelectionPaths={[model.src]}
-          onSelectionChange={(mediaOrUrl: MediaItem[] | string) => {
-            (selected as any).img = ContentModel.audio(
-              typeof mediaOrUrl === 'string'
-                ? mediaOrUrl
-                : mediaOrUrl[0].url
-            );
+          onSelectionChange={(images: MediaItem[]) => {
+            (selected as any).img = ContentModel.audio(images[0].url);
           }} />
       </ModalSelection>;
 

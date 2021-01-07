@@ -28,7 +28,7 @@ interface OwnProps {
   selectionType: SELECTION_TYPES;
   initialSelectionPaths?: string[];
   onEdit: (updated: Media) => void;
-  onSelectionChange: (selection: MediaItem[] | string) => void;
+  onSelectionChange: (selection: MediaItem[]) => void;
 }
 
 const mapStateToProps = (state: State, ownProps: OwnProps): StateProps => {
