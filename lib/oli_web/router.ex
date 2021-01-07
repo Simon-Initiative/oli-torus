@@ -238,7 +238,6 @@ defmodule OliWeb.Router do
   end
 
 
-
   scope "/api/v1/account", OliWeb do
     pipe_through [:api, :authoring_protected]
 
@@ -268,7 +267,6 @@ defmodule OliWeb.Router do
     post "/:project_id/objectives", ResourceController, :create_objective
 
   end
-
 
 
   scope "/api/v1/attempt", OliWeb do

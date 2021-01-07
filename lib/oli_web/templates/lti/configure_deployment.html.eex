@@ -5,4 +5,4 @@
 
 <p>LTI 1.3 deployments must be configured with the tool provider before a platform can launch into the tool.</p>
 
-<p>If you need help configuring your LTI connection, please <a href="https://oli.cmu.edu/jcourse/webui/help.do" target="_blank">contact OLI Support</a></p>
+<p>If you need help configuring your LTI connection, please <a href="<%= Routes.help_delivery_path(@conn, :index) %>">contact OLI Support</a></p>
