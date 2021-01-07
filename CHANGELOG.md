@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1 (2021-1-6)
+### Enhancements
+  - Add support for embedding images in structured content editors by external URL and by pasting a copied image
+
 ## 0.4.1 (2021-1-4)
 ### Bug fixes
   - Fix an issue where new local activities were not being registered on deployment
