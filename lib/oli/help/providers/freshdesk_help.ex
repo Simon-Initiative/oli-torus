@@ -11,7 +11,7 @@ defmodule Oli.Help.Providers.FreshdeskHelp do
 
   @impl Oli.Help.Dispatcher
   def dispatch(%HelpContent{} = contents) do
-    url = System.get_env("FRESHDESK_API_URL")
+    url = System.get_env("FRESHDESK_API_URL", "example.edu")
 
     {:ok, body} =
       Jason.encode(
