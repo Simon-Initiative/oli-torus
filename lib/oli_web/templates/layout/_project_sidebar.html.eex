@@ -1,6 +1,6 @@
 <div class="workspace-sidebar">
-  <div class="small">
-    <%= sidebar_link @conn, "Help", :help, to: Routes.help_path(@conn, :index) %>
+  <div class="container">
+    <%= link "Help", to: Routes.help_path(@conn, :index), class: "justify-content-end small" %>
   </div>
   <div class="user">
     <%= account_link @conn %>

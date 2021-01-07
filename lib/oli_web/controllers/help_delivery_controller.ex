@@ -1,4 +1,4 @@
-defmodule OliWeb.HelpController do
+defmodule OliWeb.HelpDeliveryController do
   use OliWeb, :controller
 
   alias Oli.Help.HelpContent
@@ -22,12 +22,12 @@ defmodule OliWeb.HelpController do
       do
       conn
       |> put_flash(:ok, "Your help request has been successfully submitted")
-      |> redirect(to: Routes.help_path(conn, :sent))
+      |> redirect(to: Routes.help_delivery_path(conn, :sent))
     else
       {:error, message} -> IO.puts "errors from dispatch #{inspect message}"
                            conn
                            |> put_flash(:error, "Help request failed, please try again")
-                           |> redirect(to: Routes.help_path(conn, :index))
+                           |> redirect(to: Routes.help_delivery_path(conn, :index))
     end
 
   end
@@ -69,6 +69,7 @@ defmodule OliWeb.HelpController do
     if current_user != nil do
       # :TODO: find a way to reliably get roles in both authoring and delivery contexts
       #  current_user = current_user  |> Repo.preload([:system_role])
+      IO.inspect current_user
       email = if current_user.email == nil, do: " ", else: " "
       given_name = if current_user.given_name == nil, do: " ", else: " "
       family_name = if current_user.family_name == nil, do: " ", else: " "

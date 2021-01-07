@@ -151,6 +151,12 @@ defmodule OliWeb.Router do
     pipe_through [:browser]
 
     get "/", StaticPageController, :index
+
+  end
+
+  scope "/", OliWeb do
+    pipe_through [:browser, Oli.Plugs.RemoveXFrameOptions]
+
     resources "/help", HelpController, only: [:index, :create]
     get "/help/sent", HelpController, :sent
   end
@@ -173,7 +179,6 @@ defmodule OliWeb.Router do
 
     # keep a session active by periodically calling this endpoint
     get "/keep-alive", StaticPageController, :keep_alive
-
 
   end
 
@@ -282,6 +287,7 @@ defmodule OliWeb.Router do
     put "/activity/:activity_attempt_guid", AttemptController, :submit_activity
     patch "/activity/:activity_attempt_guid", AttemptController, :save_activity
 
+
   end
 
   # LTI routes
@@ -323,6 +329,8 @@ defmodule OliWeb.Router do
     live "/:context_id/grades", Grades.GradesLive, session: {__MODULE__, :with_delivery, []}
     get "/:context_id/grades/export", PageDeliveryController, :export_gradebook
 
+    resources "/help", HelpDeliveryController, only: [:index, :create]
+    get "/help/sent", HelpDeliveryController, :sent
   end
 
   scope "/admin", OliWeb do
