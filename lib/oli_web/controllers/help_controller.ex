@@ -24,7 +24,7 @@ defmodule OliWeb.HelpController do
       |> put_flash(:ok, "Your help request has been successfully submitted")
       |> redirect(to: Routes.help_path(conn, :sent))
     else
-      {:error, message} -> IO.puts "errors from dispatch #{inspect message}"
+      {:error, message} ->
                            conn
                            |> put_flash(:error, "Help request failed, please try again")
                            |> redirect(to: Routes.help_path(conn, :index))
