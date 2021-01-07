@@ -74,4 +74,12 @@ defmodule Oli.Utils do
         {:ok, json} <- Poison.decode(body), do: {:ok, json}
   end
 
+  def positive_or_nil(num) do
+    if num > 0 do
+      num
+    else
+      nil
+    end
+  end
+
 end

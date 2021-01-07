@@ -281,6 +281,16 @@ defmodule Oli.Institutions do
   end
 
   @doc """
+  Returns the count of pending_registrations.
+  ## Examples
+      iex> count_pending_registrations()
+      123
+  """
+  def count_pending_registrations do
+    Repo.aggregate(PendingRegistration, :count)
+  end
+
+  @doc """
   Gets a single pending_registration.
   Raises `Ecto.NoResultsError` if the PendingRegistration does not exist.
   ## Examples
