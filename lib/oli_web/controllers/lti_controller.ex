@@ -10,7 +10,6 @@ defmodule OliWeb.LtiController do
   alias Oli.Lti_1p3
   alias Oli.Predefined
   alias Oli.Slack
-  alias Oli.Utils
 
   require Logger
 
@@ -153,9 +152,56 @@ defmodule OliWeb.LtiController do
     case Institutions.create_pending_registration(pending_registration_attrs) do
       {:ok, pending_registration} ->
         # send a Slack notification regarding the new registration request
-        Slack.send( %{
-          "username" => "Registration Requested",
-          "text" => "Registration requested by *#{pending_registration.name}*. <#{Utils.get_base_url()}/admin/institutions#pending-registrations|Click here to review and approve>.",
+        Slack.send(%{
+          "username" => "Torus Bot",
+          "icon_emoji" => ":robot_face:",
+          "blocks" => [
+            %{
+              "type" => "section",
+              "text" => %{
+                "type" => "mrkdwn",
+                "text" => "New registration request from *#{pending_registration.name}*. <#{Routes.institution_url(conn, :index)}#pending-registrations|Click here to view all pending requests>."
+              }
+            },
+            %{
+              "type" => "section",
+              "fields" => [
+                %{
+                  "type" => "mrkdwn",
+                  "text" => "*Name:*\n#{pending_registration.name}"
+                },
+                %{
+                  "type" => "mrkdwn",
+                  "text" => "*Institution Url:*\n#{pending_registration.institution_url}"
+                },
+                %{
+                  "type" => "mrkdwn",
+                  "text" => "*Contact Email:*\n#{pending_registration.institution_email}"
+                },
+                %{
+                  "type" => "mrkdwn",
+                  "text" => "*Location:*\n#{pending_registration.country_code} - #{pending_registration.timezone}"
+                },
+                %{
+                  "type" => "mrkdwn",
+                  "text" => "*Date:*\n#{pending_registration.inserted_at |> Timex.format!("{RFC822}")}"
+                },
+              ]
+            },
+            %{
+              "type" => "actions",
+              "elements" => [
+                %{
+                  "type" => "button",
+                  "text" => %{
+                    "type" => "plain_text",
+                    "text" => "Review Request"
+                  },
+                  "url" => "#{Routes.institution_url(conn, :index)}#pending-registrations",
+                }
+              ]
+            }
+          ]
         })
 
         conn

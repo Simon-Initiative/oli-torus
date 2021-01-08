@@ -6,10 +6,36 @@ defmodule Oli.Slack do
 
   Example Payload:
   %{
-    "username" => "webhookbot",
-    "channel" => "#general",
-    "text" => "This is posted to #general and comes from a bot named webhookbot. <http://url_to_task|Click here>.",
-    "icon_emoji" => ":robot_face:",
+    "blocks" => [
+      {
+        "type" => "section",
+        "text" => {
+          "type" => "mrkdwn",
+          "text" => "Chew choo! @scott started a train to Deli Board at 11:30. Will you join?"
+        }
+      },
+      {
+        "type" => "actions",
+        "elements" => [
+          {
+            "type" => "button",
+            "text" => {
+              "type" => "plain_text",
+              "text" => "Yes",
+              "emoji" => true
+            }
+          },
+          {
+            "type" => "button",
+            "text" => {
+              "type" => "plain_text",
+              "text" => "No",
+              "emoji"=> true
+            }
+          }
+        ]
+      }
+    ]
   }
   """
   def send(payload) do

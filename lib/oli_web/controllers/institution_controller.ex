@@ -108,7 +108,17 @@ defmodule OliWeb.InstitutionController do
           # send a Slack notification regarding the new registration approval
           approving_admin = conn.assigns[:current_author]
           Slack.send(%{
-            "text" => "Registration for *#{pending_registration.name}* was approved by #{approving_admin.name}.",
+            "username" => approving_admin.name,
+            "icon_emoji" => ":robot_face:",
+            "blocks" => [
+              %{
+                "type" => "section",
+                "text" => %{
+                  "type" => "mrkdwn",
+                  "text" => "Registration request for *#{pending_registration.name}* has been approved."
+                }
+              }
+            ]
           })
 
           conn
@@ -134,8 +144,17 @@ defmodule OliWeb.InstitutionController do
     # send a Slack notification regarding the new registration approval
     approving_admin = conn.assigns[:current_author]
     Slack.send(%{
-      "username" => "Registration Declined",
-      "text" => "Registration for *#{pending_registration.name}* was declined by #{approving_admin.name}.",
+      "username" => approving_admin.name,
+      "icon_emoji" => ":robot_face:",
+      "blocks" => [
+        %{
+          "type" => "section",
+          "text" => %{
+            "type" => "mrkdwn",
+            "text" => "Registration for *#{pending_registration.name}* has been declined."
+          }
+        }
+      ]
     })
 
     conn
