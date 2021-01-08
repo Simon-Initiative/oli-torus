@@ -1,8 +1,4 @@
 <div class="container">
-  <script src="//cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js"></script>
-  <script>
-    new ClipboardJS('.btn');
-  </script>
 
   <span>
     <%= link to: Routes.institution_path(@conn, :index) do %>
@@ -35,20 +31,6 @@
       <tr>
         <td><strong>Timezone:</strong></td>
         <td><%= @institution.timezone %></td>
-      </tr>
-
-      <tr>
-        <td><strong>Developer Key JSON URL:</strong></td>
-        <td>
-          <div class="input-group input-group-sm mb-3">
-            <input type="text" id="developer_key_url" class="form-control" value="<%= @developer_key_url %>" readonly>
-            <div class="input-group-append">
-              <button class="btn btn-xs btn-outline-primary" data-clipboard-target="#developer_key_url">
-                <i class="lar la-clipboard"></i> Copy
-              </button>
-            </div>
-          </div>
-        </td>
       </tr>
 
       <tr>

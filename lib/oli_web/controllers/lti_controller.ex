@@ -64,13 +64,13 @@ defmodule OliWeb.LtiController do
 
     developer_key_config = %{
       "title" => "OLI Torus",
-      "scopes" => [],
-      ## TODO: add scopes for LTI services in the future
-      # "scopes":[
-      #   "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
-      #   "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly"
-      #   ...
-      # ],
+      "scopes" => [
+        "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
+        "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem.readonly",
+        "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
+        "https://purl.imsglobal.org/spec/lti-ags/scope/score",
+        "https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly"
+      ],
       "extensions" => [
         %{
           "platform" => "canvas.instructure.com",
@@ -114,7 +114,7 @@ defmodule OliWeb.LtiController do
         "kty" => "RSA",
         "use" => "sig"
       },
-      "description" => "Create, deliver and iteratively improve course content with Torus, through the Open Learning Initiative",
+      "description" => "Create, deliver and iteratively improve course content through the Open Learning Initiative",
       "custom_fields" => %{},
       "public_jwk_url" => "https://#{host}/.well-known/jwks.json",
       "target_link_uri" => "https://#{host}/lti/launch",

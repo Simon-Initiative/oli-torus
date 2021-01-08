@@ -88,8 +88,9 @@ defmodule Oli.Utils do
   def get_base_url() do
     url_config = Application.fetch_env!(:oli, OliWeb.Endpoint)[:url]
 
-    port = case Keyword.get(url_config, :port, "80") do
-      "80" -> ""
+    port = case Keyword.get(url_config, :port, 80) do
+      80 -> ""
+      443 -> ""
       p -> ":#{p}"
     end
 

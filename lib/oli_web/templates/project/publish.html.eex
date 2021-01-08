@@ -1,3 +1,14 @@
+<script src="//cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js"></script>
+<script>
+  var clipboard = new ClipboardJS('.clipboardjs.btn');
+
+  clipboard.on('success', function(e) {
+      const el = $(e.trigger);
+      el.html('Copied!');
+      setTimeout(() => el.html('<i class="lar la-clipboard"></i> Copy'), 5000);
+  });
+</script>
+
 <div class="publish container">
 
   <div class="row">
@@ -35,6 +46,106 @@
         <% end %>
       </div>
 
+    </div>
+  </div>
+
+  <div class="row justify-content-md-center mt-5">
+    <div class="col-8">
+      <div class="card">
+        <div class="card-body text-center">
+          <h5 class="card-title">Deliver your course with your institution's LMS</h5>
+          <p class="card-text">
+            Connect with your institution's LMS using LTI 1.3 to deliver your course.
+            <br>
+            Click the button below to get started.
+          </p>
+
+          <a href="#" class="btn btn-primary mt-3" data-toggle="collapse" data-target="#lms-config-details">Get Connected</a>
+
+          <div class="collapse" id="lms-config-details">
+            <hr class="my-3" />
+
+            <p class="my-3 text-secondary">
+              Select your institution's LMS family below to show configuration instructions:
+            </p>
+
+            <ul class="nav nav-pills justify-content-center mb-3" id="pills-tab" role="tablist">
+              <li class="nav-item">
+                <a class="nav-link active" id="pills-canvas-tab" data-toggle="pill" href="#pills-canvas" role="tab" aria-controls="pills-canvas" aria-selected="true">Canvas</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" id="pills-other-tab" data-toggle="pill" href="#pills-other" role="tab" aria-controls="pills-other" aria-selected="false">Other LMS</a>
+              </li>
+            </ul>
+
+            <div class="tab-content text-left p-3" id="pills-tabContent">
+              <div class="tab-pane fade show active" id="pills-canvas" role="tabpanel" aria-labelledby="pills-canvas-tab">
+
+              <p>
+                Please refer to the <a href="https://community.canvaslms.com/t5/Admin-Guide/How-do-I-configure-an-LTI-key-for-an-account/ta-p/140" target="_blank">Canvas Documentation on LTI key configuration</a> to create
+                a new developer key. Using the <b>Enter JSON URL</b> option, copy the url below and paste into the JSON URL field.
+              </p>
+
+              <p>
+                <div><strong>Developer Key JSON URL:</strong></div>
+                <div class="input-group input-group-sm mb-3">
+                  <input type="text" id="developer_key_url" class="form-control" value="<%= @developer_key_url %>" readonly>
+                  <div class="input-group-append">
+                    <button class="clipboardjs btn btn-xs btn-outline-primary" data-clipboard-target="#developer_key_url">
+                      <i class="lar la-clipboard"></i> Copy
+                    </button>
+                  </div>
+                </div>
+              </p>
+
+              </div>
+              <div class="tab-pane fade" id="pills-other" role="tabpanel" aria-labelledby="pills-other-tab">
+
+                <div><strong>Tool URL:</strong></div>
+                <div class="input-group input-group-sm mb-3">
+                  <input type="text" id="tool_url" class="form-control" value="<%= @tool_url %>" readonly>
+                  <div class="input-group-append">
+                    <button class="clipboardjs btn btn-xs btn-outline-primary" data-clipboard-target="#tool_url">
+                      <i class="lar la-clipboard"></i> Copy
+                    </button>
+                  </div>
+                </div>
+
+                <div><strong>Initiate login URL:</strong></div>
+                <div class="input-group input-group-sm mb-3">
+                  <input type="text" id="initiate_login_url" class="form-control" value="<%= @initiate_login_url %>" readonly>
+                  <div class="input-group-append">
+                    <button class="clipboardjs btn btn-xs btn-outline-primary" data-clipboard-target="#initiate_login_url">
+                      <i class="lar la-clipboard"></i> Copy
+                    </button>
+                  </div>
+                </div>
+
+                <div><strong>Public Keyset URL:</strong></div>
+                <div class="input-group input-group-sm mb-3">
+                  <input type="text" id="public_keyset_url" class="form-control" value="<%= @public_keyset_url %>" readonly>
+                  <div class="input-group-append">
+                    <button class="clipboardjs btn btn-xs btn-outline-primary" data-clipboard-target="#public_keyset_url">
+                      <i class="lar la-clipboard"></i> Copy
+                    </button>
+                  </div>
+                </div>
+
+                <div><strong>Redirection URI(s):</strong></div>
+                <div class="input-group input-group-sm mb-3">
+                  <input type="text" id="redirect_uris" class="form-control" value="<%= @redirect_uris %>" readonly>
+                  <div class="input-group-append">
+                    <button class="clipboardjs btn btn-xs btn-outline-primary" data-clipboard-target="#redirect_uris">
+                      <i class="lar la-clipboard"></i> Copy
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
