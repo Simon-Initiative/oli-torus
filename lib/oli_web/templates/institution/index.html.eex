@@ -157,8 +157,8 @@
               </div>
 
               <script>
-                const $input = $("#review-<%= pending_registration.id %> .institution-name.typeahead");
-                $input.typeahead({
+                var institution_name_input = $("#review-<%= pending_registration.id %> .institution-name.typeahead");
+                institution_name_input.typeahead({
                   source: world_universities_and_domains,
                   autoSelect: true,
                   afterSelect: function(sel) {

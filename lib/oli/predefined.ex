@@ -364,6 +364,14 @@ defmodule Oli.Predefined do
         auth_login_path: "/api/lti/authorize_redirect",
         auth_server_path: "",
       },
+      %{
+        product_family_code: "moodle",
+        name: "Moodle",
+        key_set_path: "/mod/lti/certs.php",
+        auth_token_path: "/mod/lti/token.php",
+        auth_login_path: "/mod/lti/auth.php",
+        auth_server_path: "",
+      },
     ]
   end
 end
