@@ -1,4 +1,4 @@
-defmodule Oli.Repo.Migrations.UnlinkInstitutionAuthor do
+defmodule Oli.Repo.Migrations.ImproveLtiWorkflow do
   use Ecto.Migration
 
   def change do
