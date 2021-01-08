@@ -3,6 +3,8 @@ defmodule Oli.Help.Providers.FreshdeskHelp do
 
   alias Oli.Help.HelpContent
 
+  require Logger
+
   @headers [
     {"Content-type", "application/json"},
     {"Accept", "application/json"},
@@ -29,9 +31,18 @@ defmodule Oli.Help.Providers.FreshdeskHelp do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, body}
       {:ok, %HTTPoison.Response{body: body}} ->
-        {:error, body}
+        Logger.error(body)
+        Logger.error("""
+        Error in FreshdeskHelp.dispatch.
+        Type: api call, failed with non 200 status code"
+        """)
+        {:error, "Error creating Freshdesk help ticket"}
       {:error, %HTTPoison.Error{reason: reason}} ->
-        {:error, reason}
+        Logger.error(reason)
+        Logger.error("""
+        Error in FreshdeskHelp.dispatch."
+        """)
+        {:error, "Error creating Freshdesk help ticket"}
     end
   end
 

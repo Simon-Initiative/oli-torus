@@ -20,7 +20,7 @@ defmodule OliWeb.HelpController do
          {:ok, _} <- Oli.Help.Dispatcher.dispatch(Application.fetch_env!(:oli, :help)[:dispatcher], help_content)
       do
       conn
-      |> put_flash(:ok, "Your help request has been successfully submitted")
+      |> put_flash(:info, "Your help request has been successfully submitted")
       |> redirect(to: Routes.help_path(conn, :sent))
     else
       {:error, _message} ->
