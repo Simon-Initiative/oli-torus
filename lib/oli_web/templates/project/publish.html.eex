@@ -53,9 +53,9 @@
     <div class="col-8">
       <div class="card">
         <div class="card-body text-center">
-          <h5 class="card-title">Deliver your course with your institution's LMS</h5>
+          <h5 class="card-title">Deliver this course through your institution's LMS</h5>
           <p class="card-text">
-            Connect your institution's LMS using LTI 1.3 to deliver your course.
+            Connect your institution's LMS using LTI 1.3 to deliver course materials to students.
             <br>
             Click the button below to get started.
           </p>
