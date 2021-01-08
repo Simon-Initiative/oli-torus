@@ -1,6 +1,8 @@
 defmodule OliWeb.InstitutionControllerTest do
   use OliWeb.ConnCase
 
+  import ExUnit.CaptureLog
+
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Accounts.Author
@@ -117,10 +119,13 @@ defmodule OliWeb.InstitutionControllerTest do
         |> Map.merge(PendingRegistration.institution_attrs(pending_registration))
         |> Map.merge(PendingRegistration.registration_attrs(pending_registration))
 
-      conn = put(conn, Routes.institution_path(conn, :approve_registration), %{"pending_registration" => pending_registration_attrs})
-      assert redirected_to(conn) == Routes.institution_path(conn, :index) <> "#pending-registrations"
 
-      assert Institutions.count_pending_registrations() == 0
+      assert capture_log(fn ->
+        conn = put(conn, Routes.institution_path(conn, :approve_registration), %{"pending_registration" => pending_registration_attrs})
+        assert redirected_to(conn) == Routes.institution_path(conn, :index) <> "#pending-registrations"
+
+        assert Institutions.count_pending_registrations() == 0
+      end) =~ "This message cannot be sent because SLACK_WEBHOOK_URL is not configured"
     end
   end
 
