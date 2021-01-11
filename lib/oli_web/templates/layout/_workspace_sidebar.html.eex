@@ -1,4 +1,7 @@
 <div class="workspace-sidebar">
+  <div class="container">
+    <%= link "Help", to: Routes.help_path(@conn, :index), class: "justify-content-end small" %>
+  </div>
   <div class="user">
     <%= account_link @conn %>
     <%= sidebar_link @conn, "Projects", :projects, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>

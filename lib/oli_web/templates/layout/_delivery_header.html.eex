@@ -1,10 +1,13 @@
 
 <nav class="navbar navbar-expand">
   <div class="container">
-    <a class="navbar-brand oli-logo" href="<%= if assigns[:preview_mode], do: "#", else: Routes.delivery_path(@conn, :index) %>">
+    <a class="navbar-brand oli-logo mr-auto" href="<%= if assigns[:preview_mode], do: "#", else: Routes.delivery_path(@conn, :index) %>">
       <img src="/images/oli-icon.png" width="30" height="30" class="d-inline-block align-top mr-2" alt="">
       Open Learning <span style="font-weight: 200">Initiative</span>
     </a>
+    <div class="nav-item my-2 my-lg-0 mr-2">
+      <a  href="<%= Routes.help_delivery_path(@conn, :index) %>">Help</a>
+    </div>
 
     <%= if assigns[:lti_params] && user_signed_in?(@conn) do %>
       <%= if user_role_is_student(@conn, @current_user) do %>
@@ -63,5 +66,6 @@
         </div>
       <% end %>
     <% end %>
+
   </div>
 </nav>

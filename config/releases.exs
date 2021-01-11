@@ -50,6 +50,10 @@ config :oli, :recaptcha,
   site_key: System.get_env("RECAPTCHA_SITE_KEY"),
   secret: System.get_env("RECAPTCHA_PRIVATE_KEY")
 
+# Configure help
+config :oli, :help,
+  dispatcher: Oli.Help.Providers.FreshdeskHelp
+
 config :oli, OliWeb.Endpoint,
   server: true,
   http: [
