@@ -1,4 +1,4 @@
-// This is the entry point for the multiple choice authoring
+// This is the entry point for the check all that apply authoring
 // component, as specified in the manifest.json
 
 // An authoring component entry point must expose the following

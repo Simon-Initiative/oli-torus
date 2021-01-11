@@ -180,7 +180,7 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
     );
 
   return (
-    <div className={`activity multiple-choice-activity ${isEvaluated ? 'evaluated' : ''}`}>
+    <div className={`activity ordering-activity ${isEvaluated ? 'evaluated' : ''}`}>
       <div className="activity-content">
         <div>
           <Stem stem={stem} />

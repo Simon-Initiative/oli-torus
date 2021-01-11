@@ -113,8 +113,6 @@ export const defaultOrderingModel : () => Ordering = () => {
         ],
       }],
       correct: [[choice1.id, choice2.id], correctResponse.id],
-      // FIX THIS CHOICE ID LIST
-      incorrect: [[], incorrectResponse.id],
       transformations: [
         { id: guid(), path: 'choices', operation: Operation.shuffle },
       ],

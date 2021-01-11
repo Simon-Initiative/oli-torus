@@ -157,7 +157,7 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
     );
 
   return (
-    <div className={`activity multiple-choice-activity ${isEvaluated ? 'evaluated' : ''}`}>
+    <div className={`activity cata-activity ${isEvaluated ? 'evaluated' : ''}`}>
       <div className="activity-content">
         <div>
           <Stem stem={stem} />
