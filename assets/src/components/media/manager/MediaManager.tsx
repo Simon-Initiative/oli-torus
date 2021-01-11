@@ -5,10 +5,10 @@ import { MediaIcon } from './MediaIcon';
 import { Media, MediaItem, MediaRef } from 'types/media';
 import guid from 'utils/guid';
 import { convert, stringFormat } from 'utils/format';
-import * as persistence from 'data/persistence/media';
 import { OrderedMediaLibrary } from '../OrderedMediaLibrary';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 import { relativeToNow } from 'utils/date';
+import { uploadFiles } from './upload';
 
 const PAGELOAD_TRIGGER_MARGIN_PX = 100;
 const MAX_NAME_LENGTH = 26;
@@ -227,25 +227,8 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       fileList.push(files[i]);
     }
 
-    // the server creates a lock on upload, so we must upload files one at a
-    // time. This factory function returns a new promise to upload a file
-    // recursively until fileList is empty
-    const results: any = [];
-    const createWebContentPromiseFactory = (courseId: string, file: File): any =>
-      persistence.createMedia(courseId, file)
-        .then((result) => {
-          results.push(result);
-
-          if (fileList.length > 0) {
-            const top = (fileList.pop() as any) as File;
-            return createWebContentPromiseFactory(courseId, top);
-          }
-
-          return results;
-        });
-
     // sequentially upload files one at a time, then reload the media page
-    createWebContentPromiseFactory(this.props.projectSlug, fileList.pop() as any)
+    uploadFiles(this.props.projectSlug, fileList)
       .then((result: any) => {
         onResetMedia();
         onLoadCourseMediaNextPage(this.props.projectSlug,

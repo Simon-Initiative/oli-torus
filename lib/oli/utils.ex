@@ -74,4 +74,26 @@ defmodule Oli.Utils do
         {:ok, json} <- Poison.decode(body), do: {:ok, json}
   end
 
+  def positive_or_nil(num) do
+    if num > 0 do
+      num
+    else
+      nil
+    end
+  end
+
+  @doc """
+  Returns the base url for torus using the application endpoint configuration
+  """
+  def get_base_url() do
+    url_config = Application.fetch_env!(:oli, OliWeb.Endpoint)[:url]
+
+    port = case Keyword.get(url_config, :port, 80) do
+      80 -> ""
+      443 -> ""
+      p -> ":#{p}"
+    end
+
+    "https://#{Keyword.get(url_config, :host, "localhost")}#{port}"
+  end
 end

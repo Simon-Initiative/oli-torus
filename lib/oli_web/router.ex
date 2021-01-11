@@ -151,6 +151,14 @@ defmodule OliWeb.Router do
     pipe_through [:browser]
 
     get "/", StaticPageController, :index
+
+  end
+
+  scope "/", OliWeb do
+    pipe_through [:browser, Oli.Plugs.RemoveXFrameOptions]
+
+    resources "/help", HelpController, only: [:index, :create]
+    get "/help/sent", HelpController, :sent
   end
 
   scope "/.well-known", OliWeb do
@@ -171,7 +179,6 @@ defmodule OliWeb.Router do
 
     # keep a session active by periodically calling this endpoint
     get "/keep-alive", StaticPageController, :keep_alive
-
 
   end
 
@@ -231,7 +238,6 @@ defmodule OliWeb.Router do
   end
 
 
-
   scope "/api/v1/account", OliWeb do
     pipe_through [:api, :authoring_protected]
 
@@ -263,7 +269,6 @@ defmodule OliWeb.Router do
   end
 
 
-
   scope "/api/v1/attempt", OliWeb do
     pipe_through [:api, :delivery_protected]
 
@@ -280,6 +285,7 @@ defmodule OliWeb.Router do
     put "/activity/:activity_attempt_guid", AttemptController, :submit_activity
     patch "/activity/:activity_attempt_guid", AttemptController, :save_activity
 
+
   end
 
   # LTI routes
@@ -292,6 +298,8 @@ defmodule OliWeb.Router do
     post "/test", LtiController, :test
 
     get "/developer_key.json", LtiController, :developer_key_json
+
+    post "/register", LtiController, :request_registration
   end
 
   scope "/course", OliWeb do
@@ -306,7 +314,6 @@ defmodule OliWeb.Router do
 
     post "/section", DeliveryController, :create_section
     get "/signout", DeliveryController, :signout
-    get "/open_and_free", DeliveryController, :list_open_and_free
 
     get "/unauthorized", DeliveryController, :unauthorized
 
@@ -321,6 +328,8 @@ defmodule OliWeb.Router do
     live "/:context_id/grades", Grades.GradesLive, session: {__MODULE__, :with_delivery, []}
     get "/:context_id/grades/export", PageDeliveryController, :export_gradebook
 
+    resources "/help", HelpDeliveryController, only: [:index, :create]
+    get "/help/sent", HelpDeliveryController, :sent
   end
 
   scope "/admin", OliWeb do
@@ -344,6 +353,8 @@ defmodule OliWeb.Router do
     get "/invite", InviteController, :index
     post "/invite", InviteController, :create
 
+    put "/approve_registration", InstitutionController, :approve_registration
+    delete "/pending_registration/:id", InstitutionController, :remove_registration
   end
 
   scope "/project", OliWeb do

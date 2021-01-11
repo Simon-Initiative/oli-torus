@@ -19,10 +19,6 @@ defmodule Oli.Lti_1p3 do
     |> Repo.insert()
   end
 
-  def get_registration_by_issuer(issuer) do
-    Repo.one(from r in Registration, where: r.issuer == ^issuer)
-  end
-
   def create_new_deployment(attrs) do
     %Deployment{}
     |> Deployment.changeset(attrs)
@@ -57,12 +53,6 @@ defmodule Oli.Lti_1p3 do
       join: deployment in Deployment, on: deployment.registration_id == registration.id,
       where: deployment.deployment_id == ^deployment_id,
       select: {institution, registration, deployment}
-  end
-
-  def get_registration_by_issuer_client_id(issuer, client_id) do
-    Repo.one from r in Registration,
-      where: r.issuer == ^ issuer and r.client_id == ^client_id,
-      select: r
   end
 
   @doc """

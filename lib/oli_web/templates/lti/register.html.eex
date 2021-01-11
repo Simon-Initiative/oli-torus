@@ -1,0 +1,186 @@
+<%= render OliWeb.LayoutView, "_delivery_header.html", assigns %>
+
+<div class="container form-container">
+  <div class="row my-3">
+    <h2>Welcome to the Open Learning Initiative!</h2>
+  </div>
+
+  <div class="row">
+    <p>
+      It looks like this is the first time you are accessing OLI from your institution's LMS. Before getting started,
+      you must register your institution.
+    </p>
+    <p>
+      Please provide some details below to request a registration. Your request will be reviewed by OLI which may take up to
+      2 business days. We may contact you for more information using the Contact Email provided. If approved, you will receive an
+      email notification and granted access through your LMS.
+    </p>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-12 col-md-8 col-lg-6 mx-auto">
+      <div class="card card-signin my-5">
+        <div class="card-body">
+          <h5 class="card-title text-center">Register Your Institution</h5>
+
+          <script>
+            var world_universities_and_domains = <%= Poison.encode!(@world_universities_and_domains) |> raw %>;
+            var lti_config_defaults = <%= Poison.encode!(@lti_config_defaults) |> raw %>;
+            var issuer = <%= Poison.encode!(@issuer) |> raw %>
+          </script>
+
+          <%= form_for @changeset, @submit_action, fn f -> %>
+            <%= if @changeset.action do %>
+              <div class="alert alert-danger">
+                <p>Something went wrong, please check the errors below.</p>
+              </div>
+            <% end %>
+
+            <div class="form-label-group">
+              <%= text_input f, :name, class: "institution-name typeahead form-control " <> error_class(f, :name, "is-invalid"), data_provide: "typeahead",
+                placeholder: "Institution Name", required: true, autofocus: focusHelper(f, :name, default: true) %>
+              <%= label f, :name, "Institution Name", class: "control-label" %>
+              <%= error_tag f, :name %>
+            </div>
+
+            <script>
+              var $input = $(".institution-name.typeahead");
+              $input.typeahead({
+                source: world_universities_and_domains,
+                autoSelect: true,
+                afterSelect: function(sel) {
+                  $('input.institution-url').val(sel.institution_url);
+                  $('select.country-code').val(sel.country_code);
+
+                  setTimeout(function() {
+                    $('input.email').focus();
+                  });
+                },
+              });
+            </script>
+
+            <div class="form-label-group">
+              <%= text_input f, :institution_url, class: "institution-url form-control " <> error_class(f, :institution_url, "is-invalid"),
+                placeholder: "Institution URL", required: true, autofocus: focusHelper(f, :institution_url)  %>
+              <%= label f, :institution_url, "Institution URL" %>
+              <%= error_tag f, :institution_url %>
+            </div>
+
+            <div class="form-label-group">
+              <%= email_input f, :institution_email, class: "email form-control " <> error_class(f, :institution_email, "is-invalid"),
+                placeholder: "Contact Email", required: true, autofocus: focusHelper(f, :institution_email) %>
+              <%= label f, :institution_email, "Contact Email", class: "control-label" %>
+              <%= error_tag f, :institution_email %>
+            </div>
+
+            <div class="form-label-group">
+              <%= select f, :country_code, @country_codes, prompt: "Select Country", class: "country-code form-control " <> error_class(f, :country_code, "is-invalid"),
+                required: true, autofocus: focusHelper(f, :country_code) %>
+              <%= error_tag f, :country_code %>
+            </div>
+
+            <div class="form-label-group">
+              <%= select f, :timezone, @timezones, prompt: "Select Timezone", class: "form-control " <> error_class(f, :timezone, "is-invalid"),
+                required: true, autofocus: focusHelper(f, :timezone) %>
+              <%= error_tag f, :timezone %>
+            </div>
+
+            <hr class="my-4" />
+
+            <h6>LTI 1.3 Configuration</h6>
+
+            <select id="lms-family" class="form-control mb-4">
+              <option>Select LMS Family</option>
+              <%= for option <- @lti_config_defaults do %>
+                <option value="<%= option.product_family_code %>"><%= option.name %></option>
+              <% end %>
+              <option value="other">Other LMS</option>
+            </select>
+
+            <script>
+              $('#lms-family').change(function({ target: target }) {
+                selection = $(target).val();
+                let config = lti_config_defaults.find(c => c.product_family_code === selection);
+
+                if (config) {
+                  // show #suggestion-msg and set config values
+                  $('#lms-details').show();
+                  $('.submit').prop( "disabled", false );
+
+                  const base_url = issuer
+                    .replace(/^http\:\/\//, "https://")
+                    .replace(/\/$/, "");
+
+                  if (base_url) {
+                    $('#suggested-values-msg').show();
+
+                    $('.key_set_url').val(base_url + config.key_set_path);
+                    $('.auth_token_url').val(base_url + config.auth_token_path);
+                    $('.auth_login_url').val(base_url + config.auth_login_path);
+                    $('.auth_server').val(base_url);
+                  }
+                } else {
+                  // hide #suggestion-msg and reset config values
+                  $('#suggested-values-msg').hide();
+                  $('#lms-details').show();
+                  $('.submit').prop( "disabled", false );
+
+                  $('.key_set_url').val('');
+                  $('.auth_token_url').val('');
+                  $('.auth_login_url').val('');
+                  $('.auth_server').val('');
+                }
+              })
+            </script>
+
+
+            <p id="suggested-values-msg" class="text-secondary mb-3" style="display: none">
+              Below are some suggested values based on your LMS family. <b>Please confirm these</b> with your
+              LMS administrator and change as necessary before proceeding.
+            </p>
+
+            <div id="lms-details" style="display: none">
+
+              <%= hidden_input f, :issuer, value: @issuer  %>
+              <%= hidden_input f, :client_id, value: @client_id  %>
+
+              <div class="form-label-group">
+                <%= text_input f, :key_set_url, class: "key_set_url form-control " <> error_class(f, :key_set_url, "is-invalid"),
+                  placeholder: "Keyset URL", required: true, autofocus: focusHelper(f, :key_set_url) %>
+                <%= label f, :key_set_url, "Keyset URL", class: "control-label" %>
+                <%= error_tag f, :key_set_url %>
+              </div>
+
+              <div class="form-label-group">
+                <%= text_input f, :auth_token_url, class: "auth_token_url form-control " <> error_class(f, :auth_token_url, "is-invalid"),
+                  placeholder: "Auth Token URL", required: true, autofocus: focusHelper(f, :auth_token_url) %>
+                <%= label f, :auth_token_url, "Auth Token URL", class: "control-label" %>
+                <%= error_tag f, :auth_token_url %>
+              </div>
+
+              <div class="form-label-group">
+                <%= text_input f, :auth_login_url, class: "auth_login_url form-control " <> error_class(f, :auth_login_url, "is-invalid"),
+                  placeholder: "Auth Login URL", required: true, autofocus: focusHelper(f, :auth_login_url) %>
+                <%= label f, :auth_login_url, "Auth Login URL", class: "control-label" %>
+                <%= error_tag f, :auth_login_url %>
+              </div>
+
+              <div class="form-label-group">
+                <%= text_input f, :auth_server, class: "auth_server form-control " <> error_class(f, :auth_server, "is-invalid"),
+                  placeholder: "Auth Server URL", required: true, autofocus: focusHelper(f, :auth_server) %>
+                <%= label f, :auth_server, "Auth Server URL", class: "control-label" %>
+                <%= error_tag f, :auth_server %>
+              </div>
+
+            </div>
+
+            <div>
+              <%= submit "Register", disabled: true, class: "submit btn btn-md btn-primary btn-block" %>
+            </div>
+          <% end %>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

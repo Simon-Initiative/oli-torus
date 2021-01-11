@@ -1,0 +1,7 @@
+<div class="container form-container">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h5 class="text-success">Your help request submitted</h5>
+        </div>
+    </div>
+</div>

@@ -7,6 +7,22 @@
 # General application configuration
 use Mix.Config
 
+world_universities_and_domains_json =
+  case File.read("./priv/data/world_universities_and_domains.json") do
+    {:ok, body} ->
+      body
+    _ ->
+      "[]"
+  end
+
+countries_json =
+  case File.read("./priv/data/countries.json") do
+    {:ok, body} ->
+      body
+    _ ->
+      "[]"
+  end
+
 default_sha = if Mix.env == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 config :oli,
   ecto_repos: [Oli.Repo],
@@ -20,7 +36,9 @@ config :oli,
     |> Enum.map(&File.read!/1),
   email_from_name: System.get_env("EMAIL_FROM_NAME", "OLI Torus"),
   email_from_address: System.get_env("EMAIL_FROM_ADDRESS", "admin@example.edu"),
-  email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu")
+  email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu"),
+  world_universities_and_domains_json: world_universities_and_domains_json,
+  countries_json: countries_json
 
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,
@@ -36,6 +54,10 @@ config :oli, :recaptcha,
   timeout: 5000,
   site_key: System.get_env("RECAPTCHA_SITE_KEY"),
   secret: System.get_env("RECAPTCHA_PRIVATE_KEY")
+
+# Configure help
+config :oli, :help,
+  dispatcher: Oli.Help.Providers.EmailHelp
 
 config :ex_aws,
   access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, :instance_role],

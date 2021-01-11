@@ -20,6 +20,34 @@ defmodule Oli.Email do
     |> html_text_body()
   end
 
+  @spec help_desk_email(String.t(), String.t(), String.t(), String.t(), atom(), map()) :: Bamboo.Email.t()
+  def help_desk_email(name, from_email, help_desk_email, subject, view, assigns) do
+    base_email()
+    |> from(name <> "<" <> from_email <> ">")
+    |> put_header("Reply-To", name <> " <" <> from_email <> ">")
+    |> put_layout({OliWeb.LayoutView, :help_email})
+    |> to(help_desk_email)
+    |> subject(subject)
+    |> render(view, assigns)
+    |> html_text_body()
+  end
+
+  @doc """
+  Creates a generic email with an html and text body.
+  Returns a Bamboo.Email struct ready for delivery.
+  ## Examples:
+    iex> create_email("someone@example.com", "Example Email", "template.html", assigns)
+    %Bamboo.Email{}
+  """
+  @spec create_email(String.t(), String.t(), String.t(), map()) :: Bamboo.Email.t()
+  def create_email(recipient_email, subject, view, assigns) do
+    base_email()
+    |> to(recipient_email)
+    |> subject(subject)
+    |> render(view, assigns)
+    |> html_text_body()
+  end
+
   def base_email do
     from_email_name = Application.get_env(:oli, :email_from_name)
     from_email_address = Application.get_env(:oli, :email_from_address)

@@ -63,7 +63,7 @@ function testDefaultModel(): ShortAnswerModelSchema {
   };
 }
 
-describe('multiple choice question', () => {
+describe('short answer question', () => {
   const model = testDefaultModel();
 
   it('has a stem', () => {

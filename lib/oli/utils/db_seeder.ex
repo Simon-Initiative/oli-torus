@@ -23,7 +23,7 @@ defmodule Oli.Seeder do
 
     {:ok, _} = AuthorProject.changeset(%AuthorProject{}, %{author_id: author.id, project_id: project.id, project_role_id: ProjectRole.role_id.owner}) |> Repo.insert
 
-    {:ok, institution} = Institution.changeset(%Institution{}, %{name: "Example Institution", country_code: "US", institution_email: author.email, institution_url: "example.edu", timezone: "America/New_York", author_id: author.id}) |> Repo.insert
+    {:ok, institution} = Institution.changeset(%Institution{}, %{name: "Example Institution", country_code: "US", institution_email: author.email, institution_url: "example.edu", timezone: "America/New_York"}) |> Repo.insert
 
     # A single container resource with a mapped revision
     {:ok, container_resource} = Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert

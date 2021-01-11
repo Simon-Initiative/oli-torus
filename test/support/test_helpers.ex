@@ -90,12 +90,33 @@ defmodule Oli.TestHelpers do
         institution_url: "institution.example.edu",
         name: "Example Institution",
         timezone: "US/Eastern",
-        author_id: 1,
       })
 
     {:ok, institution} = Institutions.create_institution(params)
 
     institution
+  end
+
+  def pending_registration_fixture(attrs \\ %{}) do
+    params =
+      attrs
+      |> Enum.into(%{
+        name: "Example Institution",
+        country_code: "US",
+        institution_email: "example@example.edu",
+        institution_url: "institution.example.edu",
+        timezone: "US/Eastern",
+        issuer: "https://institution.example.edu",
+        client_id: "1000000000001",
+        key_set_url: "some key_set_url",
+        auth_token_url: "some auth_token_url",
+        auth_login_url: "some auth_login_url",
+        auth_server: "some auth_server",
+      })
+
+    {:ok, pending_registration} = Institutions.create_pending_registration(params)
+
+    pending_registration
   end
 
   def registration_fixture(attrs \\ %{}) do

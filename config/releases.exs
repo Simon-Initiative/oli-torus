@@ -40,7 +40,8 @@ host =
 config :oli,
   email_from_name: System.get_env("EMAIL_FROM_NAME", "OLI Torus"),
   email_from_address: System.get_env("EMAIL_FROM_ADDRESS", "admin@example.edu"),
-  email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu")
+  email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu"),
+  slack_webhook_url: System.get_env("SLACK_WEBHOOK_URL")
 
 # Configure reCAPTCHA
 config :oli, :recaptcha,
@@ -48,6 +49,10 @@ config :oli, :recaptcha,
   timeout: 5000,
   site_key: System.get_env("RECAPTCHA_SITE_KEY"),
   secret: System.get_env("RECAPTCHA_PRIVATE_KEY")
+
+# Configure help
+config :oli, :help,
+  dispatcher: Oli.Help.Providers.FreshdeskHelp
 
 config :oli, OliWeb.Endpoint,
   server: true,
