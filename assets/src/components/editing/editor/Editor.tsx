@@ -46,6 +46,8 @@ function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
 
 export const Editor = React.memo((props: EditorProps) => {
 
+  const [isPerformingAsyncAction, setIsPerformingAsyncAction] = useState(false);
+
   const commandContext = props.commandContext;
 
   const editor: ReactEditor & SlateEditor = useMemo(
@@ -113,8 +115,10 @@ export const Editor = React.memo((props: EditorProps) => {
         onChange={onChange}>
 
         <InsertionToolbar
+          isPerformingAsyncAction={isPerformingAsyncAction}
           toolbarItems={props.toolbarItems}
-          commandContext={props.commandContext} />
+          commandContext={props.commandContext}
+        />
 
         <HoveringToolbar
           isOpen={shouldShowFormattingToolbar}>
@@ -130,7 +134,11 @@ export const Editor = React.memo((props: EditorProps) => {
           renderLeaf={renderLeaf}
           placeholder="Enter some content here..."
           onKeyDown={onKeyDown}
-          onPaste={e => onPaste(editor, e)} />
+          onPaste={async (e) => {
+            setIsPerformingAsyncAction(true);
+            await onPaste(editor, e, props.commandContext.projectSlug);
+            setIsPerformingAsyncAction(false);
+          }} />
       </Slate>
     </React.Fragment>
   );
