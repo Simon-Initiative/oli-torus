@@ -1,4 +1,4 @@
-// This is the entry point for the check all that apply authoring
+// This is the entry point for the ordering authoring
 // component, as specified in the manifest.json
 
 // An authoring component entry point must expose the following
@@ -14,18 +14,18 @@
 //    full control over populating a new activity.
 
 // Fulfills 1. and 2. from above by exporting these components:
-export { CheckAllThatApplyDelivery } from './CheckAllThatApplyDelivery';
-export { CheckAllThatApplyAuthoring } from './CheckAllThatApplyAuthoring';
+export { OrderingDelivery } from './OrderingDelivery';
+export { OrderingAuthoring } from './OrderingAuthoring';
 
 // Registers the creation function:
 import { Manifest, CreationContext } from '../types';
 import { registerCreationFunc } from '../creation';
-import { CheckAllThatApplyModelSchema } from './schema';
-import { defaultCATAModel } from './utils';
+import { OrderingModelSchema } from './schema';
+import { defaultOrderingModel } from './utils';
 const manifest : Manifest = require('./manifest.json');
 
-function createFn(content: CreationContext) : Promise<CheckAllThatApplyModelSchema> {
-  return Promise.resolve(Object.assign({}, defaultCATAModel()));
+function createFn(content: CreationContext) : Promise<OrderingModelSchema> {
+  return Promise.resolve(Object.assign({}, defaultOrderingModel()));
 }
 
 registerCreationFunc(manifest, createFn);

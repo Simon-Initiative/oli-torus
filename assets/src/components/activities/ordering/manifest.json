@@ -1,0 +1,17 @@
+{
+  "id": "oli_ordering",
+  "friendlyName": "Ordering",
+  "description": "A ordering activity where answer options must be placed in the correct order",
+  "delivery": {
+    "element": "oli-ordering-delivery",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "oli-ordering-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "schemaPruning": {
+    "type": "keys",
+    "keys": ["feedback"]
+  }
+}
