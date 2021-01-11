@@ -24,7 +24,7 @@ defmodule Oli.Lti_1p3Test do
         institution_id: institution.id,
       })
 
-      assert Lti_1p3.get_registration_by_issuer_client_id("some issuer", "some client_id") == registration
+      assert Oli.Institutions.get_registration_by_issuer_client_id("some issuer", "some client_id") == registration
     end
 
     test "create and get valid deployment", %{institution: institution, jwk: jwk} do

@@ -20,7 +20,7 @@ export function selectAudio(projectSlug: string,
     const selected = { img: null };
 
     const mediaLibrary =
-      <ModalSelection title="Select audio"
+      <ModalSelection title="Embed audio"
         onInsert={() => { dismiss(); resolve(selected.img as any); }}
         onCancel={() => dismiss()}
         disableInsert={true}

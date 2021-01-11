@@ -57,6 +57,14 @@ defmodule OliWeb.ProjectController do
         {has_changes, changes, parent_pages}
       end
 
+    base_url = Oli.Utils.get_base_url()
+    developer_key_url = "#{base_url}/lti/developer_key.json"
+
+    tool_url = "#{base_url}/lti/launch"
+    initiate_login_url = "#{base_url}/lti/login"
+    public_keyset_url = "#{base_url}/.well-known/jwks.json"
+    redirect_uris = "#{base_url}/lti/launch"
+
     render conn, "publish.html",
       # page
       breadcrumbs: [Breadcrumb.new(%{full_title: "Publish"})],
@@ -66,7 +74,12 @@ defmodule OliWeb.ProjectController do
       latest_published_publication: latest_published_publication,
       active_publication_changes: active_publication_changes,
       has_changes: has_changes,
-      parent_pages: parent_pages
+      parent_pages: parent_pages,
+      developer_key_url: developer_key_url,
+      tool_url: tool_url,
+      initiate_login_url: initiate_login_url,
+      public_keyset_url: public_keyset_url,
+      redirect_uris: redirect_uris
 
   end
 

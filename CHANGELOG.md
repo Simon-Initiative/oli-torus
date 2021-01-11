@@ -1,10 +1,25 @@
 # Changelog
 
-## 0.4.0 (TBD)
+## Unreleased
 ### Enhancements
+  - Improved LTI workflow for new institutions
+  - Add support for embedding images in structured content editors by external URL and by pasting a copied image
+  - Ordering activity
 
 ### Bug fixes
+  - Fix a broken link to external learning objectives content
 
+## 0.4.1 (2021-1-4)
+### Bug fixes
+  - Fix an issue where new local activities were not being registered on deployment
+
+## 0.4.0 (2021-1-4)
+### Enhancements
+  - Add support for check all that apply activity
+
+### Bug fixes
+  - Fix an issue where special characters in a course slug broke breadcrumb navigation in editor
+  - Fix some silently broken  unit tests
 
 ## 0.3.0 (2020-12-10)
 

@@ -64,7 +64,8 @@ defmodule OliWeb.LtiControllerTest do
       }
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
-      assert html_response(conn, 200) =~ "No registration exists for issuer (iss): http://invalid.edu"
+      assert html_response(conn, 200) =~ "Welcome to the Open Learning Initiative!"
+      assert html_response(conn, 200) =~ "Register Your Institution"
 
     end
 
@@ -81,11 +82,17 @@ defmodule OliWeb.LtiControllerTest do
       assert json_response(conn, 200) != nil
       assert json_response(conn, 200) |> Map.get("extensions") |> Enum.find(fn %{"platform" => p} -> p == "canvas.instructure.com" end) |> Map.get("privacy_level") =~ "public"
       assert json_response(conn, 200) |> Map.get("title") =~ "OLI Torus"
-      assert json_response(conn, 200) |> Map.get("description") =~ "Create, deliver and iteratively improve course content with Torus, through the Open Learning Initiative"
+      assert json_response(conn, 200) |> Map.get("description") =~ "Create, deliver and iteratively improve course content through the Open Learning Initiative"
       assert json_response(conn, 200) |> Map.get("oidc_initiation_url") =~ "https://localhost/lti/login"
       assert json_response(conn, 200) |> Map.get("target_link_uri") =~ "https://localhost/lti/launch"
       assert json_response(conn, 200) |> Map.get("public_jwk_url") =~ "https://localhost/.well-known/jwks.json"
-      assert json_response(conn, 200) |> Map.get("scopes") == []
+      assert json_response(conn, 200) |> Map.get("scopes") == [
+        "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
+        "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem.readonly",
+        "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
+        "https://purl.imsglobal.org/spec/lti-ags/scope/score",
+        "https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly"
+      ]
       assert json_response(conn, 200) |> Map.get("public_jwk") |> Map.get("kid") == public_jwk["kid"]
       assert json_response(conn, 200) |> Map.get("public_jwk") |> Map.get("n") == public_jwk["n"]
     end

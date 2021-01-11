@@ -55,17 +55,12 @@ defmodule OliWeb.DeliveryController do
   defp render_configure_section(conn, context_id, author) do
     publications = Publishing.available_publications(author)
     my_publications = publications |> Enum.filter(fn p -> !p.open_and_free && p.published end)
-    open_and_free_publications = publications |> Enum.filter(fn p -> p.open_and_free && p.published end)
-    render(conn, "configure_section.html", context_id: context_id, author: author, my_publications: my_publications, open_and_free_publications: open_and_free_publications)
+
+    render(conn, "configure_section.html", context_id: context_id, author: author, my_publications: my_publications)
   end
 
   defp redirect_to_page_delivery(conn, section) do
     redirect(conn, to: Routes.page_delivery_path(conn, :index, section.context_id))
-  end
-
-  def list_open_and_free(conn, _params) do
-    open_and_free_publications = Publishing.available_publications()
-    render(conn, "configure_section.html", open_and_free_publications: open_and_free_publications)
   end
 
   def link_account(conn, _params) do

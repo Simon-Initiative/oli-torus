@@ -37,6 +37,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/styles/atom-one-dark.min.css" integrity="sha512-Jlyabam8ztU2kOGN19fSzv1Go9nt9A43UA6vhmL1MPsQMeoPZd+p7pbmegAtyl8kulna0Cqwb7Pgj4adGTLCXA==" crossorigin="anonymous" media="screen and (prefers-color-scheme: dark)"/>
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
 
+    <!-- Bootstrap typeahead -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js" integrity="sha512-HWlJyU4ut5HkEj0QsK/IxBCY55n5ZpskyjVlAoV9Z7XQwwkqXoYdCIC93/htL3Gu5H3R4an/S0h2NXfbZk3g7w==" crossorigin="anonymous"></script>
+
     <script>
     window.MathJax = {
       tex: {
@@ -68,10 +71,26 @@
     <%= Map.get(assigns, :inner_layout) || @inner_content %>
 
     <script>
+      // initialize jquery window object
       window.$ = $;
+
+      // initialize all rendered dropdown toggles
       $('.dropdown-toggle').dropdown();
       $(function () {
         $('[data-toggle="tooltip"]').tooltip();
+      });
+
+      // handle direct tab routing via url hash
+      $(document).ready(function() {
+        if (location.hash !== '') {
+          // make tabs navigable by their link's href
+          $('a[data-toggle="tab"][href="' + location.hash + '"]').tab('show');
+        }
+
+        // change the url hash when a new tab is selected
+        return $('a[data-toggle="tab"]').on('show.bs.tab', function(e) {
+          return location.hash = $(e.target).attr('href').substr(1);
+        });
       });
     </script>
   </body>

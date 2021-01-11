@@ -1,5 +1,0 @@
-<h3 class="my-3">LTI Connection is Invalid</h3>
-
-<p>Reason: <span class="text-danger"><%= @reason %></span></p>
-
-<p>If you need help configuring your LTI connection, please <a href="<%= Routes.help_delivery_path(@conn, :index) %>">contact OLI Support</a></p>

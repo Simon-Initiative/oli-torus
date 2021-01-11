@@ -3,7 +3,8 @@ use Mix.Config
 config :oli,
   env: :dev,
   s3_media_bucket_name: "torus-media-dev",
-  media_url: "torus-media-dev.s3.amazonaws.com"
+  media_url: "torus-media-dev.s3.amazonaws.com",
+  slack_webhook_url: System.get_env("SLACK_WEBHOOK_URL")
 
 # Configure your database
 config :oli, Oli.Repo,
