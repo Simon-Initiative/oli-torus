@@ -1,5 +1,4 @@
 # Changelog
-
 ## Unreleased
 ### Enhancements
   - Improved LTI workflow for new institutions
