@@ -229,7 +229,6 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
 
     // sequentially upload files one at a time, then reload the media page
     uploadFiles(this.props.projectSlug, fileList)
-    // createWebContentPromiseFactory(this.props.projectSlug, fileList.pop() as any)
       .then((result: any) => {
         onResetMedia();
         onLoadCourseMediaNextPage(this.props.projectSlug,
