@@ -1,6 +1,8 @@
 # Changelog
 
-### Dev
+## Unreleased
+### Enhancements
+  - Improved LTI workflow for new institutions
 
 ### Bug fixes
   - Fix a broken link to external learning objectives content
