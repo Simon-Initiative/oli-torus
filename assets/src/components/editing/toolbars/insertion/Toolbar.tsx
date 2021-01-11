@@ -5,15 +5,18 @@ import Popover from 'react-tiny-popover';
 import { hideToolbar, showToolbar, ToolbarButton, Spacer, DropdownToolbarButton } from '../common';
 import { shouldShowInsertionToolbar, positionInsertion } from './utils';
 import { classNames } from 'utils/classNames';
+import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 
 type InsertionToolbarProps = {
+  isPerformingAsyncAction: boolean;
   toolbarItems: ToolbarItem[];
   commandContext: CommandContext;
 };
 
 function insertionAreEqual(prevProps: InsertionToolbarProps, nextProps: InsertionToolbarProps) {
   return prevProps.commandContext === nextProps.commandContext
-    && prevProps.toolbarItems === nextProps.toolbarItems;
+    && prevProps.toolbarItems === nextProps.toolbarItems
+    && prevProps.isPerformingAsyncAction === nextProps.isPerformingAsyncAction;
 }
 
 export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
@@ -88,7 +91,9 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
           }>
           {ref => <div ref={ref} className="insert-button"
             onClick={() => setIsPopoverOpen(!isPopoverOpen)}>
-            <i className="fa fa-plus"></i>
+            {props.isPerformingAsyncAction
+              ? <LoadingSpinner size={LoadingSpinnerSize.Normal} />
+              : <i className="fa fa-plus"></i>}
           </div>}
         </Popover>
       </div>

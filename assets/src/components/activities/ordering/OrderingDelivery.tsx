@@ -2,14 +2,13 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { DeliveryElement, DeliveryElementProps,
   EvaluationResponse, ResetActivityResponse, RequestHintResponse } from '../DeliveryElement';
-import { CheckAllThatApplyModelSchema } from './schema';
+import { OrderingModelSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { Stem } from '../common/DisplayedStem';
 import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/Evaluation';
-import { getCorrectResponse, getIncorrectResponse, getTargetedResponses, isTargetedCATA } from './utils';
 
 type Evaluation = {
   score: number,
@@ -17,14 +16,34 @@ type Evaluation = {
   feedback: ActivityTypes.RichText,
 };
 
+// [id, index]
+type Selection = [ActivityTypes.ChoiceId, number];
+interface SelectionProps {
+  selected: Selection[];
+  onDeselect: (id: ActivityTypes.ChoiceId) => void;
+}
+const Selection = ({ selected, onDeselect }: SelectionProps) => {
+  const id = (selection: Selection) => selection[0];
+  const index = (selection: Selection) => selection[1];
+  return (
+    <div className="mb-2" style={{ height: 34, borderBottom: '3px solid #333' }}>
+      {selected.map(selection =>
+        <button onClick={() => onDeselect(id(selection))}
+          className="choice-index mr-1">
+            {index(selection) + 1}
+        </button>)}
+    </div>
+  );
+};
+
 interface ChoicesProps {
   choices: ActivityTypes.Choice[];
   selected: ActivityTypes.ChoiceId[];
-  onSelect: (id: ActivityTypes.ChoiceId) => void;
+  onSelect: (id: string) => void;
   isEvaluated: boolean;
 }
 const Choices = ({ choices, selected, onSelect, isEvaluated }: ChoicesProps) => {
-  const isSelected = (choiceId: ActivityTypes.ChoiceId) => !!selected.find(s => s === choiceId);
+  const isSelected = (choiceId: string) => !!selected.find(s => s === choiceId);
   return (
     <div className="choices">
     {choices.map((choice, index) =>
@@ -43,6 +62,7 @@ interface ChoiceProps {
   choice: ActivityTypes.Choice;
   index: number;
   selected: boolean;
+  // fix
   onClick: () => void;
   isEvaluated: boolean;
 }
@@ -57,7 +77,7 @@ const Choice = ({ choice, index, selected, onClick, isEvaluated }: ChoiceProps) 
   );
 };
 
-const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSchema>) => {
+const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
 
   const [model, setModel] = useState(props.model);
   const [attemptState, setAttemptState] = useState(props.state);
@@ -74,12 +94,12 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
   const { stem, choices } = model;
 
   const isEvaluated = attemptState.score !== null;
-  const selectedToInput = () => selected.join(' ');
+  const orderedChoiceIds = () => selected.join(' ');
 
   const onSubmit = () => {
     props.onSubmitActivity(attemptState.attemptGuid,
       // update this input too
-      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: selectedToInput() } }])
+      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: orderedChoiceIds() } }])
       .then((response: EvaluationResponse) => {
         if (response.evaluations.length > 0) {
           const { score, out_of, feedback, error } = response.evaluations[0];
@@ -106,7 +126,8 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
     // Then in the rule evaluator, we will say
     // `input like id1 && input like id2 && input like id3`
     props.onSaveActivity(attemptState.attemptGuid,
-      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: selectedToInput() } }]);
+      [{ attemptGuid: attemptState.parts[0].attemptGuid,
+        response: { input: orderedChoiceIds() } }]);
   };
 
   const onRequestHint = () => {
@@ -124,7 +145,7 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
     .then((state: ResetActivityResponse) => {
       setSelected([]);
       setAttemptState(state.attemptState);
-      setModel(state.model as CheckAllThatApplyModelSchema);
+      setModel(state.model as OrderingModelSchema);
       setHints([]);
       setHasMoreHints(props.state.parts[0].hasMoreHints);
     });
@@ -151,16 +172,21 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
     ? null
     : (
       <button
-        className="btn btn-primary mt-2 float-right" disabled={isEvaluated} onClick={onSubmit}>
+        className="btn btn-primary mt-2 float-right"
+        disabled={isEvaluated || selected.length !== choices.length}
+        onClick={onSubmit}>
         Submit
       </button>
     );
 
   return (
-    <div className={`activity cata-activity ${isEvaluated ? 'evaluated' : ''}`}>
+    <div className={`activity ordering-activity ${isEvaluated ? 'evaluated' : ''}`}>
       <div className="activity-content">
         <div>
           <Stem stem={stem} />
+          <Selection
+            onDeselect={(id: ActivityTypes.ChoiceId) => updateSelection(id)}
+            selected={selected.map(s => [s, choices.findIndex(c => c.id === s)])} />
           <Choices choices={choices} selected={selected}
             onSelect={onSelect} isEvaluated={isEvaluated}/>
           {maybeSubmitButton}
@@ -173,12 +199,12 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
 };
 
 // Defines the web component, a simple wrapper over our React component above
-export class CheckAllThatApplyDelivery extends DeliveryElement<CheckAllThatApplyModelSchema> {
-  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<CheckAllThatApplyModelSchema>) {
-    ReactDOM.render(<CheckAllThatApply {...props} />, mountPoint);
+export class OrderingDelivery extends DeliveryElement<OrderingModelSchema> {
+  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<OrderingModelSchema>) {
+    ReactDOM.render(<Ordering {...props} />, mountPoint);
   }
 }
 
 // Register the web component:
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
-window.customElements.define(manifest.delivery.element, CheckAllThatApplyDelivery);
+window.customElements.define(manifest.delivery.element, OrderingDelivery);

@@ -1,5 +1,9 @@
 @import "authoring/variables";
 
+.react-tiny-popover-container {
+  z-index: 1;
+}
+
 .hovering-toolbar {
 
   .btn-group {
