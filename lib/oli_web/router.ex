@@ -292,6 +292,8 @@ defmodule OliWeb.Router do
     post "/test", LtiController, :test
 
     get "/developer_key.json", LtiController, :developer_key_json
+
+    post "/register", LtiController, :request_registration
   end
 
   scope "/course", OliWeb do
@@ -343,6 +345,8 @@ defmodule OliWeb.Router do
     get "/invite", InviteController, :index
     post "/invite", InviteController, :create
 
+    put "/approve_registration", InstitutionController, :approve_registration
+    delete "/pending_registration/:id", InstitutionController, :remove_registration
   end
 
   scope "/project", OliWeb do

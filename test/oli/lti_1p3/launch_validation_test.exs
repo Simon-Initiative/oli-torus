@@ -9,23 +9,23 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
     test "passes validation for a valid launch request" do
       %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs()
 
-      assert {:ok, _, _jwt_body} = LaunchValidation.validate(conn, get_public_key)
+      assert {:ok, _, _jwt_body} = LaunchValidation.validate(conn, providers: %{get_public_key: get_public_key})
     end
   end
 
   test "fails validation on missing oidc state" do
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{state: nil, lti_1p3_state: nil})
 
-    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_oidc_state, msg: "State from session is missing. Make sure cookies are enabled and configured correctly"}}
+    assert LaunchValidation.validate(conn, providers: %{get_public_key: get_public_key}) == {:error, %{reason: :invalid_oidc_state, msg: "State from session is missing. Make sure cookies are enabled and configured correctly"}}
   end
 
   test "fails validation on invalid oidc state" do
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{state: "doesnt", lti_1p3_state: "match"})
 
-    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_oidc_state, msg: "State from OIDC request does not match session"}}
+    assert LaunchValidation.validate(conn, providers: %{get_public_key: get_public_key}) == {:error, %{reason: :invalid_oidc_state, msg: "State from OIDC request does not match session"}}
   end
 
-  test "fails validation if registration does not exist for client id" do
+  test "fails validation if registration doesn't exist for client id" do
     institution = institution_fixture()
     jwk = jwk_fixture()
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{
@@ -42,19 +42,19 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
       },
     })
 
-    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_registration, msg: "Registration with issuer \"https://lti-ri.imsglobal.org\" and client id \"12345\" not found", issuer: "https://lti-ri.imsglobal.org", client_id: "12345"}}
+    assert LaunchValidation.validate(conn, providers: %{get_public_key: get_public_key}) == {:error, %{reason: :invalid_registration, msg: "Registration with issuer \"https://lti-ri.imsglobal.org\" and client id \"12345\" not found", issuer: "https://lti-ri.imsglobal.org", client_id: "12345"}}
   end
 
   test "fails validation on missing id_token" do
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{id_token: nil})
 
-    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :missing_id_token, msg: "Missing id_token"}}
+    assert LaunchValidation.validate(conn, providers: %{get_public_key: get_public_key}) == {:error, %{reason: :missing_id_token, msg: "Missing id_token"}}
   end
 
   test "fails validation on malformed id_token" do
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{id_token: "malformed3"})
 
-      assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :token_malformed, msg: "Invalid id_token"}}
+      assert LaunchValidation.validate(conn, providers: %{get_public_key: get_public_key}) == {:error, %{reason: :token_malformed, msg: "Invalid id_token"}}
   end
 
   test "fails validation on invalid signature" do
@@ -66,7 +66,7 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
       {:ok, JOSE.JWK.from_pem(public_key)}
     end
 
-    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :signature_error, msg: "Invalid id_token"}}
+    assert LaunchValidation.validate(conn, providers: %{get_public_key: get_public_key}) == {:error, %{reason: :signature_error, msg: "Invalid id_token"}}
   end
 
   test "fails validation on expired exp" do
@@ -75,7 +75,7 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
 
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims})
 
-    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_token_timestamp, msg: "Token exp is expired"}}
+    assert LaunchValidation.validate(conn, providers: %{get_public_key: get_public_key}) == {:error, %{reason: :invalid_token_timestamp, msg: "Token exp is expired"}}
   end
 
   test "fails validation on token iat invalid" do
@@ -84,7 +84,7 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
 
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims})
 
-    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_token_timestamp, msg: "Token iat is invalid"}}
+    assert LaunchValidation.validate(conn, providers: %{get_public_key: get_public_key}) == {:error, %{reason: :invalid_token_timestamp, msg: "Token iat is invalid"}}
   end
 
   test "fails validation on both expired exp and iat invalid" do
@@ -94,7 +94,7 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
 
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims})
 
-    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_token_timestamp, msg: "Token exp and iat are invalid"}}
+    assert LaunchValidation.validate(conn, providers: %{get_public_key: get_public_key}) == {:error, %{reason: :invalid_token_timestamp, msg: "Token exp and iat are invalid"}}
   end
 
   test "fails validation on duplicate nonce" do
@@ -103,20 +103,20 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims})
 
     # passes on first attempt with a given nonce
-    assert {:ok, _, _jwt_body} = LaunchValidation.validate(conn, get_public_key)
+    assert {:ok, _, _jwt_body} = LaunchValidation.validate(conn, providers: %{get_public_key: get_public_key})
 
     # fails on second attempt with a duplicate nonce
-    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_nonce, msg: "Duplicate nonce"}}
+    assert LaunchValidation.validate(conn, providers: %{get_public_key: get_public_key}) == {:error, %{reason: :invalid_nonce, msg: "Duplicate nonce"}}
   end
 
-  test "fails validation if deployement doesnt exist" do
+  test "fails validation if deployment doesn't exist" do
     claims = TestHelpers.Lti_1p3.all_default_claims()
       |> put_in(["nonce"], UUID.uuid4())
       |> put_in(["https://purl.imsglobal.org/spec/lti/claim/deployment_id"], "invalid_deployment_id")
 
-    %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims})
+    %{conn: conn, get_public_key: get_public_key, registration: registration} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims})
 
-    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_deployment, msg: "Deployment with id \"invalid_deployment_id\" not found", deployment_id: "invalid_deployment_id"}}
+    assert LaunchValidation.validate(conn, providers: %{get_public_key: get_public_key}) == {:error, %{reason: :invalid_deployment, msg: "Deployment with id \"invalid_deployment_id\" not found", registration_id: registration.id, deployment_id: "invalid_deployment_id"}}
   end
 
   test "fails validation on missing message type" do
@@ -126,7 +126,7 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
 
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims})
 
-    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_message_type, msg: "Missing message type"}}
+    assert LaunchValidation.validate(conn, providers: %{get_public_key: get_public_key}) == {:error, %{reason: :invalid_message_type, msg: "Missing message type"}}
   end
 
   test "fails validation on invalid message type" do
@@ -136,13 +136,13 @@ defmodule Oli.Lti_1p3.LaunchValidationTest do
 
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs(%{claims: claims})
 
-    assert LaunchValidation.validate(conn, get_public_key) == {:error, %{reason: :invalid_message_type, msg: "Invalid or unsupported message type \"InvalidMessageType\""}}
+    assert LaunchValidation.validate(conn, providers: %{get_public_key: get_public_key}) == {:error, %{reason: :invalid_message_type, msg: "Invalid or unsupported message type \"InvalidMessageType\""}}
   end
 
   test "caches lti launch params" do
     %{conn: conn, get_public_key: get_public_key} = TestHelpers.Lti_1p3.generate_lti_stubs()
 
-    assert {:ok, conn, _jwt_body} = LaunchValidation.validate(conn, get_public_key)
+    assert {:ok, conn, _jwt_body} = LaunchValidation.validate(conn, providers: %{get_public_key: get_public_key})
 
     assert Map.has_key?(Plug.Conn.get_session(conn), "lti_1p3_sub")
   end

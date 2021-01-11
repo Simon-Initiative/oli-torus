@@ -53,7 +53,7 @@ defmodule OliWeb.Projects.ProjectsLive do
   def render(assigns) do
 
     ~L"""
-    <div class="projects-title-row">
+    <div class="projects-title-row my-4">
       <div class="container">
         <div class="row">
           <div class="col-12">
@@ -61,15 +61,15 @@ defmodule OliWeb.Projects.ProjectsLive do
             <div class="d-flex justify-content-between align-items-baseline">
               <div class="flex-grow-1"></div>
               <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                <label phx-click="display_mode" phx-value-display_mode="cards" class="btn btn-sm btn-secondary <%= if @display_mode == "cards" do "active" else "" end %> %>">
+                <label phx-click="display_mode" phx-value-display_mode="cards" class="btn btn-sm btn-light <%= if @display_mode == "cards" do "active" else "" end %> %>">
                   <input type="radio" name="options" id="option1"
                     <%= if @display_mode == "cards" do "checked" else "" end %>
-                  > <span><i class="fas fa-th-large"></i></span>
+                  > <span><i class="las la-grip-horizontal"></i> Card</span>
                 </label>
-                <label phx-click="display_mode" phx-value-display_mode="table" class="btn btn-sm btn-secondary <%= if @display_mode == "table" do "active" else "" end %>">
+                <label phx-click="display_mode" phx-value-display_mode="table" class="btn btn-sm btn-light <%= if @display_mode == "table" do "active" else "" end %>">
                   <input type="radio" name="options" id="option2"
                     <%= if @display_mode == "table" do "checked" else "" end %>
-                  > <span><i class="fas fa-table"></i></span>
+                  > <span><i class="las la-th-list"></i> Table</span>
                 </label>
               </div>
 

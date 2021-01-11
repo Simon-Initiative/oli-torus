@@ -20,12 +20,12 @@ defmodule OliWeb.Projects.Table do
 
   def render(assigns) do
     ~L"""
-    <table class="table table-hover table-bordered table-sm">
-      <thead class="thead-dark">
+    <table class="table table-striped table-bordered">
+      <thead>
         <tr>
           <%= th(assigns, "Title", @sort_by, @sort_order, "title") %>
           <%= th(assigns, "Created", @sort_by, @sort_order, "created") %>
-          <%= th(assigns, "Authors", @sort_by, @sort_order, "author") %>
+          <%= th(assigns, "Collaborators", @sort_by, @sort_order, "author") %>
         </tr>
       </thead>
       <tbody>

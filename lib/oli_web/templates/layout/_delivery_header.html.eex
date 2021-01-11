@@ -6,7 +6,7 @@
       Open Learning <span style="font-weight: 200">Initiative</span>
     </a>
 
-    <%= if user_signed_in?(@conn) do %>
+    <%= if assigns[:lti_params] && user_signed_in?(@conn) do %>
       <%= if user_role_is_student(@conn, @current_user) do %>
         <div class="nav-item dropdown form-inline my-2 my-lg-0">
           <a class="user block nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

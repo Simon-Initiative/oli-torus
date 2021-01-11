@@ -7,6 +7,7 @@ defmodule Oli.Institutions do
   alias Oli.Repo
 
   alias Oli.Institutions.Institution
+  alias Oli.Institutions.PendingRegistration
   alias Oli.Lti_1p3.Registration
   alias Oli.Lti_1p3.Deployment
 
@@ -262,4 +263,150 @@ defmodule Oli.Institutions do
   def change_deployment(%Deployment{} = deployment, _attrs \\ %{}) do
     Deployment.changeset(deployment, %{})
   end
+
+  def get_registration_by_issuer_client_id(issuer, client_id) do
+    Repo.one from registration in Registration,
+      where: registration.issuer == ^ issuer and registration.client_id == ^client_id,
+      select: registration
+  end
+
+  @doc """
+  Returns the list of pending_registrations.
+  ## Examples
+      iex> list_pending_registrations()
+      [%PendingRegistration{}, ...]
+  """
+  def list_pending_registrations do
+    Repo.all(PendingRegistration)
+  end
+
+  @doc """
+  Returns the count of pending_registrations.
+  ## Examples
+      iex> count_pending_registrations()
+      123
+  """
+  def count_pending_registrations do
+    Repo.aggregate(PendingRegistration, :count)
+  end
+
+  @doc """
+  Gets a single pending_registration.
+  Raises `Ecto.NoResultsError` if the PendingRegistration does not exist.
+  ## Examples
+      iex> get_pending_registration!(123)
+      %PendingRegistration{}
+      iex> get_pending_registration!(456)
+      ** (Ecto.NoResultsError)
+  """
+  def get_pending_registration!(id), do: Repo.get!(PendingRegistration, id)
+
+  @doc """
+  Gets a single pending_registration by the issuer and client_id.
+  Returns nil if the PendingRegistration does not exist.
+  ## Examples
+      iex> get_pending_registration_by_issuer_client_id(123)
+      %PendingRegistration{}
+      iex> get_pending_registration_by_issuer_client_id(456)
+      nil
+  """
+  def get_pending_registration_by_issuer_client_id(issuer, client_id) do
+    Repo.one from pr in PendingRegistration,
+      where: pr.issuer == ^ issuer and pr.client_id == ^client_id,
+      select: pr
+  end
+
+  @doc """
+  Creates a pending_registration.
+  ## Examples
+      iex> create_pending_registration(%{field: value})
+      {:ok, %PendingRegistration{}}
+      iex> create_pending_registration(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_pending_registration(attrs \\ %{}) do
+    %PendingRegistration{}
+    |> PendingRegistration.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a pending_registration.
+  ## Examples
+      iex> update_pending_registration(pending_registration, %{field: new_value})
+      {:ok, %PendingRegistration{}}
+      iex> update_pending_registration(pending_registration, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def update_pending_registration(%PendingRegistration{} = pending_registration, attrs) do
+    pending_registration
+    |> PendingRegistration.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a pending_registration.
+  ## Examples
+      iex> delete_pending_registration(pending_registration)
+      {:ok, %PendingRegistration{}}
+      iex> delete_pending_registration(pending_registration)
+      {:error, %Ecto.Changeset{}}
+  """
+  def delete_pending_registration(%PendingRegistration{} = pending_registration) do
+    Repo.delete(pending_registration)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking pending_registration changes.
+  ## Examples
+      iex> change_pending_registration(pending_registration)
+      %Ecto.Changeset{source: %PendingRegistration{}}
+  """
+  def change_pending_registration(%PendingRegistration{} = pending_registration) do
+    PendingRegistration.changeset(pending_registration, %{})
+  end
+
+  @doc false
+  # Returns the institution that has a similar (normalized) url. If no institutions or more
+  # than one exist with a similar url, then a new one is created.
+  # ## Examples
+  #     iex> find_or_create_institution_by_normalized_url(institution_attrs)
+  #     {:ok, %Institution{}}
+  def find_or_create_institution_by_normalized_url(institution_attrs) do
+    normalized_url = institution_attrs[:institution_url]
+      |> String.replace(~r/^https?\:\/\//i, "")
+      |> String.replace_trailing("/", "")
+
+    case Repo.all(from i in Institution, where: like(i.institution_url, ^normalized_url), select: i) do
+      [] -> create_institution(institution_attrs)
+      [institution] -> {:ok, institution}
+      [_ | _] -> create_institution(institution_attrs)
+    end
+  end
+
+  @doc """
+  Approves a pending registration request. If successful, a new registration will be created and attached
+  to a new or existing institution if one with a similar url already exists.
+  The operation guarantees all actions or none are performed.
+  ## Examples
+      iex> approve_pending_registration(pending_registration)
+      {:ok, {%Institution{}, %Registration{}}}
+      iex> approve_pending_registration(pending_registration)
+      {:error, reason}
+  """
+  def approve_pending_registration(%PendingRegistration{} = pending_registration) do
+    Repo.transaction(fn ->
+      with {:ok, institution} <- find_or_create_institution_by_normalized_url(PendingRegistration.institution_attrs(pending_registration)),
+        active_jwk = Oli.Lti_1p3.get_active_jwk(),
+        registration_attrs = Map.merge(PendingRegistration.registration_attrs(pending_registration), %{institution_id: institution.id, tool_jwk_id: active_jwk.id}),
+        {:ok, registration} <- create_registration(registration_attrs),
+        {:ok, _pending_registration} <- delete_pending_registration(pending_registration)
+      do
+        {institution, registration}
+      else
+        error -> Repo.rollback(error)
+      end
+    end)
+  end
+
 end

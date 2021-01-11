@@ -13,17 +13,17 @@
   </div>
 
   <div class="form-label-group">
-    <%= email_input f, :institution_email, class: "form-control " <> error_class(f, :institution_email, "is-invalid"),
-      placeholder: "Institution Email", required: true, autofocus: focusHelper(f, :institution_email) %>
-    <%= label f, :institution_email, "Institution Email", class: "control-label" %>
-    <%= error_tag f, :institution_email %>
-  </div>
-
-  <div class="form-label-group">
     <%= text_input f, :institution_url, class: "form-control " <> error_class(f, :institution_url, "is-invalid"),
       placeholder: "Institution URL", required: true, autofocus: focusHelper(f, :institution_url)  %>
     <%= label f, :institution_url, "Institution URL" %>
     <%= error_tag f, :institution_url %>
+  </div>
+
+  <div class="form-label-group">
+    <%= email_input f, :institution_email, class: "form-control " <> error_class(f, :institution_email, "is-invalid"),
+      placeholder: "Contact Email", required: true, autofocus: focusHelper(f, :institution_email) %>
+    <%= label f, :institution_email, "Institution Email", class: "control-label" %>
+    <%= error_tag f, :institution_email %>
   </div>
 
   <div class="form-label-group">
