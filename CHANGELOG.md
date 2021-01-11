@@ -1,6 +1,8 @@
 # Changelog
 
-### Dev
+## Dev
+### Enhancements
+  - Add support for embedding images in structured content editors by external URL and by pasting a copied image
 
 ### Bug fixes
   - Fix a broken link to external learning objectives content
