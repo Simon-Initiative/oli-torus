@@ -5,6 +5,7 @@
   - Improved LTI workflow for new institutions
   - Add support for embedding images in structured content editors by external URL and by pasting a copied image
   - Ordering activity
+  - Add support for user help requests capture and forward to email or help desk
 
 ### Bug fixes
   - Fix a broken link to external learning objectives content
