@@ -10,7 +10,7 @@
     <title>OliWeb.LtiController — OLI Torus v0.4.1</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-d7c5bd411a.js"></script>
+    <script src="dist/sidebar_items-350809979a.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -118,7 +118,7 @@ OliWeb.LtiController <small class="app-vsn">(OLI Torus v0.4.1)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#launch/2">launch(conn, params)</a>
+    <a href="#launch/2">launch(conn, params \\ %{})</a>
 
   </div>
 
@@ -132,7 +132,14 @@ OliWeb.LtiController <small class="app-vsn">(OLI Torus v0.4.1)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#test/2">test(conn, params)</a>
+    <a href="#request_registration/2">request_registration(conn, params)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#test/2">test(conn, params \\ %{})</a>
 
   </div>
 
@@ -161,7 +168,7 @@ Functions
     </a>
     <h1 class="signature">developer_key_json(conn, params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L45" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L51" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -183,7 +190,7 @@ Functions
     </a>
     <h1 class="signature">jwks(conn, params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L122" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L128" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -198,14 +205,16 @@ Functions
 </section>
 <section class="detail" id="launch/2">
 
+    <span id="launch/1"></span>
+
   <div class="detail-header">
     <a href="#launch/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">launch(conn, params)</h1>
+    <h1 class="signature">launch(conn, params \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L21" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L29" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -227,7 +236,29 @@ Functions
     </a>
     <h1 class="signature">login(conn, params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L11" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L17" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="request_registration/2">
+
+  <div class="detail-header">
+    <a href="#request_registration/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">request_registration(conn, params)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L151" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -242,14 +273,16 @@ Functions
 </section>
 <section class="detail" id="test/2">
 
+    <span id="test/1"></span>
+
   <div class="detail-header">
     <a href="#test/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">test(conn, params)</h1>
+    <h1 class="signature">test(conn, params \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L36" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lti_controller.ex#L42" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

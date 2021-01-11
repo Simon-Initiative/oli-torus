@@ -7,10 +7,10 @@
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.4.1">
 
-    <title>Oli.Utils.Common — OLI Torus v0.4.1</title>
+    <title>Oli.Help.Dispatcher — OLI Torus v0.4.1</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-d7c5bd411a.js"></script>
+    <script src="dist/sidebar_items-350809979a.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -78,9 +78,9 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Utils.Common <small class="app-vsn">(OLI Torus v0.4.1)</small>
+Oli.Help.Dispatcher <small>behaviour</small> <small class="app-vsn">(OLI Torus v0.4.1)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/common.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/help/dispatcher.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -104,9 +104,25 @@ Oli.Utils.Common <small class="app-vsn">(OLI Torus v0.4.1)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#get_base_url/0">get_base_url()</a>
+    <a href="#dispatch/2">dispatch(implementation, contents)</a>
 
   </div>
+
+</div>
+
+  </div>
+
+  <div class="summary-callbacks summary">
+    <h2>
+      <a href="#callbacks">Callbacks</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#c:dispatch/1">dispatch(%Oli.Help.HelpContent{})</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Dispatches help requests to help support (email or some other form of helpdesk).</p></div>
 
 </div>
 
@@ -124,16 +140,16 @@ Oli.Utils.Common <small class="app-vsn">(OLI Torus v0.4.1)</small>
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="get_base_url/0">
+<section class="detail" id="dispatch/2">
 
   <div class="detail-header">
-    <a href="#get_base_url/0" class="detail-link" title="Link to this function">
+    <a href="#dispatch/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">get_base_url()</h1>
+    <h1 class="signature">dispatch(implementation, contents)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/common.ex#L2" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/help/dispatcher.ex#L10" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -144,6 +160,64 @@ Functions
   <section class="docstring">
 
 
+  </section>
+</section>
+
+          </div>
+        </section>
+
+        <section id="callbacks" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#callbacks">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Callbacks
+          </h1>
+          <div class="callbacks-list">
+<section class="detail" id="c:dispatch/1">
+
+  <div class="detail-header">
+    <a href="#c:dispatch/1" class="detail-link" title="Link to this callback">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature">dispatch(%Oli.Help.HelpContent{})</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/help/dispatcher.ex#L8" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>dispatch(%Oli.Help.HelpContent{
+  account_created: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  account_email: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  account_name: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  account_role: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  agent_accept: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  agent_language: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  cookies_enabled: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  email: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  full_name: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  ip_address: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  location: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  message: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  subject: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  timestamp: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  user_agent: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+}) :: {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()} | {:error, <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()}</pre>
+
+      </div>
+
+<p>Dispatches help requests to help support (email or some other form of helpdesk).</p>
   </section>
 </section>
 

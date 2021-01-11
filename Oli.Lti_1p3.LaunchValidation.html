@@ -10,7 +10,7 @@
     <title>Oli.Lti_1p3.LaunchValidation — OLI Torus v0.4.1</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-d7c5bd411a.js"></script>
+    <script src="dist/sidebar_items-350809979a.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -109,6 +109,20 @@ Oli.Lti_1p3.LaunchValidation <small class="app-vsn">(OLI Torus v0.4.1)</small>
   </div>
 
 </div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:providers/0">providers()</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:validate_opts/0">validate_opts()</a>
+
+  </div>
+
+</div>
 
   </div>
 
@@ -118,7 +132,7 @@ Oli.Lti_1p3.LaunchValidation <small class="app-vsn">(OLI Torus v0.4.1)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#validate/2">validate(conn, get_public_key)</a>
+    <a href="#validate/2">validate(conn, opts)</a>
 
   </div>
 
@@ -188,6 +202,64 @@ Types
 
   </section>
 </section>
+<section class="detail" id="t:providers/0">
+
+  <div class="detail-header">
+    <a href="#t:providers/0" class="detail-link" title="Link to this type">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature">providers()</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/launch_validation.ex#L7" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>providers() :: %{get_public_key: <a href="#t:get_public_key_callback/0">get_public_key_callback</a>()}</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="t:validate_opts/0">
+
+  <div class="detail-header">
+    <a href="#t:validate_opts/0" class="detail-link" title="Link to this type">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature">validate_opts()</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/launch_validation.ex#L8" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>validate_opts() :: [{:providers, <a href="#t:providers/0">providers</a>()}]</pre>
+
+      </div>
+
+
+  </section>
+</section>
 
           </div>
         </section>
@@ -208,9 +280,9 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">validate(conn, get_public_key)</h1>
+    <h1 class="signature">validate(conn, opts)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/launch_validation.ex#L12" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/launch_validation.ex#L14" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -223,7 +295,7 @@ Functions
       <h2>Specs</h2>
       <div class="specs">
 
-          <pre>validate(<a href="https://hexdocs.pm/plug/1.10.4/Plug.Conn.html#t:t/0">Plug.Conn.t</a>(), <a href="#t:get_public_key_callback/0">get_public_key_callback</a>()) ::
+          <pre>validate(<a href="https://hexdocs.pm/plug/1.10.4/Plug.Conn.html#t:t/0">Plug.Conn.t</a>(), <a href="#t:validate_opts/0">validate_opts</a>()) ::
   {:ok, <a href="https://hexdocs.pm/plug/1.10.4/Plug.Conn.html#t:t/0">Plug.Conn.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}
   | {:error,
      %{optional(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>()) =&gt; <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(), :reason =&gt; <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(), :msg =&gt; <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()}}</pre>
