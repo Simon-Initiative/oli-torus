@@ -30,11 +30,13 @@ defmodule Oli.Help.Providers.FreshdeskHelp do
     case HTTPoison.post(url, body, @headers) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, body}
+      {:ok, %HTTPoison.Response{status_code: 201, body: body}} ->
+        {:ok, body}
       {:ok, %HTTPoison.Response{body: body}} ->
         Logger.error(body)
         Logger.error("""
         Error in FreshdeskHelp.dispatch.
-        Type: api call, failed with non 200 status code"
+        Type: api call, failed with non 200 or 201 status code"
         """)
         {:error, "Error creating Freshdesk help ticket"}
       {:error, %HTTPoison.Error{reason: reason}} ->
