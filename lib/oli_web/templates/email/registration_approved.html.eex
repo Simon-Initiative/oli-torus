@@ -40,7 +40,7 @@
                         <br />
 
                         <p style="margin: 0;">
-                          You can now access course materials from OLI <a href="<%= @registration.issuer %>" target="_blank">using your institution's LMS</a>.
+                          You can now access OLI course materials from <a href="<%= @registration.issuer %>" target="_blank">your institution's LMS</a>.
                         </p>
 
                     </td>
