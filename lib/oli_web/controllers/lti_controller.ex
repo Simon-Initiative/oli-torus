@@ -205,7 +205,7 @@ defmodule OliWeb.LtiController do
         })
 
         conn
-        |> render("registration_pending.html")
+        |> render("registration_pending.html", pending_registration: pending_registration)
 
       {:error, changeset} ->
         conn
@@ -237,9 +237,9 @@ defmodule OliWeb.LtiController do
           issuer: issuer,
           client_id: client_id)
 
-      _registration ->
+      pending_registration ->
         conn
-        |> render("registration_pending.html")
+        |> render("registration_pending.html", pending_registration: pending_registration)
     end
   end
 
