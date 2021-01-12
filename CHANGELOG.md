@@ -1,5 +1,6 @@
 # Changelog
-## Unreleased
+
+## 0.5.0 (2021-1-12)
 ### Enhancements
   - Improved LTI workflow for new institutions
   - Add support for embedding images in structured content editors by external URL and by pasting a copied image
