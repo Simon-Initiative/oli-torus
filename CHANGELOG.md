@@ -1,6 +1,6 @@
 # Changelog
 
-## UNRELEASED (TBD)
+## 0.5.1 (2021-1-13)
 
 ### Bug fixes
   - Fix missing status 201 handling on Freshdesk API call
