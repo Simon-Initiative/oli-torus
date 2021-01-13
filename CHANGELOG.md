@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1 (2021-1-13)
+
+### Bug fixes
+  - Fix missing status 201 handling on Freshdesk API call
+  - Fix an issue where creating an institution with the same url as multiple existing institutions creates another new institution
+
 ## 0.5.0 (2021-1-12)
 ### Enhancements
   - Improved LTI workflow for new institutions

@@ -256,6 +256,20 @@ defmodule Oli.InstitutionsTest do
       assert different_institution.id != institution.id
     end
 
+    test "find_or_create_institution_by_normalized_url/1 uses the first existing institution if multiple institutions with similar urls exist", %{institution: first_institution} do
+      _second_institution = institution_fixture()
+
+      {:ok, result_institution} = Institutions.find_or_create_institution_by_normalized_url(%{
+        country_code: "US",
+        institution_email: "institution@example.edu",
+        institution_url: "https://institution.example.edu/",
+        name: "Example Institution",
+        timezone: "US/Eastern",
+      })
+
+      assert result_institution.id == first_institution.id
+    end
+
     test "approve_pending_registration/1 creates a new institution and registration and removes pending registration" do
       {:ok, %PendingRegistration{} = pending_registration} = Institutions.create_pending_registration(%{
         name: "New Institution",
