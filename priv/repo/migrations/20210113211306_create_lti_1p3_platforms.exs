@@ -2,7 +2,7 @@ defmodule Oli.Repo.Migrations.CreateLti1p3Platforms do
   use Ecto.Migration
 
   def change do
-    create table(:lti_1p3_platforms) do
+    create table(:lti_1p3_platform_instances) do
       add :name, :string
       add :description, :text
       add :target_link_uri, :string

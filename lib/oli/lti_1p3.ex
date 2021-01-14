@@ -102,4 +102,10 @@ defmodule Oli.Lti_1p3 do
       nil
   """
   def fetch_lti_params(key), do: Repo.get_by(LtiParams, key: key)
+
+  # TODO
+  def authorize_login(_conn, _params) do
+    {:ok}
+  end
+
 end

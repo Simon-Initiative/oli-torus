@@ -1,8 +1,8 @@
-defmodule Oli.Lti_1p3.Platform do
+defmodule Oli.Lti_1p3.PlatformInstance do
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "lti_1p3_platforms" do
+  schema "lti_1p3_platform_instances" do
     field :client_id, :string
     field :custom_params, :string
     field :description, :string
@@ -16,8 +16,8 @@ defmodule Oli.Lti_1p3.Platform do
   end
 
   @doc false
-  def changeset(platform, attrs) do
-    platform
+  def changeset(platform_instance, attrs) do
+    platform_instance
     |> cast(attrs, [:name, :description, :target_link_uri, :client_id, :login_url, :keyset_url, :redirect_uris, :custom_params])
     |> validate_required([:name, :description, :target_link_uri, :client_id, :login_url, :keyset_url, :redirect_uris, :custom_params])
   end

@@ -1,8 +1,8 @@
-defmodule OliWeb.PlatformControllerTest do
+defmodule OliWeb.PlatformInstanceControllerTest do
   use OliWeb.ConnCase
 
-  alias Oli.Lti_1p3.Platform
-  alias Oli.Lti_1p3.Platforms
+  alias Oli.Lti_1p3.PlatformInstance
+  alias Oli.Lti_1p3.PlatformInstances
 
   @create_attrs %{
     client_id: "some client_id",
@@ -26,28 +26,32 @@ defmodule OliWeb.PlatformControllerTest do
   }
   @invalid_attrs %{client_id: nil, custom_params: nil, description: nil, keyset_url: nil, login_url: nil, name: nil, redirect_uris: nil, target_link_uri: nil}
 
-  def fixture(:platform) do
-    {:ok, platform} = Platforms.create_platform(@create_attrs)
-    platform
+  def fixture(:platform_instance) do
+    {:ok, platform_instance} = PlatformInstances.create_platform_instance(@create_attrs)
+    platform_instance
   end
 
-  setup %{conn: conn} do
+  def accept_json(%{conn: conn}) do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
+  setup [:author_project_conn, :accept_json]
+
   describe "index" do
-    test "lists all lti_1p3_platforms", %{conn: conn} do
-      conn = get(conn, Routes.platform_path(conn, :index))
+    test "lists all lti_1p3_platform_instances", %{conn: conn} do
+      conn = get(conn, Routes.platform_instance_path(conn, :index))
       assert json_response(conn, 200)["data"] == []
     end
   end
 
-  describe "create platform" do
-    test "renders platform when data is valid", %{conn: conn} do
-      conn = post(conn, Routes.platform_path(conn, :create), platform: @create_attrs)
+  describe "create platform_instance" do
+    test "renders platform_instance when data is valid", %{conn: conn, author: author} do
+      conn = post(conn, Routes.platform_instance_path(conn, :create), platform_instance: @create_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
-      conn = get(conn, Routes.platform_path(conn, :show, id))
+      conn = recycle_author_session(conn, author)
+
+      conn = get(conn, Routes.platform_instance_path(conn, :show, id))
 
       assert %{
                "id" => ^id,
@@ -63,19 +67,21 @@ defmodule OliWeb.PlatformControllerTest do
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, Routes.platform_path(conn, :create), platform: @invalid_attrs)
+      conn = post(conn, Routes.platform_instance_path(conn, :create), platform_instance: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
 
-  describe "update platform" do
-    setup [:create_platform]
+  describe "update platform_instance" do
+    setup [:create_platform_instance]
 
-    test "renders platform when data is valid", %{conn: conn, platform: %Platform{id: id} = platform} do
-      conn = put(conn, Routes.platform_path(conn, :update, platform), platform: @update_attrs)
+    test "renders platform_instance when data is valid", %{conn: conn, author: author, platform_instance: %PlatformInstance{id: id} = platform_instance} do
+      conn = put(conn, Routes.platform_instance_path(conn, :update, platform_instance), platform_instance: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
-      conn = get(conn, Routes.platform_path(conn, :show, id))
+      conn = recycle_author_session(conn, author)
+
+      conn = get(conn, Routes.platform_instance_path(conn, :show, id))
 
       assert %{
                "id" => ^id,
@@ -90,27 +96,29 @@ defmodule OliWeb.PlatformControllerTest do
              } = json_response(conn, 200)["data"]
     end
 
-    test "renders errors when data is invalid", %{conn: conn, platform: platform} do
-      conn = put(conn, Routes.platform_path(conn, :update, platform), platform: @invalid_attrs)
+    test "renders errors when data is invalid", %{conn: conn, platform_instance: platform_instance} do
+      conn = put(conn, Routes.platform_instance_path(conn, :update, platform_instance), platform_instance: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
 
-  describe "delete platform" do
-    setup [:create_platform]
+  describe "delete platform_instance" do
+    setup [:create_platform_instance]
 
-    test "deletes chosen platform", %{conn: conn, platform: platform} do
-      conn = delete(conn, Routes.platform_path(conn, :delete, platform))
+    test "deletes chosen platform_instance", %{conn: conn, author: author, platform_instance: platform_instance} do
+      conn = delete(conn, Routes.platform_instance_path(conn, :delete, platform_instance))
       assert response(conn, 204)
 
+      conn = recycle_author_session(conn, author)
+
       assert_error_sent 404, fn ->
-        get(conn, Routes.platform_path(conn, :show, platform))
+        get(conn, Routes.platform_instance_path(conn, :show, platform_instance))
       end
     end
   end
 
-  defp create_platform(_) do
-    platform = fixture(:platform)
-    %{platform: platform}
+  defp create_platform_instance(_) do
+    platform_instance = fixture(:platform_instance)
+    %{platform_instance: platform_instance}
   end
 end

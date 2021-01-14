@@ -291,7 +291,7 @@ defmodule OliWeb.Router do
   scope "/api/v1/lti", OliWeb do
     pipe_through [:api, :authoring_protected]
 
-    resources "/platforms", PlatformController
+    resources "/platforms", PlatformInstanceController
   end
 
   # LTI routes

@@ -212,6 +212,11 @@ defmodule Oli.TestHelpers do
     {:ok, conn: conn, author: author, project: project}
   end
 
+  def recycle_author_session(conn, author) do
+    Phoenix.ConnTest.recycle(conn)
+      |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+  end
+
   def author_project_fixture(), do: author_project_fixture(nil)
   def author_project_fixture(_conn) do
     author = author_fixture()

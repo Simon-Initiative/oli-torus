@@ -49,7 +49,7 @@ defmodule OliWeb.LtiController do
   end
 
   def authorize(conn, params) do
-    case Lti_1p3.Platforms.authorize_login(conn, params) do
+    case Lti_1p3.authorize_login(conn, params) do
       {:ok} ->
         conn
         |> send_resp(200, "OK")
