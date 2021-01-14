@@ -48,6 +48,15 @@ defmodule OliWeb.LtiController do
     end
   end
 
+  def authorize(conn, params) do
+    case Lti_1p3.Platforms.authorize_login(conn, params) do
+      {:ok} ->
+        conn
+        |> send_resp(200, "OK")
+      {:error, e} -> throw e
+    end
+  end
+
   def developer_key_json(conn, _params) do
     active_jwk = Lti_1p3.get_active_jwk()
 

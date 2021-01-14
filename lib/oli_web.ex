@@ -106,6 +106,11 @@ defmodule OliWeb do
     end
   end
 
+  # implement Phoenix.HTML.Safe for Map type. Used by some json views
+  defimpl Phoenix.HTML.Safe, for: Map do
+    def to_iodata(data), do: data |> Jason.encode! |> Plug.HTML.html_escape
+  end
+
   @doc """
   When used, dispatch to the appropriate controller/view/etc.
   """

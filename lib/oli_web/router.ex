@@ -288,6 +288,12 @@ defmodule OliWeb.Router do
 
   end
 
+  scope "/api/v1/lti", OliWeb do
+    pipe_through [:api, :authoring_protected]
+
+    resources "/platforms", PlatformController
+  end
+
   # LTI routes
   scope "/lti", OliWeb do
     pipe_through [:lti, :www_url_form]
@@ -300,6 +306,8 @@ defmodule OliWeb.Router do
     get "/developer_key.json", LtiController, :developer_key_json
 
     post "/register", LtiController, :request_registration
+
+    post "/authorize", LtiController, :authorize
   end
 
   scope "/course", OliWeb do
