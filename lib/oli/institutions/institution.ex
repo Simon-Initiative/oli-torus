@@ -12,7 +12,6 @@ defmodule Oli.Institutions.Institution do
     # LTI 1.3 Deployments
     has_many :registrations, Oli.Lti_1p3.Registration
     has_many :sections, Oli.Delivery.Sections.Section
-    has_many :users, Oli.Accounts.User
 
     timestamps(type: :utc_datetime)
   end

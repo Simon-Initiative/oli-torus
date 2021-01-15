@@ -132,8 +132,12 @@ defmodule OliWeb.DeliveryControllerTest do
       password: "password123",
       password_confirmation: "password123",
     })
+
+    tool_jwk = jwk_fixture()
     institution = institution_fixture(%{ author_id: author.id })
-    user = user_fixture(%{institution_id: institution.id})
+    registration = registration_fixture(%{institution_id: institution.id, tool_jwk_id: tool_jwk.id})
+    deployment = deployment_fixture(%{registration_id: registration.id})
+    user = user_fixture()
 
     %{ project: project, publication: publication } = project_fixture(author)
 
@@ -147,6 +151,7 @@ defmodule OliWeb.DeliveryControllerTest do
       "https://purl.imsglobal.org/spec/lti/claim/roles" => [
         "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner",
       ],
+      "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id,
     })
     Oli.Lti_1p3.cache_lti_params!("instructor-sub", %{
       "sub" => "instructor-sub",
@@ -158,6 +163,7 @@ defmodule OliWeb.DeliveryControllerTest do
       "https://purl.imsglobal.org/spec/lti/claim/roles" => [
         "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor",
       ],
+      "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id,
     })
     Oli.Lti_1p3.cache_lti_params!("student-instructor-sub", %{
       "sub" => "instructor-sub",
@@ -170,6 +176,7 @@ defmodule OliWeb.DeliveryControllerTest do
         "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor",
         "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner",
       ],
+      "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id,
     })
 
     conn = Plug.Test.init_test_session(conn, lti_1p3_sub: "student-sub")

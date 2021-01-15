@@ -29,7 +29,6 @@ defmodule Oli.Accounts.User do
     # A user may optionally be linked to an author account
     belongs_to :author, Oli.Accounts.Author
 
-    belongs_to :institution, Oli.Institutions.Institution
     has_many :enrollments, Oli.Delivery.Sections.Enrollment
     many_to_many :platform_roles, Oli.Lti_1p3.PlatformRole, join_through: "users_platform_roles", on_replace: :delete
 
@@ -60,7 +59,6 @@ defmodule Oli.Accounts.User do
       :phone_number_verified,
       :address,
       :author_id,
-      :institution_id,
     ])
     |> validate_required([:sub])
     |> maybe_name_from_given_and_family()
