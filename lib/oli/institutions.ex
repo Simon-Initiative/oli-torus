@@ -367,8 +367,10 @@ defmodule Oli.Institutions do
   end
 
   @doc false
-  # Returns the institution that has a similar (normalized) url. If no institutions or more
-  # than one exist with a similar url, then a new one is created.
+  # Returns the institution that has a similar (normalized) url. If no institutions a similar url
+  # exist, then a new one is created. If more than one institution with a similar url exist, then
+  # the first institution in the result is returned.
+  #
   # ## Examples
   #     iex> find_or_create_institution_by_normalized_url(institution_attrs)
   #     {:ok, %Institution{}}
@@ -380,7 +382,7 @@ defmodule Oli.Institutions do
     case Repo.all(from i in Institution, where: like(i.institution_url, ^normalized_url), select: i) do
       [] -> create_institution(institution_attrs)
       [institution] -> {:ok, institution}
-      [_ | _] -> create_institution(institution_attrs)
+      [institution | _] -> {:ok, institution}
     end
   end
 
