@@ -19,6 +19,6 @@ defmodule Oli.Lti_1p3.PlatformInstance do
   def changeset(platform_instance, attrs) do
     platform_instance
     |> cast(attrs, [:name, :description, :target_link_uri, :client_id, :login_url, :keyset_url, :redirect_uris, :custom_params])
-    |> validate_required([:name, :description, :target_link_uri, :client_id, :login_url, :keyset_url, :redirect_uris, :custom_params])
+    |> validate_required([:name, :target_link_uri, :client_id, :login_url, :keyset_url, :redirect_uris])
   end
 end

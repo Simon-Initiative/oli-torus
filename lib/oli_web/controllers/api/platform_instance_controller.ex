@@ -1,4 +1,4 @@
-defmodule OliWeb.PlatformInstanceController do
+defmodule OliWeb.Api.PlatformInstanceController do
   use OliWeb, :controller
 
   alias Oli.Lti_1p3.PlatformInstance

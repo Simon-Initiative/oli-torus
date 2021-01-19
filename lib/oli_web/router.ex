@@ -288,10 +288,10 @@ defmodule OliWeb.Router do
 
   end
 
-  scope "/api/v1/lti", OliWeb do
+  scope "/api/v1/lti", OliWeb, as: :api do
     pipe_through [:api, :authoring_protected]
 
-    resources "/platforms", PlatformInstanceController
+    resources "/platforms", Api.PlatformInstanceController
   end
 
   # LTI routes
@@ -307,7 +307,7 @@ defmodule OliWeb.Router do
 
     post "/register", LtiController, :request_registration
 
-    post "/authorize", LtiController, :authorize
+    get "/authorize_redirect", LtiController, :authorize_redirect
   end
 
   scope "/course", OliWeb do
@@ -343,6 +343,8 @@ defmodule OliWeb.Router do
   scope "/admin", OliWeb do
     pipe_through [:browser, :authoring_protected, :admin]
     live_dashboard "/dashboard", metrics: OliWeb.Telemetry, session: {__MODULE__, :with_session, []}
+
+    resources "/platform_instances", PlatformInstanceController
   end
 
   scope "/admin", OliWeb do

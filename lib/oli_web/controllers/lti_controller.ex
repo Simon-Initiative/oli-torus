@@ -7,6 +7,7 @@ defmodule OliWeb.LtiController do
   alias Oli.Institutions.PendingRegistration
   alias Oli.Lti_1p3.ContextRoles
   alias Oli.Lti_1p3.PlatformRoles
+  alias Oli.Lti_1p3.PlatformInstances
   alias Oli.Lti_1p3
   alias Oli.Predefined
   alias Oli.Slack
@@ -27,7 +28,7 @@ defmodule OliWeb.LtiController do
   end
 
   def launch(conn, _params \\ %{}) do
-    case Lti_1p3.LaunchValidation.validate(conn, providers: %{get_public_key: &get_public_key/2}) do
+    case Lti_1p3.LaunchValidation.validate(conn) do
       {:ok, conn, lti_params} ->
         handle_valid_lti_1p3_launch(conn, lti_params)
       {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
@@ -40,7 +41,7 @@ defmodule OliWeb.LtiController do
   end
 
   def test(conn, _params \\ %{}) do
-    case Lti_1p3.LaunchValidation.validate(conn, providers: %{get_public_key: &get_public_key/2}) do
+    case Lti_1p3.LaunchValidation.validate(conn) do
       {:ok, conn, lti_params} ->
         render(conn, "lti_test.html", lti_params: lti_params)
       {:error, %{reason: _reason, msg: msg}} ->
@@ -48,11 +49,11 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  def authorize(conn, params) do
-    case Lti_1p3.authorize_login(conn, params) do
-      {:ok} ->
+  def authorize_redirect(conn, params) do
+    case Lti_1p3.authorize_redirect(conn, params) do
+      {:ok, redirect_uri, state, id_token} ->
         conn
-        |> send_resp(200, "OK")
+        |> render("post_redirect.html", redirect_uri: redirect_uri, state: state, id_token: id_token)
       {:error, e} -> throw e
     end
   end
@@ -358,17 +359,4 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  defp get_public_key(%Lti_1p3.Registration{key_set_url: key_set_url}, kid) do
-    public_key_set = case HTTPoison.get(key_set_url) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        Jason.decode!(body)
-      _ ->
-        {:error, "Failed to fetch public key from registered platform url"}
-    end
-
-    public_key = Enum.find(public_key_set["keys"], fn key -> key["kid"] == kid end)
-    |> JOSE.JWK.from
-
-    {:ok, public_key}
-  end
 end
