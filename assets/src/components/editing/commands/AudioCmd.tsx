@@ -42,8 +42,9 @@ export function selectAudio(projectSlug: string,
 
 const command: Command = {
   execute: (context, editor: ReactEditor) => {
+    const at = editor.selection as any;
     selectAudio(context.projectSlug, ContentModel.audio())
-      .then(img => Transforms.insertNodes(editor, img));
+      .then(img => Transforms.insertNodes(editor, img, { at }));
   },
   precondition: (editor: ReactEditor) => {
     return true;

@@ -2,6 +2,7 @@
 
 ## Unreleased
 ### Bug fixes
+  - Honor the current location when inserting block content (YouTube, images, etc)
   - Remove foreign key constraint that tied a user to an institution
 
 ## 0.5.1 (2021-1-13)

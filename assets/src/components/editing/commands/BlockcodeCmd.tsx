@@ -5,7 +5,7 @@ import { isActive } from '../utils';
 
 const command: Command = {
   execute: (context, editor) => {
-    Transforms.insertNodes(editor, ContentModel.code());
+    Transforms.insertNodes(editor, ContentModel.code(), { at: editor.selection as any });
   },
   precondition: (editor) => {
     return !isActive(editor, 'table');
