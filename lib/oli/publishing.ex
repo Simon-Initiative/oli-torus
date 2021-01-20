@@ -5,6 +5,7 @@ defmodule Oli.Publishing do
 
   alias Oli.Authoring.Course.Project
   alias Oli.Accounts.Author
+  alias Oli.Authoring.Locks
   alias Oli.Delivery.Sections
   alias Oli.Resources.{Revision, ResourceType}
   alias Oli.Publishing.{Publication, PublishedResource}
@@ -590,6 +591,8 @@ defmodule Oli.Publishing do
   For a given list of resource ids and a given project publication id,
   retrieve the corresponding published resource record, preloading the
   locked_by_id to allow access to the user that might have the resource locked.
+
+  This only returns those records that have an active lock associated with them.
   """
   def retrieve_lock_info(resource_ids, publication_id) do
 
@@ -597,6 +600,8 @@ defmodule Oli.Publishing do
       where: mapping.publication_id == ^publication_id and mapping.resource_id in ^resource_ids,
       select: mapping,
       preload: [:author])
+
+    |> Enum.filter(fn m -> !Locks.expired_or_empty?(m) end)
 
     Enum.reduce(%{}, mappings, fn e, m -> Map.put(m, e.resource_id, e) end)
 
