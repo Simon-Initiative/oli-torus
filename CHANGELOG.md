@@ -3,6 +3,7 @@
 ## Unreleased
 ### Bug fixes
   - Remove foreign key constraint that tied a user to an institution
+  - Do not display stale locks in Curriculum view
 
 ## 0.5.1 (2021-1-13)
 ### Bug fixes
