@@ -596,14 +596,12 @@ defmodule Oli.Publishing do
   """
   def retrieve_lock_info(resource_ids, publication_id) do
 
-    mappings = Repo.all(from mapping in PublishedResource,
+    Repo.all(from mapping in PublishedResource,
       where: mapping.publication_id == ^publication_id and mapping.resource_id in ^resource_ids,
       select: mapping,
       preload: [:author])
 
     |> Enum.filter(fn m -> !Locks.expired_or_empty?(m) end)
-
-    Enum.reduce(%{}, mappings, fn e, m -> Map.put(m, e.resource_id, e) end)
 
   end
 
