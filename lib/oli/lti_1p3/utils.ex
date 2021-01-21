@@ -1,6 +1,10 @@
 defmodule Oli.Lti_1p3.Utils do
   alias Oli.Lti_1p3.Registration
 
+  def default_config(), do: Application.get_env(:oli, :lti_1p3, [http_client: HTTPoison])
+
+  defp http(), do: Keyword.get(default_config(), :http_client)
+
   def registration_key_set_url(%Registration{key_set_url: key_set_url}) do
     {:ok, key_set_url}
   end
@@ -84,16 +88,22 @@ defmodule Oli.Lti_1p3.Utils do
   end
 
   def fetch_public_key(key_set_url, kid) do
-    public_key_set = case HTTPoison.get(key_set_url) do
+    public_key_set = case http().get(key_set_url) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         Jason.decode!(body)
-      _ ->
-        {:error, "Failed to fetch public key from registered platform url"}
+      error ->
+        error
     end
 
-    public_key = Enum.find(public_key_set["keys"], fn key -> key["kid"] == kid end)
-    |> JOSE.JWK.from
+    case Enum.find(public_key_set["keys"], fn key -> key["kid"] == kid end) do
+      nil ->
+        {:error, %{reason: :key_not_found, msg: "Key with kid #{kid} not found in the fetched list of public keys"}}
 
-    {:ok, public_key}
+      public_key_json ->
+        public_key = public_key_json
+          |> JOSE.JWK.from
+
+        {:ok, public_key}
+    end
   end
 end

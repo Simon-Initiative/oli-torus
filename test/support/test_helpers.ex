@@ -148,15 +148,20 @@ defmodule Oli.TestHelpers do
     deployment
   end
 
-  def jwk_fixture() do
+  def jwk_fixture(attrs \\ %{}) do
     %{private_key: private_key} = Oli.Lti_1p3.KeyGenerator.generate_key_pair()
-    {:ok, jwk} = Oli.Lti_1p3.create_new_jwk(%{
-      pem: private_key,
-      typ: "JWT",
-      alg: "RS256",
-      kid: UUID.uuid4(),
-      active: true,
-    })
+
+    params =
+      attrs
+      |> Enum.into(%{
+        pem: private_key,
+        typ: "JWT",
+        alg: "RS256",
+        kid: UUID.uuid4(),
+        active: true,
+      })
+
+    {:ok, jwk} = Oli.Lti_1p3.create_new_jwk(params)
 
     jwk
   end
@@ -210,6 +215,13 @@ defmodule Oli.TestHelpers do
     conn = Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     {:ok, conn: conn, author: author, project: project}
+  end
+
+  def admin_conn(%{conn: conn}) do
+    admin = author_fixture(%{system_role_id: Accounts.SystemRole.role_id.admin})
+    conn = Pow.Plug.assign_current_user(conn, admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+    {:ok, conn: conn, admin: admin}
   end
 
   def recycle_author_session(conn, author) do

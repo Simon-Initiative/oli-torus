@@ -7,7 +7,6 @@ defmodule OliWeb.LtiController do
   alias Oli.Institutions.PendingRegistration
   alias Oli.Lti_1p3.ContextRoles
   alias Oli.Lti_1p3.PlatformRoles
-  alias Oli.Lti_1p3.PlatformInstances
   alias Oli.Lti_1p3
   alias Oli.Predefined
   alias Oli.Slack

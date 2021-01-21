@@ -1,21 +1,23 @@
 defmodule OliWeb.PlatformInstanceControllerTest do
   use OliWeb.ConnCase
 
-  alias Oli.OliWeb
+  alias Oli.Lti_1p3.PlatformInstances
 
   @create_attrs %{client_id: "some client_id", custom_params: "some custom_params", description: "some description", keyset_url: "some keyset_url", login_url: "some login_url", name: "some name", redirect_uris: "some redirect_uris", target_link_uri: "some target_link_uri"}
   @update_attrs %{client_id: "some updated client_id", custom_params: "some updated custom_params", description: "some updated description", keyset_url: "some updated keyset_url", login_url: "some updated login_url", name: "some updated name", redirect_uris: "some updated redirect_uris", target_link_uri: "some updated target_link_uri"}
   @invalid_attrs %{client_id: nil, custom_params: nil, description: nil, keyset_url: nil, login_url: nil, name: nil, redirect_uris: nil, target_link_uri: nil}
 
   def fixture(:platform_instance) do
-    {:ok, platform_instance} = OliWeb.create_platform_instance(@create_attrs)
+    {:ok, platform_instance} = PlatformInstances.create_platform_instance(@create_attrs)
     platform_instance
   end
+
+  setup [:admin_conn]
 
   describe "index" do
     test "lists all lti_1p3_platform_instances", %{conn: conn} do
       conn = get(conn, Routes.platform_instance_path(conn, :index))
-      assert html_response(conn, 200) =~ "Listing Lti 1p3 platform instances"
+      assert html_response(conn, 200) =~ "LTI 1.3 Platform Instances"
     end
   end
 
@@ -27,11 +29,13 @@ defmodule OliWeb.PlatformInstanceControllerTest do
   end
 
   describe "create platform_instance" do
-    test "redirects to show when data is valid", %{conn: conn} do
+    test "redirects to show when data is valid", %{conn: conn, admin: admin} do
       conn = post(conn, Routes.platform_instance_path(conn, :create), platform_instance: @create_attrs)
 
       assert %{id: id} = redirected_params(conn)
       assert redirected_to(conn) == Routes.platform_instance_path(conn, :show, id)
+
+      conn = recycle_author_session(conn, admin)
 
       conn = get(conn, Routes.platform_instance_path(conn, :show, id))
       assert html_response(conn, 200) =~ "Show Platform instance"
@@ -55,9 +59,11 @@ defmodule OliWeb.PlatformInstanceControllerTest do
   describe "update platform_instance" do
     setup [:create_platform_instance]
 
-    test "redirects when data is valid", %{conn: conn, platform_instance: platform_instance} do
+    test "redirects when data is valid", %{conn: conn, admin: admin, platform_instance: platform_instance} do
       conn = put(conn, Routes.platform_instance_path(conn, :update, platform_instance), platform_instance: @update_attrs)
       assert redirected_to(conn) == Routes.platform_instance_path(conn, :show, platform_instance)
+
+      conn = recycle_author_session(conn, admin)
 
       conn = get(conn, Routes.platform_instance_path(conn, :show, platform_instance))
       assert html_response(conn, 200) =~ "some updated client_id"
@@ -72,10 +78,12 @@ defmodule OliWeb.PlatformInstanceControllerTest do
   describe "delete platform_instance" do
     setup [:create_platform_instance]
 
-    test "deletes chosen platform_instance", %{conn: conn, platform_instance: platform_instance} do
+    test "deletes chosen platform_instance", %{conn: conn, admin: admin, platform_instance: platform_instance} do
       conn = delete(conn, Routes.platform_instance_path(conn, :delete, platform_instance))
       assert redirected_to(conn) == Routes.platform_instance_path(conn, :index)
       assert_error_sent 404, fn ->
+        conn = recycle_author_session(conn, admin)
+
         get(conn, Routes.platform_instance_path(conn, :show, platform_instance))
       end
     end

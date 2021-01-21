@@ -2,6 +2,7 @@ use Mix.Config
 
 config :oli,
   env: :test,
+  http_adapter: HTTPoison,
   s3_media_bucket_name: "torus-media-test",
   media_url: "d1od6xouqrpl5k.cloudfront.net"
 
@@ -36,6 +37,9 @@ config :oli, OliWeb.Pow.Mailer,
 config :oli, OliWeb.Endpoint,
   http: [port: 4002],
   server: false
+
+config :oli, :lti_1p3,
+  http_client: Lti_1p3.MockHTTPoison
 
 # Print only warnings and errors during test
 config :logger, level: :warn

@@ -2,7 +2,6 @@ defmodule Oli.TestHelpers.Lti_1p3 do
   import Oli.TestHelpers
 
   alias Oli.Lti_1p3
-  alias Oli.Lti_1p3.KeyGenerator
 
   def generate_lti_stubs(args \\ %{}) do
     institution = institution_fixture()
@@ -30,14 +29,11 @@ defmodule Oli.TestHelpers.Lti_1p3 do
       deployment_id: "1",
       state: state_uuid,
       lti_1p3_state: state_uuid,
-      kid: "some kid",
+      kid: jwk.kid,
     } |> Map.merge(args)
 
-    # generate a key pair
-    %{public_key: public_key, private_key: private_key} = KeyGenerator.generate_key_pair()
-
     # create a signer
-    signer = Joken.Signer.create("RS256", %{"pem" => private_key}, %{
+    signer = Joken.Signer.create("RS256", %{"pem" => jwk.pem}, %{
       "kid" => kid,
     })
 
@@ -62,12 +58,7 @@ defmodule Oli.TestHelpers.Lti_1p3 do
     conn = Plug.Test.conn(:post, "/", %{"state" => state, "id_token" => token})
       |> Plug.Test.init_test_session(%{state: lti_1p3_state})
 
-    # stub a get_public_key callback
-    get_public_key = fn _registration, _kid ->
-      {:ok, JOSE.JWK.from_pem(public_key)}
-    end
-
-    %{conn: conn, get_public_key: get_public_key, institution: institution, registration: registration, jwk: jwk, state_uuid: state_uuid}
+    %{conn: conn, institution: institution, registration: registration, jwk: jwk, state_uuid: state_uuid}
   end
 
   def all_default_claims() do
@@ -185,3 +176,5 @@ defmodule Oli.Lti_1p3.Lti_1p3_User.Mock do
   end
 
 end
+
+Mox.defmock(Lti_1p3.MockHTTPoison, for: HTTPoison.Base)
