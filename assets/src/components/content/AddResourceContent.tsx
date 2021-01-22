@@ -48,6 +48,7 @@ const promptForObjectiveSelection
 
       display(<ModalSelection title="Target learning objectives with this activity"
         hideOkButton={true}
+        hideDialogCloseButton={true}
         cancelLabel="Skip this step"
         onInsert={() => { dismiss(); resolve([]); }}
         onCancel={() => { dismiss(); resolve([]); }}>
