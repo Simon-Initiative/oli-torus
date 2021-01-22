@@ -4,6 +4,7 @@
 ### Bug fixes
   - Remove foreign key constraint that tied a user to an institution
   - Do not display stale locks in Curriculum view
+  - Ensure error messages always visible in page and activity editors
   - Remove ability to cancel activity creation during objective selection
 
 ## 0.5.1 (2021-1-13)

@@ -154,19 +154,26 @@ class ActivityEditor extends React.Component<ActivityEditorProps, ActivityEditor
 
   editingLockedMessage(email: string) {
     const message = createMessage({
+      guid: 'readonly-error',
       canUserDismiss: false,
       content: 'Read Only. User ' + email + ' is currently editing this page.',
       severity: Severity.Information,
     });
-    this.setState({ messages: [...this.state.messages, message] });
+    this.addAsUnique(message);
   }
 
   publishErrorMessage(failure: any) {
     const message = createMessage({
+      guid: 'general-error',
       canUserDismiss: true,
       content: 'A problem occurred while saving your changes',
     });
-    this.setState({ messages: [...this.state.messages, message] });
+    this.addAsUnique(message);
+  }
+
+  addAsUnique(message: Message) {
+    const messages = this.state.messages.filter(m => m.guid !== message.guid);
+    this.setState({ messages: [...messages, message] });
   }
 
   update(update: Partial<Undoable>) {
