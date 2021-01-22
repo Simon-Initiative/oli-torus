@@ -226,8 +226,8 @@ including &quot;exp&quot; for expiration date</p><h2 id="cache_lti_params!/2-exa
   <a href="#cache_lti_params!/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">cache_lti_params!</span><span class="p" data-group-id="7185137687-1">(</span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">lti_params</span><span class="p" data-group-id="7185137687-1">)</span><span class="w">
-</span><span class="p" data-group-id="7185137687-2">%</span><span class="nc" data-group-id="7185137687-2">LtiParams</span><span class="p" data-group-id="7185137687-2">{</span><span class="p" data-group-id="7185137687-2">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">cache_lti_params!</span><span class="p" data-group-id="9904663298-1">(</span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">lti_params</span><span class="p" data-group-id="9904663298-1">)</span><span class="w">
+</span><span class="p" data-group-id="9904663298-2">%</span><span class="nc" data-group-id="9904663298-2">LtiParams</span><span class="p" data-group-id="9904663298-2">{</span><span class="p" data-group-id="9904663298-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_new_deployment/1">
@@ -320,9 +320,9 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p><h2 i
   <a href="#fetch_lti_params/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">fetch_lti_params</span><span class="p" data-group-id="6287926220-1">(</span><span class="s">&quot;some-key&quot;</span><span class="p" data-group-id="6287926220-1">)</span><span class="w">
-</span><span class="p" data-group-id="6287926220-2">%</span><span class="nc" data-group-id="6287926220-2">LtiParams</span><span class="p" data-group-id="6287926220-2">{</span><span class="p" data-group-id="6287926220-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">fetch_lti_params</span><span class="p" data-group-id="6287926220-3">(</span><span class="s">&quot;bad-key&quot;</span><span class="p" data-group-id="6287926220-3">)</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">fetch_lti_params</span><span class="p" data-group-id="3906532448-1">(</span><span class="s">&quot;some-key&quot;</span><span class="p" data-group-id="3906532448-1">)</span><span class="w">
+</span><span class="p" data-group-id="3906532448-2">%</span><span class="nc" data-group-id="3906532448-2">LtiParams</span><span class="p" data-group-id="3906532448-2">{</span><span class="p" data-group-id="3906532448-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">fetch_lti_params</span><span class="p" data-group-id="3906532448-3">(</span><span class="s">&quot;bad-key&quot;</span><span class="p" data-group-id="3906532448-3">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -459,9 +459,9 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p><h2 i
   <a href="#insert_or_update_lti_1p3_deployment/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">insert_or_update_lti_1p3_deployment</span><span class="p" data-group-id="1759414160-1">(</span><span class="p" data-group-id="1759414160-2">%{</span><span class="ss">deployment_id</span><span class="p">:</span><span class="w"> </span><span class="n">deployment_id</span><span class="p" data-group-id="1759414160-2">}</span><span class="p" data-group-id="1759414160-1">)</span><span class="w">
-</span><span class="p" data-group-id="1759414160-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1759414160-4">%</span><span class="nc" data-group-id="1759414160-4">Oli.Lti_1p3.Deployment</span><span class="p" data-group-id="1759414160-4">{</span><span class="p" data-group-id="1759414160-4">}</span><span class="p" data-group-id="1759414160-3">}</span><span class="w">    </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Inserted or updated with success</span><span class="w">
-</span><span class="p" data-group-id="1759414160-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">changeset</span><span class="p" data-group-id="1759414160-5">}</span><span class="w">                 </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Something went wrong</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">insert_or_update_lti_1p3_deployment</span><span class="p" data-group-id="3121808073-1">(</span><span class="p" data-group-id="3121808073-2">%{</span><span class="ss">deployment_id</span><span class="p">:</span><span class="w"> </span><span class="n">deployment_id</span><span class="p" data-group-id="3121808073-2">}</span><span class="p" data-group-id="3121808073-1">)</span><span class="w">
+</span><span class="p" data-group-id="3121808073-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3121808073-4">%</span><span class="nc" data-group-id="3121808073-4">Oli.Lti_1p3.Deployment</span><span class="p" data-group-id="3121808073-4">{</span><span class="p" data-group-id="3121808073-4">}</span><span class="p" data-group-id="3121808073-3">}</span><span class="w">    </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Inserted or updated with success</span><span class="w">
+</span><span class="p" data-group-id="3121808073-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">changeset</span><span class="p" data-group-id="3121808073-5">}</span><span class="w">                 </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Something went wrong</span></code></pre>
   </section>
 </section>
 
