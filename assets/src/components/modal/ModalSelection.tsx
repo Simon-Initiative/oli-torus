@@ -16,6 +16,7 @@ export interface ModalSelectionProps {
   okClassName?: string;
   cancelLabel?: string;
   disableInsert?: boolean;
+  hideDialogCloseButton?: boolean;
   title: string;
   hideOkButton?: boolean;
   onInsert: () => void;
@@ -62,12 +63,15 @@ class ModalSelection extends React.PureComponent<ModalSelectionProps, ModalSelec
           <div className="modal-content">
             <div className="modal-header">
               <h5 className="modal-title">{this.props.title}</h5>
+              {this.props.hideDialogCloseButton === true
+              ? null
+              :
               <button
                 type="button"
                 className="close"
                 onClick={this.onCancel}>
                 <span aria-hidden="true">&times;</span>
-              </button>
+              </button>}
             </div>
             <div className="modal-body">
               {React.Children.map(this.props.children, child =>
