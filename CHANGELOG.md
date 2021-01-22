@@ -2,6 +2,7 @@
 
 ## Unreleased
 ### Bug fixes
+  - Honor the current location when inserting block content (YouTube, images, etc)
   - Remove foreign key constraint that tied a user to an institution
   - Ensure error messages always visible in page and activity editors
   - Remove ability to cancel activity creation during objective selection

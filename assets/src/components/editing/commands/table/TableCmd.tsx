@@ -7,7 +7,7 @@ import { isTopLevel } from 'components/editing/utils';
 
 const command: Command = {
   execute: (context: any, editor: ReactEditor, params: any) => {
-
+    const at = editor.selection as any;
     const rows: any = [];
 
     for (let i = 0; i < params.rows; i += 1) {
@@ -19,7 +19,7 @@ const command: Command = {
     }
 
     const t = table(rows);
-    Transforms.insertNodes(editor, t);
+    Transforms.insertNodes(editor, t, { at });
     Transforms.deselect(editor);
   },
   precondition: (editor: ReactEditor) => {

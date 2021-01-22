@@ -59,6 +59,9 @@ export function selectWebpage(): Promise<string | null> {
 
 const command: Command = {
   execute: (context, editor) => {
+
+    const at = editor.selection as any;
+
     selectWebpage()
       .then((selectedSrc) => {
         if (selectedSrc !== null) {
@@ -67,7 +70,7 @@ const command: Command = {
             src = 'https://' + src;
           }
 
-          Transforms.insertNodes(editor, ContentModel.webpage(src));
+          Transforms.insertNodes(editor, ContentModel.webpage(src), { at });
         }
       });
   },
