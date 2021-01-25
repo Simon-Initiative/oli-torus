@@ -12,8 +12,16 @@ defmodule Oli.Repo.Migrations.CreateLti1p3Platforms do
       add :redirect_uris, :text
       add :custom_params, :text
 
-      timestamps()
+      timestamps(type: :timestamptz)
     end
 
+    create unique_index(:lti_1p3_platform_instances, :client_id)
+
+    alter table(:nonces) do
+      add :domain, :string
+    end
+
+    drop unique_index(:nonces, [:value])
+    create unique_index(:nonces, [:value, :domain], name: :value_domain_index)
   end
 end

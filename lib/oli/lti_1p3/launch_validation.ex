@@ -22,10 +22,10 @@ defmodule Oli.Lti_1p3.LaunchValidation do
          {:ok, key_set_url} <- registration_key_set_url(registration),
          {:ok, id_token} <- extract_param(conn, "id_token"),
          {:ok, conn, jwt_body} <- validate_jwt_signature(conn, id_token, key_set_url),
-         {:ok, conn} <- validate_jwt_timestamps(conn, jwt_body),
+         {:ok} <- validate_timestamps(jwt_body),
          {:ok, conn} <- validate_deployment(conn, registration, jwt_body),
          {:ok, conn} <- validate_message(conn, jwt_body),
-         {:ok, conn} <- validate_nonce(conn, jwt_body),
+         {:ok} <- validate_nonce(jwt_body, "torus_launch"),
          {:ok, conn} <- cache_launch_params(conn, jwt_body)
     do
       {:ok, conn, jwt_body}
@@ -68,15 +68,6 @@ defmodule Oli.Lti_1p3.LaunchValidation do
          {:ok, jwt_claims} <- peek_claims(jwt_string)
     do
       {:ok, jwt_claims["iss"], jwt_claims["aud"]}
-    end
-  end
-
-  defp validate_nonce(conn, jwt_body) do
-    case Oli.Lti_1p3.Nonces.create_nonce(%{value: jwt_body["nonce"]}) do
-      {:ok, _nonce} ->
-        {:ok, conn}
-      {:error, %{ errors: [ value: { _msg, [{:constraint, :unique} | _]}]}} ->
-        {:error, %{reason: :invalid_nonce, msg: "Duplicate nonce"}}
     end
   end
 

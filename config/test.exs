@@ -39,7 +39,7 @@ config :oli, OliWeb.Endpoint,
   server: false
 
 config :oli, :lti_1p3,
-  http_client: Lti_1p3.MockHTTPoison
+  http_client: Oli.Lti_1p3.MockHTTPoison
 
 # Print only warnings and errors during test
 config :logger, level: :warn

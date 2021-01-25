@@ -34,6 +34,19 @@ defmodule Oli.Lti_1p3.PlatformInstances do
   def get_platform_instance!(id), do: Repo.get!(PlatformInstance, id)
 
   @doc """
+  Gets a single platform_instance by client id
+  ## Examples
+
+      iex> get_platform_instance_by_client_id("123")
+      %PlatformInstance{}
+
+      iex> get_platform_instance_by_client_id("456")
+      nil
+
+  """
+  def get_platform_instance_by_client_id(client_id), do: Repo.get_by(PlatformInstance, client_id: client_id)
+
+  @doc """
   Creates a platform_instance.
 
   ## Examples

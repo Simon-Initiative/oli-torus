@@ -1,7 +1,9 @@
-defmodule Oli.TestHelpers.Lti_1p3 do
+defmodule Oli.Lti_1p3.TestHelpers do
   import Oli.TestHelpers
 
   alias Oli.Lti_1p3
+
+  Mox.defmock(Oli.Lti_1p3.MockHTTPoison, for: HTTPoison.Base)
 
   def generate_lti_stubs(args \\ %{}) do
     institution = institution_fixture()
@@ -154,6 +156,23 @@ defmodule Oli.TestHelpers.Lti_1p3 do
     }
   end
 
+  def mock_get_jwk_keys(jwk) do
+    body = Jason.encode!(%{
+      keys: [
+        jwk.pem
+        |> JOSE.JWK.from_pem()
+        |> JOSE.JWK.to_public()
+        |> JOSE.JWK.to_map()
+        |> (fn {_kty, public_jwk} -> public_jwk end).()
+        |> Map.put("typ", jwk.typ)
+        |> Map.put("alg", jwk.alg)
+        |> Map.put("kid", jwk.kid)
+        |> Map.put("use", "sig")
+      ]
+    })
+
+    {:ok, %HTTPoison.Response{status_code: 200, body: body}}
+  end
 end
 
 # notice: this protocol mock implementation must reside in this support directory
@@ -174,7 +193,4 @@ defmodule Oli.Lti_1p3.Lti_1p3_User.Mock do
       mock_user.context_role_uris |> ContextRoles.get_roles_by_uris()
     end
   end
-
 end
-
-Mox.defmock(Lti_1p3.MockHTTPoison, for: HTTPoison.Base)

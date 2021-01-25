@@ -49,11 +49,12 @@ defmodule OliWeb.LtiController do
   end
 
   def authorize_redirect(conn, params) do
-    case Lti_1p3.authorize_redirect(conn, params) do
+    case Lti_1p3.AuthorizationRedirect.authorize_redirect(conn, params) do
       {:ok, redirect_uri, state, id_token} ->
         conn
         |> render("post_redirect.html", redirect_uri: redirect_uri, state: state, id_token: id_token)
-      {:error, e} -> throw e
+      {:error, %{reason: _reason, msg: msg}} ->
+          render(conn, "lti_error.html", reason: msg)
     end
   end
 

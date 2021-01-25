@@ -60,6 +60,7 @@ config :oli, :help,
   dispatcher: Oli.Help.Providers.EmailHelp
 
 config :oli, :lti_1p3,
+  repo: Oli.Repo,
   http_client: HTTPoison
 
 config :ex_aws,
