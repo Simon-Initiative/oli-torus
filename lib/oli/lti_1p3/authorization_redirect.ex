@@ -2,48 +2,26 @@ defmodule Oli.Lti_1p3.AuthorizationRedirect do
   import Oli.Lti_1p3.Utils
 
   alias Oli.Lti_1p3.PlatformInstances
+  alias Oli.Lti_1p3.LoginHint
+  alias Oli.Lti_1p3.LoginHints
 
-  # TODO
   def authorize_redirect(conn, params) do
-
-    # TODO: REMOVE
-    IO.inspect params
-
     case PlatformInstances.get_platform_instance_by_client_id(params["client_id"]) do
       nil ->
         {:error, %{reason: :client_not_registered, msg: "No platform exists with client id '#{params["client_id"]}'"}}
 
       platform_instance ->
-        keyset_url = platform_instance.keyset_url
         client_id = platform_instance.client_id
 
-        # TODO: decide how to handle deployments
+        # TODO: decide how to handle deployments, for now just use "1"
         deployment_id = "1"
 
         # perform authentication response validation per LTI 1.3 specification
-        # https://www.imsglobal.org/spec/security/v1p0/#authentication-response-validation-0
-        with {:ok, jwt_string} <- extract_param(conn, "state"),
-            # validate signature
-            # TODO: allow tool to specify an algorithm in the alg header parameter of the JOSE Header
-            {:ok, _conn, state_jwt} <- validate_jwt_signature(conn, jwt_string, keyset_url),
-
-            _ <- IO.inspect(state_jwt, label: "state_jwt"),
-
-            # validate the issuer claim ('iss') matches the client_id for tool
-            {:ok} <- validate_issuer(state_jwt, client_id),
-
-            # validate that the audience claim ('aud') contains its advertised issuer URL
-            {:ok} <- validate_audience(state_jwt, Oli.Utils.get_base_url()),
-
-            # TODO (SHOULD): if the token contains multiple audiences, verify that the authorized party claim ('azp') is present
-            # and that its issuer URL is the claim value.
-
-            # validate the token is not expired ('exp) and issued at is valid ('iat')
-            {:ok} <- validate_timestamps(state_jwt),
-
-            # validate nonce. because nonce uniqueness is scoped to a particular platform instance
-            # use the platform instance's unique client_id to scope the nonce validation to only that domain
-            {:ok} <- validate_nonce(state_jwt, "platform_instance_#{client_id}")
+        # https://www.imsglobal.org/spec/security/v1p0/#step-3-authentication-response
+        with {:ok} <- validate_oidc_params(params),
+             {:ok} <- validate_oidc_scope(params),
+             {:ok} <- validate_current_user(conn, params),
+             {:ok} <- validate_client_id(params, client_id)
         do
           active_jwk = get_active_jwk()
           issuer = Oli.Utils.get_base_url()
@@ -63,8 +41,6 @@ defmodule Oli.Lti_1p3.AuthorizationRedirect do
               " https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment_id,
             })
 
-          IO.inspect claims, label: "claims"
-
           {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
 
           state = params["state"]
@@ -72,6 +48,66 @@ defmodule Oli.Lti_1p3.AuthorizationRedirect do
 
           {:ok, redirect_uri, state, id_token}
         end
+    end
+  end
+
+  defp validate_oidc_params(params) do
+    required_param_keys = [
+      "client_id",
+      "login_hint",
+      "lti_message_hint",
+      "nonce",
+      "prompt",
+      "redirect_uri",
+      "response_mode",
+      "response_type",
+      "scope",
+    ]
+
+    case Enum.filter(required_param_keys, fn required_key -> !Map.has_key?(params, required_key) end) do
+      [] ->
+        {:ok}
+      missing_params->
+        {:error, %{reason: :invalid_oidc_params, msg: "Invalid OIDC params. The following parameters are missing: #{Enum.join(missing_params, ",")}", missing_params: missing_params}}
+    end
+
+  end
+
+  defp validate_oidc_scope(params) do
+    if params["scope"] == "openid" do
+      {:ok}
+    else
+      {:error, %{reason: :invalid_oidc_scope, msg: "Invalid OIDC scope: #{params["scope"]}. Scope must be 'openid'"}}
+    end
+  end
+
+  # TODO: refactor to be more general, remove author
+  defp validate_current_user(conn, params) do
+    case LoginHints.get_login_hint_by_value(params["login_hint"]) do
+      %LoginHint{user_id: user_id, author_id: nil} ->
+        if conn.assigns[:current_user].id == user_id do
+          {:ok}
+        else
+          {:error, %{reason: :no_user_session, msg: "No user session"}}
+        end
+
+      %LoginHint{user_id: nil, author_id: author_id} ->
+        if conn.assigns[:current_author].id == author_id do
+          {:ok}
+        else
+          {:error, %{reason: :no_user_session, msg: "No author session"}}
+        end
+
+      _ ->
+        {:error, %{reason: :invalid_login_hint, msg: "Login hint must be linked with an active user session"}}
+    end
+  end
+
+  defp validate_client_id(params, client_id) do
+    if params["client_id"] == client_id do
+      {:ok}
+    else
+      {:error, %{reason: :unauthorized_client, msg: "Client not authorized in requested context"}}
     end
   end
 

@@ -23,5 +23,16 @@ defmodule Oli.Repo.Migrations.CreateLti1p3Platforms do
 
     drop unique_index(:nonces, [:value])
     create unique_index(:nonces, [:value, :domain], name: :value_domain_index)
+
+    create table(:lti_1p3_login_hints) do
+      add :value, :string
+      add :user_id, references(:users)
+      add :author_id, references(:authors)
+
+      timestamps(type: :timestamptz)
+    end
+
+    create unique_index(:lti_1p3_login_hints, :value)
+
   end
 end

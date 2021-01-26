@@ -50,11 +50,9 @@
 
   <div class="mt-3" style="height: 600px">
     <form action="<%= @launch_params.oidc_login_url %>" class="hide" method="POST" target="tool_content">
-      <input type="hidden" name="iss" id="iss" value="<%= @launch_params.issuer %>">
-      <input type="hidden" name="login_hint" id="login_hint" value="<%= @launch_params.login_hint %>">
-      <input type="hidden" name="client_id" id="client_id" value="<%= @launch_params.client_id %>">
-      <input type="hidden" name="target_link_uri" id="target_link_uri" value="<%= @launch_params.target_link_uri %>">
-      <input type="hidden" name="lti_message_hint" id="lti_message_hint" value="<%= @launch_params.lti_message_hint %>">
+      <%= for param <- @launch_params |> Map.drop([:oidc_login_url]) |> Map.keys do %>
+        <input type="hidden" name="<%= param %>" id="<%= param %>" value="<%= @launch_params[param] %>">
+      <% end %>
 
       <div style="margin-bottom: 20px;">
           <button class="btn btn-primary" type="submit">

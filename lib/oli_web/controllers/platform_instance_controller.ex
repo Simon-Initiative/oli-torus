@@ -3,6 +3,8 @@ defmodule OliWeb.PlatformInstanceController do
 
   alias Oli.Lti_1p3.PlatformInstances
   alias Oli.Lti_1p3.PlatformInstance
+  alias Oli.Lti_1p3.LoginHint
+  alias Oli.Lti_1p3.LoginHints
 
   def index(conn, _params) do
     lti_1p3_platform_instances = PlatformInstances.list_lti_1p3_platform_instances()
@@ -29,15 +31,16 @@ defmodule OliWeb.PlatformInstanceController do
   def show(conn, %{"id" => id}) do
     platform_instance = PlatformInstances.get_platform_instance!(id)
 
+    author = conn.assigns[:current_author]
+    %LoginHint{value: login_hint} = LoginHints.create_login_hint_for_author!(author)
+
     launch_params = %{
-      issuer: Oli.Utils.get_base_url(),
-      # login_hint: random_string(40),
-      login_hint: "some-login-hint",
+      iss: Oli.Utils.get_base_url(),
+      login_hint: login_hint,
       client_id: platform_instance.client_id,
       target_link_uri: platform_instance.target_link_uri,
       oidc_login_url: platform_instance.login_url,
-      # lti_message_hint: random_string(40),
-      lti_message_hint: "lti-message-hint"
+      # TODO: REMOVE - lti_message_hint: random_string(40),
     }
 
     render(conn, "show.html", platform_instance: platform_instance, launch_params: launch_params)

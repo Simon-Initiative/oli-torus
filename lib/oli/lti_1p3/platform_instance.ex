@@ -12,7 +12,7 @@ defmodule Oli.Lti_1p3.PlatformInstance do
     field :redirect_uris, :string
     field :target_link_uri, :string
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false
