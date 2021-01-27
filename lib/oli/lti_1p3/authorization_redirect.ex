@@ -5,7 +5,7 @@ defmodule Oli.Lti_1p3.AuthorizationRedirect do
   alias Oli.Lti_1p3.LoginHint
   alias Oli.Lti_1p3.LoginHints
 
-  def authorize_redirect(conn, params) do
+  def authorize_redirect(params, current_user) do
     case PlatformInstances.get_platform_instance_by_client_id(params["client_id"]) do
       nil ->
         {:error, %{reason: :client_not_registered, msg: "No platform exists with client id '#{params["client_id"]}'"}}
@@ -20,7 +20,7 @@ defmodule Oli.Lti_1p3.AuthorizationRedirect do
         # https://www.imsglobal.org/spec/security/v1p0/#step-3-authentication-response
         with {:ok} <- validate_oidc_params(params),
              {:ok} <- validate_oidc_scope(params),
-             {:ok} <- validate_current_user(conn, params),
+             {:ok} <- validate_current_user(params, current_user),
              {:ok} <- validate_client_id(params, client_id)
         do
           active_jwk = get_active_jwk()
@@ -68,7 +68,7 @@ defmodule Oli.Lti_1p3.AuthorizationRedirect do
       [] ->
         {:ok}
       missing_params->
-        {:error, %{reason: :invalid_oidc_params, msg: "Invalid OIDC params. The following parameters are missing: #{Enum.join(missing_params, ",")}", missing_params: missing_params}}
+        {:error, %{reason: :invalid_oidc_params, msg: "Invalid OIDC params. The following parameters are missing: #{Enum.join(missing_params, ", ")}", missing_params: missing_params}}
     end
 
   end
@@ -81,22 +81,10 @@ defmodule Oli.Lti_1p3.AuthorizationRedirect do
     end
   end
 
-  # TODO: refactor to be more general, remove author
-  defp validate_current_user(conn, params) do
+  defp validate_current_user(params, %{id: user_id}) do
     case LoginHints.get_login_hint_by_value(params["login_hint"]) do
-      %LoginHint{user_id: user_id, author_id: nil} ->
-        if conn.assigns[:current_user].id == user_id do
-          {:ok}
-        else
-          {:error, %{reason: :no_user_session, msg: "No user session"}}
-        end
-
-      %LoginHint{user_id: nil, author_id: author_id} ->
-        if conn.assigns[:current_author].id == author_id do
-          {:ok}
-        else
-          {:error, %{reason: :no_user_session, msg: "No author session"}}
-        end
+      %LoginHint{session_user_id: ^user_id} ->
+        {:ok}
 
       _ ->
         {:error, %{reason: :invalid_login_hint, msg: "Login hint must be linked with an active user session"}}

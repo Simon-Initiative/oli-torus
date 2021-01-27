@@ -202,6 +202,13 @@ defmodule Oli.TestHelpers do
     |> Repo.insert()
   end
 
+  def user_conn(%{conn: conn}) do
+    user = user_fixture()
+    conn = Pow.Plug.assign_current_user(conn, user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+    {:ok, conn: conn, user: user}
+  end
+
   def author_conn(%{conn: conn}) do
     author = author_fixture()
     conn = Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))

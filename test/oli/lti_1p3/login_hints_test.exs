@@ -10,25 +10,27 @@ defmodule Oli.Lti_1p3.LoginHintsTest do
 
     test "should get existing login_hint", %{user: user} do
       {:ok, login_hint} = %LoginHint{}
-      |> LoginHint.changeset(%{value: "some-value", user_id: user.id})
-      |> Repo.insert()
+        |> LoginHint.changeset(%{value: "some-value", session_user_id: user.id})
+        |> Repo.insert()
 
-      assert LoginHints.get_login_hint_by_value(login_hint.value).value == "some-value"
-      assert LoginHints.get_login_hint_by_value(login_hint.value).user_id == user.id
+        fetched_login_hint = LoginHints.get_login_hint_by_value(login_hint.value)
+      assert fetched_login_hint.value == "some-value"
+      assert fetched_login_hint.session_user_id == user.id
     end
 
     test "should create new login_hint with specified user", %{user: user} do
-      {:ok, login_hint} = LoginHints.create_login_hint("some-value", user)
+      login_hint = LoginHints.create_login_hint!(user.id)
 
-      assert login_hint.value == "some-value"
-      assert login_hint.user_id == user.id
+      assert login_hint.value != nil
+      assert login_hint.session_user_id == user.id
     end
 
     test "should cleanup expired login_hints", %{user: user} do
-      {:ok, login_hint} = LoginHints.create_login_hint("some-value", user)
+      login_hint = LoginHints.create_login_hint!(user.id)
 
       # verify the login_hint exists before cleanup
-      assert LoginHints.get_login_hint_by_value(login_hint.value) == login_hint
+      fetched_login_hint = LoginHints.get_login_hint_by_value(login_hint.value)
+      assert fetched_login_hint == login_hint
 
       # fake the login_hint was created a day + 1 hour ago
       a_day_before = Timex.now |> Timex.subtract(Timex.Duration.from_hours(25))
@@ -39,7 +41,8 @@ defmodule Oli.Lti_1p3.LoginHintsTest do
       # cleanup
       LoginHints.cleanup_login_hint_store()
 
-      assert LoginHints.get_login_hint_by_value(login_hint.value) == nil
+      fetched_login_hint = LoginHints.get_login_hint_by_value(login_hint.value)
+      assert fetched_login_hint == nil
     end
   end
 

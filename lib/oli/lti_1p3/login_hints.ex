@@ -25,25 +25,12 @@ defmodule Oli.Lti_1p3.LoginHints do
   Creates a login_hint for a user.
   Raises an error if the creation fails
   ## Examples
-      iex> create_login_hint_for_user!(user)
+      iex> create_login_hint!(session_user_id)
       %LoginHint{}
   """
-  def create_login_hint_for_user!(user) do
+  def create_login_hint!(session_user_id) do
     %LoginHint{}
-    |> LoginHint.changeset(%{value: UUID.uuid4(), user_id: user.id})
-    |> Repo.insert!()
-  end
-
-  @doc """
-  Creates a login_hint for an author.
-  Raises an error if the creation fails
-  ## Examples
-      iex> create_login_hint_for_author!(author)
-      %LoginHint{}
-  """
-  def create_login_hint_for_author!(author) do
-    %LoginHint{}
-    |> LoginHint.changeset(%{value: UUID.uuid4(), author_id: author.id})
+    |> LoginHint.changeset(%{value: UUID.uuid4(), session_user_id: session_user_id})
     |> Repo.insert!()
   end
 

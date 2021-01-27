@@ -49,7 +49,15 @@ defmodule OliWeb.LtiController do
   end
 
   def authorize_redirect(conn, params) do
-    case Lti_1p3.AuthorizationRedirect.authorize_redirect(conn, params) do
+    session_user = case params["lti_message_hint"] do
+      # TODO: change lti_message_hint to opaque value
+      "author" ->
+        conn.assigns[:current_author]
+      _ ->
+        conn.assigns[:current_user]
+    end
+
+    case Lti_1p3.AuthorizationRedirect.authorize_redirect(params, session_user) do
       {:ok, redirect_uri, state, id_token} ->
         conn
         |> render("post_redirect.html", redirect_uri: redirect_uri, state: state, id_token: id_token)
