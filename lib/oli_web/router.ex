@@ -161,8 +161,14 @@ defmodule OliWeb.Router do
     get "/help/sent", HelpController, :sent
   end
 
+  scope "/", OliWeb do
+    pipe_through [:api]
+
+    post "/access_tokens", LtiController, :access_tokens
+  end
+
   scope "/.well-known", OliWeb do
-    pipe_through [:browser]
+    pipe_through [:api]
 
     get "/jwks.json", LtiController, :jwks
   end

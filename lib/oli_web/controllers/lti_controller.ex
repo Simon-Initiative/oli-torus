@@ -171,6 +171,14 @@ defmodule OliWeb.LtiController do
 
   end
 
+  def access_tokens(conn, _params) do
+    conn
+    |> put_status(:not_implemented)
+    |> json(%{
+      error: "NOT IMPLEMENTED"
+    })
+  end
+
   def request_registration(conn, %{"pending_registration" => pending_registration_attrs} = _params) do
     case Institutions.create_pending_registration(pending_registration_attrs) do
       {:ok, pending_registration} ->

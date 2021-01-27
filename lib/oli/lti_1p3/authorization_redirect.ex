@@ -28,18 +28,32 @@ defmodule Oli.Lti_1p3.AuthorizationRedirect do
           issuer = Oli.Utils.get_base_url()
           custom_header = %{"kid" => active_jwk.kid}
           signer = Joken.Signer.create("RS256", %{"pem" => active_jwk.pem}, custom_header)
+          user_details = Map.from_struct(current_user)
 
           {:ok, claims} = Joken.Config.default_claims(iss: issuer, aud: client_id)
             |> Joken.generate_claims(%{
               "nonce" => UUID.uuid4(),
-              "sub" => "test sub",
-              "name" => "test name",
-              "given_name" => "test given_name",
-              "family_name" => "test family_name",
-              "middle_name" => "test middle_name",
+              "sub" => user_details[:sub],
+              "name" => user_details[:name],
+              "given_name" => user_details[:given_name],
+              "family_name" => user_details[:family_name],
+              "middle_name" => user_details[:middle_name],
+              "picture" => user_details[:picture],
+              "email" => user_details[:email],
+              "email_verified," => user_details[:email_verified],
+              "locale" => user_details[:locale],
+              "nickname" => user_details[:nickname],
+              "preferred_username" => user_details[:preferred_username],
+              "website" => user_details[:website],
+              "gender" => user_details[:gender],
+              "birthdate" => user_details[:birthdate],
+              "zoneinfo" => user_details[:zoneinfo],
+              "phone_number" => user_details[:phone_number],
+              "phone_number_verified" => user_details[:phone_number_verified],
+              "address" => user_details[:address],
 
               # TODO: more claims data, e.g. test/support/lti_1p3_test_helpers.ex:104
-              " https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment_id,
+              "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment_id,
             })
 
           {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
