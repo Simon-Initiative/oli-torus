@@ -12,6 +12,7 @@ defmodule Oli.Lti_1p3.AuthorizationRedirect do
 
       platform_instance ->
         client_id = platform_instance.client_id
+        valid_redirect_uris = platform_instance.redirect_uris |> String.split(",")
 
         # TODO: decide how to handle deployments, for now just use "1"
         deployment_id = "1"
@@ -22,6 +23,7 @@ defmodule Oli.Lti_1p3.AuthorizationRedirect do
              {:ok} <- validate_oidc_scope(params),
              {:ok} <- validate_current_user(params, current_user),
              {:ok} <- validate_client_id(params, client_id),
+             {:ok} <- validate_redirect_uri(params, valid_redirect_uris),
              {:ok} <- validate_nonce(params, "authorize_redirect")
         do
           active_jwk = get_active_jwk()
@@ -111,6 +113,14 @@ defmodule Oli.Lti_1p3.AuthorizationRedirect do
       {:ok}
     else
       {:error, %{reason: :unauthorized_client, msg: "Client not authorized in requested context"}}
+    end
+  end
+
+  defp validate_redirect_uri(params, valid_redirect_uris) do
+    if params["redirect_uri"] in valid_redirect_uris do
+      {:ok}
+    else
+      {:error, %{reason: :unauthorized_redirect_uri, msg: "Redirect URI not authorized in requested context"}}
     end
   end
 

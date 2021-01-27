@@ -80,6 +80,18 @@ defmodule Oli.Lti_1p3.AuthorizationRedirectTest do
       assert AuthorizationRedirect.authorize_redirect(params, user) == {:error, %{reason: :client_not_registered, msg: "No platform exists with client id 'some-other-client-id'"}}
     end
 
+    test "fails on invalid redirect_uri" do
+      %{
+        params: params,
+        user: user,
+      } = generate_lti_platform_stubs()
+
+      params = params
+        |> Map.put("redirect_uri", "some-invalid_redirect-uri")
+
+      assert AuthorizationRedirect.authorize_redirect(params, user) == {:error, %{reason: :unauthorized_redirect_uri, msg: "Redirect URI not authorized in requested context"}}
+    end
+
     test "fails on duplicate nonce" do
       %{
         params: params,
@@ -104,7 +116,7 @@ defmodule Oli.Lti_1p3.AuthorizationRedirectTest do
       lti_message_hint: lti_message_hint,
       user: user,
     } = %{
-      target_link_uri: "some-target-link-uri",
+      target_link_uri: "some-valid-url",
       nonce: "some-nonce",
       client_id: "some-client-id",
       state: "some-state",
@@ -118,7 +130,7 @@ defmodule Oli.Lti_1p3.AuthorizationRedirectTest do
       client_id: client_id,
       login_url: "some-login-url",
       keyset_url: "some-keyset-url",
-      redirect_uris: "some-redirect-uris"
+      redirect_uris: "some-valid-url"
     })
 
     params = %{
