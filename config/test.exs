@@ -2,7 +2,6 @@ use Mix.Config
 
 config :oli,
   env: :test,
-  http_adapter: HTTPoison,
   s3_media_bucket_name: "torus-media-test",
   media_url: "d1od6xouqrpl5k.cloudfront.net"
 
