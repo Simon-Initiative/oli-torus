@@ -5,6 +5,235 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
   alias Oli.Delivery.Attempts
   alias Oli.Activities.Model.Part
   alias Oli.Delivery.Attempts.{ActivityAttempt, PartAttempt, StudentInput, Snapshot}
+  alias Oli.Delivery.Page.PageContext
+  alias Oli.Delivery.Student.Summary
+
+  describe "concurrent activity accesses with two students" do
+    setup do
+      content = %{
+        "stem" => "1",
+        "authoring" => %{
+          "parts" => [
+            %{"id" => "1", "responses" => [
+              %{"rule" => "input like {a}", "score" => 10, "id" => "r1", "feedback" => %{"id" => "1", "content" => "yes"}},
+              %{"rule" => "input like {b}", "score" => 1, "id" => "r2", "feedback" => %{"id" => "2", "content" => "almost"}},
+              %{"rule" => "input like {c}", "score" => 0, "id" => "r3", "feedback" => %{"id" => "3", "content" => "no"}}
+            ], "scoringStrategy" => "best", "evaluationStrategy" => "regex"}
+          ]
+        }
+      }
+
+      map = Seeder.base_project_with_resource2()
+      |> Seeder.create_section()
+      |> Seeder.add_objective("objective one", :o1)
+      |> Seeder.add_activity(%{title: "one", max_attempts: 5, content: content}, :activity1)
+      |> Seeder.add_activity(%{title: "two", max_attempts: 5, content: content}, :activity2)
+      |> Seeder.add_user(%{}, :user1)
+      |> Seeder.add_user(%{}, :user2)
+
+      Seeder.add_page(map, %{
+        title: "graded page",
+        content: %{
+          "model" => [
+            %{"type" => "activity-reference", "activity_id" => Map.get(map, :activity1).revision.resource_id},
+            %{"type" => "activity-reference", "activity_id" => Map.get(map, :activity2).revision.resource_id}
+          ]
+        },
+        objectives: %{"attached" => [Map.get(map, :o1).resource.id]},
+        graded: true,
+      }, :graded_page)
+
+      # |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :graded_page, :graded_page_user1_attempt1)
+      # |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: content}, :activity, :graded_page_user1_attempt1, :user1_activity_attempt1)
+      # |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :user1_activity_attempt1, :user1_part1_attempt1)
+    end
+
+    test "graded page: determine_resource_attempt_state works with 2 users after user1 has started a page and user2 has not", %{
+      graded_page: %{ resource: resource, revision: revision },
+      user1: user1,
+      user2: user2,
+      section: section,
+    } do
+      # Order of events:
+      # PageDeliveryController.page()
+      # PageContext.create_page_context(context_id, revision_slug, user)
+      # If context.progress_state == :not_started
+        # show prologue with button to start
+        # Click start: Routes.page_delivery_path, :start_attempt
+        # PageDeliveryController.start_attempt()
+        # Attempts.start_resource_attempt(revision_slug, context_id, user.id, activity_provider)
+        # Attempts.create_new_attempt_tree()
+          # Create resource attempt, activity attempt, part attempt
+
+      # On click answer: AttemptController.save_activity
+        # Attempts.save_student_input(parts)
+        # Update all PartAttempts linked to the activity_attempt
+
+      # On Submit page:
+      # Routes.page_delivery_path, :finalize_attempt
+      # Attempts.submit_graded_page(context_id, attempt_guid)
+      # If resource_attempt.date_evaluated == nil
+        # For all activities: Attempts.submit_graded_page_activity(context_id, activity_attempt.attempt_guid)
+        # if all of Attempts.get_latest_part_attempts() do not have a response,
+        # give back {:error, {:not_all_answered}}
+
+      # Main logic:
+      # User 1
+      # PageContext.create_page_context()
+      # Attempts.start_resource_attempt()
+      # Attempts.create_new_attempt_tree()
+      # Attempts.save_student_input()
+
+      # User 2
+      # PageContext.create_page_context() -> sees previous attempt
+      # Attempts.save_student_input()
+      # Attempts.submit_graded_page
+      # Attempts.submit_graded_page_activity, error
+
+      # One of the activities has a part that does not have a response
+
+
+
+      # Make sure the attempts queries are working with the is_nil logic
+
+
+      # View index
+      {:ok, _summary} = Summary.get_summary(section.context_id, user1)
+
+      # Open the graded page as user 1 to get the prologue
+      user1_page_context = PageContext.create_page_context(section.context_id, revision.slug, user1)
+      assert user1_page_context.progress_state == :not_started
+      assert Enum.count(user1_page_context.resource_attempts) == 0
+
+      # Start the attempt and go into the assessment
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+      {:ok, {user1_resource_attempt, user1_activity_attempts}} = Attempts.start_resource_attempt(revision.slug, section.context_id, user1.id, activity_provider)
+
+      # {user1_activity_attempts, user1_part_attempt} = user1_activity_attempts
+      # |> Enum.map(fn {_activity_key, {activity_attempt, part_attemps}} ->
+      #   {activity_attempt,
+      #   part_attemps
+      #   |> Enum.map(fn {_part_attempt_key, part_attempt} -> part_attempt end)
+      #   |> hd}
+      # end)
+      # |> hd
+
+      # IO.inspect(user1_activity_attempts
+      # |> Map.values
+      # |> hd)
+
+
+
+      # Save an activity part on the page but do not submit it
+      {:ok, {:ok, 1}} = Attempts.save_student_input([
+        %{
+          # attempt_guid: user1_part_attempt.attempt_guid,
+          attempt_guid: user1_activity_attempts
+            |> Map.values
+            |> hd
+            |> elem(1)
+            |> Map.values
+            |> hd
+            |> Map.get(:attempt_guid),
+          response: %{ input: "a" }
+        }
+      ])
+
+
+      # Make sure the latest resource attempt is still correct
+      user1_latest_resource_attempt = Attempts.get_latest_resource_attempt(resource.id, section.context_id, user1.id)
+      assert user1_latest_resource_attempt == user1_resource_attempt
+
+      # Make sure the progress state is correct for the latest resource attempt
+      {:ok, {:in_progress, _resource_attempt}} = Attempts.determine_resource_attempt_state(
+        revision, section.context_id, user1.id, activity_provider)
+
+      # IO.inspect(PageContext.create_page_context(section.context_id, revision.slug, user1), label: "User 1")
+
+
+      # Now we have an "in progress" resource attempt for student 1 with a saved student input,
+      # so the resource is partially completed.
+
+
+
+
+
+
+
+
+      # User 2
+
+      {:ok, _summary2} = Summary.get_summary(section.context_id, user2)
+
+
+
+      # Access the graded page with user2
+      IO.inspect(Attempts.get_latest_resource_attempt(resource.id, section.context_id, user2.id))
+      user2_page_context = PageContext.create_page_context(section.context_id, revision.slug, user2)
+      assert user2_page_context.progress_state != :not_started
+      # assert Enum.count(user2_page_context.resource_attempts) == 0
+
+      # {:ok, {user2_resource_attempt, user2_activity_attempts}} = Attempts.start_resource_attempt(revision.slug, section.context_id, user2.id, activity_provider)
+
+      # # Save attempts for both activities
+      # Attempts.save_student_input([
+      #   %{
+      #     attempt_guid: user2_activity_attempts
+      #     |> Map.values
+      #     |> hd
+      #     |> elem(1)
+      #     |> Map.values
+      #     |> hd
+      #     |> Map.get(:attempt_guid),
+      #     response: %{ input: "a" }
+      #   }
+      # ])
+      # Attempts.save_student_input([
+      #   %{
+      #     attempt_guid: user2_activity_attempts
+      #     |> Map.values
+      #     |> tl
+      #     |> hd
+      #     |> elem(1)
+      #     |> Map.values
+      #     |> hd
+      #     |> Map.get(:attempt_guid),
+      #     response: %{ input: "a" }
+      #   }
+      # ])
+
+      # IO.inspect(
+      #   Attempts.submit_graded_page(section.context_id, user2_resource_attempt.attempt_guid)
+      # )
+
+      # submit graded page should give back {:error, {:not_all_answered}}
+
+
+      # user2_latest_resource_attempt = Attempts.get_latest_resource_attempt(resource.id, section.context_id, user2.id)
+      # assert user1_latest_resource_attempt == user1_resource_attempt
+
+
+      # Test Attempts.submit_graded_page
+
+      # # {:ok, {resource_attempt, attempts}} = Attempts.create_new_attempt_tree(nil, revision, section.context_id, user2.id, activity_provider)
+
+      # {:ok, {:in_progress, resource_attempt_user2}} = Attempts.determine_resource_attempt_state(
+      #   revision, section.context_id, user2.id, activity_provider)
+
+      # # Make sure we're looking at a different resource attempt for the second user
+      # assert resource_attempt_user1 != resource_attempt_user2
+
+      # part_inputs = [%{attempt_guid: user2_part1_attempt1.attempt_guid, input: %StudentInput{input: "a"}}]
+
+      # {:ok, _evals} = Attempts.submit_part_evaluations(
+      #   section.context_id, user2_activity_attempt.attempt_guid, part_inputs)
+
+      # Attempts.submit_graded_page(section.context_id, user2_resource_attempt1.attempt_guid)
+
+      # {:ok, {:not_started, _resource_attempt}} = Attempts.determine_resource_attempt_state(
+      #   revision, section.context_id, user2.id, activity_provider)
+    end
+  end
 
 
   describe "resetting an activity" do
@@ -39,7 +268,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           ]
         },
         objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
-      }, :page)
+      }, :ungraded_page)
       |> Seeder.add_page(%{
         title: "page2",
         content: %{
@@ -50,22 +279,25 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         objectives: %{"attached" => [Map.get(map, :o1).resource.id]},
         graded: true,
       }, :graded_page)
-      |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :page, :attempt1)
-      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: content}, :activity, :attempt1, :activity_attempt1)
-      |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :activity_attempt1, :part1_attempt1)
 
-      |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :graded_page, :attempt2)
-      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: content}, :activity, :attempt2, :activity_attempt2)
-      |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :activity_attempt2, :part1_attempt2)
+      # Ungraded page ("page1" / :page1) attempts
+      |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :ungraded_page, :ungraded_page_user1_attempt1)
+      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: content}, :activity, :ungraded_page_user1_attempt1, :ungraded_page_user1_activity_attempt1)
+      |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :ungraded_page_user1_activity_attempt1, :ungraded_page_user1_activity_attempt1_part1_attempt1)
 
-      |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user2, :graded_page, :attempt3)
-      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: content}, :activity, :attempt3, :activity_attempt3)
-      |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :activity_attempt3, :part1_attempt3)
+      # Graded page ("page2" / :graded_page) attempts
+      |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :graded_page, :graded_page_user1_attempt1)
+      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: content}, :activity, :graded_page_user1_attempt1, :user1_activity_attempt1)
+      |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :user1_activity_attempt1, :user1_part1_attempt1)
+
+      |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user2, :graded_page, :graded_page_user2_attempt1)
+      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: content}, :activity, :graded_page_user2_attempt1, :user2_activity_attempt1)
+      |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :user2_activity_attempt1, :user2_part1_attempt1)
 
     end
 
-    test "get_latest_resource_attempt gives an unevaluated attempt with 1 user", %{ page: %{ resource: resource }, user1: user1,
-    section: section, attempt1: resource_attempt1 } do
+    test "ungraded page: get_latest_resource_attempt gives an unevaluated attempt with 1 user", %{ ungraded_page: %{ resource: resource }, user1: user1,
+    section: section, ungraded_page_user1_attempt1: resource_attempt1 } do
       resource_attempt = Attempts.get_latest_resource_attempt(resource.id, section.context_id, user1.id)
 
       assert resource_attempt == resource_attempt1
@@ -73,8 +305,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert is_nil(resource_attempt.score)
     end
 
-    test "get_latest_resource_attempt gives two different attempts with 2 users", %{ page: %{ resource: resource }, user1: user1,
-    user2: user2, section: section, attempt1: resource_attempt1, attempt2: resource_attempt2 } do
+    test "Graded page: get_latest_resource_attempt gives the correct resource attempts with 2 users", %{ graded_page: %{ resource: resource }, user1: user1,
+    user2: user2, section: section, graded_page_user1_attempt1: resource_attempt1, graded_page_user2_attempt1: resource_attempt2 } do
       resource_attempt_user1 = Attempts.get_latest_resource_attempt(resource.id, section.context_id, user1.id)
       resource_attempt_user2 = Attempts.get_latest_resource_attempt(resource.id, section.context_id, user2.id)
 
@@ -84,9 +316,37 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert resource_attempt1 != resource_attempt2
     end
 
+    test "Attempts.get_latest_part_attempts(activity_attempt_guid) works" do
+
+    end
+
     test "determine_resource_attempt_state works for graded pages with 1 user", %{ graded_page: %{ revision: revision },
-      user1: user1, section: section, part1_attempt2: part_attempt, activity_attempt2: activity_attempt,
-      attempt2: resource_attempt1,
+      user1: user1, section: section, user1_part1_attempt1: part_attempt, user1_activity_attempt1: activity_attempt,
+      graded_page_user1_attempt1: resource_attempt1,
+    } do
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+
+      # User1 has a started resource attempt, so it should be "in progress"
+      {:ok, {:in_progress, _resource_attempt}} = Attempts.determine_resource_attempt_state(
+        revision, section.context_id, user1.id, activity_provider)
+
+      part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
+
+      # Evaluate the parts to allow the graded page to be submitted
+      {:ok, _evals} = Attempts.submit_part_evaluations(
+        section.context_id, activity_attempt.attempt_guid, part_inputs)
+
+      # Submit the page to toggle it from "in progress" to completed
+      Attempts.submit_graded_page(section.context_id, resource_attempt1.attempt_guid)
+
+      # determine_resource_attempt_state should no longer retrieve the previously in progress attempt
+      {:ok, {:not_started, _resource_attempt}} = Attempts.determine_resource_attempt_state(
+        revision, section.context_id, user1.id, activity_provider)
+
+    end
+
+    test "parts can only be submitted once", %{ graded_page: %{ revision: revision },
+      user1: user1, section: section, user1_part1_attempt1: part_attempt, user1_activity_attempt1: activity_attempt
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
@@ -98,26 +358,74 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       {:ok, _evals} = Attempts.submit_part_evaluations(
         section.context_id, activity_attempt.attempt_guid, part_inputs)
 
-      IO.inspect(Attempts.submit_graded_page(section.context_id, resource_attempt1.attempt_guid))
+      {:error, "nothing to process"} = Attempts.submit_part_evaluations(
+        section.context_id, activity_attempt.attempt_guid, part_inputs)
+    end
+
+    test "determine_resource_attempt_state works for graded pages with 2 users when user1 submits a page and user2 submits submits it afterwards", %{
+      graded_page: %{ revision: revision },
+      user1: user1,
+      section: section,
+      user1_part1_attempt1: user1_part1_attempt1,
+      user2_part1_attempt1: user2_part1_attempt1,
+      user1_activity_attempt1: user1_activity_attempt,
+      user2_activity_attempt1: user2_activity_attempt,
+      graded_page_user1_attempt1: user1_resource_attempt1,
+      graded_page_user2_attempt1: user2_resource_attempt1,
+      user2: user2,
+    } do
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+
+      # User 1
+      {:ok, {:in_progress, resource_attempt_user1}} = Attempts.determine_resource_attempt_state(
+        revision, section.context_id, user1.id, activity_provider)
+
+      part_inputs = [%{attempt_guid: user1_part1_attempt1.attempt_guid, input: %StudentInput{input: "a"}}]
+
+      {:ok, _evals} = Attempts.submit_part_evaluations(
+        section.context_id, user1_activity_attempt.attempt_guid, part_inputs)
+
+      Attempts.submit_graded_page(section.context_id, user1_resource_attempt1.attempt_guid)
 
       {:ok, {:not_started, _resource_attempt}} = Attempts.determine_resource_attempt_state(
         revision, section.context_id, user1.id, activity_provider)
 
+      # User 2
+      {:ok, {:in_progress, resource_attempt_user2}} = Attempts.determine_resource_attempt_state(
+        revision, section.context_id, user2.id, activity_provider)
+
+      # Make sure we're looking at a different resource attempt for the second user
+      assert resource_attempt_user1 != resource_attempt_user2
+
+      part_inputs = [%{attempt_guid: user2_part1_attempt1.attempt_guid, input: %StudentInput{input: "a"}}]
+
+      {:ok, _evals} = Attempts.submit_part_evaluations(
+        section.context_id, user2_activity_attempt.attempt_guid, part_inputs)
+
+      Attempts.submit_graded_page(section.context_id, user2_resource_attempt1.attempt_guid)
+
+      {:ok, {:not_started, _resource_attempt}} = Attempts.determine_resource_attempt_state(
+        revision, section.context_id, user2.id, activity_provider)
     end
 
-    test "determine_resource_attempt_state works for graded pages with 2 users" do
+    # this is the function that saves an input in a graded assessment before the page is submitted
+    test "save_student_input", %{ user1_part1_attempt1: part_attempt } do
+      part_inputs = [
+        %{
+          attempt_guid: part_attempt.attempt_guid,
+          response: %{ input: "a" }
+        }
+      ]
 
+      # The part can be saved once
+      assert {:ok, {:ok, 1}} = Attempts.save_student_input(part_inputs)
+      # The part can be saved again
+      assert {:ok, {:ok, 1}} = Attempts.save_student_input(part_inputs)
     end
 
 
-
-    # IO.inspect(resource_attempt)
-
-    # get_resource_state(resource_revision, context_id, user_id, activity_provider) do
-
-
-    test "processing a submission", %{ activity: %{ revision: activity_revision }, page: %{ revision: page_revision }, user1: user,
-      part1_attempt1: part_attempt, section: section, activity_attempt1: activity_attempt} do
+    test "processing a submission", %{ activity: %{ revision: activity_revision }, ungraded_page: %{ revision: page_revision }, user1: user,
+      ungraded_page_user1_activity_attempt1_part1_attempt1: part_attempt, section: section, ungraded_page_user1_activity_attempt1: activity_attempt} do
 
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
 
@@ -179,7 +487,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
     # 3. Student opens a new window tab B with the same resource. This generates a new activity attempt (attempt 2)
     # 4. Student submits a response for tab B. (exhausting attempt 2)
     # 5. Student clicks "Reset" in tab A.  This should be rejected.
-    test "handling concurrent reset attempts", %{ part1_attempt1: part_attempt, section: section, activity_attempt1: activity_attempt} do
+    test "handling concurrent reset attempts", %{ ungraded_page_user1_activity_attempt1_part1_attempt1: part_attempt, section: section, ungraded_page_user1_activity_attempt1: activity_attempt} do
 
       # Submit in tab A:
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
@@ -231,14 +539,14 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
       }
 
-      Seeder.add_page(map, attrs, :page)
-      |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :page, :attempt1)
-      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: content}, :activity, :attempt1, :activity_attempt1)
-      |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :activity_attempt1, :part1_attempt1)
+      Seeder.add_page(map, attrs, :ungraded_page)
+      |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :ungraded_page, :ungraded_page_user1_attempt1)
+      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: content}, :activity, :ungraded_page_user1_attempt1, :ungraded_page_user1_activity_attempt1)
+      |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :ungraded_page_user1_activity_attempt1, :ungraded_page_user1_activity_attempt1_part1_attempt1)
 
     end
 
-    test "processing a submission", %{ part1_attempt1: part_attempt, section: section, activity_attempt1: activity_attempt} do
+    test "processing a submission", %{ ungraded_page_user1_activity_attempt1_part1_attempt1: part_attempt, section: section, ungraded_page_user1_activity_attempt1: activity_attempt} do
 
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
       {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id} }]} = Attempts.submit_part_evaluations(section.context_id, activity_attempt.attempt_guid, part_inputs)
@@ -263,7 +571,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
     end
 
-    test "processing a different submission", %{ part1_attempt1: part_attempt, section: section, activity_attempt1: activity_attempt} do
+    test "processing a different submission", %{ ungraded_page_user1_activity_attempt1_part1_attempt1: part_attempt, section: section, ungraded_page_user1_activity_attempt1: activity_attempt} do
 
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "b"}}]
       {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id} }]} = Attempts.submit_part_evaluations(section.context_id, activity_attempt.attempt_guid, part_inputs)
@@ -275,7 +583,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
     end
 
-    test "processing a submission whose input matches no response", %{ section: section, part1_attempt1: part_attempt, activity_attempt1: activity_attempt} do
+    test "processing a submission whose input matches no response", %{ section: section, ungraded_page_user1_activity_attempt1_part1_attempt1: part_attempt, ungraded_page_user1_activity_attempt1: activity_attempt} do
 
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "d"}}]
       {:error, error} = Attempts.submit_part_evaluations(section.context_id, activity_attempt.attempt_guid, part_inputs)
@@ -324,15 +632,15 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
       }
 
-      Seeder.add_page(map, attrs, :page)
-      |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :page, :attempt1)
-      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: content}, :activity, :attempt1, :activity_attempt1)
-      |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :activity_attempt1, :part1_attempt1)
-      |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "2", responses: [], hints: []}, :activity_attempt1, :part2_attempt1)
+      Seeder.add_page(map, attrs, :ungraded_page)
+      |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :ungraded_page, :ungraded_page_user1_attempt1)
+      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: content}, :activity, :ungraded_page_user1_attempt1, :ungraded_page_user1_activity_attempt1)
+      |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :ungraded_page_user1_activity_attempt1, :ungraded_page_user1_activity_attempt1_part1_attempt1)
+      |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "2", responses: [], hints: []}, :ungraded_page_user1_activity_attempt1, :ungraded_page_user1_activity_attempt1_part2_attempt1)
 
     end
 
-    test "processing a submission with just one of the parts submitted", %{ section: section, part1_attempt1: part_attempt, activity_attempt1: activity_attempt} do
+    test "processing a submission with just one of the parts submitted", %{ section: section, ungraded_page_user1_activity_attempt1_part1_attempt1: part_attempt, ungraded_page_user1_activity_attempt1: activity_attempt} do
 
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
       {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id} }]} = Attempts.submit_part_evaluations(section.context_id, activity_attempt.attempt_guid, part_inputs)
@@ -357,7 +665,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
     end
 
-    test "processing a submission with all parts submitted", %{ section: section, part1_attempt1: part_attempt, part2_attempt1: part2_attempt, activity_attempt1: activity_attempt} do
+    test "processing a submission with all parts submitted", %{ section: section, ungraded_page_user1_activity_attempt1_part1_attempt1: part_attempt, ungraded_page_user1_activity_attempt1_part2_attempt1: part2_attempt, ungraded_page_user1_activity_attempt1: activity_attempt} do
 
       part_inputs = [
         %{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}},

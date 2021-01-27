@@ -40,7 +40,6 @@ defmodule OliWeb.PageDeliveryController do
     if Sections.is_enrolled?(user.id, context_id) do
 
       PageContext.create_page_context(context_id, revision_slug, user)
-      |> IO.inspect(label: "Context")
       |> render_page(conn, context_id, user)
 
     else
