@@ -27,6 +27,7 @@ defmodule Oli.Repo.Migrations.CreateLti1p3Platforms do
     create table(:lti_1p3_login_hints) do
       add :value, :string
       add :session_user_id, :integer
+      add :context, :string
 
       timestamps(type: :timestamptz)
     end

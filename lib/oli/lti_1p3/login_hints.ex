@@ -28,9 +28,9 @@ defmodule Oli.Lti_1p3.LoginHints do
       iex> create_login_hint!(session_user_id)
       %LoginHint{}
   """
-  def create_login_hint!(session_user_id) do
+  def create_login_hint!(session_user_id, context \\ nil) do
     %LoginHint{}
-    |> LoginHint.changeset(%{value: UUID.uuid4(), session_user_id: session_user_id})
+    |> LoginHint.changeset(%{value: UUID.uuid4(), session_user_id: session_user_id, context: context})
     |> Repo.insert!()
   end
 

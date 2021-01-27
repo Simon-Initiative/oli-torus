@@ -32,7 +32,7 @@ defmodule OliWeb.PlatformInstanceController do
     platform_instance = PlatformInstances.get_platform_instance!(id)
 
     author = conn.assigns[:current_author]
-    %LoginHint{value: login_hint} = LoginHints.create_login_hint!(author.id)
+    %LoginHint{value: login_hint} = LoginHints.create_login_hint!(author.id, "author")
 
     launch_params = %{
       iss: Oli.Utils.get_base_url(),
@@ -40,8 +40,6 @@ defmodule OliWeb.PlatformInstanceController do
       client_id: platform_instance.client_id,
       target_link_uri: platform_instance.target_link_uri,
       oidc_login_url: platform_instance.login_url,
-      # TODO: encode lit_message_hint in JWT so that it is opaque and verifiable
-      lti_message_hint: "author",
     }
 
     render(conn, "show.html", platform_instance: platform_instance, launch_params: launch_params)

@@ -5,6 +5,7 @@ defmodule Oli.Lti_1p3.LoginHint do
   schema "lti_1p3_login_hints" do
     field :value, :string
     field :session_user_id, :integer
+    field :context, :string
 
     timestamps(type: :utc_datetime)
   end
@@ -12,7 +13,7 @@ defmodule Oli.Lti_1p3.LoginHint do
   @doc false
   def changeset(login_hint, attrs) do
     login_hint
-    |> cast(attrs, [:value, :session_user_id])
+    |> cast(attrs, [:value, :session_user_id, :context])
     |> validate_required([:value, :session_user_id])
     |> unique_constraint(:value)
   end

@@ -18,11 +18,12 @@ defmodule Oli.Lti_1p3.LoginHintsTest do
       assert fetched_login_hint.session_user_id == user.id
     end
 
-    test "should create new login_hint with specified user", %{user: user} do
-      login_hint = LoginHints.create_login_hint!(user.id)
+    test "should create new login_hint with specified user and context", %{user: user} do
+      login_hint = LoginHints.create_login_hint!(user.id, "some-context")
 
       assert login_hint.value != nil
       assert login_hint.session_user_id == user.id
+      assert login_hint.context == "some-context"
     end
 
     test "should cleanup expired login_hints", %{user: user} do
