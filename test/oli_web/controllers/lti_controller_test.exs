@@ -77,7 +77,7 @@ defmodule OliWeb.LtiControllerTest do
     test "authorize_redirect get successful for user", %{conn: conn} do
       user = user_fixture()
       %LoginHint{value: login_hint} = LoginHints.create_login_hint!(user.id)
-      target_link_uri = "some-target-link-uri"
+      target_link_uri = "some-valid-url"
       nonce = "some-nonce"
       client_id = "some-client-id"
       state = "some-state"
@@ -89,7 +89,7 @@ defmodule OliWeb.LtiControllerTest do
         client_id: client_id,
         login_url: "some-login-url",
         keyset_url: "some-keyset-url",
-        redirect_uris: "some-redirect-uris"
+        redirect_uris: "some-valid-url"
       })
 
       params = %{
@@ -116,7 +116,7 @@ defmodule OliWeb.LtiControllerTest do
     test "authorize_redirect get successful for author", %{conn: conn} do
       author = author_fixture()
       %LoginHint{value: login_hint} = LoginHints.create_login_hint!(author.id, "author")
-      target_link_uri = "some-target-link-uri"
+      target_link_uri = "some-valid-url"
       nonce = "some-nonce"
       client_id = "some-client-id"
       state = "some-state"
@@ -128,7 +128,7 @@ defmodule OliWeb.LtiControllerTest do
         client_id: client_id,
         login_url: "some-login-url",
         keyset_url: "some-keyset-url",
-        redirect_uris: "some-redirect-uris"
+        redirect_uris: "some-valid-url"
       })
 
       params = %{
