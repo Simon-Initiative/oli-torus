@@ -21,7 +21,8 @@ defmodule Oli.Lti_1p3.AuthorizationRedirect do
         with {:ok} <- validate_oidc_params(params),
              {:ok} <- validate_oidc_scope(params),
              {:ok} <- validate_current_user(params, current_user),
-             {:ok} <- validate_client_id(params, client_id)
+             {:ok} <- validate_client_id(params, client_id),
+             {:ok} <- validate_nonce(params, "authorize_redirect")
         do
           active_jwk = get_active_jwk()
           issuer = Oli.Utils.get_base_url()

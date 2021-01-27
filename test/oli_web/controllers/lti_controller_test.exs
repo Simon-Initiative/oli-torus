@@ -1,6 +1,11 @@
 defmodule OliWeb.LtiControllerTest do
   use OliWeb.ConnCase
 
+  alias Oli.Lti_1p3.PlatformInstance
+  alias Oli.Lti_1p3.PlatformInstances
+  alias Oli.Lti_1p3.LoginHint
+  alias Oli.Lti_1p3.LoginHints
+
   describe "lti_controller" do
     setup [:create_fixtures]
 
@@ -67,6 +72,84 @@ defmodule OliWeb.LtiControllerTest do
       assert html_response(conn, 200) =~ "Welcome to the Open Learning Initiative!"
       assert html_response(conn, 200) =~ "Register Your Institution"
 
+    end
+
+    test "authorize_redirect get successful for user", %{conn: conn} do
+      user = user_fixture()
+      %LoginHint{value: login_hint} = LoginHints.create_login_hint!(user.id)
+      target_link_uri = "some-target-link-uri"
+      nonce = "some-nonce"
+      client_id = "some-client-id"
+      state = "some-state"
+      lti_message_hint = "some-lti-message-hint"
+
+      {:ok, %PlatformInstance{}} = PlatformInstances.create_platform_instance(%{
+        name: "some-platform",
+        target_link_uri: target_link_uri,
+        client_id: client_id,
+        login_url: "some-login-url",
+        keyset_url: "some-keyset-url",
+        redirect_uris: "some-redirect-uris"
+      })
+
+      params = %{
+        "client_id" => client_id,
+        "login_hint" => login_hint,
+        "lti_message_hint" => lti_message_hint,
+        "nonce" => nonce,
+        "prompt" => "none",
+        "redirect_uri" => target_link_uri,
+        "response_mode" => "form_post",
+        "response_type" => "id_token",
+        "scope" => "openid",
+        "state" => state,
+      }
+
+      conn = Pow.Plug.assign_current_user(conn, user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, Routes.lti_path(conn, :authorize_redirect, params))
+
+      assert html_response(conn, 200) =~ "You are being redirected..."
+      assert html_response(conn, 200) =~ "<form name=\"post_redirect\" action=\"#{target_link_uri}\" method=\"post\">"
+    end
+
+    test "authorize_redirect get successful for author", %{conn: conn} do
+      author = author_fixture()
+      %LoginHint{value: login_hint} = LoginHints.create_login_hint!(author.id, "author")
+      target_link_uri = "some-target-link-uri"
+      nonce = "some-nonce"
+      client_id = "some-client-id"
+      state = "some-state"
+      lti_message_hint = "some-lti-message-hint"
+
+      {:ok, %PlatformInstance{}} = PlatformInstances.create_platform_instance(%{
+        name: "some-platform",
+        target_link_uri: target_link_uri,
+        client_id: client_id,
+        login_url: "some-login-url",
+        keyset_url: "some-keyset-url",
+        redirect_uris: "some-redirect-uris"
+      })
+
+      params = %{
+        "client_id" => client_id,
+        "login_hint" => login_hint,
+        "lti_message_hint" => lti_message_hint,
+        "nonce" => nonce,
+        "prompt" => "none",
+        "redirect_uri" => target_link_uri,
+        "response_mode" => "form_post",
+        "response_type" => "id_token",
+        "scope" => "openid",
+        "state" => state,
+      }
+
+      conn = Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+      conn = get(conn, Routes.lti_path(conn, :authorize_redirect, params))
+
+      assert html_response(conn, 200) =~ "You are being redirected..."
+      assert html_response(conn, 200) =~ "<form name=\"post_redirect\" action=\"#{target_link_uri}\" method=\"post\">"
     end
 
     test "returns developer key json", %{conn: conn} do

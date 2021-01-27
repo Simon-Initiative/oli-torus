@@ -25,7 +25,7 @@ defmodule Oli.Lti_1p3.LaunchValidation do
          {:ok} <- validate_timestamps(jwt_body),
          {:ok, conn} <- validate_deployment(conn, registration, jwt_body),
          {:ok, conn} <- validate_message(conn, jwt_body),
-         {:ok} <- validate_nonce(jwt_body, "torus_launch"),
+         {:ok} <- validate_nonce(jwt_body, "validate_launch"),
          {:ok, conn} <- cache_launch_params(conn, jwt_body)
     do
       {:ok, conn, jwt_body}

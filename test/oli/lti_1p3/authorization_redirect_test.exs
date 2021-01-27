@@ -79,6 +79,18 @@ defmodule Oli.Lti_1p3.AuthorizationRedirectTest do
 
       assert AuthorizationRedirect.authorize_redirect(params, user) == {:error, %{reason: :client_not_registered, msg: "No platform exists with client id 'some-other-client-id'"}}
     end
+
+    test "fails on duplicate nonce" do
+      %{
+        params: params,
+        user: user,
+      } = generate_lti_platform_stubs()
+
+      assert {:ok, _target_link_uri, _state, _id_token} = AuthorizationRedirect.authorize_redirect(params, user)
+
+      # try again with the same nonce
+      assert {:error, %{reason: :invalid_nonce, msg: "Duplicate nonce"}} == AuthorizationRedirect.authorize_redirect(params, user)
+    end
   end
 
   def generate_lti_platform_stubs(args \\ %{}) do
