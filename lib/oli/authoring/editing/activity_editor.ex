@@ -59,22 +59,23 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   .`{:error, {:lock_not_acquired}}` if the lock could not be acquired or updated
   .`{:error, {:not_found}}` if the project, resource, activity, or user cannot be found
   .`{:error, {:not_authorized}}` if the user is not authorized to edit this activity
+  .`{:error, {:invalid_update_field}}` if the update contains an invalid field
   .`{:error, {:error}}` unknown error
   """
-  @spec edit(String.t, String.t, String.t, String.t, %{})
+  @spec edit(String.t, String.t, any(), String.t, %{})
     :: {:ok, %Revision{}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:lock_not_acquired}} | {:error, {:not_authorized}}
-  def edit(project_slug, revision_slug, activity_slug, author_email, update) do
+  def edit(project_slug, lock_id, activity_id, author_email, update) do
 
-    result = with {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
+    result = with {:ok, {:valid}} <- validate_request(update),
+         {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
-         {:ok, activity} <- Resources.get_resource_from_slug(activity_slug) |> trap_nil(),
+         {:ok, activity} <- Resources.get_resource(activity_id) |> trap_nil(),
          {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
-         {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil()
+         {:ok, resource} <- Resources.get_resource(lock_id) |> trap_nil()
     do
       Repo.transaction(fn ->
 
-#        update = sync_objectives_to_parts(update)
         update = translate_objective_slugs_to_ids(update)
 
         case Locks.update(publication.id, resource.id, author.id) do
@@ -212,13 +213,58 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   # Applies the update to the revision, converting any objective slugs back to ids
   defp update_revision(revision, update, _) do
+
     objectives = if Map.has_key?(update, "objectives"), do: Map.get(update, "objectives"), else: revision.objectives
+
+    # recombine authoring as a key underneath content, handling the four cases of
+    # which combination of "authoring" and "content" keys are present in the update
+    update = case {Map.get(update, "content"), Map.get(update, "authoring")} do
+
+      # Neither key is present, so leave the update as-is
+      {nil, nil} -> update
+
+      # Only the "content" key is present, so we have to fetch the current "content/authoring" key
+      # ensure that it set under this new "content"
+      {content, nil} ->
+        content = case Map.get(revision.content, "authoring") do
+          nil -> content
+          authoring -> Map.put(content, "authoring", authoring)
+        end
+        Map.put(update, "content", content)
+
+      # Only the "authoring" key is present, so we must fetch the current "content" and insert this
+      # authoring key under it
+      {nil, authoring} ->
+        Map.put(update, "content", Map.put(revision.content, "authoring", authoring))
+
+      # Both authoring and content are present, just place authoring under this content
+      {content, authoring} -> Map.put(update, "content", Map.put(content, "authoring", authoring))
+
+    end
+
     parts = update["content"]["authoring"]["parts"]
     update = sync_objectives_to_parts(objectives, update, parts)
+
     {:ok, updated} = Resources.update_revision(revision, update)
 
     updated
   end
+
+  # Check to see if this update is valid
+  defp validate_request(update) do
+
+    # Ensure that only these top-level keys are present
+    allowed = MapSet.new(~w"objectives title content authoring")
+
+    case Map.keys(update)
+    |> Enum.all?(fn k -> MapSet.member?(allowed, k) end) do
+
+      false -> {:error, {:invalid_update_field}}
+      true -> {:ok, {:valid}}
+    end
+
+  end
+
 
   defp sync_objectives_to_parts(_objectives, update, nil), do: update
   defp sync_objectives_to_parts(objectives, update, parts) do

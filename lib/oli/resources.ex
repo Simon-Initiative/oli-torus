@@ -32,6 +32,17 @@ defmodule Oli.Resources do
   def get_resource!(id), do: Repo.get!(Resource, id)
 
   @doc """
+  Gets a single resource.
+  Returns nil if resource does not exist.
+  ## Examples
+      iex> get_resource(123)
+      %Resource{}
+      iex> get_resource(456)
+      nil
+  """
+  def get_resource(id), do: Repo.get(Resource, id)
+
+  @doc """
   Gets a single resource, based on a revision  slug.
   """
   @spec get_resource_from_slug(String.t) :: any

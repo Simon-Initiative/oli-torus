@@ -3,8 +3,7 @@ defmodule OliWeb.ActivityControllerTest do
 
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ActivityEditor
-
-  alias Oli.Publishing
+  alias Oli.Publishing.AuthoringResolver
 
   setup [:project_seed]
 
@@ -17,6 +16,78 @@ defmodule OliWeb.ActivityControllerTest do
       assert %{ "objectives" => %{}, "content" => %{"stem" => "1"}, "authoring" => %{"parts" => [part]} } = json_response(conn, 200)
       assert %{"id" => "1", "responses" => [], "scoringStrategy" => "best", "evaluationStrategy" => "regex"} = part
     end
+
+    test "updates the title", %{conn: conn, project: project, activity_id: activity_id, revision1: revision} do
+
+      update = %{"title" => "updated title"}
+      conn = put(conn, Routes.activity_path(conn, :update, project.slug, activity_id, %{"lock_id" => revision.resource_id}), update)
+
+      assert %{ "type" => "success" } = json_response(conn, 200)
+
+      r = AuthoringResolver.from_resource_id(project.slug, activity_id)
+      assert r.title == "updated title"
+
+    end
+
+    test "updates content (and title), but not authoring", %{conn: conn, project: project, activity_id: activity_id, revision1: revision} do
+
+      update = %{"title" => "updated title", "content" => %{"1" => "2"}}
+      conn = put(conn, Routes.activity_path(conn, :update, project.slug, activity_id, %{"lock_id" => revision.resource_id}), update)
+
+      assert %{ "type" => "success" } = json_response(conn, 200)
+
+      r = AuthoringResolver.from_resource_id(project.slug, activity_id)
+      assert r.title == "updated title"
+      assert r.content["1"] == "2"
+      assert length(r.content["authoring"]["parts"]) == 1
+
+    end
+
+    test "updates authoring, but not content", %{conn: conn, project: project, activity_id: activity_id, revision1: revision} do
+
+      update = %{"authoring" => %{
+        "parts" => [
+          %{"id" => "1", "responses" => [], "scoringStrategy" => "best", "evaluationStrategy" => "none"}
+        ]
+      }}
+      conn = put(conn, Routes.activity_path(conn, :update, project.slug, activity_id, %{"lock_id" => revision.resource_id}), update)
+
+      assert %{ "type" => "success" } = json_response(conn, 200)
+
+      r = AuthoringResolver.from_resource_id(project.slug, activity_id)
+      assert r.content["stem"] == "1"
+      assert hd(r.content["authoring"]["parts"])["evaluationStrategy"] == "none"
+
+    end
+
+    test "including an invalid key gets rejected", %{conn: conn, project: project, activity_id: activity_id, revision1: revision} do
+
+      update = %{"title" => "updated title", "resource_id" => "2"}
+      conn = put(conn, Routes.activity_path(conn, :update, project.slug, activity_id, %{"lock_id" => revision.resource_id}), update)
+      assert response(conn, 400)
+
+    end
+
+    test "updates authoring and content", %{conn: conn, project: project, activity_id: activity_id, revision1: revision} do
+
+      update = %{
+        "content" => %{"1" => "2"},
+        "authoring" => %{
+          "parts" => [
+            %{"id" => "1", "responses" => [], "scoringStrategy" => "best", "evaluationStrategy" => "none"}
+          ]
+        }
+      }
+      conn = put(conn, Routes.activity_path(conn, :update, project.slug, activity_id, %{"lock_id" => revision.resource_id}), update)
+
+      assert %{ "type" => "success" } = json_response(conn, 200)
+
+      r = AuthoringResolver.from_resource_id(project.slug, activity_id)
+      assert r.content["1"] == "2"
+      assert hd(r.content["authoring"]["parts"])["evaluationStrategy"] == "none"
+
+    end
+
 
   end
 

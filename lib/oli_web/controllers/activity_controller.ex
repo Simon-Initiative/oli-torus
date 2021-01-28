@@ -99,13 +99,16 @@ defmodule OliWeb.ActivityController do
   def update(conn, %{
         "project" => project_slug,
         "lock_id" => resource_slug,
-        "resource" => activity_slug,
-        "update" => update
-      }) do
+        "resource" => activity_id
+      } = params) do
+
     author = conn.assigns[:current_author]
 
-    case ActivityEditor.edit(project_slug, resource_slug, activity_slug, author.email, update) do
+    update = conn.body_params
+
+    case ActivityEditor.edit(project_slug, resource_slug, activity_id, author.email, update) do
       {:ok, %{slug: slug}} -> json(conn, %{"type" => "success", "revisionSlug" => slug})
+      {:error, {:invalid_update_field}} -> error(conn, 400, "invalid field in update detected")
       {:error, {:not_found}} -> error(conn, 404, "not found")
       {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
       _ -> error(conn, 500, "server error")
