@@ -214,10 +214,6 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert resource_attempt1 != resource_attempt2
     end
 
-    test "Attempts.get_latest_part_attempts(activity_attempt_guid) works" do
-
-    end
-
     test "determine_resource_attempt_state works for graded pages with 1 user", %{ graded_page: %{ revision: revision },
       user1: user1, section: section, user1_part1_attempt1: part_attempt, user1_activity_attempt1: activity_attempt,
       graded_page_user1_attempt1: resource_attempt1,
@@ -307,7 +303,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
     end
 
     # this is the function that saves an input in a graded assessment before the page is submitted
-    test "save_student_input", %{ user1_part1_attempt1: part_attempt } do
+    test "can save student inputs and receive a count", %{ user1_part1_attempt1: part_attempt } do
       part_inputs = [
         %{
           attempt_guid: part_attempt.attempt_guid,

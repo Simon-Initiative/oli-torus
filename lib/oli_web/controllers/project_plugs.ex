@@ -29,8 +29,6 @@ defmodule OliWeb.ProjectPlugs do
 
   def ensure_context_id_matches(conn, _) do
     context_id = conn.assigns.lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"]
-    IO.inspect(conn.assigns.lti_params)
-    IO.inspect(context_id)
 
     # Verify that the context_id found as a parameter in the route
     # matches the one found in the LTI launch from the session
