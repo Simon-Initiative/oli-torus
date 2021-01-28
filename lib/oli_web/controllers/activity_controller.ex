@@ -12,6 +12,8 @@ defmodule OliWeb.ActivityController do
   plug :fetch_project when action in [:edit]
   plug :authorize_project when action in [:edit]
 
+
+
   def edit(conn, %{
         "project_id" => project_slug,
         "revision_slug" => revision_slug,
@@ -69,10 +71,35 @@ defmodule OliWeb.ActivityController do
     end
   end
 
+  def retrieve(conn, %{
+    "project" => project_slug,
+    "resource" => activity_id
+  }) do
+    author = conn.assigns[:current_author]
+
+    case ActivityEditor.retrieve(project_slug, activity_id) do
+      {:ok, %{objectives: objectives, title: title, content: content}} ->
+
+        result = %{
+          "type" => "success",
+          "objectives" => objectives,
+          "title" => title,
+          "content" => Map.delete(content, "authoring"),
+          "authoring" => Map.get(content, "authoring")
+        }
+
+        json(conn, result)
+
+      {:error, {:not_found}} -> error(conn, 404, "not found")
+      _ -> error(conn, 500, "server error")
+    end
+
+  end
+
   def update(conn, %{
         "project" => project_slug,
-        "resource" => resource_slug,
-        "activity" => activity_slug,
+        "lock_id" => resource_slug,
+        "resource" => activity_slug,
         "update" => update
       }) do
     author = conn.assigns[:current_author]

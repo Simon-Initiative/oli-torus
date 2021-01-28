@@ -252,11 +252,9 @@ defmodule OliWeb.Router do
     get "/:project/link", ResourceController, :index
 
     post "/:project/activity/:activity_type", ActivityController, :create
-    put "/:project/resource/:resource/activity/:activity", ActivityController, :update
+
     put "/test/evaluate", ActivityController, :evaluate
     put "/test/transform", ActivityController, :transform
-
-    delete "/:project/resource/:resource/activity", ActivityController, :delete
 
     post "/:project/lock/:resource", LockController, :acquire
     delete "/:project/lock/:resource", LockController, :release
@@ -265,6 +263,16 @@ defmodule OliWeb.Router do
     get "/:project/media", MediaController, :index
 
     post "/:project_id/objectives", ResourceController, :create_objective
+
+  end
+
+  # Storage Service
+  scope "/api/v1/storage/project", OliWeb do
+    pipe_through [:api, :authoring_protected]
+
+    get "/:project/resource/:resource", ActivityController, :retrieve
+    delete "/:project/resource/:resource", ActivityController, :delete
+    put "/:project/resource/:resource", ActivityController, :update
 
   end
 

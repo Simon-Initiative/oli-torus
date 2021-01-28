@@ -22,6 +22,25 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   alias Oli.Authoring.Broadcaster
 
   @doc """
+  Retrieves an activity resource.
+
+  Returns:
+
+  .`{:ok, %Revision{}}` when the revision is retrieved
+  .`{:error, {:not_found}}` if the project or resource is not found
+  """
+  @spec retrieve(String.t, any())
+    :: {:ok, %Revision{}} | {:error, {:not_found}}
+  def retrieve(project_slug, activity_id) do
+
+    case AuthoringResolver.from_resource_id(project_slug, activity_id) do
+      nil -> {:error, {:not_found}}
+      revision -> {:ok, revision}
+    end
+
+  end
+
+  @doc """
   Attempts to process an edit for an activity specified by a given
   project and revision slug and activity slug for the author specified by email.
 
