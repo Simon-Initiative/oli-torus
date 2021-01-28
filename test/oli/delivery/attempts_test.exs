@@ -4,12 +4,11 @@ defmodule Oli.Delivery.AttemptsTest do
 
   alias Oli.Delivery.Attempts
   alias Oli.Activities.Model.Part
+  alias Oli.Delivery.Page.PageContext
 
-  describe "creating the attempt tree" do
-
+  describe "creating the attempt tree records" do
 
     setup do
-
       content1 = %{
         "stem" => "1",
         "authoring" => %{
@@ -27,13 +26,13 @@ defmodule Oli.Delivery.AttemptsTest do
         }
       }
 
-
       map = Seeder.base_project_with_resource2()
       |> Seeder.create_section()
       |> Seeder.add_objective("objective one", :o1)
       |> Seeder.add_activity(%{title: "one", content: content1}, :a1)
       |> Seeder.add_activity(%{title: "two", content: content2}, :a2)
       |> Seeder.add_user(%{}, :user1)
+      |> Seeder.add_user(%{}, :user2)
 
       attrs = %{
         title: "page1",
@@ -43,11 +42,11 @@ defmodule Oli.Delivery.AttemptsTest do
             %{"type" => "activity-reference", "activity_id" => Map.get(map, :a2).resource.id}
           ]
         },
-        objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
+        objectives: %{"attached" => [Map.get(map, :o1).resource.id]},
+        graded: true,
       }
 
       Seeder.add_page(map, attrs, :p1)
-
     end
 
     test "create the attempt tree", %{ p1: p1, user1: user, section: section, a1: a1, a2: a2} do
@@ -70,9 +69,82 @@ defmodule Oli.Delivery.AttemptsTest do
 
     end
 
+    test "tracking user resource access", %{user1: user1, user2: user2, section: section, p1: %{resource: resource}} do
+
+      Attempts.track_access(resource.id, section.context_id, user1.id)
+      Attempts.track_access(resource.id, section.context_id, user1.id)
+
+      entries = Oli.Repo.all(Oli.Delivery.Attempts.ResourceAccess)
+      assert length(entries) == 1
+      assert hd(entries).access_count == 2
+
+      Attempts.track_access(resource.id, section.context_id, user2.id)
+      entries = Oli.Repo.all(Oli.Delivery.Attempts.ResourceAccess)
+      assert length(entries) == 2
+      assert hd(entries).access_count == 2
+
+    end
+
+    test "starting a graded resource attempt with one user", %{p1: %{revision: revision, resource: resource}, section: section, user1: user1} do
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+
+      PageContext.create_page_context(section.context_id, revision.slug, user1)
+
+      # Page 1
+      {:ok, {resource_attempt, _activity_attempts}} =
+        Attempts.start_resource_attempt(revision.slug, section.context_id, user1.id, activity_provider)
+
+      {:error, {:active_attempt_present}} =
+        Attempts.start_resource_attempt(revision.slug, section.context_id, user1.id, activity_provider)
+
+      # No page
+      {:error, {:not_found}} =
+        Attempts.start_resource_attempt("garbage slug", section.context_id, user1.id, activity_provider)
+
+      # The started attempt should be the latest attempt for this user
+      latest_attempt = Attempts.get_latest_resource_attempt(resource.id, section.context_id, user1.id)
+      assert latest_attempt == resource_attempt
+
+      # Make sure the progress state is correct for the latest resource attempt
+      {:ok, {:in_progress, _ra}} = Attempts.determine_resource_attempt_state(
+        revision, section.context_id, user1.id, activity_provider)
+    end
+
+    test "starting a graded resource attempt with two users", %{p1: %{revision: revision, resource: resource}, section: section, user1: user1, user2: user2} do
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+
+      PageContext.create_page_context(section.context_id, revision.slug, user1)
+      PageContext.create_page_context(section.context_id, revision.slug, user2)
+
+      # User1 - same as above
+      {:ok, {resource_attempt, _activity_attempts}} = Attempts.start_resource_attempt(
+        revision.slug, section.context_id, user1.id, activity_provider)
+
+      latest_attempt = Attempts.get_latest_resource_attempt(resource.id, section.context_id, user1.id)
+      assert latest_attempt == resource_attempt
+
+      {:ok, {:in_progress, _ra}} = Attempts.determine_resource_attempt_state(
+        revision, section.context_id, user1.id, activity_provider)
+
+      # User2
+      # Should not have an attempt yet
+      {:ok, {:not_started, _ra}} = Attempts.determine_resource_attempt_state(
+        revision, section.context_id, user2.id, activity_provider)
+
+      # Start an attempt, should have same results as user1 above
+      {:ok, {resource_attempt2, _activity_attempts}} =
+        Attempts.start_resource_attempt(revision.slug, section.context_id, user2.id, activity_provider)
+
+      latest_attempt2 = Attempts.get_latest_resource_attempt(resource.id, section.context_id, user2.id)
+      assert latest_attempt2 == resource_attempt2
+
+      {:ok, {:in_progress, _ra}} = Attempts.determine_resource_attempt_state(
+        revision, section.context_id, user2.id, activity_provider)
+    end
+
   end
 
-  describe "fetching existing attempts" do
+  describe "fetching attempt records" do
 
     setup do
       Seeder.base_project_with_resource2()
@@ -80,6 +152,7 @@ defmodule Oli.Delivery.AttemptsTest do
       |> Seeder.add_user(%{}, :user1)
       |> Seeder.add_user(%{}, :user2)
       |> Seeder.add_activity(%{}, :publication, :project, :author, :activity_a)
+      |> Seeder.add_page(%{graded: true}, :graded_page)
 
       |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :page1, :revision1, :attempt1)
       |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: %{}}, :activity_a, :attempt1, :activity_attempt1)
@@ -93,69 +166,22 @@ defmodule Oli.Delivery.AttemptsTest do
       |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "2", responses: [], hints: []}, :activity_attempt2, :part2_attempt1)
       |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "3", responses: [], hints: []}, :activity_attempt2, :part3_attempt1)
       |> Seeder.create_part_attempt(%{attempt_number: 2}, %Part{id: "3", responses: [], hints: []}, :activity_attempt2, :part3_attempt2)
-
-      # |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user2, :page1, :revision1, :attempt2)
-      # |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: %{}}, :activity_a, :attempt1, :activity_attempt3)
-      # |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :activity_attempt3, :part1_attempt1)
-
-      # make new accesses/attempts for user 2, get an "in progress" state for a resource for user1 and
-      # try creating one for user 2 -> make sure get_latest_resource_attempt works to get correct attempt
-      # try finishing for user 2, ensure no "in progress" attempt for user 2.
     end
 
-    test "get latest resource attempt", %{user1: user1, user2: user2, section: section, page1: page1, activity_a: activity_a, attempt1: attempt1,
-    #  attempt2: attempt2,
-     revision1: revision1,
-     part1_attempt1: part1_attempt1,
-     activity_attempt1: activity_attempt1
-     } do
-
-      # IO.inspect(Repo.all(from a in Oli.Delivery.Attempts.ResourceAccess,
-      # join: s in Oli.Delivery.Sections.Section, on: a.section_id == s.id,
-      # join: ra1 in Oli.Delivery.Attempts.ResourceAttempt, on: a.id == ra1.resource_access_id,
-      # left_join: ra2 in Oli.Delivery.Attempts.ResourceAttempt, on: (a.id == ra2.resource_access_id and ra1.id < ra2.id and ra1.resource_access_id == ra2.resource_access_id),
-      # where: s.context_id == ^section.context_id and a.resource_id == ^page1.id and is_nil(ra2),
-      # select: ra1))
-
-      latest_attempt_user1 = Attempts.get_latest_resource_attempt(page1.id, section.context_id, user1.id)
-      # latest_attempt_user2 = Attempts.get_latest_resource_attempt(page1.id, section.context_id, user2.id)
-
+    test "get graded resource access", %{section: section, graded_page: %{revision: revision}, user1: user1} do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/2
-      IO.inspect(Attempts.determine_resource_attempt_state(revision1, section.context_id, user1.id, activity_provider), label: "Resource attempt state for user 1: before")
 
-      IO.inspect(attempt1.attempt_guid)
+      PageContext.create_page_context(section.context_id, revision.slug, user1)
 
-      Attempts.submit_part_evaluations(section.context_id, activity_attempt1.attempt_guid,
-        [%{attempt_guid: part1_attempt1.attempt_guid, input: %Oli.Delivery.Attempts.StudentInput{input: "a"}}]
-      )
+      {:ok, {_resource_attempt, _activity_attempts}} = Attempts.start_resource_attempt(
+        revision.slug, section.context_id, user1.id, activity_provider)
 
-      IO.inspect(Attempts.submit_graded_page(section.context_id, attempt1.attempt_guid), label: "Submission")
-
-      IO.inspect(Attempts.determine_resource_attempt_state(revision1, section.context_id, user1.id, activity_provider), label: "Resource attempt state for user 1: after")
-
-      IO.inspect(Attempts.get_graded_resource_access_for_context(section.context_id), label: "graded RA")
-
-      # IO.inspect(latest_attempt_user1, label: "attempt user 1")
-      # IO.inspect(latest_attempt_user2, label: "attempt user 2")
+      [access | _] = Attempts.get_graded_resource_access_for_context(section.context_id)
+      assert access.access_count == 2
+      assert is_nil access.score
     end
 
-    test "creating an access record", %{user1: user1, user2: user2, section: section, page1: page1} do
-
-      Attempts.track_access(page1.id, section.context_id, user1.id)
-      Attempts.track_access(page1.id, section.context_id, user1.id)
-
-      entries = Oli.Repo.all(Oli.Delivery.Attempts.ResourceAccess)
-      assert length(entries) == 1
-      assert hd(entries).access_count == 4
-
-      Attempts.track_access(page1.id, section.context_id, user2.id)
-      entries = Oli.Repo.all(Oli.Delivery.Attempts.ResourceAccess)
-      assert length(entries) == 2
-      assert hd(entries).access_count == 4
-
-    end
-
-    test "fetching attempt records", %{attempt2: attempt2, activity_attempt2: activity_attempt2, activity_a: activity_a} do
+    test "get latest attempt - activity attempts", %{attempt2: attempt2, activity_attempt2: activity_attempt2, activity_a: activity_a} do
 
       results = Attempts.get_latest_attempts(attempt2.id)
 
@@ -178,6 +204,36 @@ defmodule Oli.Delivery.AttemptsTest do
         {%{id: ^id}, map} -> assert map["3"].attempt_number == 2
         _ -> assert false
       end
+
+    end
+
+    test "get latest attempts - part attempts", %{attempt1: attempt1} do
+      [{_activity_attempt, part_attempt_map}] = Attempts.get_latest_attempts(attempt1.id)
+      |> Map.values()
+
+      [part_attempt] = part_attempt_map
+      |> Map.values()
+
+      assert %Oli.Delivery.Attempts.PartAttempt{} = part_attempt
+      assert part_attempt.attempt_number == 1
+      assert is_nil part_attempt.date_evaluated
+    end
+
+    test "resource attempt history", %{graded_page: %{resource: resource, revision: revision}, section: section, user1: user1} do
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+
+      PageContext.create_page_context(section.context_id, revision.slug, user1)
+
+      {:ok, {_resource_attempt, _activity_attempts}} = Attempts.start_resource_attempt(
+        revision.slug, section.context_id, user1.id, activity_provider)
+
+      {access, attempts} = Attempts.get_resource_attempt_history(resource.id, section.context_id, user1.id)
+
+      assert access.access_count == 1
+      assert length(attempts) == 1
+      assert hd(attempts).attempt_number == 1
+      assert hd(attempts).date_evaluated == nil
+
 
     end
 

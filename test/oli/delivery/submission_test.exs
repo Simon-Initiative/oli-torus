@@ -42,61 +42,14 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         objectives: %{"attached" => [Map.get(map, :o1).resource.id]},
         graded: true,
       }, :graded_page)
-
-      # |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :graded_page, :graded_page_user1_attempt1)
-      # |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: content}, :activity, :graded_page_user1_attempt1, :user1_activity_attempt1)
-      # |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :user1_activity_attempt1, :user1_part1_attempt1)
     end
 
-    test "graded page: determine_resource_attempt_state works with 2 users after user1 has started a page and user2 has not", %{
+    test "graded page : determine_resource_attempt_state works with 2 users after user1 has started a page and user2 has not", %{
       graded_page: %{ resource: resource, revision: revision },
       user1: user1,
       user2: user2,
       section: section,
     } do
-      # Order of events:
-      # PageDeliveryController.page()
-      # PageContext.create_page_context(context_id, revision_slug, user)
-      # If context.progress_state == :not_started
-        # show prologue with button to start
-        # Click start: Routes.page_delivery_path, :start_attempt
-        # PageDeliveryController.start_attempt()
-        # Attempts.start_resource_attempt(revision_slug, context_id, user.id, activity_provider)
-        # Attempts.create_new_attempt_tree()
-          # Create resource attempt, activity attempt, part attempt
-
-      # On click answer: AttemptController.save_activity
-        # Attempts.save_student_input(parts)
-        # Update all PartAttempts linked to the activity_attempt
-
-      # On Submit page:
-      # Routes.page_delivery_path, :finalize_attempt
-      # Attempts.submit_graded_page(context_id, attempt_guid)
-      # If resource_attempt.date_evaluated == nil
-        # For all activities: Attempts.submit_graded_page_activity(context_id, activity_attempt.attempt_guid)
-        # if all of Attempts.get_latest_part_attempts() do not have a response,
-        # give back {:error, {:not_all_answered}}
-
-      # Main logic:
-      # User 1
-      # PageContext.create_page_context()
-      # Attempts.start_resource_attempt()
-      # Attempts.create_new_attempt_tree()
-      # Attempts.save_student_input()
-
-      # User 2
-      # PageContext.create_page_context() -> sees previous attempt
-      # Attempts.save_student_input()
-      # Attempts.submit_graded_page
-      # Attempts.submit_graded_page_activity, error
-
-      # One of the activities has a part that does not have a response
-
-
-
-      # Make sure the attempts queries are working with the is_nil logic
-
-
       # View index
       {:ok, _summary} = Summary.get_summary(section.context_id, user1)
 
@@ -108,21 +61,6 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       # Start the attempt and go into the assessment
       activity_provider = &Oli.Delivery.ActivityProvider.provide/2
       {:ok, {user1_resource_attempt, user1_activity_attempts}} = Attempts.start_resource_attempt(revision.slug, section.context_id, user1.id, activity_provider)
-
-      # {user1_activity_attempts, user1_part_attempt} = user1_activity_attempts
-      # |> Enum.map(fn {_activity_key, {activity_attempt, part_attemps}} ->
-      #   {activity_attempt,
-      #   part_attemps
-      #   |> Enum.map(fn {_part_attempt_key, part_attempt} -> part_attempt end)
-      #   |> hd}
-      # end)
-      # |> hd
-
-      # IO.inspect(user1_activity_attempts
-      # |> Map.values
-      # |> hd)
-
-
 
       # Save an activity part on the page but do not submit it
       {:ok, {:ok, 1}} = Attempts.save_student_input([
@@ -139,99 +77,59 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         }
       ])
 
-
       # Make sure the latest resource attempt is still correct
       user1_latest_resource_attempt = Attempts.get_latest_resource_attempt(resource.id, section.context_id, user1.id)
       assert user1_latest_resource_attempt == user1_resource_attempt
 
       # Make sure the progress state is correct for the latest resource attempt
-      {:ok, {:in_progress, _resource_attempt}} = Attempts.determine_resource_attempt_state(
-        revision, section.context_id, user1.id, activity_provider)
-
-      # IO.inspect(PageContext.create_page_context(section.context_id, revision.slug, user1), label: "User 1")
-
+      assert PageContext.create_page_context(section.context_id, revision.slug, user1).progress_state == :in_progress
 
       # Now we have an "in progress" resource attempt for student 1 with a saved student input,
       # so the resource is partially completed.
-
-
-
-
-
-
-
 
       # User 2
 
       {:ok, _summary2} = Summary.get_summary(section.context_id, user2)
 
-
-
       # Access the graded page with user2
-      IO.inspect(Attempts.get_latest_resource_attempt(resource.id, section.context_id, user2.id))
+      assert is_nil Attempts.get_latest_resource_attempt(resource.id, section.context_id, user2.id)
       user2_page_context = PageContext.create_page_context(section.context_id, revision.slug, user2)
-      assert user2_page_context.progress_state != :not_started
-      # assert Enum.count(user2_page_context.resource_attempts) == 0
+      assert user2_page_context.progress_state == :not_started
+      assert Enum.count(user2_page_context.resource_attempts) == 0
 
-      # {:ok, {user2_resource_attempt, user2_activity_attempts}} = Attempts.start_resource_attempt(revision.slug, section.context_id, user2.id, activity_provider)
+      {:ok, {user2_resource_attempt, user2_activity_attempts}} =
+        Attempts.start_resource_attempt(revision.slug, section.context_id, user2.id, activity_provider)
 
-      # # Save attempts for both activities
-      # Attempts.save_student_input([
-      #   %{
-      #     attempt_guid: user2_activity_attempts
-      #     |> Map.values
-      #     |> hd
-      #     |> elem(1)
-      #     |> Map.values
-      #     |> hd
-      #     |> Map.get(:attempt_guid),
-      #     response: %{ input: "a" }
-      #   }
-      # ])
-      # Attempts.save_student_input([
-      #   %{
-      #     attempt_guid: user2_activity_attempts
-      #     |> Map.values
-      #     |> tl
-      #     |> hd
-      #     |> elem(1)
-      #     |> Map.values
-      #     |> hd
-      #     |> Map.get(:attempt_guid),
-      #     response: %{ input: "a" }
-      #   }
-      # ])
+      # Save attempts for both activities
+      Attempts.save_student_input([
+        %{
+          attempt_guid: user2_activity_attempts
+          |> Map.values
+          |> hd
+          |> elem(1)
+          |> Map.values
+          |> hd
+          |> Map.get(:attempt_guid),
+          response: %{ input: "a" }
+        }
+      ])
+      Attempts.save_student_input([
+        %{
+          attempt_guid: user2_activity_attempts
+          |> Map.values
+          |> tl
+          |> hd
+          |> elem(1)
+          |> Map.values
+          |> hd
+          |> Map.get(:attempt_guid),
+          response: %{ input: "a" }
+        }
+      ])
 
-      # IO.inspect(
-      #   Attempts.submit_graded_page(section.context_id, user2_resource_attempt.attempt_guid)
-      # )
-
-      # submit graded page should give back {:error, {:not_all_answered}}
-
-
-      # user2_latest_resource_attempt = Attempts.get_latest_resource_attempt(resource.id, section.context_id, user2.id)
-      # assert user1_latest_resource_attempt == user1_resource_attempt
-
-
-      # Test Attempts.submit_graded_page
-
-      # # {:ok, {resource_attempt, attempts}} = Attempts.create_new_attempt_tree(nil, revision, section.context_id, user2.id, activity_provider)
-
-      # {:ok, {:in_progress, resource_attempt_user2}} = Attempts.determine_resource_attempt_state(
-      #   revision, section.context_id, user2.id, activity_provider)
-
-      # # Make sure we're looking at a different resource attempt for the second user
-      # assert resource_attempt_user1 != resource_attempt_user2
-
-      # part_inputs = [%{attempt_guid: user2_part1_attempt1.attempt_guid, input: %StudentInput{input: "a"}}]
-
-      # {:ok, _evals} = Attempts.submit_part_evaluations(
-      #   section.context_id, user2_activity_attempt.attempt_guid, part_inputs)
-
-      # Attempts.submit_graded_page(section.context_id, user2_resource_attempt1.attempt_guid)
-
-      # {:ok, {:not_started, _resource_attempt}} = Attempts.determine_resource_attempt_state(
-      #   revision, section.context_id, user2.id, activity_provider)
+      # Make sure user 2 can submit the page
+      {:ok, access} = Attempts.submit_graded_page(section.context_id, user2_resource_attempt.attempt_guid)
+      assert !is_nil(hd(access.resource_attempts).date_evaluated)
     end
   end
 
