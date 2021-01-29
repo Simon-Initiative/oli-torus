@@ -22,7 +22,7 @@ defmodule OliWeb.ActivityControllerTest do
       update = %{"title" => "A title", "content" => %{"1" => "2"}}
       conn = post(conn, Routes.activity_path(conn, :create_secondary, project.slug, activity_id), update)
 
-      assert %{ "type" => "success", "resource_id" => id } = json_response(conn, 200)
+      assert %{ "result" => "success", "resource_id" => id } = json_response(conn, 200)
 
       r = AuthoringResolver.from_resource_id(project.slug, id)
       assert r.title == "A title"
@@ -31,7 +31,7 @@ defmodule OliWeb.ActivityControllerTest do
       assert r.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("secondary")
 
       conn = delete(original_conn, Routes.activity_path(original_conn, :delete, project.slug, id, %{"lock_id" => revision.resource_id }))
-      assert %{ "type" => "success" } = json_response(conn, 200)
+      assert %{ "result" => "success" } = json_response(conn, 200)
 
       r = AuthoringResolver.from_resource_id(project.slug, id)
       assert r.deleted == true
@@ -54,7 +54,7 @@ defmodule OliWeb.ActivityControllerTest do
       update = %{"title" => "updated title"}
       conn = put(conn, Routes.activity_path(conn, :update, project.slug, activity_id, %{"lock_id" => revision.resource_id}), update)
 
-      assert %{ "type" => "success" } = json_response(conn, 200)
+      assert %{ "result" => "success" } = json_response(conn, 200)
 
       r = AuthoringResolver.from_resource_id(project.slug, activity_id)
       assert r.title == "updated title"
@@ -66,7 +66,7 @@ defmodule OliWeb.ActivityControllerTest do
       update = %{"title" => "updated title", "content" => %{"1" => "2"}}
       conn = put(conn, Routes.activity_path(conn, :update, project.slug, activity_id, %{"lock_id" => revision.resource_id}), update)
 
-      assert %{ "type" => "success" } = json_response(conn, 200)
+      assert %{ "result" => "success" } = json_response(conn, 200)
 
       r = AuthoringResolver.from_resource_id(project.slug, activity_id)
       assert r.title == "updated title"
@@ -84,7 +84,7 @@ defmodule OliWeb.ActivityControllerTest do
       }}
       conn = put(conn, Routes.activity_path(conn, :update, project.slug, activity_id, %{"lock_id" => revision.resource_id}), update)
 
-      assert %{ "type" => "success" } = json_response(conn, 200)
+      assert %{ "result" => "success" } = json_response(conn, 200)
 
       r = AuthoringResolver.from_resource_id(project.slug, activity_id)
       assert r.content["stem"] == "1"
@@ -112,7 +112,7 @@ defmodule OliWeb.ActivityControllerTest do
       }
       conn = put(conn, Routes.activity_path(conn, :update, project.slug, activity_id, %{"lock_id" => revision.resource_id}), update)
 
-      assert %{ "type" => "success" } = json_response(conn, 200)
+      assert %{ "result" => "success" } = json_response(conn, 200)
 
       r = AuthoringResolver.from_resource_id(project.slug, activity_id)
       assert r.content["1"] == "2"
