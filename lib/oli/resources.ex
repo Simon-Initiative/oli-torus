@@ -286,6 +286,7 @@ defmodule Oli.Resources do
       resource_type_id: previous_revision.resource_type_id,
       activity_type_id: previous_revision.activity_type_id,
       scoring_strategy_id: previous_revision.scoring_strategy_id,
+      primary_resource_id: previous_revision.primary_resource_id,
       max_attempts: previous_revision.max_attempts,
       recommended_attempts: previous_revision.recommended_attempts,
       time_limit: previous_revision.time_limit

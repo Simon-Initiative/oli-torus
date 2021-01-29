@@ -48,6 +48,34 @@ defmodule OliWeb.ActivityController do
     end
   end
 
+
+  def create_secondary(conn, %{
+        "project" => project_slug,
+        "resource" => activity_id
+      }) do
+
+    author = conn.assigns[:current_author]
+    update = conn.body_params
+
+    case ActivityEditor.create_secondary(project_slug, activity_id, author, update) do
+      {:ok, revision} ->
+        json(conn, %{"type" => "success", "resource_id" => revision.resource_id})
+
+      {:error, {:invalid_update_field}} ->
+        error(conn, 400, "invalid update field")
+
+      {:error, {:not_found}} ->
+        error(conn, 404, "not found")
+
+      {:error, {:not_authorized}} ->
+        error(conn, 403, "unauthorized")
+
+      _ ->
+        error(conn, 500, "server error")
+    end
+
+  end
+
   def create(conn, %{
         "project" => project_slug,
         "activity_type" => activity_type_slug,
@@ -77,7 +105,7 @@ defmodule OliWeb.ActivityController do
   }) do
     author = conn.assigns[:current_author]
 
-    case ActivityEditor.retrieve(project_slug, activity_id) do
+    case ActivityEditor.retrieve(project_slug, activity_id, author) do
       {:ok, %{objectives: objectives, title: title, content: content}} ->
 
         result = %{
@@ -100,7 +128,7 @@ defmodule OliWeb.ActivityController do
         "project" => project_slug,
         "lock_id" => resource_slug,
         "resource" => activity_id
-      } = params) do
+      }) do
 
     author = conn.assigns[:current_author]
 
@@ -108,7 +136,7 @@ defmodule OliWeb.ActivityController do
 
     case ActivityEditor.edit(project_slug, resource_slug, activity_id, author.email, update) do
       {:ok, %{slug: slug}} -> json(conn, %{"type" => "success", "revisionSlug" => slug})
-      {:error, {:invalid_update_field}} -> error(conn, 400, "invalid field in update detected")
+      {:error, {:invalid_update_field}} -> error(conn, 400, "invalid update field")
       {:error, {:not_found}} -> error(conn, 404, "not found")
       {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
       _ -> error(conn, 500, "server error")
@@ -135,8 +163,18 @@ defmodule OliWeb.ActivityController do
     end
   end
 
-  def delete(conn, %{"project" => _project_slug, "activity" => _activity_slug}) do
-    _author = conn.assigns[:current_author]
+  def delete(conn, %{"project" => project_slug, "resource" => resource_id, "lock_id" => lock_id}) do
+
+    author = conn.assigns[:current_author]
+
+    case ActivityEditor.delete(project_slug, lock_id, resource_id, author) do
+      {:ok, _} -> json(conn, %{"type" => "success"})
+      {:error, {:not_applicable}} -> error(conn, 400, "not applicable to this resource")
+      {:error, {:not_found}} -> error(conn, 404, "not found")
+      {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
+      _ -> error(conn, 500, "server error")
+    end
+
   end
 
   defp error(conn, code, reason) do

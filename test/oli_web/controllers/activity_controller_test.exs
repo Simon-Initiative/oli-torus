@@ -7,6 +7,38 @@ defmodule OliWeb.ActivityControllerTest do
 
   setup [:project_seed]
 
+  describe "create and then delete a secondary resource" do
+
+    test "fails when attempting to delete an activity primary document", %{conn: conn, project: project, activity_id: activity_id, revision1: revision} do
+
+      conn = delete(conn, Routes.activity_path(conn, :delete, project.slug, activity_id, %{"lock_id" => revision.resource_id }))
+      assert response(conn, 400)
+    end
+
+    test "creates a secondary resource for an activity", %{conn: conn, project: project, activity_id: activity_id, revision1: revision} do
+
+      original_conn = conn
+
+      update = %{"title" => "A title", "content" => %{"1" => "2"}}
+      conn = post(conn, Routes.activity_path(conn, :create_secondary, project.slug, activity_id), update)
+
+      assert %{ "type" => "success", "resource_id" => id } = json_response(conn, 200)
+
+      r = AuthoringResolver.from_resource_id(project.slug, id)
+      assert r.title == "A title"
+      assert r.content["1"] == "2"
+      assert r.deleted == false
+      assert r.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("secondary")
+
+      conn = delete(original_conn, Routes.activity_path(original_conn, :delete, project.slug, id, %{"lock_id" => revision.resource_id }))
+      assert %{ "type" => "success" } = json_response(conn, 200)
+
+      r = AuthoringResolver.from_resource_id(project.slug, id)
+      assert r.deleted == true
+    end
+
+  end
+
   describe "get resource" do
 
     test "retrieves the unpublished activity", %{conn: conn, project: project, activity_id: activity_id} do
