@@ -371,7 +371,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   defp validate_request(update) do
 
     # Ensure that only these top-level keys are present
-    allowed = MapSet.new(~w"objectives title content authoring")
+    allowed = MapSet.new(~w"objectives title content authoring releaseLock")
 
     case Map.keys(update)
     |> Enum.all?(fn k -> MapSet.member?(allowed, k) end) do

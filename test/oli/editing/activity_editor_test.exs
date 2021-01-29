@@ -51,28 +51,28 @@ defmodule Oli.ActivityEditingTest do
     test "edit/5 does not release the lock when 'releaseLock' is absent", %{project: project, author: author, author2: author2, revision1: revision1 } do
 
       content = %{ "stem" => "Hey there" }
-      {:ok, {%{slug: slug}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
+      {:ok, {%{resource_id: resource_id}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
 
       PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
       update = %{ "title" => "edited title"}
-      {:ok, _} = ActivityEditor.edit(project.slug, revision1.slug, slug, author.email, update)
+      {:ok, _} = ActivityEditor.edit(project.slug, revision1.resource_id, resource_id, author.email, update)
 
       PageEditor.acquire_lock(project.slug, revision1.slug, author2.email)
-      result = ActivityEditor.edit(project.slug, revision1.slug, slug, author2.email, update)
+      result = ActivityEditor.edit(project.slug, revision1.resource_id, resource_id, author2.email, update)
       assert {:error, {:lock_not_acquired, _}} = result
     end
 
     test "edit/5 releases the lock when 'releaseLock' present", %{project: project, author: author, author2: author2, revision1: revision1 } do
 
       content = %{ "stem" => "Hey there" }
-      {:ok, {%{slug: slug}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
+      {:ok, {%{resource_id: resource_id}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
 
       PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
       update = %{ "title" => "edited title", "releaseLock" => true}
-      {:ok, _} = ActivityEditor.edit(project.slug, revision1.slug, slug, author.email, update)
+      {:ok, _} = ActivityEditor.edit(project.slug, revision1.resource_id, resource_id, author.email, update)
 
       PageEditor.acquire_lock(project.slug, revision1.slug, author2.email)
-      result = ActivityEditor.edit(project.slug, revision1.slug, slug, author2.email, update)
+      result = ActivityEditor.edit(project.slug, revision1.resource_id, resource_id, author2.email, update)
       assert {:ok, _} = result
     end
 
@@ -111,7 +111,7 @@ defmodule Oli.ActivityEditingTest do
     test "can repeatedly edit an activity", %{author: author, project: project, revision1: revision } do
 
       content = %{ "stem" => "Hey there" }
-      {:ok, {%{slug: slug}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
+      {:ok, {%{slug: slug, resource_id: resource_id}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
 
       # Verify that we can issue a resource edit that attaches the activity
       update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug, "purpose" => "none"}]}}
@@ -119,14 +119,14 @@ defmodule Oli.ActivityEditingTest do
       assert {:ok, _} =  PageEditor.edit(project.slug, revision.slug, author.email, update)
 
       update = %{ "title" => "edited title"}
-      {:ok, first} = ActivityEditor.edit(project.slug, revision.slug, slug, author.email, update)
+      {:ok, first} = ActivityEditor.edit(project.slug, revision.resource_id, resource_id, author.email, update)
 
       actual = Resources.get_revision!(first.id)
       assert actual.title == "edited title"
       assert actual.slug == "edited_title"
 
       update = %{ "title" => "edited title"}
-      {:ok, _} = ActivityEditor.edit(project.slug, revision.slug, slug, author.email, update)
+      {:ok, _} = ActivityEditor.edit(project.slug, revision.resource_id, resource_id, author.email, update)
       actual2 = Resources.get_revision!(first.id)
 
       # ensure that it did not create a new revision
@@ -181,7 +181,7 @@ defmodule Oli.ActivityEditingTest do
       update = %{ "objectives" => %{ "1" => [ ob1.slug ], "2" => [ ob2.slug ]  },
         "content" => %{"authoring" => %{"parts" => [%{"id" => "1" }]}}}
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
-      {:ok, updated} = ActivityEditor.edit(project.slug, revision.slug, revision.slug, author.email, update)
+      {:ok, updated} = ActivityEditor.edit(project.slug, revision.resource_id, revision.resource_id, author.email, update)
 
       # Verify that the objective tied to that part has been removed as well
       assert updated.objectives == %{ "1" => [ ob1.resource_id ] }

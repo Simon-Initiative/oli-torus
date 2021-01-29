@@ -118,7 +118,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       attachment = %{ "objectives" => %{ "1" => [ objective.slug ] },
         "content" => %{"authoring" => %{"parts" => [%{"id" => "1" }]}}}
 
-      ActivityEditor.edit(project.slug, revision.slug, slug, author.email, attachment)
+      ActivityEditor.edit(project.slug, revision.resource_id, activity_id, author.email, attachment)
       PageEditor.release_lock(project.slug, revision.slug, author.email)
 
       ObjectiveEditor.detach_objective(objective.slug, project, author)
@@ -142,7 +142,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       attachment = %{ "objectives" => %{ "1" => [ objective.slug ] },
         "content" => %{"authoring" => %{"parts" => [%{"id" => "1" }]}}}
 
-      ActivityEditor.edit(project.slug, revision.slug, slug, author.email, attachment)
+      ActivityEditor.edit(project.slug, revision.resource_id, activity_id, author.email, attachment)
       ObjectiveEditor.detach_objective(objective.slug, project, author)
 
       updated_activity = AuthoringResolver.from_resource_id(project.slug, activity_id)

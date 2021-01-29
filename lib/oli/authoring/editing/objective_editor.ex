@@ -182,9 +182,9 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
         # detach from all non-locked activities. Locked activities are those activities
         # whose parent page is locked
         Enum.filter(activities, fn %{resource_id: resource_id} -> !Map.has_key?(locked_by, Map.get(parent_pages, resource_id).id) end)
-        |> Enum.each(fn %{slug: slug, resource_id: resource_id} ->
-          page = AuthoringResolver.from_resource_id(project.slug, Map.get(parent_pages, resource_id).id)
-          detach_from_activity(revision_slug, page.slug, slug, project.slug, author)
+        |> Enum.each(fn activity ->
+          page = AuthoringResolver.from_resource_id(project.slug, Map.get(parent_pages, activity.resource_id).id)
+          detach_from_activity(revision_slug, page, activity, project.slug, author)
         end)
 
     end
@@ -225,7 +225,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   end
 
   # Detach an objective from all parts of an activity, using the `ActivityEditor` logic.
-  defp detach_from_activity(objective_slug, page_slug, activity_slug, project_slug, author) do
+  defp detach_from_activity(objective_slug, %{slug: page_slug, resource_id: page_id}, %{slug: activity_slug, resource_id: activity_id}, project_slug, author) do
 
     case PageEditor.acquire_lock(project_slug, page_slug, author.email) do
       {:acquired} ->
@@ -240,7 +240,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
           end)
         }
 
-        ActivityEditor.edit(project_slug, page_slug, activity_slug, author.email, update)
+        ActivityEditor.edit(project_slug, page_id, activity_id, author.email, update)
         PageEditor.release_lock(project_slug, page_slug, author.email)
     end
 

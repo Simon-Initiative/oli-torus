@@ -32,7 +32,7 @@ defmodule Oli.PublishingTest do
     assert {:ok, _} =  PageEditor.edit(project.slug, page_revision.slug, author.email, update)
 
     update = %{ "objectives" => objectives }
-    {:ok, revision} = ActivityEditor.edit(project.slug, page_revision.slug, revision.slug, author.email, update)
+    {:ok, revision} = ActivityEditor.edit(project.slug, page_revision.resource_id, revision.resource_id, author.email, update)
 
     revision
 
