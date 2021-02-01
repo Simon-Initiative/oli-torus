@@ -1,5 +1,5 @@
 import * as Immutable from 'immutable';
-import { ProjectSlug, ActivityTypeSlug, ActivitySlug, ObjectiveSlug, ResourceSlug } from 'data/types';
+import { ProjectSlug, ActivityTypeSlug, ActivitySlug, ObjectiveSlug, ResourceSlug, ResourceId } from 'data/types';
 import { ActivityModelSchema, PartResponse } from 'components/activities/types';
 import { makeRequest } from './common';
 
@@ -7,12 +7,18 @@ export type ActivityUpdate = {
   title: string,
   objectives: Immutable.Map<string, Immutable.List<ObjectiveSlug>>,
   content: ActivityModelSchema,
+  authoring?: any,
 };
 
 export type Created = {
   type: 'success',
   revisionSlug: string,
   transformed: null | ActivityModelSchema,
+};
+
+export type Updated = {
+  result: 'success',
+  revisionSlug: string,
 };
 
 export type Transformed = {
@@ -42,18 +48,26 @@ export function create(
 }
 
 export function edit(
-  project: ProjectSlug, resource: ResourceSlug,
-  activity: ActivitySlug, pendingUpdate: ActivityUpdate, releaseLock: boolean) {
+  project: ProjectSlug, resource: ResourceId,
+  activity: ResourceId, pendingUpdate: ActivityUpdate, releaseLock: boolean) {
 
-  const update = Object.assign({}, pendingUpdate, { releaseLock });
+  let update = Object.assign({}, pendingUpdate, { releaseLock });
+  update.content = Object.assign({}, update.content);
+
+  // Here we pull the "authoring" key out of "content" and elevate it
+  // as a top-level key
+  if (update.content.authoring !== undefined) {
+    update.authoring = update.content.authoring;
+    delete update.content.authoring;
+  }
 
   const params = {
     method: 'PUT',
-    body: JSON.stringify({ update }),
-    url: `/project/${project}/resource/${resource}/activity/${activity}`,
+    body: JSON.stringify(update),
+    url: `/storage/project/${project}/resource/${activity}?lock_id=${resource}`,
   };
 
-  return makeRequest<Created>(params);
+  return makeRequest<Updated>(params);
 }
 
 export function transform(model: ActivityModelSchema) {

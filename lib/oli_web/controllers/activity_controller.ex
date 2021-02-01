@@ -132,6 +132,7 @@ defmodule OliWeb.ActivityController do
 
     author = conn.assigns[:current_author]
 
+
     update = conn.body_params
 
     case ActivityEditor.edit(project_slug, resource_slug, activity_id, author.email, update) do

@@ -8,7 +8,7 @@ import { ActivityContext } from 'data/content/activity';
 import { Objective } from 'data/content/objective';
 import { TitleBar } from '../content/TitleBar';
 import { UndoRedo } from '../content/UndoRedo';
-import { ProjectSlug, ResourceSlug, ObjectiveSlug, ActivitySlug } from 'data/types';
+import { ProjectSlug, ResourceSlug, ObjectiveSlug, ActivitySlug, ResourceId } from 'data/types';
 import {
   UndoableState, processRedo, processUndo, processUpdate, init,
   registerUndoRedoHotkeys, unregisterUndoRedoHotkeys,
@@ -45,8 +45,8 @@ type ActivityEditorState = {
 
 // Creates a function that when invoked submits a save request
 function prepareSaveFn(
-  project: ProjectSlug, resource: ResourceSlug,
-  activity: ActivitySlug, update: Persistence.ActivityUpdate) {
+  project: ProjectSlug, resource: ResourceId,
+  activity: ResourceId, update: Persistence.ActivityUpdate) {
 
   return (releaseLock: boolean) =>
     Persistence.edit(project, resource, activity, update, releaseLock);
@@ -208,9 +208,9 @@ class ActivityEditor extends React.Component<ActivityEditorProps, ActivityEditor
   }
 
   save() {
-    const { projectSlug, resourceSlug, activitySlug } = this.props;
+    const { projectSlug, resourceId, activityId } = this.props;
     this.persistence.save(
-      prepareSaveFn(projectSlug, resourceSlug, activitySlug, this.state.undoable.current));
+      prepareSaveFn(projectSlug, resourceId, activityId, this.state.undoable.current));
   }
 
   undo() {
