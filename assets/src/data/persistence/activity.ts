@@ -51,7 +51,7 @@ export function edit(
   project: ProjectSlug, resource: ResourceId,
   activity: ResourceId, pendingUpdate: ActivityUpdate, releaseLock: boolean) {
 
-  let update = Object.assign({}, pendingUpdate, { releaseLock });
+  const update = Object.assign({}, pendingUpdate, { releaseLock });
   update.content = Object.assign({}, update.content);
 
   // Here we pull the "authoring" key out of "content" and elevate it
