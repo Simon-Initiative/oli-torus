@@ -248,9 +248,6 @@ defmodule OliWeb.ActivityController do
           end
 
         else
-          IO.inspect Sections.list_sections()
-          IO.inspect section.context_id
-          IO.inspect Sections.list_enrollments(section.context_id)
           error(conn, 403, "unauthorized")
         end
 
