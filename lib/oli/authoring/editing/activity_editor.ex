@@ -102,7 +102,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       end
 
     else
-      error -> IO.inspect(error)
+      error -> error
     end
 
   end
@@ -135,7 +135,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       do
         secondary_revision
       else
-        error -> IO.inspect(error) |> Repo.rollback()
+        error -> Repo.rollback(error)
       end
 
     end)
