@@ -277,6 +277,12 @@ defmodule OliWeb.Router do
 
   end
 
+  scope "/api/v1/storage/course/:course/resource/:resource", OliWeb do
+    pipe_through [:api, :delivery_protected]
+
+    get "/", ActivityController, :retrieve_delivery
+  end
+
 
   scope "/api/v1/attempt", OliWeb do
     pipe_through [:api, :delivery_protected]

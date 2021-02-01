@@ -64,7 +64,7 @@ export function edit(
   const params = {
     method: 'PUT',
     body: JSON.stringify(update),
-    url: `/storage/project/${project}/resource/${activity}?lock_id=${resource}`,
+    url: `/storage/project/${project}/resource/${activity}?lock=${resource}`,
   };
 
   return makeRequest<Updated>(params);
