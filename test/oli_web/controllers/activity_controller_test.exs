@@ -7,17 +7,6 @@ defmodule OliWeb.ActivityControllerTest do
 
   setup [:project_seed]
 
-  describe "get resource for delivery" do
-
-    test "retrieves the published activity", %{conn: conn, section: section, activity_id: activity_id} do
-
-      conn = get(conn, Routes.activity_path(conn, :retrieve_delivery, section.id, activity_id))
-
-      assert %{"content" => %{"stem" => "1"}} = json_response(conn, 200)
-    end
-
-  end
-
   describe "create and then delete a secondary resource" do
 
     test "fails when attempting to delete an activity primary document", %{conn: conn, project: project, activity_id: activity_id, revision1: revision} do
