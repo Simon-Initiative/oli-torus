@@ -9,7 +9,7 @@ defmodule Oli.Institutions do
   alias Oli.Institutions.Institution
   alias Oli.Institutions.PendingRegistration
   alias Oli.Lti_1p3.Registration
-  alias Oli.Lti_1p3.Deployment
+  alias Lti_1p3.Deployment
 
   @doc """
   Returns the list of institutions.
@@ -399,7 +399,7 @@ defmodule Oli.Institutions do
   def approve_pending_registration(%PendingRegistration{} = pending_registration) do
     Repo.transaction(fn ->
       with {:ok, institution} <- find_or_create_institution_by_normalized_url(PendingRegistration.institution_attrs(pending_registration)),
-        active_jwk = Oli.Lti_1p3.get_active_jwk(),
+        active_jwk = Lti_1p3.get_active_jwk(),
         registration_attrs = Map.merge(PendingRegistration.registration_attrs(pending_registration), %{institution_id: institution.id, tool_jwk_id: active_jwk.id}),
         {:ok, registration} <- create_registration(registration_attrs),
         {:ok, _pending_registration} <- delete_pending_registration(pending_registration)

@@ -8,7 +8,7 @@ defmodule Oli.Delivery.Sections do
 
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.Enrollment
-  alias Oli.Lti_1p3.ContextRole
+  alias Lti_1p3.ContextRole
 
   @doc """
   Enrolls a user in a course section.

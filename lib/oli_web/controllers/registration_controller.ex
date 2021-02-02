@@ -12,7 +12,7 @@ defmodule OliWeb.RegistrationController do
   def create(conn, %{"institution_id" => institution_id, "registration" => registration_params}) do
     registration_params = registration_params
       |> Map.put("institution_id", institution_id)
-      |> Map.put("tool_jwk_id", Oli.Lti_1p3.get_active_jwk().id)
+      |> Map.put("tool_jwk_id", Lti_1p3.get_active_jwk().id)
 
     case Institutions.create_registration(registration_params) do
       {:ok, _registration} ->

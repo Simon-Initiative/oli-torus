@@ -1,7 +1,7 @@
 defmodule OliWeb.PageDeliveryView do
   use OliWeb, :view
 
-  alias Oli.Lti_1p3.ContextRoles
+  alias Lti_1p3.ContextRoles
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Numbering
 

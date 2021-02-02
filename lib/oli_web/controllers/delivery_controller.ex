@@ -3,7 +3,9 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing
-  alias Oli.Lti_1p3.ContextRoles
+
+  alias Oli.Institutions
+  alias Lti_1p3.ContextRoles
   alias Oli.Accounts
   alias Oli.Accounts.Author
 

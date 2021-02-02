@@ -1,10 +1,10 @@
 defmodule OliWeb.LtiControllerTest do
   use OliWeb.ConnCase
 
-  alias Oli.Lti_1p3.PlatformInstance
-  alias Oli.Lti_1p3.PlatformInstances
-  alias Oli.Lti_1p3.LoginHint
-  alias Oli.Lti_1p3.LoginHints
+  alias Lti_1p3.PlatformInstance
+  alias Lti_1p3.PlatformInstances
+  alias Lti_1p3.LoginHint
+  alias Lti_1p3.LoginHints
 
   describe "lti_controller" do
     setup [:create_fixtures]
@@ -155,7 +155,7 @@ defmodule OliWeb.LtiControllerTest do
     test "returns developer key json", %{conn: conn} do
       conn = get(conn, Routes.lti_path(conn, :developer_key_json))
 
-      active_jwk = Oli.Lti_1p3.get_active_jwk()
+      active_jwk = Lti_1p3.get_active_jwk()
 
       public_jwk = JOSE.JWK.from_pem(active_jwk.pem) |> JOSE.JWK.to_public()
       |> JOSE.JWK.to_map()

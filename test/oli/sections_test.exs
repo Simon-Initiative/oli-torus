@@ -5,7 +5,7 @@ defmodule Oli.SectionsTest do
   alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Course.Project
   alias Oli.Publishing.Publication
-  alias Oli.Lti_1p3.ContextRoles
+  alias Lti_1p3.ContextRoles
 
   describe "enrollments" do
     @valid_attrs %{end_date: ~D[2010-04-17], open_and_free: true, registration_open: true, start_date: ~D[2010-04-17], time_zone: "some time_zone", title: "some title", context_id: "context_id"}

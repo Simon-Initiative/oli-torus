@@ -1,10 +1,10 @@
 defmodule OliWeb.PlatformInstanceController do
   use OliWeb, :controller
 
-  alias Oli.Lti_1p3.PlatformInstances
-  alias Oli.Lti_1p3.PlatformInstance
-  alias Oli.Lti_1p3.LoginHint
-  alias Oli.Lti_1p3.LoginHints
+  alias Lti_1p3.PlatformInstances
+  alias Lti_1p3.PlatformInstance
+  alias Lti_1p3.LoginHint
+  alias Lti_1p3.LoginHints
 
   def index(conn, _params) do
     lti_1p3_platform_instances = PlatformInstances.list_lti_1p3_platform_instances()

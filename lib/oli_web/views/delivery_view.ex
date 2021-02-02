@@ -1,8 +1,8 @@
 defmodule OliWeb.DeliveryView do
   use OliWeb, :view
 
-  alias Oli.Lti_1p3.ContextRoles
-  alias Oli.Lti_1p3.PlatformRoles
+  alias Lti_1p3.ContextRoles
+  alias Lti_1p3.PlatformRoles
 
   def get_context_id(conn) do
     case conn.assigns.lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"] do

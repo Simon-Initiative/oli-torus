@@ -13,7 +13,7 @@ defmodule Oli.Lti.LTI_NRPS do
   @context_memberships_url_key "context_memberships_url"
 
   alias Oli.Lti.Membership
-  alias Oli.Lti_1p3.AccessToken
+  alias Lti_1p3.AccessToken
 
   require Logger
 

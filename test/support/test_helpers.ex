@@ -151,7 +151,7 @@ defmodule Oli.TestHelpers do
   end
 
   def jwk_fixture(attrs \\ %{}) do
-    %{private_key: private_key} = Oli.Lti_1p3.KeyGenerator.generate_key_pair()
+    %{private_key: private_key} = Lti_1p3.KeyGenerator.generate_key_pair()
 
     params =
       attrs
@@ -163,7 +163,7 @@ defmodule Oli.TestHelpers do
         active: true,
       })
 
-    {:ok, jwk} = Oli.Lti_1p3.create_new_jwk(params)
+    {:ok, jwk} = Lti_1p3.create_new_jwk(params)
 
     jwk
   end

@@ -2,7 +2,7 @@ defmodule Oli.Plugs.LoadLtiParams do
   import Plug.Conn
   import Phoenix.Controller
 
-  alias Oli.Lti_1p3
+  alias Lti_1p3
 
   def init(opts), do: opts
 

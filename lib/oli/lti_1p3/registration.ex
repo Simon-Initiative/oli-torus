@@ -10,8 +10,8 @@ defmodule Oli.Lti_1p3.Registration do
     field :auth_login_url, :string
     field :auth_server, :string
 
-    has_many :deployments, Oli.Lti_1p3.Deployment
-    belongs_to :tool_jwk, Oli.Lti_1p3.Jwk, foreign_key: :tool_jwk_id
+    has_many :deployments, Lti_1p3.Deployment
+    belongs_to :tool_jwk, Lti_1p3.Jwk, foreign_key: :tool_jwk_id
     belongs_to :institution, Oli.Institutions.Institution
 
     timestamps(type: :utc_datetime)
@@ -38,7 +38,7 @@ defmodule Oli.Lti_1p3.Registration do
       :auth_login_url,
       :auth_server,
       :tool_jwk_id,
-      :institution_id
+      :institution_id,
     ])
   end
 end

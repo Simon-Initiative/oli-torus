@@ -6,8 +6,8 @@ defmodule OliWeb.Grades.GradesLive do
   alias Oli.Lti.LTI_AGS
   alias Oli.Lti.LineItem
   alias Oli.Lti.LTI_NRPS
-  alias Oli.Lti_1p3.AccessToken
-  alias Oli.Lti_1p3.ContextRoles
+  alias Lti_1p3.AccessToken
+  alias Lti_1p3.ContextRoles
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Attempts.ResourceAccess
 
@@ -131,7 +131,7 @@ defmodule OliWeb.Grades.GradesLive do
   end
 
   defp access_token_provider(lti_launch_params) do
-    deployment_id = Oli.Lti_1p3.get_deployment_id_from_launch(lti_launch_params)
+    deployment_id = Lti_1p3.get_deployment_id_from_launch(lti_launch_params)
     AccessToken.fetch_access_token(deployment_id, Grading.ags_scopes(), host())
   end
 
