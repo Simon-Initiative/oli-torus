@@ -120,6 +120,11 @@ defmodule OliWeb.ActivityController do
 
   @doc """
   Create a new secondary document for an activity.
+
+  Torus activities are comprised of one primary document and zero or more secondary documents. While Torus
+  creates the primary document for an activity instance, secondary document creation is entirely the responsibility
+  of the activity implementation.
+
   """
   @doc parameters: [
     project: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The project identifier"],
@@ -183,7 +188,10 @@ defmodule OliWeb.ActivityController do
   end
 
   @doc """
-  Retrieve a document for an activity.
+  Retrieve a document for an activity in an authoring context.
+
+  This retrieves the unpublished revision of an activity document, either a primary or secondary
+  document.
   """
   @doc parameters: [
     project: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The project identifier"],
@@ -219,6 +227,9 @@ defmodule OliWeb.ActivityController do
 
   @doc """
   Retrieve a document for an activity for delivery purposes.
+
+  This retrieves the published revision of an activity document, either a primary or secondary
+  document, for a particular course section.
   """
   @doc parameters: [
     course: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The course identifier"],
@@ -257,10 +268,16 @@ defmodule OliWeb.ActivityController do
 
   @doc """
   Update a document for an activity.
+
+  This operation will update one or more of the top-level document attributes (`title`, `objectives`, `content`, `authoring`) for
+  either primary or secondary activity documents.
+
+  This operation must be performed in the context of an exclusive write lock to avoid concurrent updates. The identifier of the
+  lock must be specificed via the `lock` query parameter.
   """
   @doc parameters: [
     project: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The project identifier"],
-    resource: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The activity identifier that this document will be secondary to"],
+    resource: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The activity document identifier"],
     lock: [in: :query, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The lock identifier that this operation will be performed within"]
   ],
   request_body: {"Attributes for the document", "application/json", OliWeb.ActivityController.DocumentAttributes, required: true},
@@ -310,6 +327,11 @@ defmodule OliWeb.ActivityController do
 
   @doc """
   Delete a secondary document for an activity.
+
+  This operation will mark a secondary document as deleted, but only for the current unpublished revision.
+
+  This operation must be performed in the context of an exclusive write lock to avoid concurrent updates. The identifier of the
+  lock must be specificed via the `lock` query parameter.
   """
   @doc parameters: [
     project: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The project identifier"],
