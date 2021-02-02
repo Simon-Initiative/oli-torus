@@ -65,7 +65,7 @@ defmodule Oli.MixProject do
       {:credo, "~> 1.1.0", only: [:dev, :test], runtime: true},
       {:csv, "~> 2.3"},
       {:dialyxir, "~> 0.5.0", only: [:dev], runtime: true},
-      {:ecto_sql, "~> 3.1"},
+      {:ecto_sql, "~> 3.5.2"},
       {:ex_aws, "~> 2.1.6"},
       {:ex_aws_s3, "~> 2.0"},
       {:excoveralls, "~> 0.10", only: :test},

@@ -4,11 +4,13 @@ defmodule Oli.Publishing do
   alias Oli.Repo
 
   alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Course.ProjectVisibility
   alias Oli.Accounts.Author
   alias Oli.Authoring.Locks
   alias Oli.Delivery.Sections
   alias Oli.Resources.{Revision, ResourceType}
   alias Oli.Publishing.{Publication, PublishedResource}
+  alias Oli.Institutions.Institution
 
   def query_unpublished_revisions_by_type(project_slug, type) do
     publication_id = get_unpublished_publication_by_slug!(project_slug).id
@@ -637,6 +639,24 @@ defmodule Oli.Publishing do
     Enum.filter(results, fn [_, _, %{"activity_id" => activity_id}] -> MapSet.member?(activities, activity_id) end)
     |> Enum.reduce(%{}, fn [id, slug, %{"activity_id" => activity_id}], map -> Map.put(map, activity_id, %{slug: slug, id: id}) end)
 
+  end
+
+  def insert_visibility(attrs) do
+    IO.inspect attrs
+    %ProjectVisibility{}
+    |> ProjectVisibility.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def get_all_project_visibilities(project_id) do
+    Repo.all from v in ProjectVisibility,
+      where: v.project_id == ^project_id,
+      left_join: author in Author, on: v.author_id == author.id,
+      left_join: institution in Institution, on: v.institution_id == institution.id,
+      select: %{
+        author: author,
+        institution: institution
+      }
   end
 
 end
