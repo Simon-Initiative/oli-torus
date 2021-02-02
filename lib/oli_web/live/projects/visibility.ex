@@ -84,18 +84,20 @@ defmodule OliWeb.Projects.VisibilityLive do
                         <br>
                         <h3>Users</h3>
                         <div class="card">
-                           <div> <form phx-change="search" class="form-inline form-grow">
-                                        <%= text_input :search_field, :query, placeholder: "Search for users by email here",
+                            <div>
+                                <form phx-change="search" class="form-inline form-grow">
+                                    <%= text_input :search_field, :query, placeholder: "Search for users by email here",
                         class: "form-control form-control-sm mb-2 mb-sm-0 title container-fluid flex-fill",
                         autofocus: true, "phx-debounce": "300" %>
-                                        <%= hidden_input :search_field, :entity, value: "instructors" %>
-                                    </form></div>
+                                    <%= hidden_input :search_field, :entity, value: "instructors" %>
+                                </form>
+                            </div>
                             <div class="row justify-content-center">
 
                                 <%= if !Enum.empty?(@user_emails) do %>
                                 <div class="flex-fill">
                                     <p>Select from the list below and submit</p>
-                                    <form phx-submit="selected_email" >
+                                    <form phx-submit="selected_email">
                                         <%= multiple_select :multi, :emails, @user_emails, class: "form-control w-100" %>
                                         <%= submit "Submit", class: "btn btn-primary" %>
                                     </form>
@@ -104,9 +106,9 @@ defmodule OliWeb.Projects.VisibilityLive do
                                 <div class="flex-fill">
                                     <ul class="list-group list-group-flush">
                                         <%= for v <- @project_visibilities do %>
-                                          <%= if v.author != nil do %>
-                                            <li class="list-group-item"><%= v.author.email %></li>
-                                          <%= end %>
+                                        <%= if v.author != nil do %>
+                                        <li class="list-group-item"><%= v.author.email %></li>
+                                        <%= end %>
                                         <%= end %>
                                     </ul>
                                 </div>
@@ -118,12 +120,14 @@ defmodule OliWeb.Projects.VisibilityLive do
                          class="container tab-pane <%= if  @tab == :institutions, do: "active", else: "fade" %>"><br>
                         <h3>Institutions</h3>
                         <div class="card">
-                            <div><form phx-change="search" class="form-inline form-grow">
-                                        <%= text_input :search_field, :query, placeholder: "Search for institutions by name here",
+                            <div>
+                                <form phx-change="search" class="form-inline form-grow">
+                                    <%= text_input :search_field, :query, placeholder: "Search for institutions by name here",
                         class: "form-control form-control-sm mb-2 mb-sm-0 title container-fluid flex-fill",
                         autofocus: true, "phx-debounce": "300" %>
-                                        <%= hidden_input :search_field, :entity, value: "institution" %>
-                                    </form> </div>
+                                    <%= hidden_input :search_field, :entity, value: "institution" %>
+                                </form>
+                            </div>
                             <div class="row justify-content-center">
                                 <%= if !Enum.empty?(@institution_names) do %>
                                 <div class="flex-fill">
@@ -137,9 +141,9 @@ defmodule OliWeb.Projects.VisibilityLive do
                                 <div class="flex-fill">
                                     <ul class="list-group list-group-flush">
                                         <%= for v <- @project_visibilities do %>
-                                          <%= if v.institution != nil do %>
-                                            <li class="list-group-item"><%= v.institution.name %></li>
-                                          <%= end %>
+                                        <%= if v.institution != nil do %>
+                                        <li class="list-group-item"><%= v.institution.name %></li>
+                                        <%= end %>
                                         <%= end %>
                                     </ul>
                                 </div>
@@ -167,6 +171,18 @@ defmodule OliWeb.Projects.VisibilityLive do
           end
 
         list = Enum.map(list, fn a -> {a.email, a.id} end) |> Enum.sort_by(& &1)
+        list = list |> Enum.filter(fn e ->
+          {_, id} = e
+          f =
+            Enum.find(socket.assigns.project_visibilities, fn x ->
+              x.author != nil && x.author.id == id
+            end)
+          if f == nil do
+            true
+          else
+            false
+          end
+        end)
         {:noreply, assign(socket, :user_emails, list)}
       "institution" ->
         list =
@@ -177,6 +193,18 @@ defmodule OliWeb.Projects.VisibilityLive do
           end
 
         list = Enum.map(list, fn a -> {a.name, a.id} end) |> Enum.sort_by(& &1)
+        list = list |> Enum.filter(fn e ->
+          {_, id} = e
+          f =
+            Enum.find(socket.assigns.project_visibilities, fn x ->
+              x.institution != nil && x.institution.id == id
+            end)
+          if f == nil do
+            true
+          else
+            false
+          end
+        end)
         {:noreply, assign(socket, :institution_names, list)}
     end
   end
