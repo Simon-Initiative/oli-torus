@@ -39,7 +39,7 @@
   "jason": {:hex, :jason, "1.2.2", "ba43e3f2709fd1aa1dce90aaabfd039d000469c05c56f0b8e31978e03fa39052", [:mix], [{:decimal, "~> 1.0 or ~> 2.0", [hex: :decimal, repo: "hexpm", optional: true]}], "hexpm", "18a228f5f0058ee183f29f9eae0805c6e59d61c3b006760668d8d18ff0d12179"},
   "joken": {:hex, :joken, "2.2.0", "2daa1b12be05184aff7b5ace1d43ca1f81345962285fff3f88db74927c954d3a", [:mix], [{:jose, "~> 1.9", [hex: :jose, repo: "hexpm", optional: false]}], "hexpm", "b4f92e30388206f869dd25d1af628a1d99d7586e5cf0672f64d4df84c4d2f5e9"},
   "jose": {:hex, :jose, "1.11.1", "59da64010c69aad6cde2f5b9248b896b84472e99bd18f246085b7b9fe435dcdb", [:mix, :rebar3], [], "hexpm", "078f6c9fb3cd2f4cfafc972c814261a7d1e8d2b3685c0a76eb87e158efff1ac5"},
-  "lti_1p3": {:git, "https://github.com/Simon-Initiative/lti_1p3.git", "77b16372dba239bdbadefcadceb2d0b0440a9cd1", [branch: "master"]},
+  "lti_1p3": {:git, "https://github.com/Simon-Initiative/lti_1p3.git", "ffefaa6380dd980411ed36e5e9fb7e5c78c90c1a", [branch: "master"]},
   "mail": {:hex, :mail, "0.2.2", "b1d31beaa2a7b23d7b84b2794f037ef4dfdaba9e66d877142bedbaf0625b9c16", [:mix], [], "hexpm", "1c9d31548a60c44ded1806369e07a7dd4d05737eb47fa3238bbf2436b3da8a32"},
   "makeup": {:hex, :makeup, "1.0.5", "d5a830bc42c9800ce07dd97fa94669dfb93d3bf5fcf6ea7a0c67b2e0e4a7f26c", [:mix], [{:nimble_parsec, "~> 0.5 or ~> 1.0", [hex: :nimble_parsec, repo: "hexpm", optional: false]}], "hexpm", "cfa158c02d3f5c0c665d0af11512fed3fba0144cf1aadee0f2ce17747fba2ca9"},
   "makeup_elixir": {:hex, :makeup_elixir, "0.14.1", "4f0e96847c63c17841d42c08107405a005a2680eb9c7ccadfd757bd31dabccfb", [:mix], [{:makeup, "~> 1.0", [hex: :makeup, repo: "hexpm", optional: false]}], "hexpm", "f2438b1a80eaec9ede832b5c41cd4f373b38fd7aa33e3b22d9db79e640cbde11"},
