@@ -4,13 +4,14 @@ defmodule Oli.PublishingTest do
   alias Oli.Authoring.Course
   alias Oli.Publishing
   alias Oli.Publishing.Publication
+  alias Oli.Publishing.PublishedResource
   alias Oli.Resources
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Authoring.Editing.ActivityEditor
-
+  alias Oli.Authoring.Locks
 
   def create_activity(parts, author, project, page_revision, obj_slug) do
 
@@ -34,6 +35,32 @@ defmodule Oli.PublishingTest do
     {:ok, revision} = ActivityEditor.edit(project.slug, page_revision.slug, revision.slug, author.email, update)
 
     revision
+
+  end
+
+
+  describe "retrieve_lock_info" do
+
+    setup do
+      Seeder.base_project_with_resource2()
+    end
+
+    test "retrieves valid lock info", %{author: author, publication: publication, container: %{ resource: container_resource } } do
+      assert Locks.acquire(publication.id, container_resource.id, author.id) == {:acquired}
+      id = container_resource.id
+      assert [%PublishedResource{resource_id: ^id}] = Publishing.retrieve_lock_info([container_resource.id], publication.id)
+
+    end
+
+    test "ignores expired locks", %{author: author, publication: publication, container: %{ resource: container_resource } } do
+      assert Locks.acquire(publication.id, container_resource.id, author.id) == {:acquired}
+      [published_resource] = Publishing.retrieve_lock_info([container_resource.id], publication.id)
+
+      Publishing.update_resource_mapping(published_resource, %{ lock_updated_at: yesterday()})
+
+      assert [] = Publishing.retrieve_lock_info([container_resource.id], publication.id)
+
+    end
 
   end
 

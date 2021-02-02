@@ -43,8 +43,9 @@ export function selectImage(projectSlug: string,
 
 const command: Command = {
   execute: (context, editor) => {
+    const at = editor.selection as any;
     selectImage(context.projectSlug, ContentModel.image())
-    .then(img => Transforms.insertNodes(editor, img));
+    .then(img => Transforms.insertNodes(editor, img, { at }));
   },
   precondition: (editor) => {
     return true;

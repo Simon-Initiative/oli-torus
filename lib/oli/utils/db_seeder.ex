@@ -283,8 +283,6 @@ defmodule Oli.Seeder do
   end
 
   def add_user(map, attrs, tag \\ nil) do
-    institution = map.institution
-
     {:ok, user} =
       User.changeset(%User{
         sub: "a6d5c443-1f51-4783-ba1a-7686ffe3b54a",
@@ -295,7 +293,6 @@ defmodule Oli.Seeder do
         picture: "https://platform.example.edu/jane.jpg",
         email: "jane#{System.unique_integer([:positive])}@platform.example.edu",
         locale: "en-US",
-        institution_id: institution.id
       }, attrs)
       |> Repo.insert
 

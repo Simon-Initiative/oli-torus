@@ -21,9 +21,9 @@ defmodule Oli.SectionsTest do
         |> Map.put(:project_id, project.id)
         |> Map.put(:publication_id, publication.id)
 
-      user1 = user_fixture(%{institution_id: institution.id})
-      user2 = user_fixture(%{institution_id: institution.id})
-      user3 = user_fixture(%{institution_id: institution.id})
+      user1 = user_fixture()
+      user2 = user_fixture()
+      user3 = user_fixture()
 
       {:ok, section} = valid_attrs |> Sections.create_section()
 

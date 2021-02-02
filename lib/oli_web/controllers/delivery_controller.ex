@@ -3,7 +3,6 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing
-  alias Oli.Institutions
   alias Oli.Lti_1p3.ContextRoles
   alias Oli.Accounts
   alias Oli.Accounts.Author
@@ -193,14 +192,17 @@ defmodule OliWeb.DeliveryController do
   def create_section(conn, %{"publication_id" => publication_id}) do
     lti_params = conn.assigns.lti_params
     user = conn.assigns.current_user
-    institution = Institutions.get_institution!(user.institution_id)
+
+    deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"];
+    {institution, _registration, _deployment} = Oli.Lti_1p3.get_ird_by_deployment_id(deployment_id)
+
     publication = Publishing.get_publication!(publication_id)
 
     {:ok, %Section{id: section_id}} = Sections.create_section(%{
       time_zone: institution.timezone,
       title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
       context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
-      institution_id: user.institution_id,
+      institution_id: institution.id,
       project_id: publication.project_id,
       publication_id: publication_id,
     })
