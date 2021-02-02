@@ -59,7 +59,7 @@ config :oli, :recaptcha,
 config :oli, :help,
   dispatcher: Oli.Help.Providers.EmailHelp
 
-config :lti_1p3, :lti_1p3,
+config :lti_1p3,
   repo: Oli.Repo,
   http_client: HTTPoison
 
