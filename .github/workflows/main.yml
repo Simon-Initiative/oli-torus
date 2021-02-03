@@ -26,7 +26,7 @@ jobs:
         run: docker-compose up -d postgres
 
       - name: 🧪 Setup elixir
-        uses: actions/setup-elixir@v1
+        uses: erlef/setup-elixir@v1
         with:
           elixir-version: 1.11.1 # Define the elixir version [required]
           otp-version: 23.1 # Define the OTP version [required]
@@ -56,7 +56,7 @@ jobs:
           node-version: '12.x'
 
       - name: 🧪 Setup elixir
-        uses: actions/setup-elixir@v1
+        uses: erlef/setup-elixir@v1
         with:
           elixir-version: 1.10.2 # Define the elixir version [required]
           otp-version: 22.2 # Define the OTP version [required]

@@ -16,7 +16,7 @@ jobs:
         run: cp oli.example.env oli.env
 
       - name: Setup Elixir 🧪
-        uses: actions/setup-elixir@v1
+        uses: erlef/setup-elixir@v1
         with:
           elixir-version: 1.11.1 # Define the elixir version [required]
           otp-version: 23.1 # Define the OTP version [required]
