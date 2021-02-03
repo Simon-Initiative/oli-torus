@@ -24,14 +24,14 @@ defmodule Oli.Lti_1p3.Nonces do
   @doc """
   Creates a nonce. Returns a error if the nonce already exists
   ## Examples
-      iex> create_nonce(%{field: value})
+      iex> create_nonce("value", "domain")
       {:ok, %Nonce{}}
-      iex> create_nonce(%{field: bad_value})
+      iex> create_nonce("bad value", "domain")
       {:error, %Ecto.Changeset{}}
   """
-  def create_nonce(attrs \\ %{}) do
+  def create_nonce(value, domain \\ nil) do
     %Nonce{}
-    |> Nonce.changeset(attrs)
+    |> Nonce.changeset(%{value: value, domain: domain})
     |> Repo.insert()
   end
 
@@ -44,7 +44,7 @@ defmodule Oli.Lti_1p3.Nonces do
     nonce_expiry = Timex.now |> Timex.subtract(Timex.Duration.from_seconds(@max_nonce_ttl_sec))
     result = Repo.delete_all from(n in Nonce, where: n.inserted_at < ^nonce_expiry)
 
-    Logger.info("done.")
+    Logger.info("Nonce cleanup complete.")
 
     result
   end

@@ -1,7 +1,7 @@
 defmodule Oli.Lti_1p3 do
   import Ecto.Query, warn: false
-  alias Oli.Repo
 
+  alias Oli.Repo
   alias Oli.Lti_1p3.Registration
   alias Oli.Lti_1p3.Deployment
   alias Oli.Lti_1p3.Jwk
@@ -36,12 +36,7 @@ defmodule Oli.Lti_1p3 do
     |> Repo.insert()
   end
 
-  def get_active_jwk() do
-    case Repo.all(from k in Jwk, where: k.active == true, order_by: [desc: k.id], limit: 1) do
-      [head | _] -> head
-      _ -> []
-    end
-  end
+  def get_active_jwk(), do: Oli.Lti_1p3.Utils.get_active_jwk()
 
   def get_all_jwks() do
     Repo.all(from k in Jwk, where: k.active == true)
@@ -102,4 +97,5 @@ defmodule Oli.Lti_1p3 do
       nil
   """
   def fetch_lti_params(key), do: Repo.get_by(LtiParams, key: key)
+
 end
