@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.23.0">
+    <meta name="project" content="OLI Torus v0.5.1">
+
+    <title>Oli.Lti_1p3.PlatformInstances — OLI Torus v0.5.1</title>
+    <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
+
+    <script src="dist/sidebar_items-874ceed718.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+
+  </head>
+  <body data-type="modules">
+    <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+
+<div class="main">
+
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" title="Collapse/expand sidebar"></span>
+</button>
+
+<section class="sidebar">
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
+    </button>
+    <label class="search-label">
+      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectDetails">
+      <a href="http://oli.cmu.edu" class="sidebar-projectName">
+OLI Torus
+      </a>
+      <strong class="sidebar-projectVersion">
+        v0.5.1
+      </strong>
+    </div>
+
+      <a href="http://oli.cmu.edu">
+        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
+      </a>
+
+  </div>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list" href="#full-list">Modules</a></li>
+
+
+      <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+      <h1>
+Oli.Lti_1p3.PlatformInstances <small class="app-vsn">(OLI Torus v0.5.1)</small>
+
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/platform_instances.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+
+      </h1>
+
+
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#change_platform_instance/2">change_platform_instance(platform_instance, attrs \\ %{})</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns an <code class="inline">%Ecto.Changeset{}</code> for tracking platform_instance changes.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create_platform_instance/1">create_platform_instance(attrs \\ %{})</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Creates a platform_instance.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#delete_platform_instance/1">delete_platform_instance(platform_instance)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Deletes a platform_instance.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_platform_instance!/1">get_platform_instance!(id)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Gets a single platform_instance.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_platform_instance_by_client_id/1">get_platform_instance_by_client_id(client_id)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Gets a single platform_instance by client id</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#list_lti_1p3_platform_instances/0">list_lti_1p3_platform_instances()</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the list of lti_1p3_platform_instances.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#update_platform_instance/2">update_platform_instance(platform_instance, attrs)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Updates a platform_instance.</p></div>
+
+</div>
+
+  </div>
+
+        </section>
+
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions
+          </h1>
+          <div class="functions-list">
+<section class="detail" id="change_platform_instance/2">
+
+    <span id="change_platform_instance/1"></span>
+
+  <div class="detail-header">
+    <a href="#change_platform_instance/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">change_platform_instance(platform_instance, attrs \\ %{})</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/platform_instances.ex#L110" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Returns an <code class="inline">%Ecto.Changeset{}</code> for tracking platform_instance changes.</p><h2 id="change_platform_instance/2-examples" class="section-heading">
+  <a href="#change_platform_instance/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_platform_instance</span><span class="p" data-group-id="0972217991-1">(</span><span class="n">platform_instance</span><span class="p" data-group-id="0972217991-1">)</span><span class="w">
+</span><span class="p" data-group-id="0972217991-2">%</span><span class="nc" data-group-id="0972217991-2">Ecto.Changeset</span><span class="p" data-group-id="0972217991-2">{</span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0972217991-3">%</span><span class="nc" data-group-id="0972217991-3">PlatformInstance</span><span class="p" data-group-id="0972217991-3">{</span><span class="p" data-group-id="0972217991-3">}</span><span class="p" data-group-id="0972217991-2">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="create_platform_instance/1">
+
+    <span id="create_platform_instance/0"></span>
+
+  <div class="detail-header">
+    <a href="#create_platform_instance/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create_platform_instance(attrs \\ %{})</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/platform_instances.ex#L61" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Creates a platform_instance.</p><h2 id="create_platform_instance/1-examples" class="section-heading">
+  <a href="#create_platform_instance/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_platform_instance</span><span class="p" data-group-id="2077315975-1">(</span><span class="p" data-group-id="2077315975-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="2077315975-2">}</span><span class="p" data-group-id="2077315975-1">)</span><span class="w">
+</span><span class="p" data-group-id="2077315975-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2077315975-4">%</span><span class="nc" data-group-id="2077315975-4">PlatformInstance</span><span class="p" data-group-id="2077315975-4">{</span><span class="p" data-group-id="2077315975-4">}</span><span class="p" data-group-id="2077315975-3">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_platform_instance</span><span class="p" data-group-id="2077315975-5">(</span><span class="p" data-group-id="2077315975-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="2077315975-6">}</span><span class="p" data-group-id="2077315975-5">)</span><span class="w">
+</span><span class="p" data-group-id="2077315975-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2077315975-8">%</span><span class="nc" data-group-id="2077315975-8">Ecto.Changeset</span><span class="p" data-group-id="2077315975-8">{</span><span class="p" data-group-id="2077315975-8">}</span><span class="p" data-group-id="2077315975-7">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="delete_platform_instance/1">
+
+  <div class="detail-header">
+    <a href="#delete_platform_instance/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">delete_platform_instance(platform_instance)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/platform_instances.ex#L97" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Deletes a platform_instance.</p><h2 id="delete_platform_instance/1-examples" class="section-heading">
+  <a href="#delete_platform_instance/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_platform_instance</span><span class="p" data-group-id="3996173176-1">(</span><span class="n">platform_instance</span><span class="p" data-group-id="3996173176-1">)</span><span class="w">
+</span><span class="p" data-group-id="3996173176-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3996173176-3">%</span><span class="nc" data-group-id="3996173176-3">PlatformInstance</span><span class="p" data-group-id="3996173176-3">{</span><span class="p" data-group-id="3996173176-3">}</span><span class="p" data-group-id="3996173176-2">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_platform_instance</span><span class="p" data-group-id="3996173176-4">(</span><span class="n">platform_instance</span><span class="p" data-group-id="3996173176-4">)</span><span class="w">
+</span><span class="p" data-group-id="3996173176-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3996173176-6">%</span><span class="nc" data-group-id="3996173176-6">Ecto.Changeset</span><span class="p" data-group-id="3996173176-6">{</span><span class="p" data-group-id="3996173176-6">}</span><span class="p" data-group-id="3996173176-5">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="get_platform_instance!/1">
+
+  <div class="detail-header">
+    <a href="#get_platform_instance!/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_platform_instance!(id)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/platform_instances.ex#L34" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Gets a single platform_instance.</p><p>Raises <a href="https://hexdocs.pm/ecto/3.3.2/Ecto.NoResultsError.html"><code class="inline">Ecto.NoResultsError</code></a> if the PlatformInstance does not exist.</p><h2 id="get_platform_instance!/1-examples" class="section-heading">
+  <a href="#get_platform_instance!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance!</span><span class="p" data-group-id="7046733145-1">(</span><span class="mi">123</span><span class="p" data-group-id="7046733145-1">)</span><span class="w">
+</span><span class="p" data-group-id="7046733145-2">%</span><span class="nc" data-group-id="7046733145-2">PlatformInstance</span><span class="p" data-group-id="7046733145-2">{</span><span class="p" data-group-id="7046733145-2">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance!</span><span class="p" data-group-id="7046733145-3">(</span><span class="mi">456</span><span class="p" data-group-id="7046733145-3">)</span><span class="w">
+</span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="get_platform_instance_by_client_id/1">
+
+  <div class="detail-header">
+    <a href="#get_platform_instance_by_client_id/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_platform_instance_by_client_id(client_id)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/platform_instances.ex#L47" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Gets a single platform_instance by client id</p><h2 id="get_platform_instance_by_client_id/1-examples" class="section-heading">
+  <a href="#get_platform_instance_by_client_id/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance_by_client_id</span><span class="p" data-group-id="2185012629-1">(</span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="2185012629-1">)</span><span class="w">
+</span><span class="p" data-group-id="2185012629-2">%</span><span class="nc" data-group-id="2185012629-2">PlatformInstance</span><span class="p" data-group-id="2185012629-2">{</span><span class="p" data-group-id="2185012629-2">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance_by_client_id</span><span class="p" data-group-id="2185012629-3">(</span><span class="s">&quot;456&quot;</span><span class="p" data-group-id="2185012629-3">)</span><span class="w">
+</span><span class="no">nil</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="list_lti_1p3_platform_instances/0">
+
+  <div class="detail-header">
+    <a href="#list_lti_1p3_platform_instances/0" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">list_lti_1p3_platform_instances()</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/platform_instances.ex#L16" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Returns the list of lti_1p3_platform_instances.</p><h2 id="list_lti_1p3_platform_instances/0-examples" class="section-heading">
+  <a href="#list_lti_1p3_platform_instances/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_lti_1p3_platform_instance_instances</span><span class="p" data-group-id="9032482105-1">(</span><span class="p" data-group-id="9032482105-1">)</span><span class="w">
+</span><span class="p" data-group-id="9032482105-2">[</span><span class="p" data-group-id="9032482105-3">%</span><span class="nc" data-group-id="9032482105-3">PlatformInstance</span><span class="p" data-group-id="9032482105-3">{</span><span class="p" data-group-id="9032482105-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="9032482105-2">]</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="update_platform_instance/2">
+
+  <div class="detail-header">
+    <a href="#update_platform_instance/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">update_platform_instance(platform_instance, attrs)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/platform_instances.ex#L79" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Updates a platform_instance.</p><h2 id="update_platform_instance/2-examples" class="section-heading">
+  <a href="#update_platform_instance/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_platform_instance</span><span class="p" data-group-id="3146997727-1">(</span><span class="n">platform_instance</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3146997727-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="3146997727-2">}</span><span class="p" data-group-id="3146997727-1">)</span><span class="w">
+</span><span class="p" data-group-id="3146997727-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3146997727-4">%</span><span class="nc" data-group-id="3146997727-4">PlatformInstance</span><span class="p" data-group-id="3146997727-4">{</span><span class="p" data-group-id="3146997727-4">}</span><span class="p" data-group-id="3146997727-3">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_platform_instance</span><span class="p" data-group-id="3146997727-5">(</span><span class="n">platform_instance</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3146997727-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="3146997727-6">}</span><span class="p" data-group-id="3146997727-5">)</span><span class="w">
+</span><span class="p" data-group-id="3146997727-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3146997727-8">%</span><span class="nc" data-group-id="3146997727-8">Ecto.Changeset</span><span class="p" data-group-id="3146997727-8">{</span><span class="p" data-group-id="3146997727-8">}</span><span class="p" data-group-id="3146997727-7">}</span></code></pre>
+  </section>
+</section>
+
+          </div>
+        </section>
+
+      <footer class="footer">
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.23.0) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
+          </span>
+          <span class="line">
+            Designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+          </span>
+        </p>
+        <p>
+
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
+          <button class="line footer-button display-shortcuts-help">
+            Display keyboard shortcuts
+          </button>
+          <button class="line footer-button night-mode-toggle">
+            Toggle night mode
+          </button>
+          <button class="line footer-button display-quick-switch">
+            Go to a HexDocs package
+          </button>
+          <button class="line footer-button tooltips-toggle">
+            <span class="tooltips-option-disable">Disable tooltips</span>
+            <span class="tooltips-option-enable">Enable tooltips</span>
+          </button>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+  </body>
+</html>

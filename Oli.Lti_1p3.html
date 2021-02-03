@@ -10,7 +10,7 @@
     <title>Oli.Lti_1p3 — OLI Torus v0.5.1</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-350809979a.js"></script>
+    <script src="dist/sidebar_items-874ceed718.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -211,7 +211,7 @@ Functions
     </a>
     <h1 class="signature">cache_lti_params!(key, lti_params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L84" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L79" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -226,8 +226,8 @@ including &quot;exp&quot; for expiration date</p><h2 id="cache_lti_params!/2-exa
   <a href="#cache_lti_params!/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">cache_lti_params!</span><span class="p" data-group-id="9924361016-1">(</span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">lti_params</span><span class="p" data-group-id="9924361016-1">)</span><span class="w">
-</span><span class="p" data-group-id="9924361016-2">%</span><span class="nc" data-group-id="9924361016-2">LtiParams</span><span class="p" data-group-id="9924361016-2">{</span><span class="p" data-group-id="9924361016-2">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">cache_lti_params!</span><span class="p" data-group-id="9897848111-1">(</span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">lti_params</span><span class="p" data-group-id="9897848111-1">)</span><span class="w">
+</span><span class="p" data-group-id="9897848111-2">%</span><span class="nc" data-group-id="9897848111-2">LtiParams</span><span class="p" data-group-id="9897848111-2">{</span><span class="p" data-group-id="9897848111-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_new_deployment/1">
@@ -305,7 +305,7 @@ including &quot;exp&quot; for expiration date</p><h2 id="cache_lti_params!/2-exa
     </a>
     <h1 class="signature">fetch_lti_params(key)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L104" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L99" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -320,9 +320,9 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p><h2 i
   <a href="#fetch_lti_params/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">fetch_lti_params</span><span class="p" data-group-id="2580578406-1">(</span><span class="s">&quot;some-key&quot;</span><span class="p" data-group-id="2580578406-1">)</span><span class="w">
-</span><span class="p" data-group-id="2580578406-2">%</span><span class="nc" data-group-id="2580578406-2">LtiParams</span><span class="p" data-group-id="2580578406-2">{</span><span class="p" data-group-id="2580578406-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">fetch_lti_params</span><span class="p" data-group-id="2580578406-3">(</span><span class="s">&quot;bad-key&quot;</span><span class="p" data-group-id="2580578406-3">)</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">fetch_lti_params</span><span class="p" data-group-id="8008600983-1">(</span><span class="s">&quot;some-key&quot;</span><span class="p" data-group-id="8008600983-1">)</span><span class="w">
+</span><span class="p" data-group-id="8008600983-2">%</span><span class="nc" data-group-id="8008600983-2">LtiParams</span><span class="p" data-group-id="8008600983-2">{</span><span class="p" data-group-id="8008600983-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">fetch_lti_params</span><span class="p" data-group-id="8008600983-3">(</span><span class="s">&quot;bad-key&quot;</span><span class="p" data-group-id="8008600983-3">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -357,7 +357,7 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p><h2 i
     </a>
     <h1 class="signature">get_all_jwks()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L46" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L41" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -423,7 +423,7 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p><h2 i
     </a>
     <h1 class="signature">get_ird_by_deployment_id(deployment_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L50" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L45" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -445,7 +445,7 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p><h2 i
     </a>
     <h1 class="signature">insert_or_update_lti_1p3_deployment(changes)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L68" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3.ex#L63" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -459,9 +459,9 @@ Returns <code class="inline">nil</code> if the lti_params do not exist.</p><h2 i
   <a href="#insert_or_update_lti_1p3_deployment/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">insert_or_update_lti_1p3_deployment</span><span class="p" data-group-id="5628075221-1">(</span><span class="p" data-group-id="5628075221-2">%{</span><span class="ss">deployment_id</span><span class="p">:</span><span class="w"> </span><span class="n">deployment_id</span><span class="p" data-group-id="5628075221-2">}</span><span class="p" data-group-id="5628075221-1">)</span><span class="w">
-</span><span class="p" data-group-id="5628075221-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5628075221-4">%</span><span class="nc" data-group-id="5628075221-4">Oli.Lti_1p3.Deployment</span><span class="p" data-group-id="5628075221-4">{</span><span class="p" data-group-id="5628075221-4">}</span><span class="p" data-group-id="5628075221-3">}</span><span class="w">    </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Inserted or updated with success</span><span class="w">
-</span><span class="p" data-group-id="5628075221-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">changeset</span><span class="p" data-group-id="5628075221-5">}</span><span class="w">                 </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Something went wrong</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">insert_or_update_lti_1p3_deployment</span><span class="p" data-group-id="3165057205-1">(</span><span class="p" data-group-id="3165057205-2">%{</span><span class="ss">deployment_id</span><span class="p">:</span><span class="w"> </span><span class="n">deployment_id</span><span class="p" data-group-id="3165057205-2">}</span><span class="p" data-group-id="3165057205-1">)</span><span class="w">
+</span><span class="p" data-group-id="3165057205-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3165057205-4">%</span><span class="nc" data-group-id="3165057205-4">Oli.Lti_1p3.Deployment</span><span class="p" data-group-id="3165057205-4">{</span><span class="p" data-group-id="3165057205-4">}</span><span class="p" data-group-id="3165057205-3">}</span><span class="w">    </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Inserted or updated with success</span><span class="w">
+</span><span class="p" data-group-id="3165057205-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">changeset</span><span class="p" data-group-id="3165057205-5">}</span><span class="w">                 </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Something went wrong</span></code></pre>
   </section>
 </section>
 

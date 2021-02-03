@@ -10,7 +10,7 @@
     <title>Oli.Lti_1p3.LaunchValidation — OLI Torus v0.5.1</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-350809979a.js"></script>
+    <script src="dist/sidebar_items-874ceed718.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -104,20 +104,6 @@ Oli.Lti_1p3.LaunchValidation <small class="app-vsn">(OLI Torus v0.5.1)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#t:get_public_key_callback/0">get_public_key_callback()</a>
-
-  </div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#t:providers/0">providers()</a>
-
-  </div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
     <a href="#t:validate_opts/0">validate_opts()</a>
 
   </div>
@@ -132,7 +118,7 @@ Oli.Lti_1p3.LaunchValidation <small class="app-vsn">(OLI Torus v0.5.1)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#validate/2">validate(conn, opts)</a>
+    <a href="#validate/2">validate(conn, opts \\ [])</a>
 
   </div>
 
@@ -154,83 +140,6 @@ Oli.Lti_1p3.LaunchValidation <small class="app-vsn">(OLI Torus v0.5.1)</small>
 Types
           </h1>
           <div class="types-list">
-<section class="detail" id="t:get_public_key_callback/0">
-
-  <div class="detail-header">
-    <a href="#t:get_public_key_callback/0" class="detail-link" title="Link to this type">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this type</span>
-    </a>
-    <h1 class="signature">get_public_key_callback()</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/launch_validation.ex#L6" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-      <h2>Specs</h2>
-      <div class="specs">
-
-          <pre>get_public_key_callback() ::
-  (%Oli.Lti_1p3.Registration{
-     __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-     auth_login_url: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-     auth_server: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-     auth_token_url: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-     client_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-     deployments: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-     id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-     inserted_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-     institution: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-     institution_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-     issuer: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-     key_set_url: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-     tool_jwk: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-     tool_jwk_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-     updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
-   },
-   <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>() -&gt;
-     {:ok, <a href="https://hexdocs.pm/jose/1.10.1/JOSE.JWK.html#t:t/0">JOSE.JWK.t</a>()})</pre>
-
-      </div>
-
-
-  </section>
-</section>
-<section class="detail" id="t:providers/0">
-
-  <div class="detail-header">
-    <a href="#t:providers/0" class="detail-link" title="Link to this type">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this type</span>
-    </a>
-    <h1 class="signature">providers()</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/launch_validation.ex#L7" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-      <h2>Specs</h2>
-      <div class="specs">
-
-          <pre>providers() :: %{get_public_key: <a href="#t:get_public_key_callback/0">get_public_key_callback</a>()}</pre>
-
-      </div>
-
-
-  </section>
-</section>
 <section class="detail" id="t:validate_opts/0">
 
   <div class="detail-header">
@@ -240,7 +149,7 @@ Types
     </a>
     <h1 class="signature">validate_opts()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/launch_validation.ex#L8" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/launch_validation.ex#L11" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -253,7 +162,7 @@ Types
       <h2>Specs</h2>
       <div class="specs">
 
-          <pre>validate_opts() :: [{:providers, <a href="#t:providers/0">providers</a>()}]</pre>
+          <pre>validate_opts() :: []</pre>
 
       </div>
 
@@ -275,14 +184,16 @@ Functions
           <div class="functions-list">
 <section class="detail" id="validate/2">
 
+    <span id="validate/1"></span>
+
   <div class="detail-header">
     <a href="#validate/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">validate(conn, opts)</h1>
+    <h1 class="signature">validate(conn, opts \\ [])</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/launch_validation.ex#L14" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/launch_validation.ex#L17" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
