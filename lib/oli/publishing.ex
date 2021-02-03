@@ -644,19 +644,32 @@ defmodule Oli.Publishing do
 
   end
 
+  @doc """
+  Creates a course builder course visibility mapping
+  """
   def insert_visibility(attrs) do
-    IO.inspect attrs
     %ProjectVisibility{}
     |> ProjectVisibility.changeset(attrs)
     |> Repo.insert()
   end
 
+  @doc """
+  Removes a course builder course visibility mapping
+  """
+  def remove_visibility(%ProjectVisibility{} = project_visibility) do
+    Repo.delete(project_visibility)
+  end
+
+  @doc """
+  Returns a map containing mappings for which users or institutions have course build access to the project
+  """
   def get_all_project_visibilities(project_id) do
     Repo.all from v in ProjectVisibility,
       where: v.project_id == ^project_id,
       left_join: author in Author, on: v.author_id == author.id,
       left_join: institution in Institution, on: v.institution_id == institution.id,
       select: %{
+        visibility: v,
         author: author,
         institution: institution
       }

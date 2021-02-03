@@ -43,15 +43,15 @@ defmodule OliWeb.Projects.VisibilityLive do
                     <form phx-change="option">
                         <div class="form-group">
                             <%= radio_button :visibility, :option, "authors", class: "form-check-input", checked: if  @project.visibility == :authors, do: true, else: false  %>
-                            <%= label :visibility_option, "Only Authors who are building this course", class: "form-check-label" %>
+                            <%= label :visibility_option, "Only direct authors to this course", class: "form-check-label" %>
                         </div>
                         <div class="form-group">
                             <%= radio_button :visibility, :option, "global", class: "form-check-input", checked: if  @project.visibility == :global, do: true, else: false %>
-                            <%= label :visibility_option, "All users registered as instructors", class: "form-check-label" %>
+                            <%= label :visibility_option, "Any user with instructor access", class: "form-check-label" %>
                         </div>
                         <div class="form-group">
                             <%= radio_button :visibility, :option, "selected", class: "form-check-input", checked: if  @project.visibility == :selected, do: true, else: false %>
-                            <%= label :visibility_option, "Only a selected list of users or institutions", class: "form-check-label" %>
+                            <%= label :visibility_option, "Only the selected list of users or institutions below", class: "form-check-label" %>
                         </div>
                     </form>
                 </div>
@@ -70,11 +70,11 @@ defmodule OliWeb.Projects.VisibilityLive do
                 <ul class="nav nav-tabs">
                     <li class="nav-item">
                         <a phx-click="users_tab" class="nav-link <%= if  @tab == :users, do: "active" %>"
-                           data-toggle="tab" href="#users">Users</a>
+                            data-toggle="tab" href="#users">Users</a>
                     </li>
                     <li class="nav-item">
                         <a phx-click="institutions_tab" class="nav-link <%= if  @tab == :institutions, do: "active" %>"
-                           data-toggle="tab" href="#institutions">Institutions</a>
+                            data-toggle="tab" href="#institutions">Institutions</a>
                     </li>
                 </ul>
 
@@ -107,7 +107,18 @@ defmodule OliWeb.Projects.VisibilityLive do
                                     <ul class="list-group list-group-flush">
                                         <%= for v <- @project_visibilities do %>
                                         <%= if v.author != nil do %>
-                                        <li class="list-group-item"><%= v.author.email %></li>
+                                        <li class="list-group-item">
+                                            <div class="d-flex">
+                                                <div class="flex-fill"><%= v.author.email %>
+                                                </div>
+                                                <div><button id="delete_<%= v.visibility.id %>"
+                                                        phx-click="delete_visibility"
+                                                        phx-value-id="<%= v.visibility.id %>" data-backdrop="static"
+                                                        data-keyboard="false" class="ml-1 btn btn-sm btn-danger">
+                                                        <i class="fas fa-trash-alt fa-lg"></i>
+                                                    </button></div>
+                                            </div>
+                                        </li>
                                         <%= end %>
                                         <%= end %>
                                     </ul>
@@ -117,7 +128,7 @@ defmodule OliWeb.Projects.VisibilityLive do
 
                     </div>
                     <div id="institutions"
-                         class="container tab-pane <%= if  @tab == :institutions, do: "active", else: "fade" %>"><br>
+                        class="container tab-pane <%= if  @tab == :institutions, do: "active", else: "fade" %>"><br>
                         <h3>Institutions</h3>
                         <div class="card">
                             <div>
@@ -142,7 +153,17 @@ defmodule OliWeb.Projects.VisibilityLive do
                                     <ul class="list-group list-group-flush">
                                         <%= for v <- @project_visibilities do %>
                                         <%= if v.institution != nil do %>
-                                        <li class="list-group-item"><%= v.institution.name %></li>
+                                        <li class="list-group-item">
+                                            <div class="d-flex">
+                                                <div class="flex-fill"><%= v.institution.name %></div>
+                                                <div><button id="delete_<%= v.visibility.id %>"
+                                                        phx-click="delete_visibility"
+                                                        phx-value-id="<%= v.visibility.id %>" data-backdrop="static"
+                                                        data-keyboard="false" class="ml-1 btn btn-sm btn-danger">
+                                                        <i class="fas fa-trash-alt fa-lg"></i>
+                                                    </button></div>
+                                            </div>
+                                        </li>
                                         <%= end %>
                                         <%= end %>
                                     </ul>
@@ -157,6 +178,7 @@ defmodule OliWeb.Projects.VisibilityLive do
         <% end %>
     </div>
     </div>
+
     """
   end
 
@@ -164,47 +186,60 @@ defmodule OliWeb.Projects.VisibilityLive do
     case entity do
       "instructors" ->
         list =
-          if String.length(query) > 3 do
+          if String.length(query) > 1 do
             Accounts.search_authors_matching(query)
           else
             []
           end
 
         list = Enum.map(list, fn a -> {a.email, a.id} end) |> Enum.sort_by(& &1)
-        list = list |> Enum.filter(fn e ->
-          {_, id} = e
-          f =
-            Enum.find(socket.assigns.project_visibilities, fn x ->
-              x.author != nil && x.author.id == id
-            end)
-          if f == nil do
-            true
-          else
-            false
-          end
-        end)
+
+        list =
+          list
+          |> Enum.filter(fn e ->
+            {_, id} = e
+
+            f =
+              Enum.find(socket.assigns.project_visibilities, fn x ->
+                x.author != nil && x.author.id == id
+              end)
+
+            if f == nil do
+              true
+            else
+              false
+            end
+          end)
+
         {:noreply, assign(socket, :user_emails, list)}
+
       "institution" ->
         list =
-          if String.length(query) > 3 do
+          if String.length(query) > 1 do
             Institutions.search_authors_matching(query)
           else
             []
           end
 
         list = Enum.map(list, fn a -> {a.name, a.id} end) |> Enum.sort_by(& &1)
-        list = list |> Enum.filter(fn e ->
-          {_, id} = e
-          f =
-            Enum.find(socket.assigns.project_visibilities, fn x ->
-              x.institution != nil && x.institution.id == id
-            end)
-          if f == nil do
-            true
-          else
-            false
-          end
-        end)
+
+        list =
+          list
+          |> Enum.filter(fn e ->
+            {_, id} = e
+
+            f =
+              Enum.find(socket.assigns.project_visibilities, fn x ->
+                x.institution != nil && x.institution.id == id
+              end)
+
+            if f == nil do
+              true
+            else
+              false
+            end
+          end)
+
         {:noreply, assign(socket, :institution_names, list)}
     end
   end
@@ -246,6 +281,7 @@ defmodule OliWeb.Projects.VisibilityLive do
         Enum.find(socket.assigns.project_visibilities, fn x ->
           x.institution != nil && x.institution.id == id
         end)
+
       if f == nil do
         Publishing.insert_visibility(%{project_id: socket.assigns.project.id, institution_id: id})
       end
@@ -262,5 +298,21 @@ defmodule OliWeb.Projects.VisibilityLive do
 
   def handle_event("institutions_tab", option, socket) do
     {:noreply, assign(socket, :tab, :institutions)}
+  end
+
+  def handle_event("delete_visibility", %{"id" => visibility_id}, socket) do
+    {id, _} = Integer.parse(visibility_id)
+
+    v =
+      Enum.find(socket.assigns.project_visibilities, fn x ->
+        x.visibility != nil && x.visibility.id == id
+      end)
+
+    if v != nil do
+      Publishing.remove_visibility(v.visibility)
+    end
+
+    project_visibilities = Publishing.get_all_project_visibilities(socket.assigns.project.id)
+    {:noreply, assign(socket, project_visibilities: project_visibilities)}
   end
 end
