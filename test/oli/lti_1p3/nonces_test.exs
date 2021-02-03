@@ -8,20 +8,44 @@ defmodule Oli.Lti_1p3.NoncesTest do
   describe "lti 1.3 nonces" do
     test "should get existing nonce" do
       {:ok, nonce} = %Nonce{}
-      |> Nonce.changeset(%{value: "some-value"})
+      |> Nonce.changeset(%{value: "some-value", domain: "some-domain"})
       |> Repo.insert()
 
       assert Nonces.get_nonce!(nonce.id).value == "some-value"
+      assert Nonces.get_nonce!(nonce.id).domain == "some-domain"
     end
 
-    test "should create new nonce" do
-      {:ok, nonce} = Nonces.create_nonce(%{value: "some-value"})
+    test "should create new nonce with default domain nil" do
+      {:ok, nonce} = Nonces.create_nonce("some-value")
 
       assert nonce.value == "some-value"
+      assert nonce.domain == nil
+    end
+
+    test "should create new nonce with specified domain" do
+      {:ok, nonce} = Nonces.create_nonce("some-value", "some-domain")
+
+      assert nonce.value == "some-value"
+      assert nonce.domain == "some-domain"
+    end
+
+    test "should create new nonce with specified domain if one already exists with different domain" do
+      {:ok, _nonce1} = Nonces.create_nonce("some-value")
+      {:ok, _nonce2} = Nonces.create_nonce("some-value", "some-domain")
+      {:ok, nonce3} = Nonces.create_nonce("some-value", "different-domain")
+
+      assert nonce3.value == "some-value"
+      assert nonce3.domain == "different-domain"
+    end
+
+    test "should fail to create new nonce if one already exists with specified domain" do
+      {:ok, _nonce} = Nonces.create_nonce("some-value", "some-domain")
+
+      assert {:error, %Ecto.Changeset{}} = Nonces.create_nonce("some-value", "some-domain")
     end
 
     test "should cleanup expired nonces" do
-      {:ok, nonce} = Nonces.create_nonce(%{value: "some-value"})
+      {:ok, nonce} = Nonces.create_nonce("some-value")
 
       # verify the nonce exists before cleanup
       assert Nonces.get_nonce!(nonce.id) == nonce

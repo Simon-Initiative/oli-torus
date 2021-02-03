@@ -59,6 +59,10 @@ config :oli, :recaptcha,
 config :oli, :help,
   dispatcher: Oli.Help.Providers.EmailHelp
 
+config :oli, :lti_1p3,
+  repo: Oli.Repo,
+  http_client: HTTPoison
+
 config :ex_aws,
   access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, :instance_role],
   secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, :instance_role]
