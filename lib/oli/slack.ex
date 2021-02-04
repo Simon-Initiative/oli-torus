@@ -1,6 +1,8 @@
 defmodule Oli.Slack do
   require Logger
 
+  import Oli.HTTP
+
   @doc """
   Sends a message to slack using the pre-configured configured webhook
 
@@ -45,7 +47,7 @@ defmodule Oli.Slack do
         {:error, "SLACK_WEBHOOK_URL not configured"}
 
       slack_webhook_url ->
-        HTTPoison.post(
+        http().post(
           slack_webhook_url,
           Jason.encode!(payload),
           [{"Content-Type", "application/json"}]

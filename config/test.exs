@@ -3,7 +3,9 @@ use Mix.Config
 config :oli,
   env: :test,
   s3_media_bucket_name: "torus-media-test",
-  media_url: "d1od6xouqrpl5k.cloudfront.net"
+  media_url: "d1od6xouqrpl5k.cloudfront.net",
+  http_client: Oli.Test.MockHTTP,
+  slack_webhook_url: nil
 
 # Configure your database
 config :oli, Oli.Repo,
