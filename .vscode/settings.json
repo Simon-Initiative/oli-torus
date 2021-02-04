@@ -1,33 +1,6 @@
 {
-    "editor.tabSize": 1,
+    "editor.tabSize": 2,
     "files.trimTrailingWhitespace": true,
     "typescript.tsdk": "node_modules/typescript/lib",
-    "jest.rootPath": "./assets",
-    "html.format.unformatted": "",
-    "beautify.language": {
-
-
-        "js": {
-            "type": [
-                "javascript",
-                "json",
-                "jsonc"
-            ],
-            "filename": [
-                ".jshintrc",
-                ".jsbeautifyrc"
-            ]
-        },
-        "css": [
-            "css",
-            "less",
-            "scss"
-        ],
-        "html": [
-            "htm",
-            "html",
-            "html-eex"
-        ]
-    },
-    "beautify.config": ""
+    "jest.rootPath": "./assets"
 }

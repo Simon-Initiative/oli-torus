@@ -1,0 +1,63 @@
+defmodule OliWeb.ProjectVisibilityTest do
+  use OliWeb.ConnCase
+  alias Oli.Seeder
+  alias Oli.Authoring.Course
+
+  import Phoenix.ConnTest
+  import Phoenix.LiveViewTest
+  @endpoint OliWeb.Endpoint
+
+  describe "visibility live test" do
+    setup [:setup_session]
+
+    test "project visibility update", %{conn: conn, author: author, project: project, map: map, institution: institution} do
+
+      {:ok, view, html} = live_isolated(conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => project.slug })
+
+      assert view |> element("#visibility_option_selected") |> has_element?()
+
+      view
+      |> element("#visibility_option")
+      |> render_change(%{"visibility" => %{"option" => "global"}})
+
+      updated_project = Course.get_project!(project.id)
+
+      assert updated_project.visibility == :global
+    end
+
+  end
+
+  defp setup_session(%{conn: conn}) do
+    user = user_fixture()
+
+    map = Seeder.base_project_with_resource2()
+
+    section = section_fixture(%{
+      context_id: "some-context-id",
+      project_id: map.project.id,
+      publication_id: map.publication.id,
+      institution_id: map.institution.id
+    })
+
+    lti_params = Oli.TestHelpers.Lti_1p3.all_default_claims()
+      |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
+
+    Oli.Lti_1p3.cache_lti_params!(lti_params["sub"], lti_params)
+
+    conn = Plug.Test.init_test_session(conn, lti_1p3_sub: lti_params["sub"])
+      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+    {:ok,
+      conn: conn,
+      map: map,
+      author: map.author,
+      institution: map.institution,
+      user: user,
+      project: map.project,
+      publication: map.publication,
+      section: section
+    }
+  end
+
+end

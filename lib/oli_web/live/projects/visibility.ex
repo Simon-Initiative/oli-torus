@@ -31,154 +31,151 @@ defmodule OliWeb.Projects.VisibilityLive do
   def render(assigns) do
     ~L"""
     <div class="card">
-    <div class="card-body ">
+      <div class="card-body ">
         <div class="row justify-content-center">
-            <div class="col-sm-8 p-3 text-center">
-                <h5 class="card-title">Course builder visibility</h5>
-            </div>
+          <div class="col-sm-8 p-3 text-center">
+            <h5 class="card-title">Course builder visibility</h5>
+          </div>
         </div>
         <div class="row justify-content-center">
-            <div class="col-sm-8">
-                <div class="form-check form-switch">
-                    <form phx-change="option">
-                        <div class="form-group">
-                            <%= radio_button :visibility, :option, "authors", class: "form-check-input", checked: if  @project.visibility == :authors, do: true, else: false  %>
-                            <%= label :visibility_option, "Only direct authors to this course", class: "form-check-label" %>
-                        </div>
-                        <div class="form-group">
-                            <%= radio_button :visibility, :option, "global", class: "form-check-input", checked: if  @project.visibility == :global, do: true, else: false %>
-                            <%= label :visibility_option, "Any user with instructor access", class: "form-check-label" %>
-                        </div>
-                        <div class="form-group">
-                            <%= radio_button :visibility, :option, "selected", class: "form-check-input", checked: if  @project.visibility == :selected, do: true, else: false %>
-                            <%= label :visibility_option, "Only the selected list of users or institutions below", class: "form-check-label" %>
-                        </div>
-                    </form>
+          <div class="col-sm-8">
+            <div class="form-check form-switch">
+              <form phx-change="option" id="visibility_option">
+                <div class="form-group">
+                  <%= radio_button :visibility, :option, "authors", class: "form-check-input", checked: if  @project.visibility == :authors, do: true, else: false  %>
+                  <%= label :visibility_option, "Only direct authors to this course", class: "form-check-label" %>
                 </div>
+                <div class="form-group">
+                  <%= radio_button :visibility, :option, "global", class: "form-check-input", checked: if  @project.visibility == :global, do: true, else: false %>
+                  <%= label :visibility_option, "Any user with instructor access", class: "form-check-label" %>
+                </div>
+                <div class="form-group">
+                  <%= radio_button :visibility, :option, "selected", class: "form-check-input", checked: if  @project.visibility == :selected, do: true, else: false %>
+                  <%= label :visibility_option, "Only the selected list of users or institutions below", class: "form-check-label" %>
+                </div>
+              </form>
             </div>
+          </div>
         </div>
         <%= if @project.visibility == :selected do %>
-        <div class="row justify-content-center">
+          <div class="row justify-content-center">
             <div class="col-sm-8 text-center">
-                <p class="card-text">Below is a list of users and/or institutions that have been granted
-                    permission
-                    to create course instances in their LMS using this project</p>
+              <p class="card-text">Below is a list of users and/or institutions that have been granted
+                permission
+                to create course instances in their LMS using this project</p>
             </div>
-        </div>
-        <div class="row justify-content-center">
+          </div>
+          <div class="row justify-content-center">
             <div class="col-sm-8">
-                <ul class="nav nav-tabs">
-                    <li class="nav-item">
-                        <a phx-click="users_tab" class="nav-link <%= if  @tab == :users, do: "active" %>"
-                            data-toggle="tab" href="#users">Users</a>
-                    </li>
-                    <li class="nav-item">
-                        <a phx-click="institutions_tab" class="nav-link <%= if  @tab == :institutions, do: "active" %>"
-                            data-toggle="tab" href="#institutions">Institutions</a>
-                    </li>
-                </ul>
-
-                <!-- Tab panes -->
-                <div class="tab-content">
-                    <div id="users" class="container tab-pane <%= if  @tab == :users, do: "active", else: "fade" %>">
-                        <br>
-                        <h3>Users</h3>
-                        <div class="card">
-                            <div>
-                                <form phx-change="search" class="form-inline form-grow">
-                                    <%= text_input :search_field, :query, placeholder: "Search for users by email here",
-                        class: "form-control form-control-sm mb-2 mb-sm-0 title container-fluid flex-fill",
-                        autofocus: true, "phx-debounce": "300" %>
-                                    <%= hidden_input :search_field, :entity, value: "instructors" %>
-                                </form>
-                            </div>
-                            <div class="row justify-content-center">
-
-                                <%= if !Enum.empty?(@user_emails) do %>
-                                <div class="flex-fill">
-                                    <p>Select from the list below and submit</p>
-                                    <form phx-submit="selected_email">
-                                        <%= multiple_select :multi, :emails, @user_emails, class: "form-control w-100" %>
-                                        <%= submit "Submit", class: "btn btn-primary" %>
-                                    </form>
-                                </div>
-                                <%= end %>
-                                <div class="flex-fill">
-                                    <ul class="list-group list-group-flush">
-                                        <%= for v <- @project_visibilities do %>
-                                        <%= if v.author != nil do %>
-                                        <li class="list-group-item">
-                                            <div class="d-flex">
-                                                <div class="flex-fill"><%= v.author.email %>
-                                                </div>
-                                                <div><button id="delete_<%= v.visibility.id %>"
-                                                        phx-click="delete_visibility"
-                                                        phx-value-id="<%= v.visibility.id %>" data-backdrop="static"
-                                                        data-keyboard="false" class="ml-1 btn btn-sm btn-danger">
-                                                        <i class="fas fa-trash-alt fa-lg"></i>
-                                                    </button></div>
-                                            </div>
-                                        </li>
-                                        <%= end %>
-                                        <%= end %>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-
+              <ul class="nav nav-tabs">
+                <li class="nav-item">
+                  <a phx-click="users_tab" class="nav-link <%= if  @tab == :users, do: "active" %>"
+                                data-toggle="tab" href="#users">Users</a>
+                </li>
+                <li class="nav-item">
+                  <a phx-click="institutions_tab" class="nav-link <%= if  @tab == :institutions, do: "active" %>"
+                                data-toggle="tab" href="#institutions">Institutions</a>
+                </li>
+              </ul>
+              <!-- Tab panes -->
+              <div class="tab-content">
+                <div id="users" class="container tab-pane <%= if  @tab == :users, do: "active", else: "fade" %>">
+                  <br>
+                  <h3>Users</h3>
+                  <div class="card">
+                    <div>
+                      <form phx-change="search" class="form-inline form-grow">
+                        <%= text_input :search_field, :query, placeholder: "Search for users by email here",
+                            class: "form-control form-control-sm mb-2 mb-sm-0 title container-fluid flex-fill",
+                            autofocus: true, "phx-debounce": "300" %>
+                        <%= hidden_input :search_field, :entity, value: "instructors" %>
+                      </form>
                     </div>
-                    <div id="institutions"
-                        class="container tab-pane <%= if  @tab == :institutions, do: "active", else: "fade" %>"><br>
-                        <h3>Institutions</h3>
-                        <div class="card">
-                            <div>
-                                <form phx-change="search" class="form-inline form-grow">
-                                    <%= text_input :search_field, :query, placeholder: "Search for institutions by name here",
-                        class: "form-control form-control-sm mb-2 mb-sm-0 title container-fluid flex-fill",
-                        autofocus: true, "phx-debounce": "300" %>
-                                    <%= hidden_input :search_field, :entity, value: "institution" %>
-                                </form>
-                            </div>
-                            <div class="row justify-content-center">
-                                <%= if !Enum.empty?(@institution_names) do %>
-                                <div class="flex-fill">
-                                    <p>Select from the list below and submit</p>
-                                    <form phx-submit="selected_institution">
-                                        <%= multiple_select :multi, :institutions, @institution_names , class: "form-control w-100" %>
-                                        <%= submit "Submit", class: "btn btn-primary" %>
-                                    </form>
-                                </div>
-                                <%= end %>
-                                <div class="flex-fill">
-                                    <ul class="list-group list-group-flush">
-                                        <%= for v <- @project_visibilities do %>
-                                        <%= if v.institution != nil do %>
-                                        <li class="list-group-item">
-                                            <div class="d-flex">
-                                                <div class="flex-fill"><%= v.institution.name %></div>
-                                                <div><button id="delete_<%= v.visibility.id %>"
-                                                        phx-click="delete_visibility"
-                                                        phx-value-id="<%= v.visibility.id %>" data-backdrop="static"
-                                                        data-keyboard="false" class="ml-1 btn btn-sm btn-danger">
-                                                        <i class="fas fa-trash-alt fa-lg"></i>
-                                                    </button></div>
-                                            </div>
-                                        </li>
-                                        <%= end %>
-                                        <%= end %>
-                                    </ul>
-                                </div>
-                            </div>
+                    <div class="row justify-content-center">
+                      <%= if !Enum.empty?(@user_emails) do %>
+                        <div class="flex-fill">
+                          <p>Select from the list below and submit</p>
+                          <form phx-submit="selected_email" id="user_submit">
+                            <%= multiple_select :multi, :emails, @user_emails, class: "form-control w-100" %>
+                            <%= submit "Submit", class: "btn btn-primary" %>
+                          </form>
                         </div>
+                      <%= end %>
+                      <div class="flex-fill">
+                        <ul class="list-group list-group-flush">
+                          <%= for v <- @project_visibilities do %>
+                            <%= if v.author != nil do %>
+                              <li class="list-group-item">
+                                <div class="d-flex">
+                                  <div class="flex-fill"><%= v.author.email %>
+                                  </div>
+                                  <div>
+                                    <button id="delete_<%= v.visibility.id %>"
+                                            phx-click="delete_visibility"
+                                            phx-value-id="<%= v.visibility.id %>" data-backdrop="static"
+                                            data-keyboard="false" class="ml-1 btn btn-sm btn-danger">
+                                      <i class="fas fa-trash-alt fa-lg"></i>
+                                    </button></div>
+                                </div>
+                              </li>
+                            <%= end %>
+                          <%= end %>
+                        </ul>
+                      </div>
                     </div>
-
+                  </div>
                 </div>
+                <div id="institutions"
+                            class="container tab-pane <%= if  @tab == :institutions, do: "active", else: "fade" %>"><br>
+                  <h3>Institutions</h3>
+                  <div class="card">
+                    <div>
+                      <form phx-change="search" class="form-inline form-grow">
+                        <%= text_input :search_field, :query, placeholder: "Search for institutions by name here",
+                            class: "form-control form-control-sm mb-2 mb-sm-0 title container-fluid flex-fill",
+                            autofocus: true, "phx-debounce": "300" %>
+                        <%= hidden_input :search_field, :entity, value: "institution" %>
+                      </form>
+                    </div>
+                    <div class="row justify-content-center">
+                      <%= if !Enum.empty?(@institution_names) do %>
+                        <div class="flex-fill">
+                          <p>Select from the list below and submit</p>
+                          <form phx-submit="selected_institution" id="institutions_submit">
+                            <%= multiple_select :multi, :institutions, @institution_names , class: "form-control w-100" %>
+                            <%= submit "Submit", class: "btn btn-primary" %>
+                          </form>
+                        </div>
+                      <%= end %>
+                      <div class="flex-fill">
+                        <ul class="list-group list-group-flush">
+                          <%= for v <- @project_visibilities do %>
+                            <%= if v.institution != nil do %>
+                              <li class="list-group-item">
+                                <div class="d-flex">
+                                  <div class="flex-fill"><%= v.institution.name %></div>
+                                  <div>
+                                    <button id="delete_<%= v.visibility.id %>"
+                                            phx-click="delete_visibility"
+                                            phx-value-id="<%= v.visibility.id %>" data-backdrop="static"
+                                            data-keyboard="false" class="ml-1 btn btn-sm btn-danger">
+                                      <i class="fas fa-trash-alt fa-lg"></i>
+                                    </button></div>
+                                </div>
+                              </li>
+                            <%= end %>
+                          <%= end %>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-        </div>
+          </div>
         <% end %>
+      </div>
     </div>
-    </div>
-
     """
   end
 
