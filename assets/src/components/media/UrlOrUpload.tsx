@@ -41,7 +41,7 @@ export const UrlOrUpload = (props: Props) => {
             id="inlineRadio2"
             value="url" />
           <label className="form-check-label" htmlFor="inlineRadio2">
-            External media item
+            Use external media item
           </label>
         </div>
         <div className="form-check">
@@ -54,7 +54,7 @@ export const UrlOrUpload = (props: Props) => {
             id="inlineRadio1"
             value="upload" />
           <label className="form-check-label" htmlFor="inlineRadio1">
-            Upload new media
+            Upload new or use existing media library item
           </label>
         </div>
       </div>
