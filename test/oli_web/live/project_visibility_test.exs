@@ -3,7 +3,6 @@ defmodule OliWeb.ProjectVisibilityTest do
   alias Oli.Seeder
   alias Oli.Authoring.Course
 
-  import Phoenix.ConnTest
   import Phoenix.LiveViewTest
   @endpoint OliWeb.Endpoint
 
