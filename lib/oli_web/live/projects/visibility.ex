@@ -1,10 +1,8 @@
 defmodule OliWeb.Projects.VisibilityLive do
   use Phoenix.LiveView
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Authoring.Course
   alias Oli.Accounts
   alias Oli.Institutions
-  alias Oli.Authoring.Course.ProjectVisibility
   alias Oli.Publishing
   use Phoenix.HTML
 
@@ -100,7 +98,7 @@ defmodule OliWeb.Projects.VisibilityLive do
                             <%= submit "Submit", class: "btn btn-primary" %>
                           </form>
                         </div>
-                      <%= end %>
+                      <% end %>
                       <div class="flex-fill">
                         <ul class="list-group list-group-flush">
                           <%= for v <- @project_visibilities do %>
@@ -118,8 +116,8 @@ defmodule OliWeb.Projects.VisibilityLive do
                                     </button></div>
                                 </div>
                               </li>
-                            <%= end %>
-                          <%= end %>
+                            <% end %>
+                          <% end %>
                         </ul>
                       </div>
                     </div>
@@ -146,7 +144,7 @@ defmodule OliWeb.Projects.VisibilityLive do
                             <%= submit "Submit", class: "btn btn-primary" %>
                           </form>
                         </div>
-                      <%= end %>
+                      <% end %>
                       <div class="flex-fill">
                         <ul class="list-group list-group-flush">
                           <%= for v <- @project_visibilities do %>
@@ -163,8 +161,8 @@ defmodule OliWeb.Projects.VisibilityLive do
                                     </button></div>
                                 </div>
                               </li>
-                            <%= end %>
-                          <%= end %>
+                            <% end %>
+                          <% end %>
                         </ul>
                       </div>
                     </div>
