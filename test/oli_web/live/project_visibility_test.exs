@@ -10,9 +10,9 @@ defmodule OliWeb.ProjectVisibilityTest do
   describe "visibility live test" do
     setup [:setup_session]
 
-    test "project visibility update", %{conn: conn, author: author, project: project, map: map, institution: institution} do
+    test "project visibility update", %{conn: conn, project: project} do
 
-      {:ok, view, html} = live_isolated(conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => project.slug })
+      {:ok, view, _} = live_isolated(conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => project.slug })
 
       assert view |> element("#visibility_option_selected") |> has_element?()
 
@@ -40,13 +40,13 @@ defmodule OliWeb.ProjectVisibilityTest do
     })
 
     lti_params = Oli.TestHelpers.Lti_1p3.all_default_claims()
-      |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
+                 |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
 
     Oli.Lti_1p3.cache_lti_params!(lti_params["sub"], lti_params)
 
     conn = Plug.Test.init_test_session(conn, lti_1p3_sub: lti_params["sub"])
-      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-      |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+           |> Pow.Plug.assign_current_user(map.author, get_pow_config(:author))
+           |> Pow.Plug.assign_current_user(user, get_pow_config(:user))
 
     {:ok,
       conn: conn,
