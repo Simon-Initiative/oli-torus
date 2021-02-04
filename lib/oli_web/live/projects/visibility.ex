@@ -287,11 +287,11 @@ defmodule OliWeb.Projects.VisibilityLive do
     {:noreply, assign(socket, project_visibilities: project_visibilities, institution_names: [])}
   end
 
-  def handle_event("users_tab", option, socket) do
+  def handle_event("users_tab", _option, socket) do
     {:noreply, assign(socket, :tab, :users)}
   end
 
-  def handle_event("institutions_tab", option, socket) do
+  def handle_event("institutions_tab", _option, socket) do
     {:noreply, assign(socket, :tab, :institutions)}
   end
 
