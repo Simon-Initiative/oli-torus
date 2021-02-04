@@ -7,9 +7,20 @@ defmodule Oli.SlackTest do
   alias Oli.Test.MockHTTP
   alias Oli.Slack
 
+  defp on_exit_cb(_) do
+    on_exit(fn ->
+      case Application.fetch_env!(:oli, :slack_webhook_url) do
+        {:ok, _} ->
+          Application.delete_env(:oli, :slack_webhook_url)
+        _ ->
+          nil
+      end
+    end)
+  end
+
   describe "slack messaging properly configured" do
     # Make sure mocks are verified when the test exits
-    setup :verify_on_exit!
+    setup [:verify_on_exit!, :on_exit_cb]
 
     test "sends a slack message to the configured url" do
       payload = get_example_payload()
@@ -25,6 +36,8 @@ defmodule Oli.SlackTest do
   end
 
   describe "slack messaging not configured" do
+    setup :on_exit_cb
+
     test "fails and logs a warning that slack_webhook_url is not configured" do
       payload = get_example_payload()
 
