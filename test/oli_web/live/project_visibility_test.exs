@@ -2,6 +2,7 @@ defmodule OliWeb.ProjectVisibilityTest do
   use OliWeb.ConnCase
   alias Oli.Seeder
   alias Oli.Authoring.Course
+  alias Oli.Publishing
 
   import Phoenix.LiveViewTest
   @endpoint OliWeb.Endpoint
@@ -9,7 +10,7 @@ defmodule OliWeb.ProjectVisibilityTest do
   describe "visibility live test" do
     setup [:setup_session]
 
-    test "project visibility update", %{conn: conn, project: project} do
+    test "project visibility update", %{conn: conn, project: project, author: author, institution: institution} do
 
       {:ok, view, _} = live_isolated(conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => project.slug })
 
@@ -20,8 +21,15 @@ defmodule OliWeb.ProjectVisibilityTest do
       |> render_change(%{"visibility" => %{"option" => "global"}})
 
       updated_project = Course.get_project!(project.id)
-
       assert updated_project.visibility == :global
+
+      available_publications = Publishing.available_publications(author, institution)
+      assert available_publications == []
+
+      Publishing.publish_project(project)
+
+      available_publications = Publishing.available_publications(author, institution)
+      assert Enum.count(available_publications) == 2
     end
 
   end
