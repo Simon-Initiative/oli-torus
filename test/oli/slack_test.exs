@@ -7,10 +7,10 @@ defmodule Oli.SlackTest do
   alias Oli.Test.MockHTTP
   alias Oli.Slack
 
-  # Make sure mocks are verified when the test exits
-  setup :verify_on_exit!
+  describe "slack messaging properly configured" do
+    # Make sure mocks are verified when the test exits
+    setup :verify_on_exit!
 
-  describe "slack messaging" do
     test "sends a slack message to the configured url" do
       payload = get_example_payload()
       slack_webhook_url = "https://hooks.example.com/services/ASDF7ASDF7ASH/ASDF7HQ9JF3/0JR43098o78hdfsdf"
@@ -22,7 +22,9 @@ defmodule Oli.SlackTest do
 
       assert Slack.send(payload) == {:ok, %HTTPoison.Response{status_code: 200, body: "OK"}}
     end
+  end
 
+  describe "slack messaging not configured" do
     test "fails and logs a warning that slack_webhook_url is not configured" do
       payload = get_example_payload()
 
