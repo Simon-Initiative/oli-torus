@@ -39,18 +39,17 @@ defmodule Oli.Slack do
   }
   """
   def send(payload) do
-    case Application.fetch_env(:oli, :slack_webhook_url) do
-      {:ok, slack_webhook_url} ->
+    case Application.fetch_env!(:oli, :slack_webhook_url) do
+      nil ->
+        Logger.warning("This message cannot be sent because SLACK_WEBHOOK_URL is not configured", payload)
+        {:error, "SLACK_WEBHOOK_URL not configured"}
+
+      slack_webhook_url ->
         HTTPoison.post(
           slack_webhook_url,
           Jason.encode!(payload),
           [{"Content-Type", "application/json"}]
         )
-
-      :error ->
-        Logger.warning("This message cannot be sent because SLACK_WEBHOOK_URL is not configured", payload)
-
-        {:error, "SLACK_WEBHOOK_URL not configured"}
     end
   end
 end
