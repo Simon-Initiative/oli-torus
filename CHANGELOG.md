@@ -5,6 +5,7 @@
   - Add LTI 1.3 platform launch support
 
 ### Bug fixes
+  - Allow Slack hook URL to be unspecified during LMS LTI registration
   - Prevent LTI launch to an iframe to avoid third-party cookie issues
   - Honor the current location when inserting block content (YouTube, images, etc)
   - Remove foreign key constraint that tied a user to an institution

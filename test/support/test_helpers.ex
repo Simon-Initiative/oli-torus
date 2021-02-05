@@ -9,6 +9,8 @@ defmodule Oli.TestHelpers do
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing
 
+  Mox.defmock(Oli.Test.MockHTTP, for: HTTPoison.Base)
+
   def yesterday() do
     {:ok, datetime} = DateTime.now("Etc/UTC")
     DateTime.add(datetime, -(60 * 60 * 24), :second)
