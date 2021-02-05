@@ -1,17 +1,17 @@
 import * as Immutable from 'immutable';
-import { ProjectSlug, ActivityTypeSlug, ActivitySlug, ObjectiveSlug, ResourceSlug, ResourceId } from 'data/types';
+import { ProjectSlug, ActivityTypeSlug, ResourceId } from 'data/types';
 import { ActivityModelSchema, PartResponse } from 'components/activities/types';
 import { makeRequest } from './common';
 
 export type ActivityUpdate = {
   title: string,
-  objectives: Immutable.Map<string, Immutable.List<ObjectiveSlug>>,
+  objectives: Immutable.Map<string, Immutable.List<ResourceId>>,
   content: ActivityModelSchema,
   authoring?: any,
 };
 
 export type Created = {
-  type: 'success',
+  result: 'success',
   revisionSlug: string,
   transformed: null | ActivityModelSchema,
 };
@@ -22,17 +22,17 @@ export type Updated = {
 };
 
 export type Transformed = {
-  type: 'success',
+  result: 'success',
   transformed: null | ActivityModelSchema,
 };
 
 export type Evaluated = {
-  type: 'success',
-  evaluations: any,
+  result: 'success',
+  evaluations: any
 };
 
 
-export type Edited = { type: 'success', revisionSlug: string };
+export type Edited = { result: 'success', revisionSlug: string };
 
 export function create(
   project: ProjectSlug, activityTypeSlug: ActivityTypeSlug,

@@ -45,7 +45,7 @@ export const Objectives = (props: ObjectivesProps) => {
           if (createdObjective) {
             create(props.projectSlug, createdObjective.title)
               .then((result) => {
-                if (result.type === 'success') {
+                if (result.result === 'success') {
                   onRegisterNewObjective({
                     slug: result.revisionSlug,
                     title: createdObjective.title,

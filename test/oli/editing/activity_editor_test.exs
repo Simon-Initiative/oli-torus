@@ -40,7 +40,7 @@ defmodule Oli.ActivityEditingTest do
           "transformations" => []
         }
       }
-      {:ok, {revision, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [obj1.revision.slug, obj2.revision.slug])
+      {:ok, {revision, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [obj1.resource.id, obj2.resource.id])
       assert revision.content == content
 
       assert Map.get(revision.objectives, "1") == [obj1.resource.id, obj2.resource.id]
@@ -178,7 +178,7 @@ defmodule Oli.ActivityEditingTest do
       assert revision.content["objectives"] == %{ "1" => [ ob1.slug ], "2" => [ ob2.slug ]  }
 
       # Delete one of the activity parts
-      update = %{ "objectives" => %{ "1" => [ ob1.slug ], "2" => [ ob2.slug ]  },
+      update = %{ "objectives" => %{ "1" => [ ob1.resource_id ], "2" => [ ob2.resource_id ]  },
         "content" => %{"authoring" => %{"parts" => [%{"id" => "1" }]}}}
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
       {:ok, updated} = ActivityEditor.edit(project.slug, revision.resource_id, revision.resource_id, author.email, update)

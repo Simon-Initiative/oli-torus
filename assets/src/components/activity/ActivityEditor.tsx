@@ -8,7 +8,7 @@ import { ActivityContext } from 'data/content/activity';
 import { Objective } from 'data/content/objective';
 import { TitleBar } from '../content/TitleBar';
 import { UndoRedo } from '../content/UndoRedo';
-import { ProjectSlug, ResourceSlug, ObjectiveSlug, ActivitySlug, ResourceId } from 'data/types';
+import { ProjectSlug, ResourceId } from 'data/types';
 import {
   UndoableState, processRedo, processUndo, processUpdate, init,
   registerUndoRedoHotkeys, unregisterUndoRedoHotkeys,
@@ -32,7 +32,7 @@ export interface ActivityEditorProps extends ActivityContext {
 type Undoable = {
   title: string,
   content: ActivityModelSchema,
-  objectives: Immutable.Map<string, Immutable.List<ObjectiveSlug>>,
+  objectives: Immutable.Map<string, Immutable.List<ResourceId>>,
 };
 
 type ActivityEditorState = {
@@ -89,7 +89,7 @@ class ActivityEditor extends React.Component<ActivityEditorProps, ActivityEditor
       editMode: true,
       undoable: init({
         title,
-        objectives: Immutable.Map<string, Immutable.List<ObjectiveSlug>>(o as any),
+        objectives: Immutable.Map<string, Immutable.List<ResourceId>>(o as any),
         content: model,
       }),
       persistence: 'idle',

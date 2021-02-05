@@ -14,7 +14,7 @@ import { Editors } from '../editors/Editors';
 import { TitleBar } from '../../content/TitleBar';
 import { UndoRedo } from '../../content/UndoRedo';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
-import { ProjectSlug, ResourceSlug, ObjectiveSlug } from 'data/types';
+import { ProjectSlug, ResourceSlug, ResourceId } from 'data/types';
 import * as Persistence from 'data/persistence/resource';
 import {
   UndoableState, processRedo, processUndo, processUpdate, init,
@@ -40,14 +40,14 @@ export interface ResourceEditorProps extends ResourceContext {
 type Undoable = {
   title: string,
   content: Immutable.List<ResourceContent>,
-  objectives: Immutable.List<ObjectiveSlug>,
+  objectives: Immutable.List<ResourceId>,
 };
 
 type ResourceEditorState = {
   messages: Message[],
   undoable: UndoableState<Undoable>,
   allObjectives: Immutable.List<Objective>,
-  childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>,
+  childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>,
   activities: Immutable.Map<string, Activity>,
   editMode: boolean,
   persistence: 'idle' | 'pending' | 'inflight',
@@ -72,21 +72,21 @@ function withDefaultContent(content: ResourceContent[]) {
 }
 
 function mapChildrenObjectives(objectives: Objective[])
-  : Immutable.Map<ObjectiveSlug, Immutable.List<Objective>> {
+  : Immutable.Map<ResourceId, Immutable.List<Objective>> {
 
   return objectives.reduce(
     (map, o) => {
-      if (o.parentSlug !== null) {
+      if (o.parentId !== null) {
         let updatedMap = map;
-        if (o.parentSlug !== null && !map.has(o.parentSlug)) {
-          updatedMap = updatedMap.set(o.parentSlug, Immutable.List());
+        if (o.parentId !== null && !map.has(o.parentId)) {
+          updatedMap = updatedMap.set(o.parentId, Immutable.List());
         }
-        const appended = (updatedMap.get(o.parentSlug) as any).push(o);
-        return updatedMap.set(o.parentSlug, appended);
+        const appended = (updatedMap.get(o.parentId) as any).push(o);
+        return updatedMap.set(o.parentId, appended);
       }
       return map;
     },
-    Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>(),
+    Immutable.Map<ResourceId, Immutable.List<Objective>>(),
   );
 }
 
@@ -112,7 +112,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       editMode: true,
       undoable: init({
         title,
-        objectives: Immutable.List<ObjectiveSlug>(objectives.attached),
+        objectives: Immutable.List<ResourceId>(objectives.attached),
         content: Immutable.List<ResourceContent>(withDefaultContent(content.model)),
       }),
       persistence: 'idle',
@@ -324,18 +324,18 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 
         create(props.projectSlug, title)
           .then((result) => {
-            if (result.type === 'success') {
+            if (result.result === 'success') {
 
               const objective = {
-                slug: result.revisionSlug,
+                id: result.resourceId,
                 title,
-                parentSlug: null,
+                parentId: null,
               };
 
               this.setState({
                 allObjectives: this.state.allObjectives.push(objective),
                 childrenObjectives:
-                  this.state.childrenObjectives.set(objective.slug, Immutable.List<Objective>()),
+                  this.state.childrenObjectives.set(objective.id, Immutable.List<Objective>()),
               });
 
               resolve(objective);

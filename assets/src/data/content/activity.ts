@@ -1,11 +1,11 @@
 
-import { ProjectSlug, ResourceSlug, ObjectiveSlug, ActivitySlug, ResourceId } from 'data/types';
+import { ProjectSlug, ResourceSlug, ActivitySlug, ResourceId } from 'data/types';
 import { Objective } from 'data/content/objective';
 
 import { ActivityModelSchema } from 'components/activities/types';
 
 export interface ObjectiveMap {
-  [id: string]: ObjectiveSlug[];
+  [id: string]: ResourceId[];
 }
 
 export type SiblingActivity = {
