@@ -411,4 +411,20 @@ defmodule Oli.Institutions do
     end)
   end
 
+  @doc """
+  Returns an institution, registration and deployment from a given deployment_id
+  ## Examples
+      iex> get_ird_by_deployment_id("some-deployment-id")
+      {%Institution{}, %Registration{}, %Deployment{}}
+      iex> get_ird_by_deployment_id("invalid-deployment-id")
+      nil
+  """
+  def get_ird_by_deployment_id(deployment_id) do
+    Repo.one from institution in Oli.Institutions.Institution,
+      join: registration in Lti_1p3.Registration, on: registration.institution_id == institution.id,
+      join: deployment in Lti_1p3.Deployment, on: deployment.registration_id == registration.id,
+      where: deployment.deployment_id == ^deployment_id,
+      select: {institution, registration, deployment}
+  end
+
 end

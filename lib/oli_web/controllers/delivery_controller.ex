@@ -196,7 +196,7 @@ defmodule OliWeb.DeliveryController do
     user = conn.assigns.current_user
 
     deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"];
-    {institution, _registration, _deployment} = Oli.Lti_1p3.get_ird_by_deployment_id(deployment_id)
+    {institution, _registration, _deployment} = Institutions.get_ird_by_deployment_id(deployment_id)
 
     publication = Publishing.get_publication!(publication_id)
 
