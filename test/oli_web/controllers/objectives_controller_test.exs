@@ -2,9 +2,16 @@ defmodule OliWeb.ObjectivesControllerTest do
 
   use OliWeb.ConnCase
 
+  alias Oli.Authoring.Authors.AuthorProject
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.Repo
 
   setup [:project_seed]
+
+  def remove_author(author, project) do
+    author_project = Repo.get_by(AuthorProject, %{ author_id: author.id, project_id: project.id })
+    Repo.delete(author_project)
+  end
 
   describe "GET operation via objectives service" do
 
@@ -34,6 +41,13 @@ defmodule OliWeb.ObjectivesControllerTest do
       assert response(conn, 404)
     end
 
+    test "GET fails when author has no access to project", %{conn: conn, project: project, author: author} do
+
+      remove_author(author, project)
+
+      conn = get(conn, Routes.objectives_path(conn, :index, project.slug))
+      assert response(conn, 403)
+    end
 
   end
 
@@ -64,6 +78,14 @@ defmodule OliWeb.ObjectivesControllerTest do
 
     end
 
+    test "create fails when author has no access to project", %{conn: conn, project: project, author: author} do
+
+      remove_author(author, project)
+
+      conn = post(conn, Routes.objectives_path(conn, :create, project.slug), %{"title" => "test"})
+      assert response(conn, 403)
+    end
+
     test "fails when title is missing from payload", %{conn: conn, project: project} do
 
       conn = post(conn, Routes.objectives_path(conn, :create, project.slug), %{})
@@ -91,6 +113,14 @@ defmodule OliWeb.ObjectivesControllerTest do
       rev = AuthoringResolver.from_resource_id(project.slug, child1.resource.id)
       assert rev.title == "new title"
 
+    end
+
+    test "update fails when author has no access to project", %{conn: conn, project: project, author: author} do
+
+      remove_author(author, project)
+
+      conn = put(conn, Routes.objectives_path(conn, :update, project.slug, 1), %{"title" => "test"})
+      assert response(conn, 403)
     end
 
     test "fails when objective does not exist", %{conn: conn, project: project} do
