@@ -142,7 +142,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       institution_id: map.institution.id
     })
 
-    lti_params = Oli.TestHelpers.Lti_1p3.all_default_claims()
+    lti_params = Oli.Lti_1p3.TestHelpers.all_default_claims()
       |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
 
     Oli.Lti_1p3.cache_lti_params!(lti_params["sub"], lti_params)

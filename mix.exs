@@ -80,6 +80,7 @@ defmodule Oli.MixProject do
       {:jose, "~> 1.10"},
       {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
+      {:mox, "~> 0.5", only: :test},
       {:nimble_parsec, "~> 0.5"},
       {:open_api_spex, "~> 3.9"},
       {:phoenix, "~> 1.5.6"},

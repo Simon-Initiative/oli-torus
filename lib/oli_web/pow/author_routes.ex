@@ -61,7 +61,12 @@ defmodule OliWeb.Pow.AuthorRoutes do
           end
         _ ->
           # action is simply an account login, use the default routing mechanism
-          nil
+          case conn do
+            %{assigns: %{request_path: request_path}} ->
+              request_path
+            _ ->
+              nil
+          end
       end
     end
   end
