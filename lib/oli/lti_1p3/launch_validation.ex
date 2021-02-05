@@ -1,26 +1,31 @@
 defmodule Oli.Lti_1p3.LaunchValidation do
+  import Oli.Lti_1p3.Utils
+
   @message_validators [
     Oli.Lti_1p3.MessageValidators.ResourceMessageValidator
   ]
 
-  @type get_public_key_callback() :: (%Oli.Lti_1p3.Registration{}, String.t() -> {:ok, JOSE.JWK.t()})
-  @type providers() :: %{get_public_key: get_public_key_callback()}
-  @type validate_opts() :: [{:providers, providers()}]
+  # @type get_public_key_callback() :: (%Oli.Lti_1p3.Registration{}, String.t() -> {:ok, JOSE.JWK.t()})
+  # @type providers() :: %{get_public_key: get_public_key_callback()}
+  # @type validate_opts() :: [{:providers, providers()}]
+  @type validate_opts() :: []
 
   @doc """
   Validates all aspects of an incoming LTI message launch and caches the launch params in the session if successful.
   """
   @spec validate(Plug.Conn.t(), validate_opts()) :: {:ok, Plug.Conn.t(), any()} | {:error, %{optional(atom()) => any(), reason: atom(), msg: String.t()}}
-  def validate(conn, opts) do
-    %{get_public_key: get_public_key} = Keyword.get(opts, :providers)
+  def validate(conn, _opts \\ []) do
+    # %{get_public_key: get_public_key} = Keyword.get(opts, :providers)
 
     with {:ok, conn} <- validate_oidc_state(conn),
          {:ok, conn, registration} <- validate_registration(conn),
-         {:ok, conn, jwt_body} <- validate_jwt(conn, registration, get_public_key),
-         {:ok, conn} <- validate_token_timestamps(conn, jwt_body),
+         {:ok, key_set_url} <- registration_key_set_url(registration),
+         {:ok, id_token} <- extract_param(conn, "id_token"),
+         {:ok, conn, jwt_body} <- validate_jwt_signature(conn, id_token, key_set_url),
+         {:ok} <- validate_timestamps(jwt_body),
          {:ok, conn} <- validate_deployment(conn, registration, jwt_body),
          {:ok, conn} <- validate_message(conn, jwt_body),
-         {:ok, conn} <- validate_nonce(conn, jwt_body),
+         {:ok} <- validate_nonce(jwt_body, "validate_launch"),
          {:ok, conn} <- cache_launch_params(conn, jwt_body)
     do
       {:ok, conn, jwt_body}
@@ -58,100 +63,11 @@ defmodule Oli.Lti_1p3.LaunchValidation do
     end
   end
 
-  defp extract_id_token(conn) do
-    case conn.params["id_token"] do
-      nil ->
-        {:error, %{reason: :missing_id_token, msg: "Missing id_token"}}
-      id_token ->
-        {:ok, id_token}
-    end
-  end
-
-  defp peek_header(jwt_string) do
-    case Joken.peek_header(jwt_string) do
-      {:ok, header} ->
-        {:ok, header}
-      {:error, reason} ->
-        {:error, %{reason: reason, msg: "Invalid id_token"}}
-    end
-  end
-
-  defp peek_claims(jwt_string) do
-    case Joken.peek_claims(jwt_string) do
-      {:ok, claims} ->
-        {:ok, claims}
-      {:error, reason} ->
-        {:error, %{reason: reason, msg: "Invalid id_token"}}
-    end
-  end
-
-  defp peek_jwt_kid(conn) do
-    with {:ok, jwt_string} <- extract_id_token(conn),
-         {:ok, jwt_body} <- peek_header(jwt_string)
-    do
-      {:ok, jwt_body["kid"]}
-    end
-  end
-
   defp peek_issuer_client_id(conn) do
-    with {:ok, jwt_string} <- extract_id_token(conn),
+    with {:ok, jwt_string} <- extract_param(conn, "id_token"),
          {:ok, jwt_claims} <- peek_claims(jwt_string)
     do
       {:ok, jwt_claims["iss"], jwt_claims["aud"]}
-    end
-  end
-
-  defp validate_jwt(conn, registration, get_public_key) do
-    with {:ok, jwt_string} <- extract_id_token(conn),
-         {:ok, kid} <- peek_jwt_kid(conn),
-         {:ok, public_key} <- get_public_key.(registration, kid)
-    do
-      {_kty, pk} = JOSE.JWK.to_map(public_key)
-
-      signer = Joken.Signer.create("RS256", pk)
-
-      case Joken.verify_and_validate(%{}, jwt_string, signer) do
-        {:ok, jwt} ->
-          {:ok, conn, jwt}
-        {:error, reason} ->
-          {:error, %{reason: reason, msg: "Invalid id_token"}}
-      end
-    end
-  end
-
-  defp validate_token_timestamps(conn, jwt_body) do
-    try do
-      case {Timex.from_unix(jwt_body["exp"]), Timex.from_unix(jwt_body["iat"])} do
-      {exp, iat} ->
-        # get the current time with a buffer of a few seconds to account for clock skew and rounding
-        now = Timex.now()
-        buffer_sec = 2
-        a_few_seconds_ago = now |> Timex.subtract(Timex.Duration.from_seconds(buffer_sec))
-        a_few_seconds_ahead = now |> Timex.add(Timex.Duration.from_seconds(buffer_sec))
-
-        # check if token is expired and/or issued at invalid time
-        case {Timex.before?(exp, a_few_seconds_ago), Timex.after?(iat, a_few_seconds_ahead)} do
-          {false, false} ->
-            {:ok, conn}
-          {_, false} ->
-            {:error, %{reason: :invalid_token_timestamp, msg: "Token exp is expired"}}
-          {false, _} ->
-            {:error, %{reason: :invalid_token_timestamp, msg: "Token iat is invalid"}}
-          _ ->
-            {:error, %{reason: :invalid_token_timestamp, msg: "Token exp and iat are invalid"}}
-        end
-      end
-    rescue
-      _error -> {:error, %{reason: :invalid_token_timestamp, msg: "Timestamps are invalid"}}
-    end
-  end
-
-  defp validate_nonce(conn, jwt_body) do
-    case Oli.Lti_1p3.Nonces.create_nonce(%{value: jwt_body["nonce"]}) do
-      {:ok, _nonce} ->
-        {:ok, conn}
-      {:error, %{ errors: [ value: { _msg, [{:constraint, :unique} | _]}]}} ->
-        {:error, %{reason: :invalid_nonce, msg: "Duplicate nonce"}}
     end
   end
 

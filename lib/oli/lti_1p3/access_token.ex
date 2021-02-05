@@ -79,7 +79,7 @@ defmodule Oli.Lti_1p3.AccessToken do
   defp create_client_assertion(host, registration) do
 
     # Get the active private key
-    active_jwk = Oli.Lti_1p3.get_active_jwk()
+    active_jwk = Oli.Lti_1p3.Utils.get_active_jwk()
 
     # Sign and return the JWT, include the kid of the key we are using
     # in the header.
