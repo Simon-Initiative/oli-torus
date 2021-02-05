@@ -7,26 +7,24 @@ defmodule Oli.SlackTest do
   alias Oli.Test.MockHTTP
   alias Oli.Slack
 
-  defp on_exit_cb(_) do
-    on_exit(fn ->
-      case Application.fetch_env!(:oli, :slack_webhook_url) do
-        {:ok, _} ->
-          Application.delete_env(:oli, :slack_webhook_url)
-        _ ->
-          nil
-      end
-    end)
+  @slack_webhook_url "https://hooks.example.com/services/ASDF7ASDF7ASH/ASDF7HQ9JF3/0JR43098o78hdfsdf"
+
+  defp setup_slack_webhook_url_env(_) do
+    Application.put_env(:oli, :slack_webhook_url, @slack_webhook_url)
+  end
+
+  defp remove_slack_webhook_url_env_on_exit(_) do
+    on_exit(fn -> Application.put_env(:oli, :slack_webhook_url, nil) end)
   end
 
   describe "slack messaging properly configured" do
     # Make sure mocks are verified when the test exits
-    setup [:verify_on_exit!, :on_exit_cb]
+    setup [:verify_on_exit!, :setup_slack_webhook_url_env, :remove_slack_webhook_url_env_on_exit]
 
     test "sends a slack message to the configured url" do
       payload = get_example_payload()
-      slack_webhook_url = "https://hooks.example.com/services/ASDF7ASDF7ASH/ASDF7HQ9JF3/0JR43098o78hdfsdf"
-      Application.put_env(:oli, :slack_webhook_url, slack_webhook_url)
       body = payload |> Jason.encode!()
+      slack_webhook_url = @slack_webhook_url
 
       MockHTTP
       |> expect(:post, fn ^slack_webhook_url, ^body, _headers -> {:ok, %HTTPoison.Response{status_code: 200, body: "OK"}}  end)
@@ -36,8 +34,6 @@ defmodule Oli.SlackTest do
   end
 
   describe "slack messaging not configured" do
-    setup :on_exit_cb
-
     test "fails and logs a warning that slack_webhook_url is not configured" do
       payload = get_example_payload()
 
