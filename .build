@@ -94,6 +94,7 @@ Oli.Email.html
 Oli.Grading.GradebookRow.html
 Oli.Grading.GradebookScore.html
 Oli.Grading.html
+Oli.HTTP.html
 Oli.Help.Dispatcher.html
 Oli.Help.HelpContent.html
 Oli.Help.Providers.EmailHelp.html
@@ -337,8 +338,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-2ed7dc62eb.js
-dist/sidebar_items-874ceed718.js
+dist/search_items-e4e5dfa4cc.js
+dist/sidebar_items-a886cfd886.js
 index.html
 license.html
 readme.html
