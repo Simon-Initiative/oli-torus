@@ -2,6 +2,7 @@
 
 ## Unreleased
 ### Bug fixes
+  - Allow Slack hook URL to be unspecified during LMS LTI registration
   - Honor the current location when inserting block content (YouTube, images, etc)
   - Remove foreign key constraint that tied a user to an institution
   - Do not display stale locks in Curriculum view
