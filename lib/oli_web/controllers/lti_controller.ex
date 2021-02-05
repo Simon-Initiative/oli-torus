@@ -27,7 +27,7 @@ defmodule OliWeb.LtiController do
   end
 
   def launch(conn, _params \\ %{}) do
-    case Lti_1p3.LaunchValidation.validate(conn, providers: %{get_public_key: &get_public_key/2}) do
+    case Lti_1p3.LaunchValidation.validate(conn) do
       {:ok, conn, lti_params} ->
         handle_valid_lti_1p3_launch(conn, lti_params)
       {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
@@ -40,11 +40,34 @@ defmodule OliWeb.LtiController do
   end
 
   def test(conn, _params \\ %{}) do
-    case Lti_1p3.LaunchValidation.validate(conn, providers: %{get_public_key: &get_public_key/2}) do
+    case Lti_1p3.LaunchValidation.validate(conn) do
       {:ok, conn, lti_params} ->
         render(conn, "lti_test.html", lti_params: lti_params)
       {:error, %{reason: _reason, msg: msg}} ->
         render(conn, "lti_error.html", reason: msg)
+    end
+  end
+
+  def authorize_redirect(conn, params) do
+    case Lti_1p3.LoginHints.get_login_hint_by_value(params["login_hint"]) do
+      nil ->
+        render(conn, "lti_error.html", reason: "The current user must be the same user initiating the LTI request")
+
+      %Lti_1p3.LoginHint{context: context} ->
+        current_user = case context do
+          "author" ->
+            conn.assigns[:current_author]
+          _ ->
+            conn.assigns[:current_user]
+        end
+
+        case Lti_1p3.AuthorizationRedirect.authorize_redirect(params, current_user) do
+          {:ok, redirect_uri, state, id_token} ->
+            conn
+            |> render("post_redirect.html", redirect_uri: redirect_uri, state: state, id_token: id_token)
+          {:error, %{reason: _reason, msg: msg}} ->
+              render(conn, "lti_error.html", reason: msg)
+        end
     end
   end
 
@@ -146,6 +169,14 @@ defmodule OliWeb.LtiController do
     conn
     |> json(key_map)
 
+  end
+
+  def access_tokens(conn, _params) do
+    conn
+    |> put_status(:not_implemented)
+    |> json(%{
+      error: "NOT IMPLEMENTED"
+    })
   end
 
   def request_registration(conn, %{"pending_registration" => pending_registration_attrs} = _params) do
@@ -349,17 +380,4 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  defp get_public_key(%Lti_1p3.Registration{key_set_url: key_set_url}, kid) do
-    public_key_set = case HTTPoison.get(key_set_url) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        Jason.decode!(body)
-      _ ->
-        {:error, "Failed to fetch public key from registered platform url"}
-    end
-
-    public_key = Enum.find(public_key_set["keys"], fn key -> key["kid"] == kid end)
-    |> JOSE.JWK.from
-
-    {:ok, public_key}
-  end
 end

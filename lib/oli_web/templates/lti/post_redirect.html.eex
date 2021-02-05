@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>You are being redirected...</title>
+    </head>
+    <body>
+      <div>
+          You are being redirected...
+      </div>
+        <form name="post_redirect" action="<%= @redirect_uri %>" method="post">
+            <input type="hidden" name="state" value="<%= @state %>">
+            <input type="hidden" name="id_token" value="<%= @id_token %>">
+
+            <noscript>
+              <input type="submit" value="Click here to continue">
+            </noscript>
+        </form>
+
+        <script type="text/javascript">
+          window.onload=function(){
+            document.getElementsByName('post_redirect')[0].style.display = 'none';
+            document.forms["post_redirect"].submit();
+          }
+        </script>
+    </body>
+</html>

@@ -161,8 +161,14 @@ defmodule OliWeb.Router do
     get "/help/sent", HelpController, :sent
   end
 
+  scope "/", OliWeb do
+    pipe_through [:api]
+
+    post "/access_tokens", LtiController, :access_tokens
+  end
+
   scope "/.well-known", OliWeb do
-    pipe_through [:browser]
+    pipe_through [:api]
 
     get "/jwks.json", LtiController, :jwks
   end
@@ -316,6 +322,12 @@ defmodule OliWeb.Router do
 
   end
 
+  scope "/api/v1/lti", OliWeb, as: :api do
+    pipe_through [:api, :authoring_protected]
+
+    resources "/platforms", Api.PlatformInstanceController
+  end
+
   # LTI routes
   scope "/lti", OliWeb do
     pipe_through [:lti, :www_url_form]
@@ -328,6 +340,8 @@ defmodule OliWeb.Router do
     get "/developer_key.json", LtiController, :developer_key_json
 
     post "/register", LtiController, :request_registration
+
+    get "/authorize_redirect", LtiController, :authorize_redirect
   end
 
   scope "/course", OliWeb do
@@ -363,6 +377,8 @@ defmodule OliWeb.Router do
   scope "/admin", OliWeb do
     pipe_through [:browser, :authoring_protected, :admin]
     live_dashboard "/dashboard", metrics: OliWeb.Telemetry, session: {__MODULE__, :with_session, []}
+
+    resources "/platform_instances", PlatformInstanceController
   end
 
   scope "/admin", OliWeb do
