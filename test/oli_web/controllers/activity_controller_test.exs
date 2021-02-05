@@ -22,7 +22,7 @@ defmodule OliWeb.ActivityControllerTest do
       update = %{"title" => "A title", "content" => %{"1" => "2"}}
       conn = post(conn, Routes.activity_path(conn, :create_secondary, project.slug, activity_id), update)
 
-      assert %{ "result" => "success", "resource_id" => id } = json_response(conn, 201)
+      assert %{ "result" => "success", "resourceId" => id } = json_response(conn, 201)
 
       r = AuthoringResolver.from_resource_id(project.slug, id)
       assert r.title == "A title"
@@ -94,7 +94,7 @@ defmodule OliWeb.ActivityControllerTest do
 
     test "including an invalid key gets rejected", %{conn: conn, project: project, activity_id: activity_id, revision1: revision} do
 
-      update = %{"title" => "updated title", "resource_id" => "2"}
+      update = %{"title" => "updated title", "resourceId" => "2"}
       conn = put(conn, Routes.activity_path(conn, :update, project.slug, activity_id, %{"lock" => revision.resource_id}), update)
       assert response(conn, 400)
 

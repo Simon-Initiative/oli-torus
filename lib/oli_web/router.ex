@@ -259,8 +259,6 @@ defmodule OliWeb.Router do
     post "/:project/lock/:resource", LockController, :acquire
     delete "/:project/lock/:resource", LockController, :release
 
-    post "/:project_id/objectives", ResourceController, :create_objective
-
   end
 
   # Storage Service
@@ -286,6 +284,16 @@ defmodule OliWeb.Router do
 
     post "/", MediaController, :create
     get "/", MediaController, :index
+
+  end
+
+  # Objectives Service
+  scope "/api/v1/objectives/project/:project", OliWeb do
+    pipe_through [:api, :authoring_protected]
+
+    post "/", ObjectivesController, :create
+    get "/", ObjectivesController, :index
+    put "/objective/:objective", ObjectivesController, :update
 
   end
 

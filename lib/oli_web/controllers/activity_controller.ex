@@ -9,6 +9,7 @@ defmodule OliWeb.ActivityController do
   alias OliWeb.Common.Breadcrumb
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
+  alias OliWeb.ApiSchemas
 
   import OliWeb.ProjectPlugs
 
@@ -81,43 +82,6 @@ defmodule OliWeb.ActivityController do
     })
   end
 
-
-  defmodule CreationResponse do
-    require OpenApiSpex
-
-    OpenApiSpex.schema(%{
-      title: "Update response",
-      description: "The response to a successful document update request",
-      type: :object,
-      properties: %{
-        result: %Schema{type: :string, description: "The literal value of 'success'"},
-        resource_id: %Schema{type: :string, description: "The identifier for the newly created resource"}
-      },
-      required: [:result, :resource_id],
-      example: %{
-        "result" => "success",
-        "resource_id" => "239820"
-      }
-    })
-  end
-
-  defmodule UpdateResponse do
-    require OpenApiSpex
-
-    OpenApiSpex.schema(%{
-      title: "Update response",
-      description: "The response to a successful document update request",
-      type: :object,
-      properties: %{
-        result: %Schema{type: :string, description: "The literal value of 'success'"}
-      },
-      required: [:result],
-      example: %{
-        "result" => "success"
-      }
-    })
-  end
-
   @doc """
   Create a new secondary document for an activity.
 
@@ -132,7 +96,7 @@ defmodule OliWeb.ActivityController do
   ],
   request_body: {"Attributes for the document", "application/json", OliWeb.ActivityController.DocumentAttributes, required: true},
   responses: %{
-    201 => {"Creation Response", "application/json", OliWeb.ActivityController.CreationResponse}
+    201 => {"Creation Response", "application/json", ApiSchemas.CreationResponse}
   }
   def create_secondary(conn, %{
         "project" => project_slug,
@@ -146,7 +110,7 @@ defmodule OliWeb.ActivityController do
       {:ok, revision} ->
         conn
         |> put_status(:created) # This sets status code 201 instead of 200
-        |> json(%{"result" => "success", "resource_id" => revision.resource_id})
+        |> json(%{"result" => "success", "resourceId" => revision.resource_id})
 
       {:error, {:invalid_update_field}} ->
         error(conn, 400, "invalid update field")
@@ -282,7 +246,7 @@ defmodule OliWeb.ActivityController do
   ],
   request_body: {"Attributes for the document", "application/json", OliWeb.ActivityController.DocumentAttributes, required: true},
   responses: %{
-    200 => {"Update Response", "application/json", OliWeb.ActivityController.UpdateResponse}
+    200 => {"Update Response", "application/json", ApiSchemas.UpdateResponse}
   }
   def update(conn, %{
         "project" => project_slug,
@@ -339,7 +303,7 @@ defmodule OliWeb.ActivityController do
     lock: [in: :query, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The lock identifier that this operation will be performed within"]
   ],
   responses: %{
-    200 => {"Deletion Response", "application/json", OliWeb.ActivityController.UpdateResponse}
+    200 => {"Deletion Response", "application/json", ApiSchemas.UpdateResponse}
   }
   def delete(conn, %{"project" => project_slug, "resource" => resource_id, "lock" => lock_id}) do
 

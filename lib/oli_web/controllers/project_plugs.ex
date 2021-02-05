@@ -27,6 +27,29 @@ defmodule OliWeb.ProjectPlugs do
     end
   end
 
+  def fetch_project_api(conn, _) do
+    case Course.get_project_by_slug(conn.params["project"]) do
+      nil -> error(conn, 404, "Project not found")
+
+      project -> conn
+        |> Plug.Conn.assign(:project, project)
+    end
+  end
+
+  def authorize_project_api(conn, _) do
+    if Accounts.can_access?(conn.assigns[:current_author], conn.assigns[:project]) do
+      conn
+    else
+      error(conn, 403, "Not authorized")
+    end
+  end
+
+  defp error(conn, code, reason) do
+    conn
+    |> Plug.Conn.send_resp(code, reason)
+    |> Plug.Conn.halt()
+  end
+
   def ensure_context_id_matches(conn, _) do
     context_id = conn.assigns.lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"]
 

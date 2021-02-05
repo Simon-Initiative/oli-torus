@@ -148,7 +148,7 @@ defmodule OliWeb.MediaController do
   Create a new media library entry by uploading the encoded media file to an Amazon S3 storage bucket.
   """
   @doc parameters: [
-    project: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The project slug"]
+    project: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The project id"]
   ],
   request_body: {"Request body to add a media library item", "application/json", OliWeb.MediaController.MediaItemUpload, required: true},
   responses: %{
