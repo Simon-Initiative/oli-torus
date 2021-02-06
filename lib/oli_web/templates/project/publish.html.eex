@@ -35,7 +35,6 @@
             </p>
         <% end %>
       <% end %>
-        <%= live_render @conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => @project.slug } %>
 
       <div class="my-4">
         <%= form_for @conn, Routes.project_path(@conn, :publish_active, @project), fn _ -> %>

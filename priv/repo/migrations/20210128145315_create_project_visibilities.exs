@@ -3,9 +3,9 @@ defmodule Oli.Repo.Migrations.CreateProjectVisibilities do
 
   def change do
     create table(:project_visibilities) do
-      add :project_id, :integer
-      add :author_id, :integer
-      add :institution_id, :integer
+      add :project_id, references(:projects)
+      add :author_id, references(:authors)
+      add :institution_id, references(:institutions)
 
       timestamps(type: :timestamptz)
     end
@@ -17,6 +17,5 @@ defmodule Oli.Repo.Migrations.CreateProjectVisibilities do
     alter table(:projects) do
       add :visibility, :string
     end
-
   end
 end
