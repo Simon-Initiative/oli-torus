@@ -414,7 +414,7 @@ defmodule Oli.Institutions do
   @doc """
   Searches for a list of Institution with an name matching a wildcard pattern
   """
-  def search_authors_matching(query) do
+  def search_institutions_matching(query) do
     q = query
     q = "%" <> q <> "%"
     Repo.all from i in Institution,

@@ -211,7 +211,7 @@ defmodule OliWeb.Projects.VisibilityLive do
       "institution" ->
         list =
           if String.length(query) > 1 do
-            Institutions.search_authors_matching(query)
+            Institutions.search_institutions_matching(query)
           else
             []
           end
