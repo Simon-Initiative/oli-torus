@@ -50,6 +50,7 @@ Oli.Authoring.Collaborators.html
 Oli.Authoring.Course.Family.html
 Oli.Authoring.Course.Project.html
 Oli.Authoring.Course.ProjectResource.html
+Oli.Authoring.Course.ProjectVisibility.html
 Oli.Authoring.Course.html
 Oli.Authoring.Editing.ActivityContext.html
 Oli.Authoring.Editing.ActivityEditor.html
@@ -300,6 +301,7 @@ OliWeb.Projects.Cards.html
 OliWeb.Projects.ProjectsLive.html
 OliWeb.Projects.State.html
 OliWeb.Projects.Table.html
+OliWeb.Projects.VisibilityLive.html
 OliWeb.Qa.QaLive.html
 OliWeb.Qa.State.html
 OliWeb.Qa.Utils.html
@@ -338,8 +340,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-e4e5dfa4cc.js
-dist/sidebar_items-a886cfd886.js
+dist/search_items-259196cb7f.js
+dist/sidebar_items-db928afbc5.js
 index.html
 license.html
 readme.html
