@@ -7,12 +7,15 @@ defmodule Oli.MixProject do
       version: "0.5.1",
       elixir: "~> 1.11",
       elixirc_paths: elixirc_paths(Mix.env()),
+#      elixirc_options: [warnings_as_errors: true],
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
+        test: :test,
+        "test.watch": :test,
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
@@ -65,7 +68,7 @@ defmodule Oli.MixProject do
       {:credo, "~> 1.1.0", only: [:dev, :test], runtime: true},
       {:csv, "~> 2.3"},
       {:dialyxir, "~> 0.5.0", only: [:dev], runtime: true},
-      {:ecto_sql, "~> 3.1"},
+      {:ecto_sql, "~> 3.5.2"},
       {:ex_aws, "~> 2.1.6"},
       {:ex_aws_s3, "~> 2.0"},
       {:excoveralls, "~> 0.10", only: :test},
@@ -118,16 +121,16 @@ defmodule Oli.MixProject do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate", "run priv/repo/seeds.exs", "test"],
+      test: ["ecto.reset", "test"],
 
       # runs tests and produces a coverage report
-      "test.coverage": ["ecto.create --quiet", "ecto.migrate", "run priv/repo/seeds.exs", "coveralls.html"],
+      "test.coverage": ["ecto.reset", "coveralls.html"],
 
       # runs tests and produces a coverage report
-      "test.coverage.xml": ["ecto.create --quiet", "ecto.migrate", "run priv/repo/seeds.exs", "coveralls.xml"],
+      "test.coverage.xml": ["ecto.reset", "coveralls.xml"],
 
       # runs tests in deterministic order, only shows one failure at a time and reruns tests if any changes are made
-      "test.watch": ["test.watch --stale --max-failures 1 --trace --seed 0"],
+      "test.watch": ["ecto.reset", "test.watch --stale --max-failures 1 --trace --seed 0"],
     ]
   end
 end
