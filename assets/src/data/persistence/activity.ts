@@ -36,7 +36,7 @@ export type Edited = { result: 'success', revisionSlug: string };
 
 export function create(
   project: ProjectSlug, activityTypeSlug: ActivityTypeSlug,
-  model: ActivityModelSchema, objectives: string[]) {
+  model: ActivityModelSchema, objectives: ResourceId[]) {
 
   const params = {
     method: 'POST',

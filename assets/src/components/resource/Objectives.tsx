@@ -41,6 +41,7 @@ export const Objectives = (props: ObjectivesProps) => {
           if (createdObjective) {
             create(props.projectSlug, createdObjective.title)
               .then((result) => {
+
                 if (result.result === 'success') {
                   onRegisterNewObjective({
                     id: result.resourceId,
@@ -48,9 +49,15 @@ export const Objectives = (props: ObjectivesProps) => {
                     parentId: null,
                   });
 
-                  // the newly created objective will be the only one that has null as it's slug,
-                  // so while mapping objectives to slugs replace any nulls with the new slug
-                  const updatedObjectives = updated.map(o => valueOr(o.id, result.resourceId));
+                  // Use the newly created resource id instead of the id of
+                  // item created for us by the Typeahead
+                  const updatedObjectives = updated.map(o => {
+                    if (o.customOption) {
+                      return result.resourceId;
+                    } else {
+                      return o.id;
+                    }
+                  });
 
                   onEdit(Immutable.List<ResourceId>(updatedObjectives));
                 } else {

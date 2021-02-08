@@ -324,6 +324,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 
         create(props.projectSlug, title)
           .then((result) => {
+
             if (result.result === 'success') {
 
               const objective = {

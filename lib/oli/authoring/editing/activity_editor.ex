@@ -235,7 +235,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     previous
   end
 
-  # takes the model of the activity to be created and a list of objective slugs and
+  # takes the model of the activity to be created and a list of objective ids and
   # creates a map of all part ids to objective resource ids
   defp attach_objectives_to_all_parts(model, objectives) do
 

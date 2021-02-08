@@ -11,7 +11,7 @@ export function create(project: ProjectSlug, title: string) {
   const params = {
     method: 'POST',
     body: JSON.stringify({ title }),
-    url: `/objectives/project/${project}/objectives`,
+    url: `/objectives/project/${project}`,
   };
 
   return makeRequest<Created>(params);
