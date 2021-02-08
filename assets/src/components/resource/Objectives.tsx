@@ -51,12 +51,11 @@ export const Objectives = (props: ObjectivesProps) => {
 
                   // Use the newly created resource id instead of the id of
                   // item created for us by the Typeahead
-                  const updatedObjectives = updated.map(o => {
+                  const updatedObjectives = updated.map((o) => {
                     if (o.customOption) {
                       return result.resourceId;
-                    } else {
-                      return o.id;
                     }
+                    return o.id;
                   });
 
                   onEdit(Immutable.List<ResourceId>(updatedObjectives));

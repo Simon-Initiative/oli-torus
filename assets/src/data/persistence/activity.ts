@@ -28,7 +28,7 @@ export type Transformed = {
 
 export type Evaluated = {
   result: 'success',
-  evaluations: any
+  evaluations: any,
 };
 
 
