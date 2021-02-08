@@ -276,7 +276,7 @@ defmodule OliWeb.ActivityController do
       end)
 
     case Attempts.perform_test_evaluation(model, parsed) do
-      {:ok, evaluations} -> json(conn, %{"type" => "success", "evaluations" => evaluations})
+      {:ok, evaluations} -> json(conn, %{"result" => "success", "evaluations" => evaluations})
       {:error, _} -> error(conn, 500, "server error")
     end
   end
@@ -284,7 +284,7 @@ defmodule OliWeb.ActivityController do
   @doc false
   def transform(conn, %{"model" => model}) do
     case Attempts.perform_test_transformation(model) do
-      {:ok, transformed} -> json(conn, %{"type" => "success", "transformed" => transformed})
+      {:ok, transformed} -> json(conn, %{"result" => "success", "transformed" => transformed})
       {:error, _} -> error(conn, 500, "server error")
     end
   end
