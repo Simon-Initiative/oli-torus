@@ -1,7 +1,7 @@
 <div class="insights container">
   <div class="row">
     <div class="col-12">
-      <h2>Insights</h1>
+      <h1>Insights</h1>
       <p class="text-secondary">
       Insights can help you improve your course by providing a statistical analysis of
       the skills covered by each question to find areas where students are struggling.

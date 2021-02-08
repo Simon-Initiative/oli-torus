@@ -4,11 +4,13 @@ defmodule Oli.Publishing do
   alias Oli.Repo
 
   alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Course.ProjectVisibility
   alias Oli.Accounts.Author
   alias Oli.Authoring.Locks
   alias Oli.Delivery.Sections
   alias Oli.Resources.{Revision, ResourceType}
   alias Oli.Publishing.{Publication, PublishedResource}
+  alias Oli.Institutions.Institution
 
   def query_unpublished_revisions_by_type(project_slug, type) do
     publication_id = get_unpublished_publication_by_slug!(project_slug).id
@@ -90,15 +92,16 @@ defmodule Oli.Publishing do
     query = from pub in Publication,
       join: u in subquery(subquery), on: pub.project_id == u.project_id and u.max_date == pub.updated_at,
       join: proj in Project, on: pub.project_id == proj.id,
-      where: pub.open_and_free == true,
+      where: pub.open_and_free == true or proj.visibility == :global,
       preload: [:project],
+      distinct: true,
       select: pub
 
     Repo.all(query)
   end
 
-  @spec available_publications(Oli.Accounts.Author.t()) :: any
-  def available_publications(%Author{} = author) do
+  @spec available_publications(Oli.Accounts.Author.t(), Oli.Institutions.Institution.t()) :: any
+  def available_publications(%Author{} = author, %Institution{} = institution) do
 
     subquery = from t in Publication,
       select: %{project_id: t.project_id, max_date: max(t.updated_at)},
@@ -109,8 +112,10 @@ defmodule Oli.Publishing do
       join: u in subquery(subquery), on: pub.project_id == u.project_id and u.max_date == pub.updated_at,
       join: proj in Project, on: pub.project_id == proj.id,
       left_join: a in assoc(proj, :authors),
-      where: a.id == ^author.id or pub.open_and_free == true,
+      left_join: v in ProjectVisibility, on: proj.id == v.project_id,
+      where: a.id == ^author.id or pub.open_and_free == true or proj.visibility == :global or (proj.visibility == :selected and (v.author_id == ^author.id or v.institution_id == ^institution.id)),
       preload: [:project],
+      distinct: true,
       select: pub
 
     Repo.all(query)
@@ -637,6 +642,37 @@ defmodule Oli.Publishing do
     Enum.filter(results, fn [_, _, %{"activity_id" => activity_id}] -> MapSet.member?(activities, activity_id) end)
     |> Enum.reduce(%{}, fn [id, slug, %{"activity_id" => activity_id}], map -> Map.put(map, activity_id, %{slug: slug, id: id}) end)
 
+  end
+
+  @doc """
+  Creates a course builder course visibility mapping
+  """
+  def insert_visibility(attrs) do
+    %ProjectVisibility{}
+    |> ProjectVisibility.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Removes a course builder course visibility mapping
+  """
+  def remove_visibility(%ProjectVisibility{} = project_visibility) do
+    Repo.delete(project_visibility)
+  end
+
+  @doc """
+  Returns a map containing mappings for which users or institutions have course build access to the project
+  """
+  def get_all_project_visibilities(project_id) do
+    Repo.all from v in ProjectVisibility,
+      where: v.project_id == ^project_id,
+      left_join: author in Author, on: v.author_id == author.id,
+      left_join: institution in Institution, on: v.institution_id == institution.id,
+      select: %{
+        visibility: v,
+        author: author,
+        institution: institution
+      }
   end
 
 end
