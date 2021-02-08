@@ -82,7 +82,7 @@ class ActivityEditor extends React.Component<ActivityEditorProps, ActivityEditor
 
     const { title, objectives, allObjectives, model } = props;
 
-    const o = Object.keys(objectives).map(o => [o, objectives[o]]);
+    const o = Object.keys(objectives).map(o => [o, Immutable.List<ResourceId>(objectives[o])]);
 
     this.state = {
       messages: [],

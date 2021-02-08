@@ -433,7 +433,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         title: title,
         model: model,
         objectives: objectives,
-        allObjectives: all_objectives,
+        allObjectives: PageEditor.construct_parent_references(all_objectives),
       }
 
       {:ok, context}
