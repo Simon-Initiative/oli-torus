@@ -82,6 +82,42 @@ defmodule OliWeb.ActivityController do
     })
   end
 
+
+  defmodule BulkDocumentResponse do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "Bulk retrieval document response",
+      description: "The response for a bulk document fetch operation",
+      type: :object,
+      properties: %{
+        results: %Schema{type: :list, description: "Collection of document attribute instances"}
+      },
+      required: [:results],
+      example: %{
+        "result" => "success",
+        "results" => []
+      }
+    })
+  end
+
+  defmodule BulkDocumentRequestBody do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "Bulk retrieval document request body",
+      description: "The request body for a bulk document fetch operation",
+      type: :object,
+      properties: %{
+        resourceIds: %Schema{type: :list, description: "Array of resource identifiers of documents being requested"}
+      },
+      required: [:resourceIds],
+      example: %{
+        "resourceIds" => ["id1", "id2", "id3"]
+      }
+    })
+  end
+
   @doc """
   Create a new secondary document for an activity.
 
@@ -151,6 +187,22 @@ defmodule OliWeb.ActivityController do
     end
   end
 
+  defp document_to_result(nil) do
+    %{
+      "result" => "failed"
+    }
+  end
+
+  defp document_to_result(%{objectives: objectives, title: title, content: content}) do
+    %{
+      "result" => "success",
+      "objectives" => objectives,
+      "title" => title,
+      "content" => Map.delete(content, "authoring"),
+      "authoring" => Map.get(content, "authoring")
+    }
+  end
+
   @doc """
   Retrieve a document for an activity in an authoring context.
 
@@ -171,22 +223,47 @@ defmodule OliWeb.ActivityController do
     author = conn.assigns[:current_author]
 
     case ActivityEditor.retrieve(project_slug, activity_id, author) do
-      {:ok, %{objectives: objectives, title: title, content: content}} ->
+      {:ok, rev} -> json(conn, document_to_result(rev))
+      {:error, {:not_found}} -> error(conn, 404, "not found")
+      _ -> error(conn, 500, "server error")
+    end
 
-        result = %{
-          "result" => "success",
-          "objectives" => objectives,
-          "title" => title,
-          "content" => Map.delete(content, "authoring"),
-          "authoring" => Map.get(content, "authoring")
-        }
+  end
 
-        json(conn, result)
+  @doc """
+  Bulk retrieve documents for an activity in an authoring context.
+
+  This retrieves the unpublished revision of activity documents.
+  """
+  @doc parameters: [
+    project: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The project identifier"]
+  ],
+  request_body: {"Attributes for the document", "application/json", OliWeb.ActivityController.BulkDocumentRequestBody, required: true},
+  responses: %{
+    200 => {"Retrieval Response", "application/json", OliWeb.ActivityController.BulkDocumentResponse}
+  }
+  def bulk_retrieve(conn, %{
+    "project" => project_slug,
+    "resourceIds" => activity_ids
+  }) do
+    author = conn.assigns[:current_author]
+
+    case ActivityEditor.retrieve_bulk(project_slug, activity_ids, author) do
+      {:ok, revisions} ->
+        json(conn, %{"result" => "success", "results" => Enum.map(revisions, &document_to_result/1)})
 
       {:error, {:not_found}} -> error(conn, 404, "not found")
       _ -> error(conn, 500, "server error")
     end
 
+  end
+
+  defp document_to_delivery_result(%{title: title, content: content}) do
+    %{
+      "result" => "success",
+      "title" => title,
+      "content" => Map.delete(content, "authoring")
+    }
   end
 
   @doc """
@@ -219,7 +296,47 @@ defmodule OliWeb.ActivityController do
           case DeliveryResolver.from_resource_id(section.context_id, activity_id) do
             nil -> error(conn, 404, "not found")
 
-            rev -> json(conn, %{"result" => "success", "title" => rev.title, "content" => Map.delete(rev.content, "authoring")})
+            rev -> json(conn, document_to_delivery_result(rev))
+          end
+
+        else
+          error(conn, 403, "unauthorized")
+        end
+
+    end
+
+  end
+
+  @doc """
+  Retrieve a document for an activity for delivery purposes.
+
+  This retrieves the published revision of an activity document, either a primary or secondary
+  document, for a particular course section.
+  """
+  @doc parameters: [
+    course: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The course identifier"]
+  ],
+  responses: %{
+    200 => {"Retrieval Response", "application/json", OliWeb.ActivityController.BulkDocumentResponse}
+  }
+  def bulk_retrieve_delivery(conn, %{
+    "course" => course,
+    "resourceIds" => activity_ids
+  }) do
+
+    user = conn.assigns.current_user
+
+    case Sections.get_section_by(id: course) do
+
+      nil -> error(conn, 404, "not found")
+
+      section ->
+        if Sections.is_enrolled?(user.id, section.context_id) do
+
+          case DeliveryResolver.from_resource_id(section.context_id, activity_ids) do
+            nil -> error(conn, 404, "not found")
+
+            revisions -> json(conn, %{"result" => "success", "results" => Enum.map(revisions, &document_to_delivery_result/1)})
           end
 
         else

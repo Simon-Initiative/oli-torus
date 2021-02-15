@@ -24,6 +24,31 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   import Ecto.Query, warn: false
 
   @doc """
+  Retrieves a list of activity resources.
+
+  Returns:
+
+  .`{:ok, [%Revision{}]}` when the revision is retrieved
+  .`{:error, {:not_found}}` if the project is not found
+  """
+  @spec retrieve_bulk(String.t, any(), any())
+    :: {:ok, %Revision{}} | {:error, {:not_found}}
+  def retrieve_bulk(project_slug, activity_ids, author) when is_list(activity_ids) do
+
+    with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
+      {:ok} <- authorize_user(author, project)
+    do
+      case AuthoringResolver.from_resource_id(project_slug, activity_ids) do
+        nil -> {:error, {:not_found}}
+        revisions -> {:ok, revisions}
+      end
+    else
+      error -> error
+    end
+
+  end
+
+  @doc """
   Retrieves an activity resource.
 
   Returns:

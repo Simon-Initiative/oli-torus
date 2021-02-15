@@ -268,20 +268,22 @@ defmodule OliWeb.Router do
   end
 
   # Storage Service
-  scope "/api/v1/storage/project/:project/resource/:resource", OliWeb do
+  scope "/api/v1/storage/project/:project/resource", OliWeb do
     pipe_through [:api, :authoring_protected]
 
-    get "/", ActivityController, :retrieve
-    delete "/", ActivityController, :delete
-    put "/", ActivityController, :update
-    post "/", ActivityController, :create_secondary
+    get "/:resource", ActivityController, :retrieve
+    post "/", ActivityController, :bulk_retrieve
+    delete "/:resource", ActivityController, :delete
+    put "/:resource", ActivityController, :update
+    post "/:resource", ActivityController, :create_secondary
 
   end
 
-  scope "/api/v1/storage/course/:course/resource/:resource", OliWeb do
+  scope "/api/v1/storage/course/:course/resource", OliWeb do
     pipe_through [:api, :delivery_protected]
 
-    get "/", ActivityController, :retrieve_delivery
+    get "/:resource", ActivityController, :retrieve_delivery
+    post "/", ActivityController, :bulk_retrieve_delivery
   end
 
   # Media Service
