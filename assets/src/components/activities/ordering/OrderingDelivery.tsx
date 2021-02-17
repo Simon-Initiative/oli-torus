@@ -168,6 +168,9 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
     <Hints key="hints" onClick={onRequestHint} hints={hints}
       hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>];
 
+  const gradedDetails = props.graded && props.progress_state === 'in_review' ? [
+    evaluationSummary] : null;
+
   const maybeSubmitButton = props.graded
     ? null
     : (
@@ -192,6 +195,7 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
           {maybeSubmitButton}
         </div>
         {ungradedDetails}
+        {gradedDetails}
       </div>
       {reset}
     </div>

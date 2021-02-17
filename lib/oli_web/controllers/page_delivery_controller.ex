@@ -61,6 +61,8 @@ defmodule OliWeb.PageDeliveryController do
   defp render_page(%PageContext{summary: summary, progress_state: :not_started, page: page, resource_attempts: resource_attempts} = context,
     conn, context_id, _) do
 
+    IO.inspect context
+
     attempts_taken = length(resource_attempts)
 
     # The call to "max" here accounts for the possibility that a publication could reduce the
@@ -79,6 +81,7 @@ defmodule OliWeb.PageDeliveryController do
     render(conn, "prologue.html", %{
       context_id: context_id,
       scripts: Activities.get_activity_scripts(),
+      resource_attempts: Enum.filter(resource_attempts, fn r -> r.date_evaluated != nil end),
       summary: summary,
       previous_page: context.previous_page,
       next_page: context.next_page,
@@ -96,9 +99,13 @@ defmodule OliWeb.PageDeliveryController do
   # This case handles :in_progress and :revised progress states
   defp render_page(%PageContext{} = context, conn, context_id, user) do
 
-    render_context = %Context{user: user, activity_map: context.activities}
+#    IO.inspect context
+
+    render_context = %Context{user: user, progress_state: context.progress_state, activity_map: context.activities}
     page_model = Map.get(context.page.content, "model")
     html = Page.render(render_context, page_model, Page.Html)
+
+#    IO.inspect html
 
     conn = put_root_layout conn, {OliWeb.LayoutView, "page.html"}
     render(conn,
@@ -106,6 +113,7 @@ defmodule OliWeb.PageDeliveryController do
         "container.html" else "page.html"
       end, %{
       page: context.page,
+      progress_state: context.progress_state,
       context_id: context_id,
       scripts: Activities.get_activity_scripts(),
       summary: context.summary,
@@ -133,6 +141,24 @@ defmodule OliWeb.PageDeliveryController do
         {:ok, _} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
         {:error, {:active_attempt_present}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
         {:error, {:no_more_attempts}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, context_id, revision_slug))
+        _ -> render(conn, "error.html")
+      end
+
+    else
+      render conn, "not_authorized.html"
+    end
+
+  end
+
+  def review_attempt(conn, %{"context_id" => context_id, "revision_slug" => revision_slug, "attempt_guid" => attempt_guid}) do
+
+    user = conn.assigns.current_user
+
+    if Sections.is_enrolled?(user.id, context_id) do
+
+      case Attempts.review_resource_attempt(attempt_guid) do
+        {:ok, _} -> PageContext.create_page_context(context_id, revision_slug, attempt_guid, user)
+                    |> render_page(conn, context_id, user)
         _ -> render(conn, "error.html")
       end
 

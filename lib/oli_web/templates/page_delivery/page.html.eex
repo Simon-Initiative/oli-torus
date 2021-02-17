@@ -1,5 +1,7 @@
 
-<h1><%= @title %></h1>
+<h1><%= @title %><%= if @progress_state == :in_review do %>
+ (Review)
+<% end %></h1>
 
 <%= render "_objectives.html", objectives: @objectives %>
 
@@ -11,6 +13,6 @@
   OLI.initActivityBridge('eventIntercept');
 </script>
 
-<%= if @graded && @activity_count > 0 do %>
+<%= if @graded && @activity_count > 0 && @progress_state != :in_review do %>
   <%= link "Submit Assessment", to: Routes.page_delivery_path(@conn, :finalize_attempt, @context_id, @slug, @attempt_guid), class: "btn btn-primary btn-lg" %>
 <% end %>

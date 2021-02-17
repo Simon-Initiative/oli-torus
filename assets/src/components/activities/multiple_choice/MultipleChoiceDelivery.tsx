@@ -58,6 +58,7 @@ const Choice = ({ choice, index, selected, onClick, isEvaluated }: ChoiceProps) 
 
 const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) => {
 
+  console.log("Multiple choice props " + JSON.stringify(props));
   const [model, setModel] = useState(props.model);
   const [attemptState, setAttemptState] = useState(props.state);
   const [hints, setHints] = useState(props.state.parts[0].hints);
@@ -135,6 +136,9 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
     <Hints key="hints" onClick={onRequestHint} hints={hints}
       hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>];
 
+  const gradedDetails = props.graded && props.progress_state === 'in_review' ? [
+    evaluationSummary] : null;
+
   return (
     <div className={`activity multiple-choice-activity ${isEvaluated ? 'evaluated' : ''}`}>
       <div className="activity-content">
@@ -142,6 +146,7 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
         <Choices choices={choices} selected={selected}
           onSelect={onSelect} isEvaluated={isEvaluated}/>
         {ungradedDetails}
+        {gradedDetails}
       </div>
       {reset}
     </div>

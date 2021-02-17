@@ -1,17 +1,45 @@
 <% prologue_class = "jumbotron prologue " <> if @allow_attempt?, do: "allow-attempt", else: "" %>
 <div class="<%= prologue_class %>">
-  <h3 class="display-4"><%= @title %></h3>
+  <h3 class="display-4 text-center"><%= @title %></h3>
   <p class="lead" style="color: darkred;">This is a <strong>graded assessment</strong></p>
 
   <p><%= @message %></p>
-
+  <div>
+  <%= for resource_attempt <- @resource_attempts do %>
+  <div class="mb-2">
+    <h5 class="mb-0">
+      <%= link to: Routes.page_delivery_path(@conn, :review_attempt, @context_id, @slug, resource_attempt.attempt_guid) do %>
+      <span>Attempt <%= resource_attempt.attempt_number %></span>
+      <% end %>
+    </h5>
+    <div class="row justify-content-start">
+      <div class="col-sm-3">Started:</div>
+      <div><%= resource_attempt.inserted_at %></div>
+    </div>
+    <div class="row">
+      <div class="col-sm-3">Submitted:</div>
+      <div><%= resource_attempt.date_evaluated %></div>
+    </div>
+    <div class="row">
+      <div class="col-sm-3">Score:</div>
+      <div><%=  (resource_attempt.score / resource_attempt.out_of) * 100 |> round
+            |> Integer.to_string  %>%</div>
+    </div>
+    <div class="row">
+      <div class="col-sm-3">Points:</div>
+      <div><%= resource_attempt.score %> out of <%= resource_attempt.out_of %> </div>
+    </div>
+  </div>
+  <% end %>
+  </div>
   <%= if @allow_attempt? do %>
 
     <hr class="my-4">
+  <div class="text-center">
     <p>When you are ready to begin, you may <strong>Start Attempt</strong>.</p>
     <p class="lead">
       <%= link "Start Attempt", class: "btn btn-primary btn-lg", to: Routes.page_delivery_path(@conn, :start_attempt, @context_id, @slug) %>
     </p>
-
+  </div>
   <% end  %>
 </div>

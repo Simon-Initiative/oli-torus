@@ -338,6 +338,7 @@ defmodule OliWeb.Router do
     get "/:context_id/page", PageDeliveryController, :index
     get "/:context_id/page/:revision_slug/attempt", PageDeliveryController, :start_attempt
     get "/:context_id/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt
+    get "/:context_id/page/:revision_slug/attempt/:attempt_guid/review", PageDeliveryController, :review_attempt
 
     live "/:context_id/grades", Grades.GradesLive, session: {__MODULE__, :with_delivery, []}
     get "/:context_id/grades/export", PageDeliveryController, :export_gradebook
