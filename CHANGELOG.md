@@ -4,6 +4,7 @@
 ### Enhancements
   - Add LTI 1.3 platform launch support
   - Add support for project visibility control
+  - Move LTI 1.3 functionality to external Lti_1p3 library
 
 ### Bug fixes
   - Allow Slack hook URL to be unspecified during LMS LTI registration
