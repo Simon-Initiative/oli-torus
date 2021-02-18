@@ -194,29 +194,20 @@ defmodule Oli.Delivery.Attempts do
   @spec determine_resource_attempt_state(%Revision{}, String.t, number(), any) :: {:ok, {:in_progress, {%ResourceAttempt{}, map() }}} | {:ok, {:revised, {%ResourceAttempt{}, map() }}} | {:ok, {:not_started, {%ResourceAccess{}, [%ResourceAttempt{}]}}} | {:error, any}
   def determine_resource_attempt_state(resource_revision, context_id, user_id, activity_provider) do
 
-    # determine latest resource attempt and then derive the current resource state
-    Repo.transaction(fn ->
-
-      case get_latest_resource_attempt(resource_revision.resource_id, context_id, user_id)
-      |> get_resource_state(resource_revision, context_id, user_id, activity_provider, :in_progress) do
-
-        {:ok, results} -> results
-        {:error, error} -> Repo.rollback(error)
-      end
-
-    end)
-
+    determine_resource_attempt_state(resource_revision, context_id, nil, user_id, activity_provider)
   end
 
-  @spec determine_resource_attempt_state(%Revision{}, String.t, String.t, number(), any) :: {:ok, {:in_progress, {%ResourceAttempt{}, map() }}} | {:ok, {:revised, {%ResourceAttempt{}, map() }}} | {:ok, {:not_started, {%ResourceAccess{}, [%ResourceAttempt{}]}}} | {:error, any}
+  @spec determine_resource_attempt_state(%Revision{}, String.t, String.t, number(), any) :: {:ok, {:in_progress, {%ResourceAttempt{}, map() }}} | {:ok, {:revised, {%ResourceAttempt{}, map() }}} | {:ok, {:not_started, {%ResourceAccess{}, [%ResourceAttempt{}]}}} | {:ok, {:in_review, {%ResourceAccess{}, [%ResourceAttempt{}]}}} |{:error, any}
   def determine_resource_attempt_state(resource_revision, context_id, attempt_guid, user_id, activity_provider) do
 
-    # determine latest resource attempt and then derive the current resource state
+    # use supplied attempt guid or determine latest resource attempt and then derive the current resource state
     Repo.transaction(fn ->
+    resource_attempt = case attempt_guid do
+      nil -> get_latest_resource_attempt(resource_revision.resource_id, context_id, user_id)
+      _ -> get_resource_attempt_by(attempt_guid: attempt_guid)
+    end
 
-      case get_resource_attempt_by(attempt_guid: attempt_guid)
-           |> get_resource_state(resource_revision, context_id, user_id, activity_provider, :in_review) do
-
+      case get_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider, attempt_guid) do
         {:ok, results} -> results
         {:error, error} -> Repo.rollback(error)
       end
@@ -225,10 +216,10 @@ defmodule Oli.Delivery.Attempts do
 
   end
 
-  defp get_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider, mode) do
+  defp get_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider, attempt_guid) do
 
     case resource_revision.graded do
-      true -> get_graded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider, mode)
+      true -> get_graded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider, attempt_guid)
       false -> get_ungraded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider)
     end
 
@@ -241,7 +232,7 @@ defmodule Oli.Delivery.Attempts do
     # changes to the resource to be seen after a user has visited the resource previously
     if is_nil(resource_attempt) or resource_attempt.revision_id != resource_revision.id do
 
-      case create_new_attempt_tree(1, resource_attempt, resource_revision, context_id, user_id, activity_provider) do
+      case create_new_attempt_tree(0, resource_attempt, resource_revision, context_id, user_id, activity_provider) do
         {:ok, results} -> {:ok, {:in_progress, results}}
         error -> error
       end
@@ -251,8 +242,9 @@ defmodule Oli.Delivery.Attempts do
     end
   end
 
-  defp get_graded_resource_state(resource_attempt, resource_revision, context_id, user_id, _, mode) do
-
+  defp get_graded_resource_state(resource_attempt, resource_revision, context_id, user_id, _, attempt_guid) do
+    mode = if attempt_guid == nil, do: :in_progress, else: :in_review
+#    IO.inspect "them mode is #{mode} and #{inspect attempt_guid}"
     if (is_nil(resource_attempt) or !is_nil(resource_attempt.date_evaluated)) and mode != :in_review do
       {:ok, {:not_started, get_resource_attempt_history(resource_revision.resource_id, context_id, user_id)}}
     else

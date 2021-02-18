@@ -5,6 +5,28 @@
 
 <%= render "_objectives.html", objectives: @objectives %>
 
+<%= if @progress_state == :in_review do %>
+<div class="mb-2">
+ <div class="row justify-content-start">
+  <div class="col-sm-3">Started:</div>
+  <div><%= Timex.format!(Timex.Timezone.convert(@resource_attempt.inserted_at, Timex.Timezone.local()), "{ISOdate} {ISOtime} {Zabbr}") %></div>
+ </div>
+ <div class="row">
+  <div class="col-sm-3">Submitted:</div>
+  <div><%= Timex.format!(Timex.Timezone.convert(@resource_attempt.date_evaluated, Timex.Timezone.local()), "{ISOdate} {ISOtime} {Zabbr}") %></div>
+ </div>
+ <div class="row">
+  <div class="col-sm-3">Score:</div>
+  <div><%=  (@resource_attempt.score / @resource_attempt.out_of) * 100 |> round
+            |> Integer.to_string  %>%</div>
+ </div>
+ <div class="row">
+  <div class="col-sm-3">Points:</div>
+  <div><%= @resource_attempt.score %> out of <%= @resource_attempt.out_of %> </div>
+ </div>
+</div>
+<% end %>
+
 <div id="eventIntercept">
   <%= raw(@html) %>
 </div>

@@ -99,13 +99,9 @@ defmodule OliWeb.PageDeliveryController do
   # This case handles :in_progress and :revised progress states
   defp render_page(%PageContext{} = context, conn, context_id, user) do
 
-#    IO.inspect context
-
     render_context = %Context{user: user, progress_state: context.progress_state, activity_map: context.activities}
     page_model = Map.get(context.page.content, "model")
     html = Page.render(render_context, page_model, Page.Html)
-
-#    IO.inspect html
 
     conn = put_root_layout conn, {OliWeb.LayoutView, "page.html"}
     render(conn,
@@ -125,6 +121,7 @@ defmodule OliWeb.PageDeliveryController do
       html: html,
       objectives: context.objectives,
       slug: context.page.slug,
+      resource_attempt: hd(context.resource_attempts),
       attempt_guid: hd(context.resource_attempts).attempt_guid,
     })
   end

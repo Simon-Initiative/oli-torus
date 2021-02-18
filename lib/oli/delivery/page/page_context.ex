@@ -35,41 +35,11 @@ defmodule Oli.Delivery.Page.PageContext do
     # track access to this resource
     Attempts.track_access(page_revision.resource_id, context_id, user.id)
 
-    activity_provider = &Oli.Delivery.ActivityProvider.provide/2
-
-    {progress_state, resource_attempts, latest_attempts, activities} = case Attempts.determine_resource_attempt_state(page_revision, context_id, user.id, activity_provider) do
-      {:ok, {:not_started, {_, resource_attempts}}} -> {:not_started, resource_attempts, %{}, nil}
-      {:ok, {state, {resource_attempt, latest_attempts}}} -> {state, [resource_attempt], latest_attempts, ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
-      {:error, _} -> {:error, [], %{}}
-    end
-
-    # Fetch the revision pinned to the resource attempt if it was revised since this attempt began. This
-    # is what enables existing attempts that are being revisited after a change was published to the page
-    # to display the old content
-    page_revision = if progress_state == :revised do
-      Oli.Resources.get_revision!(hd(resource_attempts).revision_id)
-    else
-      page_revision
-    end
-
-    {:ok, summary} = Summary.get_summary(context_id, user)
-
-    {previous, next} = determine_previous_next(flatten_hierarchy(summary.hierarchy), page_revision)
-
-    %PageContext{
-      summary: summary,
-      page: page_revision,
-      progress_state: progress_state,
-      resource_attempts: resource_attempts,
-      activities: activities,
-      objectives: rollup_objectives(latest_attempts, DeliveryResolver, context_id),
-      previous_page: previous,
-      next_page: next
-    }
+    create_page_context(context_id, page_slug, nil, user)
   end
 
   @doc """
-  Creates the page context required to render a page in delivery model, based
+  Creates the page context required to render a page in review model, based
   off of the section context id, the slug of the page to render, and an
   optional id of the parent container that the page exists within. If not
   specified, the container is assumed to be the root resource of the publication.
@@ -88,7 +58,8 @@ defmodule Oli.Delivery.Page.PageContext do
     activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
     {progress_state, resource_attempts, latest_attempts, activities} = case Attempts.determine_resource_attempt_state(page_revision, context_id, attempt_guid, user.id, activity_provider) do
-    {:ok, {state, {resource_attempt, latest_attempts}}} -> {state, [resource_attempt], latest_attempts, ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
+      {:ok, {:not_started, {_, resource_attempts}}} -> {:not_started, resource_attempts, %{}, nil}
+      {:ok, {state, {resource_attempt, latest_attempts}}} -> {state, [resource_attempt], latest_attempts, ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
       {:error, _} -> {:error, [], %{}}
     end
 
