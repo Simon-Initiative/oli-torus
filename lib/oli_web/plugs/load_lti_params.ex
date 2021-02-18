@@ -12,11 +12,11 @@ defmodule Oli.Plugs.LoadLtiParams do
         lms_signin_required(conn)
       sub ->
         # load cached lti params from database
-        case Lti_1p3.fetch_lti_params(sub) do
+        case Lti_1p3.Tool.get_lti_params_by_sub(sub) do
           nil ->
             lms_signin_required(conn)
-          %{data: data} ->
-            assign(conn, :lti_params, data)
+          %{params: params} ->
+            assign(conn, :lti_params, params)
         end
     end
   end

@@ -1,7 +1,7 @@
 defmodule OliWeb.PlatformInstanceControllerTest do
   use OliWeb.ConnCase
 
-  alias Lti_1p3.PlatformInstances
+  alias Oli.Lti_1p3.PlatformInstances
 
   @create_attrs %{client_id: "some client_id", custom_params: "some custom_params", description: "some description", keyset_url: "some keyset_url", login_url: "some login_url", name: "some name", redirect_uris: "some redirect_uris", target_link_uri: "some target_link_uri"}
   @update_attrs %{client_id: "some updated client_id", custom_params: "some updated custom_params", description: "some updated description", keyset_url: "some updated keyset_url", login_url: "some updated login_url", name: "some updated name", redirect_uris: "some updated redirect_uris", target_link_uri: "some updated target_link_uri"}

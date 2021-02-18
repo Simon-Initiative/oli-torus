@@ -60,9 +60,14 @@ config :oli, :help,
   dispatcher: Oli.Help.Providers.EmailHelp
 
 config :lti_1p3,
-  repo: Oli.Repo,
-  http_client: HTTPoison,
-  registration: Oli.Lti_1p3.Registration
+  provider: Lti_1p3.DataProviders.EctoProvider,
+  ecto_provider: [
+    repo: Oli.Repo,
+    schemas: [
+      user: Oli.Accounts.User,
+      registration: Oli.Lti_1p3.Tool.Registration
+    ]
+  ]
 
 config :ex_aws,
   access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, :instance_role],

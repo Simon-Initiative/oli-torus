@@ -2,7 +2,7 @@ defmodule OliWeb.DeploymentController do
   use OliWeb, :controller
 
   alias Oli.Institutions
-  alias Lti_1p3.Deployment
+  alias Lti_1p3.DataProviders.EctoProvider.Deployment
 
   def new(conn, %{"institution_id" => institution_id, "registration_id" => registration_id}) do
     changeset = Institutions.change_deployment(%Deployment{registration_id: registration_id})

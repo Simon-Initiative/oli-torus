@@ -2,7 +2,7 @@ defmodule OliWeb.RegistrationController do
   use OliWeb, :controller
 
   alias Oli.Institutions
-  alias Oli.Lti_1p3.Registration
+  alias Oli.Lti_1p3.Tool.Registration
 
   def new(conn, %{"institution_id" => institution_id}) do
     changeset = Institutions.change_registration(%Registration{institution_id: institution_id})
@@ -10,9 +10,11 @@ defmodule OliWeb.RegistrationController do
   end
 
   def create(conn, %{"institution_id" => institution_id, "registration" => registration_params}) do
+    {:ok, active_jwk} = Lti_1p3.get_active_jwk()
+
     registration_params = registration_params
       |> Map.put("institution_id", institution_id)
-      |> Map.put("tool_jwk_id", Lti_1p3.get_active_jwk().id)
+      |> Map.put("tool_jwk_id", active_jwk.id)
 
     case Institutions.create_registration(registration_params) do
       {:ok, _registration} ->

@@ -6,8 +6,8 @@ defmodule OliWeb.Grades.GradesLive do
   alias Oli.Lti.LTI_AGS
   alias Oli.Lti.LineItem
   alias Oli.Lti.LTI_NRPS
-  alias Lti_1p3.AccessToken
-  alias Lti_1p3.ContextRoles
+  alias Lti_1p3.Tool.AccessToken
+  alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Attempts.ResourceAccess
 
@@ -131,8 +131,11 @@ defmodule OliWeb.Grades.GradesLive do
   end
 
   defp access_token_provider(lti_launch_params) do
-    deployment_id = Lti_1p3.get_deployment_id_from_launch(lti_launch_params)
-    AccessToken.fetch_access_token(deployment_id, Grading.ags_scopes(), host())
+    issuer = lti_launch_params["iss"]
+    client_id = lti_launch_params["aud"]
+    deployment_id = lti_launch_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
+    {registration, _deployment} = Lti_1p3.Tool.get_registration_deployment(issuer, client_id, deployment_id)
+    AccessToken.fetch_access_token(registration, Grading.ags_scopes(), host())
   end
 
   defp send_grades(students, access_token, context_id, page, line_item, socket) do

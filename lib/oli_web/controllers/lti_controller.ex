@@ -5,8 +5,8 @@ defmodule OliWeb.LtiController do
   alias Oli.Delivery.Sections
   alias Oli.Institutions
   alias Oli.Institutions.PendingRegistration
-  alias Lti_1p3.ContextRoles
-  alias Lti_1p3.PlatformRoles
+  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Tool.PlatformRoles
   alias Lti_1p3
   alias Oli.Predefined
   alias Oli.Slack
@@ -15,7 +15,7 @@ defmodule OliWeb.LtiController do
 
   ## LTI 1.3
   def login(conn, params) do
-    case Lti_1p3.OidcLogin.oidc_login_redirect_url(params) do
+    case Lti_1p3.Tool.OidcLogin.oidc_login_redirect_url(params) do
       {:ok, state, redirect_url} ->
         conn
         |> put_session("state", state)
@@ -30,7 +30,7 @@ defmodule OliWeb.LtiController do
   @spec launch(Plug.Conn.t(), any) :: Plug.Conn.t()
   def launch(conn, params) do
     session_state = Plug.Conn.get_session(conn, "state")
-    case Lti_1p3.LaunchValidation.validate(params, session_state) do
+    case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
       {:ok, lti_params, cache_key} ->
 
         # store sub in the session so that the cached lti_params can be
@@ -50,7 +50,7 @@ defmodule OliWeb.LtiController do
 
   def test(conn, params) do
     session_state = Plug.Conn.get_session(conn, "state")
-    case Lti_1p3.LaunchValidation.validate(params, session_state) do
+    case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
       {:ok, lti_params, _cache_key} ->
         render(conn, "lti_test.html", lti_params: lti_params)
       {:error, %{reason: _reason, msg: msg}} ->
@@ -59,11 +59,11 @@ defmodule OliWeb.LtiController do
   end
 
   def authorize_redirect(conn, params) do
-    case Lti_1p3.LoginHints.get_login_hint_by_value(params["login_hint"]) do
+    case Lti_1p3.Platform.LoginHints.get_login_hint_by_value(params["login_hint"]) do
       nil ->
         render(conn, "lti_error.html", reason: "The current user must be the same user initiating the LTI request")
 
-      %Lti_1p3.LoginHint{context: context} ->
+      %Lti_1p3.Platform.LoginHint{context: context} ->
         current_user = case context do
           "author" ->
             conn.assigns[:current_author]
@@ -75,7 +75,7 @@ defmodule OliWeb.LtiController do
         # TODO: add multiple deployment support
         # for now, just use a single deployment with a static deployment_id
         deployment_id = "1"
-        case Lti_1p3.AuthorizationRedirect.authorize_redirect(params, current_user, issuer, deployment_id) do
+        case Lti_1p3.Platform.AuthorizationRedirect.authorize_redirect(params, current_user, issuer, deployment_id) do
           {:ok, redirect_uri, state, id_token} ->
             conn
             |> render("post_redirect.html", redirect_uri: redirect_uri, state: state, id_token: id_token)
@@ -86,7 +86,7 @@ defmodule OliWeb.LtiController do
   end
 
   def developer_key_json(conn, _params) do
-    active_jwk = Lti_1p3.get_active_jwk()
+    {:ok, active_jwk} = Lti_1p3.get_active_jwk()
 
     public_jwk = JOSE.JWK.from_pem(active_jwk.pem) |> JOSE.JWK.to_public()
       |> JOSE.JWK.to_map()
@@ -163,26 +163,8 @@ defmodule OliWeb.LtiController do
   end
 
   def jwks(conn, _params) do
-    all_jwks = Lti_1p3.get_all_jwks()
-      |> Enum.map(fn %{pem: pem, typ: typ, alg: alg, kid: kid} ->
-        pem
-        |> JOSE.JWK.from_pem
-        |> JOSE.JWK.to_public
-        |> JOSE.JWK.to_map()
-        |> (fn {_kty, public_jwk} -> public_jwk end).()
-        |> Map.put("typ", typ)
-        |> Map.put("alg", alg)
-        |> Map.put("kid", kid)
-        |> Map.put("use", "sig")
-      end)
-
-    key_map = %{
-      keys: all_jwks
-    }
-
     conn
-    |> json(key_map)
-
+    |> json(Lti_1p3.get_all_public_keys())
   end
 
   def access_tokens(conn, _params) do
@@ -299,10 +281,12 @@ defmodule OliWeb.LtiController do
   end
 
   defp handle_valid_lti_1p3_launch(conn, lti_params) do
+    issuer = lti_params["iss"]
+    client_id = lti_params["aud"]
     deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
 
-    case Lti_1p3.get_rd_by_deployment_id(deployment_id) do
-      {registration, _deployment} ->
+    case Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id) do
+      {institution, _registration, _deployment} ->
         lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
 
         # update user values defined by the oidc standard per LTI 1.3 standard user identity claims
@@ -327,7 +311,7 @@ defmodule OliWeb.LtiController do
           phone_number: lti_params["phone_number"],
           phone_number_verified: lti_params["phone_number_verified"],
           address: lti_params["address"],
-          institution_id: registration.institution_id,
+          institution_id: institution.id,
         }) do
           {:ok, user} ->
             # update user platform roles

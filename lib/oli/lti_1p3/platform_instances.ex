@@ -1,9 +1,8 @@
-defmodule Lti_1p3.PlatformInstances do
+defmodule Oli.Lti_1p3.PlatformInstances do
   import Ecto.Query, warn: false
-  import Lti_1p3.Config
 
-  # alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
-  alias Lti_1p3.PlatformInstance
+  alias Oli.Repo
+  alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
 
   @doc """
   Returns the list of lti_1p3_platform_instances.

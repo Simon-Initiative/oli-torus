@@ -13,7 +13,7 @@ defmodule Oli.Grading do
   alias Oli.Delivery.Attempts.ResourceAccess
   alias Oli.Grading.GradebookRow
   alias Oli.Grading.GradebookScore
-  alias Lti_1p3.ContextRoles
+  alias Lti_1p3.Tool.ContextRoles
   alias Oli.Lti.LTI_AGS
   alias Oli.Resources.Revision
   alias Oli.Publishing.Publication

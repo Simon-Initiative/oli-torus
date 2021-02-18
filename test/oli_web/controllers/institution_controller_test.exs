@@ -7,8 +7,8 @@ defmodule OliWeb.InstitutionControllerTest do
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Institutions
-  alias Oli.Lti_1p3.Registration
-  alias Lti_1p3.Deployment
+  alias Oli.Lti_1p3.Tool.Registration
+  alias Lti_1p3.DataProviders.EctoProvider.Deployment
   alias Oli.Institutions.PendingRegistration
 
   @create_attrs %{country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", name: "some name", timezone: "some timezone"}
