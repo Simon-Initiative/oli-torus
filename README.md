@@ -13,7 +13,7 @@ The Torus project is the next generation of the [Open Learning Initiative](https
 
 - Integrated course authoring and delivery system supporting rich text, media and interactive activities
 - Learning engineering focused course design and instrumentation feeds a rich data-analytics dashboard to allow iterative course improvement
-- Publication and versioning system to track and migratte changes between a course and its derivatives
+- Publication and versioning system to track and migrate changes between a course and its derivatives
 - Extensible activity framework incorporates third-party developed learning activities
 - A standards oriented design pairs Torus with any LTI 1.3 compliant Learning Management System
 - A [managed instance](https://proton.oli.cmu.edu) of Torus is available, or run your own instance
