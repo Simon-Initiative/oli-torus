@@ -427,4 +427,14 @@ defmodule Oli.Institutions do
       select: {institution, registration, deployment}
   end
 
+  @doc """
+  Searches for a list of Institution with an name matching a wildcard pattern
+  """
+  def search_institutions_matching(query) do
+    q = query
+    q = "%" <> q <> "%"
+    Repo.all from i in Institution,
+             where: ilike(i.name, ^q)
+  end
+
 end

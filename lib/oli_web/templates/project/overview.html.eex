@@ -66,6 +66,11 @@
 
       <div class="row my-4">
         <div class="col-12">
+          <%= live_render @conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => @project.slug } %>
+        </div>
+      </div>
+      <div class="row my-4">
+        <div class="col-12">
           <h4>Datashop Export</h4>
           <%= case Oli.Publishing.get_latest_published_publication_by_slug!(@project.slug) do %>
             <% nil -> %>

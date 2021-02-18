@@ -54,7 +54,13 @@ defmodule OliWeb.DeliveryController do
   end
 
   defp render_configure_section(conn, context_id, author) do
-    publications = Publishing.available_publications(author)
+    lti_params = conn.assigns.lti_params
+    issuer = lti_params["iss"]
+    client_id = lti_params["aud"]
+    deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"];
+    {institution, _registration, _deployment} = Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
+
+    publications = Publishing.available_publications(author, institution)
     my_publications = publications |> Enum.filter(fn p -> !p.open_and_free && p.published end)
 
     render(conn, "configure_section.html", context_id: context_id, author: author, my_publications: my_publications)
