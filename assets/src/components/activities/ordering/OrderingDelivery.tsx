@@ -21,14 +21,16 @@ type Selection = [ActivityTypes.ChoiceId, number];
 interface SelectionProps {
   selected: Selection[];
   onDeselect: (id: ActivityTypes.ChoiceId) => void;
+  isEvaluated: boolean;
 }
-const Selection = ({ selected, onDeselect }: SelectionProps) => {
+const Selection = ({ selected, onDeselect, isEvaluated }: SelectionProps) => {
   const id = (selection: Selection) => selection[0];
   const index = (selection: Selection) => selection[1];
   return (
     <div className="mb-2" style={{ height: 34, borderBottom: '3px solid #333' }}>
       {selected.map(selection =>
         <button onClick={() => onDeselect(id(selection))}
+                disabled={isEvaluated}
           className="choice-index mr-1">
             {index(selection) + 1}
         </button>)}
@@ -171,6 +173,9 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
   const gradedDetails = props.graded && props.progress_state === 'in_review' ? [
     evaluationSummary] : null;
 
+  const gradedPoints = props.graded && props.progress_state === 'in_review' ? [
+    <div className="text-info font-italic"><span>Points: </span><span>{attemptState.score + " out of " + attemptState.outOf}</span> </div>] : null;
+
   const maybeSubmitButton = props.graded
     ? null
     : (
@@ -187,9 +192,10 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
       <div className="activity-content">
         <div>
           <Stem stem={stem} />
+          {gradedPoints}
           <Selection
             onDeselect={(id: ActivityTypes.ChoiceId) => updateSelection(id)}
-            selected={selected.map(s => [s, choices.findIndex(c => c.id === s)])} />
+            selected={selected.map(s => [s, choices.findIndex(c => c.id === s)])} isEvaluated={isEvaluated}/>
           <Choices choices={choices} selected={selected}
             onSelect={onSelect} isEvaluated={isEvaluated}/>
           {maybeSubmitButton}

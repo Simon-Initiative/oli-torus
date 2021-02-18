@@ -10,6 +10,7 @@ import { Stem } from '../common/DisplayedStem';
 import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/Evaluation';
+import {IconCorrect, IconIncorrect} from "components/misc/Icons";
 
 type Evaluation = {
   score: number,
@@ -139,10 +140,18 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
   const gradedDetails = props.graded && props.progress_state === 'in_review' ? [
     evaluationSummary] : null;
 
+  const correctnessIcon = attemptState.score === 0 ? <IconIncorrect/> : <IconCorrect/>;
+
+  const gradedPoints = props.graded && props.progress_state === 'in_review' ? [
+    <div className="text-info font-italic">
+      {correctnessIcon}
+    <span>Points: </span><span>{attemptState.score + " out of " + attemptState.outOf}</span> </div>] : null;
+
   return (
     <div className={`activity multiple-choice-activity ${isEvaluated ? 'evaluated' : ''}`}>
       <div className="activity-content">
         <Stem stem={stem} />
+        {gradedPoints}
         <Choices choices={choices} selected={selected}
           onSelect={onSelect} isEvaluated={isEvaluated}/>
         {ungradedDetails}

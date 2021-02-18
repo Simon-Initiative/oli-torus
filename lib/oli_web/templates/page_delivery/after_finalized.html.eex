@@ -8,4 +8,9 @@
 
   <hr>
   <p class="mb-0"><%= @message %></p>
+  <div class="mt-4">
+  <%= link "Exit", to: Routes.page_delivery_path(@conn, :page, @context_id, @slug), class: "btn btn-primary btn-lg" %>
+  <%= link "Review Attempt", to: Routes.page_delivery_path(@conn, :review_attempt,
+   @context_id, @slug, @attempt_guid), class: "btn btn-primary btn-lg" %>
+  </div>
  </div>

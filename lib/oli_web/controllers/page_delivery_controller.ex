@@ -61,8 +61,6 @@ defmodule OliWeb.PageDeliveryController do
   defp render_page(%PageContext{summary: summary, progress_state: :not_started, page: page, resource_attempts: resource_attempts} = context,
     conn, context_id, _) do
 
-    IO.inspect context
-
     attempts_taken = length(resource_attempts)
 
     # The call to "max" here accounts for the possibility that a publication could reduce the
@@ -88,7 +86,9 @@ defmodule OliWeb.PageDeliveryController do
       title: context.page.title,
       allow_attempt?: allow_attempt?,
       message: message,
-      slug: context.page.slug
+      resource_id: page.resource_id,
+      slug: context.page.slug,
+      max_attempts: page.max_attempts
     })
   end
 
@@ -196,7 +196,7 @@ defmodule OliWeb.PageDeliveryController do
       {:ok, resource_access} ->
 
         grade_sync_result = send_one_grade(lti_params, resource_access)
-        after_finalized(conn, context_id, revision_slug, user, grade_sync_result)
+        after_finalized(conn, context_id, revision_slug, attempt_guid, user, grade_sync_result)
 
       {:error, {:not_all_answered}} ->
         put_flash(conn, :error, "You have not answered all questions")
@@ -209,7 +209,7 @@ defmodule OliWeb.PageDeliveryController do
 
   end
 
-  def after_finalized(conn, context_id, revision_slug, user, grade_sync_result) do
+  def after_finalized(conn, context_id, revision_slug, attempt_guid, user, grade_sync_result) do
 
     context = PageContext.create_page_context(context_id, revision_slug, user)
 
@@ -234,6 +234,7 @@ defmodule OliWeb.PageDeliveryController do
     render(conn, "after_finalized.html",
       grade_message: grade_message,
       context_id: context_id,
+      attempt_guid: attempt_guid,
       scripts: Activities.get_activity_scripts(),
       summary: context.summary,
       previous_page: context.previous_page,

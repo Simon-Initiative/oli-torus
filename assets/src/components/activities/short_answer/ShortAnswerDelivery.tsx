@@ -130,6 +130,9 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
   const gradedDetails = props.graded && props.progress_state === 'in_review' ? [
     evaluationSummary] : null;
 
+  const gradedPoints = props.graded && props.progress_state === 'in_review' ? [
+    <div className="text-info font-italic"><span>Points: </span><span>{attemptState.score + " out of " + attemptState.outOf}</span> </div>] : null;
+
   const maybeSubmitButton = props.graded
   ? null
   : (
@@ -143,7 +146,7 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
     <div className="activity short-answer-activity">
       <div className="activity-content">
         <Stem stem={stem} />
-
+        {gradedPoints}
         <div className="">
           <Input
             inputType={model.inputType}

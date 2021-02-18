@@ -3,22 +3,25 @@
   <h3 class="display-4 text-center"><%= @title %></h3>
   <p class="lead" style="color: darkred;">This is a <strong>graded assessment</strong></p>
 
+  <h4 class="mb-2">
+    <span>Score: </span><span><%= calculate_score_percentage(Map.get(@summary.access_map, @resource_id)) %></span>
+  </h4>
   <p><%= @message %></p>
   <div>
   <%= for resource_attempt <- @resource_attempts do %>
   <div class="mb-2">
     <h5 class="mb-0">
       <%= link to: Routes.page_delivery_path(@conn, :review_attempt, @context_id, @slug, resource_attempt.attempt_guid) do %>
-      <span>Attempt <%= resource_attempt.attempt_number %></span>
+      <span>Attempt <%= resource_attempt.attempt_number %> of <%= @max_attempts %></span>
       <% end %>
     </h5>
     <div class="row justify-content-start">
       <div class="col-sm-3">Started:</div>
-      <div><%= resource_attempt.inserted_at %></div>
+      <div><%= Timex.format!(Timex.Timezone.convert(resource_attempt.inserted_at, Timex.Timezone.local()), "{ISOdate} {ISOtime} {Zabbr}") %></div>
     </div>
     <div class="row">
       <div class="col-sm-3">Submitted:</div>
-      <div><%= resource_attempt.date_evaluated %></div>
+      <div><%= Timex.format!(Timex.Timezone.convert(resource_attempt.date_evaluated, Timex.Timezone.local()), "{ISOdate} {ISOtime} {Zabbr}") %></div>
     </div>
     <div class="row">
       <div class="col-sm-3">Score:</div>
