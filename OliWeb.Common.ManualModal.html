@@ -10,7 +10,7 @@
     <title>OliWeb.Common.ManualModal — OLI Torus v0.5.1</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-e4b331b08e.js"></script>
+    <script src="dist/sidebar_items-b4b0a31576.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -94,9 +94,9 @@ must be added and removed from a parent LiveView programmatically when it needs 
 vary the content that the modal displays from invocation to invocation.  The only way to do this
 is to completely remove the component from the DOM and remount it with the new content.  Doing this, however,
 forces the launching of the modal to be done via JavaScript (notice the phx-hook that is present on
-the root div of this modal)</p><p>Minimal example usage specifying only the required properties:</p><pre><code class="nohighlight makeup elixir"><span class="o">&lt;</span><span class="p">%</span><span class="o">=</span><span class="w"> </span><span class="n">live_component</span><span class="w"> </span><span class="na">@socket</span><span class="p">,</span><span class="w"> </span><span class="nc">ManualModal</span><span class="p">,</span><span class="w"> </span><span class="ss">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Confirm your request&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">modal_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;my_unique_modal_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">ok_action</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;confirm&quot;</span><span class="w"> </span><span class="k" data-group-id="3026869568-1">do</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span><span class="w">
-  </span><span class="o">&lt;</span><span class="n">p</span><span class="w"> </span><span class="n">class</span><span class="o">=</span><span class="s">&quot;mb-4&quot;</span><span class="o">&gt;</span><span class="nc">Are</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">sure</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">want</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="k" data-group-id="3026869568-2">do</span><span class="w"> </span><span class="n">this?</span><span class="o">&lt;</span><span class="o">/</span><span class="n">p</span><span class="o">&gt;</span><span class="w">
-</span><span class="o">&lt;</span><span class="p">%</span><span class="w"> </span><span class="k" data-group-id="3026869568-2">end</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span></code></pre><p>Required properties:</p><p><code class="inline">title</code>: The string title that the modal will display
+the root div of this modal)</p><p>Minimal example usage specifying only the required properties:</p><pre><code class="nohighlight makeup elixir"><span class="o">&lt;</span><span class="p">%</span><span class="o">=</span><span class="w"> </span><span class="n">live_component</span><span class="w"> </span><span class="na">@socket</span><span class="p">,</span><span class="w"> </span><span class="nc">ManualModal</span><span class="p">,</span><span class="w"> </span><span class="ss">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Confirm your request&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">modal_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;my_unique_modal_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">ok_action</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;confirm&quot;</span><span class="w"> </span><span class="k" data-group-id="3637907323-1">do</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span><span class="w">
+  </span><span class="o">&lt;</span><span class="n">p</span><span class="w"> </span><span class="n">class</span><span class="o">=</span><span class="s">&quot;mb-4&quot;</span><span class="o">&gt;</span><span class="nc">Are</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">sure</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">want</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="k" data-group-id="3637907323-2">do</span><span class="w"> </span><span class="n">this?</span><span class="o">&lt;</span><span class="o">/</span><span class="n">p</span><span class="o">&gt;</span><span class="w">
+</span><span class="o">&lt;</span><span class="p">%</span><span class="w"> </span><span class="k" data-group-id="3637907323-2">end</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span></code></pre><p>Required properties:</p><p><code class="inline">title</code>: The string title that the modal will display
 <code class="inline">modal_id</code>: The DOM id that will be attached to this modal. This is the id that another part of the UI needs</p><pre><code class="nohighlight makeup elixir"><span class="w">        </span><span class="n">to</span><span class="w"> </span><span class="n">target</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">trigger</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">modal</span></code></pre><p>'ok_action': The phx-click action to invoke upon clicking the 'Ok' button</p><p>Optional properties:</p><p><code class="inline">ok_label</code>: The label to use for the 'Ok' button, defaults to 'Ok'
 <code class="inline">ok_style</code>: The Bootstrap button style to use for the 'Ok' button, defaults to <code class="inline">btn-primary</code></p>
         </section>
@@ -121,7 +121,7 @@ the root div of this modal)</p><p>Minimal example usage specifying only the requ
 
   </div>
 
-    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.14.0/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p></div>
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.14.8/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p></div>
 
 </div>
 <div class="summary-row">
@@ -130,7 +130,7 @@ the root div of this modal)</p><p>Minimal example usage specifying only the requ
 
   </div>
 
-    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.14.0/Phoenix.LiveComponent.html#c:render/1"><code class="inline">Phoenix.LiveComponent.render/1</code></a>.</p></div>
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.14.8/Phoenix.LiveComponent.html#c:render/1"><code class="inline">Phoenix.LiveComponent.render/1</code></a>.</p></div>
 
 </div>
 
@@ -167,7 +167,7 @@ Functions
 
   <section class="docstring">
 
-<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.14.0/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p>
+<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.14.8/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p>
   </section>
 </section>
 <section class="detail" id="render/1">
@@ -189,7 +189,7 @@ Functions
 
   <section class="docstring">
 
-<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.14.0/Phoenix.LiveComponent.html#c:render/1"><code class="inline">Phoenix.LiveComponent.render/1</code></a>.</p>
+<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.14.8/Phoenix.LiveComponent.html#c:render/1"><code class="inline">Phoenix.LiveComponent.render/1</code></a>.</p>
   </section>
 </section>
 
