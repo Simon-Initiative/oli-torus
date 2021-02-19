@@ -7,6 +7,55 @@ defmodule OliWeb.ActivityControllerTest do
 
   setup [:project_seed]
 
+  describe "bulk retrieval" do
+
+    test "retrieves multiple secondary documents", %{conn: conn, project: project, activity_id: activity_id} do
+
+      original_conn = conn
+
+      # Create two documents
+      update_1 = %{"title" => "Title 1", "content" => %{"1" => "2"}}
+      conn = post(original_conn, Routes.activity_path(conn, :create_secondary, project.slug, activity_id), update_1)
+      assert %{ "result" => "success", "resourceId" => id_1 } = json_response(conn, 201)
+
+      update_2 = %{"title" => "Title 2", "content" => %{"1" => "2"}}
+      conn = post(original_conn, Routes.activity_path(conn, :create_secondary, project.slug, activity_id), update_2)
+      assert %{ "result" => "success", "resourceId" => id_2 } = json_response(conn, 201)
+
+      # And now fetch them using the bulk retrieval endpoint
+      conn = post(original_conn, Routes.activity_path(original_conn, :bulk_retrieve, project.slug), %{"resourceIds" => [id_1, id_2] })
+      assert %{ "result" => "success", "results" => results } = json_response(conn, 200)
+
+      assert length(results) == 2
+      assert [%{"title" => "Title 1"}, %{"title" => "Title 2"}] = results
+
+    end
+
+    test "handles missing documents with a failure placeholder", %{conn: conn, project: project, activity_id: activity_id} do
+
+      original_conn = conn
+
+      # Create two documents
+      update_1 = %{"title" => "Title 1", "content" => %{"1" => "2"}}
+      conn = post(original_conn, Routes.activity_path(conn, :create_secondary, project.slug, activity_id), update_1)
+      assert %{ "result" => "success", "resourceId" => id_1 } = json_response(conn, 201)
+
+      update_2 = %{"title" => "Title 2", "content" => %{"1" => "2"}}
+      conn = post(original_conn, Routes.activity_path(conn, :create_secondary, project.slug, activity_id), update_2)
+      assert %{ "result" => "success", "resourceId" => id_2 } = json_response(conn, 201)
+
+      # And now fetch them using the bulk retrieval endpoint, but with a non-existent document id interspersed
+      conn = post(original_conn, Routes.activity_path(original_conn, :bulk_retrieve, project.slug), %{"resourceIds" => [id_1, 189183, id_2] })
+      assert %{ "result" => "success", "results" => results } = json_response(conn, 200)
+
+      assert length(results) == 3
+      assert [%{"title" => "Title 1"}, %{"result" => "failed"}, %{"title" => "Title 2"}] = results
+
+    end
+
+  end
+
+
   describe "create and then delete a secondary resource" do
 
     test "fails when attempting to delete an activity primary document", %{conn: conn, project: project, activity_id: activity_id, revision1: revision} do

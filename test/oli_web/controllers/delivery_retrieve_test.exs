@@ -18,6 +18,38 @@ defmodule OliWeb.DeliveryRetrieveTest do
 
   end
 
+  describe "bulk get resource for delivery" do
+
+    test "retrieves the published pages", %{conn: conn, section: section, page_revision1: rev1, page_revision2: rev2} do
+
+      conn = post(conn, Routes.activity_path(conn, :bulk_retrieve_delivery, section.id), %{"resourceIds" => [rev1.resource_id, rev2.resource_id]})
+
+      assert %{"results" => results} = json_response(conn, 200)
+      assert length(results) == 2
+
+
+    end
+
+  end
+
+  defp insert_page(map, tag) do
+
+    attrs = %{
+      graded: true,
+      max_attempts: 1,
+      title: "page1",
+      content: %{
+        "model" => [
+          %{"type" => "activity-reference", "purpose" => "None", "activity_id" => Map.get(map, :activity).resource.id}
+        ]
+      },
+      objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
+    }
+
+    Seeder.add_page(map, attrs, tag)
+
+  end
+
   defp setup_session(%{conn: conn}) do
     user = user_fixture()
 
@@ -37,22 +69,10 @@ defmodule OliWeb.DeliveryRetrieveTest do
     map = Seeder.base_project_with_resource2()
     |> Seeder.add_objective("objective one", :o1)
     |> Seeder.add_activity(%{title: "one", max_attempts: 2, content: content}, :publication, :project, :author, :activity)
+    |> insert_page(:new_page1)
+    |> insert_page(:new_page2)
 
-    attrs = %{
-      graded: true,
-      max_attempts: 1,
-      title: "page1",
-      content: %{
-        "model" => [
-          %{"type" => "activity-reference", "purpose" => "None", "activity_id" => Map.get(map, :activity).resource.id}
-        ]
-      },
-      objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
-    }
-
-    map = Seeder.add_page(map, attrs, :page)
-
-    Seeder.attach_pages_to([map.page1, map.page2, map.page.resource], map.container.resource, map.container.revision, map.publication)
+    Seeder.attach_pages_to([map.page1, map.page2, map.new_page1.resource, map.new_page2.resource], map.container.resource, map.container.revision, map.publication)
 
     section = section_fixture(%{
       context_id: "some-context-id",
@@ -84,7 +104,9 @@ defmodule OliWeb.DeliveryRetrieveTest do
       publication: map.publication,
       section: section,
       revision: map.revision1,
-      page_revision: map.page.revision
+      page_revision1: map.new_page1.revision,
+      page_revision2: map.new_page2.revision,
+
     }
   end
 end
