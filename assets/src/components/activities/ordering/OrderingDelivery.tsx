@@ -5,7 +5,7 @@ import {
   DeliveryElementProps,
   EvaluationResponse,
   RequestHintResponse,
-  ResetActivityResponse
+  ResetActivityResponse,
 } from '../DeliveryElement';
 import { OrderingModelSchema } from './schema';
 import * as ActivityTypes from '../types';
@@ -140,7 +140,7 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
     props.onSaveActivity(attemptState.attemptGuid,
       [{
         attemptGuid: attemptState.parts[0].attemptGuid,
-        response: { input: orderedChoiceIds() }
+        response: { input: orderedChoiceIds() },
       }]);
   };
 
@@ -182,15 +182,16 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
     <Hints key="hints" onClick={onRequestHint} hints={hints}
       hasMoreHints={hasMoreHints} isEvaluated={isEvaluated} />];
 
-  const gradedDetails = props.graded && props.progress_state === 'in_review' ? [
+  const gradedDetails = props.graded && props.progressState === 'in_review' ? [
     evaluationSummary] : null;
 
   const correctnessIcon = attemptState.score === 0 ? <IconIncorrect /> : <IconCorrect />;
 
-  const gradedPoints = props.graded && props.progress_state === 'in_review' ? [
+  const gradedPoints = props.graded && props.progressState === 'in_review' ? [
     <div className="text-info font-italic">
       {correctnessIcon}
-      <span>Points: </span><span>{attemptState.score + " out of " + attemptState.outOf}</span></div>] : null;
+      <span>Points: </span><span>{attemptState.score + " out of "
+    + attemptState.outOf}</span></div>] : null;
 
   const maybeSubmitButton = props.graded
     ? null
@@ -211,7 +212,8 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
           {gradedPoints}
           <Selection
             onDeselect={(id: ActivityTypes.ChoiceId) => updateSelection(id)}
-            selected={selected.map(s => [s, choices.findIndex(c => c.id === s)])} isEvaluated={isEvaluated} />
+            selected={selected.map(s =>
+              [s, choices.findIndex(c => c.id === s)])} isEvaluated={isEvaluated} />
           <Choices choices={choices} selected={selected}
             onSelect={onSelect} isEvaluated={isEvaluated} />
           {maybeSubmitButton}

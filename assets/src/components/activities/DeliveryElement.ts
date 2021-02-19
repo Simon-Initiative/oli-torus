@@ -39,7 +39,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   model: T;
   state: ActivityState;
   preview: boolean;
-  progress_state: string;
+  progressState: string;
 
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
   onSubmitActivity: (attemptGuid: string,
@@ -62,7 +62,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
 
   mountPoint: HTMLDivElement;
   connected: boolean;
-  progress_state: string;
+  progressState: string;
 
   onRequestHint: (attemptGuid: string, partAttemptGuid: string) => Promise<RequestHintResponse>;
 
@@ -113,7 +113,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
         }
         resolve(result);
       };
-      if (this.progress_state === 'in_review') {
+      if (this.progressState === 'in_review') {
         continuation(null, 'in review mode');
         return;
       }
@@ -128,16 +128,16 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     const graded = JSON.parse(this.getAttribute('graded') as any);
     const state = JSON.parse(this.getAttribute('state') as any) as ActivityState;
     const preview = valueOr(JSON.parse(this.getAttribute('preview') as any), false);
-    const progress_state = this.getAttribute('progress_state') as any;
+    const progressState = this.getAttribute('progress_state') as any;
 
-    this.progress_state = progress_state;
+    this.progressState = progressState;
 
     return {
       graded,
       model,
       state,
       preview,
-      progress_state,
+      progressState,
       onRequestHint: this.onRequestHint,
       onSavePart: this.onSavePart,
       onSubmitPart: this.onSubmitPart,

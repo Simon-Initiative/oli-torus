@@ -143,15 +143,15 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
     <Hints key="hints" onClick={onRequestHint} hints={hints}
       hasMoreHints={hasMoreHints} isEvaluated={isEvaluated} />];
 
-  const gradedDetails = props.graded && props.progress_state === 'in_review' ? [
+  const gradedDetails = props.graded && props.progressState === 'in_review' ? [
     evaluationSummary] : null;
 
   const correctnessIcon = attemptState.score === 0 ? <IconIncorrect /> : <IconCorrect />;
 
-  const gradedPoints = props.graded && props.progress_state === 'in_review' ? [
+  const gradedPoints = props.graded && props.progressState === 'in_review' ? [
     <div className="text-info font-italic">
       {correctnessIcon}
-      <span>Points: </span><span>{attemptState.score + " out of " + attemptState.outOf}</span></div>] : null;
+      <span>Points: </span><span>{attemptState.score + ' out of ' + attemptState.outOf}</span></div>] : null;
 
   return (
     <div className={`activity multiple-choice-activity ${isEvaluated ? 'evaluated' : ''}`}>
