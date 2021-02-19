@@ -15,7 +15,7 @@ defmodule Oli.Lti.LTI_AGS do
 
   alias Oli.Lti.Score
   alias Oli.Lti.LineItem
-  alias Oli.Lti_1p3.AccessToken
+  alias Lti_1p3.Tool.AccessToken
 
   require Logger
 

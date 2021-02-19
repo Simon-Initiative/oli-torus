@@ -316,7 +316,7 @@ defmodule Oli.Seeder do
 
     # Enroll users
     user_tags
-    |> Enum.each(fn user_tag -> Sections.enroll(map[user_tag].id, map[section_tag].id, [Oli.Lti_1p3.ContextRoles.get_role(:context_learner)]) end)
+    |> Enum.each(fn user_tag -> Sections.enroll(map[user_tag].id, map[section_tag].id, [Lti_1p3.Tool.ContextRoles.get_role(:context_learner)]) end)
 
     map
   end

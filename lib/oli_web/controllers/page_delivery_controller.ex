@@ -11,7 +11,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Utils.Slug
   alias Oli.Utils.Time
   alias Oli.Delivery.Sections
-  alias Oli.Lti_1p3.ContextRoles
+  alias Lti_1p3.Tool.ContextRoles
   alias Oli.Resources.ResourceType
   alias Oli.Grading
 
@@ -150,8 +150,11 @@ defmodule OliWeb.PageDeliveryController do
 
   defp access_token_provider(lti_launch_params) do
     fn ->
-      deployment_id = Oli.Lti_1p3.get_deployment_id_from_launch(lti_launch_params)
-      Oli.Lti_1p3.AccessToken.fetch_access_token(deployment_id, Oli.Grading.ags_scopes(), host())
+      issuer = lti_launch_params["iss"]
+      client_id = lti_launch_params["aud"]
+      deployment_id = lti_launch_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
+      {registration, _deployment} = Lti_1p3.Tool.get_registration_deployment(issuer, client_id, deployment_id)
+      Lti_1p3.Tool.AccessToken.fetch_access_token(registration, Oli.Grading.ags_scopes(), host())
     end
   end
 
