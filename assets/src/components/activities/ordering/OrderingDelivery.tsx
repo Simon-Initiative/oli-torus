@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import {
   DeliveryElement,
@@ -7,14 +7,14 @@ import {
   RequestHintResponse,
   ResetActivityResponse
 } from '../DeliveryElement';
-import {OrderingModelSchema} from './schema';
+import { OrderingModelSchema } from './schema';
 import * as ActivityTypes from '../types';
-import {HtmlContentModelRenderer} from 'data/content/writers/renderer';
-import {Stem} from '../common/DisplayedStem';
-import {Hints} from '../common/DisplayedHints';
-import {Reset} from '../common/Reset';
-import {Evaluation} from '../common/Evaluation';
-import {IconCorrect, IconIncorrect} from 'components/misc/Icons';
+import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
+import { Stem } from '../common/DisplayedStem';
+import { Hints } from '../common/DisplayedHints';
+import { Reset } from '../common/Reset';
+import { Evaluation } from '../common/Evaluation';
+import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 
 type Evaluation = {
   score: number,
@@ -31,15 +31,15 @@ interface SelectionProps {
   isEvaluated: boolean;
 }
 
-const Selection = ({selected, onDeselect, isEvaluated}: SelectionProps) => {
+const Selection = ({ selected, onDeselect, isEvaluated }: SelectionProps) => {
   const id = (selection: Selection) => selection[0];
   const index = (selection: Selection) => selection[1];
   return (
-    <div className="mb-2" style={{height: 34, borderBottom: '3px solid #333'}}>
+    <div className="mb-2" style={{ height: 34, borderBottom: '3px solid #333' }}>
       {selected.map(selection =>
         <button onClick={() => onDeselect(id(selection))}
-                disabled={isEvaluated}
-                className="choice-index mr-1">
+          disabled={isEvaluated}
+          className="choice-index mr-1">
           {index(selection) + 1}
         </button>)}
     </div>
@@ -53,7 +53,7 @@ interface ChoicesProps {
   isEvaluated: boolean;
 }
 
-const Choices = ({choices, selected, onSelect, isEvaluated}: ChoicesProps) => {
+const Choices = ({ choices, selected, onSelect, isEvaluated }: ChoicesProps) => {
   const isSelected = (choiceId: string) => !!selected.find(s => s === choiceId);
   return (
     <div className="choices">
@@ -64,7 +64,7 @@ const Choices = ({choices, selected, onSelect, isEvaluated}: ChoicesProps) => {
           selected={isSelected(choice.id)}
           choice={choice}
           isEvaluated={isEvaluated}
-          index={index}/>)}
+          index={index} />)}
     </div>
   );
 };
@@ -78,13 +78,13 @@ interface ChoiceProps {
   isEvaluated: boolean;
 }
 
-const Choice = ({choice, index, selected, onClick, isEvaluated}: ChoiceProps) => {
+const Choice = ({ choice, index, selected, onClick, isEvaluated }: ChoiceProps) => {
   return (
     <div key={choice.id}
-         onClick={isEvaluated ? undefined : onClick}
-         className={`choice ${selected ? 'selected' : ''}`}>
+      onClick={isEvaluated ? undefined : onClick}
+      className={`choice ${selected ? 'selected' : ''}`}>
       <span className="choice-index">{index + 1}</span>
-      <HtmlContentModelRenderer text={choice.content}/>
+      <HtmlContentModelRenderer text={choice.content} />
     </div>
   );
 };
@@ -103,7 +103,7 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
           (acc: ActivityTypes.ChoiceId[], curr: ActivityTypes.ChoiceId) => acc.concat([curr]),
           []));
 
-  const {stem, choices} = model;
+  const { stem, choices } = model;
 
   const isEvaluated = attemptState.score !== null;
   const orderedChoiceIds = () => selected.join(' ');
@@ -111,12 +111,12 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
   const onSubmit = () => {
     props.onSubmitActivity(attemptState.attemptGuid,
       // update this input too
-      [{attemptGuid: attemptState.parts[0].attemptGuid, response: {input: orderedChoiceIds()}}])
+      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: orderedChoiceIds() } }])
       .then((response: EvaluationResponse) => {
         if (response.evaluations.length > 0) {
-          const {score, out_of, feedback, error} = response.evaluations[0];
-          const parts = [Object.assign({}, attemptState.parts[0], {feedback, error})];
-          const updated = Object.assign({}, attemptState, {score, outOf: out_of, parts});
+          const { score, out_of, feedback, error } = response.evaluations[0];
+          const parts = [Object.assign({}, attemptState.parts[0], { feedback, error })];
+          const updated = Object.assign({}, attemptState, { score, outOf: out_of, parts });
           setAttemptState(updated);
         }
       });
@@ -140,7 +140,7 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
     props.onSaveActivity(attemptState.attemptGuid,
       [{
         attemptGuid: attemptState.parts[0].attemptGuid,
-        response: {input: orderedChoiceIds()}
+        response: { input: orderedChoiceIds() }
       }]);
   };
 
@@ -166,26 +166,26 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
   };
 
   const evaluationSummary = isEvaluated
-    ? <Evaluation key="evaluation" attemptState={attemptState}/>
+    ? <Evaluation key="evaluation" attemptState={attemptState} />
     : null;
 
   const reset = isEvaluated && !props.graded
     ? (<div className="d-flex my-3">
-        <div className="flex-fill"></div>
-        <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset}/>
-      </div>
+      <div className="flex-fill"></div>
+      <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
+    </div>
     )
     : null;
 
   const ungradedDetails = props.graded ? null : [
     evaluationSummary,
     <Hints key="hints" onClick={onRequestHint} hints={hints}
-           hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>];
+      hasMoreHints={hasMoreHints} isEvaluated={isEvaluated} />];
 
   const gradedDetails = props.graded && props.progress_state === 'in_review' ? [
     evaluationSummary] : null;
 
-  const correctnessIcon = attemptState.score === 0 ? <IconIncorrect/> : <IconCorrect/>;
+  const correctnessIcon = attemptState.score === 0 ? <IconIncorrect /> : <IconCorrect />;
 
   const gradedPoints = props.graded && props.progress_state === 'in_review' ? [
     <div className="text-info font-italic">
@@ -207,13 +207,13 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
     <div className={`activity ordering-activity ${isEvaluated ? 'evaluated' : ''}`}>
       <div className="activity-content">
         <div>
-          <Stem stem={stem}/>
+          <Stem stem={stem} />
           {gradedPoints}
           <Selection
             onDeselect={(id: ActivityTypes.ChoiceId) => updateSelection(id)}
-            selected={selected.map(s => [s, choices.findIndex(c => c.id === s)])} isEvaluated={isEvaluated}/>
+            selected={selected.map(s => [s, choices.findIndex(c => c.id === s)])} isEvaluated={isEvaluated} />
           <Choices choices={choices} selected={selected}
-                   onSelect={onSelect} isEvaluated={isEvaluated}/>
+            onSelect={onSelect} isEvaluated={isEvaluated} />
           {maybeSubmitButton}
         </div>
         {ungradedDetails}

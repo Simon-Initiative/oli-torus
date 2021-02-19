@@ -1,21 +1,21 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import {
   DeliveryElement,
   DeliveryElementProps,
   EvaluationResponse,
   RequestHintResponse,
-  ResetActivityResponse
+  ResetActivityResponse,
 } from '../DeliveryElement';
-import {MultipleChoiceModelSchema} from './schema';
+import { MultipleChoiceModelSchema } from './schema';
 import * as ActivityTypes from '../types';
-import {HtmlContentModelRenderer} from 'data/content/writers/renderer';
-import {Maybe} from 'tsmonad';
-import {Stem} from '../common/DisplayedStem';
-import {Hints} from '../common/DisplayedHints';
-import {Reset} from '../common/Reset';
-import {Evaluation} from '../common/Evaluation';
-import {IconCorrect, IconIncorrect} from 'components/misc/Icons';
+import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
+import { Maybe } from 'tsmonad';
+import { Stem } from '../common/DisplayedStem';
+import { Hints } from '../common/DisplayedHints';
+import { Reset } from '../common/Reset';
+import { Evaluation } from '../common/Evaluation';
+import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 
 type Evaluation = {
   score: number,
@@ -30,7 +30,7 @@ interface ChoicesProps {
   isEvaluated: boolean;
 }
 
-const Choices = ({choices, selected, onSelect, isEvaluated}: ChoicesProps) => {
+const Choices = ({ choices, selected, onSelect, isEvaluated }: ChoicesProps) => {
   return (
     <div className="choices">
       {choices.map((choice, index) =>
@@ -40,7 +40,7 @@ const Choices = ({choices, selected, onSelect, isEvaluated}: ChoicesProps) => {
           selected={selected.valueOr('') === choice.id}
           choice={choice}
           isEvaluated={isEvaluated}
-          index={index}/>)}
+          index={index} />)}
     </div>
   );
 };
@@ -53,20 +53,19 @@ interface ChoiceProps {
   isEvaluated: boolean;
 }
 
-const Choice = ({choice, index, selected, onClick, isEvaluated}: ChoiceProps) => {
+const Choice = ({ choice, index, selected, onClick, isEvaluated }: ChoiceProps) => {
   return (
     <div key={choice.id}
-         onClick={isEvaluated ? undefined : onClick}
-         className={`choice ${selected ? 'selected' : ''}`}>
+      onClick={isEvaluated ? undefined : onClick}
+      className={`choice ${selected ? 'selected' : ''}`}>
       <span className="choice-index">{index + 1}</span>
-      <HtmlContentModelRenderer text={choice.content}/>
+      <HtmlContentModelRenderer text={choice.content} />
     </div>
   );
 };
 
 const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) => {
 
-  console.log("Multiple choice props " + JSON.stringify(props));
   const [model, setModel] = useState(props.model);
   const [attemptState, setAttemptState] = useState(props.state);
   const [hints, setHints] = useState(props.state.parts[0].hints);
@@ -76,7 +75,7 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
       ? Maybe.nothing<string>()
       : Maybe.just<string>(props.state.parts[0].response.input));
 
-  const {stem, choices} = model;
+  const { stem, choices } = model;
 
   const isEvaluated = attemptState.score !== null;
 
@@ -88,18 +87,18 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
 
       // In summative context, post the student response to save it
       props.onSaveActivity(attemptState.attemptGuid,
-        [{attemptGuid: attemptState.parts[0].attemptGuid, response: {input: id}}]);
+        [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: id } }]);
 
     } else {
 
       // Auto-submit our student reponse in formative context
       props.onSubmitActivity(attemptState.attemptGuid,
-        [{attemptGuid: attemptState.parts[0].attemptGuid, response: {input: id}}])
+        [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: id } }])
         .then((response: EvaluationResponse) => {
           if (response.evaluations.length > 0) {
-            const {score, out_of, feedback, error} = response.evaluations[0];
-            const parts = [Object.assign({}, attemptState.parts[0], {feedback, error})];
-            const updated = Object.assign({}, attemptState, {score, outOf: out_of, parts});
+            const { score, out_of, feedback, error } = response.evaluations[0];
+            const parts = [Object.assign({}, attemptState.parts[0], { feedback, error })];
+            const updated = Object.assign({}, attemptState, { score, outOf: out_of, parts });
             setAttemptState(updated);
           }
         });
@@ -128,26 +127,26 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
   };
 
   const evaluationSummary = isEvaluated
-    ? <Evaluation key="evaluation" attemptState={attemptState}/>
+    ? <Evaluation key="evaluation" attemptState={attemptState} />
     : null;
 
   const reset = isEvaluated && !props.graded
     ? (<div className="d-flex my-3">
-        <div className="flex-fill"></div>
-        <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset}/>
-      </div>
+      <div className="flex-fill"></div>
+      <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
+    </div>
     )
     : null;
 
   const ungradedDetails = props.graded ? null : [
     evaluationSummary,
     <Hints key="hints" onClick={onRequestHint} hints={hints}
-           hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>];
+      hasMoreHints={hasMoreHints} isEvaluated={isEvaluated} />];
 
   const gradedDetails = props.graded && props.progress_state === 'in_review' ? [
     evaluationSummary] : null;
 
-  const correctnessIcon = attemptState.score === 0 ? <IconIncorrect/> : <IconCorrect/>;
+  const correctnessIcon = attemptState.score === 0 ? <IconIncorrect /> : <IconCorrect />;
 
   const gradedPoints = props.graded && props.progress_state === 'in_review' ? [
     <div className="text-info font-italic">
@@ -157,10 +156,10 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
   return (
     <div className={`activity multiple-choice-activity ${isEvaluated ? 'evaluated' : ''}`}>
       <div className="activity-content">
-        <Stem stem={stem}/>
+        <Stem stem={stem} />
         {gradedPoints}
         <Choices choices={choices} selected={selected}
-                 onSelect={onSelect} isEvaluated={isEvaluated}/>
+          onSelect={onSelect} isEvaluated={isEvaluated} />
         {ungradedDetails}
         {gradedDetails}
       </div>

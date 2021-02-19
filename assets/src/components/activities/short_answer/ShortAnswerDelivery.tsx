@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import {
   DeliveryElement,
@@ -7,14 +7,14 @@ import {
   RequestHintResponse,
   ResetActivityResponse
 } from '../DeliveryElement';
-import {InputType, ShortAnswerModelSchema} from './schema';
+import { InputType, ShortAnswerModelSchema } from './schema';
 import * as ActivityTypes from '../types';
-import {Stem} from '../common/DisplayedStem';
-import {Hints} from '../common/DisplayedHints';
-import {Reset} from '../common/Reset';
-import {Evaluation} from '../common/Evaluation';
-import {valueOr} from 'utils/common';
-import {IconCorrect, IconIncorrect} from 'components/misc/Icons';
+import { Stem } from '../common/DisplayedStem';
+import { Hints } from '../common/DisplayedHints';
+import { Reset } from '../common/Reset';
+import { Evaluation } from '../common/Evaluation';
+import { valueOr } from 'utils/common';
+import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 
 type Evaluation = {
   score: number,
@@ -36,19 +36,19 @@ const Input = (props: InputProps) => {
   if (props.inputType === 'numeric') {
     return (
       <input type="number"
-             className="form-control"
-             onChange={(e: any) => props.onChange(e.target.value)}
-             value={input}
-             disabled={props.isEvaluated}/>
+        className="form-control"
+        onChange={(e: any) => props.onChange(e.target.value)}
+        value={input}
+        disabled={props.isEvaluated} />
     );
   }
   if (props.inputType === 'text') {
     return (
       <input type="text"
-             className="form-control"
-             onChange={(e: any) => props.onChange(e.target.value)}
-             value={input}
-             disabled={props.isEvaluated}/>
+        className="form-control"
+        onChange={(e: any) => props.onChange(e.target.value)}
+        value={input}
+        disabled={props.isEvaluated} />
     );
   }
   return (
@@ -70,7 +70,7 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
   const [hints, setHints] = useState(props.state.parts[0].hints);
   const [hasMoreHints, setHasMoreHints] = useState(props.state.parts[0].hasMoreHints);
   const [input, setInput] = useState(valueOr(attemptState.parts[0].response, ''));
-  const {stem} = model;
+  const { stem } = model;
 
   const isEvaluated = attemptState.score !== null;
 
@@ -79,17 +79,17 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
     setInput(input);
 
     props.onSaveActivity(attemptState.attemptGuid,
-      [{attemptGuid: attemptState.parts[0].attemptGuid, response: {input}}]);
+      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input } }]);
   };
 
   const onSubmit = () => {
     props.onSubmitActivity(attemptState.attemptGuid,
-      [{attemptGuid: attemptState.parts[0].attemptGuid, response: {input}}])
+      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input } }])
       .then((response: EvaluationResponse) => {
         if (response.evaluations.length > 0) {
-          const {score, out_of, feedback, error} = response.evaluations[0];
-          const parts = [Object.assign({}, attemptState.parts[0], {feedback, error})];
-          const updated = Object.assign({}, attemptState, {score, outOf: out_of, parts});
+          const { score, out_of, feedback, error } = response.evaluations[0];
+          const parts = [Object.assign({}, attemptState.parts[0], { feedback, error })];
+          const updated = Object.assign({}, attemptState, { score, outOf: out_of, parts });
           setAttemptState(updated);
         }
       });
@@ -117,26 +117,26 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
   };
 
   const evaluationSummary = isEvaluated
-    ? <Evaluation key="evaluation" attemptState={attemptState}/>
+    ? <Evaluation key="evaluation" attemptState={attemptState} />
     : null;
 
   const reset = isEvaluated && !props.graded
     ? (<div className="d-flex">
-        <div className="flex-fill"></div>
-        <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset}/>
-      </div>
+      <div className="flex-fill"></div>
+      <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
+    </div>
     )
     : null;
 
   const ungradedDetails = props.graded ? null : [
     evaluationSummary,
     <Hints key="hints" onClick={onRequestHint} hints={hints}
-           hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>];
+      hasMoreHints={hasMoreHints} isEvaluated={isEvaluated} />];
 
   const gradedDetails = props.graded && props.progress_state === 'in_review' ? [
     evaluationSummary] : null;
 
-  const correctnessIcon = attemptState.score === 0 ? <IconIncorrect/> : <IconCorrect/>;
+  const correctnessIcon = attemptState.score === 0 ? <IconIncorrect /> : <IconCorrect />;
 
   const gradedPoints = props.graded && props.progress_state === 'in_review' ? [
     <div className="text-info font-italic">
@@ -155,14 +155,14 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
   return (
     <div className="activity short-answer-activity">
       <div className="activity-content">
-        <Stem stem={stem}/>
+        <Stem stem={stem} />
         {gradedPoints}
         <div className="">
           <Input
             inputType={model.inputType}
             input={input}
             isEvaluated={isEvaluated}
-            onChange={onInputChange}/>
+            onChange={onInputChange} />
           {maybeSubmitButton}
         </div>
 

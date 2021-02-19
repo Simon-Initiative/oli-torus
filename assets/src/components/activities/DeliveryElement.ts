@@ -1,5 +1,5 @@
-import {ActivityModelSchema, ActivityState, Hint, PartResponse, PartState, StudentResponse, Success} from './types';
-import {valueOr} from 'utils/common';
+import { ActivityModelSchema, ActivityState, Hint, PartResponse, PartState, StudentResponse, Success } from './types';
+import { valueOr } from 'utils/common';
 
 
 export interface EvaluatedPart {
@@ -43,14 +43,14 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
 
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
   onSubmitActivity: (attemptGuid: string,
-                     partResponses: PartResponse[]) => Promise<EvaluationResponse>;
+    partResponses: PartResponse[]) => Promise<EvaluationResponse>;
   onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>;
 
   onRequestHint: (attemptGuid: string, partAttemptGuid: string) => Promise<RequestHintResponse>;
   onSavePart: (attemptGuid: string, partAttemptGuid: string,
-               response: StudentResponse) => Promise<Success>;
+    response: StudentResponse) => Promise<Success>;
   onSubmitPart: (attemptGuid: string, partAttemptGuid: string,
-                 response: StudentResponse) => Promise<EvaluationResponse>;
+    response: StudentResponse) => Promise<EvaluationResponse>;
   onResetPart: (attemptGuid: string, partAttemptGuid: string) => Promise<PartActivityResponse>;
 }
 
@@ -68,13 +68,13 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
 
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
   onSubmitActivity: (attemptGuid: string,
-                     partResponses: PartResponse[]) => Promise<EvaluationResponse>;
+    partResponses: PartResponse[]) => Promise<EvaluationResponse>;
   onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>;
 
   onSavePart: (attemptGuid: string, partAttemptGuid: string,
-               response: StudentResponse) => Promise<Success>;
+    response: StudentResponse) => Promise<Success>;
   onSubmitPart: (attemptGuid: string, partAttemptGuid: string,
-                 response: StudentResponse) => Promise<EvaluationResponse>;
+    response: StudentResponse) => Promise<EvaluationResponse>;
   onResetPart: (attemptGuid: string, partAttemptGuid: string) => Promise<PartActivityResponse>;
 
   constructor() {
@@ -104,7 +104,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   }
 
   dispatch(name: string, attemptGuid: string,
-           partAttemptGuid: string | undefined, payload?: any): Promise<any> {
+    partAttemptGuid: string | undefined, payload?: any): Promise<any> {
     return new Promise((resolve, reject) => {
       const continuation = (result: any, error: any) => {
         if (error !== undefined) {
@@ -114,7 +114,6 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
         resolve(result);
       };
       if (this.progress_state === 'in_review') {
-        console.log('in review mode')
         continuation(null, 'in review mode');
         return;
       }
@@ -150,7 +149,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   }
 
   details(continuation: (result: any, error: any) => void,
-          attemptGuid: string, partAttemptGuid: string | undefined, payload?: any) {
+    attemptGuid: string, partAttemptGuid: string | undefined, payload?: any) {
     return {
       bubbles: true,
       detail: {
