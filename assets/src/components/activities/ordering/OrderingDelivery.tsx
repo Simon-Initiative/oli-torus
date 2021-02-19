@@ -190,7 +190,7 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
   const gradedPoints = props.graded && props.progressState === 'in_review' ? [
     <div className="text-info font-italic">
       {correctnessIcon}
-      <span>Points: </span><span>{attemptState.score + " out of "
+      <span>Points: </span><span>{attemptState.score + ' out of '
     + attemptState.outOf}</span></div>] : null;
 
   const maybeSubmitButton = props.graded

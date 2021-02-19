@@ -1,4 +1,10 @@
-import { ActivityModelSchema, ActivityState, Hint, PartResponse, PartState, StudentResponse, Success } from './types';
+import { ActivityModelSchema,
+  ActivityState,
+  Hint,
+  PartResponse,
+  PartState,
+  StudentResponse,
+  Success } from './types';
 import { valueOr } from 'utils/common';
 
 

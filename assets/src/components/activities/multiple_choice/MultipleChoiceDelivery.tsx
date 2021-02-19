@@ -151,7 +151,8 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
   const gradedPoints = props.graded && props.progressState === 'in_review' ? [
     <div className="text-info font-italic">
       {correctnessIcon}
-      <span>Points: </span><span>{attemptState.score + ' out of ' + attemptState.outOf}</span></div>] : null;
+      <span>Points: </span><span>{attemptState.score + ' out of '
+    + attemptState.outOf}</span></div>] : null;
 
   return (
     <div className={`activity multiple-choice-activity ${isEvaluated ? 'evaluated' : ''}`}>
