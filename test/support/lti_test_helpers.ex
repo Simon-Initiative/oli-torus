@@ -1,68 +1,4 @@
 defmodule Oli.Lti_1p3.TestHelpers do
-  import Oli.TestHelpers
-
-  alias Oli.Lti_1p3
-
-  Mox.defmock(Oli.Lti_1p3.MockHTTPoison, for: HTTPoison.Base)
-
-  def generate_lti_stubs(args \\ %{}) do
-    institution = institution_fixture()
-    jwk = jwk_fixture()
-    state_uuid = UUID.uuid4()
-    %{
-      claims: claims,
-      registration_params: registration_params,
-      deployment_id: deployment_id,
-      kid: kid,
-      state: state,
-      lti_1p3_state: lti_1p3_state,
-    } = %{
-      claims: all_default_claims(),
-      registration_params: %{
-        issuer: "https://lti-ri.imsglobal.org",
-        client_id: "12345",
-        key_set_url: "some key_set_url",
-        auth_token_url: "some auth_token_url",
-        auth_login_url: "some auth_login_url",
-        auth_server: "some auth_server",
-        tool_jwk_id: jwk.id,
-        institution_id: institution.id,
-      },
-      deployment_id: "1",
-      state: state_uuid,
-      lti_1p3_state: state_uuid,
-      kid: jwk.kid,
-    } |> Map.merge(args)
-
-    # create a signer
-    signer = Joken.Signer.create("RS256", %{"pem" => jwk.pem}, %{
-      "kid" => kid,
-    })
-
-    # claims
-    {:ok, claims} = Joken.generate_claims(%{}, claims)
-    token = if Map.has_key?(args, :id_token) do
-      args[:id_token]
-    else
-      Joken.generate_and_sign!(%{}, claims, signer)
-    end
-
-    # create a registration
-    {:ok, registration} = Lti_1p3.create_new_registration(registration_params)
-
-    # create a deployment
-    {:ok, _deployment} = Lti_1p3.create_new_deployment(%{
-      deployment_id: deployment_id,
-      registration_id: registration.id
-    })
-
-    # stub conn
-    conn = Plug.Test.conn(:post, "/", %{"state" => state, "id_token" => token})
-      |> Plug.Test.init_test_session(%{state: lti_1p3_state})
-
-    %{conn: conn, institution: institution, registration: registration, jwk: jwk, state_uuid: state_uuid}
-  end
-
   def all_default_claims() do
     %{}
     |> Map.merge(security_detail_data())
@@ -141,7 +77,7 @@ defmodule Oli.Lti_1p3.TestHelpers do
         "contact_email" => "",
         "description" => "",
         "guid" => 1237,
-        "name" => "oli-test",
+        "name" => "lti-test",
         "product_family_code" => "",
         "url" => "",
         "version" => "1.0"
@@ -154,43 +90,5 @@ defmodule Oli.Lti_1p3.TestHelpers do
     %{
       "https://www.example.com/extension" => %{"color" => "violet"},
     }
-  end
-
-  def mock_get_jwk_keys(jwk) do
-    body = Jason.encode!(%{
-      keys: [
-        jwk.pem
-        |> JOSE.JWK.from_pem()
-        |> JOSE.JWK.to_public()
-        |> JOSE.JWK.to_map()
-        |> (fn {_kty, public_jwk} -> public_jwk end).()
-        |> Map.put("typ", jwk.typ)
-        |> Map.put("alg", jwk.alg)
-        |> Map.put("kid", jwk.kid)
-        |> Map.put("use", "sig")
-      ]
-    })
-
-    {:ok, %HTTPoison.Response{status_code: 200, body: body}}
-  end
-end
-
-# notice: this protocol mock implementation must reside in this support directory
-# because of protocol consolidation. See https://hexdocs.pm/elixir/master/Protocol.html#module-consolidation
-defmodule Oli.Lti_1p3.Lti_1p3_User.Mock do
-  alias Oli.Lti_1p3.Lti_1p3_User
-  alias Oli.Lti_1p3.PlatformRoles
-  alias Oli.Lti_1p3.ContextRoles
-
-  defstruct [:platform_role_uris, :context_role_uris]
-
-  defimpl Lti_1p3_User do
-    def get_platform_roles(mock_user) do
-      mock_user.platform_role_uris |> PlatformRoles.get_roles_by_uris()
-    end
-
-    def get_context_roles(mock_user, _context_id) do
-      mock_user.context_role_uris |> ContextRoles.get_roles_by_uris()
-    end
   end
 end

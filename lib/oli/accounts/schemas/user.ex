@@ -30,7 +30,7 @@ defmodule Oli.Accounts.User do
     belongs_to :author, Oli.Accounts.Author
 
     has_many :enrollments, Oli.Delivery.Sections.Enrollment
-    many_to_many :platform_roles, Oli.Lti_1p3.PlatformRole, join_through: "users_platform_roles", on_replace: :delete
+    many_to_many :platform_roles, Lti_1p3.DataProviders.EctoProvider.PlatformRole, join_through: "users_platform_roles", on_replace: :delete
 
     timestamps(type: :utc_datetime)
   end
@@ -66,7 +66,7 @@ defmodule Oli.Accounts.User do
 end
 
 # define implementations required for LTI 1.3 library integration
-defimpl Oli.Lti_1p3.Lti_1p3_User, for: Oli.Accounts.User do
+defimpl Lti_1p3.Tool.Lti_1p3_User, for: Oli.Accounts.User do
   import Ecto.Query, warn: false
   alias Oli.Repo
   alias Oli.Delivery.Sections.Section

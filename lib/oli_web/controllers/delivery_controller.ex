@@ -3,7 +3,9 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing
-  alias Oli.Lti_1p3.ContextRoles
+
+  alias Oli.Institutions
+  alias Lti_1p3.Tool.ContextRoles
   alias Oli.Accounts
   alias Oli.Accounts.Author
 
@@ -53,8 +55,10 @@ defmodule OliWeb.DeliveryController do
 
   defp render_configure_section(conn, context_id, author) do
     lti_params = conn.assigns.lti_params
+    issuer = lti_params["iss"]
+    client_id = lti_params["aud"]
     deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"];
-    {institution, _registration, _deployment} = Oli.Lti_1p3.get_ird_by_deployment_id(deployment_id)
+    {institution, _registration, _deployment} = Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
 
     publications = Publishing.available_publications(author, institution)
     my_publications = publications |> Enum.filter(fn p -> !p.open_and_free && p.published end)
@@ -197,8 +201,10 @@ defmodule OliWeb.DeliveryController do
     lti_params = conn.assigns.lti_params
     user = conn.assigns.current_user
 
+    issuer = lti_params["iss"]
+    client_id = lti_params["aud"]
     deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"];
-    {institution, _registration, _deployment} = Oli.Lti_1p3.get_ird_by_deployment_id(deployment_id)
+    {institution, _registration, _deployment} = Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
 
     publication = Publishing.get_publication!(publication_id)
 

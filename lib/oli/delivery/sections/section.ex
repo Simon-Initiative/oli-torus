@@ -10,7 +10,7 @@ defmodule Oli.Delivery.Sections.Section do
     field :title, :string
     field :context_id, :string
 
-    belongs_to :lti_1p3_deployment, Oli.Lti_1p3.Deployment, foreign_key: :lti_1p3_deployment_id
+    belongs_to :lti_1p3_deployment, Lti_1p3.DataProviders.EctoProvider.Deployment, foreign_key: :lti_1p3_deployment_id
 
     belongs_to :institution, Oli.Institutions.Institution
     belongs_to :project, Oli.Authoring.Course.Project
