@@ -50,7 +50,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     lti_params = Oli.Lti_1p3.TestHelpers.all_default_claims()
       |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
 
-    Oli.Lti_1p3.cache_lti_params!(lti_params["sub"], lti_params)
+    cache_lti_params(lti_params["sub"], lti_params)
 
     conn = Plug.Test.init_test_session(conn, lti_1p3_sub: lti_params["sub"])
       |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))

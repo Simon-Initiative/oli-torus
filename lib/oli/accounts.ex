@@ -124,6 +124,8 @@ defmodule Oli.Accounts do
       %Ecto.Changeset{source: %User{}}
   """
   def update_user_platform_roles(%User{} = user, roles) do
+    roles = Lti_1p3.DataProviders.EctoProvider.Marshaler.to(roles)
+
     user
     |> Repo.preload([:platform_roles])
     |> User.changeset()

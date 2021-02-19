@@ -348,7 +348,7 @@ defmodule Oli.Delivery.Attempts do
   end
 
   def get_part_attempts_and_users_for_publication(publication_id) do
-    student_role_id = Oli.Lti_1p3.ContextRoles.get_role(:context_learner).id
+    student_role_id = Lti_1p3.Tool.ContextRoles.get_role(:context_learner).id
     Repo.all(
       from section in Section,
       join: enrollment in Enrollment, on: enrollment.section_id == section.id,
@@ -361,7 +361,7 @@ defmodule Oli.Delivery.Attempts do
 
       # only fetch records for users enrolled as students
       left_join: er in "enrollments_context_roles", on: enrollment.id == er.enrollment_id,
-      left_join: context_role in Oli.Lti_1p3.ContextRole, on: er.context_role_id == context_role.id and context_role.id == ^student_role_id,
+      left_join: context_role in Lti_1p3.DataProviders.EctoProvider.ContextRole, on: er.context_role_id == context_role.id and context_role.id == ^student_role_id,
 
       select: %{ part_attempt: pattempt, user: user })
       # TODO: This should be done in the query, but can't get the syntax right

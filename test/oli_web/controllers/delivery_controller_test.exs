@@ -141,7 +141,9 @@ defmodule OliWeb.DeliveryControllerTest do
 
     %{ project: project, publication: publication } = project_fixture(author)
 
-    Oli.Lti_1p3.cache_lti_params!("student-sub", %{
+    cache_lti_params("student-sub", %{
+      "iss" => "some issuer",
+      "aud" => "some client_id",
       "sub" => "student-sub",
       "exp" => Timex.now |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix,
       "https://purl.imsglobal.org/spec/lti/claim/context" => %{
@@ -153,7 +155,10 @@ defmodule OliWeb.DeliveryControllerTest do
       ],
       "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id,
     })
-    Oli.Lti_1p3.cache_lti_params!("instructor-sub", %{
+
+    cache_lti_params("instructor-sub", %{
+      "iss" => "some issuer",
+      "aud" => "some client_id",
       "sub" => "instructor-sub",
       "exp" => Timex.now |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix,
       "https://purl.imsglobal.org/spec/lti/claim/context" => %{
@@ -165,8 +170,11 @@ defmodule OliWeb.DeliveryControllerTest do
       ],
       "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id,
     })
-    Oli.Lti_1p3.cache_lti_params!("student-instructor-sub", %{
-      "sub" => "instructor-sub",
+
+    cache_lti_params("student-instructor-sub", %{
+      "iss" => "some issuer",
+      "aud" => "some client_id",
+      "sub" => "student-instructor-sub",
       "exp" => Timex.now |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix,
       "https://purl.imsglobal.org/spec/lti/claim/context" => %{
         "id" => "some-context-id",
