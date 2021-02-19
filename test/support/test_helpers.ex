@@ -150,22 +150,26 @@ defmodule Oli.TestHelpers do
     deployment
   end
 
-  def jwk_fixture(attrs \\ %{}) do
-    %{private_key: private_key} = Oli.Lti_1p3.KeyGenerator.generate_key_pair()
+  def jwk_fixture() do
+    %{private_key: private_key} = Lti_1p3.KeyGenerator.generate_key_pair()
 
-    params =
-      attrs
-      |> Enum.into(%{
-        pem: private_key,
-        typ: "JWT",
-        alg: "RS256",
-        kid: UUID.uuid4(),
-        active: true,
-      })
-
-    {:ok, jwk} = Oli.Lti_1p3.create_new_jwk(params)
+    {:ok, jwk} = Lti_1p3.create_jwk(%Lti_1p3.Jwk{
+      pem: private_key,
+      typ: "JWT",
+      alg: "RS256",
+      kid: UUID.uuid4(),
+      active: true,
+    })
 
     jwk
+  end
+
+  def cache_lti_params(sub, lti_params) do
+    {:ok, _lti_params} = Lti_1p3.DataProviders.EctoProvider.create_or_update_lti_params(%Lti_1p3.Tool.LtiParams{
+      sub: sub,
+      params: lti_params,
+      exp: Timex.from_unix(lti_params["exp"])
+    })
   end
 
   def project_fixture(author, title \\ "test project") do

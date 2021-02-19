@@ -8,7 +8,8 @@ defmodule Oli.Delivery.Sections do
 
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.Enrollment
-  alias Oli.Lti_1p3.ContextRole
+  alias Lti_1p3.Tool.ContextRole
+  alias Lti_1p3.DataProviders.EctoProvider
 
   @doc """
   Enrolls a user in a course section.
@@ -16,6 +17,7 @@ defmodule Oli.Delivery.Sections do
   """
   @spec enroll(number(), number(), [%ContextRole{}]) :: {:ok, %Enrollment{}}
   def enroll(user_id, section_id, context_roles) do
+    context_roles = EctoProvider.Marshaler.to(context_roles)
 
     case Repo.one(from(e in Enrollment, preload: [:context_roles], where: e.user_id == ^user_id and e.section_id == ^section_id, select: e)) do
 

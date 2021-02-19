@@ -1,10 +1,9 @@
 defmodule OliWeb.LtiControllerTest do
   use OliWeb.ConnCase
 
-  alias Oli.Lti_1p3.PlatformInstance
-  alias Oli.Lti_1p3.PlatformInstances
-  alias Oli.Lti_1p3.LoginHint
-  alias Oli.Lti_1p3.LoginHints
+  alias Lti_1p3.Platform.PlatformInstance
+  alias Lti_1p3.Platform.LoginHint
+  alias Lti_1p3.Platform.LoginHints
 
   describe "lti_controller" do
     setup [:create_fixtures]
@@ -76,14 +75,14 @@ defmodule OliWeb.LtiControllerTest do
 
     test "authorize_redirect get successful for user", %{conn: conn} do
       user = user_fixture()
-      %LoginHint{value: login_hint} = LoginHints.create_login_hint!(user.id)
+      {:ok, %LoginHint{value: login_hint}} = LoginHints.create_login_hint(user.id)
       target_link_uri = "some-valid-url"
       nonce = "some-nonce"
       client_id = "some-client-id"
       state = "some-state"
       lti_message_hint = "some-lti-message-hint"
 
-      {:ok, %PlatformInstance{}} = PlatformInstances.create_platform_instance(%{
+      {:ok, %PlatformInstance{}} = Lti_1p3.Platform.create_platform_instance(%PlatformInstance{
         name: "some-platform",
         target_link_uri: target_link_uri,
         client_id: client_id,
@@ -115,14 +114,14 @@ defmodule OliWeb.LtiControllerTest do
 
     test "authorize_redirect get successful for author", %{conn: conn} do
       author = author_fixture()
-      %LoginHint{value: login_hint} = LoginHints.create_login_hint!(author.id, "author")
+      {:ok, %LoginHint{value: login_hint}} = LoginHints.create_login_hint(author.id, "author")
       target_link_uri = "some-valid-url"
       nonce = "some-nonce"
       client_id = "some-client-id"
       state = "some-state"
       lti_message_hint = "some-lti-message-hint"
 
-      {:ok, %PlatformInstance{}} = PlatformInstances.create_platform_instance(%{
+      {:ok, %PlatformInstance{}} = Lti_1p3.Platform.create_platform_instance(%PlatformInstance{
         name: "some-platform",
         target_link_uri: target_link_uri,
         client_id: client_id,
@@ -155,7 +154,7 @@ defmodule OliWeb.LtiControllerTest do
     test "returns developer key json", %{conn: conn} do
       conn = get(conn, Routes.lti_path(conn, :developer_key_json))
 
-      active_jwk = Oli.Lti_1p3.get_active_jwk()
+      {:ok, active_jwk} = Lti_1p3.get_active_jwk()
 
       public_jwk = JOSE.JWK.from_pem(active_jwk.pem) |> JOSE.JWK.to_public()
       |> JOSE.JWK.to_map()

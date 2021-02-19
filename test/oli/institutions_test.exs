@@ -4,11 +4,9 @@ defmodule Oli.InstitutionsTest do
   alias Oli.Institutions
   alias Oli.Institutions.Institution
   alias Oli.Institutions.PendingRegistration
-  alias Oli.Lti_1p3.Registration
+  alias Oli.Lti_1p3.Tool.Registration
 
   describe "registrations" do
-    alias Oli.Lti_1p3.Registration
-
     setup do
       institution = institution_fixture()
       jwk = jwk_fixture()
@@ -71,7 +69,7 @@ defmodule Oli.InstitutionsTest do
   end
 
   describe "deployments" do
-    alias Oli.Lti_1p3.Deployment
+    alias Lti_1p3.DataProviders.EctoProvider.Deployment
 
     setup do
       institution = institution_fixture()
@@ -126,7 +124,7 @@ defmodule Oli.InstitutionsTest do
   end
 
   describe "pending_registration" do
-    alias Oli.Lti_1p3.Deployment
+    alias Lti_1p3.Tool.Deployment
 
     setup do
       institution = institution_fixture()

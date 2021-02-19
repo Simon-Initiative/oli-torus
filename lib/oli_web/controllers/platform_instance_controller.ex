@@ -2,9 +2,9 @@ defmodule OliWeb.PlatformInstanceController do
   use OliWeb, :controller
 
   alias Oli.Lti_1p3.PlatformInstances
-  alias Oli.Lti_1p3.PlatformInstance
-  alias Oli.Lti_1p3.LoginHint
-  alias Oli.Lti_1p3.LoginHints
+  alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
+  alias Lti_1p3.Platform.LoginHint
+  alias Lti_1p3.Platform.LoginHints
 
   def index(conn, _params) do
     lti_1p3_platform_instances = PlatformInstances.list_lti_1p3_platform_instances()
@@ -32,7 +32,7 @@ defmodule OliWeb.PlatformInstanceController do
     platform_instance = PlatformInstances.get_platform_instance!(id)
 
     author = conn.assigns[:current_author]
-    %LoginHint{value: login_hint} = LoginHints.create_login_hint!(author.id, "author")
+    {:ok, %LoginHint{value: login_hint}} = LoginHints.create_login_hint(author.id, "author")
 
     launch_params = %{
       iss: Oli.Utils.get_base_url(),

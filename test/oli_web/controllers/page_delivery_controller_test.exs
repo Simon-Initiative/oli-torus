@@ -3,7 +3,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   alias Oli.Delivery.Sections
   alias Oli.Seeder
   alias Oli.Delivery.Attempts.{ResourceAttempt, PartAttempt, ResourceAccess}
-  alias Oli.Lti_1p3.ContextRoles
+  alias Lti_1p3.Tool.ContextRoles
 
   describe "page_delivery_controller index" do
     setup [:setup_session]
@@ -145,7 +145,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
     lti_params = Oli.Lti_1p3.TestHelpers.all_default_claims()
       |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
 
-    Oli.Lti_1p3.cache_lti_params!(lti_params["sub"], lti_params)
+    cache_lti_params(lti_params["sub"], lti_params)
 
     conn = Plug.Test.init_test_session(conn, lti_1p3_sub: lti_params["sub"])
       |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
