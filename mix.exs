@@ -7,7 +7,7 @@ defmodule Oli.MixProject do
       version: "0.5.1",
       elixir: "~> 1.11",
       elixirc_paths: elixirc_paths(Mix.env()),
-#      elixirc_options: [warnings_as_errors: true],
+      elixirc_options: [warnings_as_errors: true],
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
