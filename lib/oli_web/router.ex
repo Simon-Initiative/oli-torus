@@ -258,22 +258,52 @@ defmodule OliWeb.Router do
     get "/:project/link", ResourceController, :index
 
     post "/:project/activity/:activity_type", ActivityController, :create
-    put "/:project/resource/:resource/activity/:activity", ActivityController, :update
+
     put "/test/evaluate", ActivityController, :evaluate
     put "/test/transform", ActivityController, :transform
-
-    delete "/:project/resource/:resource/activity", ActivityController, :delete
 
     post "/:project/lock/:resource", LockController, :acquire
     delete "/:project/lock/:resource", LockController, :release
 
-    post "/:project/media", MediaController, :create
-    get "/:project/media", MediaController, :index
+  end
 
-    post "/:project_id/objectives", ResourceController, :create_objective
+  # Storage Service
+  scope "/api/v1/storage/project/:project/resource", OliWeb do
+    pipe_through [:api, :authoring_protected]
+
+    get "/:resource", ActivityController, :retrieve
+    post "/", ActivityController, :bulk_retrieve
+    delete "/:resource", ActivityController, :delete
+    put "/:resource", ActivityController, :update
+    post "/:resource", ActivityController, :create_secondary
 
   end
 
+  scope "/api/v1/storage/course/:course/resource", OliWeb do
+    pipe_through [:api, :delivery_protected]
+
+    get "/:resource", ActivityController, :retrieve_delivery
+    post "/", ActivityController, :bulk_retrieve_delivery
+  end
+
+  # Media Service
+  scope "/api/v1/media/project/:project", OliWeb do
+    pipe_through [:api, :authoring_protected]
+
+    post "/", MediaController, :create
+    get "/", MediaController, :index
+
+  end
+
+  # Objectives Service
+  scope "/api/v1/objectives/project/:project", OliWeb do
+    pipe_through [:api, :authoring_protected]
+
+    post "/", ObjectivesController, :create
+    get "/", ObjectivesController, :index
+    put "/objective/:objective", ObjectivesController, :update
+
+  end
 
   scope "/api/v1/attempt", OliWeb do
     pipe_through [:api, :delivery_protected]
@@ -338,6 +368,7 @@ defmodule OliWeb.Router do
     get "/:context_id/page", PageDeliveryController, :index
     get "/:context_id/page/:revision_slug/attempt", PageDeliveryController, :start_attempt
     get "/:context_id/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt
+    get "/:context_id/page/:revision_slug/attempt/:attempt_guid/review", PageDeliveryController, :review_attempt
 
     live "/:context_id/grades", Grades.GradesLive, session: {__MODULE__, :with_delivery, []}
     get "/:context_id/grades/export", PageDeliveryController, :export_gradebook

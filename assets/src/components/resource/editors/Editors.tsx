@@ -6,7 +6,7 @@ import {
 } from 'data/content/resource';
 import { ActivityEditorMap } from 'data/content/editors';
 import { ProjectSlug, ResourceSlug } from 'data/types';
-import { Objective, ObjectiveSlug } from 'data/content/objective';
+import { Objective, ResourceId } from 'data/content/objective';
 import { classNames } from 'utils/classNames';
 import { AddResourceOrDropTarget } from './AddResourceOrDropTarget';
 import { createEditor } from './createEditor';
@@ -31,7 +31,7 @@ export type EditorsProps = {
   resourceSlug: ResourceSlug;
   resourceContext: ResourceContext;
   objectives: Immutable.List<Objective>;
-  childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>;
+  childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
   onRegisterNewObjective: (text: string) => Promise<Objective>;
 };
 
@@ -40,7 +40,7 @@ export const Editors = (props: EditorsProps) => {
 
   const objectivesMap = props.resourceContext.allObjectives.reduce(
     (m: any, o) => {
-      m[o.slug] = o.title;
+      m[o.id] = o.title;
       return m;
     },
     {},

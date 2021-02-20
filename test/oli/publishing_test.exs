@@ -13,7 +13,7 @@ defmodule Oli.PublishingTest do
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Authoring.Locks
 
-  def create_activity(parts, author, project, page_revision, obj_slug) do
+  def create_activity(parts, author, project, page_revision, obj_resource_id) do
 
     # Create a two part activity where each part is tied to one of the objectives above
 
@@ -27,12 +27,12 @@ defmodule Oli.PublishingTest do
     {:ok, {revision, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
 
     # attach just one activity
-    update = %{ "objectives" => %{ "attached" => [obj_slug]}, "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => revision.slug, "purpose" => "none"}]}}
+    update = %{ "objectives" => %{ "attached" => [obj_resource_id]}, "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => revision.slug, "purpose" => "none"}]}}
     PageEditor.acquire_lock(project.slug, page_revision.slug, author.email)
     assert {:ok, _} =  PageEditor.edit(project.slug, page_revision.slug, author.email, update)
 
     update = %{ "objectives" => objectives }
-    {:ok, revision} = ActivityEditor.edit(project.slug, page_revision.slug, revision.slug, author.email, update)
+    {:ok, revision} = ActivityEditor.edit(project.slug, page_revision.resource_id, revision.resource_id, author.email, update)
 
     revision
 
@@ -76,10 +76,10 @@ defmodule Oli.PublishingTest do
       {:ok, %{revision: obj2}}  = ObjectiveEditor.add_new(%{title: "two"}, author, project)
       {:ok, %{revision: obj3}}  = ObjectiveEditor.add_new(%{title: "three"}, author, project)
 
-      activity1 = create_activity([{"1", [obj1.slug]}, {"2", []}], author, project, revision, obj1.slug)
-      activity2 = create_activity([{"1", [obj1.slug]}, {"2", [obj1.slug]}], author, project, revision, obj1.slug)
-      activity3 = create_activity([{"1", [obj1.slug]}, {"2", [obj2.slug]}], author, project, revision, obj1.slug)
-      activity4 = create_activity([{"1", [obj2.slug]}, {"2", [obj3.slug]}], author, project, revision, obj1.slug)
+      activity1 = create_activity([{"1", [obj1.resource_id]}, {"2", []}], author, project, revision, obj1.resource_id)
+      activity2 = create_activity([{"1", [obj1.resource_id]}, {"2", [obj1.resource_id]}], author, project, revision, obj1.resource_id)
+      activity3 = create_activity([{"1", [obj1.resource_id]}, {"2", [obj2.resource_id]}], author, project, revision, obj1.resource_id)
+      activity4 = create_activity([{"1", [obj2.resource_id]}, {"2", [obj3.resource_id]}], author, project, revision, obj1.resource_id)
 
       results = Publishing.find_objective_attachments(obj1.resource_id, publication.id)
 

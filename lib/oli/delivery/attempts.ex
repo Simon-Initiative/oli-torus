@@ -194,12 +194,20 @@ defmodule Oli.Delivery.Attempts do
   @spec determine_resource_attempt_state(%Revision{}, String.t, number(), any) :: {:ok, {:in_progress, {%ResourceAttempt{}, map() }}} | {:ok, {:revised, {%ResourceAttempt{}, map() }}} | {:ok, {:not_started, {%ResourceAccess{}, [%ResourceAttempt{}]}}} | {:error, any}
   def determine_resource_attempt_state(resource_revision, context_id, user_id, activity_provider) do
 
-    # determine latest resource attempt and then derive the current resource state
+    determine_resource_attempt_state(resource_revision, context_id, nil, user_id, activity_provider)
+  end
+
+  @spec determine_resource_attempt_state(%Revision{}, String.t, String.t, number(), any) :: {:ok, {:in_progress, {%ResourceAttempt{}, map() }}} | {:ok, {:revised, {%ResourceAttempt{}, map() }}} | {:ok, {:not_started, {%ResourceAccess{}, [%ResourceAttempt{}]}}} | {:ok, {:in_review, {%ResourceAccess{}, [%ResourceAttempt{}]}}} |{:error, any}
+  def determine_resource_attempt_state(resource_revision, context_id, attempt_guid, user_id, activity_provider) do
+
+    # use supplied attempt guid or determine latest resource attempt and then derive the current resource state
     Repo.transaction(fn ->
+    resource_attempt = case attempt_guid do
+      nil -> get_latest_resource_attempt(resource_revision.resource_id, context_id, user_id)
+      _ -> get_resource_attempt_by(attempt_guid: attempt_guid)
+    end
 
-      case get_latest_resource_attempt(resource_revision.resource_id, context_id, user_id)
-      |> get_resource_state(resource_revision, context_id, user_id, activity_provider) do
-
+      case get_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider, attempt_guid) do
         {:ok, results} -> results
         {:error, error} -> Repo.rollback(error)
       end
@@ -208,11 +216,10 @@ defmodule Oli.Delivery.Attempts do
 
   end
 
-
-  defp get_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
+  defp get_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider, attempt_guid) do
 
     case resource_revision.graded do
-      true -> get_graded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider)
+      true -> get_graded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider, attempt_guid)
       false -> get_ungraded_resource_state(resource_attempt, resource_revision, context_id, user_id, activity_provider)
     end
 
@@ -225,7 +232,7 @@ defmodule Oli.Delivery.Attempts do
     # changes to the resource to be seen after a user has visited the resource previously
     if is_nil(resource_attempt) or resource_attempt.revision_id != resource_revision.id do
 
-      case create_new_attempt_tree(resource_attempt, resource_revision, context_id, user_id, activity_provider) do
+      case create_new_attempt_tree(0, resource_attempt, resource_revision, context_id, user_id, activity_provider) do
         {:ok, results} -> {:ok, {:in_progress, results}}
         error -> error
       end
@@ -235,19 +242,20 @@ defmodule Oli.Delivery.Attempts do
     end
   end
 
-  defp get_graded_resource_state(resource_attempt, resource_revision, context_id, user_id, _) do
-
-    if is_nil(resource_attempt) or !is_nil(resource_attempt.date_evaluated) do
+  defp get_graded_resource_state(resource_attempt, resource_revision, context_id, user_id, _, attempt_guid) do
+    mode = if attempt_guid == nil, do: :in_progress, else: :in_review
+#    IO.inspect "them mode is #{mode} and #{inspect attempt_guid}"
+    if (is_nil(resource_attempt) or !is_nil(resource_attempt.date_evaluated)) and mode != :in_review do
       {:ok, {:not_started, get_resource_attempt_history(resource_revision.resource_id, context_id, user_id)}}
     else
 
       # Unlike ungraded pages, for graded pages we do not throw away attempts and create anew in the case
       # where the resource revision has changed.  Instead we return back the existing attempt tree and force
       # the page renderer to resolve this discrepancy by indicating the "revised" state.
-      if resource_revision.id !== resource_attempt.revision_id do
+      if resource_revision.id !== resource_attempt.revision_id and mode != :in_review do
         {:ok, {:revised, {resource_attempt, get_latest_attempts(resource_attempt.id)}}}
       else
-        {:ok, {:in_progress, {resource_attempt, get_latest_attempts(resource_attempt.id)}}}
+        {:ok, {mode, {resource_attempt, get_latest_attempts(resource_attempt.id)}}}
       end
 
     end
@@ -360,10 +368,10 @@ defmodule Oli.Delivery.Attempts do
     |> Enum.map(& %{ user: &1.user, part_attempt: Repo.preload(&1.part_attempt, [activity_attempt: [:revision, revision: :activity_type, resource_attempt: :revision]]) })
   end
 
-  def create_new_attempt_tree(old_resource_attempt, resource_revision, context_id, user_id, activity_provider) do
+  def create_new_attempt_tree(attempt_count, old_resource_attempt, resource_revision, context_id, user_id, activity_provider) do
 
     {resource_access_id, next_attempt_number} = case old_resource_attempt do
-      nil -> {get_resource_access(resource_revision.resource_id, context_id, user_id).id, 1}
+      nil -> {get_resource_access(resource_revision.resource_id, context_id, user_id).id, attempt_count + 1}
       attempt -> {attempt.resource_access_id, attempt.attempt_number + 1}
     end
 
@@ -509,7 +517,7 @@ defmodule Oli.Delivery.Attempts do
         case {revision.max_attempts > length(resource_attempts) or revision.max_attempts == 0,
           has_any_active_attempts?(resource_attempts)} do
 
-          {true, false} -> case create_new_attempt_tree(nil, revision, context_id, user_id, activity_provider) do
+          {true, false} -> case create_new_attempt_tree(length(resource_attempts), nil, revision, context_id, user_id, activity_provider) do
             {:ok, results} -> results
             {:error, error} -> Repo.rollback(error)
           end
@@ -521,6 +529,28 @@ defmodule Oli.Delivery.Attempts do
       end
 
     end)
+
+  end
+
+  @doc """
+  Lookup resource attempt in an evaluated state for the given page guid
+
+  On success returns:
+  `{:ok, :preview_ready}`
+
+  Possible failure returns are
+  `{:error, :not_yet_submitted}` if the resource attempt is not yet evaluated
+
+  """
+  def review_resource_attempt(resource_attempt_guid) do
+
+      # get the resource attempt record, ensure it's already evaluated
+      resource_attempt = get_resource_attempt_by(attempt_guid: resource_attempt_guid)
+      if resource_attempt.date_evaluated != nil do
+        {:ok, :preview_ready}
+      else
+        {:error, :not_yet_submitted}
+      end
 
   end
 

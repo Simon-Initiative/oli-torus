@@ -1,5 +1,10 @@
-import { ActivityModelSchema, ActivityState, PartResponse,
-  StudentResponse, Hint, Success, PartState } from './types';
+import { ActivityModelSchema,
+  ActivityState,
+  Hint,
+  PartResponse,
+  PartState,
+  StudentResponse,
+  Success } from './types';
 import { valueOr } from 'utils/common';
 
 
@@ -40,6 +45,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   model: T;
   state: ActivityState;
   preview: boolean;
+  progressState: string;
 
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
   onSubmitActivity: (attemptGuid: string,
@@ -62,6 +68,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
 
   mountPoint: HTMLDivElement;
   connected: boolean;
+  progressState: string;
 
   onRequestHint: (attemptGuid: string, partAttemptGuid: string) => Promise<RequestHintResponse>;
 
@@ -98,33 +105,45 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       this.dispatch('resetPart', attemptGuid, partAttemptGuid);
   }
 
+  static get observedAttributes() {
+    return ['model', 'state'];
+  }
+
   dispatch(name: string, attemptGuid: string,
-    partAttemptGuid: string | undefined, payload?: any) : Promise<any> {
+    partAttemptGuid: string | undefined, payload?: any): Promise<any> {
     return new Promise((resolve, reject) => {
-      const continuation = (result : any, error : any) => {
+      const continuation = (result: any, error: any) => {
         if (error !== undefined) {
           reject(error);
           return;
         }
         resolve(result);
       };
+      if (this.progressState === 'in_review') {
+        continuation(null, 'in review mode');
+        return;
+      }
       this.dispatchEvent(new CustomEvent(
         name, this.details(continuation, attemptGuid, partAttemptGuid, payload)));
     });
   }
 
-  props() : DeliveryElementProps<T> {
+  props(): DeliveryElementProps<T> {
 
     const model = JSON.parse(this.getAttribute('model') as any);
     const graded = JSON.parse(this.getAttribute('graded') as any);
     const state = JSON.parse(this.getAttribute('state') as any) as ActivityState;
     const preview = valueOr(JSON.parse(this.getAttribute('preview') as any), false);
+    const progressState = this.getAttribute('progress_state') as any;
+
+    this.progressState = progressState;
 
     return {
       graded,
       model,
       state,
       preview,
+      progressState,
       onRequestHint: this.onRequestHint,
       onSavePart: this.onSavePart,
       onSubmitPart: this.onSubmitPart,
@@ -136,7 +155,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   }
 
   details(continuation: (result: any, error: any) => void,
-    attemptGuid: string, partAttemptGuid: string | undefined, payload? : any) {
+    attemptGuid: string, partAttemptGuid: string | undefined, payload?: any) {
     return {
       bubbles: true,
       detail: {
@@ -149,7 +168,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     };
   }
 
-  abstract render(mountPoint: HTMLDivElement, props: DeliveryElementProps<T>) : void;
+  abstract render(mountPoint: HTMLDivElement, props: DeliveryElementProps<T>): void;
 
   connectedCallback() {
     this.appendChild(this.mountPoint);
@@ -162,6 +181,4 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       this.render(this.mountPoint, this.props());
     }
   }
-
-  static get observedAttributes() { return ['model', 'state']; }
 }

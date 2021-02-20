@@ -1,5 +1,5 @@
 import { ModelElement, Selection } from './model';
-import { ProjectSlug, ResourceSlug, ObjectiveSlug, ActivitySlug, ActivityTypeSlug } from 'data/types';
+import { ProjectSlug, ResourceSlug, ResourceId, ActivitySlug, ActivityTypeSlug } from 'data/types';
 import { Objective } from 'data/content/objective';
 
 import guid from 'utils/guid';
@@ -11,7 +11,7 @@ export type PageContent = {
 };
 
 export type AttachedObjectives = {
-  attached: ObjectiveSlug[],
+  attached: ResourceId[],
 };
 
 // The types of things that can be present as top level

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import * as Immutable from 'immutable';
 import { Typeahead } from 'react-bootstrap-typeahead';
-import { Objective, ObjectiveSlug } from 'data/content/objective';
+import { Objective, ResourceId } from 'data/content/objective';
 import { ProjectSlug } from 'data/types';
 import { create } from 'data/persistence/objective';
 import guid from 'utils/guid';
@@ -9,10 +9,10 @@ import { valueOr } from 'utils/common';
 
 export type ObjectivesProps = {
   objectives: Immutable.List<Objective>;
-  selected: Immutable.List<ObjectiveSlug>;
+  selected: Immutable.List<ResourceId>;
   editMode: boolean;
   projectSlug: ProjectSlug;
-  onEdit: (objectives: Immutable.List<ObjectiveSlug>) => void;
+  onEdit: (objectives: Immutable.List<ResourceId>) => void;
   onRegisterNewObjective: (objective: Objective) => void;
 };
 
@@ -24,13 +24,9 @@ export const Objectives = (props: ObjectivesProps) => {
   // a unique DOM id.  So we generate one for it.
   const [id] = useState(guid());
 
-  // Typeahead options MUST contain an 'id' field.  So we add one in, using
-  // our slug as its contents.
-  const withIds = objectives.map(o => Object.assign(o, { id: o.slug }));
-
   // The current 'selected' state of Typeahead must be the same shape as
   // the options objects. So we look up from our list of slugs those objects.
-  const map = Immutable.Map<ObjectiveSlug, Objective>(withIds.toArray().map(o => [o.slug, o]));
+  const map = Immutable.Map<ResourceId, Objective>(objectives.toArray().map(o => [o.id, o]));
   const asObjectives = selected.toArray().map(s => map.get(s) as Objective);
 
   return (
@@ -45,18 +41,24 @@ export const Objectives = (props: ObjectivesProps) => {
           if (createdObjective) {
             create(props.projectSlug, createdObjective.title)
               .then((result) => {
-                if (result.type === 'success') {
+
+                if (result.result === 'success') {
                   onRegisterNewObjective({
-                    slug: result.revisionSlug,
+                    id: result.resourceId,
                     title: createdObjective.title,
-                    parentSlug: null,
+                    parentId: null,
                   });
 
-                  // the newly created objective will be the only one that has null as it's slug,
-                  // so while mapping objectives to slugs replace any nulls with the new slug
-                  const updatedObjectives = updated.map(o => valueOr(o.slug, result.revisionSlug));
+                  // Use the newly created resource id instead of the id of
+                  // item created for us by the Typeahead
+                  const updatedObjectives = updated.map((o) => {
+                    if (o.customOption) {
+                      return result.resourceId;
+                    }
+                    return o.id;
+                  });
 
-                  onEdit(Immutable.List<ObjectiveSlug>(updatedObjectives));
+                  onEdit(Immutable.List<ResourceId>(updatedObjectives));
                 } else {
                   throw result;
                 }
@@ -71,12 +73,12 @@ export const Objectives = (props: ObjectivesProps) => {
             // This check handles some weirdness where Typeahead fires onChange when
             // there really isn't a change.
             if (updated.length !== selected.size) {
-              const updatedObjectives = updated.map(o => o.slug);
-              onEdit(Immutable.List<ObjectiveSlug>(updatedObjectives));
+              const updatedObjectives = updated.map(o => o.id);
+              onEdit(Immutable.List<ResourceId>(updatedObjectives));
             }
           }
         }}
-        options={withIds.toArray()}
+        options={props.objectives.toArray()}
         allowNew={true}
         newSelectionPrefix="Create new objective: "
         selectHintOnEnter={true}

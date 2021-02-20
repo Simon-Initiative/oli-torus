@@ -7,7 +7,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Authoring.{Locks, Course}
   alias Oli.Resources.Revision
   alias Oli.Resources
-  alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Activities
@@ -183,10 +182,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
          {:ok, %{content: content } = revision} <- AuthoringResolver.from_revision_slug(project_slug, revision_slug) |> trap_nil(),
          {:ok, objectives} <- Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, objectives_with_parent_reference} <- construct_parent_references(objectives) |> trap_nil(),
-         {:ok, attached_objectives} <- id_to_slug(revision.objectives, objectives) |> trap_nil(),
          {:ok, activities} <- create_activities_map(project_slug, publication.id, content)
     do
-      {:ok, create(publication.id, revision, project_slug, revision_slug, author, objectives_with_parent_reference, attached_objectives, activities, editor_map)}
+      {:ok, create(publication.id, revision, project_slug, revision_slug, author, objectives_with_parent_reference, revision.objectives, activities, editor_map)}
     else
       _ -> {:error, :not_found}
     end
@@ -254,7 +252,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   # From the array of maps found in a resource revision content, produce a
   # map of the content of the activity revisions that pertain to the
   # current publication
-  defp create_activities_map(project_slug, publication_id, %{ "model" => content}) do
+  defp create_activities_map(_, publication_id, %{ "model" => content}) do
 
     # Now see if we even have any activities that need to be mapped
     found_activities = Enum.filter(content, fn c -> Map.get(c, "type") == "activity-reference" end)
@@ -275,7 +273,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
           typeSlug: Map.get(id_to_slug, activity_type_id),
           activitySlug: slug,
           model: content,
-          objectives: ActivityEditor.translate_ids_to_slugs(project_slug, objectives)
+          objectives: objectives
         } end)
         |> Enum.reduce(%{}, fn e, m -> Map.put(m, Map.get(e, :activitySlug), e) end)}
     else
@@ -395,48 +393,34 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
   end
 
-  # Take a list of maps containing the title, slug, resource_id, and children (as a list of resource_ids)
+  # Take a list of maps containing the title, resource_id, and children (as a list of resource_ids)
   # and turn it into a list of maps of this form:
   #
   # %{
-  #   slug: the slug of the objective
+  #   id: the slug of the objective
   #   title: the title of the objective
-  #   parentSlug: the slug of the parent objective, nil if no parent objective
+  #   parentId: the id of the parent objective, nil if no parent objective
   # }
   #
-  def construct_parent_references(objectives) do
+  def construct_parent_references(revisions) do
 
-    by_resource_id = Enum.reduce(objectives, %{}, fn o, m -> Map.put(m, o.resource_id, o.slug) end)
-
-    parent_slug = Enum.reduce(objectives, %{}, fn o, m ->
-      Enum.reduce(o.children, m, fn child, m -> Map.put(m, Map.get(by_resource_id, child), Map.get(by_resource_id, o.resource_id)) end)
+     # create a map of ids to their parent ids
+     parents = Enum.reduce(revisions, %{}, fn r, m ->
+      Enum.reduce(r.children, m, fn c, n ->
+        Map.put(n, c, r.resource_id)
+      end)
     end)
 
-    Enum.map(objectives, fn o ->
-    %{
-      slug: o.slug,
-      title: o.title,
-      parentSlug: Map.get(parent_slug, o.slug)
-    }
+    # now just transform the revision list to pair it down to including
+    # id, title, and the new parent_id
+    Enum.map(revisions, fn r ->
+      %{
+        id: r.resource_id,
+        title: r.title,
+        parentId: Map.get(parents, r.resource_id)
+      }
     end)
-  end
 
-  # takes the attached objectives in the form of a map of "attached" to a list of objective ids
-  # and converts it to a map of "attached" to list of slugs, using all current objectives
-  def id_to_slug(attached_objectives, all_objectives) do
-    map = Enum.reduce(all_objectives, %{}, fn o, m -> Map.put(m, Map.get(o, :resource_id), o) end)
-
-    attached = Enum.reduce(Map.get(attached_objectives, "attached"), [],
-      fn o, acc ->
-        if Map.has_key?(map, o) do
-          acc ++ [Map.get(Map.get(map, o), :slug)]
-        else
-          acc
-        end
-      end
-    )
-
-    %{attached: attached}
   end
 
   # Create the resource editing context that we will supply to the client side editor
@@ -485,28 +469,10 @@ defmodule Oli.Authoring.Editing.PageEditor do
     {revision, changed_activity_revisions}
   end
 
-  defp get_ids_from_objective_slugs(slugs) do
-    result = Repo.all(from rev in Oli.Resources.Revision,
-      where: rev.slug in ^slugs,
-      select: map(rev, [:resource_id, :slug]))
-
-    map = Enum.reduce(result, %{}, fn e, m -> Map.put(m, e.slug, e) end)
-
-    Enum.map(slugs, fn slug -> Map.get(map, slug) end)
-      |> Enum.map(fn m -> Map.get(m, :resource_id) end)
-  end
-
-  # Applies the update to the revision, converting any objective slugs back to ids
+  # Applies the update to the revision
   defp update_revision({revision, activity_revisions}, update, _) do
 
-    converted_back_to_ids = case Map.get(update, "objectives") do
-      nil -> update
-      %{ "attached" => []} -> update
-      %{ "attached" => objectives} -> Map.put(update, "objectives", %{"attached" => get_ids_from_objective_slugs(objectives)})
-    end
-
-    {:ok, updated} = Oli.Resources.update_revision(revision, converted_back_to_ids)
-
+    {:ok, updated} = Oli.Resources.update_revision(revision, update)
     {updated, activity_revisions}
   end
 

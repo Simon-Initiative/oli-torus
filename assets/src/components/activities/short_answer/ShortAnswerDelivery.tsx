@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
-import { DeliveryElement, DeliveryElementProps,
-  EvaluationResponse, ResetActivityResponse, RequestHintResponse } from '../DeliveryElement';
-import { ShortAnswerModelSchema, InputType } from './schema';
+import {
+  DeliveryElement,
+  DeliveryElementProps,
+  EvaluationResponse,
+  RequestHintResponse,
+  ResetActivityResponse,
+} from '../DeliveryElement';
+import { InputType, ShortAnswerModelSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { Stem } from '../common/DisplayedStem';
 import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/Evaluation';
 import { valueOr } from 'utils/common';
+import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 
 type Evaluation = {
   score: number,
@@ -91,66 +97,78 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
 
   const onRequestHint = () => {
     props.onRequestHint(attemptState.attemptGuid, attemptState.parts[0].attemptGuid)
-    .then((state: RequestHintResponse) => {
-      if (state.hint !== undefined) {
-        setHints([...hints, state.hint] as any);
-      }
-      setHasMoreHints(state.hasMoreHints);
-    });
+      .then((state: RequestHintResponse) => {
+        if (state.hint !== undefined) {
+          setHints([...hints, state.hint] as any);
+        }
+        setHasMoreHints(state.hasMoreHints);
+      });
   };
 
   const onReset = () => {
     props.onResetActivity(attemptState.attemptGuid)
-    .then((state: ResetActivityResponse) => {
-      setAttemptState(state.attemptState);
-      setModel(state.model as ShortAnswerModelSchema);
-      setHints([]);
-      setHasMoreHints(props.state.parts[0].hasMoreHints);
-      setInput('');
-    });
+      .then((state: ResetActivityResponse) => {
+        setAttemptState(state.attemptState);
+        setModel(state.model as ShortAnswerModelSchema);
+        setHints([]);
+        setHasMoreHints(props.state.parts[0].hasMoreHints);
+        setInput('');
+      });
   };
 
   const evaluationSummary = isEvaluated
-    ? <Evaluation key="evaluation" attemptState={attemptState}/>
+    ? <Evaluation key="evaluation" attemptState={attemptState} />
     : null;
 
   const reset = isEvaluated && !props.graded
     ? (<div className="d-flex">
-        <div className="flex-fill"></div>
-        <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
-      </div>
+      <div className="flex-fill"></div>
+      <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
+    </div>
     )
     : null;
 
   const ungradedDetails = props.graded ? null : [
     evaluationSummary,
     <Hints key="hints" onClick={onRequestHint} hints={hints}
-      hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>];
+      hasMoreHints={hasMoreHints} isEvaluated={isEvaluated} />];
+
+  const gradedDetails = props.graded && props.progressState === 'in_review' ? [
+    evaluationSummary] : null;
+
+  const correctnessIcon = attemptState.score === 0 ? <IconIncorrect /> : <IconCorrect />;
+
+  const gradedPoints = props.graded && props.progressState === 'in_review' ? [
+    <div className="text-info font-italic">
+      {correctnessIcon}
+      <span>Points: </span><span>{attemptState.score + ' out of '
+    + attemptState.outOf}</span></div>] : null;
 
   const maybeSubmitButton = props.graded
-  ? null
-  : (
-    <button
-      className="btn btn-primary mt-2 float-right" disabled={isEvaluated} onClick={onSubmit}>
-      Submit
-    </button>
-  );
+    ? null
+    : (
+      <button
+        className="btn btn-primary mt-2 float-right" disabled={isEvaluated} onClick={onSubmit}>
+        Submit
+      </button>
+    );
 
   return (
     <div className="activity short-answer-activity">
       <div className="activity-content">
         <Stem stem={stem} />
-
+        {gradedPoints}
         <div className="">
           <Input
             inputType={model.inputType}
             input={input}
             isEvaluated={isEvaluated}
-            onChange={onInputChange}/>
+            onChange={onInputChange} />
           {maybeSubmitButton}
         </div>
 
         {ungradedDetails}
+        {gradedDetails}
       </div>
       {reset}
     </div>
