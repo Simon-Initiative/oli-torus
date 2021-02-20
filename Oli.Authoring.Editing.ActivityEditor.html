@@ -10,7 +10,7 @@
     <title>Oli.Authoring.Editing.ActivityEditor — OLI Torus v0.5.1</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-b4b0a31576.js"></script>
+    <script src="dist/sidebar_items-f5bb2f44fa.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -128,7 +128,25 @@ referenced from a resource.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#edit/5">edit(project_slug, revision_slug, activity_slug, author_email, update)</a>
+    <a href="#create_secondary/4">create_secondary(project_slug, activity_id, author, update)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Creates a new secondary document for an activity.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#delete/4">delete(project_slug, lock_id, activity_id, author)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Deletes a secondary activity resource.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#edit/5">edit(project_slug, lock_id, activity_id, author_email, update)</a>
 
   </div>
 
@@ -145,9 +163,20 @@ project and revision slug and activity slug for the author specified by email.</
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#translate_ids_to_slugs/2">translate_ids_to_slugs(project_slug, objectives)</a>
+    <a href="#retrieve/3">retrieve(project_slug, activity_id, author)</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Retrieves an activity resource.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#retrieve_bulk/3">retrieve_bulk(project_slug, activity_ids, author)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Retrieves a list of activity resources.</p></div>
 
 </div>
 
@@ -174,7 +203,7 @@ Functions
     </a>
     <h1 class="signature">create(project_slug, activity_type_slug, author, model, objectives)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L228" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L406" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -239,6 +268,8 @@ Functions
      objectives: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      previous_revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      previous_revision_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     primary_resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     primary_resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      recommended_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -273,7 +304,7 @@ Functions
     </a>
     <h1 class="signature">create_context(project_slug, revision_slug, activity_slug, author)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L258" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L436" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -288,16 +319,16 @@ where this activity is being editing within the context of being
 referenced from a resource.</p>
   </section>
 </section>
-<section class="detail" id="edit/5">
+<section class="detail" id="create_secondary/4">
 
   <div class="detail-header">
-    <a href="#edit/5" class="detail-link" title="Link to this function">
+    <a href="#create_secondary/4" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">edit(project_slug, revision_slug, activity_slug, author_email, update)</h1>
+    <h1 class="signature">create_secondary(project_slug, activity_id, author, update)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L47" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L148" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -310,7 +341,40 @@ referenced from a resource.</p>
       <h2>Specs</h2>
       <div class="specs">
 
-          <pre>edit(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), %{}) ::
+          <pre>create_secondary(
+  <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
+  <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
+  %Oli.Accounts.Author{
+    __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    current_password: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    email: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    email_confirmation_token: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    email_confirmed_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    family_name: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    given_name: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    inserted_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    invitation_accepted_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    invitation_token: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    invited_by: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    invited_by_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    invited_users: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    name: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    password: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    password_hash: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    picture: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    preferences: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    projects: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    sections: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    system_role: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    system_role_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    unconfirmed_email: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    user_identities: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    users: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+  },
+  <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()
+) ::
   {:ok,
    %Oli.Resources.Revision{
      __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -328,6 +392,115 @@ referenced from a resource.</p>
      objectives: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      previous_revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      previous_revision_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     primary_resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     primary_resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     recommended_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     resource_type: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     resource_type_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     scoring_strategy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     scoring_strategy_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     time_limit: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     title: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     warnings: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+   }}
+  | {:error, {:not_found}}
+  | {:error, {:error}}
+  | {:error, {:not_authorized}}
+  | {:error, {:invalid_update_field}}</pre>
+
+      </div>
+
+<p>Creates a new secondary document for an activity.</p><p>Returns:</p><p>.<code class="inline">{:ok, %Activity{}}</code> when the creation processes succeeds
+.<code class="inline">{:error, {:not_found}}</code> if the project, resource, or user cannot be found
+.<code class="inline">{:error, {:not_authorized}}</code> if the user is not authorized to edit this project
+.<code class="inline">{:error, {:invalid_update_field}}</code> if the update contains an invalid field
+.<code class="inline">{:error, {:error}}</code> unknown error</p>
+  </section>
+</section>
+<section class="detail" id="delete/4">
+
+  <div class="detail-header">
+    <a href="#delete/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">delete(project_slug, lock_id, activity_id, author)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L89" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>delete(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">list</a>()}
+  | {:error, {:not_found}}
+  | {:error, {:error}}
+  | {:error, {:lock_not_acquired}}
+  | {:error, {:not_authorized}}</pre>
+
+      </div>
+
+<p>Deletes a secondary activity resource.</p><p>Returns:</p><p>.<code class="inline">{:ok, revision}</code> when the resource is deleted
+.<code class="inline">{:error, {:lock_not_acquired}}</code> if the lock could not be acquired or updated
+.<code class="inline">{:error, {:not_found}}</code> if the project or activity or user cannot be found
+.<code class="inline">{:error, {:not_authorized}}</code> if the user is not authorized to edit this project or activity
+.<code class="inline">{:error, {:error}}</code> unknown error</p>
+  </section>
+</section>
+<section class="detail" id="edit/5">
+
+  <div class="detail-header">
+    <a href="#edit/5" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">edit(project_slug, lock_id, activity_id, author_email, update)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L207" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>edit(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), %{}) ::
+  {:ok,
+   %Oli.Resources.Revision{
+     __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     activity_type: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     activity_type_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     author: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     author_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     children: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     content: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     deleted: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     graded: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     inserted_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     max_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     objectives: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     previous_revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     previous_revision_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     primary_resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     primary_resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      recommended_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -358,6 +531,7 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
 .<code class="inline">{:error, {:lock_not_acquired}}</code> if the lock could not be acquired or updated
 .<code class="inline">{:error, {:not_found}}</code> if the project, resource, activity, or user cannot be found
 .<code class="inline">{:error, {:not_authorized}}</code> if the user is not authorized to edit this activity
+.<code class="inline">{:error, {:invalid_update_field}}</code> if the update contains an invalid field
 .<code class="inline">{:error, {:error}}</code> unknown error</p>
   </section>
 </section>
@@ -370,7 +544,7 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
     </a>
     <h1 class="signature">get_latest_revision(publication_id, resource_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L292" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L472" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -383,16 +557,16 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
 
   </section>
 </section>
-<section class="detail" id="translate_ids_to_slugs/2">
+<section class="detail" id="retrieve/3">
 
   <div class="detail-header">
-    <a href="#translate_ids_to_slugs/2" class="detail-link" title="Link to this function">
+    <a href="#retrieve/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">translate_ids_to_slugs(project_slug, objectives)</h1>
+    <h1 class="signature">retrieve(project_slug, activity_id, author)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L142" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L61" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -402,7 +576,111 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
 
   <section class="docstring">
 
+      <h2>Specs</h2>
+      <div class="specs">
 
+          <pre>retrieve(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()) ::
+  {:ok,
+   %Oli.Resources.Revision{
+     __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     activity_type: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     activity_type_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     author: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     author_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     children: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     content: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     deleted: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     graded: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     inserted_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     max_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     objectives: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     previous_revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     previous_revision_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     primary_resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     primary_resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     recommended_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     resource_type: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     resource_type_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     scoring_strategy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     scoring_strategy_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     time_limit: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     title: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     warnings: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+   }}
+  | {:error, {:not_found}}</pre>
+
+      </div>
+
+<p>Retrieves an activity resource.</p><p>Returns:</p><p>.<code class="inline">{:ok, %Revision{}}</code> when the revision is retrieved
+.<code class="inline">{:error, {:not_found}}</code> if the project or resource is not found</p>
+  </section>
+</section>
+<section class="detail" id="retrieve_bulk/3">
+
+  <div class="detail-header">
+    <a href="#retrieve_bulk/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">retrieve_bulk(project_slug, activity_ids, author)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L36" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>retrieve_bulk(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()) ::
+  {:ok,
+   %Oli.Resources.Revision{
+     __meta__: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     activity_type: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     activity_type_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     author: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     author_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     children: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     content: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     deleted: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     graded: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     inserted_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     max_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     objectives: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     previous_revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     previous_revision_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     primary_resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     primary_resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     recommended_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     resource_type: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     resource_type_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     scoring_strategy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     scoring_strategy_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     time_limit: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     title: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     warnings: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+   }}
+  | {:error, {:not_found}}</pre>
+
+      </div>
+
+<p>Retrieves a list of activity resources.</p><p>Returns:</p><p>.<code class="inline">{:ok, [%Revision{}]}</code> when the revision is retrieved
+.<code class="inline">{:error, {:not_found}}</code> if the project is not found</p>
   </section>
 </section>
 

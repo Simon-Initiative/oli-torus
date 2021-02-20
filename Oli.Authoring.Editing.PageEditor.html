@@ -10,7 +10,7 @@
     <title>Oli.Authoring.Editing.PageEditor — OLI Torus v0.5.1</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-b4b0a31576.js"></script>
+    <script src="dist/sidebar_items-f5bb2f44fa.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -117,7 +117,7 @@ Oli.Authoring.Editing.PageEditor <small class="app-vsn">(OLI Torus v0.5.1)</smal
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#construct_parent_references/1">construct_parent_references(objectives)</a>
+    <a href="#construct_parent_references/1">construct_parent_references(revisions)</a>
 
   </div>
 
@@ -152,13 +152,6 @@ project and revision slug, for the author specified by email.</p></div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#get_latest_revision/2">get_latest_revision(publication, resource)</a>
-
-  </div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#id_to_slug/2">id_to_slug(attached_objectives, all_objectives)</a>
 
   </div>
 
@@ -203,7 +196,7 @@ Functions
     </a>
     <h1 class="signature">acquire_lock(project_slug, revision_slug, author_email)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L120" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L119" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -240,9 +233,9 @@ an expected condition that a user could encounter.</p><p>Returns:</p><p>.<code c
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">construct_parent_references(objectives)</h1>
+    <h1 class="signature">construct_parent_references(revisions)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L407" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L405" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -264,7 +257,7 @@ an expected condition that a user could encounter.</p><p>Returns:</p><p>.<code c
     </a>
     <h1 class="signature">create_context(project_slug, revision_slug, author)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L178" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L177" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -287,7 +280,7 @@ for a specific resource / revision.</p>
     </a>
     <h1 class="signature">create_new_revision(arg, publication, resource, author_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L477" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L461" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -309,7 +302,7 @@ for a specific resource / revision.</p>
     </a>
     <h1 class="signature">edit(project_slug, revision_slug, author_email, update)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L49" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L48" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -340,6 +333,8 @@ for a specific resource / revision.</p>
      objectives: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      previous_revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      previous_revision_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     primary_resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     primary_resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      recommended_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -382,29 +377,7 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
     </a>
     <h1 class="signature">get_latest_revision(publication, resource)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L460" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
-<section class="detail" id="id_to_slug/2">
-
-  <div class="detail-header">
-    <a href="#id_to_slug/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">id_to_slug(attached_objectives, all_objectives)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L426" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L444" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -426,7 +399,7 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
     </a>
     <h1 class="signature">release_lock(project_slug, revision_slug, author_email)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L156" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L155" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -464,7 +437,7 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
     </a>
     <h1 class="signature">render_page_html(project_slug, revision_slug, author, options \\ [])</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L195" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/page_editor.ex#L193" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

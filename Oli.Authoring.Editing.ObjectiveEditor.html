@@ -10,7 +10,7 @@
     <title>Oli.Authoring.Editing.ObjectiveEditor — OLI Torus v0.5.1</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-b4b0a31576.js"></script>
+    <script src="dist/sidebar_items-f5bb2f44fa.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -125,7 +125,7 @@ Oli.Authoring.Editing.ObjectiveEditor <small class="app-vsn">(OLI Torus v0.5.1)<
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#detach_objective/3">detach_objective(revision_slug, project, author)</a>
+    <a href="#detach_objective/3">detach_objective(objective_id, project, author)</a>
 
   </div>
 
@@ -148,7 +148,7 @@ Oli.Authoring.Editing.ObjectiveEditor <small class="app-vsn">(OLI Torus v0.5.1)<
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#preview_objective_detatchment/2">preview_objective_detatchment(revision_slug, project)</a>
+    <a href="#preview_objective_detatchment/2">preview_objective_detatchment(resource_id, project)</a>
 
   </div>
 
@@ -249,7 +249,7 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">detach_objective(revision_slug, project, author)</h1>
+    <h1 class="signature">detach_objective(objective_id, project, author)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L169" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -296,7 +296,7 @@ commiting the changes as arguments.</p>
     </a>
     <h1 class="signature">fetch_objective_mappings(project)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L389" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L380" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -316,9 +316,9 @@ commiting the changes as arguments.</p>
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">preview_objective_detatchment(revision_slug, project)</h1>
+    <h1 class="signature">preview_objective_detatchment(resource_id, project)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L277" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/objective_editor.ex#L269" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -331,8 +331,11 @@ commiting the changes as arguments.</p>
       <h2>Specs</h2>
       <div class="specs">
 
-          <pre>preview_objective_detatchment(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), Oli.Authoring.Course.Project.t()) ::
-  %{attachments: {<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}, locked_by: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(), parent_pages: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()}</pre>
+          <pre>preview_objective_detatchment(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(), Oli.Authoring.Course.Project.t()) :: %{
+  attachments: {<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()},
+  locked_by: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>(),
+  parent_pages: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()
+}</pre>
 
       </div>
 

@@ -10,7 +10,7 @@
     <title>OliWeb.ActivityController — OLI Torus v0.5.1</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-b4b0a31576.js"></script>
+    <script src="dist/sidebar_items-f5bb2f44fa.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -88,6 +88,11 @@ OliWeb.ActivityController <small class="app-vsn">(OLI Torus v0.5.1)</small>
       </h1>
 
 
+        <section id="moduledoc">
+<p>The storage service allows activity implementations to read, write, update
+and delete documents associated with an activity instance.</p>
+        </section>
+
 
         <section id="summary" class="details-list">
           <h1 class="section-heading">
@@ -104,9 +109,29 @@ OliWeb.ActivityController <small class="app-vsn">(OLI Torus v0.5.1)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#create/2">create(conn, map)</a>
+    <a href="#bulk_retrieve/2">bulk_retrieve(conn, map)</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Bulk retrieve documents for an activity in an authoring context.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#bulk_retrieve_delivery/2">bulk_retrieve_delivery(conn, map)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Retrieve a document for an activity for delivery purposes.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create_secondary/2">create_secondary(conn, map)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Create a new secondary document for an activity.</p></div>
 
 </div>
 <div class="summary-row">
@@ -115,26 +140,25 @@ OliWeb.ActivityController <small class="app-vsn">(OLI Torus v0.5.1)</small>
 
   </div>
 
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#edit/2">edit(conn, map)</a>
-
-  </div>
+    <div class="summary-synopsis"><p>Delete a secondary document for an activity.</p></div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#evaluate/2">evaluate(conn, map)</a>
+    <a href="#retrieve/2">retrieve(conn, map)</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Retrieve a document for an activity in an authoring context.</p></div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#transform/2">transform(conn, map)</a>
+    <a href="#retrieve_delivery/2">retrieve_delivery(conn, map)</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Retrieve a document for an activity for delivery purposes.</p></div>
 
 </div>
 <div class="summary-row">
@@ -142,6 +166,8 @@ OliWeb.ActivityController <small class="app-vsn">(OLI Torus v0.5.1)</small>
     <a href="#update/2">update(conn, map)</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Update a document for an activity.</p></div>
 
 </div>
 
@@ -159,16 +185,16 @@ OliWeb.ActivityController <small class="app-vsn">(OLI Torus v0.5.1)</small>
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="create/2">
+<section class="detail" id="bulk_retrieve/2">
 
   <div class="detail-header">
-    <a href="#create/2" class="detail-link" title="Link to this function">
+    <a href="#bulk_retrieve/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">create(conn, map)</h1>
+    <h1 class="signature">bulk_retrieve(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/activity_controller.ex#L49" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/activity_controller.ex#L245" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -178,7 +204,54 @@ Functions
 
   <section class="docstring">
 
+<p>Bulk retrieve documents for an activity in an authoring context.</p><p>This retrieves the unpublished revision of activity documents.</p>
+  </section>
+</section>
+<section class="detail" id="bulk_retrieve_delivery/2">
 
+  <div class="detail-header">
+    <a href="#bulk_retrieve_delivery/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">bulk_retrieve_delivery(conn, map)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/activity_controller.ex#L322" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Retrieve a document for an activity for delivery purposes.</p><p>This retrieves the published revision of an activity document, either a primary or secondary
+document, for a particular course section.</p>
+  </section>
+</section>
+<section class="detail" id="create_secondary/2">
+
+  <div class="detail-header">
+    <a href="#create_secondary/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create_secondary(conn, map)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/activity_controller.ex#L137" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Create a new secondary document for an activity.</p><p>Torus activities are comprised of one primary document and zero or more secondary documents. While Torus
+creates the primary document for an activity instance, secondary document creation is entirely the responsibility
+of the activity implementation.</p>
   </section>
 </section>
 <section class="detail" id="delete/2">
@@ -190,7 +263,7 @@ Functions
     </a>
     <h1 class="signature">delete(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/activity_controller.ex#L108" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/activity_controller.ex#L425" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -200,19 +273,20 @@ Functions
 
   <section class="docstring">
 
-
+<p>Delete a secondary document for an activity.</p><p>This operation will mark a secondary document as deleted, but only for the current unpublished revision.</p><p>This operation must be performed in the context of an exclusive write lock to avoid concurrent updates. The identifier of the
+lock must be specificed via the <code class="inline">lock</code> query parameter.</p>
   </section>
 </section>
-<section class="detail" id="edit/2">
+<section class="detail" id="retrieve/2">
 
   <div class="detail-header">
-    <a href="#edit/2" class="detail-link" title="Link to this function">
+    <a href="#retrieve/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">edit(conn, map)</h1>
+    <h1 class="signature">retrieve(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/activity_controller.ex#L15" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/activity_controller.ex#L219" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -222,19 +296,20 @@ Functions
 
   <section class="docstring">
 
-
+<p>Retrieve a document for an activity in an authoring context.</p><p>This retrieves the unpublished revision of an activity document, either a primary or secondary
+document.</p>
   </section>
 </section>
-<section class="detail" id="evaluate/2">
+<section class="detail" id="retrieve_delivery/2">
 
   <div class="detail-header">
-    <a href="#evaluate/2" class="detail-link" title="Link to this function">
+    <a href="#retrieve_delivery/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">evaluate(conn, map)</h1>
+    <h1 class="signature">retrieve_delivery(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/activity_controller.ex#L89" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/activity_controller.ex#L282" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -244,29 +319,8 @@ Functions
 
   <section class="docstring">
 
-
-  </section>
-</section>
-<section class="detail" id="transform/2">
-
-  <div class="detail-header">
-    <a href="#transform/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">transform(conn, map)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/activity_controller.ex#L101" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
+<p>Retrieve a document for an activity for delivery purposes.</p><p>This retrieves the published revision of an activity document, either a primary or secondary
+document, for a particular course section.</p>
   </section>
 </section>
 <section class="detail" id="update/2">
@@ -278,7 +332,7 @@ Functions
     </a>
     <h1 class="signature">update(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/activity_controller.ex#L72" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/activity_controller.ex#L368" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -288,7 +342,9 @@ Functions
 
   <section class="docstring">
 
-
+<p>Update a document for an activity.</p><p>This operation will update one or more of the top-level document attributes (<code class="inline">title</code>, <code class="inline">objectives</code>, <code class="inline">content</code>, <code class="inline">authoring</code>) for
+either primary or secondary activity documents.</p><p>This operation must be performed in the context of an exclusive write lock to avoid concurrent updates. The identifier of the
+lock must be specificed via the <code class="inline">lock</code> query parameter.</p>
   </section>
 </section>
 
