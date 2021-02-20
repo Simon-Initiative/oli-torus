@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Page.PageContext — OLI Torus v0.5.1</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-f5bb2f44fa.js"></script>
+    <script src="dist/sidebar_items-6089cf98d9.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -118,6 +118,18 @@ optional id of the parent container that the page exists within. If not
 specified, the container is assumed to be the root resource of the publication.</p></div>
 
 </div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create_page_context/4">create_page_context(context_id, page_slug, attempt_guid, user)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Creates the page context required to render a page in review model, based
+off of the section context id, the slug of the page to render, and an
+optional id of the parent container that the page exists within. If not
+specified, the container is assumed to be the root resource of the publication.</p></div>
+
+</div>
 
   </div>
 
@@ -170,6 +182,51 @@ Functions
       </div>
 
 <p>Creates the page context required to render a page in delivery model, based
+off of the section context id, the slug of the page to render, and an
+optional id of the parent container that the page exists within. If not
+specified, the container is assumed to be the root resource of the publication.</p><p>The key task performed here is the resolution of all referenced objectives
+and activities that may be present in the content of the page. This
+information is collected and then assembled in a fashion that can be given
+to a renderer.</p>
+  </section>
+</section>
+<section class="detail" id="create_page_context/4">
+
+  <div class="detail-header">
+    <a href="#create_page_context/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create_page_context(context_id, page_slug, attempt_guid, user)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L53" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>create_page_context(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), Oli.Accounts.User) ::
+  %Oli.Delivery.Page.PageContext{
+    activities: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    next_page: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    objectives: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    page: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    previous_page: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    progress_state: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    resource_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    summary: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+  }</pre>
+
+      </div>
+
+<p>Creates the page context required to render a page in review model, based
 off of the section context id, the slug of the page to render, and an
 optional id of the parent container that the page exists within. If not
 specified, the container is assumed to be the root resource of the publication.</p><p>The key task performed here is the resolution of all referenced objectives
