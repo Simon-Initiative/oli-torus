@@ -7,16 +7,16 @@ RUN yum install ncurses-devel openssl-devel -y
 RUN yum groupinstall "Development Tools" -y
 
 WORKDIR /tmp
-RUN wget "http://erlang.org/download/otp_src_23.1.tar.gz" -O otp23.tar.gz
+RUN wget "http://erlang.org/download/otp_src_23.2.tar.gz" -O otp23.tar.gz
 RUN tar xfz otp23.tar.gz
-WORKDIR /tmp/otp_src_23.1/
+WORKDIR /tmp/otp_src_23.2/
 RUN ./configure
 RUN make && make install
 
 WORKDIR /tmp
-RUN wget "https://github.com/elixir-lang/elixir/archive/v1.11.1.tar.gz"
-RUN tar xfz v1.11.1.tar.gz
-WORKDIR /tmp/elixir-1.11.1/
+RUN wget "https://github.com/elixir-lang/elixir/archive/v1.11.3.tar.gz"
+RUN tar xfz v1.11.3.tar.gz
+WORKDIR /tmp/elixir-1.11.3/
 ENV PATH="${PATH}:/usr/local/bin"
 RUN make && make install
 

@@ -1,8 +1,8 @@
-import { ObjectiveSlug } from 'data/types';
-export { ObjectiveSlug } from 'data/types';
+import { ResourceId } from 'data/types';
+export { ResourceId } from 'data/types';
 
 export type Objective = {
-  slug: ObjectiveSlug,
+  id: ResourceId,
   title: string,
-  parentSlug: ObjectiveSlug | null,
+  parentId: ResourceId | null,
 };

@@ -4,6 +4,7 @@
 ### Enhancements
   - Add LTI 1.3 platform launch support
   - Add support for project visibility control
+  - Add storage, media, and objectives service API implementations
   - Move LTI 1.3 functionality to external Lti_1p3 library
 
 ### Bug fixes

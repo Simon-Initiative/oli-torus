@@ -1,7 +1,7 @@
 import { ActivityEditorMap } from 'data/content/editors';
 import { ResourceContext, ResourceContent, Activity } from 'data/content/resource';
 import { Objective } from 'data/content/objective';
-import { ObjectiveSlug } from 'data/types';
+import { ResourceId } from 'data/types';
 import { AddResourceContent } from 'components/content/AddResourceContent';
 import * as Immutable from 'immutable';
 import { DropTarget } from './dragndrop/DropTarget';
@@ -16,7 +16,7 @@ export type AddResourceOrDropTargetProps = {
   onDrop: (e: React.DragEvent<HTMLDivElement>, index: number) => void,
   onAddItem: (c: ResourceContent, index: number, a?: Activity) => void,
   objectives: Immutable.List<Objective>,
-  childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>,
+  childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>,
   onRegisterNewObjective: (text: string) => Promise<Objective>,
 };
 
