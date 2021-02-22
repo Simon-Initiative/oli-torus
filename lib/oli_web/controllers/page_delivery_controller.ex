@@ -15,15 +15,13 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Resources.ResourceType
   alias Oli.Grading
 
-  plug :ensure_context_id_matches when action not in [:link]
-
-  def index(conn, %{"context_id" => context_id}) do
+  def index(conn, %{"section_slug" => section_slug}) do
 
     user = conn.assigns.current_user
 
-    if Sections.is_enrolled?(user.id, context_id) do
+    if Sections.is_enrolled?(user.id, section_slug) do
 
-      case Summary.get_summary(context_id, user) do
+      case Summary.get_summary(section_slug, user) do
         {:ok, summary} -> render(conn, "index.html", context_id: context_id, summary: summary)
         {:error, _} -> render(conn, "error.html")
       end

@@ -334,13 +334,13 @@ defmodule OliWeb.Router do
     # course link resolver
     get "/link/:revision_slug", PageDeliveryController, :link
 
-    get "/:context_id/page/:revision_slug", PageDeliveryController, :page
-    get "/:context_id/page", PageDeliveryController, :index
-    get "/:context_id/page/:revision_slug/attempt", PageDeliveryController, :start_attempt
-    get "/:context_id/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt
+    get "/:section_slug", PageDeliveryController, :index
+    get "/:section_slug/page/:revision_slug", PageDeliveryController, :page
+    get "/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt
+    get "/:section_slug/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt
 
-    live "/:context_id/grades", Grades.GradesLive, session: {__MODULE__, :with_delivery, []}
-    get "/:context_id/grades/export", PageDeliveryController, :export_gradebook
+    live "/:section_slug/grades", Grades.GradesLive, session: {__MODULE__, :with_delivery, []}
+    get "/:section_slug/grades/export", PageDeliveryController, :export_gradebook
 
     resources "/help", HelpDeliveryController, only: [:index, :create]
     get "/help/sent", HelpDeliveryController, :sent
