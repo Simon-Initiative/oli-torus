@@ -18,6 +18,16 @@ defmodule OliWeb.PageDeliveryView do
     Numbering.prefix(hierarchy_node.numbering) <> ": " <> hierarchy_node.revision.title
   end
 
+  def has_submitted_attempt?(resource_access) do
+    case {resource_access.score, resource_access.out_of} do
+      {nil, nil} ->
+        # resource was accessed but no attempt was submitted
+        false
+      {_score, _out_of} ->
+        true
+    end
+  end
+
   def calculate_score_percentage(resource_access) do
     case {resource_access.score, resource_access.out_of} do
       {nil, nil} ->
