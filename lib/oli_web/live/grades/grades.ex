@@ -11,13 +11,12 @@ defmodule OliWeb.Grades.GradesLive do
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Attempts.ResourceAccess
   alias Oli.Delivery.Sections
+  alias Lti_1p3.DataProviders.EctoProvider
+  alias Lti_1p3.DataProviders.EctoProvider.Deployment
 
   def mount(%{"section_slug" => section_slug}, %{"lti_params" => lti_params, "current_user" => current_user}, socket) do
 
-    %{registration: registration} = Sections.get_section_by(slug: section_slug)
-      |> Oli.Repo.preload([:registration])
-
-    if ContextRoles.has_role?(current_user, registration, ContextRoles.get_role(:context_instructor)) do
+    if ContextRoles.has_role?(current_user, section_slug, ContextRoles.get_role(:context_instructor)) do
 
       line_items_url = LTI_AGS.get_line_items_url(lti_params)
       graded_pages = Grading.fetch_graded_pages(section_slug)

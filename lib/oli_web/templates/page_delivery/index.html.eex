@@ -27,7 +27,7 @@
   if (isInIframe) {
     const button = document.createElement("button");
     button.onclick = (_e) =>
-      window.open(window.location.href, "_parent");
+      window.open(window.location.href, "_blank");
     button.innerHTML = "Open with full window";
     button.className = "btn btn-primary"
     const container = document.getElementById("index-container");
