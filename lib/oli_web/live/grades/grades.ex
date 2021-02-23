@@ -10,9 +10,6 @@ defmodule OliWeb.Grades.GradesLive do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Attempts.ResourceAccess
-  alias Oli.Delivery.Sections
-  alias Lti_1p3.DataProviders.EctoProvider
-  alias Lti_1p3.DataProviders.EctoProvider.Deployment
 
   def mount(%{"section_slug" => section_slug}, %{"lti_params" => lti_params, "current_user" => current_user}, socket) do
 
