@@ -58,7 +58,7 @@ export function createMedia(
     const params = {
       method: 'POST',
       body: JSON.stringify(body),
-      url: `/project/${project}/media`,
+      url: `/media/project/${project}`,
     };
 
     return makeRequest<MediaItemCreated>(params);
@@ -85,7 +85,7 @@ export function fetchMedia(
   const params = {
     method: 'GET',
     query,
-    url: `/project/${project}/media`,
+    url: `/media/project/${project}`,
   };
 
   return makeRequest<PaginatedResponse<MediaItem>>(params);

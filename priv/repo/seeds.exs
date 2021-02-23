@@ -58,12 +58,18 @@ if !Oli.Repo.get_by(Oli.Authoring.Authors.ProjectRole, id: 1) do
 end
 
 # create resource types
-if !Oli.Repo.get_by(Oli.Resources.ResourceType, id: 1) do
+existing_rts = Oli.Resources.list_resource_types()
+|> Enum.map(fn %{id: id} -> id end)
+|> MapSet.new()
 
-  Oli.Resources.ResourceType.get_types()
-  |> Enum.map(&Oli.Resources.create_resource_type/1)
+Oli.Resources.ResourceType.get_types()
+|> Enum.each(fn rt ->
 
-end
+  if !MapSet.member?(existing_rts, rt.id) do
+    Oli.Resources.create_resource_type(rt)
+  end
+
+end)
 
 # create scoring strategy types
 if !Oli.Repo.get_by(Oli.Resources.ScoringStrategy, id: 1) do

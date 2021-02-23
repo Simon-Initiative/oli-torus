@@ -28,6 +28,7 @@ defmodule Oli.Resources.Utils do
       author_id: wrapper.author_id,
       previous_revision_id: wrapper.previous_revision_id,
       activity_type_id: wrapper.activity_type_id,
+      primary_resource_id: wrapper.primary_resource_id,
       inserted_at: wrapper.inserted_at,
       updated_at: wrapper.updated_at
     }
@@ -51,6 +52,7 @@ defmodule Oli.Resources.Utils do
       resource_type_id: wrapper.resource_type_id,
       author_id: wrapper.author_id,
       previous_revision_id: wrapper.previous_revision_id,
+      primary_resource_id: nil,
       activity_type_id: nil,
       inserted_at: wrapper.inserted_at,
       updated_at: wrapper.updated_at
@@ -76,6 +78,7 @@ defmodule Oli.Resources.Utils do
       author_id: wrapper.author_id,
       previous_revision_id: wrapper.previous_revision_id,
       activity_type_id: nil,
+      primary_resource_id: nil,
       inserted_at: wrapper.inserted_at,
       updated_at: wrapper.updated_at
     }
@@ -99,6 +102,7 @@ defmodule Oli.Resources.Utils do
       resource_type_id: wrapper.resource_type_id,
       author_id: wrapper.author_id,
       previous_revision_id: wrapper.previous_revision_id,
+      primary_resource_id: nil,
       activity_type_id: nil,
       inserted_at: wrapper.inserted_at,
       updated_at: wrapper.updated_at

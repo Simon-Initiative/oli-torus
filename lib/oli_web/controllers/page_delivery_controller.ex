@@ -78,13 +78,16 @@ defmodule OliWeb.PageDeliveryController do
     render(conn, "prologue.html", %{
       section_slug: section_slug,
       scripts: Activities.get_activity_scripts(),
+      resource_attempts: Enum.filter(resource_attempts, fn r -> r.date_evaluated != nil end),
       summary: summary,
       previous_page: context.previous_page,
       next_page: context.next_page,
       title: context.page.title,
       allow_attempt?: allow_attempt?,
       message: message,
-      slug: context.page.slug
+      resource_id: page.resource_id,
+      slug: context.page.slug,
+      max_attempts: page.max_attempts
     })
   end
 
@@ -95,7 +98,7 @@ defmodule OliWeb.PageDeliveryController do
   # This case handles :in_progress and :revised progress states
   defp render_page(%PageContext{} = context, conn, section_slug, user) do
 
-    render_context = %Context{user: user, activity_map: context.activities}
+    render_context = %Context{user: user, progress_state: context.progress_state, activity_map: context.activities}
     page_model = Map.get(context.page.content, "model")
     html = Page.render(render_context, page_model, Page.Html)
 
@@ -105,6 +108,7 @@ defmodule OliWeb.PageDeliveryController do
         "container.html" else "page.html"
       end, %{
       page: context.page,
+      progress_state: context.progress_state,
       section_slug: section_slug,
       scripts: Activities.get_activity_scripts(),
       summary: context.summary,
@@ -116,6 +120,7 @@ defmodule OliWeb.PageDeliveryController do
       html: html,
       objectives: context.objectives,
       slug: context.page.slug,
+      resource_attempt: hd(context.resource_attempts),
       attempt_guid: hd(context.resource_attempts).attempt_guid,
     })
   end
@@ -132,6 +137,24 @@ defmodule OliWeb.PageDeliveryController do
         {:ok, _} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
         {:error, {:active_attempt_present}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
         {:error, {:no_more_attempts}} -> redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
+        _ -> render(conn, "error.html")
+      end
+
+    else
+      render conn, "not_authorized.html"
+    end
+
+  end
+
+  def review_attempt(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug, "attempt_guid" => attempt_guid}) do
+
+    user = conn.assigns.current_user
+
+    if Sections.is_enrolled?(user.id, section_slug) do
+
+      case Attempts.review_resource_attempt(attempt_guid) do
+        {:ok, _} -> PageContext.create_page_context(section_slug, revision_slug, attempt_guid, user)
+                    |> render_page(conn, section_slug, user)
         _ -> render(conn, "error.html")
       end
 
@@ -170,7 +193,7 @@ defmodule OliWeb.PageDeliveryController do
       {:ok, resource_access} ->
 
         grade_sync_result = send_one_grade(lti_params, resource_access)
-        after_finalized(conn, section_slug, revision_slug, user, grade_sync_result)
+        after_finalized(conn, section_slug, revision_slug, attempt_guid, user, grade_sync_result)
 
       {:error, {:not_all_answered}} ->
         put_flash(conn, :error, "You have not answered all questions")
@@ -183,7 +206,7 @@ defmodule OliWeb.PageDeliveryController do
 
   end
 
-  def after_finalized(conn, section_slug, revision_slug, user, grade_sync_result) do
+  def after_finalized(conn, section_slug, revision_slug, attempt_guid, user, grade_sync_result) do
 
     context = PageContext.create_page_context(section_slug, revision_slug, user)
 
@@ -208,6 +231,7 @@ defmodule OliWeb.PageDeliveryController do
     render(conn, "after_finalized.html",
       grade_message: grade_message,
       section_slug: section_slug,
+      attempt_guid: attempt_guid,
       scripts: Activities.get_activity_scripts(),
       summary: context.summary,
       previous_page: context.previous_page,

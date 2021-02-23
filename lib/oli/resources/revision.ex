@@ -30,6 +30,7 @@ defmodule Oli.Resources.Revision do
     field :time_limit, :integer, default: 0
     belongs_to :scoring_strategy, Oli.Resources.ScoringStrategy
     belongs_to :activity_type, Oli.Activities.Registration
+    belongs_to :primary_resource, Oli.Resources.Resource
 
     has_many :warnings, Oli.Qa.Warning
 
@@ -39,7 +40,7 @@ defmodule Oli.Resources.Revision do
   @doc false
   def changeset(resource_revision, attrs \\ %{}) do
     resource_revision
-    |> cast(attrs, [:title, :slug, :deleted, :author_id, :resource_id,
+    |> cast(attrs, [:title, :slug, :deleted, :author_id, :resource_id, :primary_resource_id,
       :previous_revision_id, :resource_type_id, :content, :children, :objectives, :graded,
       :max_attempts, :recommended_attempts, :time_limit, :scoring_strategy_id, :activity_type_id])
     |> validate_required([:title, :deleted, :author_id, :resource_id, :resource_type_id])

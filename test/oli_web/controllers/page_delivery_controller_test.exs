@@ -95,6 +95,15 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       assert html_response(conn, 200) =~ "You have 0 attempts remaining out of 1 total attempt"
 
+      assert html_response(conn, 200) =~ "Attempt 1 of 1"
+
+      # visit assessment review page
+      conn = recycle(conn)
+             |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      conn = get(conn, Routes.page_delivery_path(conn, :review_attempt, section.slug, page_revision.slug, attempt.attempt_guid))
+
+      assert html_response(conn, 200) =~ "(Review)"
+
     end
 
   end

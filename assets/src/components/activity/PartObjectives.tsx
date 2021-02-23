@@ -1,17 +1,17 @@
 import * as Immutable from 'immutable';
 import React from 'react';
-import { ObjectiveSlug } from 'data/types';
+import { ResourceId } from 'data/types';
 import { Objective } from 'data/content/objective';
 import { Objectives } from 'components/resource/Objectives';
 import { valueOr } from 'utils/common';
 
 export type PartObjectivesProps = {
   partIds: Immutable.List<string>,
-  objectives: Immutable.Map<string, Immutable.List<ObjectiveSlug>>,
+  objectives: Immutable.Map<string, Immutable.List<ResourceId>>,
   allObjectives: Immutable.List<Objective>,
   editMode: boolean,
   projectSlug: string,
-  onEdit: (objectives: Immutable.Map<string, Immutable.List<ObjectiveSlug>>) => void;
+  onEdit: (objectives: Immutable.Map<string, Immutable.List<ResourceId>>) => void;
   onRegisterNewObjective: (objective: Objective) => void;
 };
 
@@ -32,12 +32,12 @@ export const PartObjectives = (props: PartObjectivesProps) => {
                 <Objectives
                   editMode={editMode}
                   projectSlug={props.projectSlug}
-                  selected={Immutable.List<ObjectiveSlug>(valueOr(objectives.get(id),
-                    Immutable.List<ObjectiveSlug>()))}
+                  selected={Immutable.List<ResourceId>(valueOr(objectives.get(id),
+                    Immutable.List<ResourceId>()))}
                   objectives={allObjectives}
                   onRegisterNewObjective={onRegisterNewObjective}
                   onEdit={objectives => onEdit(Immutable.Map<string,
-                    Immutable.List<ObjectiveSlug>>({ [id]: objectives } as any))}/>
+                    Immutable.List<ResourceId>>({ [id]: objectives } as any))}/>
               </div>
             )))
             : (
@@ -45,13 +45,13 @@ export const PartObjectives = (props: PartObjectivesProps) => {
                 <Objectives
                   editMode={editMode}
                   projectSlug={props.projectSlug}
-                  selected={Immutable.List<ObjectiveSlug>(valueOr(objectives.get(partIds.first()),
-                    Immutable.List<ObjectiveSlug>()))}
+                  selected={Immutable.List<ResourceId>(valueOr(objectives.get(partIds.first()),
+                    Immutable.List<ResourceId>()))}
                   objectives={allObjectives}
                   onRegisterNewObjective={onRegisterNewObjective}
                   onEdit={objectives => onEdit(
                     Immutable.Map<string,
-                    Immutable.List<ObjectiveSlug>>({
+                    Immutable.List<ResourceId>>({
                       [partIds.first() as string]: objectives,
                     } as any))}/>
               </div>

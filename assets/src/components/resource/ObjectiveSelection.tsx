@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import * as Immutable from 'immutable';
-import { Objective, ObjectiveSlug } from 'data/content/objective';
+import { Objective, ResourceId } from 'data/content/objective';
 
 export type ObjectiveSelectionProps = {
   objectives: Immutable.List<Objective>;
-  childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>;
+  childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
   onRegisterNewObjective: (title: string) => Promise<Objective>;
-  onUseSelected: (objectives: Immutable.List<ObjectiveSlug>) => void;
+  onUseSelected: (objectives: Immutable.List<ResourceId>) => void;
 };
 
 type ObjectNodeProps = {
   objective: Objective,
-  childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>,
+  childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>,
   level: number,
   selected: Object,
-  toggleSelected: (slug: ObjectiveSlug) => void,
+  toggleSelected: (id: ResourceId) => void,
 };
 
 const indentPerLevel = (level: number) => ({ marginLeft: (level * 15) + 'px' });
@@ -23,22 +23,22 @@ const ObjectiveNode = (props: ObjectNodeProps) => {
 
   const { objective, childrenObjectives, level } = props;
 
-  const myChildren = childrenObjectives.get(objective.slug);
+  const myChildren = childrenObjectives.get(objective.id);
   const renderedChildren = myChildren === undefined
     ? null
     : myChildren.toArray().map(o => <ObjectiveNode
-       key={o.slug}
+       key={o.id}
        selected={props.selected}
        toggleSelected={props.toggleSelected}
        objective={o}
        childrenObjectives={childrenObjectives} level={level + 1}/>);
 
   return (
-    <div key={objective.slug}>
+    <div key={objective.id}>
       <div
         key="title"
-        onClick={() => props.toggleSelected(objective.slug)}
-        className={`title ${(props.selected as any)[objective.slug] === true ? 'selected' : ''}`}
+        onClick={() => props.toggleSelected(objective.id)}
+        className={`title ${(props.selected as any)[objective.id] === true ? 'selected' : ''}`}
         style={indentPerLevel(level)}>
         {objective.title}
       </div>
@@ -48,12 +48,12 @@ const ObjectiveNode = (props: ObjectNodeProps) => {
 };
 
 const ObjectiveTree = (props: ObjectiveSelectionProps &
-  { selected: Object, toggleSelected: (slug: ObjectiveSlug) => void}) => {
+  { selected: Object, toggleSelected: (slug: ResourceId) => void}) => {
   return (
     <React.Fragment>
       {props.objectives.toArray()
-        .filter(o => o.parentSlug === null)
-        .map(o => <ObjectiveNode key={o.slug} objective={o} selected={props.selected}
+        .filter(o => o.parentId === null)
+        .map(o => <ObjectiveNode key={o.id} objective={o} selected={props.selected}
           toggleSelected={props.toggleSelected}
           childrenObjectives={props.childrenObjectives} level={1}/>)}
     </React.Fragment>
@@ -66,13 +66,13 @@ export const ObjectiveSelection = (props: ObjectiveSelectionProps) => {
   const [text, setText] = useState('');
 
   const toList = () =>
-    props.objectives.filter(o => (selected as any)[o.slug] === true).map(o => o.slug);
+    props.objectives.filter(o => (selected as any)[o.id] === true).map(o => o.id);
 
-  const toggleSelected = (slug: ObjectiveSlug) => {
-    if ((selected as any)[slug] === true) {
-      setSelected(Object.assign({}, selected, { [slug]: false }));
+  const toggleSelected = (id: ResourceId) => {
+    if ((selected as any)[id] === true) {
+      setSelected(Object.assign({}, selected, { [id]: false }));
     } else {
-      setSelected(Object.assign({}, selected, { [slug]: true }));
+      setSelected(Object.assign({}, selected, { [id]: true }));
     }
 
   };
