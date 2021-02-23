@@ -2,6 +2,8 @@ defmodule Oli.Delivery.Sections.Section do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Oli.Utils.Slug
+
   schema "sections" do
     field :end_date, :date
     field :registration_open, :boolean, default: false

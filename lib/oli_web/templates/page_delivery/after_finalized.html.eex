@@ -2,7 +2,7 @@
 <div class="alert alert-success after-finalized" role="alert">
   <h4 class="alert-heading">Attempt Submitted</h4>
 
-  <p>You've succesffully completed this graded assessment attempt. </p>
+  <p>You've completed this graded assessment attempt. </p>
 
   <p><%= @grade_message %></p>
 

@@ -13,7 +13,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       conn = conn
-      |> get(Routes.page_delivery_path(conn, :index, section.context_id))
+      |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       assert html_response(conn, 200) =~ "<h3>"
     end
@@ -23,7 +23,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       conn = conn
-      |> get(Routes.page_delivery_path(conn, :page, section.context_id, revision.slug))
+      |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
 
       assert html_response(conn, 200) =~ "<h1>"
     end
@@ -32,14 +32,14 @@ defmodule OliWeb.PageDeliveryControllerTest do
     test "handles student page access by a non enrolled student", %{conn: conn, revision: revision, section: section} do
 
       conn = conn
-      |> get(Routes.page_delivery_path(conn, :page, section.context_id, revision.slug))
+      |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
 
       assert html_response(conn, 200) =~ "Not authorized"
     end
 
     test "handles student access who is not enrolled", %{conn: conn, section: section} do
       conn = conn
-      |> get(Routes.page_delivery_path(conn, :index, section.context_id))
+      |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       assert html_response(conn, 200) =~ "Not authorized"
     end
@@ -48,14 +48,14 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      conn = get(conn, Routes.page_delivery_path(conn, :page, section.context_id, page_revision.slug))
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
 
       assert html_response(conn, 200) =~ "When you are ready to begin, you may"
 
       # now start the attempt
       conn = recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-      conn = get(conn, Routes.page_delivery_path(conn, :start_attempt, section.context_id, page_revision.slug))
+      conn = get(conn, Routes.page_delivery_path(conn, :start_attempt, section.slug, page_revision.slug))
 
       # verify the redirection
       assert html_response(conn, 302) =~ "redirected"
@@ -80,7 +80,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       # Submit the assessment and verify we see the summary view
       conn = recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-      conn = get(conn, Routes.page_delivery_path(conn, :finalize_attempt, section.context_id, page_revision.slug, attempt.attempt_guid))
+      conn = get(conn, Routes.page_delivery_path(conn, :finalize_attempt, section.slug, page_revision.slug, attempt.attempt_guid))
 
       # fetch the resource id record and verify the grade rolled up
       [access] = Oli.Repo.all(ResourceAccess)
@@ -91,7 +91,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       # does not allow us to start a new attempt
       conn = recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-      conn = get(conn, Routes.page_delivery_path(conn, :page, section.context_id, page_revision.slug))
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
 
       assert html_response(conn, 200) =~ "You have 0 attempts remaining out of 1 total attempt"
 
@@ -143,7 +143,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
     })
 
     lti_params = Oli.Lti_1p3.TestHelpers.all_default_claims()
-      |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
+      |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.slug)
 
     cache_lti_params(lti_params["sub"], lti_params)
 

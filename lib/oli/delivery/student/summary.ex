@@ -9,8 +9,8 @@ defmodule Oli.Delivery.Student.Summary do
   def get_summary(section_slug, user) do
 
     with {:ok, section} <- Sections.get_section_by(slug: section_slug) |> Oli.Utils.trap_nil(),
-      resource_accesses <- Attempts.get_user_resource_accesses_for_context(section.context_id, user.id),
-      [root_container_node] <- Numbering.full_hierarchy(Oli.Publishing.DeliveryResolver, section.context_id)
+      resource_accesses <- Attempts.get_user_resource_accesses_for_context(section.slug, user.id),
+      [root_container_node] <- Numbering.full_hierarchy(Oli.Publishing.DeliveryResolver, section.slug)
     do
       access_map = Enum.reduce(resource_accesses, %{}, fn ra, acc ->
         Map.put_new(acc, ra.resource_id, ra)

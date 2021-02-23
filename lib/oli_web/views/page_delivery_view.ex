@@ -5,9 +5,9 @@ defmodule OliWeb.PageDeliveryView do
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Numbering
 
-  def is_instructor?(conn, context_id) do
+  def is_instructor?(conn, section_slug) do
     user = conn.assigns.current_user
-    ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_instructor))
+    ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_instructor))
   end
 
   def container?(page) do

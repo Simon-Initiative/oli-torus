@@ -15,7 +15,7 @@
         <%= @inner_content %>
 
         <%= render OliWeb.PageDeliveryView, "_previous_next_nav.html",
-          conn: @conn, context_id: @context_id, summary: @summary, previous_page: @previous_page, next_page: @next_page %>
+          conn: @conn, section_slug: @section_slug, summary: @summary, previous_page: @previous_page, next_page: @next_page %>
 
       </div>
   </div>

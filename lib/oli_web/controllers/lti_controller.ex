@@ -27,7 +27,6 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  @spec launch(Plug.Conn.t(), any) :: Plug.Conn.t()
   def launch(conn, params) do
     session_state = Plug.Conn.get_session(conn, "state")
     case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
@@ -323,16 +322,17 @@ defmodule OliWeb.LtiController do
               nil ->
                 throw "Error getting context information from launch params"
               context ->
-                %{"id" => context_id} = context
-                %{"title" => context_title} = context
-
-                # Update section specifics - if one exists. Enroll the user and also update the section details
-                with {:ok, section} <- get_existing_section(context_id)
+                # update section specifics - if one exists. Enroll the user and also update the section details
+                with {:ok, section} <- get_existing_section(lti_params)
                 do
                   # transform lti_roles to a list only containing valid context roles (exclude all system and institution roles)
                   context_roles = ContextRoles.get_roles_by_uris(lti_roles)
 
+                  # if a course section exists, ensure that this user has an enrollment in this section
                   enroll_user(user.id, section.id, context_roles)
+
+                  # make sure section details are up to date
+                  %{"title" => context_title} = context
                   update_section_details(context_title, section)
                 end
 
@@ -361,8 +361,6 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  # If a course section exists for the context_id, ensure that
-  # this user has an enrollment in this section
   defp enroll_user(user_id, section_id, context_roles) do
     Sections.enroll(user_id, section_id, context_roles)
   end
@@ -371,8 +369,8 @@ defmodule OliWeb.LtiController do
     Sections.update_section(section, %{title: context_title})
   end
 
-  defp get_existing_section(context_id) do
-    case Sections.get_section_by(context_id: context_id) do
+  defp get_existing_section(lti_params) do
+    case Sections.get_section_from_lti_params(lti_params) do
       nil -> nil
       section -> {:ok, section}
     end
