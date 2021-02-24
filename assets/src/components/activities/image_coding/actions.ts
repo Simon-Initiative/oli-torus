@@ -10,6 +10,10 @@ export class ICActions {
     return Maybe.maybe(slice.find(c => c.id === id));
   }
 
+  private static getResponse = (draftState: ImageCodingModelSchema, id: string) => {
+    return ICActions.getById(draftState.authoring.parts[0].responses, id);
+  }
+
   private static getHint = (draftState: ImageCodingModelSchema,
     id: string) => ICActions.getById(draftState.authoring.parts[0].hints, id)
 
@@ -39,12 +43,23 @@ export class ICActions {
     };
   }
 
+  static editImageURL(value: string) {
+    return (draftState: ImageCodingModelSchema) => {
+      draftState.imageURL = value;
+    };
+  }
+
   static editTolerance(value: number) {
     return (draftState: ImageCodingModelSchema) => {
       draftState.tolerance = value;
     };
   }
+  static editFeedback(id: string, content: RichText) {
+    return (draftState: ImageCodingModelSchema) => {
+      ICActions.getResponse(draftState, id).lift(r => r.feedback.content = content);
+    };
 
+  }
   static addHint() {
     return (draftState: ImageCodingModelSchema) => {
       const newHint: HintType = fromText('');

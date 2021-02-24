@@ -3,7 +3,7 @@ import * as ContentModel from 'data/content/model';
 import { ImageCodingModelSchema } from './schema';
 import { RichText, Operation, ScoringStrategy, Choice } from '../types';
 
-export const makeResponse = (rule: string, score: number, text: '') =>
+export const makeResponse = (rule: string, score: number, text: string) =>
   ({ id: guid(), rule, score, feedback: fromText(text) });
 
 export const defaultICModel : () => ImageCodingModelSchema = () => {
@@ -13,6 +13,7 @@ export const defaultICModel : () => ImageCodingModelSchema = () => {
     isExample: false,
     starterCode: 'Sample Starter Code',
     solutionCode: 'Sample Solution Code',
+    imageURL: '',
     tolerance: 0.0,
     regex: '',
     authoring: {
@@ -20,7 +21,8 @@ export const defaultICModel : () => ImageCodingModelSchema = () => {
         id: '1', // an IC only has one part, so it is safe to hardcode the id
         scoringStrategy: ScoringStrategy.average,
         responses: [
-          makeResponse('input like {answer}', 1, ''),
+          makeResponse('input like {correct}', 1, 'Correct'),
+          makeResponse('input like {.*}', 0, 'Incorrect'),
         ],
         hints: [
           fromText(''),
@@ -47,6 +49,10 @@ export function fromText(text: string): { id: string, content: RichText } {
       selection: null,
     },
   };
+}
+
+export function lastPart(path: string): string {
+  return path.substring(path.lastIndexOf('/') + 1);
 }
 
 export const feedback = (text: string, match: string | number, score: number = 0) => ({
