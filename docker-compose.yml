@@ -3,6 +3,11 @@ services:
   app:
     build: .
     container_name: oli_app
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "1"
+        max-size: 5m
     env_file: ./oli.env
     depends_on:
       - postgres
@@ -15,6 +20,11 @@ services:
   postgres:
     image: postgres
     container_name: oli_postgres
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "1"
+        max-size: 5m
     ports:
       - 5432:5432
     env_file: ./postgres.env
@@ -27,6 +37,11 @@ services:
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: oli_pgadmin
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "1"
+        max-size: 5m
     logging:
       driver: none
     ports:
