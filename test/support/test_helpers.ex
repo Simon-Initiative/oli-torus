@@ -164,9 +164,9 @@ defmodule Oli.TestHelpers do
     jwk
   end
 
-  def cache_lti_params(sub, lti_params) do
+  def cache_lti_params(key, lti_params) do
     {:ok, _lti_params} = Lti_1p3.DataProviders.EctoProvider.create_or_update_lti_params(%Lti_1p3.Tool.LtiParams{
-      sub: sub,
+      key: key,
       params: lti_params,
       exp: Timex.from_unix(lti_params["exp"])
     })

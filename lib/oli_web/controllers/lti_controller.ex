@@ -35,7 +35,7 @@ defmodule OliWeb.LtiController do
         # store sub in the session so that the cached lti_params can be
         # retrieved from the database on later requests
         conn = conn
-          |> Plug.Conn.put_session(:lti_1p3_sub, cache_key)
+          |> Plug.Conn.put_session(:lti_1p3_params, cache_key)
 
         handle_valid_lti_1p3_launch(conn, lti_params)
       {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->

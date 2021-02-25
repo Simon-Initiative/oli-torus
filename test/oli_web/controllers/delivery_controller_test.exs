@@ -8,7 +8,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "handles student with no section", %{conn: conn} do
       conn = conn
-        |> put_session(:lti_1p3_sub, "student-no-section-sub")
+        |> put_session(:lti_1p3_params, "student-no-section-params-key")
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~ "Your instructor has not configured this course section. Please check back soon."
@@ -16,7 +16,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "handles user with student and instructor roles with no section", %{conn: conn} do
       conn = conn
-        |> put_session(:lti_1p3_sub, "student-instructor-no-section-sub")
+        |> put_session(:lti_1p3_params, "student-instructor-no-section-params-key")
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~ "<h3>Getting Started</h3>"
@@ -26,7 +26,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "handles student with section", %{conn: conn} do
       conn = conn
-      |> put_session(:lti_1p3_sub, "student-sub")
+      |> put_session(:lti_1p3_params, "student-params-key")
       |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 302) =~ "redirected"
@@ -34,7 +34,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "handles instructor with no linked account", %{conn: conn, user: _user} do
       conn = conn
-        |> put_session(:lti_1p3_sub, "instructor-no-section-sub")
+        |> put_session(:lti_1p3_params, "instructor-no-section-params-key")
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~ "<h3>Getting Started</h3>"
@@ -45,7 +45,7 @@ defmodule OliWeb.DeliveryControllerTest do
     test "handles instructor with no section", %{conn: conn, user: user} do
       {:ok, _user} = Accounts.update_user(user, %{author_id: 1})
       conn = conn
-        |> put_session(:lti_1p3_sub, "instructor-no-section-sub")
+        |> put_session(:lti_1p3_params, "instructor-no-section-params-key")
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~ "<h3>Select a Project</h3>"
@@ -54,7 +54,7 @@ defmodule OliWeb.DeliveryControllerTest do
     test "handles instructor with section", %{conn: conn, user: user} do
       {:ok, _user} = Accounts.update_user(user, %{author_id: 1})
       conn = conn
-        |> put_session(:lti_1p3_sub, "instructor-sub")
+        |> put_session(:lti_1p3_params, "instructor-params-key")
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 302) =~ "redirect"
@@ -63,7 +63,7 @@ defmodule OliWeb.DeliveryControllerTest do
     test "handles instructor create section", %{conn: conn, project: project, user: user, publication: publication} do
       {:ok, _user} = Accounts.update_user(user, %{author_id: 1})
       conn = conn
-        |> put_session(:lti_1p3_sub, "instructor-no-section-sub")
+        |> put_session(:lti_1p3_params, "instructor-no-section-params-key")
         |> post(Routes.delivery_path(conn, :create_section, %{ project_id: project.id, publication_id: publication.id }))
 
       assert html_response(conn, 302) =~ "redirect"
@@ -140,7 +140,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     %{ project: project, publication: publication } = project_fixture(author)
 
-    cache_lti_params("student-sub", %{
+    cache_lti_params("student-params-key", %{
       "iss" => registration.issuer,
       "aud" => registration.client_id,
       "sub" => "student-sub",
@@ -155,7 +155,7 @@ defmodule OliWeb.DeliveryControllerTest do
       "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id,
     })
 
-    cache_lti_params("student-no-section-sub", %{
+    cache_lti_params("student-no-section-params-key", %{
       "iss" => registration.issuer,
       "aud" => registration.client_id,
       "sub" => "student-sub",
@@ -170,7 +170,7 @@ defmodule OliWeb.DeliveryControllerTest do
       "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id,
     })
 
-    cache_lti_params("instructor-sub", %{
+    cache_lti_params("instructor-params-key", %{
       "iss" => registration.issuer,
       "aud" => registration.client_id,
       "sub" => "instructor-sub",
@@ -185,7 +185,7 @@ defmodule OliWeb.DeliveryControllerTest do
       "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id,
     })
 
-    cache_lti_params("instructor-no-section-sub", %{
+    cache_lti_params("instructor-no-section-params-key", %{
       "iss" => registration.issuer,
       "aud" => registration.client_id,
       "sub" => "instructor-create-sub",
@@ -200,7 +200,7 @@ defmodule OliWeb.DeliveryControllerTest do
       "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id,
     })
 
-    cache_lti_params("student-instructor-no-section-sub", %{
+    cache_lti_params("student-instructor-no-section-params-key", %{
       "iss" => registration.issuer,
       "aud" => registration.client_id,
       "sub" => "student-instructor-sub",
@@ -216,7 +216,7 @@ defmodule OliWeb.DeliveryControllerTest do
       "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id,
     })
 
-    conn = Plug.Test.init_test_session(conn, lti_1p3_sub: "student-sub")
+    conn = Plug.Test.init_test_session(conn, lti_1p3_params: "student-params-key")
       |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
       |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
