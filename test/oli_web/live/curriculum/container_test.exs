@@ -2,6 +2,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
   use OliWeb.ConnCase
   alias Oli.Seeder
   alias Oli.Publishing.AuthoringResolver
+  alias OliWeb.Common.LtiSession
 
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
@@ -52,9 +53,10 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
     cache_lti_params("params-key", lti_params)
 
-    conn = Plug.Test.init_test_session(conn, lti_1p3_params: "params-key")
-      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+    conn = Plug.Test.init_test_session(conn, lti_session: nil)
+      |> LtiSession.put_section_params(section.slug, "params-key")
       |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
     {:ok,
       conn: conn,
