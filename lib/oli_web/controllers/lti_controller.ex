@@ -313,7 +313,7 @@ defmodule OliWeb.LtiController do
 
             # keep track of the latest user lti params for later requests which
             # are not in the context of a section
-            LtiSession.put_user_params(conn, lti_params_key)
+            conn = LtiSession.put_user_params(conn, lti_params_key)
 
             # context claim is considered optional according to IMS http://www.imsglobal.org/spec/lti/v1p3/#context-claim
             # safeguard against the case that context is missing

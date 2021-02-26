@@ -58,13 +58,6 @@ defmodule OliWeb.Router do
     plug Oli.Plugs.NoCache
   end
 
-  pipeline :delivery do
-    plug Oli.Plugs.SetDefaultPow, :user
-    plug Oli.Plugs.LoadLtiParams
-    plug Oli.Plugs.RemoveXFrameOptions
-    plug :put_root_layout, {OliWeb.LayoutView, "delivery.html"}
-  end
-
   # set the layout to be workspace
   pipeline :workspace do
     plug :put_root_layout, {OliWeb.LayoutView, "workspace.html"}
@@ -72,10 +65,12 @@ defmodule OliWeb.Router do
 
   # Ensure that we have a logged in user
   pipeline :delivery_protected do
+    plug Oli.Plugs.RemoveXFrameOptions
     plug Pow.Plug.RequireAuthenticated,
       error_handler: OliWeb.Pow.UserAuthErrorHandler
     plug Oli.Plugs.SetDefaultPow, :user
     plug Oli.Plugs.LoadLtiParams
+    plug :put_root_layout, {OliWeb.LayoutView, "delivery.html"}
   end
 
   # Ensure that we have a logged in user
@@ -347,7 +342,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/course", OliWeb do
-    pipe_through [:browser, :delivery, :delivery_protected, :pow_email_layout]
+    pipe_through [:browser, :delivery_protected, :pow_email_layout]
 
     get "/", DeliveryController, :index
 
