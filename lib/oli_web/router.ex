@@ -65,10 +65,10 @@ defmodule OliWeb.Router do
 
   # Ensure that we have a logged in user
   pipeline :delivery_protected do
-    plug Oli.Plugs.RemoveXFrameOptions
+    plug Oli.Plugs.SetDefaultPow, :user
     plug Pow.Plug.RequireAuthenticated,
       error_handler: OliWeb.Pow.UserAuthErrorHandler
-    plug Oli.Plugs.SetDefaultPow, :user
+    plug Oli.Plugs.RemoveXFrameOptions
     plug Oli.Plugs.LoadLtiParams
     plug :put_root_layout, {OliWeb.LayoutView, "delivery.html"}
   end
