@@ -1,6 +1,6 @@
-defmodule Oli.Authoring.IngestTest do
+defmodule Oli.Interop.IngestTest do
 
-  alias Oli.Authoring.Ingest
+  alias Oli.Interop.Ingest
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Revision
   alias Oli.Repo
@@ -20,7 +20,7 @@ defmodule Oli.Authoring.IngestTest do
   # (just the file name, not the full path) and the second tuple item is the contents of
   # the file.
   def simulate_unzipping() do
-    Path.wildcard("./test/oli/authoring/digest/*.json")
+    Path.wildcard("./test/oli/interop/digest/*.json")
     |> Enum.map(fn f -> {String.split(f, "/") |> Enum.reverse |> hd |> String.to_charlist, File.read(f)} end)
     |> Enum.map(fn {f, {:ok, contents}} -> {f, contents} end)
   end

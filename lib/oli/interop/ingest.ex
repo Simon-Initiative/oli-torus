@@ -1,4 +1,4 @@
-defmodule Oli.Authoring.Ingest do
+defmodule Oli.Interop.Ingest do
 
   alias Oli.Repo
   alias Oli.Publishing.ChangeTracker
