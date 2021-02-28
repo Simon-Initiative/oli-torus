@@ -1,0 +1,271 @@
+{
+  "type": "Activity",
+  "id": "cata",
+  "originalFile": "",
+  "title": "",
+  "tags": [],
+  "unresolvedReferences": [],
+  "content": {
+    "model": {
+      "stem": {
+        "content": [
+          {
+            "type": "p",
+            "children": [
+              {
+                "type": "text",
+                "text": "Which of the following code runs via translation? Check all that apply."
+              }
+            ]
+          }
+        ]
+      },
+      "choices": [
+        {
+          "content": [
+            {
+              "type": "text",
+              "text": "C++ code"
+            }
+          ],
+          "id": "0"
+        },
+        {
+          "content": [
+            {
+              "type": "text",
+              "text": "JavaScript code"
+            }
+          ],
+          "id": "1"
+        },
+        {
+          "content": [
+            {
+              "type": "text",
+              "text": "Machine code"
+            }
+          ],
+          "id": "2"
+        },
+        {
+          "content": [
+            {
+              "type": "text",
+              "text": "Python code"
+            }
+          ],
+          "id": "3"
+        }
+      ],
+      "authoring": {
+        "parts": [
+          {
+            "id": "1",
+            "responses": [
+              {
+                "score": 0,
+                "rule": "input like {0}",
+                "feedback": {
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "It is correct that C++ is a high-level language that runs via translation. However, there is at least one other code that runs via translation."
+                    }
+                  ]
+                }
+              },
+              {
+                "score": 0,
+                "rule": "input like {1}",
+                "feedback": {
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "It is correct that JavaScript is a high-level language that runs via translation. However, there is at least one other code that runs via translation."
+                    }
+                  ]
+                }
+              },
+              {
+                "score": 0,
+                "rule": "input like {2}",
+                "feedback": {
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Machine code is the native language of the CPU, so it does not run via translation on the CPU."
+                    }
+                  ]
+                }
+              },
+              {
+                "score": 0,
+                "rule": "input like {3}",
+                "feedback": {
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "It is correct that Python is a high-level language that runs via translation. However, there is at least one other code that runs via translation."
+                    }
+                  ]
+                }
+              },
+              {
+                "score": 0,
+                "rule": " && input like {1}",
+                "feedback": {
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "It is correct that C++ and JavaScript run via translation, but there is at least one other code that runs via translation."
+                    }
+                  ]
+                }
+              },
+              {
+                "score": 0,
+                "rule": " && input like {2}",
+                "feedback": {
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "It is correct that C++ runs via translation, but machine code is the native language of the CPU, so it does not run via translation on the CPU. Also, there is at least one other code that runs via translation."
+                    }
+                  ]
+                }
+              },
+              {
+                "score": 0,
+                "rule": " && input like {3}",
+                "feedback": {
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "It is correct that C++ and Python run via translation, but there is at least one other code that runs via translation."
+                    }
+                  ]
+                }
+              },
+              {
+                "score": 0,
+                "rule": " && input like {2}",
+                "feedback": {
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "It is correct that JavaScript runs via translation, but machine code is the native language of the CPU, so it does not run via translation on the CPU. Also, there is at least one other code that runs via translation."
+                    }
+                  ]
+                }
+              },
+              {
+                "score": 0,
+                "rule": " && input like {3}",
+                "feedback": {
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "It is correct that JavaScript and Python run via translation, but there is at least one other code that runs via translation."
+                    }
+                  ]
+                }
+              },
+              {
+                "score": 0,
+                "rule": " && input like {3}",
+                "feedback": {
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "It is correct that Python runs via translation, but machine code is the native language of the CPU, so it does not run via translation on the CPU. Also, there is at least one other code that runs via translation."
+                    }
+                  ]
+                }
+              },
+              {
+                "score": 0,
+                "rule": " && input like {2}",
+                "feedback": {
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "It is correct that C++ and JavaScript run via translation, but machine code is the native language of the CPU, so it does not run via translation on the CPU."
+                    }
+                  ]
+                }
+              },
+              {
+                "score": 0,
+                "rule": " && input like {3}",
+                "feedback": {
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "C++, JavaScript, and Python run via translation."
+                    }
+                  ]
+                }
+              },
+              {
+                "score": 0,
+                "rule": " && input like {3}",
+                "feedback": {
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "It is correct that C++ and Python run via translation, but machine code is the native language of the CPU, so it does not run via translation on the CPU."
+                    }
+                  ]
+                }
+              },
+              {
+                "score": 0,
+                "rule": " && input like {3}",
+                "feedback": {
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "It is correct that JavaScript and Python run via translation, but machine code is the native language of the CPU, so it does not run via translation on the CPU."
+                    }
+                  ]
+                }
+              },
+              {
+                "score": 0,
+                "rule": " && input like {3}",
+                "feedback": {
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Not all of these languages run via translation."
+                    }
+                  ]
+                }
+              },
+              {
+                "score": 0,
+                "rule": "input like {*}",
+                "feedback": {
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "Incorrect."
+                    }
+                  ]
+                }
+              }
+            ],
+            "hints": [],
+            "scoringStrategy": "average"
+          }
+        ],
+        "transformations": [],
+        "previewText": ""
+      }
+    }
+  },
+  "objectives": [],
+  "legacyId": "a_90d6f87478a24b5cbf508a59c6fd62a7",
+  "subType": "oli_check_all_that_apply"
+}
