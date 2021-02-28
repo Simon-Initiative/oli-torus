@@ -23,7 +23,8 @@ export const Item = (props: ItemProps) => {
   return (
     <div className="my-3" key={response.id}>
       <Description>
-        <IconCorrect /> Feedback for {response.score === 1 ? "Correct" : "Incorrect"} Answer:
+        {response.score === 1 ? <IconCorrect /> : <IconIncorrect/>}
+        Feedback for {response.score === 1 ? "Correct" : "Incorrect"} Answer:
       </Description>
       <RichTextEditor
         projectSlug={props.projectSlug}
@@ -37,7 +38,7 @@ export const Item = (props: ItemProps) => {
 
 export const Feedback = (props: FeedbackProps) => {
 
-  const { model, editMode } = props;
+  const { model } = props;
   const { authoring: { parts } } = model;
 
   return (

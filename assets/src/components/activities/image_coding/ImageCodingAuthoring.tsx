@@ -69,9 +69,9 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
     });
   }
 
-  const onSelectImage = (e : any) => {
+  const addImage = (e : any) => {
     selectImage(projectSlug, ContentModel.image()).then(img => {
-      dispatch(ICActions.editImageURL(img.src))
+      dispatch(ICActions.addImageURL(img.src))
     })
   }
 
@@ -83,20 +83,21 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
         stem={model.stem}
         onEditStem={content => dispatch(ICActions.editStem(content))} />
 
-    <Heading title="Resources" id="images" />
-      <div>
-        <p>{lastPart(model.imageURL)}</p>
-        <button
-          className="btn btn-primary mt-2"  onClick={onSelectImage}>
-          Add Image...
-        </button>
-        &nbsp;&nbsp;&nbsp;
-        <button
-          className="btn btn-primary mt-2"  onClick={onSelectImage}>
-          Add Spreadsheet...
-        </button>
-      </div>
-      <br/>
+      <Heading title="Resources" id="images" />
+        <div>
+          {model.imageURLs.map((url, i) =>
+            <p>{lastPart(url)}</p>)}
+          <button
+            className="btn btn-primary mt-2"  onClick={addImage}>
+            Add Image...
+          </button>
+          &nbsp;&nbsp;&nbsp;
+          <button
+            className="btn btn-primary mt-2"  onClick={addImage}>
+            Add Spreadsheet...
+          </button>
+        </div>
+        <br/>
 
       <Heading title="Starter Code" id="starter-code" />
       <textarea
@@ -132,18 +133,17 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
             value={model.solutionCode}
             onChange={(e: any) => dispatch(ICActions.editSolutionCode(e.target.value))} />
 
-        <Hints
-          projectSlug={props.projectSlug}
-          hints={model.authoring.parts[0].hints}
-          editMode={props.editMode}
-          onAddHint={() => dispatch(ICActions.addHint())}
-          onEditHint={(id, content) => dispatch(ICActions.editHint(id, content))}
-          onRemoveHint={id => dispatch(ICActions.removeHint(id))} />
+          <Hints
+            projectSlug={props.projectSlug}
+            hints={model.authoring.parts[0].hints}
+            editMode={props.editMode}
+            onAddHint={() => dispatch(ICActions.addHint())}
+            onEditHint={(id, content) => dispatch(ICActions.editHint(id, content))}
+            onRemoveHint={id => dispatch(ICActions.removeHint(id))} />
 
-        <Feedback {...sharedProps}
-          projectSlug={props.projectSlug}
-          onEditResponse={(id, content) => dispatch(ICActions.editFeedback(id, content))} />
-
+          <Feedback {...sharedProps}
+            projectSlug={props.projectSlug}
+            onEditResponse={(id, content) => dispatch(ICActions.editFeedback(id, content))} />
          </div>
       }
 

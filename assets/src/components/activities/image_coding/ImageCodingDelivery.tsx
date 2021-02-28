@@ -11,6 +11,7 @@ import { Evaluation } from '../common/Evaluation';
 import { valueOr } from 'utils/common';
 import { Evaluator, EvalContext} from './Evaluator';
 import { CSSTransition } from 'react-transition-group';
+import { lastPart } from './utils';
 
 
 type Evaluation = {
@@ -52,15 +53,16 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   const [hasMoreHints, setHasMoreHints] = useState(props.state.parts[0].hasMoreHints);
   // const [input, setInput] = useState(valueOr(attemptState.parts[0].response, ''));
   const [input, setInput] = useState(valueOr(model.starterCode, ''));
-  const { stem } = model;
+  const { stem, imageURLs } = model;
   // runtime evaluation state:
   let [output, setOutput] = useState('');
   let [error, setError] = useState('');
 
   const isEvaluated = attemptState.score !== null;
 
-  const imageRef = useRef<HTMLImageElement>(null);
+  const imageRefs = useRef<HTMLImageElement[]>(new Array(imageURLs.length));
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef2 = useRef<HTMLCanvasElement>(null);
   const resultRef = useRef<HTMLCanvasElement>(null);
   const solnRef = useRef<HTMLCanvasElement>(null);
 
@@ -149,15 +151,20 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     }
   }
 
+  var haveSolution = false;
+
   const solutionCorrect = () => {
     // evaluate solution code if needed to "print" result image to solnCanvas.
     // only needs to be done once.
     var solnCanvas = getResult(true);
-    if (solnCanvas && solnCanvas.width === 0) {}
+    if (solnCanvas && ! haveSolution) {
       var ctx : EvalContext = { getCanvas, getImage, getResult, appendOutput, solutionRun: true};
       var e = Evaluator.execute(model.solutionCode, ctx);
       if (e != null) {
         updateError(e.message);
+      } else {
+        haveSolution = true;
+      }
     }
 
     var diff = getResultDiff();
@@ -196,7 +203,13 @@ function getResultDiff() {
   var solnData = solnCanvas.getContext("2d")
       .getImageData(0, 0, solnCanvas.width, solnCanvas.height).data;
 
-  return(Evaluator.imageDiff(studentData, solnData));
+  var diff = 999;  // default if imageDiff throws size mismatch error
+  try {
+    diff = Evaluator.imageDiff(studentData, solnData));
+  }
+  finally {
+    return diff;
+  }
 }
 
   const evaluationSummary = isEvaluated
@@ -230,27 +243,14 @@ function getResultDiff() {
     return <p><span style={{color: 'red'}}>Error: </span>{error}</p>
   }
 
-  const initImageCanvas = (e: any) => {
-    const canvas = canvasRef.current;
-    const img = imageRef.current;
-
-    if (img === null || canvas === null) {
-      console.log("initCanvas: img or canvas is null")
-      return;
-    }
-
-    const ctx = canvas.getContext("2d");
-    ctx.canvas.width = img.width;
-    ctx.canvas.height = img.height;
-    ctx.drawImage(img, 0, 0);
-  }
-
-  const getCanvas = (id : string) => {
-    return canvasRef.current;
+  const getCanvas = (n: number = 0) => {
+     // we currently only need exactly two temp canvases, one for src and
+     // one for destination of offscreen transformation.
+     return n === 0 ? canvasRef.current : canvasRef2.current;
   }
 
   const getImage = (name: string) => {
-    return imageRef.current;
+    return imageRefs.current.find(img => lastPart(img.src) === name);
   }
 
   const getResult = (solution: boolean) => {
@@ -286,17 +286,22 @@ function getResultDiff() {
           {runButton} {maybeSubmitButton}
         </div>
 
-        <div>
-          <img ref={imageRef} src={model.imageURL} onLoad={initImageCanvas} style={{display: 'none'}} crossOrigin="anonymous"/>
-          <canvas ref={canvasRef} style={{display: 'none'}}/>
-        </div>
+        {/* hidden images */}
+        {imageURLs.map((url, i) =>
+          <img key={i} ref={(e:HTMLImageElement) => imageRefs.current[i] = e}
+               src={url} style={{display: 'none'}} crossOrigin="anonymous"/>)}
+
+        {/* implementation relies on 2 hidden canvases for image operations */}
+         <canvas ref={canvasRef} style={{display: 'none'}}/>
+         <canvas ref={canvasRef2} style={{display: 'none'}}/>
 
         <div style={{whiteSpace: 'pre-wrap'}}>
           <h5>Output:</h5>
           {renderOutput()}
           {errorMsg()}
+          {/* output canvases for student and (hidden) correct solution */}
           <canvas ref={resultRef} height="0" width="0"/>
-          <canvas ref={solnRef} style={{display: 'none'}}/>
+          <canvas ref={solnRef} style={{display: 'none'}} />
         </div>
 
         {ungradedDetails}

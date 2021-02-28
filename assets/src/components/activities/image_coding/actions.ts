@@ -43,9 +43,9 @@ export class ICActions {
     };
   }
 
-  static editImageURL(value: string) {
+  static addImageURL(value: string) {
     return (draftState: ImageCodingModelSchema) => {
-      draftState.imageURL = value;
+      draftState.imageURLs.push(value);
     };
   }
 
