@@ -175,7 +175,7 @@ defmodule Oli.Interop.Ingest do
 
   defp create_activity(project, activity, as_author, registration_by_subtype) do
 
-    objectives = activity["content"]["model"]["authoring"]["parts"]
+    objectives = activity["content"]["authoring"]["parts"]
     |> Enum.map(fn %{"id" => id} -> id end)
     |> Enum.reduce(%{}, fn e, m -> Map.put(m, e, []) end)
 
