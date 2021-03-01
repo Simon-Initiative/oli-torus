@@ -17,6 +17,8 @@ defmodule Oli.Lti.LTI_AGS do
   alias Oli.Lti.LineItem
   alias Lti_1p3.Tool.AccessToken
 
+  import Oli.HTTP
+
   require Logger
 
   @doc """
@@ -29,7 +31,7 @@ defmodule Oli.Lti.LTI_AGS do
     url = "#{line_item.id}/scores"
     body = score |> Jason.encode!()
 
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.post(url, body, headers(access_token)),
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- http().post(url, body, headers(access_token)),
       {:ok, result} <- Jason.decode(body)
     do
       {:ok, result}
@@ -60,7 +62,7 @@ defmodule Oli.Lti.LTI_AGS do
     prefixed_resource_id = LineItem.to_resource_id(resource_id)
     request_url = "#{line_items_service_url}?resource_id=#{prefixed_resource_id}&limit=1"
 
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(request_url, headers(access_token)),
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- http().get(request_url, headers(access_token)),
       {:ok, result} <- Jason.decode(body)
     do
       case result do
@@ -107,7 +109,7 @@ defmodule Oli.Lti.LTI_AGS do
     # a thousand gradebook entries.
     url = line_items_service_url <> "?limit=1000"
 
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(url, headers(access_token)),
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- http().get(url, headers(access_token)),
       {:ok, results} <- Jason.decode(body)
     do
       {:ok, Enum.map(results, fn r -> to_line_item(r) end)}
@@ -135,7 +137,7 @@ defmodule Oli.Lti.LTI_AGS do
 
     body = line_item |> Jason.encode!()
 
-    with {:ok, %HTTPoison.Response{status_code: 201, body: body}} <- HTTPoison.post(line_items_service_url, body, headers(access_token)),
+    with {:ok, %HTTPoison.Response{status_code: 201, body: body}} <- http().post(line_items_service_url, body, headers(access_token)),
       {:ok, result} <- Jason.decode(body)
     do
       {:ok, to_line_item(result)}
@@ -168,7 +170,7 @@ defmodule Oli.Lti.LTI_AGS do
     # url to use is the id of the line item
     url = line_item.id
 
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.put(url, body, headers(access_token)),
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- http().put(url, body, headers(access_token)),
       {:ok, result} <- Jason.decode(body)
     do
       {:ok, to_line_item(result)}
