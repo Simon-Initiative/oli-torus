@@ -257,7 +257,7 @@ function getResultDiff() {
     return solution ? solnRef.current : resultRef.current;
   }
 
-  const maybeSubmitButton = !model.isExample && props.graded
+  const maybeSubmitButton = (model.isExample || props.graded)
   ? null
   : (
     <button
@@ -304,7 +304,7 @@ function getResultDiff() {
           <canvas ref={solnRef} style={{display: 'none'}} />
         </div>
 
-        {ungradedDetails}
+        {!model.isExample && ungradedDetails}
       </div>
       {reset}
     </div>
