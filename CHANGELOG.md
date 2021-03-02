@@ -9,6 +9,7 @@
   - Add support for preview mode in graded assessments
 
 ### Bug fixes
+  - Replace use of context_id in favor of the unique course section slug
   - Allow Slack hook URL to be unspecified during LMS LTI registration
   - Prevent LTI launch to an iframe to avoid third-party cookie issues
   - Honor the current location when inserting block content (YouTube, images, etc)
