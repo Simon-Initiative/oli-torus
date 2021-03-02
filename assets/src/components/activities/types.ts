@@ -31,6 +31,13 @@ export type PartResponse = {
   response: StudentResponse,
 };
 
+export type PartEvaluation = {
+  attemptGuid: string;
+  score: number | null;
+  outOf: number | null;
+  feedback: any;
+}
+
 export type Manifest = {
   id: ID,
   friendlyName: string,
