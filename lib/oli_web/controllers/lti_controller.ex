@@ -42,7 +42,7 @@ defmodule OliWeb.LtiController do
       {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
         handle_invalid_registration(conn, issuer, client_id)
       {:error, %{reason: :invalid_deployment, msg: _msg, registration_id: registration_id, deployment_id: deployment_id}} ->
-        handle_invalid_deployment(conn, registration_id, deployment_id)
+        handle_invalid_deployment(conn, params, registration_id, deployment_id)
       {:error, %{reason: _reason, msg: msg}} ->
         render(conn, "lti_error.html", reason: msg)
     end
@@ -270,11 +270,11 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  defp handle_invalid_deployment(conn, registration_id, deployment_id) do
+  defp handle_invalid_deployment(conn, params, registration_id, deployment_id) do
     case Institutions.create_deployment(%{deployment_id: deployment_id, registration_id: registration_id}) do
       {:ok, _deployment} ->
         # try the LTI launch again now that deployment is created
-        launch(conn, conn.params)
+        launch(conn, params)
       _ ->
         render(conn, "lti_error.html", reason: "Failed to create deployment")
     end
