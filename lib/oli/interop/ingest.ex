@@ -55,8 +55,9 @@ defmodule Oli.Interop.Ingest do
         hierarchy_details = Map.get(resource_map, @hierarchy_key)
 
         with {:ok, %{project: project, resource_revision: root_revision}} <- create_project(project_details, as_author),
-          {:ok, activity_map} <- create_activities(project, resource_map, as_author),
-          {:ok, page_map} <- create_pages(project, resource_map, activity_map, as_author),
+          {:ok, objective_map} <- create_objectives(project, resource_map, as_author),
+          {:ok, activity_map} <- create_activities(project, resource_map, objective_map, as_author),
+          {:ok, page_map} <- create_pages(project, resource_map, activity_map, objective_map, as_author),
           {:ok, _} <- create_media(project, media_details, as_author),
           {:ok, _} <- create_hierarchy(project, root_revision, page_map, hierarchy_details, as_author)
         do
@@ -86,7 +87,7 @@ defmodule Oli.Interop.Ingest do
 
   end
 
-  defp create_activities(project, resource_map, as_author) do
+  defp create_activities(project, resource_map, _, as_author) do
 
     registration_map = get_registration_map()
 
@@ -115,7 +116,7 @@ defmodule Oli.Interop.Ingest do
 
 
   # Process each resource file of type "Page" to create pages
-  defp create_pages(project, resource_map, activity_map, as_author) do
+  defp create_pages(project, resource_map, activity_map, objective_map, as_author) do
 
     pages = Map.keys(resource_map)
     |> Enum.map(fn k -> {k, Map.get(resource_map, k)} end)
@@ -125,7 +126,32 @@ defmodule Oli.Interop.Ingest do
 
       case Enum.reduce_while(pages, %{}, fn {id, page}, map ->
 
-        case create_page(project, page, activity_map, as_author) do
+        case create_page(project, page, activity_map, objective_map, as_author) do
+          {:ok, revision} -> {:cont, Map.put(map, id, revision)}
+          {:error, e} -> {:halt, {:error, e}}
+        end
+
+      end) do
+
+        {:error, e} -> Repo.rollback(e)
+        map -> map
+      end
+
+    end)
+
+  end
+
+  defp create_objectives(project, resource_map, as_author) do
+
+    objectives = Map.keys(resource_map)
+    |> Enum.map(fn k -> {k, Map.get(resource_map, k)} end)
+    |> Enum.filter(fn {_, content} -> Map.get(content, "type") == "Objective" end)
+
+    Repo.transaction(fn ->
+
+      case Enum.reduce_while(objectives, %{}, fn {id, o}, map ->
+
+        case create_objective(project, o, as_author) do
           {:ok, revision} -> {:cont, Map.put(map, id, revision)}
           {:error, e} -> {:halt, {:error, e}}
         end
@@ -158,13 +184,13 @@ defmodule Oli.Interop.Ingest do
   end
 
   # Create one page
-  defp create_page(project, page, activity_map, as_author) do
+  defp create_page(project, page, activity_map, objective_map, as_author) do
 
     %{
       title: Map.get(page, "title"),
       content: Map.get(page, "content") |> rewire_activity_references(activity_map),
       author_id: as_author.id,
-      objectives: %{"attached" => []},
+      objectives: %{"attached" => Enum.map(page["objectives"], fn id -> Map.get(objective_map, id).resource_id end)},
       resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
       scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
       graded: false
@@ -193,6 +219,25 @@ defmodule Oli.Interop.Ingest do
       resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
       activity_type_id: Map.get(registration_by_subtype, Map.get(activity, "subType")),
       scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+    }
+    |> create_resource(project)
+
+  end
+
+  defp create_objective(project, objective, as_author) do
+
+    title = case Map.get(objective, "title") do
+      nil ->  "Empty"
+      "" -> "Empty"
+      title -> title
+    end
+
+    %{
+      title: title,
+      content: %{},
+      author_id: as_author.id,
+      objectives: %{},
+      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective")
     }
     |> create_resource(project)
 
