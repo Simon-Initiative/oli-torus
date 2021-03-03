@@ -11,7 +11,7 @@ defmodule Oli.Delivery.Attempts do
   alias Oli.Activities.Model
   alias Oli.Activities.Model.Feedback
   alias Oli.Activities.Transformers
-  alias Oli.Delivery.Attempts.{StudentInput, Result, Scoring}
+  alias Oli.Delivery.Attempts.{StudentInput, Result, Scoring, ClientEvaluation}
   alias Oli.Publishing.{PublishedResource, DeliveryResolver}
   alias Oli.Delivery.Page.ModelPruner
 
@@ -733,7 +733,7 @@ defmodule Oli.Delivery.Attempts do
   the results of the part evalutions (including ones already having been evaluated)
   will be rolled up to the activity attempt record.
 
-  On success returns an `{:ok, results}` tuple where results in an array of maps.  Each
+  On success returns an `{:ok, results}` tuple where results in an array of maps. Each
   map instance contains the result of one of the evaluations in the form:
 
   `${score: score, out_of: out_of, feedback: feedback, attempt_guid, attempt_guid}`
@@ -765,6 +765,54 @@ defmodule Oli.Delivery.Attempts do
       case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
       |> persist_evaluations(part_inputs, roll_up_fn)
       |> generate_snapshots(context_id, part_inputs) do
+
+        {:ok, results} -> results
+        {:error, error} -> Repo.rollback(error)
+        _ -> Repo.rollback("unknown error")
+      end
+
+    end)
+
+  end
+
+  @doc """
+  Processes a set of client evaluations for some number of parts for the given
+  activity attempt guid.  If this collection of evaluations completes the activity
+  the results of the part evalutions (including ones already having been evaluated)
+  will be rolled up to the activity attempt record.
+
+  On success returns an `{:ok, results}` tuple where results in an array of maps. Each
+  map instance contains the result of one of the evaluations in the form:
+
+  `${score: score, out_of: out_of, feedback: feedback, attempt_guid, attempt_guid}`
+
+  On failure returns `{:error, error}`
+  """
+  @spec submit_part_evaluations(String.t, String.t, [map()]) :: {:ok, [map()]} | {:error, any}
+  def submit_client_evaluations(context_id, activity_attempt_guid, client_evaluations) do
+
+    Repo.transaction(fn ->
+
+      part_attempts = get_latest_part_attempts(activity_attempt_guid)
+
+      roll_up = fn result ->
+        rollup_part_attempt_evaluations(activity_attempt_guid)
+        result
+      end
+      no_roll_up = fn result -> result end
+
+      {roll_up_fn, client_evaluations} = case filter_already_submitted(client_evaluations, part_attempts) do
+        {true, client_evaluations} -> {roll_up, client_evaluations}
+        {false, client_evaluations} -> {no_roll_up, client_evaluations}
+      end
+
+      case client_evaluations
+      |> Enum.map(fn %ClientEvaluation{score: score, out_of: out_of, feedback: feedback} ->
+        {:ok, {feedback, %Result{score: score, out_of: out_of}}}
+      end)
+      |> (&({:ok, &1})).()
+      |> persist_evaluations(client_evaluations, roll_up_fn)
+      |> generate_snapshots(context_id, client_evaluations) do
 
         {:ok, results} -> results
         {:error, error} -> Repo.rollback(error)

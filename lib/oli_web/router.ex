@@ -321,7 +321,7 @@ defmodule OliWeb.Router do
     put "/activity/:activity_attempt_guid", AttemptController, :submit_activity
     patch "/activity/:activity_attempt_guid", AttemptController, :save_activity
 
-
+    put "/activity/:activity_attempt_guid/evaluations", AttemptController, :submit_evaluations
   end
 
   scope "/api/v1/lti", OliWeb, as: :api do
