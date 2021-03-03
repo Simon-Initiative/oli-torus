@@ -291,9 +291,9 @@ defmodule OliWeb.ActivityController do
       nil -> error(conn, 404, "not found")
 
       section ->
-        if Sections.is_enrolled?(user.id, section.context_id) do
+        if Sections.is_enrolled?(user.id, section.slug) do
 
-          case DeliveryResolver.from_resource_id(section.context_id, activity_id) do
+          case DeliveryResolver.from_resource_id(section.slug, activity_id) do
             nil -> error(conn, 404, "not found")
 
             rev -> json(conn, document_to_delivery_result(rev))
@@ -331,9 +331,9 @@ defmodule OliWeb.ActivityController do
       nil -> error(conn, 404, "not found")
 
       section ->
-        if Sections.is_enrolled?(user.id, section.context_id) do
+        if Sections.is_enrolled?(user.id, section.slug) do
 
-          case DeliveryResolver.from_resource_id(section.context_id, activity_ids) do
+          case DeliveryResolver.from_resource_id(section.slug, activity_ids) do
             nil -> error(conn, 404, "not found")
 
             revisions -> json(conn, %{"result" => "success", "results" => Enum.map(revisions, &document_to_delivery_result/1)})

@@ -13,13 +13,13 @@ defmodule Oli.Publishing.DeliveryResolver do
   @behaviour Resolver
 
   @impl Resolver
-  def from_resource_id(context_id, resource_ids) when is_list(resource_ids) do
+  def from_resource_id(section_slug, resource_ids) when is_list(resource_ids) do
 
     fn ->
       revisions = Repo.all(from s in Section,
         join: m in PublishedResource, on: m.publication_id == s.publication_id,
         join: rev in Revision, on: rev.id == m.revision_id,
-        where: s.context_id == ^context_id and m.resource_id in ^resource_ids,
+        where: s.slug == ^section_slug and m.resource_id in ^resource_ids,
         select: rev)
 
       # order them according to the resource_ids
@@ -30,20 +30,20 @@ defmodule Oli.Publishing.DeliveryResolver do
   end
 
   @impl Resolver
-  def from_resource_id(context_id, resource_id) do
+  def from_resource_id(section_slug, resource_id) do
 
     fn ->
       Repo.one(from s in Section,
         join: m in PublishedResource, on: m.publication_id == s.publication_id,
         join: rev in Revision, on: rev.id == m.revision_id,
-        where: s.context_id == ^context_id and m.resource_id == ^resource_id,
+        where: s.slug == ^section_slug and m.resource_id == ^resource_id,
         select: rev)
       end
     |> run() |> emit([:oli, :resolvers, :delivery], :duration)
   end
 
   @impl Resolver
-  def from_revision_slug(context_id, revision_slug) do
+  def from_revision_slug(section_slug, revision_slug) do
 
     fn ->
       Repo.one(from rev in Revision,
@@ -51,7 +51,7 @@ defmodule Oli.Publishing.DeliveryResolver do
         join: m in PublishedResource, on: m.resource_id == r.id,
         join: rev2 in Revision, on: m.revision_id == rev2.id,
         join: s in Section, on: s.publication_id == m.publication_id,
-        where: rev.slug == ^revision_slug and s.context_id == ^context_id,
+        where: rev.slug == ^revision_slug and s.slug == ^section_slug,
         limit: 1,
         select: rev2)
     end
@@ -59,31 +59,31 @@ defmodule Oli.Publishing.DeliveryResolver do
   end
 
   @impl Resolver
-  def publication(context_id) do
+  def publication(section_slug) do
     fn ->
       Repo.one(from p in Publication,
         join: s in Section, on: p.id == s.publication_id,
-        where: s.context_id == ^context_id,
+        where: s.slug == ^section_slug,
         select: p)
       end
     |> run() |> emit([:oli, :resolvers, :delivery], :duration)
   end
 
   @impl Resolver
-  def root_container(context_id) do
+  def root_container(section_slug) do
     fn ->
       Repo.one(from s in Section,
         join: p in Publication, on: p.id == s.publication_id,
         join: m in PublishedResource, on: m.publication_id == p.id,
         join: rev in Revision, on: rev.id == m.revision_id,
-        where: m.resource_id == p.root_resource_id and s.context_id == ^context_id,
+        where: m.resource_id == p.root_resource_id and s.slug == ^section_slug,
         select: rev)
     end
     |> run() |> emit([:oli, :resolvers, :delivery], :duration)
   end
 
   @impl Resolver
-  def all_revisions_in_hierarchy(context_id) do
+  def all_revisions_in_hierarchy(section_slug) do
 
     page_id = Oli.Resources.ResourceType.get_id_by_type("page")
     container_id = Oli.Resources.ResourceType.get_id_by_type("container")
@@ -93,7 +93,7 @@ defmodule Oli.Publishing.DeliveryResolver do
         join: p in Publication, on: p.id == s.publication_id,
         join: m in PublishedResource, on: m.publication_id == p.id,
         join: rev in Revision, on: rev.id == m.revision_id,
-        where: (rev.resource_type_id == ^page_id or rev.resource_type_id == ^container_id) and s.context_id == ^context_id,
+        where: (rev.resource_type_id == ^page_id or rev.resource_type_id == ^container_id) and s.slug == ^section_slug,
         select: rev)
     end
     |> run() |> emit([:oli, :resolvers, :delivery], :duration)
@@ -102,7 +102,7 @@ defmodule Oli.Publishing.DeliveryResolver do
 
   @impl Resolver
   def find_parent_objectives(_, []), do: []
-  def find_parent_objectives(context_id, resource_ids) do
+  def find_parent_objectives(section_slug, resource_ids) do
 
     ids = Enum.join(resource_ids, ",")
 
@@ -114,7 +114,7 @@ defmodule Oli.Publishing.DeliveryResolver do
         from published_resources as m
         join sections as c on m.publication_id = c.publication_id
         join revisions as rev on rev.id = m.revision_id
-        where c.context_id = '#{context_id}'
+        where c.slug = '#{section_slug}'
           and rev.deleted is false
           and rev.children && ARRAY[#{ids}]
         """

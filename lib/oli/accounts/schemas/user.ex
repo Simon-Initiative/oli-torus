@@ -77,11 +77,11 @@ defimpl Lti_1p3.Tool.Lti_1p3_User, for: Oli.Accounts.User do
     user.platform_roles
   end
 
-  def get_context_roles(user, context_id) do
+  def get_context_roles(user, section_slug) do
     user_id = user.id
     query = from e in Enrollment, preload: [:context_roles],
       join: s in Section, on: e.section_id == s.id,
-      where: e.user_id == ^user_id and s.context_id == ^context_id,
+      where: e.user_id == ^user_id and s.slug == ^section_slug,
       select: e
 
     case Repo.one query do

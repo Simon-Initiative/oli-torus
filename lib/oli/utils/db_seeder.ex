@@ -152,7 +152,7 @@ defmodule Oli.Seeder do
     revision = Map.get(map, resource_tag).revision
     section = map.section
 
-    %ResourceAccess{id: id} = Attempts.track_access(resource.id, section.context_id, user.id)
+    %ResourceAccess{id: id} = Attempts.track_access(resource.id, section.slug, user.id)
 
     attrs = Map.merge(attrs, %{
       resource_access_id: id,
@@ -174,7 +174,7 @@ defmodule Oli.Seeder do
     revision = Map.get(map, revision_tag)
     section = map.section
 
-    %ResourceAccess{id: id} = Attempts.track_access(resource.id, section.context_id, user.id)
+    %ResourceAccess{id: id} = Attempts.track_access(resource.id, section.slug, user.id)
 
     attrs = Map.merge(attrs, %{
       resource_access_id: id,

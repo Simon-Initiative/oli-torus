@@ -3,7 +3,7 @@ defmodule Oli.Delivery.Page.ObjectivesRollup do
   # for a map of activity ids to latest attempt tuples (where the first tuple item is the activity attempt)
   # return the parent objective revisions of all attached objectives
   # if an attached objective is a parent, include that in the return list
-  def rollup_objectives(activity_revisions, resolver, context_id) do
+  def rollup_objectives(activity_revisions, resolver, section_slug) do
 
     attached_objective_ids = Enum.reduce(activity_revisions, MapSet.new(), fn %{objectives: objectives}, all ->
         Enum.map(objectives, fn {_, ids} -> ids end)
@@ -13,9 +13,9 @@ defmodule Oli.Delivery.Page.ObjectivesRollup do
       end)
     |> MapSet.to_list
 
-    all = resolver.from_resource_id(context_id, attached_objective_ids)
+    all = resolver.from_resource_id(section_slug, attached_objective_ids)
 
-    parents = resolver.find_parent_objectives(context_id, attached_objective_ids)
+    parents = resolver.find_parent_objectives(section_slug, attached_objective_ids)
 
     # now we have revisions for all directly attached objectives and their parents (if they have parents)
     # we want to only return the parents

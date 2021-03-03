@@ -20,7 +20,11 @@ jobs:
         uses: actions/checkout@v2
 
       - name: 🔧 Configure
-        run: cp oli.example.env oli.env && cp postgres.example.env postgres.env
+        run: |
+          cp oli.example.env oli.env
+          cp postgres.example.env postgres.env
+          sed -i 's/DB_HOST=/# DB_HOST=/g' oli.env
+          printf "\n\nDB_HOST=localhost" >> oli.env
 
       - name: 🗄 Start test database
         run: docker-compose up -d postgres
@@ -58,8 +62,8 @@ jobs:
       - name: 🧪 Setup elixir
         uses: erlef/setup-elixir@v1
         with:
-          elixir-version: 1.10.2 # Define the elixir version [required]
-          otp-version: 22.2 # Define the OTP version [required]
+          elixir-version: 1.11.1 # Define the elixir version [required]
+          otp-version: 23.1 # Define the OTP version [required]
 
       - name: ⬇️ Install elixir dependencies
         run: mix deps.get
