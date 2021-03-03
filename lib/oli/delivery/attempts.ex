@@ -788,7 +788,7 @@ defmodule Oli.Delivery.Attempts do
 
   On failure returns `{:error, error}`
   """
-  @spec submit_part_evaluations(String.t, String.t, [map()]) :: {:ok, [map()]} | {:error, any}
+  @spec submit_client_evaluations(String.t, String.t, [map()]) :: {:ok, [map()]} | {:error, any}
   def submit_client_evaluations(context_id, activity_attempt_guid, client_evaluations) do
 
     Repo.transaction(fn ->
@@ -806,13 +806,17 @@ defmodule Oli.Delivery.Attempts do
         {false, client_evaluations} -> {no_roll_up, client_evaluations}
       end
 
+      part_inputs = Enum.map(client_evaluations, fn %{attempt_guid: attempt_guid, client_evaluation: %ClientEvaluation{input: input}} ->
+        %{attempt_guid: attempt_guid, input: input}
+      end)
+
       case client_evaluations
-      |> Enum.map(fn %ClientEvaluation{score: score, out_of: out_of, feedback: feedback} ->
+      |> Enum.map(fn %{attempt_guid: _attempt_guid, client_evaluation: %ClientEvaluation{score: score, out_of: out_of, feedback: feedback}} ->
         {:ok, {feedback, %Result{score: score, out_of: out_of}}}
       end)
-      |> (&({:ok, &1})).()
-      |> persist_evaluations(client_evaluations, roll_up_fn)
-      |> generate_snapshots(context_id, client_evaluations) do
+      |> (fn evaluations -> {:ok, evaluations} end).()
+      |> persist_evaluations(part_inputs, roll_up_fn)
+      |> generate_snapshots(context_id, part_inputs) do
 
         {:ok, results} -> results
         {:error, error} -> Repo.rollback(error)

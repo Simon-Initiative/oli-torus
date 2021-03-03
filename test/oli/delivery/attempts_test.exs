@@ -3,8 +3,9 @@ defmodule Oli.Delivery.AttemptsTest do
   use Oli.DataCase
 
   alias Oli.Delivery.Attempts
-  alias Oli.Activities.Model.Part
+  alias Oli.Activities.Model.{Part, Feedback}
   alias Oli.Delivery.Page.PageContext
+  alias Oli.Delivery.Attempts.{ClientEvaluation, StudentInput}
 
   describe "creating the attempt tree records" do
 
@@ -237,6 +238,45 @@ defmodule Oli.Delivery.AttemptsTest do
 
     end
 
+  end
+
+  describe "submit_client_evaluations" do
+
+    setup do
+      Seeder.base_project_with_resource2()
+      |> Seeder.create_section()
+      |> Seeder.add_user(%{}, :user1)
+      |> Seeder.add_user(%{}, :user2)
+      |> Seeder.add_activity(%{}, :publication, :project, :author, :activity_a)
+      |> Seeder.add_page(%{graded: true}, :graded_page)
+
+      |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :page1, :revision1, :attempt1)
+      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: %{}}, :activity_a, :attempt1, :activity_attempt1)
+      |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :activity_attempt1, :part1_attempt1)
+
+      |> Seeder.create_resource_attempt(%{attempt_number: 2}, :user1, :page1, :revision1, :attempt2)
+      |> Seeder.create_activity_attempt(%{attempt_number: 1, transformed_model: %{}}, :activity_a, :attempt2, :activity_attempt2)
+      |> Seeder.create_part_attempt(%{attempt_number: 1}, %Part{id: "1", responses: [], hints: []}, :activity_attempt2, :part1_attempt1)
+    end
+
+    test "processes a set of client evaluations for some number of parts for the given activity attempt guid", %{part1_attempt1: part1_attempt1, section: section} do
+
+      context_id = section.context_id
+      activity_attempt_guid = part1_attempt1.attempt_guid
+      {:ok, feedback} = Feedback.parse(%{"id" => "1", "content" => "some-feedback"})
+      client_evaluations = [
+        %{attempt_guid: part1_attempt1.attempt_guid, client_evaluation: %ClientEvaluation{input: %StudentInput{input: "some-input"}, score: 1, out_of: 1, feedback: feedback}}
+      ]
+
+      assert Attempts.submit_client_evaluations(context_id, activity_attempt_guid, client_evaluations) == {:ok, [
+          %{
+            attempt_guid: part1_attempt1.attempt_guid,
+            feedback: %Oli.Activities.Model.Feedback{content: "some-feedback", id: "1"},
+            out_of: 1,
+            score: 1
+          }
+        ]}
+    end
   end
 
 end
