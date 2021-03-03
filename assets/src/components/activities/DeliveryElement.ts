@@ -4,7 +4,7 @@ import { ActivityModelSchema,
   PartResponse,
   PartState,
   StudentResponse,
-  PartEvaluation,
+  ClientEvaluation,
   Success } from './types';
 import { valueOr } from 'utils/common';
 
@@ -59,7 +59,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   onSubmitPart: (attemptGuid: string, partAttemptGuid: string,
     response: StudentResponse) => Promise<EvaluationResponse>;
   onResetPart: (attemptGuid: string, partAttemptGuid: string) => Promise<PartActivityResponse>;
-  onSubmitEvaluations: (attemptGuid: string, partEvaluations: PartEvaluation[]) => Promise<EvaluationResponse>;
+  onSubmitEvaluations: (attemptGuid: string, clientEvaluations: ClientEvaluation[]) => Promise<EvaluationResponse>;
 }
 
 // An abstract delivery web component, designed to delegate to
@@ -84,7 +84,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   onSubmitPart: (attemptGuid: string, partAttemptGuid: string,
     response: StudentResponse) => Promise<EvaluationResponse>;
   onResetPart: (attemptGuid: string, partAttemptGuid: string) => Promise<PartActivityResponse>;
-  onSubmitEvaluations: (attemptGuid: string, partEvaluations: PartEvaluation[]) => Promise<EvaluationResponse>;
+  onSubmitEvaluations: (attemptGuid: string, clientEvaluations: ClientEvaluation[]) => Promise<EvaluationResponse>;
 
   constructor() {
     super();
@@ -106,8 +106,8 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       this.dispatch('submitPart', attemptGuid, partAttemptGuid, response);
     this.onResetPart = (attemptGuid: string, partAttemptGuid: string) =>
       this.dispatch('resetPart', attemptGuid, partAttemptGuid);
-    this.onSubmitEvaluations = (attemptGuid: string, partEvaluations: PartEvaluation[]) =>
-      this.dispatch('submitEvaluations', attemptGuid, undefined, partEvaluations);
+    this.onSubmitEvaluations = (attemptGuid: string, clientEvaluations: ClientEvaluation[]) =>
+      this.dispatch('submitEvaluations', attemptGuid, undefined, clientEvaluations);
   }
 
   static get observedAttributes() {

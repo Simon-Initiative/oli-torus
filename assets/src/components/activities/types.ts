@@ -31,7 +31,7 @@ export type PartResponse = {
   response: StudentResponse,
 };
 
-export type PartEvaluation = {
+export type ClientEvaluation = {
   attemptGuid: string;
   score: number | null;
   outOf: number | null;
