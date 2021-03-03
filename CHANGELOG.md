@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (2021-3-3)
 ### Enhancements
   - Add LTI 1.3 platform launch support
   - Add support for project visibility control
