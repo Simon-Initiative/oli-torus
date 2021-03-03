@@ -66,6 +66,9 @@ export function selectYouTube(): Promise<string | null> {
 
 const command: Command = {
   execute: (context, editor) => {
+
+    const at = editor.selection as any;
+
     selectYouTube()
       .then((selectedSrc) => {
         if (selectedSrc !== null) {
@@ -80,7 +83,8 @@ const command: Command = {
             src = src.substr(src.lastIndexOf('/') + 1);
           }
 
-          Transforms.insertNodes(editor, ContentModel.youtube(src));
+          Transforms.insertNodes(
+            editor, ContentModel.youtube(src), { at });
         }
       });
   },

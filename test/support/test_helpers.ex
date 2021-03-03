@@ -9,6 +9,10 @@ defmodule Oli.TestHelpers do
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing
 
+  import Mox
+
+  Mox.defmock(Oli.Test.MockHTTP, for: HTTPoison.Base)
+
   def yesterday() do
     {:ok, datetime} = DateTime.now("Etc/UTC")
     DateTime.add(datetime, -(60 * 60 * 24), :second)
@@ -149,8 +153,9 @@ defmodule Oli.TestHelpers do
   end
 
   def jwk_fixture() do
-    %{private_key: private_key} = Oli.Lti_1p3.KeyGenerator.generate_key_pair()
-    {:ok, jwk} = Oli.Lti_1p3.create_new_jwk(%{
+    %{private_key: private_key} = Lti_1p3.KeyGenerator.generate_key_pair()
+
+    {:ok, jwk} = Lti_1p3.create_jwk(%Lti_1p3.Jwk{
       pem: private_key,
       typ: "JWT",
       alg: "RS256",
@@ -159,6 +164,14 @@ defmodule Oli.TestHelpers do
     })
 
     jwk
+  end
+
+  def cache_lti_params(key, lti_params) do
+    {:ok, _lti_params} = Lti_1p3.DataProviders.EctoProvider.create_or_update_lti_params(%Lti_1p3.Tool.LtiParams{
+      key: key,
+      params: lti_params,
+      exp: Timex.from_unix(lti_params["exp"])
+    })
   end
 
   def project_fixture(author, title \\ "test project") do
@@ -197,6 +210,13 @@ defmodule Oli.TestHelpers do
     |> Repo.insert()
   end
 
+  def user_conn(%{conn: conn}) do
+    user = user_fixture()
+    conn = Pow.Plug.assign_current_user(conn, user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+    {:ok, conn: conn, user: user}
+  end
+
   def author_conn(%{conn: conn}) do
     author = author_fixture()
     conn = Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
@@ -210,6 +230,18 @@ defmodule Oli.TestHelpers do
     conn = Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     {:ok, conn: conn, author: author, project: project}
+  end
+
+  def admin_conn(%{conn: conn}) do
+    admin = author_fixture(%{system_role_id: Accounts.SystemRole.role_id.admin})
+    conn = Pow.Plug.assign_current_user(conn, admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+    {:ok, conn: conn, admin: admin}
+  end
+
+  def recycle_author_session(conn, author) do
+    Phoenix.ConnTest.recycle(conn)
+      |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
   end
 
   def author_project_fixture(), do: author_project_fixture(nil)
@@ -231,5 +263,19 @@ defmodule Oli.TestHelpers do
   def read_json_file(filename) do
     with {:ok, body} <- File.read(filename),
          {:ok, json} <- Poison.decode(body), do: {:ok, json}
+  end
+
+  def expect_recaptcha_http_post() do
+    verify_recaptcha_url = Application.fetch_env!(:oli, :recaptcha)[:verify_url]
+    Oli.Test.MockHTTP
+    |> expect(:post, fn ^verify_recaptcha_url, _body, _headers, _opts ->
+      {:ok, %HTTPoison.Response{
+        status_code: 200,
+        body: Jason.encode!(%{
+          "challenge_ts" => "some-challenge-ts",
+          "hostname" => "testkey.google.com",
+          "success" => true
+        })
+      }}  end)
   end
 end

@@ -1,7 +1,31 @@
 
-<h1><%= @title %></h1>
+<h1><%= @title %><%= if @progress_state == :in_review do %>
+ (Review)
+<% end %></h1>
 
 <%= render "_objectives.html", objectives: @objectives %>
+
+<%= if @progress_state == :in_review do %>
+<div class="mb-2">
+ <div class="row justify-content-start">
+  <div class="col-sm-3">Started:</div>
+  <div><%= Timex.format!(Timex.Timezone.convert(@resource_attempt.inserted_at, Timex.Timezone.local()), "{ISOdate} {ISOtime} {Zabbr}") %></div>
+ </div>
+ <div class="row">
+  <div class="col-sm-3">Submitted:</div>
+  <div><%= Timex.format!(Timex.Timezone.convert(@resource_attempt.date_evaluated, Timex.Timezone.local()), "{ISOdate} {ISOtime} {Zabbr}") %></div>
+ </div>
+ <div class="row">
+  <div class="col-sm-3">Score:</div>
+  <div><%=  (@resource_attempt.score / @resource_attempt.out_of) * 100 |> round
+            |> Integer.to_string  %>%</div>
+ </div>
+ <div class="row">
+  <div class="col-sm-3">Points:</div>
+  <div><%= @resource_attempt.score %> out of <%= @resource_attempt.out_of %> </div>
+ </div>
+</div>
+<% end %>
 
 <div id="eventIntercept">
   <%= raw(@html) %>
@@ -11,6 +35,10 @@
   OLI.initActivityBridge('eventIntercept');
 </script>
 
-<%= if @graded && @activity_count > 0 do %>
-  <%= link "Submit Assessment", to: Routes.page_delivery_path(@conn, :finalize_attempt, @context_id, @slug, @attempt_guid), class: "btn btn-primary btn-lg" %>
+<%= if @graded && @activity_count > 0 && @progress_state != :in_review do %>
+  <%= link "Submit Assessment", to: Routes.page_delivery_path(@conn, :finalize_attempt, @section_slug, @slug, @attempt_guid), class: "btn btn-primary btn-lg" %>
+<% end %>
+
+<%= if @progress_state == :in_review do %>
+<%= link "Exit", to: Routes.page_delivery_path(@conn, :page, @section_slug, @slug), class: "btn btn-primary btn-lg" %>
 <% end %>

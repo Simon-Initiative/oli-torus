@@ -2,10 +2,15 @@
 <div class="alert alert-success after-finalized" role="alert">
   <h4 class="alert-heading">Attempt Submitted</h4>
 
-  <p>You've succesffully completed this graded assessment attempt. </p>
+  <p>You've completed this graded assessment attempt. </p>
 
   <p><%= @grade_message %></p>
 
   <hr>
   <p class="mb-0"><%= @message %></p>
+  <div class="mt-4">
+  <%= link "Exit", to: Routes.page_delivery_path(@conn, :page, @section_slug, @slug), class: "btn btn-primary btn-lg" %>
+  <%= link "Review Attempt", to: Routes.page_delivery_path(@conn, :review_attempt,
+   @section_slug, @slug, @attempt_guid), class: "btn btn-primary btn-lg" %>
+  </div>
  </div>

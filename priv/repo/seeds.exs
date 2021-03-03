@@ -58,12 +58,18 @@ if !Oli.Repo.get_by(Oli.Authoring.Authors.ProjectRole, id: 1) do
 end
 
 # create resource types
-if !Oli.Repo.get_by(Oli.Resources.ResourceType, id: 1) do
+existing_rts = Oli.Resources.list_resource_types()
+|> Enum.map(fn %{id: id} -> id end)
+|> MapSet.new()
 
-  Oli.Resources.ResourceType.get_types()
-  |> Enum.map(&Oli.Resources.create_resource_type/1)
+Oli.Resources.ResourceType.get_types()
+|> Enum.each(fn rt ->
 
-end
+  if !MapSet.member?(existing_rts, rt.id) do
+    Oli.Resources.create_resource_type(rt)
+  end
+
+end)
 
 # create scoring strategy types
 if !Oli.Repo.get_by(Oli.Resources.ScoringStrategy, id: 1) do
@@ -99,9 +105,9 @@ Oli.Registrar.register_local_activities()
 |> Enum.map(fn t -> Oli.Repo.insert!(t, on_conflict: :replace_all, conflict_target: :id) end)
 
 # create a default active lti_1p3 jwk
-if !Oli.Repo.get_by(Oli.Lti_1p3.Jwk, id: 1) do
-  %{private_key: private_key} = Oli.Lti_1p3.KeyGenerator.generate_key_pair()
-  Oli.Lti_1p3.create_new_jwk(%{
+if !Oli.Repo.get_by(Lti_1p3.DataProviders.EctoProvider.Jwk, id: 1) do
+  %{private_key: private_key} = Lti_1p3.KeyGenerator.generate_key_pair()
+  Lti_1p3.create_jwk(%Lti_1p3.Jwk{
     pem: private_key,
     typ: "JWT",
     alg: "RS256",
@@ -111,16 +117,18 @@ if !Oli.Repo.get_by(Oli.Lti_1p3.Jwk, id: 1) do
 end
 
 # create lti_1p3 platform roles
-if !Oli.Repo.get_by(Oli.Lti_1p3.PlatformRole, id: 1) do
-  Oli.Lti_1p3.PlatformRoles.list_roles()
-  |> Enum.map(&Oli.Lti_1p3.PlatformRole.changeset/1)
+if !Oli.Repo.get_by(Lti_1p3.DataProviders.EctoProvider.PlatformRole, id: 1) do
+  Lti_1p3.Tool.PlatformRoles.list_roles()
+  |> Enum.map(fn t -> struct(Lti_1p3.DataProviders.EctoProvider.PlatformRole, Map.from_struct(t)) end)
+  |> Enum.map(&Lti_1p3.DataProviders.EctoProvider.PlatformRole.changeset/1)
   |> Enum.map(fn t -> Oli.Repo.insert!(t, on_conflict: :replace_all, conflict_target: :id) end)
 end
 
 # create lti_1p3 context roles
-if !Oli.Repo.get_by(Oli.Lti_1p3.ContextRole, id: 1) do
-  Oli.Lti_1p3.ContextRoles.list_roles()
-  |> Enum.map(&Oli.Lti_1p3.ContextRole.changeset/1)
+if !Oli.Repo.get_by(Lti_1p3.DataProviders.EctoProvider.ContextRole, id: 1) do
+  Lti_1p3.Tool.ContextRoles.list_roles()
+  |> Enum.map(fn t -> struct(Lti_1p3.DataProviders.EctoProvider.ContextRole, Map.from_struct(t)) end)
+  |> Enum.map(&Lti_1p3.DataProviders.EctoProvider.ContextRole.changeset/1)
   |> Enum.map(fn t -> Oli.Repo.insert!(t, on_conflict: :replace_all, conflict_target: :id) end)
 end
 
@@ -141,15 +149,15 @@ if Application.fetch_env!(:oli, :env) == :dev do
     # create any registrations defined in registrations.json
     case Utils.read_json_file("./registrations.json") do
       {:ok, json} ->
-        %{id: jwk_id} = Oli.Lti_1p3.get_active_jwk()
+        {:ok, %{id: jwk_id}} = Lti_1p3.get_active_jwk()
 
         json
         |> Enum.each(fn attrs ->
           attrs = attrs
           |> Map.merge(%{"tool_jwk_id" => jwk_id, "institution_id" => 1})
 
-          %Oli.Lti_1p3.Registration{}
-          |> Oli.Lti_1p3.Registration.changeset(attrs)
+          %Oli.Lti_1p3.Tool.Registration{}
+          |> Oli.Lti_1p3.Tool.Registration.changeset(attrs)
           |> Oli.Repo.insert()
         end)
       _ ->

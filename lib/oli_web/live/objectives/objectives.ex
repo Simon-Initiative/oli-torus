@@ -15,7 +15,7 @@ defmodule OliWeb.Objectives.Objectives do
   alias Oli.Publishing.ObjectiveMappingTransfer
   alias Oli.Authoring.Course
   alias Oli.Accounts.Author
-
+  alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources
   alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
@@ -190,7 +190,8 @@ defmodule OliWeb.Objectives.Objectives do
   def handle_event("prepare_delete", %{"slug" => slug}, socket) do
 
     if socket.assigns.can_delete? do
-      attachment_summary = ObjectiveEditor.preview_objective_detatchment(slug, socket.assigns.project)
+      %{resource_id: resource_id} = AuthoringResolver.from_revision_slug(socket.assigns.project.slug, slug)
+      attachment_summary = ObjectiveEditor.preview_objective_detatchment(resource_id, socket.assigns.project)
       {:noreply, assign(socket, modal_shown: :delete, attachment_summary: attachment_summary, prepare_delete_slug: slug, force_render: socket.assigns.force_render + 1)}
     else
       {:noreply, socket}
@@ -200,11 +201,12 @@ defmodule OliWeb.Objectives.Objectives do
   # handle processing deletion of item
   def handle_event("delete", _, socket) do
 
-    ObjectiveEditor.detach_objective(socket.assigns.prepare_delete_slug, socket.assigns.project, socket.assigns.author)
+    %{resource_id: resource_id} = AuthoringResolver.from_revision_slug(socket.assigns.project.slug, socket.assigns.prepare_delete_slug)
+    ObjectiveEditor.detach_objective(resource_id, socket.assigns.project, socket.assigns.author)
 
     parent_objective = determine_parent_objective(socket, socket.assigns.prepare_delete_slug)
 
-    socket = case ObjectiveEditor.preview_objective_detatchment(socket.assigns.prepare_delete_slug, socket.assigns.project) do
+    socket = case ObjectiveEditor.preview_objective_detatchment(resource_id, socket.assigns.project) do
       %{attachments: {[], []}} -> case ObjectiveEditor.delete(socket.assigns.prepare_delete_slug, socket.assigns.author, socket.assigns.project, parent_objective) do
         {:ok, _} -> socket
         {:error, _} -> socket

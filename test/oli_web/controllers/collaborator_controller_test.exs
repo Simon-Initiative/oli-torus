@@ -10,11 +10,15 @@ defmodule OliWeb.CollaboratorControllerTest do
 
   describe "create" do
     test "redirects to project path when data is valid", %{conn: conn, project: project} do
+      expect_recaptcha_http_post()
+
       conn = post(conn, Routes.collaborator_path(conn, :create, project), email: @admin_email, "g-recaptcha-response": "any")
       assert html_response(conn, 302) =~ "/project/"
     end
 
     test "redirects to project path when data is invalid", %{conn: conn, project: project} do
+      expect_recaptcha_http_post()
+
       conn = post(conn, Routes.collaborator_path(conn, :create, project), email: @invalid_email, "g-recaptcha-response": "any")
       assert html_response(conn, 302) =~ "/project/"
     end
@@ -22,6 +26,8 @@ defmodule OliWeb.CollaboratorControllerTest do
 
   describe "collaboration_invite" do
     test "accept new collaboration invitation", %{conn: conn, project: project} do
+      expect_recaptcha_http_post()
+
       conn = post(conn, Routes.collaborator_path(conn, :create, project), email: @invite_email, "g-recaptcha-response": "any")
       new_author = Accounts.get_author_by_email(@invite_email)
       token = PowInvitation.Plug.sign_invitation_token(conn, new_author)

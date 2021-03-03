@@ -2,6 +2,8 @@ defmodule Oli.Delivery.Sections.Section do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Oli.Utils.Slug
+
   schema "sections" do
     field :end_date, :date
     field :registration_open, :boolean, default: false
@@ -9,8 +11,9 @@ defmodule Oli.Delivery.Sections.Section do
     field :time_zone, :string
     field :title, :string
     field :context_id, :string
+    field :slug, :string
 
-    belongs_to :lti_1p3_deployment, Oli.Lti_1p3.Deployment, foreign_key: :lti_1p3_deployment_id
+    belongs_to :lti_1p3_deployment, Lti_1p3.DataProviders.EctoProvider.Deployment, foreign_key: :lti_1p3_deployment_id
 
     belongs_to :institution, Oli.Institutions.Institution
     belongs_to :project, Oli.Authoring.Course.Project
@@ -24,7 +27,8 @@ defmodule Oli.Delivery.Sections.Section do
   @doc false
   def changeset(section, attrs) do
     section
-    |> cast(attrs, [:title, :start_date, :end_date, :time_zone, :registration_open, :context_id, :lti_1p3_deployment_id, :institution_id, :project_id, :publication_id])
+    |> cast(attrs, [:title, :start_date, :end_date, :time_zone, :registration_open, :context_id, :slug, :lti_1p3_deployment_id, :institution_id, :project_id, :publication_id])
     |> validate_required([:title, :time_zone, :registration_open, :context_id, :institution_id, :project_id, :publication_id])
+    |> Slug.update_never("sections")
   end
 end

@@ -8,7 +8,7 @@ import { ActivityContext } from 'data/content/activity';
 import { Objective } from 'data/content/objective';
 import { TitleBar } from '../content/TitleBar';
 import { UndoRedo } from '../content/UndoRedo';
-import { ProjectSlug, ResourceSlug, ObjectiveSlug, ActivitySlug } from 'data/types';
+import { ProjectSlug, ResourceId } from 'data/types';
 import {
   UndoableState, processRedo, processUndo, processUpdate, init,
   registerUndoRedoHotkeys, unregisterUndoRedoHotkeys,
@@ -32,7 +32,7 @@ export interface ActivityEditorProps extends ActivityContext {
 type Undoable = {
   title: string,
   content: ActivityModelSchema,
-  objectives: Immutable.Map<string, Immutable.List<ObjectiveSlug>>,
+  objectives: Immutable.Map<string, Immutable.List<ResourceId>>,
 };
 
 type ActivityEditorState = {
@@ -45,8 +45,8 @@ type ActivityEditorState = {
 
 // Creates a function that when invoked submits a save request
 function prepareSaveFn(
-  project: ProjectSlug, resource: ResourceSlug,
-  activity: ActivitySlug, update: Persistence.ActivityUpdate) {
+  project: ProjectSlug, resource: ResourceId,
+  activity: ResourceId, update: Persistence.ActivityUpdate) {
 
   return (releaseLock: boolean) =>
     Persistence.edit(project, resource, activity, update, releaseLock);
@@ -82,14 +82,14 @@ class ActivityEditor extends React.Component<ActivityEditorProps, ActivityEditor
 
     const { title, objectives, allObjectives, model } = props;
 
-    const o = Object.keys(objectives).map(o => [o, objectives[o]]);
+    const o = Object.keys(objectives).map(o => [o, Immutable.List<ResourceId>(objectives[o])]);
 
     this.state = {
       messages: [],
       editMode: true,
       undoable: init({
         title,
-        objectives: Immutable.Map<string, Immutable.List<ObjectiveSlug>>(o as any),
+        objectives: Immutable.Map<string, Immutable.List<ResourceId>>(o as any),
         content: model,
       }),
       persistence: 'idle',
@@ -154,19 +154,26 @@ class ActivityEditor extends React.Component<ActivityEditorProps, ActivityEditor
 
   editingLockedMessage(email: string) {
     const message = createMessage({
+      guid: 'readonly-error',
       canUserDismiss: false,
       content: 'Read Only. User ' + email + ' is currently editing this page.',
       severity: Severity.Information,
     });
-    this.setState({ messages: [...this.state.messages, message] });
+    this.addAsUnique(message);
   }
 
   publishErrorMessage(failure: any) {
     const message = createMessage({
+      guid: 'general-error',
       canUserDismiss: true,
       content: 'A problem occurred while saving your changes',
     });
-    this.setState({ messages: [...this.state.messages, message] });
+    this.addAsUnique(message);
+  }
+
+  addAsUnique(message: Message) {
+    const messages = this.state.messages.filter(m => m.guid !== message.guid);
+    this.setState({ messages: [...messages, message] });
   }
 
   update(update: Partial<Undoable>) {
@@ -201,9 +208,9 @@ class ActivityEditor extends React.Component<ActivityEditorProps, ActivityEditor
   }
 
   save() {
-    const { projectSlug, resourceSlug, activitySlug } = this.props;
+    const { projectSlug, resourceId, activityId } = this.props;
     this.persistence.save(
-      prepareSaveFn(projectSlug, resourceSlug, activitySlug, this.state.undoable.current));
+      prepareSaveFn(projectSlug, resourceId, activityId, this.state.undoable.current));
   }
 
   undo() {

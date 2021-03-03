@@ -5,7 +5,7 @@ defmodule Oli.SectionsTest do
   alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Course.Project
   alias Oli.Publishing.Publication
-  alias Oli.Lti_1p3.ContextRoles
+  alias Lti_1p3.Tool.ContextRoles
 
   describe "enrollments" do
     @valid_attrs %{end_date: ~D[2010-04-17], open_and_free: true, registration_open: true, start_date: ~D[2010-04-17], time_zone: "some time_zone", title: "some title", context_id: "context_id"}
@@ -21,9 +21,9 @@ defmodule Oli.SectionsTest do
         |> Map.put(:project_id, project.id)
         |> Map.put(:publication_id, publication.id)
 
-      user1 = user_fixture(%{institution_id: institution.id})
-      user2 = user_fixture(%{institution_id: institution.id})
-      user3 = user_fixture(%{institution_id: institution.id})
+      user1 = user_fixture()
+      user2 = user_fixture()
+      user3 = user_fixture()
 
       {:ok, section} = valid_attrs |> Sections.create_section()
 
@@ -33,15 +33,15 @@ defmodule Oli.SectionsTest do
 
     test "list_enrollments/1 returns valid enrollments", %{section: section, user1: user1, user2: user2, user3: user3} do
 
-      assert Sections.list_enrollments("context_id") == []
+      assert Sections.list_enrollments(section.slug) == []
 
       Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_instructor)])
       Sections.enroll(user2.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.enroll(user3.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      assert length(Sections.list_enrollments("context_id")) == 3
+      assert length(Sections.list_enrollments(section.slug)) == 3
 
-      [one, two, three] = Sections.list_enrollments("context_id")
+      [one, two, three] = Sections.list_enrollments(section.slug)
 
       assert one.user_id == user1.id
       assert two.user_id == user2.id
@@ -51,27 +51,27 @@ defmodule Oli.SectionsTest do
       assert two.section_id == section.id
       assert three.section_id == section.id
 
-      assert ContextRoles.has_role?(user1, section.context_id, ContextRoles.get_role(:context_instructor))
-      assert ContextRoles.has_role?(user2, section.context_id, ContextRoles.get_role(:context_learner))
-      assert ContextRoles.has_role?(user3, section.context_id, ContextRoles.get_role(:context_learner))
+      assert ContextRoles.has_role?(user1, section.slug, ContextRoles.get_role(:context_instructor))
+      assert ContextRoles.has_role?(user2, section.slug, ContextRoles.get_role(:context_learner))
+      assert ContextRoles.has_role?(user3, section.slug, ContextRoles.get_role(:context_learner))
 
     end
 
     test "enroll/3 upserts correctly", %{section: section, user1: user1} do
 
-      assert Sections.list_enrollments("context_id") == []
+      assert Sections.list_enrollments(section.slug) == []
 
       # Enroll a user as instructor
       Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_instructor)])
-      assert ContextRoles.has_role?(user1, section.context_id, ContextRoles.get_role(:context_instructor))
+      assert ContextRoles.has_role?(user1, section.slug, ContextRoles.get_role(:context_instructor))
 
       # Now enroll again as same role, this should be idempotent
       Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_instructor)])
-      assert ContextRoles.has_role?(user1, section.context_id, ContextRoles.get_role(:context_instructor))
+      assert ContextRoles.has_role?(user1, section.slug, ContextRoles.get_role(:context_instructor))
 
       # Now enroll again with different role, this should update the role
       Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
-      assert ContextRoles.has_role?(user1, section.context_id, ContextRoles.get_role(:context_learner))
+      assert ContextRoles.has_role?(user1, section.slug, ContextRoles.get_role(:context_learner))
 
 
     end
@@ -98,7 +98,7 @@ defmodule Oli.SectionsTest do
 
       {:ok, section} = valid_attrs |> Sections.create_section()
 
-      {:ok, Map.merge(map, %{section: section, valid_attrs: valid_attrs})}
+      {:ok, Map.merge(map, %{section: section, institution: institution, valid_attrs: valid_attrs})}
     end
 
 
@@ -120,10 +120,24 @@ defmodule Oli.SectionsTest do
     end
 
     test "get_section_by!/1 returns the section and preloaded associations using the criteria", %{section: section} do
-      found_section = Sections.get_section_by(context_id: section.context_id)
+      found_section = Sections.get_section_by(slug: section.slug)
       assert found_section.id == section.id
       {%Project{} = _project} = {found_section.project}
       {%Publication{} = _publication} = {found_section.publication}
+    end
+
+    test "get_section_from_lti_params/1 returns the section from the given lti params", %{section: section, institution: institution} do
+      jwk = jwk_fixture()
+      registration = registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
+      deployment = deployment_fixture(%{registration_id: registration.id})
+      {:ok, section} = Sections.update_section(section, %{lti_1p3_deployment_id: deployment.id})
+
+      lti_params = Oli.Lti_1p3.TestHelpers.all_default_claims()
+        |> put_in(["iss"], registration.issuer)
+        |> put_in(["aud"], registration.client_id)
+        |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
+
+      assert Sections.get_section_from_lti_params(lti_params) == section
     end
 
     test "create_section/1 with invalid data returns error changeset" do

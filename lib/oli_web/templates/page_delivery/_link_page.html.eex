@@ -1,5 +1,5 @@
 <% link_class = "list-group-item list-group-item-action " <> if @active_page == @node.revision.slug, do: "active", else: "" %>
-<%= link to: Routes.page_delivery_path(@conn, :page, @context_id, @node.revision.slug), class: link_class do %>
+<%= link to: Routes.page_delivery_path(@conn, :page, @section_slug, @node.revision.slug), class: link_class do %>
   <div class="d-flex w-100 justify-content-between">
     <span class="page-title">
       <i class="far fa-file mr-2"></i> <%= @node.revision.title %>

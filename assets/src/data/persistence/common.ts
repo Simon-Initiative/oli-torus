@@ -21,6 +21,7 @@ export type Ok<Result = any> = {
 
 export type ServerError = {
   type: 'ServerError',
+  result: 'failure',
   status: string,
   statusText: string,
   message: string,

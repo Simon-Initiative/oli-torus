@@ -6,7 +6,7 @@ import {
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { ActivityModelSchema } from 'components/activities/types';
 import { invokeCreationFunc } from 'components/activities/creation';
-import { Objective, ObjectiveSlug } from 'data/content/objective';
+import { Objective, ResourceId } from 'data/content/objective';
 import * as Persistence from 'data/persistence/activity';
 import guid from 'utils/guid';
 import Popover from 'react-tiny-popover';
@@ -26,7 +26,7 @@ type AddCallback = (content: ResourceContent, index: number, a?: Activity) => vo
 
 const promptForObjectiveSelection
   = (objectives: Immutable.List<Objective>,
-    childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>,
+    childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>,
     onRegisterNewObjective: (title: string) => Promise<Objective>) => {
 
     return new Promise((resolve, reject) => {
@@ -36,18 +36,20 @@ const promptForObjectiveSelection
           onRegisterNewObjective(title)
             .then((objective) => {
               dismiss();
-              resolve(Immutable.List<ObjectiveSlug>([objective.slug]));
+
+              resolve(Immutable.List<ResourceId>([objective.id]));
             });
         });
       };
 
-      const onUseSelected = (selected: Immutable.List<ObjectiveSlug>) => {
+      const onUseSelected = (selected: Immutable.List<ResourceId>) => {
         dismiss();
         resolve(selected);
       };
 
       display(<ModalSelection title="Target learning objectives with this activity"
         hideOkButton={true}
+        hideDialogCloseButton={true}
         cancelLabel="Skip this step"
         onInsert={() => { dismiss(); resolve([]); }}
         onCancel={() => { dismiss(); resolve([]); }}>
@@ -70,7 +72,7 @@ interface AddResourceContentProps {
   onAddItem: AddCallback;
   isLast: boolean;
   objectives: Immutable.List<Objective>;
-  childrenObjectives: Immutable.Map<ObjectiveSlug, Immutable.List<Objective>>;
+  childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
   onRegisterNewObjective: (text: string) => Promise<Objective>;
   editorMap: ActivityEditorMap;
   resourceContext: ResourceContext;
@@ -85,10 +87,10 @@ export const AddResourceContent = (
   const handleAdd = (editorDesc: EditorDesc) => {
 
     let model: ActivityModelSchema;
-    let selectedObjectives: string[];
+    let selectedObjectives: ResourceId[];
 
     promptForObjectiveSelection(objectives, childrenObjectives, onRegisterNewObjective)
-      .then((objectives: string[]) => invokeCreationFunc(editorDesc.slug, resourceContext)
+      .then((objectives: ResourceId[]) => invokeCreationFunc(editorDesc.slug, resourceContext)
         .then((createdModel) => {
 
           model = createdModel;

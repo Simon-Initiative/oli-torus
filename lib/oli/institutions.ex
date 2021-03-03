@@ -8,8 +8,8 @@ defmodule Oli.Institutions do
 
   alias Oli.Institutions.Institution
   alias Oli.Institutions.PendingRegistration
-  alias Oli.Lti_1p3.Registration
-  alias Oli.Lti_1p3.Deployment
+  alias Oli.Lti_1p3.Tool.Registration
+  alias Lti_1p3.DataProviders.EctoProvider.Deployment
 
   @doc """
   Returns the list of institutions.
@@ -399,7 +399,7 @@ defmodule Oli.Institutions do
   def approve_pending_registration(%PendingRegistration{} = pending_registration) do
     Repo.transaction(fn ->
       with {:ok, institution} <- find_or_create_institution_by_normalized_url(PendingRegistration.institution_attrs(pending_registration)),
-        active_jwk = Oli.Lti_1p3.get_active_jwk(),
+        {:ok, active_jwk} = Lti_1p3.get_active_jwk(),
         registration_attrs = Map.merge(PendingRegistration.registration_attrs(pending_registration), %{institution_id: institution.id, tool_jwk_id: active_jwk.id}),
         {:ok, registration} <- create_registration(registration_attrs),
         {:ok, _pending_registration} <- delete_pending_registration(pending_registration)
@@ -409,6 +409,32 @@ defmodule Oli.Institutions do
         error -> Repo.rollback(error)
       end
     end)
+  end
+
+  @doc """
+  Returns an institution, registration and deployment from a given deployment_id
+  ## Examples
+      iex> get_institution_registration_deployment("some-issuer", "some-client-id", "some-deployment-id")
+      {%Institution{}, %Registration{}, %Deployment{}}
+      iex> get_institution_registration_deployment("some-issuer", "some-client-id", "some-deployment-id")
+      nil
+  """
+  def get_institution_registration_deployment(issuer, client_id, deployment_id) do
+    Repo.one from institution in Oli.Institutions.Institution,
+      join: registration in Oli.Lti_1p3.Tool.Registration, on: registration.institution_id == institution.id,
+      join: deployment in Lti_1p3.DataProviders.EctoProvider.Deployment, on: deployment.registration_id == registration.id,
+      where: registration.issuer == ^issuer and registration.client_id == ^client_id and deployment.deployment_id == ^deployment_id,
+      select: {institution, registration, deployment}
+  end
+
+  @doc """
+  Searches for a list of Institution with an name matching a wildcard pattern
+  """
+  def search_institutions_matching(query) do
+    q = query
+    q = "%" <> q <> "%"
+    Repo.all from i in Institution,
+             where: ilike(i.name, ^q)
   end
 
 end

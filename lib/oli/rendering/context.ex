@@ -10,5 +10,6 @@ defmodule Oli.Rendering.Context do
       log_errors: true,
       render_errors: true,
     },
-    preview: false
+    preview: false,
+    progress_state: :in_progress
 end

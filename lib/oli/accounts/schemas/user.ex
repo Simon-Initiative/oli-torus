@@ -29,9 +29,8 @@ defmodule Oli.Accounts.User do
     # A user may optionally be linked to an author account
     belongs_to :author, Oli.Accounts.Author
 
-    belongs_to :institution, Oli.Institutions.Institution
     has_many :enrollments, Oli.Delivery.Sections.Enrollment
-    many_to_many :platform_roles, Oli.Lti_1p3.PlatformRole, join_through: "users_platform_roles", on_replace: :delete
+    many_to_many :platform_roles, Lti_1p3.DataProviders.EctoProvider.PlatformRole, join_through: "users_platform_roles", on_replace: :delete
 
     timestamps(type: :utc_datetime)
   end
@@ -60,7 +59,6 @@ defmodule Oli.Accounts.User do
       :phone_number_verified,
       :address,
       :author_id,
-      :institution_id,
     ])
     |> validate_required([:sub])
     |> maybe_name_from_given_and_family()
@@ -68,7 +66,7 @@ defmodule Oli.Accounts.User do
 end
 
 # define implementations required for LTI 1.3 library integration
-defimpl Oli.Lti_1p3.Lti_1p3_User, for: Oli.Accounts.User do
+defimpl Lti_1p3.Tool.Lti_1p3_User, for: Oli.Accounts.User do
   import Ecto.Query, warn: false
   alias Oli.Repo
   alias Oli.Delivery.Sections.Section
@@ -79,11 +77,11 @@ defimpl Oli.Lti_1p3.Lti_1p3_User, for: Oli.Accounts.User do
     user.platform_roles
   end
 
-  def get_context_roles(user, context_id) do
+  def get_context_roles(user, section_slug) do
     user_id = user.id
     query = from e in Enrollment, preload: [:context_roles],
       join: s in Section, on: e.section_id == s.id,
-      where: e.user_id == ^user_id and s.context_id == ^context_id,
+      where: e.user_id == ^user_id and s.slug == ^section_slug,
       select: e
 
     case Repo.one query do

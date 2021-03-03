@@ -41,7 +41,7 @@ export class Banner
     const messages = [...errors, ...warnings, ...infos, ...tasks];
 
     return (
-      <div className="banner">
+      <div className="banner sticky-top">
         <TransitionGroup>
           {messages.map(m => <CSSTransition key={m.guid} timeout={{ enter: 200, exit: 200 }}>
             <Message key={m.guid} {...this.props} message={m} />

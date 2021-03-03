@@ -152,7 +152,7 @@ defmodule Oli.Seeder do
     revision = Map.get(map, resource_tag).revision
     section = map.section
 
-    %ResourceAccess{id: id} = Attempts.track_access(resource.id, section.context_id, user.id)
+    %ResourceAccess{id: id} = Attempts.track_access(resource.id, section.slug, user.id)
 
     attrs = Map.merge(attrs, %{
       resource_access_id: id,
@@ -174,7 +174,7 @@ defmodule Oli.Seeder do
     revision = Map.get(map, revision_tag)
     section = map.section
 
-    %ResourceAccess{id: id} = Attempts.track_access(resource.id, section.context_id, user.id)
+    %ResourceAccess{id: id} = Attempts.track_access(resource.id, section.slug, user.id)
 
     attrs = Map.merge(attrs, %{
       resource_access_id: id,
@@ -283,8 +283,6 @@ defmodule Oli.Seeder do
   end
 
   def add_user(map, attrs, tag \\ nil) do
-    institution = map.institution
-
     {:ok, user} =
       User.changeset(%User{
         sub: "a6d5c443-1f51-4783-ba1a-7686ffe3b54a",
@@ -295,7 +293,6 @@ defmodule Oli.Seeder do
         picture: "https://platform.example.edu/jane.jpg",
         email: "jane#{System.unique_integer([:positive])}@platform.example.edu",
         locale: "en-US",
-        institution_id: institution.id
       }, attrs)
       |> Repo.insert
 
@@ -319,7 +316,7 @@ defmodule Oli.Seeder do
 
     # Enroll users
     user_tags
-    |> Enum.each(fn user_tag -> Sections.enroll(map[user_tag].id, map[section_tag].id, [Oli.Lti_1p3.ContextRoles.get_role(:context_learner)]) end)
+    |> Enum.each(fn user_tag -> Sections.enroll(map[user_tag].id, map[section_tag].id, [Lti_1p3.Tool.ContextRoles.get_role(:context_learner)]) end)
 
     map
   end

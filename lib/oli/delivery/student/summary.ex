@@ -6,11 +6,11 @@ defmodule Oli.Delivery.Student.Summary do
 
   defstruct [:title, :description, :access_map, :hierarchy]
 
-  def get_summary(context_id, user) do
+  def get_summary(section_slug, user) do
 
-    with {:ok, section} <- Sections.get_section_by(context_id: context_id) |> Oli.Utils.trap_nil(),
-      resource_accesses <- Attempts.get_user_resource_accesses_for_context(context_id, user.id),
-      [root_container_node] <- Numbering.full_hierarchy(Oli.Publishing.DeliveryResolver, context_id)
+    with {:ok, section} <- Sections.get_section_by(slug: section_slug) |> Oli.Utils.trap_nil(),
+      resource_accesses <- Attempts.get_user_resource_accesses_for_context(section.slug, user.id),
+      [root_container_node] <- Numbering.full_hierarchy(Oli.Publishing.DeliveryResolver, section.slug)
     do
       access_map = Enum.reduce(resource_accesses, %{}, fn ra, acc ->
         Map.put_new(acc, ra.resource_id, ra)

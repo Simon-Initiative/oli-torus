@@ -124,6 +124,8 @@ defmodule Oli.Accounts do
       %Ecto.Changeset{source: %User{}}
   """
   def update_user_platform_roles(%User{} = user, roles) do
+    roles = Lti_1p3.DataProviders.EctoProvider.Marshaler.to(roles)
+
     user
     |> Repo.preload([:platform_roles])
     |> User.changeset()
@@ -220,6 +222,16 @@ defmodule Oli.Accounts do
   """
   def get_author_by_email(email) do
     Repo.get_by(Author, email: email)
+  end
+
+  @doc """
+  Searches for a list of authors with an email matching a wildcard pattern
+  """
+  def search_authors_matching(query) do
+    q = query
+    q = "%" <> q <> "%"
+    Repo.all from author in Author,
+    where: ilike(author.email, ^q)
   end
 
   @doc """

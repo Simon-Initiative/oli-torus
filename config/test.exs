@@ -3,14 +3,16 @@ use Mix.Config
 config :oli,
   env: :test,
   s3_media_bucket_name: "torus-media-test",
-  media_url: "d1od6xouqrpl5k.cloudfront.net"
+  media_url: "d1od6xouqrpl5k.cloudfront.net",
+  http_client: Oli.Test.MockHTTP,
+  slack_webhook_url: nil
 
 # Configure your database
 config :oli, Oli.Repo,
-  username: System.get_env("TEST_DB_USER", "postgres"),
-  password: System.get_env("TEST_DB_PASSWORD", "postgres"),
-  database: System.get_env("TEST_DB_NAME", "oli_test"),
-  hostname: System.get_env("TEST_DB_HOST", "localhost"),
+  username: System.get_env("DB_USER", "postgres"),
+  password: System.get_env("DB_PASSWORD", "postgres"),
+  hostname: System.get_env("DB_HOST", "localhost"),
+  database: "oli_test",
   pool: Ecto.Adapters.SQL.Sandbox
 
 # Configure reCAPTCHA
@@ -30,6 +32,9 @@ config :oli, Oli.Mailer,
 
 config :oli, OliWeb.Pow.Mailer,
   adapter: Bamboo.TestAdapter
+
+config :lti_1p3,
+  http_client: Oli.Test.MockHTTP
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.

@@ -20,6 +20,7 @@ defmodule Oli.Resources.Activity do
     :max_attempts,
     :recommended_attempts,
     :scoring_strategy,
+    :primary_resource_id,
     :time_limit
   ]
 
@@ -40,6 +41,7 @@ defmodule Oli.Resources.Activity do
       recommended_attempts: revision.recommended_attempts,
       time_limit: revision.time_limit,
       scoring_strategy: revision.scoring_strategy,
+      primary_resource_id: revision.primary_resource_id,
       inserted_at: revision.inserted_at,
       updated_at: revision.updated_at
     }

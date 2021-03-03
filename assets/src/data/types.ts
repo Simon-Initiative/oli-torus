@@ -1,4 +1,4 @@
-
+export type ResourceId = number;
 export type ResourceSlug = string;
 export type ProjectSlug = string;
 export type ObjectiveSlug = string;

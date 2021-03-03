@@ -4,6 +4,7 @@ defmodule Oli.Utils.Recaptcha do
     See the [documentation](https://developers.google.com/recaptcha/docs/verify)
     for more details.
   """
+  import Oli.HTTP
 
   @headers [
     {"Content-type", "application/x-www-form-urlencoded"},
@@ -20,7 +21,7 @@ defmodule Oli.Utils.Recaptcha do
     |> URI.encode_query()
 
     result =
-      with {:ok, response} <- HTTPoison.post(url, body, @headers, timeout: timeout),
+      with {:ok, response} <- http().post(url, body, @headers, timeout: timeout),
            {:ok, data} <- Jason.decode(response.body)
       do
         {:ok, data}

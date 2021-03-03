@@ -13,7 +13,9 @@ defmodule Oli.Lti.LTI_NRPS do
   @context_memberships_url_key "context_memberships_url"
 
   alias Oli.Lti.Membership
-  alias Oli.Lti_1p3.AccessToken
+  alias Lti_1p3.Tool.AccessToken
+
+  import Oli.HTTP
 
   require Logger
 
@@ -37,7 +39,7 @@ defmodule Oli.Lti.LTI_NRPS do
 
     url = context_memberships_url <> "?limit=1000"
 
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- HTTPoison.get(url, headers(access_token)),
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- http().get(url, headers(access_token)),
       {:ok, results} <- Jason.decode(body),
       members <- Map.get(results, "members")
     do

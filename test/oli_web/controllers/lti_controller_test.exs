@@ -1,6 +1,12 @@
 defmodule OliWeb.LtiControllerTest do
   use OliWeb.ConnCase
 
+  alias Lti_1p3.Platform.PlatformInstance
+  alias Lti_1p3.Platform.LoginHint
+  alias Lti_1p3.Platform.LoginHints
+
+  import Mox
+
   describe "lti_controller" do
     setup [:create_fixtures]
 
@@ -69,10 +75,175 @@ defmodule OliWeb.LtiControllerTest do
 
     end
 
+    test "launch successful for valid params and creates deployment on the fly", %{conn: conn, registration: registration} do
+      platform_jwk = jwk_fixture()
+
+      Oli.Test.MockHTTP
+      |> expect(:get, 2, fn "some key_set_url" ->
+        {:ok, %HTTPoison.Response{
+          status_code: 200,
+          body: Jason.encode!(%{
+            keys: [
+              platform_jwk.pem
+              |> JOSE.JWK.from_pem
+              |> JOSE.JWK.to_public
+              |> JOSE.JWK.to_map()
+              |> (fn {_kty, public_jwk} -> public_jwk end).()
+              |> Map.put("typ", platform_jwk.typ)
+              |> Map.put("alg", platform_jwk.alg)
+              |> Map.put("kid", platform_jwk.kid)
+              |> Map.put("use", "sig")
+            ]
+          })
+        }}  end)
+
+      state = "some-state"
+      conn = Plug.Test.init_test_session(conn, state: state)
+
+      custom_header = %{"kid" => platform_jwk.kid}
+      signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+      claims = Oli.Lti_1p3.TestHelpers.all_default_claims()
+        |> Map.delete("iss")
+        |> Map.delete("aud")
+
+      {:ok, claims} = Joken.Config.default_claims(iss: registration.issuer, aud: registration.client_id)
+        |> Joken.generate_claims(claims)
+      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+      deployment_id = claims["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
+      registration_id = registration.id
+      assert nil == Lti_1p3.Tool.get_registration_deployment(registration.issuer, registration.client_id, deployment_id)
+
+      conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+
+      assert redirected_to(conn) == Routes.delivery_path(conn, :index)
+      assert {%Lti_1p3.Tool.Registration{}, %Lti_1p3.Tool.Deployment{deployment_id: ^deployment_id, registration_id: ^registration_id}}
+        = Lti_1p3.Tool.get_registration_deployment(registration.issuer, registration.client_id, deployment_id)
+    end
+
+    test "launch handles invalid registration and shows registration form", %{conn: conn } do
+      platform_jwk = jwk_fixture()
+
+      Oli.Test.MockHTTP
+      |> expect(:get, 2, fn "some key_set_url" ->
+        {:ok, %HTTPoison.Response{
+          status_code: 200,
+          body: Jason.encode!(%{
+            keys: [
+              platform_jwk.pem
+              |> JOSE.JWK.from_pem
+              |> JOSE.JWK.to_public
+              |> JOSE.JWK.to_map()
+              |> (fn {_kty, public_jwk} -> public_jwk end).()
+              |> Map.put("typ", platform_jwk.typ)
+              |> Map.put("alg", platform_jwk.alg)
+              |> Map.put("kid", platform_jwk.kid)
+              |> Map.put("use", "sig")
+            ]
+          })
+        }}  end)
+
+      state = "some-state"
+      conn = Plug.Test.init_test_session(conn, state: state)
+
+      custom_header = %{"kid" => platform_jwk.kid}
+      signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+      claims = Oli.Lti_1p3.TestHelpers.all_default_claims()
+        |> Map.delete("iss")
+        |> Map.delete("aud")
+
+      {:ok, claims} = Joken.Config.default_claims(iss: "some different client_id", aud: "some different issuer")
+        |> Joken.generate_claims(claims)
+      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+      conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+
+      assert html_response(conn, 200) =~ "Welcome to the Open Learning Initiative!"
+      assert html_response(conn, 200) =~ "Register Your Institution"
+    end
+
+    test "authorize_redirect get successful for user", %{conn: conn} do
+      user = user_fixture()
+      {:ok, %LoginHint{value: login_hint}} = LoginHints.create_login_hint(user.id)
+      target_link_uri = "some-valid-url"
+      nonce = "some-nonce"
+      client_id = "some-client-id"
+      state = "some-state"
+      lti_message_hint = "some-lti-message-hint"
+
+      {:ok, %PlatformInstance{}} = Lti_1p3.Platform.create_platform_instance(%PlatformInstance{
+        name: "some-platform",
+        target_link_uri: target_link_uri,
+        client_id: client_id,
+        login_url: "some-login-url",
+        keyset_url: "some-keyset-url",
+        redirect_uris: "some-valid-url"
+      })
+
+      params = %{
+        "client_id" => client_id,
+        "login_hint" => login_hint,
+        "lti_message_hint" => lti_message_hint,
+        "nonce" => nonce,
+        "prompt" => "none",
+        "redirect_uri" => target_link_uri,
+        "response_mode" => "form_post",
+        "response_type" => "id_token",
+        "scope" => "openid",
+        "state" => state,
+      }
+
+      conn = Pow.Plug.assign_current_user(conn, user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, Routes.lti_path(conn, :authorize_redirect, params))
+
+      assert html_response(conn, 200) =~ "You are being redirected..."
+      assert html_response(conn, 200) =~ "<form name=\"post_redirect\" action=\"#{target_link_uri}\" method=\"post\">"
+    end
+
+    test "authorize_redirect get successful for author", %{conn: conn} do
+      author = author_fixture()
+      {:ok, %LoginHint{value: login_hint}} = LoginHints.create_login_hint(author.id, "author")
+      target_link_uri = "some-valid-url"
+      nonce = "some-nonce"
+      client_id = "some-client-id"
+      state = "some-state"
+      lti_message_hint = "some-lti-message-hint"
+
+      {:ok, %PlatformInstance{}} = Lti_1p3.Platform.create_platform_instance(%PlatformInstance{
+        name: "some-platform",
+        target_link_uri: target_link_uri,
+        client_id: client_id,
+        login_url: "some-login-url",
+        keyset_url: "some-keyset-url",
+        redirect_uris: "some-valid-url"
+      })
+
+      params = %{
+        "client_id" => client_id,
+        "login_hint" => login_hint,
+        "lti_message_hint" => lti_message_hint,
+        "nonce" => nonce,
+        "prompt" => "none",
+        "redirect_uri" => target_link_uri,
+        "response_mode" => "form_post",
+        "response_type" => "id_token",
+        "scope" => "openid",
+        "state" => state,
+      }
+
+      conn = Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+      conn = get(conn, Routes.lti_path(conn, :authorize_redirect, params))
+
+      assert html_response(conn, 200) =~ "You are being redirected..."
+      assert html_response(conn, 200) =~ "<form name=\"post_redirect\" action=\"#{target_link_uri}\" method=\"post\">"
+    end
+
     test "returns developer key json", %{conn: conn} do
       conn = get(conn, Routes.lti_path(conn, :developer_key_json))
 
-      active_jwk = Oli.Lti_1p3.get_active_jwk()
+      {:ok, active_jwk} = Lti_1p3.get_active_jwk()
 
       public_jwk = JOSE.JWK.from_pem(active_jwk.pem) |> JOSE.JWK.to_public()
       |> JOSE.JWK.to_map()
@@ -105,7 +276,7 @@ defmodule OliWeb.LtiControllerTest do
     registration = registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
     deployment = deployment_fixture(%{registration_id: registration.id})
 
-    %{conn: conn, deployment: deployment, registration: registration, institution: institution}
+    %{conn: conn, jwk: jwk, deployment: deployment, registration: registration, institution: institution}
   end
 
 end

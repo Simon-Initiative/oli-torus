@@ -1,13 +1,13 @@
 defmodule OliWeb.PageDeliveryView do
   use OliWeb, :view
 
-  alias Oli.Lti_1p3.ContextRoles
+  alias Lti_1p3.Tool.ContextRoles
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Numbering
 
-  def is_instructor?(conn, context_id) do
+  def is_instructor?(conn, section_slug) do
     user = conn.assigns.current_user
-    ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_instructor))
+    ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_instructor))
   end
 
   def container?(page) do
@@ -16,6 +16,16 @@ defmodule OliWeb.PageDeliveryView do
 
   def container_title(hierarchy_node) do
     Numbering.prefix(hierarchy_node.numbering) <> ": " <> hierarchy_node.revision.title
+  end
+
+  def has_submitted_attempt?(resource_access) do
+    case {resource_access.score, resource_access.out_of} do
+      {nil, nil} ->
+        # resource was accessed but no attempt was submitted
+        false
+      {_score, _out_of} ->
+        true
+    end
   end
 
   def calculate_score_percentage(resource_access) do

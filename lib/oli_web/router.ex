@@ -58,13 +58,6 @@ defmodule OliWeb.Router do
     plug Oli.Plugs.NoCache
   end
 
-  pipeline :delivery do
-    plug Oli.Plugs.SetDefaultPow, :user
-    plug Oli.Plugs.LoadLtiParams
-    plug Oli.Plugs.RemoveXFrameOptions
-    plug :put_root_layout, {OliWeb.LayoutView, "delivery.html"}
-  end
-
   # set the layout to be workspace
   pipeline :workspace do
     plug :put_root_layout, {OliWeb.LayoutView, "workspace.html"}
@@ -72,10 +65,12 @@ defmodule OliWeb.Router do
 
   # Ensure that we have a logged in user
   pipeline :delivery_protected do
+    plug Oli.Plugs.SetDefaultPow, :user
     plug Pow.Plug.RequireAuthenticated,
       error_handler: OliWeb.Pow.UserAuthErrorHandler
-    plug Oli.Plugs.SetDefaultPow, :user
+    plug Oli.Plugs.RemoveXFrameOptions
     plug Oli.Plugs.LoadLtiParams
+    plug :put_root_layout, {OliWeb.LayoutView, "delivery.html"}
   end
 
   # Ensure that we have a logged in user
@@ -161,8 +156,14 @@ defmodule OliWeb.Router do
     get "/help/sent", HelpController, :sent
   end
 
+  scope "/", OliWeb do
+    pipe_through [:api]
+
+    post "/access_tokens", LtiController, :access_tokens
+  end
+
   scope "/.well-known", OliWeb do
-    pipe_through [:browser]
+    pipe_through [:api]
 
     get "/jwks.json", LtiController, :jwks
   end
@@ -252,22 +253,52 @@ defmodule OliWeb.Router do
     get "/:project/link", ResourceController, :index
 
     post "/:project/activity/:activity_type", ActivityController, :create
-    put "/:project/resource/:resource/activity/:activity", ActivityController, :update
+
     put "/test/evaluate", ActivityController, :evaluate
     put "/test/transform", ActivityController, :transform
-
-    delete "/:project/resource/:resource/activity", ActivityController, :delete
 
     post "/:project/lock/:resource", LockController, :acquire
     delete "/:project/lock/:resource", LockController, :release
 
-    post "/:project/media", MediaController, :create
-    get "/:project/media", MediaController, :index
+  end
 
-    post "/:project_id/objectives", ResourceController, :create_objective
+  # Storage Service
+  scope "/api/v1/storage/project/:project/resource", OliWeb do
+    pipe_through [:api, :authoring_protected]
+
+    get "/:resource", ActivityController, :retrieve
+    post "/", ActivityController, :bulk_retrieve
+    delete "/:resource", ActivityController, :delete
+    put "/:resource", ActivityController, :update
+    post "/:resource", ActivityController, :create_secondary
 
   end
 
+  scope "/api/v1/storage/course/:course/resource", OliWeb do
+    pipe_through [:api, :delivery_protected]
+
+    get "/:resource", ActivityController, :retrieve_delivery
+    post "/", ActivityController, :bulk_retrieve_delivery
+  end
+
+  # Media Service
+  scope "/api/v1/media/project/:project", OliWeb do
+    pipe_through [:api, :authoring_protected]
+
+    post "/", MediaController, :create
+    get "/", MediaController, :index
+
+  end
+
+  # Objectives Service
+  scope "/api/v1/objectives/project/:project", OliWeb do
+    pipe_through [:api, :authoring_protected]
+
+    post "/", ObjectivesController, :create
+    get "/", ObjectivesController, :index
+    put "/objective/:objective", ObjectivesController, :update
+
+  end
 
   scope "/api/v1/attempt", OliWeb do
     pipe_through [:api, :delivery_protected]
@@ -288,6 +319,12 @@ defmodule OliWeb.Router do
 
   end
 
+  scope "/api/v1/lti", OliWeb, as: :api do
+    pipe_through [:api, :authoring_protected]
+
+    resources "/platforms", Api.PlatformInstanceController
+  end
+
   # LTI routes
   scope "/lti", OliWeb do
     pipe_through [:lti, :www_url_form]
@@ -300,10 +337,12 @@ defmodule OliWeb.Router do
     get "/developer_key.json", LtiController, :developer_key_json
 
     post "/register", LtiController, :request_registration
+
+    get "/authorize_redirect", LtiController, :authorize_redirect
   end
 
   scope "/course", OliWeb do
-    pipe_through [:browser, :delivery, :delivery_protected, :pow_email_layout]
+    pipe_through [:browser, :delivery_protected, :pow_email_layout]
 
     get "/", DeliveryController, :index
 
@@ -320,13 +359,14 @@ defmodule OliWeb.Router do
     # course link resolver
     get "/link/:revision_slug", PageDeliveryController, :link
 
-    get "/:context_id/page/:revision_slug", PageDeliveryController, :page
-    get "/:context_id/page", PageDeliveryController, :index
-    get "/:context_id/page/:revision_slug/attempt", PageDeliveryController, :start_attempt
-    get "/:context_id/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt
+    get "/:section_slug/page", PageDeliveryController, :index
+    get "/:section_slug/page/:revision_slug", PageDeliveryController, :page
+    get "/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt
+    get "/:section_slug/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt
+    get "/:section_slug/page/:revision_slug/attempt/:attempt_guid/review", PageDeliveryController, :review_attempt
 
-    live "/:context_id/grades", Grades.GradesLive, session: {__MODULE__, :with_delivery, []}
-    get "/:context_id/grades/export", PageDeliveryController, :export_gradebook
+    live "/:section_slug/grades", Grades.GradesLive, session: {__MODULE__, :with_delivery, []}
+    get "/:section_slug/grades/export", PageDeliveryController, :export_gradebook
 
     resources "/help", HelpDeliveryController, only: [:index, :create]
     get "/help/sent", HelpDeliveryController, :sent
@@ -335,6 +375,8 @@ defmodule OliWeb.Router do
   scope "/admin", OliWeb do
     pipe_through [:browser, :authoring_protected, :admin]
     live_dashboard "/dashboard", metrics: OliWeb.Telemetry, session: {__MODULE__, :with_session, []}
+
+    resources "/platform_instances", PlatformInstanceController
   end
 
   scope "/admin", OliWeb do
