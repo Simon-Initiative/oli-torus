@@ -195,6 +195,7 @@ OliWeb.CollaboratorController.html
 OliWeb.Common.AuthorInitials.html
 OliWeb.Common.Breadcrumb.html
 OliWeb.Common.Links.html
+OliWeb.Common.LtiSession.html
 OliWeb.Common.ManualModal.html
 OliWeb.Common.MaterialIcon.html
 OliWeb.Common.MinimalModal.html
@@ -327,8 +328,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-6087fddc2a.js
-dist/sidebar_items-6089cf98d9.js
+dist/search_items-8dd7424b5e.js
+dist/sidebar_items-13802c86fc.js
 index.html
 license.html
 readme.html
