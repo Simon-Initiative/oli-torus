@@ -3,15 +3,17 @@
   <h3 class="display-4"><%= @title %></h3>
   <p class="lead" style="color: #c0392b;">This is a <strong>graded assessment</strong></p>
 
-  <h4 class="mb-2">
-    <span>Score: </span><span><%= calculate_score_percentage(Map.get(@summary.access_map, @resource_id)) %></span>
-  </h4>
+  <%= if has_submitted_attempt?(Map.get(@summary.access_map, @resource_id)) do %>
+    <h4 class="mb-2">
+      <span>Score: </span><span><%= calculate_score_percentage(Map.get(@summary.access_map, @resource_id)) %></span>
+    </h4>
+  <% end %>
   <p><%= @message %></p>
   <div>
   <%= for resource_attempt <- @resource_attempts do %>
   <div class="mb-2">
     <h5 class="mb-0">
-      <%= link to: Routes.page_delivery_path(@conn, :review_attempt, @context_id, @slug, resource_attempt.attempt_guid) do %>
+      <%= link to: Routes.page_delivery_path(@conn, :review_attempt, @section_slug, @slug, resource_attempt.attempt_guid) do %>
       <span>Attempt <%= resource_attempt.attempt_number %> of <%= @max_attempts %></span>
       <% end %>
     </h5>
@@ -41,7 +43,7 @@
   <div class="text-center">
     <p>When you are ready to begin, you may <strong>Start Attempt</strong>.</p>
     <p class="lead">
-      <%= link "Start Attempt", class: "btn btn-primary btn-lg", to: Routes.page_delivery_path(@conn, :start_attempt, @context_id, @slug) %>
+      <%= link "Start Attempt", class: "btn btn-primary btn-lg", to: Routes.page_delivery_path(@conn, :start_attempt, @section_slug, @slug) %>
     </p>
   </div>
   <% end  %>

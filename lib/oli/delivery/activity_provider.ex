@@ -7,10 +7,10 @@ defmodule Oli.Delivery.ActivityProvider do
   @doc """
   Realizes and resolves activities.
   """
-  def provide(context_id, %Revision{} = revision) do
+  def provide(section_slug, %Revision{} = revision) do
     case Realizer.realize(revision) do
       [] -> []
-      ids -> DeliveryResolver.from_resource_id(context_id, ids)
+      ids -> DeliveryResolver.from_resource_id(section_slug, ids)
     end
   end
 
