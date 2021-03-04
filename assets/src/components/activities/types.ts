@@ -36,7 +36,7 @@ export type ClientEvaluation = {
   score: number | null;
   outOf: number | null;
   feedback: any;
-}
+};
 
 export type Manifest = {
   id: ID,

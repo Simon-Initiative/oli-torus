@@ -59,7 +59,8 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   onSubmitPart: (attemptGuid: string, partAttemptGuid: string,
     response: StudentResponse) => Promise<EvaluationResponse>;
   onResetPart: (attemptGuid: string, partAttemptGuid: string) => Promise<PartActivityResponse>;
-  onSubmitEvaluations: (attemptGuid: string, clientEvaluations: ClientEvaluation[]) => Promise<EvaluationResponse>;
+  onSubmitEvaluations: (attemptGuid: string, clientEvaluations: ClientEvaluation[]) =>
+    Promise<EvaluationResponse>;
 }
 
 // An abstract delivery web component, designed to delegate to
@@ -84,7 +85,8 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   onSubmitPart: (attemptGuid: string, partAttemptGuid: string,
     response: StudentResponse) => Promise<EvaluationResponse>;
   onResetPart: (attemptGuid: string, partAttemptGuid: string) => Promise<PartActivityResponse>;
-  onSubmitEvaluations: (attemptGuid: string, clientEvaluations: ClientEvaluation[]) => Promise<EvaluationResponse>;
+  onSubmitEvaluations: (attemptGuid: string, clientEvaluations: ClientEvaluation[]) =>
+    Promise<EvaluationResponse>;
 
   constructor() {
     super();
