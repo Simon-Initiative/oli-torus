@@ -70,8 +70,7 @@ defmodule OliWeb.AttemptController do
 
   def submit_evaluations(conn, %{"activity_attempt_guid" => activity_attempt_guid, "evaluations" => client_evaluations}) do
 
-    lti_params = conn.assigns.lti_params
-    context_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"]
+    %Section{slug: section_slug} = Sections.get_section_from_lti_params(conn.assigns.lti_params)
 
     client_evaluations = Enum.map(client_evaluations, fn %{
       "attemptGuid" => attempt_guid,
@@ -93,7 +92,7 @@ defmodule OliWeb.AttemptController do
     }
     end)
 
-    case Attempts.submit_client_evaluations(context_id, activity_attempt_guid, client_evaluations) do
+    case Attempts.submit_client_evaluations(section_slug, activity_attempt_guid, client_evaluations) do
       {:ok, evaluations} -> json conn, %{ "type" => "success", "evaluations" => evaluations}
       {:error, _} -> error(conn, 500, "server error")
     end
