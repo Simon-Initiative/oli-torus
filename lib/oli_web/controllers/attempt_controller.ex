@@ -73,8 +73,25 @@ defmodule OliWeb.AttemptController do
     lti_params = conn.assigns.lti_params
     context_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"]
 
-    client_evaluations = Enum.map(client_evaluations, fn %{"attemptGuid" => attempt_guid, "response" => response, "score" => score, "outOf" => out_of, "feedback" => feedback} ->
-      %{attempt_guid: attempt_guid, client_evaluation: %ClientEvaluation{input: %StudentInput{input: Map.get(response, "input")}, score: score, out_of: out_of, feedback: feedback}} end)
+    client_evaluations = Enum.map(client_evaluations, fn %{
+      "attemptGuid" => attempt_guid,
+      "response" => response,
+      "score" => score,
+      "outOf" => out_of,
+      "feedback" => feedback
+      } -> %{
+      attempt_guid: attempt_guid,
+      client_evaluation: %ClientEvaluation{
+        input: %StudentInput{
+          input: Map.get(response, "input")
+        },
+        score:
+        score,
+        out_of: out_of,
+        feedback: feedback
+      }
+    }
+    end)
 
     case Attempts.submit_client_evaluations(context_id, activity_attempt_guid, client_evaluations) do
       {:ok, evaluations} -> json conn, %{ "type" => "success", "evaluations" => evaluations}

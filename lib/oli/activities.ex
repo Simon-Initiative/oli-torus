@@ -16,6 +16,7 @@ defmodule Oli.Activities do
       authoring_element: manifest.authoring.element,
       delivery_script: manifest.id <> "_delivery.js",
       delivery_element: manifest.delivery.element,
+      allow_client_evaluation: manifest.allowClientEvaluation,
       description: manifest.description,
       title: manifest.friendlyName,
       icon: "nothing",

@@ -6,6 +6,7 @@ defmodule Oli.Delivery.Attempts do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.{PartAttempt, ResourceAccess, ResourceAttempt, ActivityAttempt, Snapshot}
   alias Oli.Delivery.Evaluation.{EvaluationContext}
+  alias Oli.Activities
   alias Oli.Activities.State.ActivityState
   alias Oli.Resources.{Revision}
   alias Oli.Activities.Model
@@ -791,40 +792,49 @@ defmodule Oli.Delivery.Attempts do
   @spec submit_client_evaluations(String.t, String.t, [map()]) :: {:ok, [map()]} | {:error, any}
   def submit_client_evaluations(context_id, activity_attempt_guid, client_evaluations) do
 
-    Repo.transaction(fn ->
+    # verify this activity type allows client evaluation
+    activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+    activity_registration_slug = activity_attempt.revision.activity_type.slug
+    case Oli.Activities.get_registration_by_slug(activity_registration_slug) do
+      %Activities.Registration{allow_client_evaluation: true} ->
+        Repo.transaction(fn ->
 
-      part_attempts = get_latest_part_attempts(activity_attempt_guid)
+          part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
-      roll_up = fn result ->
-        rollup_part_attempt_evaluations(activity_attempt_guid)
-        result
-      end
-      no_roll_up = fn result -> result end
+          roll_up = fn result ->
+            rollup_part_attempt_evaluations(activity_attempt_guid)
+            result
+          end
+          no_roll_up = fn result -> result end
 
-      {roll_up_fn, client_evaluations} = case filter_already_submitted(client_evaluations, part_attempts) do
-        {true, client_evaluations} -> {roll_up, client_evaluations}
-        {false, client_evaluations} -> {no_roll_up, client_evaluations}
-      end
+          {roll_up_fn, client_evaluations} = case filter_already_submitted(client_evaluations, part_attempts) do
+            {true, client_evaluations} -> {roll_up, client_evaluations}
+            {false, client_evaluations} -> {no_roll_up, client_evaluations}
+          end
 
-      part_inputs = Enum.map(client_evaluations, fn %{attempt_guid: attempt_guid, client_evaluation: %ClientEvaluation{input: input}} ->
-        %{attempt_guid: attempt_guid, input: input}
-      end)
+          part_inputs = Enum.map(client_evaluations, fn %{attempt_guid: attempt_guid, client_evaluation: %ClientEvaluation{input: input}} ->
+            %{attempt_guid: attempt_guid, input: input}
+          end)
 
-      case client_evaluations
-      |> Enum.map(fn %{attempt_guid: _attempt_guid, client_evaluation: %ClientEvaluation{score: score, out_of: out_of, feedback: feedback}} ->
-        {:ok, {feedback, %Result{score: score, out_of: out_of}}}
-      end)
-      |> (fn evaluations -> {:ok, evaluations} end).()
-      |> persist_evaluations(part_inputs, roll_up_fn)
-      |> generate_snapshots(context_id, part_inputs) do
+          case client_evaluations
+          |> Enum.map(fn %{attempt_guid: _attempt_guid, client_evaluation: %ClientEvaluation{score: score, out_of: out_of, feedback: feedback}} ->
+            {:ok, {feedback, %Result{score: score, out_of: out_of}}}
+          end)
+          |> (fn evaluations -> {:ok, evaluations} end).()
+          |> persist_evaluations(part_inputs, roll_up_fn)
+          |> generate_snapshots(context_id, part_inputs) do
 
-        {:ok, results} -> results
-        {:error, error} -> Repo.rollback(error)
-        _ -> Repo.rollback("unknown error")
-      end
+            {:ok, results} -> results
+            {:error, error} -> Repo.rollback(error)
+            _ -> Repo.rollback("unknown error")
+          end
 
-    end)
+        end)
 
+
+      _ ->
+        {:error, "Activity type does not allow client evaluation"}
+    end
   end
 
   def submit_graded_page(context_id, resource_attempt_guid) do
@@ -1006,7 +1016,7 @@ defmodule Oli.Delivery.Attempts do
       iex> get_activity_attempt_by(attempt_guid: "111")
       nil
   """
-  def get_activity_attempt_by(clauses), do: Repo.get_by(ActivityAttempt, clauses) |> Repo.preload([:revision])
+  def get_activity_attempt_by(clauses), do: Repo.get_by(ActivityAttempt, clauses) |> Repo.preload([revision: [:activity_type]])
 
   @doc """
   Gets a part attempt by a clause.
