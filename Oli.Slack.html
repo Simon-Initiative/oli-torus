@@ -5,9 +5,9 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.23.0">
-    <meta name="project" content="OLI Torus v0.6.0">
+    <meta name="project" content="OLI Torus v0.6.1">
 
-    <title>Oli.Slack — OLI Torus v0.6.0</title>
+    <title>Oli.Slack — OLI Torus v0.6.1</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
     <script src="dist/sidebar_items-13802c86fc.js"></script>
@@ -50,7 +50,7 @@
 OLI Torus
       </a>
       <strong class="sidebar-projectVersion">
-        v0.6.0
+        v0.6.1
       </strong>
     </div>
 
@@ -78,7 +78,7 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Slack <small class="app-vsn">(OLI Torus v0.6.0)</small>
+Oli.Slack <small class="app-vsn">(OLI Torus v0.6.1)</small>
 
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/slack.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
@@ -147,34 +147,34 @@ Functions
 
 <p>Sends a message to slack using the pre-configured configured webhook</p><p>Example Payload:
 %{
-  &quot;blocks&quot; =&gt; [</p><pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="5099700351-1">{</span><span class="w">
+  &quot;blocks&quot; =&gt; [</p><pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="8540569930-1">{</span><span class="w">
   </span><span class="s">&quot;type&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;section&quot;</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="5099700351-2">{</span><span class="w">
+  </span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8540569930-2">{</span><span class="w">
     </span><span class="s">&quot;type&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;mrkdwn&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;Chew choo! @scott started a train to Deli Board at 11:30. Will you join?&quot;</span><span class="w">
-  </span><span class="p" data-group-id="5099700351-2">}</span><span class="w">
-</span><span class="p" data-group-id="5099700351-1">}</span><span class="p">,</span><span class="w">
-</span><span class="p" data-group-id="5099700351-3">{</span><span class="w">
+  </span><span class="p" data-group-id="8540569930-2">}</span><span class="w">
+</span><span class="p" data-group-id="8540569930-1">}</span><span class="p">,</span><span class="w">
+</span><span class="p" data-group-id="8540569930-3">{</span><span class="w">
   </span><span class="s">&quot;type&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;actions&quot;</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;elements&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="5099700351-4">[</span><span class="w">
-    </span><span class="p" data-group-id="5099700351-5">{</span><span class="w">
+  </span><span class="s">&quot;elements&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8540569930-4">[</span><span class="w">
+    </span><span class="p" data-group-id="8540569930-5">{</span><span class="w">
       </span><span class="s">&quot;type&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;button&quot;</span><span class="p">,</span><span class="w">
-      </span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="5099700351-6">{</span><span class="w">
+      </span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8540569930-6">{</span><span class="w">
         </span><span class="s">&quot;type&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;plain_text&quot;</span><span class="p">,</span><span class="w">
         </span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;Yes&quot;</span><span class="p">,</span><span class="w">
         </span><span class="s">&quot;emoji&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="no">true</span><span class="w">
-      </span><span class="p" data-group-id="5099700351-6">}</span><span class="w">
-    </span><span class="p" data-group-id="5099700351-5">}</span><span class="p">,</span><span class="w">
-    </span><span class="p" data-group-id="5099700351-7">{</span><span class="w">
+      </span><span class="p" data-group-id="8540569930-6">}</span><span class="w">
+    </span><span class="p" data-group-id="8540569930-5">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="8540569930-7">{</span><span class="w">
       </span><span class="s">&quot;type&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;button&quot;</span><span class="p">,</span><span class="w">
-      </span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="5099700351-8">{</span><span class="w">
+      </span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8540569930-8">{</span><span class="w">
         </span><span class="s">&quot;type&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;plain_text&quot;</span><span class="p">,</span><span class="w">
         </span><span class="s">&quot;text&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;No&quot;</span><span class="p">,</span><span class="w">
         </span><span class="s">&quot;emoji&quot;</span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="no">true</span><span class="w">
-      </span><span class="p" data-group-id="5099700351-8">}</span><span class="w">
-    </span><span class="p" data-group-id="5099700351-7">}</span><span class="w">
-  </span><span class="p" data-group-id="5099700351-4">]</span><span class="w">
-</span><span class="p" data-group-id="5099700351-3">}</span></code></pre><p>  ]
+      </span><span class="p" data-group-id="8540569930-8">}</span><span class="w">
+    </span><span class="p" data-group-id="8540569930-7">}</span><span class="w">
+  </span><span class="p" data-group-id="8540569930-4">]</span><span class="w">
+</span><span class="p" data-group-id="8540569930-3">}</span></code></pre><p>  ]
 }</p>
   </section>
 </section>
