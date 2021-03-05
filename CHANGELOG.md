@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+### Enhancements
+  - Add the ability for an activity to submit client evaluations
+
 ## 0.6.0 (2021-3-3)
 ### Enhancements
   - Add LTI 1.3 platform launch support
