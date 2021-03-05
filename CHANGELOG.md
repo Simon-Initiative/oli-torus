@@ -25,6 +25,17 @@
 
 ## 0.5.1 (2021-1-13)
 ### Bug fixes
+  - Replace use of context_id in favor of the unique course section slug
+  - Allow Slack hook URL to be unspecified during LMS LTI registration
+  - Prevent LTI launch to an iframe to avoid third-party cookie issues
+  - Honor the current location when inserting block content (YouTube, images, etc)
+  - Remove foreign key constraint that tied a user to an institution
+  - Do not display stale locks in Curriculum view
+  - Ensure error messages always visible in page and activity editors
+  - Remove ability to cancel activity creation during objective selection
+
+## 0.5.1 (2021-1-13)
+### Bug fixes
   - Fix missing status 201 handling on Freshdesk API call
   - Fix an issue where creating an institution with the same url as multiple existing institutions creates another new institution
 
