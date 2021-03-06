@@ -5,6 +5,11 @@
 ### Bug fixes
   - Fix an issue where pasting text containing newlines from an external source crashes the editor
 
+## 0.6.1 (2021-3-3)
+
+### Bug fixes
+  - Fixes an issue where existing sections might not be found on LTI launch
+
 ## 0.6.0 (2021-3-3)
 ### Enhancements
   - Add LTI 1.3 platform launch support
