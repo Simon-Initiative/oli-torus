@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Bug fixes
+  - Fix an issue where pasting text containing newlines from an external source crashes the editor
+
 ## 0.6.1 (2021-3-3)
 
 ### Bug fixes
