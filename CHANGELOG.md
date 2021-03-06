@@ -3,7 +3,10 @@
 ## Unreleased
 
 ### Enhancements
-  - Add the ability for an activity to submit client evaluations
+  - Add the ability for an activity to submit client side evaluations
+
+### Bug fixes
+  - Fix an issue where pasting text containing newlines from an external source crashes the editor
 
 ## 0.6.1 (2021-3-3)
 
