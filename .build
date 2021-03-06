@@ -68,6 +68,7 @@ Oli.Authoring.Theme.html
 Oli.Authoring.html
 Oli.Delivery.ActivityProvider.html
 Oli.Delivery.Attempts.ActivityAttempt.html
+Oli.Delivery.Attempts.ClientEvaluation.html
 Oli.Delivery.Attempts.PartAttempt.html
 Oli.Delivery.Attempts.ResourceAccess.html
 Oli.Delivery.Attempts.ResourceAttempt.html
@@ -328,8 +329,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-8dd7424b5e.js
-dist/sidebar_items-13802c86fc.js
+dist/search_items-0f3356ce2f.js
+dist/sidebar_items-602b407f88.js
 index.html
 license.html
 readme.html
