@@ -11,6 +11,7 @@ defmodule Oli.Activities.Registration do
     field :delivery_element, :string
     field :icon, :string
     field :title, :string
+    field :allow_client_evaluation, :boolean, default: false
 
     timestamps(type: :utc_datetime)
   end
@@ -18,7 +19,7 @@ defmodule Oli.Activities.Registration do
   @doc false
   def changeset(registration, attrs) do
     registration
-    |> cast(attrs, [:slug, :title, :icon, :description, :delivery_element, :authoring_element, :delivery_script, :authoring_script])
+    |> cast(attrs, [:slug, :title, :icon, :description, :delivery_element, :authoring_element, :delivery_script, :authoring_script, :allow_client_evaluation])
     |> validate_required([:slug, :title, :icon, :description, :delivery_element, :authoring_element, :delivery_script, :authoring_script])
     |> unique_constraint(:slug)
     |> unique_constraint(:authoring_element)

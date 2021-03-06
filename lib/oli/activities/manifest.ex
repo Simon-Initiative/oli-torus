@@ -1,14 +1,17 @@
 defmodule Oli.Activities.Manifest do
+  import Oli.Utils
 
-  defstruct [:id, :friendlyName, :description, :delivery, :authoring]
+  defstruct [:id, :friendlyName, :description, :delivery, :authoring, :allowClientEvaluation]
 
-  def parse(%{"id" => id, "friendlyName" => friendlyName, "description" => description, "delivery" => delivery, "authoring" => authoring }) do
+  def parse(%{"id" => id, "friendlyName" => friendlyName, "description" => description, "delivery" => delivery, "authoring" => authoring} = json) do
     %Oli.Activities.Manifest{
       id: id,
       friendlyName: friendlyName,
       description: description,
       delivery: Oli.Activities.ModeSpecification.parse(delivery),
-      authoring: Oli.Activities.ModeSpecification.parse(authoring)}
+      authoring: Oli.Activities.ModeSpecification.parse(authoring),
+      allowClientEvaluation: value_or(json["allowClientEvaluation"], false),
+    }
   end
 
 end

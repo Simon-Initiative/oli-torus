@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Enhancements
+  - Add the ability for an activity to submit client side evaluations
+
 ### Bug fixes
   - Fix an issue where pasting text containing newlines from an external source crashes the editor
 
