@@ -58,7 +58,7 @@ defmodule Oli.Interop.Ingest do
           {:ok, objective_map} <- create_objectives(project, resource_map, as_author),
           {:ok, activity_map} <- create_activities(project, resource_map, objective_map, as_author),
           {:ok, page_map} <- create_pages(project, resource_map, activity_map, objective_map, as_author),
-          {:ok, _} <- create_media(project, media_details, as_author),
+          {:ok, _} <- create_media(project, media_details),
           {:ok, _} <- create_hierarchy(project, root_revision, page_map, hierarchy_details, as_author)
         do
           project
@@ -82,7 +82,7 @@ defmodule Oli.Interop.Ingest do
 
     case Map.get(project_details, "title") do
       nil -> {:error, "no project title found"}
-      title -> Oli.Authoring.Course.create_project(title, as_author)
+      title -> Oli.Authoring.Course.create_ingested_project(Map.get(project_details, "slug"), title, as_author)
     end
 
   end
@@ -254,8 +254,21 @@ defmodule Oli.Interop.Ingest do
   end
 
   # Create the media entries
-  defp create_media(_project, _media_details, _as_author) do
-    {:ok, %{}}
+  defp create_media(project, media_details) do
+
+    items = Map.get(media_details, "mediaItems")
+    |> Enum.map(fn i -> %{
+      url: i["url"],
+      file_name: i["name"],
+      mime_type: i["mimeType"],
+      file_size: i["fileSize"],
+      md5_hash: i["md5"],
+      deleted: false,
+      project_id: project.id
+    } end)
+
+    Repo.transaction(fn -> Enum.map(items, &Oli.Authoring.MediaLibrary.create_media_item/1) end)
+
   end
 
   # create the course hierarchy
