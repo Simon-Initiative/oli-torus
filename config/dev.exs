@@ -13,7 +13,9 @@ config :oli, Oli.Repo,
   database: System.get_env("DB_NAME", "oli_dev"),
   hostname: System.get_env("DB_HOST", "localhost"),
   show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+  pool_size: 10,
+  timeout: 600_000,
+  ownership_timeout: 600_000
 
 # Configure email for development
 config :oli, Oli.Mailer,
