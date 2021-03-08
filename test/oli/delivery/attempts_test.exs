@@ -82,7 +82,18 @@ defmodule Oli.Delivery.AttemptsTest do
       Attempts.track_access(resource.id, section.slug, user2.id)
       entries = Oli.Repo.all(Oli.Delivery.Attempts.ResourceAccess)
       assert length(entries) == 2
-      assert hd(entries).access_count == 2
+
+      # assert the access counts in a way that disregards the order of the access records
+      first = Enum.at(entries, 0)
+      second = Enum.at(entries, 1)
+
+      if first.user_id == user2.id do
+        assert first.access_count == 1
+        assert second.access_count == 2
+      else
+        assert first.access_count == 2
+        assert second.access_count == 1
+      end
 
     end
 
