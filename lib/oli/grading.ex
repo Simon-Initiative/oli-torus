@@ -4,8 +4,6 @@ defmodule Oli.Grading do
   consumable by various tools such as Excel (CSV) or an LMS API.
   """
 
-  @context_url "https://purl.imsglobal.org/spec/lti/claim/context"
-
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -21,7 +19,6 @@ defmodule Oli.Grading do
   alias Oli.Resources.ResourceType
   import Ecto.Query, warn: false
   alias Oli.Repo
-
 
   @doc """
   If grade passback services 2.0 is enabled, sends the current state of a ResourceAccess
@@ -61,9 +58,8 @@ defmodule Oli.Grading do
   defp send_score(lti_launch_params, %ResourceAccess{} = resource_access, token) do
 
     line_items_service_url = LTI_AGS.get_line_items_url(lti_launch_params)
-
-    context_id = Map.get(lti_launch_params, @context_url) |> Map.get("id")
-    label = DeliveryResolver.from_resource_id(context_id, resource_access.resource_id).title
+    %Section{slug: section_slug} = Sections.get_section_from_lti_params(lti_launch_params)
+    label = DeliveryResolver.from_resource_id(section_slug, resource_access.resource_id).title
 
     # Next, fetch (and possibly create) the line item associated with this resource
     case LTI_AGS.fetch_or_create_line_item(line_items_service_url, resource_access.resource_id, 1, label, token) do
@@ -164,13 +160,13 @@ defmodule Oli.Grading do
   def generate_gradebook_for_section(%Section{} = section) do
 
     # get publication page resources, filtered by graded: true
-    graded_pages = fetch_graded_pages(section.context_id)
+    graded_pages = fetch_graded_pages(section.slug)
 
     # get students enrolled in the section, filter by role: student
-    students = fetch_students(section.context_id)
+    students = fetch_students(section.slug)
 
     # create a map of all resource accesses, keyed off resource id
-    resource_accesses = fetch_resource_accesses(section.context_id)
+    resource_accesses = fetch_resource_accesses(section.slug)
 
     # build gradebook map - for each user in the section, create a gradebook row. Using
     # resource_accesses, create a list of gradebook scores leaving scores null if they do not exist
@@ -203,14 +199,14 @@ defmodule Oli.Grading do
     {gradebook, column_labels}
   end
 
-  def fetch_students(context_id) do
-    Sections.list_enrollments(context_id)
+  def fetch_students(section_slug) do
+    Sections.list_enrollments(section_slug)
       |> Enum.filter(fn e -> ContextRoles.contains_role?(e.context_roles, ContextRoles.get_role(:context_learner)) end)
       |> Enum.map(fn e -> e.user end)
   end
 
-  def fetch_resource_accesses(context_id) do
-    Attempts.get_graded_resource_access_for_context(context_id)
+  def fetch_resource_accesses(section_slug) do
+    Attempts.get_graded_resource_access_for_context(section_slug)
       |> Enum.reduce(%{}, fn resource_access, acc ->
         case acc[resource_access.resource_id] do
           nil ->
@@ -221,7 +217,7 @@ defmodule Oli.Grading do
       end)
   end
 
-  def fetch_graded_pages(context_id) do
+  def fetch_graded_pages(section_slug) do
     resource_type_id = ResourceType.get_id_by_type("page")
 
     Repo.all(from s in Section,
@@ -232,7 +228,7 @@ defmodule Oli.Grading do
         rev.deleted == false and
         rev.graded == true and
         rev.resource_type_id == ^resource_type_id and
-        s.context_id == ^context_id,
+        s.slug == ^section_slug,
       select: rev)
   end
 

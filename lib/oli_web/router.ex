@@ -58,13 +58,6 @@ defmodule OliWeb.Router do
     plug Oli.Plugs.NoCache
   end
 
-  pipeline :delivery do
-    plug Oli.Plugs.SetDefaultPow, :user
-    plug Oli.Plugs.LoadLtiParams
-    plug Oli.Plugs.RemoveXFrameOptions
-    plug :put_root_layout, {OliWeb.LayoutView, "delivery.html"}
-  end
-
   # set the layout to be workspace
   pipeline :workspace do
     plug :put_root_layout, {OliWeb.LayoutView, "workspace.html"}
@@ -72,10 +65,12 @@ defmodule OliWeb.Router do
 
   # Ensure that we have a logged in user
   pipeline :delivery_protected do
+    plug Oli.Plugs.SetDefaultPow, :user
     plug Pow.Plug.RequireAuthenticated,
       error_handler: OliWeb.Pow.UserAuthErrorHandler
-    plug Oli.Plugs.SetDefaultPow, :user
+    plug Oli.Plugs.RemoveXFrameOptions
     plug Oli.Plugs.LoadLtiParams
+    plug :put_root_layout, {OliWeb.LayoutView, "delivery.html"}
   end
 
   # Ensure that we have a logged in user
@@ -321,7 +316,7 @@ defmodule OliWeb.Router do
     put "/activity/:activity_attempt_guid", AttemptController, :submit_activity
     patch "/activity/:activity_attempt_guid", AttemptController, :save_activity
 
-
+    put "/activity/:activity_attempt_guid/evaluations", AttemptController, :submit_evaluations
   end
 
   scope "/api/v1/lti", OliWeb, as: :api do
@@ -347,7 +342,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/course", OliWeb do
-    pipe_through [:browser, :delivery, :delivery_protected, :pow_email_layout]
+    pipe_through [:browser, :delivery_protected, :pow_email_layout]
 
     get "/", DeliveryController, :index
 
@@ -364,14 +359,14 @@ defmodule OliWeb.Router do
     # course link resolver
     get "/link/:revision_slug", PageDeliveryController, :link
 
-    get "/:context_id/page/:revision_slug", PageDeliveryController, :page
-    get "/:context_id/page", PageDeliveryController, :index
-    get "/:context_id/page/:revision_slug/attempt", PageDeliveryController, :start_attempt
-    get "/:context_id/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt
-    get "/:context_id/page/:revision_slug/attempt/:attempt_guid/review", PageDeliveryController, :review_attempt
+    get "/:section_slug/page", PageDeliveryController, :index
+    get "/:section_slug/page/:revision_slug", PageDeliveryController, :page
+    get "/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt
+    get "/:section_slug/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt
+    get "/:section_slug/page/:revision_slug/attempt/:attempt_guid/review", PageDeliveryController, :review_attempt
 
-    live "/:context_id/grades", Grades.GradesLive, session: {__MODULE__, :with_delivery, []}
-    get "/:context_id/grades/export", PageDeliveryController, :export_gradebook
+    live "/:section_slug/grades", Grades.GradesLive, session: {__MODULE__, :with_delivery, []}
+    get "/:section_slug/grades/export", PageDeliveryController, :export_gradebook
 
     resources "/help", HelpDeliveryController, only: [:index, :create]
     get "/help/sent", HelpDeliveryController, :sent

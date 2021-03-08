@@ -2,6 +2,7 @@ defmodule Oli.Help.Providers.FreshdeskHelp do
   @behaviour Oli.Help.Dispatcher
 
   alias Oli.Help.HelpContent
+  import Oli.HTTP
 
   require Logger
 
@@ -27,7 +28,7 @@ defmodule Oli.Help.Providers.FreshdeskHelp do
         }
       )
 
-    case HTTPoison.post(url, body, @headers) do
+    case http().post(url, body, @headers) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, body}
       {:ok, %HTTPoison.Response{status_code: 201, body: body}} ->

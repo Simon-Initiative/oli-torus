@@ -36,9 +36,9 @@
 </script>
 
 <%= if @graded && @activity_count > 0 && @progress_state != :in_review do %>
-  <%= link "Submit Assessment", to: Routes.page_delivery_path(@conn, :finalize_attempt, @context_id, @slug, @attempt_guid), class: "btn btn-primary btn-lg" %>
+  <%= link "Submit Assessment", to: Routes.page_delivery_path(@conn, :finalize_attempt, @section_slug, @slug, @attempt_guid), class: "btn btn-primary btn-lg" %>
 <% end %>
 
 <%= if @progress_state == :in_review do %>
-<%= link "Exit", to: Routes.page_delivery_path(@conn, :page, @context_id, @slug), class: "btn btn-primary btn-lg" %>
+<%= link "Exit", to: Routes.page_delivery_path(@conn, :page, @section_slug, @slug), class: "btn btn-primary btn-lg" %>
 <% end %>

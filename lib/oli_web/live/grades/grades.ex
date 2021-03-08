@@ -11,12 +11,12 @@ defmodule OliWeb.Grades.GradesLive do
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Attempts.ResourceAccess
 
-  def mount(%{"context_id" => context_id}, %{"lti_params" => lti_params, "current_user" => current_user}, socket) do
+  def mount(%{"section_slug" => section_slug}, %{"lti_params" => lti_params, "current_user" => current_user}, socket) do
 
-    if ContextRoles.has_role?(current_user, context_id, ContextRoles.get_role(:context_instructor)) do
+    if ContextRoles.has_role?(current_user, section_slug, ContextRoles.get_role(:context_instructor)) do
 
       line_items_url = LTI_AGS.get_line_items_url(lti_params)
-      graded_pages = Grading.fetch_graded_pages(context_id)
+      graded_pages = Grading.fetch_graded_pages(section_slug)
       selected_page = if length(graded_pages) > 0 do hd(graded_pages).resource_id else nil end
 
       {:ok, assign(socket,
@@ -27,7 +27,7 @@ defmodule OliWeb.Grades.GradesLive do
         task_queue: [],
         progress_current: 0,
         progress_max: 0,
-        context_id: context_id,
+        section_slug: section_slug,
         lti_params: lti_params)
       }
     else
@@ -95,10 +95,10 @@ defmodule OliWeb.Grades.GradesLive do
     creation_tasks ++ update_tasks
   end
 
-  defp determine_grade_sync_tasks(context_id, graded_page, line_item, students) do
+  defp determine_grade_sync_tasks(section_slug, graded_page, line_item, students) do
 
     # create a map of all resource accesses, keyed off of the student id
-    resource_accesses = Attempts.get_resource_access_for_page(context_id, graded_page.resource_id)
+    resource_accesses = Attempts.get_resource_access_for_page(section_slug, graded_page.resource_id)
     |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.user_id, r) end)
 
     # For each student, see if they have a finalized score in an access record
@@ -138,9 +138,9 @@ defmodule OliWeb.Grades.GradesLive do
     AccessToken.fetch_access_token(registration, Grading.ags_scopes(), host())
   end
 
-  defp send_grades(students, access_token, context_id, page, line_item, socket) do
+  defp send_grades(students, access_token, section_slug, page, line_item, socket) do
 
-    task_queue = determine_grade_sync_tasks(context_id, page, line_item, students)
+    task_queue = determine_grade_sync_tasks(section_slug, page, line_item, students)
 
     send(self(), :pop_task_queue)
 
@@ -150,10 +150,10 @@ defmodule OliWeb.Grades.GradesLive do
       progress_max: length(task_queue), progress_current: 0)}
   end
 
-  defp fetch_students(access_token, context_id, lti_params) do
+  defp fetch_students(access_token, section_slug, lti_params) do
 
     # Query the db to find all enrolled students
-    students = Grading.fetch_students(context_id)
+    students = Grading.fetch_students(section_slug)
 
     # If NRPS is enabled, request the latest view of the course membership
     # and filter our enrolled students to that list.  This step avoids us
@@ -189,7 +189,7 @@ defmodule OliWeb.Grades.GradesLive do
 
       {:ok, line_items, access_token} ->
 
-        graded_pages = Grading.fetch_graded_pages(socket.assigns.context_id)
+        graded_pages = Grading.fetch_graded_pages(socket.assigns.section_slug)
 
         case determine_line_item_tasks(graded_pages, line_items) do
 
@@ -228,8 +228,8 @@ defmodule OliWeb.Grades.GradesLive do
 
           {:ok, line_item} ->
 
-            fetch_students(access_token, socket.assigns.context_id, socket.assigns.lti_params)
-            |> send_grades(access_token, socket.assigns.context_id, page, line_item, socket)
+            fetch_students(access_token, socket.assigns.section_slug, socket.assigns.lti_params)
+            |> send_grades(access_token, socket.assigns.section_slug, page, line_item, socket)
 
           {:error, e} -> {:noreply, put_flash(socket, :error, e)}
 

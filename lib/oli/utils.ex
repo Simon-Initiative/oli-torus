@@ -11,10 +11,11 @@ defmodule Oli.Utils do
   Returns the specified value if not nil, otherwise returns the default value
   """
   def value_or(value, default_value) do
-    if value == nil do
-      default_value
-    else
-      value
+    case value do
+      nil ->
+        default_value
+      value ->
+        value
     end
   end
 

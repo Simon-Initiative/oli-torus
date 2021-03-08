@@ -10,6 +10,7 @@ defmodule OliWeb.LtiController do
   alias Lti_1p3
   alias Oli.Predefined
   alias Oli.Slack
+  alias OliWeb.Common.LtiSession
 
   require Logger
 
@@ -27,22 +28,15 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  @spec launch(Plug.Conn.t(), any) :: Plug.Conn.t()
   def launch(conn, params) do
     session_state = Plug.Conn.get_session(conn, "state")
     case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
-      {:ok, lti_params, cache_key} ->
-
-        # store sub in the session so that the cached lti_params can be
-        # retrieved from the database on later requests
-        conn = conn
-          |> Plug.Conn.put_session(:lti_1p3_sub, cache_key)
-
-        handle_valid_lti_1p3_launch(conn, lti_params)
+      {:ok, lti_params, lti_params_key} ->
+        handle_valid_lti_1p3_launch(conn, lti_params, lti_params_key)
       {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
         handle_invalid_registration(conn, issuer, client_id)
       {:error, %{reason: :invalid_deployment, msg: _msg, registration_id: registration_id, deployment_id: deployment_id}} ->
-        handle_invalid_deployment(conn, registration_id, deployment_id)
+        handle_invalid_deployment(conn, params, registration_id, deployment_id)
       {:error, %{reason: _reason, msg: msg}} ->
         render(conn, "lti_error.html", reason: msg)
     end
@@ -270,17 +264,17 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  defp handle_invalid_deployment(conn, registration_id, deployment_id) do
+  defp handle_invalid_deployment(conn, params, registration_id, deployment_id) do
     case Institutions.create_deployment(%{deployment_id: deployment_id, registration_id: registration_id}) do
       {:ok, _deployment} ->
         # try the LTI launch again now that deployment is created
-        launch(conn, conn.params)
+        launch(conn, params)
       _ ->
         render(conn, "lti_error.html", reason: "Failed to create deployment")
     end
   end
 
-  defp handle_valid_lti_1p3_launch(conn, lti_params) do
+  defp handle_valid_lti_1p3_launch(conn, lti_params, lti_params_key) do
     issuer = lti_params["iss"]
     client_id = lti_params["aud"]
     deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
@@ -317,23 +311,34 @@ defmodule OliWeb.LtiController do
             # update user platform roles
             Accounts.update_user_platform_roles(user, PlatformRoles.get_roles_by_uris(lti_roles))
 
+            # keep track of the latest user lti params for later requests which
+            # are not in the context of a section
+            conn = LtiSession.put_user_params(conn, lti_params_key)
+
             # context claim is considered optional according to IMS http://www.imsglobal.org/spec/lti/v1p3/#context-claim
             # safeguard against the case that context is missing
             case lti_params["https://purl.imsglobal.org/spec/lti/claim/context"] do
               nil ->
                 throw "Error getting context information from launch params"
               context ->
-                %{"id" => context_id} = context
-                %{"title" => context_title} = context
-
-                # Update section specifics - if one exists. Enroll the user and also update the section details
-                with {:ok, section} <- get_existing_section(context_id)
+                # update section specifics - if one exists. Enroll the user and also update the section details
+                conn = with {:ok, section} <- get_existing_section(lti_params)
                 do
                   # transform lti_roles to a list only containing valid context roles (exclude all system and institution roles)
                   context_roles = ContextRoles.get_roles_by_uris(lti_roles)
 
+                  # if a course section exists, ensure that this user has an enrollment in this section
                   enroll_user(user.id, section.id, context_roles)
+
+                  # make sure section details are up to date
+                  %{"title" => context_title} = context
                   update_section_details(context_title, section)
+
+                  # store lti params key in the session for this particular section so that the cached lti_params
+                  # can be retrieved from the database in later requests
+                  LtiSession.put_section_params(conn, section.slug, lti_params_key)
+                else
+                  _ -> conn
                 end
 
                 # if account is linked to an author, sign them in
@@ -361,8 +366,6 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  # If a course section exists for the context_id, ensure that
-  # this user has an enrollment in this section
   defp enroll_user(user_id, section_id, context_roles) do
     Sections.enroll(user_id, section_id, context_roles)
   end
@@ -371,8 +374,8 @@ defmodule OliWeb.LtiController do
     Sections.update_section(section, %{title: context_title})
   end
 
-  defp get_existing_section(context_id) do
-    case Sections.get_section_by(context_id: context_id) do
+  defp get_existing_section(lti_params) do
+    case Sections.get_section_from_lti_params(lti_params) do
       nil -> nil
       section -> {:ok, section}
     end

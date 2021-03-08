@@ -1,8 +1,22 @@
 defmodule OliWeb.HelpControllerTest do
   use OliWeb.ConnCase
 
+  alias Oli.Test.MockHTTP
+
+  import Mox
+
   describe "request_help" do
     test "send help request", %{conn: conn} do
+      expect_recaptcha_http_post()
+
+      freshdesk_url = System.get_env("FRESHDESK_API_URL", "example.edu")
+      MockHTTP
+      |> expect(:post, fn ^freshdesk_url, _body, _headers, _opts ->
+        {:ok, %HTTPoison.Response{
+          status_code: 200
+        }}
+      end)
+
       conn = conn
              |> put_req_header("accept", "text/html")
              |> put_req_header("accept-language", "en-US,en;q=0.9")

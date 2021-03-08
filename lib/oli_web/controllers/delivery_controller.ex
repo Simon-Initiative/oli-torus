@@ -17,9 +17,7 @@ defmodule OliWeb.DeliveryController do
   def index(conn, _params) do
     user = conn.assigns.current_user
     lti_params = conn.assigns.lti_params
-
-    context_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"]
-    section = Sections.get_section_by(context_id: context_id)
+    section = Sections.get_section_from_lti_params(lti_params)
 
     lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
     context_roles = ContextRoles.get_roles_by_uris(lti_roles)
@@ -28,14 +26,14 @@ defmodule OliWeb.DeliveryController do
     case {role, user.author, section} do
       # author account has not been linked
       {role, nil, nil} when role == @context_administrator or role == @context_instructor ->
-        render_getting_started(conn, context_id)
+        render_getting_started(conn)
 
       # section has not been configured
       {role, author, nil} when role == @context_administrator or role == @context_instructor ->
-        render_configure_section(conn, context_id, author)
+        render_configure_section(conn, author)
 
       {_role, _author, nil} ->
-        render_course_not_configured(conn, context_id)
+        render_course_not_configured(conn)
 
       # section has been configured
       {_role, _author, section} ->
@@ -44,16 +42,16 @@ defmodule OliWeb.DeliveryController do
 
   end
 
-  defp render_course_not_configured(conn, context_id) do
-    render(conn, "course_not_configured.html", context_id: context_id)
+  defp render_course_not_configured(conn) do
+    render(conn, "course_not_configured.html")
   end
 
 
-  defp render_getting_started(conn, context_id) do
-    render(conn, "getting_started.html", context_id: context_id)
+  defp render_getting_started(conn) do
+    render(conn, "getting_started.html")
   end
 
-  defp render_configure_section(conn, context_id, author) do
+  defp render_configure_section(conn, author) do
     lti_params = conn.assigns.lti_params
     issuer = lti_params["iss"]
     client_id = lti_params["aud"]
@@ -63,11 +61,11 @@ defmodule OliWeb.DeliveryController do
     publications = Publishing.available_publications(author, institution)
     my_publications = publications |> Enum.filter(fn p -> !p.open_and_free && p.published end)
 
-    render(conn, "configure_section.html", context_id: context_id, author: author, my_publications: my_publications)
+    render(conn, "configure_section.html", author: author, my_publications: my_publications)
   end
 
   defp redirect_to_page_delivery(conn, section) do
-    redirect(conn, to: Routes.page_delivery_path(conn, :index, section.context_id))
+    redirect(conn, to: Routes.page_delivery_path(conn, :index, section.slug))
   end
 
   def link_account(conn, _params) do
@@ -204,7 +202,7 @@ defmodule OliWeb.DeliveryController do
     issuer = lti_params["iss"]
     client_id = lti_params["aud"]
     deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"];
-    {institution, _registration, _deployment} = Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
+    {institution, _registration, deployment} = Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
 
     publication = Publishing.get_publication!(publication_id)
 
@@ -215,6 +213,7 @@ defmodule OliWeb.DeliveryController do
       institution_id: institution.id,
       project_id: publication.project_id,
       publication_id: publication_id,
+      lti_1p3_deployment_id: deployment.id,
     })
 
     # Enroll this user with their proper roles (instructor)

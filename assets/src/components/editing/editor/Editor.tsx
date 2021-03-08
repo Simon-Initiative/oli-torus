@@ -112,7 +112,17 @@ export const Editor = React.memo((props: EditorProps) => {
       <Slate
         editor={editor}
         value={props.value}
-        onChange={onChange}>
+        onChange={onChange}
+        onPaste={async (
+          e: React.ClipboardEvent<HTMLDivElement>,
+          editor: SlateEditor,
+          next: Function,
+        ) => {
+          setIsPerformingAsyncAction(true);
+          await onPaste(editor, e, props.commandContext.projectSlug);
+          setIsPerformingAsyncAction(false);
+          next();
+        }}>
 
         <InsertionToolbar
           isPerformingAsyncAction={isPerformingAsyncAction}
@@ -133,12 +143,7 @@ export const Editor = React.memo((props: EditorProps) => {
           renderElement={renderElement}
           renderLeaf={renderLeaf}
           placeholder="Enter some content here..."
-          onKeyDown={onKeyDown}
-          onPaste={async (e) => {
-            setIsPerformingAsyncAction(true);
-            await onPaste(editor, e, props.commandContext.projectSlug);
-            setIsPerformingAsyncAction(false);
-          }} />
+          onKeyDown={onKeyDown} />
       </Slate>
     </React.Fragment>
   );

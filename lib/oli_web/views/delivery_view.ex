@@ -1,31 +1,36 @@
 defmodule OliWeb.DeliveryView do
   use OliWeb, :view
 
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.PlatformRoles
 
-  def get_context_id(conn) do
-    case conn.assigns.lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"] do
-      nil -> nil
-      context_id -> context_id
+  def get_section_slug(conn) do
+    case Sections.get_section_from_lti_params(conn.assigns.lti_params) do
+      %Section{slug: slug} -> slug
+      _ -> nil
     end
   end
 
+
   def user_role_is_student(conn, user) do
-    context_id = get_context_id(conn)
-    ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_learner))
+    section_slug = get_section_slug(conn)
+
+    ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_learner))
   end
 
   def user_role_text(conn, user) do
-    context_id = get_context_id(conn)
+    section_slug = get_section_slug(conn)
+
     cond do
       PlatformRoles.has_role?(user, PlatformRoles.get_role(:system_administrator))
       || PlatformRoles.has_role?(user, PlatformRoles.get_role(:institution_administrator))
-      || ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_administrator)) ->
+      || ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_administrator)) ->
         "Administrator"
-      ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_instructor)) ->
+      ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_instructor)) ->
         "Instructor"
-      ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_student)) ->
+      ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_student)) ->
         "Student"
       true ->
         "Student"
@@ -33,15 +38,16 @@ defmodule OliWeb.DeliveryView do
   end
 
   def user_role_color(conn, user) do
-    context_id = get_context_id(conn)
+    section_slug = get_section_slug(conn)
+
     cond do
       PlatformRoles.has_role?(user, PlatformRoles.get_role(:system_administrator))
       || PlatformRoles.has_role?(user, PlatformRoles.get_role(:institution_administrator))
-      || ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_administrator)) ->
+      || ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_administrator)) ->
         "#f39c12"
-      ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_instructor)) ->
+      ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_instructor)) ->
         "#2ecc71"
-      ContextRoles.has_role?(user, context_id, ContextRoles.get_role(:context_learner)) ->
+      ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_learner)) ->
         "#3498db"
       true ->
         "#3498db"

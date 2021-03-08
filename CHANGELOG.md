@@ -1,6 +1,19 @@
 # Changelog
 
 ## Unreleased
+
+### Enhancements
+  - Add the ability for an activity to submit client side evaluations
+
+### Bug fixes
+  - Fix an issue where pasting text containing newlines from an external source crashes the editor
+
+## 0.6.1 (2021-3-3)
+
+### Bug fixes
+  - Fixes an issue where existing sections might not be found on LTI launch
+
+## 0.6.0 (2021-3-3)
 ### Enhancements
   - Add LTI 1.3 platform launch support
   - Add support for project visibility control
@@ -9,6 +22,7 @@
   - Add support for preview mode in graded assessments
 
 ### Bug fixes
+  - Replace use of context_id in favor of the unique course section slug
   - Allow Slack hook URL to be unspecified during LMS LTI registration
   - Prevent LTI launch to an iframe to avoid third-party cookie issues
   - Honor the current location when inserting block content (YouTube, images, etc)

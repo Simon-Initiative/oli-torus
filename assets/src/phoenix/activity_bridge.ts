@@ -100,6 +100,14 @@ export const initActivityBridge = (elementId: string) => {
       '/api/v1/attempt/activity/' + e.detail.attemptGuid + '/part/' + e.detail.partAttemptGuid + '/hint',
       'GET', undefined, e.detail.continuation);
   }, false);
+
+  div.addEventListener('submitEvaluations', (e: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    makeRequest(
+      '/api/v1/attempt/activity/' + e.detail.attemptGuid + '/evaluations',
+      'PUT', { input: e.detail.payload }, e.detail.continuation);
+  }, false);
 };
 
 const key = (activityAttemptGuid : string,

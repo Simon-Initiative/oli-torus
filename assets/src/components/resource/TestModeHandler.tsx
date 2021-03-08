@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityModelSchema, PartResponse } from 'components/activities/types';
+import { ActivityModelSchema, ClientEvaluation, PartResponse } from 'components/activities/types';
 import * as Persistence from 'data/persistence/activity';
 import { RequestHintResponse } from 'components/activities/DeliveryElement';
 import produce from 'immer';
@@ -79,6 +79,7 @@ export class TestModeHandler extends React.Component<TestModelHandlerProps, Test
     this.setUpHandler('submitActivity', this.handleSubmit.bind(this));
     this.setUpHandler('requestHint', this.handleHint.bind(this));
     this.setUpHandler('resetActivity', this.handleReset.bind(this));
+    this.setUpHandler('submitEvaluations', this.handleSubmitEvaluations.bind(this));
   }
 
   // Helper function to isolate the setting up and handling of the custom event listener
@@ -114,6 +115,20 @@ export class TestModeHandler extends React.Component<TestModelHandlerProps, Test
 
       continuation({ type: 'success', evaluations }, undefined);
     });
+  }
+
+  handleSubmitEvaluations(continuation: Continuation, clientEvaluations: ClientEvaluation[]) {
+    const evaluatedParts = clientEvaluations
+      .map((e : any) => {
+        return {
+          type: 'EvaluatedPart',
+          out_of: e.out_of,
+          score: e.score,
+          feedback: e.feedback,
+        };
+      });
+
+    continuation({ type: 'success', evaluations: evaluatedParts }, undefined);
   }
 
   handleHint(continuation: Continuation, partId: string) {

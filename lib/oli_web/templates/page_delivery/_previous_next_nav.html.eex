@@ -3,7 +3,7 @@
 
     <%= if @previous_page != nil do %>
     <li class="page-item">
-      <%= link to: Routes.page_delivery_path(@conn, :page, @context_id, @previous_page.slug), class: "page-link" do %>
+      <%= link to: Routes.page_delivery_path(@conn, :page, @section_slug, @previous_page.slug), class: "page-link" do %>
         <div class="d-flex flex-row">
           <div>
             <i class="fas fa-arrow-left nav-icon"></i>
@@ -19,7 +19,7 @@
 
     <%= if @next_page != nil do %>
     <li class="page-item">
-      <%= link to: Routes.page_delivery_path(@conn, :page, @context_id, @next_page.slug), class: "page-link" do %>
+      <%= link to: Routes.page_delivery_path(@conn, :page, @section_slug, @next_page.slug), class: "page-link" do %>
         <div class="d-flex flex-row">
           <div class="d-flex flex-column flex-fill flex-ellipsize-fix">
             <div class="text-secondary text-left nav-label">Next</div>

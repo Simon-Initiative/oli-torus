@@ -9,6 +9,8 @@ defmodule Oli.TestHelpers do
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing
 
+  import Mox
+
   Mox.defmock(Oli.Test.MockHTTP, for: HTTPoison.Base)
 
   def yesterday() do
@@ -164,9 +166,9 @@ defmodule Oli.TestHelpers do
     jwk
   end
 
-  def cache_lti_params(sub, lti_params) do
+  def cache_lti_params(key, lti_params) do
     {:ok, _lti_params} = Lti_1p3.DataProviders.EctoProvider.create_or_update_lti_params(%Lti_1p3.Tool.LtiParams{
-      sub: sub,
+      key: key,
       params: lti_params,
       exp: Timex.from_unix(lti_params["exp"])
     })
@@ -261,5 +263,19 @@ defmodule Oli.TestHelpers do
   def read_json_file(filename) do
     with {:ok, body} <- File.read(filename),
          {:ok, json} <- Poison.decode(body), do: {:ok, json}
+  end
+
+  def expect_recaptcha_http_post() do
+    verify_recaptcha_url = Application.fetch_env!(:oli, :recaptcha)[:verify_url]
+    Oli.Test.MockHTTP
+    |> expect(:post, fn ^verify_recaptcha_url, _body, _headers, _opts ->
+      {:ok, %HTTPoison.Response{
+        status_code: 200,
+        body: Jason.encode!(%{
+          "challenge_ts" => "some-challenge-ts",
+          "hostname" => "testkey.google.com",
+          "success" => true
+        })
+      }}  end)
   end
 end

@@ -2,12 +2,12 @@
   <h3><%= @summary.title %></h3>
   <p class="text-secondary"><%= @summary.description %></p>
 
-  <%= if is_instructor?(@conn, @context_id) do %>
+  <%= if is_instructor?(@conn, @section_slug) do %>
 
   <div class="d-flex flex-row">
     <div class="flex-fill"></div>
     <div>
-      <%= link "Manage Grades", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @context_id), class: "btn btn-link btn-sm" %>
+      <%= link "Manage Grades", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section_slug), class: "btn btn-link btn-sm" %>
     </div>
   </div>
 
@@ -16,7 +16,7 @@
   <h5>Course Outline</h5>
 
   <div id="index-container" class="course-outline list-group">
-    <%= render "_outline.html", conn: @conn, context_id: @context_id, summary: @summary, nodes: @summary.hierarchy, active_page: nil %>
+    <%= render "_outline.html", conn: @conn, section_slug: @section_slug, summary: @summary, nodes: @summary.hierarchy, active_page: nil %>
   </div>
 </div>
 
@@ -27,7 +27,7 @@
   if (isInIframe) {
     const button = document.createElement("button");
     button.onclick = (_e) =>
-      window.open(window.location.href, "_parent");
+      window.open(window.location.href, "_blank");
     button.innerHTML = "Open with full window";
     button.className = "btn btn-primary"
     const container = document.getElementById("index-container");

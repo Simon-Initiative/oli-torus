@@ -3,6 +3,7 @@ defmodule OliWeb.DeliveryRetrieveTest do
 
   alias Oli.Seeder
   alias Lti_1p3.Tool.ContextRoles
+  alias OliWeb.Common.LtiSession
 
   setup [:setup_session]
 
@@ -87,9 +88,10 @@ defmodule OliWeb.DeliveryRetrieveTest do
     lti_params = Oli.Lti_1p3.TestHelpers.all_default_claims()
       |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
 
-    cache_lti_params(lti_params["sub"], lti_params)
+    cache_lti_params("params-key", lti_params)
 
-    conn = Plug.Test.init_test_session(conn, lti_1p3_sub: lti_params["sub"])
+    conn = Plug.Test.init_test_session(conn, lti_session: nil)
+      |> LtiSession.put_user_params("params-key")
       |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
       |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
@@ -106,7 +108,6 @@ defmodule OliWeb.DeliveryRetrieveTest do
       revision: map.revision1,
       page_revision1: map.new_page1.revision,
       page_revision2: map.new_page2.revision,
-
     }
   end
 end

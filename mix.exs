@@ -4,10 +4,10 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.5.1",
+      version: "0.6.1",
       elixir: "~> 1.11",
       elixirc_paths: elixirc_paths(Mix.env()),
-      elixirc_options: [warnings_as_errors: true],
+      elixirc_options: elixirc_options(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -57,6 +57,10 @@ defmodule Oli.MixProject do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
+  defp elixirc_options(:dev), do: []
+  defp elixirc_options(:test), do: []
+  defp elixirc_options(_), do: [warnings_as_errors: true]
+
   # Specifies your project dependencies.
   #
   # Type `mix help deps` for examples and options.
@@ -80,8 +84,8 @@ defmodule Oli.MixProject do
       {:jason, "~> 1.0"},
       {:joken, "~> 2.2.0"},
       {:jose, "~> 1.10"},
-      {:lti_1p3, "~> 0.1.1"},
-      {:lti_1p3_ecto_provider, "~> 0.1.2"},
+      {:lti_1p3, "~> 0.3.0"},
+      {:lti_1p3_ecto_provider, "~> 0.2.0"},
       {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:mox, "~> 0.5", only: :test},

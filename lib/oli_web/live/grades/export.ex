@@ -15,7 +15,7 @@ defmodule OliWeb.Grades.Export do
       </div>
 
       <div class="card-footer">
-       <%= link link_text, to: Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @context_id), class: "btn btn-primary" %>
+       <%= link link_text, to: Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section_slug), class: "btn btn-primary" %>
       </div>
     </div>
     """
