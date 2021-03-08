@@ -1724,7 +1724,5 @@
     ]
   },
   "isGraded": false,
-  "objectives": [
-    "u-analog_and_digital-m-analog_and_digital-p-analog_and_digital_LO_1"
-  ]
+  "objectives": []
 }
