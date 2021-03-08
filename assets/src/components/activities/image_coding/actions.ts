@@ -54,6 +54,7 @@ export class ICActions {
       draftState.tolerance = value;
     };
   }
+
   static editFeedback(id: string, content: RichText) {
     return (draftState: ImageCodingModelSchema) => {
       ICActions.getResponse(draftState, id).lift(r => r.feedback.content = content);

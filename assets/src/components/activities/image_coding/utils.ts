@@ -14,7 +14,7 @@ export const defaultICModel : () => ImageCodingModelSchema = () => {
     starterCode: 'Sample Starter Code',
     solutionCode: 'Sample Solution Code',
     imageURLs: [],
-    tolerance: 0.0,
+    tolerance: 1.0,
     regex: '',
     authoring: {
       parts: [{

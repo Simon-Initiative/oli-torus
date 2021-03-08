@@ -10,7 +10,6 @@ import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/Evaluation';
 import { valueOr } from 'utils/common';
 import { Evaluator, EvalContext} from './Evaluator';
-import { CSSTransition } from 'react-transition-group';
 import { lastPart } from './utils';
 
 
@@ -51,7 +50,6 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   const [attemptState, setAttemptState] = useState(props.state);
   const [hints, setHints] = useState(props.state.parts[0].hints);
   const [hasMoreHints, setHasMoreHints] = useState(props.state.parts[0].hasMoreHints);
-  // const [input, setInput] = useState(valueOr(attemptState.parts[0].response, ''));
   const [input, setInput] = useState(valueOr(model.starterCode, ''));
   const { stem, imageURLs } = model;
   // runtime evaluation state:
@@ -65,6 +63,21 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   const canvasRef2 = useRef<HTMLCanvasElement>(null);
   const resultRef = useRef<HTMLCanvasElement>(null);
   const solnRef = useRef<HTMLCanvasElement>(null);
+
+  // effect hook to initiate loading of images, executes once on first render
+  useEffect( () => {
+    imageURLs.map((url, i) => {
+        const img = new Image();
+        // Owing to a flaw in S3, we get CORS errors when image is loaded from cache if cached copy was obtained
+        // from an earlier non-CORS request. Appending unique query string is a simple hack to force fresh load.
+        // Downside: cache can fill up with many copies of same image.
+        img.src = url + "?t=" + new Date().getTime();
+        img.crossOrigin="anonymous";
+
+        // save references in parallel array. Elements never need to be attached to DOM.
+        imageRefs.current[i] = img;
+      });
+  }, []);
 
   const onInputChange = (input: string) => {
 
@@ -169,7 +182,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
 
     var diff = getResultDiff();
     console.log("Avg solution diff = " + diff);
-    return diff < 1;
+    return diff < model.tolerance;
   }
 
 // Computes and returns the image diff, or 999 for error.
@@ -250,7 +263,11 @@ function getResultDiff() {
   }
 
   const getImage = (name: string) => {
-    return imageRefs.current.find(img => lastPart(img.src) === name);
+    const i = imageURLs.findIndex(url => lastPart(url) === name);
+    if (i < 0 || i >= imageRefs.current.length)
+      return null;
+
+    return imageRefs.current[i];
   }
 
   const getResult = (solution: boolean) => {
@@ -285,11 +302,6 @@ function getResultDiff() {
             onChange={onInputChange}/>
           {runButton} {maybeSubmitButton}
         </div>
-
-        {/* hidden images */}
-        {imageURLs.map((url, i) =>
-          <img key={i} ref={(e:HTMLImageElement) => imageRefs.current[i] = e}
-               src={url} style={{display: 'none'}} crossOrigin="anonymous"/>)}
 
         {/* implementation relies on 2 hidden canvases for image operations */}
          <canvas ref={canvasRef} style={{display: 'none'}}/>

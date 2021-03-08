@@ -1,5 +1,3 @@
-import { ImageCodingDelivery } from "./ImageCodingDelivery";
-
 export type EvalContext = {
   getImage: (name:string) => HTMLImageElement | null;
   getCanvas: (n: number) => HTMLCanvasElement | null;
@@ -77,8 +75,6 @@ export class Evaluator {
       //alert(matched);
       if (matched.search(reStrong) == -1) {
         throw new Error("Attempt to use 'for(part: composite)' form, but it looks wrong: " + result[0]);
-        // todo: since it happens before the eval, this error ends up in an alert(), but maybe
-        // appearing in the regular red-text would be better.
       }
     }
 

@@ -86,7 +86,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
       <Heading title="Resources" id="images" />
         <div>
           {model.imageURLs.map((url, i) =>
-            <p>{lastPart(url)}</p>)}
+            <p key={i}>{lastPart(url)}</p>)}
           <button
             className="btn btn-primary mt-2"  onClick={addImage}>
             Add Image...
@@ -132,6 +132,13 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
             className="form-control"
             value={model.solutionCode}
             onChange={(e: any) => dispatch(ICActions.editSolutionCode(e.target.value))} />
+          <br/>
+
+          <p>Tolerance:&nbsp;
+            <input type="number" value={model.tolerance}
+                   onChange={(e: any) => dispatch(ICActions.editTolerance(e.target.value))}/>
+            &nbsp;(Average per-pixel error allowed.)
+          </p>
 
           <Hints
             projectSlug={props.projectSlug}
