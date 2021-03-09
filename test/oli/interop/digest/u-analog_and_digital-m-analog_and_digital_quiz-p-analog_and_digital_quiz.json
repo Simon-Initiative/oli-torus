@@ -1,0 +1,40 @@
+{
+  "type": "Page",
+  "id": "u-analog_and_digital-m-analog_and_digital_quiz-p-analog_and_digital_quiz",
+  "originalFile": "",
+  "title": "Analog and Digital Quiz Page",
+  "tags": [],
+  "unresolvedReferences": [
+    "a_fd13a924cebc4be1be0915b498e86d22",
+    "a_815ec3ca43354b43ad0c06bdcab63953"
+  ],
+  "content": {
+    "model": [
+      {
+        "type": "content",
+        "id": "1380138112",
+        "children": [
+          {
+            "type": "image",
+            "children": [],
+            "src": "../webcontent/1x1.png"
+          }
+        ]
+      },
+      {
+        "type": "activity-reference",
+        "activity_id": "mcq"
+      },
+      {
+        "type": "activity-reference",
+        "activity_id": "cata"
+      },
+      {
+        "type": "activity-reference",
+        "activity_id": "single_response"
+      }
+    ]
+  },
+  "isGraded": false,
+  "objectives": []
+}

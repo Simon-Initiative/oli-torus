@@ -1,0 +1,126 @@
+{
+  "type": "Activity",
+  "id": "mcq",
+  "originalFile": "",
+  "title": "",
+  "tags": [],
+  "unresolvedReferences": [],
+  "content": {
+    "stem": {
+      "content": [
+        {
+          "type": "p",
+          "children": [
+            {
+              "type": "text",
+              "text": "Which one of the following best describes digitization of sound?"
+            }
+          ]
+        }
+      ]
+    },
+    "choices": [
+      {
+        "content": [
+          {
+            "type": "text",
+            "text": "Many times per second, convert the signal into a number representing red, green, or blue."
+          }
+        ],
+        "id": "0"
+      },
+      {
+        "content": [
+          {
+            "type": "text",
+            "text": "Many times per second, convert the signal into a number representing the difference between this signal and another music signal."
+          }
+        ],
+        "id": "1"
+      },
+      {
+        "content": [
+          {
+            "type": "text",
+            "text": "Many times per second, convert the signal into a number representing the signal&apos;s distance from the midline."
+          }
+        ],
+        "id": "2"
+      },
+      {
+        "content": [
+          {
+            "type": "text",
+            "text": "Many times per second, convert the signal into a number representing the difference between the left and right channels."
+          }
+        ],
+        "id": "3"
+      }
+    ],
+    "authoring": {
+      "parts": [
+        {
+          "id": "1",
+          "responses": [
+            {
+              "score": 0,
+              "rule": "input like {0}",
+              "feedback": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Digitization does convert the signal, but not to colors."
+                  }
+                ]
+              }
+            },
+            {
+              "score": 0,
+              "rule": "input like {1}",
+              "feedback": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Digitization does a conversion to a number, but not between two signals."
+                  }
+                ]
+              }
+            },
+            {
+              "score": 1,
+              "rule": "input like {2}",
+              "feedback": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Digitization measures the value of the signal many times per second."
+                  }
+                ]
+              }
+            },
+            {
+              "score": 0,
+              "rule": "input like {3}",
+              "feedback": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Digitization does a conversion to a number, but not between left and right channelts."
+                  }
+                ]
+              }
+            }
+          ],
+          "hints": [],
+          "scoringStrategy": "average"
+        }
+      ],
+      "transformations": [],
+      "previewText": ""
+    }
+
+  },
+  "objectives": [],
+  "legacyId": "a_fd13a924cebc4be1be0915b498e86d22",
+  "subType": "oli_multiple_choice"
+}

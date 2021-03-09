@@ -69,6 +69,29 @@ defmodule Oli.Authoring.Course do
   end
 
 
+  # Specialized project creation facility for ingested projects, where the course digest
+  # specifies the slug to be used for the project (as opposed to letting that slug be derived
+  # from the title).
+  def create_ingested_project(slug, title, author) do
+    Repo.transaction(fn ->
+      with {:ok, project_family} <- create_family(default_family(title)),
+           {:ok, project} <- create_project(default_project(title, project_family) |> Map.put(:slug, slug)),
+           {:ok, _} <- Collaborators.add_collaborator(author, project),
+           {:ok, %{resource: resource, revision: resource_revision}}
+              <- initial_resource_setup(author, project),
+           {:ok, _}
+              <- Publishing.initial_publication_setup(project, resource, resource_revision)
+      do
+        %{
+          project: project,
+          resource_revision: resource_revision
+        }
+      else
+        {:error, error} -> Repo.rollback(error)
+      end
+    end)
+  end
+
   def create_project(title, author) do
     Repo.transaction(fn ->
       with {:ok, project_family} <- create_family(default_family(title)),

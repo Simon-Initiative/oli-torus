@@ -158,7 +158,7 @@ defmodule OliWeb.Router do
 
   scope "/", OliWeb do
     pipe_through [:api]
-
+    get "/api/v1/legacy_support", LegacySupportController, :index
     post "/access_tokens", LtiController, :access_tokens
   end
 
