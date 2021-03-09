@@ -7,10 +7,10 @@
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.6.1">
 
-    <title>Oli.Authoring.Ingest — OLI Torus v0.6.1</title>
+    <title>OliWeb.LegacySupportController — OLI Torus v0.6.1</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-602b407f88.js"></script>
+    <script src="dist/sidebar_items-aee8b6ab5d.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -78,9 +78,9 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Authoring.Ingest <small class="app-vsn">(OLI Torus v0.6.1)</small>
+OliWeb.LegacySupportController <small class="app-vsn">(OLI Torus v0.6.1)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/ingest.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/legacy_support_controller.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -104,13 +104,9 @@ Oli.Authoring.Ingest <small class="app-vsn">(OLI Torus v0.6.1)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#ingest/2">ingest(file, as_author)</a>
+    <a href="#index/2">index(conn, _)</a>
 
   </div>
-
-    <div class="summary-synopsis"><p>Ingest a course digest archive that is sitting on the file system
-and turn it into a course project.  Gives the author specified access
-to the new project.</p></div>
 
 </div>
 
@@ -128,16 +124,16 @@ to the new project.</p></div>
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="ingest/2">
+<section class="detail" id="index/2">
 
   <div class="detail-header">
-    <a href="#ingest/2" class="detail-link" title="Link to this function">
+    <a href="#index/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">ingest(file, as_author)</h1>
+    <h1 class="signature">index(conn, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/ingest.ex#L28" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/legacy_support_controller.ex#L5" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -147,12 +143,7 @@ Functions
 
   <section class="docstring">
 
-<p>Ingest a course digest archive that is sitting on the file system
-and turn it into a course project.  Gives the author specified access
-to the new project.</p><p>A course digest archive is a zip file containing a flat list of JSON files.</p><p>There are three required files in a course archive:</p><p>_project.json: a document containing top-level project meta data
-_hierarchy.json: a document that specifies the course project container hierarchy
-_media-manifest.json: a manifest listing all of the media items referenced by the digest</p><p>Any number of other JSON files corresponding to pages and activities can exist
-in the digest archive.</p><p>Returns {:ok, project} on success and {:error, error} on failure</p>
+
   </section>
 </section>
 

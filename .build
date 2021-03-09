@@ -59,7 +59,6 @@ Oli.Authoring.Editing.ObjectiveEditor.html
 Oli.Authoring.Editing.PageEditor.html
 Oli.Authoring.Editing.ResourceContext.html
 Oli.Authoring.Editing.Utils.html
-Oli.Authoring.Ingest.html
 Oli.Authoring.Locks.html
 Oli.Authoring.MediaLibrary.ItemOptions.html
 Oli.Authoring.MediaLibrary.MediaItem.html
@@ -104,6 +103,8 @@ Oli.Help.Providers.FreshdeskHelp.html
 Oli.Institutions.Institution.html
 Oli.Institutions.PendingRegistration.html
 Oli.Institutions.html
+Oli.Interop.Ingest.html
+Oli.Interop.LegacySupport.html
 Oli.Lti.LTI_AGS.html
 Oli.Lti.LTI_NRPS.html
 Oli.Lti.LineItem.html
@@ -242,6 +243,8 @@ OliWeb.InstitutionView.html
 OliWeb.InviteController.html
 OliWeb.InviteView.html
 OliWeb.LayoutView.html
+OliWeb.LegacySupportController.html
+OliWeb.LegacySupportView.html
 OliWeb.LiveHelpers.html
 OliWeb.LockController.html
 OliWeb.LtiController.html
@@ -329,8 +332,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-0f3356ce2f.js
-dist/sidebar_items-602b407f88.js
+dist/search_items-ce79791fc0.js
+dist/sidebar_items-aee8b6ab5d.js
 index.html
 license.html
 readme.html
