@@ -88,9 +88,29 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   };
 
   const onSubmit = () => {
-    let pseudoResponse = solutionCorrect() ? 'correct' : 'wrong';
-    console.log('Submitting response: ' + pseudoResponse);
+    const isCorrect = solutionCorrect();
 
+    // get attributes for a ClientEvaluation
+    const partState = attemptState.parts[0];
+    const score = isCorrect ? 1 : 0;
+    const outOf =  1; // partState.outOf;
+    // FIXME: locate correct, error responses by score value (1 or 0)
+    const feedback = isCorrect ? model.authoring.parts[0].responses[0].feedback
+                               : model.authoring.parts[0].responses[1].feedback ;
+
+    props.onSubmitEvaluations(attemptState.attemptGuid,
+      [{attemptGuid: partState.attemptGuid, score, outOf, feedback }])
+      .then((response: EvaluationResponse) => {
+        if (response.evaluations.length > 0) {
+          const { error } = response.evaluations[0];
+          const parts = [Object.assign({}, partState, { feedback, error })];
+          const updated = Object.assign({}, attemptState, { score, outOf, parts });
+          setAttemptState(updated);
+        }
+      });
+/*
+    let pseudoResponse = isCorrect ? 'correct' : 'wrong';
+    console.log('Submitting response: ' + pseudoResponse);
     props.onSubmitActivity(attemptState.attemptGuid,
       [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: pseudoResponse } }])
       .then((response: EvaluationResponse) => {
@@ -100,7 +120,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
           const updated = Object.assign({}, attemptState, { score, outOf: out_of, parts });
           setAttemptState(updated);
         }
-      });
+      }); */
   };
 
   const onRequestHint = () => {
