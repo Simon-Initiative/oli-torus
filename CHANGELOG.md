@@ -6,6 +6,7 @@
   - Add the ability for an activity to submit client side evaluations
 
 ### Bug fixes
+  - Fix an issue where activity text that contained HTML tags rendered actual HTML
   - Fix an issue where pasting text containing newlines from an external source crashes the editor
   - Fix an issue with null section slugs and deployment id in existing sections
 

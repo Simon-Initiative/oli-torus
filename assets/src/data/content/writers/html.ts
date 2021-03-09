@@ -11,6 +11,15 @@ import { WriterContext } from './context';
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.
 
+function escapeHtml(unsafe: string) : string {
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export class HtmlParser implements WriterImpl {
   private escapeXml = (text: string) => decodeURI(encodeURI(text));
 
@@ -106,7 +115,7 @@ export class HtmlParser implements WriterImpl {
   a = (context: WriterContext, next: Next, { href }: Hyperlink) =>
     `<a href="${this.escapeXml(href)}">${next()}</a>\n`
   text = (context: WriterContext, textEntity: Text) =>
-    this.wrapWithMarks(this.escapeXml(textEntity.text), textEntity)
+    this.wrapWithMarks(escapeHtml(textEntity.text), textEntity)
 
   unsupported = (context: WriterContext, { type }: ModelElement) =>
     '<div class="content invalid">Content element is invalid</div>\n'
