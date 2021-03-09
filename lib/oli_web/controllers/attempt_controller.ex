@@ -3,6 +3,7 @@ defmodule OliWeb.AttemptController do
 
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Attempts.StudentInput
+  alias Oli.Delivery.Attempts.ClientEvaluation
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
 
@@ -66,6 +67,38 @@ defmodule OliWeb.AttemptController do
       {:error, _} -> error(conn, 500, "server error")
     end
   end
+
+  def submit_evaluations(conn, %{"activity_attempt_guid" => activity_attempt_guid, "evaluations" => client_evaluations}) do
+
+    %Section{slug: section_slug} = Sections.get_section_from_lti_params(conn.assigns.lti_params)
+
+    client_evaluations = Enum.map(client_evaluations, fn %{
+      "attemptGuid" => attempt_guid,
+      "response" => response,
+      "score" => score,
+      "outOf" => out_of,
+      "feedback" => feedback
+      } -> %{
+      attempt_guid: attempt_guid,
+      client_evaluation: %ClientEvaluation{
+        input: %StudentInput{
+          input: Map.get(response, "input")
+        },
+        score:
+        score,
+        out_of: out_of,
+        feedback: feedback
+      }
+    }
+    end)
+
+    case Attempts.submit_client_evaluations(section_slug, activity_attempt_guid, client_evaluations) do
+      {:ok, evaluations} -> json conn, %{ "type" => "success", "evaluations" => evaluations}
+      {:error, _} -> error(conn, 500, "server error")
+    end
+
+  end
+
 
   def new_activity(conn, %{"activity_attempt_guid" => attempt_guid}) do
 
