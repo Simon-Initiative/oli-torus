@@ -1,0 +1,88 @@
+{
+  "type": "Activity",
+  "id": "single_response",
+  "originalFile": "",
+  "title": "",
+  "tags": [],
+  "unresolvedReferences": [],
+  "content": {
+    "stem": {
+      "content": [
+        {
+          "type": "p",
+          "children": [
+            {
+              "type": "text",
+              "text": "Suppose there are four 500-MB hard drives plus one 2-GB flash drive. What is the total capacity, in gigabytes, of this hardware?"
+            }
+          ]
+        }
+      ]
+    },
+    "authoring": {
+      "parts": [
+        {
+          "id": "1",
+          "responses": [
+            {
+              "score": 1,
+              "rule": "input like {4}",
+              "feedback": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "2 GB of hard drive capacity plus 2 GB of flash drive capacity is 4 GB total."
+                  }
+                ]
+              }
+            },
+            {
+              "score": 0,
+              "rule": "input like {*}",
+              "feedback": {
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Try Again."
+                  }
+                ]
+              }
+            }
+          ],
+          "hints": [
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Four 500 MB hard drives is 2000 MB."
+                }
+              ]
+            },
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "2000 MB is 2 GB."
+                }
+              ]
+            },
+            {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "2 GB of hard drive capacity plus 2 GB of flash drive capacity is 4 GB total."
+                }
+              ]
+            }
+          ],
+          "scoringStrategy": "average"
+        }
+      ],
+      "transformations": [],
+      "previewText": ""
+    }
+  },
+  "objectives": [],
+  "legacyId": "a_c0e9e0a69cba4931967143bf72ac2dd8",
+  "subType": "oli_short_answer"
+}

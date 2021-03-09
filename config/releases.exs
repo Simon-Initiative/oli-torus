@@ -13,7 +13,9 @@ config :oli, Oli.Repo,
   # ssl: true,
   url: database_url,
   database: System.get_env("DB_NAME", "oli"),
-  pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10")
+  pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+  timeout: 600_000,
+  ownership_timeout: 600_000
 
 secret_key_base =
   System.get_env("SECRET_KEY_BASE") ||

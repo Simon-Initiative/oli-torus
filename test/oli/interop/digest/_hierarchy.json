@@ -1,0 +1,71 @@
+{
+  "type": "Hierarchy",
+  "id": "",
+  "originalFile": "",
+  "title": "",
+  "tags": [],
+  "unresolvedReferences": [],
+  "children": [
+    {
+      "type": "description",
+      "children": [
+        {
+          "type": "text",
+          "text": "Sample organization included with the OLI project template."
+        }
+      ]
+    },
+    {
+      "type": "audience",
+      "children": [
+        {
+          "type": "text",
+          "text": "This organization is intended as an example for OLI content authors."
+        }
+      ]
+    },
+    {
+      "type": "container",
+      "children": [
+        {
+          "type": "container",
+          "children": [
+            {
+              "type": "item",
+              "children": [],
+              "idref": "u-analog_and_digital-m-contents_analog_and_digital-p-contents_analog_and_digital"
+            }
+          ],
+          "id": "u-analog_and_digital-m-contents_analog_and_digital",
+          "title": "Contents: Analog and Digital"
+        },
+        {
+          "type": "container",
+          "children": [
+            {
+              "type": "item",
+              "children": [],
+              "idref": "u-analog_and_digital-m-analog_and_digital-p-analog_and_digital"
+            }
+          ],
+          "id": "u-analog_and_digital-m-analog_and_digital",
+          "title": "Analog and Digital"
+        },
+        {
+          "type": "container",
+          "children": [
+            {
+              "type": "item",
+              "children": [],
+              "idref": "u-analog_and_digital-m-analog_and_digital_quiz-p-analog_and_digital_quiz"
+            }
+          ],
+          "id": "u-analog_and_digital-m-analog_and_digital_quiz",
+          "title": "Analog and Digital Quiz"
+        }
+      ],
+      "id": "analog_and_digital",
+      "title": "Analog and Digital Unit"
+    }
+  ]
+}

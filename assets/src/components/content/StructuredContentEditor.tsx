@@ -24,6 +24,7 @@ export const StructuredContentEditor = (props: StructuredContentEditor) => {
     const updated = Object.assign({}, content, { children, selection });
     props.onEdit(updated);
   };
+
   return (
     <ErrorBoundary>
       <Editor

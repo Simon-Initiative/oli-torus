@@ -13,7 +13,9 @@ config :oli, Oli.Repo,
   password: System.get_env("DB_PASSWORD", "postgres"),
   hostname: System.get_env("DB_HOST", "localhost"),
   database: "oli_test",
-  pool: Ecto.Adapters.SQL.Sandbox
+  pool: Ecto.Adapters.SQL.Sandbox,
+  timeout: 600_000,
+  ownership_timeout: 600_000
 
 # Configure reCAPTCHA
 config :oli, :recaptcha,
