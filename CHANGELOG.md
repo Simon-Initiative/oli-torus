@@ -7,11 +7,12 @@
 
 ### Bug fixes
   - Fix an issue where pasting text containing newlines from an external source crashes the editor
+  - Fix an issue with null section slugs and deployment id in existing sections
 
 ## 0.6.1 (2021-3-3)
 
 ### Bug fixes
-  - Fixes an issue where existing sections might not be found on LTI launch
+  - Fix an issue where existing sections might not be found on LTI launch
 
 ## 0.6.0 (2021-3-3)
 ### Enhancements

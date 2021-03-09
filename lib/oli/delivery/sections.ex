@@ -10,8 +10,8 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
-  # alias Lti_1p3.DataProviders.EctoProvider.Deployment
-  # alias Oli.Lti_1p3.Tool.Registration
+  alias Lti_1p3.DataProviders.EctoProvider.Deployment
+  alias Oli.Lti_1p3.Tool.Registration
 
   @doc """
   Enrolls a user in a course section.
@@ -116,19 +116,15 @@ defmodule Oli.Delivery.Sections do
       nil
   """
   def get_section_from_lti_params(lti_params) do
-    ## TODO: disabled for now, but issuer and client_id need to be re-enabled in the future to fully qualify a section
-    ## after null lti_1p3_deployment_id is fixed for all existing sections
-
-    # issuer = lti_params["iss"]
-    # client_id = lti_params["aud"]
+    issuer = lti_params["iss"]
+    client_id = lti_params["aud"]
     context_id = Map.get(lti_params, "https://purl.imsglobal.org/spec/lti/claim/context")
       |> Map.get("id")
 
     Repo.one(from s in Section,
-      # join: d in Deployment, on: s.lti_1p3_deployment_id == d.id,
-      # join: r in Registration, on: d.registration_id == r.id,
-      # where: s.context_id == ^context_id and r.issuer == ^issuer and r.client_id == ^client_id,
-      where: s.context_id == ^context_id,
+      join: d in Deployment, on: s.lti_1p3_deployment_id == d.id,
+      join: r in Registration, on: d.registration_id == r.id,
+      where: s.context_id == ^context_id and r.issuer == ^issuer and r.client_id == ^client_id,
       select: s)
   end
 

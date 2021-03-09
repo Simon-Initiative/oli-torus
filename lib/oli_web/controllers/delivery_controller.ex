@@ -8,6 +8,7 @@ defmodule OliWeb.DeliveryController do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Accounts
   alias Oli.Accounts.Author
+  alias OliWeb.Common.LtiSession
 
   @context_administrator ContextRoles.get_role(:context_administrator)
   @context_instructor ContextRoles.get_role(:context_instructor)
@@ -206,7 +207,7 @@ defmodule OliWeb.DeliveryController do
 
     publication = Publishing.get_publication!(publication_id)
 
-    {:ok, %Section{id: section_id}} = Sections.create_section(%{
+    {:ok, %Section{id: section_id, slug: section_slug}} = Sections.create_section(%{
       time_zone: institution.timezone,
       title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
       context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
@@ -220,6 +221,10 @@ defmodule OliWeb.DeliveryController do
     lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
     context_roles = ContextRoles.get_roles_by_uris(lti_roles)
     Sections.enroll(user.id, section_id, context_roles)
+
+    # set the lti_params_key for the new section to the current user's lti_params_key
+    lti_params_key = LtiSession.get_user_params(conn)
+    LtiSession.put_section_params(conn, section_slug, lti_params_key)
 
     conn
     |> redirect(to: Routes.delivery_path(conn, :index))
