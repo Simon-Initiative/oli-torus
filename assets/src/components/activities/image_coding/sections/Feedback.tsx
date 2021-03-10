@@ -2,35 +2,36 @@ import React, { useState } from 'react';
 import { Heading } from 'components/misc/Heading';
 import { RichTextEditor } from 'components/content/RichTextEditor';
 import { ModelEditorProps } from '../schema';
-import { RichText, Response } from '../../types';
+import { RichText, Feedback as FeedbackItem} from '../../types';
 import { Description } from 'components/misc/Description';
 import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 import { ProjectSlug } from 'data/types';
 
 interface FeedbackProps extends ModelEditorProps {
-  onEditResponse: (id: string, content: RichText) => void;
+  onEditResponse: (score: number, content: RichText) => void;
   projectSlug: ProjectSlug;
 }
 
 interface ItemProps extends FeedbackProps {
-  response: Response;
+  feedback: FeedbackItem;
+  score: number;
 }
 
 export const Item = (props: ItemProps) => {
 
-  const { response, editMode, onEditResponse } = props;
+  const { feedback, score, editMode, onEditResponse } = props;
 
   return (
-    <div className="my-3" key={response.id}>
+    <div className="my-3" key={feedback.id}>
       <Description>
-        {response.score === 1 ? <IconCorrect /> : <IconIncorrect/>}
-        Feedback for {response.score === 1 ? "Correct" : "Incorrect"} Answer:
+        {score === 1 ? <IconCorrect /> : <IconIncorrect/>}
+        Feedback for {score === 1 ? 'Correct' : 'Incorrect'} Answer:
       </Description>
       <RichTextEditor
         projectSlug={props.projectSlug}
         editMode={editMode}
-        text={response.feedback.content}
-        onEdit={content => onEditResponse(response.id, content)}/>
+        text={feedback.content}
+        onEdit={content => onEditResponse(score, content)}/>
     </div>
   );
 
@@ -39,15 +40,14 @@ export const Item = (props: ItemProps) => {
 export const Feedback = (props: FeedbackProps) => {
 
   const { model } = props;
-  const { authoring: { parts } } = model;
 
   return (
     <div className="my-5">
       <Heading title="Feedback" subtitle="Providing feedback when a student answers a
         question is one of the best ways to reinforce their understanding." id="feedback" />
 
-      {parts[0].responses.map((response: Response, index) =>
-        <Item key={response.id} {...props} response={response} />)}
+      {model.feedback.map((f: FeedbackItem, index) =>
+        <Item key={index} {...props} feedback={f} score={index}/>)}
     </div>
   );
 };

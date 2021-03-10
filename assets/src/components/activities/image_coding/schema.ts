@@ -1,5 +1,5 @@
 
-import { ActivityModelSchema, Stem, Hint, Part } from '../types';
+import { ActivityModelSchema, Stem, Part, Feedback } from '../types';
 
 export interface ImageCodingModelSchema extends ActivityModelSchema {
   stem: Stem;
@@ -10,6 +10,7 @@ export interface ImageCodingModelSchema extends ActivityModelSchema {
   // for evaluation:
   tolerance: number;
   regex: string;
+  feedback: Feedback[];
   authoring: {
     parts: Part[];
     previewText: string;

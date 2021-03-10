@@ -71,9 +71,9 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
 
   const addImage = (e : any) => {
     selectImage(projectSlug, ContentModel.image()).then(img => {
-      dispatch(ICActions.addImageURL(img.src))
-    })
-  }
+      dispatch(ICActions.addImageURL(img.src));
+    });
+  };
 
   return (
     <React.Fragment>
@@ -150,7 +150,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
 
           <Feedback {...sharedProps}
             projectSlug={props.projectSlug}
-            onEditResponse={(id, content) => dispatch(ICActions.editFeedback(id, content))} />
+            onEditResponse={(score, content) => dispatch(ICActions.editFeedback(score, content))} />
          </div>
       }
 

@@ -1,10 +1,7 @@
 import guid from 'utils/guid';
 import * as ContentModel from 'data/content/model';
 import { ImageCodingModelSchema } from './schema';
-import { RichText, Operation, ScoringStrategy, Choice } from '../types';
-
-export const makeResponse = (rule: string, score: number, text: string) =>
-  ({ id: guid(), rule, score, feedback: fromText(text) });
+import { RichText, ScoringStrategy } from '../types';
 
 export const defaultICModel : () => ImageCodingModelSchema = () => {
 
@@ -15,15 +12,16 @@ export const defaultICModel : () => ImageCodingModelSchema = () => {
     solutionCode: 'Sample Solution Code',
     imageURLs: [],
     tolerance: 1.0,
-    regex: '',
+    regex: '',  // from original, not clear how used or if needed
+    feedback: [ // order matters: feedback[score] is used for score in {0, 1}
+      fromText('Incorrect'),
+      fromText('Correct'),
+    ],
     authoring: {
       parts: [{
         id: '1', // an IC only has one part, so it is safe to hardcode the id
         scoringStrategy: ScoringStrategy.average,
-        responses: [
-          makeResponse('input like {correct}', 1, 'Correct'),
-          makeResponse('input like {.*}', 0, 'Incorrect'),
-        ],
+        responses: [],
         hints: [
           fromText(''),
           fromText(''),

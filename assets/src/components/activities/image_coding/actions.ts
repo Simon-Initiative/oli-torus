@@ -1,5 +1,5 @@
 import { ImageCodingModelSchema } from './schema';
-import { fromText, makeResponse } from './utils';
+import { fromText } from './utils';
 import { RichText, Hint as HintType, Choice } from '../types';
 import { Maybe } from 'tsmonad';
 import { toSimpleText } from 'data/content/text';
@@ -8,10 +8,6 @@ import { Identifiable } from 'data/content/model';
 export class ICActions {
   private static getById<T extends Identifiable>(slice: T[], id: string): Maybe<T> {
     return Maybe.maybe(slice.find(c => c.id === id));
-  }
-
-  private static getResponse = (draftState: ImageCodingModelSchema, id: string) => {
-    return ICActions.getById(draftState.authoring.parts[0].responses, id);
   }
 
   private static getHint = (draftState: ImageCodingModelSchema,
@@ -55,12 +51,12 @@ export class ICActions {
     };
   }
 
-  static editFeedback(id: string, content: RichText) {
+  static editFeedback(score: number, content: RichText) {
     return (draftState: ImageCodingModelSchema) => {
-      ICActions.getResponse(draftState, id).lift(r => r.feedback.content = content);
+        draftState.feedback[score].content = content;
     };
-
   }
+
   static addHint() {
     return (draftState: ImageCodingModelSchema) => {
       const newHint: HintType = fromText('');

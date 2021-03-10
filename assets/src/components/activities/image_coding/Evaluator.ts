@@ -21,8 +21,10 @@ export class Evaluator {
 
     // special case for rendering result image
     if (something instanceof SimpleImageImpl) {
-      var canvas = ctx.getResult(ctx.solutionRun);
-      something.drawTo(canvas);
+      const canvas = ctx.getResult(ctx.solutionRun);
+      if (canvas) {
+        something.drawTo(canvas);
+      }
       return;
     }
 
@@ -34,23 +36,23 @@ export class Evaluator {
 
     // hack: make array look like string
     if (something instanceof Array) {
-      something = "[" + something.join(", ") + "]";
+      something = '[' + something.join(', ') + ']';
     }
 
-    var spacer = something == '\n' ? '' : ' ';
+    const spacer = something == '\n' ? '' : ' ';
 
     ctx.appendOutput(something + spacer);
   }
 
   static myprint(ctx : EvalContext, ...args: any): void {
-    for (var i = 0; i < args.length; i++) {
+    for (let i = 0; i < args.length; i++) {
       this.printOne(args[i], ctx);
     }
 
-    var lastArg = args[args.length -1];
-    var hasBreak = lastArg instanceof SimpleImageImpl || lastArg === '\n';
+    const lastArg = args[args.length - 1];
+    const hasBreak = lastArg instanceof SimpleImageImpl || lastArg === '\n';
     if (! hasBreak) {
-      this.printOne("\n", ctx);
+      this.printOne('\n', ctx);
     }
   }
 
@@ -59,47 +61,47 @@ export class Evaluator {
   // Given code, return sugared up code, or may throw error.
   // expands: for (part: composite) {
   static sugarCode(code : string) {
-    var reWeak = /for *\([ \w+().-]*:[ \w+().-]*\) *\{/g;
+    const reWeak = /for *\([ \w+().-]*:[ \w+().-]*\) *\{/g;
     // important: the g is required to avoid infinite loop
     // weak: for ( stuff* : stuff*) {
     // weak not allowing newline etc., or the * goes too far
-    var reStrong = /for\s*\(\s*(?:var\s+)?(\w+)\s*:\s*(\w+(\(.*?\))?)\s*\)\s*\{/;
+    const reStrong = /for\s*\(\s*(?:var\s+)?(\w+)\s*:\s*(\w+(\(.*?\))?)\s*\)\s*\{/;
     // strong: for([var ]x : y|foo(.*?) ) {
 
     // Find all occurences of weak, check that each is also strong.
     // e.g. "for (x: 1 +1) {" should throw this error
-    var result;
+    let result;
     while ((result = reWeak.exec(code)) != null) {
       // have result[0] result.index, reWeak.lastIndex
-      var matched = result[0];
-      //alert(matched);
+      const matched = result[0];
+      // alert(matched);
       if (matched.search(reStrong) == -1) {
         throw new Error("Attempt to use 'for(part: composite)' form, but it looks wrong: " + result[0]);
       }
     }
 
     // Loop, finding the next
-    var gensym = 0;
+    let gensym = 0;
     while (1) {
-      var temp = code;
-      var pvar = "pxyz" + gensym;
-      var ivar = "ixyz" + gensym;
+      const temp = code;
+      const pvar = 'pxyz' + gensym;
+      const ivar = 'ixyz' + gensym;
       gensym++;
-      var replacement = "var " + pvar + " = Evaluator.getArray($2); " +
-        "for (var " + ivar + "=0; " + ivar + "<" + pvar + ".length; " + ivar + "++) {" +
-        "var $1 = " + pvar + "[" + ivar + "];";
+      const replacement = 'var ' + pvar + ' = Evaluator.getArray($2); ' +
+        'for (var ' + ivar + '=0; ' + ivar + '<' + pvar + '.length; ' + ivar + '++) {' +
+        'var $1 = ' + pvar + '[' + ivar + '];';
       code = code.replace(reStrong, replacement);
       if (code == temp) break;
     }
     return(code);
-    //return code.replace(reStrong, replacement);
+    // return code.replace(reStrong, replacement);
 
     // someday: could look for reWeak, compare to where reStrong applied,
     // see if there is a case where they are trying but failing to use the for(part) form.
     // Or an easy to implement form would be to look for "for (a b c)" or whatever
     // where the lexemes look wrong, and flag it before the sugaring even happens.
-    //var reWeak = /for\s*\((.*?)\)\s*\{/;
-    //while ((result = reWeak.exec(code)) != null) {
+    // var reWeak = /for\s*\((.*?)\)\s*\{/;
+    // while ((result = reWeak.exec(code)) != null) {
     // have result[0] result.index, reWeak.lastIndex
   }
 
@@ -109,7 +111,7 @@ export class Evaluator {
     if (obj && typeof(obj) == 'object') {
       if (obj instanceof Array) {
         return obj;
-      } else if ('toArray' in obj) {
+      }  if ('toArray' in obj) {
         return obj.toArray();
       }
     } else {
@@ -120,10 +122,10 @@ export class Evaluator {
   // Called from user-facing functions, checks number of arguments.
   static funCheck(funName : string, expectedLen : number, actualLen : number) {
     if (expectedLen != actualLen) {
-      var s1 = (actualLen == 1)?"":"s";  // pluralize correctly
-      var s2 = (expectedLen == 1)?"":"s";
-      var message = funName + "() called with " + actualLen + " value" + s1 + ", but expected " +
-        expectedLen + " value" + s2 + ".";
+      const s1 = (actualLen == 1) ? '' :'s';  // pluralize correctly
+      const s2 = (expectedLen == 1) ? '' :'s';
+      const message = funName + '() called with ' + actualLen + ' value' + s1 + ', but expected ' +
+        expectedLen + ' value' + s2 + '.';
       // someday: think about "values" vs. "arguments" here
       throw new Error(message);
     }
@@ -133,7 +135,7 @@ export class Evaluator {
   static execute (src : string,  ctx: EvalContext) : any {
 
     // set up environment for calls by user code
-    let print = (...args: any) => { Evaluator.myprint(ctx, ...args); };
+    const print = (...args: any) => { Evaluator.myprint(ctx, ...args); };
 
     class SimpleImage extends SimpleImageImpl {
       constructor(name : string) {
@@ -146,20 +148,20 @@ export class Evaluator {
     window.print = print;
     window.Evaluator = Evaluator;
 
-    var result : any;
+    let result : any;
     try {
       const code = this.sugarCode(src);
 
       // Use Function to execute in global scope. Note user vars persist.
       // result = eval(code);
       result = Function(code)();
-      return "Evaluator.execute result: " + result;
+      return 'Evaluator.execute result: ' + result;
     }
-    catch(e) {
-      //alert(e);
+    catch (e) {
+      // alert(e);
       e.userError = true;
       // var line = extractLine(e, evalLine)
-      //if (line != -1) e.userLine = line;
+      // if (line != -1) e.userLine = line;
       return e;
     }
 
@@ -167,21 +169,28 @@ export class Evaluator {
   }
 
   // Given the student and ans data arrays, compute per-pixel diff number.
-  static imageDiff = function(studentData : Uint8ClampedArray, ansData : Uint8ClampedArray) {
-    if (studentData.length != ansData.length)
-      throw("image array lengths don't match " + studentData.length + " " + ansData.length);
+  static imageDiff = function (studentData : Uint8ClampedArray, ansData : Uint8ClampedArray) {
+    if (studentData.length === 0) {
+      throw('Could not get student image data');
+    }
+    if (ansData.length === 0) {
+      throw('Could not get solution image data');
+    }
+    if (studentData.length != ansData.length) {
+      throw("image array lengths don't match " + studentData.length + ' ' + ansData.length);
+    }
 
-    var diff = 0;
-    for (var i = 0; i < studentData.length; i+=4) {
-        diff += Math.abs(studentData[i] - ansData[i]);  // R
-        diff += Math.abs(studentData[i + 1] - ansData[i + 1]);  // G
-        diff += Math.abs(studentData[i + 2] - ansData[i + 2]);  // B
+    let diff = 0;
+    for (let i = 0; i < studentData.length; i += 4) {
+      diff += Math.abs(studentData[i] - ansData[i]);  // R
+      diff += Math.abs(studentData[i + 1] - ansData[i + 1]);  // G
+      diff += Math.abs(studentData[i + 2] - ansData[i + 2]);  // B
 
     }
-    diff = diff / (studentData.length/4.0);  // error-per-pixel
+    diff = diff / (studentData.length / 4.0);  // error-per-pixel
 
     return diff;
-  }
+  };
 }
 
 
@@ -197,266 +206,266 @@ export class SimplePixel {
     this.simple_image = simple_image;
     this.x = x;
     this.y = y;
-  };
+  }
 
-  getRed = function() {
-    Evaluator.funCheck("getRed", 0, arguments.length);
+  getRed = function () {
+    Evaluator.funCheck('getRed', 0, arguments.length);
     return this.simple_image.getRed(this.x, this.y);
   };
-  setRed = function(val) {
-    Evaluator.funCheck("setRed", 1, arguments.length);
+  setRed = function (val: number) {
+    Evaluator.funCheck('setRed', 1, arguments.length);
     this.simple_image.setRed(this.x, this.y, val);
   };
-  getGreen = function() {
-    Evaluator.funCheck("getGreen", 0, arguments.length);
+  getGreen = function () {
+    Evaluator.funCheck('getGreen', 0, arguments.length);
     return this.simple_image.getGreen(this.x, this.y);
   };
-  setGreen = function(val) {
-    Evaluator.funCheck("setGreen", 1, arguments.length);
+  setGreen = function (val: number) {
+    Evaluator.funCheck('setGreen', 1, arguments.length);
     this.simple_image.setGreen(this.x, this.y, val);
   };
-  getBlue = function() {
-    Evaluator.funCheck("getBlue", 0, arguments.length);
+  getBlue = function () {
+    Evaluator.funCheck('getBlue', 0, arguments.length);
     return this.simple_image.getBlue(this.x, this.y);
   };
-  setBlue = function(val) {
-    Evaluator.funCheck("setBlue", 1, arguments.length);
+  setBlue = function (val: number) {
+    Evaluator.funCheck('setBlue', 1, arguments.length);
     this.simple_image.setBlue(this.x, this.y, val);
   };
 
-  getX = function() {
-    Evaluator.funCheck("getX", 0, arguments.length);
+  getX = function () {
+    Evaluator.funCheck('getX', 0, arguments.length);
     return this.x;
   };
-  getY = function() {
-    Evaluator.funCheck("getY", 0, arguments.length);
+  getY = function () {
+    Evaluator.funCheck('getY', 0, arguments.length);
     return this.y;
   };
 
   // copy values from source pixel
-  setPixel = function(pixel: SimplePixel){
+  setPixel = function (pixel: SimplePixel) {
     this.setRed(pixel.getRed());
     this.setGreen(pixel.getGreen());
     this.setBlue(pixel.getBlue());
-  }
+  };
 
   // Render pixel as string -- print() uses this
-  getString = function() {
-    return "r:" + this.getRed() + " g:" + this.getGreen() + " b:" + this.getBlue();
+  getString = function () {
+    return 'r:' + this.getRed() + ' g:' + this.getGreen() + ' b:' + this.getBlue();
   };
 }
 
   // Relies on invisible canvas, inited either with a "foo.jpg" url,
   // or an htmlImage from loadImage().
-  export class SimpleImageImpl {
-    width: number;
-    height: number;
-    zoom: number;
-    imageData: ImageData;
-    ctx: EvalContext;
+export class SimpleImageImpl {
+  width: number;
+  height: number;
+  zoom: number;
+  imageData: ImageData;
+  ctx: EvalContext;
 
-    constructor (image : any, ctx: EvalContext) {
-     var htmlImage = null;
-     if (typeof image == "string") {
-       htmlImage = ctx.getImage(image);
-     } else {
-       throw new Error("new SimpleImage(...) requires an image name.");
-     }
+  constructor (image : any, ctx: EvalContext) {
+    let htmlImage = null;
+    if (typeof image == 'string') {
+      htmlImage = ctx.getImage(image);
+    } else {
+      throw new Error('new SimpleImage(...) requires an image name.');
+    }
 
-     if (!htmlImage) {
-      throw new Error("Image not found: " + image);
-     }
-     if (!htmlImage.complete) {
-       throw new Error("Image still loading -- wait a bit and retry");
-     }
+    if (!htmlImage) {
+      throw new Error('Image not found: ' + image);
+    }
+    if (!htmlImage.complete) {
+      throw new Error('Image still loading -- wait a bit and retry');
+    }
 
-     this.width = htmlImage.width;
-     this.height = htmlImage.height;
-     this.ctx = ctx;
+    this.width = htmlImage.width;
+    this.height = htmlImage.height;
+    this.ctx = ctx;
 
-     //console.log(this);
+     // console.log(this);
 
      // render to temp canvas to get image data
-     const canvas = ctx.getCanvas(0);
-     if (!canvas) throw new Error("Failed to get canvas for " + name);
-     const context = canvas.getContext("2d");
-     if (!context) throw new Error("getContext failed for " + name);
+    const canvas = ctx.getCanvas(0);
+    if (!canvas) throw new Error('Failed to get canvas for ' + name);
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('getContext failed for ' + name);
 
-     context.canvas.width = this.width;
-     context.canvas.height = this.height;
-     context.drawImage(htmlImage, 0, 0);
+    context.canvas.width = this.width;
+    context.canvas.height = this.height;
+    context.drawImage(htmlImage, 0, 0);
 
      // Do this last so it gets the actual image data.
-     this.imageData = context.getImageData(0, 0, this.width, this.height);
-   }
+    this.imageData = context.getImageData(0, 0, this.width, this.height);
+  }
 
-    getWidth = function() {
-       return this.width;
-     }
+  getWidth = function () {
+    return this.width;
+  };
 
-    getHeight = function() {
-       return this.height;
-     }
+  getHeight = function () {
+    return this.height;
+  };
 
      // Computes index into 1-d array, and checks correctness of x,y values
-    getIndex = function(x: number, y: number) {
-       if (x == null || y == null) {
-         throw new Error("need x and y values passed to this function");
-       }
-       else if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
-        throw new Error("x/y out of bounds x:" + x + " y:" + y);
-       }
-       else return (x + y * this.width) * 4;
-     }
+  getIndex = function (x: number, y: number) {
+    if (x == null || y == null) {
+      throw new Error('need x and y values passed to this function');
+    }
+    else if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
+      throw new Error('x/y out of bounds x:' + x + ' y:' + y);
+    }
+    else return (x + y * this.width) * 4;
+  };
 
 
      // --setters--
 
      // Clamp values to be in the range 0..255. Used by setRed() et al.
-    clamp = function(value : number) {
+  clamp = function (value : number) {
       // value = Math.floor(value);  // .js is always float, so this line
       // is probably unncessary, unless we get into some deep JIT level.
-      if (value < 0) return 0;
-      if (value > 255) {
-        console.log("clamping pixel value: " + value)
-        return 255;
-      }
-      return value;
+    if (value < 0) return 0;
+    if (value > 255) {
+      console.log('clamping pixel value: ' + value);
+      return 255;
     }
+    return value;
+  };
 
      // Sets the red value for the given x,y
-     setRed = function(x: number, y: number, value: number) {
-       Evaluator.funCheck("setRed", 3, arguments.length);
-       var index = this.getIndex(x, y);
-       this.imageData.data[index] = this.clamp(value);
+  setRed = function (x: number, y: number, value: number) {
+    Evaluator.funCheck('setRed', 3, arguments.length);
+    const index = this.getIndex(x, y);
+    this.imageData.data[index] = this.clamp(value);
 
        // This is how you would write back each pixel individually.
        // It gives terrible performance (on Firefox anyway).
        // this.context.putImageData(this.imageData, 0, 0, x, y, 1, 1);
        // dx dy dirtyX dirtyY dirtyWidth dirtyHeight
-     };
+  };
 
      // Sets the green value for the given x,y
-     setGreen = function(x: number, y: number, value: number) {
-       Evaluator.funCheck("setGreen", 3, arguments.length);
-       var index = this.getIndex(x, y);
-       this.imageData.data[index + 1] = this.clamp(value);
-     };
+  setGreen = function (x: number, y: number, value: number) {
+    Evaluator.funCheck('setGreen', 3, arguments.length);
+    const index = this.getIndex(x, y);
+    this.imageData.data[index + 1] = this.clamp(value);
+  };
 
      // Sets the blue value for the given x,y
-     setBlue = function(x: number, y: number, value: number) {
-       Evaluator.funCheck("setBlue", 3, arguments.length);
-       var index = this.getIndex(x, y);
-       this.imageData.data[index + 2] = this.clamp(value);
-     };
+  setBlue = function (x: number, y: number, value: number) {
+    Evaluator.funCheck('setBlue', 3, arguments.length);
+    const index = this.getIndex(x, y);
+    this.imageData.data[index + 2] = this.clamp(value);
+  };
 
      // Sets the alpha value for the given x,y
-     setAlpha = function(x: number, y: number, value: number) {
-       Evaluator.funCheck("setAlpha", 3, arguments.length);
-       var index = this.getIndex(x, y);
-       this.imageData.data[index + 3] = this.clamp(value);
-     };
+  setAlpha = function (x: number, y: number, value: number) {
+    Evaluator.funCheck('setAlpha', 3, arguments.length);
+    const index = this.getIndex(x, y);
+    this.imageData.data[index + 3] = this.clamp(value);
+  };
 
-     setZoom = function(n : number) {
-       this.zoom = n;
-     }
+  setZoom = function (n : number) {
+    this.zoom = n;
+  };
 
      // --getters--
      // Gets the red value for the given x,y
-     getRed = function(x: number, y: number) {
-       Evaluator.funCheck("getRed", 2, arguments.length);
-       var index = this.getIndex(x, y);
-       return this.imageData.data[index];
-     };
+  getRed = function (x: number, y: number) {
+    Evaluator.funCheck('getRed', 2, arguments.length);
+    const index = this.getIndex(x, y);
+    return this.imageData.data[index];
+  };
 
-     getGreen = function(x: number, y: number) {
-       Evaluator.funCheck("getGreen", 2, arguments.length);
-       var index = this.getIndex(x, y);
-       return this.imageData.data[index + 1];
-     };
+  getGreen = function (x: number, y: number) {
+    Evaluator.funCheck('getGreen', 2, arguments.length);
+    const index = this.getIndex(x, y);
+    return this.imageData.data[index + 1];
+  };
 
-      getBlue = function(x: number, y: number) {
-       Evaluator.funCheck("getBlue", 2, arguments.length);
-       var index = this.getIndex(x, y);
-       return this.imageData.data[index + 2];
-     };
+  getBlue = function (x: number, y: number) {
+    Evaluator.funCheck('getBlue', 2, arguments.length);
+    const index = this.getIndex(x, y);
+    return this.imageData.data[index + 2];
+  };
 
-     getAlpha = function(x: number, y: number) {
-       Evaluator.funCheck("getAlpha", 2, arguments.length);
-       var index = this.getIndex(x, y);
-       return this.imageData.data[index + 3];
-     };
+  getAlpha = function (x: number, y: number) {
+    Evaluator.funCheck('getAlpha', 2, arguments.length);
+    const index = this.getIndex(x, y);
+    return this.imageData.data[index + 3];
+  };
 
     // Gets the pixel object for this x,y. Changes to the
     // pixel write back to the image.
-    getPixel = function(x: number, y: number) {
-      Evaluator.funCheck("getPixel", 2, arguments.length);
-      return new SimplePixel(this, x, y);
-    };
+  getPixel = function (x: number, y: number) {
+    Evaluator.funCheck('getPixel', 2, arguments.length);
+    return new SimplePixel(this, x, y);
+  };
 
     // Export an image as an array of pixel refs for the for-loop.
-    toArray = function() {
-      var array = new Array();  // 1. simple-way (this is as good or faster in various browser tests)
-      //var array = new Array(this.getWidth() * this.getHeight()); // 2. alloc way
-      //var i = 0;  // 2.
+  toArray = function () {
+    const array = new Array();  // 1. simple-way (this is as good or faster in various browser tests)
+      // var array = new Array(this.getWidth() * this.getHeight()); // 2. alloc way
+      // var i = 0;  // 2.
       // nip 2012-7  .. change to cache-friendly y/x ordering
       // Non-firefox browsers may benefit.
-      for (var y = 0; y < this.getHeight(); y++) {
-        for (var x = 0; x < this.getWidth(); x++) {
-          //array[i++] = new SimplePixel(this, x, y);  // 2.
-          array.push(new SimplePixel(this, x, y));  // 1.
-        }
+    for (let y = 0; y < this.getHeight(); y++) {
+      for (let x = 0; x < this.getWidth(); x++) {
+          // array[i++] = new SimplePixel(this, x, y);  // 2.
+        array.push(new SimplePixel(this, x, y));  // 1.
       }
-      return array;
     }
+    return array;
+  };
 
     // Change the size of the image to the given, scaling the pixels.
-    setSize = function(newWidth: number, newHeight: number) {
+  setSize = function (newWidth: number, newHeight: number) {
 
       // flush any changes from buffer to a temp canvas to be used as src
-      var srcCanvas = this.ctx.getCanvas(0);
-      srcCanvas.width = this.width;
-      srcCanvas.height = this.height;
+    const srcCanvas = this.ctx.getCanvas(0);
+    srcCanvas.width = this.width;
+    srcCanvas.height = this.height;
 
-      var srcContext = srcCanvas.getContext("2d");
-      srcContext.putImageData(this.imageData, 0, 0);  // can omit x/y/width/height and get default behavior
+    const srcContext = srcCanvas.getContext('2d');
+    srcContext.putImageData(this.imageData, 0, 0);  // can omit x/y/width/height and get default behavior
 
       // get second temp canvas of new size
-      var dstCanvas = this.ctx.getCanvas(1);
-      dstCanvas.width = newWidth;
-      dstCanvas.height = newHeight;
+    const dstCanvas = this.ctx.getCanvas(1);
+    dstCanvas.width = newWidth;
+    dstCanvas.height = newHeight;
 
       // scale by canvas-to-canvas drawing to get image smoothing
-      var dstContext = dstCanvas.getContext("2d");
-      dstContext.drawImage(srcCanvas, 0, 0, dstCanvas.width, dstCanvas.height);
+    const dstContext = dstCanvas.getContext('2d');
+    dstContext.drawImage(srcCanvas, 0, 0, dstCanvas.width, dstCanvas.height);
 
       // reload this image's data from dst canvas
-      this.width = dstCanvas.width;
-      this.height = dstCanvas.height;
-      this.imageData = dstContext.getImageData(0, 0, dstCanvas.width, dstCanvas.height);
-    }
+    this.width = dstCanvas.width;
+    this.height = dstCanvas.height;
+    this.imageData = dstContext.getImageData(0, 0, dstCanvas.width, dstCanvas.height);
+  };
 
     // Set this image to be the same size to the passed in image.
     // This image may end up a little bigger than the passed image
     // to keep its proportions.
     // Useful to set a back image to match the size of the front
     // image for bluescreen.
-    setSameSize = function(otherImage : SimpleImageImpl) {
-      if (!this.width) return;
+  setSameSize = function (otherImage : SimpleImageImpl) {
+    if (!this.width) return;
 
-      var wscale = otherImage.width / this.width;
-      var hscale = otherImage.height / this.height;
+    const wscale = otherImage.width / this.width;
+    const hscale = otherImage.height / this.height;
 
-      var scale = Math.max(wscale, hscale);
+    const scale = Math.max(wscale, hscale);
 
-      if (scale != 1) {
-        this.setSize(Math.floor(this.width * scale), Math.floor(this.height * scale));
-      }
+    if (scale != 1) {
+      this.setSize(Math.floor(this.width * scale), Math.floor(this.height * scale));
     }
+  };
 
   // Draws to the given canvas, setting its size.
   // Used to implement printing of an image.
-  drawTo = function(toCanvas : HTMLCanvasElement) {
+  drawTo = function (toCanvas : HTMLCanvasElement) {
     if (!this.zoom) {
       toCanvas.width = this.width;
       toCanvas.height = this.height;
@@ -467,8 +476,8 @@ export class SimplePixel {
     }
 
     // AW: put bits from image's data cache without going via canvas
-    var toContext = toCanvas.getContext("2d");
-    if (toContext === null) throw new Error("Error getting drawing context");
+    const toContext = toCanvas.getContext('2d');
+    if (toContext === null) throw new Error('Error getting drawing context');
 
     // drawImage() takes either an htmlImg or a canvas
     if (!this.zoom) {
@@ -476,32 +485,32 @@ export class SimplePixel {
     }
     else {
       // in effect we want this:
-      //toContext.drawImage(this.canvas, 0, 0, toCanvas.width, toCanvas.height);
+      // toContext.drawImage(this.canvas, 0, 0, toCanvas.width, toCanvas.height);
 
       // Manually scale/copy the pixels, to avoid the default smoothing effect.
       // changed: createImageData apparently better than getImageData here.
-      var toData = toContext.createImageData(toCanvas.width, toCanvas.height);
-      for (var x = 0; x < toCanvas.width; x++) {
-        for (var y = 0; y < toCanvas.height; y++) {
-          var iNew =  (x + y * toCanvas.width) * 4;
-          var iOld = (Math.floor(x / this.zoom) + Math.floor(y / this.zoom) * this.width) * 4;
-          for (var j = 0; j < 4; j++) {
+      const toData = toContext.createImageData(toCanvas.width, toCanvas.height);
+      for (let x = 0; x < toCanvas.width; x++) {
+        for (let y = 0; y < toCanvas.height; y++) {
+          const iNew =  (x + y * toCanvas.width) * 4;
+          const iOld = (Math.floor(x / this.zoom) + Math.floor(y / this.zoom) * this.width) * 4;
+          for (let j = 0; j < 4; j++) {
             toData.data[iNew + j] = this.imageData.data[iOld + j];
           }
         }
       }
       toContext.putImageData(toData, 0, 0);
     }
-  }
+  };
 
   // debugging aid to show image data. Use on tiny test images only!
-  dump = function() {
-    for (var x = 0; x < this.width; x++) {
-      for (var y = 0; y < this.height; y++) {
-        var i =  (x + y * this.width) * 4;
-        console.log(x + "," + y + ':' + this.imageData.data[i] + ',' + this.imageData.data[i+1] + ',' + this.imageData.data[i+2]);
+  dump = function () {
+    for (let x = 0; x < this.width; x++) {
+      for (let y = 0; y < this.height; y++) {
+        const i =  (x + y * this.width) * 4;
+        console.log(x + ',' + y + ':' + this.imageData.data[i] + ',' + this.imageData.data[i + 1] + ',' + this.imageData.data[i + 2]);
       }
     }
-  }
+  };
 
 }
