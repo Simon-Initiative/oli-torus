@@ -12,6 +12,7 @@ defmodule Oli.Delivery.Sections.Section do
     field :title, :string
     field :context_id, :string
     field :slug, :string
+    field :open_and_free, :boolean, default: false
 
     belongs_to :lti_1p3_deployment, Lti_1p3.DataProviders.EctoProvider.Deployment, foreign_key: :lti_1p3_deployment_id
 

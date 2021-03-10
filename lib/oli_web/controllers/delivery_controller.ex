@@ -60,7 +60,7 @@ defmodule OliWeb.DeliveryController do
     {institution, _registration, _deployment} = Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
 
     publications = Publishing.available_publications(author, institution)
-    my_publications = publications |> Enum.filter(fn p -> !p.open_and_free && p.published end)
+    my_publications = publications |> Enum.filter(fn p -> p.published end)
 
     render(conn, "configure_section.html", author: author, my_publications: my_publications)
   end

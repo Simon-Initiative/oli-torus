@@ -92,7 +92,7 @@ defmodule Oli.Publishing do
     query = from pub in Publication,
       join: u in subquery(subquery), on: pub.project_id == u.project_id and u.max_date == pub.updated_at,
       join: proj in Project, on: pub.project_id == proj.id,
-      where: pub.open_and_free == true or proj.visibility == :global,
+      where: proj.visibility == :global,
       preload: [:project],
       distinct: true,
       select: pub
@@ -113,7 +113,7 @@ defmodule Oli.Publishing do
       join: proj in Project, on: pub.project_id == proj.id,
       left_join: a in assoc(proj, :authors),
       left_join: v in ProjectVisibility, on: proj.id == v.project_id,
-      where: a.id == ^author.id or pub.open_and_free == true or proj.visibility == :global or (proj.visibility == :selected and (v.author_id == ^author.id or v.institution_id == ^institution.id)),
+      where: a.id == ^author.id or proj.visibility == :global or (proj.visibility == :selected and (v.author_id == ^author.id or v.institution_id == ^institution.id)),
       preload: [:project],
       distinct: true,
       select: pub
@@ -430,7 +430,6 @@ defmodule Oli.Publishing do
     {:ok, new_publication} = create_publication(%{
       description: active_publication.description,
       published: false,
-      open_and_free: active_publication.open_and_free,
       root_resource_id: active_publication.root_resource_id,
       project_id: active_publication.project_id,
     })

@@ -27,7 +27,7 @@ defmodule Oli.TestHelpers do
     params =
       attrs
       |> Enum.into(%{end_date: ~D[2010-04-17],
-      open_and_free: true,
+      open_and_free: false,
       registration_open: true,
       start_date: ~D[2010-04-17],
       time_zone: "some time_zone",

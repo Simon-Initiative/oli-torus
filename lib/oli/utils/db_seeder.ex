@@ -30,7 +30,7 @@ defmodule Oli.Seeder do
     {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: container_resource.id}) |> Repo.insert
     {:ok, container_revision} = Oli.Resources.create_revision(%{author_id: author.id, objectives: %{}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"), children: [], content: %{}, deleted: false, slug: "example_page", title: "Example Page", resource_id: container_resource.id})
 
-    {:ok, publication} = Publication.changeset(%Publication{}, %{description: "An example course", published: false, open_and_free: true, root_resource_id: container_resource.id, project_id: project.id}) |> Repo.insert
+    {:ok, publication} = Publication.changeset(%Publication{}, %{description: "An example course", published: false, root_resource_id: container_resource.id, project_id: project.id}) |> Repo.insert
 
     publish_resource(publication, container_resource, container_revision)
 
@@ -68,7 +68,7 @@ defmodule Oli.Seeder do
     {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: container_resource.id}) |> Repo.insert
     {:ok, container_revision} = Oli.Resources.create_revision(%{author_id: author.id, objectives: %{}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"), children: [], content: %{}, deleted: false, slug: "root_container", title: "Root Container", resource_id: container_resource.id})
 
-    {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, open_and_free: true, root_resource_id: container_resource.id, project_id: project.id}) |> Repo.insert
+    {:ok, publication} = Publication.changeset(%Publication{}, %{description: "description", published: false, root_resource_id: container_resource.id, project_id: project.id}) |> Repo.insert
 
     publish_resource(publication, container_resource, container_revision)
 
@@ -93,7 +93,7 @@ defmodule Oli.Seeder do
   def create_section(map) do
 
     params = %{end_date: ~D[2010-04-17],
-      open_and_free: true,
+      open_and_free: false,
       registration_open: true,
       start_date: ~D[2010-04-17],
       time_zone: "some time_zone",
