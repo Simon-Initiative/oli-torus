@@ -53,7 +53,7 @@ export class ICActions {
 
   static editFeedback(score: number, content: RichText) {
     return (draftState: ImageCodingModelSchema) => {
-        draftState.feedback[score].content = content;
+      draftState.feedback[score].content = content;
     };
   }
 

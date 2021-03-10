@@ -59,6 +59,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
 
   const isEvaluated = attemptState.score !== null;
 
+  // tslint:disable-next-line:prefer-array-literal
   const imageRefs = useRef<HTMLImageElement[]>(new Array(imageURLs.length));
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef2 = useRef<HTMLCanvasElement>(null);
@@ -69,9 +70,9 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   useEffect(() => {
     imageURLs.map((url, i) => {
       const img = new Image();
-        // Owing to a flaw in S3, we get CORS errors when image is loaded from cache if cached copy was obtained
-        // from an earlier non-CORS request. Appending unique query string is a simple hack to force fresh load.
-        // Downside: cache can fill up with many copies of same image.
+      // Owing to a flaw in S3, we get CORS errors when image is loaded from cache if cached
+      // copy was obtainedfrom an earlier non-CORS request. Appending unique query string is
+      // a simple hack to force fresh load.
       img.src = url + '?t=' + new Date().getTime();
       img.crossOrigin = 'anonymous';
 
@@ -150,7 +151,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
 
   const appendOutput = (s: string) => {
     updateOutput(currentOutput + s);
-    console.log('Output now: |' + output + '|');
+    // console.log('Output now: |' + output + '|');
   };
 
   const onRun = () => {
@@ -177,7 +178,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     }
 
     const diff = getResultDiff();
-    console.log('Avg solution diff = ' + diff);
+    // console.log('Avg solution diff = ' + diff);
     return diff < model.tolerance;
   };
 
@@ -186,24 +187,17 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   function getResultDiff() {
 
     const studentCanvas = getResult(false);
-    if (!studentCanvas) {
-      throw new Error('error: failed to get student canvas');
-    }
+    if (!studentCanvas) throw new Error('Failed to get student result image');
+
     // width = 0 => student run failed or they didn't run at all. Can't getImageData
     // this is possible, not a system error.
     if (studentCanvas.width === 0) {
-      console.log('no student image to compare');
       return(999);
     }
 
     const solnCanvas = getResult(true);
-    if (!solnCanvas) {
-      console.log('error: no soln canvas');
-      return(999);
-    }
-    if (solnCanvas.width === 0) {
-      console.log('error: no solution image to compare');
-      return(999);
+    if (!solnCanvas || solnCanvas.width === 0) {
+      throw new Error('Failed to get solution image');
     }
 
     let studentData = new Uint8ClampedArray;
@@ -221,8 +215,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     let diff = 999;  // default if imageDiff throws size mismatch error
     try {
       diff = Evaluator.imageDiff(studentData, solnData);
-    }
-    finally {
+    } finally {
       return diff;
     }
   }

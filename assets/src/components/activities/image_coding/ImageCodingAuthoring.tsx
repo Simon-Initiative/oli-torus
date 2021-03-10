@@ -70,7 +70,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
   }
 
   const addImage = (e : any) => {
-    selectImage(projectSlug, ContentModel.image()).then(img => {
+    selectImage(projectSlug, ContentModel.image()).then((img) => {
       dispatch(ICActions.addImageURL(img.src));
     });
   };
