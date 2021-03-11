@@ -4,6 +4,7 @@
 
 ### Enhancements
   - Add the ability for an activity to submit client side evaluations
+  - Change project slug determiniation during course ingestion to be server driven
 
 ### Bug fixes
   - Fix an issue where activity text that contained HTML tags rendered actual HTML
