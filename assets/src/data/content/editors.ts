@@ -7,6 +7,7 @@ export type EditorDesc = {
   icon: string;
   description: string;
   friendlyName: string;
+  globallyAvailable: boolean;
 };
 
 export interface ActivityEditorMap {
