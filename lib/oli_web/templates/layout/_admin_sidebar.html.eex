@@ -7,3 +7,5 @@
 
 <%= sidebar_link @conn, "Ingest", :ingest, to: Routes.ingest_path(@conn, :index) %>
 <%= sidebar_link @conn, "Invite", :invite, to: Routes.invite_path(@conn, :index) %>
+
+<%= sidebar_link @conn, "Open and Free", :invite, to: Routes.open_and_free_path(@conn, :index) %>

@@ -75,6 +75,19 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Returns the list of open and free sections.
+  ## Examples
+      iex> list_open_and_free_sections()
+      [%Section{}, ...]
+  """
+  def list_open_and_free_sections() do
+    Repo.all from(
+      s in Section,
+      where: s.open_and_free == true,
+      select: s)
+  end
+
+  @doc """
   Gets a single section.
   Raises `Ecto.NoResultsError` if the Section does not exist.
   ## Examples

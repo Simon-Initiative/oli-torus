@@ -5,9 +5,9 @@ defmodule Oli.Delivery.Sections.Section do
   alias Oli.Utils.Slug
 
   schema "sections" do
-    field :end_date, :date
     field :registration_open, :boolean, default: false
     field :start_date, :date
+    field :end_date, :date
     field :time_zone, :string
     field :title, :string
     field :context_id, :string

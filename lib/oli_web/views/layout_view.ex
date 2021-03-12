@@ -41,11 +41,6 @@ defmodule OliWeb.LayoutView do
     end
   end
 
-  def is_admin?(%{:assigns => assigns}) do
-    admin_role_id = Oli.Accounts.SystemRole.role_id().admin
-    assigns.current_author.system_role_id == admin_role_id
-  end
-
   def account_link(%{:assigns => assigns} = conn) do
     current_author = assigns.current_author
     full_name = "#{current_author.name}"
@@ -75,10 +70,6 @@ defmodule OliWeb.LayoutView do
 
   def theme_url(conn, :delivery) do
     Routes.static_path(conn, "/css/delivery_theme_oli.css")
-  end
-
-  def preview_mode(%{assigns: assigns} = _conn) do
-    Map.get(assigns, :preview_mode, false)
   end
 
 end

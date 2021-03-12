@@ -1,3 +1,4 @@
+
 defmodule OliWeb.Router do
   use OliWeb, :router
   use Pow.Phoenix.Router
@@ -397,6 +398,9 @@ defmodule OliWeb.Router do
 
     put "/approve_registration", InstitutionController, :approve_registration
     delete "/pending_registration/:id", InstitutionController, :remove_registration
+
+    # Open and free sections
+    resources "/open_and_free", OpenAndFreeController
   end
 
   scope "/project", OliWeb do

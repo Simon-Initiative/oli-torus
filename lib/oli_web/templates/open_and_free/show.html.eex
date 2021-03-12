@@ -1,0 +1,8 @@
+<h1>Show Open and free</h1>
+
+<ul>
+
+</ul>
+
+<span><%= link "Edit", to: Routes.open_and_free_path(@conn, :edit, @section) %></span>
+<span><%= link "Back", to: Routes.open_and_free_path(@conn, :index) %></span>

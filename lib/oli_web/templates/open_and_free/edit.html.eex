@@ -1,0 +1,5 @@
+<h1>Edit Open and free</h1>
+
+<%= render "form.html", Map.put(assigns, :action, Routes.open_and_free_path(@conn, :update, @sections)) %>
+
+<span><%= link "Back", to: Routes.open_and_free_path(@conn, :index) %></span>
