@@ -1,4 +1,4 @@
-defmodule Oli.Activities.Registration do
+defmodule Oli.Activities.ActivityRegistration do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -13,6 +13,7 @@ defmodule Oli.Activities.Registration do
     field :title, :string
     field :allow_client_evaluation, :boolean, default: false
     field :globally_available, :boolean, default: false
+    many_to_many :projects, Oli.Authoring.Course.Project, join_through: Oli.Activities.ActivityRegistrationProject
 
     timestamps(type: :utc_datetime)
   end

@@ -223,6 +223,10 @@ defmodule OliWeb.Router do
     put "/:project_id/collaborators/:author_email", CollaboratorController, :update
     delete "/:project_id/collaborators/:author_email", CollaboratorController, :delete
 
+    # Activities
+    put "/:project_id/activities/enable/:activity_slug", ProjectActivityController, :enable_activity
+    put "/:project_id/activities/disable/:activity_slug", ProjectActivityController, :disable_activity
+
     # Insights
     get "/:project_id/insights", ProjectController, :insights
     # Ideally, analytics should be live-routed to preserve forward/back button when toggling

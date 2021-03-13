@@ -7,7 +7,10 @@ defmodule Oli.Activities do
   alias Oli.Repo
 
   alias Oli.Activities.Manifest
-  alias Oli.Activities.Registration
+  alias Oli.Activities.ActivityRegistration
+  alias Oli.Authoring.Course
+  alias Oli.Activities.ActivityRegistrationProject
+  import Oli.Utils
 
   def register_activity(%Manifest{} = manifest) do
 
@@ -37,8 +40,79 @@ defmodule Oli.Activities do
       |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.slug, e) end)
   end
 
+  def enable_activity_in_project(project_slug, activity_slug) do
+    with {:ok, activity_registration} <- get_registration_by_slug(activity_slug)
+                     |> trap_nil("An activity with that slug was not found."),
+         {:ok, project} <- Course.get_project_by_slug(project_slug)
+                           |> trap_nil("The project was not found.")
+      do
+      case Repo.get_by(
+             ActivityRegistrationProject,
+             %{
+               activity_registration_id: activity_registration.id,
+               project_id: project.id
+             }
+           )  do
+        nil -> %ActivityRegistrationProject{}
+               |> ActivityRegistrationProject.changeset(
+                    %{
+                      activity_registration_id: activity_registration.id,
+                      project_id: project.id,
+                    }
+                  ) |> Repo.insert
+        _ -> {:error, "The activity is already enabled in the project."}
+      end
+    else
+      {:error, {message}} -> {:error, message}
+    end
+  end
+
+  def disable_activity_in_project(project_slug, activity_slug) do
+    with {:ok, activity_registration} <- get_registration_by_slug(activity_slug)
+                          |> trap_nil("An activity with that slug was not found."),
+         {:ok, project} <- Course.get_project_by_slug(project_slug)
+                           |> trap_nil("The project was not found."),
+         {:ok, activity_project} <- Repo.get_by(
+                                    ActivityRegistrationProject,
+                                    %{
+                                      activity_registration_id: activity_registration.id,
+                                      project_id: project.id
+                                    }
+                                  )
+                                  |> trap_nil("The activity is not enabled on the project.")
+      do
+        Repo.delete(activity_project)
+    else
+      {:error, {message}} -> {:error, message}
+    end
+  end
+
+  def activities_for_project(project) do
+    project = project |> Repo.preload([:activity_registrations])
+    registered_activities = list_activity_registrations()
+
+    project_activities =
+      Enum.reduce(project.activity_registrations, [], fn a, m -> m ++ [a.id] end)
+
+    activities_enabled =
+      Enum.reduce(registered_activities, [], fn a, m ->
+        enabled_for_project = a.globally_available === true or Enum.member?(project_activities, a.id)
+        m ++
+        [
+          %{
+            slug: a.slug,
+            title: a.title,
+            global: a.globally_available,
+            enabled: enabled_for_project
+          }
+        ]
+      end)
+
+    Enum.sort_by(activities_enabled, &(&1.global), :desc)
+  end
+
   def get_registration_by_slug(slug) do
-    Repo.one(from p in Registration, where: p.slug == ^slug)
+    Repo.one(from p in ActivityRegistration, where: p.slug == ^slug)
   end
 
   @doc """
@@ -47,11 +121,11 @@ defmodule Oli.Activities do
   ## Examples
 
       iex> list_activity_registrations()
-      [%Registration{}, ...]
+      [%ActivityRegistration{}, ...]
 
   """
   def list_activity_registrations do
-    Repo.all(Registration)
+    Repo.all(ActivityRegistration)
   end
 
   @doc """
@@ -65,20 +139,20 @@ defmodule Oli.Activities do
   @doc """
   Gets a single registration.
 
-  Raises `Ecto.NoResultsError` if the Registration does not exist.
+  Raises `Ecto.NoResultsError` if the ActivityRegistration does not exist.
 
   ## Examples
 
       iex> get_registration!(123)
-      %Registration{}
+      %ActivityRegistration{}
 
       iex> get_registration!(456)
       ** (Ecto.NoResultsError)
 
   """
-  def get_registration!(id), do: Repo.get!(Registration, id)
+  def get_registration!(id), do: Repo.get!(ActivityRegistration, id)
 
-  def get_registration(id), do: Repo.get(Registration, id)
+  def get_registration(id), do: Repo.get(ActivityRegistration, id)
 
   @doc """
   Creates a registration.
@@ -86,15 +160,15 @@ defmodule Oli.Activities do
   ## Examples
 
       iex> create_registration(%{field: value})
-      {:ok, %Registration{}}
+      {:ok, %ActivityRegistration{}}
 
       iex> create_registration(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
   def create_registration(attrs \\ %{}) do
-    %Registration{}
-    |> Registration.changeset(attrs)
+    %ActivityRegistration{}
+    |> ActivityRegistration.changeset(attrs)
     |> Repo.insert()
   end
 
@@ -104,15 +178,15 @@ defmodule Oli.Activities do
   ## Examples
 
       iex> update_registration(registration, %{field: new_value})
-      {:ok, %Registration{}}
+      {:ok, %ActivityRegistration{}}
 
       iex> update_registration(registration, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_registration(%Registration{} = registration, attrs) do
+  def update_registration(%ActivityRegistration{} = registration, attrs) do
     registration
-    |> Registration.changeset(attrs)
+    |> ActivityRegistration.changeset(attrs)
     |> Repo.update()
   end
 
@@ -122,13 +196,13 @@ defmodule Oli.Activities do
   ## Examples
 
       iex> delete_registration(registration)
-      {:ok, %Registration{}}
+      {:ok, %ActivityRegistration{}}
 
       iex> delete_registration(registration)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_registration(%Registration{} = registration) do
+  def delete_registration(%ActivityRegistration{} = registration) do
     Repo.delete(registration)
   end
 
@@ -138,11 +212,11 @@ defmodule Oli.Activities do
   ## Examples
 
       iex> change_registration(registration)
-      %Ecto.Changeset{source: %Registration{}}
+      %Ecto.Changeset{source: %ActivityRegistration{}}
 
   """
-  def change_registration(%Registration{} = registration) do
-    Registration.changeset(registration, %{})
+  def change_registration(%ActivityRegistration{} = registration) do
+    ActivityRegistration.changeset(registration, %{})
   end
 
 end
