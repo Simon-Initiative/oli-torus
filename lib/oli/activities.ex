@@ -13,7 +13,6 @@ defmodule Oli.Activities do
   import Oli.Utils
 
   def register_activity(%Manifest{} = manifest) do
-
     attrs = %{
       authoring_script: manifest.id <> "_authoring.js",
       authoring_element: manifest.authoring.element,
@@ -24,43 +23,65 @@ defmodule Oli.Activities do
       description: manifest.description,
       title: manifest.friendlyName,
       icon: "nothing",
-      slug: manifest.id,
+      slug: manifest.id
     }
 
     case get_registration_by_slug(attrs.slug) do
       nil -> create_registration(attrs)
       registration -> update_registration(registration, attrs)
     end
-
   end
 
   def create_registered_activity_map() do
     list_activity_registrations()
+    |> Enum.map(&Oli.Activities.ActivityMapEntry.from_registration/1)
+    |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.slug, e) end)
+  end
+
+  def create_registered_activity_map(project_slug) do
+    with {:ok, project} <-
+           Course.get_project_by_slug(project_slug)
+           |> trap_nil("The project was not found.") do
+      project = project |> Repo.preload([:activity_registrations])
+
+      project_activities =
+        Enum.reduce(project.activity_registrations, [], fn a, m -> m ++ [a.id] end)
+
+      list_activity_registrations()
+      |> Enum.filter(fn a ->
+        a.globally_available === true or Enum.member?(project_activities, a.id)
+      end)
       |> Enum.map(&Oli.Activities.ActivityMapEntry.from_registration/1)
       |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.slug, e) end)
+    else
+      {:error, {message}} -> {:error, message}
+    end
   end
 
   def enable_activity_in_project(project_slug, activity_slug) do
-    with {:ok, activity_registration} <- get_registration_by_slug(activity_slug)
-                     |> trap_nil("An activity with that slug was not found."),
-         {:ok, project} <- Course.get_project_by_slug(project_slug)
-                           |> trap_nil("The project was not found.")
-      do
+    with {:ok, activity_registration} <-
+           get_registration_by_slug(activity_slug)
+           |> trap_nil("An activity with that slug was not found."),
+         {:ok, project} <-
+           Course.get_project_by_slug(project_slug)
+           |> trap_nil("The project was not found.") do
       case Repo.get_by(
              ActivityRegistrationProject,
              %{
                activity_registration_id: activity_registration.id,
                project_id: project.id
              }
-           )  do
-        nil -> %ActivityRegistrationProject{}
-               |> ActivityRegistrationProject.changeset(
-                    %{
-                      activity_registration_id: activity_registration.id,
-                      project_id: project.id,
-                    }
-                  ) |> Repo.insert
-        _ -> {:error, "The activity is already enabled in the project."}
+           ) do
+        nil ->
+          %ActivityRegistrationProject{}
+          |> ActivityRegistrationProject.changeset(%{
+            activity_registration_id: activity_registration.id,
+            project_id: project.id
+          })
+          |> Repo.insert()
+
+        _ ->
+          {:error, "The activity is already enabled in the project."}
       end
     else
       {:error, {message}} -> {:error, message}
@@ -68,20 +89,22 @@ defmodule Oli.Activities do
   end
 
   def disable_activity_in_project(project_slug, activity_slug) do
-    with {:ok, activity_registration} <- get_registration_by_slug(activity_slug)
-                          |> trap_nil("An activity with that slug was not found."),
-         {:ok, project} <- Course.get_project_by_slug(project_slug)
-                           |> trap_nil("The project was not found."),
-         {:ok, activity_project} <- Repo.get_by(
-                                    ActivityRegistrationProject,
-                                    %{
-                                      activity_registration_id: activity_registration.id,
-                                      project_id: project.id
-                                    }
-                                  )
-                                  |> trap_nil("The activity is not enabled on the project.")
-      do
-        Repo.delete(activity_project)
+    with {:ok, activity_registration} <-
+           get_registration_by_slug(activity_slug)
+           |> trap_nil("An activity with that slug was not found."),
+         {:ok, project} <-
+           Course.get_project_by_slug(project_slug)
+           |> trap_nil("The project was not found."),
+         {:ok, activity_project} <-
+           Repo.get_by(
+             ActivityRegistrationProject,
+             %{
+               activity_registration_id: activity_registration.id,
+               project_id: project.id
+             }
+           )
+           |> trap_nil("The activity is not enabled on the project.") do
+      Repo.delete(activity_project)
     else
       {:error, {message}} -> {:error, message}
     end
@@ -89,26 +112,26 @@ defmodule Oli.Activities do
 
   def activities_for_project(project) do
     project = project |> Repo.preload([:activity_registrations])
-    registered_activities = list_activity_registrations()
 
     project_activities =
       Enum.reduce(project.activity_registrations, [], fn a, m -> m ++ [a.id] end)
 
     activities_enabled =
-      Enum.reduce(registered_activities, [], fn a, m ->
-        enabled_for_project = a.globally_available === true or Enum.member?(project_activities, a.id)
+      Enum.reduce(list_activity_registrations(), [], fn a, m ->
+        enabled_for_project =
+          a.globally_available === true or Enum.member?(project_activities, a.id)
         m ++
-        [
-          %{
-            slug: a.slug,
-            title: a.title,
-            global: a.globally_available,
-            enabled: enabled_for_project
-          }
-        ]
+          [
+            %{
+              slug: a.slug,
+              title: a.title,
+              global: a.globally_available,
+              enabled: enabled_for_project
+            }
+          ]
       end)
 
-    Enum.sort_by(activities_enabled, &(&1.global), :desc)
+    Enum.sort_by(activities_enabled, & &1.global, :desc)
   end
 
   def get_registration_by_slug(slug) do
@@ -133,7 +156,7 @@ defmodule Oli.Activities do
   """
   def get_activity_scripts() do
     list_activity_registrations()
-      |> Enum.map(fn r -> Map.get(r, :authoring_script) end)
+    |> Enum.map(fn r -> Map.get(r, :authoring_script) end)
   end
 
   @doc """
@@ -218,5 +241,4 @@ defmodule Oli.Activities do
   def change_registration(%ActivityRegistration{} = registration) do
     ActivityRegistration.changeset(registration, %{})
   end
-
 end

@@ -181,15 +181,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
   for a specific resource / revision.
   """
   def create_context(project_slug, revision_slug, author) do
-    editor_map = Oli.Activities.create_registered_activity_map()
+    editor_map = Activities.create_registered_activity_map(project_slug)
 
-    editor_map = Enum.reduce(editor_map, %{}, fn {key, a}, m ->
-      if a.globallyAvailable === true do
-        Map.put(m, key, a)
-      else
-        m
-      end
-    end)
+    IO.inspect editor_map
 
     with {:ok, publication} <-
            Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
