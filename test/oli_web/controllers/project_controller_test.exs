@@ -36,6 +36,7 @@ defmodule OliWeb.ProjectControllerTest do
            }
          ) |> Repo.insert
       conn = get(conn, Routes.project_path(conn, :overview, project.slug))
+
       assert html_response(conn, 200) =~ "Overview"
     end
   end
