@@ -1,0 +1,29 @@
+<div class="card mt-4">
+  <div class="card-body">
+    <h4>Activities</h4>
+    <table class="table table-sm">
+      <thead class="thead-light">
+        <tr>
+          <th>Title</th>
+          <th>Global</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for activity <- @registered_activities do %>
+          <tr>
+            <td><%= "#{activity.title}"%></td>
+            <td><%= "#{activity.globally_available}"%></td>
+            <td>
+              <%= if activity.globally_available do %>
+                <%= link "Make Private", to: Routes.activity_manage_path(@conn, :make_private, activity.slug), method: :put, class: "text-danger" %>
+              <% else %>
+                <%= link "Make Global", to: Routes.activity_manage_path(@conn, :make_global,activity.slug), method: :put, class: "text-success" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

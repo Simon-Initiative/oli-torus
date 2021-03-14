@@ -5,11 +5,11 @@
     <%= if @activity_enabled.global do %>
       <%= "---"%>
     <% else %>
-    <%= if @activity_enabled.enabled do %>
-    <%= link "Remove", to: Routes.project_activity_path(@conn, :disable_activity, @project, @activity_enabled.slug), method: :put, class: "text-danger" %>
-    <% else %>
-    <%= link "Add", to: Routes.project_activity_path(@conn, :enable_activity, @project, @activity_enabled.slug), method: :put, class: "text-success" %>
-    <% end %>
+      <%= if @activity_enabled.enabled do %>
+        <%= link "Remove", to: Routes.project_activity_path(@conn, :disable_activity, @project, @activity_enabled.slug), method: :put, class: "text-danger" %>
+      <% else %>
+        <%= link "Add", to: Routes.project_activity_path(@conn, :enable_activity, @project, @activity_enabled.slug), method: :put, class: "text-success" %>
+      <% end %>
     <% end %>
   </td>
 </tr>

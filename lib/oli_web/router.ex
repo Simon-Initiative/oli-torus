@@ -399,6 +399,10 @@ defmodule OliWeb.Router do
     get "/invite", InviteController, :index
     post "/invite", InviteController, :create
 
+    get "/manage_activities", ActivityManageController, :index
+    put "/manage_activities/make_global/:activity_slug", ActivityManageController, :make_global
+    put "/manage_activities/make_private/:activity_slug", ActivityManageController, :make_private
+
     put "/approve_registration", InstitutionController, :approve_registration
     delete "/pending_registration/:id", InstitutionController, :remove_registration
   end

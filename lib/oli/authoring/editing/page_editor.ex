@@ -183,8 +183,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
   def create_context(project_slug, revision_slug, author) do
     editor_map = Activities.create_registered_activity_map(project_slug)
 
-    IO.inspect editor_map
-
     with {:ok, publication} <-
            Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, %{content: content} = revision} <-

@@ -134,6 +134,17 @@ defmodule Oli.Activities do
     Enum.sort_by(activities_enabled, & &1.global, :desc)
   end
 
+  def set_global_status(activity_slug, status) do
+    with {:ok, activity_registration} <-
+           get_registration_by_slug(activity_slug)
+           |> trap_nil("An activity with that slug was not found.")
+      do
+      update_registration(activity_registration, %{globally_available: status})
+    else
+      {:error, {message}} -> {:error, message}
+    end
+  end
+
   def get_registration_by_slug(slug) do
     Repo.one(from p in ActivityRegistration, where: p.slug == ^slug)
   end
