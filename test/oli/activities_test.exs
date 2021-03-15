@@ -1,9 +1,6 @@
 defmodule Oli.ActivitiesTest do
   use Oli.DataCase
   alias Oli.Activities
-  alias Oli.Repo
-  alias Oli.Authoring.Course.Project
-  alias Oli.Activities.ActivityRegistrationProject
   import ExUnit.Assertions
 
   setup [:author_project_fixture]
