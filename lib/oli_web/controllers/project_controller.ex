@@ -11,8 +11,6 @@ defmodule OliWeb.ProjectController do
   alias OliWeb.Common.Breadcrumb
   alias Oli.Activities
 
-  alias Oli.Repo
-
   def overview(conn, project_params) do
     project = conn.assigns.project
 
