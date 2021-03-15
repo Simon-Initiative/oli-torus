@@ -60,24 +60,43 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   const isEvaluated = attemptState.score !== null;
 
   // tslint:disable-next-line:prefer-array-literal
-  const imageRefs = useRef<HTMLImageElement[]>(new Array(imageURLs.length));
+  const resourceRefs = useRef<(HTMLImageElement|String)[]>(new Array(imageURLs.length));
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef2 = useRef<HTMLCanvasElement>(null);
   const resultRef = useRef<HTMLCanvasElement>(null);
   const solnRef = useRef<HTMLCanvasElement>(null);
 
-  // effect hook to initiate loading of images, executes once on first render
+  const loadCSV = (url: string, i: number) => {
+    fetch(url, { mode: 'cors' })
+      .then ((resp) => {
+        if (! resp.ok) {
+          throw new Error('failed to load ' + lastPart(url) + ': '
+              + resp.statusText);
+        }
+        return resp.text();
+      })
+      .then (text => resourceRefs.current[i] = text)
+      .catch ((e) => {
+        throw new Error('failed to load ' + lastPart(url) + ': ' + e);
+      });
+  };
+
+  const loadImage = (url: string, i: number) => {
+    const img = new Image();
+    // Owing to a flaw in S3, we get CORS errors when image is loaded from cache if cached
+    // copy was obtainedf rom an earlier non-CORS request. Appending unique query string is
+    // a simple hack to force fresh load.
+    img.src = url + '?t=' + new Date().getTime();
+    img.crossOrigin = 'anonymous';
+
+    // save references in parallel array. Elements never need to be attached to DOM.
+    resourceRefs.current[i] = img;
+  };
+
+  // effect hook to initiate fetching of resources, executes once on first render
   useEffect(() => {
     imageURLs.map((url, i) => {
-      const img = new Image();
-      // Owing to a flaw in S3, we get CORS errors when image is loaded from cache if cached
-      // copy was obtainedfrom an earlier non-CORS request. Appending unique query string is
-      // a simple hack to force fresh load.
-      img.src = url + '?t=' + new Date().getTime();
-      img.crossOrigin = 'anonymous';
-
-        // save references in parallel array. Elements never need to be attached to DOM.
-      imageRefs.current[i] = img;
+      url.endsWith('csv') ? loadCSV(url, i) : loadImage(url, i);
     });
   }, []);
 
@@ -127,9 +146,10 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
       setModel(state.model as ImageCodingModelSchema);
       setHints([]);
       setHasMoreHints(props.state.parts[0].hasMoreHints);
-      setInput(model.starterCode);
+      // Do we want reset to reload starter code, discarding changes?
+      // setInput(model.starterCode);
       resetEval();
-      // Reload starter code?
+
     });
   };
 
@@ -158,7 +178,8 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     // clear output for new run
     resetEval();
 
-    const ctx : EvalContext = { getCanvas, getImage, getResult, appendOutput, solutionRun: false };
+    const ctx : EvalContext = { getCanvas, getResource, getResult, appendOutput,
+      solutionRun: false };
     const e = Evaluator.execute(input, ctx);
     if (e != null) {
       setError(e.message);
@@ -170,7 +191,8 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     // only needs to be done once, setting solnCanvas.width > 0
     const solnCanvas = getResult(true);
     if (solnCanvas && solnCanvas.width === 0) {
-      const ctx : EvalContext = { getCanvas, getImage, getResult, appendOutput, solutionRun: true };
+      const ctx : EvalContext = { getCanvas, getResource, getResult, appendOutput,
+        solutionRun: true };
       const e = Evaluator.execute(model.solutionCode, ctx);
       if (e != null) {
         setError(e.message);
@@ -258,13 +280,13 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     return n === 0 ? canvasRef.current : canvasRef2.current;
   };
 
-  const getImage = (name: string) => {
+  const getResource = (name: string) => {
     const i = imageURLs.findIndex(url => lastPart(url) === name);
-    if (i < 0 || i >= imageRefs.current.length) {
+    if (i < 0 || i >= resourceRefs.current.length) {
       return null;
     }
 
-    return imageRefs.current[i];
+    return resourceRefs.current[i];
   };
 
   const getResult = (solution: boolean) => {

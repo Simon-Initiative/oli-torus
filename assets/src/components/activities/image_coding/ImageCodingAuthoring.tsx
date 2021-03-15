@@ -69,8 +69,42 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
     });
   }
 
+  function selectSpreadsheet(projectSlug: string,
+    model: ContentModel.Image): Promise<ContentModel.Image> {
+
+    return new Promise((resolve, reject) => {
+
+      const selected = { file: null };
+
+      const mediaLibrary =
+          <ModalSelection title="Select a csv file" size={sizes.extraLarge}
+            onInsert={() => { dismiss(); resolve(selected.file as any); }}
+            onCancel={() => dismiss()}
+            disableInsert={true}
+          >
+            <MediaManager model={model}
+              projectSlug={projectSlug}
+              onEdit={() => { }}
+              mimeFilter={MIMETYPE_FILTERS.CSV}
+              selectionType={SELECTION_TYPES.SINGLE}
+              initialSelectionPaths={model.src ? [model.src] : [selected.file as any]}
+              onSelectionChange={(files: MediaItem[]) => {
+                (selected as any).file = ContentModel.image(files[0].url);
+              }} />
+          </ModalSelection>;
+
+      display(mediaLibrary);
+    });
+  }
+
   const addImage = (e : any) => {
     selectImage(projectSlug, ContentModel.image()).then((img) => {
+      dispatch(ICActions.addImageURL(img.src));
+    });
+  };
+
+  const addSpreadsheet = (e : any) => {
+    selectSpreadsheet(projectSlug, ContentModel.image()).then((img) => {
       dispatch(ICActions.addImageURL(img.src));
     });
   };
@@ -93,7 +127,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
           </button>
           &nbsp;&nbsp;&nbsp;
           <button
-            className="btn btn-primary mt-2"  onClick={addImage}>
+            className="btn btn-primary mt-2"  onClick={addSpreadsheet}>
             Add Spreadsheet...
           </button>
         </div>

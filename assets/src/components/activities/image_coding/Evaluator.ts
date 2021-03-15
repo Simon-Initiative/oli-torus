@@ -1,5 +1,5 @@
 export type EvalContext = {
-  getImage: (name:string) => HTMLImageElement | null;
+  getResource: (name:string) => HTMLImageElement | String | null;
   getCanvas: (n: number) => HTMLCanvasElement | null;
   // getTempCanvas: () => HTMLCanvasElement | null;
   getResult: (solution: boolean) => HTMLCanvasElement | null;
@@ -10,6 +10,7 @@ export type EvalContext = {
 declare global {
   interface Window {
     SimpleImage: Function;
+    SimpleTable: Function;
     print: () => void;
     Evaluator : Function;
   }
@@ -150,8 +151,15 @@ export class Evaluator {
       }
     }
 
+    class SimpleTable extends SimpleTableImpl {
+      constructor(name : string) {
+        super(name, ctx);
+      }
+    }
+
     // install these into global scope for access by user code
     window.SimpleImage = SimpleImage;
+    window.SimpleTable = SimpleTable;
     window.print = print;
     window.Evaluator = Evaluator;
 
@@ -265,16 +273,16 @@ export class SimpleImageImpl {
   imageData: ImageData;
   ctx: EvalContext;
 
-  constructor (image : any, ctx: EvalContext) {
+  constructor (imageName : string, ctx: EvalContext) {
     let htmlImage = null;
-    if (typeof image === 'string') {
-      htmlImage = ctx.getImage(image);
+    if (typeof imageName === 'string') {
+      htmlImage = ctx.getResource(imageName) as HTMLImageElement;
     } else {
       throw new Error('new SimpleImage(...) requires an image name.');
     }
 
     if (!htmlImage) {
-      throw new Error('Image not found: ' + image);
+      throw new Error('Image not found: ' + imageName);
     }
     if (!htmlImage.complete) {
       throw new Error('Image still loading -- wait a bit and retry');
@@ -308,7 +316,7 @@ export class SimpleImageImpl {
     return this.height;
   };
 
-     // Computes index into 1-d array, and checks correctness of x,y values
+  // Computes index into 1-d array, and checks correctness of x,y values
   getIndex = function (x: number, y: number) {
     if (x === null || y === null) {
       throw new Error('need x and y values passed to this function');
@@ -318,10 +326,9 @@ export class SimpleImageImpl {
     else return (x + y * this.width) * 4;
   };
 
+  // --setters--
 
-     // --setters--
-
-     // Clamp values to be in the range 0..255. Used by setRed() et al.
+  // Clamp values to be in the range 0..255. Used by setRed() et al.
   clamp = function (value : number) {
       // value = Math.floor(value);  // .js is always float, so this line
       // is probably unncessary, unless we get into some deep JIT level.
@@ -333,7 +340,7 @@ export class SimpleImageImpl {
     return value;
   };
 
-     // Sets the red value for the given x,y
+  // Sets the red value for the given x,y
   setRed = function (x: number, y: number, value: number) {
     Evaluator.funCheck('setRed', 3, arguments.length);
     const index = this.getIndex(x, y);
@@ -345,21 +352,21 @@ export class SimpleImageImpl {
        // dx dy dirtyX dirtyY dirtyWidth dirtyHeight
   };
 
-     // Sets the green value for the given x,y
+  // Sets the green value for the given x,y
   setGreen = function (x: number, y: number, value: number) {
     Evaluator.funCheck('setGreen', 3, arguments.length);
     const index = this.getIndex(x, y);
     this.imageData.data[index + 1] = this.clamp(value);
   };
 
-     // Sets the blue value for the given x,y
+  // Sets the blue value for the given x,y
   setBlue = function (x: number, y: number, value: number) {
     Evaluator.funCheck('setBlue', 3, arguments.length);
     const index = this.getIndex(x, y);
     this.imageData.data[index + 2] = this.clamp(value);
   };
 
-     // Sets the alpha value for the given x,y
+  // Sets the alpha value for the given x,y
   setAlpha = function (x: number, y: number, value: number) {
     Evaluator.funCheck('setAlpha', 3, arguments.length);
     const index = this.getIndex(x, y);
@@ -370,8 +377,6 @@ export class SimpleImageImpl {
     this.zoom = n;
   };
 
-     // --getters--
-     // Gets the red value for the given x,y
   getRed = function (x: number, y: number) {
     Evaluator.funCheck('getRed', 2, arguments.length);
     const index = this.getIndex(x, y);
@@ -396,14 +401,14 @@ export class SimpleImageImpl {
     return this.imageData.data[index + 3];
   };
 
-    // Gets the pixel object for this x,y. Changes to the
-    // pixel write back to the image.
+  // Gets the pixel object for this x,y. Changes to the
+  // pixel write back to the image.
   getPixel = function (x: number, y: number) {
     Evaluator.funCheck('getPixel', 2, arguments.length);
     return new SimplePixel(this, x, y);
   };
 
-    // Export an image as an array of pixel refs for the for-loop.
+  // Export an image as an array of pixel refs for the for-loop.
   toArray = function () {
     const array = [];
     // 1. simple-way (this is as good or faster in various browser tests)
@@ -420,10 +425,10 @@ export class SimpleImageImpl {
     return array;
   };
 
-    // Change the size of the image to the given, scaling the pixels.
+  // Change the size of the image to the given, scaling the pixels.
   setSize = function (newWidth: number, newHeight: number) {
 
-      // flush any changes from buffer to a temp canvas to be used as src
+    // flush any changes from buffer to a temp canvas to be used as src
     const srcCanvas = this.ctx.getCanvas(0);
     srcCanvas.width = this.width;
     srcCanvas.height = this.height;
@@ -431,26 +436,26 @@ export class SimpleImageImpl {
     const srcContext = srcCanvas.getContext('2d');
     srcContext.putImageData(this.imageData, 0, 0);
 
-      // get second temp canvas of new size
+    // get second temp canvas of new size
     const dstCanvas = this.ctx.getCanvas(1);
     dstCanvas.width = newWidth;
     dstCanvas.height = newHeight;
 
-      // scale by canvas-to-canvas drawing to get image smoothing
+    // scale by canvas-to-canvas drawing to get image smoothing
     const dstContext = dstCanvas.getContext('2d');
     dstContext.drawImage(srcCanvas, 0, 0, dstCanvas.width, dstCanvas.height);
 
-      // reload this image's data from dst canvas
+    // reload this image's data from dst canvas
     this.width = dstCanvas.width;
     this.height = dstCanvas.height;
     this.imageData = dstContext.getImageData(0, 0, dstCanvas.width, dstCanvas.height);
   };
 
-    // Set this image to be the same size to the passed in image.
-    // This image may end up a little bigger than the passed image
-    // to keep its proportions.
-    // Useful to set a back image to match the size of the front
-    // image for bluescreen.
+  // Set this image to be the same size to the passed in image.
+  // This image may end up a little bigger than the passed image
+  // to keep its proportions.
+  // Useful to set a back image to match the size of the front
+  // image for bluescreen.
   setSameSize = function (otherImage : SimpleImageImpl) {
     if (!this.width) return;
 
@@ -516,4 +521,124 @@ export class SimpleImageImpl {
     }
   };
   */
+}
+
+// Simple Table Support //
+
+export class Row {
+  table : SimpleTableImpl ;
+  array : string[];
+
+  constructor (table : SimpleTableImpl, rowArray: string[]) {
+    this.table = table;
+    this.array = rowArray;
+  }
+
+  // Returns the nth value from this row.
+  getColumn = function (n: number) {
+    // todo: could do bounds checking here to be more friendly
+    return this.array[n];
+  };
+
+  // Returns the value for the named field.
+  getField = function (fieldName: string) {
+    const index = this.table.getFieldIndex(fieldName);
+    if (index === -1) {
+      throw new Error('getField() unknown field name: ' + fieldName);
+    }
+    return this.array[index];
+  };
+
+  // Returns the raw array; used for printing.
+  getArray = function () {
+    return this.array;
+  };
+
+  getString = function () {
+    return this.array.join(', ');
+  };
+}
+
+// Creates a new table with the given file
+export class SimpleTableImpl {
+  fields: string[];
+  rows: Row[];
+
+  constructor (filename: string, ctx: EvalContext) {
+    const text = ctx.getResource(filename) as string;
+
+    const lines = text.split(/\n|\r\n/);  // test: this does work with DOS line endings
+
+    // todo: could have some logic about if the first row is the field names or not
+    this.fields = SimpleTableImpl.splitCSV(lines[0], 0);
+    lines.splice(0, 1);  // remove 0th element
+
+    const rows = [];
+    for (const line of lines) {
+      const parts = SimpleTableImpl.splitCSV(line, this.fields.length);
+      if (parts.length !== 0) {  // essentially we skip blank lines
+        rows.push(new Row(this, parts));
+      }
+    }
+    this.rows = rows;
+  }
+
+  // Given a text line, explode the CSV and return an array elements.
+  // Columns is the expected number of columns to fill out to, or 0 to ignore.
+  // Returns [] on empty string, as you might see with a blank line.
+  // The elements are whitespace trimmed.
+  // Can make this more sophisticated about CSV format later.
+  static splitCSV(line: string, columns: number) {
+    const trimmed = line.replace(/^\s+|\s+$/g, '');  // .trim() effectively, and below
+    if (trimmed === '') return [];
+
+    const fields = trimmed.split(/,/, -1)
+      .map(field => field.replace(/^\s+|\s+$/g, ''));
+
+    // hack: file can omit blank data from RHS .. add it back on
+    while (columns && fields.length < columns) {
+      fields.push('');
+    }
+    return fields;
+  }
+
+  getColumnCount = function () {
+    return this.fields.length;
+  };
+
+  // Returns an array of the field names.
+  getFields = function () {
+    return this.fields;
+  };
+
+  // Limits the table to just n rows.
+  limitRows = function (n: number) {
+    this.rows.splice(n, this.rows.length - n);
+  };
+
+  // Returns the index for a field name (case sensitive).
+  // Used internally by row.getField()
+  getFieldIndex = function (fieldName: string) {
+    return this.fields.findIndex((f : string) => f === fieldName);
+  };
+
+  // Returns the number of rows.
+  getRowCount = function () {
+    return this.rows.length;
+  };
+
+  // Returns the nth row.
+  getRow = function (n: number) {
+    if (n < 0 || n >= this.rows.length) {
+      throw 'Count of rows is ' + this.rows.length + ', but attempting to get row:' + n;
+    }
+    return this.rows[n];
+  };
+
+  // toArray() adapter so for (part: composite) works.
+  // In this case, we just return the internal array of row objects.
+  toArray = function () {
+    return this.rows;
+  };
+
 }
