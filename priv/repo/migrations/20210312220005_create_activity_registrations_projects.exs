@@ -1,4 +1,4 @@
-defmodule Oli.Repo.Migrations.AddRegistrationsProjects do
+defmodule Oli.Repo.Migrations.CreateActivityRegistrationsProjects do
   use Ecto.Migration
 
   def change do
