@@ -151,4 +151,59 @@ defmodule Oli.CourseTest do
     end
 
   end
+
+  describe "project duplication" do
+    setup do
+      Oli.Seeder.base_project_with_resource2()
+    end
+
+    test "duplicate_project/1 works", %{ project: project } do
+      {:ok, duplicated_project} = Course.duplicate_project(project.slug)
+
+      # verify project
+      project = Repo.get(Oli.Authoring.Course.Project, p.id)
+      assert project.title == "KTH CS101"
+      assert p.title == project.title
+
+      # verify project access for author
+      access = Repo.get_by(Oli.Authoring.Authors.AuthorProject, [author_id: author.id, project_id: project.id])
+      refute is_nil(access)
+
+      # verify correct number of hierarchy elements were created
+      containers = Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "container")
+      assert length(containers) == 4 + 1  # 4 defined in the course, plus 1 for the root
+
+      # verify correct number of practice pages were created
+      practice_pages = Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "page")
+      |> Enum.filter(fn p -> !p.graded end)
+      assert length(practice_pages) == 3
+
+      # verify that every practice page has a content attribute with a model
+      assert Enum.all?(practice_pages, fn p -> Map.has_key?(p.content, "model") end)
+
+
+      # spot check some elements to ensure that they were correctly constructed:
+
+      # check an internal hierarchy node, one that contains references to only
+      # other hierarchy nodes
+      c = by_title(project, "Analog and Digital Unit")
+      assert length(c.children) == 3
+      children = AuthoringResolver.from_resource_id(project.slug, c.children)
+      assert Enum.at(children, 0).title == "Contents: Analog and Digital"
+      assert Enum.at(children, 1).title == "Analog and Digital"
+      assert Enum.at(children, 2).title == "Analog and Digital Quiz"
+
+      # check a leaf hierarchy node, one that contains only page references
+      c = by_title(project, "Analog and Digital")
+      assert length(c.children) == 1
+      children = AuthoringResolver.from_resource_id(project.slug, c.children)
+      assert Enum.at(children, 0).title == "Analog and Digital Page"
+
+
+      # verify that all the activities were created correctly
+      activities = Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "activity")
+      assert length(activities) == 3
+    end
+
+  end
 end
