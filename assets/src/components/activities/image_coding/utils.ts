@@ -10,7 +10,7 @@ export const defaultICModel : () => ImageCodingModelSchema = () => {
     isExample: false,
     starterCode: 'Sample Starter Code',
     solutionCode: 'Sample Solution Code',
-    imageURLs: [],
+    resourceURLs: [],
     tolerance: 1.0,
     regex: '',  // from original, not clear how used or if needed
     feedback: [ // order matters: feedback[score] is used for score in {0, 1}

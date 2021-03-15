@@ -51,7 +51,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   const [hints, setHints] = useState(props.state.parts[0].hints);
   const [hasMoreHints, setHasMoreHints] = useState(props.state.parts[0].hasMoreHints);
   const [input, setInput] = useState(valueOr(model.starterCode, ''));
-  const { stem, imageURLs } = model;
+  const { stem, resourceURLs } = model;
   // runtime evaluation state:
   const [output, setOutput] = useState('');
   const [error, setError] = useState('');
@@ -60,7 +60,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   const isEvaluated = attemptState.score !== null;
 
   // tslint:disable-next-line:prefer-array-literal
-  const resourceRefs = useRef<(HTMLImageElement|String)[]>(new Array(imageURLs.length));
+  const resourceRefs = useRef<(HTMLImageElement|String)[]>(new Array(resourceURLs.length));
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef2 = useRef<HTMLCanvasElement>(null);
   const resultRef = useRef<HTMLCanvasElement>(null);
@@ -95,7 +95,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
 
   // effect hook to initiate fetching of resources, executes once on first render
   useEffect(() => {
-    imageURLs.map((url, i) => {
+    resourceURLs.map((url, i) => {
       url.endsWith('csv') ? loadCSV(url, i) : loadImage(url, i);
     });
   }, []);
@@ -281,7 +281,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   };
 
   const getResource = (name: string) => {
-    const i = imageURLs.findIndex(url => lastPart(url) === name);
+    const i = resourceURLs.findIndex(url => lastPart(url) === name);
     if (i < 0 || i >= resourceRefs.current.length) {
       return null;
     }

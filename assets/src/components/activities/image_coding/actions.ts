@@ -41,13 +41,19 @@ export class ICActions {
 
   static addImageURL(value: string) {
     return (draftState: ImageCodingModelSchema) => {
-      draftState.imageURLs.push(value);
+      draftState.resourceURLs.push(value);
     };
   }
 
   static editTolerance(value: number) {
     return (draftState: ImageCodingModelSchema) => {
       draftState.tolerance = value;
+    };
+  }
+
+  static editRegex(value: string) {
+    return (draftState: ImageCodingModelSchema) => {
+      draftState.regex = value;
     };
   }
 

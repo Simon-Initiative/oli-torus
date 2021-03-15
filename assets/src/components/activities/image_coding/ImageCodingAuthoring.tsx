@@ -109,6 +109,44 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
     });
   };
 
+  const usesImage = () => {
+    return model.resourceURLs.some(url => !url.endsWith("csv"));
+  };
+
+  const usesSpreadsheet = () => {
+    return model.resourceURLs.some(url => url.endsWith("csv"));
+  };
+
+
+  const solutionParameters = () => {
+    if (usesImage()) return (
+      <div>
+        <Heading title="Solution Code" id="solution-code" />
+        <textarea
+          rows={5}
+          cols={80}
+          className="form-control"
+          value={model.solutionCode}
+          onChange={(e: any) => dispatch(ICActions.editSolutionCode(e.target.value))} />
+        <br/>
+        <p>Tolerance:&nbsp;
+          <input type="number" value={model.tolerance}
+                onChange={(e: any) => dispatch(ICActions.editTolerance(e.target.value))}/>
+          &nbsp;(Average per-pixel error allowed.)
+        </p>
+      </div>
+    );
+
+    // else non-image problem evaluated by regex match to text output
+    return (
+      <p><br/>Regex:&nbsp;
+        <input type="text" value={model.regex}
+              onChange={(e: any) => dispatch(ICActions.editRegex(e.target.value))}/>
+        &nbsp;Pattern for correct text output
+      </p>
+    );
+  };
+
   return (
     <React.Fragment>
       <Stem
@@ -119,15 +157,15 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
 
       <Heading title="Resources" id="images" />
         <div>
-          {model.imageURLs.map((url, i) =>
+          {model.resourceURLs.map((url, i) =>
             <p key={i}>{lastPart(url)}</p>)}
           <button
-            className="btn btn-primary mt-2"  onClick={addImage}>
+            className="btn btn-primary mt-2" onClick={addImage} disabled={usesSpreadsheet()}>
             Add Image...
           </button>
           &nbsp;&nbsp;&nbsp;
           <button
-            className="btn btn-primary mt-2"  onClick={addSpreadsheet}>
+            className="btn btn-primary mt-2" onClick={addSpreadsheet} disabled={usesImage()}>
             Add Spreadsheet...
           </button>
         </div>
@@ -159,20 +197,8 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
       {! model.isExample &&
 
         <div>
-          <Heading title="Solution Code" id="solution-code" />
-          <textarea
-            rows={5}
-            cols={80}
-            className="form-control"
-            value={model.solutionCode}
-            onChange={(e: any) => dispatch(ICActions.editSolutionCode(e.target.value))} />
-          <br/>
 
-          <p>Tolerance:&nbsp;
-            <input type="number" value={model.tolerance}
-                   onChange={(e: any) => dispatch(ICActions.editTolerance(e.target.value))}/>
-            &nbsp;(Average per-pixel error allowed.)
-          </p>
+          {solutionParameters()}
 
           <Hints
             projectSlug={props.projectSlug}
@@ -185,9 +211,8 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
           <Feedback {...sharedProps}
             projectSlug={props.projectSlug}
             onEditResponse={(score, content) => dispatch(ICActions.editFeedback(score, content))} />
-         </div>
+        </div>
       }
-
 
     </React.Fragment>
   );
