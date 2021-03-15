@@ -177,6 +177,44 @@ export class Evaluator {
     return null;
   }
 
+  // Computes and returns the image diff, or 999 for error.
+  // todo: structure error cases better.
+  static getResultDiff = function(ctx: EvalContext) {
+
+    const studentCanvas = ctx.getResult(false);
+    if (!studentCanvas) throw new Error('Failed to get student result image');
+
+    // width = 0 => student run failed or they didn't run at all. Can't getImageData
+    // this is possible, not a system error.
+    if (studentCanvas.width === 0) {
+      return(999);
+    }
+
+    const solnCanvas = ctx.getResult(true);
+    if (!solnCanvas || solnCanvas.width === 0) {
+      throw new Error('Failed to get solution image');
+    }
+
+    let studentData = new Uint8ClampedArray;
+    let context = studentCanvas.getContext('2d');
+    if (context) {
+      studentData = context.getImageData(0, 0, studentCanvas.width, studentCanvas.height).data;
+    }
+
+    let solnData = new Uint8ClampedArray;
+    context = solnCanvas.getContext('2d');
+    if (context) {
+      solnData = context.getImageData(0, 0, solnCanvas.width, solnCanvas.height).data;
+    }
+
+    let diff = 999;  // default if imageDiff throws size mismatch error
+    try {
+      diff = Evaluator.imageDiff(studentData, solnData);
+    } finally {
+      return diff;
+    }
+  }
+
   // Given the student and ans data arrays, compute per-pixel diff number.
   static imageDiff = function (studentData : Uint8ClampedArray, ansData : Uint8ClampedArray) {
     if (studentData.length === 0) {

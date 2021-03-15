@@ -148,8 +148,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
       setHasMoreHints(props.state.parts[0].hasMoreHints);
       // Do we want reset to reload starter code, discarding changes?
       // setInput(model.starterCode);
-      resetEval();
-
+      clearOutput();
     });
   };
 
@@ -159,7 +158,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     setOutput(s);
   };
 
-  const resetEval = () => {
+  const clearOutput = () => {
     updateOutput('');
     setError('');
     // collapse result canvas
@@ -171,12 +170,11 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
 
   const appendOutput = (s: string) => {
     updateOutput(currentOutput + s);
-    // console.log('Output now: |' + output + '|');
   };
 
   const onRun = () => {
     // clear output for new run
-    resetEval();
+    clearOutput();
 
     const ctx : EvalContext = { getCanvas, getResource, getResult, appendOutput,
       solutionRun: false };
@@ -186,60 +184,34 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     }
   };
 
+  const usesImages = () => {
+    return resourceURLs.some(url => ! url.endsWith('csv'));
+  }
+
   const solutionCorrect = () => {
+    return usesImages() ? imageCorrect() : textCorrect();
+  }
+
+  const textCorrect = () => {
+    return new RegExp(model.regex).test(output);
+  }
+
+  const imageCorrect = () => {
     // evaluate solution code if needed to "print" result image to solnCanvas.
     // only needs to be done once, setting solnCanvas.width > 0
+    const ctx : EvalContext = { getCanvas, getResource, getResult, appendOutput,
+      solutionRun: true };
     const solnCanvas = getResult(true);
     if (solnCanvas && solnCanvas.width === 0) {
-      const ctx : EvalContext = { getCanvas, getResource, getResult, appendOutput,
-        solutionRun: true };
       const e = Evaluator.execute(model.solutionCode, ctx);
       if (e != null) {
         setError(e.message);
       }
     }
 
-    const diff = getResultDiff();
+    const diff = Evaluator.getResultDiff(ctx);
     // console.log('Avg solution diff = ' + diff);
     return diff < model.tolerance;
-  };
-
-  // Computes and returns the image diff, or 999 for error.
-  // todo: structure error cases better.
-  function getResultDiff() {
-
-    const studentCanvas = getResult(false);
-    if (!studentCanvas) throw new Error('Failed to get student result image');
-
-    // width = 0 => student run failed or they didn't run at all. Can't getImageData
-    // this is possible, not a system error.
-    if (studentCanvas.width === 0) {
-      return(999);
-    }
-
-    const solnCanvas = getResult(true);
-    if (!solnCanvas || solnCanvas.width === 0) {
-      throw new Error('Failed to get solution image');
-    }
-
-    let studentData = new Uint8ClampedArray;
-    let context = studentCanvas.getContext('2d');
-    if (context) {
-      studentData = context.getImageData(0, 0, studentCanvas.width, studentCanvas.height).data;
-    }
-
-    let solnData = new Uint8ClampedArray;
-    context = solnCanvas.getContext('2d');
-    if (context) {
-      solnData = context.getImageData(0, 0, solnCanvas.width, solnCanvas.height).data;
-    }
-
-    let diff = 999;  // default if imageDiff throws size mismatch error
-    try {
-      diff = Evaluator.imageDiff(studentData, solnData);
-    } finally {
-      return diff;
-    }
   }
 
   const evaluationSummary = isEvaluated
