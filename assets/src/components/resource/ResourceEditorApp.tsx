@@ -12,7 +12,6 @@ let store = configureStore();
 (window as any).oliMountApplication
   = (mountPoint: any, paramString : any) => {
     const params = JSON.parse(b64DecodeUnicode(paramString));
-  console.log("Parameters from backend " + JSON.stringify(params))
 
     ReactDOM.render(
       <Provider store={store}>
