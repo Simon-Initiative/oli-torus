@@ -10,6 +10,7 @@ defmodule Oli.Activities do
   alias Oli.Activities.ActivityRegistration
   alias Oli.Authoring.Course
   alias Oli.Activities.ActivityRegistrationProject
+  alias Oli.Activities.ActivityMapEntry
   import Oli.Utils
 
   def register_activity(%Manifest{} = manifest) do
@@ -34,10 +35,20 @@ defmodule Oli.Activities do
 
   def create_registered_activity_map() do
     list_activity_registrations()
-    |> Enum.map(&Oli.Activities.ActivityMapEntry.from_registration/1)
+    |> Enum.map(&ActivityMapEntry.from_registration/1)
     |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.slug, e) end)
   end
 
+  @doc """
+  Returns the list of activities visible for author to use in particular project.
+
+  ## Examples
+
+      iex> create_registered_activity_map(philosophy)
+      [%ActivityMapEntry{}, ...]
+
+  """
+  @spec create_registered_activity_map(String.t) :: %ActivityMapEntry{} | {:error, any}
   def create_registered_activity_map(project_slug) do
     with {:ok, project} <-
            Course.get_project_by_slug(project_slug)
@@ -45,14 +56,18 @@ defmodule Oli.Activities do
       project = project |> Repo.preload([:activity_registrations])
 
       project_activities =
-        Enum.reduce(project.activity_registrations, [], fn a, m -> m ++ [a.id] end)
+        Enum.reduce(project.activity_registrations, MapSet.new, fn a, m -> MapSet.put(m, a.slug) end)
 
       list_activity_registrations()
-      |> Enum.filter(fn a ->
-        a.globally_available === true or Enum.member?(project_activities, a.id)
+      |> Enum.map(&ActivityMapEntry.from_registration/1)
+      |> Enum.reduce(%{}, fn e, m ->
+        e = if e.globallyAvailable === true or MapSet.member?(project_activities, e.slug) do
+          Map.merge(e, %{enabledForProject: true})
+        else
+          e
+        end
+        Map.put(m, e.slug, e)
       end)
-      |> Enum.map(&Oli.Activities.ActivityMapEntry.from_registration/1)
-      |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.slug, e) end)
     else
       {:error, {message}} -> {:error, message}
     end
@@ -114,12 +129,12 @@ defmodule Oli.Activities do
     project = project |> Repo.preload([:activity_registrations])
 
     project_activities =
-      Enum.reduce(project.activity_registrations, [], fn a, m -> m ++ [a.id] end)
+      Enum.reduce(project.activity_registrations, MapSet.new, fn a, m -> MapSet.put(m,a.id) end)
 
     activities_enabled =
       Enum.reduce(list_activity_registrations(), [], fn a, m ->
         enabled_for_project =
-          a.globally_available === true or Enum.member?(project_activities, a.id)
+          a.globally_available === true or MapSet.member?(project_activities, a.id)
         m ++
           [
             %{

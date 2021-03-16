@@ -38,7 +38,8 @@ defmodule Oli.ActivitiesTest do
       test "default editor menu should not include custom activity", %{project: project} do
         editor_menu_items =  Activities.create_registered_activity_map(project.slug)
 
-        assert !Map.has_key?(editor_menu_items, "oli_image_coding")
+        image_coding = Map.get(editor_menu_items, "oli_image_coding")
+        assert !image_coding.globallyAvailable and !image_coding.enabledForProject
       end
 
       test "editor menu with custom activity included", %{project: project} do
@@ -47,7 +48,9 @@ defmodule Oli.ActivitiesTest do
         Activities.enable_activity_in_project(project.slug, custom_activity.slug)
         editor_menu_items =  Activities.create_registered_activity_map(project.slug)
 
-        assert Map.has_key?(editor_menu_items, "oli_image_coding")
+        image_coding = Map.get(editor_menu_items, "oli_image_coding")
+        assert !image_coding.globallyAvailable and image_coding.enabledForProject
+
       end
 
     end
