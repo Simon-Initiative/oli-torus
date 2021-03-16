@@ -379,7 +379,7 @@ defmodule Oli.Institutions do
       |> String.replace(~r/^https?\:\/\//i, "")
       |> String.replace_trailing("/", "")
 
-    case Repo.all(from i in Institution, where: like(i.institution_url, ^normalized_url), select: i) do
+    case Repo.all(from i in Institution, where: like(i.institution_url, ^normalized_url), select: i, order_by: i.id) do
       [] -> create_institution(institution_attrs)
       [institution] -> {:ok, institution}
       [institution | _] -> {:ok, institution}
