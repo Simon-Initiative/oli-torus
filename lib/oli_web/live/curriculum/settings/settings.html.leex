@@ -46,9 +46,7 @@
 <div class="mt-4">
   <button
     phx-target="<%= @myself %>"
-    phx-capture-click="delete"
-    phx-window-keydown="delete"
-    phx-key="enter"
+    phx-click="delete"
     phx-value-slug="<%= @revision.slug %>"
     data-confirm="Are you sure you want to delete this curriculum item?"
     class="btn btn-danger">
