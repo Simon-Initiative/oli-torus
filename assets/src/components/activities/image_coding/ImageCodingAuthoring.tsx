@@ -110,32 +110,34 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
   };
 
   const usesImage = () => {
-    return model.resourceURLs.some(url => !url.endsWith("csv"));
+    return model.resourceURLs.some(url => !url.endsWith('csv'));
   };
 
   const usesSpreadsheet = () => {
-    return model.resourceURLs.some(url => url.endsWith("csv"));
+    return model.resourceURLs.some(url => url.endsWith('csv'));
   };
 
 
   const solutionParameters = () => {
-    if (usesImage()) return (
-      <div>
-        <Heading title="Solution Code" id="solution-code" />
-        <textarea
-          rows={5}
-          cols={80}
-          className="form-control"
-          value={model.solutionCode}
-          onChange={(e: any) => dispatch(ICActions.editSolutionCode(e.target.value))} />
-        <br/>
-        <p>Tolerance:&nbsp;
-          <input type="number" value={model.tolerance}
-                onChange={(e: any) => dispatch(ICActions.editTolerance(e.target.value))}/>
-          &nbsp;(Average per-pixel error allowed.)
-        </p>
-      </div>
-    );
+    if (usesImage()) {
+      return (
+        <div>
+          <Heading title="Solution Code" id="solution-code" />
+          <textarea
+            rows={5}
+            cols={80}
+            className="form-control"
+            value={model.solutionCode}
+            onChange={(e: any) => dispatch(ICActions.editSolutionCode(e.target.value))} />
+          <br/>
+          <p>Tolerance:&nbsp;
+            <input type="number" value={model.tolerance}
+                  onChange={(e: any) => dispatch(ICActions.editTolerance(e.target.value))}/>
+            &nbsp;(Average per-pixel error allowed.)
+          </p>
+        </div>
+      );
+    }
 
     // else non-image problem evaluated by regex match to text output
     return (

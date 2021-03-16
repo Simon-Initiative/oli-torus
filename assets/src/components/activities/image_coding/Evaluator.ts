@@ -179,7 +179,7 @@ export class Evaluator {
 
   // Computes and returns the image diff, or 999 for error.
   // todo: structure error cases better.
-  static getResultDiff = function(ctx: EvalContext) {
+  static getResultDiff = function (ctx: EvalContext) {
 
     const studentCanvas = ctx.getResult(false);
     if (!studentCanvas) throw new Error('Failed to get student result image');
@@ -213,7 +213,7 @@ export class Evaluator {
     } finally {
       return diff;
     }
-  }
+  };
 
   // Given the student and ans data arrays, compute per-pixel diff number.
   static imageDiff = function (studentData : Uint8ClampedArray, ansData : Uint8ClampedArray) {

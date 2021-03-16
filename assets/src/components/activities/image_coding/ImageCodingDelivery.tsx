@@ -186,15 +186,15 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
 
   const usesImages = () => {
     return resourceURLs.some(url => ! url.endsWith('csv'));
-  }
+  };
 
   const solutionCorrect = () => {
     return usesImages() ? imageCorrect() : textCorrect();
-  }
+  };
 
   const textCorrect = () => {
     return new RegExp(model.regex).test(output);
-  }
+  };
 
   const imageCorrect = () => {
     // evaluate solution code if needed to "print" result image to solnCanvas.
@@ -212,7 +212,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     const diff = Evaluator.getResultDiff(ctx);
     // console.log('Avg solution diff = ' + diff);
     return diff < model.tolerance;
-  }
+  };
 
   const evaluationSummary = isEvaluated
     ? <Evaluation key="evaluation" attemptState={attemptState}/>
