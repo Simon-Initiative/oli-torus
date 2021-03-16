@@ -19,6 +19,7 @@ import { MediaItem } from 'types/media';
 import * as ContentModel from 'data/content/model';
 import { Feedback } from './sections/Feedback';
 import { lastPart } from './utils';
+import { CloseButton } from 'components/misc/CloseButton';
 
 const store = configureStore();
 
@@ -99,13 +100,13 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
 
   const addImage = (e : any) => {
     selectImage(projectSlug, ContentModel.image()).then((img) => {
-      dispatch(ICActions.addImageURL(img.src));
+      dispatch(ICActions.addResourceURL(img.src));
     });
   };
 
   const addSpreadsheet = (e : any) => {
     selectSpreadsheet(projectSlug, ContentModel.image()).then((img) => {
-      dispatch(ICActions.addImageURL(img.src));
+      dispatch(ICActions.addResourceURL(img.src));
     });
   };
 
@@ -159,8 +160,16 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
 
       <Heading title="Resources" id="images" />
         <div>
-          {model.resourceURLs.map((url, i) =>
-            <p key={i}>{lastPart(url)}</p>)}
+          <ul className="list-group">
+            {model.resourceURLs.map((url, i) =>
+              <li className="list-group-item" key={i}>
+                {lastPart(url)}
+                <CloseButton
+                  className="pl-3 pr-1"
+                  editMode={props.editMode}
+                  onClick={() => dispatch(ICActions.removeResourceURL(url))}/>
+              </li>)}
+          </ul>
           <button
             className="btn btn-primary mt-2" onClick={addImage} disabled={usesSpreadsheet()}>
             Add Image...
@@ -171,7 +180,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
             Add Spreadsheet...
           </button>
         </div>
-        <br/>
+      <br/>
 
       <Heading title="Starter Code" id="starter-code" />
       <textarea

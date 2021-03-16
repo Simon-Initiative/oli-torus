@@ -39,9 +39,17 @@ export class ICActions {
     };
   }
 
-  static addImageURL(value: string) {
+  static addResourceURL(value: string) {
     return (draftState: ImageCodingModelSchema) => {
-      draftState.resourceURLs.push(value);
+      if (draftState.resourceURLs.indexOf(value) === -1) {
+        draftState.resourceURLs.push(value);
+      }
+    };
+  }
+
+  static removeResourceURL(value: string) {
+    return (draftState: ImageCodingModelSchema) => {
+      draftState.resourceURLs = draftState.resourceURLs.filter(url => url !== value);
     };
   }
 
