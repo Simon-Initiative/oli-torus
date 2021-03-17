@@ -6,7 +6,7 @@ export interface ImageCodingModelSchema extends ActivityModelSchema {
   isExample: boolean;
   starterCode: string;
   solutionCode: string;
-  imageURLs: string[];
+  resourceURLs: string[];
   // for evaluation:
   tolerance: number;
   regex: string;

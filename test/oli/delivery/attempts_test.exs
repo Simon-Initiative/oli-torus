@@ -188,8 +188,11 @@ defmodule Oli.Delivery.AttemptsTest do
       {:ok, {_resource_attempt, _activity_attempts}} = Attempts.start_resource_attempt(
         revision.slug, section.slug, user1.id, activity_provider)
 
-      [access | _] = Attempts.get_graded_resource_access_for_context(section.slug)
-      assert access.access_count == 2
+      access = Attempts.get_graded_resource_access_for_context(section.slug)
+      |> Enum.filter(fn a -> a.resource_id == revision.resource_id && a.user_id == user1.id end)
+      |> hd
+
+      assert access.access_count == 1
       assert is_nil access.score
     end
 

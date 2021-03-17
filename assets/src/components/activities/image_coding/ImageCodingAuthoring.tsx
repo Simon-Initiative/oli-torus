@@ -19,6 +19,7 @@ import { MediaItem } from 'types/media';
 import * as ContentModel from 'data/content/model';
 import { Feedback } from './sections/Feedback';
 import { lastPart } from './utils';
+import { CloseButton } from 'components/misc/CloseButton';
 
 const store = configureStore();
 
@@ -69,10 +70,84 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
     });
   }
 
+  function selectSpreadsheet(projectSlug: string,
+    model: ContentModel.Image): Promise<ContentModel.Image> {
+
+    return new Promise((resolve, reject) => {
+
+      const selected = { file: null };
+
+      const mediaLibrary =
+          <ModalSelection title="Select a csv file" size={sizes.extraLarge}
+            onInsert={() => { dismiss(); resolve(selected.file as any); }}
+            onCancel={() => dismiss()}
+            disableInsert={true}
+          >
+            <MediaManager model={model}
+              projectSlug={projectSlug}
+              onEdit={() => { }}
+              mimeFilter={MIMETYPE_FILTERS.CSV}
+              selectionType={SELECTION_TYPES.SINGLE}
+              initialSelectionPaths={model.src ? [model.src] : [selected.file as any]}
+              onSelectionChange={(files: MediaItem[]) => {
+                (selected as any).file = ContentModel.image(files[0].url);
+              }} />
+          </ModalSelection>;
+
+      display(mediaLibrary);
+    });
+  }
+
   const addImage = (e : any) => {
     selectImage(projectSlug, ContentModel.image()).then((img) => {
-      dispatch(ICActions.addImageURL(img.src));
+      dispatch(ICActions.addResourceURL(img.src));
     });
+  };
+
+  const addSpreadsheet = (e : any) => {
+    selectSpreadsheet(projectSlug, ContentModel.image()).then((img) => {
+      dispatch(ICActions.addResourceURL(img.src));
+    });
+  };
+
+  const usesImage = () => {
+    return model.resourceURLs.some(url => !url.endsWith('csv'));
+  };
+
+  const usesSpreadsheet = () => {
+    return model.resourceURLs.some(url => url.endsWith('csv'));
+  };
+
+
+  const solutionParameters = () => {
+    if (usesImage()) {
+      return (
+        <div>
+          <Heading title="Solution Code" id="solution-code" />
+          <textarea
+            rows={5}
+            cols={80}
+            className="form-control"
+            value={model.solutionCode}
+            onChange={(e: any) => dispatch(ICActions.editSolutionCode(e.target.value))} />
+          <br/>
+          <p>Tolerance:&nbsp;
+            <input type="number" value={model.tolerance}
+                  onChange={(e: any) => dispatch(ICActions.editTolerance(e.target.value))}/>
+            &nbsp;(Average per-pixel error allowed.)
+          </p>
+        </div>
+      );
+    }
+
+    // else non-image problem evaluated by regex match to text output
+    return (
+      <p><br/>Regex:&nbsp;
+        <input type="text" value={model.regex}
+              onChange={(e: any) => dispatch(ICActions.editRegex(e.target.value))}/>
+        &nbsp;Pattern for correct text output
+      </p>
+    );
   };
 
   return (
@@ -85,19 +160,27 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
 
       <Heading title="Resources" id="images" />
         <div>
-          {model.imageURLs.map((url, i) =>
-            <p key={i}>{lastPart(url)}</p>)}
+          <ul className="list-group">
+            {model.resourceURLs.map((url, i) =>
+              <li className="list-group-item" key={i}>
+                {lastPart(url)}
+                <CloseButton
+                  className="pl-3 pr-1"
+                  editMode={props.editMode}
+                  onClick={() => dispatch(ICActions.removeResourceURL(url))}/>
+              </li>)}
+          </ul>
           <button
-            className="btn btn-primary mt-2"  onClick={addImage}>
+            className="btn btn-primary mt-2" onClick={addImage} disabled={usesSpreadsheet()}>
             Add Image...
           </button>
           &nbsp;&nbsp;&nbsp;
           <button
-            className="btn btn-primary mt-2"  onClick={addImage}>
+            className="btn btn-primary mt-2" onClick={addSpreadsheet} disabled={usesImage()}>
             Add Spreadsheet...
           </button>
         </div>
-        <br/>
+      <br/>
 
       <Heading title="Starter Code" id="starter-code" />
       <textarea
@@ -125,20 +208,8 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
       {! model.isExample &&
 
         <div>
-          <Heading title="Solution Code" id="solution-code" />
-          <textarea
-            rows={5}
-            cols={80}
-            className="form-control"
-            value={model.solutionCode}
-            onChange={(e: any) => dispatch(ICActions.editSolutionCode(e.target.value))} />
-          <br/>
 
-          <p>Tolerance:&nbsp;
-            <input type="number" value={model.tolerance}
-                   onChange={(e: any) => dispatch(ICActions.editTolerance(e.target.value))}/>
-            &nbsp;(Average per-pixel error allowed.)
-          </p>
+          {solutionParameters()}
 
           <Hints
             projectSlug={props.projectSlug}
@@ -151,9 +222,8 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
           <Feedback {...sharedProps}
             projectSlug={props.projectSlug}
             onEditResponse={(score, content) => dispatch(ICActions.editFeedback(score, content))} />
-         </div>
+        </div>
       }
-
 
     </React.Fragment>
   );
