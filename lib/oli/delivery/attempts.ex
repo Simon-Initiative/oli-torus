@@ -797,7 +797,7 @@ defmodule Oli.Delivery.Attempts do
     activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
     activity_registration_slug = activity_attempt.revision.activity_type.slug
     case Oli.Activities.get_registration_by_slug(activity_registration_slug) do
-      %Activities.Registration{allow_client_evaluation: true} ->
+      %Activities.ActivityRegistration{allow_client_evaluation: true} ->
         Repo.transaction(fn ->
 
           part_attempts = get_latest_part_attempts(activity_attempt_guid)

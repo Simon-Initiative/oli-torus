@@ -19,6 +19,8 @@ const unsupported: EditorDesc = {
   description: 'Not supported',
   friendlyName: 'Not supported',
   slug: 'unknown',
+  globallyAvailable: true,
+  enabledForProject: true,
 };
 
 // content or referenced activities

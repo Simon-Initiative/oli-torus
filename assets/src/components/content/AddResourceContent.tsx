@@ -141,11 +141,17 @@ export const AddResourceContent = (
     .keys(editorMap)
     .map((k: string) => {
       const editorDesc: EditorDesc = editorMap[k];
+      const enabled = editorDesc.globallyAvailable || editorDesc.enabledForProject;
       return (
-        <button className="btn btn-sm insert-activity-btn" key={editorDesc.slug}
-          onClick={handleAdd.bind(this, editorDesc)}>
-          {editorDesc.friendlyName}
-        </button>
+        <React.Fragment>
+          {enabled &&
+            (
+              <button className="btn btn-sm insert-activity-btn" key={editorDesc.slug}
+                      onClick={handleAdd.bind(this, editorDesc)}>
+                {editorDesc.friendlyName}
+              </button>)
+          }
+        </React.Fragment>
       );
     });
 

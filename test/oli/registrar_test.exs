@@ -18,6 +18,7 @@ defmodule Oli.RegistrarTest do
       assert r.delivery_script == "oli_check_all_that_apply_delivery.js"
       assert r.authoring_element == "oli-check-all-that-apply-authoring"
       assert r.delivery_element == "oli-check-all-that-apply-delivery"
+      assert r.globally_available == true
 
     end
 
@@ -34,6 +35,7 @@ defmodule Oli.RegistrarTest do
       assert r.friendlyName == "Check All That Apply"
       assert r.authoringElement == "oli-check-all-that-apply-authoring"
       assert r.deliveryElement == "oli-check-all-that-apply-delivery"
+      assert r.globallyAvailable == true
 
     end
 
