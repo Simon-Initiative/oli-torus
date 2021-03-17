@@ -6,7 +6,7 @@ defmodule OliWeb.ActivityManageController do
   @spec index(Plug.Conn.t(), any) :: Plug.Conn.t()
   def index(conn, _params) do
     registered_activities =
-      Enum.sort_by(Activities.list_activity_registrations(), & &1.globally_available, :desc)
+      Enum.sort_by(Activities.list_activity_registrations(), & &1.title, :asc)
 
     params = %{
       registered_activities: registered_activities

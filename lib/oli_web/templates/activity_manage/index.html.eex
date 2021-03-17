@@ -5,6 +5,9 @@
       <thead class="thead-light">
         <tr>
           <th>Title</th>
+          <th>Slug</th>
+          <th>Description</th>
+          <th>Eval Method</th>
           <th>Global</th>
           <th></th>
         </tr>
@@ -13,6 +16,9 @@
         <%= for activity <- @registered_activities do %>
           <tr>
             <td><%= "#{activity.title}"%></td>
+            <td><%= "#{activity.slug}"%></td>
+            <td><%= "#{activity.description}"%></td>
+            <td><%= "#{if activity.allow_client_evaluation do "Client" else "Server" end}"%></td>
             <td><%= "#{activity.globally_available}"%></td>
             <td>
               <%= if activity.globally_available do %>
