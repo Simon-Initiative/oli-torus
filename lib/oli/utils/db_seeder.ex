@@ -15,6 +15,7 @@ defmodule Oli.Seeder do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Attempts.Snapshot
   alias Oli.Qa.Reviews
+  alias Oli.Activities
 
   def base_project_with_resource(author) do
 

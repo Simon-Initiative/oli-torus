@@ -19,6 +19,7 @@ export const MIMETYPE_FILTERS = {
   AUDIO: ['audio/mpeg', 'audio/wav', 'audio/mid', 'audio/mp4'],
   VIDEO: ['video/mp4'],
   HTML: ['text/html'],
+  CSV: ['text/csv'],
   ALL: undefined,
 };
 

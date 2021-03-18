@@ -117,7 +117,8 @@ export class TestModeHandler extends React.Component<TestModelHandlerProps, Test
     });
   }
 
-  handleSubmitEvaluations(continuation: Continuation, clientEvaluations: ClientEvaluation[]) {
+  handleSubmitEvaluations(continuation: Continuation, attemptGuid: any,
+    clientEvaluations: ClientEvaluation[]) {
     const evaluatedParts = clientEvaluations
       .map((e : any) => {
         return {
