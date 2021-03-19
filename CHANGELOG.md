@@ -7,6 +7,7 @@
   - Add the ability to limit what activities are available for use in particular course projects
 
 ### Bug fixes
+  - Fix an issue where grading status transitions across publications were not handled properly
   - Fix an issue where activity text that contained HTML tags rendered actual HTML
   - Fix an issue where pasting text containing newlines from an external source crashes the editor
   - Fix an issue with null section slugs and deployment id in existing sections
