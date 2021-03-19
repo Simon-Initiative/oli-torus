@@ -30,12 +30,13 @@ defmodule OliWeb.LayoutView do
   def sidebar_link(%{:assigns => assigns} = _conn, text, path, opts) do
     route = Keyword.get(opts, :to)
     badge = Keyword.get(opts, :badge)
+    target = Keyword.get(opts, :target)
 
     case badge do
       nil ->
-        link text, to: route, class: active_class(active_or_nil(assigns), path)
+        link text, to: route, class: active_class(active_or_nil(assigns), path), target: target
       badge ->
-        link to: route, class: "align-items-center #{active_class(active_or_nil(assigns), path)}" do
+        link to: route, class: "align-items-center #{active_class(active_or_nil(assigns), path)}", target: target do
           [content_tag(:span, text), content_tag(:span, badge, class: "badge badge-pill badge-primary ml-2")]
         end
     end

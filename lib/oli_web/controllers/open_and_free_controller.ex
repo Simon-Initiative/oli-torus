@@ -3,6 +3,9 @@ defmodule OliWeb.OpenAndFreeController do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
+  alias Oli.Predefined
+  alias Oli.Authoring.Course
+  alias Oli.Publishing
 
   def index(conn, _params) do
     sections = Sections.list_open_and_free_sections()
@@ -15,6 +18,14 @@ defmodule OliWeb.OpenAndFreeController do
   end
 
   def create(conn, %{"section" => section_params}) do
+    %{id: project_id} = Course.get_project_by_slug(section_params["project_slug"])
+    %{id: publication_id} = Publishing.get_latest_published_publication_by_slug!(section_params["project_slug"])
+
+    section_params = section_params
+      |> Map.put("project_id", project_id)
+      |> Map.put("publication_id", publication_id)
+      |> Map.put("open_and_free", true)
+
     case Sections.create_section(section_params) do
       {:ok, section} ->
         conn
@@ -22,6 +33,8 @@ defmodule OliWeb.OpenAndFreeController do
         |> redirect(to: Routes.open_and_free_path(conn, :show, section))
 
       {:error, %Ecto.Changeset{} = changeset} ->
+        IO.inspect changeset
+
         render_workspace_page(conn, "new.html", changeset: changeset)
     end
   end
@@ -34,7 +47,7 @@ defmodule OliWeb.OpenAndFreeController do
   def edit(conn, %{"id" => id}) do
     section = Sections.get_section!(id)
     changeset = Sections.change_section(section)
-    render_workspace_page(conn, "edit.html", section: section, changeset: changeset)
+    render_workspace_page(conn, "edit.html", section: section, changeset: changeset, timezones: Predefined.timezones())
   end
 
   def update(conn, %{"id" => id, "section" => section_params}) do

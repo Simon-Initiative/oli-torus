@@ -1,8 +1,38 @@
-<h1>Show Open and free</h1>
+<div class="container">
 
-<ul>
+  <span>
+    <%= link to: Routes.open_and_free_path(@conn, :index) do %>
+      <i class="las la-arrow-left"></i> Back
+    <% end %>
+  </span>
 
-</ul>
+  <h3 class="my-3">
+    <%= @section.title %>
+    <%= link "Edit Details", to: Routes.open_and_free_path(@conn, :edit, @section), class: "btn btn-sm btn-outline-primary ml-2 float-right" %>
+  </h3>
 
-<span><%= link "Edit", to: Routes.open_and_free_path(@conn, :edit, @section) %></span>
-<span><%= link "Back", to: Routes.open_and_free_path(@conn, :index) %></span>
+  <table class="table">
+    <tbody>
+      <tr>
+        <td><strong>URL:</strong></td>
+        <td><%= @section.slug %></td>
+      </tr>
+
+      <tr>
+        <td><strong>Start Date:</strong></td>
+        <td><%= @section.start_date %></td>
+      </tr>
+
+      <tr>
+        <td><strong>End Date:</strong></td>
+        <td><%= @section.end_date %></td>
+      </tr>
+
+      <tr>
+        <td><strong>Timezone:</strong></td>
+        <td><%= @section.time_zone %></td>
+      </tr>
+
+    </tbody>
+  </table>
+</div>

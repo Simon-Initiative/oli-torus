@@ -28,8 +28,8 @@ defmodule Oli.Delivery.Sections.Section do
   @doc false
   def changeset(section, attrs) do
     section
-    |> cast(attrs, [:title, :start_date, :end_date, :time_zone, :registration_open, :context_id, :slug, :lti_1p3_deployment_id, :institution_id, :project_id, :publication_id])
-    |> validate_required([:title, :time_zone, :registration_open, :context_id, :institution_id, :project_id, :publication_id])
+    |> cast(attrs, [:title, :start_date, :end_date, :time_zone, :registration_open, :context_id, :slug, :open_and_free, :lti_1p3_deployment_id, :institution_id, :project_id, :publication_id])
+    |> validate_required([:title, :time_zone, :registration_open, :project_id, :publication_id])
     |> Slug.update_never("sections")
   end
 end

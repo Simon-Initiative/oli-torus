@@ -69,7 +69,7 @@ defmodule Oli.MixProject do
       {:bamboo, "~> 1.6"},
       {:bamboo_ses, "~> 0.1.0"},
       {:bcrypt_elixir, "~> 2.2"},
-      {:credo, "~> 1.1.0", only: [:dev, :test], runtime: true},
+      {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:csv, "~> 2.3"},
       {:dialyxir, "~> 0.5.0", only: [:dev], runtime: true},
       {:ecto_sql, "~> 3.5.2"},

@@ -1,24 +1,41 @@
-<h1>Listing Open and free</h1>
+<div class="container mt-3">
+  <div class="d-flex flex-row mb-2">
+    <div class="flex-grow-1"></div>
+    <div><%= link "New Open and Free", to: Routes.open_and_free_path(@conn, :new), class: "btn btn-md btn-outline-primary" %></div>
+  </div>
 
-<table>
-  <thead>
-    <tr>
+  <%= if Enum.count(@sections) == 0 do %>
+    <div class="my-5 text-center">
+      There are no open and free sections
+    </div>
+  <% else %>
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>URL</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Timezone</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for section <- @sections do %>
+          <tr>
+            <td><%= section.title %></td>
+            <td><%= section.slug %></td>
+            <td><%= section.start_date %></td>
+            <td><%= section.end_date %></td>
+            <td><%= section.time_zone %></td>
 
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-<%= for section <- @sections do %>
-    <tr>
-
-      <td>
-        <span><%= link "Show", to: Routes.open_and_free_path(@conn, :show, section) %></span>
-        <span><%= link "Edit", to: Routes.open_and_free_path(@conn, :edit, section) %></span>
-        <span><%= link "Delete", to: Routes.open_and_free_path(@conn, :delete, section), method: :delete, data: [confirm: "Are you sure?"] %></span>
-      </td>
-    </tr>
-<% end %>
-  </tbody>
-</table>
-
-<span><%= link "New Open and free", to: Routes.open_and_free_path(@conn, :new) %></span>
+            <td class="text-nowrap">
+              <%= link "Details", to: Routes.open_and_free_path(@conn, :show, section), class: "btn btn-sm btn-outline-primary" %>
+              <%= link "Edit", to: Routes.open_and_free_path(@conn, :edit, section), class: "btn btn-sm btn-outline-primary" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>
