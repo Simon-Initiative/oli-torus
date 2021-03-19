@@ -7,6 +7,9 @@ defmodule Oli.Repo.Migrations.OpenAndFree do
     end
 
     execute("CREATE EXTENSION pg_trgm")
+    execute("""
+    CREATE INDEX projects_trgm_idx ON projects USING GIN (to_tsvector('english', title || ' ' || description || ' ' || slug))
+    """)
   end
 
   def down do
@@ -14,6 +17,7 @@ defmodule Oli.Repo.Migrations.OpenAndFree do
       add :open_and_free, :boolean, default: false, null: false
     end
 
+    execute("DROP INDEX projects_trgm_idx")
     execute("DROP EXTENSION pg_trgm")
   end
 end
