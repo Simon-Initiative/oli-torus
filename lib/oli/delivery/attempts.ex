@@ -602,6 +602,12 @@ defmodule Oli.Delivery.Attempts do
       with {:ok, revision} <- DeliveryResolver.from_revision_slug(section_slug, revision_slug) |> Oli.Utils.trap_nil(:not_found),
         {_, resource_attempts} <- get_resource_attempt_history(revision.resource_id, section_slug, user_id)
       do
+
+        # We want to disregard any attempts that pertained to revisions whose graded status
+        # do not match the current graded status. This acommodates the toggling of "graded" status
+        # across publications, interwoven with student attempts to work correctly
+        resource_attempts = Enum.filter(resource_attempts, fn a -> a.revision.graded == revision.graded end)
+
         case {revision.max_attempts > length(resource_attempts) or revision.max_attempts == 0,
           has_any_active_attempts?(resource_attempts)} do
 
