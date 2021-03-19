@@ -115,7 +115,7 @@ defmodule Oli.Delivery.AttemptsTest do
 
       # The started attempt should be the latest attempt for this user
       latest_attempt = Attempts.get_latest_resource_attempt(resource.id, section.slug, user1.id)
-      assert latest_attempt == resource_attempt
+      assert latest_attempt.id == resource_attempt.id
 
       # Make sure the progress state is correct for the latest resource attempt
       {:ok, {:in_progress, _ra}} = Attempts.determine_resource_attempt_state(
@@ -133,7 +133,7 @@ defmodule Oli.Delivery.AttemptsTest do
         revision.slug, section.slug, user1.id, activity_provider)
 
       latest_attempt = Attempts.get_latest_resource_attempt(resource.id, section.slug, user1.id)
-      assert latest_attempt == resource_attempt
+      assert latest_attempt.id == resource_attempt.id
 
       {:ok, {:in_progress, _ra}} = Attempts.determine_resource_attempt_state(
         revision, section.slug, user1.id, activity_provider)
@@ -148,7 +148,7 @@ defmodule Oli.Delivery.AttemptsTest do
         Attempts.start_resource_attempt(revision.slug, section.slug, user2.id, activity_provider)
 
       latest_attempt2 = Attempts.get_latest_resource_attempt(resource.id, section.slug, user2.id)
-      assert latest_attempt2 == resource_attempt2
+      assert latest_attempt2.id == resource_attempt2.id
 
       {:ok, {:in_progress, _ra}} = Attempts.determine_resource_attempt_state(
         revision, section.slug, user2.id, activity_provider)

@@ -60,6 +60,9 @@ defmodule OliWeb.PageDeliveryController do
   defp render_page(%PageContext{summary: summary, progress_state: :not_started, page: page, resource_attempts: resource_attempts} = context,
     conn, section_slug, _) do
 
+    # Only consider graded attempts
+    resource_attempts = Enum.filter(resource_attempts, fn a -> a.revision.graded == true end)
+
     attempts_taken = length(resource_attempts)
 
     # The call to "max" here accounts for the possibility that a publication could reduce the
