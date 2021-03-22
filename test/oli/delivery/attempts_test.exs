@@ -188,8 +188,11 @@ defmodule Oli.Delivery.AttemptsTest do
       {:ok, {_resource_attempt, _activity_attempts}} = Attempts.start_resource_attempt(
         revision.slug, section.slug, user1.id, activity_provider)
 
-      [access | _] = Attempts.get_graded_resource_access_for_context(section.slug)
-      assert access.access_count == 2
+      access = Attempts.get_graded_resource_access_for_context(section.slug)
+      |> Enum.filter(fn a -> a.resource_id == revision.resource_id && a.user_id == user1.id end)
+      |> hd
+
+      assert access.access_count == 1
       assert is_nil access.score
     end
 
@@ -258,13 +261,14 @@ defmodule Oli.Delivery.AttemptsTest do
 
     test "processes a set of client evaluations for an activity that permits client evaluation" do
       # create mock activity which allows client evaluation
-      {:ok, %Activities.Registration{}} = Activities.register_activity(%Manifest{
+      {:ok, %Activities.ActivityRegistration{}} = Activities.register_activity(%Manifest{
         id: "test_allow_client_eval",
         friendlyName: "Test Client Eval",
         description: "A test activity that allows client evaluation",
         delivery: %ModeSpecification{element: "test-client-eval", entry: "./delivery-entry.ts"},
         authoring: %ModeSpecification{element: "test-client-eval", entry: "./authoring-entry.ts"},
         allowClientEvaluation: true,
+        global: true,
       })
 
       # create an example project with the activity in a graded page
@@ -304,13 +308,14 @@ defmodule Oli.Delivery.AttemptsTest do
 
     test "fails to process a set of client evaluations for an activity that does not permit client evaluation" do
       # create mock activity which does not allow client evaluation
-      {:ok, %Activities.Registration{}} = Activities.register_activity(%Manifest{
+      {:ok, %Activities.ActivityRegistration{}} = Activities.register_activity(%Manifest{
         id: "test_refuse_client_eval",
         friendlyName: "Test Client Eval",
         description: "A test activity that allows client evaluation",
         delivery: %ModeSpecification{element: "test-client-eval", entry: "./delivery-entry.ts"},
         authoring: %ModeSpecification{element: "test-client-eval", entry: "./authoring-entry.ts"},
         allowClientEvaluation: false,
+        global: true,
       })
 
       # create an example project with the activity in a graded page

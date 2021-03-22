@@ -29,7 +29,7 @@ defmodule Oli.Resources.Revision do
     field :recommended_attempts, :integer, default: 0
     field :time_limit, :integer, default: 0
     belongs_to :scoring_strategy, Oli.Resources.ScoringStrategy
-    belongs_to :activity_type, Oli.Activities.Registration
+    belongs_to :activity_type, Oli.Activities.ActivityRegistration
     belongs_to :primary_resource, Oli.Resources.Resource
     belongs_to :project, Oli.Authoring.Course.Project
 

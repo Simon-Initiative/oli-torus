@@ -39,15 +39,29 @@ export class ICActions {
     };
   }
 
-  static addImageURL(value: string) {
+  static addResourceURL(value: string) {
     return (draftState: ImageCodingModelSchema) => {
-      draftState.imageURLs.push(value);
+      if (draftState.resourceURLs.indexOf(value) === -1) {
+        draftState.resourceURLs.push(value);
+      }
+    };
+  }
+
+  static removeResourceURL(value: string) {
+    return (draftState: ImageCodingModelSchema) => {
+      draftState.resourceURLs = draftState.resourceURLs.filter(url => url !== value);
     };
   }
 
   static editTolerance(value: number) {
     return (draftState: ImageCodingModelSchema) => {
       draftState.tolerance = value;
+    };
+  }
+
+  static editRegex(value: string) {
+    return (draftState: ImageCodingModelSchema) => {
+      draftState.regex = value;
     };
   }
 

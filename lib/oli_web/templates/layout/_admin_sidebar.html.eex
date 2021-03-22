@@ -7,3 +7,4 @@
 
 <%= sidebar_link @conn, "Ingest", :ingest, to: Routes.ingest_path(@conn, :index) %>
 <%= sidebar_link @conn, "Invite", :invite, to: Routes.invite_path(@conn, :index) %>
+<%= sidebar_link @conn, "Activities", :activity_manage, to: Routes.activity_manage_path(@conn, :index) %>
