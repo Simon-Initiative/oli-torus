@@ -4,6 +4,7 @@
 
 ### Enhancements
   - Add the ability for an activity to submit client side evaluations
+  - Change project slug determiniation during course ingestion to be server driven
   - Add the ability to limit what activities are available for use in particular course projects
   - Add the ability to duplicate a project on the course overview page
 
