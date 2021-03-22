@@ -482,8 +482,8 @@ defmodule Oli.Seeder do
     end
   end
 
-  def add_author(%{ project: project} = map, author, atom) do
-    {:ok, _} = AuthorProject.changeset(%AuthorProject{}, %{author_id: author.id, project_id: project.id, project_role_id: ProjectRole.role_id.owner}) |> Repo.insert
+  def add_collaborator(%{ project: project} = map, author, atom) do
+    {:ok, _} = AuthorProject.changeset(%AuthorProject{}, %{author_id: author.id, project_id: project.id, project_role_id: ProjectRole.role_id.contributor}) |> Repo.insert
     Map.put(map, atom, author)
   end
 
