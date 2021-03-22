@@ -151,5 +151,4 @@ defmodule Oli.CourseTest do
     end
 
   end
-
 end
