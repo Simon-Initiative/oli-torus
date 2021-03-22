@@ -171,7 +171,7 @@ defmodule Oli.Authoring.Locks do
     case predicate.(mapping) do
       true -> case Publishing.update_resource_mapping(mapping, %{ locked_by_id: current_user_id, lock_updated_at: lock_updated_at}) do
         {:ok, _} ->
-          Broadcaster.broadcast_lock_acquired(mapping.resource_id, current_user_id)
+          Broadcaster.broadcast_lock_acquired(mapping.publication_id, mapping.resource_id, current_user_id)
           success_result
         {:error, _} -> {:error}
       end
@@ -206,7 +206,7 @@ defmodule Oli.Authoring.Locks do
   defp release_lock(mapping) do
     case Publishing.update_resource_mapping(mapping, %{ locked_by_id: nil, lock_updated_at: nil}) do
       {:ok, _} ->
-        Broadcaster.broadcast_lock_released(mapping.resource_id)
+        Broadcaster.broadcast_lock_released(mapping.publication_id, mapping.resource_id)
         {:ok}
       {:error, _} -> {:error}
     end
