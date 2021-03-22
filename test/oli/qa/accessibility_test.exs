@@ -44,21 +44,26 @@ defmodule Oli.Qa.AccessibilityTest do
             %{
               "children" => [
                 %{
+                  "type" => "img",
+                  "src" => "https://upload.wikimedia.org/wikipedia/commons/8/86/Map_of_territorial_growth_1775.jpg",
                   "children" => [
                     %{
-                      "type" => "img",
-                      "src" => "https://upload.wikimedia.org/wikipedia/commons/8/86/Map_of_territorial_growth_1775.jpg",
-                      "children" => [
-                        %{
-                          "text" => ""
-                        }
-                      ],
-                      "id" => 2607239386,
-                      "caption" => "Eastern North America in 1775. The British Province of Quebec, the Thirteen Colonies on the Atlantic coast, and the Indian Reserve as defined by the Royal Proclamation of 1763. The border between the red and pink areas represents the 1763 \"Proclamation line\", while the orange area represents the Spanish claim.",
-                    },
+                      "text" => ""
+                    }
                   ],
-                  "id" => "3636822762",
-                  "type" => "p"
+                  "id" => "1",
+                  "caption" => "Eastern North America in 1775. The British Province of Quebec, the Thirteen Colonies on the Atlantic coast, and the Indian Reserve as defined by the Royal Proclamation of 1763. The border between the red and pink areas represents the 1763 \"Proclamation line\", while the orange area represents the Spanish claim.",
+                },
+                %{
+                  "type" => "img",
+                  "src" => "https://upload.wikimedia.org/wikipedia/commons/f/ff/Wikipedia_logo_593.jpg",
+                  "children" => [
+                    %{
+                      "text" => ""
+                    }
+                  ],
+                  "id" => "2",
+                  "caption" => "Wikipedia logo",
                 }
               ],
               "id" => "481882791",
@@ -80,6 +85,10 @@ defmodule Oli.Qa.AccessibilityTest do
       assert Enum.find(warnings, & &1.revision.id == image_no_alt.revision.id)
       # has alt text
       assert !Enum.find(warnings, & &1.revision.id == image_has_alt.revision.id)
+
+      assert Enum.any?(warnings, & &1.content["id"] == "1")
+      assert Enum.any?(warnings, & &1.content["id"] == "2")
+
     end
 
   end

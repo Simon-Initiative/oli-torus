@@ -38,7 +38,8 @@
 
         <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
           <div class="card-body">
-              Only a second or two.  If the ingestion succeeds you will be redirected to the Project Overview of the new course project.
+              It depends on the size of the course described in the digest, but expect the ingestion to take anywhere from a
+              few seconds to a minute or two.  After the ingestion finishes you will be taken to the Project Overview of the new course project.
           </div>
         </div>
       </div>
@@ -75,15 +76,13 @@
         <div class="card-header" id="four">
           <h2 class="mb-0">
             <button class="btn btn-link btn-block text-left collapsed" type="button" data-toggle="collapse" data-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
-              How does the ingestion process handle media items?
+              How can I learn more about the course ingest process and course digest format?
             </button>
           </h2>
         </div>
         <div id="collapseFour" class="collapse" aria-labelledby="four" data-parent="#accordionExample">
           <div class="card-body">
-            The course ingestion tool expects that media items referenced in the course material have already been
-            pre-positioned into a Torus AWS S3 bucket folder.  That bucket folder name must be specified in the
-            <code>s3-folder-name</code> top-level key in the <code>_media-manifest.json</code>.
+             The Torus GitHub WIKI has documentation regarding ingestion.
           </div>
         </div>
       </div>

@@ -268,4 +268,8 @@ defmodule Oli.Authoring.MediaLibrary do
     |> Repo.update()
   end
 
+  def change_media_item(%MediaItem{} = media_item, attrs \\ %{}) do
+    MediaItem.changeset(media_item, attrs)
+  end
+
 end

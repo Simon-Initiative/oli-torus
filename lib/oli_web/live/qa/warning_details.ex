@@ -5,6 +5,14 @@ defmodule OliWeb.Qa.WarningDetails do
 
   def render(assigns) do
     ~L"""
+    <style>
+      .delivery-container img {
+        max-width: 300px;
+      }
+      .delivery-container iframe {
+        max-width: 300px;
+      }
+    </style>
     <div class="review-card active" id="<%= @selected.id %>">
       <h4 class="d-flex">
         <div>
@@ -22,8 +30,10 @@ defmodule OliWeb.Qa.WarningDetails do
       <div class="alert alert-info">
         <strong>Action item</strong> <%= action_item(@selected.subtype, %{ graded: @selected.revision.graded }) %>
         <%= if @selected.content do %>
-          <%= Phoenix.HTML.raw(Oli.Rendering.Content.render(%Oli.Rendering.Context{user: @author}, @selected.content, Oli.Rendering.Content.Html)) %>
-        <% end %>
+          <div class="delivery-container">
+            <%= Phoenix.HTML.raw(Oli.Rendering.Content.render(%Oli.Rendering.Context{user: @author}, @selected.content, Oli.Rendering.Content.Html)) %>
+          </div>
+          <% end %>
       </div>
     </div>
     """
