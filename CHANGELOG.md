@@ -12,6 +12,8 @@
   - Fix an issue where activity text that contained HTML tags rendered actual HTML
   - Fix an issue where pasting text containing newlines from an external source crashes the editor
   - Fix an issue with null section slugs and deployment id in existing sections
+  - Fix an issue where large images can obscure the Review mode UI
+  - Fix an issue where accessibility warnings for pages with multiple images only show the first image
 
 ## 0.6.1 (2021-3-3)
 
