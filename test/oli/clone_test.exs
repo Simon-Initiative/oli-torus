@@ -8,6 +8,7 @@ defmodule Oli.CloneTest do
   alias Oli.Authoring.MediaLibrary
   alias Oli.Authoring.Course.Family
   alias Oli.Authoring.Clone
+  alias Oli.Authoring.Editing.PageEditor
 
   describe "project duplication" do
     setup do
@@ -16,7 +17,7 @@ defmodule Oli.CloneTest do
       # Acquire a lock to edit the published_resource mapping in place
       Locks.acquire(project_map.publication.id, project_map.container.resource.id, project_map.author.id)
 
-      {:ok, duplicated_project} = Clone.clone_project(project_map.project.slug, project_map.author)
+      {:ok, duplicated_project} = Clone.clone_project(project_map.project.slug, project_map.author2)
       Map.put(project_map, :duplicated, Repo.preload(duplicated_project, [:parent_project, :family]))
     end
 
@@ -34,7 +35,7 @@ defmodule Oli.CloneTest do
       assert duplicated.project_id == project.id
     end
 
-    test "clone_project/2 creates a new collaborator", %{ author: author, duplicated: duplicated } do
+    test "clone_project/2 creates a new collaborator", %{ author2: author, duplicated: duplicated } do
       # AuthorProject schema
       collaborator = Collaborators.get_collaborator(author.id, duplicated.id)
       assert collaborator.author_id == author.id
@@ -86,6 +87,50 @@ defmodule Oli.CloneTest do
       assert Enum.count(cloned) == 1
       assert hd(cloned).project_id == duplicated.id
     end
+
+    test "editing a cloned project revision -> in base project", %{author: author1, duplicated: duplicated, project: project, page1: page1} do
+
+      base_revision = AuthoringResolver.from_resource_id(project.slug, page1.id)
+      # Author 1 starts editing the page in the original project
+      PageEditor.acquire_lock(project.slug, base_revision.slug, author1.email)
+      some_new_content =  %{ "content" =>
+        %{ "model" => [%{"type" => "p", "children" => [%{ "text" => "A paragraph."}] }]}
+      }
+      PageEditor.edit(project.slug, base_revision.slug, author1.email, some_new_content)
+
+      author1_edit_revision = AuthoringResolver.from_resource_id(project.slug, page1.id)
+      # Verify that editing created a new revision
+      refute author1_edit_revision.id == base_revision.id
+      assert author1_edit_revision.content == some_new_content["content"]
+
+      # Verify that the latest revision in the duplicated course does not have the changes
+      duplicated_revision = AuthoringResolver.from_resource_id(duplicated.slug, page1.id)
+      refute author1_edit_revision.id == duplicated_revision.id
+      refute duplicated_revision.content == some_new_content["content"]
+
+    end
+
+    test "editing a cloned project revision -> in cloned project", %{author2: author2, duplicated: duplicated, project: project, page1: page1} do
+
+      duplicated_revision = AuthoringResolver.from_resource_id(duplicated.slug, page1.id)
+      # Author 2 starts editing the page in the cloned project
+      PageEditor.acquire_lock(duplicated.slug, duplicated_revision.slug, author2.email)
+      some_new_content =  %{ "content" =>
+        %{ "model" => [%{"type" => "p", "children" => [%{ "text" => "A paragraph."}] }]}
+      }
+      PageEditor.edit(duplicated.slug, duplicated_revision.slug, author2.email, some_new_content)
+
+      author2_edit_revision = AuthoringResolver.from_resource_id(duplicated.slug, duplicated_revision.resource_id)
+      # Verify that editing created a new revision
+      refute author2_edit_revision.id == duplicated_revision.id
+      assert author2_edit_revision.content == some_new_content["content"]
+
+      # Verify that the latest revision in the original course does not have the changes
+      base_revision = AuthoringResolver.from_resource_id(project.slug, page1.id)
+      refute author2_edit_revision.id == duplicated_revision.id
+      refute base_revision.content == some_new_content["content"]
+    end
+
   end
 
 end
