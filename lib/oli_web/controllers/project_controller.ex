@@ -177,9 +177,8 @@ defmodule OliWeb.ProjectController do
   def clone_project(conn, _project_params) do
     case Clone.clone_project(conn.assigns.project.slug, conn.assigns.current_author) do
       {:ok, project} ->
-        IO.inspect(project)
         conn
-        |> put_flash(:info, "Project copied. You've been redirected to your new project.")
+        |> put_flash(:info, "Project duplicated. You've been redirected to your new project.")
         |> redirect(to: Routes.project_path(conn, :overview, project))
 
       {:error, message} ->
