@@ -48,7 +48,7 @@ defmodule Oli.Authoring.Locks do
   .`{:lock_not_acquired, {user_email, date_time}}` the date and user id of the existing lock
 
   """
-  @spec acquire(number, number, number) ::
+  @spec acquire(String.t(), number, number, number) ::
           {:error}
           | {:acquired}
           | {:lock_not_acquired,
@@ -63,21 +63,21 @@ defmodule Oli.Authoring.Locks do
                 second: any,
                 year: any
               }}}
-  def acquire(publication_id, resource_id, user_id) do
+  def acquire(project_slug, publication_id, resource_id, user_id) do
 
     # Get the mapping that pertains to this publication and resource
     case Publishing.get_resource_mapping!(publication_id, resource_id) |> Repo.preload([:author]) do
 
       # Acquire the lock if held already by this user
-      %{locked_by_id: ^user_id} = mapping -> lock_action(mapping, user_id, &always?/1, {:acquired}, {:acquired}, nil)
+      %{locked_by_id: ^user_id} = mapping -> lock_action(project_slug, mapping, user_id, &always?/1, {:acquired}, {:acquired}, nil)
 
       # Acquire the lock if no user has this mapping locked
-      %{locked_by_id: nil} = mapping -> lock_action(mapping, user_id, &always?/1, {:acquired}, {:acquired}, nil)
+      %{locked_by_id: nil} = mapping -> lock_action(project_slug, mapping, user_id, &always?/1, {:acquired}, {:acquired}, nil)
 
       # Otherwise, another user may have this locked, acquire it if
       # the lock is expired
       %{lock_updated_at: lock_updated_at, } = mapping ->
-        lock_action(mapping, user_id, &expired?/1, {:acquired}, {:lock_not_acquired, {mapping.author.email, lock_updated_at}}, nil)
+        lock_action(project_slug, mapping, user_id, &expired?/1, {:acquired}, {:lock_not_acquired, {mapping.author.email, lock_updated_at}}, nil)
     end
   end
 
@@ -93,7 +93,7 @@ defmodule Oli.Authoring.Locks do
   .`{:lock_not_acquired, {user_email, date_time}}` the date and user id of the existing lock
 
   """
-  @spec update(number, number, number) ::
+  @spec update(String.t(), number, number, number) ::
           {:error}
           | {:acquired}
           | {:updated}
@@ -109,14 +109,14 @@ defmodule Oli.Authoring.Locks do
                 second: any,
                 year: any
               }}}
-  def update(publication_id, resource_id, user_id) do
+  def update(project_slug, publication_id, resource_id, user_id) do
 
     # Get the mapping that pertains to this publication and resource
     case Publishing.get_resource_mapping!(publication_id, resource_id) |> Repo.preload([:author]) do
 
       # Acquire the lock if held already by this user and the lock is expired or its last_updated_date is empty
       # otherwise, simply update it
-      %{locked_by_id: ^user_id} = mapping -> lock_action(mapping, user_id, &expired_or_empty_predicate?/1, {:acquired}, {:updated}, now())
+      %{locked_by_id: ^user_id} = mapping -> lock_action(project_slug, mapping, user_id, &expired_or_empty_predicate?/1, {:acquired}, {:updated}, now())
 
       # Otherwise, another user may have this locked, or it was locked by this
       # user and it expired and an interleaving lock, redit, release by another user
@@ -140,10 +140,10 @@ defmodule Oli.Authoring.Locks do
   .`{:lock_not_held}` if the lock was not held by this user
 
   """
-  @spec release(number, number, number) :: {:error} | {:lock_not_held} | {:ok}
-  def release(publication_id, resource_id, user_id) do
+  @spec release(String.t(), number, number, number) :: {:error} | {:lock_not_held} | {:ok}
+  def release(project_slug, publication_id, resource_id, user_id) do
     case Publishing.get_resource_mapping!(publication_id, resource_id) do
-      %{locked_by_id: ^user_id} = mapping -> release_lock(mapping)
+      %{locked_by_id: ^user_id} = mapping -> release_lock(project_slug, mapping)
       _ -> {:lock_not_held}
     end
   end
@@ -167,11 +167,11 @@ defmodule Oli.Authoring.Locks do
     datetime
   end
 
-  defp lock_action(mapping, current_user_id, predicate, success_result, failure_result, lock_updated_at) do
+  defp lock_action(project_slug, mapping, current_user_id, predicate, success_result, failure_result, lock_updated_at) do
     case predicate.(mapping) do
       true -> case Publishing.update_resource_mapping(mapping, %{ locked_by_id: current_user_id, lock_updated_at: lock_updated_at}) do
         {:ok, _} ->
-          Broadcaster.broadcast_lock_acquired(mapping.publication_id, mapping.resource_id, current_user_id)
+          Broadcaster.broadcast_lock_acquired(project_slug, mapping.publication_id, mapping.resource_id, current_user_id)
           success_result
         {:error, _} -> {:error}
       end
@@ -203,10 +203,10 @@ defmodule Oli.Authoring.Locks do
     lock_updated_at == nil or expired?(mapping)
   end
 
-  defp release_lock(mapping) do
+  defp release_lock(project_slug, mapping) do
     case Publishing.update_resource_mapping(mapping, %{ locked_by_id: nil, lock_updated_at: nil}) do
       {:ok, _} ->
-        Broadcaster.broadcast_lock_released(mapping.publication_id, mapping.resource_id)
+        Broadcaster.broadcast_lock_released(project_slug, mapping.publication_id, mapping.resource_id)
         {:ok}
       {:error, _} -> {:error}
     end

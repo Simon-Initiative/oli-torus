@@ -104,7 +104,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
           update = %{"deleted" => true}
 
-          case Locks.update(publication.id, resource.id, author.id) do
+          case Locks.update(project.slug, publication.id, resource.id, author.id) do
 
             # If we acquired the lock, we must first create a new revision
             {:acquired} -> create_new_revision(revision, publication, activity, author.id)
@@ -216,13 +216,13 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     do
       Repo.transaction(fn ->
 
-        case Locks.update(publication.id, resource.id, author.id) do
+        case Locks.update(project.slug, publication.id, resource.id, author.id) do
 
           # If we acquired the lock, we must first create a new revision
           {:acquired} -> get_latest_revision(publication.id, activity.id)
             |> create_new_revision(publication, activity, author.id)
             |> update_revision(update, project.slug)
-            |> possibly_release_lock(publication, resource, author, update)
+            |> possibly_release_lock(project, publication, resource, author, update)
 
           # A successful lock update means we can safely edit the existing revision
           # unless, that is, if the update would change the corresponding slug.
@@ -231,7 +231,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           {:updated} -> get_latest_revision(publication.id, activity.id)
             |> maybe_create_new_revision(publication, activity, author.id, update)
             |> update_revision(update, project.slug)
-            |> possibly_release_lock(publication, resource, author, update)
+            |> possibly_release_lock(project, publication, resource, author, update)
 
           # error or not able to lock results in a failed edit
           result -> Repo.rollback(result)
@@ -252,9 +252,9 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   end
 
-  defp possibly_release_lock(previous, publication, resource, author, update) do
+  defp possibly_release_lock(previous, project, publication, resource, author, update) do
     if Map.get(update, "releaseLock", false) do
-      Locks.release(publication.id, resource.id, author.id)
+      Locks.release(project.slug, publication.id, resource.id, author.id)
     end
 
     previous

@@ -45,15 +45,15 @@ defmodule Oli.PublishingTest do
       Seeder.base_project_with_resource2()
     end
 
-    test "retrieves valid lock info", %{author: author, publication: publication, container: %{ resource: container_resource } } do
-      assert Locks.acquire(publication.id, container_resource.id, author.id) == {:acquired}
+    test "retrieves valid lock info", %{author: author, project: project, publication: publication, container: %{ resource: container_resource } } do
+      assert Locks.acquire(project.slug, publication.id, container_resource.id, author.id) == {:acquired}
       id = container_resource.id
       assert [%PublishedResource{resource_id: ^id}] = Publishing.retrieve_lock_info([container_resource.id], publication.id)
 
     end
 
-    test "ignores expired locks", %{author: author, publication: publication, container: %{ resource: container_resource } } do
-      assert Locks.acquire(publication.id, container_resource.id, author.id) == {:acquired}
+    test "ignores expired locks", %{author: author, project: project, publication: publication, container: %{ resource: container_resource } } do
+      assert Locks.acquire(project.slug, publication.id, container_resource.id, author.id) == {:acquired}
       [published_resource] = Publishing.retrieve_lock_info([container_resource.id], publication.id)
 
       Publishing.update_resource_mapping(published_resource, %{ lock_updated_at: yesterday()})
