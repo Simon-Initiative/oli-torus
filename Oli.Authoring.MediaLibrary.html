@@ -10,7 +10,7 @@
     <title>Oli.Authoring.MediaLibrary — OLI Torus v0.6.1</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-760366f09a.js"></script>
+    <script src="dist/sidebar_items-b836648a62.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -109,6 +109,13 @@ Oli.Authoring.MediaLibrary <small class="app-vsn">(OLI Torus v0.6.1)</small>
   </div>
 
     <div class="summary-synopsis"><p>Adds an item to the media library for a specific project slug.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#change_media_item/2">change_media_item(media_item, attrs \\ %{})</a>
+
+  </div>
 
 </div>
 <div class="summary-row">
@@ -219,6 +226,30 @@ to storage or it was a problem saving file meta data</p><p>If the project does n
 <code class="inline">{:error, {:not_found}}</code> is returned</p>
   </section>
 </section>
+<section class="detail" id="change_media_item/2">
+
+    <span id="change_media_item/1"></span>
+
+  <div class="detail-header">
+    <a href="#change_media_item/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">change_media_item(media_item, attrs \\ %{})</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/media_library.ex#L271" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
 <section class="detail" id="create_media_item/1">
 
     <span id="create_media_item/0"></span>
@@ -244,10 +275,10 @@ to storage or it was a problem saving file meta data</p><p>If the project does n
   <a href="#create_media_item/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_media_item</span><span class="p" data-group-id="0095263074-1">(</span><span class="p" data-group-id="0095263074-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="0095263074-2">}</span><span class="p" data-group-id="0095263074-1">)</span><span class="w">
-</span><span class="p" data-group-id="0095263074-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0095263074-4">%</span><span class="nc" data-group-id="0095263074-4">MediaItem</span><span class="p" data-group-id="0095263074-4">{</span><span class="p" data-group-id="0095263074-4">}</span><span class="p" data-group-id="0095263074-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_media_item</span><span class="p" data-group-id="0095263074-5">(</span><span class="p" data-group-id="0095263074-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="0095263074-6">}</span><span class="p" data-group-id="0095263074-5">)</span><span class="w">
-</span><span class="p" data-group-id="0095263074-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0095263074-8">%</span><span class="nc" data-group-id="0095263074-8">Ecto.Changeset</span><span class="p" data-group-id="0095263074-8">{</span><span class="p" data-group-id="0095263074-8">}</span><span class="p" data-group-id="0095263074-7">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_media_item</span><span class="p" data-group-id="8779554693-1">(</span><span class="p" data-group-id="8779554693-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="8779554693-2">}</span><span class="p" data-group-id="8779554693-1">)</span><span class="w">
+</span><span class="p" data-group-id="8779554693-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8779554693-4">%</span><span class="nc" data-group-id="8779554693-4">MediaItem</span><span class="p" data-group-id="8779554693-4">{</span><span class="p" data-group-id="8779554693-4">}</span><span class="p" data-group-id="8779554693-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_media_item</span><span class="p" data-group-id="8779554693-5">(</span><span class="p" data-group-id="8779554693-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="8779554693-6">}</span><span class="p" data-group-id="8779554693-5">)</span><span class="w">
+</span><span class="p" data-group-id="8779554693-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8779554693-8">%</span><span class="nc" data-group-id="8779554693-8">Ecto.Changeset</span><span class="p" data-group-id="8779554693-8">{</span><span class="p" data-group-id="8779554693-8">}</span><span class="p" data-group-id="8779554693-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="items/2">
@@ -365,10 +396,10 @@ project's media library.</p><p>If the project matching the supplied slug exists,
   <a href="#update_media_item/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_media_item</span><span class="p" data-group-id="3723744916-1">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3723744916-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="3723744916-2">}</span><span class="p" data-group-id="3723744916-1">)</span><span class="w">
-</span><span class="p" data-group-id="3723744916-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3723744916-4">%</span><span class="nc" data-group-id="3723744916-4">MediaItem</span><span class="p" data-group-id="3723744916-4">{</span><span class="p" data-group-id="3723744916-4">}</span><span class="p" data-group-id="3723744916-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_media_item</span><span class="p" data-group-id="3723744916-5">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3723744916-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="3723744916-6">}</span><span class="p" data-group-id="3723744916-5">)</span><span class="w">
-</span><span class="p" data-group-id="3723744916-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3723744916-8">%</span><span class="nc" data-group-id="3723744916-8">Ecto.Changeset</span><span class="p" data-group-id="3723744916-8">{</span><span class="p" data-group-id="3723744916-8">}</span><span class="p" data-group-id="3723744916-7">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_media_item</span><span class="p" data-group-id="1423882145-1">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1423882145-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="1423882145-2">}</span><span class="p" data-group-id="1423882145-1">)</span><span class="w">
+</span><span class="p" data-group-id="1423882145-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1423882145-4">%</span><span class="nc" data-group-id="1423882145-4">MediaItem</span><span class="p" data-group-id="1423882145-4">{</span><span class="p" data-group-id="1423882145-4">}</span><span class="p" data-group-id="1423882145-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_media_item</span><span class="p" data-group-id="1423882145-5">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1423882145-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1423882145-6">}</span><span class="p" data-group-id="1423882145-5">)</span><span class="w">
+</span><span class="p" data-group-id="1423882145-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1423882145-8">%</span><span class="nc" data-group-id="1423882145-8">Ecto.Changeset</span><span class="p" data-group-id="1423882145-8">{</span><span class="p" data-group-id="1423882145-8">}</span><span class="p" data-group-id="1423882145-7">}</span></code></pre>
   </section>
 </section>
 

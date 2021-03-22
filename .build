@@ -47,6 +47,7 @@ Oli.Authoring.Authors.ProjectRole.html
 Oli.Authoring.Broadcaster.Messages.html
 Oli.Authoring.Broadcaster.Subscriber.html
 Oli.Authoring.Broadcaster.html
+Oli.Authoring.Clone.html
 Oli.Authoring.Collaborators.html
 Oli.Authoring.Course.Family.html
 Oli.Authoring.Course.Project.html
@@ -336,8 +337,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-9dc7045fd4.js
-dist/sidebar_items-760366f09a.js
+dist/search_items-2f7973fba0.js
+dist/sidebar_items-b836648a62.js
 index.html
 license.html
 readme.html
