@@ -9,6 +9,7 @@
   - Add the ability to duplicate a project on the course overview page
 
 ### Bug fixes
+  - Fix an issue where cancelling a curriculum deletion operation still deleted the curriculum item
   - Fix an issue where the projects table did not sort by created date correctly
   - Fix an issue where activity text that contained HTML tags rendered actual HTML
   - Fix an issue where pasting text containing newlines from an external source crashes the editor
@@ -92,4 +93,3 @@
 ## 0.1.0 (2020-7-24)
 
   - Initial release
-
