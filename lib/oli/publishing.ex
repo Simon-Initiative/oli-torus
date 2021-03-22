@@ -386,8 +386,8 @@ defmodule Oli.Publishing do
       iex> change_resource_mapping(resource_mapping)
       %Ecto.Changeset{source: %ResourceMapping{}}
   """
-  def change_resource_mapping(%PublishedResource{} = resource_mapping) do
-    PublishedResource.changeset(resource_mapping, %{})
+  def change_resource_mapping(%PublishedResource{} = resource_mapping, attrs \\ %{}) do
+    PublishedResource.changeset(resource_mapping, attrs)
   end
 
   @doc """

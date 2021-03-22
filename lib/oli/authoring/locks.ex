@@ -28,7 +28,9 @@ defmodule Oli.Authoring.Locks do
 
   """
 
+  import Ecto.Query, warn: false
   alias Oli.Publishing
+  alias Oli.Publishing.PublishedResource
   alias Oli.Repo
   alias Oli.Authoring.Broadcaster
 
@@ -146,6 +148,20 @@ defmodule Oli.Authoring.Locks do
     end
   end
 
+  @doc """
+  Releases all locks for revisions in the supplied publication.
+
+  Returns:
+  .`{number, nil | returned data}` where number is the number of rows updated
+  """
+  @spec release_all(binary) :: {number, nil | term()}
+  def release_all(publication_id) do
+    from(pr in PublishedResource,
+      where: pr.publication_id == ^publication_id and not is_nil(pr.locked_by_id),
+      select: pr)
+    |> Repo.update_all(set: [locked_by_id: nil, lock_updated_at: nil])
+  end
+
   defp now() do
     {:ok, datetime} = DateTime.now("Etc/UTC")
     datetime
@@ -155,7 +171,7 @@ defmodule Oli.Authoring.Locks do
     case predicate.(mapping) do
       true -> case Publishing.update_resource_mapping(mapping, %{ locked_by_id: current_user_id, lock_updated_at: lock_updated_at}) do
         {:ok, _} ->
-          Broadcaster.broadcast_lock_acquired(mapping.resource_id, current_user_id)
+          Broadcaster.broadcast_lock_acquired(mapping.publication_id, mapping.resource_id, current_user_id)
           success_result
         {:error, _} -> {:error}
       end
@@ -188,9 +204,9 @@ defmodule Oli.Authoring.Locks do
   end
 
   defp release_lock(mapping) do
-    case Publishing.update_resource_mapping(mapping, %{ locked_by_id: nil, locked_at: nil}) do
+    case Publishing.update_resource_mapping(mapping, %{ locked_by_id: nil, lock_updated_at: nil}) do
       {:ok, _} ->
-        Broadcaster.broadcast_lock_released(mapping.resource_id)
+        Broadcaster.broadcast_lock_released(mapping.publication_id, mapping.resource_id)
         {:ok}
       {:error, _} -> {:error}
     end

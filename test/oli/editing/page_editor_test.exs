@@ -8,6 +8,8 @@ defmodule Oli.EditingTest do
   alias Oli.Accounts.SystemRole
   alias Oli.Utils.Time
   alias Oli.Authoring.Locks
+  alias Oli.Authoring.Editing.ContainerEditor
+  alias Oli.Publishing.AuthoringResolver
 
   describe "editing" do
 
@@ -23,6 +25,42 @@ defmodule Oli.EditingTest do
       {:ok, updated_revision} = PageEditor.edit(project.slug, revision1.slug, author.email, %{ "content" => content })
 
       assert revision1.id != updated_revision.id
+    end
+
+    test "editing page settings works when a second author edits a page that a first author is editing", %{page1: page1, revision1: revision1, author: author1, project: project, author2: author2} do
+
+      original_revision = AuthoringResolver.from_resource_id(project.slug, page1.id)
+      assert original_revision.graded == false
+      # Author 1 starts editing the page
+      PageEditor.acquire_lock(project.slug, revision1.slug, author1.email)
+      some_new_content =  %{ "content" =>
+        %{ "model" => [%{"type" => "p", "children" => [%{ "text" => "A paragraph."}] }]}
+      }
+      PageEditor.edit(project.slug, revision1.slug, author1.email, some_new_content)
+
+      author1_edit_revision = AuthoringResolver.from_resource_id(project.slug, page1.id)
+      # Verify that editing created a new revision
+      refute author1_edit_revision.id == original_revision.id
+      assert author1_edit_revision.content == some_new_content["content"]
+      # With author 1 still in an active editing session, author 2 makes container_editor driven edit:
+      ContainerEditor.edit_page(project, author1_edit_revision.slug, %{ graded: true, author_id: author2.id })
+      author2_edit_revision = AuthoringResolver.from_resource_id(project.slug, page1.id)
+      # Verify this edit created a new revision.
+      refute author1_edit_revision.id == author2_edit_revision.id
+      # Verify this edit has the correct content and graded edits
+      assert author2_edit_revision.content == author1_edit_revision.content
+      assert author2_edit_revision.graded == true
+      # Now have author 1 make another edit:
+      another_content = %{ "content" =>
+        %{ "model" => [%{"type" => "content", "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]}] }
+      }
+      PageEditor.edit(project.slug, revision1.slug, author1.email, another_content)
+      # Verify we get the same revision and all changes are present.
+      author1_edit_revision = AuthoringResolver.from_resource_id(project.slug, page1.id)
+      assert author1_edit_revision.id == author2_edit_revision.id
+      assert author1_edit_revision.content == another_content["content"]
+      assert author1_edit_revision.graded == true
+
     end
 
     test "edit/4 mark page delete and cascade to child activities", %{author: author, revision1: revision1, project: project } do

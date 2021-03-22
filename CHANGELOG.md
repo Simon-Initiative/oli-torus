@@ -5,6 +5,7 @@
 ### Enhancements
   - Add the ability for an activity to submit client side evaluations
   - Add the ability to limit what activities are available for use in particular course projects
+  - Add the ability to duplicate a project on the course overview page
 
 ### Bug fixes
   - Fix an issue where activity text that contained HTML tags rendered actual HTML
