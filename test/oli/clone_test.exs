@@ -20,7 +20,7 @@ defmodule Oli.CloneTest do
       Map.put(project_map, :duplicated, Repo.preload(duplicated_project, [:parent_project, :family]))
     end
 
-    test "clone_project/2 creates a new family", %{ project: project, family: family, duplicated: duplicated } do
+    test "clone_project/2 creates a new family", %{ family: family, duplicated: duplicated } do
       assert %Family{} = duplicated.family
       assert family.title <> " Copy" == duplicated.family.title
       assert family.description == duplicated.family.description
@@ -34,7 +34,7 @@ defmodule Oli.CloneTest do
       assert duplicated.project_id == project.id
     end
 
-    test "clone_project/2 creates a new collaborator", %{ author: author, project: project, duplicated: duplicated } do
+    test "clone_project/2 creates a new collaborator", %{ author: author, duplicated: duplicated } do
       # AuthorProject schema
       collaborator = Collaborators.get_collaborator(author.id, duplicated.id)
       assert collaborator.author_id == author.id
@@ -46,17 +46,17 @@ defmodule Oli.CloneTest do
       base_root_container = AuthoringResolver.root_container(project.slug)
 
       assert new_publication.project_id == duplicated.id
-      assert root_resource_id = base_root_container.resource_id
+      assert new_publication.root_resource_id == base_root_container.resource_id
     end
 
-    test "clone_project/2 clears all locks", %{ publication: publication, container: %{ resource: resource }, duplicated: duplicated } do
+    test "clone_project/2 clears all locks", %{ publication: publication, container: %{ resource: resource } } do
       # Lock acquisition is done in setup, since the project is duplicated there
 
       # Check locks for locked revision in the base course
       assert Enum.empty?(Publishing.retrieve_lock_info([resource.id], publication.id))
     end
 
-    test "clone_all_resource_mappings/2 works", %{ author: author, container: %{ resource: resource }, publication: publication, duplicated: duplicated } do
+    test "clone_all_resource_mappings/2 works", %{ container: %{ resource: resource }, publication: publication, duplicated: duplicated } do
       # Create a new publication
       {:ok, cloned_publication} = Publishing.create_publication(%{
         project_id: duplicated.id,
@@ -69,7 +69,7 @@ defmodule Oli.CloneTest do
     end
 
     test "clone_all_media_items/2 works", %{ project: project, duplicated: duplicated } do
-      {:ok, dummy_media_item} = MediaLibrary.create_media_item(%{
+      {:ok, _dummy_media_item} = MediaLibrary.create_media_item(%{
         url: "www.google.com",
         file_name: "test",
         mime_type: "jpg",
@@ -78,6 +78,9 @@ defmodule Oli.CloneTest do
         deleted: false,
         project_id: project.id
       })
+
+      {:ok, {_items, item_count}} = MediaLibrary.items(duplicated.slug, %MediaLibrary.ItemOptions{})
+      assert item_count == 0
 
       cloned = Clone.clone_all_media_items(project.slug, duplicated.id)
       assert Enum.count(cloned) == 1
