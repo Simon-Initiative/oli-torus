@@ -9,6 +9,7 @@
   - Add the ability to duplicate a project on the course overview page
 
 ### Bug fixes
+  - Fix an issue where the projects table did not sort by created date correctly
   - Fix an issue where activity text that contained HTML tags rendered actual HTML
   - Fix an issue where pasting text containing newlines from an external source crashes the editor
   - Fix an issue with null section slugs and deployment id in existing sections
