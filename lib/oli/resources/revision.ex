@@ -31,6 +31,7 @@ defmodule Oli.Resources.Revision do
     belongs_to :scoring_strategy, Oli.Resources.ScoringStrategy
     belongs_to :activity_type, Oli.Activities.Registration
     belongs_to :primary_resource, Oli.Resources.Resource
+    belongs_to :project, Oli.Authoring.Course.Project
 
     has_many :warnings, Oli.Qa.Warning
 

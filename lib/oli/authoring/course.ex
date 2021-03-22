@@ -13,10 +13,20 @@ defmodule Oli.Authoring.Course do
     |> Repo.insert()
   end
 
+  def list_project_resources(project_id) do
+    Repo.all(
+      from pr in ProjectResource,
+      where: pr.project_id == ^project_id,
+      select: pr)
+  end
+
+  def change_project_resource(%ProjectResource{} = project_resource, attrs \\ %{}) do
+    ProjectResource.changeset(project_resource, attrs)
+  end
+
   def list_projects do
     Repo.all(Project)
   end
-
 
   def get_projects_for_author(author) do
 
@@ -117,7 +127,7 @@ defmodule Oli.Authoring.Course do
     end)
   end
 
-  defp create_project(attrs) do
+  def create_project(attrs) do
     %Project{}
     |> Project.changeset(attrs)
     |> Repo.insert()

@@ -9,6 +9,7 @@ defmodule OliWeb.ProjectController do
   alias Oli.Qa
   alias Oli.Analytics.Datashop
   alias OliWeb.Common.Breadcrumb
+  alias Oli.Authoring.Clone
 
   def overview(conn, project_params) do
     project = conn.assigns.project
@@ -142,5 +143,20 @@ defmodule OliWeb.ProjectController do
     project = conn.assigns.project
     conn
     |> send_download({:binary, Datashop.export(project.id)}, filename: "Datashop_#{project.slug}.xml")
+  end
+
+  def clone_project(conn, _project_params) do
+    case Clone.clone_project(conn.assigns.project.slug, conn.assigns.current_author) do
+      {:ok, project} ->
+        IO.inspect(project)
+        conn
+        |> put_flash(:info, "Project copied. You've been redirected to your new project.")
+        |> redirect(to: Routes.project_path(conn, :overview, project))
+
+      {:error, message} ->
+        conn
+        |> put_flash(:error, "Project could not be copied: " <> message)
+        |> render("overview.html")
+    end
   end
 end

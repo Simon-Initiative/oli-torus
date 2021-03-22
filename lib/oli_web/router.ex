@@ -196,6 +196,7 @@ defmodule OliWeb.Router do
     get "/:project_id/publish", ProjectController, :publish
     post "/:project_id/publish", ProjectController, :publish_active
     post "/:project_id/datashop", ProjectController, :download_datashop
+    post "/:project_id/duplicate", ProjectController, :clone_project
 
     # Project
     put "/:project_id", ProjectController, :update
