@@ -57,6 +57,21 @@ defmodule OliWeb.PageDeliveryController do
     redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
   end
 
+  defp render_page(%PageContext{page: %{content: %{"advancedDelivery" => true}}} = context,
+    conn, section_slug, _) do
+
+    conn = put_root_layout conn, {OliWeb.LayoutView, "page.html"}
+    user = conn.assigns.current_user
+
+    render(conn, "delivery.html", %{
+      section_slug: section_slug,
+      title: context.page.title,
+      resource_id: page.resource_id,
+      slug: context.page.slug,
+      user_id: user.id
+    })
+  end
+
   defp render_page(%PageContext{summary: summary, progress_state: :not_started, page: page, resource_attempts: resource_attempts} = context,
     conn, section_slug, _) do
 

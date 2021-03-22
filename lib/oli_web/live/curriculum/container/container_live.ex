@@ -230,39 +230,49 @@ defmodule OliWeb.Curriculum.ContainerLive do
     attrs = %{
       objectives: %{"attached" => []},
       children: [],
-      content: %{"model" => []},
+      content:
+        case type do
+          "Adaptive" -> %{"model" => [], "advancedAuthoring" => true, "advancedDelivery" => true}
+          _ -> %{"model" => []}
+        end,
       title:
         case type do
+          "Adaptive" -> "New Adaptive Page"
           "Scored" -> "New Assessment"
           "Unscored" -> "New Page"
           "Container" -> new_container_name(socket.assigns.numberings, socket.assigns.container)
         end,
       graded:
         case type do
+          "Adaptive" -> false
           "Scored" -> true
           "Unscored" -> false
           "Container" -> false
         end,
       max_attempts:
         case type do
+          "Adaptive" -> 0
           "Scored" -> 5
           "Unscored" -> 0
           "Container" -> nil
         end,
       recommended_attempts:
         case type do
+          "Adaptive" -> 0
           "Scored" -> 5
           "Unscored" -> 0
           "Container" -> nil
         end,
       scoring_strategy_id:
         case type do
+          "Adaptive" -> ScoringStrategy.get_id_by_type("best")
           "Scored" -> ScoringStrategy.get_id_by_type("best")
           "Unscored" -> ScoringStrategy.get_id_by_type("best")
           "Container" -> nil
         end,
       resource_type_id:
         case type do
+          "Adaptive" -> Oli.Resources.ResourceType.get_id_by_type("page")
           "Scored" -> Oli.Resources.ResourceType.get_id_by_type("page")
           "Unscored" -> Oli.Resources.ResourceType.get_id_by_type("page")
           "Container" -> Oli.Resources.ResourceType.get_id_by_type("container")
