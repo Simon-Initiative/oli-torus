@@ -55,12 +55,18 @@ defmodule OliWeb.RevisionHistory do
     }
   end
 
+  defp date_sort(d1, d2) do
+    case NaiveDateTime.compare(d1, d2) do
+      :gt -> false
+      _ -> true
+    end
+  end
 
   defp determine_most_recent_published(mappings) do
 
     all = Enum.reduce(mappings, MapSet.new(), fn mapping, m -> MapSet.put(m, mapping.publication) end)
     |> MapSet.to_list()
-    |> Enum.sort(&(&1.inserted_at >= &2.inserted_at))
+    |> Enum.sort(fn m1, m2 -> date_sort(m1.inserted_at, m2.inserted_at) end)
 
     case length(all) do
       1 -> nil

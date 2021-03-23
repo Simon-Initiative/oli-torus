@@ -6,6 +6,10 @@ defmodule Oli.Authoring.Collaborators do
   alias OliWeb.Router.Helpers, as: Routes
   import Oli.Utils
 
+  def get_collaborator(author_id, project_id) do
+    Repo.get_by(AuthorProject, %{ author_id: author_id, project_id: project_id })
+  end
+
   def change_collaborator(email, project_slug) do
     with {:ok, author} <- Accounts.get_author_by_email(email)
                           |> trap_nil("An author with that email was not found."),

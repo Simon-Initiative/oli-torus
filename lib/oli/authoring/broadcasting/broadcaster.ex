@@ -84,22 +84,22 @@ defmodule Oli.Authoring.Broadcaster do
   @doc """
   Broadcasts that a lock has been acquired on a resource
   """
-  def broadcast_lock_acquired(resource_id, author_id) do
+  def broadcast_lock_acquired(publication_id, resource_id, author_id) do
     PubSub.broadcast(
       Oli.PubSub,
       message_lock_acquired(resource_id),
-      {:lock_acquired, resource_id, author_id}
+      {:lock_acquired, publication_id, resource_id, author_id}
     )
   end
 
   @doc """
   Broadcasts that a lock has been released on a resource
   """
-  def broadcast_lock_released(resource_id) do
+  def broadcast_lock_released(publication_id, resource_id) do
     PubSub.broadcast(
       Oli.PubSub,
       message_lock_released(resource_id),
-      {:lock_released, resource_id}
+      {:lock_released, publication_id, resource_id}
     )
   end
 
