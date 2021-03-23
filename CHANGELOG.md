@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.0 (2021-3-23)
 
 ### Enhancements
   - Add the ability for an activity to submit client side evaluations
