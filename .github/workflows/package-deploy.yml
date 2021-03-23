@@ -1,0 +1,110 @@
+name: Package & Deploy
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - deploy-test     # manually trigger deploy to test
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v2
+
+      - name: 🧾 Build info
+        id: info
+        run: |
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+          echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
+
+      - name: 📦💽 Package
+        uses: ./.github/actions/phoenix-builder
+        with:
+          build-sha: ${{ steps.info.outputs.sha_short }}
+
+      - name: 💽⬆️ Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}
+          path: _build/prod/rel/oli
+
+  deploy-test:
+    runs-on: ubuntu-latest
+    needs: package
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v2
+
+      - name: 🧾 Build info
+        id: info
+        run: |
+          sha_short=$(git rev-parse --short HEAD)
+          app_version=$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')
+          deploy_host=$(echo tokamak.oli.cmu.edu)
+          echo "::set-output name=sha_short::$sha_short"
+          echo "::set-output name=app_version::$app_version"
+          echo "::set-output name=deploy_host::$deploy_host"
+
+      - name: ⬇️🚢 Fetch archived build & ship it
+        run: |
+          echo $(curl -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/Simon-Initiative/oli-torus/actions/artifacts)
+          echo $(curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/Simon-Initiative/oli-torus/actions/artifacts | jq -r '.artifacts[] | select(.name == "oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}")')
+          BUILD_ARCHIVE_URL=$(curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/Simon-Initiative/oli-torus/actions/artifacts | jq -r '.artifacts[] | select(.name == "oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}") | .archive_download_url')
+
+          # print error message and exit if BUILD_ARCHIVE_URL is not set
+          if [ -z "${BUILD_ARCHIVE_URL}" ]; then echo "Build archive for oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip not found"; exit 1 ; fi
+
+          wget -O oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip ${BUILD_ARCHIVE_URL}
+          mkdir ~/.ssh
+          echo "${{ secrets.SIMON_BOT_PRIVATE_KEY}}" > ~/.ssh/simon-bot
+          chmod 600 ~/.ssh/simon-bot
+          sftp -i ~/.ssh/simon-bot -o StrictHostKeyChecking=no simon-bot@${{ steps.info.outputs.deploy_host }}  <<< $'cd /torus\n put oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip'
+
+      - name: 💰 Deploy using SSH
+        uses: fifsky/ssh-action@master
+        with:
+          command: |
+            cd /torus
+            sh deploy.sh ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }}
+          host: ${{ steps.info.outputs.deploy_host }}
+          user: simon-bot
+          key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
+
+
+  docs:
+    runs-on: ubuntu-latest
+    # only deploy docs if the workflow is running on the master branch
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v2 # If you're using actions/checkout@v2 you must set persist-credentials to false in most cases for the deployment to work correctly.
+        with:
+          persist-credentials: false
+
+      - name: 🔧 Configure
+        run: cp oli.example.env oli.env
+
+      - name: 🧪 Setup Elixir
+        uses: erlef/setup-elixir@v1
+        with:
+          elixir-version: 1.11.1 # Define the elixir version [required]
+          otp-version: 23.1 # Define the OTP version [required]
+
+      - name: ⬇️ Install Elixir Dependencies
+        run: mix deps.get
+
+      - name: 🔨📦 Build Dependencies
+        run: mix deps.compile
+
+      - name: 🔨📄 Build Docs
+        run: mix docs
+
+      - name: 🚀 Deploy Docs
+        uses: JamesIves/github-pages-deploy-action@releases/v3
+        with:
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: doc # The folder the action should deploy.
