@@ -12,7 +12,6 @@ export function defineApplication<T extends State>(Component : React.FunctionCom
   // to be passed into this function, instead of simply using a shared common state
   let store = configureStore();
 
-
   (window as any).oliMountApplication
     = (mountPoint: any, params : any) => {
 

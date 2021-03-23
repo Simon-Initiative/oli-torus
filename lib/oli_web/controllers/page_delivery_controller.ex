@@ -66,7 +66,7 @@ defmodule OliWeb.PageDeliveryController do
     render(conn, "delivery.html", %{
       section_slug: section_slug,
       title: context.page.title,
-      resource_id: page.resource_id,
+      resource_id: context.page.resource_id,
       slug: context.page.slug,
       user_id: user.id
     })
