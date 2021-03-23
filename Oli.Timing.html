@@ -5,9 +5,9 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.23.0">
-    <meta name="project" content="OLI Torus v0.6.1">
+    <meta name="project" content="OLI Torus v0.7.0">
 
-    <title>Oli.Timing — OLI Torus v0.6.1</title>
+    <title>Oli.Timing — OLI Torus v0.7.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
     <script src="dist/sidebar_items-b3d162a16e.js"></script>
@@ -50,7 +50,7 @@
 OLI Torus
       </a>
       <strong class="sidebar-projectVersion">
-        v0.6.1
+        v0.7.0
       </strong>
     </div>
 
@@ -78,7 +78,7 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Timing <small class="app-vsn">(OLI Torus v0.6.1)</small>
+Oli.Timing <small class="app-vsn">(OLI Torus v0.7.0)</small>
 
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/timing.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
@@ -170,7 +170,7 @@ Designed to be used in conjunction with <code class="inline">Oli.Timing.run</cod
   <a href="#emit/3-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="8345051644-1">(</span><span class="k" data-group-id="8345051644-2">fn</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="s">&quot;4&quot;</span><span class="w"> </span><span class="k" data-group-id="8345051644-2">end</span><span class="p" data-group-id="8345051644-1">)</span><span class="w"> </span><span class="o">|&gt;</span><span class="w"> </span><span class="n">emit</span><span class="p" data-group-id="8345051644-3">(</span><span class="p" data-group-id="8345051644-4">[</span><span class="ss">:oli</span><span class="p">,</span><span class="w"> </span><span class="ss">:four</span><span class="p">,</span><span class="w"> </span><span class="ss">:calc</span><span class="p" data-group-id="8345051644-4">]</span><span class="p">,</span><span class="w"> </span><span class="ss">:duration</span><span class="p" data-group-id="8345051644-3">)</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="5381190253-1">(</span><span class="k" data-group-id="5381190253-2">fn</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="s">&quot;4&quot;</span><span class="w"> </span><span class="k" data-group-id="5381190253-2">end</span><span class="p" data-group-id="5381190253-1">)</span><span class="w"> </span><span class="o">|&gt;</span><span class="w"> </span><span class="n">emit</span><span class="p" data-group-id="5381190253-3">(</span><span class="p" data-group-id="5381190253-4">[</span><span class="ss">:oli</span><span class="p">,</span><span class="w"> </span><span class="ss">:four</span><span class="p">,</span><span class="w"> </span><span class="ss">:calc</span><span class="p" data-group-id="5381190253-4">]</span><span class="p">,</span><span class="w"> </span><span class="ss">:duration</span><span class="p" data-group-id="5381190253-3">)</span><span class="w">
 </span><span class="s">&quot;4&quot;</span></code></pre>
   </section>
 </section>
@@ -200,11 +200,11 @@ result of the function.</p><h2 id="run/1-examples" class="section-heading">
   <a href="#run/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="6868627487-1">(</span><span class="k" data-group-id="6868627487-2">fn</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="s">&quot;3&quot;</span><span class="w"> </span><span class="k" data-group-id="6868627487-2">end</span><span class="p" data-group-id="6868627487-1">)</span><span class="w">
-</span><span class="p" data-group-id="6868627487-3">{</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;3&quot;</span><span class="p" data-group-id="6868627487-3">}</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="4969865304-1">(</span><span class="k" data-group-id="4969865304-2">fn</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="s">&quot;3&quot;</span><span class="w"> </span><span class="k" data-group-id="4969865304-2">end</span><span class="p" data-group-id="4969865304-1">)</span><span class="w">
+</span><span class="p" data-group-id="4969865304-3">{</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;3&quot;</span><span class="p" data-group-id="4969865304-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="6868627487-4">(</span><span class="k" data-group-id="6868627487-5">fn</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="o">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="k" data-group-id="6868627487-5">end</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6868627487-6">[</span><span class="s">&quot;Bob&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot; Ross&quot;</span><span class="p" data-group-id="6868627487-6">]</span><span class="p" data-group-id="6868627487-4">)</span><span class="w">
-</span><span class="p" data-group-id="6868627487-7">{</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Bob Ross&quot;</span><span class="p" data-group-id="6868627487-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="4969865304-4">(</span><span class="k" data-group-id="4969865304-5">fn</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="o">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="k" data-group-id="4969865304-5">end</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4969865304-6">[</span><span class="s">&quot;Bob&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot; Ross&quot;</span><span class="p" data-group-id="4969865304-6">]</span><span class="p" data-group-id="4969865304-4">)</span><span class="w">
+</span><span class="p" data-group-id="4969865304-7">{</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Bob Ross&quot;</span><span class="p" data-group-id="4969865304-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="run/2">
