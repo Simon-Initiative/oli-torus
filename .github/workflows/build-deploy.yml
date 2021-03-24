@@ -4,7 +4,7 @@ on:
     branches:
       - master
     tags:
-      - deploy-test                         # manually deploy to test
+      - deploy-test     # manually trigger deploy to test
 
 jobs:
   build:
