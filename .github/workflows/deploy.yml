@@ -2,12 +2,9 @@ name: Deploy
 
 on:
   push:
-    branches:
-      - master
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'             # production release tags vX.Y.Z
       - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'     # release candidate tags vX.Y.Z-rc1
-      - deploy-test                         # manually deploy to test
 
 jobs:
   deploy:
@@ -31,6 +28,9 @@ jobs:
 
       - name: 🗜️🚢 Zip it & ship it
         run: |
+          # print error message and exit if archive_download_url is not set
+          if [ -z "${{ steps.info.outputs.archive_download_url }}" ]; then echo "Build archive for oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip not found"; exit 1 ; fi
+
           wget -O oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip ${{ steps.info.outputs.archive_download_url }}
           mkdir ~/.ssh
           echo "${{ secrets.SIMON_BOT_PRIVATE_KEY}}" > ~/.ssh/simon-bot
@@ -46,39 +46,3 @@ jobs:
           host: ${{ steps.info.outputs.deploy_host }}
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
-
-  docs:
-    runs-on: ubuntu-latest
-    # only deploy docs if the workflow is running on the master branch
-    if: github.ref == 'refs/heads/master'
-
-    steps:
-      - name: 🛎️ Checkout
-        uses: actions/checkout@v2 # If you're using actions/checkout@v2 you must set persist-credentials to false in most cases for the deployment to work correctly.
-        with:
-          persist-credentials: false
-
-      - name: 🔧 Configure
-        run: cp oli.example.env oli.env
-
-      - name: 🧪 Setup Elixir
-        uses: erlef/setup-elixir@v1
-        with:
-          elixir-version: 1.11.1 # Define the elixir version [required]
-          otp-version: 23.1 # Define the OTP version [required]
-
-      - name: ⬇️ Install Elixir Dependencies
-        run: mix deps.get
-
-      - name: 🔨📦 Build Dependencies
-        run: mix deps.compile
-
-      - name: 🔨📄 Build Docs
-        run: mix docs
-
-      - name: 🚀 Deploy Docs
-        uses: JamesIves/github-pages-deploy-action@releases/v3
-        with:
-          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-          BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: doc # The folder the action should deploy.
