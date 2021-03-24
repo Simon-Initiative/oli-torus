@@ -46,3 +46,39 @@ jobs:
           host: ${{ steps.info.outputs.deploy_host }}
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
+
+  docs:
+    runs-on: ubuntu-latest
+    # only deploy docs if the workflow is running on the master branch
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v2 # If you're using actions/checkout@v2 you must set persist-credentials to false in most cases for the deployment to work correctly.
+        with:
+          persist-credentials: false
+
+      - name: 🔧 Configure
+        run: cp oli.example.env oli.env
+
+      - name: 🧪 Setup Elixir
+        uses: erlef/setup-elixir@v1
+        with:
+          elixir-version: 1.11.1 # Define the elixir version [required]
+          otp-version: 23.1 # Define the OTP version [required]
+
+      - name: ⬇️ Install Elixir Dependencies
+        run: mix deps.get
+
+      - name: 🔨📦 Build Dependencies
+        run: mix deps.compile
+
+      - name: 🔨📄 Build Docs
+        run: mix docs
+
+      - name: 🚀 Deploy Docs
+        uses: JamesIves/github-pages-deploy-action@releases/v3
+        with:
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: doc # The folder the action should deploy.

@@ -1,0 +1,29 @@
+name: Build
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v2
+
+      - name: 🧾 Build info
+        id: info
+        run: |
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+          echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
+
+      - name: 📦💽 Package
+        uses: ./.github/actions/phoenix-builder
+        with:
+          build-sha: ${{ steps.info.outputs.sha_short }}
+
+      - name: 💽⬆️ Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}
+          path: _build/prod/rel/oli
