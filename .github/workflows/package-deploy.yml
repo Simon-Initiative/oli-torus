@@ -50,7 +50,7 @@ jobs:
       - name: ⬇️🚢 Fetch archived build & ship it
         run: |
           echo $(curl -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/Simon-Initiative/oli-torus/actions/artifacts)
-          echo $(curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/Simon-Initiative/oli-torus/actions/artifacts | jq -r '.artifacts[] | select(.name == "oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}"))
+          echo $(curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/Simon-Initiative/oli-torus/actions/artifacts | jq -r '.artifacts[] | select(.name == "oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}")')
           BUILD_ARCHIVE_URL=$(curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/Simon-Initiative/oli-torus/actions/artifacts | jq -r '.artifacts[] | select(.name == "oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}") | .archive_download_url')
 
           # print error message and exit if BUILD_ARCHIVE_URL is not set
