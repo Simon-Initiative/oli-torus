@@ -26,7 +26,7 @@ jobs:
           echo "::set-output name=deploy_host::$deploy_host"
           echo "::set-output name=archive_download_url::$archive_download_url"
 
-      - name: 🗜️🚢 Zip it & ship it
+      - name: ⬇️🚢 Fetch archived build & ship it
         run: |
           # print error message and exit if archive_download_url is not set
           if [ -z "${{ steps.info.outputs.archive_download_url }}" ]; then echo "Build archive for oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip not found"; exit 1 ; fi
