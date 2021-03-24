@@ -4,8 +4,6 @@ on:
   pull_request:
     branches:
       - master
-      - test
-      - production
 
 jobs:
   elixir-build-test:
