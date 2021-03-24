@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy Release
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'     # release candidate tags vX.Y.Z-rc1
 
 jobs:
-  deploy:
+  deploy-release:
     runs-on: ubuntu-latest
 
     steps:
