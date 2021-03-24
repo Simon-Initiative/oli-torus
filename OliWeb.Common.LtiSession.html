@@ -90,12 +90,12 @@ OliWeb.Common.LtiSession <small class="app-vsn">(OLI Torus v0.7.0)</small>
 
         <section id="moduledoc">
 <p>A module for managing a user's session data across possibly different
-platforms and course sections.</p><p>For example:</p><pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="8653503968-1">%{</span><span class="w">
-  </span><span class="ss">user_params</span><span class="p">:</span><span class="w"> </span><span class="n">string</span><span class="p" data-group-id="8653503968-2">(</span><span class="p" data-group-id="8653503968-2">)</span><span class="p">,</span><span class="w">        </span><span class="c1"># latest lti params associated with this user from the most recent launch</span><span class="w">
-  </span><span class="ss">sections</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="8653503968-3">%{</span><span class="w">
-    </span><span class="p" data-group-id="8653503968-4">[</span><span class="n">sections_slug</span><span class="p" data-group-id="8653503968-4">]</span><span class="p">:</span><span class="w"> </span><span class="n">string</span><span class="p" data-group-id="8653503968-5">(</span><span class="p" data-group-id="8653503968-5">)</span><span class="w">   </span><span class="c1"># lti params for a particular user and section</span><span class="w">
-  </span><span class="p" data-group-id="8653503968-3">}</span><span class="w">
-</span><span class="p" data-group-id="8653503968-1">}</span></code></pre><p>A plug will set lti_params in assigns using the user id and and lti_params if a section_slug is present in the url</p>
+platforms and course sections.</p><p>For example:</p><pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="3698767633-1">%{</span><span class="w">
+  </span><span class="ss">user_params</span><span class="p">:</span><span class="w"> </span><span class="n">string</span><span class="p" data-group-id="3698767633-2">(</span><span class="p" data-group-id="3698767633-2">)</span><span class="p">,</span><span class="w">        </span><span class="c1"># latest lti params associated with this user from the most recent launch</span><span class="w">
+  </span><span class="ss">sections</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3698767633-3">%{</span><span class="w">
+    </span><span class="p" data-group-id="3698767633-4">[</span><span class="n">sections_slug</span><span class="p" data-group-id="3698767633-4">]</span><span class="p">:</span><span class="w"> </span><span class="n">string</span><span class="p" data-group-id="3698767633-5">(</span><span class="p" data-group-id="3698767633-5">)</span><span class="w">   </span><span class="c1"># lti params for a particular user and section</span><span class="w">
+  </span><span class="p" data-group-id="3698767633-3">}</span><span class="w">
+</span><span class="p" data-group-id="3698767633-1">}</span></code></pre><p>A plug will set lti_params in assigns using the user id and and lti_params if a section_slug is present in the url</p>
         </section>
 
 
