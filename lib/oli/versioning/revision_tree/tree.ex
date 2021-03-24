@@ -16,6 +16,8 @@ defmodule Oli.Versioning.RevisionTree.Tree do
 
     revisions = list_revisions_by_resource(resource_id)
     projects = Course.list_projects_containing_resource(resource_id)
+    |> sort_preorder
+
     head_revisions = Enum.map(projects, fn p -> AuthoringResolver.from_resource_id(p.slug, resource_id) end)
 
     build(revisions, head_revisions, projects)
@@ -35,13 +37,41 @@ defmodule Oli.Versioning.RevisionTree.Tree do
           node = %Node{revision: head, children: [], project_id: project.id}
           track_back(node, by_id, project, Map.put(nodes, head.id, node))
 
-        node -> nodes
+        _ -> nodes
 
       end
     end)
 
   end
 
+  # Sorts a collection of projects according by a preorder tree traversal, based on the
+  # tree structure of parent_parent references
+  def sort_preorder(projects) do
+
+    by_parent = Enum.reduce(projects, %{}, fn e, m ->
+      case Map.get(m, e.parent_project_id) do
+        nil -> Map.put(m, e.parent_project_id, [e])
+        others -> Map.put(m, e.parent_project_id, others ++ [e])
+      end
+    end)
+
+    [root_project] = Map.get(by_parent, nil)
+    sort_preorder_helper([], root_project, by_parent)
+
+  end
+
+  defp sort_preorder_helper(projects, current, by_parent) do
+
+    # if this current one is not the parent of any other, we reach our base case
+    case Map.get(by_parent, current.id) do
+      nil -> projects ++ [current]
+      children ->
+        Enum.reduce(children, projects ++ [current], fn c, all ->
+          sort_preorder_helper(all, c, by_parent)
+        end)
+    end
+
+  end
 
   defp track_back(child_node, by_id, project, nodes) do
 
