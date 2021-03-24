@@ -1,4 +1,4 @@
-defmodule OliWeb.RevisionHistory.TreeNode do
+defmodule Oli.Versioning.RevisionTree.Node do
 
   @moduledoc """
   Struct representation of a node in a revision tree.
