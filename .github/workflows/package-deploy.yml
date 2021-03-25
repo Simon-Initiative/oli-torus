@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - cd-changes    # TODO: REMOVE
     tags:
       - deploy-test     # manually trigger deploy to test
 
@@ -42,21 +43,13 @@ jobs:
         run: |
           sha_short=$(git rev-parse --short HEAD)
           app_version=$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')
-          deploy_host=$(echo tokamak.oli.cmu.edu)
           echo "::set-output name=sha_short::$sha_short"
           echo "::set-output name=app_version::$app_version"
-          echo "::set-output name=deploy_host::$deploy_host"
+          echo "::set-output name=deploy_host::tokamak.oli.cmu.edu
 
-      - name: ⬇️🚢 Fetch archived build & ship it
+      - name: 🗜️🚢 Zip it & ship it
         run: |
-          echo $(curl -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/Simon-Initiative/oli-torus/actions/artifacts)
-          echo $(curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/Simon-Initiative/oli-torus/actions/artifacts | jq -r '.artifacts[] | select(.name == "oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}")')
-          BUILD_ARCHIVE_URL=$(curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/Simon-Initiative/oli-torus/actions/artifacts | jq -r '.artifacts[] | select(.name == "oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}") | .archive_download_url')
-
-          # print error message and exit if BUILD_ARCHIVE_URL is not set
-          if [ -z "${BUILD_ARCHIVE_URL}" ]; then echo "Build archive for oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip not found"; exit 1 ; fi
-
-          wget -O oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip ${BUILD_ARCHIVE_URL}
+          zip -r oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip _build/prod/rel/oli
           mkdir ~/.ssh
           echo "${{ secrets.SIMON_BOT_PRIVATE_KEY}}" > ~/.ssh/simon-bot
           chmod 600 ~/.ssh/simon-bot
