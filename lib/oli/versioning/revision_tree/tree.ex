@@ -10,11 +10,10 @@ defmodule Oli.Versioning.RevisionTree.Tree do
 
 
   @doc """
-  Partitions the revisions for a resource into projects
+  Creates a tree representation of a collection revisions for one resource id.
   """
-  def build(resource_id) do
+  def build(revisions, resource_id) do
 
-    revisions = list_revisions_by_resource(resource_id)
     projects = Course.list_projects_containing_resource(resource_id)
     |> sort_preorder
 
@@ -106,12 +105,6 @@ defmodule Oli.Versioning.RevisionTree.Tree do
 
     end
 
-  end
-
-  def list_revisions_by_resource(resource_id) do
-    Repo.all(from r in Revision,
-      where: r.resource_id == ^resource_id,
-      select: map(r, [:id, :previous_revision_id]))
   end
 
 end
