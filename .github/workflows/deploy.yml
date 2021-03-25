@@ -1,10 +1,10 @@
-name: Deploy Release
+name: Deploy
 
 on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'             # production release tags vX.Y.Z
-      - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'     # release candidate tags vX.Y.Z-rc1
+      - 'v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+'     # release candidate tags vX.Y.Z-rc1
 
 jobs:
   deploy-release:
