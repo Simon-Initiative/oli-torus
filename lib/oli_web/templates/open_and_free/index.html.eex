@@ -14,9 +14,6 @@
         <tr>
           <th>Title</th>
           <th>URL</th>
-          <th>Start</th>
-          <th>End</th>
-          <th>Timezone</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -24,10 +21,7 @@
         <%= for section <- @sections do %>
           <tr>
             <td><%= section.title %></td>
-            <td><%= section.slug %></td>
-            <td><%= section.start_date %></td>
-            <td><%= section.end_date %></td>
-            <td><%= section.time_zone %></td>
+            <td><%= link Routes.page_delivery_url(@conn, :index, section.slug), to: Routes.page_delivery_url(@conn, :index, section.slug) %></td>
 
             <td class="text-nowrap">
               <%= link "Details", to: Routes.open_and_free_path(@conn, :show, section), class: "btn btn-sm btn-outline-primary" %>

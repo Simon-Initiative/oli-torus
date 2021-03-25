@@ -11,6 +11,7 @@ defmodule Oli.Delivery.Sections do
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
   alias Lti_1p3.DataProviders.EctoProvider.Deployment
+  alias Oli.Lti_1p3
   alias Oli.Lti_1p3.Tool.Registration
 
   @doc """
@@ -129,16 +130,21 @@ defmodule Oli.Delivery.Sections do
       nil
   """
   def get_section_from_lti_params(lti_params) do
-    issuer = lti_params["iss"]
-    client_id = lti_params["aud"]
     context_id = Map.get(lti_params, "https://purl.imsglobal.org/spec/lti/claim/context")
       |> Map.get("id")
 
-    Repo.one(from s in Section,
-      join: d in Deployment, on: s.lti_1p3_deployment_id == d.id,
-      join: r in Registration, on: d.registration_id == r.id,
-      where: s.context_id == ^context_id and r.issuer == ^issuer and r.client_id == ^client_id,
-      select: s)
+    if Lti_1p3.Utils.open_and_free_user?(lti_params) do
+      get_section_by(context_id: context_id, open_and_free: true)
+    else
+      issuer = lti_params["iss"]
+      client_id = lti_params["aud"]
+
+      Repo.one(from s in Section,
+        join: d in Deployment, on: s.lti_1p3_deployment_id == d.id,
+        join: r in Registration, on: d.registration_id == r.id,
+        where: s.context_id == ^context_id and r.issuer == ^issuer and r.client_id == ^client_id,
+        select: s)
+    end
   end
 
   @doc """

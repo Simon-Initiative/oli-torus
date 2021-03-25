@@ -64,6 +64,11 @@ defmodule OliWeb.Router do
     plug :put_root_layout, {OliWeb.LayoutView, "workspace.html"}
   end
 
+  pipeline :maybe_enroll_open_and_free do
+    plug Oli.Plugs.SetDefaultPow, :user
+    plug Oli.Plugs.MaybeEnrollOpenAndFreeUser
+  end
+
   # Ensure that we have a logged in user
   pipeline :delivery_protected do
     plug Oli.Plugs.SetDefaultPow, :user
@@ -357,6 +362,13 @@ defmodule OliWeb.Router do
 
     get "/unauthorized", DeliveryController, :unauthorized
 
+    live "/:section_slug/grades", Grades.GradesLive, session: {__MODULE__, :with_delivery, []}
+    get "/:section_slug/grades/export", PageDeliveryController, :export_gradebook
+  end
+
+  scope "/course", OliWeb do
+    pipe_through [:browser, :maybe_enroll_open_and_free, :delivery_protected, :pow_email_layout]
+
     # course link resolver
     get "/link/:revision_slug", PageDeliveryController, :link
 
@@ -365,9 +377,6 @@ defmodule OliWeb.Router do
     get "/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt
     get "/:section_slug/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt
     get "/:section_slug/page/:revision_slug/attempt/:attempt_guid/review", PageDeliveryController, :review_attempt
-
-    live "/:section_slug/grades", Grades.GradesLive, session: {__MODULE__, :with_delivery, []}
-    get "/:section_slug/grades/export", PageDeliveryController, :export_gradebook
 
     resources "/help", HelpDeliveryController, only: [:index, :create]
     get "/help/sent", HelpDeliveryController, :sent

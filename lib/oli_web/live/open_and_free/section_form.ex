@@ -32,7 +32,7 @@ defmodule OliWeb.OpenAndFree.SectionForm do
       <% end %>
 
       <div class="form-label-group"
-        phx-hook="BootstrapTypeahead"
+        phx-hook="ProjectsTypeahead"
         phx-update="ignore">
         <%= text_input f, :project_name, class: "project-name typeahead form-control " <> error_class(f, :project_id, "is-invalid"),
           placeholder: "Project", required: true, autofocus: focusHelper(f, :project_name, default: true), autocomplete: "off" %>

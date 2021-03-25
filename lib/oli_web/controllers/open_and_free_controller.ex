@@ -25,6 +25,7 @@ defmodule OliWeb.OpenAndFreeController do
       |> Map.put("project_id", project_id)
       |> Map.put("publication_id", publication_id)
       |> Map.put("open_and_free", true)
+      |> Map.put("context_id", UUID.uuid4())
 
     case Sections.create_section(section_params) do
       {:ok, section} ->
@@ -33,8 +34,6 @@ defmodule OliWeb.OpenAndFreeController do
         |> redirect(to: Routes.open_and_free_path(conn, :show, section))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        IO.inspect changeset
-
         render_workspace_page(conn, "new.html", changeset: changeset)
     end
   end
