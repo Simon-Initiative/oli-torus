@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - master
-      - cd-changes    # TODO: REMOVE
     tags:
       - deploy-test     # manually trigger deploy to test
 
