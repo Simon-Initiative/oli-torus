@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.1
+### Bug fixes
+  - Fix an issue where slug creation allowed some non-alphanumeric chars
+
 ## 0.7.0 (2021-3-23)
 
 ### Enhancements
