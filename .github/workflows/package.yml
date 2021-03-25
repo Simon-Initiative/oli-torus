@@ -37,7 +37,7 @@ jobs:
         if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/tags/deploy-test' }}
         with:
           command: |
-            sleep 10  # add a buffer period between artifact upload and download
+            sleep 60  # add a buffer period between artifact upload and download
             cd /torus
             sh deploy.sh ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }} ${{ secrets.ACCESS_TOKEN }}
           host: ${{ steps.info.outputs.deploy_host }}
