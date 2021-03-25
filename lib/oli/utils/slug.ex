@@ -123,7 +123,6 @@ defmodule Oli.Utils.Slug do
   defp unique_slug(_table, _, []) do "" end
 
   def alpha_numeric_only(str) do
-    # \W is the shorthand for the [^a-zA-Z0-9] pattern
-    String.replace(str, ~r/[\W]+/, "")
+    String.replace(str, ~r/[^A-Za-z0-9 -]+/, "")
   end
 end
