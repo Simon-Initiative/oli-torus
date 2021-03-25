@@ -1,21 +1,14 @@
 name: Package & Deploy
-
 on:
   push:
     branches:
-      - test
-      - production
+      - master
     tags:
-      - deploy-test
+      - deploy-test     # manually trigger deploy to test
 
 jobs:
-  package-and-deploy:
+  package-deploy:
     runs-on: ubuntu-latest
-
-    # only release and deploy if the workflow is running on the test branch, production branch,
-    # or a commit is tagged with 'deploy-test'
-    if: github.ref == 'refs/heads/test' || 'refs/heads/production' || github.ref == 'refs/tags/deploy-test'
-
     steps:
       - name: 🛎️ Checkout
         uses: actions/checkout@v2
@@ -25,9 +18,9 @@ jobs:
         run: |
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
-          echo "::set-output name=deploy_host::$(if [[ ${GITHUB_REF##*/} == "production"  ]] ; then echo proton.oli.cmu.edu ; else echo tokamak.oli.cmu.edu ; fi)"
+          echo "::set-output name=deploy_host::tokamak.oli.cmu.edu"
 
-      - name: 📦💽 Package release
+      - name: 📦💽 Package
         uses: ./.github/actions/phoenix-builder
         with:
           build-sha: ${{ steps.info.outputs.sha_short }}
@@ -37,18 +30,6 @@ jobs:
         with:
           name: oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}
           path: _build/prod/rel/oli
-
-      # TODO: add S3 archive support
-      # - name: 💽⬆️ Upload release to S3 archive
-      #   uses: jakejarvis/s3-sync-action@master
-      #   with:
-      #     args: --acl public-read --follow-symlinks --delete
-      #   env:
-      #     AWS_S3_BUCKET: 'oli-torus-releases'
-      #     AWS_ACCESS_KEY_ID: ${{ secrets.SIMON_BOT_AWS_ACCESS_KEY_ID }}
-      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.SIMON_BOT_AWS_SECRET_ACCESS_KEY }}
-      #     AWS_REGION: 'us-east-2'
-      #     SOURCE_DIR: 'oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}'
 
       - name: 🗜️🚢 Zip it & ship it
         run: |
@@ -67,3 +48,40 @@ jobs:
           host: ${{ steps.info.outputs.deploy_host }}
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
+
+
+  docs:
+    runs-on: ubuntu-latest
+    # only deploy docs if the workflow is running on the master branch
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v2 # If you're using actions/checkout@v2 you must set persist-credentials to false in most cases for the deployment to work correctly.
+        with:
+          persist-credentials: false
+
+      - name: 🔧 Configure
+        run: cp oli.example.env oli.env
+
+      - name: 🧪 Setup Elixir
+        uses: erlef/setup-elixir@v1
+        with:
+          elixir-version: 1.11.1 # Define the elixir version [required]
+          otp-version: 23.1 # Define the OTP version [required]
+
+      - name: ⬇️ Install Elixir Dependencies
+        run: mix deps.get
+
+      - name: 🔨📦 Build Dependencies
+        run: mix deps.compile
+
+      - name: 🔨📄 Build Docs
+        run: mix docs
+
+      - name: 🚀 Deploy Docs
+        uses: JamesIves/github-pages-deploy-action@releases/v3
+        with:
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: doc # The folder the action should deploy.
