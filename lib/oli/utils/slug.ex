@@ -74,7 +74,10 @@ defmodule Oli.Utils.Slug do
     end
   end
 
-  defp generate(table, title) do
+  @doc """
+  Generates a unique slug for the table using the title provided
+  """
+  def generate(table, title) do
 
     suffixes = [
       fn -> "" end,
@@ -123,6 +126,6 @@ defmodule Oli.Utils.Slug do
   defp unique_slug(_table, _, []) do "" end
 
   def alpha_numeric_only(str) do
-    String.replace(str, ~r/[^A-Za-z0-9 -]+/, "")
+    String.replace(str, ~r/[^A-Za-z0-9_]+/, "")
   end
 end
