@@ -16,9 +16,7 @@
             <span class="block lg:inline-block lg:mt-0 text-grey-darkest no-underline hover:underline my-1 mr-3">
               <%= "#{@current_user.name}" %>
             </span>
-            <div class="user-icon">
-              <img src="<%= @current_user.picture %>" class="rounded-circle" />
-            </div>
+            <%= user_icon(@conn, @current_user) %>
           </a>
           <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
             <%= link "Sign out", to: Routes.delivery_path(@conn, :signout), id: "signout-link", class: "dropdown-item btn" %>
@@ -36,7 +34,7 @@
               </div>
             </div>
             <div class="user-icon">
-              <img src="<%= @current_user.picture %>" class="rounded-circle" />
+              <%= user_icon(@conn, @current_user) %>
             </div>
           </a>
           <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">

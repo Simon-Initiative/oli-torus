@@ -1,7 +1,7 @@
 defmodule OliWeb.LayoutView do
   use OliWeb, :view
 
-  import OliWeb.DeliveryView, only: [user_role_is_student: 2, user_role_text: 2, user_role_color: 2, account_linked?: 1]
+  import OliWeb.DeliveryView, only: [user_role_is_student: 2, user_role_text: 2, user_role_color: 2, user_icon: 2, account_linked?: 1]
   alias Oli.Authoring
   alias Oli.Accounts.AuthorPreferences
   alias Oli.Publishing.AuthoringResolver
