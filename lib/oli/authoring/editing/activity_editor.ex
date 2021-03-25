@@ -156,7 +156,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
         {:ok, secondary_revision} <- create_secondary_revision(activity_id, author.id, validated_update),
         {:ok, _} <- Course.create_project_resource(%{ project_id: project.id, resource_id: secondary_revision.resource_id}) |> trap_nil(),
-        {:ok, _mapping} <- Publishing.create_resource_mapping(%{publication_id: publication.id, resource_id: secondary_revision.resource_id, revision_id: secondary_revision.id})
+        {:ok, _mapping} <- Publishing.create_published_resource(%{publication_id: publication.id, resource_id: secondary_revision.resource_id, revision_id: secondary_revision.id})
       do
         secondary_revision
       else
@@ -295,8 +295,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       activity_type_id: previous.activity_type_id
     })
 
-    Publishing.get_resource_mapping!(publication.id, activity.id)
-    |> Publishing.update_resource_mapping(%{ revision_id: revision.id })
+    Publishing.get_published_resource!(publication.id, activity.id)
+    |> Publishing.update_published_resource(%{ revision_id: revision.id })
 
     revision
   end
@@ -414,7 +414,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          {:ok, attached_objectives} <- attach_objectives_to_all_parts(model, objectives),
          {:ok, %{content: content} = activity} <- Activity.create_new(%{title: activity_type.title, scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"), objectives: attached_objectives, author_id: author.id, content: model, activity_type_id: activity_type.id}),
          {:ok, _} <- Course.create_project_resource(%{ project_id: project.id, resource_id: activity.resource_id}) |> trap_nil(),
-         {:ok, _mapping} <- Publishing.create_resource_mapping(%{publication_id: publication.id, resource_id: activity.resource_id, revision_id: activity.id})
+         {:ok, _mapping} <- Publishing.create_published_resource(%{publication_id: publication.id, resource_id: activity.resource_id, revision_id: activity.id})
       do
         case Transformers.apply_transforms(content) do
           {:ok, transformed} -> {activity, transformed}

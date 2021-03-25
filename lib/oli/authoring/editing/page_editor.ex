@@ -27,7 +27,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   project and revision slug, for the author specified by email.
 
   The update parameter is a map containing key-value pairs of the
-  attributes of a ResourceRevision that are to be edited. It can
+  attributes of a resource Revision that are to be edited. It can
   contain any number of key-value pairs, but the keys must match
   the schema of `%Revision{}` struct.
 
@@ -37,7 +37,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
   Returns:
 
-  .`{:ok, %ResourceRevision{}}` when the edit processes successfully the
+  .`{:ok, %Revision{}}` when the edit processes successfully the
   .`{:error, {:lock_not_acquired}}` if the lock could not be acquired or updated
   .`{:error, {:not_found}}` if the project, resource, or user cannot be found
   .`{:error, {:not_authorized}}` if the user is not authorized to edit this resource
@@ -59,7 +59,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
            {:ok, converted_update} <- convert_to_activity_ids(update) do
         Repo.transaction(fn ->
-          case Locks.update(publication.id, resource.id, author.id) do
+          case IO.inspect(Locks.update(publication.id, resource.id, author.id)) do
             # If we acquired the lock, we must first create a new revision
             {:acquired} ->
               get_latest_revision(publication, resource)
@@ -534,8 +534,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
     attrs = %{author_id: author_id}
     {:ok, revision} = Resources.create_revision_from_previous(previous, attrs)
 
-    mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
-    {:ok, _mapping} = Publishing.update_resource_mapping(mapping, %{revision_id: revision.id})
+    mapping = Publishing.get_published_resource!(publication.id, resource.id)
+    {:ok, _mapping} = Publishing.update_published_resource(mapping, %{revision_id: revision.id})
 
     {revision, changed_activity_revisions}
   end

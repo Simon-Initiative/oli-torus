@@ -13,15 +13,15 @@ defmodule Oli.Authoring.Locks do
   thus the scoping of locks to publication and resource.
 
   ## Lock Expiration
-  This implementation allows a user to acquire an already locked resource
-  mapping that is held by another user if that existing lock has expired. Locks
+  This implementation allows a user to acquire an already locked
+  published_resource that is held by another user if that existing lock has expired. Locks
   are considered to be expired if they have not been updated for `@ttl` seconds.
   This handles the case that a user locks a resource and then abandons their
   editing session without closing their browser.
 
   ## Actions
   Three actions exist for a lock: `acquire`, `update` and `release`. Lock acquiring
-  results in the resource mapping record being stamped with the users id, but
+  results in the published_resource record being stamped with the users id, but
   with an `nil` last updated at date.  Updating a lock sets the last updated at
   date. Releasing a lock sets both the user and last updated at to `nil`. Coupled
   with
@@ -38,8 +38,8 @@ defmodule Oli.Authoring.Locks do
   @ttl 10 * 60
 
   @doc """
-  Attempts to acquire or update a lock for user `user_id` the resource mapping
-  defined by `publication_id` and `resource_id`.
+  Attempts to acquire or update a lock for user `user_id` the published resource
+  mapping defined by `publication_id` and `resource_id`.
 
   Returns:
 
@@ -65,8 +65,8 @@ defmodule Oli.Authoring.Locks do
               }}}
   def acquire(publication_id, resource_id, user_id) do
 
-    # Get the mapping that pertains to this publication and resource
-    case Publishing.get_resource_mapping!(publication_id, resource_id) |> Repo.preload([:author]) do
+    # Get the published_resource that pertains to this publication and resource
+    case Publishing.get_published_resource!(publication_id, resource_id) |> Repo.preload([:author]) do
 
       # Acquire the lock if held already by this user
       %{locked_by_id: ^user_id} = mapping -> lock_action(mapping, user_id, &always?/1, {:acquired}, {:acquired}, nil)
@@ -82,7 +82,7 @@ defmodule Oli.Authoring.Locks do
   end
 
   @doc """
-  Attempts to acquire or update a lock for user `user_id` the resource mapping
+  Attempts to acquire or update a lock for user `user_id` the published resource mapping
   defined by `publication_id` and `resource_id`.
 
   Returns:
@@ -112,7 +112,7 @@ defmodule Oli.Authoring.Locks do
   def update(publication_id, resource_id, user_id) do
 
     # Get the mapping that pertains to this publication and resource
-    case Publishing.get_resource_mapping!(publication_id, resource_id) |> Repo.preload([:author]) do
+    case Publishing.get_published_resource!(publication_id, resource_id) |> Repo.preload([:author]) do
 
       # Acquire the lock if held already by this user and the lock is expired or its last_updated_date is empty
       # otherwise, simply update it
@@ -142,7 +142,7 @@ defmodule Oli.Authoring.Locks do
   """
   @spec release(number, number, number) :: {:error} | {:lock_not_held} | {:ok}
   def release(publication_id, resource_id, user_id) do
-    case Publishing.get_resource_mapping!(publication_id, resource_id) do
+    case Publishing.get_published_resource!(publication_id, resource_id) do
       %{locked_by_id: ^user_id} = mapping -> release_lock(mapping)
       _ -> {:lock_not_held}
     end
@@ -167,11 +167,11 @@ defmodule Oli.Authoring.Locks do
     datetime
   end
 
-  defp lock_action(mapping, current_user_id, predicate, success_result, failure_result, lock_updated_at) do
-    case predicate.(mapping) do
-      true -> case Publishing.update_resource_mapping(mapping, %{ locked_by_id: current_user_id, lock_updated_at: lock_updated_at}) do
+  defp lock_action(published_resource, current_user_id, predicate, success_result, failure_result, lock_updated_at) do
+    case predicate.(published_resource) do
+      true -> case Publishing.update_published_resource(published_resource, %{ locked_by_id: current_user_id, lock_updated_at: lock_updated_at}) do
         {:ok, _} ->
-          Broadcaster.broadcast_lock_acquired(mapping.publication_id, mapping.resource_id, current_user_id)
+          Broadcaster.broadcast_lock_acquired(published_resource.publication_id, published_resource.resource_id, current_user_id)
           success_result
         {:error, _} -> {:error}
       end
@@ -179,7 +179,7 @@ defmodule Oli.Authoring.Locks do
     end
   end
 
-  defp always?(_mapping) do
+  defp always?(_published_resource) do
     true
   end
 
@@ -195,18 +195,18 @@ defmodule Oli.Authoring.Locks do
     NaiveDateTime.diff(now(), to_use) > @ttl
   end
 
-  def expired_or_empty?(%{ locked_by_id: locked_by_id} = mapping) do
-    locked_by_id == nil or expired?(mapping)
+  def expired_or_empty?(%{ locked_by_id: locked_by_id} = published_resource) do
+    locked_by_id == nil or expired?(published_resource)
   end
 
-  def expired_or_empty_predicate?(%{ lock_updated_at: lock_updated_at} = mapping) do
-    lock_updated_at == nil or expired?(mapping)
+  def expired_or_empty_predicate?(%{ lock_updated_at: lock_updated_at} = published_resource) do
+    lock_updated_at == nil or expired?(published_resource)
   end
 
-  defp release_lock(mapping) do
-    case Publishing.update_resource_mapping(mapping, %{ locked_by_id: nil, lock_updated_at: nil}) do
+  defp release_lock(published_resource) do
+    case Publishing.update_published_resource(published_resource, %{ locked_by_id: nil, lock_updated_at: nil}) do
       {:ok, _} ->
-        Broadcaster.broadcast_lock_released(mapping.publication_id, mapping.resource_id)
+        Broadcaster.broadcast_lock_released(published_resource.publication_id, published_resource.resource_id)
         {:ok}
       {:error, _} -> {:error}
     end
