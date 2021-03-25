@@ -19,7 +19,7 @@ jobs:
         run: |
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
-          echo "::set-output name=deploy_host::tokamak.oli.cmu.edu
+          echo "::set-output name=deploy_host::tokamak.oli.cmu.edu"
 
       - name: 📦💽 Package
         uses: ./.github/actions/phoenix-builder
