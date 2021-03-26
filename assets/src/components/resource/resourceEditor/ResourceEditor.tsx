@@ -147,6 +147,8 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       persistence => this.setState({ persistence }),
     ).then((editMode) => {
       this.setState({ editMode });
+      console.log('edit mode:',editMode)
+      console.log('lock result', this.persistence.getLockResult())
       if (editMode) {
         this.windowUnloadListener = registerUnload(this.persistence);
         this.undoRedoListener = registerUndoRedoHotkeys(this.undo.bind(this), this.redo.bind(this));
@@ -184,12 +186,20 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
   }
 
   publishErrorMessage(failure: any) {
-    const message = createMessage({
+    let message;
+    switch (failure?.status) {
+      case 423: message = "refresh the page to re-gain edit access."; break;
+      case 404: message = "this page was not found. Try reopening it from the Curriculum."; break;
+      case 403: message = "you're not able to access this page. Did your login expire?"; break;
+      case 500:
+      default: message = "there was a general problem on our end. Please try refreshing the page and trying again."; break;
+    }
+
+    this.addAsUnique(createMessage({
       guid: 'general-error',
       canUserDismiss: true,
-      content: 'A problem occurred while saving your changes',
-    });
-    this.addAsUnique(message);
+      content: 'Your changes weren\'t saved: ' + message,
+    }));
   }
 
   createObjectiveErrorMessage(failure: any) {

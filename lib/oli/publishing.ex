@@ -405,8 +405,7 @@ defmodule Oli.Publishing do
 
 
   @doc """
-  Returns the list of objectives (their slugs and titles)
-  that pertain to a given publication.
+  Returns the revision that pertains to a given publication and a resource id.
   """
   def get_published_revision(publication_id, resource_id) do
     Repo.one from mapping in PublishedResource,
@@ -437,11 +436,11 @@ defmodule Oli.Publishing do
           project_id: active_publication.project_id,
         }),
         # Locks must be released so that users who have acquired a resource lock
-        # will be forced to re-acquire the lock with the new publication
+        # will be forced to re-acquire the lock with the new publication and
+        # create a new revision under that publication
         _ <- Locks.release_all(active_publication.id),
-        # clone mappings for resources, activities, and objectives. This copies the locks
-        # over to the new PublishedResources so that users can continue editing
-        # pages they locked before a course was published
+        # clone mappings for resources, activities, and objectives. This removes
+        # all active locks, forcing the user to refresh the page to re-acquire the lock.
         _ <- Clone.clone_all_published_resources(active_publication.id, new_publication.id),
         # set the active publication to published
         {:ok, publication} <- update_publication(active_publication, %{published: true}),

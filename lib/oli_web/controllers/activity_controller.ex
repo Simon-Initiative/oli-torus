@@ -428,6 +428,7 @@ defmodule OliWeb.ActivityController do
 
     case ActivityEditor.delete(project_slug, lock_id, resource_id, author) do
       {:ok, _} -> json(conn, %{"result" => "success"})
+      {:error, {:lock_not_acquired, _}} -> error(conn, 423, "locked")
       {:error, {:not_applicable}} -> error(conn, 400, "not applicable to this resource")
       {:error, {:not_found}} -> error(conn, 404, "not found")
       {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")

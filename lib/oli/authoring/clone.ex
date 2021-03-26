@@ -55,8 +55,6 @@ defmodule Oli.Authoring.Clone do
       publication_id: cloned_publication_id,
       resource_id: &1.resource_id,
       revision_id: &1.revision_id,
-      lock_updated_at: &1.lock_updated_at,
-      locked_by_id: &1.locked_by_id,
     })))
   end
 

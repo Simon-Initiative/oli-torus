@@ -52,7 +52,7 @@ defmodule Oli.Authoring.Locks do
           {:error}
           | {:acquired}
           | {:lock_not_acquired,
-             {number,
+             {String.t(),
               %{
                 calendar: atom,
                 day: any,
@@ -94,11 +94,11 @@ defmodule Oli.Authoring.Locks do
 
   """
   @spec update(number, number, number) ::
-          {:error}
+          {:error, any()}
           | {:acquired}
           | {:updated}
           | {:lock_not_acquired,
-             {number,
+             {String.t(),
               %{
                 calendar: atom,
                 day: any,
@@ -118,13 +118,19 @@ defmodule Oli.Authoring.Locks do
       # otherwise, simply update it
       %{locked_by_id: ^user_id} = mapping -> lock_action(mapping, user_id, &expired_or_empty_predicate?/1, {:acquired}, {:updated}, now())
 
-      # Otherwise, another user may have this locked, or it was locked by this
+      # Otherwise, another user may have this locked, a new revision was created after the user
+      # acquired the lock, or it was locked by this
       # user and it expired and an interleaving lock, redit, release by another user
       # has taken place.  We must not acquire here since this could lead to lost changes as
       # the client has a copy of content in client-side memory and is seeking to update this
       # revision.
       %{lock_updated_at: lock_updated_at} = mapping ->
-        {:lock_not_acquired, {mapping.author.email, lock_updated_at}}
+        # The :lock_not_acquired message shows the author's email if a lock is present. Otherwise,
+        # it just shows a generic message
+        {:lock_not_acquired, {
+          if is_nil(mapping.author) do "another author" else mapping.author.email end,
+          lock_updated_at
+        }}
     end
   end
 
@@ -150,6 +156,10 @@ defmodule Oli.Authoring.Locks do
 
   @doc """
   Releases all locks for revisions in the supplied publication.
+  This removes the `locked_by_id` to release the lock but keeps
+  the `lock_updated_at` set to preserve the record that the resource
+  was locked in the past. This allows revision edits to re-acquire
+  the lock through `Locks.update`.
 
   Returns:
   .`{number, nil | returned data}` where number is the number of rows updated
@@ -159,7 +169,7 @@ defmodule Oli.Authoring.Locks do
     from(pr in PublishedResource,
       where: pr.publication_id == ^publication_id and not is_nil(pr.locked_by_id),
       select: pr)
-    |> Repo.update_all(set: [locked_by_id: nil, lock_updated_at: nil])
+    |> Repo.update_all(set: [locked_by_id: nil])
   end
 
   defp now() do

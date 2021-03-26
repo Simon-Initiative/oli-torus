@@ -141,22 +141,22 @@ defmodule Oli.PublishingTest do
     end
 
     test "publish_project/1 publishes all currently locked resources and any new edits to the locked resource result in creation of a new revision for both pages and activities",
-      %{publication: publication, project: project, author: author, revision1: revision} do
+      %{publication: original_unpublished_publication, project: project, author: author, revision1: original_revision} do
 
       # lock a page
-      {:acquired} = PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+      {:acquired} = PageEditor.acquire_lock(project.slug, original_revision.slug, author.email)
 
       # lock an activity
       {:ok, %{revision: obj}}  = ObjectiveEditor.add_new(%{title: "one"}, author, project)
-      activity = create_activity([{"1", [obj.resource_id]}, {"1", []}], author, project, revision, obj.resource_id)
-      {:acquired} = PageEditor.acquire_lock(project.slug, activity.slug, author.email)
+      revision_with_activity = create_activity([{"1", [obj.resource_id]}, {"1", []}], author, project, original_revision, obj.resource_id)
+      {:acquired} = PageEditor.acquire_lock(project.slug, revision_with_activity.slug, author.email)
 
       # Publish the project
-      {:ok, %Publication{} = published} = Publishing.publish_project(project)
+      {:ok, %Publication{} = published_publication} = Publishing.publish_project(project)
 
       # publication should succeed even if a resource is "locked"
-      new_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
-      assert new_publication.id != publication.id
+      new_unpublished_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+      assert new_unpublished_publication.id != original_unpublished_publication.id
 
       # further edits to locked resources should occur in newly created revisions. The locks should not
       # need to be re-acquired through a page reload triggering `PageEditor.acquire_lock`
@@ -164,23 +164,20 @@ defmodule Oli.PublishingTest do
 
       # Update a page
       page_content = %{ "content" => %{ "model" => [%{"type" => "p", "children" => [%{ "text" => "A paragraph."}] }]}}
-      {:ok, updated_page_revision} = PageEditor.edit(project.slug, revision.slug, author.email, page_content)
+      # The page should not be able to be edited without re-acquiring the lock
+      {:error, {:lock_not_acquired, _}} = PageEditor.edit(project.slug, revision_with_activity.slug, author.email, page_content)
+
+      {:acquired} = PageEditor.acquire_lock(project.slug, revision_with_activity.slug, author.email)
+      {:ok, updated_page_revision} = PageEditor.edit(project.slug, revision_with_activity.slug, author.email, page_content)
       # The updates should occur on the new revision
-      assert revision.id != updated_page_revision.id
+      assert revision_with_activity.id != updated_page_revision.id
       assert updated_page_revision.content == page_content["content"]
 
-      # further edits should not be present in published resource
-      published_resource = Publishing.get_published_resource!(published.id, revision.resource_id)
-      old_revision = Resources.get_revision!(published_resource.revision_id)
-      assert old_revision.content == revision.content
-
-      # Update an activity
-      activity_content = %{ "objectives" => %{ "attached" => [obj.resource_id]}, "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => activity.slug, "purpose" => "none"}]}}
-
-      {:ok, updated_activity_revision} = ActivityEditor.edit(project.slug, revision.resource_id, activity.resource_id, author.email, activity_content)
-      # The updates should occur on the new revision
-      assert activity.id != updated_activity_revision.id
-      IO.inspect(updated_activity_revision)
+      # But the updates should not be present in the recently-published revision
+      published_resource = Publishing.get_published_resource!(published_publication.id, original_revision.resource_id)
+      published_revision = Resources.get_revision!(published_resource.revision_id)
+      assert published_revision.id == revision_with_activity.id
+      assert published_revision.content == revision_with_activity.content
 
     end
 

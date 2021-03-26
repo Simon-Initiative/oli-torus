@@ -47,7 +47,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
           {:ok, %Revision{}}
           | {:error, {:not_found}}
           | {:error, {:error}}
-          | {:error, {:lock_not_acquired}}
+          | {:error, {:lock_not_acquired, {String.t(), Calendar.naive_datetime()}}}
           | {:error, {:not_authorized}}
   def edit(project_slug, revision_slug, author_email, update) do
     result =
@@ -59,7 +59,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
            {:ok, converted_update} <- convert_to_activity_ids(update) do
         Repo.transaction(fn ->
-          case IO.inspect(Locks.update(publication.id, resource.id, author.id)) do
+          case Locks.update(publication.id, resource.id, author.id) do
             # If we acquired the lock, we must first create a new revision
             {:acquired} ->
               get_latest_revision(publication, resource)
@@ -122,7 +122,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   """
   @spec acquire_lock(String.t(), String.t(), String.t()) ::
           {:acquired}
-          | {:lock_not_acquired, String.t()}
+          | {:lock_not_acquired, {String.t(), Calendar.naive_datetime()}}
           | {:error, {:not_found}}
           | {:error, {:error}}
           | {:error, {:not_authorized}}
@@ -137,7 +137,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
         # If we reacquired the lock, we must first create a new revision
         {:acquired} -> {:acquired}
         # error or not able to lock results in a failed edit
-        {:lock_not_acquired, {locked_by, _}} -> {:lock_not_acquired, locked_by}
+        {:lock_not_acquired, {locked_by, locked_at}} -> {:lock_not_acquired, {locked_by, locked_at}}
         error -> {:error, error}
       end
     else

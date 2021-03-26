@@ -79,13 +79,13 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   Returns:
 
   .`{:ok, revision}` when the resource is deleted
-  .`{:error, {:lock_not_acquired}}` if the lock could not be acquired or updated
+  .`{:error, {:lock_not_acquired, {user_email, updated_at}}}` if the lock could not be acquired or updated
   .`{:error, {:not_found}}` if the project or activity or user cannot be found
   .`{:error, {:not_authorized}}` if the user is not authorized to edit this project or activity
   .`{:error, {:error}}` unknown error
   """
   @spec delete(String.t, any(), any(), String.t)
-    :: {:ok, list()} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:lock_not_acquired}} | {:error, {:not_authorized}}
+    :: {:ok, list()} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:lock_not_acquired, any()}} | {:error, {:not_authorized}} | {:error, {:not_applicable}}
   def delete(project_slug, lock_id, activity_id, author) do
 
     secondary_id = Oli.Resources.ResourceType.get_id_by_type("secondary")
@@ -196,14 +196,14 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   Returns:
 
   .`{:ok, %Revision{}}` when the edit processes successfully
-  .`{:error, {:lock_not_acquired}}` if the lock could not be acquired or updated
+  .`{:error, {:lock_not_acquired, {user_email, updated_at}}}` if the lock could not be acquired or updated
   .`{:error, {:not_found}}` if the project, resource, activity, or user cannot be found
   .`{:error, {:not_authorized}}` if the user is not authorized to edit this activity
   .`{:error, {:invalid_update_field}}` if the update contains an invalid field
   .`{:error, {:error}}` unknown error
   """
   @spec edit(String.t, String.t, any(), String.t, %{})
-    :: {:ok, %Revision{}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:lock_not_acquired}} | {:error, {:not_authorized}}
+    :: {:ok, %Revision{}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:lock_not_acquired, any()}} | {:error, {:not_authorized}}
   def edit(project_slug, lock_id, activity_id, author_email, update) do
 
     result = with {:ok, _} <- validate_request(update),
@@ -402,7 +402,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   .`{:error, {:error}}` unknown error
   """
   @spec create(String.t, String.t, %Author{}, %{}, [])
-    :: {:ok, %Revision{}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:not_authorized}}
+    :: {:ok, {%Revision{}, map()}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:not_authorized}}
   def create(project_slug, activity_type_slug, author, model, objectives) do
 
     Repo.transaction(fn ->
