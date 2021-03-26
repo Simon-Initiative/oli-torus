@@ -16,7 +16,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn = conn
       |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
-      assert html_response(conn, 200) =~ "<h3>"
+      assert html_response(conn, 200) =~ "Course Overview"
     end
 
     test "handles student page access by an enrolled student", %{conn: conn, revision: revision, user: user, section: section} do
@@ -149,7 +149,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
       context_id: "some-context-id",
       project_id: map.project.id,
       publication_id: map.publication.id,
-      institution_id: map.institution.id
+      institution_id: map.institution.id,
+      open_and_free: false
     })
 
     lti_params = Oli.Lti_1p3.TestHelpers.all_default_claims()
