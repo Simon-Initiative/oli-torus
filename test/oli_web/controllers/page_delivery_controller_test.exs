@@ -109,6 +109,33 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
   end
 
+  describe "open and free page_delivery_controller" do
+    setup [:setup_open_and_free_section]
+
+    test "handles new open and free user access", %{conn: conn, section: section} do
+      conn = conn
+      |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      user = Pow.Plug.current_user(conn);
+
+      assert html_response(conn, 200) =~ "Course Overview"
+      assert user.sub != nil
+
+      # access again, verify the same user is used that was created before
+      conn = recycle(conn)
+
+      conn = conn
+      |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      same_user = Pow.Plug.current_user(conn);
+
+      assert html_response(conn, 200) =~ "Course Overview"
+      assert user.id == same_user.id
+      assert user.sub == same_user.sub
+    end
+
+  end
+
   defp setup_session(%{conn: conn}) do
     user = user_fixture()
 
@@ -175,5 +202,23 @@ defmodule OliWeb.PageDeliveryControllerTest do
       revision: map.revision1,
       page_revision: map.page.revision
     }
+  end
+
+  defp setup_open_and_free_section(_) do
+    author = author_fixture()
+
+    %{project: project, institution: institution} = Oli.Seeder.base_project_with_resource(author)
+
+    {:ok, publication} = Oli.Publishing.publish_project(project)
+
+    section = section_fixture(%{
+      institution_id: institution.id,
+      project_id: project.id,
+      publication_id: publication.id,
+      context_id: UUID.uuid4(),
+      open_and_free: true,
+    })
+
+    %{section: section, project: project, publication: publication}
   end
 end
