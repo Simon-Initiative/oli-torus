@@ -165,11 +165,11 @@ class ActivityEditor extends React.Component<ActivityEditorProps, ActivityEditor
   publishErrorMessage(failure: any) {
     let message;
     switch (failure?.status) {
-      case 423: message = "refresh the page to re-gain edit access."; break;
-      case 404: message = "this activity was not found. Try reopening it from the page it's attached to."; break;
-      case 403: message = "you're not able to access this activity. Did your login expire?"; break;
+      case 423: message = 'refresh the page to re-gain edit access.'; break;
+      case 404: message = 'this activity was not found. Try reopening it from the page it\'s attached to.'; break;
+      case 403: message = 'you\'re not able to access this activity. Did your login expire?'; break;
       case 500:
-      default: message = "there was a general problem on our end. Please try refreshing the page and trying again."; break;
+      default: message = 'there was a general problem on our end. Please try refreshing the page and trying again.'; break;
     }
 
     this.addAsUnique(createMessage({
