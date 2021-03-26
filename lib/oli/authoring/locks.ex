@@ -156,10 +156,7 @@ defmodule Oli.Authoring.Locks do
 
   @doc """
   Releases all locks for revisions in the supplied publication.
-  This removes the `locked_by_id` to release the lock but keeps
-  the `lock_updated_at` set to preserve the record that the resource
-  was locked in the past. This allows revision edits to re-acquire
-  the lock through `Locks.update`.
+  This removes the `locked_by_id` and `lock_updated_at` fields.
 
   Returns:
   .`{number, nil | returned data}` where number is the number of rows updated
