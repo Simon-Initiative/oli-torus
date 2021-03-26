@@ -1,26 +1,26 @@
 
 export const ProjectsTypeahead = {
   mounted() {
-    var $input = $("input.project-name.typeahead") as any;
+    const $input = $('input.project-name.typeahead') as any;
 
-    var cbHandlerInitialized = false;
+    let cbHandlerInitialized = false;
     $input.typeahead({
       source: (query: string, cb: any) => {
         if (!cbHandlerInitialized) {
-          this.handleEvent("projects", ({projects}: any) => cb(projects));
+          this.handleEvent('projects', ({ projects }: any) => cb(projects));
           cbHandlerInitialized = true;
         }
 
-        this.pushEvent("search", {search: query})
+        this.pushEvent('search', { search: query });
       },
       displayText: (item: any) => item.title,
       autoSelect: true,
-      afterSelect: function(sel: any) {
+      afterSelect(sel: any) {
         $('input#section_name').val(sel.title);
         $('input#section_project_slug').val(sel.slug);
         $('input#section_title').val(sel.title);
 
-        setTimeout(function() {
+        setTimeout(() => {
           $('input.title').focus().select();
         });
       },
