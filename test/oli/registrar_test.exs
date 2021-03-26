@@ -8,7 +8,7 @@ defmodule Oli.RegistrarTest do
     test "register_local_activities/0 registers", _ do
 
       registrations = Activities.list_activity_registrations()
-      assert length(registrations) == 4
+      assert length(registrations) == 5
 
       r = hd(registrations)
 
@@ -18,6 +18,7 @@ defmodule Oli.RegistrarTest do
       assert r.delivery_script == "oli_check_all_that_apply_delivery.js"
       assert r.authoring_element == "oli-check-all-that-apply-authoring"
       assert r.delivery_element == "oli-check-all-that-apply-delivery"
+      assert r.globally_available == true
 
     end
 
@@ -25,7 +26,7 @@ defmodule Oli.RegistrarTest do
 
       map = Activities.create_registered_activity_map()
 
-      assert (Map.keys(map) |> length) == 4
+      assert (Map.keys(map) |> length) == 5
 
       r = Map.get(map, "oli_check_all_that_apply")
 
@@ -34,6 +35,7 @@ defmodule Oli.RegistrarTest do
       assert r.friendlyName == "Check All That Apply"
       assert r.authoringElement == "oli-check-all-that-apply-authoring"
       assert r.deliveryElement == "oli-check-all-that-apply-delivery"
+      assert r.globallyAvailable == true
 
     end
 

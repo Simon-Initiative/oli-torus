@@ -22,7 +22,9 @@
 
       <% end %>
 
-      <h2>Collaborators</h2>
+      <div class="card mt-4">
+        <div class="card-body">
+      <h4>Collaborators</h4>
       <script src="https://www.google.com/recaptcha/api.js"></script>
       <%= form_for @conn, Routes.collaborator_path(@conn, :create, @project), [id: "form-add-collaborator"], fn f -> %>
         <div class="form-group">
@@ -63,12 +65,42 @@
           <%= render_many @collaborators, OliWeb.ProjectView, "_tr_collaborator.html", %{conn: @conn, as: :collaborator, project: @project} %>
         </tbody>
       </table>
-
+        </div>
+      </div>
+      <div class="card mt-4">
+        <div class="card-body">
+          <h4>Activities Enabled</h4>
+          <table class="table table-sm">
+            <thead class="thead-light">
+            <tr>
+              <th>Title</th>
+              <th>Enabled</th>
+              <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <%= render_many @activities_enabled, OliWeb.ProjectView, "_tr_activities_available.html", %{conn: @conn, as: :activity_enabled, project: @project} %>
+            </tbody>
+          </table>
+        </div>
+      </div>
       <div class="row my-4">
         <div class="col-12">
           <%= live_render @conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => @project.slug } %>
         </div>
       </div>
+
+      <div class="row my-4">
+        <div class="col-12">
+          <h4>Duplicate this course</h4>
+          <%= button("Duplicate Course",
+            to: Routes.project_path(@conn, :clone_project, @project),
+            method: :post,
+            class: "btn btn-primary",
+            data_confirm: "Are you sure you want to duplicate this project?") %>
+        </div>
+      </div>
+
       <div class="row my-4">
         <div class="col-12">
           <h4>Datashop Export</h4>

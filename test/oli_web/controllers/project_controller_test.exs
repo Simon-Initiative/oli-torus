@@ -2,6 +2,8 @@ defmodule OliWeb.ProjectControllerTest do
   use OliWeb.ConnCase
   alias Oli.Repo
   alias Oli.Authoring.Course.Project
+  alias Oli.Activities
+  alias Oli.Activities.ActivityRegistrationProject
 
   @basic_get_routes [:overview, :publish, :insights]
   setup [:author_project_conn]
@@ -25,7 +27,16 @@ defmodule OliWeb.ProjectControllerTest do
 
   describe "overview" do
     test "displays the page", %{conn: conn, project: project} do
+      custom_act = Activities.get_registration_by_slug("oli_image_coding")
+      %ActivityRegistrationProject{}
+      |> ActivityRegistrationProject.changeset(
+           %{
+             activity_registration_id: custom_act.id,
+             project_id: project.id,
+           }
+         ) |> Repo.insert
       conn = get(conn, Routes.project_path(conn, :overview, project.slug))
+
       assert html_response(conn, 200) =~ "Overview"
     end
   end

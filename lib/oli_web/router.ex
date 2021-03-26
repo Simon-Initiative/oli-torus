@@ -202,6 +202,7 @@ defmodule OliWeb.Router do
     get "/:project_id/publish", ProjectController, :publish
     post "/:project_id/publish", ProjectController, :publish_active
     post "/:project_id/datashop", ProjectController, :download_datashop
+    post "/:project_id/duplicate", ProjectController, :clone_project
 
     # Project
     put "/:project_id", ProjectController, :update
@@ -228,6 +229,10 @@ defmodule OliWeb.Router do
     post "/:project_id/collaborators", CollaboratorController, :create
     put "/:project_id/collaborators/:author_email", CollaboratorController, :update
     delete "/:project_id/collaborators/:author_email", CollaboratorController, :delete
+
+    # Activities
+    put "/:project_id/activities/enable/:activity_slug", ProjectActivityController, :enable_activity
+    put "/:project_id/activities/disable/:activity_slug", ProjectActivityController, :disable_activity
 
     # Insights
     get "/:project_id/insights", ProjectController, :insights
@@ -404,6 +409,10 @@ defmodule OliWeb.Router do
 
     get "/invite", InviteController, :index
     post "/invite", InviteController, :create
+
+    get "/manage_activities", ActivityManageController, :index
+    put "/manage_activities/make_global/:activity_slug", ActivityManageController, :make_global
+    put "/manage_activities/make_private/:activity_slug", ActivityManageController, :make_private
 
     put "/approve_registration", InstitutionController, :approve_registration
     delete "/pending_registration/:id", InstitutionController, :remove_registration

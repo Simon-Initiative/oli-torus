@@ -1,20 +1,15 @@
-name: Package & Deploy
+name: Deploy
 
 on:
   push:
-    branches:
-      - test
-      - production
     tags:
-      - deploy-test
+      - 'v[0-9]+.[0-9]+.[0-9]+'              # production release tags vX.Y.Z
+      - 'v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+'     # release candidate tags vX.Y.Z-rc1
+      - deploy-test                          # manually trigger build and deploy to test
 
 jobs:
-  package-and-deploy:
+  deploy-release:
     runs-on: ubuntu-latest
-
-    # only release and deploy if the workflow is running on the test branch, production branch,
-    # or a commit is tagged with 'deploy-test'
-    if: github.ref == 'refs/heads/test' || 'refs/heads/production' || github.ref == 'refs/tags/deploy-test'
 
     steps:
       - name: 🛎️ Checkout
@@ -25,45 +20,14 @@ jobs:
         run: |
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
-          echo "::set-output name=deploy_host::$(if [[ ${GITHUB_REF##*/} == "production"  ]] ; then echo proton.oli.cmu.edu ; else echo tokamak.oli.cmu.edu ; fi)"
+          echo "::set-output name=deploy_host::$(if [[ ${{ github.event.ref }} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]] ; then echo proton.oli.cmu.edu ; else echo tokamak.oli.cmu.edu ; fi)"
 
-      - name: 📦💽 Package release
-        uses: ./.github/actions/phoenix-builder
-        with:
-          build-sha: ${{ steps.info.outputs.sha_short }}
-
-      - name: 💽⬆️ Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}
-          path: _build/prod/rel/oli
-
-      # TODO: add S3 archive support
-      # - name: 💽⬆️ Upload release to S3 archive
-      #   uses: jakejarvis/s3-sync-action@master
-      #   with:
-      #     args: --acl public-read --follow-symlinks --delete
-      #   env:
-      #     AWS_S3_BUCKET: 'oli-torus-releases'
-      #     AWS_ACCESS_KEY_ID: ${{ secrets.SIMON_BOT_AWS_ACCESS_KEY_ID }}
-      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.SIMON_BOT_AWS_SECRET_ACCESS_KEY }}
-      #     AWS_REGION: 'us-east-2'
-      #     SOURCE_DIR: 'oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}'
-
-      - name: 🗜️🚢 Zip it & ship it
-        run: |
-          zip -r oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip _build/prod/rel/oli
-          mkdir ~/.ssh
-          echo "${{ secrets.SIMON_BOT_PRIVATE_KEY}}" > ~/.ssh/simon-bot
-          chmod 600 ~/.ssh/simon-bot
-          sftp -i ~/.ssh/simon-bot -o StrictHostKeyChecking=no simon-bot@${{ steps.info.outputs.deploy_host }}  <<< $'cd /torus\n put oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip'
-
-      - name: 💰 Deploy using SSH
+      - name: 🚢💰 Deploy using SSH
         uses: fifsky/ssh-action@master
         with:
           command: |
             cd /torus
-            sh deploy.sh ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }}
+            sh deploy.sh ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }} ${{ secrets.ACCESS_TOKEN }}
           host: ${{ steps.info.outputs.deploy_host }}
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}

@@ -82,7 +82,7 @@ defmodule Oli.Interop.Ingest do
 
     case Map.get(project_details, "title") do
       nil -> {:error, "no project title found"}
-      title -> Oli.Authoring.Course.create_ingested_project(Map.get(project_details, "slug"), title, as_author)
+      title -> Oli.Authoring.Course.create_project(title, as_author)
     end
 
   end

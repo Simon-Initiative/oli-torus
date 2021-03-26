@@ -1,0 +1,83 @@
+name: Package & Deploy Test
+on:
+  push:
+    branches:
+      - master
+      - hotfix-*          # include hotfix branches
+    tags:
+      - package           # manually trigger a package build
+      # - deploy-test       # manually trigger build and deploy to test
+
+jobs:
+  package-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v2
+
+      - name: 🧾 Build info
+        id: info
+        run: |
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+          echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
+          echo "::set-output name=deploy_host::tokamak.oli.cmu.edu"
+
+      - name: 📦💽 Package
+        uses: ./.github/actions/phoenix-builder
+        with:
+          build-sha: ${{ steps.info.outputs.sha_short }}
+
+      - name: 💽⬆️ Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}
+          path: _build/prod/rel/oli
+
+      # - name: 🚢💰 Deploy using SSH
+      #   uses: fifsky/ssh-action@master
+      #   if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/tags/deploy-test' }}
+      #   with:
+      #     command: |
+      #       sleep 60  # add a buffer period between artifact upload and download
+      #       cd /torus
+      #       sh deploy.sh ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }} ${{ secrets.ACCESS_TOKEN }}
+      #     host: ${{ steps.info.outputs.deploy_host }}
+      #     user: simon-bot
+      #     key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
+
+
+  docs:
+    runs-on: ubuntu-latest
+    # only deploy docs if the workflow is running on the master branch
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v2 # If you're using actions/checkout@v2 you must set persist-credentials to false in most cases for the deployment to work correctly.
+        with:
+          persist-credentials: false
+
+      - name: 🔧 Configure
+        run: cp oli.example.env oli.env
+
+      - name: 🧪 Setup Elixir
+        uses: erlef/setup-elixir@v1
+        with:
+          elixir-version: 1.11.1 # Define the elixir version [required]
+          otp-version: 23.1 # Define the OTP version [required]
+
+      - name: ⬇️ Install Elixir Dependencies
+        run: mix deps.get
+
+      - name: 🔨📦 Build Dependencies
+        run: mix deps.compile
+
+      - name: 🔨📄 Build Docs
+        run: mix docs
+
+      - name: 🚀 Deploy Docs
+        uses: JamesIves/github-pages-deploy-action@releases/v3
+        with:
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: doc # The folder the action should deploy.

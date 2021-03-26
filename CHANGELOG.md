@@ -1,14 +1,25 @@
 # Changelog
 
-## Unreleased
+## 0.7.1
+### Bug fixes
+  - Fix an issue where slug creation allowed some non-alphanumeric chars
+
+## 0.7.0 (2021-3-23)
 
 ### Enhancements
   - Add the ability for an activity to submit client side evaluations
+  - Change project slug determiniation during course ingestion to be server driven
+  - Add the ability to limit what activities are available for use in particular course projects
+  - Add the ability to duplicate a project on the course overview page
 
 ### Bug fixes
+  - Fix an issue where cancelling a curriculum deletion operation still deleted the curriculum item
+  - Fix an issue where the projects table did not sort by created date correctly
   - Fix an issue where activity text that contained HTML tags rendered actual HTML
   - Fix an issue where pasting text containing newlines from an external source crashes the editor
   - Fix an issue with null section slugs and deployment id in existing sections
+  - Fix an issue where large images can obscure the Review mode UI
+  - Fix an issue where accessibility warnings for pages with multiple images only show the first image
 
 ## 0.6.1 (2021-3-3)
 
@@ -86,4 +97,3 @@
 ## 0.1.0 (2020-7-24)
 
   - Initial release
-

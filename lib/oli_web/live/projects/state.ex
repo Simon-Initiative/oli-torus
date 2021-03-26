@@ -51,17 +51,32 @@ defmodule OliWeb.Projects.State do
   end
 
   def sort_projects(state, sort_by, sort_order) do
+
+    comparator = case {sort_by, sort_order} do
+      {"created", "asc"} -> fn p1, p2 -> date_sort(p1.inserted_at, p2.inserted_at) end
+      {"created", "desc"} -> fn p1, p2 -> date_sort(p2.inserted_at, p1.inserted_at) end
+      {"title", "asc"} -> fn p1, p2 -> p1.title < p2.title end
+      {"title", "desc"} -> fn p1, p2 -> p2.title < p1.title end
+      {"author", "asc"} -> fn p1, p2 -> author_sort(state.authors, p1, p2) end
+      {"author", "desc"} -> fn p1, p2 -> author_sort(state.authors, p2, p1) end
+    end
+
     [
       sort_by: sort_by,
       sort_order: sort_order,
-      projects: Enum.sort(state.projects, fn p1, p2 ->
-        case sort_by do
-          "title" -> if sort_order == "asc" do p1.title < p2.title else p2.title < p1.title end
-          "created" -> if sort_order == "asc" do p1.inserted_at < p2.inserted_at else p2.inserted_at < p1.inserted_at end
-          "author" -> if sort_order == "asc" do p1.inserted_at < p2.inserted_at else p2.inserted_at < p1.inserted_at end
-        end
-      end)
+      projects: Enum.sort(state.projects, comparator)
     ]
+  end
+
+  defp author_sort(authors, p1, p2) do
+    (Map.get(authors, p1.id) |> hd) < (Map.get(authors, p2.id) |> hd)
+  end
+
+  defp date_sort(d1, d2) do
+    case NaiveDateTime.compare(d1, d2) do
+      :gt -> false
+      _ -> true
+    end
   end
 
   defp with_changes(state, changes) do
