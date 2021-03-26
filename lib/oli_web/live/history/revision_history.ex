@@ -55,9 +55,10 @@ defmodule OliWeb.RevisionHistory do
     }
   end
 
+  # Sorts newest to oldest
   defp date_sort(d1, d2) do
     case NaiveDateTime.compare(d1, d2) do
-      :gt -> false
+      :lt -> false
       _ -> true
     end
   end
@@ -67,7 +68,6 @@ defmodule OliWeb.RevisionHistory do
     all = Enum.reduce(mappings, MapSet.new(), fn mapping, m -> MapSet.put(m, mapping.publication) end)
     |> MapSet.to_list()
     |> Enum.sort(fn m1, m2 -> date_sort(m1.inserted_at, m2.inserted_at) end)
-    |> IO.inspect(label: "All sorted")
 
     case length(all) do
       1 -> nil

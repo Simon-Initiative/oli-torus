@@ -174,11 +174,9 @@ defmodule Oli.PublishingTest do
       assert updated_page_revision.content == page_content["content"]
 
       # But the updates should not be present in the recently-published revision
-      published_resource = Publishing.get_published_resource!(published_publication.id, original_revision.resource_id)
+      published_resource = Publishing.get_published_resource!(published_publication.id, revision_with_activity.resource_id)
       published_revision = Resources.get_revision!(published_resource.revision_id)
-      assert published_revision.id == revision_with_activity.id
       assert published_revision.content == revision_with_activity.content
-
     end
 
     test "broadcasting the new publication works when publishing", %{project: project} do
@@ -188,15 +186,6 @@ defmodule Oli.PublishingTest do
       assert pub.id == publication.id
       assert project.slug == project_slug
     end
-
-    # test "publishing does not prevent subsequent edits in locked resources" do
-    #   {:acquired} = PageEditor.acquire_lock(project.slug, revision.slug, author.email)
-    #   {:ok, %Publication{} = published} = Publishing.publish_project(project)
-
-    # end
-
-
-    # add activities editor test
 
     test "update_all_section_publications/2 updates all existing sections using the project to the latest publication",
       %{project: project} do
