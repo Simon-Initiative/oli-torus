@@ -76,7 +76,7 @@ defmodule Oli.Authoring.Locks do
 
       # Otherwise, another user may have this locked, acquire it if
       # the lock is expired
-      %{lock_updated_at: lock_updated_at, } = mapping ->
+      %{lock_updated_at: lock_updated_at} = mapping ->
         lock_action(mapping, user_id, &expired?/1, {:acquired}, {:lock_not_acquired, {mapping.author.email, lock_updated_at}}, nil)
     end
   end
@@ -169,7 +169,7 @@ defmodule Oli.Authoring.Locks do
     from(pr in PublishedResource,
       where: pr.publication_id == ^publication_id and not is_nil(pr.locked_by_id),
       select: pr)
-    |> Repo.update_all(set: [locked_by_id: nil])
+    |> Repo.update_all(set: [locked_by_id: nil, lock_updated_at: nil])
   end
 
   defp now() do
