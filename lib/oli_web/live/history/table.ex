@@ -51,7 +51,7 @@ defmodule OliWeb.RevisionHistory.Table do
         <td><%= rev.id %></td>
         <td><%= time(assigns, rev.inserted_at) %></td>
         <td><%= time(assigns, rev.updated_at) %></td>
-        <td><%= rev.author.email %></td>
+        <td><%= rev.author_id %></td>
         <td><%= rev.slug %></td>
         <td><%= publication_state(assigns, rev.id) %></td>
         </tr>

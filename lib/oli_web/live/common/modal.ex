@@ -47,7 +47,7 @@ defmodule OliWeb.Common.Modal do
             </button>
           </div>
           <div class="modal-body">
-            <%= @inner_content.([]) %>
+            <%= render_block(@inner_block) %>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>

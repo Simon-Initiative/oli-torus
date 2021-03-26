@@ -2,8 +2,6 @@ defmodule Oli.Versioning.RevisionTree.Tree do
 
   import Ecto.Query, warn: false
 
-  alias Oli.Repo
-  alias Oli.Resources.Revision
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Course
   alias Oli.Versioning.RevisionTree.Node
@@ -48,9 +46,9 @@ defmodule Oli.Versioning.RevisionTree.Tree do
   def sort_preorder(projects) do
 
     by_parent = Enum.reduce(projects, %{}, fn e, m ->
-      case Map.get(m, e.parent_project_id) do
-        nil -> Map.put(m, e.parent_project_id, [e])
-        others -> Map.put(m, e.parent_project_id, others ++ [e])
+      case Map.get(m, e.project_id) do
+        nil -> Map.put(m, e.project_id, [e])
+        others -> Map.put(m, e.project_id, others ++ [e])
       end
     end)
 
@@ -91,7 +89,7 @@ defmodule Oli.Versioning.RevisionTree.Tree do
           # We haven't encountered it yet, so we simply create a new tree node, store it and
           # continue tracking backwards into the previous
           nil ->
-            previous_node = %Node{revision: previous, children: [child_node], project_id: project.id}
+            previous_node = %Node{revision: previous, children: [child_node.revision.id], project_id: project.id}
             nodes = Map.put(nodes, previous.id, previous_node)
             track_back(previous_node, by_id, project, nodes)
 
@@ -99,7 +97,7 @@ defmodule Oli.Versioning.RevisionTree.Tree do
           # "fork" point in our revision history - simply update the children node to wire in this
           # new descendent path
           node ->
-            Map.put(nodes, previous.id, %Node{revision: node.revision, children: node.children ++ [child_node], project_id: node.project_id})
+            Map.put(nodes, previous.id, %Node{revision: node.revision, children: node.children ++ [child_node.revision.id], project_id: node.project_id})
 
         end
 

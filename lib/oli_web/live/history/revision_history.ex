@@ -30,8 +30,11 @@ defmodule OliWeb.RevisionHistory do
     Subscriber.subscribe_to_new_revisions(resource_id)
     Subscriber.subscribe_to_new_publications(project_slug)
 
-    revisions = fetch_all_revisions()
+    revisions = fetch_all_revisions(resource_id)
+    root = Enum.filter(revisions, fn r -> is_nil(r.previous_revision_id) end) |> hd
     tree = Oli.Versioning.RevisionTree.Tree.build(revisions, resource_id)
+    IO.inspect revisions
+    IO.inspect tree
 
     mappings = Publishing.get_all_mappings_for_resource(resource_id, project_slug)
     mappings_by_revision = Enum.reduce(mappings, %{}, fn mapping, m -> Map.put(m, mapping.revision_id, mapping) end)
@@ -42,6 +45,7 @@ defmodule OliWeb.RevisionHistory do
       breadcrumbs: [Breadcrumb.new(%{full_title: "Revision History"})],
       view: "table",
       tree: tree,
+      root: root,
       resource_id: resource_id,
       mappings: mappings_by_revision,
       publication: determine_most_recent_published(mappings),
@@ -53,16 +57,16 @@ defmodule OliWeb.RevisionHistory do
     }
   end
 
-  defp fetch_all_revisions() do
+  defp fetch_all_revisions(resource_id) do
     Repo.all(from rev in Revision,
       where: rev.resource_id == ^resource_id,
       order_by: [desc: rev.inserted_at],
-      select: map(rev, [:id, :previous_revision_id, :inserted_at, :updated_at, :author, :slug]),
+      select: map(rev, [:id, :previous_revision_id, :inserted_at, :updated_at, :author_id, :slug]),
       preload: [:author])
   end
 
   defp fetch_selected(revision_id) do
-    Repo.one(Revision, revision_id)
+    Repo.get!(Revision, revision_id)
   end
 
   defp date_sort(d1, d2) do
@@ -117,7 +121,7 @@ defmodule OliWeb.RevisionHistory do
           </div>
           <div class="card-body">
             <%= if @view == "graph" do %>
-              <%= live_component @socket, Graph, tree: tree, selected: @selected, initial_size: @initial_size %>
+              <%= live_component @socket, Graph, tree: @tree, root: @root, selected: @selected, initial_size: @initial_size %>
             <% else %>
               <%= live_component @socket, Pagination, revisions: @revisions, page_offset: @page_offset, page_size: size %>
               <%= live_component @socket, Table, publication: @publication, mappings: @mappings, revisions: @revisions, selected: @selected, page_offset: @page_offset, page_size: size %>
@@ -201,7 +205,7 @@ defmodule OliWeb.RevisionHistory do
   end
 
   def handle_event("graph", _, socket) do
-    {:noreply, assign(socket, :view, "graph")}
+    {:noreply, assign(socket, view: "graph")}
   end
 
   def handle_event("page", %{ "ordinal" => ordinal}, socket) do
@@ -221,15 +225,15 @@ defmodule OliWeb.RevisionHistory do
       list -> [revision] ++ list
     end
 
-    selected = if revision.id == selected.id do
+    selected = if revision.id == socket.assigns.selected.id do
       selected = revision
     else
       selected = socket.assigns.selected
     end
 
-    tree = case Map.get(tree, revision.id) do
+    tree = case Map.get(socket.assigns.tree, revision.id) do
       nil -> Oli.Versioning.RevisionTree.Tree.build(revisions, socket.assigns.resource_id)
-      node -> Map.put(tree, revision.id, %{node | revision: revision})
+      node -> Map.put(socket.assigns.tree, revision.id, %{node | revision: revision})
     end
 
     {:noreply, assign(socket, selected: selected, revisions: revisions, tree: tree)}

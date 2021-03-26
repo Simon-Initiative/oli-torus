@@ -8,7 +8,7 @@ defmodule Oli.Versioning.RevisionTree.TreeTest do
 
   def rev({p, id}), do: %{id: id, previous_revision_id: p}
 
-  def proj({p, id}), do: %{id: id, parent_project_id: p}
+  def proj({p, id}), do: %{id: id, project_id: p}
 
   describe "project sorting by parent tree" do
 
@@ -56,7 +56,7 @@ defmodule Oli.Versioning.RevisionTree.TreeTest do
 
       assert Map.get(tree_nodes, 1).revision.id == 1
       assert Map.get(tree_nodes, 1).project_id == 1
-      assert [%{revision: %{id: 2}}] = Map.get(tree_nodes, 1).children
+      assert [2] = Map.get(tree_nodes, 1).children
 
       assert Map.get(tree_nodes, 5).revision.id == 5
       assert [] = Map.get(tree_nodes, 5).children
@@ -83,7 +83,7 @@ defmodule Oli.Versioning.RevisionTree.TreeTest do
       assert Enum.to_list(tree_nodes) |> length() == 5
 
       assert Map.get(tree_nodes, 1).revision.id == 1
-      assert [%{revision: %{id: 2}}] = Map.get(tree_nodes, 1).children
+      assert [2] = Map.get(tree_nodes, 1).children
 
       assert Map.get(tree_nodes, 5).revision.id == 5
       assert Map.get(tree_nodes, 5).project_id == 1
@@ -111,11 +111,49 @@ defmodule Oli.Versioning.RevisionTree.TreeTest do
 
       assert Map.get(tree_nodes, 1).revision.id == 1
       assert Map.get(tree_nodes, 1).project_id == 1
-      assert [%{revision: %{id: 2}}] = Map.get(tree_nodes, 1).children
+      assert [2] = Map.get(tree_nodes, 1).children
 
       assert Map.get(tree_nodes, 5).revision.id == 5
       assert Map.get(tree_nodes, 5).project_id == 1
       assert [] = Map.get(tree_nodes, 5).children
+
+    end
+
+    test "it works on a simple linked list, multiple projects with second having more revisions" do
+
+      # Constructs the following:
+      #
+      #
+      #
+      # 1-2-3-4-5
+      #     ^   ^
+      #     |   |
+      # proj1   proj2
+      #
+      # Simulating that proj2 forked from proj1 at third revision. New revisions made to proj2, but none
+      # to proj1
+
+      revisions = [{nil,1}, {1, 2}, {2, 3}, {3, 4}, {4, 5}] |> as_revisions
+
+      tree_nodes = Tree.build(revisions, [rev({2,3}), rev({4,5})], [proj({nil, 1}), proj({1, 2})])
+
+      assert Enum.to_list(tree_nodes) |> length() == 5
+
+      assert Map.get(tree_nodes, 1).revision.id == 1
+      assert Map.get(tree_nodes, 1).project_id == 1
+      assert [2] = Map.get(tree_nodes, 1).children
+
+      assert Map.get(tree_nodes, 5).revision.id == 5
+      assert Map.get(tree_nodes, 5).project_id == 2
+      assert [] = Map.get(tree_nodes, 5).children
+
+      assert Map.get(tree_nodes, 3).revision.id == 3
+      assert Map.get(tree_nodes, 3).project_id == 1
+      assert [4] = Map.get(tree_nodes, 3).children
+
+      assert Map.get(tree_nodes, 2).revision.id == 2
+      assert Map.get(tree_nodes, 2).project_id == 1
+      assert [3] = Map.get(tree_nodes, 2).children
 
     end
 
@@ -135,7 +173,7 @@ defmodule Oli.Versioning.RevisionTree.TreeTest do
 
       # Verify the root node
       assert Map.get(tree_nodes, 1).revision.id == 1
-      assert [%{revision: %{id: 2}}] = Map.get(tree_nodes, 1).children
+      assert [2] = Map.get(tree_nodes, 1).children
 
       # Verify the leaf nodes
       assert Map.get(tree_nodes, 5).revision.id == 5
@@ -146,7 +184,7 @@ defmodule Oli.Versioning.RevisionTree.TreeTest do
 
       # Verify the forked node
       node3 = Map.get(tree_nodes, 3)
-      assert [%{revision: %{id: 4}}, %{revision: %{id: 6}}] = node3.children
+      assert [4, 6] = node3.children
 
     end
 
@@ -171,7 +209,7 @@ defmodule Oli.Versioning.RevisionTree.TreeTest do
       # Verify the root node
       assert Map.get(tree_nodes, 1).revision.id == 1
       assert Map.get(tree_nodes, 1).project_id == 1
-      assert [%{revision: %{id: 2}}] = Map.get(tree_nodes, 1).children
+      assert [2] = Map.get(tree_nodes, 1).children
 
       # Verify the leaf nodes
       assert Map.get(tree_nodes, 5).revision.id == 5
@@ -189,7 +227,7 @@ defmodule Oli.Versioning.RevisionTree.TreeTest do
       # Verify the forked node
       node3 = Map.get(tree_nodes, 3)
       assert node3.project_id == 1
-      assert [%{revision: %{id: 4}}, %{revision: %{id: 6}}, %{revision: %{id: 9}}] = node3.children
+      assert [4, 6, 9] = node3.children
 
     end
 
@@ -215,7 +253,7 @@ defmodule Oli.Versioning.RevisionTree.TreeTest do
       # Verify the root node
       assert Map.get(tree_nodes, 1).revision.id == 1
       assert Map.get(tree_nodes, 1).project_id == 1
-      assert [%{revision: %{id: 2}}] = Map.get(tree_nodes, 1).children
+      assert [2] = Map.get(tree_nodes, 1).children
 
       # Verify the leaf nodes
       assert Map.get(tree_nodes, 5).revision.id == 5
@@ -233,11 +271,11 @@ defmodule Oli.Versioning.RevisionTree.TreeTest do
       # Verify the forked nodes
       node3 = Map.get(tree_nodes, 3)
       assert node3.project_id == 1
-      assert [%{revision: %{id: 4}}, %{revision: %{id: 6}}] = node3.children
+      assert [4, 6] = node3.children
 
       node6 = Map.get(tree_nodes, 6)
       assert node6.project_id == 2
-      assert [%{revision: %{id: 7}}, %{revision: %{id: 9}}] = node6.children
+      assert [7, 9] = node6.children
 
     end
 

@@ -1,0 +1,33 @@
+.revision-tree {
+  overflow: auto;
+
+  .node{
+    fill: lighten($secondary, 30%);
+    stroke: lighten($secondary, 30%);
+    stroke-width: 1;
+  }
+
+  .node:hover {
+    cursor: pointer;
+    fill: $secondary;
+    & + .tree-node-text {
+      fill: white;
+    }
+  }
+
+  .line {
+    stroke: lighten($secondary, 30%);
+    stroke-width: 2
+  }
+
+  .tree {
+    position: relative;
+    margin: 20px 0;
+  }
+
+  .tree-node-text {
+    fill: black;
+    font-size: 14px;
+    pointer-events: none;
+  }
+}

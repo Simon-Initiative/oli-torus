@@ -40,22 +40,23 @@ defmodule OliWeb.RevisionHistory.ReingoldTilford do
   The function receives the value and returns the
   node label. The label is used to compute its width.
   """
-  def build(tree) do
-    tree
-    |> change_representation(0)
+  def build(root, nodes) do
+    change_representation(root, nodes, 0)
     |> calculate_initial_y(0, [])
     |> ensure_children_inside_screen()
     |> put_final_y_values(0)
     |> put_x_position()
   end
 
-  defp change_representation(node, level) do
-    children = Enum.map(node.children, &change_representation(&1, level + 1))
+  defp change_representation(node, nodes, level) do
+    children = Enum.map(node.children, &change_representation(Map.get(nodes, &1), nodes, level + 1))
+
+    label = Integer.to_string(node.revision.id)
 
     %Node{
       x: 0,
       y: 0,
-      label: node.revision.id,
+      label: label,
       children: children,
       modifier: 0,
       type: if(children == [], do: :leaf, else: :subtree),
