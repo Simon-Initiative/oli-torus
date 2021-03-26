@@ -114,6 +114,22 @@ defmodule Oli.Utils.SlugTest do
       |> Changeset.get_change(:slug) == nil
     end
 
+    test "update_on_change/2 produces valid slug when the title contains non-alphanumeric and special characters", %{ revision1: r } do
+
+      {:ok, new_revision} = Revision.changeset(%Revision{}, %{
+        previous_revision_id: r.id,
+        title: "What’s in a Name?",   # apostrophe is a special character
+        resource_id: r.resource_id,
+        resource_type_id: r.resource_type_id,
+        author_id: r.author_id
+        })
+      |> Repo.insert()
+
+      refute new_revision.slug == r.slug
+      assert new_revision.slug == "whats_in_a_name"
+
+    end
+
   end
 
 
