@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - hotfix-*          # include hotfix branches
     tags:
       - package           # manually trigger a package build
       # - deploy-test       # manually trigger build and deploy to test
