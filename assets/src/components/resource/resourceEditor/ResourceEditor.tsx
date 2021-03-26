@@ -147,8 +147,6 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       persistence => this.setState({ persistence }),
     ).then((editMode) => {
       this.setState({ editMode });
-      console.log('edit mode:',editMode)
-      console.log('lock result', this.persistence.getLockResult())
       if (editMode) {
         this.windowUnloadListener = registerUnload(this.persistence);
         this.undoRedoListener = registerUndoRedoHotkeys(this.undo.bind(this), this.redo.bind(this));
