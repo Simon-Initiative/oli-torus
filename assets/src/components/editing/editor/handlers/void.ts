@@ -1,4 +1,4 @@
-import { Transforms, Range, Node, Path, Editor } from 'slate';
+import { Transforms, Range, Node, Path } from 'slate';
 import * as ContentModel from 'data/content/model';
 import { KeyboardEvent } from 'react';
 import { getNearestBlock } from 'components/editing/utils';
