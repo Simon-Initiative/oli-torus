@@ -10,7 +10,7 @@
     <title>Oli.Authoring.Locks — OLI Torus v0.7.1</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-e91c7b255a.js"></script>
+    <script src="dist/sidebar_items-f4730ba0be.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -104,8 +104,8 @@ thus the scoping of locks to publication and resource.</p><h2 id="module-lock-ex
   <a href="#module-lock-expiration" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Lock Expiration
 </h2>
-<p>This implementation allows a user to acquire an already locked resource
-mapping that is held by another user if that existing lock has expired. Locks
+<p>This implementation allows a user to acquire an already locked
+published_resource that is held by another user if that existing lock has expired. Locks
 are considered to be expired if they have not been updated for <code class="inline">@ttl</code> seconds.
 This handles the case that a user locks a resource and then abandons their
 editing session without closing their browser.</p><h2 id="module-actions" class="section-heading">
@@ -113,7 +113,7 @@ editing session without closing their browser.</p><h2 id="module-actions" class=
   Actions
 </h2>
 <p>Three actions exist for a lock: <code class="inline">acquire</code>, <code class="inline">update</code> and <code class="inline">release</code>. Lock acquiring
-results in the resource mapping record being stamped with the users id, but
+results in the published_resource record being stamped with the users id, but
 with an <code class="inline">nil</code> last updated at date.  Updating a lock sets the last updated at
 date. Releasing a lock sets both the user and last updated at to <code class="inline">nil</code>. Coupled
 with</p>
@@ -139,20 +139,20 @@ with</p>
 
   </div>
 
-    <div class="summary-synopsis"><p>Attempts to acquire or update a lock for user <code class="inline">user_id</code> the resource mapping
-defined by <code class="inline">publication_id</code> and <code class="inline">resource_id</code>.</p></div>
+    <div class="summary-synopsis"><p>Attempts to acquire or update a lock for user <code class="inline">user_id</code> the published resource
+mapping defined by <code class="inline">publication_id</code> and <code class="inline">resource_id</code>.</p></div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#expired_or_empty?/1">expired_or_empty?(mapping)</a>
+    <a href="#expired_or_empty?/1">expired_or_empty?(published_resource)</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#expired_or_empty_predicate?/1">expired_or_empty_predicate?(mapping)</a>
+    <a href="#expired_or_empty_predicate?/1">expired_or_empty_predicate?(published_resource)</a>
 
   </div>
 
@@ -173,7 +173,8 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
 
   </div>
 
-    <div class="summary-synopsis"><p>Releases all locks for revisions in the supplied publication.</p></div>
+    <div class="summary-synopsis"><p>Releases all locks for revisions in the supplied publication.
+This removes the <code class="inline">locked_by_id</code> and <code class="inline">lock_updated_at</code> fields.</p></div>
 
 </div>
 <div class="summary-row">
@@ -182,7 +183,7 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
 
   </div>
 
-    <div class="summary-synopsis"><p>Attempts to acquire or update a lock for user <code class="inline">user_id</code> the resource mapping
+    <div class="summary-synopsis"><p>Attempts to acquire or update a lock for user <code class="inline">user_id</code> the published resource mapping
 defined by <code class="inline">publication_id</code> and <code class="inline">resource_id</code>.</p></div>
 
 </div>
@@ -227,7 +228,7 @@ Functions
   {:error}
   | {:acquired}
   | {:lock_not_acquired,
-     {<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(),
+     {<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
       %{
         calendar: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(),
         day: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
@@ -241,8 +242,8 @@ Functions
 
       </div>
 
-<p>Attempts to acquire or update a lock for user <code class="inline">user_id</code> the resource mapping
-defined by <code class="inline">publication_id</code> and <code class="inline">resource_id</code>.</p><p>Returns:</p><p>.<code class="inline">{:acquired}</code> if the lock was acquired
+<p>Attempts to acquire or update a lock for user <code class="inline">user_id</code> the published resource
+mapping defined by <code class="inline">publication_id</code> and <code class="inline">resource_id</code>.</p><p>Returns:</p><p>.<code class="inline">{:acquired}</code> if the lock was acquired
 .<code class="inline">{:error}</code> if an internal error was encountered
 .<code class="inline">{:lock_not_acquired, {user_email, date_time}}</code> the date and user id of the existing lock</p>
   </section>
@@ -254,9 +255,9 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">expired_or_empty?(mapping)</h1>
+    <h1 class="signature">expired_or_empty?(published_resource)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L198" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L205" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -276,9 +277,9 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">expired_or_empty_predicate?(mapping)</h1>
+    <h1 class="signature">expired_or_empty_predicate?(published_resource)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L202" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L209" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -300,7 +301,7 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
     </a>
     <h1 class="signature">release(publication_id, resource_id, user_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L144" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L150" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -332,7 +333,7 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
     </a>
     <h1 class="signature">release_all(publication_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L158" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L165" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -349,7 +350,8 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
 
       </div>
 
-<p>Releases all locks for revisions in the supplied publication.</p><p>Returns:
+<p>Releases all locks for revisions in the supplied publication.
+This removes the <code class="inline">locked_by_id</code> and <code class="inline">lock_updated_at</code> fields.</p><p>Returns:
 .<code class="inline">{number, nil | returned data}</code> where number is the number of rows updated</p>
   </section>
 </section>
@@ -376,11 +378,11 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
       <div class="specs">
 
           <pre>update(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()) ::
-  {:error}
+  {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}
   | {:acquired}
   | {:updated}
   | {:lock_not_acquired,
-     {<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(),
+     {<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
       %{
         calendar: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(),
         day: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
@@ -394,7 +396,7 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
 
       </div>
 
-<p>Attempts to acquire or update a lock for user <code class="inline">user_id</code> the resource mapping
+<p>Attempts to acquire or update a lock for user <code class="inline">user_id</code> the published resource mapping
 defined by <code class="inline">publication_id</code> and <code class="inline">resource_id</code>.</p><p>Returns:</p><p>.<code class="inline">{:acquired}</code> if the lock was acquired
 .<code class="inline">{:updated}</code> if the lock was updated
 .<code class="inline">{:error}</code> if an internal error was encountered

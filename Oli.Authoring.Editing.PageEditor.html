@@ -10,7 +10,7 @@
     <title>Oli.Authoring.Editing.PageEditor — OLI Torus v0.7.1</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-e91c7b255a.js"></script>
+    <script src="dist/sidebar_items-f4730ba0be.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -211,7 +211,7 @@ Functions
 
           <pre>acquire_lock(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()) ::
   {:acquired}
-  | {:lock_not_acquired, <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()}
+  | {:lock_not_acquired, {<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/Calendar.html#t:naive_datetime/0">Calendar.naive_datetime</a>()}}
   | {:error, {:not_found}}
   | {:error, {:error}}
   | {:error, {:not_authorized}}</pre>
@@ -350,18 +350,18 @@ for a specific resource / revision.</p>
    }}
   | {:error, {:not_found}}
   | {:error, {:error}}
-  | {:error, {:lock_not_acquired}}
+  | {:error, {:lock_not_acquired, {<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/Calendar.html#t:naive_datetime/0">Calendar.naive_datetime</a>()}}}
   | {:error, {:not_authorized}}</pre>
 
       </div>
 
 <p>Attempts to process an edit for a resource specified by a given
 project and revision slug, for the author specified by email.</p><p>The update parameter is a map containing key-value pairs of the
-attributes of a ResourceRevision that are to be edited. It can
+attributes of a resource Revision that are to be edited. It can
 contain any number of key-value pairs, but the keys must match
 the schema of <code class="inline">%Revision{}</code> struct.</p><p>Not acquiring the lock here is considered a failure, as it is
 not an expected condition that a client would encounter. The client
-should have first acquired the lock via <code class="inline">acquire_lock</code>.</p><p>Returns:</p><p>.<code class="inline">{:ok, %ResourceRevision{}}</code> when the edit processes successfully the
+should have first acquired the lock via <code class="inline">acquire_lock</code>.</p><p>Returns:</p><p>.<code class="inline">{:ok, %Revision{}}</code> when the edit processes successfully the
 .<code class="inline">{:error, {:lock_not_acquired}}</code> if the lock could not be acquired or updated
 .<code class="inline">{:error, {:not_found}}</code> if the project, resource, or user cannot be found
 .<code class="inline">{:error, {:not_authorized}}</code> if the user is not authorized to edit this resource
