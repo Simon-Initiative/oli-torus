@@ -230,7 +230,7 @@ defmodule Oli.Seeder do
   end
 
   defp publish_resource(publication, resource, revision) do
-    Publishing.create_resource_mapping(%{ publication_id: publication.id, resource_id: resource.id, revision_id: revision.id})
+    Publishing.create_published_resource(%{ publication_id: publication.id, resource_id: resource.id, revision_id: revision.id})
   end
 
   def create_page(title, publication, project, author, content \\ %{ "model" => []}) do
@@ -446,8 +446,8 @@ defmodule Oli.Seeder do
   defp set_container_children(children, container, container_revision, publication) do
     {:ok, updated} = Oli.Resources.update_revision(container_revision, %{children: children})
 
-    Publishing.get_resource_mapping!(publication.id, container.id)
-    |> Publishing.update_resource_mapping(%{revision_id: updated.id})
+    Publishing.get_published_resource!(publication.id, container.id)
+    |> Publishing.update_published_resource(%{revision_id: updated.id})
 
     updated
   end

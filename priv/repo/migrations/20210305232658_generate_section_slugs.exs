@@ -2,12 +2,8 @@ defmodule Oli.Repo.Migrations.GenerateSectionSlugs do
   use Ecto.Migration
   import Ecto.Query, warn: false
 
-  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Utils.Slug
-  alias Oli.Institutions.Institution
-  alias Oli.Lti_1p3.Tool.Registration
-  alias Lti_1p3.Tool.Deployment
 
   def change do
     # nothing to do
@@ -54,8 +50,8 @@ defmodule Oli.Repo.Migrations.GenerateSectionSlugs do
   end
 
   defp find_latest_deployment_id(%{institution: institution}) do
-    Enum.reduce(institution.registrations, nil, fn r, acc ->
-      Enum.reduce(r.deployments, nil, fn d, acc ->
+    Enum.reduce(institution.registrations, nil, fn r, _acc ->
+      Enum.reduce(r.deployments, nil, fn d, _acc ->
         d.id
       end)
     end)

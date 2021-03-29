@@ -56,7 +56,7 @@ defmodule Oli.PublishingTest do
       assert Locks.acquire(publication.id, container_resource.id, author.id) == {:acquired}
       [published_resource] = Publishing.retrieve_lock_info([container_resource.id], publication.id)
 
-      Publishing.update_resource_mapping(published_resource, %{ lock_updated_at: yesterday()})
+      Publishing.update_published_resource(published_resource, %{ lock_updated_at: yesterday()})
 
       assert [] = Publishing.retrieve_lock_info([container_resource.id], publication.id)
 
@@ -120,47 +120,71 @@ defmodule Oli.PublishingTest do
     end
 
     test "publish_project/1 creates a new working unpublished publication for a project",
-      %{publication: publication, project: project} do
+      %{publication: unpublished_publication, project: project} do
 
-      {:ok, %Publication{} = published} = Publishing.publish_project(project)
+      {:ok, %Publication{} = published_publication} = Publishing.publish_project(project)
+
+      # The published publication should match the original unpublished publication
+      assert unpublished_publication.id == published_publication.id
 
       # the unpublished publication for the project should now be a new different publication
-      new_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
-      assert new_publication.id != publication.id
+      new_unpublished_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+      assert new_unpublished_publication.id != unpublished_publication.id
 
       # mappings should be retained in the original published publication
-      original_resource_mappings = Publishing.get_resource_mappings_by_publication(publication.id)
-      published_resource_mappings = Publishing.get_resource_mappings_by_publication(published.id)
-      assert original_resource_mappings == published_resource_mappings
+      unpublished_mappings = Publishing.get_published_resources_by_publication(unpublished_publication.id)
+      published_mappings = Publishing.get_published_resources_by_publication(published_publication.id)
+      assert unpublished_mappings == published_mappings
 
       # mappings should now be replaced with new mappings in the new publication
-      assert original_resource_mappings != Publishing.get_resource_mappings_by_publication(new_publication.id)
-
+      assert unpublished_mappings != Publishing.get_published_resources_by_publication(new_unpublished_publication.id)
     end
 
-    test "publish_project/1 publishes all currently locked resources and any new edits to the locked resource result in creation of a new revision",
-      %{publication: publication, project: project, author: author, page1: page1, revision1: revision} do
+    test "publish_project/1 publishes all currently locked resources and any new edits to the locked resource result in creation of a new revision for both pages and activities",
+      %{publication: original_unpublished_publication, project: project, author: author, revision1: original_revision} do
 
-      # lock the resource
-      Publishing.get_resource_mapping!(publication.id, page1.id)
-      |> Publishing.update_resource_mapping(%{lock_updated_at: now(), locked_by_id: author.id})
+      # lock a page
+      {:acquired} = PageEditor.acquire_lock(project.slug, original_revision.slug, author.email)
 
-      {:ok, %Publication{} = published} = Publishing.publish_project(project)
+      # lock an activity
+      {:ok, %{revision: obj}}  = ObjectiveEditor.add_new(%{title: "one"}, author, project)
+      revision_with_activity = create_activity([{"1", [obj.resource_id]}, {"1", []}], author, project, original_revision, obj.resource_id)
+      {:acquired} = PageEditor.acquire_lock(project.slug, revision_with_activity.slug, author.email)
+
+      # Publish the project
+      {:ok, %Publication{} = published_publication} = Publishing.publish_project(project)
 
       # publication should succeed even if a resource is "locked"
-      new_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
-      assert new_publication.id != publication.id
+      new_unpublished_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+      assert new_unpublished_publication.id != original_unpublished_publication.id
 
-      # further edits to the locked resource should occur in a new revision
-      content = %{"model" => [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }] }
-      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
-      {:ok, updated_revision} = PageEditor.edit(project.slug, revision.slug, author.email, %{ content: content })
-      assert revision.id != updated_revision.id
+      # further edits to locked resources should occur in newly created revisions. The locks should not
+      # need to be re-acquired through a page reload triggering `PageEditor.acquire_lock`
+      # in order to be able to continue editing the new revisions.
 
-      # further edits should not be present in published resource
-      resource_mapping = Publishing.get_resource_mapping!(published.id, revision.resource_id)
-      old_revision = Resources.get_revision!(resource_mapping.revision_id)
-      assert old_revision.content == revision.content
+      # Update a page
+      page_content = %{ "content" => %{ "model" => [%{"type" => "p", "children" => [%{ "text" => "A paragraph."}] }]}}
+      # The page should not be able to be edited without re-acquiring the lock
+      {:error, {:lock_not_acquired, _}} = PageEditor.edit(project.slug, revision_with_activity.slug, author.email, page_content)
+
+      {:acquired} = PageEditor.acquire_lock(project.slug, revision_with_activity.slug, author.email)
+      {:ok, updated_page_revision} = PageEditor.edit(project.slug, revision_with_activity.slug, author.email, page_content)
+      # The updates should occur on the new revision
+      assert revision_with_activity.id != updated_page_revision.id
+      assert updated_page_revision.content == page_content["content"]
+
+      # But the updates should not be present in the recently-published revision
+      published_resource = Publishing.get_published_resource!(published_publication.id, revision_with_activity.resource_id)
+      published_revision = Resources.get_revision!(published_resource.revision_id)
+      assert published_revision.content == revision_with_activity.content
+    end
+
+    test "broadcasting the new publication works when publishing", %{project: project} do
+      Oli.Authoring.Broadcaster.Subscriber.subscribe_to_new_publications(project.slug)
+      {:ok, publication} = Publishing.publish_project(project)
+      {:messages, [{:new_publication, pub, project_slug}]} = Process.info(self(), :messages)
+      assert pub.id == publication.id
+      assert project.slug == project_slug
     end
 
     test "update_all_section_publications/2 updates all existing sections using the project to the latest publication",
