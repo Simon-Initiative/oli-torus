@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.2
+### Bug fixes
+  - Fix an issue where administrators cannot configure a section without instructor role
+
 ## 0.7.1
 ### Bug fixes
   - Fix an issue where slug creation allowed some non-alphanumeric chars
