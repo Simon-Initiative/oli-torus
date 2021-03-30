@@ -7,6 +7,9 @@
 ## 0.7.1
 ### Bug fixes
   - Fix an issue where slug creation allowed some non-alphanumeric chars
+  - Fix an issue where publishing or duplicating courses would cause save errors in page and activity editors
+  - Fix keyboard deletion with media items
+  - Add extra newline after an iframe/webpage is inserted into an editor
 
 ## 0.7.0 (2021-3-23)
 

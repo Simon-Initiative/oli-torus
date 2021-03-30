@@ -44,10 +44,9 @@ export const ImageEditor = (props: ImageProps) => {
   return (
     <div
       {...attributes}
-      contentEditable={false}
       style={{ userSelect: 'none' }}
       className={'image-editor text-center ' + displayModelToClassName(model.display)}>
-      <figure>
+      <figure contentEditable={false}>
         <HoveringToolbar
           isOpen={e => focused && selected}
           showArrow
