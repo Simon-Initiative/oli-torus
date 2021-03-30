@@ -34,7 +34,7 @@ defmodule OliWeb.DeliveryView do
   def user_role_is_student(conn, user) do
     section_slug = get_section_slug(conn)
 
-    ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_learner))
+    PlatformRoles.has_roles?(user, @student_roles, :any) || ContextRoles.has_roles?(user, section_slug, @student_roles, :any)
   end
 
   def user_role_text(conn, user) do
