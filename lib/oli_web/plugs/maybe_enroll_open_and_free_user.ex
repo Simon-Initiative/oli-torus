@@ -12,7 +12,7 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
     do
       case Pow.Plug.current_user(conn) do
         nil ->
-          case Accounts.create_user(%{sub: UUID.uuid4()}) do
+          case create_open_and_free_user() do
             {:ok, user} ->
               maybe_enroll_user(conn, user, section)
 
@@ -28,26 +28,42 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
     end
   end
 
+  defp create_open_and_free_user() do
+    Accounts.create_user(%{
+      sub: UUID.uuid4(),
+      login_token: UUID.uuid4()
+    })
+  end
+
   defp maybe_enroll_user(conn, user, section) do
+    # create or update lti_params for open and free user
+    params = open_and_free_lti_params(user, section)
+    exp = Timex.now |> Timex.add(Timex.Duration.from_weeks(52))
+    {:ok, %Lti_1p3.Tool.LtiParams{}} = %Lti_1p3.Tool.LtiParams{key: user.sub, params: params, exp: exp}
+      |> Lti_1p3.DataProviders.EctoProvider.create_or_update_lti_params()
+
+    conn = conn
+      |> LtiSession.put_user_params(user.sub)
+      |> LtiSession.put_section_params(section.slug, user.sub)
+
     if Sections.is_enrolled?(user.id, section.slug) do
+      # user is already enrolled
       conn
     else
-      params = open_and_free_lti_params(user, section)
-      exp = Timex.now |> Timex.add(Timex.Duration.from_weeks(52))
-      {:ok, %Lti_1p3.Tool.LtiParams{}} = %Lti_1p3.Tool.LtiParams{key: user.sub, params: params, exp: exp}
-        |> Lti_1p3.DataProviders.EctoProvider.create_or_update_lti_params()
-
       # enroll new open and free user in this section as a student/learner
       context_roles = params["https://purl.imsglobal.org/spec/lti/claim/roles"]
         |> Lti_1p3.Tool.ContextRoles.get_roles_by_uris()
+
       Sections.enroll(user.id, section.id, context_roles)
 
+      # generate a login token so a user can access their user progress in the future or using a different browser
+      login_token = Phoenix.Token.sign(conn, "login_token", user.sub) |> Base.url_encode64()
+
       conn
-      |> LtiSession.put_user_params(user.sub)
-      |> LtiSession.put_section_params(section.slug, user.sub)
-      |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
-      |> Pow.Plug.create(user)
+      |> Phoenix.Controller.put_flash(:info, "You've been enrolled! Save this URL to login: #{get_base_url()}/login/#{login_token}")
     end
+    |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
+    |> Pow.Plug.create(user)
   end
 
   # creates mock lti_params for open and free user which are used to power delivery,

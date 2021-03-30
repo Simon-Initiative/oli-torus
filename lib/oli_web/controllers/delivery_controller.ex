@@ -23,24 +23,35 @@ defmodule OliWeb.DeliveryController do
     lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
     context_roles = ContextRoles.get_roles_by_uris(lti_roles)
     role = ContextRoles.get_highest_role(context_roles)
-
-    case {role, user.author, section} do
-      # author account has not been linked
-      {role, nil, nil} when role == @context_administrator or role == @context_instructor ->
-        render_getting_started(conn)
-
-      # section has not been configured
-      {role, author, nil} when role == @context_administrator or role == @context_instructor ->
-        render_configure_section(conn, author)
-
-      {_role, _author, nil} ->
-        render_course_not_configured(conn)
-
-      # section has been configured
-      {_role, _author, section} ->
-        redirect_to_page_delivery(conn, section)
+    open_and_free_user? = case lti_params["https://oli.cmu.edu/session"] do
+      %{"open_and_free" => true} -> true
+      _ -> false
     end
 
+    if open_and_free_user? do
+      render_open_and_free_index(conn)
+    else
+      case {role, user.author, section} do
+        # author account has not been linked
+        {role, nil, nil} when role == @context_administrator or role == @context_instructor ->
+          render_getting_started(conn)
+
+        # section has not been configured
+        {role, author, nil} when role == @context_administrator or role == @context_instructor ->
+          render_configure_section(conn, author)
+
+        {_role, _author, nil} ->
+          render_course_not_configured(conn)
+
+        # section has been configured
+        {_role, _author, section} ->
+          redirect_to_page_delivery(conn, section)
+      end
+    end
+  end
+
+  defp render_open_and_free_index(conn) do
+    render(conn, "open_and_free_index.html")
   end
 
   defp render_course_not_configured(conn) do
@@ -235,6 +246,18 @@ defmodule OliWeb.DeliveryController do
     |> use_pow_config(:user)
     |> Pow.Plug.delete()
     |> redirect(to: Routes.delivery_path(conn, :index))
+  end
+
+  def login(conn, %{"token" => token}) do
+    with decoded_token <- Base.url_decode64!(token),
+         {:ok, sub} <- Phoenix.Token.verify(conn, "login_token", decoded_token, max_age: 86_400),
+         user when not is_nil(user) <- Accounts.get_user_by(sub: sub)
+    do
+      redirect(conn, to: Routes.delivery_path(conn, :index))
+    else
+      _ ->
+        render conn, "unauthorized.html"
+    end
   end
 
 end

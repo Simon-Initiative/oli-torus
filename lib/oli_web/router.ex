@@ -369,6 +369,8 @@ defmodule OliWeb.Router do
 
     live "/:section_slug/grades", Grades.GradesLive, session: {__MODULE__, :with_delivery, []}
     get "/:section_slug/grades/export", PageDeliveryController, :export_gradebook
+
+    get "/login/:token", DeliveryController, :login
   end
 
   scope "/course", OliWeb do

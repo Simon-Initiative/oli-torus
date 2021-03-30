@@ -108,7 +108,7 @@ defmodule Oli.Accounts do
       {:error, changeset}         -> # Something went wrong
 
   """
-  def insert_or_update_user(%{ sub: sub } = changes) do
+  def insert_or_update_user(%{sub: sub} = changes) do
     case Repo.get_by(User, sub: sub) do
       nil -> %User{}
       user -> user
