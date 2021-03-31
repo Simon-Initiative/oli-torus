@@ -428,7 +428,6 @@ defmodule Oli.Publishing do
 
     # create a new publication to capture all further edits
     {:ok, new_publication} = create_publication(%{
-      description: active_publication.description,
       published: false,
       root_resource_id: active_publication.root_resource_id,
       project_id: active_publication.project_id,

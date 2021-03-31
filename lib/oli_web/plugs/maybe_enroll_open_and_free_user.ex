@@ -3,6 +3,7 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
   alias Oli.Delivery.Sections
   alias Oli.Accounts
   alias OliWeb.Common.LtiSession
+  alias OliWeb.Router.Helpers, as: Routes
 
   def init(opts), do: opts
 
@@ -30,8 +31,9 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
 
   defp create_open_and_free_user() do
     Accounts.create_user(%{
+      # generate a unique sub identifier which is also used so a user can access
+      # their progress in the future or using a different browser
       sub: UUID.uuid4(),
-      login_token: UUID.uuid4()
     })
   end
 
@@ -56,11 +58,8 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
 
       Sections.enroll(user.id, section.id, context_roles)
 
-      # generate a login token so a user can access their user progress in the future or using a different browser
-      login_token = Phoenix.Token.sign(conn, "login_token", user.sub) |> Base.url_encode64()
-
       conn
-      |> Phoenix.Controller.put_flash(:info, "You've been enrolled! Save this URL to login: #{get_base_url()}/login/#{login_token}")
+      |> Phoenix.Controller.put_flash(:info, "You've been enrolled! Save this URL to login: #{Routes.delivery_url(conn, :login, user.sub)}")
     end
     |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
     |> Pow.Plug.create(user)

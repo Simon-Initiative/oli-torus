@@ -352,7 +352,13 @@ defmodule OliWeb.Router do
     get "/authorize_redirect", LtiController, :authorize_redirect
   end
 
-  scope "/course", OliWeb do
+  scope "/sections", OliWeb do
+    pipe_through [:browser]
+
+    get "/login/:sub", DeliveryController, :login
+  end
+
+  scope "/sections", OliWeb do
     pipe_through [:browser, :delivery_protected, :pow_email_layout]
 
     get "/", DeliveryController, :index
@@ -362,24 +368,22 @@ defmodule OliWeb.Router do
     get "/create_and_link_account", DeliveryController, :create_and_link_account
     post "/create_and_link_account", DeliveryController, :process_create_and_link_account_user
 
-    post "/section", DeliveryController, :create_section
+    post "/", DeliveryController, :create_section
     get "/signout", DeliveryController, :signout
 
     get "/unauthorized", DeliveryController, :unauthorized
 
     live "/:section_slug/grades", Grades.GradesLive, session: {__MODULE__, :with_delivery, []}
     get "/:section_slug/grades/export", PageDeliveryController, :export_gradebook
-
-    get "/login/:token", DeliveryController, :login
   end
 
-  scope "/course", OliWeb do
+  scope "/sections", OliWeb do
     pipe_through [:browser, :maybe_enroll_open_and_free, :delivery_protected, :pow_email_layout]
 
-    # course link resolver
+    # section link resolver
     get "/link/:revision_slug", PageDeliveryController, :link
 
-    get "/:section_slug/page", PageDeliveryController, :index
+    get "/:section_slug", PageDeliveryController, :index
     get "/:section_slug/page/:revision_slug", PageDeliveryController, :page
     get "/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt
     get "/:section_slug/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt

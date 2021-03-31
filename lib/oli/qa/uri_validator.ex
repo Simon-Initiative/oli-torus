@@ -11,7 +11,7 @@ defmodule Oli.Qa.UriValidator do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Revision
 
-  @internal_link_prefix "/course/link/"
+  @internal_link_prefix "/sections/link/"
 
   # returns only valid uris
   def valid_uris(elements, project_slug) when is_list(elements) do

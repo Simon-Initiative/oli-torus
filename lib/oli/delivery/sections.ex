@@ -5,7 +5,6 @@ defmodule Oli.Delivery.Sections do
 
   import Ecto.Query, warn: false
   alias Oli.Repo
-
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.Tool.ContextRole
@@ -62,6 +61,19 @@ defmodule Oli.Delivery.Sections do
       where: s.slug == ^section_slug,
       preload: [:user, :context_roles],
       select: e)
+    Repo.all(query)
+  end
+
+  @doc """
+  Returns a listing of all open and free sections for a given user.
+  """
+  def list_user_open_and_free_sections(%{id: user_id} = _user) do
+    query = from(
+      s in Section,
+      join: e in Enrollment, on: e.section_id == s.id,
+      where: e.user_id == ^user_id and s.open_and_free == true,
+      preload: [:project, :publication],
+      select: s)
     Repo.all(query)
   end
 

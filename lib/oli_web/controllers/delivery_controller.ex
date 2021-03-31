@@ -29,7 +29,7 @@ defmodule OliWeb.DeliveryController do
     end
 
     if open_and_free_user? do
-      render_open_and_free_index(conn)
+      render_open_and_free_index(conn, user)
     else
       case {role, user.author, section} do
         # author account has not been linked
@@ -50,8 +50,12 @@ defmodule OliWeb.DeliveryController do
     end
   end
 
-  defp render_open_and_free_index(conn) do
-    render(conn, "open_and_free_index.html")
+  defp render_open_and_free_index(conn, user) do
+    sections = Sections.list_user_open_and_free_sections(user)
+
+    IO.inspect sections
+
+    render(conn, "open_and_free_index.html", sections: sections)
   end
 
   defp render_course_not_configured(conn) do
@@ -248,12 +252,14 @@ defmodule OliWeb.DeliveryController do
     |> redirect(to: Routes.delivery_path(conn, :index))
   end
 
-  def login(conn, %{"token" => token}) do
-    with decoded_token <- Base.url_decode64!(token),
-         {:ok, sub} <- Phoenix.Token.verify(conn, "login_token", decoded_token, max_age: 86_400),
-         user when not is_nil(user) <- Accounts.get_user_by(sub: sub)
+  def login(conn, %{"sub" => sub}) do
+    with user when not is_nil(user) <- Accounts.get_user_by(sub: sub)
     do
-      redirect(conn, to: Routes.delivery_path(conn, :index))
+      conn
+      |> LtiSession.put_user_params(user.sub)
+      |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
+      |> Pow.Plug.create(user)
+      |> redirect(to: Routes.delivery_path(conn, :index))
     else
       _ ->
         render conn, "unauthorized.html"

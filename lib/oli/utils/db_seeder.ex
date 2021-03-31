@@ -20,7 +20,7 @@ defmodule Oli.Seeder do
   def base_project_with_resource(author) do
 
     {:ok, family} = Family.changeset(%Family{}, %{description: "description", title: "title"}) |> Repo.insert
-    {:ok, project} = Project.changeset(%Project{}, %{description: "description", title: "Example Open and Free Course", version: "1", family_id: family.id}) |> Repo.insert
+    {:ok, project} = Project.changeset(%Project{}, %{description: "description", title: "Example Course", version: "1", family_id: family.id}) |> Repo.insert
 
     {:ok, _} = AuthorProject.changeset(%AuthorProject{}, %{author_id: author.id, project_id: project.id, project_role_id: ProjectRole.role_id.owner}) |> Repo.insert
 
@@ -31,7 +31,7 @@ defmodule Oli.Seeder do
     {:ok, _} = Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{project_id: project.id, resource_id: container_resource.id}) |> Repo.insert
     {:ok, container_revision} = Oli.Resources.create_revision(%{author_id: author.id, objectives: %{}, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"), children: [], content: %{}, deleted: false, slug: "example_page", title: "Example Page", resource_id: container_resource.id})
 
-    {:ok, publication} = Publication.changeset(%Publication{}, %{description: "An example course", published: false, root_resource_id: container_resource.id, project_id: project.id}) |> Repo.insert
+    {:ok, publication} = Publication.changeset(%Publication{}, %{published: false, root_resource_id: container_resource.id, project_id: project.id}) |> Repo.insert
 
     publish_resource(publication, container_resource, container_revision)
 
@@ -44,7 +44,7 @@ defmodule Oli.Seeder do
       |> Map.put(:author, author)
       |> Map.put(:institution, institution)
       |> Map.put(:publication, publication)
-      |> Map.put(:container, %{ resource: container_resource, revision: container_revision })
+      |> Map.put(:container, %{resource: container_resource, revision: container_revision})
       |> Map.put(:page1, page1)
       |> Map.put(:page2, page2)
       |> Map.put(:revision1, revision1)
