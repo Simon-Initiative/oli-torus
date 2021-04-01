@@ -353,9 +353,11 @@ defmodule OliWeb.Router do
   end
 
   scope "/sections", OliWeb do
-    pipe_through [:browser]
+    pipe_through [:browser, :maybe_enroll_open_and_free, :delivery_protected, :pow_email_layout]
 
-    get "/login/:sub", DeliveryController, :login
+    # section link resolver
+    get "/link/:revision_slug", PageDeliveryController, :link
+    get "/:section_slug", PageDeliveryController, :index
   end
 
   scope "/sections", OliWeb do
@@ -373,17 +375,6 @@ defmodule OliWeb.Router do
 
     get "/unauthorized", DeliveryController, :unauthorized
 
-    live "/:section_slug/grades", Grades.GradesLive, session: {__MODULE__, :with_delivery, []}
-    get "/:section_slug/grades/export", PageDeliveryController, :export_gradebook
-  end
-
-  scope "/sections", OliWeb do
-    pipe_through [:browser, :maybe_enroll_open_and_free, :delivery_protected, :pow_email_layout]
-
-    # section link resolver
-    get "/link/:revision_slug", PageDeliveryController, :link
-
-    get "/:section_slug", PageDeliveryController, :index
     get "/:section_slug/page/:revision_slug", PageDeliveryController, :page
     get "/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt
     get "/:section_slug/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt
@@ -391,6 +382,8 @@ defmodule OliWeb.Router do
 
     resources "/help", HelpDeliveryController, only: [:index, :create]
     get "/help/sent", HelpDeliveryController, :sent
+    live "/:section_slug/grades", Grades.GradesLive, session: {__MODULE__, :with_delivery, []}
+    get "/:section_slug/grades/export", PageDeliveryController, :export_gradebook
   end
 
   scope "/admin", OliWeb do

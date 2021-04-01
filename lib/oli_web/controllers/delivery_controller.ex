@@ -265,18 +265,4 @@ defmodule OliWeb.DeliveryController do
     |> redirect(to: Routes.delivery_path(conn, :index))
   end
 
-  def login(conn, %{"sub" => sub}) do
-    with user when not is_nil(user) <- Accounts.get_user_by(sub: sub)
-    do
-      conn
-      |> LtiSession.put_user_params(user.sub)
-      |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
-      |> Pow.Plug.create(user)
-      |> redirect(to: Routes.delivery_path(conn, :index))
-    else
-      _ ->
-        render conn, "unauthorized.html"
-    end
-  end
-
 end
