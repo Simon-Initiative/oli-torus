@@ -121,7 +121,10 @@ defmodule Oli.Accounts do
   Updates the platform roles associated with a user
   ## Examples
       iex> update_user_platform_roles(user, roles)
-      %Ecto.Changeset{source: %User{}}
+      {:ok, user}       -> # Updated with success
+
+      iex> update_user_platform_roles(user, roles)
+      {:error, changeset} -> # Something went wrong
   """
   def update_user_platform_roles(%User{} = user, roles) do
     roles = Lti_1p3.DataProviders.EctoProvider.Marshaler.to(roles)

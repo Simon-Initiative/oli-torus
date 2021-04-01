@@ -4,6 +4,7 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
   alias Oli.Accounts
   alias OliWeb.Common.LtiSession
   alias OliWeb.Router.Helpers, as: Routes
+  alias Lti_1p3.Tool.PlatformRoles
 
   def init(opts), do: opts
 
@@ -30,11 +31,15 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
   end
 
   defp create_open_and_free_user() do
-    Accounts.create_user(%{
+    {:ok, user} = Accounts.create_user(%{
       # generate a unique sub identifier which is also used so a user can access
       # their progress in the future or using a different browser
       sub: UUID.uuid4(),
     })
+
+    Accounts.update_user_platform_roles(user, [
+      PlatformRoles.get_role(:institution_learner),
+    ])
   end
 
   defp maybe_enroll_user(conn, user, section) do
