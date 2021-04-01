@@ -2,6 +2,7 @@ defmodule OliWeb.DeliveryView do
   use OliWeb, :view
 
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.PlatformRoles
 
@@ -22,43 +23,73 @@ defmodule OliWeb.DeliveryView do
     ContextRoles.get_role(:context_learner),
   ]
 
-  def user_role_is_student(conn, user) do
-    section = Sections.get_section_from_lti_params(conn.assigns.lti_params)
+  defp user_role(conn, user) do
+    case Sections.get_section_from_lti_params(conn.assigns.lti_params) do
+      %Section{open_and_free: open_and_free, slug: section_slug} ->
+        cond do
+          open_and_free ->
+            :open_and_free
+          PlatformRoles.has_roles?(user, @admin_roles, :any) || ContextRoles.has_roles?(user, section_slug, @admin_roles, :any) ->
+            :administrator
+          PlatformRoles.has_roles?(user, @instructor_roles, :any) || ContextRoles.has_roles?(user, section_slug, @instructor_roles, :any) ->
+            :instructor
+          PlatformRoles.has_roles?(user, @student_roles, :any) || ContextRoles.has_roles?(user, section_slug, @student_roles, :any) ->
+            :student
+          true ->
+            :other
+        end
+      _ ->
+        cond do
+          PlatformRoles.has_roles?(user, @admin_roles, :any) ->
+            :administrator
+          PlatformRoles.has_roles?(user, @instructor_roles, :any) ->
+            :instructor
+          PlatformRoles.has_roles?(user, @student_roles, :any) ->
+            :student
+          true ->
+            :other
+        end
+    end
+  end
 
-    PlatformRoles.has_roles?(user, @student_roles, :any) || ContextRoles.has_roles?(user, section.slug, @student_roles, :any)
+  def user_role_is_student(conn, user) do
+    case user_role(conn, user) do
+      :open_and_free ->
+        true
+      :student ->
+        true
+      _ ->
+        false
+    end
   end
 
   def user_role_text(conn, user) do
-    section = Sections.get_section_from_lti_params(conn.assigns.lti_params)
-
-    cond do
-      section.open_and_free ->
+    case user_role(conn, user) do
+      :open_and_free ->
         "Open and Free"
-      PlatformRoles.has_roles?(user, @admin_roles, :any) || ContextRoles.has_roles?(user, section.slug, @admin_roles, :any) ->
+      :administrator ->
         "Administrator"
-      PlatformRoles.has_roles?(user, @instructor_roles, :any) || ContextRoles.has_roles?(user, section.slug, @instructor_roles, :any) ->
+      :instructor ->
         "Instructor"
-      PlatformRoles.has_roles?(user, @student_roles, :any) || ContextRoles.has_roles?(user, section.slug, @student_roles, :any) ->
+      :student ->
         "Student"
-      true ->
+      _ ->
         ""
     end
   end
 
   def user_role_color(conn, user) do
-    section = Sections.get_section_from_lti_params(conn.assigns.lti_params)
-
-    cond do
-      section.open_and_free ->
+    case user_role(conn, user) do
+      :open_and_free ->
         "#2C67C4"
-      PlatformRoles.has_roles?(user, @admin_roles, :any) || ContextRoles.has_roles?(user, section.slug, @admin_roles, :any) ->
+      :administrator ->
         "#f39c12"
-      PlatformRoles.has_roles?(user, @instructor_roles, :any) || ContextRoles.has_roles?(user, section.slug, @instructor_roles, :any) ->
+      :instructor ->
         "#2ecc71"
-      PlatformRoles.has_roles?(user, @student_roles, :any) || ContextRoles.has_roles?(user, section.slug, @student_roles, :any) ->
+      :student ->
         "#3498db"
-      true ->
-        "#3498db"
+      _ ->
+        ""
     end
   end
 
@@ -84,5 +115,4 @@ defmodule OliWeb.DeliveryView do
         """
     end
   end
-
 end
