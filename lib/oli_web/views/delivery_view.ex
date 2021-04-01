@@ -1,7 +1,6 @@
 defmodule OliWeb.DeliveryView do
   use OliWeb, :view
 
-  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.PlatformRoles
@@ -24,7 +23,7 @@ defmodule OliWeb.DeliveryView do
   ]
 
   defp user_role(conn, user) do
-    case Sections.get_section_from_lti_params(conn.assigns.lti_params) do
+    case conn.assigns[:section] do
       %Section{open_and_free: open_and_free, slug: section_slug} ->
         cond do
           open_and_free ->
@@ -49,6 +48,33 @@ defmodule OliWeb.DeliveryView do
           true ->
             :other
         end
+    end
+  end
+
+  defp is_preview_mode?(conn) do
+    conn.assigns[:preview_mode] == true
+  end
+
+  defp is_open_and_free_section?(conn) do
+    case conn.assigns[:section] do
+      %Section{open_and_free: open_and_free} ->
+        open_and_free
+
+      _ ->
+        false
+    end
+  end
+
+  def logo_link_path(conn) do
+    cond do
+      is_preview_mode?(conn) ->
+        "#"
+
+      is_open_and_free_section?(conn) ->
+        Routes.delivery_path(conn, :open_and_free_index)
+
+      true ->
+        Routes.delivery_path(conn, :index)
     end
   end
 

@@ -75,8 +75,15 @@ defmodule OliWeb.Router do
     plug Pow.Plug.RequireAuthenticated,
       error_handler: OliWeb.Pow.UserAuthErrorHandler
     plug Oli.Plugs.RemoveXFrameOptions
-    plug Oli.Plugs.LoadLtiParams
     plug :put_root_layout, {OliWeb.LayoutView, "delivery.html"}
+  end
+
+  pipeline :require_lti_params do
+    plug Oli.Plugs.RequireLtiParams
+  end
+
+  pipeline :require_section do
+    plug Oli.Plugs.RequireSection
   end
 
   # Ensure that we have a logged in user
@@ -114,8 +121,8 @@ defmodule OliWeb.Router do
     %{"current_author_id" => conn.assigns.current_author.id}
   end
 
-  def with_delivery(conn) do
-    %{"lti_params" => conn.assigns.lti_params, "current_user" => conn.assigns.current_user}
+  def with_section_user(conn) do
+    %{"section" => conn.assigns.section, "current_user" => conn.assigns.current_user}
   end
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layout, layout)
@@ -152,12 +159,7 @@ defmodule OliWeb.Router do
     pipe_through [:browser]
 
     get "/", StaticPageController, :index
-
-  end
-
-  scope "/", OliWeb do
-    pipe_through [:browser, Oli.Plugs.RemoveXFrameOptions]
-
+    get "/unauthorized", StaticPageController, :unauthorized
     resources "/help", HelpController, only: [:index, :create]
     get "/help/sent", HelpController, :sent
   end
@@ -355,15 +357,29 @@ defmodule OliWeb.Router do
   scope "/sections", OliWeb do
     pipe_through [:browser, :maybe_enroll_open_and_free, :delivery_protected, :pow_email_layout]
 
-    # section link resolver
-    get "/link/:revision_slug", PageDeliveryController, :link
-    get "/:section_slug", PageDeliveryController, :index
+    get "/", DeliveryController, :open_and_free_index
   end
 
   scope "/sections", OliWeb do
-    pipe_through [:browser, :delivery_protected, :pow_email_layout]
+    pipe_through [:browser, :maybe_enroll_open_and_free, :delivery_protected, :require_section, :pow_email_layout]
+
+    get "/:section_slug", PageDeliveryController, :index
+    get "/:section_slug/page/:revision_slug", PageDeliveryController, :page
+    get "/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt
+    get "/:section_slug/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt
+    get "/:section_slug/page/:revision_slug/attempt/:attempt_guid/review", PageDeliveryController, :review_attempt
+
+    live "/:section_slug/grades", Grades.GradesLive, session: {__MODULE__, :with_section_user, []}
+    get "/:section_slug/grades/export", PageDeliveryController, :export_gradebook
+  end
+
+  scope "/course", OliWeb do
+    pipe_through [:browser, :delivery_protected, :require_lti_params, :pow_email_layout]
 
     get "/", DeliveryController, :index
+
+    # course link resolver
+    get "/link/:revision_slug", PageDeliveryController, :link
 
     get "/link_account", DeliveryController, :link_account
     post "/link_account", DeliveryController, :process_link_account_user
@@ -372,18 +388,6 @@ defmodule OliWeb.Router do
 
     post "/", DeliveryController, :create_section
     get "/signout", DeliveryController, :signout
-
-    get "/unauthorized", DeliveryController, :unauthorized
-
-    get "/:section_slug/page/:revision_slug", PageDeliveryController, :page
-    get "/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt
-    get "/:section_slug/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt
-    get "/:section_slug/page/:revision_slug/attempt/:attempt_guid/review", PageDeliveryController, :review_attempt
-
-    resources "/help", HelpDeliveryController, only: [:index, :create]
-    get "/help/sent", HelpDeliveryController, :sent
-    live "/:section_slug/grades", Grades.GradesLive, session: {__MODULE__, :with_delivery, []}
-    get "/:section_slug/grades/export", PageDeliveryController, :export_gradebook
   end
 
   scope "/admin", OliWeb do

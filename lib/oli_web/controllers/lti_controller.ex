@@ -11,6 +11,8 @@ defmodule OliWeb.LtiController do
   alias Oli.Predefined
   alias Oli.Slack
   alias OliWeb.Common.LtiSession
+  alias Oli.Lti.LTI_AGS
+  alias Oli.Lti.LTI_NRPS
 
   require Logger
 
@@ -332,7 +334,7 @@ defmodule OliWeb.LtiController do
 
                   # make sure section details are up to date
                   %{"title" => context_title} = context
-                  update_section_details(context_title, section)
+                  update_section_details(context_title, section, lti_params)
 
                   # store lti params key in the session for this particular section so that the cached lti_params
                   # can be retrieved from the database in later requests
@@ -370,8 +372,14 @@ defmodule OliWeb.LtiController do
     Sections.enroll(user_id, section_id, context_roles)
   end
 
-  defp update_section_details(context_title, section) do
-    Sections.update_section(section, %{title: context_title})
+  defp update_section_details(context_title, section, lti_params) do
+    Sections.update_section(section, %{
+      title: context_title,
+      grade_passback_enabled: LTI_AGS.grade_passback_enabled?(lti_params),
+      line_items_service_url: LTI_AGS.get_line_items_url(lti_params),
+      nrps_enabled: LTI_NRPS.nrps_enabled?(lti_params),
+      nrps_context_memberships_url: LTI_NRPS.get_context_memberships_url(lti_params)
+    })
   end
 
   defp get_existing_section(lti_params) do

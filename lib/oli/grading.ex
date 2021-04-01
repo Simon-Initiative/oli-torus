@@ -30,13 +30,13 @@ defmodule Oli.Grading do
 
   If error encountered, returns {:error, error}
   """
-  def send_score_to_lms(lti_launch_params, %ResourceAccess{} = resource_access, access_token_provider) do
+  def send_score_to_lms(section, user, %ResourceAccess{} = resource_access, access_token_provider) do
 
     # First check to see if grade passback is enabled
-    if LTI_AGS.grade_passback_enabled?(lti_launch_params) do
+    if section.grade_passback_enabled do
 
       case access_token_provider.() do
-        {:ok, access_token} -> send_score(lti_launch_params, resource_access, access_token)
+        {:ok, access_token} -> send_score(section, user, resource_access, access_token)
         e -> e
       end
 
@@ -55,19 +55,17 @@ defmodule Oli.Grading do
     ]
   end
 
-  defp send_score(lti_launch_params, %ResourceAccess{} = resource_access, token) do
+  defp send_score(section, user, %ResourceAccess{} = resource_access, token) do
 
-    line_items_service_url = LTI_AGS.get_line_items_url(lti_launch_params)
-    %Section{slug: section_slug} = Sections.get_section_from_lti_params(lti_launch_params)
-    label = DeliveryResolver.from_resource_id(section_slug, resource_access.resource_id).title
+    label = DeliveryResolver.from_resource_id(section.slug, resource_access.resource_id).title
 
     # Next, fetch (and possibly create) the line item associated with this resource
-    case LTI_AGS.fetch_or_create_line_item(line_items_service_url, resource_access.resource_id, 1, label, token) do
+    case LTI_AGS.fetch_or_create_line_item(section.line_items_service_url, resource_access.resource_id, 1, label, token) do
 
       # Finally, post the score for this line item
       {:ok, line_item} ->
 
-        case to_score(Map.get(lti_launch_params, "sub"), resource_access)
+        case to_score(Map.get(user.sub, "sub"), resource_access)
         |>  LTI_AGS.post_score(line_item, token) do
 
           {:ok, _} -> {:ok, :synced}

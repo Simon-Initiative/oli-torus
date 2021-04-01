@@ -1,4 +1,4 @@
-defmodule Oli.Plugs.LoadLtiParams do
+defmodule Oli.Plugs.RequireLtiParams do
   import Plug.Conn
   import Phoenix.Controller
 
@@ -16,7 +16,7 @@ defmodule Oli.Plugs.LoadLtiParams do
 
           lti_params_key ->
             # load cached lti params from database
-            fetch_lti_params(conn, lti_params_key)
+            load_lti_params(conn, lti_params_key)
         end
 
       _ ->
@@ -26,13 +26,13 @@ defmodule Oli.Plugs.LoadLtiParams do
 
           lti_params_key ->
             # load cached lti params from database
-            fetch_lti_params(conn, lti_params_key)
+            load_lti_params(conn, lti_params_key)
         end
     end
 
   end
 
-  defp fetch_lti_params(conn, lti_params_key) do
+  defp load_lti_params(conn, lti_params_key) do
     case Lti_1p3.Tool.get_lti_params_by_key(lti_params_key) do
       nil ->
         lms_signin_required(conn)
@@ -45,6 +45,7 @@ defmodule Oli.Plugs.LoadLtiParams do
   defp lms_signin_required(conn) do
     conn
     |> put_view(OliWeb.DeliveryView)
+    |> put_status(401)
     |> render("signin_required.html")
     |> halt()
   end

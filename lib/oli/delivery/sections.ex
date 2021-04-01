@@ -2,15 +2,14 @@ defmodule Oli.Delivery.Sections do
   @moduledoc """
   The Sections context.
   """
-
   import Ecto.Query, warn: false
+
   alias Oli.Repo
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
   alias Lti_1p3.DataProviders.EctoProvider.Deployment
-  alias Oli.Lti_1p3
   alias Oli.Lti_1p3.Tool.Registration
 
   @doc """
@@ -144,19 +143,30 @@ defmodule Oli.Delivery.Sections do
   def get_section_from_lti_params(lti_params) do
     context_id = Map.get(lti_params, "https://purl.imsglobal.org/spec/lti/claim/context")
       |> Map.get("id")
+    issuer = lti_params["iss"]
+    client_id = lti_params["aud"]
 
-    if Lti_1p3.Utils.open_and_free_user?(lti_params) do
-      get_section_by(context_id: context_id, open_and_free: true)
-    else
-      issuer = lti_params["iss"]
-      client_id = lti_params["aud"]
+    Repo.one(from s in Section,
+      join: d in Deployment, on: s.lti_1p3_deployment_id == d.id,
+      join: r in Registration, on: d.registration_id == r.id,
+      where: s.context_id == ^context_id and r.issuer == ^issuer and r.client_id == ^client_id,
+      select: s)
+  end
 
-      Repo.one(from s in Section,
-        join: d in Deployment, on: s.lti_1p3_deployment_id == d.id,
-        join: r in Registration, on: d.registration_id == r.id,
-        where: s.context_id == ^context_id and r.issuer == ^issuer and r.client_id == ^client_id,
-        select: s)
-    end
+  @doc """
+  Gets the associated deployment and registration from the given section
+
+  ## Examples
+      iex> get_deployment_registration_from_section(section)
+      {%Deployment{}, %Registration{}}
+      iex> get_deployment_registration_from_section(section)
+      nil
+  """
+  def get_deployment_registration_from_section(%Section{lti_1p3_deployment_id: lti_1p3_deployment_id}) do
+    Repo.one(from d in Deployment,
+      join: r in Registration, on: d.registration_id == r.id,
+      where: ^lti_1p3_deployment_id == d.id,
+      select: {d, r})
   end
 
   @doc """

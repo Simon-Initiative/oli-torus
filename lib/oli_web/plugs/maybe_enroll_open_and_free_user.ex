@@ -59,29 +59,22 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
       sub: UUID.uuid4(),
     })
 
+    # TODO: consider removing
     Accounts.update_user_platform_roles(user, [
       PlatformRoles.get_role(:institution_learner),
     ])
   end
 
   defp maybe_enroll_user(conn, user, section) do
-    # create or update lti_params for open and free user
-    params = open_and_free_lti_params(user, section)
-    exp = Timex.now |> Timex.add(Timex.Duration.from_weeks(52))
-    {:ok, %Lti_1p3.Tool.LtiParams{}} = %Lti_1p3.Tool.LtiParams{key: user.sub, params: params, exp: exp}
-      |> Lti_1p3.DataProviders.EctoProvider.create_or_update_lti_params()
-
-    conn = conn
-      |> LtiSession.put_user_params(user.sub)
-      |> LtiSession.put_section_params(section.slug, user.sub)
-
     if Sections.is_enrolled?(user.id, section.slug) do
       # user is already enrolled
       conn
     else
+      # TODO: consider changing, open and free has no concept of LTI roles
       # enroll new open and free user in this section as a student/learner
-      context_roles = params["https://purl.imsglobal.org/spec/lti/claim/roles"]
-        |> Lti_1p3.Tool.ContextRoles.get_roles_by_uris()
+      context_roles = [
+        Lti_1p3.Tool.ContextRoles.get_role(:context_learner),
+      ]
 
       Sections.enroll(user.id, section.id, context_roles)
 
@@ -92,22 +85,4 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
     |> Pow.Plug.create(user)
   end
 
-  # creates mock lti_params for open and free user which are used to power delivery,
-  # we will just use the user's sub uuid as the key since it is guaranteed to be unique
-  defp open_and_free_lti_params(user, section) do
-    %{
-      "sub" => user.sub,
-      "https://purl.imsglobal.org/spec/lti/claim/context" => %{
-          "id" => section.context_id,
-          "title" => section.title,
-      },
-      "https://purl.imsglobal.org/spec/lti/claim/roles" => [
-        "http://purl.imsglobal.org/vocab/lis/v2/institution/person#Student",
-        "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner",
-      ],
-      "https://oli.cmu.edu/session" => %{
-        "open_and_free" => true,
-      }
-    }
-  end
 end

@@ -24,11 +24,9 @@ defmodule OliWeb.DeliveryController do
   def index(conn, _params) do
     user = conn.assigns.current_user
     lti_params = conn.assigns.lti_params
-    section = Sections.get_section_from_lti_params(lti_params)
 
     lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
     context_roles = ContextRoles.get_roles_by_uris(lti_roles)
-
     platform_roles = PlatformRoles.get_roles_by_uris(lti_roles)
     roles = MapSet.new(context_roles ++ platform_roles)
     allow_configure_section_roles = MapSet.new(@allow_configure_section_roles)
@@ -36,37 +34,31 @@ defmodule OliWeb.DeliveryController do
     # allow section configuration if user has any of the allowed roles
     allow_configure_section = (MapSet.intersection(roles, allow_configure_section_roles) |> MapSet.size()) > 0
 
-    open_and_free_user? = case lti_params["https://oli.cmu.edu/session"] do
-      %{"open_and_free" => true} -> true
-      _ -> false
+    section = Sections.get_section_from_lti_params(lti_params)
+
+    case {user.author, section} do
+      # author account has not been linked
+      {nil, nil} when allow_configure_section ->
+        render_getting_started(conn)
+
+      # section has not been configured
+      {author, nil} when allow_configure_section ->
+        render_configure_section(conn, author)
+
+      {_author, nil} ->
+        render_course_not_configured(conn)
+
+      # section has been configured
+      {_author, section} ->
+        redirect_to_page_delivery(conn, section)
     end
 
-    if open_and_free_user? do
-      render_open_and_free_index(conn, user)
-    else
-      case {user.author, section} do
-        # author account has not been linked
-        {nil, nil} when allow_configure_section ->
-          render_getting_started(conn)
-
-        # section has not been configured
-        {author, nil} when allow_configure_section ->
-          render_configure_section(conn, author)
-
-        {_author, nil} ->
-          render_course_not_configured(conn)
-
-        # section has been configured
-        {_author, section} ->
-          redirect_to_page_delivery(conn, section)
-      end
-    end
   end
 
-  defp render_open_and_free_index(conn, user) do
-    sections = Sections.list_user_open_and_free_sections(user)
+  def open_and_free_index(conn, _params) do
+    user = conn.assigns.current_user
 
-    IO.inspect sections
+    sections = Sections.list_user_open_and_free_sections(user)
 
     render(conn, "open_and_free_index.html", sections: sections)
   end
@@ -184,10 +176,6 @@ defmodule OliWeb.DeliveryController do
 
     conn
     |> render_create_and_link_form()
-  end
-
-  def unauthorized(conn, _params) do
-    render conn, "unauthorized.html"
   end
 
   def process_create_and_link_account_user(conn, %{"user" => user_params}) do
