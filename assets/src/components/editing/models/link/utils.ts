@@ -10,7 +10,7 @@ interface Uninitialized {
 
 export type LinkablePages = Uninitialized | Waiting | Persistence.PagesReceived;
 
-export const internalLinkPrefix = '/sections/link';
+export const internalLinkPrefix = '/courses/link';
 
 export const isInternalLink = (href: string) => href.startsWith(internalLinkPrefix);
 
