@@ -352,13 +352,13 @@ defmodule OliWeb.Router do
     get "/authorize_redirect", LtiController, :authorize_redirect
   end
 
-  scope "/courses", OliWeb do
+  scope "/sections", OliWeb do
     pipe_through [:browser]
 
     get "/login/:sub", DeliveryController, :login
   end
 
-  scope "/courses", OliWeb do
+  scope "/sections", OliWeb do
     pipe_through [:browser, :delivery_protected, :pow_email_layout]
 
     get "/", DeliveryController, :index
@@ -377,7 +377,7 @@ defmodule OliWeb.Router do
     get "/:section_slug/grades/export", PageDeliveryController, :export_gradebook
   end
 
-  scope "/courses", OliWeb do
+  scope "/sections", OliWeb do
     pipe_through [:browser, :maybe_enroll_open_and_free, :delivery_protected, :pow_email_layout]
 
     # section link resolver
