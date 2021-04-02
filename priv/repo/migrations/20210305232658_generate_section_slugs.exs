@@ -2,7 +2,6 @@ defmodule Oli.Repo.Migrations.GenerateSectionSlugs do
   use Ecto.Migration
   import Ecto.Query, warn: false
 
-  alias Oli.Delivery.Sections.Section
   alias Oli.Utils.Slug
 
   def change do
