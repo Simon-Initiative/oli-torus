@@ -78,10 +78,13 @@ defmodule Oli.Publishing do
 
   @doc """
   Returns the list of publications available to an author. If no author is specified,
-  then it will only return publicly available open and free publications
+  then it will only return publicly available publications.
 
   ## Examples
-      iex> available_publications(author)
+      iex> available_publications()
+      [%Publication{}, ...]
+
+      iex> available_publications(author, institution)
       [%Publication{}, ...]
   """
   def available_publications() do
@@ -93,7 +96,7 @@ defmodule Oli.Publishing do
     query = from pub in Publication,
       join: u in subquery(subquery), on: pub.project_id == u.project_id and u.max_date == pub.updated_at,
       join: proj in Project, on: pub.project_id == proj.id,
-      where: proj.visibility == :global,
+      where: pub.published == true and proj.visibility == :global,
       preload: [:project],
       distinct: true,
       select: pub
@@ -101,7 +104,6 @@ defmodule Oli.Publishing do
     Repo.all(query)
   end
 
-  @spec available_publications(Oli.Accounts.Author.t(), Oli.Institutions.Institution.t()) :: any
   def available_publications(%Author{} = author, %Institution{} = institution) do
 
     subquery = from t in Publication,
@@ -114,7 +116,12 @@ defmodule Oli.Publishing do
       join: proj in Project, on: pub.project_id == proj.id,
       left_join: a in assoc(proj, :authors),
       left_join: v in ProjectVisibility, on: proj.id == v.project_id,
-      where: a.id == ^author.id or proj.visibility == :global or (proj.visibility == :selected and (v.author_id == ^author.id or v.institution_id == ^institution.id)),
+      where: pub.published == true and (
+        a.id == ^author.id or proj.visibility == :global or (
+          proj.visibility == :selected and (
+            v.author_id == ^author.id or v.institution_id == ^institution.id)
+          )
+        ),
       preload: [:project],
       distinct: true,
       select: pub

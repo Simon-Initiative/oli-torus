@@ -29,7 +29,8 @@ defmodule OliWeb.ProjectVisibilityTest do
       Publishing.publish_project(project)
 
       available_publications = Publishing.available_publications(author, institution)
-      assert Enum.count(available_publications) == 2
+
+      assert Enum.count(available_publications) == 1
     end
 
   end
