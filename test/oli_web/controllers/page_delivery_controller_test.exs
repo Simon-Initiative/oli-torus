@@ -1,5 +1,8 @@
 defmodule OliWeb.PageDeliveryControllerTest do
   use OliWeb.ConnCase
+
+  import Mox
+
   alias Oli.Delivery.Sections
   alias Oli.Seeder
   alias Oli.Delivery.Attempts.{ResourceAttempt, PartAttempt, ResourceAccess}
@@ -112,10 +115,36 @@ defmodule OliWeb.PageDeliveryControllerTest do
     setup [:setup_open_and_free_section]
 
     test "handles new open and free user access", %{conn: conn, section: section} do
+      Oli.Test.MockHTTP
+      |> expect(:post, fn "https://www.google.com/recaptcha/api/siteverify", _body, _headers, _opts ->
+        {:ok, %HTTPoison.Response{
+          status_code: 200,
+          body: Jason.encode!(%{
+            "success" => true
+          })
+        }}  end)
+
       conn = conn
       |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
+      # redirected to enroll page
+      assert html_response(conn, 302) =~ "/course/users?redirect_to=%2Fsections%2Fsome_title"
+
+      conn = recycle(conn)
+        |> post(Routes.delivery_path(conn, :create_user), %{
+          "user_details" => %{
+            "name" => "John Doe",
+            "redirect_to" => "/sections/some_title"
+          },
+          "g-recaptcha-response" => "some-valid-capcha-data"
+        })
+
+      assert html_response(conn, 302) =~ "/sections/some_title"
       user = Pow.Plug.current_user(conn);
+
+      # make the same request with a user logged in
+      conn = recycle(conn)
+      |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       assert html_response(conn, 200) =~ "Course Overview"
       assert user.sub != nil
