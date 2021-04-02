@@ -4,7 +4,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
   alias Oli.Seeder
   alias Oli.Delivery.Attempts.{ResourceAttempt, PartAttempt, ResourceAccess}
   alias Lti_1p3.Tool.ContextRoles
-  alias OliWeb.Common.LtiSession
 
   describe "page_delivery_controller index" do
     setup [:setup_session]
@@ -186,7 +185,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
     cache_lti_params("params-key", lti_params)
 
     conn = Plug.Test.init_test_session(conn, lti_session: nil)
-      |> LtiSession.put_section_params(section.slug, "params-key")
       |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
       |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 

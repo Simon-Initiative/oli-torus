@@ -3,7 +3,6 @@ defmodule OliWeb.ProjectVisibilityTest do
   alias Oli.Seeder
   alias Oli.Authoring.Course
   alias Oli.Publishing
-  alias OliWeb.Common.LtiSession
 
   import Phoenix.LiveViewTest
   @endpoint OliWeb.Endpoint
@@ -53,7 +52,6 @@ defmodule OliWeb.ProjectVisibilityTest do
     cache_lti_params("params-key", lti_params)
 
     conn = Plug.Test.init_test_session(conn, lti_session: nil)
-      |> LtiSession.put_section_params(section.slug, "params-key")
       |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
       |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 

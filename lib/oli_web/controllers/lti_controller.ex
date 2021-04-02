@@ -335,10 +335,6 @@ defmodule OliWeb.LtiController do
                   # make sure section details are up to date
                   %{"title" => context_title} = context
                   update_section_details(context_title, section, lti_params)
-
-                  # store lti params key in the session for this particular section so that the cached lti_params
-                  # can be retrieved from the database in later requests
-                  LtiSession.put_section_params(conn, section.slug, lti_params_key)
                 else
                   _ -> conn
                 end

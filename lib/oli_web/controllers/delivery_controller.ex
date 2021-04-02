@@ -238,10 +238,6 @@ defmodule OliWeb.DeliveryController do
     context_roles = ContextRoles.get_roles_by_uris(lti_roles)
     Sections.enroll(user.id, section_id, context_roles)
 
-    # set the lti_params_key for the new section to the current user's lti_params_key
-    lti_params_key = LtiSession.get_user_params(conn)
-    LtiSession.put_section_params(conn, section_slug, lti_params_key)
-
     conn
     |> redirect(to: Routes.delivery_path(conn, :index))
   end
