@@ -41,7 +41,7 @@ defmodule Oli.Repo.Migrations.GenerateSectionSlugs do
 
     sections_deployments
     # dedupe sections, keeping section with latest deployment_id
-    |> Enum.reduce(%{}, fn s, acc -> Map.put(s.id, s.deployment_id) end)
+    |> Enum.reduce(%{}, fn s, acc -> Map.put(acc, s.id, s.deployment_id) end)
     # persist
     |> Enum.each(fn {id, deployment_id} ->
       section = from s in "sections", where: s.id == ^id

@@ -9,7 +9,6 @@ defmodule OliWeb.DeliveryController do
   alias Lti_1p3.Tool.PlatformRoles
   alias Oli.Accounts
   alias Oli.Accounts.Author
-  alias OliWeb.Common.LtiSession
 
   @allow_configure_section_roles [
     PlatformRoles.get_role(:system_administrator),
@@ -223,7 +222,7 @@ defmodule OliWeb.DeliveryController do
 
     publication = Publishing.get_publication!(publication_id)
 
-    {:ok, %Section{id: section_id, slug: section_slug}} = Sections.create_section(%{
+    {:ok, %Section{id: section_id}} = Sections.create_section(%{
       time_zone: institution.timezone,
       title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
       context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],

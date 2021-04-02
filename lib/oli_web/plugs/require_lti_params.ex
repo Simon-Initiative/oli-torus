@@ -8,28 +8,14 @@ defmodule Oli.Plugs.RequireLtiParams do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    case conn.path_params do
-      %{"section_slug" => section_slug} ->
-        case LtiSession.get_section_params(conn, section_slug) do
-          nil ->
-            lms_signin_required(conn)
+    case LtiSession.get_user_params(conn) do
+      nil ->
+        lms_signin_required(conn)
 
-          lti_params_key ->
-            # load cached lti params from database
-            load_lti_params(conn, lti_params_key)
-        end
-
-      _ ->
-        case LtiSession.get_user_params(conn) do
-          nil ->
-            lms_signin_required(conn)
-
-          lti_params_key ->
-            # load cached lti params from database
-            load_lti_params(conn, lti_params_key)
-        end
+      lti_params_key ->
+        # load cached lti params from database
+        load_lti_params(conn, lti_params_key)
     end
-
   end
 
   defp load_lti_params(conn, lti_params_key) do

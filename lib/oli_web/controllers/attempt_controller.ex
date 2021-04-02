@@ -4,8 +4,6 @@ defmodule OliWeb.AttemptController do
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Attempts.StudentInput
   alias Oli.Delivery.Attempts.ClientEvaluation
-  alias Oli.Delivery.Sections.Section
-  alias Oli.Delivery.Sections
 
   def save_part(conn, %{"activity_attempt_guid" => _attempt_guid, "part_attempt_guid" => part_attempt_guid, "response" => response}) do
 
