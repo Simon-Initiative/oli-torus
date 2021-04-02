@@ -13,8 +13,13 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Lti_1p3.Tool.Registration
 
   @doc """
-  Enrolls a user in a course section.
+  Enrolls a user in a course section
+  ## Examples
+      iex> enroll(user_id, section_id, [%ContextRole{}])
+      {:ok, %Enrollment{}} # Inserted or updated with success
 
+      iex> enroll(user_id, section_id, :open_and_free)
+      {:error, changeset} # Something went wrong
   """
   @spec enroll(number(), number(), [%ContextRole{}]) :: {:ok, %Enrollment{}}
   def enroll(user_id, section_id, context_roles) do

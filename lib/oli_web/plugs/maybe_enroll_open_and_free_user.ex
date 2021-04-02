@@ -4,7 +4,7 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
   alias Oli.Accounts
   alias OliWeb.Common.LtiSession
   alias OliWeb.Router.Helpers, as: Routes
-  alias Lti_1p3.Tool.PlatformRoles
+  alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
 
   def init(opts), do: opts
 
@@ -59,7 +59,6 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
       sub: UUID.uuid4(),
     })
 
-    # TODO: consider removing
     Accounts.update_user_platform_roles(user, [
       PlatformRoles.get_role(:institution_learner),
     ])
@@ -70,13 +69,8 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
       # user is already enrolled
       conn
     else
-      # TODO: consider changing, open and free has no concept of LTI roles
       # enroll new open and free user in this section as a student/learner
-      context_roles = [
-        Lti_1p3.Tool.ContextRoles.get_role(:context_learner),
-      ]
-
-      Sections.enroll(user.id, section.id, context_roles)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       conn
       |> Phoenix.Controller.put_flash(:info, "Welcome to Open and Free! Save this URL to login: #{Routes.page_delivery_url(conn, :index, section.slug)}?user=#{user.sub}")
