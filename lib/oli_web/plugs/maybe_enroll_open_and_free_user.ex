@@ -1,10 +1,13 @@
 defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
+  import Plug.Conn
+  import Phoenix.Controller
   import Oli.Utils
+
   alias Oli.Delivery.Sections
   alias Oli.Accounts
   alias OliWeb.Common.LtiSession
   alias OliWeb.Router.Helpers, as: Routes
-  alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
+  alias Lti_1p3.Tool.ContextRoles
 
   def init(opts), do: opts
 
@@ -16,13 +19,9 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
     do
       case Pow.Plug.current_user(conn) do
         nil ->
-          case create_open_and_free_user() do
-            {:ok, user} ->
-              maybe_enroll_user(conn, user, section)
-
-            _ ->
-              throw "Error creating open and free user"
-          end
+          conn
+          |> redirect(to: Routes.delivery_path(conn, :new_user, redirect_to: "/#{Enum.join(conn.path_info, "/")}"))
+          |> halt()
         user ->
           maybe_enroll_user(conn, user, section)
       end
@@ -41,7 +40,8 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
           |> LtiSession.put_user_params(user.sub)
           |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
           |> Pow.Plug.create(user)
-          |> Phoenix.Controller.redirect(to: "/#{Enum.join(conn.path_info, "/")}")
+          |> redirect(to: "/#{Enum.join(conn.path_info, "/")}")
+          |> halt()
         else
           _ ->
             conn
@@ -50,18 +50,6 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
       _ ->
         conn
     end
-  end
-
-  defp create_open_and_free_user() do
-    {:ok, user} = Accounts.create_user(%{
-      # generate a unique sub identifier which is also used so a user can access
-      # their progress in the future or using a different browser
-      sub: UUID.uuid4(),
-    })
-
-    Accounts.update_user_platform_roles(user, [
-      PlatformRoles.get_role(:institution_learner),
-    ])
   end
 
   defp maybe_enroll_user(conn, user, section) do
@@ -75,8 +63,6 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
       conn
       |> Phoenix.Controller.put_flash(:info, "Welcome to Open and Free! Save this URL to login: #{Routes.page_delivery_url(conn, :index, section.slug)}?user=#{user.sub}")
     end
-    |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
-    |> Pow.Plug.create(user)
   end
 
 end

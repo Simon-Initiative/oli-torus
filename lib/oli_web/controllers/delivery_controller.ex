@@ -1,14 +1,14 @@
 defmodule OliWeb.DeliveryController do
   use OliWeb, :controller
+  import Oli.Utils
+
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing
-
   alias Oli.Institutions
-  alias Lti_1p3.Tool.ContextRoles
-  alias Lti_1p3.Tool.PlatformRoles
+  alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
   alias Oli.Accounts
-  alias Oli.Accounts.Author
+  alias Oli.Accounts.{Author, User}
 
   @allow_configure_section_roles [
     PlatformRoles.get_role(:system_administrator),
@@ -245,7 +245,47 @@ defmodule OliWeb.DeliveryController do
     conn
     |> use_pow_config(:user)
     |> Pow.Plug.delete()
-    |> redirect(to: Routes.delivery_path(conn, :index))
+    |> redirect(to: Routes.static_page_path(conn, :index))
+  end
+
+  def new_user(conn, %{"redirect_to" => redirect_to}) do
+    changeset = Accounts.change_user(%User{})
+    render conn, "new_user.html", changeset: changeset, redirect_to: redirect_to
+  end
+
+  def create_user(conn, %{"user_details" => user_details, "g-recaptcha-response" => g_recaptcha_response}) do
+    redirect_to = value_or(user_details["redirect_to"], Routes.delivery_path(conn, :index))
+
+    with  g_recaptcha_response when g_recaptcha_response != "" <- g_recaptcha_response,
+          {:success, :true}  <- Oli.Utils.Recaptcha.verify(g_recaptcha_response)
+    do
+      with  {:ok, user} <- Accounts.create_user(%{
+              # generate a unique sub identifier which is also used so a user can access
+              # their progress in the future or using a different browser
+              sub: UUID.uuid4(),
+              name: user_details["name"]
+            })
+      do
+        Accounts.update_user_platform_roles(user, [
+          PlatformRoles.get_role(:institution_learner),
+        ])
+
+        conn
+        |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
+        |> Pow.Plug.create(user)
+        |> redirect(to: redirect_to)
+
+      else
+        {:error, changeset} ->
+          render conn, "new_user.html", changeset: changeset, redirect_to: redirect_to
+      end
+    else
+      _ ->
+        changeset = Accounts.change_user(%User{}, user_details)
+          |> Ecto.Changeset.add_error(:captcha, "failed, please try again")
+
+        render conn, "new_user.html", changeset: changeset, redirect_to: redirect_to
+    end
   end
 
 end

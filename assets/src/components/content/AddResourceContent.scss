@@ -43,11 +43,13 @@
       border-radius: 50%;
       width: 26px;
       height: 26px;
-      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       border: 2px solid $gray-500;
       color: $gray-500;
       opacity: inherit;
-      transition: opacity 200ms ease-out;
+      transition: opacity 200ms ease-out, background-color 200ms ease-out;
 
       i {
         vertical-align: text-top;
@@ -78,8 +80,12 @@
 
     .insert-button {
       border: 2px solid transparent;
-      background-color: $gray-600;
+      background-color: rgba($color: $body-color, $alpha: 0.6);
       color: white;
+
+      &:hover {
+        background-color: $primary;
+      }
 
       i {
         color: white;

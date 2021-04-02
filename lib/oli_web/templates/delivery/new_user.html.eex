@@ -1,0 +1,25 @@
+<div class="container">
+  <script src="https://www.google.com/recaptcha/api.js"></script>
+
+  <%= render OliWeb.SharedView, "_form_container.html", Map.put(assigns, :title, value_or(assigns[:title], "Enroll in Open and Free")) do %>
+    <%= form_for @changeset, Routes.delivery_path(@conn, :create_user), [as: :user_details], fn f -> %>
+      <div class="form-label-group">
+        <%= text_input f, :name, class: "form-control " <> error_class(f, :name, "is-invalid"),
+          placeholder: "Name", required: true, autofocus: focusHelper(f, :name) %>
+        <%= label f, :name, "Name", class: "control-label" %>
+        <%= error_tag f, :name %>
+      </div>
+
+      <div class="form-label-group">
+        <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
+        <%= error_tag f, :captcha %>
+      </div>
+
+      <%= hidden_input f, :redirect_to, value: @redirect_to %>
+
+      <%= submit "Enroll", class: "btn btn-md btn-primary btn-block" %>
+      <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.static_page_path(@conn, :index)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
+    <% end %>
+  <% end %>
+
+</div>

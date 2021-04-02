@@ -374,6 +374,19 @@ defmodule OliWeb.Router do
   end
 
   scope "/course", OliWeb do
+    pipe_through [:browser, :pow_email_layout]
+
+    get "/users", DeliveryController, :new_user
+    post "/users", DeliveryController, :create_user
+  end
+
+  scope "/course", OliWeb do
+    pipe_through [:browser, :delivery_protected, :pow_email_layout]
+
+    get "/signout", DeliveryController, :signout
+  end
+
+  scope "/course", OliWeb do
     pipe_through [:browser, :delivery_protected, :require_lti_params, :pow_email_layout]
 
     get "/", DeliveryController, :index
@@ -387,7 +400,6 @@ defmodule OliWeb.Router do
     post "/create_and_link_account", DeliveryController, :process_create_and_link_account_user
 
     post "/", DeliveryController, :create_section
-    get "/signout", DeliveryController, :signout
   end
 
   scope "/admin", OliWeb do
