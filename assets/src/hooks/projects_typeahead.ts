@@ -1,13 +1,13 @@
 function format_description(description: string) {
   const MAX_TEXT_LENGTH = 16;
   if (description && description.length > MAX_TEXT_LENGTH) {
-    return ': ' + description.substr(0, MAX_TEXT_LENGTH) + '...'
-  } else if (description) {
+    return ': ' + description.substr(0, MAX_TEXT_LENGTH) + '...';
+  }
+  if (description) {
     return ': ' + description;
   }
-  else {
-    return '';
-  }
+
+  return '';
 }
 
 export const ProjectsTypeahead = {
