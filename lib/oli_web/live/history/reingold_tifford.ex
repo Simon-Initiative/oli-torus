@@ -61,7 +61,7 @@ defmodule OliWeb.RevisionHistory.ReingoldTilford do
       modifier: 0,
       type: if(children == [], do: :leaf, else: :subtree),
       height: @node_height,
-      width: String.length(label) * 10,
+      width: max((String.length(label) * 10) + 2, 42),
       level: level,
       value: node
     }

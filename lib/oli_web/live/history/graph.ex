@@ -1,5 +1,6 @@
 defmodule OliWeb.RevisionHistory.Graph do
   use Phoenix.LiveComponent
+  alias OliWeb.RevisionHistory.Node
 
   def update(assigns, socket) do
 
@@ -9,25 +10,37 @@ defmodule OliWeb.RevisionHistory.Graph do
     nodes = OliWeb.RevisionHistory.ReingoldTilford.nodes(built)
     lines = OliWeb.RevisionHistory.ReingoldTilford.lines(built)
 
-    {:ok, assign(socket, nodes: nodes, lines: lines, initial_size: 400)}
+    {:ok, assign(socket, project: assigns.project, nodes: nodes, lines: lines, initial_size: 400, selected: assigns.selected)}
 
   end
 
   def render(assigns) do
 
+    node_class = fn n ->
+
+      "node " <>
+        if n.value.project_id == assigns.project.id do
+          " current"
+        else
+          ""
+        end <>
+        if n.value.revision.id == assigns.selected.id do
+          " active"
+        else
+          ""
+        end
+    end
+
     ~L"""
       <svg id="graph"
         style="cursor: grab;"
-        height="300" width="100%" phx-hook="GraphNavigation" class="revision-tree">
-        <style>
-          .small { font: normal 12px sans-serif; }
-        </style>
+        height="400" width="100%" phx-hook="GraphNavigation" class="revision-tree">
         <g id="panner">
           <g id="all_nodes" phx-update="append">
             <%= for node <- @nodes do %>
-              <rect x="<%= node.x %>" y="<%= node.y %>" rx="10" ry="10" width="<%= node.width %>" height="<%= node.height %>"
-              class="node" phx-click="select" phx-value-rev="<%= node.value.revision.id %>" phx-page-loading />
-              <text class="tree-node-text" x="<%= node.x + 5 %>" y="<%= node.y + div(node.height, 2) %>" dominant-baseline="central">
+              <rect x="<%= node.x %>" y="<%= node.y %>" rx="8" ry="8" width="<%= node.width %>" height="<%= node.height %>"
+                class="<%= node_class.(node) %>" phx-click="select" phx-value-rev="<%= node.value.revision.id %>" phx-page-loading />
+              <text class="tree-node-text" text-anchor="middle" x="<%= node.x + div(node.width, 2) %>" y="<%= node.y + div(node.height, 2) %>" dominant-baseline="central">
                 <%= node.label %>
               </text>
             <% end %>

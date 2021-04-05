@@ -7,9 +7,26 @@
     stroke-width: 1;
   }
 
+  .current {
+    stroke: darken($secondary, 30%);
+    stroke-width: 2;
+  }
+
+  .active {
+    fill: lighten($primary, 30%);
+  }
+
   .node:hover {
     cursor: pointer;
     fill: $secondary;
+    & + .tree-node-text {
+      fill: white;
+    }
+  }
+
+  .active:hover {
+    cursor: pointer;
+    fill: $primary;
     & + .tree-node-text {
       fill: white;
     }
@@ -27,7 +44,8 @@
 
   .tree-node-text {
     fill: black;
-    font-size: 14px;
+    font-size: 12px;
     pointer-events: none;
+    font-family: "Monaco";
   }
 }
