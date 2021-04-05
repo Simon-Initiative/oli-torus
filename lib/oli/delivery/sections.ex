@@ -202,7 +202,7 @@ defmodule Oli.Delivery.Sections do
       iex> change_section(section)
       %Ecto.Changeset{source: %Section{}}
   """
-  def change_section(%Section{} = section) do
-    Section.changeset(section, %{})
+  def change_section(%Section{} = section, attrs \\ %{}) do
+    Section.changeset(section, attrs)
   end
 end

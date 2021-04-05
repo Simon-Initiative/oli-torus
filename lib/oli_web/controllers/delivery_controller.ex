@@ -6,12 +6,18 @@ defmodule OliWeb.DeliveryController do
 
   alias Oli.Institutions
   alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Tool.PlatformRoles
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias OliWeb.Common.LtiSession
 
-  @context_administrator ContextRoles.get_role(:context_administrator)
-  @context_instructor ContextRoles.get_role(:context_instructor)
+  @allow_configure_section_roles [
+    PlatformRoles.get_role(:system_administrator),
+    PlatformRoles.get_role(:institution_administrator),
+    PlatformRoles.get_role(:institution_instructor),
+    ContextRoles.get_role(:context_administrator),
+    ContextRoles.get_role(:context_instructor)
+  ]
 
   plug Oli.Plugs.RegistrationCaptcha when action in [:process_create_and_link_account_user]
 
@@ -22,22 +28,27 @@ defmodule OliWeb.DeliveryController do
 
     lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
     context_roles = ContextRoles.get_roles_by_uris(lti_roles)
-    role = ContextRoles.get_highest_role(context_roles)
+    platform_roles = PlatformRoles.get_roles_by_uris(lti_roles)
+    roles = MapSet.new(context_roles ++ platform_roles)
+    allow_configure_section_roles = MapSet.new(@allow_configure_section_roles)
 
-    case {role, user.author, section} do
+    # allow section configuration if user has any of the allowed roles
+    allow_configure_section = (MapSet.intersection(roles, allow_configure_section_roles) |> MapSet.size()) > 0
+
+    case {user.author, section} do
       # author account has not been linked
-      {role, nil, nil} when role == @context_administrator or role == @context_instructor ->
+      {nil, nil} when allow_configure_section ->
         render_getting_started(conn)
 
       # section has not been configured
-      {role, author, nil} when role == @context_administrator or role == @context_instructor ->
+      {author, nil} when allow_configure_section ->
         render_configure_section(conn, author)
 
-      {_role, _author, nil} ->
+      {_author, nil} ->
         render_course_not_configured(conn)
 
       # section has been configured
-      {_role, _author, section} ->
+      {_author, section} ->
         redirect_to_page_delivery(conn, section)
     end
 
