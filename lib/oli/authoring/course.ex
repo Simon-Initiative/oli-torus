@@ -3,8 +3,7 @@ defmodule Oli.Authoring.Course do
   import Ecto.Query, warn: false
   alias Oli.Repo
   alias Oli.Publishing
-  alias Oli.Publishing.Publication
-  alias Oli.Authoring.{Collaborators}
+  alias Oli.Authoring.{Collaborators, ProjectSearch}
   alias Oli.Authoring.Course.{Project, Family, ProjectResource}
   alias Oli.Accounts.{SystemRole}
 
@@ -50,21 +49,9 @@ defmodule Oli.Authoring.Course do
       [%Project{}, ...]
   """
   def search_published_projects(search_term) do
-    Repo.all(
-      from p in Project, as: :project,
-      where:
-        fragment(
-          "to_tsvector('english', title || ' ' || description || ' ' || slug) @@ to_tsquery(?)",
-          ^prefix_search(search_term)
-        )
-        and exists(from(pub in Publication, where: parent_as(:project).id == pub.project_id)),
-      select: %{id: p.id, slug: p.slug, title: p.title, description: p.description}
-    )
-    |> Enum.map(fn %{id: id, slug: slug, title: title} -> %{id: id, slug: slug, title: title} end)
+    ProjectSearch.search(search_term)
+    |> IO.inspect
   end
-
-  # escape all of non-words characters from user's input and search by prefix
-  defp prefix_search(term), do: String.replace(term, ~r/\W/u, "") <> ":*"
 
   def get_project!(id), do: Repo.get!(Project, id)
   def get_project_by_slug(nil), do: nil

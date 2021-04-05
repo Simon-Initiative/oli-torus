@@ -14,15 +14,13 @@ defmodule Oli.Repo.Migrations.OpenAndFree do
       add_if_not_exists :nrps_context_memberships_url, :string
     end
 
-    execute("CREATE EXTENSION pg_trgm")
-    execute("""
-    CREATE INDEX projects_trgm_idx ON projects USING GIN (to_tsvector('english', title || ' ' || description || ' ' || slug))
-    """)
+    execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
+    execute("CREATE EXTENSION IF NOT EXISTS unaccent")
   end
 
   def down do
-    execute("DROP INDEX projects_trgm_idx")
     execute("DROP EXTENSION pg_trgm")
+    execute("DROP EXTENSION unaccent")
 
     alter table(:sections) do
       remove :grade_passback_enabled, :boolean, default: false, null: false
