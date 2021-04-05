@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
 
   alias Oli.Analytics.{ByActivity, ByObjective, ByPage}
   alias Oli.Snapshots.SnapshotSeeder
+  alias Oli.Authoring.Clone
 
   defp to_path(path) do
     Path.expand(__DIR__) <> path
@@ -23,6 +24,11 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
       objective_query: ByObjective.query_against_project_slug(seeds.project.slug),
       page_query: ByPage.query_against_project_slug(seeds.project.slug)
     }}
+  end
+
+  def duplicate_project(%{ seeds: seeds } = seeded) do
+    {:ok, duplicated_project} = Clone.clone_project(seeds.project.slug, seeds.author)
+    {:ok, %{seeded | seeds: Map.put(seeded.seeds, :duplicated, duplicated_project)}}
   end
 
   describe "number of attempts" do
@@ -241,6 +247,43 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
       activity_some_correct = seeds.activity_some_correct.revision
       activity_results = Enum.find(activity_query, & &1.slice.id == activity_some_correct.id)
       assert activity_results.first_try_correct == 0.5
+    end
+  end
+
+  describe "duplicating a project with analytics" do
+    setup do: %{ path: to_path("/csv/first_try_correct.csv") }
+    setup :seed_snapshots
+    setup :duplicate_project
+
+    test "a duplicated course should not have analytics from a parent course", %{activity_query: activity_query, objective_query: objective_query, page_query: page_query, seeds: %{ duplicated: duplicated }} do
+      # Parent course should still have analytics after duplicating project
+      assert Enum.count(objective_query) == 4
+      assert Enum.count(activity_query) == 4
+      assert Enum.count(page_query) == 5
+
+      # Duplicated course should not have analytics
+
+      insights_from_struct = fn struct -> [
+        struct.eventually_correct,
+        struct.first_try_correct,
+        struct.number_of_attempts,
+        struct.relative_difficulty
+      ] end
+
+      # 2 objectives with no analytics
+      obj_insights = ByObjective.query_against_project_slug(duplicated.slug)
+      assert Enum.count(obj_insights) == 2
+      assert Enum.all?(obj_insights, fn obj -> Enum.all?(insights_from_struct.(obj), &is_nil(&1)) end)
+
+      # 4 activities with no analytics
+      activity_insights = ByActivity.query_against_project_slug(duplicated.slug)
+      assert Enum.count(activity_insights) == 4
+      assert Enum.all?(activity_insights, fn obj -> Enum.all?(insights_from_struct.(obj), &is_nil(&1)) end)
+
+      # 3 pages with no analytics
+      page_insights = ByPage.query_against_project_slug(duplicated.slug)
+      assert Enum.count(page_insights) == 3
+      assert Enum.all?(page_insights, fn obj -> Enum.all?(insights_from_struct.(obj), &is_nil(&1)) end)
     end
   end
 end
