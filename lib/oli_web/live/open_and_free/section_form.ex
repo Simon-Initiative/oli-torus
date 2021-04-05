@@ -86,11 +86,11 @@ defmodule OliWeb.OpenAndFree.SectionForm do
 
       <div class="form-row d-flex flex-row px-1">
         <div class="flex-grow-1">
-          <p class="my-1">Allow Registration</p>
+          <p class="my-1">Registration Availability</p>
         </div>
         <div>
           <div class="form-label-group" phx-update="ignore">
-            <%= checkbox f, :registration_open, value: true, class: "form-control " <> error_class(f, :registration_open, "is-invalid"), autofocus: focusHelper(f, :registration_open),
+            <%= checkbox f, :registration_open, class: "form-control " <> error_class(f, :registration_open, "is-invalid"), autofocus: focusHelper(f, :registration_open),
               data_on: "Open", data_off: "Closed", data_toggle: "toggle", data_onstyle: "success", data_size: "sm", data_width: "100px" %>
 
             <%= error_tag f, :registration_open %>

@@ -263,7 +263,6 @@ defmodule OliWeb.DeliveryController do
               # generate a unique sub identifier which is also used so a user can access
               # their progress in the future or using a different browser
               sub: UUID.uuid4(),
-              name: user_details["name"]
             })
       do
         Accounts.update_user_platform_roles(user, [

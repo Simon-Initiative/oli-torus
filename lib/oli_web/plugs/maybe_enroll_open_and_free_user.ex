@@ -12,8 +12,6 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    conn = maybe_login_user_param(conn)
-
     with %{"section_slug" => section_slug} <- conn.path_params,
          {:ok, section} <- Sections.get_section_by(slug: section_slug, open_and_free: true) |> trap_nil
     do
@@ -26,27 +24,6 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
           maybe_enroll_user(conn, user, section)
       end
     else
-      _ ->
-        conn
-    end
-  end
-
-  defp maybe_login_user_param(conn) do
-    case conn.query_params do
-      %{"user" => sub} ->
-        with user when not is_nil(user) <- Accounts.get_user_by(sub: sub)
-        do
-          conn
-          |> LtiSession.put_user_params(user.sub)
-          |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
-          |> Pow.Plug.create(user)
-          |> redirect(to: "/#{Enum.join(conn.path_info, "/")}")
-          |> halt()
-        else
-          _ ->
-            conn
-        end
-
       _ ->
         conn
     end
@@ -76,7 +53,7 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
           Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
           conn
-          |> Phoenix.Controller.put_flash(:info, "Welcome to Open and Free! Save this URL to login: #{Routes.page_delivery_url(conn, :index, section.slug)}?user=#{user.sub}")
+          |> Phoenix.Controller.put_flash(:info, "Welcome to Open and Free!")
       end
     end
   end

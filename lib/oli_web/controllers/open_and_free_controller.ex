@@ -13,7 +13,7 @@ defmodule OliWeb.OpenAndFreeController do
   end
 
   def new(conn, _params) do
-    changeset = Sections.change_section(%Section{open_and_free: true})
+    changeset = Sections.change_section(%Section{open_and_free: true, registration_open: true})
     render_workspace_page(conn, "new.html", changeset: changeset)
   end
 
