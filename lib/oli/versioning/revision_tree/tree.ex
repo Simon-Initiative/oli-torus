@@ -42,7 +42,7 @@ defmodule Oli.Versioning.RevisionTree.Tree do
   end
 
   # Sorts a collection of projects according by a preorder tree traversal, based on the
-  # tree structure of parent_parent references
+  # tree structure of parent project references
   def sort_preorder(projects) do
 
     by_parent = Enum.reduce(projects, %{}, fn e, m ->
@@ -52,7 +52,13 @@ defmodule Oli.Versioning.RevisionTree.Tree do
       end
     end)
 
-    [root_project] = Map.get(by_parent, nil)
+    project_ids = Enum.map(projects, fn p -> p.id end)
+    |> MapSet.new()
+
+    # Determine the project that this resource was originally created in. It is the
+    # project whose parent reference is not in this set
+    [root_project] = Enum.filter(projects, fn p -> !MapSet.member?(project_ids, p.project_id) end)
+
     sort_preorder_helper([], root_project, by_parent)
 
   end
