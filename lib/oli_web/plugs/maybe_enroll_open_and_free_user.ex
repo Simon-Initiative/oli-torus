@@ -57,12 +57,35 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
       # user is already enrolled
       conn
     else
-      # enroll new open and free user in this section as a student/learner
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      now = Timex.now()
+      cond do
+        section.registration_open != true ->
+          conn
+          |> section_unavailable(:registration_closed)
 
-      conn
-      |> Phoenix.Controller.put_flash(:info, "Welcome to Open and Free! Save this URL to login: #{Routes.page_delivery_url(conn, :index, section.slug)}?user=#{user.sub}")
+        not is_nil(section.start_date) and Timex.before?(now, section.start_date) ->
+          conn
+          |> section_unavailable(:before_start_date)
+
+        not is_nil(section.end_date) and Timex.after?(now, section.end_date) ->
+          conn
+          |> section_unavailable(:after_end_date)
+
+        true ->
+          # enroll new open and free user in this section as a student/learner
+          Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+          conn
+          |> Phoenix.Controller.put_flash(:info, "Welcome to Open and Free! Save this URL to login: #{Routes.page_delivery_url(conn, :index, section.slug)}?user=#{user.sub}")
+      end
     end
   end
 
+  defp section_unavailable(conn, reason) do
+    conn
+    |> put_view(OliWeb.DeliveryView)
+    |> put_status(403)
+    |> render("section_unavailable.html", reason: reason)
+    |> halt()
+  end
 end

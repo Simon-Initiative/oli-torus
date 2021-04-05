@@ -33,6 +33,17 @@
         <td><%= @section.time_zone %></td>
       </tr>
 
+      <tr>
+        <td><strong>Registration:</strong></td>
+        <td>
+          <%= if @section.registration_open do %>
+            <i class="fa fa-check-circle text-success" aria-hidden="true"></i> Open
+          <% else %>
+            <i class="fa fa-times-circle text-danger" aria-hidden="true"></i> Closed
+          <% end %>
+        </td>
+      </tr>
+
     </tbody>
   </table>
 </div>

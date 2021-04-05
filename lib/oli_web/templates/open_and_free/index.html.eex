@@ -14,6 +14,7 @@
         <tr>
           <th>Title</th>
           <th>URL</th>
+          <th>Registration</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -23,6 +24,13 @@
             <td><%= section.title %></td>
             <td><%= link Routes.page_delivery_url(@conn, :index, section.slug), to: Routes.page_delivery_url(@conn, :index, section.slug) %></td>
 
+            <td>
+              <%= if section.registration_open do %>
+                <i class="fa fa-check-circle text-success" aria-hidden="true"></i> Open
+              <% else %>
+                <i class="fa fa-times-circle text-danger" aria-hidden="true"></i> Closed
+              <% end %>
+            </td>
             <td class="text-nowrap">
               <%= link "Details", to: Routes.open_and_free_path(@conn, :show, section), class: "btn btn-sm btn-outline-primary" %>
               <%= link "Edit", to: Routes.open_and_free_path(@conn, :edit, section), class: "btn btn-sm btn-outline-primary" %>

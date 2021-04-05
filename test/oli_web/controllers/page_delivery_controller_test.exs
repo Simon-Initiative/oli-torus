@@ -162,6 +162,18 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert user.sub == same_user.sub
     end
 
+    test "handles open and free user access when registration is closed" do
+
+    end
+
+    test "handles open and free user access when date is before start date" do
+
+    end
+
+    test "handles open and free user access when date is after end date" do
+
+    end
+
   end
 
   defp setup_session(%{conn: conn}) do
@@ -244,6 +256,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       publication_id: publication.id,
       context_id: UUID.uuid4(),
       open_and_free: true,
+      registration_open: true,
     })
 
     %{section: section, project: project, publication: publication}
