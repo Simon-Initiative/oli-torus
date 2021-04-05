@@ -125,7 +125,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         }}  end)
 
       conn = conn
-      |> get(Routes.page_delivery_path(conn, :index, section.slug))
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       # redirected to enroll page
       assert html_response(conn, 302) =~ "/course/users?redirect_to=%2Fsections%2Fsome_title"
@@ -133,7 +133,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn = recycle(conn)
         |> post(Routes.delivery_path(conn, :create_user), %{
           "user_details" => %{
-            "name" => "John Doe",
             "redirect_to" => "/sections/some_title"
           },
           "g-recaptcha-response" => "some-valid-capcha-data"
@@ -144,7 +143,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       # make the same request with a user logged in
       conn = recycle(conn)
-      |> get(Routes.page_delivery_path(conn, :index, section.slug))
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       assert html_response(conn, 200) =~ "Course Overview"
       assert user.sub != nil
@@ -153,7 +152,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn = recycle(conn)
 
       conn = conn
-      |> get(Routes.page_delivery_path(conn, :index, section.slug))
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       same_user = Pow.Plug.current_user(conn);
 
