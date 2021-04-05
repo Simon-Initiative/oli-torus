@@ -4,8 +4,6 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
   import Oli.Utils
 
   alias Oli.Delivery.Sections
-  alias Oli.Accounts
-  alias OliWeb.Common.LtiSession
   alias OliWeb.Router.Helpers, as: Routes
   alias Lti_1p3.Tool.ContextRoles
 
