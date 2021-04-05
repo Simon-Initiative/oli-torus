@@ -10,6 +10,7 @@
 ### Bug fixes
  - Fix analytics / insights to not show parent course analytics after duplication
  - Fix security vulnerability
+ - Account for ingested pages that have missing objectives
 
 ## 0.7.2 (2021-3-30)
 
