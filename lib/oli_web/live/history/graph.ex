@@ -1,6 +1,5 @@
 defmodule OliWeb.RevisionHistory.Graph do
   use Phoenix.LiveComponent
-  alias OliWeb.RevisionHistory.Node
 
   def update(assigns, socket) do
 

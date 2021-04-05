@@ -94,7 +94,6 @@ defmodule OliWeb.RevisionHistory do
 
   def render(assigns) do
 
-    reversed = Enum.reverse(assigns.revisions)
     size = @page_size
 
     ~L"""
@@ -229,9 +228,9 @@ defmodule OliWeb.RevisionHistory do
     end
 
     selected = if revision.id == socket.assigns.selected.id do
-      selected = revision
+      revision
     else
-      selected = socket.assigns.selected
+      socket.assigns.selected
     end
 
     tree = case Map.get(socket.assigns.tree, revision.id) do
