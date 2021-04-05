@@ -6,7 +6,7 @@
   - Add multi-project support to Revision History tool
 
 ## 0.7.2
-=======
+
 ### Bug fixes
  - Fix analytics / insights to not show parent course analytics after duplication
  - Fix security vulnerability
