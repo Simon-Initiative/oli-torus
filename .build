@@ -177,6 +177,8 @@ Oli.Utils.Recaptcha.html
 Oli.Utils.Slug.html
 Oli.Utils.Time.html
 Oli.Utils.html
+Oli.Versioning.RevisionTree.Node.html
+Oli.Versioning.RevisionTree.Tree.html
 Oli.html
 OliWeb.Accounts.AccountsLive.html
 OliWeb.Accounts.AccountsModel.html
@@ -311,7 +313,6 @@ OliWeb.ResourceController.html
 OliWeb.ResourceView.html
 OliWeb.RevisionHistory.Details.html
 OliWeb.RevisionHistory.Graph.html
-OliWeb.RevisionHistory.Node.html
 OliWeb.RevisionHistory.Pagination.html
 OliWeb.RevisionHistory.PaginationLink.html
 OliWeb.RevisionHistory.Table.html
@@ -337,8 +338,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-51481435a7.js
-dist/sidebar_items-a2a5537338.js
+dist/search_items-fe83157eda.js
+dist/sidebar_items-87007349f3.js
 index.html
 license.html
 readme.html
