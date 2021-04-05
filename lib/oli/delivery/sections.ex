@@ -21,17 +21,21 @@ defmodule Oli.Delivery.Sections do
   def enroll(user_id, section_id, context_roles) do
     context_roles = EctoProvider.Marshaler.to(context_roles)
 
-    case Repo.one(from(e in Enrollment, preload: [:context_roles], where: e.user_id == ^user_id and e.section_id == ^section_id, select: e)) do
-
+    case Repo.one(
+           from(e in Enrollment,
+             preload: [:context_roles],
+             where: e.user_id == ^user_id and e.section_id == ^section_id,
+             select: e
+           )
+         ) do
       # Enrollment doesn't exist, we are creating it
-      nil  -> %Enrollment{user_id: user_id, section_id: section_id}
-
+      nil -> %Enrollment{user_id: user_id, section_id: section_id}
       # Enrollment exists, we are potentially just updating it
       e -> e
     end
     |> Enrollment.changeset(%{section_id: section_id})
     |> Ecto.Changeset.put_assoc(:context_roles, context_roles)
-    |> Repo.insert_or_update
+    |> Repo.insert_or_update()
   end
 
   @doc """
@@ -39,10 +43,13 @@ defmodule Oli.Delivery.Sections do
 
   """
   def is_enrolled?(user_id, section_slug) do
-    query = from(
-      e in Enrollment,
-      join: s in Section, on: e.section_id == s.id,
-      where: e.user_id == ^user_id and s.slug == ^section_slug)
+    query =
+      from(
+        e in Enrollment,
+        join: s in Section,
+        on: e.section_id == s.id,
+        where: e.user_id == ^user_id and s.slug == ^section_slug
+      )
 
     case Repo.one(query) do
       nil -> false
@@ -55,12 +62,16 @@ defmodule Oli.Delivery.Sections do
 
   """
   def list_enrollments(section_slug) do
-    query = from(
-      e in Enrollment,
-      join: s in Section, on: e.section_id == s.id,
-      where: s.slug == ^section_slug,
-      preload: [:user, :context_roles],
-      select: e)
+    query =
+      from(
+        e in Enrollment,
+        join: s in Section,
+        on: e.section_id == s.id,
+        where: s.slug == ^section_slug,
+        preload: [:user, :context_roles],
+        select: e
+      )
+
     Repo.all(query)
   end
 
@@ -94,7 +105,8 @@ defmodule Oli.Delivery.Sections do
       iex> get_section_publication!(456)
       ** (Ecto.NoResultsError)
   """
-  def get_section_publication!(id), do: (Repo.get!(Section, id) |> Repo.preload([:publication])).publication
+  def get_section_publication!(id),
+    do: (Repo.get!(Section, id) |> Repo.preload([:publication])).publication
 
   @doc """
   Gets a single section by query parameter
@@ -104,7 +116,8 @@ defmodule Oli.Delivery.Sections do
       iex> get_section_by(slug: "111")
       nil
   """
-  def get_section_by(clauses), do: Repo.get_by(Section, clauses) |> Repo.preload([:publication, :project])
+  def get_section_by(clauses),
+    do: Repo.get_by(Section, clauses) |> Repo.preload([:publication, :project])
 
   @doc """
   Gets a section using the given LTI params
@@ -118,14 +131,20 @@ defmodule Oli.Delivery.Sections do
   def get_section_from_lti_params(lti_params) do
     issuer = lti_params["iss"]
     client_id = lti_params["aud"]
-    context_id = Map.get(lti_params, "https://purl.imsglobal.org/spec/lti/claim/context")
+
+    context_id =
+      Map.get(lti_params, "https://purl.imsglobal.org/spec/lti/claim/context")
       |> Map.get("id")
 
-    Repo.one(from s in Section,
-      join: d in Deployment, on: s.lti_1p3_deployment_id == d.id,
-      join: r in Registration, on: d.registration_id == r.id,
-      where: s.context_id == ^context_id and r.issuer == ^issuer and r.client_id == ^client_id,
-      select: s)
+    Repo.one(
+      from s in Section,
+        join: d in Deployment,
+        on: s.lti_1p3_deployment_id == d.id,
+        join: r in Registration,
+        on: d.registration_id == r.id,
+        where: s.context_id == ^context_id and r.issuer == ^issuer and r.client_id == ^client_id,
+        select: s
+    )
   end
 
   @doc """

@@ -40,22 +40,24 @@ defmodule Oli.Qa.UriValidator do
   end
 
   defp prettified_type({status, value}) do
-    type = case Map.get(value, :type) do
-      "img" -> "image"
-      "href" -> "link"
-      _ -> "remote resource"
-    end
+    type =
+      case Map.get(value, :type) do
+        "img" -> "image"
+        "href" -> "link"
+        _ -> "remote resource"
+      end
 
     {status, Map.put(value, :prettified_type, type)}
   end
 
-  defp verify_link(%{ content: content } = element, project_slug) do
-
+  defp verify_link(%{content: content} = element, project_slug) do
     case get_uri(content) do
-      @internal_link_prefix <> resource_slug -> verify_internal_link(element, resource_slug, project_slug)
-      uri -> verify_external_link(element, uri)
-    end
+      @internal_link_prefix <> resource_slug ->
+        verify_internal_link(element, resource_slug, project_slug)
 
+      uri ->
+        verify_external_link(element, uri)
+    end
   end
 
   # we verify internal links by resolving the resource slug to see if
@@ -69,8 +71,8 @@ defmodule Oli.Qa.UriValidator do
   end
 
   defp verify_external_link(element, uri) do
-    if !valid_uri?(uri)
-    do {:error, element}
+    if !valid_uri?(uri) do
+      {:error, element}
     else
       {:ok, element}
     end

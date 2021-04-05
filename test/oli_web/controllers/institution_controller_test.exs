@@ -11,9 +11,27 @@ defmodule OliWeb.InstitutionControllerTest do
   alias Lti_1p3.DataProviders.EctoProvider.Deployment
   alias Oli.Institutions.PendingRegistration
 
-  @create_attrs %{country_code: "some country_code", institution_email: "some institution_email", institution_url: "some institution_url", name: "some name", timezone: "some timezone"}
-  @update_attrs %{country_code: "some updated country_code", institution_email: "some updated institution_email", institution_url: "some updated institution_url", name: "some updated name", timezone: "some updated timezone"}
-  @invalid_attrs %{country_code: nil, institution_email: nil, institution_url: nil, name: nil, timezone: nil}
+  @create_attrs %{
+    country_code: "some country_code",
+    institution_email: "some institution_email",
+    institution_url: "some institution_url",
+    name: "some name",
+    timezone: "some timezone"
+  }
+  @update_attrs %{
+    country_code: "some updated country_code",
+    institution_email: "some updated institution_email",
+    institution_url: "some updated institution_url",
+    name: "some updated name",
+    timezone: "some updated timezone"
+  }
+  @invalid_attrs %{
+    country_code: nil,
+    institution_email: nil,
+    institution_url: nil,
+    name: nil,
+    timezone: nil
+  }
 
   describe "index" do
     setup [:create_institution]
@@ -58,8 +76,12 @@ defmodule OliWeb.InstitutionControllerTest do
 
     test "renders institution registration details", %{conn: conn, institution: institution} do
       jwk = jwk_fixture()
-      %Registration{id: registration_id} = registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
-      %Deployment{deployment_id: deployment_id} = deployment_fixture(%{registration_id: registration_id})
+
+      %Registration{id: registration_id} =
+        registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
+
+      %Deployment{deployment_id: deployment_id} =
+        deployment_fixture(%{registration_id: registration_id})
 
       conn = get(conn, Routes.institution_path(conn, :show, institution))
       assert html_response(conn, 200) =~ "some issuer - some client_id"
@@ -80,10 +102,13 @@ defmodule OliWeb.InstitutionControllerTest do
     setup [:create_institution]
 
     test "redirects when data is valid", %{conn: conn, author: author, institution: institution} do
-      conn = put(conn, Routes.institution_path(conn, :update, institution), institution: @update_attrs)
+      conn =
+        put(conn, Routes.institution_path(conn, :update, institution), institution: @update_attrs)
+
       assert redirected_to(conn) == Routes.institution_path(conn, :show, institution)
 
-      conn = recycle(conn)
+      conn =
+        recycle(conn)
         |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
       conn = get(conn, Routes.institution_path(conn, :show, institution))
@@ -91,7 +116,9 @@ defmodule OliWeb.InstitutionControllerTest do
     end
 
     test "renders errors when data is invalid", %{conn: conn, institution: institution} do
-      conn = put(conn, Routes.institution_path(conn, :update, institution), institution: @invalid_attrs)
+      conn =
+        put(conn, Routes.institution_path(conn, :update, institution), institution: @invalid_attrs)
+
       assert html_response(conn, 200) =~ "Edit Institution"
     end
   end
@@ -102,8 +129,10 @@ defmodule OliWeb.InstitutionControllerTest do
     test "deletes chosen institution", %{conn: conn, author: author, institution: institution} do
       conn = delete(conn, Routes.institution_path(conn, :delete, institution))
       assert redirected_to(conn) == Routes.institution_path(conn, :index)
+
       assert_error_sent 404, fn ->
-        conn = recycle(conn)
+        conn =
+          recycle(conn)
           |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
         get(conn, Routes.institution_path(conn, :show, institution))
@@ -116,26 +145,42 @@ defmodule OliWeb.InstitutionControllerTest do
 
     test "approves the chosen registration", %{conn: conn} do
       pending_registration = pending_registration_fixture()
-      pending_registration_attrs = %{}
+
+      pending_registration_attrs =
+        %{}
         |> Map.merge(PendingRegistration.institution_attrs(pending_registration))
         |> Map.merge(PendingRegistration.registration_attrs(pending_registration))
 
-
       assert capture_log(fn ->
-        conn = put(conn, Routes.institution_path(conn, :approve_registration), %{"pending_registration" => pending_registration_attrs})
-        assert redirected_to(conn) == Routes.institution_path(conn, :index) <> "#pending-registrations"
+               conn =
+                 put(conn, Routes.institution_path(conn, :approve_registration), %{
+                   "pending_registration" => pending_registration_attrs
+                 })
 
-        assert Institutions.count_pending_registrations() == 0
-      end) =~ "This message cannot be sent because SLACK_WEBHOOK_URL is not configured"
+               assert redirected_to(conn) ==
+                        Routes.institution_path(conn, :index) <> "#pending-registrations"
+
+               assert Institutions.count_pending_registrations() == 0
+             end) =~ "This message cannot be sent because SLACK_WEBHOOK_URL is not configured"
     end
   end
 
-  defp create_institution(%{ conn: conn  }) do
-    {:ok, author} = Author.noauth_changeset(%Author{}, %{email: "test@test.com", given_name: "First", family_name: "Last", provider: "foo", system_role_id: Accounts.SystemRole.role_id.admin}) |> Repo.insert
+  defp create_institution(%{conn: conn}) do
+    {:ok, author} =
+      Author.noauth_changeset(%Author{}, %{
+        email: "test@test.com",
+        given_name: "First",
+        family_name: "Last",
+        provider: "foo",
+        system_role_id: Accounts.SystemRole.role_id().admin
+      })
+      |> Repo.insert()
+
     create_attrs = Map.put(@create_attrs, :author_id, author.id)
     {:ok, institution} = create_attrs |> Institutions.create_institution()
 
-    conn = Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+    conn =
+      Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     {:ok, conn: conn, author: author, institution: institution}
   end

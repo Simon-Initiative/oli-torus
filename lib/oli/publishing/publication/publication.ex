@@ -18,5 +18,4 @@ defmodule Oli.Publishing.Publication do
     |> cast(attrs, [:description, :open_and_free, :published, :root_resource_id, :project_id])
     |> validate_required([:root_resource_id, :published, :project_id])
   end
-
 end

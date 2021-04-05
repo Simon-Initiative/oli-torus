@@ -29,7 +29,6 @@ defmodule Oli.Plugs.LoadLtiParams do
             fetch_lti_params(conn, lti_params_key)
         end
     end
-
   end
 
   defp fetch_lti_params(conn, lti_params_key) do
@@ -48,5 +47,4 @@ defmodule Oli.Plugs.LoadLtiParams do
     |> render("signin_required.html")
     |> halt()
   end
-
 end

@@ -12,9 +12,9 @@ defmodule Oli.Lti_1p3.TestHelpers do
       "iss" => "https://lti-ri.imsglobal.org",
       "sub" => "a73d59affc5b2c4cd493",
       "aud" => "12345",
-      "exp" => Timex.now |> Timex.add(Timex.Duration.from_minutes(5)) |> Timex.to_unix,
-      "iat" => Timex.now |> Timex.to_unix,
-      "nonce" => UUID.uuid4(),
+      "exp" => Timex.now() |> Timex.add(Timex.Duration.from_minutes(5)) |> Timex.to_unix(),
+      "iat" => Timex.now() |> Timex.to_unix(),
+      "nonce" => UUID.uuid4()
     }
   end
 
@@ -26,7 +26,7 @@ defmodule Oli.Lti_1p3.TestHelpers do
       "picture" => "http://example.org/Chelsea.jpg",
       "email" => "Chelsea.Conroy@example.org",
       "name" => "Chelsea Reichel Conroy",
-      "locale" => "en-US",
+      "locale" => "en-US"
     }
   end
 
@@ -34,8 +34,10 @@ defmodule Oli.Lti_1p3.TestHelpers do
     %{
       "https://purl.imsglobal.org/spec/lti-ags/claim/endpoint" => %{
         "lineitems" => "https://lti-ri.imsglobal.org/platforms/1237/contexts/10337/line_items",
-        "scope" => ["https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
-        "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly"]
+        "scope" => [
+          "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
+          "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly"
+        ]
       },
       "https://purl.imsglobal.org/spec/lti-ces/claim/caliper-endpoint-service" => %{
         "caliper_endpoint_url" => "https://lti-ri.imsglobal.org/platforms/1237/sensors",
@@ -43,7 +45,8 @@ defmodule Oli.Lti_1p3.TestHelpers do
         "scopes" => ["https://purl.imsglobal.org/spec/lti-ces/v1p0/scope/send"]
       },
       "https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleservice" => %{
-        "context_memberships_url" => "https://lti-ri.imsglobal.org/platforms/1237/contexts/10337/memberships",
+        "context_memberships_url" =>
+          "https://lti-ri.imsglobal.org/platforms/1237/contexts/10337/memberships",
         "service_versions" => ["2.0"]
       },
       "https://purl.imsglobal.org/spec/lti/claim/context" => %{
@@ -69,10 +72,13 @@ defmodule Oli.Lti_1p3.TestHelpers do
         "title" => "My Course"
       },
       "https://purl.imsglobal.org/spec/lti/claim/role_scope_mentor" => ["a62c52c02ba262003f5e"],
-      "https://purl.imsglobal.org/spec/lti/claim/roles" => ["http://purl.imsglobal.org/vocab/lis/v2/membership#Learner",
-      "http://purl.imsglobal.org/vocab/lis/v2/institution/person#Student",
-      "http://purl.imsglobal.org/vocab/lis/v2/membership#Mentor"],
-      "https://purl.imsglobal.org/spec/lti/claim/target_link_uri" => "https://lti-ri.imsglobal.org/lti/tools/1193/launches",
+      "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+        "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner",
+        "http://purl.imsglobal.org/vocab/lis/v2/institution/person#Student",
+        "http://purl.imsglobal.org/vocab/lis/v2/membership#Mentor"
+      ],
+      "https://purl.imsglobal.org/spec/lti/claim/target_link_uri" =>
+        "https://lti-ri.imsglobal.org/lti/tools/1193/launches",
       "https://purl.imsglobal.org/spec/lti/claim/tool_platform" => %{
         "contact_email" => "",
         "description" => "",
@@ -82,13 +88,13 @@ defmodule Oli.Lti_1p3.TestHelpers do
         "url" => "",
         "version" => "1.0"
       },
-      "https://purl.imsglobal.org/spec/lti/claim/version" => "1.3.0",
+      "https://purl.imsglobal.org/spec/lti/claim/version" => "1.3.0"
     }
   end
 
   def example_extension_data() do
     %{
-      "https://www.example.com/extension" => %{"color" => "violet"},
+      "https://www.example.com/extension" => %{"color" => "violet"}
     }
   end
 end

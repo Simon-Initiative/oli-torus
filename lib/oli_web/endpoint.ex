@@ -6,16 +6,14 @@ defmodule OliWeb.Endpoint do
     key: "_oli_key",
     signing_salt: "KydU49lB",
     same_site: "None",
-    secure: true,
+    secure: true
   ]
 
   socket "/socket", OliWeb.UserSocket,
     websocket: true,
     longpoll: false
 
-
   socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]
-
 
   # Serve at "/" the static files from "priv/static" directory.
   #

@@ -1,5 +1,4 @@
 defmodule OliWeb.Objectives.CreateNew do
-
   @moduledoc """
   Objective create component.
   """
@@ -42,7 +41,5 @@ defmodule OliWeb.Objectives.CreateNew do
       </div>
 
     """
-
   end
-
 end

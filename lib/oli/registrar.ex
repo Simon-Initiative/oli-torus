@@ -2,7 +2,7 @@ defmodule Oli.Registrar do
   alias Oli.Activities
   alias Oli.Activities.Manifest
 
-  def register_local_activities(%MapSet{} = global \\ MapSet.new) do
+  def register_local_activities(%MapSet{} = global \\ MapSet.new()) do
     Application.fetch_env!(:oli, :local_activity_manifests)
     |> Enum.map(fn body ->
       case Jason.decode(body) do
@@ -17,6 +17,7 @@ defmodule Oli.Registrar do
         else
           m
         end
+
       Activities.register_activity(m)
     end)
   end

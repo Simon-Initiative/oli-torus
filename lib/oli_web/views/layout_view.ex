@@ -1,14 +1,20 @@
 defmodule OliWeb.LayoutView do
   use OliWeb, :view
 
-  import OliWeb.DeliveryView, only: [user_role_is_student: 2, user_role_text: 2, user_role_color: 2, account_linked?: 1]
+  import OliWeb.DeliveryView,
+    only: [user_role_is_student: 2, user_role_text: 2, user_role_color: 2, account_linked?: 1]
+
   alias Oli.Authoring
   alias Oli.Accounts.AuthorPreferences
   alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
 
   def container_slug(assigns) do
-    if assigns[:container] do assigns.container.slug else nil end
+    if assigns[:container] do
+      assigns.container.slug
+    else
+      nil
+    end
   end
 
   def root_container_slug(project_slug) do
@@ -16,7 +22,9 @@ defmodule OliWeb.LayoutView do
   end
 
   def get_title(assigns) do
-    live_title_tag assigns[:page_title] || assigns[:title] || "Open Learning Initiative", suffix: ""
+    live_title_tag(assigns[:page_title] || assigns[:title] || "Open Learning Initiative",
+      suffix: ""
+    )
   end
 
   def active_or_nil(assigns) do
@@ -24,7 +32,11 @@ defmodule OliWeb.LayoutView do
   end
 
   def active_class(active, path) do
-    if active == path do :active else nil end
+    if active == path do
+      :active
+    else
+      nil
+    end
   end
 
   def sidebar_link(%{:assigns => assigns} = _conn, text, path, opts) do
@@ -33,10 +45,15 @@ defmodule OliWeb.LayoutView do
 
     case badge do
       nil ->
-        link text, to: route, class: active_class(active_or_nil(assigns), path)
+        link(text, to: route, class: active_class(active_or_nil(assigns), path))
+
       badge ->
-        link to: route, class: "align-items-center #{active_class(active_or_nil(assigns), path)}" do
-          [content_tag(:span, text), content_tag(:span, badge, class: "badge badge-pill badge-primary ml-2")]
+        link to: route,
+             class: "align-items-center #{active_class(active_or_nil(assigns), path)}" do
+          [
+            content_tag(:span, text),
+            content_tag(:span, badge, class: "badge badge-pill badge-primary ml-2")
+          ]
         end
     end
   end
@@ -49,9 +66,12 @@ defmodule OliWeb.LayoutView do
   def account_link(%{:assigns => assigns} = conn) do
     current_author = assigns.current_author
     full_name = "#{current_author.name}"
-    icon = raw "<span class=\"material-icons mr-2 align-bottom\">account_circle</span>"
-    link [icon, full_name], to: Routes.workspace_path(conn, :account),
-    class: "#{active_class(active_or_nil(assigns), :account)} account-link"
+    icon = raw("<span class=\"material-icons mr-2 align-bottom\">account_circle</span>")
+
+    link([icon, full_name],
+      to: Routes.workspace_path(conn, :account),
+      class: "#{active_class(active_or_nil(assigns), :account)} account-link"
+    )
   end
 
   def render_layout(layout, assigns, do: content) do
@@ -64,6 +84,7 @@ defmodule OliWeb.LayoutView do
         case current_author do
           %{preferences: %AuthorPreferences{theme: url}} ->
             url
+
           _ ->
             Authoring.get_default_theme!().url
         end
@@ -80,5 +101,4 @@ defmodule OliWeb.LayoutView do
   def preview_mode(%{assigns: assigns} = _conn) do
     Map.get(assigns, :preview_mode, false)
   end
-
 end

@@ -1,5 +1,4 @@
 defmodule OliWeb.Objectives.Objectives do
-
   @moduledoc """
   LiveView implementation of an objective editor.
   """
@@ -26,7 +25,6 @@ defmodule OliWeb.Objectives.Objectives do
   @default_attachment_summary %{attachments: {[], []}, locked_by: %{}, parent_pages: %{}}
 
   def mount(params, %{"current_author_id" => author_id}, socket) do
-
     author = Repo.get(Author, author_id)
     project = Course.get_project_by_slug(Map.get(params, "project_id"))
 
@@ -36,22 +34,23 @@ defmodule OliWeb.Objectives.Objectives do
 
     objectives_tree = to_objective_tree(objective_mappings)
 
-    {:ok, assign(socket,
-      active: :objectives,
-      objective_mappings: objective_mappings,
-      objectives_tree: objectives_tree,
-      breadcrumbs: [Breadcrumb.new(%{full_title: "Objectives"})],
-      changeset: Resources.change_revision(%Revision{}),
-      project: project,
-      subscriptions: subscriptions,
-      attachment_summary: @default_attachment_summary,
-      modal_shown: :none,
-      author: author,
-      force_render: 0,
-      can_delete?: true,
-      edit: :none,
-      breakdown: :none)
-    }
+    {:ok,
+     assign(socket,
+       active: :objectives,
+       objective_mappings: objective_mappings,
+       objectives_tree: objectives_tree,
+       breadcrumbs: [Breadcrumb.new(%{full_title: "Objectives"})],
+       changeset: Resources.change_revision(%Revision{}),
+       project: project,
+       subscriptions: subscriptions,
+       attachment_summary: @default_attachment_summary,
+       modal_shown: :none,
+       author: author,
+       force_render: 0,
+       can_delete?: true,
+       edit: :none,
+       breakdown: :none
+     )}
   end
 
   def render(assigns) do
@@ -106,64 +105,83 @@ defmodule OliWeb.Objectives.Objectives do
 
   defp to_objective_tree(objective_mappings) do
     if Enum.empty?(objective_mappings) do
-       []
+      []
     else
       # Extract all children references from objectives
-      children_list = objective_mappings
-                      |> Enum.map(fn mapping -> mapping.revision.children end)
-                      |> Enum.reduce(fn(children, acc) -> children ++ acc end)
+      children_list =
+        objective_mappings
+        |> Enum.map(fn mapping -> mapping.revision.children end)
+        |> Enum.reduce(fn children, acc -> children ++ acc end)
 
       # Build flat ObjectiveMappingTransfer map for all objectives
-      mapping_obs = objective_mappings |>  Enum.reduce(%{}, fn(mapping, acc) ->
-        Map.merge(acc, %{mapping.resource.id => %ObjectiveMappingTransfer{mapping: mapping, children: []}})
-      end)
+      mapping_obs =
+        objective_mappings
+        |> Enum.reduce(%{}, fn mapping, acc ->
+          Map.merge(acc, %{
+            mapping.resource.id => %ObjectiveMappingTransfer{mapping: mapping, children: []}
+          })
+        end)
 
       # Build nested tree structure
-      Enum.reduce(objective_mappings, [], fn(m, acc) ->
+      Enum.reduce(objective_mappings, [], fn m, acc ->
         a = Map.get(mapping_obs, m.resource.id)
-        a = %{a | children: m.revision.children |> Enum.reduce(a.children,fn(c, mc) ->
-          val = Map.get(mapping_obs, c)
-          if is_nil(val) do
-            mc
-          else
-            [val] ++ mc
-          end
-        end)}
+
+        a = %{
+          a
+          | children:
+              m.revision.children
+              |> Enum.reduce(a.children, fn c, mc ->
+                val = Map.get(mapping_obs, c)
+
+                if is_nil(val) do
+                  mc
+                else
+                  [val] ++ mc
+                end
+              end)
+        }
+
         if !Enum.member?(children_list, m.resource.id) do
           acc ++ [a]
         else
           acc
         end
       end)
-      |> Enum.sort(fn e1, e2 -> e1.mapping.resource.inserted_at <= e2.mapping.resource.inserted_at end)
-
+      |> Enum.sort(fn e1, e2 ->
+        e1.mapping.resource.inserted_at <= e2.mapping.resource.inserted_at
+      end)
     end
   end
 
   # spin up subscriptions for the container and for all of its objectives
   defp subscribe(objective_mappings, project_slug) do
     ids = Enum.map(objective_mappings, fn p -> p.resource.id end)
-    Enum.each(ids, & Subscriber.subscribe_to_new_revisions_in_project(&1, project_slug))
+    Enum.each(ids, &Subscriber.subscribe_to_new_revisions_in_project(&1, project_slug))
 
-    Subscriber.subscribe_to_new_resources_of_type(ResourceType.get_id_by_type("objective"), project_slug)
+    Subscriber.subscribe_to_new_resources_of_type(
+      ResourceType.get_id_by_type("objective"),
+      project_slug
+    )
 
     ids
   end
 
   # release a collection of subscriptions
   defp unsubscribe(ids, project_slug) do
-    Subscriber.unsubscribe_to_new_resources_of_type(ResourceType.get_id_by_type("objective"), project_slug)
-    Enum.each(ids, & Subscriber.unsubscribe_to_new_revisions_in_project(&1, project_slug))
+    Subscriber.unsubscribe_to_new_resources_of_type(
+      ResourceType.get_id_by_type("objective"),
+      project_slug
+    )
+
+    Enum.each(ids, &Subscriber.unsubscribe_to_new_revisions_in_project(&1, project_slug))
   end
 
   # handle change of edit
   def handle_event("modify", %{"slug" => slug}, socket) do
-
     {:noreply, assign(socket, :edit, slug)}
   end
 
   def handle_event("add_sub", %{"slug" => slug}, socket) do
-
     {:noreply, assign(socket, :edit, slug)}
   end
 
@@ -176,23 +194,45 @@ defmodule OliWeb.Objectives.Objectives do
 
   # process form submission to save page settings
   def handle_event("edit", %{"revision" => objective_params}, socket) do
-    with_atom_keys = Map.keys(objective_params)
-                     |> Enum.reduce(%{}, fn k, m -> Map.put(m, String.to_existing_atom(k), Map.get(objective_params, k)) end)
-    socket = case ObjectiveEditor.edit(Map.get(with_atom_keys,:slug), with_atom_keys, socket.assigns.author, socket.assigns.project) do
-      {:ok, _} -> socket
-      {:error, _} -> socket
-      |> put_flash(:error, "Could not edit objective")
-    end
+    with_atom_keys =
+      Map.keys(objective_params)
+      |> Enum.reduce(%{}, fn k, m ->
+        Map.put(m, String.to_existing_atom(k), Map.get(objective_params, k))
+      end)
+
+    socket =
+      case ObjectiveEditor.edit(
+             Map.get(with_atom_keys, :slug),
+             with_atom_keys,
+             socket.assigns.author,
+             socket.assigns.project
+           ) do
+        {:ok, _} ->
+          socket
+
+        {:error, _} ->
+          socket
+          |> put_flash(:error, "Could not edit objective")
+      end
 
     {:noreply, assign(socket, :edit, :none)}
   end
 
   def handle_event("prepare_delete", %{"slug" => slug}, socket) do
-
     if socket.assigns.can_delete? do
-      %{resource_id: resource_id} = AuthoringResolver.from_revision_slug(socket.assigns.project.slug, slug)
-      attachment_summary = ObjectiveEditor.preview_objective_detatchment(resource_id, socket.assigns.project)
-      {:noreply, assign(socket, modal_shown: :delete, attachment_summary: attachment_summary, prepare_delete_slug: slug, force_render: socket.assigns.force_render + 1)}
+      %{resource_id: resource_id} =
+        AuthoringResolver.from_revision_slug(socket.assigns.project.slug, slug)
+
+      attachment_summary =
+        ObjectiveEditor.preview_objective_detatchment(resource_id, socket.assigns.project)
+
+      {:noreply,
+       assign(socket,
+         modal_shown: :delete,
+         attachment_summary: attachment_summary,
+         prepare_delete_slug: slug,
+         force_render: socket.assigns.force_render + 1
+       )}
     else
       {:noreply, socket}
     end
@@ -200,20 +240,36 @@ defmodule OliWeb.Objectives.Objectives do
 
   # handle processing deletion of item
   def handle_event("delete", _, socket) do
+    %{resource_id: resource_id} =
+      AuthoringResolver.from_revision_slug(
+        socket.assigns.project.slug,
+        socket.assigns.prepare_delete_slug
+      )
 
-    %{resource_id: resource_id} = AuthoringResolver.from_revision_slug(socket.assigns.project.slug, socket.assigns.prepare_delete_slug)
     ObjectiveEditor.detach_objective(resource_id, socket.assigns.project, socket.assigns.author)
 
     parent_objective = determine_parent_objective(socket, socket.assigns.prepare_delete_slug)
 
-    socket = case ObjectiveEditor.preview_objective_detatchment(resource_id, socket.assigns.project) do
-      %{attachments: {[], []}} -> case ObjectiveEditor.delete(socket.assigns.prepare_delete_slug, socket.assigns.author, socket.assigns.project, parent_objective) do
-        {:ok, _} -> socket
-        {:error, _} -> socket
-        |> put_flash(:error, "Could not remove objective")
+    socket =
+      case ObjectiveEditor.preview_objective_detatchment(resource_id, socket.assigns.project) do
+        %{attachments: {[], []}} ->
+          case ObjectiveEditor.delete(
+                 socket.assigns.prepare_delete_slug,
+                 socket.assigns.author,
+                 socket.assigns.project,
+                 parent_objective
+               ) do
+            {:ok, _} ->
+              socket
+
+            {:error, _} ->
+              socket
+              |> put_flash(:error, "Could not remove objective")
+          end
+
+        _ ->
+          socket
       end
-      _ -> socket
-    end
 
     {:noreply, assign(socket, modal_shown: :none)}
   end
@@ -224,48 +280,72 @@ defmodule OliWeb.Objectives.Objectives do
 
   # handle clicking of the add objective
   def handle_event("perform_breakdown", %{"revision" => objective_params}, socket) do
-    with_atom_keys = Map.keys(objective_params)
-                     |> Enum.reduce(%{}, fn k, m -> Map.put(m, String.to_existing_atom(k), Map.get(objective_params, k)) end)
+    with_atom_keys =
+      Map.keys(objective_params)
+      |> Enum.reduce(%{}, fn k, m ->
+        Map.put(m, String.to_existing_atom(k), Map.get(objective_params, k))
+      end)
 
     slug = Map.get(objective_params, "slug")
 
-    socket = case ObjectiveEditor.add_new_parent_for_objective(with_atom_keys, socket.assigns.author, socket.assigns.project, slug) do
-      {:ok, _} -> socket
-      {:error, %Ecto.Changeset{} = _changeset} ->
-        socket
-        |> put_flash(:error, "Could not break down objective")
-    end
+    socket =
+      case ObjectiveEditor.add_new_parent_for_objective(
+             with_atom_keys,
+             socket.assigns.author,
+             socket.assigns.project,
+             slug
+           ) do
+        {:ok, _} ->
+          socket
+
+        {:error, %Ecto.Changeset{} = _changeset} ->
+          socket
+          |> put_flash(:error, "Could not break down objective")
+      end
 
     {:noreply, assign(socket, breakdown: :none, modal_shown: :none)}
   end
 
   # handle clicking of the add objective
   def handle_event("new", %{"revision" => objective_params}, socket) do
-    with_atom_keys = Map.keys(objective_params)
-                     |> Enum.reduce(%{}, fn k, m -> Map.put(m, String.to_existing_atom(k), Map.get(objective_params, k)) end)
+    with_atom_keys =
+      Map.keys(objective_params)
+      |> Enum.reduce(%{}, fn k, m ->
+        Map.put(m, String.to_existing_atom(k), Map.get(objective_params, k))
+      end)
 
     container_slug = Map.get(objective_params, "parent_slug")
 
-    socket = case ObjectiveEditor.add_new(with_atom_keys, socket.assigns.author, socket.assigns.project, container_slug) do
-      {:ok, _} -> socket
-      {:error, %Ecto.Changeset{} = _changeset} ->
-        socket
-        |> put_flash(:error, "Could not create objective")
-    end
+    socket =
+      case ObjectiveEditor.add_new(
+             with_atom_keys,
+             socket.assigns.author,
+             socket.assigns.project,
+             container_slug
+           ) do
+        {:ok, _} ->
+          socket
+
+        {:error, %Ecto.Changeset{} = _changeset} ->
+          socket
+          |> put_flash(:error, "Could not create objective")
+      end
 
     {:noreply, assign(socket, edit: :none, changeset: Resources.change_revision(%Revision{}))}
   end
 
-
   defp determine_parent_objective(socket, slug) do
+    child =
+      Enum.find(socket.assigns.objective_mappings, fn %{revision: revision} ->
+        revision.slug == slug
+      end)
 
-    child = Enum.find(socket.assigns.objective_mappings, fn %{ revision: revision } -> revision.slug == slug end)
-
-    case Enum.find(socket.assigns.objectives_tree, fn %{mapping: mapping} -> Enum.any?(mapping.revision.children, fn id -> id == child.revision.resource_id end) end) do
+    case Enum.find(socket.assigns.objectives_tree, fn %{mapping: mapping} ->
+           Enum.any?(mapping.revision.children, fn id -> id == child.revision.resource_id end)
+         end) do
       nil -> nil
       o -> o.mapping.revision
     end
-
   end
 
   # Here are listening for subscription notifications for newly created resources
@@ -282,22 +362,30 @@ defmodule OliWeb.Objectives.Objectives do
     id = revision.resource_id
 
     # For a completely new resource, we simply pull a new view of the objective mappings
-    objective_mappings = if any == :added do
-      ObjectiveEditor.fetch_objective_mappings(socket.assigns.project)
+    objective_mappings =
+      if any == :added do
+        ObjectiveEditor.fetch_objective_mappings(socket.assigns.project)
+      else
+        # on just an objective change, update the revision in place
+        case Enum.find_index(socket.assigns.objective_mappings, fn p -> p.resource.id == id end) do
+          nil ->
+            socket.assigns.objective_mappings
 
-    else
-      # on just an objective change, update the revision in place
-      case Enum.find_index(socket.assigns.objective_mappings, fn p -> p.resource.id == id end) do
-        nil -> socket.assigns.objective_mappings
-        index -> case revision.deleted do
-          false ->
-            mapping = %{Enum.at(socket.assigns.objective_mappings, index) | revision: revision}
-            List.replace_at(socket.assigns.objective_mappings, index, mapping)
-          true ->
-            List.delete_at(socket.assigns.objective_mappings, index)
+          index ->
+            case revision.deleted do
+              false ->
+                mapping = %{
+                  Enum.at(socket.assigns.objective_mappings, index)
+                  | revision: revision
+                }
+
+                List.replace_at(socket.assigns.objective_mappings, index, mapping)
+
+              true ->
+                List.delete_at(socket.assigns.objective_mappings, index)
+            end
         end
       end
-    end
 
     # redo all subscriptions
     unsubscribe(socket.assigns.subscriptions, socket.assigns.project.slug)
@@ -305,7 +393,11 @@ defmodule OliWeb.Objectives.Objectives do
 
     objectives_tree = to_objective_tree(objective_mappings)
 
-    {:noreply, assign(socket, objective_mappings: objective_mappings, objectives_tree: objectives_tree,
-      subscriptions: subscriptions)}
+    {:noreply,
+     assign(socket,
+       objective_mappings: objective_mappings,
+       objectives_tree: objectives_tree,
+       subscriptions: subscriptions
+     )}
   end
 end

@@ -9,18 +9,18 @@ defmodule OliWeb.DeliveryView do
   @admin_roles [
     PlatformRoles.get_role(:system_administrator),
     PlatformRoles.get_role(:institution_administrator),
-    ContextRoles.get_role(:context_administrator),
+    ContextRoles.get_role(:context_administrator)
   ]
 
   @instructor_roles [
     PlatformRoles.get_role(:institution_instructor),
-    ContextRoles.get_role(:context_instructor),
+    ContextRoles.get_role(:context_instructor)
   ]
 
   @student_roles [
     PlatformRoles.get_role(:institution_student),
     PlatformRoles.get_role(:institution_learner),
-    ContextRoles.get_role(:context_learner),
+    ContextRoles.get_role(:context_learner)
   ]
 
   def get_section_slug(conn) do
@@ -30,23 +30,29 @@ defmodule OliWeb.DeliveryView do
     end
   end
 
-
   def user_role_is_student(conn, user) do
     section_slug = get_section_slug(conn)
 
-    PlatformRoles.has_roles?(user, @student_roles, :any) || ContextRoles.has_roles?(user, section_slug, @student_roles, :any)
+    PlatformRoles.has_roles?(user, @student_roles, :any) ||
+      ContextRoles.has_roles?(user, section_slug, @student_roles, :any)
   end
 
   def user_role_text(conn, user) do
     section_slug = get_section_slug(conn)
 
     cond do
-      PlatformRoles.has_roles?(user, @admin_roles, :any) || ContextRoles.has_roles?(user, section_slug, @admin_roles, :any) ->
+      PlatformRoles.has_roles?(user, @admin_roles, :any) ||
+          ContextRoles.has_roles?(user, section_slug, @admin_roles, :any) ->
         "Administrator"
-      PlatformRoles.has_roles?(user, @instructor_roles, :any) || ContextRoles.has_roles?(user, section_slug, @instructor_roles, :any) ->
+
+      PlatformRoles.has_roles?(user, @instructor_roles, :any) ||
+          ContextRoles.has_roles?(user, section_slug, @instructor_roles, :any) ->
         "Instructor"
-      PlatformRoles.has_roles?(user, @student_roles, :any) || ContextRoles.has_roles?(user, section_slug, @student_roles, :any) ->
+
+      PlatformRoles.has_roles?(user, @student_roles, :any) ||
+          ContextRoles.has_roles?(user, section_slug, @student_roles, :any) ->
         "Student"
+
       true ->
         ""
     end
@@ -56,12 +62,18 @@ defmodule OliWeb.DeliveryView do
     section_slug = get_section_slug(conn)
 
     cond do
-      PlatformRoles.has_roles?(user, @admin_roles, :any) || ContextRoles.has_roles?(user, section_slug, @admin_roles, :any) ->
+      PlatformRoles.has_roles?(user, @admin_roles, :any) ||
+          ContextRoles.has_roles?(user, section_slug, @admin_roles, :any) ->
         "#f39c12"
-      PlatformRoles.has_roles?(user, @instructor_roles, :any) || ContextRoles.has_roles?(user, section_slug, @instructor_roles, :any) ->
+
+      PlatformRoles.has_roles?(user, @instructor_roles, :any) ||
+          ContextRoles.has_roles?(user, section_slug, @instructor_roles, :any) ->
         "#2ecc71"
-      PlatformRoles.has_roles?(user, @student_roles, :any) || ContextRoles.has_roles?(user, section_slug, @student_roles, :any) ->
+
+      PlatformRoles.has_roles?(user, @student_roles, :any) ||
+          ContextRoles.has_roles?(user, section_slug, @student_roles, :any) ->
         "#3498db"
+
       true ->
         "#3498db"
     end
@@ -70,5 +82,4 @@ defmodule OliWeb.DeliveryView do
   def account_linked?(user) do
     user.author_id != nil
   end
-
 end

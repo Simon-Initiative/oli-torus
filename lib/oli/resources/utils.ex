@@ -1,5 +1,4 @@
 defmodule Oli.Resources.Utils do
-
   alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Page
@@ -47,7 +46,7 @@ defmodule Oli.Resources.Utils do
       recommended_attempts: wrapper.recommended_attempts,
       max_attempts: wrapper.max_attempts,
       scoring_strategy: wrapper.scoring_strategy,
-      objectives: %{ "attached" => wrapper.objectives },
+      objectives: %{"attached" => wrapper.objectives},
       resource_id: wrapper.resource_id,
       resource_type_id: wrapper.resource_type_id,
       author_id: wrapper.author_id,
@@ -110,18 +109,15 @@ defmodule Oli.Resources.Utils do
   end
 
   def to_wrapper(%Revision{resource_type_id: resource_type_id} = revision) do
-
     case ResourceType.get_type_by_id(resource_type_id) do
       :page -> Page.from_revision(revision)
       :container -> Container.from_revision(revision)
       :activity -> Activity.from_revision(revision)
       :objective -> Objective.from_revision(revision)
     end
-
   end
 
   def to_wrapper(revisions) when is_list(revisions) do
     Enum.map(revisions, &to_wrapper/1)
   end
-
 end

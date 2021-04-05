@@ -1,5 +1,4 @@
 defmodule OliWeb.Curriculum.DropTarget do
-
   @moduledoc """
   Drop target component.
   """

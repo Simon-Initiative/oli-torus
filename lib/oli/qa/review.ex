@@ -17,5 +17,4 @@ defmodule Oli.Qa.Review do
     |> cast(attrs, ~w(project_id type done)a)
     |> validate_required(~w(project_id type)a)
   end
-
 end

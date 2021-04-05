@@ -11,11 +11,13 @@ defmodule Oli.Repo.Migrations.GenerateSectionSlugs do
 
   def up do
     # populate all section slugs that are null
-    sections = Oli.Repo.all(
-      from s in Section,
-      where: is_nil(s.slug),
-      select: s
-    )
+    sections =
+      Oli.Repo.all(
+        from(s in Section,
+          where: is_nil(s.slug),
+          select: s
+        )
+      )
 
     Enum.each(sections, fn section ->
       section
@@ -33,12 +35,14 @@ defmodule Oli.Repo.Migrations.GenerateSectionSlugs do
     # for a section, in which case the database record will have to be updated manually.
     # This migration script assumes that this case is minimal compared to the most common case
     # where an institution is only using a single registration with a single deployment
-    sections = Oli.Repo.all(
-      from s in Section,
-      where: is_nil(s.lti_1p3_deployment_id),
-      preload: [institution: [registrations: [:deployments]]],
-      select: s
-    )
+    sections =
+      Oli.Repo.all(
+        from(s in Section,
+          where: is_nil(s.lti_1p3_deployment_id),
+          preload: [institution: [registrations: [:deployments]]],
+          select: s
+        )
+      )
 
     Enum.each(sections, fn section ->
       section

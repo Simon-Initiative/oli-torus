@@ -7,5 +7,4 @@ defmodule OliWeb.UIPaletteControllerTest do
       assert html_response(conn, 200) =~ "UI Palette"
     end
   end
-
 end

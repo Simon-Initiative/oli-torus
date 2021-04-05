@@ -48,7 +48,7 @@ defmodule Oli.Activities do
       [%ActivityMapEntry{}, ...]
 
   """
-  @spec create_registered_activity_map(String.t) :: %ActivityMapEntry{} | {:error, any}
+  @spec create_registered_activity_map(String.t()) :: %ActivityMapEntry{} | {:error, any}
   def create_registered_activity_map(project_slug) do
     with {:ok, project} <-
            Course.get_project_by_slug(project_slug)
@@ -56,16 +56,20 @@ defmodule Oli.Activities do
       project = project |> Repo.preload([:activity_registrations])
 
       project_activities =
-        Enum.reduce(project.activity_registrations, MapSet.new, fn a, m -> MapSet.put(m, a.slug) end)
+        Enum.reduce(project.activity_registrations, MapSet.new(), fn a, m ->
+          MapSet.put(m, a.slug)
+        end)
 
       list_activity_registrations()
       |> Enum.map(&ActivityMapEntry.from_registration/1)
       |> Enum.reduce(%{}, fn e, m ->
-        e = if e.globallyAvailable === true or MapSet.member?(project_activities, e.slug) do
-          Map.merge(e, %{enabledForProject: true})
-        else
-          e
-        end
+        e =
+          if e.globallyAvailable === true or MapSet.member?(project_activities, e.slug) do
+            Map.merge(e, %{enabledForProject: true})
+          else
+            e
+          end
+
         Map.put(m, e.slug, e)
       end)
     else
@@ -129,12 +133,13 @@ defmodule Oli.Activities do
     project = project |> Repo.preload([:activity_registrations])
 
     project_activities =
-      Enum.reduce(project.activity_registrations, MapSet.new, fn a, m -> MapSet.put(m,a.id) end)
+      Enum.reduce(project.activity_registrations, MapSet.new(), fn a, m -> MapSet.put(m, a.id) end)
 
     activities_enabled =
       Enum.reduce(list_activity_registrations(), [], fn a, m ->
         enabled_for_project =
           a.globally_available === true or MapSet.member?(project_activities, a.id)
+
         m ++
           [
             %{
@@ -152,8 +157,7 @@ defmodule Oli.Activities do
   def set_global_status(activity_slug, status) do
     with {:ok, activity_registration} <-
            get_registration_by_slug(activity_slug)
-           |> trap_nil("An activity with that slug was not found.")
-      do
+           |> trap_nil("An activity with that slug was not found.") do
       update_registration(activity_registration, %{globally_available: status})
     else
       {:error, {message}} -> {:error, message}

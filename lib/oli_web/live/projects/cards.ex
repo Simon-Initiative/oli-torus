@@ -1,5 +1,4 @@
 defmodule OliWeb.Projects.Cards do
-
   alias OliWeb.Projects.Card
   use Phoenix.LiveComponent
   use Phoenix.HTML
@@ -24,5 +23,4 @@ defmodule OliWeb.Projects.Cards do
     </div>
     """
   end
-
 end

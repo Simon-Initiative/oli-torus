@@ -135,10 +135,15 @@ defmodule Oli.Authoring.Editing.PageEditor do
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil() do
       case Locks.acquire(publication.id, resource.id, author.id) do
         # If we reacquired the lock, we must first create a new revision
-        {:acquired} -> {:acquired}
+        {:acquired} ->
+          {:acquired}
+
         # error or not able to lock results in a failed edit
-        {:lock_not_acquired, {locked_by, locked_at}} -> {:lock_not_acquired, {locked_by, locked_at}}
-        error -> {:error, error}
+        {:lock_not_acquired, {locked_by, locked_at}} ->
+          {:lock_not_acquired, {locked_by, locked_at}}
+
+        error ->
+          {:error, error}
       end
     else
       error -> error

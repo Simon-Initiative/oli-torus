@@ -1,10 +1,9 @@
 defmodule Oli.Utils do
-
   @doc """
   Generates a random hex string of the given length
   """
   def random_string(length) do
-    :crypto.strong_rand_bytes(length) |> Base.encode16 |> binary_part(0, length)
+    :crypto.strong_rand_bytes(length) |> Base.encode16() |> binary_part(0, length)
   end
 
   @doc """
@@ -14,6 +13,7 @@ defmodule Oli.Utils do
     case value do
       nil ->
         default_value
+
       value ->
         value
     end
@@ -25,7 +25,6 @@ defmodule Oli.Utils do
   def render(view, template, assigns, do: content) do
     Phoenix.View.render(view, template, Map.put(assigns, :inner_content, content))
   end
-
 
   def snake_case_to_friendly(snake_input) do
     String.split(snake_input, "_")
@@ -57,7 +56,16 @@ defmodule Oli.Utils do
       %Ecto.Changeset{valid?: true, changes: changes, data: data} ->
         case Map.get(changes, :name) do
           nil ->
-            name = "#{Map.get(changes, :given_name) |> value_or(Map.get(data, :given_name)) |> value_or("")} #{Map.get(changes, :family_name) |> value_or(Map.get(data, :family_name)) |> value_or("")}"
+            name =
+              "#{
+                Map.get(changes, :given_name)
+                |> value_or(Map.get(data, :given_name))
+                |> value_or("")
+              } #{
+                Map.get(changes, :family_name)
+                |> value_or(Map.get(data, :family_name))
+                |> value_or("")
+              }"
               |> String.trim()
 
             Ecto.Changeset.put_change(changeset, :name, name)
@@ -65,14 +73,14 @@ defmodule Oli.Utils do
           _ ->
             changeset
         end
+
       _ ->
         changeset
     end
   end
 
   def read_json_file(filename) do
-    with {:ok, body} <- File.read(filename),
-        {:ok, json} <- Poison.decode(body), do: {:ok, json}
+    with {:ok, body} <- File.read(filename), {:ok, json} <- Poison.decode(body), do: {:ok, json}
   end
 
   def positive_or_nil(num) do
@@ -89,11 +97,12 @@ defmodule Oli.Utils do
   def get_base_url() do
     url_config = Application.fetch_env!(:oli, OliWeb.Endpoint)[:url]
 
-    port = case Keyword.get(url_config, :port, 80) do
-      80 -> ""
-      443 -> ""
-      p -> ":#{p}"
-    end
+    port =
+      case Keyword.get(url_config, :port, 80) do
+        80 -> ""
+        443 -> ""
+        p -> ":#{p}"
+      end
 
     "https://#{Keyword.get(url_config, :host, "localhost")}#{port}"
   end

@@ -11,11 +11,13 @@ defmodule Oli.Repo.Migrations.SlugAlphanumericOnly do
 
   def up do
     # find all revisions with slugs that contain illegal chars (non-alphanumeric)
-    revisions = Oli.Repo.all(
-      from r in Revision,
-      where: fragment("slug ~* '[^A-Za-z0-9_]'"),
-      select: r
-    )
+    revisions =
+      Oli.Repo.all(
+        from(r in Revision,
+          where: fragment("slug ~* '[^A-Za-z0-9_]'"),
+          select: r
+        )
+      )
 
     # regenerate all affected slugs
     Enum.each(revisions, fn revision ->

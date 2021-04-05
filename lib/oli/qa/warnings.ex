@@ -15,11 +15,13 @@ defmodule Oli.Qa.Warnings do
   def list_active_warnings(project_id) do
     Repo.all(
       from warning in Warning,
-      join: review in assoc(warning, :review),
-      where: review.project_id == ^project_id
-        and warning.is_dismissed == false,
-      select: warning,
-      preload: [revision: :resource_type, review: review])
+        join: review in assoc(warning, :review),
+        where:
+          review.project_id == ^project_id and
+            warning.is_dismissed == false,
+        select: warning,
+        preload: [revision: :resource_type, review: review]
+    )
   end
 
   @doc """
@@ -75,8 +77,9 @@ defmodule Oli.Qa.Warnings do
   def delete_warnings(project_id) do
     Repo.delete_all(
       from warning in Warning,
-      join: review in Review,
-      on: warning.review_id == review.id,
-      where: review.project_id == ^project_id)
+        join: review in Review,
+        on: warning.review_id == review.id,
+        where: review.project_id == ^project_id
+    )
   end
 end

@@ -1,5 +1,4 @@
 defmodule OliWeb.Projects.StateLogicTest do
-
   use Oli.DataCase
   alias Oli.Authoring.Course
   alias Oli.Accounts
@@ -13,14 +12,14 @@ defmodule OliWeb.Projects.StateLogicTest do
     setup do
       map1 = Seeder.base_project_with_resource2()
       Seeder.another_project(map1.author, map1.institution, "Apple")
-      :timer.sleep(2000);  # sleep to ensure Zebra project is created much later
+      # sleep to ensure Zebra project is created much later
+      :timer.sleep(2000)
       Seeder.another_project(map1.author, map1.institution, "Zebra")
 
       map1
     end
 
     test "sorting", %{author: author} do
-
       projects = Course.get_projects_for_author(author)
       author_projects = Accounts.project_authors(Enum.map(projects, fn %{id: id} -> id end))
 
@@ -40,9 +39,6 @@ defmodule OliWeb.Projects.StateLogicTest do
       assert state.sort_by == "created"
       assert state.sort_order == "desc"
       assert hd(state.projects).title == "Zebra"
-
     end
-
   end
-
 end

@@ -3,7 +3,6 @@ defmodule Oli.Resources.Resource do
   import Ecto.Changeset
 
   schema "resources" do
-
     has_many :resource_revisions, Oli.Resources.Revision
 
     timestamps(type: :utc_datetime)
@@ -15,5 +14,4 @@ defmodule Oli.Resources.Resource do
     |> cast(attrs, [])
     |> validate_required([])
   end
-
 end

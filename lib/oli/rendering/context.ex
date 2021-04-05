@@ -5,11 +5,11 @@ defmodule Oli.Rendering.Context do
   by the renderers
   """
   defstruct user: nil,
-    activity_map: %{},
-    render_opts: %{
-      log_errors: true,
-      render_errors: true,
-    },
-    preview: false,
-    progress_state: :in_progress
+            activity_map: %{},
+            render_opts: %{
+              log_errors: true,
+              render_errors: true
+            },
+            preview: false,
+            progress_state: :in_progress
 end

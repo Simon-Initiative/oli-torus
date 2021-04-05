@@ -30,7 +30,8 @@ defmodule Oli.Institutions do
       iex> get_institution!(456)
       ** (Ecto.NoResultsError)
   """
-  def get_institution!(id), do: Repo.get!(Institution, id) |> Repo.preload([registrations: [:deployments]])
+  def get_institution!(id),
+    do: Repo.get!(Institution, id) |> Repo.preload(registrations: [:deployments])
 
   @doc """
   Creates a institution.
@@ -265,9 +266,11 @@ defmodule Oli.Institutions do
   end
 
   def get_registration_by_issuer_client_id(issuer, client_id) do
-    Repo.one from registration in Registration,
-      where: registration.issuer == ^ issuer and registration.client_id == ^client_id,
-      select: registration
+    Repo.one(
+      from registration in Registration,
+        where: registration.issuer == ^issuer and registration.client_id == ^client_id,
+        select: registration
+    )
   end
 
   @doc """
@@ -311,9 +314,11 @@ defmodule Oli.Institutions do
       nil
   """
   def get_pending_registration_by_issuer_client_id(issuer, client_id) do
-    Repo.one from pr in PendingRegistration,
-      where: pr.issuer == ^ issuer and pr.client_id == ^client_id,
-      select: pr
+    Repo.one(
+      from pr in PendingRegistration,
+        where: pr.issuer == ^issuer and pr.client_id == ^client_id,
+        select: pr
+    )
   end
 
   @doc """
@@ -375,11 +380,17 @@ defmodule Oli.Institutions do
   #     iex> find_or_create_institution_by_normalized_url(institution_attrs)
   #     {:ok, %Institution{}}
   def find_or_create_institution_by_normalized_url(institution_attrs) do
-    normalized_url = institution_attrs[:institution_url]
+    normalized_url =
+      institution_attrs[:institution_url]
       |> String.replace(~r/^https?\:\/\//i, "")
       |> String.replace_trailing("/", "")
 
-    case Repo.all(from i in Institution, where: like(i.institution_url, ^normalized_url), select: i, order_by: i.id) do
+    case Repo.all(
+           from i in Institution,
+             where: like(i.institution_url, ^normalized_url),
+             select: i,
+             order_by: i.id
+         ) do
       [] -> create_institution(institution_attrs)
       [institution] -> {:ok, institution}
       [institution | _] -> {:ok, institution}
@@ -398,12 +409,18 @@ defmodule Oli.Institutions do
   """
   def approve_pending_registration(%PendingRegistration{} = pending_registration) do
     Repo.transaction(fn ->
-      with {:ok, institution} <- find_or_create_institution_by_normalized_url(PendingRegistration.institution_attrs(pending_registration)),
-        {:ok, active_jwk} = Lti_1p3.get_active_jwk(),
-        registration_attrs = Map.merge(PendingRegistration.registration_attrs(pending_registration), %{institution_id: institution.id, tool_jwk_id: active_jwk.id}),
-        {:ok, registration} <- create_registration(registration_attrs),
-        {:ok, _pending_registration} <- delete_pending_registration(pending_registration)
-      do
+      with {:ok, institution} <-
+             find_or_create_institution_by_normalized_url(
+               PendingRegistration.institution_attrs(pending_registration)
+             ),
+           {:ok, active_jwk} = Lti_1p3.get_active_jwk(),
+           registration_attrs =
+             Map.merge(PendingRegistration.registration_attrs(pending_registration), %{
+               institution_id: institution.id,
+               tool_jwk_id: active_jwk.id
+             }),
+           {:ok, registration} <- create_registration(registration_attrs),
+           {:ok, _pending_registration} <- delete_pending_registration(pending_registration) do
         {institution, registration}
       else
         error -> Repo.rollback(error)
@@ -420,11 +437,17 @@ defmodule Oli.Institutions do
       nil
   """
   def get_institution_registration_deployment(issuer, client_id, deployment_id) do
-    Repo.one from institution in Oli.Institutions.Institution,
-      join: registration in Oli.Lti_1p3.Tool.Registration, on: registration.institution_id == institution.id,
-      join: deployment in Lti_1p3.DataProviders.EctoProvider.Deployment, on: deployment.registration_id == registration.id,
-      where: registration.issuer == ^issuer and registration.client_id == ^client_id and deployment.deployment_id == ^deployment_id,
-      select: {institution, registration, deployment}
+    Repo.one(
+      from institution in Oli.Institutions.Institution,
+        join: registration in Oli.Lti_1p3.Tool.Registration,
+        on: registration.institution_id == institution.id,
+        join: deployment in Lti_1p3.DataProviders.EctoProvider.Deployment,
+        on: deployment.registration_id == registration.id,
+        where:
+          registration.issuer == ^issuer and registration.client_id == ^client_id and
+            deployment.deployment_id == ^deployment_id,
+        select: {institution, registration, deployment}
+    )
   end
 
   @doc """
@@ -433,8 +456,10 @@ defmodule Oli.Institutions do
   def search_institutions_matching(query) do
     q = query
     q = "%" <> q <> "%"
-    Repo.all from i in Institution,
-             where: ilike(i.name, ^q)
-  end
 
+    Repo.all(
+      from i in Institution,
+        where: ilike(i.name, ^q)
+    )
+  end
 end

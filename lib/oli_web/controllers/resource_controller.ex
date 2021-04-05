@@ -52,21 +52,27 @@ defmodule OliWeb.ResourceController do
     is_admin? = Accounts.is_admin?(author)
 
     case PageEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
-      {:ok, context} -> render(conn, "edit.html", active: :curriculum,
-        breadcrumbs: Breadcrumb.trail_to(project_slug, revision_slug),
-        is_admin?: is_admin?,
-        context: Jason.encode!(context),
-        scripts: Activities.get_activity_scripts(),
-        project_slug: project_slug,
-        revision_slug: revision_slug)
+      {:ok, context} ->
+        render(conn, "edit.html",
+          active: :curriculum,
+          breadcrumbs: Breadcrumb.trail_to(project_slug, revision_slug),
+          is_admin?: is_admin?,
+          context: Jason.encode!(context),
+          scripts: Activities.get_activity_scripts(),
+          project_slug: project_slug,
+          revision_slug: revision_slug
+        )
 
       {:error, :not_found} ->
         conn
         |> put_view(OliWeb.SharedView)
-        |> render("_not_found.html", title: "Not Found", breadcrumbs: [
-          Breadcrumb.curriculum(project_slug),
-          Breadcrumb.new(%{full_title: "Not Found"})
-        ])
+        |> render("_not_found.html",
+          title: "Not Found",
+          breadcrumbs: [
+            Breadcrumb.curriculum(project_slug),
+            Breadcrumb.new(%{full_title: "Not Found"})
+          ]
+        )
     end
   end
 
@@ -83,8 +89,14 @@ defmodule OliWeb.ResourceController do
       {:ok, context} ->
         render(conn, "page_preview.html",
           breadcrumbs: Breadcrumb.trail_to(project_slug, revision_slug),
-          objectives: Oli.Delivery.Page.ObjectivesRollup.rollup_objectives(activity_revisions, AuthoringResolver, project_slug),
-          content_html: PageEditor.render_page_html(project_slug, revision_slug, author, preview: true),
+          objectives:
+            Oli.Delivery.Page.ObjectivesRollup.rollup_objectives(
+              activity_revisions,
+              AuthoringResolver,
+              project_slug
+            ),
+          content_html:
+            PageEditor.render_page_html(project_slug, revision_slug, author, preview: true),
           context: context,
           scripts: Activities.get_activity_scripts(),
           preview_mode: true
@@ -93,10 +105,13 @@ defmodule OliWeb.ResourceController do
       {:error, :not_found} ->
         conn
         |> put_view(OliWeb.SharedView)
-        |> render("_not_found.html", title: "Not Found", breadcrumbs: [
-          Breadcrumb.curriculum(project_slug),
-          Breadcrumb.new(%{full_title: "Not Found"})
-        ])
+        |> render("_not_found.html",
+          title: "Not Found",
+          breadcrumbs: [
+            Breadcrumb.curriculum(project_slug),
+            Breadcrumb.new(%{full_title: "Not Found"})
+          ]
+        )
     end
   end
 

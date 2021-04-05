@@ -1,5 +1,4 @@
 defmodule OliWeb.Projects.Card do
-
   use Phoenix.LiveComponent
   alias OliWeb.Router.Helpers, as: Routes
 

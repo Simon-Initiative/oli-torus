@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.ActivityProvider do
-
   alias Oli.Activities.Realizer
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Revision
@@ -13,5 +12,4 @@ defmodule Oli.Delivery.ActivityProvider do
       ids -> DeliveryResolver.from_resource_id(section_slug, ids)
     end
   end
-
 end

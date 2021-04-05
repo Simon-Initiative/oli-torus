@@ -49,7 +49,8 @@ defmodule OliWeb.RevisionHistory.ReingoldTilford do
   end
 
   defp change_representation(node, nodes, level) do
-    children = Enum.map(node.children, &change_representation(Map.get(nodes, &1), nodes, level + 1))
+    children =
+      Enum.map(node.children, &change_representation(Map.get(nodes, &1), nodes, level + 1))
 
     label = Integer.to_string(node.revision.id)
 
@@ -61,7 +62,7 @@ defmodule OliWeb.RevisionHistory.ReingoldTilford do
       modifier: 0,
       type: if(children == [], do: :leaf, else: :subtree),
       height: @node_height,
-      width: max((String.length(label) * 10) + 2, 42),
+      width: max(String.length(label) * 10 + 2, 42),
       level: level,
       value: node
     }

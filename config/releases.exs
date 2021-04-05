@@ -53,8 +53,7 @@ config :oli, :recaptcha,
   secret: System.get_env("RECAPTCHA_PRIVATE_KEY")
 
 # Configure help
-config :oli, :help,
-  dispatcher: Oli.Help.Providers.FreshdeskHelp
+config :oli, :help, dispatcher: Oli.Help.Providers.FreshdeskHelp
 
 config :oli, OliWeb.Endpoint,
   server: true,

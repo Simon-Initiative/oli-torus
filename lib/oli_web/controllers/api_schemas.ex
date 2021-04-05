@@ -1,5 +1,4 @@
 defmodule OliWeb.ApiSchemas do
-
   alias OpenApiSpex.Schema
 
   defmodule CreationResponse do
@@ -11,12 +10,15 @@ defmodule OliWeb.ApiSchemas do
       type: :object,
       properties: %{
         result: %Schema{type: :string, description: "The literal value of 'success'"},
-        resourceId: %Schema{type: :integer, description: "The identifier for the newly created resource"}
+        resourceId: %Schema{
+          type: :integer,
+          description: "The identifier for the newly created resource"
+        }
       },
       required: [:result, :resource_id],
       example: %{
         "result" => "success",
-        "resourceId" => 239820
+        "resourceId" => 239_820
       }
     })
   end
@@ -37,6 +39,4 @@ defmodule OliWeb.ApiSchemas do
       }
     })
   end
-
-
 end

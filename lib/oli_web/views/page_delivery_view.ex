@@ -23,6 +23,7 @@ defmodule OliWeb.PageDeliveryView do
       {nil, nil} ->
         # resource was accessed but no attempt was submitted
         false
+
       {_score, _out_of} ->
         true
     end
@@ -33,11 +34,13 @@ defmodule OliWeb.PageDeliveryView do
       {nil, nil} ->
         # resource was accessed but no attempt was submitted
         ""
+
       {score, out_of} ->
         if out_of != 0 do
-          percent = (score / out_of) * 100
+          percent =
+            (score / out_of * 100)
             |> round
-            |> Integer.to_string
+            |> Integer.to_string()
 
           percent <> "%"
         else

@@ -5,31 +5,34 @@ defmodule Oli.Qa.Reviewers.Accessibility do
   alias Oli.Qa.{Warnings, Reviews}
 
   def review(project_slug) do
-    {:ok, review} = Reviews.create_review(Course.get_project_by_slug(project_slug), "accessibility")
+    {:ok, review} =
+      Reviews.create_review(Course.get_project_by_slug(project_slug), "accessibility")
 
     review
     |> missing_alt_text
     |> nondescriptive_link_text
-    |> Reviews.mark_review_done
+    |> Reviews.mark_review_done()
 
     project_slug
   end
 
   def missing_alt_text(review) do
-    [ "img", "youtube" ]
+    ["img", "youtube"]
     |> elements_of_type(review)
     |> Enum.filter(&no_alt_text?/1)
-    |> Enum.each(&Warnings.create_warning(%{
-      review_id: review.id,
-      revision_id: &1.id,
-      subtype: "missing alt text",
-      content: &1.content
-    }))
+    |> Enum.each(
+      &Warnings.create_warning(%{
+        review_id: review.id,
+        revision_id: &1.id,
+        subtype: "missing alt text",
+        content: &1.content
+      })
+    )
 
     review
   end
 
-  defp no_alt_text?(%{ content: content } = _element) do
+  defp no_alt_text?(%{content: content} = _element) do
     !Map.has_key?(content, "alt")
   end
 
@@ -37,12 +40,14 @@ defmodule Oli.Qa.Reviewers.Accessibility do
     ["a"]
     |> elements_of_type(review)
     |> Enum.filter(&nondescriptive?/1)
-    |> Enum.each(&Warnings.create_warning(%{
-      review_id: review.id,
-      revision_id: &1.id,
-      subtype: "nondescriptive link text",
-      content: &1.content
-    }))
+    |> Enum.each(
+      &Warnings.create_warning(%{
+        review_id: review.id,
+        revision_id: &1.id,
+        subtype: "nondescriptive link text",
+        content: &1.content
+      })
+    )
 
     review
   end

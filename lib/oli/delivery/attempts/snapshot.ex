@@ -5,7 +5,6 @@ defmodule Oli.Delivery.Attempts.Snapshot do
   # A summary of part attempt history designed to power analytic queries
 
   schema "snapshots" do
-
     # The page, activity and part that this snapshot pertains to
     belongs_to :resource, Oli.Resources.Resource
     belongs_to :activity, Oli.Resources.Resource
@@ -53,11 +52,42 @@ defmodule Oli.Delivery.Attempts.Snapshot do
   @doc false
   def changeset(problem_step_rollup, attrs) do
     problem_step_rollup
-    |> cast(attrs, [:resource_id, :activity_id, :part_id, :user_id, :section_id, :graded,
-      :score, :out_of, :part_attempt_id, :part_attempt_number, :resource_attempt_number,
-      :objective_id, :objective_revision_id, :revision_id, :activity_type_id, :attempt_number, :correct, :hints])
-    |> validate_required([:resource_id, :activity_id, :part_id, :user_id, :section_id,
-      :score, :out_of, :part_attempt_id, :part_attempt_number, :resource_attempt_number,
-      :revision_id, :activity_type_id, :attempt_number, :correct, :hints])
+    |> cast(attrs, [
+      :resource_id,
+      :activity_id,
+      :part_id,
+      :user_id,
+      :section_id,
+      :graded,
+      :score,
+      :out_of,
+      :part_attempt_id,
+      :part_attempt_number,
+      :resource_attempt_number,
+      :objective_id,
+      :objective_revision_id,
+      :revision_id,
+      :activity_type_id,
+      :attempt_number,
+      :correct,
+      :hints
+    ])
+    |> validate_required([
+      :resource_id,
+      :activity_id,
+      :part_id,
+      :user_id,
+      :section_id,
+      :score,
+      :out_of,
+      :part_attempt_id,
+      :part_attempt_number,
+      :resource_attempt_number,
+      :revision_id,
+      :activity_type_id,
+      :attempt_number,
+      :correct,
+      :hints
+    ])
   end
 end

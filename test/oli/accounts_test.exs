@@ -5,48 +5,67 @@ defmodule Oli.AccountsTest do
   alias Oli.Accounts.Author
 
   describe "authors" do
-
     test "system role defaults to author", %{} do
+      {:ok, author} =
+        Author.changeset(%Author{}, %{
+          email: "user#{System.unique_integer([:positive])}@example.com",
+          given_name: "Test",
+          family_name: "User",
+          password: "password123",
+          password_confirmation: "password123"
+        })
+        |> Repo.insert()
 
-      {:ok, author} = Author.changeset(%Author{}, %{
-        email: "user#{System.unique_integer([:positive])}@example.com",
-        given_name: "Test",
-        family_name: "User",
-        password: "password123",
-        password_confirmation: "password123",
-      })
-      |> Repo.insert()
-
-      assert author.system_role_id == Accounts.SystemRole.role_id.author
+      assert author.system_role_id == Accounts.SystemRole.role_id().author
     end
 
     test "changeset accepts system role change", %{} do
-      {:ok, author} = Author.noauth_changeset(%Author{}, %{
-        email: "user#{System.unique_integer([:positive])}@example.com",
-        given_name: "Test",
-        family_name: "User",
-        password: "password123",
-        password_confirmation: "password123",
-      })
-      |> Repo.insert()
+      {:ok, author} =
+        Author.noauth_changeset(%Author{}, %{
+          email: "user#{System.unique_integer([:positive])}@example.com",
+          given_name: "Test",
+          family_name: "User",
+          password: "password123",
+          password_confirmation: "password123"
+        })
+        |> Repo.insert()
 
-      {:ok , author} = Accounts.insert_or_update_author(%{email: author.email, system_role_id: Accounts.SystemRole.role_id.admin})
+      {:ok, author} =
+        Accounts.insert_or_update_author(%{
+          email: author.email,
+          system_role_id: Accounts.SystemRole.role_id().admin
+        })
 
-      assert author.system_role_id == Accounts.SystemRole.role_id.admin
+      assert author.system_role_id == Accounts.SystemRole.role_id().admin
     end
   end
 
   describe "users" do
     alias Oli.Accounts.User
 
-    @valid_attrs %{email: "some email", given_name: "some given_name", family_name: "some family_name", sub: "some sub", picture: "some picture"}
-    @update_attrs %{email: "some updated email", given_name: "some updated given_name", family_name: "some updated family_name", sub: "some updated sub", picture: "some updated picture"}
+    @valid_attrs %{
+      email: "some email",
+      given_name: "some given_name",
+      family_name: "some family_name",
+      sub: "some sub",
+      picture: "some picture"
+    }
+    @update_attrs %{
+      email: "some updated email",
+      given_name: "some updated given_name",
+      family_name: "some updated family_name",
+      sub: "some updated sub",
+      picture: "some updated picture"
+    }
     @invalid_attrs %{email: nil, given_name: nil, family_name: nil, sub: nil, picture: nil}
 
     setup do
       author = author_fixture()
-      valid_attrs = @valid_attrs
+
+      valid_attrs =
+        @valid_attrs
         |> Map.put(:author_id, author.id)
+
       {:ok, user} = valid_attrs |> Accounts.create_user()
 
       {:ok, %{user: user, author: author, valid_attrs: valid_attrs}}
@@ -92,5 +111,4 @@ defmodule Oli.AccountsTest do
       assert %Ecto.Changeset{} = Accounts.change_user(user)
     end
   end
-
 end

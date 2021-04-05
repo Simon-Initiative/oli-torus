@@ -1,5 +1,4 @@
 defmodule Oli.Accounts do
-
   import Ecto.Query, warn: false
 
   alias Oli.Repo
@@ -14,7 +13,6 @@ defmodule Oli.Accounts do
   def list_users do
     Repo.all(User)
   end
-
 
   @doc """
   Returns the list of authors.
@@ -108,13 +106,13 @@ defmodule Oli.Accounts do
       {:error, changeset}         -> # Something went wrong
 
   """
-  def insert_or_update_user(%{ sub: sub } = changes) do
+  def insert_or_update_user(%{sub: sub} = changes) do
     case Repo.get_by(User, sub: sub) do
       nil -> %User{}
       user -> user
     end
     |> User.changeset(changes)
-    |> Repo.insert_or_update
+    |> Repo.insert_or_update()
   end
 
   @doc """
@@ -142,8 +140,16 @@ defmodule Oli.Accounts do
       iex> update_user(user, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
-  def link_user_author_account(nil, _author), do: throw "No current_user to link to author. This function should only be called in an LTI context"
-  def link_user_author_account(_user, nil), do: throw "No author to link. This function should only be called after an author is logged in"
+  def link_user_author_account(nil, _author),
+    do:
+      throw(
+        "No current_user to link to author. This function should only be called in an LTI context"
+      )
+
+  def link_user_author_account(_user, nil),
+    do:
+      throw("No author to link. This function should only be called after an author is logged in")
+
   def link_user_author_account(user, author) do
     update_user(user, %{author_id: author.id})
   end
@@ -155,12 +161,11 @@ defmodule Oli.Accounts do
     conn.assigns[:current_user]
   end
 
-
   @doc """
   Returns true if an author is an administrator.
   """
   def is_admin?(%Author{system_role_id: system_role_id}) do
-    SystemRole.role_id.admin == system_role_id
+    SystemRole.role_id().admin == system_role_id
   end
 
   @doc """
@@ -170,13 +175,13 @@ defmodule Oli.Accounts do
       iex> insert_or_update_author(%{field: value})
       {:ok, %Author{}}
   """
-  def insert_or_update_author(%{ email: email } = changes) do
+  def insert_or_update_author(%{email: email} = changes) do
     case Repo.get_by(Author, email: email) do
       nil -> %Author{}
       author -> author
     end
     |> Author.noauth_changeset(changes)
-    |> Repo.insert_or_update
+    |> Repo.insert_or_update()
   end
 
   @doc """
@@ -230,8 +235,11 @@ defmodule Oli.Accounts do
   def search_authors_matching(query) do
     q = query
     q = "%" <> q <> "%"
-    Repo.all from author in Author,
-    where: ilike(author.email, ^q)
+
+    Repo.all(
+      from author in Author,
+        where: ilike(author.email, ^q)
+    )
   end
 
   @doc """
@@ -252,47 +260,59 @@ defmodule Oli.Accounts do
   end
 
   def can_access?(author, project) do
-
     admin_role_id = SystemRole.role_id().admin
 
     case author do
-
       # Admin authors have access to every project
-      %{system_role_id: ^admin_role_id} -> true
+      %{system_role_id: ^admin_role_id} ->
+        true
 
       # querying join table rather than author's project associations list
       # in case the author has many projects
-      _ -> Repo.one(
-        from assoc in "authors_projects",
-          where: assoc.author_id == ^author.id and
-          assoc.project_id == ^project.id,
-          select: count(assoc)) != 0
+      _ ->
+        Repo.one(
+          from assoc in "authors_projects",
+            where:
+              assoc.author_id == ^author.id and
+                assoc.project_id == ^project.id,
+            select: count(assoc)
+        ) != 0
     end
-
   end
 
   def project_author_count(project) do
     Repo.one(
       from assoc in "authors_projects",
-      join: author in Author, on: assoc.author_id == author.id,
-      where: assoc.project_id in ^project.id and (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
-        select: count(author))
+        join: author in Author,
+        on: assoc.author_id == author.id,
+        where:
+          assoc.project_id in ^project.id and
+            (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
+        select: count(author)
+    )
   end
 
   def project_authors(project_ids) when is_list(project_ids) do
     Repo.all(
       from assoc in "authors_projects",
-        join: author in Author, on: assoc.author_id == author.id,
-        where: assoc.project_id in ^project_ids and (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
-        select: [author, assoc.project_id])
+        join: author in Author,
+        on: assoc.author_id == author.id,
+        where:
+          assoc.project_id in ^project_ids and
+            (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
+        select: [author, assoc.project_id]
+    )
   end
 
   def project_authors(project) do
-    Repo.all(from assoc in "authors_projects",
-      join: author in Author,
-      on: assoc.author_id == author.id,
-      where: assoc.project_id == ^project.id and (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
-      select: author)
+    Repo.all(
+      from assoc in "authors_projects",
+        join: author in Author,
+        on: assoc.author_id == author.id,
+        where:
+          assoc.project_id == ^project.id and
+            (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
+        select: author
+    )
   end
-
 end

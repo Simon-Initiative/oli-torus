@@ -5,9 +5,8 @@ defmodule OliWeb.Pow.UserAuthErrorHandler do
   @spec call(Conn.t(), atom()) :: Conn.t()
   def call(conn, :not_authenticated) do
     conn
-      |> put_view(OliWeb.DeliveryView)
-      |> render("signin_required.html")
-      |> halt()
+    |> put_view(OliWeb.DeliveryView)
+    |> render("signin_required.html")
+    |> halt()
   end
-
 end

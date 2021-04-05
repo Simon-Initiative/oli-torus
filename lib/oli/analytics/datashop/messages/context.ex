@@ -1,4 +1,3 @@
-
 defmodule Oli.Analytics.Datashop.Messages.Context do
   @moduledoc """
   <context_message context_message_id="t.stark+0@avengers.com-one-part1" name="START_PROBLEM">
@@ -19,12 +18,13 @@ defmodule Oli.Analytics.Datashop.Messages.Context do
   alias Oli.Analytics.Datashop.Elements.{Meta, Dataset}
 
   def setup(%{
-    name: name,
-    context_message_id: context_message_id,
-    meta_element_context: meta_element_context,
-    dataset_element_context:  dataset_element_context
-  }) do
-    element(:context_message,
+        name: name,
+        context_message_id: context_message_id,
+        meta_element_context: meta_element_context,
+        dataset_element_context: dataset_element_context
+      }) do
+    element(
+      :context_message,
       %{
         context_message_id: context_message_id,
         name: name
@@ -32,6 +32,7 @@ defmodule Oli.Analytics.Datashop.Messages.Context do
       [
         Meta.setup(meta_element_context),
         Dataset.setup(dataset_element_context)
-      ])
+      ]
+    )
   end
 end

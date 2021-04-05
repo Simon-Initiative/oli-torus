@@ -1,5 +1,4 @@
 defmodule Oli.Publishing do
-
   import Ecto.Query, warn: false
   alias Oli.Repo
 
@@ -21,9 +20,10 @@ defmodule Oli.Publishing do
       join: mapping in PublishedResource,
       on: mapping.revision_id == rev.id,
       distinct: rev.resource_id,
-      where: mapping.publication_id == ^publication_id
-        and rev.resource_type_id == ^resource_type_id
-        and rev.deleted == false,
+      where:
+        mapping.publication_id == ^publication_id and
+          rev.resource_type_id == ^resource_type_id and
+          rev.deleted == false,
       select: rev
   end
 
@@ -37,34 +37,42 @@ defmodule Oli.Publishing do
   that pertain to a given publication.
   """
   def get_published_activity_revisions(publication_id, activity_ids) do
-
     activity = ResourceType.get_id_by_type("activity")
 
-    Repo.all(from mapping in PublishedResource,
-      join: rev in Revision, on: mapping.revision_id == rev.id,
-      where: rev.resource_type_id == ^activity and mapping.publication_id == ^publication_id and mapping.resource_id in ^activity_ids,
-      select: rev) |> Repo.preload(:activity_type)
+    Repo.all(
+      from mapping in PublishedResource,
+        join: rev in Revision,
+        on: mapping.revision_id == rev.id,
+        where:
+          rev.resource_type_id == ^activity and mapping.publication_id == ^publication_id and
+            mapping.resource_id in ^activity_ids,
+        select: rev
+    )
+    |> Repo.preload(:activity_type)
   end
 
   # For a project, return the all the current revisions associated
   # with the unpublished publication for a list of resource_ids
   def get_unpublished_revisions(project, resource_ids) do
-
     project_id = project.id
 
-    revisions = Repo.all(from m in Oli.Publishing.PublishedResource,
-      join: rev in Revision, on: rev.id == m.revision_id,
-      join: p in Oli.Publishing.Publication, on: p.id == m.publication_id,
-      where: p.published == false and m.resource_id in ^resource_ids and p.project_id == ^project_id,
-      select: rev)
+    revisions =
+      Repo.all(
+        from m in Oli.Publishing.PublishedResource,
+          join: rev in Revision,
+          on: rev.id == m.revision_id,
+          join: p in Oli.Publishing.Publication,
+          on: p.id == m.publication_id,
+          where:
+            p.published == false and m.resource_id in ^resource_ids and
+              p.project_id == ^project_id,
+          select: rev
+      )
 
     # order them according to the resource_ids
     map = Enum.reduce(revisions, %{}, fn e, m -> Map.put(m, e.resource_id, e) end)
     Enum.map(resource_ids, fn resource_id -> Map.get(map, resource_id) end)
-
   end
-
-
 
   @doc """
   Returns the list of publications.
@@ -85,42 +93,52 @@ defmodule Oli.Publishing do
       [%Publication{}, ...]
   """
   def available_publications() do
-    subquery = from t in Publication,
-      select: %{project_id: t.project_id, max_date: max(t.updated_at)},
-      where: t.published == true,
-      group_by: t.project_id
+    subquery =
+      from t in Publication,
+        select: %{project_id: t.project_id, max_date: max(t.updated_at)},
+        where: t.published == true,
+        group_by: t.project_id
 
-    query = from pub in Publication,
-      join: u in subquery(subquery), on: pub.project_id == u.project_id and u.max_date == pub.updated_at,
-      join: proj in Project, on: pub.project_id == proj.id,
-      where: pub.open_and_free == true or proj.visibility == :global,
-      preload: [:project],
-      distinct: true,
-      select: pub
+    query =
+      from pub in Publication,
+        join: u in subquery(subquery),
+        on: pub.project_id == u.project_id and u.max_date == pub.updated_at,
+        join: proj in Project,
+        on: pub.project_id == proj.id,
+        where: pub.open_and_free == true or proj.visibility == :global,
+        preload: [:project],
+        distinct: true,
+        select: pub
 
     Repo.all(query)
   end
 
   @spec available_publications(Oli.Accounts.Author.t(), Oli.Institutions.Institution.t()) :: any
   def available_publications(%Author{} = author, %Institution{} = institution) do
+    subquery =
+      from t in Publication,
+        select: %{project_id: t.project_id, max_date: max(t.updated_at)},
+        where: t.published == true,
+        group_by: t.project_id
 
-    subquery = from t in Publication,
-      select: %{project_id: t.project_id, max_date: max(t.updated_at)},
-      where: t.published == true,
-      group_by: t.project_id
-
-    query = from pub in Publication,
-      join: u in subquery(subquery), on: pub.project_id == u.project_id and u.max_date == pub.updated_at,
-      join: proj in Project, on: pub.project_id == proj.id,
-      left_join: a in assoc(proj, :authors),
-      left_join: v in ProjectVisibility, on: proj.id == v.project_id,
-      where: a.id == ^author.id or pub.open_and_free == true or proj.visibility == :global or (proj.visibility == :selected and (v.author_id == ^author.id or v.institution_id == ^institution.id)),
-      preload: [:project],
-      distinct: true,
-      select: pub
+    query =
+      from pub in Publication,
+        join: u in subquery(subquery),
+        on: pub.project_id == u.project_id and u.max_date == pub.updated_at,
+        join: proj in Project,
+        on: pub.project_id == proj.id,
+        left_join: a in assoc(proj, :authors),
+        left_join: v in ProjectVisibility,
+        on: proj.id == v.project_id,
+        where:
+          a.id == ^author.id or pub.open_and_free == true or proj.visibility == :global or
+            (proj.visibility == :selected and
+               (v.author_id == ^author.id or v.institution_id == ^institution.id)),
+        preload: [:project],
+        distinct: true,
+        select: pub
 
     Repo.all(query)
-
   end
 
   @doc """
@@ -136,22 +154,24 @@ defmodule Oli.Publishing do
   def get_unpublished_publication_id!(project_id) do
     Repo.one(
       from p in Publication,
-      where: p.project_id == ^project_id and p.published == false,
-      select: p.id)
+        where: p.project_id == ^project_id and p.published == false,
+        select: p.id
+    )
   end
 
   def initial_publication_setup(project, resource, resource_revision) do
     Repo.transaction(fn ->
-      with {:ok, publication} <- create_publication(%{
-          project_id: project.id,
-          root_resource_id: resource.id,
-        }),
-        {:ok, published_resource} <- create_published_resource(%{
-          publication_id: publication.id,
-          resource_id: resource.id,
-          revision_id: resource_revision.id,
-        })
-      do
+      with {:ok, publication} <-
+             create_publication(%{
+               project_id: project.id,
+               root_resource_id: resource.id
+             }),
+           {:ok, published_resource} <-
+             create_published_resource(%{
+               publication_id: publication.id,
+               resource_id: resource.id,
+               revision_id: resource_revision.id
+             }) do
         %{}
         |> Map.put(:publication, publication)
         |> Map.put(:published_resource, published_resource)
@@ -172,10 +192,13 @@ defmodule Oli.Publishing do
       ** (Ecto.NoResultsError)
   """
   def get_unpublished_publication_by_slug!(project_slug) do
-    Repo.one from pub in Publication,
-      join: proj in Project, on: pub.project_id == proj.id,
-      where: proj.slug == ^project_slug and pub.published == false,
-      select: pub
+    Repo.one(
+      from pub in Publication,
+        join: proj in Project,
+        on: pub.project_id == proj.id,
+        where: proj.slug == ^project_slug and pub.published == false,
+        select: pub
+    )
   end
 
   @doc """
@@ -189,11 +212,15 @@ defmodule Oli.Publishing do
       ** (Ecto.NoResultsError)
   """
   def get_latest_published_publication_by_slug!(project_slug) do
-    Repo.one from pub in Publication,
-      join: proj in Project, on: pub.project_id == proj.id,
-      where: proj.slug == ^project_slug and pub.published == true,
-      order_by: [desc: pub.updated_at], limit: 1,
-      select: pub
+    Repo.one(
+      from pub in Publication,
+        join: proj in Project,
+        on: pub.project_id == proj.id,
+        where: proj.slug == ^project_slug and pub.published == true,
+        order_by: [desc: pub.updated_at],
+        limit: 1,
+        select: pub
+    )
   end
 
   @doc """
@@ -257,13 +284,17 @@ defmodule Oli.Publishing do
   end
 
   def get_published_objective_details(publication_id) do
-
     objective = ResourceType.get_id_by_type("objective")
 
-    Repo.all from mapping in PublishedResource,
-      join: rev in Revision, on: mapping.revision_id == rev.id,
-      where: rev.deleted == false and rev.resource_type_id == ^objective and mapping.publication_id == ^publication_id,
-      select: map(rev, [:title, :resource_id, :children])
+    Repo.all(
+      from mapping in PublishedResource,
+        join: rev in Revision,
+        on: mapping.revision_id == rev.id,
+        where:
+          rev.deleted == false and rev.resource_type_id == ^objective and
+            mapping.publication_id == ^publication_id,
+        select: map(rev, [:title, :resource_id, :children])
+    )
   end
 
   @doc """
@@ -297,20 +328,26 @@ defmodule Oli.Publishing do
 
   """
   def get_published_resources_by_publication(publication_id) do
-    from(p in PublishedResource, where: p.publication_id == ^publication_id, preload: [:resource, :revision])
+    from(p in PublishedResource,
+      where: p.publication_id == ^publication_id,
+      preload: [:resource, :revision]
+    )
     |> Repo.all()
   end
 
   def get_objective_mappings_by_publication(publication_id) do
-
     objective = ResourceType.get_id_by_type("objective")
 
-    Repo.all(from mapping in PublishedResource,
-      join: rev in Revision, on: mapping.revision_id == rev.id,
-      where: rev.deleted == false and rev.resource_type_id == ^objective and mapping.publication_id == ^publication_id,
-      select: mapping,
-      preload: [:resource, :revision])
-
+    Repo.all(
+      from mapping in PublishedResource,
+        join: rev in Revision,
+        on: mapping.revision_id == rev.id,
+        where:
+          rev.deleted == false and rev.resource_type_id == ^objective and
+            mapping.publication_id == ^publication_id,
+        select: mapping,
+        preload: [:resource, :revision]
+    )
   end
 
   @doc """
@@ -325,11 +362,17 @@ defmodule Oli.Publishing do
   def get_published_resource!(id), do: Repo.get!(PublishedResource, id)
 
   def get_published_resource!(publication_id, resource_id) do
-    Repo.one!(from p in PublishedResource, where: p.publication_id == ^publication_id and p.resource_id == ^resource_id)
+    Repo.one!(
+      from p in PublishedResource,
+        where: p.publication_id == ^publication_id and p.resource_id == ^resource_id
+    )
   end
 
   def get_published_resource(publication_id, resource_id) do
-    Repo.one(from p in PublishedResource, where: p.publication_id == ^publication_id and p.resource_id == ^resource_id)
+    Repo.one(
+      from p in PublishedResource,
+        where: p.publication_id == ^publication_id and p.resource_id == ^resource_id
+    )
   end
 
   @doc """
@@ -338,13 +381,22 @@ defmodule Oli.Publishing do
   """
   def upsert_published_resource(%Publication{} = publication, revision) do
     case get_published_resource(publication.id, revision.resource_id) do
-      nil -> create_published_resource(%{publication_id: publication.id, resource_id: revision.resource_id, revision_id: revision.id})
-      mapping -> update_published_resource(mapping, %{resource_id: revision.resource_id, revision_id: revision.id})
+      nil ->
+        create_published_resource(%{
+          publication_id: publication.id,
+          resource_id: revision.resource_id,
+          revision_id: revision.id
+        })
+
+      mapping ->
+        update_published_resource(mapping, %{
+          resource_id: revision.resource_id,
+          revision_id: revision.id
+        })
     end
   end
 
   def publish_new_revision(previous_revision, changes, publication, author_id) do
-
     changes = Map.merge(changes, %{author_id: author_id})
 
     {:ok, revision} = Oli.Resources.create_revision_from_previous(previous_revision, changes)
@@ -403,15 +455,17 @@ defmodule Oli.Publishing do
     Repo.delete(published_resource)
   end
 
-
   @doc """
   Returns the revision that pertains to a given publication and a resource id.
   """
   def get_published_revision(publication_id, resource_id) do
-    Repo.one from mapping in PublishedResource,
-      join: rev in Revision, on: mapping.revision_id == rev.id,
-      where: mapping.resource_id == ^resource_id and mapping.publication_id == ^publication_id,
-      select: rev
+    Repo.one(
+      from mapping in PublishedResource,
+        join: rev in Revision,
+        on: mapping.revision_id == rev.id,
+        where: mapping.resource_id == ^resource_id and mapping.publication_id == ^publication_id,
+        select: rev
+    )
   end
 
   @doc """
@@ -423,31 +477,31 @@ defmodule Oli.Publishing do
       iex> publish_project(project)
       {:ok, %Publication{}}
   """
-  @spec publish_project(%Project{}) :: {:error, String.t} | {:ok, %Publication{}}
+  @spec publish_project(%Project{}) :: {:error, String.t()} | {:ok, %Publication{}}
   def publish_project(project) do
     Repo.transaction(fn ->
       with active_publication <- get_unpublished_publication_by_slug!(project.slug),
-        # create a new publication to capture all further edits
-        {:ok, new_publication} <- create_publication(%{
-          description: active_publication.description,
-          published: false,
-          open_and_free: active_publication.open_and_free,
-          root_resource_id: active_publication.root_resource_id,
-          project_id: active_publication.project_id,
-        }),
-        # Locks must be released so that users who have acquired a resource lock
-        # will be forced to re-acquire the lock with the new publication and
-        # create a new revision under that publication
-        _ <- Locks.release_all(active_publication.id),
-        # clone mappings for resources, activities, and objectives. This removes
-        # all active locks, forcing the user to refresh the page to re-acquire the lock.
-        _ <- Clone.clone_all_published_resources(active_publication.id, new_publication.id),
-        # set the active publication to published
-        {:ok, publication} <- update_publication(active_publication, %{published: true}),
-        # push forward all existing sections to this newly published publication, and
-        # error if a failure occurs with `insert!`
-        _ <- update_all_section_publications(project, active_publication)
-      do
+           # create a new publication to capture all further edits
+           {:ok, new_publication} <-
+             create_publication(%{
+               description: active_publication.description,
+               published: false,
+               open_and_free: active_publication.open_and_free,
+               root_resource_id: active_publication.root_resource_id,
+               project_id: active_publication.project_id
+             }),
+           # Locks must be released so that users who have acquired a resource lock
+           # will be forced to re-acquire the lock with the new publication and
+           # create a new revision under that publication
+           _ <- Locks.release_all(active_publication.id),
+           # clone mappings for resources, activities, and objectives. This removes
+           # all active locks, forcing the user to refresh the page to re-acquire the lock.
+           _ <- Clone.clone_all_published_resources(active_publication.id, new_publication.id),
+           # set the active publication to published
+           {:ok, publication} <- update_publication(active_publication, %{published: true}),
+           # push forward all existing sections to this newly published publication, and
+           # error if a failure occurs with `insert!`
+           _ <- update_all_section_publications(project, active_publication) do
         Oli.Authoring.Broadcaster.broadcast_publication(publication, project.slug)
 
         publication
@@ -458,14 +512,16 @@ defmodule Oli.Publishing do
   end
 
   def get_all_mappings_for_resource(resource_id, project_slug) do
-
-    Repo.all(from mapping in PublishedResource,
-      join: p in Publication, on: mapping.publication_id == p.id,
-      join: project in Project, on: p.project_id == project.id,
-      where: mapping.resource_id == ^resource_id and project.slug == ^project_slug,
-      select: mapping,
-      preload: [:publication, :revision])
-
+    Repo.all(
+      from mapping in PublishedResource,
+        join: p in Publication,
+        on: mapping.publication_id == p.id,
+        join: project in Project,
+        on: p.project_id == project.id,
+        where: mapping.resource_id == ^resource_id and project.slug == ^project_slug,
+        select: mapping,
+        preload: [:publication, :revision]
+    )
   end
 
   # Uses dangerous `update!` to fail the transaction as soon as any update fails
@@ -479,38 +535,43 @@ defmodule Oli.Publishing do
     all_resource_revisions_p2 = get_resource_revisions_for_publication(p2)
 
     # go through every resource in p1 to identify any resources that are identical, changed, or deleted in p2
-    {visited, changes} = Map.keys(all_resource_revisions_p1)
-    |> Enum.reduce({%{}, %{}}, fn id, {visited, acc} ->
-      if Map.has_key?(all_resource_revisions_p2, id) do
-        {_res_p1, rev_p1} = all_resource_revisions_p1[id]
-        {res_p2, rev_p2} = all_resource_revisions_p2[id]
-        if rev_p1.id == rev_p2.id do
-          {Map.put(visited, id, true), Map.put_new(acc, id, {:identical, %{resource: res_p2, revision: rev_p2}})}
+    {visited, changes} =
+      Map.keys(all_resource_revisions_p1)
+      |> Enum.reduce({%{}, %{}}, fn id, {visited, acc} ->
+        if Map.has_key?(all_resource_revisions_p2, id) do
+          {_res_p1, rev_p1} = all_resource_revisions_p1[id]
+          {res_p2, rev_p2} = all_resource_revisions_p2[id]
+
+          if rev_p1.id == rev_p2.id do
+            {Map.put(visited, id, true),
+             Map.put_new(acc, id, {:identical, %{resource: res_p2, revision: rev_p2}})}
+          else
+            {Map.put(visited, id, true),
+             Map.put_new(acc, id, {:changed, %{resource: res_p2, revision: rev_p2}})}
+          end
         else
-          {Map.put(visited, id, true), Map.put_new(acc, id, {:changed, %{resource: res_p2, revision: rev_p2}})}
+          {res_p1, rev_p1} = all_resource_revisions_p1[id]
+          {visited, Map.put_new(acc, id, {:deleted, %{resource: res_p1, revision: rev_p1}})}
         end
-      else
-        {res_p1, rev_p1} = all_resource_revisions_p1[id]
-        {visited, Map.put_new(acc, id, {:deleted, %{resource: res_p1, revision: rev_p1}})}
-      end
-    end)
+      end)
 
     # go through every resource in p2 that wasn't in p1 to identify new resources
-    changes = Map.keys(all_resource_revisions_p2)
-    |> Enum.filter(fn id -> !Map.has_key?(visited, id) end)
-    |> Enum.reduce(changes, fn id, acc ->
-      {res_p2, rev_p2} = all_resource_revisions_p2[id]
-      Map.put_new(acc, id, {:added, %{resource: res_p2, revision: rev_p2}})
-    end)
+    changes =
+      Map.keys(all_resource_revisions_p2)
+      |> Enum.filter(fn id -> !Map.has_key?(visited, id) end)
+      |> Enum.reduce(changes, fn id, acc ->
+        {res_p2, rev_p2} = all_resource_revisions_p2[id]
+        Map.put_new(acc, id, {:added, %{resource: res_p2, revision: rev_p2}})
+      end)
 
     changes
   end
 
   def get_published_revisions(publication) do
     get_published_resources_by_publication(publication.id)
-    |> Enum.map(& Repo.preload(&1, :revision))
-    |> Enum.map(& Map.get(&1, :revision))
-    |> Enum.filter(& !&1.deleted)
+    |> Enum.map(&Repo.preload(&1, :revision))
+    |> Enum.map(&Map.get(&1, :revision))
+    |> Enum.filter(&(!&1.deleted))
   end
 
   @doc """
@@ -530,7 +591,6 @@ defmodule Oli.Publishing do
     |> Enum.reduce(%{}, fn m, acc -> Map.put_new(acc, m.resource_id, {m.resource, m.revision}) end)
   end
 
-
   @doc """
   For a given objective resource id and a given project's publication id,
   this function will find all pages and activities that have the objective
@@ -549,27 +609,29 @@ defmodule Oli.Publishing do
   }
   """
   def find_objective_attachments(resource_id, publication_id) do
-
     page_id = ResourceType.get_id_by_type("page")
     activity_id = ResourceType.get_id_by_type("activity")
 
-    sql =
-      """
-      select
-        revisions.id, revisions.resource_id, revisions.title, revisions.slug, part
-      FROM revisions, jsonb_object_keys(revisions.objectives) p(part)
-      WHERE
-        revisions.id IN (SELECT revision_id
-        FROM published_resources
-         WHERE publication_id = #{publication_id})
-         AND (
-           (revisions.resource_type_id = #{activity_id} AND revisions.objectives->part @> '[#{resource_id}]')
-           OR
-           (revisions.resource_type_id = #{page_id} AND revisions.objectives->'attached' @> '[#{resource_id}]')
-         )
-      """
+    sql = """
+    select
+      revisions.id, revisions.resource_id, revisions.title, revisions.slug, part
+    FROM revisions, jsonb_object_keys(revisions.objectives) p(part)
+    WHERE
+      revisions.id IN (SELECT revision_id
+      FROM published_resources
+       WHERE publication_id = #{publication_id})
+       AND (
+         (revisions.resource_type_id = #{activity_id} AND revisions.objectives->part @> '[#{
+      resource_id
+    }]')
+         OR
+         (revisions.resource_type_id = #{page_id} AND revisions.objectives->'attached' @> '[#{
+      resource_id
+    }]')
+       )
+    """
 
-    {:ok, %{rows: results }} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
     results
     |> Enum.map(fn [id, resource_id, title, slug, part] ->
@@ -591,14 +653,13 @@ defmodule Oli.Publishing do
   This only returns those records that have an active lock associated with them.
   """
   def retrieve_lock_info(resource_ids, publication_id) do
-
-    Repo.all(from mapping in PublishedResource,
-      where: mapping.publication_id == ^publication_id and mapping.resource_id in ^resource_ids,
-      select: mapping,
-      preload: [:author])
-
+    Repo.all(
+      from mapping in PublishedResource,
+        where: mapping.publication_id == ^publication_id and mapping.resource_id in ^resource_ids,
+        select: mapping,
+        preload: [:author]
+    )
     |> Enum.filter(fn m -> !Locks.expired_or_empty?(m) end)
-
   end
 
   @doc """
@@ -609,30 +670,31 @@ defmodule Oli.Publishing do
   page that encloses it
   """
   def determine_parent_pages(activity_resource_ids, publication_id) do
-
     page_id = ResourceType.get_id_by_type("page")
 
     activities = MapSet.new(activity_resource_ids)
 
-    sql =
-      """
-      select
-        rev.resource_id,
-        rev.slug,
-        jsonb_path_query(content, '$.model[*] ? (@.type == "activity-reference")')
-      from published_resources as mapping
-      join revisions as rev
-      on mapping.revision_id = rev.id
-      where mapping.publication_id = #{publication_id}
-        and rev.resource_type_id = #{page_id}
-        and rev.deleted is false
-      """
+    sql = """
+    select
+      rev.resource_id,
+      rev.slug,
+      jsonb_path_query(content, '$.model[*] ? (@.type == "activity-reference")')
+    from published_resources as mapping
+    join revisions as rev
+    on mapping.revision_id = rev.id
+    where mapping.publication_id = #{publication_id}
+      and rev.resource_type_id = #{page_id}
+      and rev.deleted is false
+    """
 
-    {:ok, %{rows: results }} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
-    Enum.filter(results, fn [_, _, %{"activity_id" => activity_id}] -> MapSet.member?(activities, activity_id) end)
-    |> Enum.reduce(%{}, fn [id, slug, %{"activity_id" => activity_id}], map -> Map.put(map, activity_id, %{slug: slug, id: id}) end)
-
+    Enum.filter(results, fn [_, _, %{"activity_id" => activity_id}] ->
+      MapSet.member?(activities, activity_id)
+    end)
+    |> Enum.reduce(%{}, fn [id, slug, %{"activity_id" => activity_id}], map ->
+      Map.put(map, activity_id, %{slug: slug, id: id})
+    end)
   end
 
   @doc """
@@ -655,15 +717,18 @@ defmodule Oli.Publishing do
   Returns a map containing mappings for which users or institutions have course build access to the project
   """
   def get_all_project_visibilities(project_id) do
-    Repo.all from v in ProjectVisibility,
-      where: v.project_id == ^project_id,
-      left_join: author in Author, on: v.author_id == author.id,
-      left_join: institution in Institution, on: v.institution_id == institution.id,
-      select: %{
-        visibility: v,
-        author: author,
-        institution: institution
-      }
+    Repo.all(
+      from v in ProjectVisibility,
+        where: v.project_id == ^project_id,
+        left_join: author in Author,
+        on: v.author_id == author.id,
+        left_join: institution in Institution,
+        on: v.institution_id == institution.id,
+        select: %{
+          visibility: v,
+          author: author,
+          institution: institution
+        }
+    )
   end
-
 end

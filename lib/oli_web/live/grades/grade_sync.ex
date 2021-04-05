@@ -1,10 +1,13 @@
 defmodule OliWeb.Grades.GradeSync do
-
   use OliWeb, :live_component
 
   def render(assigns) do
-
-    disabled = if length(assigns.task_queue) > 0 or assigns.selected_page == nil do "disabled" else "" end
+    disabled =
+      if length(assigns.task_queue) > 0 or assigns.selected_page == nil do
+        "disabled"
+      else
+        ""
+      end
 
     ~L"""
 
@@ -41,5 +44,4 @@ defmodule OliWeb.Grades.GradeSync do
 
     """
   end
-
 end

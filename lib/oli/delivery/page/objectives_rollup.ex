@@ -1,17 +1,16 @@
 defmodule Oli.Delivery.Page.ObjectivesRollup do
-
   # for a map of activity ids to latest attempt tuples (where the first tuple item is the activity attempt)
   # return the parent objective revisions of all attached objectives
   # if an attached objective is a parent, include that in the return list
   def rollup_objectives(activity_revisions, resolver, section_slug) do
-
-    attached_objective_ids = Enum.reduce(activity_revisions, MapSet.new(), fn %{objectives: objectives}, all ->
+    attached_objective_ids =
+      Enum.reduce(activity_revisions, MapSet.new(), fn %{objectives: objectives}, all ->
         Enum.map(objectives, fn {_, ids} -> ids end)
-        |> List.flatten
-        |> MapSet.new
+        |> List.flatten()
+        |> MapSet.new()
         |> MapSet.union(all)
       end)
-    |> MapSet.to_list
+      |> MapSet.to_list()
 
     all = resolver.from_resource_id(section_slug, attached_objective_ids)
 
@@ -21,9 +20,10 @@ defmodule Oli.Delivery.Page.ObjectivesRollup do
     # we want to only return the parents
 
     # create a map set of all referenced children
-    referenced_children = Enum.reduce(parents, MapSet.new(), fn %{children: children}, m ->
-      Enum.reduce(children, m, fn id, m -> MapSet.put(m, id) end)
-    end)
+    referenced_children =
+      Enum.reduce(parents, MapSet.new(), fn %{children: children}, m ->
+        Enum.reduce(children, m, fn id, m -> MapSet.put(m, id) end)
+      end)
 
     # now look at all directly attached objectives.  If one does not exist within the set of referenced
     # children that means that is a root objective that was directly attached, so we append it to
@@ -35,11 +35,8 @@ defmodule Oli.Delivery.Page.ObjectivesRollup do
       end
     end)
     |> Enum.map(fn r -> r.title end)
-    |> MapSet.new
+    |> MapSet.new()
     |> MapSet.to_list()
-    |> Enum.sort
-
+    |> Enum.sort()
   end
-
-
 end

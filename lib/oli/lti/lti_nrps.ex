@@ -1,5 +1,4 @@
 defmodule Oli.Lti.LTI_NRPS do
-
   @moduledoc """
   Implementation of LTI Names and Roles Provisioning Service
 
@@ -29,27 +28,25 @@ defmodule Oli.Lti.LTI_NRPS do
       family_name: Map.get(raw, "family_name"),
       email: Map.get(raw, "email"),
       user_id: Map.get(raw, "user_id"),
-      roles: Map.get(raw, "roles"),
+      roles: Map.get(raw, "roles")
     }
   end
 
   def fetch_memberships(context_memberships_url, %AccessToken{} = access_token) do
-
     Logger.debug("Fetch memberships from #{context_memberships_url}")
 
     url = context_memberships_url <> "?limit=1000"
 
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- http().get(url, headers(access_token)),
-      {:ok, results} <- Jason.decode(body),
-      members <- Map.get(results, "members")
-    do
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
+           http().get(url, headers(access_token)),
+         {:ok, results} <- Jason.decode(body),
+         members <- Map.get(results, "members") do
       {:ok, Enum.map(members, fn r -> to_membership(r) end)}
     else
       e ->
-        Logger.error("Error encountered fetching memberships from #{url} #{inspect e}")
+        Logger.error("Error encountered fetching memberships from #{url} #{inspect(e)}")
         {:error, "Error retrieving memberships"}
     end
-
   end
 
   @doc """
@@ -70,7 +67,9 @@ defmodule Oli.Lti.LTI_NRPS do
   end
 
   defp headers(%AccessToken{} = access_token) do
-    [{"Content-Type", "application/json"}, {"Authorization", "Bearer #{access_token.access_token}"}]
+    [
+      {"Content-Type", "application/json"},
+      {"Authorization", "Bearer #{access_token.access_token}"}
+    ]
   end
-
 end

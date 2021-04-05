@@ -3,7 +3,6 @@ defmodule OliWeb.LegacySupportController do
   alias Oli.Interop.LegacySupport
 
   def index(conn, _) do
-
     summary = %{
       resources: LegacySupport.resources(),
       supported: LegacySupport.supported(),
@@ -14,5 +13,4 @@ defmodule OliWeb.LegacySupportController do
 
     json(conn, summary)
   end
-
 end

@@ -5,22 +5,34 @@ defmodule Oli.CourseTest do
   alias Oli.Authoring.Course.{Family, Project}
 
   describe "projects basic" do
-
     @valid_attrs %{description: "some description", version: "1", title: "some title"}
-    @update_attrs %{description: "some updated description", version: "1", title: "some updated title"}
+    @update_attrs %{
+      description: "some updated description",
+      version: "1",
+      title: "some updated title"
+    }
     @invalid_attrs %{description: nil, slug: nil, title: nil}
 
     setup do
+      {:ok, family} =
+        Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"})
+        |> Repo.insert()
 
-      {:ok, family} = Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"}) |> Repo.insert
-      {:ok, project} = Project.changeset(%Project{}, %{description: "description", title: "title", version: "1", family_id: family.id}) |> Repo.insert
+      {:ok, project} =
+        Project.changeset(%Project{}, %{
+          description: "description",
+          title: "title",
+          version: "1",
+          family_id: family.id
+        })
+        |> Repo.insert()
 
-      valid_attrs = Map.put(@valid_attrs, :family_id, family.id)
+      valid_attrs =
+        Map.put(@valid_attrs, :family_id, family.id)
         |> Map.put(:project_id, project.id)
 
       {:ok, %{project: project, family: family, valid_attrs: valid_attrs}}
     end
-
 
     test "list_projects/0 returns all projects", %{project: project} do
       assert Course.list_projects() == [project]
@@ -46,23 +58,27 @@ defmodule Oli.CourseTest do
       assert {:error, %Ecto.Changeset{}} = create_empty_project(@invalid_attrs)
     end
 
-    test "update_project/2 with valid data updates the project", %{project: project}  do
+    test "update_project/2 with valid data updates the project", %{project: project} do
       assert {:ok, %Project{} = project} = Course.update_project(project, @update_attrs)
       assert project.description == "some updated description"
-      assert project.slug == "title"   # The slug should never change
+      # The slug should never change
+      assert project.slug == "title"
       assert project.title == "some updated title"
     end
 
-    test "update_project/2 with invalid data returns error changeset", %{project: project}  do
+    test "update_project/2 with invalid data returns error changeset", %{project: project} do
       assert {:error, %Ecto.Changeset{}} = Course.update_project(project, @invalid_attrs)
       assert project == Course.get_project!(project.id)
     end
   end
 
   describe "families" do
-
     @valid_attrs %{description: "some description", slug: "some slug", title: "some title"}
-    @update_attrs %{description: "some updated description", slug: "some updated slug", title: "some updated title"}
+    @update_attrs %{
+      description: "some updated description",
+      slug: "some updated slug",
+      title: "some updated title"
+    }
     @invalid_attrs %{description: nil, slug: nil, title: nil}
 
     def family_fixture(attrs \\ %{}) do
@@ -121,7 +137,11 @@ defmodule Oli.CourseTest do
       assert project.family.slug == family.slug
     end
 
-    test "associates the currently logged in author with the new project", %{author_project: author_project, project: project, author: author} do
+    test "associates the currently logged in author with the new project", %{
+      author_project: author_project,
+      project: project,
+      author: author
+    } do
       assert !is_nil(author_project)
       assert author_project.author_id == author.id
       assert author_project.project_id == project.id
@@ -132,23 +152,27 @@ defmodule Oli.CourseTest do
       assert revision.slug =~ "curriculum"
     end
 
-    test "creates a new resource revision for the container", %{resource: resource, resource_revision: resource_revision} do
+    test "creates a new resource revision for the container", %{
+      resource: resource,
+      resource_revision: resource_revision
+    } do
       revision = Repo.preload(resource_revision, [:resource])
       assert revision.slug =~ "curriculum"
       assert revision.resource == resource
     end
 
     test "project should always have an unpublished, 'active' publication", %{project: project} do
-      assert Enum.find(Oli.Repo.preload(project, [:publications]).publications, &(&1.published == false))
+      assert Enum.find(
+               Oli.Repo.preload(project, [:publications]).publications,
+               &(&1.published == false)
+             )
     end
 
-    test "creates a new publication associated with the project and containing the container resource", %{publication: publication, resource: resource, project: project} do
-
+    test "creates a new publication associated with the project and containing the container resource",
+         %{publication: publication, resource: resource, project: project} do
       publication = Repo.preload(publication, [:project])
       assert publication.project == project
       assert Repo.preload(publication, [:root_resource]).root_resource == resource
-
     end
-
   end
 end

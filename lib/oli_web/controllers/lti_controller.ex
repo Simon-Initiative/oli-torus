@@ -21,8 +21,10 @@ defmodule OliWeb.LtiController do
         conn
         |> put_session("state", state)
         |> redirect(external: redirect_url)
+
       {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
         handle_invalid_registration(conn, issuer, client_id)
+
       {:error, reason} ->
         render(conn, "lti_error.html", reason: reason)
     end
@@ -30,13 +32,23 @@ defmodule OliWeb.LtiController do
 
   def launch(conn, params) do
     session_state = Plug.Conn.get_session(conn, "state")
+
     case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
       {:ok, lti_params, lti_params_key} ->
         handle_valid_lti_1p3_launch(conn, lti_params, lti_params_key)
+
       {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
         handle_invalid_registration(conn, issuer, client_id)
-      {:error, %{reason: :invalid_deployment, msg: _msg, registration_id: registration_id, deployment_id: deployment_id}} ->
+
+      {:error,
+       %{
+         reason: :invalid_deployment,
+         msg: _msg,
+         registration_id: registration_id,
+         deployment_id: deployment_id
+       }} ->
         handle_invalid_deployment(conn, params, registration_id, deployment_id)
+
       {:error, %{reason: _reason, msg: msg}} ->
         render(conn, "lti_error.html", reason: msg)
     end
@@ -44,9 +56,11 @@ defmodule OliWeb.LtiController do
 
   def test(conn, params) do
     session_state = Plug.Conn.get_session(conn, "state")
+
     case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
       {:ok, lti_params, _cache_key} ->
         render(conn, "lti_test.html", lti_params: lti_params)
+
       {:error, %{reason: _reason, msg: msg}} ->
         render(conn, "lti_error.html", reason: msg)
     end
@@ -55,26 +69,41 @@ defmodule OliWeb.LtiController do
   def authorize_redirect(conn, params) do
     case Lti_1p3.Platform.LoginHints.get_login_hint_by_value(params["login_hint"]) do
       nil ->
-        render(conn, "lti_error.html", reason: "The current user must be the same user initiating the LTI request")
+        render(conn, "lti_error.html",
+          reason: "The current user must be the same user initiating the LTI request"
+        )
 
       %Lti_1p3.Platform.LoginHint{context: context} ->
-        current_user = case context do
-          "author" ->
-            conn.assigns[:current_author]
-          _ ->
-            conn.assigns[:current_user]
-        end
+        current_user =
+          case context do
+            "author" ->
+              conn.assigns[:current_author]
+
+            _ ->
+              conn.assigns[:current_user]
+          end
 
         issuer = Oli.Utils.get_base_url()
         # TODO: add multiple deployment support
         # for now, just use a single deployment with a static deployment_id
         deployment_id = "1"
-        case Lti_1p3.Platform.AuthorizationRedirect.authorize_redirect(params, current_user, issuer, deployment_id) do
+
+        case Lti_1p3.Platform.AuthorizationRedirect.authorize_redirect(
+               params,
+               current_user,
+               issuer,
+               deployment_id
+             ) do
           {:ok, redirect_uri, state, id_token} ->
             conn
-            |> render("post_redirect.html", redirect_uri: redirect_uri, state: state, id_token: id_token)
+            |> render("post_redirect.html",
+              redirect_uri: redirect_uri,
+              state: state,
+              id_token: id_token
+            )
+
           {:error, %{reason: _reason, msg: msg}} ->
-              render(conn, "lti_error.html", reason: msg)
+            render(conn, "lti_error.html", reason: msg)
         end
     end
   end
@@ -82,14 +111,17 @@ defmodule OliWeb.LtiController do
   def developer_key_json(conn, _params) do
     {:ok, active_jwk} = Lti_1p3.get_active_jwk()
 
-    public_jwk = JOSE.JWK.from_pem(active_jwk.pem) |> JOSE.JWK.to_public()
+    public_jwk =
+      JOSE.JWK.from_pem(active_jwk.pem)
+      |> JOSE.JWK.to_public()
       |> JOSE.JWK.to_map()
       |> (fn {_kty, public_jwk} -> public_jwk end).()
       |> Map.put("typ", active_jwk.typ)
       |> Map.put("alg", active_jwk.alg)
       |> Map.put("kid", active_jwk.kid)
 
-    host = Application.get_env(:oli, OliWeb.Endpoint)
+    host =
+      Application.get_env(:oli, OliWeb.Endpoint)
       |> Keyword.get(:url)
       |> Keyword.get(:host)
 
@@ -116,7 +148,7 @@ defmodule OliWeb.LtiController do
               %{
                 "placement" => "course_navigation",
                 "message_type" => "LtiResourceLinkRequest"
-              },
+              }
               ## TODO: add support for more placement types in the future, possibly configurable by LMS admin
               # %{
               #   "placement" => "assignment_selection",
@@ -145,7 +177,8 @@ defmodule OliWeb.LtiController do
         "kty" => "RSA",
         "use" => "sig"
       },
-      "description" => "Create, deliver and iteratively improve course content through the Open Learning Initiative",
+      "description" =>
+        "Create, deliver and iteratively improve course content through the Open Learning Initiative",
       "custom_fields" => %{},
       "public_jwk_url" => "https://#{host}/.well-known/jwks.json",
       "target_link_uri" => "https://#{host}/lti/launch",
@@ -169,7 +202,10 @@ defmodule OliWeb.LtiController do
     })
   end
 
-  def request_registration(conn, %{"pending_registration" => pending_registration_attrs} = _params) do
+  def request_registration(
+        conn,
+        %{"pending_registration" => pending_registration_attrs} = _params
+      ) do
     case Institutions.create_pending_registration(pending_registration_attrs) do
       {:ok, pending_registration} ->
         # send a Slack notification regarding the new registration request
@@ -181,7 +217,10 @@ defmodule OliWeb.LtiController do
               "type" => "section",
               "text" => %{
                 "type" => "mrkdwn",
-                "text" => "New registration request from *#{pending_registration.name}*. <#{Routes.institution_url(conn, :index)}#pending-registrations|Click here to view all pending requests>."
+                "text" =>
+                  "New registration request from *#{pending_registration.name}*. <#{
+                    Routes.institution_url(conn, :index)
+                  }#pending-registrations|Click here to view all pending requests>."
               }
             },
             %{
@@ -201,12 +240,16 @@ defmodule OliWeb.LtiController do
                 },
                 %{
                   "type" => "mrkdwn",
-                  "text" => "*Location:*\n#{pending_registration.country_code} - #{pending_registration.timezone}"
+                  "text" =>
+                    "*Location:*\n#{pending_registration.country_code} - #{
+                      pending_registration.timezone
+                    }"
                 },
                 %{
                   "type" => "mrkdwn",
-                  "text" => "*Date:*\n#{pending_registration.inserted_at |> Timex.format!("{RFC822}")}"
-                },
+                  "text" =>
+                    "*Date:*\n#{pending_registration.inserted_at |> Timex.format!("{RFC822}")}"
+                }
               ]
             },
             %{
@@ -218,7 +261,7 @@ defmodule OliWeb.LtiController do
                     "type" => "plain_text",
                     "text" => "Review Request"
                   },
-                  "url" => "#{Routes.institution_url(conn, :index)}#pending-registrations",
+                  "url" => "#{Routes.institution_url(conn, :index)}#pending-registrations"
                 }
               ]
             }
@@ -239,7 +282,8 @@ defmodule OliWeb.LtiController do
           world_universities_and_domains: Predefined.world_universities_and_domains(),
           lti_config_defaults: Predefined.lti_config_defaults(),
           issuer: pending_registration_attrs["issuer"],
-          client_id: pending_registration_attrs["client_id"])
+          client_id: pending_registration_attrs["client_id"]
+        )
     end
   end
 
@@ -256,7 +300,8 @@ defmodule OliWeb.LtiController do
           world_universities_and_domains: Predefined.world_universities_and_domains(),
           lti_config_defaults: Predefined.lti_config_defaults(),
           issuer: issuer,
-          client_id: client_id)
+          client_id: client_id
+        )
 
       pending_registration ->
         conn
@@ -265,10 +310,14 @@ defmodule OliWeb.LtiController do
   end
 
   defp handle_invalid_deployment(conn, params, registration_id, deployment_id) do
-    case Institutions.create_deployment(%{deployment_id: deployment_id, registration_id: registration_id}) do
+    case Institutions.create_deployment(%{
+           deployment_id: deployment_id,
+           registration_id: registration_id
+         }) do
       {:ok, _deployment} ->
         # try the LTI launch again now that deployment is created
         launch(conn, params)
+
       _ ->
         render(conn, "lti_error.html", reason: "Failed to create deployment")
     end
@@ -286,27 +335,27 @@ defmodule OliWeb.LtiController do
         # update user values defined by the oidc standard per LTI 1.3 standard user identity claims
         # http://www.imsglobal.org/spec/lti/v1p3/#user-identity-claims
         case Accounts.insert_or_update_user(%{
-          sub: lti_params["sub"],
-          name: lti_params["name"],
-          given_name: lti_params["given_name"],
-          family_name: lti_params["family_name"],
-          middle_name: lti_params["middle_name"],
-          nickname: lti_params["nickname"],
-          preferred_username:  lti_params["preferred_username"],
-          profile: lti_params["profile"],
-          picture: lti_params["picture"],
-          website: lti_params["website"],
-          email: lti_params["email"],
-          email_verified: lti_params["email_verified"],
-          gender: lti_params["gender"],
-          birthdate: lti_params["birthdate"],
-          zoneinfo: lti_params["zoneinfo"],
-          locale: lti_params["locale"],
-          phone_number: lti_params["phone_number"],
-          phone_number_verified: lti_params["phone_number_verified"],
-          address: lti_params["address"],
-          institution_id: institution.id,
-        }) do
+               sub: lti_params["sub"],
+               name: lti_params["name"],
+               given_name: lti_params["given_name"],
+               family_name: lti_params["family_name"],
+               middle_name: lti_params["middle_name"],
+               nickname: lti_params["nickname"],
+               preferred_username: lti_params["preferred_username"],
+               profile: lti_params["profile"],
+               picture: lti_params["picture"],
+               website: lti_params["website"],
+               email: lti_params["email"],
+               email_verified: lti_params["email_verified"],
+               gender: lti_params["gender"],
+               birthdate: lti_params["birthdate"],
+               zoneinfo: lti_params["zoneinfo"],
+               locale: lti_params["locale"],
+               phone_number: lti_params["phone_number"],
+               phone_number_verified: lti_params["phone_number_verified"],
+               address: lti_params["address"],
+               institution_id: institution.id
+             }) do
           {:ok, user} ->
             # update user platform roles
             Accounts.update_user_platform_roles(user, PlatformRoles.get_roles_by_uris(lti_roles))
@@ -319,49 +368,51 @@ defmodule OliWeb.LtiController do
             # safeguard against the case that context is missing
             case lti_params["https://purl.imsglobal.org/spec/lti/claim/context"] do
               nil ->
-                throw "Error getting context information from launch params"
+                throw("Error getting context information from launch params")
+
               context ->
                 # update section specifics - if one exists. Enroll the user and also update the section details
-                conn = with {:ok, section} <- get_existing_section(lti_params)
-                do
-                  # transform lti_roles to a list only containing valid context roles (exclude all system and institution roles)
-                  context_roles = ContextRoles.get_roles_by_uris(lti_roles)
+                conn =
+                  with {:ok, section} <- get_existing_section(lti_params) do
+                    # transform lti_roles to a list only containing valid context roles (exclude all system and institution roles)
+                    context_roles = ContextRoles.get_roles_by_uris(lti_roles)
 
-                  # if a course section exists, ensure that this user has an enrollment in this section
-                  enroll_user(user.id, section.id, context_roles)
+                    # if a course section exists, ensure that this user has an enrollment in this section
+                    enroll_user(user.id, section.id, context_roles)
 
-                  # make sure section details are up to date
-                  %{"title" => context_title} = context
-                  update_section_details(context_title, section)
+                    # make sure section details are up to date
+                    %{"title" => context_title} = context
+                    update_section_details(context_title, section)
 
-                  # store lti params key in the session for this particular section so that the cached lti_params
-                  # can be retrieved from the database in later requests
-                  LtiSession.put_section_params(conn, section.slug, lti_params_key)
-                else
-                  _ -> conn
-                end
+                    # store lti params key in the session for this particular section so that the cached lti_params
+                    # can be retrieved from the database in later requests
+                    LtiSession.put_section_params(conn, section.slug, lti_params_key)
+                  else
+                    _ -> conn
+                  end
 
                 # if account is linked to an author, sign them in
-                conn = if user.author_id != nil do
-                  author = Accounts.get_author!(user.author_id)
+                conn =
+                  if user.author_id != nil do
+                    author = Accounts.get_author!(user.author_id)
 
-                  # sign into authoring account using Pow
-                  conn
-                  |> use_pow_config(:author)
-                  |> Pow.Plug.create(author)
-                else
-                  conn
-                end
+                    # sign into authoring account using Pow
+                    conn
+                    |> use_pow_config(:author)
+                    |> Pow.Plug.create(author)
+                  else
+                    conn
+                  end
 
                 # sign current user in and redirect to home page
                 conn
                 |> use_pow_config(:user)
                 |> Pow.Plug.create(user)
                 |> redirect(to: Routes.delivery_path(conn, :index))
-
             end
-            _ ->
-              throw "Error creating user"
+
+          _ ->
+            throw("Error creating user")
         end
     end
   end
@@ -380,5 +431,4 @@ defmodule OliWeb.LtiController do
       section -> {:ok, section}
     end
   end
-
 end

@@ -2,8 +2,12 @@ defmodule OliWeb.Grades.LineItems do
   use OliWeb, :live_component
 
   def render(assigns) do
-
-    disabled = if length(assigns.task_queue) > 0 do "disabled" else "" end
+    disabled =
+      if length(assigns.task_queue) > 0 do
+        "disabled"
+      else
+        ""
+      end
 
     ~L"""
 
@@ -27,5 +31,4 @@ defmodule OliWeb.Grades.LineItems do
 
     """
   end
-
 end

@@ -1,5 +1,4 @@
 defmodule OliWeb.Objectives.Attachments do
-
   use Phoenix.LiveComponent
 
   alias OliWeb.Router.Helpers, as: Routes
@@ -12,7 +11,11 @@ defmodule OliWeb.Objectives.Attachments do
   end
 
   defp get_type(r) do
-    if Map.get(r, :part) == "attached" do "Page" else "Activity" end
+    if Map.get(r, :part) == "attached" do
+      "Page"
+    else
+      "Activity"
+    end
   end
 
   # Helper to formulate link to edit a resource. It is intentional that
@@ -25,8 +28,15 @@ defmodule OliWeb.Objectives.Attachments do
     end
   end
 
-  def render(%{attachment_summary: %{attachments: {pages, activities}, locked_by: locked_by, parent_pages: parent_pages}} = assigns) do
-
+  def render(
+        %{
+          attachment_summary: %{
+            attachments: {pages, activities},
+            locked_by: locked_by,
+            parent_pages: parent_pages
+          }
+        } = assigns
+      ) do
     all = pages ++ activities
 
     is_locked? = fn id ->
@@ -94,5 +104,4 @@ defmodule OliWeb.Objectives.Attachments do
     </div>
     """
   end
-
 end

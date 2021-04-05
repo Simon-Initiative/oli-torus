@@ -102,5 +102,4 @@ defmodule Oli.Authoring.Broadcaster do
       {:lock_released, publication_id, resource_id}
     )
   end
-
 end

@@ -1,5 +1,4 @@
 defmodule OliWeb.Objectives.ObjectiveForm do
-
   @moduledoc """
   Curriculum item entry component.
   """
