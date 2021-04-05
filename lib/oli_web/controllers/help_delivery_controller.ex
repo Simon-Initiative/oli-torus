@@ -5,7 +5,6 @@ defmodule OliWeb.HelpDeliveryController do
 
   @spec index(Plug.Conn.t(), any) :: Plug.Conn.t()
   def index(conn, _params) do
-#    IO.inspect conn.private |> Map.get(:phoenix_root_layout, false)
     render_help_page(conn, "index.html", title: "Help")
   end
 

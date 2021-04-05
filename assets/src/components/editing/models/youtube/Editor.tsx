@@ -46,10 +46,10 @@ export const YouTubeEditor = (props: YouTubeProps) => {
   return (
     <div
       {...attributes}
-      contentEditable={false}
       style={{ userSelect: 'none' }}
       className={'youtube-editor ' + displayModelToClassName(model.display)}>
       <div
+        contentEditable={false}
         onClick={e => Transforms.select(editor, ReactEditor.findPath(editor, model))}
         className="embed-responsive embed-responsive-16by9 img-thumbnail" style={borderStyle}>
         <iframe className="embed-responsive-item"

@@ -31,9 +31,9 @@ export const AudioEditor = (props: AudioProps) => {
 
   return (
     <div {...attributes} className="ml-4 mr-4">
-      <div contentEditable={false} style={{ overflow: 'auto', userSelect: 'none' }}>
+      <div style={{ overflow: 'auto', userSelect: 'none' }}>
         <div className="ml-4 mr-4 text-center">
-          <figure>
+          <figure contentEditable={false}>
             <audio style={{ margin: 'auto' }} src={src} controls />
             <figcaption contentEditable={false} style={{ userSelect: 'none' }}>
               <Settings.Input

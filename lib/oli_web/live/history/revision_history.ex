@@ -71,9 +71,10 @@ defmodule OliWeb.RevisionHistory do
     Repo.get!(Revision, revision_id)
   end
 
+  # Sorts newest to oldest
   defp date_sort(d1, d2) do
     case NaiveDateTime.compare(d1, d2) do
-      :gt -> false
+      :lt -> false
       _ -> true
     end
   end
@@ -170,8 +171,8 @@ defmodule OliWeb.RevisionHistory do
     # is necessary to prevent an active editing session from stomping on what is about
     # to be restored
     publication = AuthoringResolver.publication(project_slug)
-    Publishing.get_resource_mapping!(publication.id, resource_id)
-    |> Publishing.update_resource_mapping(%{ lock_updated_at: nil, locked_by_id: nil })
+    Publishing.get_published_resource!(publication.id, resource_id)
+    |> Publishing.update_published_resource(%{ lock_updated_at: nil, locked_by_id: nil })
 
     # Now create and track the new revision, based on the current head for this project but
     # restoring the content, title and objectives and other settigns from the selected revision

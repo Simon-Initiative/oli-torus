@@ -88,6 +88,11 @@ defmodule Oli.Authoring.Course do
 
   end
 
+  def create_project(attrs) do
+    %Project{}
+    |> Project.changeset(attrs)
+    |> Repo.insert()
+  end
 
   def create_project(title, author) do
     Repo.transaction(fn ->
@@ -96,7 +101,7 @@ defmodule Oli.Authoring.Course do
            {:ok, collaborator} <- Collaborators.add_collaborator(author, project),
            {:ok, %{resource: resource, revision: resource_revision}}
               <- initial_resource_setup(author, project),
-           {:ok, %{publication: publication, resource_mapping: resource_mapping}}
+           {:ok, %{publication: publication, published_resource: published_resource}}
               <- Publishing.initial_publication_setup(project, resource, resource_revision)
       do
         %{
@@ -106,18 +111,12 @@ defmodule Oli.Authoring.Course do
           resource: resource,
           resource_revision: resource_revision,
           publication: publication,
-          resource_mapping: resource_mapping,
+          published_resource: published_resource,
         }
       else
         {:error, error} -> Repo.rollback(error)
       end
     end)
-  end
-
-  def create_project(attrs) do
-    %Project{}
-    |> Project.changeset(attrs)
-    |> Repo.insert()
   end
 
   defp default_project(title, family) do
