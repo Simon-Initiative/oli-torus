@@ -50,7 +50,6 @@ defmodule Oli.Authoring.Course do
   """
   def search_published_projects(search_term) do
     ProjectSearch.search(search_term)
-    |> IO.inspect
   end
 
   def get_project!(id), do: Repo.get!(Project, id)
