@@ -314,22 +314,22 @@ defmodule OliWeb.Router do
   end
 
   scope "/api/v1/attempt", OliWeb do
-    pipe_through [:api, :delivery_protected]
+    pipe_through [:api, :delivery_protected, :require_section]
 
     # post to create a new attempt
     # put to submit a response
     # patch to save response state
 
-    post "/activity/:activity_attempt_guid/part/:part_attempt_guid", AttemptController, :new_part
-    put "/activity/:activity_attempt_guid/part/:part_attempt_guid", AttemptController, :submit_part
-    patch "/activity/:activity_attempt_guid/part/:part_attempt_guid", AttemptController, :save_part
-    get "/activity/:activity_attempt_guid/part/:part_attempt_guid/hint", AttemptController, :get_hint
+    post "/:section_slug/activity/:activity_attempt_guid/part/:part_attempt_guid", AttemptController, :new_part
+    put "/:section_slug/activity/:activity_attempt_guid/part/:part_attempt_guid", AttemptController, :submit_part
+    patch "/:section_slug/activity/:activity_attempt_guid/part/:part_attempt_guid", AttemptController, :save_part
+    get "/:section_slug/activity/:activity_attempt_guid/part/:part_attempt_guid/hint", AttemptController, :get_hint
 
-    post "/activity/:activity_attempt_guid", AttemptController, :new_activity
-    put "/activity/:activity_attempt_guid", AttemptController, :submit_activity
-    patch "/activity/:activity_attempt_guid", AttemptController, :save_activity
+    post "/:section_slug/activity/:activity_attempt_guid", AttemptController, :new_activity
+    put "/:section_slug/activity/:activity_attempt_guid", AttemptController, :submit_activity
+    patch "/:section_slug/activity/:activity_attempt_guid", AttemptController, :save_activity
 
-    put "/activity/:activity_attempt_guid/evaluations", AttemptController, :submit_evaluations
+    put "/:section_slug/activity/:activity_attempt_guid/evaluations", AttemptController, :submit_evaluations
   end
 
   scope "/api/v1/lti", OliWeb, as: :api do
