@@ -1,3 +1,14 @@
+<script src="//cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js"></script>
+<script>
+  var clipboard = new ClipboardJS('.clipboardjs.btn');
+
+  clipboard.on('success', function(e) {
+      const el = $(e.trigger);
+      el.html('Copied!');
+      setTimeout(() => el.html('<i class="lar la-clipboard"></i> Copy'), 5000);
+  });
+</script>
+
 <div class="container mt-3">
   <div class="d-flex flex-row mb-2">
     <div class="flex-grow-1"></div>
@@ -12,8 +23,7 @@
     <table class="table table-striped table-bordered">
       <thead>
         <tr>
-          <th>Title</th>
-          <th>URL</th>
+          <th>Section</th>
           <th>Registration</th>
           <th>Actions</th>
         </tr>
@@ -21,8 +31,17 @@
       <tbody>
         <%= for section <- @sections do %>
           <tr>
-            <td><%= section.title %></td>
-            <td><%= link Routes.page_delivery_url(@conn, :index, section.slug), to: Routes.page_delivery_url(@conn, :index, section.slug) %></td>
+            <td>
+              <div>
+                <%= section.title %>
+              </div>
+              <div class="text-nowrap">
+                <%= link Routes.page_delivery_url(@conn, :index, section.slug), to: Routes.page_delivery_url(@conn, :index, section.slug), target: "_blank", id: "section_link_#{section.slug}", class: "mr-2" %>
+                <button class="clipboardjs btn btn-xs btn-primary" data-clipboard-target="#<%= "section_link_#{section.slug}" %>">
+                  <i class="lar la-clipboard"></i> Copy
+                </button>
+              </div>
+            </td>
 
             <td>
               <%= if section.registration_open do %>
