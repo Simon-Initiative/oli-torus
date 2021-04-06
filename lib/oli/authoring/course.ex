@@ -28,6 +28,16 @@ defmodule Oli.Authoring.Course do
     Repo.all(Project)
   end
 
+  @doc """
+  Lists all projects that contain a particular resource.
+  """
+  def list_projects_containing_resource(resource_id) do
+    Repo.all(from pr in ProjectResource,
+      join: p in Project, on: p.id == pr.project_id,
+      where: pr.resource_id == ^resource_id,
+      select: p)
+  end
+
   def get_projects_for_author(author) do
 
     admin_role_id = SystemRole.role_id().admin

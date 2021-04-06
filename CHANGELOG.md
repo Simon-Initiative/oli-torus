@@ -1,13 +1,26 @@
 # Changelog
 
-## 0.7.2
+## Unreleased
+
+### Enhancements
+  - Add multi-project support to Revision History tool
+
+### Bug fixes
+ - Fix analytics / insights to not show parent course analytics after duplication
+ - Remove help link in preview mode
+ - Fix security vulnerability
+ - Account for ingested pages that have missing objectives
+ - Fix issue where long lines in code blocks in activities overflow
+
+## 0.7.2 (2021-3-30)
+
 ### Bug fixes
   - Fix an issue where administrators cannot configure a section without instructor role
   - Fix an issue where publishing or duplicating courses would cause save errors in page and activity editors
   - Fix keyboard deletion with media items
   - Add extra newline after an iframe/webpage is inserted into an editor
 
-## 0.7.1
+## 0.7.1 (2021-3-24)
 ### Bug fixes
   - Fix an issue where slug creation allowed some non-alphanumeric chars
 
