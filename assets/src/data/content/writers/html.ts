@@ -125,8 +125,8 @@ export class HtmlParser implements WriterImpl {
       return `<a class="internal-link" href="${this.escapeXml(internalHref)}">${next()}</a>\n`;
     }
 
-    return `<a class="external-link" href="${this.escapeXml(href)}" \
-      target="_blank">${next()}</a>\n`;
+    // tslint:disable-next-line:max-line-length
+    return `<a class="external-link" href="${this.escapeXml(href)}" target="_blank">${next()}</a>\n`;
   }
   text = (context: WriterContext, textEntity: Text) =>
     this.wrapWithMarks(escapeHtml(textEntity.text), textEntity)
