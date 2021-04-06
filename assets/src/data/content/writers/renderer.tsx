@@ -1,11 +1,12 @@
 import { ContentWriter } from './writer';
 import { HtmlParser } from './html';
 import { RichText } from 'components/activities/types';
-import { defaultWriterContext } from './context';
+import { WriterContext } from './context';
 
 interface Props {
   text: RichText;
+  context: WriterContext
 }
-export const HtmlContentModelRenderer = ({ text } : Props) => <div dangerouslySetInnerHTML={{
-  __html: new ContentWriter().render(defaultWriterContext(), text.model, new HtmlParser()),
+export const HtmlContentModelRenderer = ({ text, context } : Props) => <div dangerouslySetInnerHTML={{
+  __html: new ContentWriter().render(context, text.model, new HtmlParser()),
 }} />;

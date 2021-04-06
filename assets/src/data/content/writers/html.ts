@@ -113,17 +113,19 @@ export class HtmlParser implements WriterImpl {
   blockquote = (context: WriterContext, next: Next, x: Blockquote) =>
     `<blockquote>${next()}</blockquote>\n`
   a = (context: WriterContext, next: Next, { href }: Hyperlink) => {
-    let maybeInternalHref = href;
     if (href.startsWith('/course/link/')) {
+      let internalHref = href;
       if (context.sectionSlug) {
         const revisionSlug = href.replace(/^\/course\/link\//,"");
-        maybeInternalHref = `/sections/${context.sectionSlug}/page/${revisionSlug}`;
+        internalHref = `/sections/${context.sectionSlug}/page/${revisionSlug}`;
       } else {
-        maybeInternalHref = '#';
+        internalHref = '#';
       }
-    }
 
-    return `<a href="${this.escapeXml(maybeInternalHref)}">${next()}</a>\n`;
+      return `<a class="internal-link" href="${this.escapeXml(internalHref)}">${next()}</a>\n`;
+    } else {
+      return `<a class="external-link" href="${this.escapeXml(href)}" target="_blank">${next()}</a>\n`;
+    }
   }
   text = (context: WriterContext, textEntity: Text) =>
     this.wrapWithMarks(escapeHtml(textEntity.text), textEntity)

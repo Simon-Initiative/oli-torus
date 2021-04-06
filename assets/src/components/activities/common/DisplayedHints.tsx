@@ -1,18 +1,20 @@
 import React from 'react';
 import * as ActivityTypes from '../types';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
+import { WriterContext } from 'data/content/writers/context';
 
 interface DisplayedHintProps {
   hint: ActivityTypes.Hint;
+  context: WriterContext;
 }
 
-const DisplayedHint = ({ hint }: DisplayedHintProps) => {
+const DisplayedHint = ({ hint, context }: DisplayedHintProps) => {
   return (
     <div key={hint.id}
       className="hint mb-2 d-flex">
       <i className="fas fa-lightbulb"></i>
       <div className="flex-fill ml-2">
-        <HtmlContentModelRenderer text={hint.content} />
+        <HtmlContentModelRenderer text={hint.content} context={context} />
       </div>
     </div>
   );
@@ -22,6 +24,7 @@ interface HintsProps {
   isEvaluated: boolean;
   hints: ActivityTypes.Hint[];
   hasMoreHints: boolean;
+  context: WriterContext;
   onClick: () => void;
 }
 
@@ -39,7 +42,7 @@ export const Hints = (props: HintsProps) => {
       <div className="hints-adornment"></div>
       <h6>Hints</h6>
       <div className="hints-list">
-        {props.hints.map(hint => <DisplayedHint key={hint.id} hint={hint}/>)}
+        {props.hints.map(hint => <DisplayedHint key={hint.id} hint={hint} context={props.context}/>)}
       </div>
       {props.hasMoreHints && <button
         onClick={props.onClick}

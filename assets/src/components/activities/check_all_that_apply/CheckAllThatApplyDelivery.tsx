@@ -5,6 +5,7 @@ import { DeliveryElement, DeliveryElementProps,
 import { CheckAllThatApplyModelSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
+import { defaultWriterContext, WriterContext } from 'data/content/writers/context';
 import { Stem } from '../common/DisplayedStem';
 import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
@@ -20,10 +21,11 @@ type Evaluation = {
 interface ChoicesProps {
   choices: ActivityTypes.Choice[];
   selected: ActivityTypes.ChoiceId[];
+  context: WriterContext;
   onSelect: (id: ActivityTypes.ChoiceId) => void;
   isEvaluated: boolean;
 }
-const Choices = ({ choices, selected, onSelect, isEvaluated }: ChoicesProps) => {
+const Choices = ({ choices, selected, context, onSelect, isEvaluated }: ChoicesProps) => {
   const isSelected = (choiceId: ActivityTypes.ChoiceId) => !!selected.find(s => s === choiceId);
   return (
     <div className="choices">
@@ -34,7 +36,8 @@ const Choices = ({ choices, selected, onSelect, isEvaluated }: ChoicesProps) => 
         selected={isSelected(choice.id)}
         choice={choice}
         isEvaluated={isEvaluated}
-        index={index} />)}
+        index={index}
+        context={context} />)}
     </div>
   );
 };
@@ -43,16 +46,17 @@ interface ChoiceProps {
   choice: ActivityTypes.Choice;
   index: number;
   selected: boolean;
+  context: WriterContext;
   onClick: () => void;
   isEvaluated: boolean;
 }
-const Choice = ({ choice, index, selected, onClick, isEvaluated }: ChoiceProps) => {
+const Choice = ({ choice, index, selected, context, onClick, isEvaluated }: ChoiceProps) => {
   return (
     <div key={choice.id}
       onClick={isEvaluated ? undefined : onClick}
       className={`choice ${selected ? 'selected' : ''}`}>
         <span className="choice-index">{index + 1}</span>
-      <HtmlContentModelRenderer text={choice.content} />
+      <HtmlContentModelRenderer text={choice.content} context={context} />
     </div>
   );
 };
@@ -75,6 +79,8 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
 
   const isEvaluated = attemptState.score !== null;
   const selectedToInput = () => selected.join(' ');
+
+  const writerContext = defaultWriterContext({sectionSlug: props.sectionSlug});
 
   const onSubmit = () => {
     props.onSubmitActivity(attemptState.attemptGuid,
@@ -131,7 +137,7 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
   };
 
   const evaluationSummary = isEvaluated
-    ? <Evaluation key="evaluation" attemptState={attemptState}/>
+    ? <Evaluation key="evaluation" attemptState={attemptState} context={writerContext}/>
     : null;
 
   const reset = isEvaluated && !props.graded
@@ -145,7 +151,7 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
   const ungradedDetails = props.graded ? null : [
     evaluationSummary,
     <Hints key="hints" onClick={onRequestHint} hints={hints}
-      hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>];
+      hasMoreHints={hasMoreHints} isEvaluated={isEvaluated} context={writerContext}/>];
 
   const maybeSubmitButton = props.graded
     ? null
@@ -160,9 +166,9 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
     <div className={`activity cata-activity ${isEvaluated ? 'evaluated' : ''}`}>
       <div className="activity-content">
         <div>
-          <Stem stem={stem} />
+          <Stem stem={stem} context={writerContext} />
           <Choices choices={choices} selected={selected}
-            onSelect={onSelect} isEvaluated={isEvaluated}/>
+            onSelect={onSelect} isEvaluated={isEvaluated} context={writerContext}/>
           {maybeSubmitButton}
         </div>
         {ungradedDetails}

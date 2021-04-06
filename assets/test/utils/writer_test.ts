@@ -15,8 +15,8 @@ describe('parser', () => {
     expect(htmlString).toContain('<h3>Introduction</h3>');
     expect(htmlString).toMatch(new RegExp('<img.* src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg/480px-Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg"/>'));
     expect(htmlString).toContain('<p>The American colonials proclaimed &quot;no taxation without representation');
-    expect(htmlString).toContain('<a href="#">Page Two</a>');
-    expect(htmlString).toContain('<a href="https://en.wikipedia.org/wiki/Stamp_Act_Congress">Stamp Act Congress</a>');
+    expect(htmlString).toContain('<a class="internal-link" href="#">Page Two</a>');
+    expect(htmlString).toContain('<a class="external-link" href="https://en.wikipedia.org/wiki/Stamp_Act_Congress" target="_blank">Stamp Act Congress</a>');
     expect(htmlString).toContain('<h3>1651–1748: Early seeds</h3>');
     expect(htmlString).toContain('<ol><li>one</li>\n<li><em>two</em></li>\n<li><em><strong>three</strong></em></li>\n</ol>');
     expect(htmlString).toContain('<ul><li>alpha</li>\n<li>beta</li>\n<li>gamma</li>\n</ul>');
@@ -25,8 +25,8 @@ describe('parser', () => {
   });
 
   it('renders internal link with context', () => {
-    const htmlString = parse(exampleContent, Object.assign(defaultWriterContext(), {sectionSlug: "some_section"}));
-    expect(htmlString).toContain('<a href="/sections/some_section/page/page_two">Page Two</a>');
+    const htmlString = parse(exampleContent, defaultWriterContext({sectionSlug: "some_section"}));
+    expect(htmlString).toContain('<a class="internal-link" href="/sections/some_section/page/page_two">Page Two</a>');
   });
 
   it('renders malformed page gracefully', () => {
