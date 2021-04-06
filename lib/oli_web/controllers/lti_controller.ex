@@ -324,7 +324,7 @@ defmodule OliWeb.LtiController do
                 throw "Error getting context information from launch params"
               context ->
                 # update section specifics - if one exists. Enroll the user and also update the section details
-                conn = with {:ok, section} <- get_existing_section(lti_params)
+                with {:ok, section} <- get_existing_section(lti_params)
                 do
                   # transform lti_roles to a list only containing valid context roles (exclude all system and institution roles)
                   context_roles = ContextRoles.get_roles_by_uris(lti_roles)
@@ -334,9 +334,7 @@ defmodule OliWeb.LtiController do
 
                   # make sure section details are up to date
                   %{"title" => context_title} = context
-                  update_section_details(context_title, section, lti_params)
-                else
-                  _ -> conn
+                  {:ok, _section} = update_section_details(context_title, section, lti_params)
                 end
 
                 # if account is linked to an author, sign them in
