@@ -7,6 +7,7 @@
 
 ### Bug fixes
  - Fix analytics / insights to not show parent course analytics after duplication
+ - Remove help link in preview mode
  - Fix security vulnerability
  - Account for ingested pages that have missing objectives
 
