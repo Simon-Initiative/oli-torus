@@ -32,7 +32,7 @@
 </div>
 
 <script>
-  OLI.initActivityBridge('eventIntercept', '<%= @section_slug %>');
+  OLI.initActivityBridge('eventIntercept');
 </script>
 
 <%= if @graded && @activity_count > 0 && @progress_state != :in_review do %>
