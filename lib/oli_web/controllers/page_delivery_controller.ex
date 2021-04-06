@@ -46,14 +46,6 @@ defmodule OliWeb.PageDeliveryController do
 
   end
 
-  # Handles in course page links, redirecting to
-  # the appropriate section resource
-  def link(conn, %{"revision_slug" => revision_slug}) do
-    section = conn.assigns.section
-
-    redirect(conn, to: Routes.page_delivery_path(conn, :page, section.slug, revision_slug))
-  end
-
   defp render_page(%PageContext{summary: summary, progress_state: :not_started, page: page, resource_attempts: resource_attempts} = context,
     conn, section_slug, _) do
 
@@ -95,7 +87,7 @@ defmodule OliWeb.PageDeliveryController do
   # This case handles :in_progress and :revised progress states
   defp render_page(%PageContext{} = context, conn, section_slug, user) do
 
-    render_context = %Context{user: user, progress_state: context.progress_state, activity_map: context.activities}
+    render_context = %Context{user: user, section_slug: section_slug, progress_state: context.progress_state, activity_map: context.activities}
     page_model = Map.get(context.page.content, "model")
     html = Page.render(render_context, page_model, Page.Html)
 

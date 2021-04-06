@@ -391,9 +391,6 @@ defmodule OliWeb.Router do
 
     get "/", DeliveryController, :index
 
-    # course link resolver
-    get "/link/:revision_slug", PageDeliveryController, :link
-
     get "/link_account", DeliveryController, :link_account
     post "/link_account", DeliveryController, :process_link_account_user
     get "/create_and_link_account", DeliveryController, :create_and_link_account
