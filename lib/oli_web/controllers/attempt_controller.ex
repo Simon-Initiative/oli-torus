@@ -15,7 +15,7 @@ defmodule OliWeb.AttemptController do
   end
 
   def submit_part(conn, %{"activity_attempt_guid" => activity_attempt_guid, "part_attempt_guid" => attempt_guid, "input" => input}) do
-    section = conn.assigns.section
+    section = Attempts.get_section_by_activity_attempt_guid(activity_attempt_guid)
 
     case Attempts.submit_part_evaluations(section.slug, activity_attempt_guid, [%{attempt_guid: attempt_guid, input: input}]) do
       {:ok, evaluations} -> json conn, %{ "type" => "success", "evaluations" => evaluations}
@@ -53,7 +53,7 @@ defmodule OliWeb.AttemptController do
   end
 
   def submit_activity(conn, %{"activity_attempt_guid" => activity_attempt_guid, "partInputs" => part_inputs}) do
-    section = conn.assigns.section
+    section = Attempts.get_section_by_activity_attempt_guid(activity_attempt_guid)
 
     parsed = Enum.map(part_inputs, fn %{"attemptGuid" => attempt_guid, "response" => input} ->
       %{attempt_guid: attempt_guid, input: %StudentInput{input: Map.get(input, "input")}} end)
@@ -65,7 +65,7 @@ defmodule OliWeb.AttemptController do
   end
 
   def submit_evaluations(conn, %{"activity_attempt_guid" => activity_attempt_guid, "evaluations" => client_evaluations}) do
-    section = conn.assigns.section
+    section = Attempts.get_section_by_activity_attempt_guid(activity_attempt_guid)
 
     client_evaluations = Enum.map(client_evaluations, fn %{
       "attemptGuid" => attempt_guid,
@@ -95,10 +95,10 @@ defmodule OliWeb.AttemptController do
   end
 
 
-  def new_activity(conn, %{"activity_attempt_guid" => attempt_guid}) do
-    section = conn.assigns.section
+  def new_activity(conn, %{"activity_attempt_guid" => activity_attempt_guid}) do
+    section = Attempts.get_section_by_activity_attempt_guid(activity_attempt_guid)
 
-    case Attempts.reset_activity(section.slug, attempt_guid) do
+    case Attempts.reset_activity(section.slug, activity_attempt_guid) do
       {:ok, {attempt_state, model}} -> json conn, %{ "type" => "success", "attemptState" => attempt_state, "model" => model}
       {:error, _} -> error(conn, 500, "server error")
     end
