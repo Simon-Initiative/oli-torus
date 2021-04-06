@@ -83,7 +83,7 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
 
   const isEvaluated = attemptState.score !== null;
 
-  const writerContext = defaultWriterContext({sectionSlug: props.sectionSlug});
+  const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
 
   const onSelect = (id: string) => {
     // Update local state

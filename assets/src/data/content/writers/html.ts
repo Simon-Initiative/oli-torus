@@ -116,16 +116,17 @@ export class HtmlParser implements WriterImpl {
     if (href.startsWith('/course/link/')) {
       let internalHref = href;
       if (context.sectionSlug) {
-        const revisionSlug = href.replace(/^\/course\/link\//,"");
+        const revisionSlug = href.replace(/^\/course\/link\//, '');
         internalHref = `/sections/${context.sectionSlug}/page/${revisionSlug}`;
       } else {
         internalHref = '#';
       }
 
       return `<a class="internal-link" href="${this.escapeXml(internalHref)}">${next()}</a>\n`;
-    } else {
-      return `<a class="external-link" href="${this.escapeXml(href)}" target="_blank">${next()}</a>\n`;
     }
+
+    return `<a class="external-link" href="${this.escapeXml(href)}" \
+      target="_blank">${next()}</a>\n`;
   }
   text = (context: WriterContext, textEntity: Text) =>
     this.wrapWithMarks(escapeHtml(textEntity.text), textEntity)

@@ -112,7 +112,7 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
   const isEvaluated = attemptState.score !== null;
   const orderedChoiceIds = () => selected.join(' ');
 
-  const writerContext = defaultWriterContext({sectionSlug: props.sectionSlug});
+  const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
 
   const onSubmit = () => {
     props.onSubmitActivity(attemptState.attemptGuid,

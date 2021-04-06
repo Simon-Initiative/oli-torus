@@ -80,7 +80,7 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
   const isEvaluated = attemptState.score !== null;
   const selectedToInput = () => selected.join(' ');
 
-  const writerContext = defaultWriterContext({sectionSlug: props.sectionSlug});
+  const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
 
   const onSubmit = () => {
     props.onSubmitActivity(attemptState.attemptGuid,

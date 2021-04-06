@@ -5,8 +5,9 @@ import { WriterContext } from './context';
 
 interface Props {
   text: RichText;
-  context: WriterContext
+  context: WriterContext;
 }
-export const HtmlContentModelRenderer = ({ text, context } : Props) => <div dangerouslySetInnerHTML={{
-  __html: new ContentWriter().render(context, text.model, new HtmlParser()),
-}} />;
+export const HtmlContentModelRenderer = ({ text, context } : Props) =>
+  <div dangerouslySetInnerHTML={{
+    __html: new ContentWriter().render(context, text.model, new HtmlParser()),
+  }} />;

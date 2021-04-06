@@ -42,7 +42,8 @@ export const Hints = (props: HintsProps) => {
       <div className="hints-adornment"></div>
       <h6>Hints</h6>
       <div className="hints-list">
-        {props.hints.map(hint => <DisplayedHint key={hint.id} hint={hint} context={props.context}/>)}
+        {props.hints.map(hint =>
+          <DisplayedHint key={hint.id} hint={hint} context={props.context}/>)}
       </div>
       {props.hasMoreHints && <button
         onClick={props.onClick}

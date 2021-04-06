@@ -1,5 +1,5 @@
 export interface WriterContext {
-  sectionSlug?: string,
+  sectionSlug?: string;
 }
 
 export const defaultWriterContext = (params: Partial<WriterContext> = {}) =>
