@@ -65,7 +65,7 @@ defmodule Oli.Grading do
       # Finally, post the score for this line item
       {:ok, line_item} ->
 
-        case to_score(Map.get(user.sub, "sub"), resource_access)
+        case to_score(user.sub, resource_access)
         |>  LTI_AGS.post_score(line_item, token) do
 
           {:ok, _} -> {:ok, :synced}
