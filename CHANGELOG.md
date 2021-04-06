@@ -9,6 +9,7 @@
  - Fix analytics / insights to not show parent course analytics after duplication
  - Fix security vulnerability
  - Account for ingested pages that have missing objectives
+ - Fix issue where long lines in code blocks in activities overflow
 
 ## 0.7.2 (2021-3-30)
 
