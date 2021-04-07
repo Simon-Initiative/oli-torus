@@ -293,7 +293,6 @@ defmodule Oli.Interop.Ingest do
   # descending through the tree and processing the leaves first, and then back upwards.
   defp create_container(project, page_map, as_author, container) do
 
-
     # recursively visit item container in the hierarchy, and via bottom
     # up approach create resource and revisions for each container, while
     # substituting page references for resource ids and container references
@@ -330,10 +329,27 @@ defmodule Oli.Interop.Ingest do
 
     Enum.reduce(entries, %{}, fn {file, content}, map ->
 
-      f = List.to_string(file)
-      id = String.slice(f, 0, String.length(f) - 5)
+      id_from_file = fn ->
+        f = List.to_string(file)
+        String.slice(f, 0, String.length(f) - 5)
+      end
 
-      Map.put(map, id, Poison.decode!(content))
+      decoded = Poison.decode!(content)
+
+      # Take the id from the attribute within the file content, unless
+      # that id is not present (nil) or empty string. In that case,
+      # use the file name to determine the id.  This allows us to avoid
+      # issues of ids that contain unicode characters not being parsed
+      # correctly from zip file entries.
+      id = case Map.get(decoded, "id") do
+
+        nil -> id_from_file.()
+        "" -> id_from_file.()
+        id -> id
+
+      end
+
+      Map.put(map, id, decoded)
     end)
 
   end
