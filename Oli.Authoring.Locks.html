@@ -10,7 +10,7 @@
     <title>Oli.Authoring.Locks — OLI Torus v0.7.2</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-70fe79bfc2.js"></script>
+    <script src="dist/sidebar_items-eeaf54be75.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -135,7 +135,7 @@ with</p>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#acquire/3">acquire(publication_id, resource_id, user_id)</a>
+    <a href="#acquire/4">acquire(project_slug, publication_id, resource_id, user_id)</a>
 
   </div>
 
@@ -159,7 +159,7 @@ mapping defined by <code class="inline">publication_id</code> and <code class="i
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#release/3">release(publication_id, resource_id, user_id)</a>
+    <a href="#release/4">release(project_slug, publication_id, resource_id, user_id)</a>
 
   </div>
 
@@ -179,7 +179,7 @@ This removes the <code class="inline">locked_by_id</code> and <code class="inlin
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#update/3">update(publication_id, resource_id, user_id)</a>
+    <a href="#update/4">update(project_slug, publication_id, resource_id, user_id)</a>
 
   </div>
 
@@ -202,14 +202,14 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="acquire/3">
+<section class="detail" id="acquire/4">
 
   <div class="detail-header">
-    <a href="#acquire/3" class="detail-link" title="Link to this function">
+    <a href="#acquire/4" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">acquire(publication_id, resource_id, user_id)</h1>
+    <h1 class="signature">acquire(project_slug, publication_id, resource_id, user_id)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L66" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -224,7 +224,7 @@ Functions
       <h2>Specs</h2>
       <div class="specs">
 
-          <pre>acquire(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()) ::
+          <pre>acquire(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()) ::
   {:error}
   | {:acquired}
   | {:lock_not_acquired,
@@ -257,7 +257,7 @@ mapping defined by <code class="inline">publication_id</code> and <code class="i
     </a>
     <h1 class="signature">expired_or_empty?(published_resource)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L205" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L207" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -279,7 +279,7 @@ mapping defined by <code class="inline">publication_id</code> and <code class="i
     </a>
     <h1 class="signature">expired_or_empty_predicate?(published_resource)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L209" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L211" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -292,16 +292,16 @@ mapping defined by <code class="inline">publication_id</code> and <code class="i
 
   </section>
 </section>
-<section class="detail" id="release/3">
+<section class="detail" id="release/4">
 
   <div class="detail-header">
-    <a href="#release/3" class="detail-link" title="Link to this function">
+    <a href="#release/4" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">release(publication_id, resource_id, user_id)</h1>
+    <h1 class="signature">release(project_slug, publication_id, resource_id, user_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L150" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L152" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -314,7 +314,8 @@ mapping defined by <code class="inline">publication_id</code> and <code class="i
       <h2>Specs</h2>
       <div class="specs">
 
-          <pre>release(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()) :: {:error} | {:lock_not_held} | {:ok}</pre>
+          <pre>release(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()) ::
+  {:error} | {:lock_not_held} | {:ok}</pre>
 
       </div>
 
@@ -333,7 +334,7 @@ defined by <code class="inline">publication_id</code> and <code class="inline">r
     </a>
     <h1 class="signature">release_all(publication_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L165" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L167" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -355,16 +356,16 @@ This removes the <code class="inline">locked_by_id</code> and <code class="inlin
 .<code class="inline">{number, nil | returned data}</code> where number is the number of rows updated</p>
   </section>
 </section>
-<section class="detail" id="update/3">
+<section class="detail" id="update/4">
 
   <div class="detail-header">
-    <a href="#update/3" class="detail-link" title="Link to this function">
+    <a href="#update/4" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">update(publication_id, resource_id, user_id)</h1>
+    <h1 class="signature">update(project_slug, publication_id, resource_id, user_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L112" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/locks.ex#L113" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -377,7 +378,7 @@ This removes the <code class="inline">locked_by_id</code> and <code class="inlin
       <h2>Specs</h2>
       <div class="specs">
 
-          <pre>update(<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()) ::
+          <pre>update(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">number</a>()) ::
   {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}
   | {:acquired}
   | {:updated}
