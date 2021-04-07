@@ -42,7 +42,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.SIMON_BOT_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SIMON_BOT_AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: 'us-east-2'
-          SOURCE_DIR: 'oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}'
+          SOURCE_DIR: 'oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip'
 
       # - name: 🚢💰 Deploy to test using SSH
       #   uses: fifsky/ssh-action@master
