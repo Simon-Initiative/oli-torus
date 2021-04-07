@@ -135,7 +135,7 @@ defmodule Oli.EditingTest do
     test "edit/4 fails when the lock cannot be acquired or updated", %{project: project, author: author, author2: author2, publication: publication, page1: page1, revision1: revision1 } do
 
       # set the lock so that it is valid and held by a different user
-      {:acquired} = Locks.acquire(publication.id, page1.id, author2.id)
+      {:acquired} = Locks.acquire(project.slug, publication.id, page1.id, author2.id)
 
       # now try to make the edit with the original user
       content = %{ "model" => [%{ "type" => "p", children: [%{ "text" => "A paragraph."}] }] }

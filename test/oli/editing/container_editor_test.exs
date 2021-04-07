@@ -65,7 +65,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
     test "remove_child/4 fails when target resource is locked", %{publication: publication, author2: author2, author: author, project: project, page1: page1, revision1: revision1 } do
 
       container = AuthoringResolver.root_container(project.slug)
-      {:acquired} = Locks.acquire(publication.id, page1.id, author2.id)
+      {:acquired} = Locks.acquire(project.slug, publication.id, page1.id, author2.id)
 
       # Verify that the remove failed due to the lock
       case ContainerEditor.remove_child(container, project, author, revision1.slug) do
@@ -78,7 +78,7 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
     test "remove_child/4 succeeds when target resource is locked by same user", %{publication: publication, author: author, project: project, page1: page1, revision1: revision1 } do
 
       container = AuthoringResolver.root_container(project.slug)
-      {:acquired} = Locks.acquire(publication.id, page1.id, author.id)
+      {:acquired} = Locks.acquire(project.slug, publication.id, page1.id, author.id)
 
       case ContainerEditor.remove_child(container, project, author, revision1.slug) do
         {:ok, _} -> assert true

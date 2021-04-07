@@ -15,7 +15,7 @@ defmodule Oli.CloneTest do
       project_map = Oli.Seeder.base_project_with_resource2()
 
       # Acquire a lock to edit the published_resource mapping in place
-      Locks.acquire(project_map.publication.id, project_map.container.resource.id, project_map.author.id)
+      Locks.acquire(project_map.project.slug, project_map.publication.id, project_map.container.resource.id, project_map.author.id)
 
       {:ok, duplicated_project} = Clone.clone_project(project_map.project.slug, project_map.author2)
       Map.put(project_map, :duplicated, Repo.preload(duplicated_project, [:parent_project, :family]))

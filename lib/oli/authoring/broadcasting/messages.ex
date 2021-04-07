@@ -30,12 +30,12 @@ defmodule Oli.Authoring.Broadcaster.Messages do
     ["dismiss_warning", project(project_slug)] |> join
   end
 
-  def message_lock_acquired(resource_id) do
-    ["lock_acquired", resource(resource_id)] |> join
+  def message_lock_acquired(project_slug, resource_id) do
+    ["lock_acquired", project(project_slug), resource(resource_id)] |> join
   end
 
-  def message_lock_released(resource_id) do
-    ["lock_released", resource(resource_id)] |> join
+  def message_lock_released(project_slug, resource_id) do
+    ["lock_released", project(project_slug), resource(resource_id)] |> join
   end
 
   ## Private helpers
