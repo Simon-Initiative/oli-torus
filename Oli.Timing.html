@@ -155,7 +155,7 @@ Functions
     </a>
     <h1 class="signature">emit(arg, tags, measurement_atom)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/timing.ex#L36" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/timing.ex#L35" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -170,7 +170,7 @@ Designed to be used in conjunction with <code class="inline">Oli.Timing.run</cod
   <a href="#emit/3-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="1344406483-1">(</span><span class="k" data-group-id="1344406483-2">fn</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="s">&quot;4&quot;</span><span class="w"> </span><span class="k" data-group-id="1344406483-2">end</span><span class="p" data-group-id="1344406483-1">)</span><span class="w"> </span><span class="o">|&gt;</span><span class="w"> </span><span class="n">emit</span><span class="p" data-group-id="1344406483-3">(</span><span class="p" data-group-id="1344406483-4">[</span><span class="ss">:oli</span><span class="p">,</span><span class="w"> </span><span class="ss">:four</span><span class="p">,</span><span class="w"> </span><span class="ss">:calc</span><span class="p" data-group-id="1344406483-4">]</span><span class="p">,</span><span class="w"> </span><span class="ss">:duration</span><span class="p" data-group-id="1344406483-3">)</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="1632086931-1">(</span><span class="k" data-group-id="1632086931-2">fn</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="s">&quot;4&quot;</span><span class="w"> </span><span class="k" data-group-id="1632086931-2">end</span><span class="p" data-group-id="1632086931-1">)</span><span class="w"> </span><span class="o">|&gt;</span><span class="w"> </span><span class="n">emit</span><span class="p" data-group-id="1632086931-3">(</span><span class="p" data-group-id="1632086931-4">[</span><span class="ss">:oli</span><span class="p">,</span><span class="w"> </span><span class="ss">:four</span><span class="p">,</span><span class="w"> </span><span class="ss">:calc</span><span class="p" data-group-id="1632086931-4">]</span><span class="p">,</span><span class="w"> </span><span class="ss">:duration</span><span class="p" data-group-id="1632086931-3">)</span><span class="w">
 </span><span class="s">&quot;4&quot;</span></code></pre>
   </section>
 </section>
@@ -183,7 +183,7 @@ Designed to be used in conjunction with <code class="inline">Oli.Timing.run</cod
     </a>
     <h1 class="signature">run(func)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/timing.ex#L18" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/timing.ex#L17" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -200,11 +200,11 @@ result of the function.</p><h2 id="run/1-examples" class="section-heading">
   <a href="#run/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="7665367767-1">(</span><span class="k" data-group-id="7665367767-2">fn</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="s">&quot;3&quot;</span><span class="w"> </span><span class="k" data-group-id="7665367767-2">end</span><span class="p" data-group-id="7665367767-1">)</span><span class="w">
-</span><span class="p" data-group-id="7665367767-3">{</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;3&quot;</span><span class="p" data-group-id="7665367767-3">}</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="2309406224-1">(</span><span class="k" data-group-id="2309406224-2">fn</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="s">&quot;3&quot;</span><span class="w"> </span><span class="k" data-group-id="2309406224-2">end</span><span class="p" data-group-id="2309406224-1">)</span><span class="w">
+</span><span class="p" data-group-id="2309406224-3">{</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;3&quot;</span><span class="p" data-group-id="2309406224-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="7665367767-4">(</span><span class="k" data-group-id="7665367767-5">fn</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="o">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="k" data-group-id="7665367767-5">end</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7665367767-6">[</span><span class="s">&quot;Bob&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot; Ross&quot;</span><span class="p" data-group-id="7665367767-6">]</span><span class="p" data-group-id="7665367767-4">)</span><span class="w">
-</span><span class="p" data-group-id="7665367767-7">{</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Bob Ross&quot;</span><span class="p" data-group-id="7665367767-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="2309406224-4">(</span><span class="k" data-group-id="2309406224-5">fn</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="o">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="k" data-group-id="2309406224-5">end</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2309406224-6">[</span><span class="s">&quot;Bob&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot; Ross&quot;</span><span class="p" data-group-id="2309406224-6">]</span><span class="p" data-group-id="2309406224-4">)</span><span class="w">
+</span><span class="p" data-group-id="2309406224-7">{</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Bob Ross&quot;</span><span class="p" data-group-id="2309406224-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="run/2">
@@ -216,7 +216,7 @@ result of the function.</p><h2 id="run/1-examples" class="section-heading">
     </a>
     <h1 class="signature">run(func, args)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/timing.ex#L22" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/timing.ex#L21" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

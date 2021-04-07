@@ -191,7 +191,7 @@ Functions
     </a>
     <h1 class="signature">change_platform_instance(platform_instance, attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/platform_instances.ex#L110" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/platform_instances.ex#L111" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -205,8 +205,8 @@ Functions
   <a href="#change_platform_instance/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_platform_instance</span><span class="p" data-group-id="8955504237-1">(</span><span class="n">platform_instance</span><span class="p" data-group-id="8955504237-1">)</span><span class="w">
-</span><span class="p" data-group-id="8955504237-2">%</span><span class="nc" data-group-id="8955504237-2">Ecto.Changeset</span><span class="p" data-group-id="8955504237-2">{</span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="8955504237-3">%</span><span class="nc" data-group-id="8955504237-3">PlatformInstance</span><span class="p" data-group-id="8955504237-3">{</span><span class="p" data-group-id="8955504237-3">}</span><span class="p" data-group-id="8955504237-2">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_platform_instance</span><span class="p" data-group-id="3249772632-1">(</span><span class="n">platform_instance</span><span class="p" data-group-id="3249772632-1">)</span><span class="w">
+</span><span class="p" data-group-id="3249772632-2">%</span><span class="nc" data-group-id="3249772632-2">Ecto.Changeset</span><span class="p" data-group-id="3249772632-2">{</span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3249772632-3">%</span><span class="nc" data-group-id="3249772632-3">PlatformInstance</span><span class="p" data-group-id="3249772632-3">{</span><span class="p" data-group-id="3249772632-3">}</span><span class="p" data-group-id="3249772632-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_platform_instance/1">
@@ -220,7 +220,7 @@ Functions
     </a>
     <h1 class="signature">create_platform_instance(attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/platform_instances.ex#L61" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/platform_instances.ex#L62" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -234,11 +234,11 @@ Functions
   <a href="#create_platform_instance/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_platform_instance</span><span class="p" data-group-id="1368967937-1">(</span><span class="p" data-group-id="1368967937-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="1368967937-2">}</span><span class="p" data-group-id="1368967937-1">)</span><span class="w">
-</span><span class="p" data-group-id="1368967937-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1368967937-4">%</span><span class="nc" data-group-id="1368967937-4">PlatformInstance</span><span class="p" data-group-id="1368967937-4">{</span><span class="p" data-group-id="1368967937-4">}</span><span class="p" data-group-id="1368967937-3">}</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_platform_instance</span><span class="p" data-group-id="9233883805-1">(</span><span class="p" data-group-id="9233883805-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="9233883805-2">}</span><span class="p" data-group-id="9233883805-1">)</span><span class="w">
+</span><span class="p" data-group-id="9233883805-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9233883805-4">%</span><span class="nc" data-group-id="9233883805-4">PlatformInstance</span><span class="p" data-group-id="9233883805-4">{</span><span class="p" data-group-id="9233883805-4">}</span><span class="p" data-group-id="9233883805-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_platform_instance</span><span class="p" data-group-id="1368967937-5">(</span><span class="p" data-group-id="1368967937-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1368967937-6">}</span><span class="p" data-group-id="1368967937-5">)</span><span class="w">
-</span><span class="p" data-group-id="1368967937-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1368967937-8">%</span><span class="nc" data-group-id="1368967937-8">Ecto.Changeset</span><span class="p" data-group-id="1368967937-8">{</span><span class="p" data-group-id="1368967937-8">}</span><span class="p" data-group-id="1368967937-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_platform_instance</span><span class="p" data-group-id="9233883805-5">(</span><span class="p" data-group-id="9233883805-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9233883805-6">}</span><span class="p" data-group-id="9233883805-5">)</span><span class="w">
+</span><span class="p" data-group-id="9233883805-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9233883805-8">%</span><span class="nc" data-group-id="9233883805-8">Ecto.Changeset</span><span class="p" data-group-id="9233883805-8">{</span><span class="p" data-group-id="9233883805-8">}</span><span class="p" data-group-id="9233883805-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_platform_instance/1">
@@ -250,7 +250,7 @@ Functions
     </a>
     <h1 class="signature">delete_platform_instance(platform_instance)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/platform_instances.ex#L97" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/platform_instances.ex#L98" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -264,11 +264,11 @@ Functions
   <a href="#delete_platform_instance/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_platform_instance</span><span class="p" data-group-id="7310366177-1">(</span><span class="n">platform_instance</span><span class="p" data-group-id="7310366177-1">)</span><span class="w">
-</span><span class="p" data-group-id="7310366177-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7310366177-3">%</span><span class="nc" data-group-id="7310366177-3">PlatformInstance</span><span class="p" data-group-id="7310366177-3">{</span><span class="p" data-group-id="7310366177-3">}</span><span class="p" data-group-id="7310366177-2">}</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_platform_instance</span><span class="p" data-group-id="3989943171-1">(</span><span class="n">platform_instance</span><span class="p" data-group-id="3989943171-1">)</span><span class="w">
+</span><span class="p" data-group-id="3989943171-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3989943171-3">%</span><span class="nc" data-group-id="3989943171-3">PlatformInstance</span><span class="p" data-group-id="3989943171-3">{</span><span class="p" data-group-id="3989943171-3">}</span><span class="p" data-group-id="3989943171-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_platform_instance</span><span class="p" data-group-id="7310366177-4">(</span><span class="n">platform_instance</span><span class="p" data-group-id="7310366177-4">)</span><span class="w">
-</span><span class="p" data-group-id="7310366177-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7310366177-6">%</span><span class="nc" data-group-id="7310366177-6">Ecto.Changeset</span><span class="p" data-group-id="7310366177-6">{</span><span class="p" data-group-id="7310366177-6">}</span><span class="p" data-group-id="7310366177-5">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_platform_instance</span><span class="p" data-group-id="3989943171-4">(</span><span class="n">platform_instance</span><span class="p" data-group-id="3989943171-4">)</span><span class="w">
+</span><span class="p" data-group-id="3989943171-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3989943171-6">%</span><span class="nc" data-group-id="3989943171-6">Ecto.Changeset</span><span class="p" data-group-id="3989943171-6">{</span><span class="p" data-group-id="3989943171-6">}</span><span class="p" data-group-id="3989943171-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="get_platform_instance!/1">
@@ -294,10 +294,10 @@ Functions
   <a href="#get_platform_instance!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance!</span><span class="p" data-group-id="7077658630-1">(</span><span class="mi">123</span><span class="p" data-group-id="7077658630-1">)</span><span class="w">
-</span><span class="p" data-group-id="7077658630-2">%</span><span class="nc" data-group-id="7077658630-2">PlatformInstance</span><span class="p" data-group-id="7077658630-2">{</span><span class="p" data-group-id="7077658630-2">}</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance!</span><span class="p" data-group-id="8438043027-1">(</span><span class="mi">123</span><span class="p" data-group-id="8438043027-1">)</span><span class="w">
+</span><span class="p" data-group-id="8438043027-2">%</span><span class="nc" data-group-id="8438043027-2">PlatformInstance</span><span class="p" data-group-id="8438043027-2">{</span><span class="p" data-group-id="8438043027-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance!</span><span class="p" data-group-id="7077658630-3">(</span><span class="mi">456</span><span class="p" data-group-id="7077658630-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance!</span><span class="p" data-group-id="8438043027-3">(</span><span class="mi">456</span><span class="p" data-group-id="8438043027-3">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -324,10 +324,10 @@ Functions
   <a href="#get_platform_instance_by_client_id/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance_by_client_id</span><span class="p" data-group-id="5459132445-1">(</span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="5459132445-1">)</span><span class="w">
-</span><span class="p" data-group-id="5459132445-2">%</span><span class="nc" data-group-id="5459132445-2">PlatformInstance</span><span class="p" data-group-id="5459132445-2">{</span><span class="p" data-group-id="5459132445-2">}</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance_by_client_id</span><span class="p" data-group-id="9104302513-1">(</span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="9104302513-1">)</span><span class="w">
+</span><span class="p" data-group-id="9104302513-2">%</span><span class="nc" data-group-id="9104302513-2">PlatformInstance</span><span class="p" data-group-id="9104302513-2">{</span><span class="p" data-group-id="9104302513-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance_by_client_id</span><span class="p" data-group-id="5459132445-3">(</span><span class="s">&quot;456&quot;</span><span class="p" data-group-id="5459132445-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance_by_client_id</span><span class="p" data-group-id="9104302513-3">(</span><span class="s">&quot;456&quot;</span><span class="p" data-group-id="9104302513-3">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -354,8 +354,8 @@ Functions
   <a href="#list_lti_1p3_platform_instances/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_lti_1p3_platform_instance_instances</span><span class="p" data-group-id="0912456553-1">(</span><span class="p" data-group-id="0912456553-1">)</span><span class="w">
-</span><span class="p" data-group-id="0912456553-2">[</span><span class="p" data-group-id="0912456553-3">%</span><span class="nc" data-group-id="0912456553-3">PlatformInstance</span><span class="p" data-group-id="0912456553-3">{</span><span class="p" data-group-id="0912456553-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="0912456553-2">]</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_lti_1p3_platform_instance_instances</span><span class="p" data-group-id="4700585409-1">(</span><span class="p" data-group-id="4700585409-1">)</span><span class="w">
+</span><span class="p" data-group-id="4700585409-2">[</span><span class="p" data-group-id="4700585409-3">%</span><span class="nc" data-group-id="4700585409-3">PlatformInstance</span><span class="p" data-group-id="4700585409-3">{</span><span class="p" data-group-id="4700585409-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="4700585409-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_platform_instance/2">
@@ -367,7 +367,7 @@ Functions
     </a>
     <h1 class="signature">update_platform_instance(platform_instance, attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/platform_instances.ex#L79" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti_1p3/platform_instances.ex#L80" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -381,11 +381,11 @@ Functions
   <a href="#update_platform_instance/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_platform_instance</span><span class="p" data-group-id="2189797485-1">(</span><span class="n">platform_instance</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2189797485-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="2189797485-2">}</span><span class="p" data-group-id="2189797485-1">)</span><span class="w">
-</span><span class="p" data-group-id="2189797485-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2189797485-4">%</span><span class="nc" data-group-id="2189797485-4">PlatformInstance</span><span class="p" data-group-id="2189797485-4">{</span><span class="p" data-group-id="2189797485-4">}</span><span class="p" data-group-id="2189797485-3">}</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_platform_instance</span><span class="p" data-group-id="0701537468-1">(</span><span class="n">platform_instance</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0701537468-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="0701537468-2">}</span><span class="p" data-group-id="0701537468-1">)</span><span class="w">
+</span><span class="p" data-group-id="0701537468-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0701537468-4">%</span><span class="nc" data-group-id="0701537468-4">PlatformInstance</span><span class="p" data-group-id="0701537468-4">{</span><span class="p" data-group-id="0701537468-4">}</span><span class="p" data-group-id="0701537468-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_platform_instance</span><span class="p" data-group-id="2189797485-5">(</span><span class="n">platform_instance</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2189797485-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="2189797485-6">}</span><span class="p" data-group-id="2189797485-5">)</span><span class="w">
-</span><span class="p" data-group-id="2189797485-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2189797485-8">%</span><span class="nc" data-group-id="2189797485-8">Ecto.Changeset</span><span class="p" data-group-id="2189797485-8">{</span><span class="p" data-group-id="2189797485-8">}</span><span class="p" data-group-id="2189797485-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_platform_instance</span><span class="p" data-group-id="0701537468-5">(</span><span class="n">platform_instance</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0701537468-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="0701537468-6">}</span><span class="p" data-group-id="0701537468-5">)</span><span class="w">
+</span><span class="p" data-group-id="0701537468-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0701537468-8">%</span><span class="nc" data-group-id="0701537468-8">Ecto.Changeset</span><span class="p" data-group-id="0701537468-8">{</span><span class="p" data-group-id="0701537468-8">}</span><span class="p" data-group-id="0701537468-7">}</span></code></pre>
   </section>
 </section>
 

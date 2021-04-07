@@ -180,7 +180,7 @@ Functions
     </a>
     <h1 class="signature">add(project_slug, file_name, file_contents)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/media_library.ex#L61" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/media_library.ex#L63" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -237,7 +237,7 @@ to storage or it was a problem saving file meta data</p><p>If the project does n
     </a>
     <h1 class="signature">change_media_item(media_item, attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/media_library.ex#L271" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/media_library.ex#L264" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -261,7 +261,7 @@ to storage or it was a problem saving file meta data</p><p>If the project does n
     </a>
     <h1 class="signature">create_media_item(attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/media_library.ex#L252" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/media_library.ex#L245" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -275,10 +275,10 @@ to storage or it was a problem saving file meta data</p><p>If the project does n
   <a href="#create_media_item/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_media_item</span><span class="p" data-group-id="5594350473-1">(</span><span class="p" data-group-id="5594350473-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="5594350473-2">}</span><span class="p" data-group-id="5594350473-1">)</span><span class="w">
-</span><span class="p" data-group-id="5594350473-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5594350473-4">%</span><span class="nc" data-group-id="5594350473-4">MediaItem</span><span class="p" data-group-id="5594350473-4">{</span><span class="p" data-group-id="5594350473-4">}</span><span class="p" data-group-id="5594350473-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_media_item</span><span class="p" data-group-id="5594350473-5">(</span><span class="p" data-group-id="5594350473-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="5594350473-6">}</span><span class="p" data-group-id="5594350473-5">)</span><span class="w">
-</span><span class="p" data-group-id="5594350473-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5594350473-8">%</span><span class="nc" data-group-id="5594350473-8">Ecto.Changeset</span><span class="p" data-group-id="5594350473-8">{</span><span class="p" data-group-id="5594350473-8">}</span><span class="p" data-group-id="5594350473-7">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_media_item</span><span class="p" data-group-id="6555478448-1">(</span><span class="p" data-group-id="6555478448-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="6555478448-2">}</span><span class="p" data-group-id="6555478448-1">)</span><span class="w">
+</span><span class="p" data-group-id="6555478448-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6555478448-4">%</span><span class="nc" data-group-id="6555478448-4">MediaItem</span><span class="p" data-group-id="6555478448-4">{</span><span class="p" data-group-id="6555478448-4">}</span><span class="p" data-group-id="6555478448-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_media_item</span><span class="p" data-group-id="6555478448-5">(</span><span class="p" data-group-id="6555478448-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="6555478448-6">}</span><span class="p" data-group-id="6555478448-5">)</span><span class="w">
+</span><span class="p" data-group-id="6555478448-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6555478448-8">%</span><span class="nc" data-group-id="6555478448-8">Ecto.Changeset</span><span class="p" data-group-id="6555478448-8">{</span><span class="p" data-group-id="6555478448-8">}</span><span class="p" data-group-id="6555478448-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="items/2">
@@ -382,7 +382,7 @@ project's media library.</p><p>If the project matching the supplied slug exists,
     </a>
     <h1 class="signature">update_media_item(media_item, attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/media_library.ex#L266" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/media_library.ex#L259" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -396,10 +396,10 @@ project's media library.</p><p>If the project matching the supplied slug exists,
   <a href="#update_media_item/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_media_item</span><span class="p" data-group-id="8472068338-1">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8472068338-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="8472068338-2">}</span><span class="p" data-group-id="8472068338-1">)</span><span class="w">
-</span><span class="p" data-group-id="8472068338-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8472068338-4">%</span><span class="nc" data-group-id="8472068338-4">MediaItem</span><span class="p" data-group-id="8472068338-4">{</span><span class="p" data-group-id="8472068338-4">}</span><span class="p" data-group-id="8472068338-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_media_item</span><span class="p" data-group-id="8472068338-5">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8472068338-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="8472068338-6">}</span><span class="p" data-group-id="8472068338-5">)</span><span class="w">
-</span><span class="p" data-group-id="8472068338-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8472068338-8">%</span><span class="nc" data-group-id="8472068338-8">Ecto.Changeset</span><span class="p" data-group-id="8472068338-8">{</span><span class="p" data-group-id="8472068338-8">}</span><span class="p" data-group-id="8472068338-7">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_media_item</span><span class="p" data-group-id="7269694041-1">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7269694041-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="7269694041-2">}</span><span class="p" data-group-id="7269694041-1">)</span><span class="w">
+</span><span class="p" data-group-id="7269694041-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7269694041-4">%</span><span class="nc" data-group-id="7269694041-4">MediaItem</span><span class="p" data-group-id="7269694041-4">{</span><span class="p" data-group-id="7269694041-4">}</span><span class="p" data-group-id="7269694041-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_media_item</span><span class="p" data-group-id="7269694041-5">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7269694041-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7269694041-6">}</span><span class="p" data-group-id="7269694041-5">)</span><span class="w">
+</span><span class="p" data-group-id="7269694041-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7269694041-8">%</span><span class="nc" data-group-id="7269694041-8">Ecto.Changeset</span><span class="p" data-group-id="7269694041-8">{</span><span class="p" data-group-id="7269694041-8">}</span><span class="p" data-group-id="7269694041-7">}</span></code></pre>
   </section>
 </section>
 
