@@ -116,8 +116,10 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
 
   const onSubmit = () => {
     props.onSubmitActivity(attemptState.attemptGuid,
-      // update this input too
-      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: orderedChoiceIds(undefined) } }])
+      [{
+        attemptGuid: attemptState.parts[0].attemptGuid,
+        response: { input: orderedChoiceIds(undefined) },
+      }])
       .then((response: EvaluationResponse) => {
         if (response.evaluations.length > 0) {
           const { score, out_of, feedback, error } = response.evaluations[0];
