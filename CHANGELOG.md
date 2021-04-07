@@ -13,6 +13,7 @@
  - Account for ingested pages that have missing objectives
  - Fix issue where long lines in code blocks in activities overflow
  - Fix an issue where grading status transitions across publications were not handled properly
+ - Change how ids are determined in ingestion to avoid problems with unicode characters
 
 ## 0.7.2 (2021-3-30)
 
