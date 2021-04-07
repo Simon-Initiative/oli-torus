@@ -4,6 +4,8 @@ on:
     branches:
       - master
       - hotfix-*          # include hotfix branches
+      # TODO: REMOVE
+      - s3-deployments
     tags:
       - package           # manually trigger a package build
       # - deploy-test       # manually trigger build and deploy to test
@@ -27,13 +29,22 @@ jobs:
         with:
           build-sha: ${{ steps.info.outputs.sha_short }}
 
-      - name: 💽⬆️ Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}
-          path: _build/prod/rel/oli
+      - name: 🗜️ Zip it
+        run: |
+          zip -r oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip _build/prod/rel/oli
 
-      # - name: 🚢💰 Deploy using SSH
+      - name: 💽⬆️ Upload release to S3 archive
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --acl public-read --follow-symlinks
+        env:
+          AWS_S3_BUCKET: 'oli-torus-releases'
+          AWS_ACCESS_KEY_ID: ${{ secrets.SIMON_BOT_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SIMON_BOT_AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: 'us-east-2'
+          SOURCE_DIR: 'oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}'
+
+      # - name: 🚢💰 Deploy to test using SSH
       #   uses: fifsky/ssh-action@master
       #   if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/tags/deploy-test' }}
       #   with:
