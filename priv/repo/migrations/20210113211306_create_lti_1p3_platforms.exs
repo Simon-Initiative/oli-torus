@@ -33,6 +33,5 @@ defmodule Oli.Repo.Migrations.CreateLti1p3Platforms do
     end
 
     create unique_index(:lti_1p3_login_hints, :value)
-
   end
 end

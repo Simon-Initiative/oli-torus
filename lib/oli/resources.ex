@@ -45,13 +45,16 @@ defmodule Oli.Resources do
   @doc """
   Gets a single resource, based on a revision  slug.
   """
-  @spec get_resource_from_slug(String.t) :: any
+  @spec get_resource_from_slug(String.t()) :: any
   def get_resource_from_slug(revision) do
-    query = from r in Resource,
-          distinct: r.id,
-          join: v in Revision, on: v.resource_id == r.id,
-          where: v.slug == ^revision,
-          select: r
+    query =
+      from r in Resource,
+        distinct: r.id,
+        join: v in Revision,
+        on: v.resource_id == r.id,
+        where: v.slug == ^revision,
+        select: r
+
     Repo.one(query)
   end
 
@@ -60,12 +63,14 @@ defmodule Oli.Resources do
   """
   @spec get_resources_from_slug([]) :: any
   def get_resources_from_slug(revisions) do
+    query =
+      from r in Resource,
+        distinct: r.id,
+        join: v in Revision,
+        on: v.resource_id == r.id,
+        where: v.slug in ^revisions,
+        select: r
 
-    query = from r in Resource,
-          distinct: r.id,
-          join: v in Revision, on: v.resource_id == r.id,
-          where: v.slug in ^revisions,
-          select: r
     resources = Repo.all(query)
 
     # order them according to the input revisions
@@ -77,18 +82,18 @@ defmodule Oli.Resources do
   Gets a list of resource ids and slugs, based on a list of revision slugs.
   """
   def map_resource_ids_from_slugs(revision_slugs) do
+    query =
+      from r in Revision,
+        where: r.slug in ^revision_slugs,
+        group_by: [r.slug, r.resource_id],
+        select: map(r, [:slug, :resource_id])
 
-    query = from r in Revision,
-          where: r.slug in ^revision_slugs,
-          group_by: [r.slug, r.resource_id],
-          select: map(r, [:slug, :resource_id])
     Repo.all(query)
   end
 
   def create_new_resource() do
     %Resource{}
-    |> Resource.changeset(%{
-    })
+    |> Resource.changeset(%{})
     |> Repo.insert()
   end
 
@@ -102,25 +107,25 @@ defmodule Oli.Resources do
       {:error, %Ecto.Changeset{}}
   """
   def create_resource_and_revision(attrs) do
-
     case create_new_resource() do
-      {:ok, resource} -> case Map.merge(attrs, %{ resource_id: resource.id })
-        |> create_revision() do
+      {:ok, resource} ->
+        case Map.merge(attrs, %{resource_id: resource.id})
+             |> create_revision() do
           {:ok, revision} -> {:ok, %{resource: resource, revision: revision}}
           error -> error
         end
-      error -> error
-    end
 
+      error ->
+        error
+    end
   end
 
   # returns a list of resource ids that refer to activity references in a page
-  def activity_references(%Revision{content: %{ "model" => model}} = _page) do
+  def activity_references(%Revision{content: %{"model" => model}} = _page) do
     model
-    |> Enum.filter(& &1["type"] == "activity-reference")
+    |> Enum.filter(&(&1["type"] == "activity-reference"))
     |> Enum.map(& &1["activity_id"])
   end
-
 
   @doc """
   Updates a resource.
@@ -195,7 +200,6 @@ defmodule Oli.Resources do
     |> Repo.insert()
   end
 
-
   @doc """
   Updates a resource_type.
   ## Examples
@@ -250,7 +254,6 @@ defmodule Oli.Resources do
       {:error, %Ecto.Changeset{}}
   """
   def create_revision(attrs \\ %{}) do
-
     %Revision{}
     |> Revision.changeset(attrs)
     |> Repo.insert()
@@ -271,26 +274,29 @@ defmodule Oli.Resources do
   end
 
   def create_revision_from_previous(previous_revision, attrs) do
-
-    attrs = Map.merge(%{
-      content: previous_revision.content,
-      objectives: previous_revision.objectives,
-      children: previous_revision.children,
-      deleted: previous_revision.deleted,
-      slug: previous_revision.slug,
-      title: previous_revision.title,
-      graded: previous_revision.graded,
-      author_id: previous_revision.author_id,
-      resource_id: previous_revision.resource_id,
-      previous_revision_id: previous_revision.id,
-      resource_type_id: previous_revision.resource_type_id,
-      activity_type_id: previous_revision.activity_type_id,
-      scoring_strategy_id: previous_revision.scoring_strategy_id,
-      primary_resource_id: previous_revision.primary_resource_id,
-      max_attempts: previous_revision.max_attempts,
-      recommended_attempts: previous_revision.recommended_attempts,
-      time_limit: previous_revision.time_limit
-    }, attrs)
+    attrs =
+      Map.merge(
+        %{
+          content: previous_revision.content,
+          objectives: previous_revision.objectives,
+          children: previous_revision.children,
+          deleted: previous_revision.deleted,
+          slug: previous_revision.slug,
+          title: previous_revision.title,
+          graded: previous_revision.graded,
+          author_id: previous_revision.author_id,
+          resource_id: previous_revision.resource_id,
+          previous_revision_id: previous_revision.id,
+          resource_type_id: previous_revision.resource_type_id,
+          activity_type_id: previous_revision.activity_type_id,
+          scoring_strategy_id: previous_revision.scoring_strategy_id,
+          primary_resource_id: previous_revision.primary_resource_id,
+          max_attempts: previous_revision.max_attempts,
+          recommended_attempts: previous_revision.recommended_attempts,
+          time_limit: previous_revision.time_limit
+        },
+        attrs
+      )
 
     create_revision(attrs)
   end
@@ -305,5 +311,4 @@ defmodule Oli.Resources do
     Oli.Resources.Utils.to_revision(revision)
     |> Revision.changeset(params)
   end
-
 end

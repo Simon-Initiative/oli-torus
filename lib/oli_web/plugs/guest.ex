@@ -10,6 +10,7 @@ defmodule OliWeb.Plugs.Guest do
       |> redirect(to: OliWeb.Router.Helpers.static_page_path(conn, :index))
       |> halt()
     end
+
     conn
   end
 end

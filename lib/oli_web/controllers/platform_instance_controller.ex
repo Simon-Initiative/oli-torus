@@ -39,7 +39,7 @@ defmodule OliWeb.PlatformInstanceController do
       login_hint: login_hint,
       client_id: platform_instance.client_id,
       target_link_uri: platform_instance.target_link_uri,
-      oidc_login_url: platform_instance.login_url,
+      oidc_login_url: platform_instance.login_url
     }
 
     render(conn, "show.html", platform_instance: platform_instance, launch_params: launch_params)

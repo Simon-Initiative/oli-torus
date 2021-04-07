@@ -16,6 +16,7 @@
  - Fix an issue where grading status transitions across publications were not handled properly
  - Change how ids are determined in ingestion to avoid problems with unicode characters
  - Scope lock messages to a specific project
+ - (Developer) Auto format Elixir code
 
 ## 0.7.2 (2021-3-30)
 

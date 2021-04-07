@@ -8,70 +8,127 @@ defmodule OliWeb.ActivityControllerTest do
   setup [:project_seed]
 
   describe "bulk retrieval" do
-
-    test "retrieves multiple secondary documents", %{conn: conn, project: project, activity_id: activity_id} do
-
+    test "retrieves multiple secondary documents", %{
+      conn: conn,
+      project: project,
+      activity_id: activity_id
+    } do
       original_conn = conn
 
       # Create two documents
       update_1 = %{"title" => "Title 1", "content" => %{"1" => "2"}}
-      conn = post(original_conn, Routes.activity_path(conn, :create_secondary, project.slug, activity_id), update_1)
-      assert %{ "result" => "success", "resourceId" => id_1 } = json_response(conn, 201)
+
+      conn =
+        post(
+          original_conn,
+          Routes.activity_path(conn, :create_secondary, project.slug, activity_id),
+          update_1
+        )
+
+      assert %{"result" => "success", "resourceId" => id_1} = json_response(conn, 201)
 
       update_2 = %{"title" => "Title 2", "content" => %{"1" => "2"}}
-      conn = post(original_conn, Routes.activity_path(conn, :create_secondary, project.slug, activity_id), update_2)
-      assert %{ "result" => "success", "resourceId" => id_2 } = json_response(conn, 201)
+
+      conn =
+        post(
+          original_conn,
+          Routes.activity_path(conn, :create_secondary, project.slug, activity_id),
+          update_2
+        )
+
+      assert %{"result" => "success", "resourceId" => id_2} = json_response(conn, 201)
 
       # And now fetch them using the bulk retrieval endpoint
-      conn = post(original_conn, Routes.activity_path(original_conn, :bulk_retrieve, project.slug), %{"resourceIds" => [id_1, id_2] })
-      assert %{ "result" => "success", "results" => results } = json_response(conn, 200)
+      conn =
+        post(original_conn, Routes.activity_path(original_conn, :bulk_retrieve, project.slug), %{
+          "resourceIds" => [id_1, id_2]
+        })
+
+      assert %{"result" => "success", "results" => results} = json_response(conn, 200)
 
       assert length(results) == 2
       assert [%{"title" => "Title 1"}, %{"title" => "Title 2"}] = results
-
     end
 
-    test "handles missing documents with a failure placeholder", %{conn: conn, project: project, activity_id: activity_id} do
-
+    test "handles missing documents with a failure placeholder", %{
+      conn: conn,
+      project: project,
+      activity_id: activity_id
+    } do
       original_conn = conn
 
       # Create two documents
       update_1 = %{"title" => "Title 1", "content" => %{"1" => "2"}}
-      conn = post(original_conn, Routes.activity_path(conn, :create_secondary, project.slug, activity_id), update_1)
-      assert %{ "result" => "success", "resourceId" => id_1 } = json_response(conn, 201)
+
+      conn =
+        post(
+          original_conn,
+          Routes.activity_path(conn, :create_secondary, project.slug, activity_id),
+          update_1
+        )
+
+      assert %{"result" => "success", "resourceId" => id_1} = json_response(conn, 201)
 
       update_2 = %{"title" => "Title 2", "content" => %{"1" => "2"}}
-      conn = post(original_conn, Routes.activity_path(conn, :create_secondary, project.slug, activity_id), update_2)
-      assert %{ "result" => "success", "resourceId" => id_2 } = json_response(conn, 201)
+
+      conn =
+        post(
+          original_conn,
+          Routes.activity_path(conn, :create_secondary, project.slug, activity_id),
+          update_2
+        )
+
+      assert %{"result" => "success", "resourceId" => id_2} = json_response(conn, 201)
 
       # And now fetch them using the bulk retrieval endpoint, but with a non-existent document id interspersed
-      conn = post(original_conn, Routes.activity_path(original_conn, :bulk_retrieve, project.slug), %{"resourceIds" => [id_1, 189183, id_2] })
-      assert %{ "result" => "success", "results" => results } = json_response(conn, 200)
+      conn =
+        post(original_conn, Routes.activity_path(original_conn, :bulk_retrieve, project.slug), %{
+          "resourceIds" => [id_1, 189_183, id_2]
+        })
+
+      assert %{"result" => "success", "results" => results} = json_response(conn, 200)
 
       assert length(results) == 3
       assert [%{"title" => "Title 1"}, %{"result" => "failed"}, %{"title" => "Title 2"}] = results
-
     end
-
   end
 
-
   describe "create and then delete a secondary resource" do
+    test "fails when attempting to delete an activity primary document", %{
+      conn: conn,
+      project: project,
+      activity_id: activity_id,
+      revision1: revision
+    } do
+      conn =
+        delete(
+          conn,
+          Routes.activity_path(conn, :delete, project.slug, activity_id, %{
+            "lock" => revision.resource_id
+          })
+        )
 
-    test "fails when attempting to delete an activity primary document", %{conn: conn, project: project, activity_id: activity_id, revision1: revision} do
-
-      conn = delete(conn, Routes.activity_path(conn, :delete, project.slug, activity_id, %{"lock" => revision.resource_id }))
       assert response(conn, 400)
     end
 
-    test "creates a secondary resource for an activity", %{conn: conn, project: project, activity_id: activity_id, revision1: revision} do
-
+    test "creates a secondary resource for an activity", %{
+      conn: conn,
+      project: project,
+      activity_id: activity_id,
+      revision1: revision
+    } do
       original_conn = conn
 
       update = %{"title" => "A title", "content" => %{"1" => "2"}}
-      conn = post(conn, Routes.activity_path(conn, :create_secondary, project.slug, activity_id), update)
 
-      assert %{ "result" => "success", "resourceId" => id } = json_response(conn, 201)
+      conn =
+        post(
+          conn,
+          Routes.activity_path(conn, :create_secondary, project.slug, activity_id),
+          update
+        )
+
+      assert %{"result" => "success", "resourceId" => id} = json_response(conn, 201)
 
       r = AuthoringResolver.from_resource_id(project.slug, id)
       assert r.title == "A title"
@@ -79,106 +136,194 @@ defmodule OliWeb.ActivityControllerTest do
       assert r.deleted == false
       assert r.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("secondary")
 
-      conn = delete(original_conn, Routes.activity_path(original_conn, :delete, project.slug, id, %{"lock" => revision.resource_id }))
-      assert %{ "result" => "success" } = json_response(conn, 200)
+      conn =
+        delete(
+          original_conn,
+          Routes.activity_path(original_conn, :delete, project.slug, id, %{
+            "lock" => revision.resource_id
+          })
+        )
+
+      assert %{"result" => "success"} = json_response(conn, 200)
 
       r = AuthoringResolver.from_resource_id(project.slug, id)
       assert r.deleted == true
     end
-
   end
 
   describe "get resource" do
-
-    test "retrieves the unpublished activity", %{conn: conn, project: project, activity_id: activity_id} do
-
+    test "retrieves the unpublished activity", %{
+      conn: conn,
+      project: project,
+      activity_id: activity_id
+    } do
       conn = get(conn, Routes.activity_path(conn, :retrieve, project.slug, activity_id))
 
-      assert %{ "objectives" => %{}, "content" => %{"stem" => "1"}, "authoring" => %{"parts" => [part]} } = json_response(conn, 200)
-      assert %{"id" => "1", "responses" => [], "scoringStrategy" => "best", "evaluationStrategy" => "regex"} = part
+      assert %{
+               "objectives" => %{},
+               "content" => %{"stem" => "1"},
+               "authoring" => %{"parts" => [part]}
+             } = json_response(conn, 200)
+
+      assert %{
+               "id" => "1",
+               "responses" => [],
+               "scoringStrategy" => "best",
+               "evaluationStrategy" => "regex"
+             } = part
     end
 
-    test "updates the title", %{conn: conn, project: project, activity_id: activity_id, revision1: revision} do
-
+    test "updates the title", %{
+      conn: conn,
+      project: project,
+      activity_id: activity_id,
+      revision1: revision
+    } do
       update = %{"title" => "updated title"}
-      conn = put(conn, Routes.activity_path(conn, :update, project.slug, activity_id, %{"lock" => revision.resource_id}), update)
 
-      assert %{ "result" => "success" } = json_response(conn, 200)
+      conn =
+        put(
+          conn,
+          Routes.activity_path(conn, :update, project.slug, activity_id, %{
+            "lock" => revision.resource_id
+          }),
+          update
+        )
+
+      assert %{"result" => "success"} = json_response(conn, 200)
 
       r = AuthoringResolver.from_resource_id(project.slug, activity_id)
       assert r.title == "updated title"
-
     end
 
-    test "updates content (and title), but not authoring", %{conn: conn, project: project, activity_id: activity_id, revision1: revision} do
-
+    test "updates content (and title), but not authoring", %{
+      conn: conn,
+      project: project,
+      activity_id: activity_id,
+      revision1: revision
+    } do
       update = %{"title" => "updated title", "content" => %{"1" => "2"}}
-      conn = put(conn, Routes.activity_path(conn, :update, project.slug, activity_id, %{"lock" => revision.resource_id}), update)
 
-      assert %{ "result" => "success" } = json_response(conn, 200)
+      conn =
+        put(
+          conn,
+          Routes.activity_path(conn, :update, project.slug, activity_id, %{
+            "lock" => revision.resource_id
+          }),
+          update
+        )
+
+      assert %{"result" => "success"} = json_response(conn, 200)
 
       r = AuthoringResolver.from_resource_id(project.slug, activity_id)
       assert r.title == "updated title"
       assert r.content["1"] == "2"
       assert length(r.content["authoring"]["parts"]) == 1
-
     end
 
-    test "updates authoring, but not content", %{conn: conn, project: project, activity_id: activity_id, revision1: revision} do
+    test "updates authoring, but not content", %{
+      conn: conn,
+      project: project,
+      activity_id: activity_id,
+      revision1: revision
+    } do
+      update = %{
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "responses" => [],
+              "scoringStrategy" => "best",
+              "evaluationStrategy" => "none"
+            }
+          ]
+        }
+      }
 
-      update = %{"authoring" => %{
-        "parts" => [
-          %{"id" => "1", "responses" => [], "scoringStrategy" => "best", "evaluationStrategy" => "none"}
-        ]
-      }}
-      conn = put(conn, Routes.activity_path(conn, :update, project.slug, activity_id, %{"lock" => revision.resource_id}), update)
+      conn =
+        put(
+          conn,
+          Routes.activity_path(conn, :update, project.slug, activity_id, %{
+            "lock" => revision.resource_id
+          }),
+          update
+        )
 
-      assert %{ "result" => "success" } = json_response(conn, 200)
+      assert %{"result" => "success"} = json_response(conn, 200)
 
       r = AuthoringResolver.from_resource_id(project.slug, activity_id)
       assert r.content["stem"] == "1"
       assert hd(r.content["authoring"]["parts"])["evaluationStrategy"] == "none"
-
     end
 
-    test "including an invalid key gets rejected", %{conn: conn, project: project, activity_id: activity_id, revision1: revision} do
-
+    test "including an invalid key gets rejected", %{
+      conn: conn,
+      project: project,
+      activity_id: activity_id,
+      revision1: revision
+    } do
       update = %{"title" => "updated title", "resourceId" => "2"}
-      conn = put(conn, Routes.activity_path(conn, :update, project.slug, activity_id, %{"lock" => revision.resource_id}), update)
-      assert response(conn, 400)
 
+      conn =
+        put(
+          conn,
+          Routes.activity_path(conn, :update, project.slug, activity_id, %{
+            "lock" => revision.resource_id
+          }),
+          update
+        )
+
+      assert response(conn, 400)
     end
 
-    test "updates authoring and content", %{conn: conn, project: project, activity_id: activity_id, revision1: revision} do
-
+    test "updates authoring and content", %{
+      conn: conn,
+      project: project,
+      activity_id: activity_id,
+      revision1: revision
+    } do
       update = %{
         "content" => %{"1" => "2"},
         "authoring" => %{
           "parts" => [
-            %{"id" => "1", "responses" => [], "scoringStrategy" => "best", "evaluationStrategy" => "none"}
+            %{
+              "id" => "1",
+              "responses" => [],
+              "scoringStrategy" => "best",
+              "evaluationStrategy" => "none"
+            }
           ]
         }
       }
-      conn = put(conn, Routes.activity_path(conn, :update, project.slug, activity_id, %{"lock" => revision.resource_id}), update)
 
-      assert %{ "result" => "success" } = json_response(conn, 200)
+      conn =
+        put(
+          conn,
+          Routes.activity_path(conn, :update, project.slug, activity_id, %{
+            "lock" => revision.resource_id
+          }),
+          update
+        )
+
+      assert %{"result" => "success"} = json_response(conn, 200)
 
       r = AuthoringResolver.from_resource_id(project.slug, activity_id)
       assert r.content["1"] == "2"
       assert hd(r.content["authoring"]["parts"])["evaluationStrategy"] == "none"
-
     end
-
-
   end
 
   def project_seed(%{conn: conn}) do
-
     content = %{
       "stem" => "1",
       "authoring" => %{
         "parts" => [
-          %{"id" => "1", "responses" => [], "scoringStrategy" => "best", "evaluationStrategy" => "regex"}
+          %{
+            "id" => "1",
+            "responses" => [],
+            "scoringStrategy" => "best",
+            "evaluationStrategy" => "regex"
+          }
         ]
       }
     }
@@ -189,14 +334,33 @@ defmodule OliWeb.ActivityControllerTest do
     revision = Map.get(seeds, :revision1)
     author = Map.get(seeds, :author)
 
-    {:ok, {%{slug: slug, resource_id: activity_id}, _}} = ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
+    {:ok, {%{slug: slug, resource_id: activity_id}, _}} =
+      ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
+
     seeds = Map.put(seeds, :activity_id, activity_id)
 
-    update = %{ "content" => %{ "model" => [%{ "type" => "activity-reference", "id" => 1, "activitySlug" => slug, "purpose" => "none"}]}}
-    PageEditor.acquire_lock(project.slug, revision.slug, author.email)
-    assert {:ok, _} =  PageEditor.edit(project.slug, revision.slug, author.email, update)
+    update = %{
+      "content" => %{
+        "model" => [
+          %{
+            "type" => "activity-reference",
+            "id" => 1,
+            "activitySlug" => slug,
+            "purpose" => "none"
+          }
+        ]
+      }
+    }
 
-    conn = Pow.Plug.assign_current_user(conn, seeds.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+    PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+    assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
+
+    conn =
+      Pow.Plug.assign_current_user(
+        conn,
+        seeds.author,
+        OliWeb.Pow.PowHelpers.get_pow_config(:author)
+      )
 
     {:ok, Map.merge(%{conn: conn}, seeds)}
   end

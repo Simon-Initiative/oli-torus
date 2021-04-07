@@ -1,15 +1,13 @@
 defmodule OliWeb.Curriculum.ActivityDelta do
-
   alias Oli.Resources
 
   defstruct current: nil,
-    deleted: [],
-    added: []
+            deleted: [],
+            added: []
 
   def new(current_page, old_page) do
-
-    current = get_activities_from_page(current_page) |> MapSet.new
-    previous_activities = get_activities_from_page(old_page) |> MapSet.new
+    current = get_activities_from_page(current_page) |> MapSet.new()
+    previous_activities = get_activities_from_page(old_page) |> MapSet.new()
 
     deleted = MapSet.difference(previous_activities, current) |> MapSet.to_list()
     added = MapSet.difference(current, previous_activities) |> MapSet.to_list()
@@ -25,5 +23,4 @@ defmodule OliWeb.Curriculum.ActivityDelta do
   defp get_activities_from_page(revision) do
     Resources.activity_references(revision)
   end
-
 end

@@ -71,7 +71,10 @@ defmodule OliWeb.ActivityController do
         title: %Schema{type: :string, description: "Title of this document"},
         objectives: %Schema{type: :object, description: "Per part objective mapping"},
         content: %Schema{type: :object, description: "Delivery specific content"},
-        authoring: %Schema{type: :object, description: "The authoring specific portion of the content"}
+        authoring: %Schema{
+          type: :object,
+          description: "The authoring specific portion of the content"
+        }
       },
       required: [],
       example: %{
@@ -81,7 +84,6 @@ defmodule OliWeb.ActivityController do
       }
     })
   end
-
 
   defmodule BulkDocumentResponse do
     require OpenApiSpex
@@ -109,7 +111,10 @@ defmodule OliWeb.ActivityController do
       description: "The request body for a bulk document fetch operation",
       type: :object,
       properties: %{
-        resourceIds: %Schema{type: :list, description: "Array of resource identifiers of documents being requested"}
+        resourceIds: %Schema{
+          type: :list,
+          description: "Array of resource identifiers of documents being requested"
+        }
       },
       required: [:resourceIds],
       example: %{
@@ -127,25 +132,37 @@ defmodule OliWeb.ActivityController do
 
   """
   @doc parameters: [
-    project: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The project identifier"],
-    resource: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The activity identifier that this document will be secondary to"]
-  ],
-  request_body: {"Attributes for the document", "application/json", OliWeb.ActivityController.DocumentAttributes, required: true},
-  responses: %{
-    201 => {"Creation Response", "application/json", ApiSchemas.CreationResponse}
-  }
+         project: [
+           in: :url,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The project identifier"
+         ],
+         resource: [
+           in: :url,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The activity identifier that this document will be secondary to"
+         ]
+       ],
+       request_body:
+         {"Attributes for the document", "application/json",
+          OliWeb.ActivityController.DocumentAttributes, required: true},
+       responses: %{
+         201 => {"Creation Response", "application/json", ApiSchemas.CreationResponse}
+       }
   def create_secondary(conn, %{
         "project" => project_slug,
         "resource" => activity_id
       }) do
-
     author = conn.assigns[:current_author]
     update = conn.body_params
 
     case ActivityEditor.create_secondary(project_slug, activity_id, author, update) do
       {:ok, revision} ->
         conn
-        |> put_status(:created) # This sets status code 201 instead of 200
+        # This sets status code 201 instead of 200
+        |> put_status(:created)
         |> json(%{"result" => "success", "resourceId" => revision.resource_id})
 
       {:error, {:invalid_update_field}} ->
@@ -160,7 +177,6 @@ defmodule OliWeb.ActivityController do
       _ ->
         error(conn, 500, "server error")
     end
-
   end
 
   @doc false
@@ -210,16 +226,28 @@ defmodule OliWeb.ActivityController do
   document.
   """
   @doc parameters: [
-    project: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The project identifier"],
-    resource: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The activity document identifier"]
-  ],
-  responses: %{
-    200 => {"Retrieval Response", "application/json", OliWeb.ActivityController.DocumentAttributes}
-  }
+         project: [
+           in: :url,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The project identifier"
+         ],
+         resource: [
+           in: :url,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The activity document identifier"
+         ]
+       ],
+       responses: %{
+         200 =>
+           {"Retrieval Response", "application/json",
+            OliWeb.ActivityController.DocumentAttributes}
+       }
   def retrieve(conn, %{
-    "project" => project_slug,
-    "resource" => activity_id
-  }) do
+        "project" => project_slug,
+        "resource" => activity_id
+      }) do
     author = conn.assigns[:current_author]
 
     case ActivityEditor.retrieve(project_slug, activity_id, author) do
@@ -227,7 +255,6 @@ defmodule OliWeb.ActivityController do
       {:error, {:not_found}} -> error(conn, 404, "not found")
       _ -> error(conn, 500, "server error")
     end
-
   end
 
   @doc """
@@ -236,26 +263,40 @@ defmodule OliWeb.ActivityController do
   This retrieves the unpublished revision of activity documents.
   """
   @doc parameters: [
-    project: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The project identifier"]
-  ],
-  request_body: {"Attributes for the document", "application/json", OliWeb.ActivityController.BulkDocumentRequestBody, required: true},
-  responses: %{
-    200 => {"Retrieval Response", "application/json", OliWeb.ActivityController.BulkDocumentResponse}
-  }
+         project: [
+           in: :url,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The project identifier"
+         ]
+       ],
+       request_body:
+         {"Attributes for the document", "application/json",
+          OliWeb.ActivityController.BulkDocumentRequestBody, required: true},
+       responses: %{
+         200 =>
+           {"Retrieval Response", "application/json",
+            OliWeb.ActivityController.BulkDocumentResponse}
+       }
   def bulk_retrieve(conn, %{
-    "project" => project_slug,
-    "resourceIds" => activity_ids
-  }) do
+        "project" => project_slug,
+        "resourceIds" => activity_ids
+      }) do
     author = conn.assigns[:current_author]
 
     case ActivityEditor.retrieve_bulk(project_slug, activity_ids, author) do
       {:ok, revisions} ->
-        json(conn, %{"result" => "success", "results" => Enum.map(revisions, &document_to_result/1)})
+        json(conn, %{
+          "result" => "success",
+          "results" => Enum.map(revisions, &document_to_result/1)
+        })
 
-      {:error, {:not_found}} -> error(conn, 404, "not found")
-      _ -> error(conn, 500, "server error")
+      {:error, {:not_found}} ->
+        error(conn, 404, "not found")
+
+      _ ->
+        error(conn, 500, "server error")
     end
-
   end
 
   defp document_to_delivery_result(%{title: title, content: content}) do
@@ -273,38 +314,44 @@ defmodule OliWeb.ActivityController do
   document, for a particular course section.
   """
   @doc parameters: [
-    course: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The course identifier"],
-    resource: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The activity document identifier"]
-  ],
-  responses: %{
-    200 => {"Retrieval Response", "application/json", OliWeb.ActivityController.DocumentAttributes}
-  }
+         course: [
+           in: :url,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The course identifier"
+         ],
+         resource: [
+           in: :url,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The activity document identifier"
+         ]
+       ],
+       responses: %{
+         200 =>
+           {"Retrieval Response", "application/json",
+            OliWeb.ActivityController.DocumentAttributes}
+       }
   def retrieve_delivery(conn, %{
-    "course" => course,
-    "resource" => activity_id
-  }) do
-
+        "course" => course,
+        "resource" => activity_id
+      }) do
     user = conn.assigns.current_user
 
     case Sections.get_section_by(id: course) do
-
-      nil -> error(conn, 404, "not found")
+      nil ->
+        error(conn, 404, "not found")
 
       section ->
         if Sections.is_enrolled?(user.id, section.slug) do
-
           case DeliveryResolver.from_resource_id(section.slug, activity_id) do
             nil -> error(conn, 404, "not found")
-
             rev -> json(conn, document_to_delivery_result(rev))
           end
-
         else
           error(conn, 403, "unauthorized")
         end
-
     end
-
   end
 
   @doc """
@@ -314,37 +361,44 @@ defmodule OliWeb.ActivityController do
   document, for a particular course section.
   """
   @doc parameters: [
-    course: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The course identifier"]
-  ],
-  responses: %{
-    200 => {"Retrieval Response", "application/json", OliWeb.ActivityController.BulkDocumentResponse}
-  }
+         course: [
+           in: :url,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The course identifier"
+         ]
+       ],
+       responses: %{
+         200 =>
+           {"Retrieval Response", "application/json",
+            OliWeb.ActivityController.BulkDocumentResponse}
+       }
   def bulk_retrieve_delivery(conn, %{
-    "course" => course,
-    "resourceIds" => activity_ids
-  }) do
-
+        "course" => course,
+        "resourceIds" => activity_ids
+      }) do
     user = conn.assigns.current_user
 
     case Sections.get_section_by(id: course) do
-
-      nil -> error(conn, 404, "not found")
+      nil ->
+        error(conn, 404, "not found")
 
       section ->
         if Sections.is_enrolled?(user.id, section.slug) do
-
           case DeliveryResolver.from_resource_id(section.slug, activity_ids) do
-            nil -> error(conn, 404, "not found")
+            nil ->
+              error(conn, 404, "not found")
 
-            revisions -> json(conn, %{"result" => "success", "results" => Enum.map(revisions, &document_to_delivery_result/1)})
+            revisions ->
+              json(conn, %{
+                "result" => "success",
+                "results" => Enum.map(revisions, &document_to_delivery_result/1)
+              })
           end
-
         else
           error(conn, 403, "unauthorized")
         end
-
     end
-
   end
 
   @doc """
@@ -357,22 +411,37 @@ defmodule OliWeb.ActivityController do
   lock must be specificed via the `lock` query parameter.
   """
   @doc parameters: [
-    project: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The project identifier"],
-    resource: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The activity document identifier"],
-    lock: [in: :query, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The lock identifier that this operation will be performed within"]
-  ],
-  request_body: {"Attributes for the document", "application/json", OliWeb.ActivityController.DocumentAttributes, required: true},
-  responses: %{
-    200 => {"Update Response", "application/json", ApiSchemas.UpdateResponse}
-  }
+         project: [
+           in: :url,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The project identifier"
+         ],
+         resource: [
+           in: :url,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The activity document identifier"
+         ],
+         lock: [
+           in: :query,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The lock identifier that this operation will be performed within"
+         ]
+       ],
+       request_body:
+         {"Attributes for the document", "application/json",
+          OliWeb.ActivityController.DocumentAttributes, required: true},
+       responses: %{
+         200 => {"Update Response", "application/json", ApiSchemas.UpdateResponse}
+       }
   def update(conn, %{
         "project" => project_slug,
         "lock" => lock_id,
         "resource" => activity_id
       }) do
-
     author = conn.assigns[:current_author]
-
 
     update = conn.body_params
 
@@ -415,15 +484,29 @@ defmodule OliWeb.ActivityController do
   lock must be specificed via the `lock` query parameter.
   """
   @doc parameters: [
-    project: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The project identifier"],
-    resource: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The activity identifier that this document will be secondary to"],
-    lock: [in: :query, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The lock identifier that this operation will be performed within"]
-  ],
-  responses: %{
-    200 => {"Deletion Response", "application/json", ApiSchemas.UpdateResponse}
-  }
+         project: [
+           in: :url,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The project identifier"
+         ],
+         resource: [
+           in: :url,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The activity identifier that this document will be secondary to"
+         ],
+         lock: [
+           in: :query,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The lock identifier that this operation will be performed within"
+         ]
+       ],
+       responses: %{
+         200 => {"Deletion Response", "application/json", ApiSchemas.UpdateResponse}
+       }
   def delete(conn, %{"project" => project_slug, "resource" => resource_id, "lock" => lock_id}) do
-
     author = conn.assigns[:current_author]
 
     case ActivityEditor.delete(project_slug, lock_id, resource_id, author) do
@@ -434,7 +517,6 @@ defmodule OliWeb.ActivityController do
       {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
       _ -> error(conn, 500, "server error")
     end
-
   end
 
   defp error(conn, code, reason) do

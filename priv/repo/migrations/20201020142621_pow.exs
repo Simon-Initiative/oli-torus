@@ -3,7 +3,6 @@ defmodule Oli.Repo.Migrations.Pow do
   import Ecto.Query, warn: false
 
   def up do
-
     # create user identities for pow_assent
     create table(:user_identities) do
       add :provider, :string, null: false
@@ -37,11 +36,13 @@ defmodule Oli.Repo.Migrations.Pow do
     flush()
 
     # populate all authors names using given_name and family_name if name is nil
-    authors = Oli.Repo.all(
-      from a in "authors",
-        where: is_nil(a.name),
-        select: %{id: a.id, given_name: a.given_name, family_name: a.family_name}
-    )
+    authors =
+      Oli.Repo.all(
+        from(a in "authors",
+          where: is_nil(a.name),
+          select: %{id: a.id, given_name: a.given_name, family_name: a.family_name}
+        )
+      )
 
     Enum.each(authors, fn author ->
       from(a in "authors", where: a.id == ^author.id)
@@ -49,11 +50,13 @@ defmodule Oli.Repo.Migrations.Pow do
     end)
 
     # populate all users names using given_name and family_name if name is nil
-    users = Oli.Repo.all(
-      from u in "users",
-        where: is_nil(u.name),
-        select: %{id: u.id, given_name: u.given_name, family_name: u.family_name}
-    )
+    users =
+      Oli.Repo.all(
+        from(u in "users",
+          where: is_nil(u.name),
+          select: %{id: u.id, given_name: u.given_name, family_name: u.family_name}
+        )
+      )
 
     Enum.each(users, fn user ->
       from(u in "users", where: u.id == ^user.id)
@@ -62,7 +65,6 @@ defmodule Oli.Repo.Migrations.Pow do
   end
 
   def down do
-
     drop unique_index(:authors, [:email_confirmation_token])
 
     alter table(:authors) do
@@ -85,5 +87,4 @@ defmodule Oli.Repo.Migrations.Pow do
 
     drop table(:user_identities)
   end
-
 end

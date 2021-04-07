@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.Page.ModelPruner do
-
   @moduledoc """
   Implements adjustments to activity models so that they can
   be safely delivered to a browser in delivery model.
@@ -13,5 +12,4 @@ defmodule Oli.Delivery.Page.ModelPruner do
   def prune(model) do
     Map.delete(model, "authoring")
   end
-
 end

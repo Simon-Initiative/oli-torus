@@ -28,7 +28,6 @@ defmodule OliWeb.Telemetry do
       # Plug
       counter("oli.plug.start.system_time"),
       summary("oli.plug.stop.duration", unit: {:native, :millisecond}),
-
       summary("oli.resolvers.authoring.duration"),
       summary("oli.resolvers.delivery.duration"),
 

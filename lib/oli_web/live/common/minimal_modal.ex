@@ -1,5 +1,4 @@
 defmodule OliWeb.Common.MinimalModal do
-
   use Phoenix.LiveComponent
 
   def render(assigns) do

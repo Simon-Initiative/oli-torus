@@ -5,10 +5,11 @@ defmodule Oli.Accounts.SystemRole do
   @doc """
   Enumerates all the SystemRole ids
   """
-  def role_id, do: %{
-    author: 1,
-    admin: 2,
-  }
+  def role_id,
+    do: %{
+      author: 1,
+      admin: 2
+    }
 
   schema "system_roles" do
     field :type, :string

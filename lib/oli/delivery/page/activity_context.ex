@@ -18,34 +18,35 @@ defmodule Oli.Delivery.Page.ActivityContext do
   """
   @spec create_context_map(boolean(), %{}) :: %{}
   def create_context_map(graded, latest_attempts) do
-
     # get a view of all current registered activity types
     registrations = Activities.list_activity_registrations()
     reg_map = Enum.reduce(registrations, %{}, fn r, m -> Map.put(m, r.id, r) end)
 
     activity_states = State.from_attempts(latest_attempts)
 
-    Enum.map(latest_attempts, fn {id, {%ActivityAttempt{transformed_model: model, revision: revision}, _}} ->
-
+    Enum.map(latest_attempts, fn {id,
+                                  {%ActivityAttempt{transformed_model: model, revision: revision},
+                                   _}} ->
       # the activity type this revision pertains to
       type = Map.get(reg_map, revision.activity_type_id)
       state = Map.get(activity_states, id)
 
-      {id, %ActivitySummary{
-        id: id,
-        model: prepare_model(model),
-        state: prepare_state(state),
-        delivery_element: type.delivery_element,
-        script: type.delivery_script,
-        graded: graded
-      }}
+      {id,
+       %ActivitySummary{
+         id: id,
+         model: prepare_model(model),
+         state: prepare_state(state),
+         delivery_element: type.delivery_element,
+         script: type.delivery_script,
+         graded: graded
+       }}
     end)
-    |> Map.new
-
+    |> Map.new()
   end
 
   def prepare_model(model, opts \\ []) do
     model = if Keyword.get(opts, :prune, true), do: ModelPruner.prune(model), else: model
+
     case Jason.encode(model) do
       {:ok, s} -> s |> encode()
       {:error, _} -> "{ \"error\": true }" |> encode()
@@ -63,5 +64,4 @@ defmodule Oli.Delivery.Page.ActivityContext do
     {:safe, encoded} = HTML.html_escape(s)
     IO.iodata_to_binary(encoded)
   end
-
 end

@@ -1,3 +1,2 @@
-defmodule Oli.Delivery.Evaluation  do
-
+defmodule Oli.Delivery.Evaluation do
 end

@@ -1,5 +1,4 @@
 defmodule Oli.Activities.State do
-
   alias Oli.Activities.State.ActivityState
   alias Oli.Activities.Model
 
@@ -13,8 +12,7 @@ defmodule Oli.Activities.State do
       {:ok, model} = Map.get(activity_attempt, :transformed_model) |> Model.parse()
 
       {id, ActivityState.from_attempt(activity_attempt, Map.values(part_attempts), model)}
-    end) |> Map.new
+    end)
+    |> Map.new()
   end
-
 end
-

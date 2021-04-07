@@ -14,18 +14,31 @@ defmodule OliWeb.InstitutionController do
     institutions = Institutions.list_institutions()
     pending_registrations = Institutions.list_pending_registrations()
 
-    render_institution_page conn, "index.html", institutions: institutions, pending_registrations: pending_registrations,
-      country_codes: Predefined.country_codes(), timezones: Predefined.timezones(), lti_config_defaults: Predefined.lti_config_defaults(), world_universities_and_domains: Predefined.world_universities_and_domains()
+    render_institution_page(conn, "index.html",
+      institutions: institutions,
+      pending_registrations: pending_registrations,
+      country_codes: Predefined.country_codes(),
+      timezones: Predefined.timezones(),
+      lti_config_defaults: Predefined.lti_config_defaults(),
+      world_universities_and_domains: Predefined.world_universities_and_domains()
+    )
   end
 
   def new(conn, _params) do
     changeset = Institutions.change_institution(%Institution{})
-    render_institution_page conn, "new.html", changeset: changeset, country_codes: Predefined.country_codes(), timezones: Predefined.timezones()
+
+    render_institution_page(conn, "new.html",
+      changeset: changeset,
+      country_codes: Predefined.country_codes(),
+      timezones: Predefined.timezones()
+    )
   end
 
   def create(conn, %{"institution" => institution_params}) do
     author_id = conn.assigns.current_author.id
-    institution_params = institution_params
+
+    institution_params =
+      institution_params
       |> Map.put("author_id", author_id)
 
     case Institutions.create_institution(institution_params) do
@@ -35,20 +48,30 @@ defmodule OliWeb.InstitutionController do
         |> redirect(to: Routes.static_page_path(conn, :index))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render_institution_page conn, "new.html", changeset: changeset, country_codes: Predefined.country_codes(), timezones: Predefined.timezones()
+        render_institution_page(conn, "new.html",
+          changeset: changeset,
+          country_codes: Predefined.country_codes(),
+          timezones: Predefined.timezones()
+        )
     end
   end
 
   def show(conn, %{"id" => id}) do
     institution = Institutions.get_institution!(id)
 
-    render_institution_page conn, "show.html", institution: institution
+    render_institution_page(conn, "show.html", institution: institution)
   end
 
   def edit(conn, %{"id" => id}) do
     institution = Institutions.get_institution!(id)
     changeset = Institutions.change_institution(institution)
-    render_institution_page conn, "edit.html", institution: institution, changeset: changeset, country_codes: Predefined.country_codes(), timezones: Predefined.timezones()
+
+    render_institution_page(conn, "edit.html",
+      institution: institution,
+      changeset: changeset,
+      country_codes: Predefined.country_codes(),
+      timezones: Predefined.timezones()
+    )
   end
 
   def update(conn, %{"id" => id, "institution" => institution_params}) do
@@ -61,7 +84,12 @@ defmodule OliWeb.InstitutionController do
         |> redirect(to: Routes.institution_path(conn, :show, institution))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render_institution_page conn, "edit.html", institution: institution, changeset: changeset, country_codes: Predefined.country_codes(), timezones: Predefined.timezones()
+        render_institution_page(conn, "edit.html",
+          institution: institution,
+          changeset: changeset,
+          country_codes: Predefined.country_codes(),
+          timezones: Predefined.timezones()
+        )
     end
   end
 
@@ -74,7 +102,10 @@ defmodule OliWeb.InstitutionController do
     |> redirect(to: Routes.institution_path(conn, :index))
   end
 
-  def approve_registration(conn, %{"pending_registration" => pending_registration_attrs} = _params) do
+  def approve_registration(
+        conn,
+        %{"pending_registration" => pending_registration_attrs} = _params
+      ) do
     issuer = pending_registration_attrs["issuer"]
     client_id = pending_registration_attrs["client_id"]
 
@@ -84,23 +115,33 @@ defmodule OliWeb.InstitutionController do
     case Institutions.get_pending_registration_by_issuer_client_id(issuer, client_id) do
       nil ->
         conn
-        |> put_flash(:error, "Pending registration with issuer '#{issuer}' and client_id '#{client_id}' does not exist")
+        |> put_flash(
+          :error,
+          "Pending registration with issuer '#{issuer}' and client_id '#{client_id}' does not exist"
+        )
         |> redirect(to: Routes.institution_path(conn, :index))
 
       pending_registration ->
-        with {:ok, pending_registration} <- Institutions.update_pending_registration(pending_registration, pending_registration_attrs),
-             {:ok, {institution, registration}} <- Institutions.approve_pending_registration(pending_registration)
-        do
-          registration_approved_email = Oli.Email.create_email(
-            institution.institution_email,
-            "Registration Approved",
-            "registration_approved.html",
-            %{institution: institution, registration: registration})
+        with {:ok, pending_registration} <-
+               Institutions.update_pending_registration(
+                 pending_registration,
+                 pending_registration_attrs
+               ),
+             {:ok, {institution, registration}} <-
+               Institutions.approve_pending_registration(pending_registration) do
+          registration_approved_email =
+            Oli.Email.create_email(
+              institution.institution_email,
+              "Registration Approved",
+              "registration_approved.html",
+              %{institution: institution, registration: registration}
+            )
 
           Oli.Mailer.deliver_now(registration_approved_email)
 
           # send a Slack notification regarding the new registration approval
           approving_admin = conn.assigns[:current_author]
+
           Slack.send(%{
             "username" => approving_admin.name,
             "icon_emoji" => ":robot_face:",
@@ -109,26 +150,32 @@ defmodule OliWeb.InstitutionController do
                 "type" => "section",
                 "text" => %{
                   "type" => "mrkdwn",
-                  "text" => "Registration request for *#{pending_registration.name}* has been approved."
+                  "text" =>
+                    "Registration request for *#{pending_registration.name}* has been approved."
                 }
               }
             ]
           })
 
           conn
-          |> put_flash(:info, ["Registration for ", content_tag(:b, pending_registration.name), " approved"])
+          |> put_flash(:info, [
+            "Registration for ",
+            content_tag(:b, pending_registration.name),
+            " approved"
+          ])
           |> redirect(to: Routes.institution_path(conn, :index) <> "#pending-registrations")
-
         else
           error ->
             Logger.error("Failed to approve registration request", error)
 
             conn
-            |> put_flash(:error, "Failed to approve registration. Please double check your entries and try again.")
+            |> put_flash(
+              :error,
+              "Failed to approve registration. Please double check your entries and try again."
+            )
             |> redirect(to: Routes.institution_path(conn, :index))
         end
     end
-
   end
 
   def remove_registration(conn, %{"id" => id}) do
@@ -137,6 +184,7 @@ defmodule OliWeb.InstitutionController do
 
     # send a Slack notification regarding the new registration approval
     approving_admin = conn.assigns[:current_author]
+
     Slack.send(%{
       "username" => approving_admin.name,
       "icon_emoji" => ":robot_face:",
@@ -152,12 +200,15 @@ defmodule OliWeb.InstitutionController do
     })
 
     conn
-    |> put_flash(:info, ["Registration for ", content_tag(:b, pending_registration.name), " declined"])
+    |> put_flash(:info, [
+      "Registration for ",
+      content_tag(:b, pending_registration.name),
+      " declined"
+    ])
     |> redirect(to: Routes.institution_path(conn, :index))
   end
 
   defp render_institution_page(conn, template, assigns) do
-    render conn, template, Keyword.merge(assigns, [active: :institutions, title: "Institutions"])
+    render(conn, template, Keyword.merge(assigns, active: :institutions, title: "Institutions"))
   end
-
 end

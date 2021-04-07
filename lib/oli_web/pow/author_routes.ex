@@ -9,6 +9,7 @@ defmodule OliWeb.Pow.AuthorRoutes do
     case maybe_link_account_route(conn) do
       nil ->
         Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
+
       route ->
         route
     end
@@ -19,6 +20,7 @@ defmodule OliWeb.Pow.AuthorRoutes do
     case maybe_link_account_route(conn) do
       nil ->
         Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
+
       route ->
         route
     end
@@ -30,14 +32,16 @@ defmodule OliWeb.Pow.AuthorRoutes do
   defp maybe_link_account_route(conn) do
     if conn.params["provider"] do
       # this is a social provider login, we need to check if it is simply a login action or a link account action
-      link_account_callback_path = Routes.delivery_path(conn, :link_account_callback, conn.params["provider"])
+      link_account_callback_path =
+        Routes.delivery_path(conn, :link_account_callback, conn.params["provider"])
 
       case conn do
         %Plug.Conn{request_path: ^link_account_callback_path} ->
           # action was link account, which already occurred in the custom controller method link_account
           # in delivery_controller. now we just need to redirect back to delivery root
           conn
-            |> Routes.delivery_path(:index)
+          |> Routes.delivery_path(:index)
+
         _ ->
           # action is simply an account login, use the default routing mechanism
           nil
@@ -54,16 +58,22 @@ defmodule OliWeb.Pow.AuthorRoutes do
               conn
               |> put_flash(:info, "Account '#{current_author.email}' is now linked")
               |> Routes.delivery_path(:index)
+
             _ ->
               conn
-              |> put_flash(:error, "Failed to link user and author accounts for '#{current_author.email}'")
+              |> put_flash(
+                :error,
+                "Failed to link user and author accounts for '#{current_author.email}'"
+              )
               |> Routes.delivery_path(:index)
           end
+
         _ ->
           # action is simply an account login, use the default routing mechanism
           case conn do
             %{assigns: %{request_path: request_path}} ->
               request_path
+
             _ ->
               nil
           end
@@ -77,14 +87,26 @@ defmodule OliWeb.Pow.AuthorRoutes do
   end
 
   @impl true
-  def path_for(%Plug.Conn{assigns: %{link_account: true}} = conn, PowAssent.Phoenix.AuthorizationController, :new, [provider], _query_params) do
+  def path_for(
+        %Plug.Conn{assigns: %{link_account: true}} = conn,
+        PowAssent.Phoenix.AuthorizationController,
+        :new,
+        [provider],
+        _query_params
+      ) do
     Routes.delivery_path(conn, :process_link_account_provider, provider)
   end
-  def path_for(%Plug.Conn{assigns: %{link_account: true}} = conn, PowAssent.Phoenix.AuthorizationController, :create, [provider], _query_params) do
+
+  def path_for(
+        %Plug.Conn{assigns: %{link_account: true}} = conn,
+        PowAssent.Phoenix.AuthorizationController,
+        :create,
+        [provider],
+        _query_params
+      ) do
     Routes.delivery_path(conn, :process_link_account_provider, provider)
   end
 
   def path_for(conn, plug, verb, vars, query_params),
     do: Pow.Phoenix.Routes.path_for(conn, plug, verb, vars, query_params)
-
 end

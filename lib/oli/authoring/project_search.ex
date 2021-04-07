@@ -41,21 +41,26 @@ defmodule Oli.Authoring.ProjectSearch do
 
   defp run(search_string) do
     Repo.all(
-      from p in Project, as: :project,
-      join: id_and_rank in matching_title_description_slug(search_string), on: id_and_rank.id == p.id,
-      where: exists(from(pub in Publication, where: parent_as(:project).id == pub.project_id)),
-      order_by: [desc: id_and_rank.rank],
-      select: %{slug: p.slug, title: p.title, description: p.description, version: p.version}
+      from p in Project,
+        as: :project,
+        join: id_and_rank in matching_title_description_slug(search_string),
+        on: id_and_rank.id == p.id,
+        where: exists(from(pub in Publication, where: parent_as(:project).id == pub.project_id)),
+        order_by: [desc: id_and_rank.rank],
+        select: %{slug: p.slug, title: p.title, description: p.description, version: p.version}
     )
   end
 
   defp normalize(search_string) do
     search_string
     |> String.downcase()
-    |> String.replace(~r/\n/, " ")          # replace newlines with a space
-    |> String.replace(~r/\t/, " ")          # replace tabs with a space
-    |> String.replace(~r/\s{2,}/, " ")      # collapse all whitespace to single space
-    |> String.trim()                        # remove leading and trailing whitespace
+    # replace newlines with a space
+    |> String.replace(~r/\n/, " ")
+    # replace tabs with a space
+    |> String.replace(~r/\t/, " ")
+    # collapse all whitespace to single space
+    |> String.replace(~r/\s{2,}/, " ")
+    # remove leading and trailing whitespace
+    |> String.trim()
   end
-
 end

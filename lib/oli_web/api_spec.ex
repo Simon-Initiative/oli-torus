@@ -6,7 +6,6 @@ defmodule OliWeb.ApiSpec do
   @impl OpenApi
   def spec do
     %OpenApi{
-
       servers: [
         # Populate the Server info from a phoenix endpoint
         Server.from_endpoint(Endpoint)
@@ -19,6 +18,7 @@ defmodule OliWeb.ApiSpec do
       # Populate the paths from a phoenix router
       paths: Paths.from_router(Router)
     }
-    |> OpenApiSpex.resolve_schema_modules() # Discover request/response schemas from path specs
+    # Discover request/response schemas from path specs
+    |> OpenApiSpex.resolve_schema_modules()
   end
 end

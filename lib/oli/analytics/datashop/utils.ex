@@ -23,12 +23,13 @@ defmodule Oli.Analytics.Datashop.Utils do
   def parse_content(content) when is_binary(content) do
     {:cdata, content}
   end
+
   def parse_content(content) do
     Content.render(%Context{}, content, Content.Html)
-    |> Phoenix.HTML.raw
-    |> Phoenix.HTML.safe_to_string
+    |> Phoenix.HTML.raw()
+    |> Phoenix.HTML.safe_to_string()
     # Remove trailing newlines
-    |> String.trim
+    |> String.trim()
     # Convert to cdata
     |> parse_content
   end
@@ -36,10 +37,11 @@ defmodule Oli.Analytics.Datashop.Utils do
   def hint_text(part, hint_id) do
     try do
       part["hints"]
-      |> Enum.find(& &1["id"] == hint_id)
+      |> Enum.find(&(&1["id"] == hint_id))
       |> Map.get("content")
       |> parse_content
-    rescue _e -> "Unknown hint text"
+    rescue
+      _e -> "Unknown hint text"
     end
   end
 
@@ -48,7 +50,8 @@ defmodule Oli.Analytics.Datashop.Utils do
       part
       |> Map.get("hints")
       |> length
-    rescue _e -> "Unknown"
+    rescue
+      _e -> "Unknown"
     end
   end
 
@@ -68,5 +71,4 @@ defmodule Oli.Analytics.Datashop.Utils do
   def make_dataset_name(project_slug) do
     "#{project_slug}-#{uuid()}"
   end
-
 end

@@ -34,7 +34,9 @@ defmodule Oli.Repo.Migrations.ImproveLtiWorkflow do
     drop(constraint(:lti_1p3_deployments, "lti_1p3_deployments_registration_id_fkey"))
 
     alter table(:lti_1p3_deployments) do
-      modify(:registration_id, references(:lti_1p3_registrations, on_delete: :delete_all), null: false)
+      modify(:registration_id, references(:lti_1p3_registrations, on_delete: :delete_all),
+        null: false
+      )
     end
   end
 
@@ -42,7 +44,9 @@ defmodule Oli.Repo.Migrations.ImproveLtiWorkflow do
     drop(constraint(:lti_1p3_deployments, "lti_1p3_deployments_registration_id_fkey"))
 
     alter table(:lti_1p3_deployments) do
-      modify(:registration_id, references(:lti_1p3_registrations, on_delete: :nothing), null: false)
+      modify(:registration_id, references(:lti_1p3_registrations, on_delete: :nothing),
+        null: false
+      )
     end
 
     drop(constraint(:lti_1p3_registrations, "lti_1p3_registrations_institution_id_fkey"))

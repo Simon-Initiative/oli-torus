@@ -7,12 +7,14 @@ defmodule Oli.Plugs.EnsureAdmin do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-
-    %{ system_role_id: system_role_id } = conn.assigns[:current_author]
+    %{system_role_id: system_role_id} = conn.assigns[:current_author]
 
     case system_role_id do
-      @admin_role_id -> conn
-      _ -> conn
+      @admin_role_id ->
+        conn
+
+      _ ->
+        conn
         |> resp(403, "Forbidden")
         |> halt()
     end

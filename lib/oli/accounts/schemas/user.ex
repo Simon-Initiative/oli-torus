@@ -30,7 +30,10 @@ defmodule Oli.Accounts.User do
     belongs_to :author, Oli.Accounts.Author
 
     has_many :enrollments, Oli.Delivery.Sections.Enrollment
-    many_to_many :platform_roles, Lti_1p3.DataProviders.EctoProvider.PlatformRole, join_through: "users_platform_roles", on_replace: :delete
+
+    many_to_many :platform_roles, Lti_1p3.DataProviders.EctoProvider.PlatformRole,
+      join_through: "users_platform_roles",
+      on_replace: :delete
 
     timestamps(type: :utc_datetime)
   end
@@ -58,7 +61,7 @@ defmodule Oli.Accounts.User do
       :phone_number,
       :phone_number_verified,
       :address,
-      :author_id,
+      :author_id
     ])
     |> validate_required([:sub])
     |> maybe_name_from_given_and_family()
@@ -79,12 +82,16 @@ defimpl Lti_1p3.Tool.Lti_1p3_User, for: Oli.Accounts.User do
 
   def get_context_roles(user, section_slug) do
     user_id = user.id
-    query = from e in Enrollment, preload: [:context_roles],
-      join: s in Section, on: e.section_id == s.id,
-      where: e.user_id == ^user_id and s.slug == ^section_slug,
-      select: e
 
-    case Repo.one query do
+    query =
+      from e in Enrollment,
+        preload: [:context_roles],
+        join: s in Section,
+        on: e.section_id == s.id,
+        where: e.user_id == ^user_id and s.slug == ^section_slug,
+        select: e
+
+    case Repo.one(query) do
       nil -> []
       enrollment -> enrollment.context_roles
     end

@@ -2,21 +2,24 @@ defmodule OliWeb.RevisionHistory.Graph do
   use Phoenix.LiveComponent
 
   def update(assigns, socket) do
-
     root_node = Map.get(assigns.tree, assigns.root.id)
     built = OliWeb.RevisionHistory.ReingoldTilford.build(root_node, assigns.tree)
 
     nodes = OliWeb.RevisionHistory.ReingoldTilford.nodes(built)
     lines = OliWeb.RevisionHistory.ReingoldTilford.lines(built)
 
-    {:ok, assign(socket, project: assigns.project, nodes: nodes, lines: lines, initial_size: 400, selected: assigns.selected)}
-
+    {:ok,
+     assign(socket,
+       project: assigns.project,
+       nodes: nodes,
+       lines: lines,
+       initial_size: 400,
+       selected: assigns.selected
+     )}
   end
 
   def render(assigns) do
-
     node_class = fn n ->
-
       "node " <>
         if n.value.project_id == assigns.project.id do
           " current"
@@ -51,5 +54,4 @@ defmodule OliWeb.RevisionHistory.Graph do
       </svg>
     """
   end
-
 end

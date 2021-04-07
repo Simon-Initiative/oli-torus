@@ -1,5 +1,4 @@
 defmodule Oli.Authoring.Editing.ActivityContext do
-
   @derive Jason.Encoder
   defstruct [
     :authoringScript,
@@ -16,7 +15,6 @@ defmodule Oli.Authoring.Editing.ActivityContext do
     :title,
     :model,
     :objectives,
-    :allObjectives,
+    :allObjectives
   ]
-
 end

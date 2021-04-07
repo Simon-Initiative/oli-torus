@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.Attempts.Scoring do
-
   alias Oli.Delivery.Attempts.Result
   alias Oli.Resources.ScoringStrategy
 
@@ -27,10 +26,15 @@ defmodule Oli.Delivery.Attempts.Scoring do
   # correct handling of cases where attempts are pinned to different revisions
   # of a resource with a possibly different number of activities
   def calculate_score("average", items) do
-
-    {total, max_out_of} = Enum.reduce(items, {0, 0}, fn p, {total, max_out_of} ->
-      {total + safe_percentage(p.score, p.out_of), if max_out_of < p.out_of do p.out_of else max_out_of end}
-    end)
+    {total, max_out_of} =
+      Enum.reduce(items, {0, 0}, fn p, {total, max_out_of} ->
+        {total + safe_percentage(p.score, p.out_of),
+         if max_out_of < p.out_of do
+           p.out_of
+         else
+           max_out_of
+         end}
+      end)
 
     %Result{
       score: total / length(items) * max_out_of,
@@ -41,14 +45,14 @@ defmodule Oli.Delivery.Attempts.Scoring do
   # The 'best' score is the attempt with the highest percentage correct,
   # not the highest raw score.
   def calculate_score("best", items) do
-
-    {score, out_of, _} = Enum.reduce(items, {0, 0, 0.0}, fn p, {score, out_of, best} ->
-      if safe_percentage(p.score, p.out_of) >= best do
-        {p.score, p.out_of, safe_percentage(p.score, p.out_of)}
-      else
-        {score, out_of, best}
-      end
-    end)
+    {score, out_of, _} =
+      Enum.reduce(items, {0, 0, 0.0}, fn p, {score, out_of, best} ->
+        if safe_percentage(p.score, p.out_of) >= best do
+          {p.score, p.out_of, safe_percentage(p.score, p.out_of)}
+        else
+          {score, out_of, best}
+        end
+      end)
 
     %Result{
       score: score,
@@ -68,9 +72,11 @@ defmodule Oli.Delivery.Attempts.Scoring do
 
   # The total strategy simply adds up the scores and adds up the out_of
   def calculate_score("total", items) do
-    {score, out_of} = Enum.reduce(items, {0, 0}, fn p, {score, out_of} ->
-      {score + p.score, out_of + p.out_of}
-    end)
+    {score, out_of} =
+      Enum.reduce(items, {0, 0}, fn p, {score, out_of} ->
+        {score + p.score, out_of + p.out_of}
+      end)
+
     %Result{
       score: score,
       out_of: out_of
@@ -91,5 +97,4 @@ defmodule Oli.Delivery.Attempts.Scoring do
       _ -> score / out_of
     end
   end
-
 end
