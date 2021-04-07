@@ -32,6 +32,8 @@ jobs:
       - name: 🗜️ Zip it
         run: |
           zip -r oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip _build/prod/rel/oli
+          ls -la
+          pwd
 
       - name: 💽⬆️ Upload release to S3 archive
         uses: jakejarvis/s3-sync-action@master
