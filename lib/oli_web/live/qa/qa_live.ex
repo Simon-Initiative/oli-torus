@@ -1,5 +1,4 @@
 defmodule OliWeb.Qa.QaLive do
-
   @moduledoc """
   LiveView implementation of QA view.
   """
@@ -17,9 +16,7 @@ defmodule OliWeb.Qa.QaLive do
   alias Oli.Repo
   alias Oli.Authoring.Broadcaster.Subscriber
 
-
   def mount(%{"project_id" => project_slug}, %{"current_author_id" => author_id}, socket) do
-
     author = Repo.get(Author, author_id)
     project = Course.get_project_by_slug(project_slug)
 
@@ -38,44 +35,76 @@ defmodule OliWeb.Qa.QaLive do
     warnings = Qa.Warnings.list_active_warnings(project.id)
     qa_reviews = Qa.Reviews.list_reviews(project.id)
 
-    parent_pages = Enum.map(warnings, fn w -> w.revision end)
-    |> Enum.filter(fn r -> r.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("activity") end)
-    |> Enum.map(fn r -> r.resource_id end)
-    |> Oli.Publishing.determine_parent_pages(Oli.Publishing.AuthoringResolver.publication(project.slug).id)
+    parent_pages =
+      Enum.map(warnings, fn w -> w.revision end)
+      |> Enum.filter(fn r ->
+        r.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("activity")
+      end)
+      |> Enum.map(fn r -> r.resource_id end)
+      |> Oli.Publishing.determine_parent_pages(
+        Oli.Publishing.AuthoringResolver.publication(project.slug).id
+      )
 
     {warnings, parent_pages, qa_reviews}
   end
 
   def handle_event("dismiss", _, socket) do
-
     warning_id = socket.assigns.selected.id
 
-    socket = case Qa.Warnings.dismiss_warning(warning_id) do
-      {:ok, _} ->
-        Oli.Authoring.Broadcaster.broadcast_dismiss_warning(warning_id, socket.assigns.project.slug)
-        socket
+    socket =
+      case Qa.Warnings.dismiss_warning(warning_id) do
+        {:ok, _} ->
+          Oli.Authoring.Broadcaster.broadcast_dismiss_warning(
+            warning_id,
+            socket.assigns.project.slug
+          )
 
-      {:error, _changeset} -> socket
-      |> put_flash(:error, "Could not dimiss warning")
-    end
+          socket
+
+        {:error, _changeset} ->
+          socket
+          |> put_flash(:error, "Could not dimiss warning")
+      end
 
     {:noreply, socket}
   end
 
   def handle_event("filter", %{"type" => type}, socket) do
-
     state = socket.assigns
     filters = State.toggle_filter(state, type)
-    selected_id = if state.selected == nil do "" else state.selected.id end
 
-    {:noreply, push_patch(socket, to: Routes.live_path(socket, OliWeb.Qa.QaLive, state.project.slug, State.to_params(filters, selected_id)))}
+    selected_id =
+      if state.selected == nil do
+        ""
+      else
+        state.selected.id
+      end
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Qa.QaLive,
+           state.project.slug,
+           State.to_params(filters, selected_id)
+         )
+     )}
   end
 
   def handle_event("select", %{"warning" => warning_id}, socket) do
-
     filters = socket.assigns.filters
 
-    {:noreply, push_patch(socket, to: Routes.live_path(socket, OliWeb.Qa.QaLive, socket.assigns.project.slug, State.to_params(filters, warning_id)))}
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Qa.QaLive,
+           socket.assigns.project.slug,
+           State.to_params(filters, warning_id)
+         )
+     )}
   end
 
   def handle_event("review", _, socket) do
@@ -151,11 +180,14 @@ defmodule OliWeb.Qa.QaLive do
   end
 
   def handle_info({:new_review, _}, socket) do
-    {:noreply, assign(socket, State.new_review_ran(socket.assigns, read_current_review(socket.assigns.project)))}
+    {:noreply,
+     assign(
+       socket,
+       State.new_review_ran(socket.assigns, read_current_review(socket.assigns.project))
+     )}
   end
 
   def handle_info({:dismiss_warning, warning_id, _}, socket) do
     {:noreply, assign(socket, State.warning_dismissed(socket.assigns, warning_id))}
   end
-
 end

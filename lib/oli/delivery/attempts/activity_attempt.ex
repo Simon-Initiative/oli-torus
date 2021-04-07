@@ -3,7 +3,6 @@ defmodule Oli.Delivery.Attempts.ActivityAttempt do
   import Ecto.Changeset
 
   schema "activity_attempts" do
-
     field :attempt_guid, :string
     field :attempt_number, :integer
     field :date_evaluated, :utc_datetime
@@ -22,7 +21,24 @@ defmodule Oli.Delivery.Attempts.ActivityAttempt do
   @doc false
   def changeset(score, attrs) do
     score
-    |> cast(attrs, [:attempt_guid, :attempt_number, :score, :out_of, :date_evaluated, :transformed_model, :resource_attempt_id, :resource_id, :revision_id])
-    |> validate_required([:attempt_guid, :attempt_number, :transformed_model, :resource_attempt_id, :resource_id, :revision_id])
+    |> cast(attrs, [
+      :attempt_guid,
+      :attempt_number,
+      :score,
+      :out_of,
+      :date_evaluated,
+      :transformed_model,
+      :resource_attempt_id,
+      :resource_id,
+      :revision_id
+    ])
+    |> validate_required([
+      :attempt_guid,
+      :attempt_number,
+      :transformed_model,
+      :resource_attempt_id,
+      :resource_id,
+      :revision_id
+    ])
   end
 end

@@ -28,7 +28,8 @@ defmodule Oli.MixProject do
       source_url: "https://github.com/Simon-Initiative/oli-torus",
       homepage_url: "http://oli.cmu.edu",
       docs: [
-        main: "Oli", # The main page in the docs
+        # The main page in the docs
+        main: "Oli",
         logo: "assets/static/images/oli-icon.png",
         extras: ["README.md", "LICENSE.md"]
       ],
@@ -112,7 +113,7 @@ defmodule Oli.MixProject do
       {:telemetry_poller, "~> 0.4"},
       {:telemetry_metrics, "~> 0.4"},
       {:timex, "~> 3.5"},
-      {:uuid, "~> 1.1" },
+      {:uuid, "~> 1.1"},
       {:xml_builder, "~> 2.1.1"}
     ]
   end
@@ -136,7 +137,7 @@ defmodule Oli.MixProject do
       "test.coverage.xml": ["ecto.reset", "coveralls.xml"],
 
       # runs tests in deterministic order, only shows one failure at a time and reruns tests if any changes are made
-      "test.watch": ["ecto.reset", "test.watch --stale --max-failures 1 --trace --seed 0"],
+      "test.watch": ["ecto.reset", "test.watch --stale --max-failures 1 --trace --seed 0"]
     ]
   end
 end

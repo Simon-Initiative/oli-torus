@@ -21,5 +21,4 @@ defmodule OliWeb.Pow.Mailer do
 
     deliver_later(email)
   end
-
 end

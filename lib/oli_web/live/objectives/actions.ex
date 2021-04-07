@@ -1,6 +1,4 @@
 defmodule OliWeb.Objectives.Actions do
-
-
   use Phoenix.LiveComponent
   use Phoenix.HTML
 
@@ -37,7 +35,5 @@ defmodule OliWeb.Objectives.Actions do
 
       </div>
     """
-
   end
-
 end

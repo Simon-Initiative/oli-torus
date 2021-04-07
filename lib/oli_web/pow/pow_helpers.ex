@@ -1,5 +1,4 @@
 defmodule OliWeb.Pow.PowHelpers do
-
   alias PowAssent.Plug
 
   alias Phoenix.{HTML, HTML.Link, Naming}
@@ -40,7 +39,7 @@ defmodule OliWeb.Pow.PowHelpers do
   """
   def provider_links(conn, link_opts \\ []) do
     available_providers = Plug.available_providers(conn)
-    providers_for_user  = Plug.providers_for_current_user(conn)
+    providers_for_user = Plug.providers_for_current_user(conn)
 
     available_providers
     |> Enum.map(&{&1, &1 in providers_for_user})
@@ -59,19 +58,39 @@ defmodule OliWeb.Pow.PowHelpers do
   def authorization_link(conn, provider, opts \\ []) do
     query_params = invitation_token_query_params(conn) ++ request_path_query_params(conn)
 
-    msg  = AuthorizationController.extension_messages(conn).login_with_provider(%{conn | params: %{"provider" => provider}})
+    msg =
+      AuthorizationController.extension_messages(conn).login_with_provider(%{
+        conn
+        | params: %{"provider" => provider}
+      })
+
     icon = provider_icon(provider)
-    path = AuthorizationController.routes(conn).path_for(conn, AuthorizationController, :new, [provider], query_params)
+
+    path =
+      AuthorizationController.routes(conn).path_for(
+        conn,
+        AuthorizationController,
+        :new,
+        [provider],
+        query_params
+      )
+
     opts = Keyword.merge(opts, to: path)
-    opts = Keyword.merge(opts, class: "btn btn-md #{provider_class(provider)} btn-block social-signin")
+
+    opts =
+      Keyword.merge(opts, class: "btn btn-md #{provider_class(provider)} btn-block social-signin")
 
     Link.link([icon, msg], opts)
   end
 
-  defp invitation_token_query_params(%{assigns: %{invited_user: %{invitation_token: token}}}), do: [invitation_token: token]
+  defp invitation_token_query_params(%{assigns: %{invited_user: %{invitation_token: token}}}),
+    do: [invitation_token: token]
+
   defp invitation_token_query_params(_conn), do: []
 
-  defp request_path_query_params(%{assigns: %{request_path: request_path}}), do: [request_path: request_path]
+  defp request_path_query_params(%{assigns: %{request_path: request_path}}),
+    do: [request_path: request_path]
+
   defp request_path_query_params(_conn), do: []
 
   @doc """
@@ -80,20 +99,35 @@ defmodule OliWeb.Pow.PowHelpers do
   """
   @spec deauthorization_link(Conn.t(), atom(), keyword()) :: HTML.safe()
   def deauthorization_link(conn, provider, opts \\ []) do
-    msg  = AuthorizationController.extension_messages(conn).remove_provider_authentication(%{conn | params: %{"provider" => provider}})
+    msg =
+      AuthorizationController.extension_messages(conn).remove_provider_authentication(%{
+        conn
+        | params: %{"provider" => provider}
+      })
+
     icon = provider_icon(provider)
-    path = AuthorizationController.routes(conn).path_for(conn, AuthorizationController, :delete, [provider])
+
+    path =
+      AuthorizationController.routes(conn).path_for(conn, AuthorizationController, :delete, [
+        provider
+      ])
+
     opts = Keyword.merge(opts, to: path, method: :delete)
-    opts = Keyword.merge(opts, class: "btn btn-md #{provider_class(provider)} btn-block social-signin")
+
+    opts =
+      Keyword.merge(opts, class: "btn btn-md #{provider_class(provider)} btn-block social-signin")
 
     Link.link([icon, msg], opts)
   end
+
   def provider_icon(provider) do
     case provider do
       :google ->
         HTML.raw("<i class=\"fab fa-google fa-lg mr-2\"></i>")
+
       :github ->
         HTML.raw("<i class=\"fab fa-github fa-lg mr-2\"></i>")
+
       _ ->
         HTML.raw(nil)
     end
@@ -101,14 +135,14 @@ defmodule OliWeb.Pow.PowHelpers do
 
   def provider_class(provider) do
     provider
-      |> Naming.humanize
-      |> String.downcase
-      |> (&("provider-#{&1}")).()
+    |> Naming.humanize()
+    |> String.downcase()
+    |> (&"provider-#{&1}").()
   end
 
   def provider_name(provider) do
     provider
-      |> Naming.humanize
-      |> String.upcase
+    |> Naming.humanize()
+    |> String.upcase()
   end
 end

@@ -1,5 +1,4 @@
 defmodule Oli.Lti.LTI_AGS do
-
   @moduledoc """
   Implementation of LTI Assignment and Grading Services (LTI AGS) version 2.0.
 
@@ -25,23 +24,25 @@ defmodule Oli.Lti.LTI_AGS do
   Post a score to an existing line item, using an already acquired access token.
   """
   def post_score(%Score{} = score, %LineItem{} = line_item, %AccessToken{} = access_token) do
-
     Logger.debug("Posting score for user #{score.userId} for line item '#{line_item.label}'")
 
     url = "#{line_item.id}/scores"
     body = score |> Jason.encode!()
 
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- http().post(url, body, headers(access_token)),
-      {:ok, result} <- Jason.decode(body)
-    do
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
+           http().post(url, body, headers(access_token)),
+         {:ok, result} <- Jason.decode(body) do
       {:ok, result}
     else
       e ->
-        Logger.error("Error encountered posting score for user #{score.userId} for line item '#{line_item.label}' #{inspect e}")
+        Logger.error(
+          "Error encountered posting score for user #{score.userId} for line item '#{
+            line_item.label
+          }' #{inspect(e)}"
+        )
 
         {:error, "Error posting score"}
     end
-
   end
 
   @doc """
@@ -49,8 +50,13 @@ defmodule Oli.Lti.LTI_AGS do
   line item is created or already exists, this function returns a line item struct wrapped
   in a {:ok, line_item} tuple.  On error, returns a {:error, error} tuple.
   """
-  def fetch_or_create_line_item(line_items_service_url, resource_id, score_maximum, label, %AccessToken{} = access_token) do
-
+  def fetch_or_create_line_item(
+        line_items_service_url,
+        resource_id,
+        score_maximum,
+        label,
+        %AccessToken{} = access_token
+      ) do
     Logger.debug("Fetch or create line item for #{resource_id} #{label}")
 
     # Grade passback 2.0 lineitems endpoint allows a GET request with a query
@@ -62,45 +68,50 @@ defmodule Oli.Lti.LTI_AGS do
     prefixed_resource_id = LineItem.to_resource_id(resource_id)
     request_url = "#{line_items_service_url}?resource_id=#{prefixed_resource_id}&limit=1"
 
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- http().get(request_url, headers(access_token)),
-      {:ok, result} <- Jason.decode(body)
-    do
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
+           http().get(request_url, headers(access_token)),
+         {:ok, result} <- Jason.decode(body) do
       case result do
-        [] -> create_line_item(line_items_service_url, resource_id, score_maximum, label, access_token)
+        [] ->
+          create_line_item(
+            line_items_service_url,
+            resource_id,
+            score_maximum,
+            label,
+            access_token
+          )
 
         # it is important to match against a possible array of items, in case an LMS does
         # not properly support the limit parameter
         [raw_line_item | _] ->
-
           line_item = to_line_item(raw_line_item)
 
           if line_item.label != label do
-            update_line_item line_item, %{label: label}, access_token
+            update_line_item(line_item, %{label: label}, access_token)
           else
             {:ok, line_item}
           end
-
       end
     else
       e ->
-        Logger.error("Error encountered fetching line item for #{resource_id} #{label}: #{inspect e}")
+        Logger.error(
+          "Error encountered fetching line item for #{resource_id} #{label}: #{inspect(e)}"
+        )
+
         {:error, "Error retrieving existing line items"}
     end
-
   end
-
 
   defp to_line_item(raw_line_item) do
     %LineItem{
       id: Map.get(raw_line_item, "id"),
       scoreMaximum: Map.get(raw_line_item, "scoreMaximum"),
       resourceId: Map.get(raw_line_item, "resourceId"),
-      label: Map.get(raw_line_item, "label"),
+      label: Map.get(raw_line_item, "label")
     }
   end
 
   def fetch_line_items(line_items_service_url, %AccessToken{} = access_token) do
-
     Logger.debug("Fetch line items from #{line_items_service_url}")
 
     # Unfortunately, at least Canvas implements a default limit of 10 line items
@@ -109,24 +120,28 @@ defmodule Oli.Lti.LTI_AGS do
     # a thousand gradebook entries.
     url = line_items_service_url <> "?limit=1000"
 
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- http().get(url, headers(access_token)),
-      {:ok, results} <- Jason.decode(body)
-    do
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
+           http().get(url, headers(access_token)),
+         {:ok, results} <- Jason.decode(body) do
       {:ok, Enum.map(results, fn r -> to_line_item(r) end)}
     else
       e ->
-        Logger.error("Error encountered fetching line items from #{url} #{inspect e}")
+        Logger.error("Error encountered fetching line items from #{url} #{inspect(e)}")
         {:error, "Error retrieving all line items"}
     end
-
   end
 
   @doc """
   Creates a line item for a resource id. Tthis function returns a line item struct wrapped
   in a {:ok, line_item} tuple.  On error, returns a {:error, error} tuple.
   """
-  def create_line_item(line_items_service_url, resource_id, score_maximum, label, %AccessToken{} = access_token) do
-
+  def create_line_item(
+        line_items_service_url,
+        resource_id,
+        score_maximum,
+        label,
+        %AccessToken{} = access_token
+      ) do
     Logger.debug("Create line item for #{resource_id} #{label}")
 
     line_item = %LineItem{
@@ -137,16 +152,18 @@ defmodule Oli.Lti.LTI_AGS do
 
     body = line_item |> Jason.encode!()
 
-    with {:ok, %HTTPoison.Response{status_code: 201, body: body}} <- http().post(line_items_service_url, body, headers(access_token)),
-      {:ok, result} <- Jason.decode(body)
-    do
+    with {:ok, %HTTPoison.Response{status_code: 201, body: body}} <-
+           http().post(line_items_service_url, body, headers(access_token)),
+         {:ok, result} <- Jason.decode(body) do
       {:ok, to_line_item(result)}
     else
       e ->
-        Logger.error("Error encountered creating line item for #{resource_id} #{label}: #{inspect e}")
+        Logger.error(
+          "Error encountered creating line item for #{resource_id} #{label}: #{inspect(e)}"
+        )
+
         {:error, "Error creating new line item"}
     end
-
   end
 
   @doc """
@@ -154,8 +171,7 @@ defmodule Oli.Lti.LTI_AGS do
   a {:ok, line_item} tuple.  On error, returns a {:error, error} tuple.
   """
   def update_line_item(%LineItem{} = line_item, changes, %AccessToken{} = access_token) do
-
-    Logger.debug("Updating line item #{line_item.id} for changes #{inspect changes}")
+    Logger.debug("Updating line item #{line_item.id} for changes #{inspect(changes)}")
 
     updated_line_item = %LineItem{
       id: line_item.id,
@@ -170,16 +186,20 @@ defmodule Oli.Lti.LTI_AGS do
     # url to use is the id of the line item
     url = line_item.id
 
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <- http().put(url, body, headers(access_token)),
-      {:ok, result} <- Jason.decode(body)
-    do
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
+           http().put(url, body, headers(access_token)),
+         {:ok, result} <- Jason.decode(body) do
       {:ok, to_line_item(result)}
     else
       e ->
-        Logger.error("Error encountered updating line item #{line_item.id} for changes #{inspect changes}: #{inspect e}")
+        Logger.error(
+          "Error encountered updating line item #{line_item.id} for changes #{inspect(changes)}: #{
+            inspect(e)
+          }"
+        )
+
         {:error, "Error updating existing line item"}
     end
-
   end
 
   @doc """
@@ -190,11 +210,13 @@ defmodule Oli.Lti.LTI_AGS do
   """
   def grade_passback_enabled?(lti_launch_params) do
     case Map.get(lti_launch_params, @lti_ags_claim_url) do
-      nil -> false
-      config ->
-        Map.has_key?(config, "lineitems") and has_scope?(config, @lineitem_scope_url) and has_scope?(config, @scores_scope_url)
-    end
+      nil ->
+        false
 
+      config ->
+        Map.has_key?(config, "lineitems") and has_scope?(config, @lineitem_scope_url) and
+          has_scope?(config, @scores_scope_url)
+    end
   end
 
   @doc """
@@ -208,17 +230,17 @@ defmodule Oli.Lti.LTI_AGS do
   Returns true if the LTI AGS claim has a particular scope url, false if it does not.
   """
   def has_scope?(lti_ags_claim, scope_url) do
-
     case Map.get(lti_ags_claim, "scope", [])
-    |> Enum.find(nil, fn url -> scope_url == url end) do
+         |> Enum.find(nil, fn url -> scope_url == url end) do
       nil -> false
       _ -> true
     end
-
   end
 
   defp headers(%AccessToken{} = access_token) do
-    [{"Content-Type", "application/json"}, {"Authorization", "Bearer #{access_token.access_token}"}]
+    [
+      {"Content-Type", "application/json"},
+      {"Authorization", "Bearer #{access_token.access_token}"}
+    ]
   end
-
 end

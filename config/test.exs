@@ -25,15 +25,12 @@ config :oli, :recaptcha,
   secret: System.get_env("RECAPTCHA_PRIVATE_KEY", "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe")
 
 # Configure help
-config :oli, :help,
-  dispatcher: Oli.Help.Providers.EmailHelp
+config :oli, :help, dispatcher: Oli.Help.Providers.EmailHelp
 
 # Configure Email
-config :oli, Oli.Mailer,
-  adapter: Bamboo.TestAdapter
+config :oli, Oli.Mailer, adapter: Bamboo.TestAdapter
 
-config :oli, OliWeb.Pow.Mailer,
-  adapter: Bamboo.TestAdapter
+config :oli, OliWeb.Pow.Mailer, adapter: Bamboo.TestAdapter
 
 config :lti_1p3,
   http_client: Oli.Test.MockHTTP

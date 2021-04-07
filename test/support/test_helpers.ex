@@ -52,14 +52,14 @@ defmodule Oli.TestHelpers do
         middle_name: "Marie",
         picture: "https://platform.example.edu/jane.jpg",
         email: "jane#{System.unique_integer([:positive])}@platform.example.edu",
-        locale: "en-US",
+        locale: "en-US"
       })
 
     {:ok, user} =
       User.changeset(%User{}, params)
       |> Repo.insert()
 
-      user
+    user
   end
 
   def author_fixture(attrs \\ %{}) do
@@ -69,17 +69,19 @@ defmodule Oli.TestHelpers do
         email: "author#{System.unique_integer([:positive])}@example.edu",
         given_name: "Test",
         family_name: "Author",
-        system_role_id: Accounts.SystemRole.role_id.author,
+        system_role_id: Accounts.SystemRole.role_id().author
       })
 
-    {:ok, author} = case attrs do
-      %{password: _password, password_confirmation: _password_confirmation} ->
-        Author.changeset(%Author{}, params)
-        |> Repo.insert()
-      _ ->
-        Author.noauth_changeset(%Author{}, params)
-        |> Repo.insert()
-    end
+    {:ok, author} =
+      case attrs do
+        %{password: _password, password_confirmation: _password_confirmation} ->
+          Author.changeset(%Author{}, params)
+          |> Repo.insert()
+
+        _ ->
+          Author.noauth_changeset(%Author{}, params)
+          |> Repo.insert()
+      end
 
     author
   end
@@ -92,7 +94,7 @@ defmodule Oli.TestHelpers do
         institution_email: "institution@example.edu",
         institution_url: "institution.example.edu",
         name: "Example Institution",
-        timezone: "US/Eastern",
+        timezone: "US/Eastern"
       })
 
     {:ok, institution} = Institutions.create_institution(params)
@@ -114,7 +116,7 @@ defmodule Oli.TestHelpers do
         key_set_url: "some key_set_url",
         auth_token_url: "some auth_token_url",
         auth_login_url: "some auth_login_url",
-        auth_server: "some auth_server",
+        auth_server: "some auth_server"
       })
 
     {:ok, pending_registration} = Institutions.create_pending_registration(params)
@@ -131,7 +133,7 @@ defmodule Oli.TestHelpers do
         auth_token_url: "some auth_token_url",
         client_id: "some client_id",
         issuer: "some issuer",
-        key_set_url: "some key_set_url",
+        key_set_url: "some key_set_url"
       })
 
     {:ok, registration} = Institutions.create_registration(params)
@@ -154,23 +156,25 @@ defmodule Oli.TestHelpers do
   def jwk_fixture() do
     %{private_key: private_key} = Lti_1p3.KeyGenerator.generate_key_pair()
 
-    {:ok, jwk} = Lti_1p3.create_jwk(%Lti_1p3.Jwk{
-      pem: private_key,
-      typ: "JWT",
-      alg: "RS256",
-      kid: UUID.uuid4(),
-      active: true,
-    })
+    {:ok, jwk} =
+      Lti_1p3.create_jwk(%Lti_1p3.Jwk{
+        pem: private_key,
+        typ: "JWT",
+        alg: "RS256",
+        kid: UUID.uuid4(),
+        active: true
+      })
 
     jwk
   end
 
   def cache_lti_params(key, lti_params) do
-    {:ok, _lti_params} = Lti_1p3.DataProviders.EctoProvider.create_or_update_lti_params(%Lti_1p3.Tool.LtiParams{
-      key: key,
-      params: lti_params,
-      exp: Timex.from_unix(lti_params["exp"])
-    })
+    {:ok, _lti_params} =
+      Lti_1p3.DataProviders.EctoProvider.create_or_update_lti_params(%Lti_1p3.Tool.LtiParams{
+        key: key,
+        params: lti_params,
+        exp: Timex.from_unix(lti_params["exp"])
+      })
   end
 
   def project_fixture(author, title \\ "test project") do
@@ -179,9 +183,15 @@ defmodule Oli.TestHelpers do
   end
 
   def objective_fixture(project, author) do
-    {:ok, %{resource: objective, revision: revision}} = Course.create_and_attach_resource(
-      project,
-      %{title: "Test learning objective", author_id: author.id, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective")})
+    {:ok, %{resource: objective, revision: revision}} =
+      Course.create_and_attach_resource(
+        project,
+        %{
+          title: "Test learning objective",
+          author_id: author.id,
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective")
+        }
+      )
 
     publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
     Publishing.upsert_published_resource(publication, revision)
@@ -197,10 +207,11 @@ defmodule Oli.TestHelpers do
   end
 
   def make_n_projects(0, _author), do: []
+
   def make_n_projects(n, author) do
     1..n
-      |> Enum.map(fn _ -> Course.create_project("test project", author) end)
-      |> Enum.map(fn {:ok, %{project: project}} -> project end)
+    |> Enum.map(fn _ -> Course.create_project("test project", author) end)
+    |> Enum.map(fn {:ok, %{project: project}} -> project end)
   end
 
   def create_empty_project(attrs \\ %{}) do
@@ -218,7 +229,9 @@ defmodule Oli.TestHelpers do
 
   def author_conn(%{conn: conn}) do
     author = author_fixture()
-    conn = Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+    conn =
+      Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     {:ok, conn: conn, author: author}
   end
@@ -226,24 +239,29 @@ defmodule Oli.TestHelpers do
   def author_project_conn(%{conn: conn}) do
     author = author_fixture()
     [project | _rest] = make_n_projects(1, author)
-    conn = Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+    conn =
+      Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     {:ok, conn: conn, author: author, project: project}
   end
 
   def admin_conn(%{conn: conn}) do
-    admin = author_fixture(%{system_role_id: Accounts.SystemRole.role_id.admin})
-    conn = Pow.Plug.assign_current_user(conn, admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+    admin = author_fixture(%{system_role_id: Accounts.SystemRole.role_id().admin})
+
+    conn =
+      Pow.Plug.assign_current_user(conn, admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     {:ok, conn: conn, admin: admin}
   end
 
   def recycle_author_session(conn, author) do
     Phoenix.ConnTest.recycle(conn)
-      |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+    |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
   end
 
   def author_project_fixture(), do: author_project_fixture(nil)
+
   def author_project_fixture(_conn) do
     author = author_fixture()
     [project | _rest] = make_n_projects(1, author)
@@ -253,28 +271,34 @@ defmodule Oli.TestHelpers do
   def author_project_objective_fixture(%{conn: conn}) do
     author = author_fixture()
     [project | _rest] = make_n_projects(1, author)
-    objective = objective_fixture(project, author);
+    objective = objective_fixture(project, author)
     objective_revision = objective.objective_revision
-    conn = Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+    conn =
+      Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
     {:ok, conn: conn, author: author, project: project, objective_revision: objective_revision}
   end
 
   def read_json_file(filename) do
-    with {:ok, body} <- File.read(filename),
-         {:ok, json} <- Poison.decode(body), do: {:ok, json}
+    with {:ok, body} <- File.read(filename), {:ok, json} <- Poison.decode(body), do: {:ok, json}
   end
 
   def expect_recaptcha_http_post() do
     verify_recaptcha_url = Application.fetch_env!(:oli, :recaptcha)[:verify_url]
+
     Oli.Test.MockHTTP
     |> expect(:post, fn ^verify_recaptcha_url, _body, _headers, _opts ->
-      {:ok, %HTTPoison.Response{
-        status_code: 200,
-        body: Jason.encode!(%{
-          "challenge_ts" => "some-challenge-ts",
-          "hostname" => "testkey.google.com",
-          "success" => true
-        })
-      }}  end)
+      {:ok,
+       %HTTPoison.Response{
+         status_code: 200,
+         body:
+           Jason.encode!(%{
+             "challenge_ts" => "some-challenge-ts",
+             "hostname" => "testkey.google.com",
+             "success" => true
+           })
+       }}
+    end)
   end
 end

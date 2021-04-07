@@ -2,7 +2,6 @@ defmodule OliWeb.Grades.Export do
   use OliWeb, :live_component
 
   def render(assigns) do
-
     link_text = dgettext("grades", "Download Gradebook")
 
     ~L"""
@@ -20,5 +19,4 @@ defmodule OliWeb.Grades.Export do
     </div>
     """
   end
-
 end

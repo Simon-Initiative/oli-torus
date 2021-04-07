@@ -1,5 +1,4 @@
 defmodule OliWeb.Objectives.ObjectiveEntry do
-
   @moduledoc """
   Curriculum item entry component.
   """
@@ -56,7 +55,6 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
   end
 
   def render(assigns) do
-
     margin_for_depth = (assigns.depth - 1) * 40
 
     ~L"""

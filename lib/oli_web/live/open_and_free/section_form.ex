@@ -10,10 +10,16 @@ defmodule OliWeb.OpenAndFree.SectionForm do
 
   @impl true
   def mount(_params, session, socket) do
-    %{"changeset" => changeset, "action" => action, "submit_text" => submit_text, "cancel" => cancel} = session
+    %{
+      "changeset" => changeset,
+      "action" => action,
+      "submit_text" => submit_text,
+      "cancel" => cancel
+    } = session
 
-    socket = socket
-      |> assign(:timezones, Predefined.timezones)
+    socket =
+      socket
+      |> assign(:timezones, Predefined.timezones())
       |> assign(:action, action)
       |> assign(:submit_text, submit_text)
       |> assign(:cancel, cancel)

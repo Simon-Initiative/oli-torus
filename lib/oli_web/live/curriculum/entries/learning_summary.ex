@@ -1,5 +1,4 @@
 defmodule OliWeb.Curriculum.LearningSummaryLive do
-
   @moduledoc """
   Curriculum item entry component.
   """
@@ -16,12 +15,10 @@ defmodule OliWeb.Curriculum.LearningSummaryLive do
   defp determine_objectives(activity_ids, activity_map, objective_map) do
     Enum.map(activity_ids, fn id -> Map.get(activity_map, id) end)
     |> Enum.reduce(MapSet.new(), fn %{objectives: objectives}, map_set ->
-
       Enum.map(objectives, fn {_, ids} -> ids end)
       |> List.flatten()
       |> MapSet.new()
       |> MapSet.union(map_set)
-
     end)
     |> MapSet.to_list()
     |> Enum.map(fn id -> Map.get(objective_map, id) end)
@@ -30,7 +27,12 @@ defmodule OliWeb.Curriculum.LearningSummaryLive do
   defp render_activities(assigns, activities) do
     count = length(activities)
 
-    type = if assigns.child.graded do "summative" else "formative" end
+    type =
+      if assigns.child.graded do
+        "summative"
+      else
+        "formative"
+      end
 
     ~L"""
     <small>

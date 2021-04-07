@@ -8,18 +8,18 @@ defmodule OliWeb.DeliveryView do
   @admin_roles [
     PlatformRoles.get_role(:system_administrator),
     PlatformRoles.get_role(:institution_administrator),
-    ContextRoles.get_role(:context_administrator),
+    ContextRoles.get_role(:context_administrator)
   ]
 
   @instructor_roles [
     PlatformRoles.get_role(:institution_instructor),
-    ContextRoles.get_role(:context_instructor),
+    ContextRoles.get_role(:context_instructor)
   ]
 
   @student_roles [
     PlatformRoles.get_role(:institution_student),
     PlatformRoles.get_role(:institution_learner),
-    ContextRoles.get_role(:context_learner),
+    ContextRoles.get_role(:context_learner)
   ]
 
   defp user_role(conn, user) do
@@ -28,23 +28,34 @@ defmodule OliWeb.DeliveryView do
         cond do
           open_and_free ->
             :open_and_free
-          PlatformRoles.has_roles?(user, @admin_roles, :any) || ContextRoles.has_roles?(user, section_slug, @admin_roles, :any) ->
+
+          PlatformRoles.has_roles?(user, @admin_roles, :any) ||
+              ContextRoles.has_roles?(user, section_slug, @admin_roles, :any) ->
             :administrator
-          PlatformRoles.has_roles?(user, @instructor_roles, :any) || ContextRoles.has_roles?(user, section_slug, @instructor_roles, :any) ->
+
+          PlatformRoles.has_roles?(user, @instructor_roles, :any) ||
+              ContextRoles.has_roles?(user, section_slug, @instructor_roles, :any) ->
             :instructor
-          PlatformRoles.has_roles?(user, @student_roles, :any) || ContextRoles.has_roles?(user, section_slug, @student_roles, :any) ->
+
+          PlatformRoles.has_roles?(user, @student_roles, :any) ||
+              ContextRoles.has_roles?(user, section_slug, @student_roles, :any) ->
             :student
+
           true ->
             :other
         end
+
       _ ->
         cond do
           PlatformRoles.has_roles?(user, @admin_roles, :any) ->
             :administrator
+
           PlatformRoles.has_roles?(user, @instructor_roles, :any) ->
             :instructor
+
           PlatformRoles.has_roles?(user, @student_roles, :any) ->
             :student
+
           true ->
             :other
         end
@@ -82,8 +93,10 @@ defmodule OliWeb.DeliveryView do
     case user_role(conn, user) do
       :open_and_free ->
         true
+
       :student ->
         true
+
       _ ->
         false
     end
@@ -93,12 +106,16 @@ defmodule OliWeb.DeliveryView do
     case user_role(conn, user) do
       :open_and_free ->
         "Open and Free"
+
       :administrator ->
         "Administrator"
+
       :instructor ->
         "Instructor"
+
       :student ->
         "Student"
+
       _ ->
         ""
     end
@@ -108,12 +125,16 @@ defmodule OliWeb.DeliveryView do
     case user_role(conn, user) do
       :open_and_free ->
         "#2C67C4"
+
       :administrator ->
         "#f39c12"
+
       :instructor ->
         "#2ecc71"
+
       :student ->
         "#3498db"
+
       _ ->
         ""
     end
@@ -133,6 +154,7 @@ defmodule OliWeb.DeliveryView do
           </div>
         </div>
         """
+
       picture ->
         ~E"""
         <div class="user-icon">

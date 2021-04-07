@@ -1,7 +1,5 @@
 defmodule Oli.Delivery.Evaluation.Rule do
-
   alias Oli.Delivery.Evaluation.EvaluationContext
-
 
   @doc """
   Parses and evaluates a rule and returns `{:ok, result}` when succesful, where `result`
@@ -11,8 +9,7 @@ defmodule Oli.Delivery.Evaluation.Rule do
   """
   def parse_and_evaluate(rule_as_string, %EvaluationContext{} = context) do
     with {:ok, tree} <- parse(rule_as_string),
-      {:ok, result} <- evaluate(tree, context)
-    do
+         {:ok, result} <- evaluate(tree, context) do
       {:ok, result}
     end
   end
@@ -34,8 +31,6 @@ defmodule Oli.Delivery.Evaluation.Rule do
   defp unwrap({:ok, _, rest, _, _, _}), do: {:error, "could not parse" <> rest}
   defp unwrap({:error, reason, _rest, _, _, _}), do: {:error, reason}
 
-
-
   def evaluate(tree, %EvaluationContext{} = context) do
     try do
       {:ok, eval(tree, context)}
@@ -47,10 +42,12 @@ defmodule Oli.Delivery.Evaluation.Rule do
   defp eval({:&&, lhs, rhs}, context), do: eval(lhs, context) and eval(rhs, context)
   defp eval({:||, lhs, rhs}, context), do: eval(lhs, context) or eval(rhs, context)
   defp eval({:!, rhs}, context), do: !eval(rhs, context)
+
   defp eval({:like, lhs, rhs}, context) do
     {:ok, regex} = Regex.compile(rhs)
     String.match?(eval(lhs, context), regex)
   end
+
   defp eval(:attempt_number, context), do: context.activity_attempt_number |> Integer.to_string()
   defp eval(:input, context), do: context.input
   defp eval(:input_length, context), do: String.length(context.input) |> Integer.to_string()
@@ -70,7 +67,6 @@ defmodule Oli.Delivery.Evaluation.Rule do
   end
 
   defp eval({:eq, lhs, rhs}, context) do
-
     left = eval(lhs, context)
     right = eval(lhs, context)
 
@@ -88,5 +84,4 @@ defmodule Oli.Delivery.Evaluation.Rule do
   defp eval(value, _) when is_binary(value), do: value
 
   defp is_float?(str), do: String.contains?(str, ".")
-
 end

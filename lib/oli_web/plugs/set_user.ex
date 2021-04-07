@@ -45,5 +45,4 @@ defmodule Oli.Plugs.SetCurrentUser do
       conn
     end
   end
-
 end

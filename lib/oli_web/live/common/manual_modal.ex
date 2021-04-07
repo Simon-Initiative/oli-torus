@@ -1,5 +1,4 @@
 defmodule OliWeb.Common.ManualModal do
-
   @moduledoc """
   A reusable LivewComponent for a Bootstrap modal, one that is manually controlled via JavaScript, and that
   must be added and removed from a parent LiveView programmatically when it needs to be shown.
@@ -36,10 +35,11 @@ defmodule OliWeb.Common.ManualModal do
 
   def mount(socket) do
     # Default property values
-    {:ok, assign(socket,
-      ok_label: "Ok",
-      ok_style: "btn-primary")
-    }
+    {:ok,
+     assign(socket,
+       ok_label: "Ok",
+       ok_style: "btn-primary"
+     )}
   end
 
   def render(assigns) do

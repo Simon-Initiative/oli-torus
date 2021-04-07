@@ -39,6 +39,4 @@ defmodule Oli.Authoring do
   def get_default_theme!() do
     Repo.get_by!(Theme, default: true)
   end
-
-
 end

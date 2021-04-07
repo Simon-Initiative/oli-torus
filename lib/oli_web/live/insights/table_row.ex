@@ -29,6 +29,7 @@ defmodule OliWeb.Insights.TableRow do
   end
 
   defp format_percent(float_or_nil) when is_nil(float_or_nil), do: nil
-  defp format_percent(float_or_nil) when is_float(float_or_nil), do: "#{round(100 * float_or_nil)}%"
 
+  defp format_percent(float_or_nil) when is_float(float_or_nil),
+    do: "#{round(100 * float_or_nil)}%"
 end

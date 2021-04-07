@@ -44,7 +44,8 @@ defmodule Oli.Lti_1p3.PlatformInstances do
       nil
 
   """
-  def get_platform_instance_by_client_id(client_id), do: Repo.get_by(PlatformInstance, client_id: client_id)
+  def get_platform_instance_by_client_id(client_id),
+    do: Repo.get_by(PlatformInstance, client_id: client_id)
 
   @doc """
   Creates a platform_instance.
@@ -110,5 +111,4 @@ defmodule Oli.Lti_1p3.PlatformInstances do
   def change_platform_instance(%PlatformInstance{} = platform_instance, attrs \\ %{}) do
     PlatformInstance.changeset(platform_instance, attrs)
   end
-
 end

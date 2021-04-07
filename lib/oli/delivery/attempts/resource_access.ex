@@ -3,7 +3,6 @@ defmodule Oli.Delivery.Attempts.ResourceAccess do
   import Ecto.Changeset
 
   schema "resource_accesses" do
-
     field :access_count, :integer
     field :score, :float
     field :out_of, :float
@@ -22,6 +21,5 @@ defmodule Oli.Delivery.Attempts.ResourceAccess do
     |> cast(attrs, [:access_count, :score, :out_of, :user_id, :section_id, :resource_id])
     |> validate_required([:access_count, :user_id, :section_id, :resource_id])
     |> unique_constraint(:entry, name: :resource_accesses_unique_index)
-
   end
 end

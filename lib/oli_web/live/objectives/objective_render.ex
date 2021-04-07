@@ -1,5 +1,4 @@
 defmodule OliWeb.Objectives.ObjectiveRender do
-
   @moduledoc """
   Curriculum item entry component.
   """
