@@ -10,7 +10,7 @@
     <title>Oli.Grading — OLI Torus v0.7.2</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-87007349f3.js"></script>
+    <script src="dist/sidebar_items-70fe79bfc2.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -156,7 +156,7 @@ and an ordered list of column labels</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#send_score_to_lms/3">send_score_to_lms(lti_launch_params, resource_access, access_token_provider)</a>
+    <a href="#send_score_to_lms/4">send_score_to_lms(section, user, resource_access, access_token_provider)</a>
 
   </div>
 
@@ -217,7 +217,7 @@ Functions
     </a>
     <h1 class="signature">export_csv(section)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L109" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L107" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -239,7 +239,7 @@ Functions
     </a>
     <h1 class="signature">fetch_graded_pages(section_slug)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L220" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L218" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -261,7 +261,7 @@ Functions
     </a>
     <h1 class="signature">fetch_resource_accesses(section_slug)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L208" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L206" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -283,7 +283,7 @@ Functions
     </a>
     <h1 class="signature">fetch_students(section_slug)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L202" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L200" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -305,7 +305,7 @@ Functions
     </a>
     <h1 class="signature">generate_gradebook_for_section(section)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L160" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L158" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -319,14 +319,14 @@ Functions
 and an ordered list of column labels</p><p><code class="inline">{[%GradebookRow{user: %User{}, scores: [%GradebookScore{}, ...]}, ...], [&quot;Quiz 1&quot;, &quot;Quiz 2&quot;]}</code></p>
   </section>
 </section>
-<section class="detail" id="send_score_to_lms/3">
+<section class="detail" id="send_score_to_lms/4">
 
   <div class="detail-header">
-    <a href="#send_score_to_lms/3" class="detail-link" title="Link to this function">
+    <a href="#send_score_to_lms/4" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">send_score_to_lms(lti_launch_params, resource_access, access_token_provider)</h1>
+    <h1 class="signature">send_score_to_lms(section, user, resource_access, access_token_provider)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L33" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -351,7 +351,7 @@ score for the current user to the LMS.</p><p>If sent successfully, returns {:ok,
     </a>
     <h1 class="signature">to_score(sub, resource_access)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L87" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L85" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

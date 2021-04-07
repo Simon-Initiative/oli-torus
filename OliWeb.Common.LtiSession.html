@@ -10,7 +10,7 @@
     <title>OliWeb.Common.LtiSession — OLI Torus v0.7.2</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-87007349f3.js"></script>
+    <script src="dist/sidebar_items-70fe79bfc2.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -90,12 +90,12 @@ OliWeb.Common.LtiSession <small class="app-vsn">(OLI Torus v0.7.2)</small>
 
         <section id="moduledoc">
 <p>A module for managing a user's session data across possibly different
-platforms and course sections.</p><p>For example:</p><pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="6101110781-1">%{</span><span class="w">
-  </span><span class="ss">user_params</span><span class="p">:</span><span class="w"> </span><span class="n">string</span><span class="p" data-group-id="6101110781-2">(</span><span class="p" data-group-id="6101110781-2">)</span><span class="p">,</span><span class="w">        </span><span class="c1"># latest lti params associated with this user from the most recent launch</span><span class="w">
-  </span><span class="ss">sections</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6101110781-3">%{</span><span class="w">
-    </span><span class="p" data-group-id="6101110781-4">[</span><span class="n">sections_slug</span><span class="p" data-group-id="6101110781-4">]</span><span class="p">:</span><span class="w"> </span><span class="n">string</span><span class="p" data-group-id="6101110781-5">(</span><span class="p" data-group-id="6101110781-5">)</span><span class="w">   </span><span class="c1"># lti params for a particular user and section</span><span class="w">
-  </span><span class="p" data-group-id="6101110781-3">}</span><span class="w">
-</span><span class="p" data-group-id="6101110781-1">}</span></code></pre><p>A plug will set lti_params in assigns using the user id and and lti_params if a section_slug is present in the url</p>
+platforms and course sections.</p><p>For example:</p><pre><code class="nohighlight makeup elixir"><span class="p" data-group-id="7058281841-1">%{</span><span class="w">
+  </span><span class="ss">user_params</span><span class="p">:</span><span class="w"> </span><span class="n">string</span><span class="p" data-group-id="7058281841-2">(</span><span class="p" data-group-id="7058281841-2">)</span><span class="p">,</span><span class="w">        </span><span class="c1"># latest lti params associated with this user from the most recent launch</span><span class="w">
+  </span><span class="ss">sections</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7058281841-3">%{</span><span class="w">
+    </span><span class="p" data-group-id="7058281841-4">[</span><span class="n">sections_slug</span><span class="p" data-group-id="7058281841-4">]</span><span class="p">:</span><span class="w"> </span><span class="n">string</span><span class="p" data-group-id="7058281841-5">(</span><span class="p" data-group-id="7058281841-5">)</span><span class="w">   </span><span class="c1"># lti params for a particular user and section</span><span class="w">
+  </span><span class="p" data-group-id="7058281841-3">}</span><span class="w">
+</span><span class="p" data-group-id="7058281841-1">}</span></code></pre><p>A plug will set lti_params in assigns using the user id and and lti_params if a section_slug is present in the url</p>
         </section>
 
 
@@ -114,29 +114,11 @@ platforms and course sections.</p><p>For example:</p><pre><code class="nohighlig
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#get_section_params/2">get_section_params(conn, section_slug)</a>
-
-  </div>
-
-    <div class="summary-synopsis"><p>Gets the latest lti params key for a particular user's section from the lti session</p></div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
     <a href="#get_user_params/1">get_user_params(conn)</a>
 
   </div>
 
     <div class="summary-synopsis"><p>Gets the latest lti params key for a particular user from the lti session</p></div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#put_section_params/3">put_section_params(conn, section_slug, lti_params_key)</a>
-
-  </div>
-
-    <div class="summary-synopsis"><p>Puts the user sub and lti params key for a particular section</p></div>
 
 </div>
 <div class="summary-row">
@@ -163,28 +145,6 @@ platforms and course sections.</p><p>For example:</p><pre><code class="nohighlig
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="get_section_params/2">
-
-  <div class="detail-header">
-    <a href="#get_section_params/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">get_section_params(conn, section_slug)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/lti_session.ex#L64" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-<p>Gets the latest lti params key for a particular user's section from the lti session</p>
-  </section>
-</section>
 <section class="detail" id="get_user_params/1">
 
   <div class="detail-header">
@@ -205,28 +165,6 @@ Functions
   <section class="docstring">
 
 <p>Gets the latest lti params key for a particular user from the lti session</p>
-  </section>
-</section>
-<section class="detail" id="put_section_params/3">
-
-  <div class="detail-header">
-    <a href="#put_section_params/3" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">put_section_params(conn, section_slug, lti_params_key)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/lti_session.ex#L48" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-<p>Puts the user sub and lti params key for a particular section</p>
   </section>
 </section>
 <section class="detail" id="put_user_params/2">

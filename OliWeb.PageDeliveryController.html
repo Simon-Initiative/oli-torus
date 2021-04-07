@@ -10,7 +10,7 @@
     <title>OliWeb.PageDeliveryController — OLI Torus v0.7.2</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-87007349f3.js"></script>
+    <script src="dist/sidebar_items-70fe79bfc2.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -132,13 +132,6 @@ OliWeb.PageDeliveryController <small class="app-vsn">(OLI Torus v0.7.2)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#link/2">link(conn, map)</a>
-
-  </div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
     <a href="#page/2">page(conn, map)</a>
 
   </div>
@@ -153,7 +146,7 @@ OliWeb.PageDeliveryController <small class="app-vsn">(OLI Torus v0.7.2)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#send_one_grade/2">send_one_grade(lti_launch_params, resource_access)</a>
+    <a href="#send_one_grade/3">send_one_grade(section, user, resource_access)</a>
 
   </div>
 
@@ -189,7 +182,7 @@ Functions
     </a>
     <h1 class="signature">after_finalized(conn, section_slug, revision_slug, attempt_guid, user, grade_sync_result)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L209" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L194" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -211,7 +204,7 @@ Functions
     </a>
     <h1 class="signature">export_gradebook(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L250" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L234" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -233,7 +226,7 @@ Functions
     </a>
     <h1 class="signature">finalize_attempt(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L187" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L173" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -255,29 +248,7 @@ Functions
     </a>
     <h1 class="signature">index(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L19" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
-<section class="detail" id="link/2">
-
-  <div class="detail-header">
-    <a href="#link/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">link(conn, map)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L52" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L18" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -299,7 +270,7 @@ Functions
     </a>
     <h1 class="signature">page(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L35" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L34" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -321,7 +292,7 @@ Functions
     </a>
     <h1 class="signature">review_attempt(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L149" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L138" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -334,16 +305,16 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="send_one_grade/2">
+<section class="detail" id="send_one_grade/3">
 
   <div class="detail-header">
-    <a href="#send_one_grade/2" class="detail-link" title="Link to this function">
+    <a href="#send_one_grade/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">send_one_grade(lti_launch_params, resource_access)</h1>
+    <h1 class="signature">send_one_grade(section, user, resource_access)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L183" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L169" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -365,7 +336,7 @@ Functions
     </a>
     <h1 class="signature">start_attempt(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L128" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/page_delivery_controller.ex#L117" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

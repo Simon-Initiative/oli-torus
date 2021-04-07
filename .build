@@ -65,6 +65,7 @@ Oli.Authoring.Locks.html
 Oli.Authoring.MediaLibrary.ItemOptions.html
 Oli.Authoring.MediaLibrary.MediaItem.html
 Oli.Authoring.MediaLibrary.html
+Oli.Authoring.ProjectSearch.html
 Oli.Authoring.Theme.html
 Oli.Authoring.html
 Oli.Delivery.ActivityProvider.html
@@ -117,10 +118,12 @@ Oli.Lti_1p3.Tool.Registration.html
 Oli.Mailer.html
 Oli.Plugs.AuthorizeProject.html
 Oli.Plugs.EnsureAdmin.html
-Oli.Plugs.LoadLtiParams.html
+Oli.Plugs.MaybeEnrollOpenAndFreeUser.html
 Oli.Plugs.NoCache.html
 Oli.Plugs.RegistrationCaptcha.html
 Oli.Plugs.RemoveXFrameOptions.html
+Oli.Plugs.RequireLtiParams.html
+Oli.Plugs.RequireSection.html
 Oli.Plugs.SetCurrentUser.html
 Oli.Plugs.SetDefaultPow.html
 Oli.Predefined.html
@@ -236,7 +239,6 @@ OliWeb.Grades.GradeSync.html
 OliWeb.Grades.GradesLive.html
 OliWeb.Grades.LineItems.html
 OliWeb.HelpController.html
-OliWeb.HelpDeliveryController.html
 OliWeb.HelpDeliveryView.html
 OliWeb.HelpView.html
 OliWeb.IngestController.html
@@ -273,6 +275,9 @@ OliWeb.ObjectivesController.ObjectiveCreationAttributes.html
 OliWeb.ObjectivesController.ObjectiveResponse.html
 OliWeb.ObjectivesController.ObjectiveUpdateAttributes.html
 OliWeb.ObjectivesController.html
+OliWeb.OpenAndFree.SectionForm.html
+OliWeb.OpenAndFreeController.html
+OliWeb.OpenAndFreeView.html
 OliWeb.PageDeliveryController.html
 OliWeb.PageDeliveryView.html
 OliWeb.PlatformInstanceController.html
@@ -327,6 +332,7 @@ OliWeb.Telemetry.html
 OliWeb.UIPaletteController.html
 OliWeb.UIPaletteView.html
 OliWeb.UserSocket.html
+OliWeb.ViewHelpers.html
 OliWeb.WorkspaceController.html
 OliWeb.WorkspaceView.html
 OliWeb.html
@@ -338,8 +344,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-fe83157eda.js
-dist/sidebar_items-87007349f3.js
+dist/search_items-56a14feebd.js
+dist/sidebar_items-70fe79bfc2.js
 index.html
 license.html
 readme.html

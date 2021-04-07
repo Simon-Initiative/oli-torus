@@ -10,7 +10,7 @@
     <title>API Reference — OLI Torus v0.7.2</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-87007349f3.js"></script>
+    <script src="dist/sidebar_items-70fe79bfc2.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -338,7 +338,7 @@ using criteria, etc.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><dataset>  &lt;name&gt;example_open_and_free_course-TxE5btqmuCGYEmPUKfewoX&lt;/name&gt;  &lt;level type=&quot;Page&quot;&gt;    &lt;name&gt;one&lt;/name&gt;    &lt;problem tutorFlag=&quot;tutor&quot;&gt;      &lt;name&gt;one-part1&lt;/name&gt;    &lt;/problem&gt;  &lt;/level&gt;</dataset></div>
+    <div class="summary-synopsis"><dataset>  &lt;name&gt;example_course-TxE5btqmuCGYEmPUKfewoX&lt;/name&gt;  &lt;level type=&quot;Page&quot;&gt;    &lt;name&gt;one&lt;/name&gt;    &lt;problem tutorFlag=&quot;tutor&quot;&gt;      &lt;name&gt;one-part1&lt;/name&gt;    &lt;/problem&gt;  &lt;/level&gt;</dataset></div>
 
 </div>
 <div class="summary-row">
@@ -401,7 +401,7 @@ using criteria, etc.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><context_message context_message_id="t.stark+0@avengers.com-one-part1" name="START_PROBLEM">  &lt;meta&gt;    &lt;user_id&gt;t.stark+0@avengers.com&lt;/user_id&gt;    &lt;session_id&gt;t.stark+0@avengers.com 2020-06-30 00:18&lt;/session_id&gt;    &lt;time&gt;2020-06-30 00:18&lt;/time&gt;    &lt;time_zone&gt;GMT&lt;/time_zone&gt;  &lt;/meta&gt;  &lt;dataset&gt;    &lt;name&gt;example_open_and_free_course-XVeLxRjNVUdSnzsMuFeZNn&lt;/name&gt;    &lt;name&gt;Activity one&lt;/name&gt;    &lt;problem_name&gt;Activity one, part 1&lt;/problem_name&gt;  &lt;/dataset&gt;</context_message></div>
+    <div class="summary-synopsis"><context_message context_message_id="t.stark+0@avengers.com-one-part1" name="START_PROBLEM">  &lt;meta&gt;    &lt;user_id&gt;t.stark+0@avengers.com&lt;/user_id&gt;    &lt;session_id&gt;t.stark+0@avengers.com 2020-06-30 00:18&lt;/session_id&gt;    &lt;time&gt;2020-06-30 00:18&lt;/time&gt;    &lt;time_zone&gt;GMT&lt;/time_zone&gt;  &lt;/meta&gt;  &lt;dataset&gt;    &lt;name&gt;example_course-XVeLxRjNVUdSnzsMuFeZNn&lt;/name&gt;    &lt;name&gt;Activity one&lt;/name&gt;    &lt;problem_name&gt;Activity one, part 1&lt;/problem_name&gt;  &lt;/dataset&gt;</context_message></div>
 
 </div>
 <div class="summary-row">
@@ -607,6 +607,13 @@ they are stored in the database.</p></div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="Oli.Authoring.MediaLibrary.MediaItem.html">Oli.Authoring.MediaLibrary.MediaItem</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Authoring.ProjectSearch.html">Oli.Authoring.ProjectSearch</a>
 
   </div>
 
@@ -990,7 +997,7 @@ consumable by various tools such as Excel (CSV) or an LMS API.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="Oli.Plugs.LoadLtiParams.html">Oli.Plugs.LoadLtiParams</a>
+    <a href="Oli.Plugs.MaybeEnrollOpenAndFreeUser.html">Oli.Plugs.MaybeEnrollOpenAndFreeUser</a>
 
   </div>
 
@@ -1012,6 +1019,20 @@ consumable by various tools such as Excel (CSV) or an LMS API.</p></div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="Oli.Plugs.RemoveXFrameOptions.html">Oli.Plugs.RemoveXFrameOptions</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Plugs.RequireLtiParams.html">Oli.Plugs.RequireLtiParams</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Plugs.RequireSection.html">Oli.Plugs.RequireSection</a>
 
   </div>
 
@@ -1903,13 +1924,6 @@ must be added and removed from a parent LiveView programmatically when it needs 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="OliWeb.HelpDeliveryController.html">OliWeb.HelpDeliveryController</a>
-
-  </div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
     <a href="OliWeb.HelpDeliveryView.html">OliWeb.HelpDeliveryView</a>
 
   </div>
@@ -2173,6 +2187,27 @@ and update the objectives present in a course project.</p></div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="OliWeb.ObjectivesController.ObjectiveUpdateAttributes.html">OliWeb.ObjectivesController.ObjectiveUpdateAttributes</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.OpenAndFree.SectionForm.html">OliWeb.OpenAndFree.SectionForm</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.OpenAndFreeController.html">OliWeb.OpenAndFreeController</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.OpenAndFreeView.html">OliWeb.OpenAndFreeView</a>
 
   </div>
 
@@ -2557,6 +2592,13 @@ and update the objectives present in a course project.</p></div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="OliWeb.UserSocket.html">OliWeb.UserSocket</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.ViewHelpers.html">OliWeb.ViewHelpers</a>
 
   </div>
 
