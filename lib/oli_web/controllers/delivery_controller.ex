@@ -49,7 +49,12 @@ defmodule OliWeb.DeliveryController do
 
       # section has been configured
       {_author, section} ->
-        redirect_to_page_delivery(conn, section)
+        if (user.research_opt_out === nil) do
+          render_research_consent(conn)
+        else
+          redirect_to_page_delivery(conn, section)
+        end
+
     end
 
   end
@@ -61,6 +66,12 @@ defmodule OliWeb.DeliveryController do
 
   defp render_getting_started(conn) do
     render(conn, "getting_started.html")
+  end
+
+  defp render_research_consent(conn) do
+    conn
+    |> assign(:opt_out, nil)
+    |> render( "research_consent.html")
   end
 
   defp render_configure_section(conn, author) do
@@ -78,6 +89,21 @@ defmodule OliWeb.DeliveryController do
 
   defp redirect_to_page_delivery(conn, section) do
     redirect(conn, to: Routes.page_delivery_path(conn, :index, section.slug))
+  end
+
+  def research_consent(conn, %{"consent" => consent}) do
+    user = conn.assigns.current_user
+    lti_params = conn.assigns.lti_params
+    section = Sections.get_section_from_lti_params(lti_params)
+
+    case Accounts.update_user(user, %{research_opt_out: consent !== "true"}) do
+      {:ok, _} -> redirect_to_page_delivery(conn, section)
+      {:error, _} ->
+        conn
+        |> put_flash(:error, "Unable to persist research consent option")
+        |> redirect_to_page_delivery(section)
+    end
+
   end
 
   def link_account(conn, _params) do

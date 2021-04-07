@@ -355,6 +355,7 @@ defmodule OliWeb.Router do
     post "/link_account", DeliveryController, :process_link_account_user
     get "/create_and_link_account", DeliveryController, :create_and_link_account
     post "/create_and_link_account", DeliveryController, :process_create_and_link_account_user
+    post "/research_consent",  DeliveryController, :research_consent
 
     post "/section", DeliveryController, :create_section
     get "/signout", DeliveryController, :signout

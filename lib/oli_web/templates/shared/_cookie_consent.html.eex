@@ -1,0 +1,315 @@
+<div class="modal fade" id="modal-cookie-consent" tabindex="-1" role="dialog" aria-labelledby="cookie-consent-modal"
+     aria-hidden="true">
+  <div class="modal-dialog " role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">We use cookies</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body"> <p>We use cookies on our website to enhance site navigation, analyze site usage,
+        and assist in our marketing efforts. By clicking "Accept", you consent to the storing
+          of cookies on your device. You can change your cookie settings at any time by clicking "Cookie Preferences"</p>
+          <p><a href="https://www.cmu.edu/legal/privacy-notice.html">Privacy Notice</a></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-primary" onclick="cookiePreferences()">Cookie Preferences</button>
+        <button type="button" class="btn btn-primary" onclick="storeConsent()">Accept</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="modal-cookie-preferences" tabindex="-1" role="dialog"
+     aria-labelledby="cookie-preferences-modal" aria-hidden="true">
+  <div class="modal-dialog " role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cookie Preferences</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+          <div class="mb-4"><p>We are committed to privacy and data protection. When you provide us with your personal
+              data, including preferences, we will only process information that is necessary for the purpose for which
+              it has been collected.</p>
+            <p><a href="https://www.cmu.edu/legal/privacy-notice.html">Privacy Notice</a></p>
+          </div>
+          <div class="accordion" id="preferenceAccordion">
+          <div class="card z-depth-0 bordered">
+            <div class="card-header d-flex justify-content-between" id="headingOne">
+              <div class="mb-0 d-inline-block">
+                <button class="btn btn-link" type="button" data-toggle="collapse"
+                        data-target="#collapseOne"
+                        aria-expanded="true" aria-controls="collapseOne">
+                  Strictly Necessary Cookies
+                  <i class="fas fa-angle-down rotate-icon"></i>
+                </button>
+              </div>
+              <div class="custom-control custom-switch d-inline-block">
+                <input type="checkbox" class="custom-control-input" id="strictCookies" checked disabled>
+                <label class="custom-control-label small pt-1" for="strictCookies">On</label>
+              </div>
+
+            </div>
+            <div id="collapseOne" class="collapse" aria-labelledby="headingOne"
+                 data-parent="#preferenceAccordion">
+              <div class="card-body">
+                  <div class="mb-2">
+                <p>These cookies are necessary for our website to function properly and cannot be switched off in our systems.</p>
+                <p>You can set your browser to block or alert you about these cookies, but some parts of
+                  the site will not then work. These cookies do not store any personally identifiable
+                  information.</p>
+                  </div>
+                  <div class="small">
+                    <a href="#demo" data-toggle="collapse">View Cookies</a>
+                    <div id="demo" class="collapse">
+                        <ul class="list-unstyled">
+                            <li>
+                                <div class="row">
+                                    <div class="col-sm-4">Name</div>
+                                    <div>_oli_key</div>
+                                </div>
+                              <div class="row">
+                                <div class="col-sm-4">Host</div>
+                                <div><%=Application.get_env(:oli, OliWeb.Endpoint)
+                                |> Keyword.get(:url)
+                                 |> Keyword.get(:host)%></div>
+                              </div>
+                              <div class="row">
+                                <div class="col-sm-4">Duration</div>
+                                <div>Session</div>
+                              </div>
+                              <div class="row">
+                                <div class="col-sm-4">Type</div>
+                                <div>1st Party</div>
+                              </div>
+                              <div class="row">
+                                <div class="col-sm-4">Category</div>
+                                <div>Strictly Necessary Cookies</div>
+                              </div>
+                              <div class="row">
+                                <div class="col-sm-4">Description</div>
+                                <div>Used to track user login</div>
+                              </div>
+                            </li>
+                          <li>
+                            <div class="row">
+                              <div class="col-sm-4">Name</div>
+                              <div>_oli_key</div>
+                            </div>
+                            <div class="row">
+                              <div class="col-sm-4">Host</div>
+                              <div><%=Application.get_env(:oli, OliWeb.Endpoint)
+                                |> Keyword.get(:url)
+                                 |> Keyword.get(:host)%></div>
+                            </div>
+                            <div class="row">
+                              <div class="col-sm-4">Duration</div>
+                              <div>Session</div>
+                            </div>
+                            <div class="row">
+                              <div class="col-sm-4">Type</div>
+                              <div>1st Party</div>
+                            </div>
+                            <div class="row">
+                              <div class="col-sm-4">Category</div>
+                              <div>Strictly Necessary Cookies</div>
+                            </div>
+                            <div class="row">
+                              <div class="col-sm-4">Description</div>
+                              <div>Used to track user login</div>
+                            </div>
+                          </li>
+
+                        </ul>
+
+                    </div>
+                  </div>
+              </div>
+            </div>
+          </div>
+          <div class="card z-depth-0 bordered">
+            <div class="card-header d-flex justify-content-between" id="headingTwo">
+              <div class="mb-0 d-inline-block">
+                <button class="btn btn-link collapsed" type="button" data-toggle="collapse"
+                        data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                  Functionality Cookies
+                  <i class="fas fa-angle-down rotate-icon"></i>
+                </button>
+              </div>
+              <div class="custom-control custom-switch d-inline-block">
+                <input type="checkbox" class="custom-control-input" id="functionalCookies"
+                       onclick="prefChange(this)">
+                <label class="custom-control-label small pt-1" for="functionalCookies">On</label>
+              </div>
+
+            </div>
+            <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo"
+                 data-parent="#preferenceAccordion">
+              <div class="card-body">
+                <p>These cookies are used to provide you with a more personalized experience on our
+                  website and to remember choices you make when you use our website.</p>
+                <p>For example, we may use functionality cookies to remember your language preferences
+                  or remember your login details.</p>
+              </div>
+            </div>
+          </div>
+          <div class="card z-depth-0 bordered">
+            <div class="card-header d-flex justify-content-between" id="headingThree">
+              <div class="mb-0 d-inline-block">
+                <button class="btn btn-link collapsed" type="button" data-toggle="collapse"
+                        data-target="#collapseThree" aria-expanded="false"
+                        aria-controls="collapseThree">
+                  Analytics Cookies
+                  <i class="fas fa-angle-down rotate-icon"></i>
+                </button>
+              </div>
+              <div class="custom-control custom-switch d-inline-block">
+                <input type="checkbox" class="custom-control-input" id="analyticsCookies"
+                       onclick="prefChange(this)">
+                <label class="custom-control-label small pt-1" for="analyticsCookies">On</label>
+              </div>
+            </div>
+            <div id="collapseThree" class="collapse" aria-labelledby="headingThree"
+                 data-parent="#preferenceAccordion">
+              <div class="card-body">
+                <p>These cookies are used to collect information to analyze the traffic to our website
+                  and how visitors are using our website.</p>
+                <p>For example, these cookies may track things such as how long you spend on the website
+                  or the pages you visit which helps us to understand how we can improve our website
+                  site for you.</p>
+                <p>The information collected through these tracking and performance cookies do not
+                  identify any individual visitor.</p>
+              </div>
+            </div>
+          </div>
+          <div class="card z-depth-0 bordered">
+            <div class="card-header d-flex justify-content-between" id="headingFour">
+              <div class="mb-0 d-inline-block">
+                <button class="btn btn-link collapsed" type="button" data-toggle="collapse"
+                        data-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                  Targeting Cookies
+                  <i class="fas fa-angle-down rotate-icon"></i>
+                </button>
+              </div>
+              <div class="custom-control custom-switch d-inline-block">
+                <input type="checkbox" class="custom-control-input" id="targetingCookies"
+                       onclick="prefChange(this)">
+                <label class="custom-control-label small pt-1" for="targetingCookies">Off</label>
+              </div>
+            </div>
+            <div id="collapseFour" class="collapse" aria-labelledby="headingFour"
+                 data-parent="#preferenceAccordion">
+              <div class="card-body">
+                <p>These cookies are used to show advertising that is likely to be of interest to you
+                  based on your browsing habits.</p>
+                <p>These cookies, as served by our content and/or advertising providers, may combine
+                  information they collected from our website with other information they have
+                  independently collected relating to your web browser's activities across their
+                  network of websites.</p>
+                <p>If you choose to remove or disable these targeting or advertising cookies, you will
+                  still see adverts but they may not be relevant to you.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-primary" onclick="savePreferences()">Save my preferences
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  $(function () {
+    let optInCookie = getCookie('_cky_opt_in');
+    if (optInCookie === "") {
+      setCookie("_cky_opt_in", "false", 365);
+      optInCookie = "false";
+    }
+    //if (optInCookie === "false") {
+    const userOptions = consentOptions();
+    setChecked('#functionalCookies', userOptions.functionality)
+    setChecked('#analyticsCookies', userOptions.analytics)
+    setChecked('#targetingCookies', userOptions.targeting)
+    $('#modal-cookie-consent').modal('show');
+    //}
+  });
+
+  const setChecked = (selector, checked) => {
+    let elem = document.querySelector(selector);
+    elem.checked = checked;
+    prefChange(elem);
+  }
+
+  const storeConsent = () => {
+    const userOptions = consentOptions();
+    setCookie("_cky_opt_choices", JSON.stringify(userOptions), 365);
+    setCookie("_cky_opt_in", "true", 365);
+    $('#modal-cookie-consent').modal('hide');
+  }
+
+  const consentOptions = () => {
+    let optSetCookie = getCookie('_cky_opt_choices');
+    let userOptions = {
+      necessary: true,
+      functionality: true,
+      analytics: true,
+      targeting: false
+    }
+    if (optSetCookie !== "") {
+      userOptions = JSON.parse(optSetCookie);
+    }
+    return userOptions;
+  }
+
+  const cookiePreferences = () => {
+    $('#modal-cookie-consent').modal('hide');
+    $('#modal-cookie-preferences').modal('show');
+  }
+
+  const savePreferences = () => {
+    let userOptions = {
+      necessary: true,
+      functionality: document.querySelector('#functionalCookies').checked,
+      analytics: document.querySelector('#analyticsCookies').checked,
+      targeting: document.querySelector('#targetingCookies').checked
+    }
+    setCookie("_cky_opt_choices", JSON.stringify(userOptions), 365);
+    $('#modal-cookie-preferences').modal('hide');
+  }
+
+  const prefChange = (checkbox) => {
+    const label = document.querySelector("label[for=" + checkbox.id + "]");
+    if (!label) return
+    label.innerHTML = 'Off';
+    if (checkbox.checked) label.innerHTML = 'On';
+  }
+
+  const setCookie = (cname, cvalue, exdays) => {
+    const d = new Date();
+    d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+    const expires = "expires=" + d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/;samesite=lax";
+  }
+
+  const getCookie = (cname) => {
+    const name = cname + "=";
+    const decodedCookie = decodeURIComponent(document.cookie);
+    const ca = decodedCookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
+  }
+
+</script>

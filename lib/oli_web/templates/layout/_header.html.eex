@@ -1,3 +1,5 @@
+<%= render OliWeb.SharedView, "_cookie_consent.html" %>
+
 <nav class="navbar navbar-expand">
   <div class="container">
     <a class="navbar-brand oli-logo mr-auto" href="<%= Routes.static_page_path(@conn, :index) %>">
@@ -13,10 +15,11 @@
       <div>
         <%= link "My Projects", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive), class: "btn btn-primary mx-2" %>
         <%= link "Sign out", to: Routes.pow_session_path(@conn, :delete), method: :delete, class: "btn btn-link ml-2" %>
-      <div>
+      </div>
     <% else %>
       <%= if @conn.request_path == "/" do %>
         <%= link "Sign in", to: Routes.pow_session_path(@conn, :new), class: "btn btn-primary my-2 my-sm-0" %>
       <% end %>
     <% end %>
+  </div>
 </nav>
