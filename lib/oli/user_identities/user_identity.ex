@@ -5,6 +5,6 @@ defmodule Oli.UserIdentities.UserIdentity do
   schema "user_identities" do
     pow_assent_user_identity_fields()
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 end

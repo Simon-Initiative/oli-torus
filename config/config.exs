@@ -40,6 +40,10 @@ config :oli,
   world_universities_and_domains_json: world_universities_and_domains_json,
   countries_json: countries_json
 
+# Configure database
+config :oli, Oli.Repo,
+  migration_timestamps: [type: :timestamptz]
+
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,
   live_view: [signing_salt: System.get_env("LIVE_VIEW_SALT", "LIVE_VIEW_SALT")],
