@@ -23,6 +23,7 @@ jobs:
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
           echo "::set-output name=deploy_host::tokamak.oli.cmu.edu"
+          echo "::set-env name=workspace::$GITHUB_WORKSPACE"
 
       - name: 📦💽 Package
         uses: ./.github/actions/phoenix-builder
@@ -44,7 +45,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.SIMON_BOT_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SIMON_BOT_AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: 'us-east-2'
-          SOURCE_DIR: '${{ env.GITHUB_WORKSPACE }}/oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip'
+          SOURCE_DIR: '${{ env.workspace }}/oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip'
 
       # - name: 🚢💰 Deploy to test using SSH
       #   uses: fifsky/ssh-action@master
