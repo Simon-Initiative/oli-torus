@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import {
   DeliveryElement, DeliveryElementProps,
-  EvaluationResponse, ResetActivityResponse, RequestHintResponse
+  EvaluationResponse, ResetActivityResponse, RequestHintResponse,
 } from '../DeliveryElement';
 import { CheckAllThatApplyModelSchema } from './schema';
 import * as ActivityTypes from '../types';
@@ -87,7 +87,10 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
   const onSubmit = () => {
     props.onSubmitActivity(attemptState.attemptGuid,
       // update this input too
-      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: selectionToInput(undefined) } }])
+      [{
+        attemptGuid: attemptState.parts[0].attemptGuid,
+        response: { input: selectionToInput(undefined) },
+      }])
       .then((response: EvaluationResponse) => {
         if (response.evaluations.length > 0) {
           const { score, out_of, feedback, error } = response.evaluations[0];
@@ -114,7 +117,10 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
     // Then in the rule evaluator, we will say
     // `input like id1 && input like id2 && input like id3`
     props.onSaveActivity(attemptState.attemptGuid,
-      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: selectionToInput(id) } }]);
+      [{
+        attemptGuid: attemptState.parts[0].attemptGuid,
+        response: { input: selectionToInput(id) },
+      }]);
   };
 
   const onRequestHint = () => {
