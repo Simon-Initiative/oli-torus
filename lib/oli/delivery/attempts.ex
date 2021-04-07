@@ -1,6 +1,6 @@
 defmodule Oli.Delivery.Attempts do
-
   import Ecto.Query, warn: false
+
   alias Oli.Repo
   alias Oli.Delivery.Sections.{Section, Enrollment}
   alias Oli.Delivery.Sections
@@ -1101,6 +1101,25 @@ defmodule Oli.Delivery.Attempts do
       objective_id: objective_id,
       objective_revision_id: revision_id
     })
+  end
+
+  @doc """
+  Gets a section by activity attempt guid.
+  ## Examples
+      iex> get_section_by_activity_attempt_guid("123")
+      %Section{}
+      iex> get_section_by_activity_attempt_guid("111")
+      nil
+  """
+  def get_section_by_activity_attempt_guid(activity_attempt_guid) do
+    Repo.one(
+      from activity_attempt in ActivityAttempt,
+      join: resource_attempt in ResourceAttempt, on: resource_attempt.id == activity_attempt.resource_attempt_id,
+      join: resource_access in ResourceAccess, on: resource_access.id == resource_attempt.resource_access_id,
+      join: section in Section, on: section.id == resource_access.section_id,
+      where: activity_attempt.attempt_guid == ^activity_attempt_guid,
+      select: section
+    )
   end
 
   @doc """

@@ -279,6 +279,7 @@ export const schema = {
   img: media,
   youtube: media,
   audio: media,
+  iframe: media,
   table: {
     isVoid: false,
     isBlock: true,

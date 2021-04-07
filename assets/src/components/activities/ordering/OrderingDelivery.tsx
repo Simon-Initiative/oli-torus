@@ -15,6 +15,7 @@ import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/Evaluation';
 import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
+import { defaultWriterContext, WriterContext } from 'data/content/writers/context';
 
 type Evaluation = {
   score: number,
@@ -49,11 +50,12 @@ const Selection = ({ selected, onDeselect, isEvaluated }: SelectionProps) => {
 interface ChoicesProps {
   choices: ActivityTypes.Choice[];
   selected: ActivityTypes.ChoiceId[];
+  context: WriterContext;
   onSelect: (id: string) => void;
   isEvaluated: boolean;
 }
 
-const Choices = ({ choices, selected, onSelect, isEvaluated }: ChoicesProps) => {
+const Choices = ({ choices, selected, context, onSelect, isEvaluated }: ChoicesProps) => {
   const isSelected = (choiceId: string) => !!selected.find(s => s === choiceId);
   return (
     <div className="choices">
@@ -63,6 +65,7 @@ const Choices = ({ choices, selected, onSelect, isEvaluated }: ChoicesProps) => 
           onClick={() => onSelect(choice.id)}
           selected={isSelected(choice.id)}
           choice={choice}
+          context={context}
           isEvaluated={isEvaluated}
           index={index} />)}
     </div>
@@ -73,18 +76,19 @@ interface ChoiceProps {
   choice: ActivityTypes.Choice;
   index: number;
   selected: boolean;
+  context: WriterContext;
   // fix
   onClick: () => void;
   isEvaluated: boolean;
 }
 
-const Choice = ({ choice, index, selected, onClick, isEvaluated }: ChoiceProps) => {
+const Choice = ({ choice, index, selected, context, onClick, isEvaluated }: ChoiceProps) => {
   return (
     <div key={choice.id}
       onClick={isEvaluated ? undefined : onClick}
       className={`choice ${selected ? 'selected' : ''}`}>
       <span className="choice-index">{index + 1}</span>
-      <HtmlContentModelRenderer text={choice.content} />
+      <HtmlContentModelRenderer text={choice.content} context={context}/>
     </div>
   );
 };
@@ -107,6 +111,8 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
 
   const isEvaluated = attemptState.score !== null;
   const orderedChoiceIds = () => selected.join(' ');
+
+  const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
 
   const onSubmit = () => {
     props.onSubmitActivity(attemptState.attemptGuid,
@@ -166,7 +172,7 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
   };
 
   const evaluationSummary = isEvaluated
-    ? <Evaluation key="evaluation" attemptState={attemptState} />
+    ? <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
     : null;
 
   const reset = isEvaluated && !props.graded
@@ -180,7 +186,7 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
   const ungradedDetails = props.graded ? null : [
     evaluationSummary,
     <Hints key="hints" onClick={onRequestHint} hints={hints}
-      hasMoreHints={hasMoreHints} isEvaluated={isEvaluated} />];
+      hasMoreHints={hasMoreHints} isEvaluated={isEvaluated} context={writerContext} />];
 
   const gradedDetails = props.graded && props.progressState === 'in_review' ? [
     evaluationSummary] : null;
@@ -208,14 +214,14 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
     <div className={`activity ordering-activity ${isEvaluated ? 'evaluated' : ''}`}>
       <div className="activity-content">
         <div>
-          <Stem stem={stem} />
+          <Stem stem={stem} context={writerContext} />
           {gradedPoints}
           <Selection
             onDeselect={(id: ActivityTypes.ChoiceId) => updateSelection(id)}
             selected={selected.map(s =>
               [s, choices.findIndex(c => c.id === s)])} isEvaluated={isEvaluated} />
           <Choices choices={choices} selected={selected}
-            onSelect={onSelect} isEvaluated={isEvaluated} />
+            onSelect={onSelect} isEvaluated={isEvaluated} context={writerContext} />
           {maybeSubmitButton}
         </div>
         {ungradedDetails}

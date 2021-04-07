@@ -1,7 +1,15 @@
 defmodule OliWeb.LayoutView do
   use OliWeb, :view
 
-  import OliWeb.DeliveryView, only: [user_role_is_student: 2, user_role_text: 2, user_role_color: 2, account_linked?: 1]
+  import OliWeb.DeliveryView, only: [
+    user_role_is_student: 2,
+    user_role_text: 2,
+    user_role_color: 2,
+    user_icon: 2,
+    account_linked?: 1,
+    logo_link_path: 1,
+  ]
+
   alias Oli.Authoring
   alias Oli.Accounts.AuthorPreferences
   alias Oli.Publishing.AuthoringResolver
@@ -30,20 +38,16 @@ defmodule OliWeb.LayoutView do
   def sidebar_link(%{:assigns => assigns} = _conn, text, path, opts) do
     route = Keyword.get(opts, :to)
     badge = Keyword.get(opts, :badge)
+    target = Keyword.get(opts, :target)
 
     case badge do
       nil ->
-        link text, to: route, class: active_class(active_or_nil(assigns), path)
+        link text, to: route, class: active_class(active_or_nil(assigns), path), target: target
       badge ->
-        link to: route, class: "align-items-center #{active_class(active_or_nil(assigns), path)}" do
+        link to: route, class: "align-items-center #{active_class(active_or_nil(assigns), path)}", target: target do
           [content_tag(:span, text), content_tag(:span, badge, class: "badge badge-pill badge-primary ml-2")]
         end
     end
-  end
-
-  def is_admin?(%{:assigns => assigns}) do
-    admin_role_id = Oli.Accounts.SystemRole.role_id().admin
-    assigns.current_author.system_role_id == admin_role_id
   end
 
   def account_link(%{:assigns => assigns} = conn) do
@@ -75,10 +79,6 @@ defmodule OliWeb.LayoutView do
 
   def theme_url(conn, :delivery) do
     Routes.static_path(conn, "/css/delivery_theme_oli.css")
-  end
-
-  def preview_mode(%{assigns: assigns} = _conn) do
-    Map.get(assigns, :preview_mode, false)
   end
 
 end

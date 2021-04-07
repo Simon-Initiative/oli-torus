@@ -5,7 +5,7 @@ import { Node, NodeEntry, Editor as SlateEditor, Transforms, Path, Element } fro
 import { p, schema, SchemaConfig } from 'data/content/model';
 import { normalize as tableNormalize } from 'components/editing/editor/normalizers/tables';
 
-const spacesRequiredBetween = Immutable.Set<string>(['image', 'youtube', 'audio', 'blockquote', 'code', 'table']);
+const spacesRequiredBetween = Immutable.Set<string>(['image', 'youtube', 'audio', 'blockquote', 'code', 'table', 'iframe']);
 
 export function installNormalizer(editor: SlateEditor & ReactEditor) {
 

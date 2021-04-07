@@ -82,7 +82,7 @@ defmodule Oli.Interop.Ingest do
 
     case Map.get(project_details, "title") do
       nil -> {:error, "no project title found"}
-      title -> Oli.Authoring.Course.create_ingested_project(Map.get(project_details, "slug"), title, as_author)
+      title -> Oli.Authoring.Course.create_project(title, as_author)
     end
 
   end
@@ -190,7 +190,12 @@ defmodule Oli.Interop.Ingest do
       title: Map.get(page, "title"),
       content: Map.get(page, "content") |> rewire_activity_references(activity_map),
       author_id: as_author.id,
-      objectives: %{"attached" => Enum.map(page["objectives"], fn id -> Map.get(objective_map, id).resource_id end)},
+      objectives: %{"attached" => Enum.map(page["objectives"], fn id ->
+        case Map.get(objective_map, id) do
+          nil -> nil
+          r -> r.resource_id
+        end
+      end) |> Enum.filter(fn f -> !is_nil(f) end)},
       resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
       scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
       graded: false

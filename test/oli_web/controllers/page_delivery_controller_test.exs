@@ -1,10 +1,12 @@
 defmodule OliWeb.PageDeliveryControllerTest do
   use OliWeb.ConnCase
+
+  import Mox
+
   alias Oli.Delivery.Sections
   alias Oli.Seeder
   alias Oli.Delivery.Attempts.{ResourceAttempt, PartAttempt, ResourceAccess}
   alias Lti_1p3.Tool.ContextRoles
-  alias OliWeb.Common.LtiSession
 
   describe "page_delivery_controller index" do
     setup [:setup_session]
@@ -16,7 +18,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn = conn
       |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
-      assert html_response(conn, 200) =~ "<h3>"
+      assert html_response(conn, 200) =~ "Course Overview"
     end
 
     test "handles student page access by an enrolled student", %{conn: conn, revision: revision, user: user, section: section} do
@@ -218,6 +220,129 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
   end
 
+  describe "open and free page_delivery_controller" do
+    setup [:setup_open_and_free_section]
+
+    test "handles new open and free user access", %{conn: conn, section: section} do
+      Oli.Test.MockHTTP
+      |> expect(:post, fn "https://www.google.com/recaptcha/api/siteverify", _body, _headers, _opts ->
+        {:ok, %HTTPoison.Response{
+          status_code: 200,
+          body: Jason.encode!(%{
+            "success" => true
+          })
+        }}  end)
+
+      conn = conn
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      # redirected to enroll page
+      assert html_response(conn, 302) =~ "/course/users?redirect_to=%2Fsections%2Fsome_title"
+
+      conn = recycle(conn)
+        |> post(Routes.delivery_path(conn, :create_user), %{
+          "user_details" => %{
+            "redirect_to" => "/sections/some_title"
+          },
+          "g-recaptcha-response" => "some-valid-capcha-data"
+        })
+
+      assert html_response(conn, 302) =~ "/sections/some_title"
+      user = Pow.Plug.current_user(conn);
+
+      # make the same request with a user logged in
+      conn = recycle(conn)
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 200) =~ "Course Overview"
+      assert user.sub != nil
+
+      # access again, verify the same user is used that was created before
+      conn = recycle(conn)
+
+      conn = conn
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      same_user = Pow.Plug.current_user(conn);
+
+      assert html_response(conn, 200) =~ "Course Overview"
+      assert user.id == same_user.id
+      assert user.sub == same_user.sub
+    end
+
+    test "handles open and free user access when registration is closed", %{conn: conn, section: section} do
+      enrolled_user = user_fixture()
+      other_user = user_fixture()
+
+      {:ok, _enrollment} = Sections.enroll(enrolled_user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = Plug.Test.init_test_session(conn, lti_session: nil)
+        |> Pow.Plug.assign_current_user(other_user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      {:ok, section} = Sections.update_section(section, %{registration_open: false})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 403) =~ "Section Not Available"
+
+      # user that was previously enrolled should still be able to access
+      conn = recycle(conn)
+        |> Pow.Plug.assign_current_user(enrolled_user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 200) =~ "Course Overview"
+    end
+
+    test "handles open and free user access when date is before start date", %{conn: conn, section: section} do
+      enrolled_user = user_fixture()
+      other_user = user_fixture()
+
+      {:ok, _enrollment} = Sections.enroll(enrolled_user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = Plug.Test.init_test_session(conn, lti_session: nil)
+        |> Pow.Plug.assign_current_user(other_user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      {:ok, section} = Sections.update_section(section, %{start_date: Timex.now() |> Timex.add(Timex.Duration.from_days(1))})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 403) =~ "Section Has Not Started"
+
+      # user that was previously enrolled should still be able to access
+      conn = recycle(conn)
+        |> Pow.Plug.assign_current_user(enrolled_user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 200) =~ "Course Overview"
+    end
+
+    test "handles open and free user access when date is after end date", %{conn: conn, section: section} do
+      enrolled_user = user_fixture()
+      other_user = user_fixture()
+
+      {:ok, _enrollment} = Sections.enroll(enrolled_user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = Plug.Test.init_test_session(conn, lti_session: nil)
+        |> Pow.Plug.assign_current_user(other_user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      {:ok, section} = Sections.update_section(section, %{end_date: Timex.now() |> Timex.subtract(Timex.Duration.from_days(1))})
+
+      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 403) =~ "Section Has Concluded"
+
+      # user that was previously enrolled should still be able to access
+      conn = recycle(conn)
+        |> Pow.Plug.assign_current_user(enrolled_user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 200) =~ "Course Overview"
+    end
+
+  end
 
   defp setup_session(%{conn: conn}) do
     user = user_fixture()
@@ -259,7 +384,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
       context_id: "some-context-id",
       project_id: map.project.id,
       publication_id: map.publication.id,
-      institution_id: map.institution.id
+      institution_id: map.institution.id,
+      open_and_free: false
     })
 
     lti_params = Oli.Lti_1p3.TestHelpers.all_default_claims()
@@ -268,7 +394,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
     cache_lti_params("params-key", lti_params)
 
     conn = Plug.Test.init_test_session(conn, lti_session: nil)
-      |> LtiSession.put_section_params(section.slug, "params-key")
       |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
       |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
@@ -284,5 +409,24 @@ defmodule OliWeb.PageDeliveryControllerTest do
       revision: map.revision1,
       page_revision: map.page.revision
     }
+  end
+
+  defp setup_open_and_free_section(_) do
+    author = author_fixture()
+
+    %{project: project, institution: institution} = Oli.Seeder.base_project_with_resource(author)
+
+    {:ok, publication} = Oli.Publishing.publish_project(project)
+
+    section = section_fixture(%{
+      institution_id: institution.id,
+      project_id: project.id,
+      publication_id: publication.id,
+      context_id: UUID.uuid4(),
+      open_and_free: true,
+      registration_open: true,
+    })
+
+    %{section: section, project: project, publication: publication}
   end
 end

@@ -94,8 +94,8 @@ defmodule Oli.Accounts do
       iex> change_user(user)
       %Ecto.Changeset{source: %User{}}
   """
-  def change_user(%User{} = user) do
-    User.changeset(user, %{})
+  def change_user(%User{} = user, attrs \\ %{}) do
+    User.changeset(user, attrs)
   end
 
   @doc """
@@ -108,7 +108,7 @@ defmodule Oli.Accounts do
       {:error, changeset}         -> # Something went wrong
 
   """
-  def insert_or_update_user(%{ sub: sub } = changes) do
+  def insert_or_update_user(%{sub: sub} = changes) do
     case Repo.get_by(User, sub: sub) do
       nil -> %User{}
       user -> user
@@ -121,7 +121,10 @@ defmodule Oli.Accounts do
   Updates the platform roles associated with a user
   ## Examples
       iex> update_user_platform_roles(user, roles)
-      %Ecto.Changeset{source: %User{}}
+      {:ok, user}       -> # Updated with success
+
+      iex> update_user_platform_roles(user, roles)
+      {:error, changeset} -> # Something went wrong
   """
   def update_user_platform_roles(%User{} = user, roles) do
     roles = Lti_1p3.DataProviders.EctoProvider.Marshaler.to(roles)

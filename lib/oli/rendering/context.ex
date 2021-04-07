@@ -11,5 +11,6 @@ defmodule Oli.Rendering.Context do
       render_errors: true,
     },
     preview: false,
-    progress_state: :in_progress
+    progress_state: :in_progress,
+    section_slug: nil
 end

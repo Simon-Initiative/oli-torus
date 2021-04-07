@@ -27,7 +27,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   project and revision slug, for the author specified by email.
 
   The update parameter is a map containing key-value pairs of the
-  attributes of a ResourceRevision that are to be edited. It can
+  attributes of a resource Revision that are to be edited. It can
   contain any number of key-value pairs, but the keys must match
   the schema of `%Revision{}` struct.
 
@@ -37,7 +37,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
   Returns:
 
-  .`{:ok, %ResourceRevision{}}` when the edit processes successfully the
+  .`{:ok, %Revision{}}` when the edit processes successfully the
   .`{:error, {:lock_not_acquired}}` if the lock could not be acquired or updated
   .`{:error, {:not_found}}` if the project, resource, or user cannot be found
   .`{:error, {:not_authorized}}` if the user is not authorized to edit this resource
@@ -47,7 +47,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
           {:ok, %Revision{}}
           | {:error, {:not_found}}
           | {:error, {:error}}
-          | {:error, {:lock_not_acquired}}
+          | {:error, {:lock_not_acquired, {String.t(), Calendar.naive_datetime()}}}
           | {:error, {:not_authorized}}
   def edit(project_slug, revision_slug, author_email, update) do
     result =
@@ -122,7 +122,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   """
   @spec acquire_lock(String.t(), String.t(), String.t()) ::
           {:acquired}
-          | {:lock_not_acquired, String.t()}
+          | {:lock_not_acquired, {String.t(), Calendar.naive_datetime()}}
           | {:error, {:not_found}}
           | {:error, {:error}}
           | {:error, {:not_authorized}}
@@ -137,7 +137,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
         # If we reacquired the lock, we must first create a new revision
         {:acquired} -> {:acquired}
         # error or not able to lock results in a failed edit
-        {:lock_not_acquired, {locked_by, _}} -> {:lock_not_acquired, locked_by}
+        {:lock_not_acquired, {locked_by, locked_at}} -> {:lock_not_acquired, {locked_by, locked_at}}
         error -> {:error, error}
       end
     else
@@ -534,8 +534,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
     attrs = %{author_id: author_id}
     {:ok, revision} = Resources.create_revision_from_previous(previous, attrs)
 
-    mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
-    {:ok, _mapping} = Publishing.update_resource_mapping(mapping, %{revision_id: revision.id})
+    mapping = Publishing.get_published_resource!(publication.id, resource.id)
+    {:ok, _mapping} = Publishing.update_published_resource(mapping, %{revision_id: revision.id})
 
     {revision, changed_activity_revisions}
   end

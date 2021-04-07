@@ -14,7 +14,7 @@ defmodule OliWeb.Common.MinimalModal do
             </button>
           </div>
           <div class="modal-body">
-            <%= @inner_content.([]) %>
+            <%= render_block(@inner_block) %>
           </div>
         </div>
       </div>

@@ -89,6 +89,18 @@
           <%= live_render @conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => @project.slug } %>
         </div>
       </div>
+
+      <div class="row my-4">
+        <div class="col-12">
+          <h4>Duplicate this course</h4>
+          <%= button("Duplicate Course",
+            to: Routes.project_path(@conn, :clone_project, @project),
+            method: :post,
+            class: "btn btn-primary",
+            data_confirm: "Are you sure you want to duplicate this project?") %>
+        </div>
+      </div>
+
       <div class="row my-4">
         <div class="col-12">
           <h4>Datashop Export</h4>

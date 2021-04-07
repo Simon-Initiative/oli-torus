@@ -26,14 +26,13 @@ defmodule Oli.TestHelpers do
   def section_fixture(attrs \\ %{}) do
     params =
       attrs
-      |> Enum.into(%{end_date: ~D[2010-04-17],
-      open_and_free: true,
-      registration_open: true,
-      start_date: ~D[2010-04-17],
-      time_zone: "some time_zone",
-      title: "some title",
-      context_id: "context_id"
-    })
+      |> Enum.into(%{
+        open_and_free: false,
+        registration_open: true,
+        time_zone: "US/Eastern",
+        title: "some title",
+        context_id: "context_id"
+      })
 
     {:ok, section} =
       Section.changeset(%Section{}, params)

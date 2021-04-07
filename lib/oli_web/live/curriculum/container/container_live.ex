@@ -447,23 +447,35 @@ defmodule OliWeb.Curriculum.ContainerLive do
   end
 
   def handle_info(
-        {:lock_acquired, resource_id, author_id},
-        %{assigns: %{resources_being_edited: resources_being_edited}} = socket
+        {:lock_acquired, publication_id, resource_id, author_id},
+        %{assigns: %{resources_being_edited: resources_being_edited, project: %{id: project_id}}} = socket
       ) do
-    author =
-      Accounts.get_user!(author_id)
-      |> Repo.preload(:author)
+    # Check to see if the lock_acquired message is intended for this specific project/publication's resource.
+    # This check could be optimized by crafting a more specific message that embeds the publication_id, but then the
+    # latest active publication_id would need to be tracked in the assigns and updated if a project is published.
+    # Same thing applies to the :lock_released handler below.
+    if Publishing.get_unpublished_publication_id!(project_id) == publication_id do
+      author =
+        Accounts.get_user!(author_id)
+        |> Repo.preload(:author)
 
-    new_resources_being_edited = Map.put(resources_being_edited, resource_id, author)
-    {:noreply, assign(socket, resources_being_edited: new_resources_being_edited)}
+      new_resources_being_edited = Map.put(resources_being_edited, resource_id, author)
+      {:noreply, assign(socket, resources_being_edited: new_resources_being_edited)}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_info(
-        {:lock_released, resource_id},
-        %{assigns: %{resources_being_edited: resources_being_edited}} = socket
+        {:lock_released, publication_id, resource_id},
+        %{assigns: %{resources_being_edited: resources_being_edited, project: %{id: project_id}}} = socket
       ) do
-    new_resources_being_edited = Map.delete(resources_being_edited, resource_id)
-    {:noreply, assign(socket, resources_being_edited: new_resources_being_edited)}
+    if Publishing.get_unpublished_publication_id!(project_id) == publication_id do
+      new_resources_being_edited = Map.delete(resources_being_edited, resource_id)
+      {:noreply, assign(socket, resources_being_edited: new_resources_being_edited)}
+    else
+      {:noreply, socket}
+    end
   end
 
   # Resources currently being edited by an author (has a lock present)
