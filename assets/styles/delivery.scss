@@ -14,6 +14,7 @@ body {
 .delivery {
   @import 'delivery/variables';
   @import '../node_modules/bootstrap/scss/bootstrap';
+  @import 'common/**/*.scss';
+  @import 'components/**/*.scss';
   @import 'delivery/**/*.scss';
-  @import 'components/activities/**/*.scss';
 }

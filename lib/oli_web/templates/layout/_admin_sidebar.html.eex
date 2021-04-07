@@ -1,10 +1,11 @@
 <hr>
 <p class="category">Admin</p>
-<%= sidebar_link @conn, "Dashboard", :dashboard, to: Routes.live_dashboard_path(OliWeb.Endpoint, :home) %>
+<%= sidebar_link @conn, "Open and Free", :open_and_free, to: Routes.open_and_free_path(@conn, :index) %>
+<%= sidebar_link @conn, "Activities", :activity_manage, to: Routes.activity_manage_path(@conn, :index) %>
 <%= sidebar_link @conn, "Accounts", :accounts, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Accounts.AccountsLive) %>
-
 <%= sidebar_link @conn, "Institutions", :institutions, to: Routes.institution_path(@conn, :index), badge: Oli.Institutions.count_pending_registrations() |> positive_or_nil %>
 
 <%= sidebar_link @conn, "Ingest", :ingest, to: Routes.ingest_path(@conn, :index) %>
 <%= sidebar_link @conn, "Invite", :invite, to: Routes.invite_path(@conn, :index) %>
-<%= sidebar_link @conn, "Activities", :activity_manage, to: Routes.activity_manage_path(@conn, :index) %>
+
+<%= sidebar_link @conn, "Dashboard", :dashboard, to: Routes.live_dashboard_path(OliWeb.Endpoint, :home), target: "_blank" %>

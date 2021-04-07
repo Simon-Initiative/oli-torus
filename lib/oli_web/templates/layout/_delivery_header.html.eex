@@ -1,17 +1,17 @@
 
 <nav class="navbar navbar-expand">
   <div class="container">
-    <a class="navbar-brand oli-logo mr-auto" href="<%= if assigns[:preview_mode], do: "#", else: Routes.delivery_path(@conn, :index) %>">
+    <a class="navbar-brand oli-logo mr-auto" href="<%= logo_link_path(@conn) %>">
       <img src="/images/oli-icon.png" width="30" height="30" class="d-inline-block align-top mr-2" alt="">
       Open Learning <span style="font-weight: 200">Initiative</span>
     </a>
     <%= if not preview_mode(@conn) do %>
       <div class="nav-item my-2 my-lg-0 mr-2">
-        <a  href="<%= Routes.help_delivery_path(@conn, :index) %>">Help</a>
+        <a  href="<%= Routes.help_path(@conn, :index) %>">Help</a>
       </div>
     <% end %>
 
-    <%= if assigns[:lti_params] && user_signed_in?(@conn) do %>
+    <%= if user_signed_in?(@conn) do %>
       <div class="nav-item dropdown form-inline my-2 my-lg-0">
         <a class="user nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           <div class="block lg:inline-block lg:mt-0 text-grey-darkest no-underline hover:underline mr-4">
@@ -23,7 +23,7 @@
             </div>
           </div>
           <div class="user-icon">
-            <img src="<%= @current_user.picture %>" class="rounded-circle" />
+            <%= user_icon(@conn, @current_user) %>
           </div>
         </a>
         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">

@@ -9,7 +9,7 @@ defmodule OliWeb.Grades.LineItems do
 
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title"><%= dgettext("grades", "Update LMS Line Items") %></h5>
+        <h5 class="card-title"><%= dgettext("grades", "Update Line Items") %></h5>
 
         <p class="card-text">
 

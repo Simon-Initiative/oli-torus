@@ -33,7 +33,7 @@
     </li>
     <% else %>
     <li class="page-item">
-      <%= link to: Routes.delivery_path(@conn, :index), class: "page-link" do %>
+      <%= link to: Routes.page_delivery_path(@conn, :index, @section_slug), class: "page-link" do %>
         <div class="d-flex flex-row">
           <div class="d-flex flex-column flex-fill flex-ellipsize-fix">
             <div class="text-secondary text-left nav-label">Complete</div>

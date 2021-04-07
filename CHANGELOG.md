@@ -4,6 +4,7 @@
 
 ### Enhancements
   - Add multi-project support to Revision History tool
+  - Add Open and Free section support
 
 ### Bug fixes
  - Fix analytics / insights to not show parent course analytics after duplication

@@ -1,8 +1,0 @@
-<h3 class="my-3">Configure Deployment</h3>
-
-<%# TODO: add ability for users to request/add a deployment from an LTI launch here %>
-<span class="text-danger">Deployment '<%= @deployment_id %>' is not configured.</span></p>
-
-<p>LTI 1.3 deployments must be configured with the tool provider before a platform can launch into the tool.</p>
-
-<p>If you need help configuring your LTI connection, please <a href="<%= Routes.help_delivery_path(@conn, :index) %>">contact OLI Support</a></p>

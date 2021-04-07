@@ -10,13 +10,14 @@ defmodule OliWeb.Grades.GradesLive do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Attempts.ResourceAccess
+  alias Oli.Delivery.Sections
 
-  def mount(%{"section_slug" => section_slug}, %{"lti_params" => lti_params, "current_user" => current_user}, socket) do
+  def mount(_params, %{"section" => section, "current_user" => current_user}, socket) do
 
-    if ContextRoles.has_role?(current_user, section_slug, ContextRoles.get_role(:context_instructor)) do
-
-      line_items_url = LTI_AGS.get_line_items_url(lti_params)
-      graded_pages = Grading.fetch_graded_pages(section_slug)
+    if ContextRoles.has_role?(current_user, section.slug, ContextRoles.get_role(:context_instructor)) do
+      {_d, registration} = Sections.get_deployment_registration_from_section(section)
+      line_items_url = section.line_items_service_url
+      graded_pages = Grading.fetch_graded_pages(section.slug)
       selected_page = if length(graded_pages) > 0 do hd(graded_pages).resource_id else nil end
 
       {:ok, assign(socket,
@@ -27,17 +28,17 @@ defmodule OliWeb.Grades.GradesLive do
         task_queue: [],
         progress_current: 0,
         progress_max: 0,
-        section_slug: section_slug,
-        lti_params: lti_params)
+        section_slug: section.slug,
+        section: section,
+        registration: registration)
       }
     else
-      {:ok, redirect(socket, to: "/unauthorized")}
+      {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
     end
   end
 
   def render(assigns) do
-
-    iss = assigns.lti_params["iss"]
+    iss = assigns.registration.issuer
     has_tasks? = length(assigns.task_queue) > 0
     progress_visible = if has_tasks? do "visible" else "invisible" end
 
@@ -95,10 +96,10 @@ defmodule OliWeb.Grades.GradesLive do
     creation_tasks ++ update_tasks
   end
 
-  defp determine_grade_sync_tasks(section_slug, graded_page, line_item, students) do
+  defp determine_grade_sync_tasks(section, graded_page, line_item, students) do
 
     # create a map of all resource accesses, keyed off of the student id
-    resource_accesses = Attempts.get_resource_access_for_page(section_slug, graded_page.resource_id)
+    resource_accesses = Attempts.get_resource_access_for_page(section.slug, graded_page.resource_id)
     |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.user_id, r) end)
 
     # For each student, see if they have a finalized score in an access record
@@ -130,17 +131,13 @@ defmodule OliWeb.Grades.GradesLive do
     |> Keyword.get(:host)
   end
 
-  defp access_token_provider(lti_launch_params) do
-    issuer = lti_launch_params["iss"]
-    client_id = lti_launch_params["aud"]
-    deployment_id = lti_launch_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
-    {registration, _deployment} = Lti_1p3.Tool.get_registration_deployment(issuer, client_id, deployment_id)
+  defp access_token_provider(registration) do
     AccessToken.fetch_access_token(registration, Grading.ags_scopes(), host())
   end
 
-  defp send_grades(students, access_token, section_slug, page, line_item, socket) do
+  defp send_grades(students, access_token, section, page, line_item, socket) do
 
-    task_queue = determine_grade_sync_tasks(section_slug, page, line_item, students)
+    task_queue = determine_grade_sync_tasks(section.slug, page, line_item, students)
 
     send(self(), :pop_task_queue)
 
@@ -150,20 +147,18 @@ defmodule OliWeb.Grades.GradesLive do
       progress_max: length(task_queue), progress_current: 0)}
   end
 
-  defp fetch_students(access_token, section_slug, lti_params) do
+  defp fetch_students(access_token, section) do
 
     # Query the db to find all enrolled students
-    students = Grading.fetch_students(section_slug)
+    students = Grading.fetch_students(section.slug)
 
     # If NRPS is enabled, request the latest view of the course membership
     # and filter our enrolled students to that list.  This step avoids us
     # ever sending grade posts for students that have dropped the class.
     # Those requests would simply fail, but this extra step eliminates making
     # those requests altogether.
-    if LTI_NRPS.nrps_enabled?(lti_params) do
-
-      case LTI_NRPS.get_context_memberships_url(lti_params)
-      |> LTI_NRPS.fetch_memberships(access_token) do
+    if section.nrps_enabled do
+      case LTI_NRPS.fetch_memberships(section.nrps_context_memberships_url, access_token) do
 
         {:ok, memberships} ->
 
@@ -184,12 +179,13 @@ defmodule OliWeb.Grades.GradesLive do
   end
 
   def handle_event("send_line_items", _, socket) do
+    registration = socket.assigns.registration
 
-    case fetch_line_items(socket.assigns.lti_params, socket.assigns.line_items_url) do
+    case fetch_line_items(registration, socket.assigns.line_items_url) do
 
       {:ok, line_items, access_token} ->
 
-        graded_pages = Grading.fetch_graded_pages(socket.assigns.section_slug)
+        graded_pages = Grading.fetch_graded_pages(socket.assigns.section)
 
         case determine_line_item_tasks(graded_pages, line_items) do
 
@@ -216,20 +212,21 @@ defmodule OliWeb.Grades.GradesLive do
   end
 
   def handle_event("send_grades", _, socket) do
-
+    section = socket.assigns.section
+    registration = socket.assigns.registration
     page = Enum.find(socket.assigns.graded_pages, fn p -> p.resource_id == socket.assigns.selected_page end)
 
-    case access_token_provider(socket.assigns.lti_params) do
+    case access_token_provider(registration) do
 
       {:ok, access_token} ->
 
-        case LTI_AGS.get_line_items_url(socket.assigns.lti_params)
+        case section
         |> LTI_AGS.fetch_or_create_line_item(page.resource_id, 1.0, page.title, access_token) do
 
           {:ok, line_item} ->
 
-            fetch_students(access_token, socket.assigns.section_slug, socket.assigns.lti_params)
-            |> send_grades(access_token, socket.assigns.section_slug, page, line_item, socket)
+            fetch_students(access_token, section)
+            |> send_grades(access_token, section, page, line_item, socket)
 
           {:error, e} -> {:noreply, put_flash(socket, :error, e)}
 
@@ -241,9 +238,8 @@ defmodule OliWeb.Grades.GradesLive do
 
   end
 
-  defp fetch_line_items(lti_params, line_items_url) do
-
-    case access_token_provider(lti_params) do
+  defp fetch_line_items(registration, line_items_url) do
+    case access_token_provider(registration) do
 
       {:ok, access_token} ->
 
