@@ -77,7 +77,6 @@ interface ChoiceProps {
   index: number;
   selected: boolean;
   context: WriterContext;
-  // fix
   onClick: () => void;
   isEvaluated: boolean;
 }
@@ -88,7 +87,7 @@ const Choice = ({ choice, index, selected, context, onClick, isEvaluated }: Choi
       onClick={isEvaluated ? undefined : onClick}
       className={`choice ${selected ? 'selected' : ''}`}>
       <span className="choice-index">{index + 1}</span>
-      <HtmlContentModelRenderer text={choice.content} context={context}/>
+      <HtmlContentModelRenderer text={choice.content} context={context} />
     </div>
   );
 };
@@ -110,14 +109,17 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
   const { stem, choices } = model;
 
   const isEvaluated = attemptState.score !== null;
-  const orderedChoiceIds = () => selected.join(' ');
+  const orderedChoiceIds = (newSelection: string | undefined) =>
+    newSelection === undefined ? selected.join(' ') : selected.concat(newSelection).join(' ');
 
   const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
 
   const onSubmit = () => {
     props.onSubmitActivity(attemptState.attemptGuid,
-      // update this input too
-      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input: orderedChoiceIds() } }])
+      [{
+        attemptGuid: attemptState.parts[0].attemptGuid,
+        response: { input: orderedChoiceIds(undefined) },
+      }])
       .then((response: EvaluationResponse) => {
         if (response.evaluations.length > 0) {
           const { score, out_of, feedback, error } = response.evaluations[0];
@@ -146,7 +148,7 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
     props.onSaveActivity(attemptState.attemptGuid,
       [{
         attemptGuid: attemptState.parts[0].attemptGuid,
-        response: { input: orderedChoiceIds() },
+        response: { input: orderedChoiceIds(id) },
       }]);
   };
 
@@ -197,7 +199,7 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
     <div className="text-info font-italic">
       {correctnessIcon}
       <span>Points: </span><span>{attemptState.score + ' out of '
-    + attemptState.outOf}</span></div>] : null;
+        + attemptState.outOf}</span></div>] : null;
 
   const maybeSubmitButton = props.graded
     ? null
