@@ -9,7 +9,7 @@ defmodule Oli.Analytics.Datashop.Messages.Context do
       <time_zone>GMT</time_zone>
     </meta>
     <dataset>
-      <name>example_open_and_free_course-XVeLxRjNVUdSnzsMuFeZNn</name>
+      <name>example_course-XVeLxRjNVUdSnzsMuFeZNn</name>
       <name>Activity one</name>
       <problem_name>Activity one, part 1</problem_name>
     </dataset>

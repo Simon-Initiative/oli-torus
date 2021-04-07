@@ -4,14 +4,15 @@
 
 ### Enhancements
   - Add multi-project support to Revision History tool
-
-## 0.7.2
+  - Add Open and Free section support
 
 ### Bug fixes
  - Fix analytics / insights to not show parent course analytics after duplication
+ - Remove help link in preview mode
  - Fix security vulnerability
  - Account for ingested pages that have missing objectives
  - Fix check all that apply activity submission in published projects
+ - Fix issue where long lines in code blocks in activities overflow
 
 ## 0.7.2 (2021-3-30)
 

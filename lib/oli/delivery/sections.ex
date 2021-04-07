@@ -2,10 +2,9 @@ defmodule Oli.Delivery.Sections do
   @moduledoc """
   The Sections context.
   """
-
   import Ecto.Query, warn: false
-  alias Oli.Repo
 
+  alias Oli.Repo
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.Tool.ContextRole
@@ -14,8 +13,13 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Lti_1p3.Tool.Registration
 
   @doc """
-  Enrolls a user in a course section.
+  Enrolls a user in a course section
+  ## Examples
+      iex> enroll(user_id, section_id, [%ContextRole{}])
+      {:ok, %Enrollment{}} # Inserted or updated with success
 
+      iex> enroll(user_id, section_id, :open_and_free)
+      {:error, changeset} # Something went wrong
   """
   @spec enroll(number(), number(), [%ContextRole{}]) :: {:ok, %Enrollment{}}
   def enroll(user_id, section_id, context_roles) do
@@ -65,6 +69,19 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Returns a listing of all open and free sections for a given user.
+  """
+  def list_user_open_and_free_sections(%{id: user_id} = _user) do
+    query = from(
+      s in Section,
+      join: e in Enrollment, on: e.section_id == s.id,
+      where: e.user_id == ^user_id and s.open_and_free == true,
+      preload: [:project, :publication],
+      select: s)
+    Repo.all(query)
+  end
+
+  @doc """
   Returns the list of sections.
   ## Examples
       iex> list_sections()
@@ -72,6 +89,19 @@ defmodule Oli.Delivery.Sections do
   """
   def list_sections do
     Repo.all(Section)
+  end
+
+  @doc """
+  Returns the list of open and free sections.
+  ## Examples
+      iex> list_open_and_free_sections()
+      [%Section{}, ...]
+  """
+  def list_open_and_free_sections() do
+    Repo.all from(
+      s in Section,
+      where: s.open_and_free == true,
+      select: s)
   end
 
   @doc """
@@ -116,16 +146,32 @@ defmodule Oli.Delivery.Sections do
       nil
   """
   def get_section_from_lti_params(lti_params) do
-    issuer = lti_params["iss"]
-    client_id = lti_params["aud"]
     context_id = Map.get(lti_params, "https://purl.imsglobal.org/spec/lti/claim/context")
       |> Map.get("id")
+    issuer = lti_params["iss"]
+    client_id = lti_params["aud"]
 
     Repo.one(from s in Section,
       join: d in Deployment, on: s.lti_1p3_deployment_id == d.id,
       join: r in Registration, on: d.registration_id == r.id,
       where: s.context_id == ^context_id and r.issuer == ^issuer and r.client_id == ^client_id,
       select: s)
+  end
+
+  @doc """
+  Gets the associated deployment and registration from the given section
+
+  ## Examples
+      iex> get_deployment_registration_from_section(section)
+      {%Deployment{}, %Registration{}}
+      iex> get_deployment_registration_from_section(section)
+      nil
+  """
+  def get_deployment_registration_from_section(%Section{lti_1p3_deployment_id: lti_1p3_deployment_id}) do
+    Repo.one(from d in Deployment,
+      join: r in Registration, on: d.registration_id == r.id,
+      where: ^lti_1p3_deployment_id == d.id,
+      select: {d, r})
   end
 
   @doc """

@@ -100,6 +100,7 @@ defmodule OliWeb do
       import OliWeb.ErrorHelpers
       import OliWeb.Gettext
       alias OliWeb.Router.Helpers, as: Routes
+      import OliWeb.ViewHelpers
 
       import Oli.Accounts, only: [author_signed_in?: 1, user_signed_in?: 1]
       import Oli.Utils

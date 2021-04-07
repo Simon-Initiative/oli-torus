@@ -15,7 +15,7 @@ defmodule Oli.Content.Content.HtmlTest do
 
     test "renders well-formed content properly", %{author: author} do
       {:ok, content} = read_json_file("./test/oli/rendering/content/example_content.json")
-      context = %Context{user: author}
+      context = %Context{user: author, section_slug: "some_section"}
 
       rendered_html = Content.render(context, content, Content.Html)
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
@@ -23,7 +23,8 @@ defmodule Oli.Content.Content.HtmlTest do
       assert rendered_html_string =~ "<h3>Introduction</h3>"
       assert rendered_html_string =~ ~r/<img.*src="https:\/\/upload.wikimedia.org\/wikipedia\/commons\/thumb\/f\/f9\/Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg\/480px-Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg"\/>/
       assert rendered_html_string =~ "<p>The American colonials proclaimed &quot;no taxation without representation"
-      assert rendered_html_string =~ "<a href=\"https://en.wikipedia.org/wiki/Stamp_Act_Congress\">Stamp Act Congress</a>"
+      assert rendered_html_string =~ "<a class=\"internal-link\" href=\"/sections/some_section/page/page_two\">Page Two</a>"
+      assert rendered_html_string =~ "<a class=\"external-link\" href=\"https://en.wikipedia.org/wiki/Stamp_Act_Congress\" target=\"_blank\">Stamp Act Congress</a>"
       assert rendered_html_string =~ "<h3>1651–1748: Early seeds</h3>"
       assert rendered_html_string =~ "<ol><li>one</li>\n<li><em>two</em></li>\n<li><em><strong>three</strong></em></li>\n</ol>"
       assert rendered_html_string =~ "<ul><li>alpha</li>\n<li>beta</li>\n<li>gamma</li>\n</ul>"

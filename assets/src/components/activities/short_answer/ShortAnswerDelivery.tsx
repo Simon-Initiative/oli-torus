@@ -15,6 +15,7 @@ import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/Evaluation';
 import { valueOr } from 'utils/common';
 import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
+import { defaultWriterContext } from 'data/content/writers/context';
 
 type Evaluation = {
   score: number,
@@ -74,6 +75,8 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
 
   const isEvaluated = attemptState.score !== null;
 
+  const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
+
   const onInputChange = (input: string) => {
 
     setInput(input);
@@ -117,7 +120,7 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
   };
 
   const evaluationSummary = isEvaluated
-    ? <Evaluation key="evaluation" attemptState={attemptState} />
+    ? <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
     : null;
 
   const reset = isEvaluated && !props.graded
@@ -130,7 +133,7 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
 
   const ungradedDetails = props.graded ? null : [
     evaluationSummary,
-    <Hints key="hints" onClick={onRequestHint} hints={hints}
+    <Hints key="hints" onClick={onRequestHint} hints={hints} context={writerContext}
       hasMoreHints={hasMoreHints} isEvaluated={isEvaluated} />];
 
   const gradedDetails = props.graded && props.progressState === 'in_review' ? [
@@ -156,7 +159,7 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
   return (
     <div className="activity short-answer-activity">
       <div className="activity-content">
-        <Stem stem={stem} />
+        <Stem stem={stem} context={writerContext} />
         {gradedPoints}
         <div className="">
           <Input

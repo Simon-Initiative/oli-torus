@@ -1,15 +1,14 @@
 defmodule OliWeb.DeliveryController do
   use OliWeb, :controller
+  import Oli.Utils
+
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing
-
   alias Oli.Institutions
-  alias Lti_1p3.Tool.ContextRoles
-  alias Lti_1p3.Tool.PlatformRoles
+  alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
   alias Oli.Accounts
-  alias Oli.Accounts.Author
-  alias OliWeb.Common.LtiSession
+  alias Oli.Accounts.{Author, User}
 
   @allow_configure_section_roles [
     PlatformRoles.get_role(:system_administrator),
@@ -24,7 +23,6 @@ defmodule OliWeb.DeliveryController do
   def index(conn, _params) do
     user = conn.assigns.current_user
     lti_params = conn.assigns.lti_params
-    section = Sections.get_section_from_lti_params(lti_params)
 
     lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
     context_roles = ContextRoles.get_roles_by_uris(lti_roles)
@@ -34,6 +32,8 @@ defmodule OliWeb.DeliveryController do
 
     # allow section configuration if user has any of the allowed roles
     allow_configure_section = (MapSet.intersection(roles, allow_configure_section_roles) |> MapSet.size()) > 0
+
+    section = Sections.get_section_from_lti_params(lti_params)
 
     case {user.author, section} do
       # author account has not been linked
@@ -54,6 +54,14 @@ defmodule OliWeb.DeliveryController do
 
   end
 
+  def open_and_free_index(conn, _params) do
+    user = conn.assigns.current_user
+
+    sections = Sections.list_user_open_and_free_sections(user)
+
+    render(conn, "open_and_free_index.html", sections: sections)
+  end
+
   defp render_course_not_configured(conn) do
     render(conn, "course_not_configured.html")
   end
@@ -71,7 +79,7 @@ defmodule OliWeb.DeliveryController do
     {institution, _registration, _deployment} = Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
 
     publications = Publishing.available_publications(author, institution)
-    my_publications = publications |> Enum.filter(fn p -> !p.open_and_free && p.published end)
+    my_publications = publications |> Enum.filter(fn p -> p.published end)
 
     render(conn, "configure_section.html", author: author, my_publications: my_publications)
   end
@@ -169,10 +177,6 @@ defmodule OliWeb.DeliveryController do
     |> render_create_and_link_form()
   end
 
-  def unauthorized(conn, _params) do
-    render conn, "unauthorized.html"
-  end
-
   def process_create_and_link_account_user(conn, %{"user" => user_params}) do
     conn
     |> use_pow_config(:author)
@@ -218,7 +222,7 @@ defmodule OliWeb.DeliveryController do
 
     publication = Publishing.get_publication!(publication_id)
 
-    {:ok, %Section{id: section_id, slug: section_slug}} = Sections.create_section(%{
+    {:ok, %Section{id: section_id}} = Sections.create_section(%{
       time_zone: institution.timezone,
       title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
       context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
@@ -233,10 +237,6 @@ defmodule OliWeb.DeliveryController do
     context_roles = ContextRoles.get_roles_by_uris(lti_roles)
     Sections.enroll(user.id, section_id, context_roles)
 
-    # set the lti_params_key for the new section to the current user's lti_params_key
-    lti_params_key = LtiSession.get_user_params(conn)
-    LtiSession.put_section_params(conn, section_slug, lti_params_key)
-
     conn
     |> redirect(to: Routes.delivery_path(conn, :index))
   end
@@ -245,7 +245,46 @@ defmodule OliWeb.DeliveryController do
     conn
     |> use_pow_config(:user)
     |> Pow.Plug.delete()
-    |> redirect(to: Routes.delivery_path(conn, :index))
+    |> redirect(to: Routes.static_page_path(conn, :index))
+  end
+
+  def new_user(conn, %{"redirect_to" => redirect_to}) do
+    changeset = Accounts.change_user(%User{})
+    render conn, "new_user.html", changeset: changeset, redirect_to: redirect_to
+  end
+
+  def create_user(conn, %{"user_details" => user_details, "g-recaptcha-response" => g_recaptcha_response}) do
+    redirect_to = value_or(user_details["redirect_to"], Routes.delivery_path(conn, :index))
+
+    with  g_recaptcha_response when g_recaptcha_response != "" <- g_recaptcha_response,
+          {:success, :true}  <- Oli.Utils.Recaptcha.verify(g_recaptcha_response)
+    do
+      with  {:ok, user} <- Accounts.create_user(%{
+              # generate a unique sub identifier which is also used so a user can access
+              # their progress in the future or using a different browser
+              sub: UUID.uuid4(),
+            })
+      do
+        Accounts.update_user_platform_roles(user, [
+          PlatformRoles.get_role(:institution_learner),
+        ])
+
+        conn
+        |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
+        |> Pow.Plug.create(user)
+        |> redirect(to: redirect_to)
+
+      else
+        {:error, changeset} ->
+          render conn, "new_user.html", changeset: changeset, redirect_to: redirect_to
+      end
+    else
+      _ ->
+        changeset = Accounts.change_user(%User{}, user_details)
+          |> Ecto.Changeset.add_error(:captcha, "failed, please try again")
+
+        render conn, "new_user.html", changeset: changeset, redirect_to: redirect_to
+    end
   end
 
 end

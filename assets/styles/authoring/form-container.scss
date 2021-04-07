@@ -59,6 +59,7 @@
     border-radius: .25rem;
     cursor: text;
     transition: all .1s ease-in-out;
+    user-select: none;
   }
 
   .form-label-group input::-webkit-input-placeholder {

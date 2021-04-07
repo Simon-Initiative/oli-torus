@@ -3,7 +3,7 @@ defmodule Oli.Authoring.Course do
   import Ecto.Query, warn: false
   alias Oli.Repo
   alias Oli.Publishing
-  alias Oli.Authoring.{Collaborators}
+  alias Oli.Authoring.{Collaborators, ProjectSearch}
   alias Oli.Authoring.Course.{Project, Family, ProjectResource}
   alias Oli.Accounts.{SystemRole}
 
@@ -52,6 +52,15 @@ defmodule Oli.Authoring.Course do
 
   end
 
+  @doc """
+  Returns the list of published projects where the title, description and slug are similar to the query string
+  ## Examples
+      iex> search_published_projects()
+      [%Project{}, ...]
+  """
+  def search_published_projects(search_term) do
+    ProjectSearch.search(search_term)
+  end
 
   def get_project!(id), do: Repo.get!(Project, id)
   def get_project_by_slug(nil), do: nil
