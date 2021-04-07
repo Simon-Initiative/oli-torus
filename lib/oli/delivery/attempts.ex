@@ -203,10 +203,11 @@ defmodule Oli.Delivery.Attempts do
 
     # use supplied attempt guid or determine latest resource attempt and then derive the current resource state
     Repo.transaction(fn ->
-    resource_attempt = case attempt_guid do
-      nil -> get_latest_resource_attempt(resource_revision.resource_id, section_slug, user_id)
-      _ -> get_resource_attempt_by(attempt_guid: attempt_guid)
-    end
+      resource_attempt = case attempt_guid do
+        nil -> get_latest_resource_attempt(resource_revision.resource_id, section_slug, user_id)
+        _ -> get_resource_attempt_by(attempt_guid: attempt_guid)
+      end
+
 
       case get_resource_state(resource_attempt, resource_revision, section_slug, user_id, activity_provider, attempt_guid) do
         {:ok, results} -> results
@@ -219,9 +220,76 @@ defmodule Oli.Delivery.Attempts do
 
   defp get_resource_state(resource_attempt, resource_revision, section_slug, user_id, activity_provider, attempt_guid) do
 
-    case resource_revision.graded do
-      true -> get_graded_resource_state(resource_attempt, resource_revision, section_slug, user_id, activity_provider, attempt_guid)
-      false -> get_ungraded_resource_state(resource_attempt, resource_revision, section_slug, user_id, activity_provider)
+    {graded, resource_attempt} = handle_grading_transitions(resource_attempt, resource_revision)
+
+    if graded do
+      get_graded_resource_state(resource_attempt, resource_revision, section_slug, user_id, activity_provider, attempt_guid)
+    else
+      get_ungraded_resource_state(resource_attempt, resource_revision, section_slug, user_id, activity_provider)
+    end
+
+  end
+
+  # We cannot simply look at the current revision to know if this is a graded page or not, as
+  # the author may have toggled that and republished after a student started an attempt.  To determine the graded status
+  #  correctly, and to account for graded <-> ungraded transitions properly we must:
+  #
+  # 1. Use the current revision if no resource attempt is present, or if the current revision is set to "graded"
+  # 2. Otherwise return "graded" value of the resource attempt revision.
+  #
+  # Then
+  defp handle_grading_transitions(resource_attempt, resource_revision) do
+
+    if is_nil(resource_attempt) || resource_attempt.revision.graded === resource_revision.graded do
+
+      # There is no latest attempt, or the latest attempt revision's graded status doesn't differ from the current revisions
+      {resource_revision.graded, resource_attempt}
+    else
+
+      # There revision on the latest attempt and the revision on current are different.
+
+      # 2. If it was graded and is now ungraded:
+	    #     -Allow an "open" graded latest attempt to resume
+      #     -If no open graded attempts, we proceed in a way that allows the student to access this as ungraded
+
+      if (resource_attempt.revision.graded == true) do
+
+        if is_nil(resource_attempt.date_evaluated) do
+
+          # Returning true here allows their active graded attempt to continue
+          {true, resource_attempt}
+
+        else
+          # This will allow the beginning of a new ungraded attempt
+          {false, resource_attempt}
+        end
+
+      else
+        # We want to handle:
+        #
+        # 1. If it was ungraded and now is graded:
+        #     -There may be some historical “ungraded” attempts, delete all of them to provide a clean slate for the graded attempts
+        #
+
+        if is_nil(resource_attempt.date_evaluated) do
+
+          # There is an open ungraded attempt that we need to finalize to allow the student
+          # to start a new one in this graded context
+          {:ok, updated_attempt} = update_resource_attempt(resource_attempt, %{
+            score: 0,
+            out_of: 0,
+            date_evaluated: DateTime.utc_now()
+          })
+
+          {true, updated_attempt}
+
+        else
+          # This will allow the beginning of a new ungraded attempt
+          {true, resource_attempt}
+        end
+
+      end
+
     end
 
   end
@@ -247,7 +315,11 @@ defmodule Oli.Delivery.Attempts do
     mode = if attempt_guid == nil, do: :in_progress, else: :in_review
 
     if (is_nil(resource_attempt) or !is_nil(resource_attempt.date_evaluated)) and mode != :in_review do
-      {:ok, {:not_started, get_resource_attempt_history(resource_revision.resource_id, section_slug, user_id)}}
+
+      {access, attempts} = get_resource_attempt_history(resource_revision.resource_id, section_slug, user_id)
+      graded_attempts = Enum.filter(attempts, fn a -> a.revision.graded == true end)
+
+      {:ok, {:not_started, {access, graded_attempts}}}
     else
 
       # Unlike ungraded pages, for graded pages we do not throw away attempts and create anew in the case
@@ -279,7 +351,8 @@ defmodule Oli.Delivery.Attempts do
 
     attempts = Repo.all(from ra in ResourceAttempt,
       where: ra.resource_access_id == ^id,
-      select: ra)
+      select: ra,
+      preload: [:revision])
 
     attempt_representation = case attempts do
       nil -> []
@@ -287,6 +360,19 @@ defmodule Oli.Delivery.Attempts do
     end
 
     {access, attempt_representation}
+  end
+
+
+  @doc """
+  Retrieves all graded resource attempts for a given resource access.
+
+  `[%ResourceAccess{}, ...]`
+  """
+  def get_graded_attempts_from_access(resource_access_id) do
+    Repo.all(from a in ResourceAttempt,
+      join: r in Revision, on: a.revision_id == r.id,
+      where: a.resource_access_id == ^resource_access_id and r.graded == true,
+      select: a)
   end
 
   @doc """
@@ -492,7 +578,7 @@ defmodule Oli.Delivery.Attempts do
       join: ra1 in ResourceAttempt, on: a.id == ra1.resource_access_id,
       left_join: ra2 in ResourceAttempt, on: (a.id == ra2.resource_access_id and ra1.id < ra2.id and ra1.resource_access_id == ra2.resource_access_id),
       where: a.user_id == ^user_id and s.slug == ^section_slug and a.resource_id == ^resource_id and is_nil(ra2),
-      select: ra1)
+      select: ra1) |> Repo.preload([:revision])
 
   end
 
@@ -516,6 +602,12 @@ defmodule Oli.Delivery.Attempts do
       with {:ok, revision} <- DeliveryResolver.from_revision_slug(section_slug, revision_slug) |> Oli.Utils.trap_nil(:not_found),
         {_, resource_attempts} <- get_resource_attempt_history(revision.resource_id, section_slug, user_id)
       do
+
+        # We want to disregard any attempts that pertained to revisions whose graded status
+        # do not match the current graded status. This acommodates the toggling of "graded" status
+        # across publications, interwoven with student attempts to work correctly
+        resource_attempts = Enum.filter(resource_attempts, fn a -> a.revision.graded == revision.graded end)
+
         case {revision.max_attempts > length(resource_attempts) or revision.max_attempts == 0,
           has_any_active_attempts?(resource_attempts)} do
 
@@ -897,11 +989,13 @@ defmodule Oli.Delivery.Attempts do
 
   defp roll_up_resource_attempts_to_access(section_slug, resource_access_id) do
 
-    access = Oli.Repo.get(ResourceAccess, resource_access_id) |> Repo.preload([:resource_attempts])
+    access = Oli.Repo.get(ResourceAccess, resource_access_id)
+    graded_attempts = get_graded_attempts_from_access(access.id)
+
     %{scoring_strategy_id: strategy_id} = DeliveryResolver.from_resource_id(section_slug, access.resource_id)
 
     %Result{score: score, out_of: out_of} =
-      Scoring.calculate_score(strategy_id, access.resource_attempts)
+      Scoring.calculate_score(strategy_id, graded_attempts)
 
     update_resource_access(access, %{
       score: score,
@@ -1056,7 +1150,7 @@ defmodule Oli.Delivery.Attempts do
       iex> get_resource_attempt_by(attempt_guid: "111")
       nil
   """
-  def get_resource_attempt_by(clauses), do: Repo.get_by(ResourceAttempt, clauses) |> Repo.preload([:activity_attempts])
+  def get_resource_attempt_by(clauses), do: Repo.get_by(ResourceAttempt, clauses) |> Repo.preload([:activity_attempts, :revision])
 
   def rollup_part_attempt_evaluations(activity_attempt_guid) do
 

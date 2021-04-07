@@ -109,6 +109,115 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     end
 
+    test "changing a page from graded to ungraded allows the graded attempt to continue", %{map: map, project: project, user: user, conn: conn, section: section, page_revision: page_revision} do
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      assert html_response(conn, 200) =~ "When you are ready to begin, you may"
+
+      # now start the graded attempt
+      conn = recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      conn = get(conn, Routes.page_delivery_path(conn, :start_attempt, section.slug, page_revision.slug))
+
+      # verify the redirection
+      assert html_response(conn, 302) =~ "redirected"
+      redir_path = redirected_to(conn, 302)
+
+      # and then the rendering of the page, which should contain a button
+      # that says 'Submit Assessment'
+      conn = recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      conn = get(conn, redir_path)
+      assert html_response(conn, 200) =~  "Submit Assessment"
+
+      # fetch the resource attempt and part attempt that will have been created
+      [attempt] = Oli.Repo.all(ResourceAttempt)
+      [part_attempt] = Oli.Repo.all(PartAttempt)
+
+      # simulate an interaction
+      Oli.Delivery.Attempts.update_part_attempt(part_attempt, %{
+        response: %{"input" => "a"}
+      })
+
+      # Now change the page from graded to ungraded, and issue a publication
+      toggle_graded = %{graded: false, title: "This is now ungraded"}
+      Oli.Authoring.Editing.PageEditor.acquire_lock(project.slug, page_revision.slug, map.author.email)
+      Oli.Authoring.Editing.PageEditor.edit(project.slug, page_revision.slug, map.author.email, toggle_graded)
+      Oli.Authoring.Editing.PageEditor.release_lock(project.slug, page_revision.slug, map.author.email)
+      Oli.Publishing.publish_project(project)
+
+      # now visit the page again, verifying that we are able to resume the original graded attempt
+      # even through the page has been changed to ungraded
+      conn = recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+      assert html_response(conn, 200) =~  "Submit Assessment"
+
+      # Submit the assessment
+      conn = recycle(conn)
+          |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        conn = get(conn, Routes.page_delivery_path(conn, :finalize_attempt, section.slug, page_revision.slug, attempt.attempt_guid))
+
+      # now visit the page again, verifying that we see the page as an ungraded page
+      conn = recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+      assert html_response(conn, 200) =~  "This is now ungraded"
+      refute html_response(conn, 200) =~  "Submit Assessment"
+
+    end
+
+    test "changing a page from ungraded to graded shows the prologue even with an ungraded attempt present", %{map: map, project: project, user: user, conn: conn, section: section, page_revision: page_revision} do
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      # Change the page to ungraded, and issue a publication
+      toggle_graded = %{graded: false, title: "This is now ungraded"}
+      Oli.Authoring.Editing.PageEditor.acquire_lock(project.slug, page_revision.slug, map.author.email)
+      Oli.Authoring.Editing.PageEditor.edit(project.slug, page_revision.slug, map.author.email, toggle_graded)
+      Oli.Authoring.Editing.PageEditor.release_lock(project.slug, page_revision.slug, map.author.email)
+      Oli.Publishing.publish_project(project)
+
+      # Visit the page in its ungraded state, thus generating a resource attempt
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+      assert html_response(conn, 200) =~  "This is now ungraded"
+      refute html_response(conn, 200) =~  "Submit Assessment"
+
+      # Now change the page to graded and issue a publication
+      toggle_graded = %{graded: true, title: "This is now graded"}
+      Oli.Authoring.Editing.PageEditor.acquire_lock(project.slug, page_revision.slug, map.author.email)
+      Oli.Authoring.Editing.PageEditor.edit(project.slug, page_revision.slug, map.author.email, toggle_graded)
+      Oli.Authoring.Editing.PageEditor.release_lock(project.slug, page_revision.slug, map.author.email)
+      Oli.Publishing.publish_project(project)
+
+      # Now visit the page again, verifying that we are presented with the prologue page
+      conn = recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+      assert html_response(conn, 200) =~ "When you are ready to begin, you may"
+
+      # now start the graded attempt
+      conn = recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      conn = get(conn, Routes.page_delivery_path(conn, :start_attempt, section.slug, page_revision.slug))
+
+      # verify the redirection
+      assert html_response(conn, 302) =~ "redirected"
+      redir_path = redirected_to(conn, 302)
+
+      # and then the rendering of the page, which should contain a button
+      # that says 'Submit Assessment'
+      conn = recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      conn = get(conn, redir_path)
+      assert html_response(conn, 200) =~  "Submit Assessment"
+
+    end
+
+
   end
 
   describe "open and free page_delivery_controller" do

@@ -13,6 +13,7 @@
  - Account for ingested pages that have missing objectives
  - Fix check all that apply + ordering activity submission in published projects
  - Fix issue where long lines in code blocks in activities overflow
+ - Fix an issue where grading status transitions across publications were not handled properly
  - Change how ids are determined in ingestion to avoid problems with unicode characters
  - Scope lock messages to a specific project
 

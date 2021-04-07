@@ -79,7 +79,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # Make sure the latest resource attempt is still correct
       user1_latest_resource_attempt = Attempts.get_latest_resource_attempt(resource.id, section.slug, user1.id)
-      assert user1_latest_resource_attempt == user1_resource_attempt
+      assert user1_latest_resource_attempt.id == user1_resource_attempt.id
 
       # Make sure the progress state is correct for the latest resource attempt
       assert PageContext.create_page_context(section.slug, revision.slug, user1).progress_state == :in_progress
@@ -129,6 +129,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # Make sure user 2 can submit the page
       {:ok, access} = Attempts.submit_graded_page(section.slug, user2_resource_attempt.attempt_guid)
+      access = Repo.preload(access, [:resource_attempts])
+
       assert !is_nil(hd(access.resource_attempts).date_evaluated)
     end
   end
@@ -198,7 +200,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
     section: section, ungraded_page_user1_attempt1: resource_attempt1 } do
       resource_attempt = Attempts.get_latest_resource_attempt(resource.id, section.slug, user1.id)
 
-      assert resource_attempt == resource_attempt1
+      assert resource_attempt.id == resource_attempt1.id
       assert is_nil(resource_attempt.date_evaluated)
       assert is_nil(resource_attempt.score)
     end
@@ -208,10 +210,10 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       resource_attempt_user1 = Attempts.get_latest_resource_attempt(resource.id, section.slug, user1.id)
       resource_attempt_user2 = Attempts.get_latest_resource_attempt(resource.id, section.slug, user2.id)
 
-      assert resource_attempt1 == resource_attempt_user1
-      assert resource_attempt2 == resource_attempt_user2
+      assert resource_attempt1.id == resource_attempt_user1.id
+      assert resource_attempt2.id == resource_attempt_user2.id
 
-      assert resource_attempt1 != resource_attempt2
+      assert resource_attempt1.id != resource_attempt2.id
     end
 
     test "determine_resource_attempt_state works for graded pages with 1 user", %{ graded_page: %{ revision: revision },
