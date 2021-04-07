@@ -13,6 +13,7 @@
  - Account for ingested pages that have missing objectives
  - Fix issue where long lines in code blocks in activities overflow
  - Change how ids are determined in ingestion to avoid problems with unicode characters
+ - Scope lock messages to a specific project
 
 ## 0.7.2 (2021-3-30)
 
