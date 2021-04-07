@@ -118,7 +118,7 @@ defmodule OliWeb.ResourceController do
 
     case PageEditor.edit(project_slug, resource_slug, author.email, update) do
       {:ok, revision} -> json(conn, %{"type" => "success", "revision_slug" => revision.slug})
-      {:error, {:lock_not_acquired}} -> error(conn, 423, "locked")
+      {:error, {:lock_not_acquired, {_user, _updated_at}}} -> error(conn, 423, "locked")
       {:error, {:not_found}} -> error(conn, 404, "not found")
       {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
       _ -> error(conn, 500, "server error")

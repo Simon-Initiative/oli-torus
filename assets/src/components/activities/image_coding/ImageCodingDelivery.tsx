@@ -11,6 +11,7 @@ import { Evaluation } from '../common/Evaluation';
 import { valueOr } from 'utils/common';
 import { Evaluator, EvalContext } from './Evaluator';
 import { lastPart } from './utils';
+import { defaultWriterContext } from 'data/content/writers/context';
 
 
 type Evaluation = {
@@ -58,6 +59,8 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   let currentOutput = output;
 
   const isEvaluated = attemptState.score !== null;
+
+  const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
 
   // tslint:disable-next-line:prefer-array-literal
   const resourceRefs = useRef<(HTMLImageElement|String)[]>(new Array(resourceURLs.length));
@@ -215,7 +218,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   };
 
   const evaluationSummary = isEvaluated
-    ? <Evaluation key="evaluation" attemptState={attemptState}/>
+    ? <Evaluation key="evaluation" attemptState={attemptState} context={writerContext}/>
     : null;
 
   const reset = isEvaluated && !props.graded
@@ -228,7 +231,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
 
   const ungradedDetails = props.graded ? null : [
     evaluationSummary,
-    <Hints key="hints" onClick={onRequestHint} hints={hints}
+    <Hints key="hints" onClick={onRequestHint} hints={hints} context={writerContext}
       hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>];
 
   const renderOutput = () => {
@@ -284,7 +287,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   return (
     <div className="activity short-answer-activity">
       <div className="activity-content">
-        <Stem stem={stem} />
+        <Stem stem={stem} context={writerContext} />
 
         <div className="">
           <Input

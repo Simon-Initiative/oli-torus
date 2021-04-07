@@ -147,8 +147,34 @@ defmodule Oli.Rendering.Content.Html do
     ["<blockquote>", next.(), "</blockquote>\n"]
   end
 
-  def a(%Context{} = _context, next, %{"href" => href}) do
-    [~s|<a href="#{escape_xml!(href)}">|, next.(), "</a>\n"]
+  def a(%Context{} = context, next, %{"href" => href}) do
+    if String.starts_with?(href, "/course/link") do
+      internal_link(context, next, href)
+    else
+      external_link(context, next, href)
+    end
+  end
+
+  defp internal_link(%Context{section_slug: section_slug}, next, href) do
+    href = case section_slug do
+      nil ->
+        "#"
+
+      section_slug ->
+        # rewrite internal link using section slug and revision slug
+        "/sections/#{section_slug}/page/#{revision_slug_from_course_link(href)}"
+    end
+
+    [~s|<a class="internal-link" href="#{escape_xml!(href)}">|, next.(), "</a>\n"]
+  end
+
+  defp external_link(%Context{} = _context, next, href) do
+    [~s|<a class="external-link" href="#{escape_xml!(href)}" target="_blank">|, next.(), "</a>\n"]
+  end
+
+  defp revision_slug_from_course_link(href) do
+    href
+    |> String.replace_prefix("/course/link/", "")
   end
 
   def definition(%Context{} = _context, next, _) do

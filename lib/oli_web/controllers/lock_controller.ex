@@ -9,7 +9,8 @@ defmodule OliWeb.LockController do
 
     case PageEditor.acquire_lock(project_slug, resource_slug, author.email) do
       {:acquired} -> json conn, %{ "type" => "acquired"}
-      {:lock_not_acquired, user} -> json conn, %{ "type" => "not_acquired", "user" => user}
+      {:lock_not_acquired, {user, _updated_at}} ->
+        json conn, %{ "type" => "not_acquired", "user" => user}
       {:error, {:not_found}} -> error(conn, 404, "not found")
       {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
       {:error, {:error}} -> error(conn, 500, "server error")

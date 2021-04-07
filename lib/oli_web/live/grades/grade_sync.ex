@@ -10,7 +10,7 @@ defmodule OliWeb.Grades.GradeSync do
 
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title"><%= dgettext("grades", "Synchronize LMS Grades") %></h5>
+        <h5 class="card-title"><%= dgettext("grades", "Synchronize Grades") %></h5>
 
         <p class="card-text">
           <%= dgettext("grades", "If an instructor changes the maximum score for an LMS gradebook line item after students
@@ -34,7 +34,7 @@ defmodule OliWeb.Grades.GradeSync do
 
       <div class="card-footer">
 
-        <a class="btn btn-primary" phx-click="send_grades" <%= disabled %>><%= dgettext("grades", "Synchronize LMS Grades") %></a>
+        <a class="btn btn-primary" phx-click="send_grades" <%= disabled %>><%= dgettext("grades", "Synchronize Grades") %></a>
 
       </div>
     </div>

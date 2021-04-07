@@ -15,7 +15,7 @@ defmodule Oli.CloneTest do
       project_map = Oli.Seeder.base_project_with_resource2()
 
       # Acquire a lock to edit the published_resource mapping in place
-      Locks.acquire(project_map.publication.id, project_map.container.resource.id, project_map.author.id)
+      Locks.acquire(project_map.project.slug, project_map.publication.id, project_map.container.resource.id, project_map.author.id)
 
       {:ok, duplicated_project} = Clone.clone_project(project_map.project.slug, project_map.author2)
       Map.put(project_map, :duplicated, Repo.preload(duplicated_project, [:parent_project, :family]))
@@ -57,13 +57,13 @@ defmodule Oli.CloneTest do
       assert Enum.empty?(Publishing.retrieve_lock_info([resource.id], publication.id))
     end
 
-    test "clone_all_resource_mappings/2 works", %{ container: %{ resource: resource }, publication: publication, duplicated: duplicated } do
+    test "clone_all_published_resources/2 works", %{ container: %{ resource: resource }, publication: publication, duplicated: duplicated } do
       # Create a new publication
       {:ok, cloned_publication} = Publishing.create_publication(%{
         project_id: duplicated.id,
         root_resource_id: resource.id,
       })
-      [head | tail] = Clone.clone_all_resource_mappings(publication.id, cloned_publication.id)
+      [head | tail] = Clone.clone_all_published_resources(publication.id, cloned_publication.id)
       # 3 published resources
       assert Enum.count([head | tail]) == 3
       assert head.publication_id == cloned_publication.id

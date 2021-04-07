@@ -105,8 +105,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
          project_slug
        ) do
     Enum.each(children, fn child ->
-      Subscriber.subscribe_to_locks_acquired(child.resource_id)
-      Subscriber.subscribe_to_locks_released(child.resource_id)
+      Subscriber.subscribe_to_locks_acquired(project_slug, child.resource_id)
+      Subscriber.subscribe_to_locks_released(project_slug, child.resource_id)
     end)
 
     activity_ids = Enum.map(activity_map, fn {id, _} -> id end)
@@ -138,8 +138,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
     Enum.each(ids, &Subscriber.unsubscribe_to_new_revisions_in_project(&1, project_slug))
 
     Enum.each(children, fn child ->
-      Subscriber.unsubscribe_to_locks_acquired(child.resource_id)
-      Subscriber.unsubscribe_to_locks_released(child.resource_id)
+      Subscriber.unsubscribe_to_locks_acquired(project_slug, child.resource_id)
+      Subscriber.unsubscribe_to_locks_released(project_slug, child.resource_id)
     end)
   end
 

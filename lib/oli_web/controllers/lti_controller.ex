@@ -11,6 +11,8 @@ defmodule OliWeb.LtiController do
   alias Oli.Predefined
   alias Oli.Slack
   alias OliWeb.Common.LtiSession
+  alias Oli.Lti.LTI_AGS
+  alias Oli.Lti.LTI_NRPS
 
   require Logger
 
@@ -322,7 +324,7 @@ defmodule OliWeb.LtiController do
                 throw "Error getting context information from launch params"
               context ->
                 # update section specifics - if one exists. Enroll the user and also update the section details
-                conn = with {:ok, section} <- get_existing_section(lti_params)
+                with {:ok, section} <- get_existing_section(lti_params)
                 do
                   # transform lti_roles to a list only containing valid context roles (exclude all system and institution roles)
                   context_roles = ContextRoles.get_roles_by_uris(lti_roles)
@@ -332,13 +334,7 @@ defmodule OliWeb.LtiController do
 
                   # make sure section details are up to date
                   %{"title" => context_title} = context
-                  update_section_details(context_title, section)
-
-                  # store lti params key in the session for this particular section so that the cached lti_params
-                  # can be retrieved from the database in later requests
-                  LtiSession.put_section_params(conn, section.slug, lti_params_key)
-                else
-                  _ -> conn
+                  {:ok, _section} = update_section_details(context_title, section, lti_params)
                 end
 
                 # if account is linked to an author, sign them in
@@ -370,8 +366,14 @@ defmodule OliWeb.LtiController do
     Sections.enroll(user_id, section_id, context_roles)
   end
 
-  defp update_section_details(context_title, section) do
-    Sections.update_section(section, %{title: context_title})
+  defp update_section_details(context_title, section, lti_params) do
+    Sections.update_section(section, %{
+      title: context_title,
+      grade_passback_enabled: LTI_AGS.grade_passback_enabled?(lti_params),
+      line_items_service_url: LTI_AGS.get_line_items_url(lti_params),
+      nrps_enabled: LTI_NRPS.nrps_enabled?(lti_params),
+      nrps_context_memberships_url: LTI_NRPS.get_context_memberships_url(lti_params)
+    })
   end
 
   defp get_existing_section(lti_params) do

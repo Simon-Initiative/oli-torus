@@ -70,6 +70,20 @@
         },
         {
           "text": " in 1765. They had no representatives in the British Parliament and so rejected Parliament's authority to tax them. Protests steadily escalated to the Boston Massacre in 1770 and the burning of the Gaspee in Rhode Island in 1772, followed by the Boston Tea Party in December 1773. The British responded by closing Boston Harbor and enacting a series of punitive laws which effectively rescinded Massachusetts Bay Colony's rights of self-government. The other colonies rallied behind Massachusetts, and a group of American Patriot leaders set up their own government in late 1774 at the Continental Congress to coordinate their resistance of Britain; other colonists retained their allegiance to the Crown and were known as Loyalists or Tories."
+        },
+        {
+          "text": "Learn more about the American colonials on "
+        },
+        {
+          "type": "a",
+          "href": "/course/link/page_two",
+          "target": "self",
+          "children": [
+            {
+              "text": "Page Two"
+            }
+          ],
+          "id": 104398605
         }
       ]
     },

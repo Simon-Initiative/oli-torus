@@ -1,0 +1,29 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12 text-center pt-4">
+      <%= case @reason do %>
+        <% :before_start_date -> %>
+          <p><i class="la la-calendar-times-o" aria-hidden="true" style="font-size: 64px"></i></p>
+          <h2 class="mt-4 mb-4">Section Has Not Started</h2>
+          <p>
+            You are attempting to access a section before its scheduled start date.
+          </p>
+        <% :after_end_date -> %>
+          <p><i class="la la-calendar-times-o" aria-hidden="true" style="font-size: 64px"></i></p>
+          <h2 class="mt-4 mb-4">Section Has Concluded</h2>
+          <p>
+            You are attempting to access a section after its scheduled end date.
+          </p>
+        <% _ -> %>
+          <p><i class="la la-times-circle-o" aria-hidden="true" style="font-size: 64px"></i></p>
+          <h2 class="mt-4 mb-4">Section Not Available</h2>
+          <p>
+            The section you are attempting to access is currently unavailable.
+          </p>
+      <% end %>
+
+      <p>If you think this is an error or would like more information, please <a href="<%= Routes.help_path(@conn, :index) %>">contact OLI Support</a>.</p>
+
+    </div>
+  </div>
+</div>

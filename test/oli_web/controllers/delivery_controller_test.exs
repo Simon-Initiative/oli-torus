@@ -172,7 +172,6 @@ defmodule OliWeb.DeliveryControllerTest do
         "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id,
       }
     )
-    conn = LtiSession.put_section_params(conn, section.slug, cache_keys.student)
 
     cache_keys = %{cache_keys |
       student_no_section: Lti_1p3.Tool.lti_params_key(registration.issuer, registration.client_id, "student-sub", "some-new-context-id")
@@ -209,7 +208,6 @@ defmodule OliWeb.DeliveryControllerTest do
       ],
       "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id,
     })
-    conn = LtiSession.put_section_params(conn, section.slug, cache_keys.instructor)
 
     cache_keys = %{cache_keys |
       instructor_no_section: Lti_1p3.Tool.lti_params_key(registration.issuer, registration.client_id, "instructor-create-sub", "some-new-context-id")

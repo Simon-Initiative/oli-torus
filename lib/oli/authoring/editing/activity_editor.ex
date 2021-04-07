@@ -79,13 +79,13 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   Returns:
 
   .`{:ok, revision}` when the resource is deleted
-  .`{:error, {:lock_not_acquired}}` if the lock could not be acquired or updated
+  .`{:error, {:lock_not_acquired, {user_email, updated_at}}}` if the lock could not be acquired or updated
   .`{:error, {:not_found}}` if the project or activity or user cannot be found
   .`{:error, {:not_authorized}}` if the user is not authorized to edit this project or activity
   .`{:error, {:error}}` unknown error
   """
   @spec delete(String.t, any(), any(), String.t)
-    :: {:ok, list()} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:lock_not_acquired}} | {:error, {:not_authorized}}
+    :: {:ok, list()} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:lock_not_acquired, any()}} | {:error, {:not_authorized}} | {:error, {:not_applicable}}
   def delete(project_slug, lock_id, activity_id, author) do
 
     secondary_id = Oli.Resources.ResourceType.get_id_by_type("secondary")
@@ -104,7 +104,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
           update = %{"deleted" => true}
 
-          case Locks.update(publication.id, resource.id, author.id) do
+          case Locks.update(project.slug, publication.id, resource.id, author.id) do
 
             # If we acquired the lock, we must first create a new revision
             {:acquired} -> create_new_revision(revision, publication, activity, author.id)
@@ -156,7 +156,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         {:ok, publication} <- Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
         {:ok, secondary_revision} <- create_secondary_revision(activity_id, author.id, validated_update),
         {:ok, _} <- Course.create_project_resource(%{ project_id: project.id, resource_id: secondary_revision.resource_id}) |> trap_nil(),
-        {:ok, _mapping} <- Publishing.create_resource_mapping(%{publication_id: publication.id, resource_id: secondary_revision.resource_id, revision_id: secondary_revision.id})
+        {:ok, _mapping} <- Publishing.create_published_resource(%{publication_id: publication.id, resource_id: secondary_revision.resource_id, revision_id: secondary_revision.id})
       do
         secondary_revision
       else
@@ -196,14 +196,14 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   Returns:
 
   .`{:ok, %Revision{}}` when the edit processes successfully
-  .`{:error, {:lock_not_acquired}}` if the lock could not be acquired or updated
+  .`{:error, {:lock_not_acquired, {user_email, updated_at}}}` if the lock could not be acquired or updated
   .`{:error, {:not_found}}` if the project, resource, activity, or user cannot be found
   .`{:error, {:not_authorized}}` if the user is not authorized to edit this activity
   .`{:error, {:invalid_update_field}}` if the update contains an invalid field
   .`{:error, {:error}}` unknown error
   """
   @spec edit(String.t, String.t, any(), String.t, %{})
-    :: {:ok, %Revision{}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:lock_not_acquired}} | {:error, {:not_authorized}}
+    :: {:ok, %Revision{}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:lock_not_acquired, any()}} | {:error, {:not_authorized}}
   def edit(project_slug, lock_id, activity_id, author_email, update) do
 
     result = with {:ok, _} <- validate_request(update),
@@ -216,13 +216,13 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     do
       Repo.transaction(fn ->
 
-        case Locks.update(publication.id, resource.id, author.id) do
+        case Locks.update(project.slug, publication.id, resource.id, author.id) do
 
           # If we acquired the lock, we must first create a new revision
           {:acquired} -> get_latest_revision(publication.id, activity.id)
             |> create_new_revision(publication, activity, author.id)
             |> update_revision(update, project.slug)
-            |> possibly_release_lock(publication, resource, author, update)
+            |> possibly_release_lock(project, publication, resource, author, update)
 
           # A successful lock update means we can safely edit the existing revision
           # unless, that is, if the update would change the corresponding slug.
@@ -231,7 +231,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           {:updated} -> get_latest_revision(publication.id, activity.id)
             |> maybe_create_new_revision(publication, activity, author.id, update)
             |> update_revision(update, project.slug)
-            |> possibly_release_lock(publication, resource, author, update)
+            |> possibly_release_lock(project, publication, resource, author, update)
 
           # error or not able to lock results in a failed edit
           result -> Repo.rollback(result)
@@ -252,9 +252,9 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   end
 
-  defp possibly_release_lock(previous, publication, resource, author, update) do
+  defp possibly_release_lock(previous, project, publication, resource, author, update) do
     if Map.get(update, "releaseLock", false) do
-      Locks.release(publication.id, resource.id, author.id)
+      Locks.release(project.slug, publication.id, resource.id, author.id)
     end
 
     previous
@@ -295,8 +295,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       activity_type_id: previous.activity_type_id
     })
 
-    Publishing.get_resource_mapping!(publication.id, activity.id)
-    |> Publishing.update_resource_mapping(%{ revision_id: revision.id })
+    Publishing.get_published_resource!(publication.id, activity.id)
+    |> Publishing.update_published_resource(%{ revision_id: revision.id })
 
     revision
   end
@@ -402,7 +402,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   .`{:error, {:error}}` unknown error
   """
   @spec create(String.t, String.t, %Author{}, %{}, [])
-    :: {:ok, %Revision{}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:not_authorized}}
+    :: {:ok, {%Revision{}, map()}} | {:error, {:not_found}} | {:error, {:error}} | {:error, {:not_authorized}}
   def create(project_slug, activity_type_slug, author, model, objectives) do
 
     Repo.transaction(fn ->
@@ -414,7 +414,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          {:ok, attached_objectives} <- attach_objectives_to_all_parts(model, objectives),
          {:ok, %{content: content} = activity} <- Activity.create_new(%{title: activity_type.title, scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"), objectives: attached_objectives, author_id: author.id, content: model, activity_type_id: activity_type.id}),
          {:ok, _} <- Course.create_project_resource(%{ project_id: project.id, resource_id: activity.resource_id}) |> trap_nil(),
-         {:ok, _mapping} <- Publishing.create_resource_mapping(%{publication_id: publication.id, resource_id: activity.resource_id, revision_id: activity.id})
+         {:ok, _mapping} <- Publishing.create_published_resource(%{publication_id: publication.id, resource_id: activity.resource_id, revision_id: activity.id})
       do
         case Transformers.apply_transforms(content) do
           {:ok, transformed} -> {activity, transformed}

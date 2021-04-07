@@ -27,7 +27,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   project and revision slug, for the author specified by email.
 
   The update parameter is a map containing key-value pairs of the
-  attributes of a ResourceRevision that are to be edited. It can
+  attributes of a resource Revision that are to be edited. It can
   contain any number of key-value pairs, but the keys must match
   the schema of `%Revision{}` struct.
 
@@ -37,7 +37,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
   Returns:
 
-  .`{:ok, %ResourceRevision{}}` when the edit processes successfully the
+  .`{:ok, %Revision{}}` when the edit processes successfully the
   .`{:error, {:lock_not_acquired}}` if the lock could not be acquired or updated
   .`{:error, {:not_found}}` if the project, resource, or user cannot be found
   .`{:error, {:not_authorized}}` if the user is not authorized to edit this resource
@@ -47,7 +47,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
           {:ok, %Revision{}}
           | {:error, {:not_found}}
           | {:error, {:error}}
-          | {:error, {:lock_not_acquired}}
+          | {:error, {:lock_not_acquired, {String.t(), Calendar.naive_datetime()}}}
           | {:error, {:not_authorized}}
   def edit(project_slug, revision_slug, author_email, update) do
     result =
@@ -59,14 +59,14 @@ defmodule Oli.Authoring.Editing.PageEditor do
            {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
            {:ok, converted_update} <- convert_to_activity_ids(update) do
         Repo.transaction(fn ->
-          case Locks.update(publication.id, resource.id, author.id) do
+          case Locks.update(project.slug, publication.id, resource.id, author.id) do
             # If we acquired the lock, we must first create a new revision
             {:acquired} ->
               get_latest_revision(publication, resource)
               |> resurrect_or_delete_activity_references(converted_update, project.slug)
               |> create_new_revision(publication, resource, author.id)
               |> update_revision(converted_update, project.slug)
-              |> possibly_release_lock(publication, resource, author, update)
+              |> possibly_release_lock(project, publication, resource, author, update)
 
             # A successful lock update means we can safely edit the existing revision
             {:updated} ->
@@ -74,7 +74,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
               |> resurrect_or_delete_activity_references(converted_update, project.slug)
               |> maybe_create_new_revision(publication, resource, author.id, converted_update)
               |> update_revision(converted_update, project.slug)
-              |> possibly_release_lock(publication, resource, author, update)
+              |> possibly_release_lock(project, publication, resource, author, update)
 
             # error or not able to lock results in a failed edit
             result ->
@@ -98,9 +98,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
     end
   end
 
-  defp possibly_release_lock(previous, publication, resource, author, update) do
+  defp possibly_release_lock(previous, project, publication, resource, author, update) do
     if Map.get(update, "releaseLock", false) do
-      Locks.release(publication.id, resource.id, author.id)
+      Locks.release(project.slug, publication.id, resource.id, author.id)
     end
 
     previous
@@ -122,7 +122,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   """
   @spec acquire_lock(String.t(), String.t(), String.t()) ::
           {:acquired}
-          | {:lock_not_acquired, String.t()}
+          | {:lock_not_acquired, {String.t(), Calendar.naive_datetime()}}
           | {:error, {:not_found}}
           | {:error, {:error}}
           | {:error, {:not_authorized}}
@@ -133,11 +133,11 @@ defmodule Oli.Authoring.Editing.PageEditor do
          {:ok, publication} <-
            Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil() do
-      case Locks.acquire(publication.id, resource.id, author.id) do
+      case Locks.acquire(project.slug, publication.id, resource.id, author.id) do
         # If we reacquired the lock, we must first create a new revision
         {:acquired} -> {:acquired}
         # error or not able to lock results in a failed edit
-        {:lock_not_acquired, {locked_by, _}} -> {:lock_not_acquired, locked_by}
+        {:lock_not_acquired, {locked_by, locked_at}} -> {:lock_not_acquired, {locked_by, locked_at}}
         error -> {:error, error}
       end
     else
@@ -167,7 +167,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
          {:ok, publication} <-
            Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil() do
-      case Locks.release(publication.id, resource.id, author.id) do
+      case Locks.release(project.slug, publication.id, resource.id, author.id) do
         {:error} -> {:error, {:error}}
         _ -> {:ok, {:released}}
       end
@@ -534,8 +534,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
     attrs = %{author_id: author_id}
     {:ok, revision} = Resources.create_revision_from_previous(previous, attrs)
 
-    mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
-    {:ok, _mapping} = Publishing.update_resource_mapping(mapping, %{revision_id: revision.id})
+    mapping = Publishing.get_published_resource!(publication.id, resource.id)
+    {:ok, _mapping} = Publishing.update_published_resource(mapping, %{revision_id: revision.id})
 
     {revision, changed_activity_revisions}
   end

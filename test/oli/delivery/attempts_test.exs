@@ -234,6 +234,10 @@ defmodule Oli.Delivery.AttemptsTest do
       assert is_nil part_attempt.date_evaluated
     end
 
+    test "get_section_by_activity_attempt_guid", %{section: section, activity_attempt1: activity_attempt1} do
+      assert section == Attempts.get_section_by_activity_attempt_guid(activity_attempt1.attempt_guid)
+    end
+
     test "resource attempt history", %{graded_page: %{resource: resource, revision: revision}, section: section, user1: user1} do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 

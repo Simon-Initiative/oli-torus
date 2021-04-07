@@ -31,12 +31,12 @@ defmodule Oli.Authoring.Broadcaster.Subscriber do
       PubSub.subscribe(Oli.PubSub, message_dismiss_warning(project_slug))
     end
 
-    def subscribe_to_locks_acquired(resource_id) do
-      PubSub.subscribe(Oli.PubSub, message_lock_acquired(resource_id))
+    def subscribe_to_locks_acquired(project_slug, resource_id) do
+      PubSub.subscribe(Oli.PubSub, message_lock_acquired(project_slug, resource_id))
     end
 
-    def subscribe_to_locks_released(resource_id) do
-      PubSub.subscribe(Oli.PubSub, message_lock_released(resource_id))
+    def subscribe_to_locks_released(project_slug, resource_id) do
+      PubSub.subscribe(Oli.PubSub, message_lock_released(project_slug, resource_id))
     end
 
 
@@ -70,11 +70,11 @@ defmodule Oli.Authoring.Broadcaster.Subscriber do
       PubSub.unsubscribe(Oli.PubSub, message_dismiss_warning(project_slug))
     end
 
-    def unsubscribe_to_locks_acquired(resource_id) do
-      PubSub.unsubscribe(Oli.PubSub, message_lock_acquired(resource_id))
+    def unsubscribe_to_locks_acquired(project_slug, resource_id) do
+      PubSub.unsubscribe(Oli.PubSub, message_lock_acquired(project_slug, resource_id))
     end
 
-    def unsubscribe_to_locks_released(resource_id) do
-      PubSub.unsubscribe(Oli.PubSub, message_lock_released(resource_id))
+    def unsubscribe_to_locks_released(project_slug, resource_id) do
+      PubSub.unsubscribe(Oli.PubSub, message_lock_released(project_slug, resource_id))
     end
 end

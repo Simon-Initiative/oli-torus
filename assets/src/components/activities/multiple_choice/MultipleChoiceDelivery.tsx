@@ -10,12 +10,13 @@ import {
 import { MultipleChoiceModelSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
-import { Maybe } from 'tsmonad';
+import { Maybe, writer } from 'tsmonad';
 import { Stem } from '../common/DisplayedStem';
 import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/Evaluation';
 import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
+import { defaultWriterContext, WriterContext } from 'data/content/writers/context';
 
 type Evaluation = {
   score: number,
@@ -26,11 +27,12 @@ type Evaluation = {
 interface ChoicesProps {
   choices: ActivityTypes.Choice[];
   selected: Maybe<string>;
+  context: WriterContext;
   onSelect: (id: string) => void;
   isEvaluated: boolean;
 }
 
-const Choices = ({ choices, selected, onSelect, isEvaluated }: ChoicesProps) => {
+const Choices = ({ choices, selected, context, onSelect, isEvaluated }: ChoicesProps) => {
   return (
     <div className="choices">
       {choices.map((choice, index) =>
@@ -39,6 +41,7 @@ const Choices = ({ choices, selected, onSelect, isEvaluated }: ChoicesProps) => 
           onClick={() => onSelect(choice.id)}
           selected={selected.valueOr('') === choice.id}
           choice={choice}
+          context={context}
           isEvaluated={isEvaluated}
           index={index} />)}
     </div>
@@ -49,17 +52,18 @@ interface ChoiceProps {
   choice: ActivityTypes.Choice;
   index: number;
   selected: boolean;
+  context: WriterContext;
   onClick: () => void;
   isEvaluated: boolean;
 }
 
-const Choice = ({ choice, index, selected, onClick, isEvaluated }: ChoiceProps) => {
+const Choice = ({ choice, index, selected, context, onClick, isEvaluated }: ChoiceProps) => {
   return (
     <div key={choice.id}
       onClick={isEvaluated ? undefined : onClick}
       className={`choice ${selected ? 'selected' : ''}`}>
       <span className="choice-index">{index + 1}</span>
-      <HtmlContentModelRenderer text={choice.content} />
+      <HtmlContentModelRenderer text={choice.content} context={context} />
     </div>
   );
 };
@@ -78,6 +82,8 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
   const { stem, choices } = model;
 
   const isEvaluated = attemptState.score !== null;
+
+  const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
 
   const onSelect = (id: string) => {
     // Update local state
@@ -127,7 +133,7 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
   };
 
   const evaluationSummary = isEvaluated
-    ? <Evaluation key="evaluation" attemptState={attemptState} />
+    ? <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
     : null;
 
   const reset = isEvaluated && !props.graded
@@ -141,7 +147,7 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
   const ungradedDetails = props.graded ? null : [
     evaluationSummary,
     <Hints key="hints" onClick={onRequestHint} hints={hints}
-      hasMoreHints={hasMoreHints} isEvaluated={isEvaluated} />];
+      hasMoreHints={hasMoreHints} isEvaluated={isEvaluated} context={writerContext} />];
 
   const gradedDetails = props.graded && props.progressState === 'in_review' ? [
     evaluationSummary] : null;
@@ -157,10 +163,10 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
   return (
     <div className={`activity multiple-choice-activity ${isEvaluated ? 'evaluated' : ''}`}>
       <div className="activity-content">
-        <Stem stem={stem} />
+        <Stem stem={stem} context={writerContext} />
         {gradedPoints}
         <Choices choices={choices} selected={selected}
-          onSelect={onSelect} isEvaluated={isEvaluated} />
+          onSelect={onSelect} isEvaluated={isEvaluated} context={writerContext} />
         {ungradedDetails}
         {gradedDetails}
       </div>

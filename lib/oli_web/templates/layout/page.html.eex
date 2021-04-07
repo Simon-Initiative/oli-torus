@@ -4,13 +4,16 @@
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
   <% end %>
 
+  <div class="my-2">
+    <a href="<%= Routes.page_delivery_path(@conn, :index, @section_slug) %>" class="btn btn-link course-btn">
+      <i class="fa fa-arrow-left mr-1" aria-hidden="true"></i> Course Overview
+    </a>
+  </div>
+
   <div id="wrapper">
 
       <!-- Page Content -->
       <div id="content">
-        <a href="<%= Routes.delivery_path(@conn, :index) %>" class="btn btn-link course-btn">
-          <i class="fa fa-arrow-left mr-1" aria-hidden="true"></i>Course Outline
-        </a>
 
         <%= @inner_content %>
 
