@@ -1,10 +1,10 @@
 
-.project-cards {
+.card-links {
   display: flex;
   flex-wrap: wrap;
 }
 
-a.project-card-link {
+a.card-link {
   width: 270px;
   height: 150px;
 
@@ -33,7 +33,7 @@ a.project-card-link {
   }
 }
 
-.project-card {
+.card-link {
   width: 270px;
   height: 150px;
   overflow: hidden;
@@ -84,4 +84,24 @@ a.project-card-link {
       font-size: 15px;
     }
   }
+}
+
+.course-card-link {
+  img.card-img-top {
+    height: 150px;
+    width: auto;
+    object-fit: cover;
+  }
+
+  .card-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* number of lines to show */
+    -webkit-box-orient: vertical;
+  }
+}
+
+.course-card-link:hover {
+  text-decoration: none;
 }

@@ -30,7 +30,7 @@ defmodule Oli.Authoring.Clone do
           }),
           base_publication <- AuthoringResolver.publication(base_project.slug),
           _ <- Locks.release_all(base_publication.id),
-          _ <- clone_all_resource_mappings(base_publication.id, cloned_publication.id),
+          _ <- clone_all_published_resources(base_publication.id, cloned_publication.id),
           _ <- clone_all_project_resources(base_project.id, cloned_project.id),
           _ <- clone_all_media_items(base_project.slug, cloned_project.id)
         do
@@ -49,9 +49,9 @@ defmodule Oli.Authoring.Clone do
     })))
   end
 
-  def clone_all_resource_mappings(base_publication_id, cloned_publication_id) do
-    Publishing.get_resource_mappings_by_publication(base_publication_id)
-    |> Enum.map(&Repo.insert!(Publishing.change_resource_mapping(%PublishedResource{}, %{
+  def clone_all_published_resources(base_publication_id, cloned_publication_id) do
+    Publishing.get_published_resources_by_publication(base_publication_id)
+    |> Enum.map(&Repo.insert!(Publishing.change_published_resource(%PublishedResource{}, %{
       publication_id: cloned_publication_id,
       resource_id: &1.resource_id,
       revision_id: &1.revision_id,

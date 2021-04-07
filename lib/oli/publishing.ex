@@ -11,6 +11,7 @@ defmodule Oli.Publishing do
   alias Oli.Resources.{Revision, ResourceType}
   alias Oli.Publishing.{Publication, PublishedResource}
   alias Oli.Institutions.Institution
+  alias Oli.Authoring.Clone
 
   def query_unpublished_revisions_by_type(project_slug, type) do
     publication_id = get_unpublished_publication_by_slug!(project_slug).id
@@ -77,10 +78,13 @@ defmodule Oli.Publishing do
 
   @doc """
   Returns the list of publications available to an author. If no author is specified,
-  then it will only return publicly available open and free publications
+  then it will only return publicly available publications.
 
   ## Examples
-      iex> available_publications(author)
+      iex> available_publications()
+      [%Publication{}, ...]
+
+      iex> available_publications(author, institution)
       [%Publication{}, ...]
   """
   def available_publications() do
@@ -92,7 +96,7 @@ defmodule Oli.Publishing do
     query = from pub in Publication,
       join: u in subquery(subquery), on: pub.project_id == u.project_id and u.max_date == pub.updated_at,
       join: proj in Project, on: pub.project_id == proj.id,
-      where: pub.open_and_free == true or proj.visibility == :global,
+      where: pub.published == true and proj.visibility == :global,
       preload: [:project],
       distinct: true,
       select: pub
@@ -100,7 +104,6 @@ defmodule Oli.Publishing do
     Repo.all(query)
   end
 
-  @spec available_publications(Oli.Accounts.Author.t(), Oli.Institutions.Institution.t()) :: any
   def available_publications(%Author{} = author, %Institution{} = institution) do
 
     subquery = from t in Publication,
@@ -113,7 +116,12 @@ defmodule Oli.Publishing do
       join: proj in Project, on: pub.project_id == proj.id,
       left_join: a in assoc(proj, :authors),
       left_join: v in ProjectVisibility, on: proj.id == v.project_id,
-      where: a.id == ^author.id or pub.open_and_free == true or proj.visibility == :global or (proj.visibility == :selected and (v.author_id == ^author.id or v.institution_id == ^institution.id)),
+      where: pub.published == true and (
+        a.id == ^author.id or proj.visibility == :global or (
+          proj.visibility == :selected and (
+            v.author_id == ^author.id or v.institution_id == ^institution.id)
+          )
+        ),
       preload: [:project],
       distinct: true,
       select: pub
@@ -145,7 +153,7 @@ defmodule Oli.Publishing do
           project_id: project.id,
           root_resource_id: resource.id,
         }),
-        {:ok, resource_mapping} <- create_resource_mapping(%{
+        {:ok, published_resource} <- create_published_resource(%{
           publication_id: publication.id,
           resource_id: resource.id,
           revision_id: resource_revision.id,
@@ -153,7 +161,7 @@ defmodule Oli.Publishing do
       do
         %{}
         |> Map.put(:publication, publication)
-        |> Map.put(:resource_mapping, resource_mapping)
+        |> Map.put(:published_resource, published_resource)
       else
         error -> Repo.rollback(error)
       end
@@ -223,7 +231,6 @@ defmodule Oli.Publishing do
   def new_project_publication(resource, project) do
     %Publication{}
     |> Publication.changeset(%{
-      description: "Initial project creation",
       root_resource_id: resource.id,
       project_id: project.id
     })
@@ -277,25 +284,25 @@ defmodule Oli.Publishing do
   end
 
   @doc """
-  Returns the list of resource_mappings.
+  Returns the list of published_resources.
   ## Examples
-      iex> list_resource_mappings()
-      [%ResourceMapping{}, ...]
+      iex> list_published_resources()
+      [%PublishedResource{}, ...]
   """
-  def list_resource_mappings do
+  def list_published_resources do
     Repo.all(PublishedResource)
   end
 
   @doc """
-  Returns the list of resource_mappings for a given publication.
+  Returns the list of published_resources for a given publication.
 
   ## Examples
 
-      iex> get_resource_mappings_for_publication()
-      [%ResourceMapping{}, ...]
+      iex> get_published_resources_for_publication()
+      [%PublishedResource{}, ...]
 
   """
-  def get_resource_mappings_by_publication(publication_id) do
+  def get_published_resources_by_publication(publication_id) do
     from(p in PublishedResource, where: p.publication_id == ^publication_id, preload: [:resource, :revision])
     |> Repo.all()
   end
@@ -313,21 +320,21 @@ defmodule Oli.Publishing do
   end
 
   @doc """
-  Gets a single resource_mapping.
+  Gets a single published_resource.
   Raises `Ecto.NoResultsError` if the Resource mapping does not exist.
   ## Examples
-      iex> get_resource_mapping!(123)
-      %ResourceMapping{}
-      iex> get_resource_mapping!(456)
+      iex> get_published_resource!(123)
+      %PublishedResource{}
+      iex> get_published_resource!(456)
       ** (Ecto.NoResultsError)
   """
-  def get_resource_mapping!(id), do: Repo.get!(PublishedResource, id)
+  def get_published_resource!(id), do: Repo.get!(PublishedResource, id)
 
-  def get_resource_mapping!(publication_id, resource_id) do
+  def get_published_resource!(publication_id, resource_id) do
     Repo.one!(from p in PublishedResource, where: p.publication_id == ^publication_id and p.resource_id == ^resource_id)
   end
 
-  def get_resource_mapping(publication_id, resource_id) do
+  def get_published_resource(publication_id, resource_id) do
     Repo.one(from p in PublishedResource, where: p.publication_id == ^publication_id and p.resource_id == ^resource_id)
   end
 
@@ -336,9 +343,9 @@ defmodule Oli.Publishing do
   for the given publication and revision.
   """
   def upsert_published_resource(%Publication{} = publication, revision) do
-    case get_resource_mapping(publication.id, revision.resource_id) do
-      nil -> create_resource_mapping(%{publication_id: publication.id, resource_id: revision.resource_id, revision_id: revision.id})
-      mapping -> update_resource_mapping(mapping, %{resource_id: revision.resource_id, revision_id: revision.id})
+    case get_published_resource(publication.id, revision.resource_id) do
+      nil -> create_published_resource(%{publication_id: publication.id, resource_id: revision.resource_id, revision_id: revision.id})
+      mapping -> update_published_resource(mapping, %{resource_id: revision.resource_id, revision_id: revision.id})
     end
   end
 
@@ -353,59 +360,58 @@ defmodule Oli.Publishing do
   end
 
   @doc """
-  Creates a resource_mapping.
+  Creates a published_resource.
   ## Examples
-      iex> create_resource_mapping(%{field: value})
-      {:ok, %ResourceMapping{}}
-      iex> create_resource_mapping(%{field: bad_value})
+      iex> create_published_resource(%{field: value})
+      {:ok, %PublishedResource{}}
+      iex> create_published_resource(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
-  def create_resource_mapping(attrs \\ %{}) do
+  def create_published_resource(attrs \\ %{}) do
     %PublishedResource{}
     |> PublishedResource.changeset(attrs)
     |> Repo.insert()
   end
 
   @doc """
-  Updates a resource_mapping.
+  Updates a published_resource.
   ## Examples
-      iex> update_resource_mapping(resource_mapping, %{field: new_value})
-      {:ok, %ResourceMapping{}}
-      iex> update_resource_mapping(resource_mapping, %{field: bad_value})
+      iex> update_published_resource(published_resource, %{field: new_value})
+      {:ok, %PublishedResource{}}
+      iex> update_published_resource(published_resource, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
-  def update_resource_mapping(%PublishedResource{} = resource_mapping, attrs) do
-    resource_mapping
+  def update_published_resource(%PublishedResource{} = published_resource, attrs) do
+    published_resource
     |> PublishedResource.changeset(attrs)
     |> Repo.update()
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking resource_mapping changes.
+  Returns an `%Ecto.Changeset{}` for tracking published_resource changes.
   ## Examples
-      iex> change_resource_mapping(resource_mapping)
-      %Ecto.Changeset{source: %ResourceMapping{}}
+      iex> change_published_resource(published_resource)
+      %Ecto.Changeset{source: %PublishedResource{}}
   """
-  def change_resource_mapping(%PublishedResource{} = resource_mapping, attrs \\ %{}) do
-    PublishedResource.changeset(resource_mapping, attrs)
+  def change_published_resource(%PublishedResource{} = published_resource, attrs \\ %{}) do
+    PublishedResource.changeset(published_resource, attrs)
   end
 
   @doc """
-  Deletes a resource_mapping.
+  Deletes a published_resource.
   ## Examples
-      iex> delete_resource_mapping(resource_mapping)
-      {:ok, %ResourceMapping{}}
-      iex> delete_resource_mapping(resource_mapping)
+      iex> delete_published_resource(published_resource)
+      {:ok, %PublishedResource{}}
+      iex> delete_published_resource(published_resource)
       {:error, %Ecto.Changeset{}}
   """
-  def delete_resource_mapping(%PublishedResource{} = resource_mapping) do
-    Repo.delete(resource_mapping)
+  def delete_published_resource(%PublishedResource{} = published_resource) do
+    Repo.delete(published_resource)
   end
 
 
   @doc """
-  Returns the list of objectives (their slugs and titles)
-  that pertain to a given publication.
+  Returns the revision that pertains to a given publication and a resource id.
   """
   def get_published_revision(publication_id, resource_id) do
     Repo.one from mapping in PublishedResource,
@@ -423,36 +429,36 @@ defmodule Oli.Publishing do
       iex> publish_project(project)
       {:ok, %Publication{}}
   """
+  @spec publish_project(%Project{}) :: {:error, String.t} | {:ok, %Publication{}}
   def publish_project(project) do
-    active_publication = get_unpublished_publication_by_slug!(project.slug)
+    Repo.transaction(fn ->
+      with active_publication <- get_unpublished_publication_by_slug!(project.slug),
+        # create a new publication to capture all further edits
+        {:ok, new_publication} <- create_publication(%{
+          published: false,
+          root_resource_id: active_publication.root_resource_id,
+          project_id: active_publication.project_id,
+        }),
+        # Locks must be released so that users who have acquired a resource lock
+        # will be forced to re-acquire the lock with the new publication and
+        # create a new revision under that publication
+        _ <- Locks.release_all(active_publication.id),
+        # clone mappings for resources, activities, and objectives. This removes
+        # all active locks, forcing the user to refresh the page to re-acquire the lock.
+        _ <- Clone.clone_all_published_resources(active_publication.id, new_publication.id),
+        # set the active publication to published
+        {:ok, publication} <- update_publication(active_publication, %{published: true}),
+        # push forward all existing sections to this newly published publication, and
+        # error if a failure occurs with `insert!`
+        _ <- update_all_section_publications(project, active_publication)
+      do
+        Oli.Authoring.Broadcaster.broadcast_publication(publication, project.slug)
 
-    # create a new publication to capture all further edits
-    {:ok, new_publication} = create_publication(%{
-      description: active_publication.description,
-      published: false,
-      open_and_free: active_publication.open_and_free,
-      root_resource_id: active_publication.root_resource_id,
-      project_id: active_publication.project_id,
-    })
-
-    # create new mappings for the new publication
-    resource_mappings = get_resource_mappings_by_publication(active_publication.id)
-
-    # create a copy_mapping function bound to new_publication
-    copy_mapping_fn = &(copy_mapping_for_publication &1, new_publication)
-
-    # copy mappings for resources, activities, and objectives
-    Enum.map(resource_mappings, copy_mapping_fn)
-
-    # set the active publication to published
-    result = update_publication(active_publication, %{published: true})
-
-    # push forward all existing sections to this newly published publication
-    update_all_section_publications(project, active_publication)
-
-    Oli.Authoring.Broadcaster.broadcast_publication(result, project.slug)
-
-    result
+        publication
+      else
+        error -> Repo.rollback(error)
+      end
+    end)
   end
 
   def get_all_mappings_for_resource(resource_id, project_slug) do
@@ -466,21 +472,10 @@ defmodule Oli.Publishing do
 
   end
 
-  defp copy_mapping_for_publication(%PublishedResource{} = resource_mapping, publication) do
-    {:ok, new_mapping} = create_resource_mapping(%{
-      publication_id: publication.id,
-      resource_id: resource_mapping.resource_id,
-      revision_id: resource_mapping.revision_id,
-    })
-    new_mapping
-  end
-
-
+  # Uses dangerous `update!` to fail the transaction as soon as any update fails
   def update_all_section_publications(project, publication) do
     Sections.get_sections_by_project(project)
-    |> Enum.map(fn section ->
-      Sections.update_section(section, %{publication_id: publication.id})
-    end)
+    |> Enum.map(&Repo.update!(Sections.change_section(&1, %{publication_id: publication.id})))
   end
 
   def diff_publications(p1, p2) do
@@ -516,7 +511,7 @@ defmodule Oli.Publishing do
   end
 
   def get_published_revisions(publication) do
-    get_resource_mappings_by_publication(publication.id)
+    get_published_resources_by_publication(publication.id)
     |> Enum.map(& Repo.preload(&1, :revision))
     |> Enum.map(& Map.get(&1, :revision))
     |> Enum.filter(& !&1.deleted)
@@ -530,11 +525,11 @@ defmodule Oli.Publishing do
       %{124 => [{%Resource{}, %Revision{}}], ...}
   """
   def get_resource_revisions_for_publication(publication) do
-    resource_mappings = get_resource_mappings_by_publication(publication.id)
+    published_resources = get_published_resources_by_publication(publication.id)
 
     # filter out revisions that are marked as deleted, then convert
     # to a map of resource_ids to {resource, revision} tuples
-    resource_mappings
+    published_resources
     |> Enum.filter(fn mapping -> mapping.revision.deleted == false end)
     |> Enum.reduce(%{}, fn m, acc -> Map.put_new(acc, m.resource_id, {m.resource, m.revision}) end)
   end

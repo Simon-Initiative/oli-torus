@@ -52,21 +52,21 @@ export const initActivityBridge = (elementId: string) => {
   div.addEventListener('saveActivity', (e: any) => {
     e.preventDefault();
     e.stopPropagation();
-    makeRequest('/api/v1/attempt/activity/' + e.detail.attemptGuid,
+    makeRequest(`/api/v1/attempt/activity/${e.detail.attemptGuid}`,
       'PATCH', { partInputs: e.detail.payload }, e.detail.continuation);
   }, false);
 
   div.addEventListener('submitActivity', (e: any) => {
     e.preventDefault();
     e.stopPropagation();
-    makeRequest('/api/v1/attempt/activity/' + e.detail.attemptGuid,
+    makeRequest(`/api/v1/attempt/activity/${e.detail.attemptGuid}`,
       'PUT', { partInputs: e.detail.payload }, e.detail.continuation);
   }, false);
 
   div.addEventListener('resetActivity', (e: any) => {
     e.preventDefault();
     e.stopPropagation();
-    makeRequest('/api/v1/attempt/activity/' + e.detail.attemptGuid,
+    makeRequest(`/api/v1/attempt/activity/${e.detail.attemptGuid}`,
       'POST', {}, e.detail.continuation);
   }, false);
 
@@ -74,7 +74,7 @@ export const initActivityBridge = (elementId: string) => {
     e.preventDefault();
     e.stopPropagation();
     makeRequest(
-      '/api/v1/attempt/activity/' + e.detail.attemptGuid + '/part/' + e.detail.partAttemptGuid,
+      `/api/v1/attempt/activity/${e.detail.attemptGuid}/part/${e.detail.attemptGuid}`,
       'PATCH', { input: e.detail.payload }, e.detail.continuation);
   }, false);
 
@@ -82,7 +82,7 @@ export const initActivityBridge = (elementId: string) => {
     e.preventDefault();
     e.stopPropagation();
     makeRequest(
-      '/api/v1/attempt/activity/' + e.detail.attemptGuid + '/part/' + e.detail.partAttemptGuid,
+      `/api/v1/attempt/activity/${e.detail.attemptGuid}/part/${e.detail.attemptGuid}`,
       'PUT', { input: e.detail.payload }, e.detail.continuation);
   }, false);
 
@@ -90,14 +90,15 @@ export const initActivityBridge = (elementId: string) => {
     e.preventDefault();
     e.stopPropagation();
     makeRequest(
-      '/api/v1/attempt/activity/' + e.detail.attemptGuid + '/part/' + e.detail.partAttemptGuid, 'POST', {}, e.detail.continuation);
+      `/api/v1/attempt/activity/${e.detail.attemptGuid}/part/${e.detail.attemptGuid}`,
+      'POST', {}, e.detail.continuation);
   }, false);
 
   div.addEventListener('requestHint', (e: any) => {
     e.preventDefault();
     e.stopPropagation();
     makeRequest(
-      '/api/v1/attempt/activity/' + e.detail.attemptGuid + '/part/' + e.detail.partAttemptGuid + '/hint',
+      `/api/v1/attempt/activity/${e.detail.attemptGuid}/part/${e.detail.partAttemptGuid}/hint`,
       'GET', undefined, e.detail.continuation);
   }, false);
 
@@ -105,7 +106,7 @@ export const initActivityBridge = (elementId: string) => {
     e.preventDefault();
     e.stopPropagation();
     makeRequest(
-      '/api/v1/attempt/activity/' + e.detail.attemptGuid + '/evaluations',
+      `/api/v1/attempt/activity/${e.detail.attemptGuid}/evaluations`,
       'PUT', { input: e.detail.payload }, e.detail.continuation);
   }, false);
 };

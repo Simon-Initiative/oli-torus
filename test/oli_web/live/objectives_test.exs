@@ -1,7 +1,6 @@
 defmodule OliWeb.ObjectivesLiveTest do
   use OliWeb.ConnCase
   alias Oli.Seeder
-  alias OliWeb.Common.LtiSession
 
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
@@ -40,38 +39,20 @@ defmodule OliWeb.ObjectivesLiveTest do
   end
 
   defp setup_session(%{conn: conn}) do
-    user = user_fixture()
-
     map = Seeder.base_project_with_resource2()
             |> Seeder.add_objective("objective 1", :objective1)
             |> Seeder.add_objective("objective 2", :objective2)
 
-    section = section_fixture(%{
-      context_id: "some-context-id",
-      project_id: map.project.id,
-      publication_id: map.publication.id,
-      institution_id: map.institution.id
-    })
-
-    lti_params = Oli.Lti_1p3.TestHelpers.all_default_claims()
-      |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
-
-    cache_lti_params("params-key", lti_params)
-
     conn = Plug.Test.init_test_session(conn, lti_session: nil)
-      |> LtiSession.put_section_params(section.slug, "params-key")
       |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
     {:ok,
       conn: conn,
       map: map,
       author: map.author,
       institution: map.institution,
-      user: user,
       project: map.project,
-      publication: map.publication,
-      section: section
+      publication: map.publication
     }
   end
 

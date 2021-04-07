@@ -41,10 +41,10 @@ export const WebpageEditor = (props: WebpageProps) => {
   return (
     <div
       {...attributes}
-      contentEditable={false}
       style={{ userSelect: 'none' }}
       className={'Webpage-editor ' + displayModelToClassName(model.display)}>
       <div
+        contentEditable={false}
         onClick={(e) => {
           ReactEditor.focus(editor);
           Transforms.select(editor, ReactEditor.findPath(editor, model));

@@ -2,7 +2,7 @@
 defmodule Oli.Analytics.Datashop.Elements.Dataset do
   @moduledoc """
   <dataset>
-    <name>example_open_and_free_course-TxE5btqmuCGYEmPUKfewoX</name>
+    <name>example_course-TxE5btqmuCGYEmPUKfewoX</name>
     <level type="Page">
       <name>one</name>
       <problem tutorFlag="tutor">

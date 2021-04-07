@@ -56,8 +56,8 @@ defmodule Oli.LocksTest do
       assert Locks.acquire(project.slug, publication.id, resource.id, author.id) == {:acquired}
 
       # Then manually set the last_updated_at time back to yesterday
-      mapping = Publishing.get_resource_mapping!(publication.id, resource.id)
-      Publishing.update_resource_mapping(mapping, %{lock_updated_at: yesterday() })
+      mapping = Publishing.get_published_resource!(publication.id, resource.id)
+      Publishing.update_published_resource(mapping, %{lock_updated_at: yesterday() })
 
       # Now verify that we can acquire it via another user
       assert Locks.acquire(project.slug, publication.id, resource.id, author2.id) == {:acquired}

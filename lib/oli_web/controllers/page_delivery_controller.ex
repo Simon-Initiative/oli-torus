@@ -4,7 +4,6 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Delivery.Student.Summary
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.Section
   alias Oli.Rendering.Context
   alias Oli.Rendering.Page
   alias Oli.Activities
@@ -45,16 +44,6 @@ defmodule OliWeb.PageDeliveryController do
       render conn, "not_authorized.html"
     end
 
-  end
-
-  # Handles in course page links, redirecting to
-  # the appropriate section resource
-  def link(conn, %{"revision_slug" => revision_slug}) do
-
-    lti_params = conn.assigns.lti_params
-    %Section{slug: section_slug} = Sections.get_section_from_lti_params(lti_params)
-
-    redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
   end
 
   defp render_page(%PageContext{summary: summary, progress_state: :not_started, page: page, resource_attempts: resource_attempts} = context,
@@ -98,7 +87,7 @@ defmodule OliWeb.PageDeliveryController do
   # This case handles :in_progress and :revised progress states
   defp render_page(%PageContext{} = context, conn, section_slug, user) do
 
-    render_context = %Context{user: user, progress_state: context.progress_state, activity_map: context.activities}
+    render_context = %Context{user: user, section_slug: section_slug, progress_state: context.progress_state, activity_map: context.activities}
     page_model = Map.get(context.page.content, "model")
     html = Page.render(render_context, page_model, Page.Html)
 
@@ -170,29 +159,25 @@ defmodule OliWeb.PageDeliveryController do
     |> Keyword.get(:host)
   end
 
-  defp access_token_provider(lti_launch_params) do
+  defp access_token_provider(section) do
     fn ->
-      issuer = lti_launch_params["iss"]
-      client_id = lti_launch_params["aud"]
-      deployment_id = lti_launch_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
-      {registration, _deployment} = Lti_1p3.Tool.get_registration_deployment(issuer, client_id, deployment_id)
+      {_deployment, registration} = Sections.get_deployment_registration_from_section(section)
       Lti_1p3.Tool.AccessToken.fetch_access_token(registration, Oli.Grading.ags_scopes(), host())
     end
   end
 
-  def send_one_grade(lti_launch_params, resource_access) do
-    Oli.Grading.send_score_to_lms(lti_launch_params, resource_access, access_token_provider(lti_launch_params))
+  def send_one_grade(section, user, resource_access) do
+    Oli.Grading.send_score_to_lms(section, user, resource_access, access_token_provider(section))
   end
 
   def finalize_attempt(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug, "attempt_guid" => attempt_guid}) do
-
     user = conn.assigns.current_user
-    lti_params = conn.assigns.lti_params
+    section = conn.assigns.section
 
     case Attempts.submit_graded_page(section_slug, attempt_guid) do
       {:ok, resource_access} ->
 
-        grade_sync_result = send_one_grade(lti_params, resource_access)
+        grade_sync_result = send_one_grade(section, user, resource_access)
         after_finalized(conn, section_slug, revision_slug, attempt_guid, user, grade_sync_result)
 
       {:error, {:not_all_answered}} ->
@@ -207,7 +192,6 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   def after_finalized(conn, section_slug, revision_slug, attempt_guid, user, grade_sync_result) do
-
     context = PageContext.create_page_context(section_slug, revision_slug, user)
 
     message = if context.page.max_attempts == 0 do

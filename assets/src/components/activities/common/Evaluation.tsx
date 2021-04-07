@@ -2,8 +2,10 @@ import React from 'react';
 import * as ActivityTypes from '../types';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { fromText } from './utils';
+import { WriterContext } from 'data/content/writers/context';
 
-export const Evaluation = ({ attemptState } : { attemptState : ActivityTypes.ActivityState}) => {
+export const Evaluation = ({ attemptState, context }:
+  {attemptState : ActivityTypes.ActivityState, context: WriterContext}) => {
 
   const { score, outOf, parts } = attemptState;
   const error = parts[0].error;
@@ -27,7 +29,7 @@ export const Evaluation = ({ attemptState } : { attemptState : ActivityTypes.Act
           <span className="result-divider">/</span>
           <span className="out-of">{outOf}</span>
         </div>
-      <HtmlContentModelRenderer text={error ? errorText : feedback} />
+      <HtmlContentModelRenderer text={error ? errorText : feedback} context={context} />
     </div>
   );
 

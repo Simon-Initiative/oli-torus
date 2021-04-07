@@ -3,7 +3,7 @@ defmodule Oli.Authoring.Course do
   import Ecto.Query, warn: false
   alias Oli.Repo
   alias Oli.Publishing
-  alias Oli.Authoring.{Collaborators}
+  alias Oli.Authoring.{Collaborators, ProjectSearch}
   alias Oli.Authoring.Course.{Project, Family, ProjectResource}
   alias Oli.Accounts.{SystemRole}
 
@@ -28,6 +28,16 @@ defmodule Oli.Authoring.Course do
     Repo.all(Project)
   end
 
+  @doc """
+  Lists all projects that contain a particular resource.
+  """
+  def list_projects_containing_resource(resource_id) do
+    Repo.all(from pr in ProjectResource,
+      join: p in Project, on: p.id == pr.project_id,
+      where: pr.resource_id == ^resource_id,
+      select: p)
+  end
+
   def get_projects_for_author(author) do
 
     admin_role_id = SystemRole.role_id().admin
@@ -42,6 +52,15 @@ defmodule Oli.Authoring.Course do
 
   end
 
+  @doc """
+  Returns the list of published projects where the title, description and slug are similar to the query string
+  ## Examples
+      iex> search_published_projects()
+      [%Project{}, ...]
+  """
+  def search_published_projects(search_term) do
+    ProjectSearch.search(search_term)
+  end
 
   def get_project!(id), do: Repo.get!(Project, id)
   def get_project_by_slug(nil), do: nil
@@ -78,6 +97,11 @@ defmodule Oli.Authoring.Course do
 
   end
 
+  def create_project(attrs) do
+    %Project{}
+    |> Project.changeset(attrs)
+    |> Repo.insert()
+  end
 
   def create_project(title, author) do
     Repo.transaction(fn ->
@@ -86,7 +110,7 @@ defmodule Oli.Authoring.Course do
            {:ok, collaborator} <- Collaborators.add_collaborator(author, project),
            {:ok, %{resource: resource, revision: resource_revision}}
               <- initial_resource_setup(author, project),
-           {:ok, %{publication: publication, resource_mapping: resource_mapping}}
+           {:ok, %{publication: publication, published_resource: published_resource}}
               <- Publishing.initial_publication_setup(project, resource, resource_revision)
       do
         %{
@@ -96,18 +120,12 @@ defmodule Oli.Authoring.Course do
           resource: resource,
           resource_revision: resource_revision,
           publication: publication,
-          resource_mapping: resource_mapping,
+          published_resource: published_resource,
         }
       else
         {:error, error} -> Repo.rollback(error)
       end
     end)
-  end
-
-  def create_project(attrs) do
-    %Project{}
-    |> Project.changeset(attrs)
-    |> Repo.insert()
   end
 
   defp default_project(title, family) do
