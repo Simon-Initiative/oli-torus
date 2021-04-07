@@ -7,7 +7,6 @@ defmodule OliWeb.IngestController do
   end
 
   def upload(conn, %{"upload" => upload}) do
-
     author = conn.assigns[:current_author]
 
     path_upload = upload["digest"]
@@ -16,11 +15,9 @@ defmodule OliWeb.IngestController do
       {:ok, project} -> redirect(conn, to: Routes.project_path(conn, :overview, project))
       {:error, error} -> render_ingest_page(conn, "error.html", title: "Ingest", error: error)
     end
-
   end
 
   defp render_ingest_page(conn, page, keywords) do
-    render conn, page, Keyword.put_new(keywords, :active, :ingest)
+    render(conn, page, Keyword.put_new(keywords, :active, :ingest))
   end
-
 end

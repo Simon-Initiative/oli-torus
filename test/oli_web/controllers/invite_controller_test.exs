@@ -12,9 +12,15 @@ defmodule OliWeb.InviteControllerTest do
     test "accept new author invitation", %{conn: conn} do
       expect_recaptcha_http_post()
 
-      conn = post(conn, Routes.invite_path(conn, :create), email: @invite_email, "g-recaptcha-response": "any")
+      conn =
+        post(conn, Routes.invite_path(conn, :create),
+          email: @invite_email,
+          "g-recaptcha-response": "any"
+        )
+
       new_author = Accounts.get_author_by_email(@invite_email)
       token = PowInvitation.Plug.sign_invitation_token(conn, new_author)
+
       put(
         conn,
         Routes.pow_invitation_invitation_path(conn, :update, token),
@@ -28,16 +34,26 @@ defmodule OliWeb.InviteControllerTest do
           }
         }
       )
+
       new_author = Accounts.get_author_by_email(@invite_email)
       assert new_author.given_name == "me"
       assert new_author.invitation_accepted_at
     end
   end
 
-  defp create_admin(%{ conn: conn  }) do
-    {:ok, author} = Author.noauth_changeset(%Author{}, %{email: "test@test.com", given_name: "First", family_name: "Last", provider: "foo", system_role_id: Accounts.SystemRole.role_id.admin}) |> Repo.insert
+  defp create_admin(%{conn: conn}) do
+    {:ok, author} =
+      Author.noauth_changeset(%Author{}, %{
+        email: "test@test.com",
+        given_name: "First",
+        family_name: "Last",
+        provider: "foo",
+        system_role_id: Accounts.SystemRole.role_id().admin
+      })
+      |> Repo.insert()
 
-    conn = Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+    conn =
+      Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     {:ok, conn: conn, author: author}
   end

@@ -28,7 +28,7 @@ defmodule Oli.Lti_1p3.Tool.Registration do
       :auth_login_url,
       :auth_server,
       :tool_jwk_id,
-      :institution_id,
+      :institution_id
     ])
     |> validate_required([
       :issuer,
@@ -38,7 +38,7 @@ defmodule Oli.Lti_1p3.Tool.Registration do
       :auth_login_url,
       :auth_server,
       :tool_jwk_id,
-      :institution_id,
+      :institution_id
     ])
   end
 end

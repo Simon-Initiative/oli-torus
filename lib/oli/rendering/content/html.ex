@@ -10,11 +10,19 @@ defmodule Oli.Rendering.Content.Html do
   @behaviour Oli.Rendering.Content
 
   def example(%Context{} = _context, next, _) do
-    [~s|<div class="content-purpose example"><div class="content-purpose-label">Example</div><div class="content-purpose-content">|, next.(), "</div></div>\n"]
+    [
+      ~s|<div class="content-purpose example"><div class="content-purpose-label">Example</div><div class="content-purpose-content">|,
+      next.(),
+      "</div></div>\n"
+    ]
   end
 
   def learn_more(%Context{} = _context, next, _) do
-    [~s|<div class="content-purpose learnmore"><div class="content-purpose-label">Learn more</div><div class="content-purpose-content">|, next.(), "</div></div>\n"]
+    [
+      ~s|<div class="content-purpose learnmore"><div class="content-purpose-label">Learn more</div><div class="content-purpose-content">|,
+      next.(),
+      "</div></div>\n"
+    ]
   end
 
   def p(%Context{} = _context, next, _) do
@@ -46,10 +54,11 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def img(%Context{} = _context, _, %{"src" => src} = attrs) do
-    alt = case attrs do
-      %{"alt" => alt} -> " alt=#{alt}"
-      _ -> ""
-    end
+    alt =
+      case attrs do
+        %{"alt" => alt} -> " alt=#{alt}"
+        _ -> ""
+      end
 
     # if attrs["caption"]
     figure(attrs, [~s|<img class="#{display_class(attrs)}"#{alt} src="#{src}"/>\n|])
@@ -60,12 +69,16 @@ defmodule Oli.Rendering.Content.Html do
   def youtube(%Context{} = _context, _, %{"src" => src} = attrs) do
     # if attrs["caption"]
     # do
-      figure(Map.put(attrs, "full-width", true), [
-        """
-        <div class="youtube-wrapper">
-          <iframe id="#{src}" class="#{display_class(attrs)}" allowfullscreen src="https://www.youtube.com/embed/#{src}"></iframe>
-        </div>
-        """])
+    figure(Map.put(attrs, "full-width", true), [
+      """
+      <div class="youtube-wrapper">
+        <iframe id="#{src}" class="#{display_class(attrs)}" allowfullscreen src="https://www.youtube.com/embed/#{
+        src
+      }"></iframe>
+      </div>
+      """
+    ])
+
     # else
     #   [
     #     """
@@ -75,7 +88,6 @@ defmodule Oli.Rendering.Content.Html do
     #     """
     #   ]
     # end
-
   end
 
   def iframe(%Context{} = _context, _, %{"src" => src} = attrs) do
@@ -84,7 +96,8 @@ defmodule Oli.Rendering.Content.Html do
       <div class="webpage-wrapper">
         <iframe class="#{display_class(attrs)}" allowfullscreen src="#{src}"></iframe>
       </div>
-      """])
+      """
+    ])
   end
 
   def audio(%Context{} = _context, _, %{"src" => src} = attrs) do
@@ -94,10 +107,12 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def table(%Context{} = _context, next, attrs) do
-    caption = case attrs do
-      %{"caption" => caption} -> "<caption>#{caption}</caption>"
-      _ -> ""
-    end
+    caption =
+      case attrs do
+        %{"caption" => caption} -> "<caption>#{caption}</caption>"
+        _ -> ""
+      end
+
     ["<table>#{caption}", next.(), "</table>\n"]
   end
 
@@ -133,9 +148,13 @@ defmodule Oli.Rendering.Content.Html do
     [next.(), "\n"]
   end
 
-  def code(%Context{} = _context, next, %{
-    "language" => language,
-  } = attrs) do
+  def code(
+        %Context{} = _context,
+        next,
+        %{
+          "language" => language
+        } = attrs
+      ) do
     figure(attrs, [~s|<pre><code class="language-#{language}">|, next.(), "</code></pre>\n"])
   end
 
@@ -156,14 +175,15 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   defp internal_link(%Context{section_slug: section_slug}, next, href) do
-    href = case section_slug do
-      nil ->
-        "#"
+    href =
+      case section_slug do
+        nil ->
+          "#"
 
-      section_slug ->
-        # rewrite internal link using section slug and revision slug
-        "/sections/#{section_slug}/page/#{revision_slug_from_course_link(href)}"
-    end
+        section_slug ->
+          # rewrite internal link using section slug and revision slug
+          "/sections/#{section_slug}/page/#{revision_slug_from_course_link(href)}"
+      end
 
     [~s|<a class="internal-link" href="#{escape_xml!(href)}">|, next.(), "</a>\n"]
   end
@@ -188,11 +208,25 @@ defmodule Oli.Rendering.Content.Html do
   def error(%Context{} = _context, element, error) do
     case error do
       {:unsupported, error_id, _error_msg} ->
-        [~s|<div class="content unsupported">Content element type '#{element["type"]}' is not supported. Please contact support with issue ##{error_id}</div>\n|]
+        [
+          ~s|<div class="content unsupported">Content element type '#{element["type"]}' is not supported. Please contact support with issue ##{
+            error_id
+          }</div>\n|
+        ]
+
       {:invalid, error_id, _error_msg} ->
-        [~s|<div class="content invalid">Content element is invalid. Please contact support with issue ##{error_id}</div>\n|]
+        [
+          ~s|<div class="content invalid">Content element is invalid. Please contact support with issue ##{
+            error_id
+          }</div>\n|
+        ]
+
       {_, error_id, _error_msg} ->
-        [~s|<div class="content invalid">An error occurred while rendering content. Please contact support with issue ##{error_id}</div>\n|]
+        [
+          ~s|<div class="content invalid">An error occurred while rendering content. Please contact support with issue ##{
+            error_id
+          }</div>\n|
+        ]
     end
   end
 
@@ -211,9 +245,11 @@ defmodule Oli.Rendering.Content.Html do
       "var" => "var",
       "code" => "code",
       "sub" => "sub",
-      "sup" => "sup",
+      "sup" => "sup"
     }
-    marks = Map.keys(text_entity)
+
+    marks =
+      Map.keys(text_entity)
       # only include marks that are set to true
       |> Enum.filter(fn attr_name -> Map.get(text_entity, attr_name) == true end)
       # convert mark to tag name
@@ -232,18 +268,36 @@ defmodule Oli.Rendering.Content.Html do
 
   # Accessible captions are created using a combination of the <figure /> and <figcaption /> elements.
   defp figure(%{"caption" => caption} = attrs, content) do
-    [~s|<div class="figure-wrapper #{display_class(attrs)}">|]
-      ++ ["<figure#{if attrs["full-width"] do " class=\"full-width\"" else "" end}>"]
-        ++ content
-        ++ ["<figcaption#{if attrs["full-width"] do " class=\"full-width\"" else "" end}>"]
-          ++ [caption]
-        ++ ["</figcaption>"]
-      ++ ["</figure>"]
-    ++ ["</div>"]
+    [~s|<div class="figure-wrapper #{display_class(attrs)}">|] ++
+      [
+        "<figure#{
+          if attrs["full-width"] do
+            " class=\"full-width\""
+          else
+            ""
+          end
+        }>"
+      ] ++
+      content ++
+      [
+        "<figcaption#{
+          if attrs["full-width"] do
+            " class=\"full-width\""
+          else
+            ""
+          end
+        }>"
+      ] ++
+      [caption] ++
+      ["</figcaption>"] ++
+      ["</figure>"] ++
+      ["</div>"]
   end
+
   defp figure(_attrs, content), do: content
 
   defp display_class(%{"display" => display}), do: display_class(display)
+
   defp display_class(display) do
     case display do
       "float_left" -> "float-md-left"

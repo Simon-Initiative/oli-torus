@@ -2,7 +2,6 @@ defmodule OliWeb.RevisionHistory.PaginationLink do
   use Phoenix.LiveComponent
 
   def render(assigns) do
-
     str = Integer.to_string(assigns.page_ordinal)
 
     ~L"""
@@ -11,5 +10,4 @@ defmodule OliWeb.RevisionHistory.PaginationLink do
     </li>
     """
   end
-
 end

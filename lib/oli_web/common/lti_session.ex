@@ -27,7 +27,8 @@ defmodule OliWeb.Common.LtiSession do
     lti_session = value_or(get_session(conn, @lti_session_key), %{})
 
     conn
-    |> put_session(@lti_session_key,
+    |> put_session(
+      @lti_session_key,
       lti_session
       |> Map.put(:user_params, lti_params_key)
     )
@@ -41,5 +42,4 @@ defmodule OliWeb.Common.LtiSession do
     |> value_or(%{})
     |> get_in([:user_params])
   end
-
 end

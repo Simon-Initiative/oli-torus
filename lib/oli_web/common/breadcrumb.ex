@@ -32,6 +32,7 @@ defmodule OliWeb.Common.Breadcrumb do
   def new(%{full_title: _full_title, short_title: _short_title} = params) do
     struct(__MODULE__, params)
   end
+
   def new(%{full_title: full_title} = params) do
     new(Map.put(params, :short_title, full_title))
   end
@@ -56,8 +57,12 @@ defmodule OliWeb.Common.Breadcrumb do
 
   defp trail_to_helper(project_slug, revision_slug) do
     with numberings <- Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug),
-         {:ok, [_root | path]} = Numbering.path_from_root_to(
-           Oli.Publishing.AuthoringResolver, project_slug, revision_slug) do
+         {:ok, [_root | path]} =
+           Numbering.path_from_root_to(
+             Oli.Publishing.AuthoringResolver,
+             project_slug,
+             revision_slug
+           ) do
       Enum.map(path, fn revision -> make_breadcrumb(project_slug, revision, numberings) end)
     end
   end

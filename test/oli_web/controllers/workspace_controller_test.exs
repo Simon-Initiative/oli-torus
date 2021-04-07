@@ -3,7 +3,6 @@ defmodule OliWeb.WorkspaceControllerTest do
   alias Oli.Repo
 
   describe "projects" do
-
     test "displays the projects page", %{conn: conn} do
       {:ok, conn: conn, author: _author} = author_conn(%{conn: conn})
       conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
@@ -44,11 +43,11 @@ defmodule OliWeb.WorkspaceControllerTest do
     end
 
     test "shows a sign out link", %{conn: conn} do
-      conn = conn
-      |> get(Routes.workspace_path(conn, :account))
+      conn =
+        conn
+        |> get(Routes.workspace_path(conn, :account))
 
       assert html_response(conn, 200) =~ "Sign out"
     end
   end
-
 end

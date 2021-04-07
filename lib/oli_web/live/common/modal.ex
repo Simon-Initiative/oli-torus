@@ -1,5 +1,4 @@
 defmodule OliWeb.Common.Modal do
-
   @moduledoc """
   A reusable LivewComponent for a Bootstrap modal.
 
@@ -29,10 +28,11 @@ defmodule OliWeb.Common.Modal do
 
   def mount(socket) do
     # Default property values
-    {:ok, assign(socket,
-      ok_label: "Ok",
-      ok_style: "btn-primary")
-    }
+    {:ok,
+     assign(socket,
+       ok_label: "Ok",
+       ok_style: "btn-primary"
+     )}
   end
 
   def render(assigns) do

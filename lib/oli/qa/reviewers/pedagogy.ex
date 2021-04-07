@@ -13,29 +13,30 @@ defmodule Oli.Qa.Reviewers.Pedagogy do
     # logic
     case Reviews.create_review(Course.get_project_by_slug(project_slug), "pedagogy") do
       {:ok, review} ->
-
         review
         |> no_attached_objectives(activities)
         |> no_attached_activities(pages)
-        |> Reviews.mark_review_done
+        |> Reviews.mark_review_done()
 
-      {:error, error} -> IO.inspect error
+      {:error, error} ->
+        IO.inspect(error)
     end
 
     project_slug
   end
 
   def no_attached_objectives(review, revisions) do
-
     revisions
     |> Enum.filter(fn r ->
-      Map.values(r.objectives) |> List.flatten == []
+      Map.values(r.objectives) |> List.flatten() == []
     end)
-    |> Enum.each(&Warnings.create_warning(%{
-      review_id: review.id,
-      revision_id: &1.id,
-      subtype: "no attached objectives"
-    }))
+    |> Enum.each(
+      &Warnings.create_warning(%{
+        review_id: review.id,
+        revision_id: &1.id,
+        subtype: "no attached objectives"
+      })
+    )
 
     review
   end
@@ -43,18 +44,20 @@ defmodule Oli.Qa.Reviewers.Pedagogy do
   def no_attached_activities(review, pages) do
     pages
     |> Enum.filter(&no_attached_activities?/1)
-    |> Enum.each(&Warnings.create_warning(%{
-      review_id: review.id,
-      revision_id: &1.id,
-      subtype: "no attached activities"
-    }))
+    |> Enum.each(
+      &Warnings.create_warning(%{
+        review_id: review.id,
+        revision_id: &1.id,
+        subtype: "no attached activities"
+      })
+    )
 
     review
   end
 
   defp no_attached_activities?(page) do
     page
-    |> Resources.activity_references
-    |> Enum.empty?
+    |> Resources.activity_references()
+    |> Enum.empty?()
   end
 end

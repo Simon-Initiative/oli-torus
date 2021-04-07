@@ -1,5 +1,4 @@
 defmodule OliWeb.Common.AuthorInitials do
-
   @moduledoc """
 
   Required properties:
@@ -13,9 +12,11 @@ defmodule OliWeb.Common.AuthorInitials do
 
   use Phoenix.LiveComponent
 
-  def render(%{ author: author } = assigns) do
-    initials = String.upcase(String.first(author.given_name))
-      <> String.upcase(String.first(author.family_name))
+  def render(%{author: author} = assigns) do
+    initials =
+      String.upcase(String.first(author.given_name)) <>
+        String.upcase(String.first(author.family_name))
+
     size = assigns.size
 
     ~L"""

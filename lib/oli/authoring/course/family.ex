@@ -20,5 +20,4 @@ defmodule Oli.Authoring.Course.Family do
     |> validate_required([:title])
     |> Slug.update_never("families")
   end
-
 end

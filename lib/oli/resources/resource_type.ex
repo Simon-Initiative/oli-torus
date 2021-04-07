@@ -4,7 +4,13 @@ defmodule Oli.Resources.ResourceType do
 
   # It would be great to encapsulate all of this into a macro.
 
-  @types [%{id: 1, type: "page"}, %{id: 2, type: "container"}, %{id: 3, type: "activity"}, %{id: 4, type: "objective"}, %{id: 5, type: "secondary"}]
+  @types [
+    %{id: 1, type: "page"},
+    %{id: 2, type: "container"},
+    %{id: 3, type: "activity"},
+    %{id: 4, type: "objective"},
+    %{id: 5, type: "secondary"}
+  ]
   @by_id Enum.reduce(@types, %{}, fn %{id: id, type: t}, m -> Map.put(m, id, t) end)
   @by_type Enum.reduce(@types, %{}, fn %{id: id, type: t}, m -> Map.put(m, t, id) end)
 
@@ -23,7 +29,6 @@ defmodule Oli.Resources.ResourceType do
   def get_id_by_type("activity"), do: Map.get(@by_type, "activity")
   def get_id_by_type("objective"), do: Map.get(@by_type, "objective")
   def get_id_by_type("secondary"), do: Map.get(@by_type, "secondary")
-
 
   schema "resource_types" do
     field :type, :string

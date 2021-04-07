@@ -1,5 +1,4 @@
 defmodule OliWeb.Common.Table.ColumnSpec do
-
   @moduledoc """
   A column specification for sortable tables.
 
@@ -24,15 +23,20 @@ defmodule OliWeb.Common.Table.ColumnSpec do
 
   """
 
-  defstruct name: nil,   # field name of the column, must be able to use this to do `Map.get(row, :name)`
-    label: nil,          # friendly label to display for this column
-    sort_fn: nil,        # a function that takes two arguments, a sort direction and column spec and returns
-                         # a function that can then be used as a sort comparator
-    render_fn: nil
+  # field name of the column, must be able to use this to do `Map.get(row, :name)`
+  defstruct name: nil,
+            # friendly label to display for this column
+            label: nil,
+            # a function that takes two arguments, a sort direction and column spec and returns
+            sort_fn: nil,
+            # a function that can then be used as a sort comparator
+            render_fn: nil
 
-  def default_sort_fn(:asc, %{name: name}), do: fn row1, row2 -> Map.get(row1, name) <= Map.get(row2, name) end
-  def default_sort_fn(:desc, %{name: name}), do: fn row1, row2 -> Map.get(row2, name) <= Map.get(row1, name) end
+  def default_sort_fn(:asc, %{name: name}),
+    do: fn row1, row2 -> Map.get(row1, name) <= Map.get(row2, name) end
+
+  def default_sort_fn(:desc, %{name: name}),
+    do: fn row1, row2 -> Map.get(row2, name) <= Map.get(row1, name) end
 
   def default_render_fn(spec, row), do: Map.get(row, spec.name)
-
 end

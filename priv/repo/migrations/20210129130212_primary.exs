@@ -5,6 +5,5 @@ defmodule Oli.Repo.Migrations.Primary do
     alter table(:revisions) do
       add :primary_resource_id, references(:resources)
     end
-
   end
 end

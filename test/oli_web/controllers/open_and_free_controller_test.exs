@@ -1,9 +1,33 @@
 defmodule OliWeb.OpenAndFreeControllerTest do
   use OliWeb.ConnCase
 
-  @create_attrs %{end_date: ~D[2010-04-17], open_and_free: true, registration_open: true, start_date: ~D[2010-04-17], time_zone: "some time_zone", title: "some title", context_id: "some context_id"}
-  @update_attrs %{end_date: ~D[2011-05-18], open_and_free: true, registration_open: false, start_date: ~D[2011-05-18], time_zone: "some updated time_zone", title: "some updated title", context_id: "some updated context_id"}
-  @invalid_attrs %{end_date: nil, open_and_free: nil, registration_open: nil, start_date: nil, time_zone: nil, title: nil, context_id: nil}
+  @create_attrs %{
+    end_date: ~D[2010-04-17],
+    open_and_free: true,
+    registration_open: true,
+    start_date: ~D[2010-04-17],
+    time_zone: "some time_zone",
+    title: "some title",
+    context_id: "some context_id"
+  }
+  @update_attrs %{
+    end_date: ~D[2011-05-18],
+    open_and_free: true,
+    registration_open: false,
+    start_date: ~D[2011-05-18],
+    time_zone: "some updated time_zone",
+    title: "some updated title",
+    context_id: "some updated context_id"
+  }
+  @invalid_attrs %{
+    end_date: nil,
+    open_and_free: nil,
+    registration_open: nil,
+    start_date: nil,
+    time_zone: nil,
+    title: nil,
+    context_id: nil
+  }
 
   setup [:admin_conn]
 
@@ -25,7 +49,10 @@ defmodule OliWeb.OpenAndFreeControllerTest do
     setup [:create_fixtures]
 
     test "redirects to show when data is valid", %{conn: conn, admin: admin, project: project} do
-      conn = post(conn, Routes.open_and_free_path(conn, :create), section: Enum.into(@create_attrs, %{project_slug: project.slug}))
+      conn =
+        post(conn, Routes.open_and_free_path(conn, :create),
+          section: Enum.into(@create_attrs, %{project_slug: project.slug})
+        )
 
       assert %{id: id} = redirected_params(conn)
       assert redirected_to(conn) == Routes.open_and_free_path(conn, :show, id)
@@ -77,13 +104,14 @@ defmodule OliWeb.OpenAndFreeControllerTest do
 
     {:ok, publication} = Oli.Publishing.publish_project(project)
 
-    section = section_fixture(%{
-      institution_id: institution.id,
-      project_id: project.id,
-      publication_id: publication.id,
-      context_id: UUID.uuid4(),
-      open_and_free: true,
-    })
+    section =
+      section_fixture(%{
+        institution_id: institution.id,
+        project_id: project.id,
+        publication_id: publication.id,
+        context_id: UUID.uuid4(),
+        open_and_free: true
+      })
 
     %{section: section, project: project, publication: publication}
   end

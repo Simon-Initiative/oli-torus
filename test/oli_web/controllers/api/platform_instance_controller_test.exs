@@ -24,7 +24,16 @@ defmodule OliWeb.Api.PlatformInstanceControllerTest do
     redirect_uris: "some updated redirect_uris",
     target_link_uri: "some updated target_link_uri"
   }
-  @invalid_attrs %{client_id: nil, custom_params: nil, description: nil, keyset_url: nil, login_url: nil, name: nil, redirect_uris: nil, target_link_uri: nil}
+  @invalid_attrs %{
+    client_id: nil,
+    custom_params: nil,
+    description: nil,
+    keyset_url: nil,
+    login_url: nil,
+    name: nil,
+    redirect_uris: nil,
+    target_link_uri: nil
+  }
 
   def fixture(:platform_instance) do
     {:ok, platform_instance} = PlatformInstances.create_platform_instance(@create_attrs)
@@ -46,7 +55,11 @@ defmodule OliWeb.Api.PlatformInstanceControllerTest do
 
   describe "create platform_instance" do
     test "renders platform_instance when data is valid", %{conn: conn, author: author} do
-      conn = post(conn, Routes.api_platform_instance_path(conn, :create), platform_instance: @create_attrs)
+      conn =
+        post(conn, Routes.api_platform_instance_path(conn, :create),
+          platform_instance: @create_attrs
+        )
+
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
       conn = recycle_author_session(conn, author)
@@ -67,7 +80,11 @@ defmodule OliWeb.Api.PlatformInstanceControllerTest do
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, Routes.api_platform_instance_path(conn, :create), platform_instance: @invalid_attrs)
+      conn =
+        post(conn, Routes.api_platform_instance_path(conn, :create),
+          platform_instance: @invalid_attrs
+        )
+
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
@@ -75,8 +92,16 @@ defmodule OliWeb.Api.PlatformInstanceControllerTest do
   describe "update platform_instance" do
     setup [:create_platform_instance]
 
-    test "renders platform_instance when data is valid", %{conn: conn, author: author, platform_instance: %PlatformInstance{id: id} = platform_instance} do
-      conn = put(conn, Routes.api_platform_instance_path(conn, :update, platform_instance), platform_instance: @update_attrs)
+    test "renders platform_instance when data is valid", %{
+      conn: conn,
+      author: author,
+      platform_instance: %PlatformInstance{id: id} = platform_instance
+    } do
+      conn =
+        put(conn, Routes.api_platform_instance_path(conn, :update, platform_instance),
+          platform_instance: @update_attrs
+        )
+
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
       conn = recycle_author_session(conn, author)
@@ -96,8 +121,15 @@ defmodule OliWeb.Api.PlatformInstanceControllerTest do
              } = json_response(conn, 200)["data"]
     end
 
-    test "renders errors when data is invalid", %{conn: conn, platform_instance: platform_instance} do
-      conn = put(conn, Routes.api_platform_instance_path(conn, :update, platform_instance), platform_instance: @invalid_attrs)
+    test "renders errors when data is invalid", %{
+      conn: conn,
+      platform_instance: platform_instance
+    } do
+      conn =
+        put(conn, Routes.api_platform_instance_path(conn, :update, platform_instance),
+          platform_instance: @invalid_attrs
+        )
+
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
@@ -105,7 +137,11 @@ defmodule OliWeb.Api.PlatformInstanceControllerTest do
   describe "delete platform_instance" do
     setup [:create_platform_instance]
 
-    test "deletes chosen platform_instance", %{conn: conn, author: author, platform_instance: platform_instance} do
+    test "deletes chosen platform_instance", %{
+      conn: conn,
+      author: author,
+      platform_instance: platform_instance
+    } do
       conn = delete(conn, Routes.api_platform_instance_path(conn, :delete, platform_instance))
       assert response(conn, 204)
 

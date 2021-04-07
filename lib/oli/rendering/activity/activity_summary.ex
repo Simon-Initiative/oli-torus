@@ -14,12 +14,17 @@ defmodule Oli.Rendering.Activity.ActivitySummary do
     :graded
   ]
   defstruct [
-    :id,                # id of the activity
-    :script,            # path to the script
-    :state,             # already encoded json of the state of the attempt
-    :model,             # already encoded json of the model of the activity
-    :delivery_element,  # the webcomponent element
-    :graded             # whether or not the activity is rendering in a graded context
+    # id of the activity
+    :id,
+    # path to the script
+    :script,
+    # already encoded json of the state of the attempt
+    :state,
+    # already encoded json of the model of the activity
+    :model,
+    # the webcomponent element
+    :delivery_element,
+    # whether or not the activity is rendering in a graded context
+    :graded
   ]
-
 end

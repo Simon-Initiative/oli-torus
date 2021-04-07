@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.Page.ModelPrunerTest do
-
   use ExUnit.Case, async: true
 
   alias Oli.Delivery.Page.ModelPruner
@@ -13,5 +12,4 @@ defmodule Oli.Delivery.Page.ModelPrunerTest do
     result = ModelPruner.prune(%{"stem" => "hi"})
     assert result == %{"stem" => "hi"}
   end
-
 end

@@ -24,14 +24,14 @@ defmodule Oli.Institutions.Institution do
       :country_code,
       :institution_email,
       :institution_url,
-      :timezone,
+      :timezone
     ])
     |> validate_required([
       :name,
       :country_code,
       :institution_email,
       :institution_url,
-      :timezone,
+      :timezone
     ])
   end
 end

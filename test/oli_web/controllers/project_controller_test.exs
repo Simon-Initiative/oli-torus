@@ -12,35 +12,37 @@ defmodule OliWeb.ProjectControllerTest do
   @update_attrs %{description: "default description"}
 
   describe "authorization" do
-    test "all get routes redirect to workspace path when attempting to view a project that does not exist", %{conn: conn} do
+    test "all get routes redirect to workspace path when attempting to view a project that does not exist",
+         %{conn: conn} do
       @basic_get_routes
-        |> Enum.each(fn path -> unauthorized_redirect(conn, path, "does not exist") end)
-      end
+      |> Enum.each(fn path -> unauthorized_redirect(conn, path, "does not exist") end)
     end
+  end
 
-    test "author can not access projects that do not belong to them", %{conn: conn, author: author} do
-      {:ok, author: _author2, project: project2} = author_project_fixture()
-      conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
-      @basic_get_routes
-        |> Enum.each(fn path -> unauthorized_redirect(conn, path, project2.slug) end)
-    end
+  test "author can not access projects that do not belong to them", %{conn: conn, author: author} do
+    {:ok, author: _author2, project: project2} = author_project_fixture()
+    conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
+
+    @basic_get_routes
+    |> Enum.each(fn path -> unauthorized_redirect(conn, path, project2.slug) end)
+  end
 
   describe "overview" do
     test "displays the page", %{conn: conn, project: project} do
       custom_act = Activities.get_registration_by_slug("oli_image_coding")
+
       %ActivityRegistrationProject{}
-      |> ActivityRegistrationProject.changeset(
-           %{
-             activity_registration_id: custom_act.id,
-             project_id: project.id,
-           }
-         ) |> Repo.insert
+      |> ActivityRegistrationProject.changeset(%{
+        activity_registration_id: custom_act.id,
+        project_id: project.id
+      })
+      |> Repo.insert()
+
       conn = get(conn, Routes.project_path(conn, :overview, project.slug))
 
       assert html_response(conn, 200) =~ "Overview"
     end
   end
-
 
   describe "publish" do
     test "displays the page", %{conn: conn, project: project} do
@@ -95,5 +97,4 @@ defmodule OliWeb.ProjectControllerTest do
     conn = get(conn, Routes.project_path(conn, path, project))
     assert redirected_to(conn) == Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
   end
-
 end

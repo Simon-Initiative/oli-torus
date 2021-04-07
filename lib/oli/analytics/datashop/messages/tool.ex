@@ -1,4 +1,3 @@
-
 defmodule Oli.Analytics.Datashop.Messages.Tool do
   @moduledoc """
     <tool_message context_message_id="student-p1-MAJOR-ARC-BFD-2-0">
@@ -22,20 +21,19 @@ defmodule Oli.Analytics.Datashop.Messages.Tool do
   alias Oli.Analytics.Datashop.Elements.{Meta, ProblemName, SemanticEvent, EventDescriptor}
 
   def setup(%{
-    type: type, # HINT or ATTEMPT
-    context_message_id: context_message_id,
-    meta_element_context: meta_element_context,
-    semantic_event_context: semantic_event_context,
-    part_attempt: part_attempt,
-    problem_name: problem_name
-  }) do
-
+        # HINT or ATTEMPT
+        type: type,
+        context_message_id: context_message_id,
+        meta_element_context: meta_element_context,
+        semantic_event_context: semantic_event_context,
+        part_attempt: part_attempt,
+        problem_name: problem_name
+      }) do
     element(:tool_message, %{context_message_id: context_message_id}, [
       Meta.setup(meta_element_context),
-      ProblemName.setup(%{ name: problem_name }),
+      ProblemName.setup(%{name: problem_name}),
       SemanticEvent.setup(semantic_event_context),
-      EventDescriptor.setup(%{ type: type, problem_name: problem_name, part_attempt: part_attempt })
+      EventDescriptor.setup(%{type: type, problem_name: problem_name, part_attempt: part_attempt})
     ])
-
   end
 end

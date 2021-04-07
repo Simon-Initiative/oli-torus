@@ -1,5 +1,4 @@
 defmodule Oli.Interop.IngestTest do
-
   alias Oli.Interop.Ingest
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Revision
@@ -7,9 +6,11 @@ defmodule Oli.Interop.IngestTest do
   use Oli.DataCase
 
   def by_title(project, title) do
-    query = from r in Revision,
-          where: r.title == ^title,
-          limit: 1
+    query =
+      from r in Revision,
+        where: r.title == ^title,
+        limit: 1
+
     AuthoringResolver.from_revision_slug(project.slug, Repo.one(query).slug)
   end
 
@@ -21,20 +22,21 @@ defmodule Oli.Interop.IngestTest do
   # the file.
   def simulate_unzipping() do
     Path.wildcard("./test/oli/interop/digest/*.json")
-    |> Enum.map(fn f -> {String.split(f, "/") |> Enum.reverse |> hd |> String.to_charlist, File.read(f)} end)
+    |> Enum.map(fn f ->
+      {String.split(f, "/") |> Enum.reverse() |> hd |> String.to_charlist(), File.read(f)}
+    end)
     |> Enum.map(fn {f, {:ok, contents}} -> {f, contents} end)
   end
 
   describe "course project ingest" do
-
     setup do
       Oli.Seeder.base_project_with_resource2()
     end
 
     test "ingest/1 processes the digest files and creates a course", %{author: author} do
-
-      {:ok, p} = simulate_unzipping()
-      |> Ingest.process(author)
+      {:ok, p} =
+        simulate_unzipping()
+        |> Ingest.process(author)
 
       # verify project
       project = Repo.get(Oli.Authoring.Course.Project, p.id)
@@ -42,21 +44,28 @@ defmodule Oli.Interop.IngestTest do
       assert p.title == project.title
 
       # verify project access for author
-      access = Repo.get_by(Oli.Authoring.Authors.AuthorProject, [author_id: author.id, project_id: project.id])
+      access =
+        Repo.get_by(Oli.Authoring.Authors.AuthorProject,
+          author_id: author.id,
+          project_id: project.id
+        )
+
       refute is_nil(access)
 
       # verify correct number of hierarchy elements were created
       containers = Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "container")
-      assert length(containers) == 4 + 1  # 4 defined in the course, plus 1 for the root
+      # 4 defined in the course, plus 1 for the root
+      assert length(containers) == 4 + 1
 
       # verify correct number of practice pages were created
-      practice_pages = Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "page")
-      |> Enum.filter(fn p -> !p.graded end)
+      practice_pages =
+        Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "page")
+        |> Enum.filter(fn p -> !p.graded end)
+
       assert length(practice_pages) == 3
 
       # verify that every practice page has a content attribute with a model
       assert Enum.all?(practice_pages, fn p -> Map.has_key?(p.content, "model") end)
-
 
       # spot check some elements to ensure that they were correctly constructed:
 
@@ -75,15 +84,9 @@ defmodule Oli.Interop.IngestTest do
       children = AuthoringResolver.from_resource_id(project.slug, c.children)
       assert Enum.at(children, 0).title == "Analog and Digital Page"
 
-
       # verify that all the activities were created correctly
       activities = Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "activity")
       assert length(activities) == 3
-
-
-
     end
-
   end
-
 end

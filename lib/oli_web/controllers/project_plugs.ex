@@ -1,5 +1,4 @@
 defmodule OliWeb.ProjectPlugs do
-
   alias Oli.Authoring.Course
   alias Oli.Accounts
   alias OliWeb.Router.Helpers, as: Routes
@@ -9,9 +8,13 @@ defmodule OliWeb.ProjectPlugs do
       nil ->
         conn
         |> Phoenix.Controller.put_flash(:info, "That project does not exist")
-        |> Phoenix.Controller.redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
+        |> Phoenix.Controller.redirect(
+          to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
+        )
         |> Plug.Conn.halt()
-      project -> conn
+
+      project ->
+        conn
         |> Plug.Conn.assign(:project, project)
     end
   end
@@ -21,17 +24,21 @@ defmodule OliWeb.ProjectPlugs do
       conn
     else
       conn
-       |> Phoenix.Controller.put_flash(:info, "You don't have access to that project")
-       |> Phoenix.Controller.redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
-       |> Plug.Conn.halt()
+      |> Phoenix.Controller.put_flash(:info, "You don't have access to that project")
+      |> Phoenix.Controller.redirect(
+        to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
+      )
+      |> Plug.Conn.halt()
     end
   end
 
   def fetch_project_api(conn, _) do
     case Course.get_project_by_slug(conn.params["project"]) do
-      nil -> error(conn, 404, "Project not found")
+      nil ->
+        error(conn, 404, "Project not found")
 
-      project -> conn
+      project ->
+        conn
         |> Plug.Conn.assign(:project, project)
     end
   end
@@ -49,5 +56,4 @@ defmodule OliWeb.ProjectPlugs do
     |> Plug.Conn.send_resp(code, reason)
     |> Plug.Conn.halt()
   end
-
 end

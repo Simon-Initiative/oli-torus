@@ -11,13 +11,19 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
 
   def call(conn, _opts) do
     with %{"section_slug" => section_slug} <- conn.path_params,
-         {:ok, section} <- Sections.get_section_by(slug: section_slug, open_and_free: true) |> trap_nil
-    do
+         {:ok, section} <-
+           Sections.get_section_by(slug: section_slug, open_and_free: true) |> trap_nil do
       case Pow.Plug.current_user(conn) do
         nil ->
           conn
-          |> redirect(to: Routes.delivery_path(conn, :new_user, redirect_to: "/#{Enum.join(conn.path_info, "/")}"))
+          |> redirect(
+            to:
+              Routes.delivery_path(conn, :new_user,
+                redirect_to: "/#{Enum.join(conn.path_info, "/")}"
+              )
+          )
           |> halt()
+
         user ->
           maybe_enroll_user(conn, user, section)
       end
@@ -33,6 +39,7 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
       conn
     else
       now = Timex.now()
+
       cond do
         section.registration_open != true ->
           conn

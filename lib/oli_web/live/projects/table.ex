@@ -1,5 +1,4 @@
 defmodule OliWeb.Projects.Table do
-
   use Phoenix.LiveComponent
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -51,5 +50,4 @@ defmodule OliWeb.Projects.Table do
     <span><%= Timex.format!(time, "{relative}", :relative)%></span>
     """
   end
-
 end

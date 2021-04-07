@@ -18,16 +18,15 @@ config :oli, Oli.Repo,
   ownership_timeout: 600_000
 
 # Configure email for development
-config :oli, Oli.Mailer,
-  adapter: Bamboo.LocalAdapter
+config :oli, Oli.Mailer, adapter: Bamboo.LocalAdapter
 
-config :oli, OliWeb.Pow.Mailer,
-  adapter: Bamboo.LocalAdapter
+config :oli, OliWeb.Pow.Mailer, adapter: Bamboo.LocalAdapter
 
-force_ssl = case System.get_env("FORCE_SSL", "false") do
-  "true" -> [rewrite_on: [:x_forwarded_proto]]
-  _ -> false
-end
+force_ssl =
+  case System.get_env("FORCE_SSL", "false") do
+    "true" -> [rewrite_on: [:x_forwarded_proto]]
+    _ -> false
+  end
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
@@ -48,7 +47,7 @@ config :oli, OliWeb.Endpoint,
     port: 443,
     otp_app: :oli,
     keyfile: "priv/ssl/localhost.key",
-    certfile: "priv/ssl/localhost.crt",
+    certfile: "priv/ssl/localhost.crt"
   ],
   force_ssl: force_ssl,
   debug_errors: true,

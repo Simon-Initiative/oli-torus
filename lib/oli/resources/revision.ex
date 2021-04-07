@@ -5,7 +5,6 @@ defmodule Oli.Resources.Revision do
   alias Oli.Utils.Slug
 
   schema "revisions" do
-
     #
     # NOTE: any field additions made here should be made also
     # in `Oli.Resources.create_revision_from_previous`
@@ -40,11 +39,26 @@ defmodule Oli.Resources.Revision do
   @doc false
   def changeset(resource_revision, attrs \\ %{}) do
     resource_revision
-    |> cast(attrs, [:title, :slug, :deleted, :author_id, :resource_id, :primary_resource_id,
-      :previous_revision_id, :resource_type_id, :content, :children, :objectives, :graded,
-      :max_attempts, :recommended_attempts, :time_limit, :scoring_strategy_id, :activity_type_id])
+    |> cast(attrs, [
+      :title,
+      :slug,
+      :deleted,
+      :author_id,
+      :resource_id,
+      :primary_resource_id,
+      :previous_revision_id,
+      :resource_type_id,
+      :content,
+      :children,
+      :objectives,
+      :graded,
+      :max_attempts,
+      :recommended_attempts,
+      :time_limit,
+      :scoring_strategy_id,
+      :activity_type_id
+    ])
     |> validate_required([:title, :deleted, :author_id, :resource_id, :resource_type_id])
     |> Slug.update_on_change("revisions")
   end
-
 end

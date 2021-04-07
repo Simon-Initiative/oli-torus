@@ -1,8 +1,8 @@
-
 defmodule OliWeb.Router do
   use OliWeb, :router
   use Pow.Phoenix.Router
   use PowAssent.Phoenix.Router
+
   use Pow.Extension.Phoenix.Router,
     extensions: [PowResetPassword, PowEmailConfirmation]
 
@@ -72,8 +72,10 @@ defmodule OliWeb.Router do
   # Ensure that we have a logged in user
   pipeline :delivery_protected do
     plug Oli.Plugs.SetDefaultPow, :user
+
     plug Pow.Plug.RequireAuthenticated,
       error_handler: OliWeb.Pow.UserAuthErrorHandler
+
     plug Oli.Plugs.RemoveXFrameOptions
     plug :put_root_layout, {OliWeb.LayoutView, "delivery.html"}
   end
@@ -133,7 +135,6 @@ defmodule OliWeb.Router do
     pipe_through :skip_csrf_protection
 
     pow_assent_authorization_post_callback_routes()
-
   end
 
   scope "/", PowInvitation.Phoenix, as: "pow_invitation" do
@@ -188,7 +189,6 @@ defmodule OliWeb.Router do
 
     # keep a session active by periodically calling this endpoint
     get "/keep-alive", StaticPageController, :keep_alive
-
   end
 
   scope "/project", OliWeb do
@@ -211,12 +211,20 @@ defmodule OliWeb.Router do
     delete "/:project_id", ProjectController, :delete
 
     # Objectives
-    live "/:project_id/objectives", Objectives.Objectives, session: {__MODULE__, :with_session, []}
+    live "/:project_id/objectives", Objectives.Objectives,
+      session: {__MODULE__, :with_session, []}
 
     # Curriculum
-    live "/:project_id/curriculum/:container_slug/edit/:revision_slug", Curriculum.ContainerLive, :edit, session: {__MODULE__, :with_session, []}
-    live "/:project_id/curriculum/:container_slug", Curriculum.ContainerLive, :index, session: {__MODULE__, :with_session, []}
-    live "/:project_id/curriculum/", Curriculum.ContainerLive, :index, session: {__MODULE__, :with_session, []}
+    live "/:project_id/curriculum/:container_slug/edit/:revision_slug",
+         Curriculum.ContainerLive,
+         :edit,
+         session: {__MODULE__, :with_session, []}
+
+    live "/:project_id/curriculum/:container_slug", Curriculum.ContainerLive, :index,
+      session: {__MODULE__, :with_session, []}
+
+    live "/:project_id/curriculum/", Curriculum.ContainerLive, :index,
+      session: {__MODULE__, :with_session, []}
 
     # Review/QA
     live "/:project_id/review", Qa.QaLive, session: {__MODULE__, :with_session, []}
@@ -233,8 +241,13 @@ defmodule OliWeb.Router do
     delete "/:project_id/collaborators/:author_email", CollaboratorController, :delete
 
     # Activities
-    put "/:project_id/activities/enable/:activity_slug", ProjectActivityController, :enable_activity
-    put "/:project_id/activities/disable/:activity_slug", ProjectActivityController, :disable_activity
+    put "/:project_id/activities/enable/:activity_slug",
+        ProjectActivityController,
+        :enable_activity
+
+    put "/:project_id/activities/disable/:activity_slug",
+        ProjectActivityController,
+        :disable_activity
 
     # Insights
     get "/:project_id/insights", ProjectController, :insights
@@ -242,7 +255,6 @@ defmodule OliWeb.Router do
     # between analytics groupings and sorting. I could not get it to run through the project authorization
     # plugs when live-routing, however.
     # live "/:project_id/insights", Insights, session: {__MODULE__, :with_session, []}
-
   end
 
   scope "/api/v1" do
@@ -250,7 +262,6 @@ defmodule OliWeb.Router do
 
     get "/openapi", OpenApiSpex.Plug.RenderSpec, []
   end
-
 
   scope "/api/v1/account", OliWeb do
     pipe_through [:api, :authoring_protected]
@@ -272,7 +283,6 @@ defmodule OliWeb.Router do
 
     post "/:project/lock/:resource", LockController, :acquire
     delete "/:project/lock/:resource", LockController, :release
-
   end
 
   # Storage Service
@@ -284,7 +294,6 @@ defmodule OliWeb.Router do
     delete "/:resource", ActivityController, :delete
     put "/:resource", ActivityController, :update
     post "/:resource", ActivityController, :create_secondary
-
   end
 
   scope "/api/v1/storage/course/:course/resource", OliWeb do
@@ -300,7 +309,6 @@ defmodule OliWeb.Router do
 
     post "/", MediaController, :create
     get "/", MediaController, :index
-
   end
 
   # Objectives Service
@@ -310,7 +318,6 @@ defmodule OliWeb.Router do
     post "/", ObjectivesController, :create
     get "/", ObjectivesController, :index
     put "/objective/:objective", ObjectivesController, :update
-
   end
 
   scope "/api/v1/attempt", OliWeb do
@@ -321,9 +328,18 @@ defmodule OliWeb.Router do
     # patch to save response state
 
     post "/activity/:activity_attempt_guid/part/:part_attempt_guid", AttemptController, :new_part
-    put "/activity/:activity_attempt_guid/part/:part_attempt_guid", AttemptController, :submit_part
-    patch "/activity/:activity_attempt_guid/part/:part_attempt_guid", AttemptController, :save_part
-    get "/activity/:activity_attempt_guid/part/:part_attempt_guid/hint", AttemptController, :get_hint
+
+    put "/activity/:activity_attempt_guid/part/:part_attempt_guid",
+        AttemptController,
+        :submit_part
+
+    patch "/activity/:activity_attempt_guid/part/:part_attempt_guid",
+          AttemptController,
+          :save_part
+
+    get "/activity/:activity_attempt_guid/part/:part_attempt_guid/hint",
+        AttemptController,
+        :get_hint
 
     post "/activity/:activity_attempt_guid", AttemptController, :new_activity
     put "/activity/:activity_attempt_guid", AttemptController, :submit_activity
@@ -361,13 +377,25 @@ defmodule OliWeb.Router do
   end
 
   scope "/sections", OliWeb do
-    pipe_through [:browser, :maybe_enroll_open_and_free, :delivery_protected, :require_section, :pow_email_layout]
+    pipe_through [
+      :browser,
+      :maybe_enroll_open_and_free,
+      :delivery_protected,
+      :require_section,
+      :pow_email_layout
+    ]
 
     get "/:section_slug", PageDeliveryController, :index
     get "/:section_slug/page/:revision_slug", PageDeliveryController, :page
     get "/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt
-    get "/:section_slug/page/:revision_slug/attempt/:attempt_guid", PageDeliveryController, :finalize_attempt
-    get "/:section_slug/page/:revision_slug/attempt/:attempt_guid/review", PageDeliveryController, :review_attempt
+
+    get "/:section_slug/page/:revision_slug/attempt/:attempt_guid",
+        PageDeliveryController,
+        :finalize_attempt
+
+    get "/:section_slug/page/:revision_slug/attempt/:attempt_guid/review",
+        PageDeliveryController,
+        :review_attempt
 
     live "/:section_slug/grades", Grades.GradesLive, session: {__MODULE__, :with_section_user, []}
     get "/:section_slug/grades/export", PageDeliveryController, :export_gradebook
@@ -401,7 +429,10 @@ defmodule OliWeb.Router do
 
   scope "/admin", OliWeb do
     pipe_through [:browser, :authoring_protected, :admin]
-    live_dashboard "/dashboard", metrics: OliWeb.Telemetry, session: {__MODULE__, :with_session, []}
+
+    live_dashboard "/dashboard",
+      metrics: OliWeb.Telemetry,
+      session: {__MODULE__, :with_session, []}
 
     resources "/platform_instances", PlatformInstanceController
   end
@@ -434,7 +465,15 @@ defmodule OliWeb.Router do
   end
 
   scope "/project", OliWeb do
-    pipe_through [:browser, :authoring_protected, :workspace, :authoring, :authorize_project, :admin]
+    pipe_through [
+      :browser,
+      :authoring_protected,
+      :workspace,
+      :authoring,
+      :authorize_project,
+      :admin
+    ]
+
     live "/:project_id/history/:slug", RevisionHistory, session: {__MODULE__, :with_session, []}
   end
 
@@ -447,7 +486,6 @@ defmodule OliWeb.Router do
       pipe_through [:browser]
 
       get "/uipalette", UIPaletteController, :index
-
     end
 
     scope "/dev" do
@@ -460,9 +498,6 @@ defmodule OliWeb.Router do
       pipe_through [:browser]
 
       get "/editor", EditorTestController, :index
-
     end
-
   end
-
 end

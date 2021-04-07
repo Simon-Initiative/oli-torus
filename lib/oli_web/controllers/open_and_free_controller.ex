@@ -20,9 +20,10 @@ defmodule OliWeb.OpenAndFreeController do
   def create(conn, %{"section" => section_params}) do
     with %{"project_slug" => project_slug} <- section_params,
          %{id: project_id} <- Course.get_project_by_slug(project_slug),
-         %{id: publication_id} <- Publishing.get_latest_published_publication_by_slug!(project_slug)
-    do
-      section_params = section_params
+         %{id: publication_id} <-
+           Publishing.get_latest_published_publication_by_slug!(project_slug) do
+      section_params =
+        section_params
         |> Map.put("project_id", project_id)
         |> Map.put("publication_id", publication_id)
         |> Map.put("open_and_free", true)
@@ -39,8 +40,10 @@ defmodule OliWeb.OpenAndFreeController do
       end
     else
       _ ->
-        changeset = Sections.change_section(%Section{open_and_free: true})
+        changeset =
+          Sections.change_section(%Section{open_and_free: true})
           |> Ecto.Changeset.add_error(:project_id, "invalid project")
+
         render_workspace_page(conn, "new.html", changeset: changeset)
     end
   end
@@ -53,7 +56,12 @@ defmodule OliWeb.OpenAndFreeController do
   def edit(conn, %{"id" => id}) do
     section = Sections.get_section!(id)
     changeset = Sections.change_section(section)
-    render_workspace_page(conn, "edit.html", section: section, changeset: changeset, timezones: Predefined.timezones())
+
+    render_workspace_page(conn, "edit.html",
+      section: section,
+      changeset: changeset,
+      timezones: Predefined.timezones()
+    )
   end
 
   def update(conn, %{"id" => id, "section" => section_params}) do
@@ -66,12 +74,15 @@ defmodule OliWeb.OpenAndFreeController do
         |> redirect(to: Routes.open_and_free_path(conn, :show, section))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render_workspace_page(conn, "edit.html", section: section, changeset: changeset, timezones: Predefined.timezones())
+        render_workspace_page(conn, "edit.html",
+          section: section,
+          changeset: changeset,
+          timezones: Predefined.timezones()
+        )
     end
   end
 
   defp render_workspace_page(conn, template, assigns) do
-    render conn, template, Keyword.merge(assigns, [active: :open_and_free, title: "Open and Free"])
+    render(conn, template, Keyword.merge(assigns, active: :open_and_free, title: "Open and Free"))
   end
-
 end

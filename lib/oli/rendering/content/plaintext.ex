@@ -96,8 +96,8 @@ defmodule Oli.Rendering.Content.Plaintext do
   end
 
   def code(%Context{} = _context, next, %{
-    "language" => _language,
-  }) do
+        "language" => _language
+      }) do
     ["[Code]: ", next.(), " "]
   end
 
@@ -124,11 +124,25 @@ defmodule Oli.Rendering.Content.Plaintext do
   def error(%Context{} = _context, element, error) do
     case error do
       {:unsupported, error_id, _error_msg} ->
-        ["<div class=\"content unsupported\">Content element type '", element["type"] ,"' is not supported. Please contact support with issue ##{error_id}</div>\n"]
+        [
+          "<div class=\"content unsupported\">Content element type '",
+          element["type"],
+          "' is not supported. Please contact support with issue ##{error_id}</div>\n"
+        ]
+
       {:invalid, error_id, _error_msg} ->
-        ["<div class=\"content invalid\">Content element is invalid. Please contact support with issue ##{error_id}</div>\n"]
+        [
+          "<div class=\"content invalid\">Content element is invalid. Please contact support with issue ##{
+            error_id
+          }</div>\n"
+        ]
+
       {_, error_id, _error_msg} ->
-        ["<div class=\"content invalid\">An error occurred while rendering content . Please contact support with issue ##{error_id}</div>\n"]
+        [
+          "<div class=\"content invalid\">An error occurred while rendering content . Please contact support with issue ##{
+            error_id
+          }</div>\n"
+        ]
     end
   end
 end

@@ -1,5 +1,4 @@
 defmodule Oli.Resources.Page do
-
   alias Oli.Resources
   @type_id Oli.Resources.ResourceType.get_id_by_type("page")
 
@@ -20,7 +19,7 @@ defmodule Oli.Resources.Page do
     :time_limit,
     :scoring_strategy,
     :inserted_at,
-    :updated_at,
+    :updated_at
   ]
 
   def from_revision(%Oli.Resources.Revision{} = revision) do
@@ -45,17 +44,15 @@ defmodule Oli.Resources.Page do
     }
   end
 
-
   def create_new(attrs) do
-
     {:ok, resource} = Resources.create_new_resource()
 
-    with_type = Map.put(attrs, :resource_type_id, @type_id)
+    with_type =
+      Map.put(attrs, :resource_type_id, @type_id)
       |> Map.put(:resource_id, resource.id)
+
     {:ok, revision} = Resources.create_revision(with_type)
 
     {:ok, from_revision(revision)}
-
   end
-
 end

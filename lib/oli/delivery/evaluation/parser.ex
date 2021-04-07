@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.Evaluation.Parser do
-
   @moduledoc """
   A parser for evaluation rules.
 
@@ -30,25 +29,36 @@ defmodule Oli.Delivery.Evaluation.Parser do
   lbrace = ascii_char([?{]) |> label("{")
   rbrace = ascii_char([?}]) |> optional(string(" ")) |> label("}")
   op_lt = ascii_char([?<]) |> optional(string(" ")) |> replace(:lt) |> label("<")
-  op_gt = ascii_char([?>]) |> optional(string(" ")) |> replace(:gt) |>label(">")
-  op_eq = ascii_char([?=]) |> optional(string(" ")) |> replace(:eq) |>label("=")
+  op_gt = ascii_char([?>]) |> optional(string(" ")) |> replace(:gt) |> label(">")
+  op_eq = ascii_char([?=]) |> optional(string(" ")) |> replace(:eq) |> label("=")
   op_like = string("like") |> optional(string(" ")) |> replace(:like) |> label("like")
 
-
-  defcombinatorp :string_until_rbrace,
-            repeat(
-              lookahead_not(ascii_char([?}]))
-              |> utf8_char([])
-            )
-            |> reduce({List, :to_string, []})
+  defcombinatorp(
+    :string_until_rbrace,
+    repeat(
+      lookahead_not(ascii_char([?}]))
+      |> utf8_char([])
+    )
+    |> reduce({List, :to_string, []})
+  )
 
   defcombinatorp(:value, ignore(lbrace) |> parsec(:string_until_rbrace) |> ignore(rbrace))
 
-
   # <component> :== "attemptNumber" | "input" | "length(input)"
-  attempt_number_ = string("attemptNumber") |> optional(string(" ")) |> replace(:attempt_number) |> label("attemptNumber")
+  attempt_number_ =
+    string("attemptNumber")
+    |> optional(string(" "))
+    |> replace(:attempt_number)
+    |> label("attemptNumber")
+
   input_ = string("input") |> optional(string(" ")) |> replace(:input) |> label("input")
-  input_length_ = string("length(input)") |> optional(string(" ")) |> replace(:input_length) |> label("input_length")
+
+  input_length_ =
+    string("length(input)")
+    |> optional(string(" "))
+    |> replace(:input_length)
+    |> label("input_length")
+
   defcombinatorp(:component, choice([attempt_number_, input_, input_length_]))
 
   # <operator> :== "<" | ">" | "=" | "like"
