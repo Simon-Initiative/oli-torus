@@ -1,25 +1,18 @@
-import { ActivityModelSchema,
+import {
+  ActivityModelSchema,
   ActivityState,
   Hint,
   PartResponse,
   PartState,
   StudentResponse,
   ClientEvaluation,
-  Success } from './types';
+  ActionResult,
+  Success
+} from './types';
 import { valueOr } from 'utils/common';
 
-
-export interface EvaluatedPart {
-  type: 'EvaluatedPart';
-  attempt_guid: string;
-  out_of: number;
-  score: number;
-  feedback: any;
-  error?: string;
-}
-
 export interface EvaluationResponse extends Success {
-  evaluations: EvaluatedPart[];
+  actions: ActionResult[];
 }
 
 // Notice that the hint attribute here is optional.  If a

@@ -76,10 +76,10 @@ export interface ActivityState {
   hasMoreHints: boolean;
 }
 
-export interface Choice extends Identifiable, HasContent {}
-export interface Stem extends Identifiable, HasContent {}
-export interface Hint extends Identifiable, HasContent {}
-export interface Feedback extends Identifiable, HasContent {}
+export interface Choice extends Identifiable, HasContent { }
+export interface Stem extends Identifiable, HasContent { }
+export interface Hint extends Identifiable, HasContent { }
+export interface Feedback extends Identifiable, HasContent { }
 export interface Transformation extends Identifiable {
   path: string;
   operation: Operation;
@@ -96,8 +96,61 @@ export interface Response extends Identifiable {
   feedback: Feedback;
 }
 
+export interface ConditionalOutcome extends Identifiable {
+  rule: Object;
+  actions: Action[];
+}
+
+export interface IsActionResult {
+  attempt_guid: string;
+  error?: string;
+}
+
+export type Action = NavigationAction | FeedbackAction | StateUpdateAction;
+export type ActionResult = NavigationActionResult | FeedbackActionResult | StateUpdateActionResult;
+
+export interface FeedbackActionCore {
+  score: number;
+  feedback: Feedback;
+}
+
+export interface NavigationActionCore {
+  to: string;
+}
+
+export interface StateUpdateActionCore {
+  update: Object;
+}
+
+export interface NavigationAction extends Identifiable, NavigationActionCore {
+  type: 'NavigationAction';
+}
+
+export interface NavigationActionResult extends NavigationActionCore, IsActionResult {
+  type: 'NavigationActionResult';
+}
+
+export interface FeedbackAction extends Identifiable, FeedbackActionCore {
+  type: 'FeedbackAction';
+}
+
+export interface FeedbackActionResult extends FeedbackActionCore, IsActionResult {
+  type: 'FeedbackActionResult';
+  out_of: number;
+}
+
+export interface StateUpdateAction extends Identifiable, StateUpdateActionCore {
+  type: 'StateUpdateAction';
+}
+
+export interface StateUpdateActionResult extends StateUpdateActionCore, IsActionResult {
+  type: 'StateUpdateActionResult';
+}
+
+
 export interface Part extends Identifiable {
   responses: Response[];
+  outcomes?: ConditionalOutcome[];
   hints: Hint[];
   scoringStrategy: ScoringStrategy;
 }
