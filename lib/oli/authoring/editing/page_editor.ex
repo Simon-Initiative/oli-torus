@@ -417,9 +417,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
   end
 
   # For the activity ids found in content, convert them to activity revision slugs
-  defp convert_to_activity_slugs(%{"model" => content}, publication_id) do
+  defp convert_to_activity_slugs(%{"model" => model} = content, publication_id) do
     found_activities =
-      Enum.filter(content, fn c -> Map.get(c, "type") == "activity-reference" end)
+      Enum.filter(model, fn c -> Map.get(c, "type") == "activity-reference" end)
       |> Enum.map(fn c -> Map.get(c, "activity_id") end)
 
     id_to_slug =
@@ -443,7 +443,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
       end
     end
 
-    %{"model" => Enum.map(content, convert)}
+    Map.put(content, "model", Enum.map(model, convert))
   end
 
   # Take a list of maps containing the title, resource_id, and children (as a list of resource_ids)

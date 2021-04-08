@@ -53,11 +53,12 @@ defmodule OliWeb.ResourceController do
 
     case PageEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
       {:ok, context} ->
-        render(conn, "edit.html",
+        render(conn, determine_editor(context),
           active: :curriculum,
           breadcrumbs: Breadcrumb.trail_to(project_slug, revision_slug),
           is_admin?: is_admin?,
           context: Jason.encode!(context),
+          raw_context: context,
           scripts: Activities.get_activity_scripts(),
           project_slug: project_slug,
           revision_slug: revision_slug
@@ -74,6 +75,16 @@ defmodule OliWeb.ResourceController do
           ]
         )
     end
+  end
+
+  # Look at the revision content to determine which editor to display
+  defp determine_editor(context) do
+
+    case context.content do
+      %{"advancedAuthoring" => true} -> "advanced.html"
+      _ -> "edit.html"
+    end
+
   end
 
   def preview(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do

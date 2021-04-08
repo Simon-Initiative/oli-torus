@@ -1,0 +1,18 @@
+
+<script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/delivery.js") %>"></script>
+
+<h1><%= @title %></h1>
+
+<div id="delivery_container" class="container"/>
+
+<script>
+
+  const params = {
+    resourceId: <%= @resource_id %>,
+    sectionSlug: "<%= @section_slug %>",
+    userId: <%= @user_id %>,
+    pageSlug: "<%= @slug %>"
+  };
+
+  window.oliMountApplication(document.getElementById('delivery_container'), params);
+</script>

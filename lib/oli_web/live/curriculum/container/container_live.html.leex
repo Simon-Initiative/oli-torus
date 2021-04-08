@@ -90,6 +90,11 @@
         <button phx-click="add" phx-value-type="Scored" class="btn btn-sm btn-outline-primary ml-2" type="button">
           Graded Assessment
         </button>
+        <%= if @adaptivity_flag do %>
+          <button phx-click="add" phx-value-type="Adaptive" class="btn btn-sm btn-outline-primary ml-2" type="button">
+            Adaptive Page
+          </button>
+        <% end %>
         <button phx-click="add" phx-value-type="Container" class="btn btn-sm btn-outline-primary ml-2" type="button">
           <%= new_container_name(@numberings, @container) %>
         </button>

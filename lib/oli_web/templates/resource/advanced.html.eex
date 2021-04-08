@@ -1,0 +1,11 @@
+<script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/authoring.js") %>"></script>
+
+<%= for script <- @scripts do %>
+  <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
+<% end %>
+
+<div id="editor" class="container"/>
+
+<script>
+  window.oliMountApplication(document.getElementById('editor'), "<%= Base.encode64(@context) %>");
+</script>

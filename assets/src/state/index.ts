@@ -30,3 +30,4 @@ export function initState(json: any = {}) {
     preferences: new PreferencesState(json),
   };
 }
+
