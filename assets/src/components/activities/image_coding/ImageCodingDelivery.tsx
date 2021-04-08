@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import {
   DeliveryElement, DeliveryElementProps,
-  EvaluationResponse, ResetActivityResponse, RequestHintResponse
+  EvaluationResponse, ResetActivityResponse, RequestHintResponse,
 } from '../DeliveryElement';
 import { ImageCodingModelSchema } from './schema';
 import * as ActivityTypes from '../types';
@@ -127,7 +127,8 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
       .then((response: EvaluationResponse) => {
         if (response.actions.length > 0) {
 
-          const action: ActivityTypes.FeedbackAction = response.actions[0] as ActivityTypes.FeedbackAction;
+          const action: ActivityTypes.FeedbackAction
+            = response.actions[0] as ActivityTypes.FeedbackAction;
           const { error } = action;
           const parts = [Object.assign({}, partState, { feedback, error })];
           const updated = Object.assign({}, attemptState, { score, outOf, parts });
@@ -185,7 +186,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
 
     const ctx: EvalContext = {
       getCanvas, getResource, getResult, appendOutput,
-      solutionRun: false
+      solutionRun: false,
     };
     const e = Evaluator.execute(input, ctx);
     if (e != null) {
@@ -210,7 +211,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     // only needs to be done once, setting solnCanvas.width > 0
     const ctx: EvalContext = {
       getCanvas, getResource, getResult, appendOutput,
-      solutionRun: true
+      solutionRun: true,
     };
     const solnCanvas = getResult(true);
     if (solnCanvas && solnCanvas.width === 0) {

@@ -7,7 +7,7 @@ import {
   StudentResponse,
   ClientEvaluation,
   Action,
-  Success
+  Success,
 } from './types';
 import { valueOr } from 'utils/common';
 

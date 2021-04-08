@@ -17,8 +17,8 @@ export const defaultModel: () => AdaptiveModelSchema = () => {
           id: 'outcome1',
           rule: [],
           actions: [
-            { id: 'action1', type: 'StateUpdateActionDesc', update: {} }
-          ]
+            { id: 'action1', type: 'StateUpdateActionDesc', update: {} },
+          ],
         }],
         hints: [
           fromText(''),

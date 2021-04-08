@@ -18,7 +18,6 @@ defmodule Oli.Delivery.Attempts do
   alias Oli.Activities.State.ActivityState
   alias Oli.Resources.{Revision}
   alias Oli.Activities.Model
-  alias Oli.Activities.Model.Feedback
   alias Oli.Activities.Model.Part
   alias Oli.Activities.Transformers
   alias Oli.Delivery.Attempts.{StudentInput, Result, Scoring, ClientEvaluation}
