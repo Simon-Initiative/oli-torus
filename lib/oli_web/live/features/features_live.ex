@@ -12,6 +12,7 @@ defmodule OliWeb.Features.FeaturesLive do
     {:ok,
      assign(socket,
        title: "Feature Flags",
+       active: :features,
        features: Features.list_features_and_states(),
        breadcrumbs: [Breadcrumb.new(%{full_title: "Feature Flags"})]
      )}
