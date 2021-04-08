@@ -1,6 +1,5 @@
 defmodule OliWeb.HelpController do
   use OliWeb, :controller
-  require Logger
 
   alias Oli.Help.HelpContent
 
@@ -25,7 +24,6 @@ defmodule OliWeb.HelpController do
       |> redirect(to: Routes.help_path(conn, :sent))
     else
       {:error, message} ->
-                           Logger.error("Error sending help message #{Kernel.inspect(message)}")
                            conn
                            |> put_flash(:error, "Help request failed, please try again")
                            |> redirect(to: Routes.help_path(conn, :index))
