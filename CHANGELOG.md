@@ -6,6 +6,8 @@
   - Add multi-project support to Revision History tool
   - Add Open and Free section support
   - Feature flag support
+  - Add research and cookie consent support
+  - Fix attempts sort order 
 
 ### Bug fixes
   - Fix analytics / insights to not show parent course analytics after duplication
