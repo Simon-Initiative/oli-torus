@@ -10,9 +10,16 @@ defmodule OliWeb.ProjectVisibilityTest do
   describe "visibility live test" do
     setup [:setup_session]
 
-    test "project visibility update", %{conn: conn, project: project, author: author, institution: institution} do
-
-      {:ok, view, _} = live_isolated(conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => project.slug })
+    test "project visibility update", %{
+      conn: conn,
+      project: project,
+      author: author,
+      institution: institution
+    } do
+      {:ok, view, _} =
+        live_isolated(conn, OliWeb.Projects.VisibilityLive,
+          session: %{"project_slug" => project.slug}
+        )
 
       assert view |> element("#visibility_option_selected") |> has_element?()
 
@@ -32,21 +39,15 @@ defmodule OliWeb.ProjectVisibilityTest do
 
       assert Enum.count(available_publications) == 1
     end
-
   end
 
   defp setup_session(%{conn: conn}) do
     map = Seeder.base_project_with_resource2()
 
-    conn = Plug.Test.init_test_session(conn, lti_session: nil)
+    conn =
+      Plug.Test.init_test_session(conn, lti_session: nil)
       |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
-    {:ok,
-      conn: conn,
-      author: map.author,
-      institution: map.institution,
-      project: map.project
-    }
+    {:ok, conn: conn, author: map.author, institution: map.institution, project: map.project}
   end
-
 end

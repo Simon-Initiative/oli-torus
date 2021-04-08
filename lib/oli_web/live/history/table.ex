@@ -1,13 +1,10 @@
 defmodule OliWeb.RevisionHistory.Table do
   use Phoenix.LiveComponent
 
-
   defp publication_state(assigns, revision_id) do
-
     publication = assigns.publication
 
     case Map.get(assigns.mappings, revision_id) do
-
       %{publication: ^publication} ->
         ~L"""
         <span class="badge badge-success">Currently Published</span>
@@ -32,7 +29,6 @@ defmodule OliWeb.RevisionHistory.Table do
   end
 
   def render(assigns) do
-
     range = Range.new(assigns.page_offset, assigns.page_offset + assigns.page_size)
     to_display = Enum.slice(assigns.revisions, range)
 

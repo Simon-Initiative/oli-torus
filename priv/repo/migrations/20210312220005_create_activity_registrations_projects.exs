@@ -10,6 +10,9 @@ defmodule Oli.Repo.Migrations.CreateActivityRegistrationsProjects do
 
     create index(:activity_registration_projects, [:activity_registration_id])
     create index(:activity_registration_projects, [:project_id])
-    create unique_index(:activity_registration_projects, [:activity_registration_id, :project_id], name: :index_activity_registration_project)
+
+    create unique_index(:activity_registration_projects, [:activity_registration_id, :project_id],
+             name: :index_activity_registration_project
+           )
   end
 end

@@ -21,12 +21,14 @@ defmodule OliWeb.RevisionHistory do
 
   @page_size 15
 
-  def mount(%{ "slug" => slug, "project_id" => project_slug}, _, socket) do
-
-    [{resource_id}] = Repo.all(from rev in Revision,
-      distinct: rev.resource_id,
-      where: rev.slug == ^slug,
-      select: {rev.resource_id})
+  def mount(%{"slug" => slug, "project_id" => project_slug}, _, socket) do
+    [{resource_id}] =
+      Repo.all(
+        from rev in Revision,
+          distinct: rev.resource_id,
+          where: rev.slug == ^slug,
+          select: {rev.resource_id}
+      )
 
     project = Course.get_project_by_slug(project_slug)
 
@@ -38,33 +40,49 @@ defmodule OliWeb.RevisionHistory do
     tree = Oli.Versioning.RevisionTree.Tree.build(revisions, resource_id)
 
     mappings = Publishing.get_all_mappings_for_resource(resource_id, project_slug)
-    mappings_by_revision = Enum.reduce(mappings, %{}, fn mapping, m -> Map.put(m, mapping.revision_id, mapping) end)
+
+    mappings_by_revision =
+      Enum.reduce(mappings, %{}, fn mapping, m -> Map.put(m, mapping.revision_id, mapping) end)
 
     selected = fetch_selected(hd(revisions).id)
 
-    {:ok, assign(socket,
-      breadcrumbs: [Breadcrumb.new(%{full_title: "Revision History"})],
-      view: "table",
-      tree: tree,
-      root: root,
-      resource_id: resource_id,
-      mappings: mappings_by_revision,
-      publication: determine_most_recent_published(mappings),
-      revisions: revisions,
-      selected: selected,
-      project: project,
-      page_offset: 0,
-      initial_size: length(revisions))
-    }
+    {:ok,
+     assign(socket,
+       breadcrumbs: [Breadcrumb.new(%{full_title: "Revision History"})],
+       view: "table",
+       tree: tree,
+       root: root,
+       resource_id: resource_id,
+       mappings: mappings_by_revision,
+       publication: determine_most_recent_published(mappings),
+       revisions: revisions,
+       selected: selected,
+       project: project,
+       page_offset: 0,
+       initial_size: length(revisions)
+     )}
   end
 
   defp fetch_all_revisions(resource_id) do
-    Repo.all(from rev in Revision,
-      join: a in Author, on: a.id == rev.author_id,
-      where: rev.resource_id == ^resource_id,
-      order_by: [desc: rev.inserted_at],
-      preload: [:author],
-      select: map(rev, [:id, :previous_revision_id, :inserted_at, :updated_at, :author_id, :slug, :author_id, author: [:email]]))
+    Repo.all(
+      from rev in Revision,
+        join: a in Author,
+        on: a.id == rev.author_id,
+        where: rev.resource_id == ^resource_id,
+        order_by: [desc: rev.inserted_at],
+        preload: [:author],
+        select:
+          map(rev, [
+            :id,
+            :previous_revision_id,
+            :inserted_at,
+            :updated_at,
+            :author_id,
+            :slug,
+            :author_id,
+            author: [:email]
+          ])
+    )
   end
 
   defp fetch_selected(revision_id) do
@@ -80,20 +98,18 @@ defmodule OliWeb.RevisionHistory do
   end
 
   defp determine_most_recent_published(mappings) do
-
-    all = Enum.reduce(mappings, MapSet.new(), fn mapping, m -> MapSet.put(m, mapping.publication) end)
-    |> MapSet.to_list()
-    |> Enum.sort(fn m1, m2 -> date_sort(m1.inserted_at, m2.inserted_at) end)
+    all =
+      Enum.reduce(mappings, MapSet.new(), fn mapping, m -> MapSet.put(m, mapping.publication) end)
+      |> MapSet.to_list()
+      |> Enum.sort(fn m1, m2 -> date_sort(m1.inserted_at, m2.inserted_at) end)
 
     case length(all) do
       1 -> nil
       _ -> Enum.at(all, 1)
     end
-
   end
 
   def render(assigns) do
-
     size = @page_size
 
     ~L"""
@@ -162,7 +178,6 @@ defmodule OliWeb.RevisionHistory do
 
   # creates a new revision by restoring the state of the selected revision
   def handle_event("restore", _, socket) do
-
     project_slug = socket.assigns.project.slug
     resource_id = socket.assigns.resource_id
 
@@ -170,23 +185,33 @@ defmodule OliWeb.RevisionHistory do
     # is necessary to prevent an active editing session from stomping on what is about
     # to be restored
     publication = AuthoringResolver.publication(project_slug)
+
     Publishing.get_published_resource!(publication.id, resource_id)
-    |> Publishing.update_published_resource(%{ lock_updated_at: nil, locked_by_id: nil })
+    |> Publishing.update_published_resource(%{lock_updated_at: nil, locked_by_id: nil})
 
     # Now create and track the new revision, based on the current head for this project but
     # restoring the content, title and objectives and other settigns from the selected revision
-    %Revision{content: content,
+    %Revision{
+      content: content,
       title: title,
       objectives: objectives,
       scoring_strategy_id: scoring_strategy_id,
       graded: graded,
       max_attempts: max_attempts,
-      author_id: author_id} = socket.assigns.selected
+      author_id: author_id
+    } = socket.assigns.selected
 
-    {:ok, revision} = AuthoringResolver.from_resource_id(project_slug, resource_id)
-    |> Resources.create_revision_from_previous(
-      %{author_id: author_id, content: content, title: title, objectives: objectives,
-        scoring_strategy_id: scoring_strategy_id, graded: graded, max_attempts: max_attempts })
+    {:ok, revision} =
+      AuthoringResolver.from_resource_id(project_slug, resource_id)
+      |> Resources.create_revision_from_previous(%{
+        author_id: author_id,
+        content: content,
+        title: title,
+        objectives: objectives,
+        scoring_strategy_id: scoring_strategy_id,
+        graded: graded,
+        max_attempts: max_attempts
+      })
 
     Oli.Publishing.ChangeTracker.track_revision(project_slug, revision)
 
@@ -195,8 +220,7 @@ defmodule OliWeb.RevisionHistory do
     {:noreply, socket}
   end
 
-  def handle_event("select", %{ "rev" => str}, socket) do
-
+  def handle_event("select", %{"rev" => str}, socket) do
     id = String.to_integer(str)
     selected = fetch_selected(id)
     {:noreply, assign(socket, :selected, selected)}
@@ -210,44 +234,53 @@ defmodule OliWeb.RevisionHistory do
     {:noreply, assign(socket, view: "graph")}
   end
 
-  def handle_event("page", %{ "ordinal" => ordinal}, socket) do
+  def handle_event("page", %{"ordinal" => ordinal}, socket) do
     page_offset = (String.to_integer(ordinal) - 1) * @page_size
     {:noreply, assign(socket, :page_offset, page_offset)}
   end
 
   def handle_info({:updated, revision, _}, socket) do
-
     id = revision.id
 
-    revision = Oli.Resources.get_revision!(id) |>  Repo.preload(:author)
+    revision = Oli.Resources.get_revision!(id) |> Repo.preload(:author)
 
-    revisions = case socket.assigns.revisions do
-      [] -> [revision]
-      [%{id: ^id} | rest] -> [revision] ++ rest
-      list -> [revision] ++ list
-    end
+    revisions =
+      case socket.assigns.revisions do
+        [] -> [revision]
+        [%{id: ^id} | rest] -> [revision] ++ rest
+        list -> [revision] ++ list
+      end
 
-    selected = if revision.id == socket.assigns.selected.id do
-      revision
-    else
-      socket.assigns.selected
-    end
+    selected =
+      if revision.id == socket.assigns.selected.id do
+        revision
+      else
+        socket.assigns.selected
+      end
 
-    tree = case Map.get(socket.assigns.tree, revision.id) do
-      nil -> Oli.Versioning.RevisionTree.Tree.build(revisions, socket.assigns.resource_id)
-      node -> Map.put(socket.assigns.tree, revision.id, %{node | revision: revision})
-    end
+    tree =
+      case Map.get(socket.assigns.tree, revision.id) do
+        nil -> Oli.Versioning.RevisionTree.Tree.build(revisions, socket.assigns.resource_id)
+        node -> Map.put(socket.assigns.tree, revision.id, %{node | revision: revision})
+      end
 
     {:noreply, assign(socket, selected: selected, revisions: revisions, tree: tree)}
   end
 
   def handle_info({:new_publication, _, _}, socket) do
+    mappings =
+      Publishing.get_all_mappings_for_resource(
+        socket.assigns.resource_id,
+        socket.assigns.project.slug
+      )
 
-    mappings = Publishing.get_all_mappings_for_resource(socket.assigns.resource_id, socket.assigns.project.slug)
-    mappings_by_revision = Enum.reduce(mappings, %{}, fn mapping, m -> Map.put(m, mapping.revision_id, mapping) end)
+    mappings_by_revision =
+      Enum.reduce(mappings, %{}, fn mapping, m -> Map.put(m, mapping.revision_id, mapping) end)
 
-    {:noreply, assign(socket, mappings: mappings_by_revision, publication: determine_most_recent_published(mappings))}
+    {:noreply,
+     assign(socket,
+       mappings: mappings_by_revision,
+       publication: determine_most_recent_published(mappings)
+     )}
   end
-
-
 end

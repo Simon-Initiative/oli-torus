@@ -1,5 +1,4 @@
 defmodule OliWeb.Qa.State do
-
   alias OliWeb.Common.Breadcrumb
 
   @default_filters MapSet.new(["pedagogy", "content", "accessibility"])
@@ -19,22 +18,27 @@ defmodule OliWeb.Qa.State do
   }
 
   def from_params(state, params) do
-
     filters =
       case params["filters"] do
         nil -> @default_filters
-        s -> String.split(s, ",") |> MapSet.new
+        s -> String.split(s, ",") |> MapSet.new()
       end
 
     selected_id =
       case params["selected"] do
-        nil -> if state.selected == nil do nil else state.selected.id end
-        id -> id
+        nil ->
+          if state.selected == nil do
+            nil
+          else
+            state.selected.id
+          end
+
+        id ->
+          id
       end
 
     state = Map.merge(state, Map.new(selection_changed(state, selected_id)))
     set_filters(state, filters)
-
   end
 
   def to_params(filters, selected) do
@@ -45,42 +49,46 @@ defmodule OliWeb.Qa.State do
   end
 
   def initialize_state(author, project, initial_review) do
-
-    changes = Keyword.merge([
-      project: project,
-      author: author
-    ], new_review_ran(@default_state, initial_review))
-    |> Enum.reduce(%{}, fn {k, v}, m -> Map.put(m, k, v) end)
+    changes =
+      Keyword.merge(
+        [
+          project: project,
+          author: author
+        ],
+        new_review_ran(@default_state, initial_review)
+      )
+      |> Enum.reduce(%{}, fn {k, v}, m -> Map.put(m, k, v) end)
 
     Map.merge(@default_state, changes)
   end
 
   def new_review_ran(state, {warnings, parent_pages, qa_reviews}) do
-    Keyword.merge([
-      selected: nil,
-      qa_reviews: qa_reviews,
-      parent_pages: parent_pages,
-    ], update_warnings(state, warnings))
+    Keyword.merge(
+      [
+        selected: nil,
+        qa_reviews: qa_reviews,
+        parent_pages: parent_pages
+      ],
+      update_warnings(state, warnings)
+    )
   end
 
   def toggle_filter(state, filter_type) do
-
     if MapSet.member?(state.filters, filter_type) do
       MapSet.delete(state.filters, filter_type)
     else
       MapSet.put(state.filters, filter_type)
     end
-
   end
 
   def set_filters(state, filters) do
-
     filtered_warnings = filter_warnings(filters, state.warnings)
 
-    selected = case Enum.find(filtered_warnings, fn w -> w == state.selected end) do
-      nil -> Enum.at(filtered_warnings, 0, nil)
-      item -> item
-    end
+    selected =
+      case Enum.find(filtered_warnings, fn w -> w == state.selected end) do
+        nil -> Enum.at(filtered_warnings, 0, nil)
+        item -> item
+      end
 
     [
       filtered_warnings: filtered_warnings,
@@ -97,18 +105,21 @@ defmodule OliWeb.Qa.State do
   end
 
   def warning_dismissed(state, warning_id) do
-
     warnings = Enum.filter(state.warnings, fn %{id: id} -> id !== warning_id end)
 
-    selected = case state.selected do
-      nil -> nil
-      %{id: ^warning_id} -> select_another(state.filtered_warnings, state.selected)
-      _ -> state.selected
-    end
+    selected =
+      case state.selected do
+        nil -> nil
+        %{id: ^warning_id} -> select_another(state.filtered_warnings, state.selected)
+        _ -> state.selected
+      end
 
-    Keyword.merge([
-      selected: selected
-    ], update_warnings(state, warnings))
+    Keyword.merge(
+      [
+        selected: selected
+      ],
+      update_warnings(state, warnings)
+    )
   end
 
   defp filter_warnings(filters, warnings) do
@@ -116,12 +127,14 @@ defmodule OliWeb.Qa.State do
   end
 
   defp update_warnings(state, active_warnings) do
+    warnings =
+      active_warnings
+      |> Enum.sort_by(&{&1.review.type, &1.subtype})
 
-    warnings = active_warnings
-    |> Enum.sort_by(& {&1.review.type, &1.subtype})
+    warnings_by_type =
+      warnings
+      |> Enum.group_by(& &1.review.type)
 
-    warnings_by_type = warnings
-    |> Enum.group_by(& &1.review.type)
     warning_types = Map.keys(warnings_by_type)
 
     [
@@ -135,11 +148,11 @@ defmodule OliWeb.Qa.State do
   defp select_another(warnings, item) do
     index = Enum.find_index(warnings, fn w -> w == item end)
     last_index = length(warnings) - 1
+
     case {last_index, index} do
       {0, _} -> nil
       {last, last} -> Enum.at(warnings, last - 1)
       {_, index} -> Enum.at(warnings, index + 1)
     end
   end
-
 end

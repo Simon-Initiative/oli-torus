@@ -1,5 +1,4 @@
 defmodule Oli.Utils.Purposes do
-
   def label_for("none"), do: "None"
   def label_for("checkpoint"), do: "Checkpoint"
   def label_for("didigetthis"), do: "Did I get this?"
@@ -9,7 +8,4 @@ defmodule Oli.Utils.Purposes do
   def label_for("learnmore"), do: "Learn More"
 
   def label_for(purpose), do: String.capitalize(purpose)
-
 end
-
-

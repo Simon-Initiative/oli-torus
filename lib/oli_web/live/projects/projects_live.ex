@@ -1,5 +1,4 @@
 defmodule OliWeb.Projects.ProjectsLive do
-
   @moduledoc """
   LiveView implementation of projects view.
   """
@@ -15,9 +14,7 @@ defmodule OliWeb.Projects.ProjectsLive do
   alias Oli.Repo
   alias Oli.Accounts
 
-
   def mount(_, %{"current_author_id" => author_id}, socket) do
-
     author = Repo.get(Author, author_id)
     projects = Course.get_projects_for_author(author)
     author_projects = Accounts.project_authors(Enum.map(projects, fn %{id: id} -> id end))
@@ -26,7 +23,6 @@ defmodule OliWeb.Projects.ProjectsLive do
   end
 
   def handle_params(params, _, socket) do
-
     sort_by =
       case params["sort_by"] do
         sort_by when sort_by in ~w(title created author) -> sort_by
@@ -45,13 +41,15 @@ defmodule OliWeb.Projects.ProjectsLive do
         _ -> socket.assigns.display_mode
       end
 
-    changes = Keyword.merge(State.sort_projects(socket.assigns, sort_by, sort_order), [display_mode: display_mode])
+    changes =
+      Keyword.merge(State.sort_projects(socket.assigns, sort_by, sort_order),
+        display_mode: display_mode
+      )
 
     {:noreply, assign(socket, changes)}
   end
 
   def render(assigns) do
-
     ~L"""
     <div class="projects-title-row my-4">
       <div class="container">
@@ -95,27 +93,51 @@ defmodule OliWeb.Projects.ProjectsLive do
   end
 
   def handle_event("display_mode", %{"display_mode" => display_mode}, socket) do
-
     sort_by = socket.assigns.sort_by
     sort_order = socket.assigns.sort_order
 
     cond do
-      display_mode == socket.assigns.display_mode -> {:noreply, socket}
-      true -> {:noreply, push_patch(socket, to: Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{sort_by: sort_by, sort_order: sort_order, display_mode: display_mode}))}
+      display_mode == socket.assigns.display_mode ->
+        {:noreply, socket}
+
+      true ->
+        {:noreply,
+         push_patch(socket,
+           to:
+             Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{
+               sort_by: sort_by,
+               sort_order: sort_order,
+               display_mode: display_mode
+             })
+         )}
     end
   end
 
   # handle change of selection
   def handle_event("sort", %{"sort_by" => sort_by}, socket) do
+    sort_order =
+      case socket.assigns.sort_by do
+        ^sort_by ->
+          if socket.assigns.sort_order == "asc" do
+            "desc"
+          else
+            "asc"
+          end
 
-    sort_order = case socket.assigns.sort_by do
-      ^sort_by -> if socket.assigns.sort_order == "asc" do "desc" else "asc" end
-      _ -> socket.assigns.sort_order
-    end
+        _ ->
+          socket.assigns.sort_order
+      end
 
     display_mode = socket.assigns.display_mode
 
-    {:noreply, push_patch(socket, to: Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{sort_by: sort_by, sort_order: sort_order, display_mode: display_mode}))}
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{
+           sort_by: sort_by,
+           sort_order: sort_order,
+           display_mode: display_mode
+         })
+     )}
   end
-
 end

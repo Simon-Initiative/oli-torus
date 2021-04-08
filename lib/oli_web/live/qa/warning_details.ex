@@ -1,5 +1,4 @@
 defmodule OliWeb.Qa.WarningDetails do
-
   use Phoenix.LiveComponent
   import OliWeb.Qa.Utils
 

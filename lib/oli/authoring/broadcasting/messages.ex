@@ -1,5 +1,4 @@
 defmodule Oli.Authoring.Broadcaster.Messages do
-
   ### Message creation API
 
   def message_new_revision(resource_id) do

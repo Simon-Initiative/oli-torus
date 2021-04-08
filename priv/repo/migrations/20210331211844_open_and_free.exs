@@ -8,10 +8,10 @@ defmodule Oli.Repo.Migrations.OpenAndFree do
     end
 
     alter table(:sections) do
-      add_if_not_exists :grade_passback_enabled, :boolean, default: false, null: false
-      add_if_not_exists :line_items_service_url, :string
-      add_if_not_exists :nrps_enabled, :boolean, default: false, null: false
-      add_if_not_exists :nrps_context_memberships_url, :string
+      add_if_not_exists(:grade_passback_enabled, :boolean, default: false, null: false)
+      add_if_not_exists(:line_items_service_url, :string)
+      add_if_not_exists(:nrps_enabled, :boolean, default: false, null: false)
+      add_if_not_exists(:nrps_context_memberships_url, :string)
     end
 
     execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")

@@ -35,5 +35,4 @@ defmodule Oli.Plugs.RequireLtiParams do
     |> render("signin_required.html")
     |> halt()
   end
-
 end

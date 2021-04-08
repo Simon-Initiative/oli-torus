@@ -1,5 +1,4 @@
 defmodule OliWeb.Common.Table.SortableTable do
-
   use Phoenix.LiveComponent
 
   alias OliWeb.Common.Table.ColumnSpec
@@ -46,5 +45,4 @@ defmodule OliWeb.Common.Table.SortableTable do
     </table>
     """
   end
-
 end

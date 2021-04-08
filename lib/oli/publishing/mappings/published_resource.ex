@@ -3,7 +3,6 @@ defmodule Oli.Publishing.PublishedResource do
   import Ecto.Changeset
 
   schema "published_resources" do
-
     field :lock_updated_at, :naive_datetime
 
     belongs_to :publication, Oli.Publishing.Publication

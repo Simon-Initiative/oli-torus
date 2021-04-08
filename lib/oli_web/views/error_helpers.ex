@@ -5,14 +5,16 @@ defmodule OliWeb.ErrorHelpers do
 
   use Phoenix.HTML
 
-  def focusHelper(form, fields, opts \\ [ default: false ])
-  def focusHelper(form, fields, [ default: default ]) when is_list(fields) do
+  def focusHelper(form, fields, opts \\ [default: false])
+
+  def focusHelper(form, fields, default: default) when is_list(fields) do
     Enum.any?(fields, fn field -> focusHelper(form, field, default: default) end)
   end
 
-  def focusHelper(form, field, [ default: default ]) do
+  def focusHelper(form, field, default: default) do
     form_has_errors = Enum.count(form.errors) > 0
     field_has_errors = hasError(form, field)
+
     cond do
       !form_has_errors -> default
       field_has_errors -> true

@@ -1,5 +1,4 @@
 defmodule OliWeb.Qa.WarningFilter do
-
   use Phoenix.LiveComponent
 
   def render(assigns) do

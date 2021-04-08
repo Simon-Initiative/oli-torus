@@ -12,7 +12,7 @@ defmodule Oli.Qa.Reviews do
 
   def mark_review_done(review) do
     review
-    |> update_review(%{ done: true })
+    |> update_review(%{done: true})
   end
 
   def get_review!(id), do: Repo.get!(Review, id)
@@ -20,7 +20,8 @@ defmodule Oli.Qa.Reviews do
   def list_reviews(project_id) do
     Repo.all(
       from warning in Review,
-      where: warning.project_id == ^project_id)
+        where: warning.project_id == ^project_id
+    )
   end
 
   @doc """
@@ -74,7 +75,9 @@ defmodule Oli.Qa.Reviews do
   end
 
   def delete_reviews(project_id) do
-    Repo.delete_all(from review in Review,
-      where: review.project_id == ^project_id)
+    Repo.delete_all(
+      from review in Review,
+        where: review.project_id == ^project_id
+    )
   end
 end

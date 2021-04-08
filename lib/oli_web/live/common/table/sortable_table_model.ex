@@ -1,5 +1,4 @@
 defmodule OliWeb.Common.Table.SortableTableModel do
-
   @moduledoc """
   The model for the sortable table LiveComponent.
 
@@ -29,43 +28,80 @@ defmodule OliWeb.Common.Table.SortableTableModel do
 
   alias OliWeb.Common.Table.ColumnSpec
 
-  defstruct rows: [],  # the items to display
-    column_specs: [],  # the columns to display
-    selected: nil,     # the selected row
-    sort_by_spec: nil, # the column that is being sorted by
-    sort_order: :asc,  # the sort order, :asc or :desc
-    event_suffix: "",
-    id_field: nil      # the field used to identify uniquely a row item
+  # the items to display
+  defstruct rows: [],
+            # the columns to display
+            column_specs: [],
+            # the selected row
+            selected: nil,
+            # the column that is being sorted by
+            sort_by_spec: nil,
+            # the sort order, :asc or :desc
+            sort_order: :asc,
+            event_suffix: "",
+            # the field used to identify uniquely a row item
+            id_field: nil
 
   def new(rows: rows, column_specs: column_specs, event_suffix: event_suffix, id_field: id_field) do
-
-    model = %__MODULE__{rows: rows, column_specs: column_specs, event_suffix: event_suffix, id_field: id_field, sort_by_spec: hd(column_specs)}
-    |> sort
+    model =
+      %__MODULE__{
+        rows: rows,
+        column_specs: column_specs,
+        event_suffix: event_suffix,
+        id_field: id_field,
+        sort_by_spec: hd(column_specs)
+      }
+      |> sort
 
     {:ok, model}
   end
 
-  def new(rows: rows, column_specs: column_specs, event_suffix: event_suffix, id_field: id_field, sort_by_spec: sort_by_spec) do
-
-    model = %__MODULE__{rows: rows, column_specs: column_specs, event_suffix: event_suffix, id_field: id_field, sort_by_spec: sort_by_spec}
-    |> sort
+  def new(
+        rows: rows,
+        column_specs: column_specs,
+        event_suffix: event_suffix,
+        id_field: id_field,
+        sort_by_spec: sort_by_spec
+      ) do
+    model =
+      %__MODULE__{
+        rows: rows,
+        column_specs: column_specs,
+        event_suffix: event_suffix,
+        id_field: id_field,
+        sort_by_spec: sort_by_spec
+      }
+      |> sort
 
     {:ok, model}
   end
 
   def update_selection(%__MODULE__{rows: rows, id_field: id_field} = struct, selected_id) do
-    Map.put(struct, :selected, Enum.find(rows, fn row -> Map.get(row, id_field) == selected_id end))
+    Map.put(
+      struct,
+      :selected,
+      Enum.find(rows, fn row -> Map.get(row, id_field) == selected_id end)
+    )
   end
 
   def update_sort_params(%__MODULE__{sort_order: sort_order} = struct, column_name) do
-
     current_spec_name = struct.sort_by_spec.name
 
     case Enum.find(struct.column_specs, fn spec -> spec.name == column_name end) do
-      %{name: ^current_spec_name} -> Map.put(struct, :sort_order, if sort_order == :asc do :desc else :asc end)
-      spec -> Map.put(struct, :sort_by_spec, spec)
-    end
+      %{name: ^current_spec_name} ->
+        Map.put(
+          struct,
+          :sort_order,
+          if sort_order == :asc do
+            :desc
+          else
+            :asc
+          end
+        )
 
+      spec ->
+        Map.put(struct, :sort_by_spec, spec)
+    end
   end
 
   def update_sort_params_and_sort(%__MODULE__{} = struct, column_name) do
@@ -74,11 +110,11 @@ defmodule OliWeb.Common.Table.SortableTableModel do
   end
 
   def sort(%__MODULE__{rows: rows, sort_by_spec: sort_by_spec, sort_order: sort_order} = struct) do
-
-    sort_fn = case sort_by_spec.sort_fn do
-      nil -> ColumnSpec.default_sort_fn(sort_order, sort_by_spec)
-      func -> func.(sort_order, sort_by_spec)
-    end
+    sort_fn =
+      case sort_by_spec.sort_fn do
+        nil -> ColumnSpec.default_sort_fn(sort_order, sort_by_spec)
+        func -> func.(sort_order, sort_by_spec)
+      end
 
     struct
     |> Map.put(:rows, Enum.sort(rows, sort_fn))
@@ -87,12 +123,21 @@ defmodule OliWeb.Common.Table.SortableTableModel do
   def to_params(%__MODULE__{} = struct) do
     Map.put(%{}, "sort_by" <> struct.event_suffix, struct.sort_by_spec.name)
     |> Map.put("sort_order" <> struct.event_suffix, struct.sort_order)
-    |> Map.put("selected" <> struct.event_suffix, (if struct.selected != nil do Map.get(struct.selected, struct.id_field) else nil end))
+    |> Map.put(
+      "selected" <> struct.event_suffix,
+      if struct.selected != nil do
+        Map.get(struct.selected, struct.id_field)
+      else
+        nil
+      end
+    )
   end
 
   def update_from_params(%__MODULE__{} = struct, params) do
-
-    column_names = Enum.reduce(struct.column_specs, %{}, fn spec, m -> Map.put(m, Atom.to_string(spec.name), spec) end)
+    column_names =
+      Enum.reduce(struct.column_specs, %{}, fn spec, m ->
+        Map.put(m, Atom.to_string(spec.name), spec)
+      end)
 
     sort_by =
       case Map.get(column_names, params["sort_by" <> struct.event_suffix]) do
@@ -117,5 +162,4 @@ defmodule OliWeb.Common.Table.SortableTableModel do
     |> update_selection(selected)
     |> sort
   end
-
 end

@@ -102,6 +102,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
       timestamps(type: :timestamptz)
     end
+
     create unique_index(:families, [:slug], name: :index_slug_families)
 
     create table(:projects) do
@@ -114,6 +115,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
       timestamps(type: :timestamptz)
     end
+
     create unique_index(:projects, [:slug], name: :index_slug_projects)
 
     create table(:resources) do
@@ -164,12 +166,24 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
       timestamps(type: :timestamptz)
     end
-    create unique_index(:activity_registrations, [:slug], name: :index_slug_registrations)
-    create unique_index(:activity_registrations, [:delivery_element], name: :index_delivery_element_registrations)
-    create unique_index(:activity_registrations, [:authoring_element], name: :index_authoring_element_registrations)
-    create unique_index(:activity_registrations, [:delivery_script], name: :index_delivery_script_registrations)
-    create unique_index(:activity_registrations, [:authoring_script], name: :index_authoring_script_registrations)
 
+    create unique_index(:activity_registrations, [:slug], name: :index_slug_registrations)
+
+    create unique_index(:activity_registrations, [:delivery_element],
+             name: :index_delivery_element_registrations
+           )
+
+    create unique_index(:activity_registrations, [:authoring_element],
+             name: :index_authoring_element_registrations
+           )
+
+    create unique_index(:activity_registrations, [:delivery_script],
+             name: :index_delivery_script_registrations
+           )
+
+    create unique_index(:activity_registrations, [:authoring_script],
+             name: :index_authoring_script_registrations
+           )
 
     create table(:revisions) do
       add :title, :string
@@ -191,6 +205,7 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
       timestamps(type: :timestamptz)
     end
+
     create index(:revisions, [:slug], name: :index_slug_revisions)
 
     create table(:published_resources) do
@@ -212,7 +227,6 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
     create index(:enrollments, [:user_id])
     create index(:enrollments, [:section_id])
     create unique_index(:enrollments, [:user_id, :section_id], name: :index_user_section)
-
 
     create table(:authors_sections) do
       timestamps(type: :timestamptz)
@@ -236,7 +250,6 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
     create index(:authors_projects, [:project_id])
     create unique_index(:authors_projects, [:author_id, :project_id], name: :index_author_project)
 
-
     create table(:projects_resources, primary_key: false) do
       timestamps(type: :timestamptz)
       add :project_id, references(:projects), primary_key: true
@@ -245,7 +258,10 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
     create index(:projects_resources, [:resource_id])
     create index(:projects_resources, [:project_id])
-    create unique_index(:projects_resources, [:resource_id, :project_id], name: :index_project_resource)
+
+    create unique_index(:projects_resources, [:resource_id, :project_id],
+             name: :index_project_resource
+           )
 
     create table(:resource_accesses) do
       timestamps(type: :timestamptz)
@@ -257,12 +273,15 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :user_id, references(:users)
       add :section_id, references(:sections)
       add :resource_id, references(:resources)
-
     end
+
     create index(:resource_accesses, [:resource_id])
     create index(:resource_accesses, [:section_id])
     create index(:resource_accesses, [:user_id])
-    create unique_index(:resource_accesses, [:resource_id, :user_id, :section_id], name: :resource_accesses_unique_index)
+
+    create unique_index(:resource_accesses, [:resource_id, :user_id, :section_id],
+             name: :resource_accesses_unique_index
+           )
 
     create table(:resource_attempts) do
       timestamps(type: :timestamptz)
@@ -275,12 +294,10 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
       add :resource_access_id, references(:resource_accesses)
       add :revision_id, references(:revisions)
-
     end
 
     create index(:resource_attempts, [:resource_access_id])
     create unique_index(:resource_attempts, [:attempt_guid], name: :resource_attempt_guid_index)
-
 
     create table(:activity_attempts) do
       timestamps(type: :timestamptz)
@@ -295,7 +312,6 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :resource_attempt_id, references(:resource_attempts)
       add :revision_id, references(:revisions)
       add :resource_id, references(:resources)
-
     end
 
     create unique_index(:activity_attempts, [:attempt_guid], name: :activity_attempt_guid_index)
@@ -311,15 +327,13 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :out_of, :float
       add :response, :map
       add :feedback, :map
-      add :hints,  {:array, :string}
+      add :hints, {:array, :string}
       add :part_id, :string
       add :activity_attempt_id, references(:activity_attempts)
-
     end
 
     create index(:part_attempts, [:activity_attempt_id])
     create unique_index(:part_attempts, [:attempt_guid], name: :attempt_guid_index)
-
 
     create table(:snapshots) do
       timestamps(type: :timestamptz)
@@ -342,7 +356,6 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
       add :score, :float
       add :out_of, :float
       add :hints, :integer
-
     end
 
     create index(:snapshots, [:objective_id])
@@ -390,7 +403,6 @@ defmodule Oli.Repo.Migrations.InitCoreSchemas do
 
     create index(:warnings, [:review_id])
     create index(:warnings, [:revision_id])
-
 
     create table(:themes) do
       timestamps(type: :timestamptz)

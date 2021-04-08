@@ -20,5 +20,4 @@ defmodule Oli.Authoring.Course.ProjectVisibility do
     |> cast(attrs, [:project_id, :author_id, :institution_id])
     |> validate_required([:project_id])
   end
-
 end

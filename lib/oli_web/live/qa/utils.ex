@@ -1,5 +1,4 @@
 defmodule OliWeb.Qa.Utils do
-
   use Phoenix.HTML
 
   def warning_icon(type) do
@@ -37,6 +36,7 @@ defmodule OliWeb.Qa.Utils do
           <a href="https://webaim.org/techniques/alttext/#basics" target="_blank">alt text accessibility guide</a> on WebAIM.org.
         </p>
         """
+
       "nondescriptive link text" ->
         """
         <p>
@@ -48,6 +48,7 @@ defmodule OliWeb.Qa.Utils do
           <a href="https://webaim.org/techniques/hypertext/link_text#text" target="_blank">Link text accessibility guide</a> on WebAIM.org.
         </p>
         """
+
       "broken remote resource" ->
         """
         <p>
@@ -55,6 +56,7 @@ defmodule OliWeb.Qa.Utils do
           mean the link or image path is broken and needs to be updated.
         </p>
         """
+
       "no attached objectives" ->
         """
         <p>
@@ -69,6 +71,7 @@ defmodule OliWeb.Qa.Utils do
           <a href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">guide on learning objectives</a> from the CMU Eberly Center.
         </p>
         """
+
       "no attached activities" ->
         case context[:graded] do
           true ->
@@ -77,6 +80,7 @@ defmodule OliWeb.Qa.Utils do
               This graded page does not have any attached activities. In order to provide a grade, the page must have at least one activity.
             </p>
             """
+
           _ ->
             """
             <p>
@@ -89,7 +93,9 @@ defmodule OliWeb.Qa.Utils do
             </p>
             """
         end
-      _ -> ""
+
+      _ ->
+        ""
     end
     |> raw()
   end
@@ -100,29 +106,35 @@ defmodule OliWeb.Qa.Utils do
         """
         <p>Add alternative text to this content</p>
         """
+
       "nondescriptive link text" ->
         """
         <p>Provide more descriptive text for this link</p>
         """
+
       "broken remote resource" ->
         """
         <p>Check to make sure this link or image is not broken</p>
         """
+
       "no attached objectives" ->
         """
         <p>Attach a learning objective to this page or activity</p>
         """
+
       "no attached activities" ->
         case context[:graded] do
           true ->
             """
             <p>Add an activity to this page or change it to an ungraded page</p>
             """
+
           _ ->
             """
             <p>Consider adding an activity to this page if it provides learning content</p>
             """
         end
+
       _ ->
         """
         <p>This content has an issue</p>
@@ -130,5 +142,4 @@ defmodule OliWeb.Qa.Utils do
     end
     |> raw()
   end
-
 end

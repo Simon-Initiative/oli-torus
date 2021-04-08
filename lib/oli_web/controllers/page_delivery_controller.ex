@@ -46,6 +46,7 @@ defmodule OliWeb.PageDeliveryController do
          section_slug,
          _
        ) do
+
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
     user = conn.assigns.current_user
 
@@ -73,6 +74,10 @@ defmodule OliWeb.PageDeliveryController do
          section_slug,
          _
        ) do
+    
+    # Only consider graded attempts
+    resource_attempts = Enum.filter(resource_attempts, fn a -> a.revision.graded == true end)
+   
     attempts_taken = length(resource_attempts)
 
     # The call to "max" here accounts for the possibility that a publication could reduce the

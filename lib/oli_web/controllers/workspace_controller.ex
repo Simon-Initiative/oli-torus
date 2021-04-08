@@ -7,17 +7,21 @@ defmodule OliWeb.WorkspaceController do
   def account(conn, _params) do
     author = conn.assigns.current_author
     themes = Authoring.list_themes()
-    active_theme = case author.preferences do
-      nil ->
-        Authoring.get_default_theme!()
-      %{theme: url} ->
-        case url do
-          nil -> Authoring.get_default_theme!()
-          _ -> Authoring.get_theme_by_url!(url)
-        end
-    end
 
-    render conn,
+    active_theme =
+      case author.preferences do
+        nil ->
+          Authoring.get_default_theme!()
+
+        %{theme: url} ->
+          case url do
+            nil -> Authoring.get_default_theme!()
+            _ -> Authoring.get_theme_by_url!(url)
+          end
+      end
+
+    render(
+      conn,
       "account.html",
       title: "Account",
       active: :account,
@@ -26,15 +30,17 @@ defmodule OliWeb.WorkspaceController do
       active_theme: active_theme,
       title: "Account",
       changeset: Author.noauth_changeset(author)
+    )
   end
 
   def update_theme(conn, %{"id" => theme_id} = _params) do
     author = conn.assigns.current_author
     theme = Authoring.get_theme!(String.to_integer(theme_id))
 
-    updated_preferences = (author.preferences || %Accounts.AuthorPreferences{})
+    updated_preferences =
+      (author.preferences || %Accounts.AuthorPreferences{})
       |> Map.put(:theme, theme.url)
-      |> Map.from_struct
+      |> Map.from_struct()
 
     case Accounts.update_author(author, %{preferences: updated_preferences}) do
       {:ok, _author} ->
@@ -53,9 +59,10 @@ defmodule OliWeb.WorkspaceController do
 
     live_preview_display = if hide == "true", do: "hidden", else: "show"
 
-    updated_preferences = (author.preferences || %Accounts.AuthorPreferences{})
+    updated_preferences =
+      (author.preferences || %Accounts.AuthorPreferences{})
       |> Map.put(:live_preview_display, live_preview_display)
-      |> Map.from_struct
+      |> Map.from_struct()
 
     case Accounts.update_author(author, %{preferences: updated_preferences}) do
       {:ok, _author} ->
@@ -82,10 +89,11 @@ defmodule OliWeb.WorkspaceController do
   def update_preferences(conn, preferences) do
     author = conn.assigns.current_author
 
-    updated_preferences = Oli.Utils.value_or(author.preferences, %Accounts.AuthorPreferences{})
+    updated_preferences =
+      Oli.Utils.value_or(author.preferences, %Accounts.AuthorPreferences{})
       |> Accounts.AuthorPreferences.changeset(preferences)
       |> Ecto.Changeset.apply_action!(:update)
-      |> Map.from_struct
+      |> Map.from_struct()
 
     case Accounts.update_author(author, %{preferences: updated_preferences}) do
       {:ok, _author} ->

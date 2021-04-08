@@ -1,5 +1,4 @@
 defmodule Oli.Authoring.Editing.ObjectiveEditor do
-
   import Ecto.Query, warn: false
 
   alias Oli.Repo
@@ -16,33 +15,37 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   import Oli.Utils
 
   def add_new(attrs, %Author{} = author, %Project{} = project, container_slug \\ nil) do
+    attrs =
+      Map.merge(attrs, %{
+        author_id: author.id,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective")
+      })
 
-    attrs = Map.merge(attrs, %{
-      author_id: author.id,
-      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective")
-    })
-
-    result = Repo.transaction(fn ->
-
-      with {:ok, %{resource: resource, revision: revision}} <- Oli.Authoring.Course.create_and_attach_resource(project, attrs),
-          publication <- Publishing.get_unpublished_publication_by_slug!(project.slug),
-          {:ok, mapping} <- Publishing.upsert_published_resource(publication, revision),
-          {:ok, container} <- maybe_append_to_container(container_slug, publication, revision, project.slug, author)
-      do
-
-        %{
-          resource: resource,
-          revision: revision,
-          project: project,
-          mapping: mapping,
-          container: container
-        }
-
-      else
-        error -> Repo.rollback(error)
-      end
-
-    end)
+    result =
+      Repo.transaction(fn ->
+        with {:ok, %{resource: resource, revision: revision}} <-
+               Oli.Authoring.Course.create_and_attach_resource(project, attrs),
+             publication <- Publishing.get_unpublished_publication_by_slug!(project.slug),
+             {:ok, mapping} <- Publishing.upsert_published_resource(publication, revision),
+             {:ok, container} <-
+               maybe_append_to_container(
+                 container_slug,
+                 publication,
+                 revision,
+                 project.slug,
+                 author
+               ) do
+          %{
+            resource: resource,
+            revision: revision,
+            project: project,
+            mapping: mapping,
+            container: container
+          }
+        else
+          error -> Repo.rollback(error)
+        end
+      end)
 
     case result do
       {:ok, %{revision: revision, container: nil} = full_result} ->
@@ -53,40 +56,48 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
         Broadcaster.broadcast_resource(revision, project.slug)
         Broadcaster.broadcast_resource(container, project.slug)
         {:ok, full_result}
-      e -> e
+
+      e ->
+        e
     end
   end
 
   def add_new_parent_for_objective(attrs, %Author{} = author, %Project{} = project, slug) do
+    attrs =
+      Map.merge(attrs, %{
+        author_id: author.id,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective")
+      })
 
-    attrs = Map.merge(attrs, %{
-      author_id: author.id,
-      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective")
-    })
-
-    result = Repo.transaction(fn ->
-
-      with {:ok, %{resource: resource, revision: revision}} <- Oli.Authoring.Course.create_and_attach_resource(project, attrs),
-          publication <- Publishing.get_unpublished_publication_by_slug!(project.slug),
-          {:ok, mapping} <- Publishing.upsert_published_resource(publication, revision),
-          {:ok, container_resource} <- Resources.get_resource_from_slug(slug) |> trap_nil(),
-          {:ok, container_revision} <- Publishing.get_published_revision(publication.id, container_resource.id) |> trap_nil(),
-          {:ok, container} <- maybe_append_to_container(revision.slug, publication, container_revision, project.slug, author)
-      do
-
-        %{
-          resource: resource,
-          revision: revision,
-          project: project,
-          mapping: mapping,
-          container: container
-        }
-
-      else
-        error -> Repo.rollback(error)
-      end
-
-    end)
+    result =
+      Repo.transaction(fn ->
+        with {:ok, %{resource: resource, revision: revision}} <-
+               Oli.Authoring.Course.create_and_attach_resource(project, attrs),
+             publication <- Publishing.get_unpublished_publication_by_slug!(project.slug),
+             {:ok, mapping} <- Publishing.upsert_published_resource(publication, revision),
+             {:ok, container_resource} <- Resources.get_resource_from_slug(slug) |> trap_nil(),
+             {:ok, container_revision} <-
+               Publishing.get_published_revision(publication.id, container_resource.id)
+               |> trap_nil(),
+             {:ok, container} <-
+               maybe_append_to_container(
+                 revision.slug,
+                 publication,
+                 container_revision,
+                 project.slug,
+                 author
+               ) do
+          %{
+            resource: resource,
+            revision: revision,
+            project: project,
+            mapping: mapping,
+            container: container
+          }
+        else
+          error -> Repo.rollback(error)
+        end
+      end)
 
     case result do
       {:ok, %{revision: revision, container: nil} = full_result} ->
@@ -97,68 +108,68 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
         Broadcaster.broadcast_resource(revision, project.slug)
         Broadcaster.broadcast_resource(container, project.slug)
         {:ok, full_result}
-      e -> e
+
+      e ->
+        e
     end
   end
 
   def edit(revision_slug, attrs, %Author{} = author, %Project{} = project) do
+    attrs =
+      Map.merge(attrs, %{
+        author_id: author.id
+      })
 
-    attrs = Map.merge(attrs, %{
-      author_id: author.id,
-    })
-
-    result = Repo.transaction(fn ->
-
-      with {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
-          publication <- Publishing.get_unpublished_publication_by_slug!(project.slug),
-          {:ok, revision} <- Publishing.get_published_revision(publication.id, resource.id) |> trap_nil(),
-          {:ok, new_revision} <- Resources.create_revision_from_previous(revision, attrs),
-          {:ok, _} <- Publishing.upsert_published_resource(publication, new_revision)
-      do
-        new_revision
-      else
-        error -> Repo.rollback(error)
-      end
-
-    end)
+    result =
+      Repo.transaction(fn ->
+        with {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
+             publication <- Publishing.get_unpublished_publication_by_slug!(project.slug),
+             {:ok, revision} <-
+               Publishing.get_published_revision(publication.id, resource.id) |> trap_nil(),
+             {:ok, new_revision} <- Resources.create_revision_from_previous(revision, attrs),
+             {:ok, _} <- Publishing.upsert_published_resource(publication, new_revision) do
+          new_revision
+        else
+          error -> Repo.rollback(error)
+        end
+      end)
 
     case result do
       {:ok, revision} ->
         Broadcaster.broadcast_resource(revision, project.slug)
         {:ok, revision}
-      e -> e
+
+      e ->
+        e
     end
   end
 
   def delete(revision_slug, %Author{} = author, %Project{} = project, parent_objective \\ nil) do
-
     attrs = %{
       author_id: author.id,
-      deleted: true,
+      deleted: true
     }
 
     Repo.transaction(fn ->
-
-      with {:ok, revision} <- edit(revision_slug, attrs, author, project)
-      do
-
+      with {:ok, revision} <- edit(revision_slug, attrs, author, project) do
         if parent_objective != nil do
-          edit(parent_objective.slug,
-            %{ children: Enum.filter(parent_objective.children, fn id -> id != revision.resource_id end)},
-            author, project)
+          edit(
+            parent_objective.slug,
+            %{
+              children:
+                Enum.filter(parent_objective.children, fn id -> id != revision.resource_id end)
+            },
+            author,
+            project
+          )
         end
 
         revision
-
       else
         error -> Repo.rollback(error)
       end
-
     end)
-
   end
-
-
 
   @doc """
   Detaches an objective from all unlocked pages and activites that currently reference it.
@@ -167,75 +178,92 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   commiting the changes as arguments.
   """
   def detach_objective(objective_id, %Project{} = project, author) do
-
     case preview_objective_detatchment(objective_id, project) do
-      %{attachments: {[], []}} -> []
+      %{attachments: {[], []}} ->
+        []
 
       %{attachments: {pages, activities}, locked_by: locked_by, parent_pages: parent_pages} ->
-
         # detach from all non-locked pages
-        Enum.filter(pages, fn %{resource_id: resource_id} -> !Map.has_key?(locked_by, resource_id) end)
+        Enum.filter(pages, fn %{resource_id: resource_id} ->
+          !Map.has_key?(locked_by, resource_id)
+        end)
         |> Enum.each(fn %{slug: slug} ->
           detach_from_page(objective_id, slug, project.slug, author)
         end)
 
         # detach from all non-locked activities. Locked activities are those activities
         # whose parent page is locked
-        Enum.filter(activities, fn %{resource_id: resource_id} -> !Map.has_key?(locked_by, Map.get(parent_pages, resource_id).id) end)
+        Enum.filter(activities, fn %{resource_id: resource_id} ->
+          !Map.has_key?(locked_by, Map.get(parent_pages, resource_id).id)
+        end)
         |> Enum.each(fn activity ->
-          page = AuthoringResolver.from_resource_id(project.slug, Map.get(parent_pages, activity.resource_id).id)
+          page =
+            AuthoringResolver.from_resource_id(
+              project.slug,
+              Map.get(parent_pages, activity.resource_id).id
+            )
+
           detach_from_activity(objective_id, page, activity, project.slug, author)
         end)
-
     end
-
   end
 
   # Specialized handling of detaching an objective from a page. The detachment
   # goes through the `PageEditor` so that locking and all other aspects of
   # manual detachment are simulated.
   defp detach_from_page(objective_id, page_slug, project_slug, author) do
-
     case PageEditor.acquire_lock(project_slug, page_slug, author.email) do
       {:acquired} ->
-
         # We need to create the context so that we get a client-side view of the
         # current objectives as slugs and not as ids
-        {:ok, %{objectives: objectives}} = PageEditor.create_context(project_slug, page_slug, author)
+        {:ok, %{objectives: objectives}} =
+          PageEditor.create_context(project_slug, page_slug, author)
 
         # Construct the update that will filter out the objective
-        update = %{"objectives" =>
-          %{"attached" => Enum.filter(Map.get(objectives, "attached"), fn s -> s != objective_id end)}}
+        update = %{
+          "objectives" => %{
+            "attached" =>
+              Enum.filter(Map.get(objectives, "attached"), fn s -> s != objective_id end)
+          }
+        }
 
         case PageEditor.edit(project_slug, page_slug, author.email, update) do
           {:ok, _} ->
             PageEditor.release_lock(project_slug, page_slug, author.email)
             true
 
-          _ -> false
+          _ ->
+            false
         end
 
-      _ -> false
+      _ ->
+        false
     end
-
   end
 
   # Detach an objective from all parts of an activity, using the `ActivityEditor` logic.
-  defp detach_from_activity(objective_id, %{slug: page_slug, resource_id: page_id}, %{slug: activity_slug, resource_id: activity_id}, project_slug, author) do
-
+  defp detach_from_activity(
+         objective_id,
+         %{slug: page_slug, resource_id: page_id},
+         %{slug: activity_slug, resource_id: activity_id},
+         project_slug,
+         author
+       ) do
     case PageEditor.acquire_lock(project_slug, page_slug, author.email) do
       {:acquired} ->
-        {:ok, %{objectives: objectives}} = ActivityEditor.create_context(project_slug, page_slug, activity_slug, author)
+        {:ok, %{objectives: objectives}} =
+          ActivityEditor.create_context(project_slug, page_slug, activity_slug, author)
 
-        update = %{"objectives" => Enum.reduce(objectives, %{}, fn {p, a}, m ->
-            Map.put(m, p, Enum.filter(a, fn s -> s != objective_id end))
-          end)
+        update = %{
+          "objectives" =>
+            Enum.reduce(objectives, %{}, fn {p, a}, m ->
+              Map.put(m, p, Enum.filter(a, fn s -> s != objective_id end))
+            end)
         }
 
         ActivityEditor.edit(project_slug, page_id, activity_id, author.email, update)
         PageEditor.release_lock(project_slug, page_slug, author.email)
     end
-
   end
 
   @doc """
@@ -267,18 +295,16 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
           parent_pages: map()
         }
   def preview_objective_detatchment(resource_id, %Project{} = project) do
-
     publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
 
     # find all attachments
     case Publishing.find_objective_attachments(resource_id, publication.id) do
-
       # if no attachments
-      [] -> %{attachments: {[], []}, locked_by: %{}, parent_pages: %{}}
+      [] ->
+        %{attachments: {[], []}, locked_by: %{}, parent_pages: %{}}
 
       # otherwise we need to see which attachments are currently locked for edit
       attachments ->
-
         # partition the attachments between pages and activities
         {pages, activities} = partition_attachments(attachments)
 
@@ -289,29 +315,34 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
         # for those activities, determine which pages they exist in and combine
         # that set of pages with the set of pages that contain the objective
         # directly attached to it
-        {parent_pages, unified_pages} = case distinct_activities do
-          [] -> {%{}, MapSet.new(Enum.map(pages, fn p -> p.resource_id end))}
-          a ->
+        {parent_pages, unified_pages} =
+          case distinct_activities do
+            [] ->
+              {%{}, MapSet.new(Enum.map(pages, fn p -> p.resource_id end))}
 
-            activity_ids = Enum.map(a, fn e -> Map.get(e, :resource_id) end)
-            parent_pages = Publishing.determine_parent_pages(activity_ids, publication.id)
-            unified_pages = unify_pages(parent_pages, pages)
-            {parent_pages, unified_pages}
-        end
+            a ->
+              activity_ids = Enum.map(a, fn e -> Map.get(e, :resource_id) end)
+              parent_pages = Publishing.determine_parent_pages(activity_ids, publication.id)
+              unified_pages = unify_pages(parent_pages, pages)
+              {parent_pages, unified_pages}
+          end
 
         # now we can determine for all pages, which users might be currently editing
-        locked_by = Publishing.retrieve_lock_info(MapSet.to_list(unified_pages), publication.id)
-        |> Enum.reduce(%{}, fn mapping, m ->
-          case Oli.Authoring.Locks.expired_or_empty?(mapping) do
-            true -> m
-            false -> Map.put(m, mapping.resource_id, mapping)
-          end
-        end)
+        locked_by =
+          Publishing.retrieve_lock_info(MapSet.to_list(unified_pages), publication.id)
+          |> Enum.reduce(%{}, fn mapping, m ->
+            case Oli.Authoring.Locks.expired_or_empty?(mapping) do
+              true -> m
+              false -> Map.put(m, mapping.resource_id, mapping)
+            end
+          end)
 
-        %{attachments: {pages, distinct_activities}, locked_by: locked_by, parent_pages: parent_pages}
-
+        %{
+          attachments: {pages, distinct_activities},
+          locked_by: locked_by,
+          parent_pages: parent_pages
+        }
     end
-
   end
 
   # split the found attachments into separate lists for pages and activies, returning them
@@ -327,12 +358,14 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   # For a list of activity attachment references, dedupe them.
   defp dedupe_activities(activities) do
-    {deduped, _} = Enum.reduce(activities, {[], MapSet.new()}, fn e, {a, m} ->
-      case MapSet.member?(m, e.resource_id) do
-        true -> {a, m}
-        false -> {a ++ [e], MapSet.put(m, e.resource_id)}
-      end
-    end)
+    {deduped, _} =
+      Enum.reduce(activities, {[], MapSet.new()}, fn e, {a, m} ->
+        case MapSet.member?(m, e.resource_id) do
+          true -> {a, m}
+          false -> {a ++ [e], MapSet.put(m, e.resource_id)}
+        end
+      end)
+
     deduped
   end
 
@@ -347,40 +380,39 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
 
   @spec maybe_append_to_container(nil | binary, any, any, any, any) ::
           {:error, {any}} | {:ok, atom | %{id: any, resource_id: integer}}
-  defp maybe_append_to_container(container_slug, publication, revision_to_attach, project_slug, author) do
-
+  defp maybe_append_to_container(
+         container_slug,
+         publication,
+         revision_to_attach,
+         project_slug,
+         author
+       ) do
     case container_slug do
       nil -> {:ok, nil}
       "" -> {:ok, nil}
       slug -> append_to_container(slug, publication, revision_to_attach, project_slug, author)
     end
-
   end
 
-
   defp append_to_container(container_slug, publication, revision_to_attach, _, author) do
-
     with {:ok, resource} <- Resources.get_resource_from_slug(container_slug) |> trap_nil(),
-        {:ok, revision} <- Publishing.get_published_revision(publication.id, resource.id) |> trap_nil()
-    do
-
+         {:ok, revision} <-
+           Publishing.get_published_revision(publication.id, resource.id) |> trap_nil() do
       attrs = %{
         children: [revision_to_attach.resource_id | revision.children],
         author_id: author.id
       }
+
       {:ok, next} = Oli.Resources.create_revision_from_previous(revision, attrs)
       {:ok, _} = Publishing.upsert_published_resource(publication, next)
       {:ok, next}
     else
       error -> error
     end
-
   end
 
   def fetch_objective_mappings(project) do
-
     publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
     Publishing.get_objective_mappings_by_publication(publication.id)
   end
-
 end

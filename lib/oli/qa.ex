@@ -33,9 +33,8 @@ defmodule Oli.Qa do
     # Each review must create a row in the review table for the review type
     # When the review is completed (all warnings finished processing), it must be marked as done.
     project_slug
-    |> Accessibility.review
-    |> Content.review
-    |> Pedagogy.review
+    |> Accessibility.review()
+    |> Content.review()
+    |> Pedagogy.review()
   end
-
 end

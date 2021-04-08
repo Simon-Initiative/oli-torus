@@ -1,5 +1,4 @@
 defmodule Oli.Predefined do
-
   def timezones do
     [
       {"(GMT-12:00) International Date Line West", "Etc/GMT+12"},
@@ -343,15 +342,15 @@ defmodule Oli.Predefined do
 
   def world_universities_and_domains do
     Application.get_env(:oli, :world_universities_and_domains_json)
-      |> Jason.decode!
-      |> Enum.map(fn el ->
-        %{
-          name: el["name"],
-          country_code: el["alpha_two_code"],
-          # pick the first webpage url in a list of possible urls for a university
-          institution_url: Enum.at(el["web_pages"], 0),
-        }
-      end)
+    |> Jason.decode!()
+    |> Enum.map(fn el ->
+      %{
+        name: el["name"],
+        country_code: el["alpha_two_code"],
+        # pick the first webpage url in a list of possible urls for a university
+        institution_url: Enum.at(el["web_pages"], 0)
+      }
+    end)
   end
 
   def lti_config_defaults do
@@ -362,7 +361,7 @@ defmodule Oli.Predefined do
         key_set_path: "/api/lti/security/jwks",
         auth_token_path: "/login/oauth2/token",
         auth_login_path: "/api/lti/authorize_redirect",
-        auth_server_path: "",
+        auth_server_path: ""
       },
       %{
         product_family_code: "moodle",
@@ -370,8 +369,8 @@ defmodule Oli.Predefined do
         key_set_path: "/mod/lti/certs.php",
         auth_token_path: "/mod/lti/token.php",
         auth_login_path: "/mod/lti/auth.php",
-        auth_server_path: "",
-      },
+        auth_server_path: ""
+      }
     ]
   end
 end

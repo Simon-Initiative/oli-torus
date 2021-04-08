@@ -2,8 +2,8 @@ defmodule OliWeb.RevisionHistory.Details do
   use Phoenix.LiveComponent
 
   def render(assigns) do
-
-    attrs = ~w"slug deleted author_id previous_revision_id resource_type_id graded max_attempts time_limit scoring_strategy_id activity_type_id"
+    attrs =
+      ~w"slug deleted author_id previous_revision_id resource_type_id graded max_attempts time_limit scoring_strategy_id activity_type_id"
 
     ~L"""
     <table
