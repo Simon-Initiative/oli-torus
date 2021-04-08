@@ -17,45 +17,50 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   alias Oli.Repo
   alias Oli.Authoring.Broadcaster
 
-
   @spec edit_page(Oli.Authoring.Course.Project.t(), any, map) :: any
   def edit_page(%Project{} = project, revision_slug, change) do
-
     # safe guard that we do never allow content or objective changes
-    atomized_change = for {key, val} <- change,
-      into: %{},
-      do: {if is_binary(key) do String.to_atom(key) else key end, val}
-    change = atomized_change
-    |> Map.delete(:content)
-    |> Map.delete(:objectives)
+    atomized_change =
+      for {key, val} <- change,
+          into: %{},
+          do:
+            {if is_binary(key) do
+               String.to_atom(key)
+             else
+               key
+             end, val}
+
+    change =
+      atomized_change
+      |> Map.delete(:content)
+      |> Map.delete(:objectives)
 
     # ensure that changing a page to practice resets the max attempts to 0
-    change = case Map.get(change, :graded, "true") do
-      "false" -> Map.put(change, :max_attempts, 0)
-      _ -> change
-    end
-
-    result = Repo.transaction(fn ->
-
-      revision = AuthoringResolver.from_revision_slug(project.slug, revision_slug)
-
-      case ChangeTracker.track_revision(project.slug, revision, change) do
-        {:ok, _} -> AuthoringResolver.from_revision_slug(project.slug, revision_slug)
-        {:error, changelist} -> Repo.rollback(changelist)
+    change =
+      case Map.get(change, :graded, "true") do
+        "false" -> Map.put(change, :max_attempts, 0)
+        _ -> change
       end
 
-    end)
+    result =
+      Repo.transaction(fn ->
+        revision = AuthoringResolver.from_revision_slug(project.slug, revision_slug)
+
+        case ChangeTracker.track_revision(project.slug, revision, change) do
+          {:ok, _} -> AuthoringResolver.from_revision_slug(project.slug, revision_slug)
+          {:error, changelist} -> Repo.rollback(changelist)
+        end
+      end)
 
     case result do
       {:ok, revision} ->
         Broadcaster.broadcast_revision(revision, project.slug)
         {:ok, revision}
 
-      e -> e
+      e ->
+        e
     end
-
   end
-
 
   @doc """
   Lists all top level resource revisions contained in a container.
@@ -64,61 +69,54 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     AuthoringResolver.from_resource_id(project.slug, container.children)
   end
 
-
   @doc """
   Creates and adds a new page or container as a child of a container.
   """
   def add_new(
-    %Revision{} = container,
-    %{objectives: _, children: _, content: _, title: _} = attrs,
-    %Author{} = author,
-    %Project{} = project
-  ) do
-
-    attrs = Map.merge(attrs, %{
-      author_id: author.id,
-    })
+        %Revision{} = container,
+        %{objectives: _, children: _, content: _, title: _} = attrs,
+        %Author{} = author,
+        %Project{} = project
+      ) do
+    attrs =
+      Map.merge(attrs, %{
+        author_id: author.id
+      })
 
     # We want to ensure that the creation and attachment either
     # all succeeds or all fails
-    result = Repo.transaction(fn ->
-
-      with {:ok, %{revision: revision}} <- Oli.Authoring.Course.create_and_attach_resource(project, attrs),
-          {:ok, _} <- ChangeTracker.track_revision(project.slug, revision),
-          {:ok, _} <- append_to_container(container, project.slug, revision, author)
-      do
-        revision
-      else
-        {:error, e} -> Repo.rollback(e)
-      end
-
-    end)
+    result =
+      Repo.transaction(fn ->
+        with {:ok, %{revision: revision}} <-
+               Oli.Authoring.Course.create_and_attach_resource(project, attrs),
+             {:ok, _} <- ChangeTracker.track_revision(project.slug, revision),
+             {:ok, _} <- append_to_container(container, project.slug, revision, author) do
+          revision
+        else
+          {:error, e} -> Repo.rollback(e)
+        end
+      end)
 
     {status, _} = result
-    if (status == :ok) do
+
+    if status == :ok do
       broadcast_update(container.resource_id, project.slug)
     end
 
     result
-
   end
 
   def broadcast_update(resource_id, project_slug) do
-
     updated_container = AuthoringResolver.from_resource_id(project_slug, resource_id)
     Broadcaster.broadcast_revision(updated_container, project_slug)
-
   end
-
 
   @doc """
   Removes a child from a container, and marks that child as deleted.
   """
   def remove_child(container, project, author, revision_slug) do
-
-    with {:ok, %{id: resource_id }} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil()
-    do
-
+    with {:ok, %{id: resource_id}} <-
+           Resources.get_resource_from_slug(revision_slug) |> trap_nil() do
       children = Enum.filter(container.children, fn id -> id !== resource_id end)
 
       # Create a change that removes the child
@@ -134,74 +132,72 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       }
 
       # Atomically apply the changes
-      result = Repo.transaction(fn ->
+      result =
+        Repo.transaction(fn ->
+          # It is important to edit the page via PageEditor, since it will ensure
+          # that a lock can be acquired before editing. This will not allow the deletion
+          # to occur if another user is editing. It *will* allow deletion to occur if
+          # this current user is editing this page (like in another tab). This is due
+          # to the re-entrant natures of our locks.
 
-        # It is important to edit the page via PageEditor, since it will ensure
-        # that a lock can be acquired before editing. This will not allow the deletion
-        # to occur if another user is editing. It *will* allow deletion to occur if
-        # this current user is editing this page (like in another tab). This is due
-        # to the re-entrant natures of our locks.
-
-        with {:acquired} <- PageEditor.acquire_lock(project.slug, revision_slug, author.email),
-          {:ok, _} <- PageEditor.edit(project.slug, revision_slug, author.email, deletion),
-          _ <- PageEditor.release_lock(project.slug, revision_slug, author.email),
-         {:ok, revision} = ChangeTracker.track_revision(project.slug, container, removal)
-        do
-          revision
-        else
-          {:lock_not_acquired, value} -> Repo.rollback({:lock_not_acquired, value})
-          {:error, e} -> Repo.rollback(e)
-        end
-
-      end)
+          with {:acquired} <- PageEditor.acquire_lock(project.slug, revision_slug, author.email),
+               {:ok, _} <- PageEditor.edit(project.slug, revision_slug, author.email, deletion),
+               _ <- PageEditor.release_lock(project.slug, revision_slug, author.email),
+               {:ok, revision} = ChangeTracker.track_revision(project.slug, container, removal) do
+            revision
+          else
+            {:lock_not_acquired, value} -> Repo.rollback({:lock_not_acquired, value})
+            {:error, e} -> Repo.rollback(e)
+          end
+        end)
 
       {status, _} = result
-      if (status == :ok) do
+
+      if status == :ok do
         broadcast_update(container.resource_id, project.slug)
       end
 
       result
-
     else
       _ -> {:error, :not_found}
     end
-
-
   end
 
   def reorder_child(container, project, author, source, index) do
-
     # Change here to enable "cross project drag and drop -> if resource is not found (nil),
     # create new resource in this project by cloning the existing resource
 
     # Get the resource idd associated with the source revision
 
-    with {:ok, %{id: resource_id }} <- Resources.get_resource_from_slug(source) |> trap_nil()
-    do
-
+    with {:ok, %{id: resource_id}} <- Resources.get_resource_from_slug(source) |> trap_nil() do
       source_index = Enum.find_index(container.children, fn id -> id == resource_id end)
 
       # Adjust the insert index based on whether
       # first removing the source would throw off the
       # insertion by 1
-      insert_index = case source_index do
-        nil -> index
-        s -> if s < index do
-          index - 1
-        else
-          index
+      insert_index =
+        case source_index do
+          nil ->
+            index
+
+          s ->
+            if s < index do
+              index - 1
+            else
+              index
+            end
         end
-      end
 
       # Apply the reordering in a way that is as robust as possible to situations
       # where the user that originated the reorder was looking at an out of date
       # version of the page
 
       # Use filter here to remove the source from anywhere that it was actually found
-      children = Enum.filter(container.children, fn id -> id !== resource_id end)
-      # And insert_at to insert it, in a way that is robust to index positions that
-      # don't even make sense
-      |> List.insert_at(insert_index, resource_id)
+      children =
+        Enum.filter(container.children, fn id -> id !== resource_id end)
+        # And insert_at to insert it, in a way that is robust to index positions that
+        # don't even make sense
+        |> List.insert_at(insert_index, resource_id)
 
       # Create a change that reorders the children
       reordering = %{
@@ -215,13 +211,13 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
           updated_container = Oli.Repo.get(Oli.Resources.Revision, rev.revision_id)
           Broadcaster.broadcast_revision(updated_container, project.slug)
           {:ok, rev}
-        result -> result
-      end
 
+        result ->
+          result
+      end
     else
       _ -> {:error, :not_found}
     end
-
   end
 
   defp append_to_container(container, project_slug, revision_to_attach, author) do
@@ -229,8 +225,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       children: container.children ++ [revision_to_attach.resource_id],
       author_id: author.id
     }
+
     ChangeTracker.track_revision(project_slug, container, append)
   end
-
-
 end

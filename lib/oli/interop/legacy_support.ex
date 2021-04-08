@@ -1,5 +1,4 @@
 defmodule Oli.Interop.LegacySupport do
-
   @resources [
     "x-oli-workbook_page",
     "x-oli-inline-assessment"
@@ -128,6 +127,4 @@ defmodule Oli.Interop.LegacySupport do
   # These are the elements that Torus plans to support in some way (either directly or
   # via conversion) but that currently does not.
   def pending, do: @pending
-
-
 end

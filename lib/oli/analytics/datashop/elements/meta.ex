@@ -1,4 +1,3 @@
-
 defmodule Oli.Analytics.Datashop.Elements.Meta do
   @moduledoc """
   <meta>
@@ -10,7 +9,7 @@ defmodule Oli.Analytics.Datashop.Elements.Meta do
   """
   import XmlBuilder
 
-  def setup(%{ date: date, email: email }) do
+  def setup(%{date: date, email: email}) do
     element(:meta, %{}, [
       element(:user_id, email),
       element(:session_id, email <> " " <> format_date(date)),

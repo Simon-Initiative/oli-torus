@@ -28,7 +28,8 @@ defmodule Oli.MixProject do
       source_url: "https://github.com/Simon-Initiative/oli-torus",
       homepage_url: "http://oli.cmu.edu",
       docs: [
-        main: "Oli", # The main page in the docs
+        # The main page in the docs
+        main: "Oli",
         logo: "assets/static/images/oli-icon.png",
         extras: ["README.md", "LICENSE.md"]
       ],
@@ -69,7 +70,7 @@ defmodule Oli.MixProject do
       {:bamboo, "~> 1.6"},
       {:bamboo_ses, "~> 0.1.0"},
       {:bcrypt_elixir, "~> 2.2"},
-      {:credo, "~> 1.1.0", only: [:dev, :test], runtime: true},
+      {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:csv, "~> 2.3"},
       {:dialyxir, "~> 0.5.0", only: [:dev], runtime: true},
       {:ecto_sql, "~> 3.5.2"},
@@ -84,8 +85,8 @@ defmodule Oli.MixProject do
       {:jason, "~> 1.0"},
       {:joken, "~> 2.2.0"},
       {:jose, "~> 1.10"},
-      {:lti_1p3, "~> 0.3.0"},
-      {:lti_1p3_ecto_provider, "~> 0.2.0"},
+      {:lti_1p3, "~> 0.3.1"},
+      {:lti_1p3_ecto_provider, "~> 0.2.1"},
       {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:mox, "~> 0.5", only: :test},
@@ -94,9 +95,9 @@ defmodule Oli.MixProject do
       {:phoenix, "~> 1.5.6"},
       {:phoenix_ecto, "~> 4.0"},
       {:phoenix_html, "~> 2.11"},
-      {:phoenix_live_dashboard, "~> 0.2.7"},
+      {:phoenix_live_dashboard, "~> 0.4.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:phoenix_live_view, "~> 0.14.0"},
+      {:phoenix_live_view, "~> 0.15.0"},
       {:phoenix_pubsub, "~> 2.0"},
       {:plug_cowboy, "~> 2.1"},
       {:poison, "~> 3.1"},
@@ -112,7 +113,7 @@ defmodule Oli.MixProject do
       {:telemetry_poller, "~> 0.4"},
       {:telemetry_metrics, "~> 0.4"},
       {:timex, "~> 3.5"},
-      {:uuid, "~> 1.1" },
+      {:uuid, "~> 1.1"},
       {:xml_builder, "~> 2.1.1"}
     ]
   end
@@ -136,7 +137,7 @@ defmodule Oli.MixProject do
       "test.coverage.xml": ["ecto.reset", "coveralls.xml"],
 
       # runs tests in deterministic order, only shows one failure at a time and reruns tests if any changes are made
-      "test.watch": ["ecto.reset", "test.watch --stale --max-failures 1 --trace --seed 0"],
+      "test.watch": ["ecto.reset", "test.watch --stale --max-failures 1 --trace --seed 0"]
     ]
   end
 end

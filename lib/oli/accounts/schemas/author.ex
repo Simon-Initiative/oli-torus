@@ -1,9 +1,11 @@
 defmodule Oli.Accounts.Author do
   use Ecto.Schema
+
   use Pow.Ecto.Schema,
-    password_hash_methods: {&Bcrypt.hash_pwd_salt/1,
-                            &Bcrypt.verify_pass/2}
+    password_hash_methods: {&Bcrypt.hash_pwd_salt/1, &Bcrypt.verify_pass/2}
+
   use PowAssent.Ecto.Schema
+
   use Pow.Extension.Ecto.Schema,
     extensions: [PowResetPassword, PowEmailConfirmation, PowInvitation]
 
@@ -23,15 +25,19 @@ defmodule Oli.Accounts.Author do
     embeds_one :preferences, Oli.Accounts.AuthorPreferences, on_replace: :delete
     belongs_to :system_role, Oli.Accounts.SystemRole
     has_many :users, Oli.Accounts.User
-    many_to_many :projects, Oli.Authoring.Course.Project, join_through: Oli.Authoring.Authors.AuthorProject, on_replace: :delete
-    many_to_many :sections, Oli.Delivery.Sections.Section, join_through: Oli.Delivery.Sections.AuthorSection
+
+    many_to_many :projects, Oli.Authoring.Course.Project,
+      join_through: Oli.Authoring.Authors.AuthorProject,
+      on_replace: :delete
+
+    many_to_many :sections, Oli.Delivery.Sections.Section,
+      join_through: Oli.Delivery.Sections.AuthorSection
 
     timestamps(type: :utc_datetime)
   end
 
   @doc false
   def changeset(author, attrs \\ %{}) do
-
     author
     |> pow_changeset(attrs)
     |> pow_extension_changeset(attrs)
@@ -40,7 +46,7 @@ defmodule Oli.Accounts.Author do
       :given_name,
       :family_name,
       :picture,
-      :system_role_id,
+      :system_role_id
     ])
     |> cast_embed(:preferences)
     |> default_system_role()
@@ -60,7 +66,7 @@ defmodule Oli.Accounts.Author do
       :given_name,
       :family_name,
       :picture,
-      :system_role_id,
+      :system_role_id
     ])
     |> cast_embed(:preferences)
     |> default_system_role()
@@ -76,10 +82,14 @@ defmodule Oli.Accounts.Author do
   defp default_system_role(changeset) do
     case changeset do
       # if changeset is valid and doesnt have a system role set, default to author
-      %Ecto.Changeset{valid?: true, changes: changes, data: %Oli.Accounts.Author{system_role_id: nil}} ->
+      %Ecto.Changeset{
+        valid?: true,
+        changes: changes,
+        data: %Oli.Accounts.Author{system_role_id: nil}
+      } ->
         case Map.get(changes, :system_role_id) do
           nil ->
-            put_change(changeset, :system_role_id, SystemRole.role_id.author)
+            put_change(changeset, :system_role_id, SystemRole.role_id().author)
 
           _ ->
             changeset
@@ -93,5 +103,4 @@ defmodule Oli.Accounts.Author do
   defp lowercase_email(changeset) do
     update_change(changeset, :email, &String.downcase/1)
   end
-
 end

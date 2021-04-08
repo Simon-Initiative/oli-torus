@@ -1,5 +1,4 @@
 defmodule Oli.Authoring.Editing.Utils do
-
   alias Oli.Accounts
 
   def authorize_user(author, project) do
@@ -26,7 +25,6 @@ defmodule Oli.Authoring.Editing.Utils do
   ids of activities not found in content2 but there were found in content1
   """
   def diff_activity_references(content1, content2) do
-
     activities1 = activity_references(content1)
     activities2 = activity_references(content2)
 
@@ -35,12 +33,16 @@ defmodule Oli.Authoring.Editing.Utils do
 
   def activity_references(content) do
     case content do
-       nil -> MapSet.new()
-       [] -> MapSet.new()
-       _ -> Enum.filter(content, fn %{"type" => type} -> type == "activity-reference" end)
-            |> Enum.map(fn %{"activity_id" => id} -> id end)
-            |> MapSet.new()
+      nil ->
+        MapSet.new()
+
+      [] ->
+        MapSet.new()
+
+      _ ->
+        Enum.filter(content, fn %{"type" => type} -> type == "activity-reference" end)
+        |> Enum.map(fn %{"activity_id" => id} -> id end)
+        |> MapSet.new()
     end
   end
-
 end

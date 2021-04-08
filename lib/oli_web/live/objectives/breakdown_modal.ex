@@ -64,5 +64,4 @@ defmodule OliWeb.Objectives.BreakdownModal do
     </div>
     """
   end
-
 end

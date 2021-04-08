@@ -9,13 +9,15 @@ defmodule Oli.Repo.Migrations.MarkActivityGlobalStatus do
 
     flush()
 
-    from(a in "activity_registrations", where: a.slug in [
-      "oli_multiple_choice",
-      "oli_check_all_that_apply",
-      "oli_short_answer",
-      "oli_ordering"
-    ])
+    from(a in "activity_registrations",
+      where:
+        a.slug in [
+          "oli_multiple_choice",
+          "oli_check_all_that_apply",
+          "oli_short_answer",
+          "oli_ordering"
+        ]
+    )
     |> Oli.Repo.update_all(set: [globally_available: true])
-
   end
 end

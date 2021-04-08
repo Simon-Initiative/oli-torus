@@ -1,5 +1,4 @@
 defmodule OliWeb.Projects.Cards do
-
   alias OliWeb.Projects.Card
   use Phoenix.LiveComponent
   use Phoenix.HTML
@@ -13,7 +12,7 @@ defmodule OliWeb.Projects.Cards do
             <small>No projects yet</small>
             <p>Create a new project to get started, or ask a friend to invite you to their project.</p>
           <% else %>
-            <div class="project-cards">
+            <div class="card-links">
               <%= for project <- @projects do %>
                 <%= live_component @socket, Card, project: project, author_count: length(Map.get(@authors, project.id)) %>
               <% end %>
@@ -24,5 +23,4 @@ defmodule OliWeb.Projects.Cards do
     </div>
     """
   end
-
 end

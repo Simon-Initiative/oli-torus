@@ -1,5 +1,4 @@
 defmodule Oli.Timing do
-
   @doc """
   Runs a function and times its execution.
   Returns a tuple of the form `{time, result}` where time
@@ -34,11 +33,8 @@ defmodule Oli.Timing do
 
   """
   def emit({time, return_result}, tags, measurement_atom) do
-
     :telemetry.execute(tags, Map.put(%{}, measurement_atom, time / 1000))
 
     return_result
   end
-
-
 end

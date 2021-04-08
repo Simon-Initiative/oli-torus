@@ -1,19 +1,19 @@
 defmodule Oli.Activities.Model.Transformation do
-
   defstruct [:id, :path, :operation]
 
-  def parse(%{"id" => id, "path" => path, "operation" => operation_str }) do
-
+  def parse(%{"id" => id, "path" => path, "operation" => operation_str}) do
     case operation_str do
       "shuffle" ->
-        {:ok, %Oli.Activities.Model.Transformation{
-          id: id,
-          path: path,
-          operation: :shuffle
-        }}
-      _ -> {:error, "invalid operation"}
-    end
+        {:ok,
+         %Oli.Activities.Model.Transformation{
+           id: id,
+           path: path,
+           operation: :shuffle
+         }}
 
+      _ ->
+        {:error, "invalid operation"}
+    end
   end
 
   def parse(transformations) when is_list(transformations) do
@@ -24,5 +24,4 @@ defmodule Oli.Activities.Model.Transformation do
   def parse(_) do
     {:error, "invalid transformation"}
   end
-
 end

@@ -1,5 +1,4 @@
 defmodule OliWeb.MediaController do
-
   @moduledoc tags: ["Media Library Service"]
 
   @moduledoc """
@@ -67,8 +66,11 @@ defmodule OliWeb.MediaController do
         order: %Schema{type: :string, description: "The sort order direction applied"},
         orderBy: %Schema{type: :string, description: "The sort order field applied"},
         numResults: %Schema{type: :integer, description: "Number of results in this page"},
-        totalResults: %Schema{type: :integer, description: "Total number of results across all pages"},
-        results: %Schema{type: :list, description: "Array of media item results"},
+        totalResults: %Schema{
+          type: :integer,
+          description: "Total number of results across all pages"
+        },
+        results: %Schema{type: :list, description: "Array of media item results"}
       },
       required: [],
       example: %{
@@ -78,15 +80,17 @@ defmodule OliWeb.MediaController do
         "orderBy" => "fileName",
         "numResults" => 40,
         "totalResults" => 200,
-        "results" => [%{
-          "url" => "https://torus-media.amazon-s3.com/asdloi/untitled.png",
-          "dateCreated" => 1503368342,
-          "dateUpdated" => 1606768149,
-          "guid" => "b89c2272-725c-4cca-bc71-8f37dfe6dbec",
-          "fileName" => "untitled.png",
-          "mimeType" => "image/png",
-          "fileSize" => 129342
-        }]
+        "results" => [
+          %{
+            "url" => "https://torus-media.amazon-s3.com/asdloi/untitled.png",
+            "dateCreated" => 1_503_368_342,
+            "dateUpdated" => 1_606_768_149,
+            "guid" => "b89c2272-725c-4cca-bc71-8f37dfe6dbec",
+            "fileName" => "untitled.png",
+            "mimeType" => "image/png",
+            "fileSize" => 129_342
+          }
+        ]
       }
     })
   end
@@ -95,25 +99,59 @@ defmodule OliWeb.MediaController do
   List a page of media items from the media library.
   """
   @doc parameters: [
-    offset: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false, description: "Index offset into the results"],
-    limit: [in: :query, schema: %OpenApiSpex.Schema{type: :integer}, required: false, description: "Limit of the number of results"],
-    mime_filter: [in: :query, schema: %OpenApiSpex.Schema{type: :string}, required: false, description: "Mime filter to apply"],
-    url_filter: [in: :query, schema: %OpenApiSpex.Schema{type: :string}, required: false, description: "URL filter to apply"],
-    search_text: [in: :query, schema: %OpenApiSpex.Schema{type: :string}, required: false, description: "Search text to apply"],
-    order: [in: :query, schema: %OpenApiSpex.Schema{type: :string}, required: false, description: "Sort order to apply, asc or desc"],
-    order_field: [in: :query, schema: %OpenApiSpex.Schema{type: :string}, required: false, description: "Sort field"],
-  ],
-  responses: %{
-    200 => {"Media Item Page", "application/json", OliWeb.MediaController.MediaItemPageSchema}
-  }
+         offset: [
+           in: :query,
+           schema: %OpenApiSpex.Schema{type: :integer},
+           required: false,
+           description: "Index offset into the results"
+         ],
+         limit: [
+           in: :query,
+           schema: %OpenApiSpex.Schema{type: :integer},
+           required: false,
+           description: "Limit of the number of results"
+         ],
+         mime_filter: [
+           in: :query,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: false,
+           description: "Mime filter to apply"
+         ],
+         url_filter: [
+           in: :query,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: false,
+           description: "URL filter to apply"
+         ],
+         search_text: [
+           in: :query,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: false,
+           description: "Search text to apply"
+         ],
+         order: [
+           in: :query,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: false,
+           description: "Sort order to apply, asc or desc"
+         ],
+         order_field: [
+           in: :query,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: false,
+           description: "Sort field"
+         ]
+       ],
+       responses: %{
+         200 =>
+           {"Media Item Page", "application/json", OliWeb.MediaController.MediaItemPageSchema}
+       }
   def index(conn, %{"project" => project_slug} = params) do
-
     options = ItemOptions.from_client_options(params)
 
     case MediaLibrary.items(project_slug, options) do
-      {:ok, {items, count}} -> json conn, to_paginated_response(options, items, count)
+      {:ok, {items, count}} -> json(conn, to_paginated_response(options, items, count))
     end
-
   end
 
   # changing this structure requires updating the definition
@@ -127,7 +165,7 @@ defmodule OliWeb.MediaController do
       orderBy: options.order_field,
       numResults: length(items),
       totalResults: total,
-      results: Enum.map(items, fn i -> to_client_media_item(i) end),
+      results: Enum.map(items, fn i -> to_client_media_item(i) end)
     }
   end
 
@@ -148,23 +186,32 @@ defmodule OliWeb.MediaController do
   Create a new media library entry by uploading the encoded media file to an Amazon S3 storage bucket.
   """
   @doc parameters: [
-    project: [in: :url, schema: %OpenApiSpex.Schema{type: :string}, required: true, description: "The project id"]
-  ],
-  request_body: {"Request body to add a media library item", "application/json", OliWeb.MediaController.MediaItemUpload, required: true},
-  responses: %{
-    200 => {"Media Item Upload Response", "application/json", OliWeb.MediaController.MediaItemUploadResponse}
-  }
+         project: [
+           in: :url,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The project id"
+         ]
+       ],
+       request_body:
+         {"Request body to add a media library item", "application/json",
+          OliWeb.MediaController.MediaItemUpload, required: true},
+       responses: %{
+         200 =>
+           {"Media Item Upload Response", "application/json",
+            OliWeb.MediaController.MediaItemUploadResponse}
+       }
   def create(conn, %{"project" => project_slug, "file" => file, "name" => name}) do
-
     case Base.decode64(file) do
       {:ok, contents} ->
         case MediaLibrary.add(project_slug, name, contents) do
-          {:ok, %MediaItem{} = item} -> json conn, %{type: "success", url: item.url}
+          {:ok, %MediaItem{} = item} -> json(conn, %{type: "success", url: item.url})
           {:error, error} -> error(conn, 400, error)
         end
-      :error -> error(conn, 400, "invalid encoded file")
-    end
 
+      :error ->
+        error(conn, 400, "invalid encoded file")
+    end
   end
 
   defp error(conn, code, reason) do
@@ -176,11 +223,20 @@ defmodule OliWeb.MediaController do
   # Match on MediaLibrary.add error reasons
   defp prettify_error(reason) do
     case reason do
-      {:file_exists} -> "That file already exists in storage. A file can only be uploaded once."
-      {:persistence} -> "The file could not be saved in storage. Hopefully, this is a temporary problem, so give it another try, but let us know if it continues to fail."
-      {:not_found} -> "The project you are trying to upload to could not be found."
-      %Ecto.Changeset{} = _changeset -> "It looks like something is wrong with that file's metadata. Make sure the image is correct, and if you're still having issues let us know."
-      _ -> "Something unexpected prevented that file from being uploaded. Try another file or reach out to us for support."
+      {:file_exists} ->
+        "That file already exists in storage. A file can only be uploaded once."
+
+      {:persistence} ->
+        "The file could not be saved in storage. Hopefully, this is a temporary problem, so give it another try, but let us know if it continues to fail."
+
+      {:not_found} ->
+        "The project you are trying to upload to could not be found."
+
+      %Ecto.Changeset{} = _changeset ->
+        "It looks like something is wrong with that file's metadata. Make sure the image is correct, and if you're still having issues let us know."
+
+      _ ->
+        "Something unexpected prevented that file from being uploaded. Try another file or reach out to us for support."
     end
   end
 end

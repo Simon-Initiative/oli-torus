@@ -1,5 +1,4 @@
 defmodule Oli.Publishing.ChangeTracker do
-
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
 
@@ -13,19 +12,23 @@ defmodule Oli.Publishing.ChangeTracker do
   already new revision.
   """
   def track_revision(project_slug, revision, changes \\ nil) do
-    process_change(project_slug, revision, &Oli.Resources.create_revision_from_previous/2, changes)
+    process_change(
+      project_slug,
+      revision,
+      &Oli.Resources.create_revision_from_previous/2,
+      changes
+    )
   end
 
   defp process_change(project_slug, revision, processor, changes) do
-
     publication = AuthoringResolver.publication(project_slug)
 
-    {:ok, resultant_revision} = case changes do
-      nil -> {:ok, revision}
-      c -> processor.(revision, c)
-    end
+    {:ok, resultant_revision} =
+      case changes do
+        nil -> {:ok, revision}
+        c -> processor.(revision, c)
+      end
 
     Publishing.upsert_published_resource(publication, resultant_revision)
   end
-
 end

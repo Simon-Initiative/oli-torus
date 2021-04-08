@@ -45,17 +45,23 @@ defmodule Oli.Resources.Numbering do
   end
 
   def full_hierarchy_helper(numberings, revisions, revision) do
-    [%HierarchyNode{
-      revision: revision,
-      children: Enum.flat_map(
-        revision.children,
-        fn resource_id -> full_hierarchy_helper(
-          numberings,
-          revisions,
-          Enum.find(revisions, fn rev -> rev.resource_id == resource_id end))
-        end),
-      numbering: Map.get(numberings, revision.id)
-    }]
+    [
+      %HierarchyNode{
+        revision: revision,
+        children:
+          Enum.flat_map(
+            revision.children,
+            fn resource_id ->
+              full_hierarchy_helper(
+                numberings,
+                revisions,
+                Enum.find(revisions, fn rev -> rev.resource_id == resource_id end)
+              )
+            end
+          ),
+        numbering: Map.get(numberings, revision.id)
+      }
+    ]
   end
 
   @doc """
@@ -98,7 +104,9 @@ defmodule Oli.Resources.Numbering do
     end
   end
 
-  @spec resource_id_to_revision_map(resolver, project_slug_or_context) :: %{resource_id => %Revision{}}
+  @spec resource_id_to_revision_map(resolver, project_slug_or_context) :: %{
+          resource_id => %Revision{}
+        }
   defp resource_id_to_revision_map(resolver, project_slug_or_context) do
     for rev <- resolver.all_revisions_in_hierarchy(project_slug_or_context),
         into: %{},

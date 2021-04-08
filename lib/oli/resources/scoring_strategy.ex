@@ -4,7 +4,12 @@ defmodule Oli.Resources.ScoringStrategy do
 
   # It would be great to encapsulate all of this into a macro.
 
-  @types [%{id: 1, type: "average"}, %{id: 2, type: "best"}, %{id: 3, type: "most_recent"}, %{id: 4, type: "total"}]
+  @types [
+    %{id: 1, type: "average"},
+    %{id: 2, type: "best"},
+    %{id: 3, type: "most_recent"},
+    %{id: 4, type: "total"}
+  ]
   @by_id Enum.reduce(@types, %{}, fn %{id: id, type: t}, m -> Map.put(m, id, t) end)
   @by_type Enum.reduce(@types, %{}, fn %{id: id, type: t}, m -> Map.put(m, t, id) end)
 

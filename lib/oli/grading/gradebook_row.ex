@@ -5,9 +5,9 @@ defmodule Oli.Grading.GradebookRow do
   defstruct [:user, :scores]
 
   @type t() :: %__MODULE__{
-    user: User.t(),
-    scores: [
-      %GradebookScore{}
-    ]
-  }
+          user: User.t(),
+          scores: [
+            %GradebookScore{}
+          ]
+        }
 end

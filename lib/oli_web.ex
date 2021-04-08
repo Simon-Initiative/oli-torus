@@ -36,7 +36,8 @@ defmodule OliWeb do
         namespace: OliWeb
 
       # Import convenience functions from controllers
-      import Phoenix.Controller, only: [get_flash: 1, get_flash: 2, view_module: 1, view_template: 1]
+      import Phoenix.Controller,
+        only: [get_flash: 1, get_flash: 2, view_module: 1, view_template: 1]
 
       unquote(view_helpers())
     end
@@ -100,6 +101,7 @@ defmodule OliWeb do
       import OliWeb.ErrorHelpers
       import OliWeb.Gettext
       alias OliWeb.Router.Helpers, as: Routes
+      import OliWeb.ViewHelpers
 
       import Oli.Accounts, only: [author_signed_in?: 1, user_signed_in?: 1]
       import Oli.Utils
@@ -108,7 +110,7 @@ defmodule OliWeb do
 
   # implement Phoenix.HTML.Safe for Map type. Used by some json views
   defimpl Phoenix.HTML.Safe, for: Map do
-    def to_iodata(data), do: data |> Jason.encode! |> Plug.HTML.html_escape
+    def to_iodata(data), do: data |> Jason.encode!() |> Plug.HTML.html_escape()
   end
 
   @doc """

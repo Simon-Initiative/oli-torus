@@ -19,7 +19,8 @@ defmodule Oli.Content.Activity.HtmlTest do
           id: 1,
           graded: false,
           state: "{ \"active\": true }",
-          model: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
+          model:
+            "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
           delivery_element: "oli-multiple-choice-delivery"
         }
       }
@@ -27,15 +28,22 @@ defmodule Oli.Content.Activity.HtmlTest do
       element = %{
         "activity_id" => 1,
         "children" => [],
-        "id" => 4097071352,
+        "id" => 4_097_071_352,
         "purpose" => "None",
         "type" => "activity-reference"
       }
 
-      rendered_html = Activity.render(%Context{user: author, activity_map: activity_map}, element, Activity.Html)
-      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
+      rendered_html =
+        Activity.render(
+          %Context{user: author, activity_map: activity_map},
+          element,
+          Activity.Html
+        )
 
-      assert rendered_html_string =~ "<oli-multiple-choice-delivery class=\"activity-container\" graded=\"false\" state=\"{ \"active\": true }\" model=\"{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}\""
+      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+      assert rendered_html_string =~
+               "<oli-multiple-choice-delivery class=\"activity-container\" graded=\"false\" state=\"{ \"active\": true }\" model=\"{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}\""
     end
 
     test "renders malformed activity gracefully", %{author: author} do
@@ -45,24 +53,33 @@ defmodule Oli.Content.Activity.HtmlTest do
           graded: false,
           slug: "test",
           state: "{ \"active\": true }",
-          model: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
+          model:
+            "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
           delivery_element: "oli-multiple-choice-delivery"
         }
       }
 
       element = %{
         "children" => [],
-        "id" => 4097071352,
+        "id" => 4_097_071_352,
         "purpose" => "None",
         "type" => "activity-reference"
       }
 
       assert capture_log(fn ->
-        rendered_html = Activity.render(%Context{user: author, activity_map: activity_map}, element, Activity.Html)
-        rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
+               rendered_html =
+                 Activity.render(
+                   %Context{user: author, activity_map: activity_map},
+                   element,
+                   Activity.Html
+                 )
 
-        assert rendered_html_string =~ "<div class=\"activity invalid alert alert-danger\">Activity is invalid"
-      end) =~ "Activity is invalid"
+               rendered_html_string =
+                 Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+               assert rendered_html_string =~
+                        "<div class=\"activity invalid alert alert-danger\">Activity is invalid"
+             end) =~ "Activity is invalid"
     end
 
     test "handles missing activity from activity-map gracefully", %{author: author} do
@@ -72,7 +89,8 @@ defmodule Oli.Content.Activity.HtmlTest do
           graded: false,
           slug: "test",
           state: "{ \"active\": true }",
-          model: "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
+          model:
+            "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
           delivery_element: "oli-multiple-choice-delivery"
         }
       }
@@ -80,17 +98,25 @@ defmodule Oli.Content.Activity.HtmlTest do
       element = %{
         "activity_id" => 1,
         "children" => [],
-        "id" => 4097071352,
+        "id" => 4_097_071_352,
         "purpose" => "None",
         "type" => "activity-reference"
       }
 
       assert capture_log(fn ->
-        rendered_html = Activity.render(%Context{user: author, activity_map: activity_map}, element, Activity.Html)
-        rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string
+               rendered_html =
+                 Activity.render(
+                   %Context{user: author, activity_map: activity_map},
+                   element,
+                   Activity.Html
+                 )
 
-        assert rendered_html_string =~ "<div class=\"activity error alert alert-danger\">An error occurred and this activity could not be shown. Please contact support with issue"
-      end) =~ "ActivitySummary with id 1 missing from activity_map"
+               rendered_html_string =
+                 Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+               assert rendered_html_string =~
+                        "<div class=\"activity error alert alert-danger\">An error occurred and this activity could not be shown. Please contact support with issue"
+             end) =~ "ActivitySummary with id 1 missing from activity_map"
     end
   end
 end

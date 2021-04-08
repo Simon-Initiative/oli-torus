@@ -27,7 +27,9 @@ defmodule Oli.SlackTest do
       slack_webhook_url = @slack_webhook_url
 
       MockHTTP
-      |> expect(:post, fn ^slack_webhook_url, ^body, _headers -> {:ok, %HTTPoison.Response{status_code: 200, body: "OK"}}  end)
+      |> expect(:post, fn ^slack_webhook_url, ^body, _headers ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: "OK"}}
+      end)
 
       assert Slack.send(payload) == {:ok, %HTTPoison.Response{status_code: 200, body: "OK"}}
     end
@@ -38,8 +40,8 @@ defmodule Oli.SlackTest do
       payload = get_example_payload()
 
       assert capture_log(fn ->
-        assert Slack.send(payload) == {:error, "SLACK_WEBHOOK_URL not configured"}
-      end) =~ "This message cannot be sent because SLACK_WEBHOOK_URL is not configured"
+               assert Slack.send(payload) == {:error, "SLACK_WEBHOOK_URL not configured"}
+             end) =~ "This message cannot be sent because SLACK_WEBHOOK_URL is not configured"
     end
   end
 
@@ -69,7 +71,7 @@ defmodule Oli.SlackTest do
               "text" => %{
                 "type" => "plain_text",
                 "text" => "No",
-                "emoji"=> true
+                "emoji" => true
               }
             }
           ]

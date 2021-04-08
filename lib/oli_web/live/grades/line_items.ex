@@ -2,14 +2,18 @@ defmodule OliWeb.Grades.LineItems do
   use OliWeb, :live_component
 
   def render(assigns) do
-
-    disabled = if length(assigns.task_queue) > 0 do "disabled" else "" end
+    disabled =
+      if length(assigns.task_queue) > 0 do
+        "disabled"
+      else
+        ""
+      end
 
     ~L"""
 
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title"><%= dgettext("grades", "Update LMS Line Items") %></h5>
+        <h5 class="card-title"><%= dgettext("grades", "Update Line Items") %></h5>
 
         <p class="card-text">
 
@@ -27,5 +31,4 @@ defmodule OliWeb.Grades.LineItems do
 
     """
   end
-
 end

@@ -11,6 +11,7 @@ world_universities_and_domains_json =
   case File.read("./priv/data/world_universities_and_domains.json") do
     {:ok, body} ->
       body
+
     _ ->
       "[]"
   end
@@ -19,26 +20,32 @@ countries_json =
   case File.read("./priv/data/countries.json") do
     {:ok, body} ->
       body
+
     _ ->
       "[]"
   end
 
-default_sha = if Mix.env == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
+default_sha = if Mix.env() == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
+
 config :oli,
   ecto_repos: [Oli.Repo],
   build: %{
-    version: Mix.Project.config[:version],
+    version: Mix.Project.config()[:version],
     sha: System.get_env("SHA", default_sha),
     date: DateTime.now!("Etc/UTC"),
-    env: Mix.env,
+    env: Mix.env()
   },
-  local_activity_manifests: Path.wildcard(File.cwd! <> "/assets/src/components/activities/*/manifest.json")
+  local_activity_manifests:
+    Path.wildcard(File.cwd!() <> "/assets/src/components/activities/*/manifest.json")
     |> Enum.map(&File.read!/1),
   email_from_name: System.get_env("EMAIL_FROM_NAME", "OLI Torus"),
   email_from_address: System.get_env("EMAIL_FROM_ADDRESS", "admin@example.edu"),
   email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu"),
   world_universities_and_domains_json: world_universities_and_domains_json,
   countries_json: countries_json
+
+# Configure database
+config :oli, Oli.Repo, migration_timestamps: [type: :timestamptz]
 
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,
@@ -116,7 +123,7 @@ config :oli, :pow,
     ]
   ]
 
-if Mix.env == :dev do
+if Mix.env() == :dev do
   config :mix_test_watch,
     clear: true
 end

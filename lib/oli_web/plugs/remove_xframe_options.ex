@@ -7,7 +7,3 @@ defmodule Oli.Plugs.RemoveXFrameOptions do
     delete_resp_header(conn, "x-frame-options")
   end
 end
-
-
-
-

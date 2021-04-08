@@ -1,12 +1,17 @@
 defmodule Oli.Delivery.Evaluation.RuleEvalTest do
-
   use ExUnit.Case, async: true
 
   alias Oli.Delivery.Evaluation.Rule
   alias Oli.Delivery.Evaluation.EvaluationContext
 
   defp eval(rule, input) do
-    context = %EvaluationContext{resource_attempt_number: 1, activity_attempt_number: 1, part_attempt_number: 1, input: input}
+    context = %EvaluationContext{
+      resource_attempt_number: 1,
+      activity_attempt_number: 1,
+      part_attempt_number: 1,
+      input: input
+    }
+
     {:ok, tree} = Rule.parse(rule)
     {:ok, result} = Rule.evaluate(tree, context)
     result
@@ -58,9 +63,14 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
   end
 
   test "evaluating strings with a numeric operator results in error" do
-    context = %EvaluationContext{resource_attempt_number: 1, activity_attempt_number: 1, part_attempt_number: 1, input: "apple"}
+    context = %EvaluationContext{
+      resource_attempt_number: 1,
+      activity_attempt_number: 1,
+      part_attempt_number: 1,
+      input: "apple"
+    }
+
     {:ok, tree} = Rule.parse("input = {apple}")
     assert {:error, %ArgumentError{message: "argument error"}} == Rule.evaluate(tree, context)
   end
-
 end

@@ -122,6 +122,5 @@ defmodule Oli.Repo.Migrations.AddLti13RegistrationTable do
 
     drop table(:section_roles)
     drop table(:lti_tool_consumers)
-
   end
 end

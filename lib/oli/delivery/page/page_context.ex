@@ -1,11 +1,28 @@
 defmodule Oli.Delivery.Page.PageContext do
-
   @moduledoc """
   Defines the context required to render a page in delivery mode.
   """
 
-  @enforce_keys [:summary, :page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page]
-  defstruct [:summary, :page, :progress_state, :resource_attempts, :activities, :objectives, :previous_page, :next_page]
+  @enforce_keys [
+    :summary,
+    :page,
+    :progress_state,
+    :resource_attempts,
+    :activities,
+    :objectives,
+    :previous_page,
+    :next_page
+  ]
+  defstruct [
+    :summary,
+    :page,
+    :progress_state,
+    :resource_attempts,
+    :activities,
+    :objectives,
+    :previous_page,
+    :next_page
+  ]
 
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Delivery.Page.PageContext
@@ -26,9 +43,8 @@ defmodule Oli.Delivery.Page.PageContext do
   information is collected and then assembled in a fashion that can be given
   to a renderer.
   """
-  @spec create_page_context(String.t, String.t, Oli.Accounts.User) :: %PageContext{}
+  @spec create_page_context(String.t(), String.t(), Oli.Accounts.User) :: %PageContext{}
   def create_page_context(section_slug, page_slug, user) do
-
     # resolve the page revision per section
     page_revision = DeliveryResolver.from_revision_slug(section_slug, page_slug)
 
@@ -49,32 +65,47 @@ defmodule Oli.Delivery.Page.PageContext do
   information is collected and then assembled in a fashion that can be given
   to a renderer.
   """
-  @spec create_page_context(String.t, String.t, String.t, Oli.Accounts.User) :: %PageContext{}
+  @spec create_page_context(String.t(), String.t(), String.t(), Oli.Accounts.User) ::
+          %PageContext{}
   def create_page_context(section_slug, page_slug, attempt_guid, user) do
-
     # resolve the page revision per section
     page_revision = DeliveryResolver.from_revision_slug(section_slug, page_slug)
 
     activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
-    {progress_state, resource_attempts, latest_attempts, activities} = case Attempts.determine_resource_attempt_state(page_revision, section_slug, attempt_guid, user.id, activity_provider) do
-      {:ok, {:not_started, {_, resource_attempts}}} -> {:not_started, resource_attempts, %{}, nil}
-      {:ok, {state, {resource_attempt, latest_attempts}}} -> {state, [resource_attempt], latest_attempts, ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
-      {:error, _} -> {:error, [], %{}}
-    end
+    {progress_state, resource_attempts, latest_attempts, activities} =
+      case Attempts.determine_resource_attempt_state(
+             page_revision,
+             section_slug,
+             attempt_guid,
+             user.id,
+             activity_provider
+           ) do
+        {:ok, {:not_started, {_, resource_attempts}}} ->
+          {:not_started, resource_attempts, %{}, nil}
+
+        {:ok, {state, {resource_attempt, latest_attempts}}} ->
+          {state, [resource_attempt], latest_attempts,
+           ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
+
+        {:error, _} ->
+          {:error, [], %{}}
+      end
 
     # Fetch the revision pinned to the resource attempt if it was revised since this attempt began. This
     # is what enables existing attempts that are being revisited after a change was published to the page
     # to display the old content
-    page_revision = if progress_state == :revised or progress_state == :in_review do
-      Oli.Resources.get_revision!(hd(resource_attempts).revision_id)
-    else
-      page_revision
-    end
+    page_revision =
+      if progress_state == :revised or progress_state == :in_review do
+        Oli.Resources.get_revision!(hd(resource_attempts).revision_id)
+      else
+        page_revision
+      end
 
     {:ok, summary} = Summary.get_summary(section_slug, user)
 
-    {previous, next} = determine_previous_next(flatten_hierarchy(summary.hierarchy), page_revision)
+    {previous, next} =
+      determine_previous_next(flatten_hierarchy(summary.hierarchy), page_revision)
 
     %PageContext{
       summary: summary,
@@ -89,6 +120,7 @@ defmodule Oli.Delivery.Page.PageContext do
   end
 
   defp flatten_hierarchy([]), do: []
+
   defp flatten_hierarchy([h | t]) do
     if ResourceType.get_type_by_id(h.revision.resource_type_id) == "container" do
       []
@@ -101,12 +133,11 @@ defmodule Oli.Delivery.Page.PageContext do
   # return the parent objective revisions of all attached objectives
   # if an attached objective is a parent, include that in the return list
   defp rollup_objectives(latest_attempts, resolver, section_slug) do
-    Enum.map(latest_attempts, fn {_, {%{ revision: revision }, _}} -> revision end)
+    Enum.map(latest_attempts, fn {_, {%{revision: revision}, _}} -> revision end)
     |> ObjectivesRollup.rollup_objectives(resolver, section_slug)
   end
 
   defp determine_previous_next(hierarchy, revision) do
-
     index = Enum.find_index(hierarchy, fn node -> node.revision.id == revision.id end)
 
     case {index, length(hierarchy) - 1} do
@@ -118,5 +149,4 @@ defmodule Oli.Delivery.Page.PageContext do
       {a, _} -> {Enum.at(hierarchy, a - 1).revision, Enum.at(hierarchy, a + 1).revision}
     end
   end
-
 end

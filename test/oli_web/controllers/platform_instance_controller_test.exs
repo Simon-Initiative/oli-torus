@@ -3,9 +3,36 @@ defmodule OliWeb.PlatformInstanceControllerTest do
 
   alias Oli.Lti_1p3.PlatformInstances
 
-  @create_attrs %{client_id: "some client_id", custom_params: "some custom_params", description: "some description", keyset_url: "some keyset_url", login_url: "some login_url", name: "some name", redirect_uris: "some redirect_uris", target_link_uri: "some target_link_uri"}
-  @update_attrs %{client_id: "some updated client_id", custom_params: "some updated custom_params", description: "some updated description", keyset_url: "some updated keyset_url", login_url: "some updated login_url", name: "some updated name", redirect_uris: "some updated redirect_uris", target_link_uri: "some updated target_link_uri"}
-  @invalid_attrs %{client_id: nil, custom_params: nil, description: nil, keyset_url: nil, login_url: nil, name: nil, redirect_uris: nil, target_link_uri: nil}
+  @create_attrs %{
+    client_id: "some client_id",
+    custom_params: "some custom_params",
+    description: "some description",
+    keyset_url: "some keyset_url",
+    login_url: "some login_url",
+    name: "some name",
+    redirect_uris: "some redirect_uris",
+    target_link_uri: "some target_link_uri"
+  }
+  @update_attrs %{
+    client_id: "some updated client_id",
+    custom_params: "some updated custom_params",
+    description: "some updated description",
+    keyset_url: "some updated keyset_url",
+    login_url: "some updated login_url",
+    name: "some updated name",
+    redirect_uris: "some updated redirect_uris",
+    target_link_uri: "some updated target_link_uri"
+  }
+  @invalid_attrs %{
+    client_id: nil,
+    custom_params: nil,
+    description: nil,
+    keyset_url: nil,
+    login_url: nil,
+    name: nil,
+    redirect_uris: nil,
+    target_link_uri: nil
+  }
 
   def fixture(:platform_instance) do
     {:ok, platform_instance} = PlatformInstances.create_platform_instance(@create_attrs)
@@ -30,7 +57,8 @@ defmodule OliWeb.PlatformInstanceControllerTest do
 
   describe "create platform_instance" do
     test "redirects to show when data is valid", %{conn: conn, admin: admin} do
-      conn = post(conn, Routes.platform_instance_path(conn, :create), platform_instance: @create_attrs)
+      conn =
+        post(conn, Routes.platform_instance_path(conn, :create), platform_instance: @create_attrs)
 
       assert %{id: id} = redirected_params(conn)
       assert redirected_to(conn) == Routes.platform_instance_path(conn, :show, id)
@@ -42,7 +70,9 @@ defmodule OliWeb.PlatformInstanceControllerTest do
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, Routes.platform_instance_path(conn, :create), platform_instance: @invalid_attrs)
+      conn =
+        post(conn, Routes.platform_instance_path(conn, :create), platform_instance: @invalid_attrs)
+
       assert html_response(conn, 200) =~ "New Platform instance"
     end
   end
@@ -50,7 +80,10 @@ defmodule OliWeb.PlatformInstanceControllerTest do
   describe "edit platform_instance" do
     setup [:create_platform_instance]
 
-    test "renders form for editing chosen platform_instance", %{conn: conn, platform_instance: platform_instance} do
+    test "renders form for editing chosen platform_instance", %{
+      conn: conn,
+      platform_instance: platform_instance
+    } do
       conn = get(conn, Routes.platform_instance_path(conn, :edit, platform_instance))
       assert html_response(conn, 200) =~ "Edit Platform instance"
     end
@@ -59,8 +92,16 @@ defmodule OliWeb.PlatformInstanceControllerTest do
   describe "update platform_instance" do
     setup [:create_platform_instance]
 
-    test "redirects when data is valid", %{conn: conn, admin: admin, platform_instance: platform_instance} do
-      conn = put(conn, Routes.platform_instance_path(conn, :update, platform_instance), platform_instance: @update_attrs)
+    test "redirects when data is valid", %{
+      conn: conn,
+      admin: admin,
+      platform_instance: platform_instance
+    } do
+      conn =
+        put(conn, Routes.platform_instance_path(conn, :update, platform_instance),
+          platform_instance: @update_attrs
+        )
+
       assert redirected_to(conn) == Routes.platform_instance_path(conn, :show, platform_instance)
 
       conn = recycle_author_session(conn, admin)
@@ -69,8 +110,15 @@ defmodule OliWeb.PlatformInstanceControllerTest do
       assert html_response(conn, 200) =~ "some updated client_id"
     end
 
-    test "renders errors when data is invalid", %{conn: conn, platform_instance: platform_instance} do
-      conn = put(conn, Routes.platform_instance_path(conn, :update, platform_instance), platform_instance: @invalid_attrs)
+    test "renders errors when data is invalid", %{
+      conn: conn,
+      platform_instance: platform_instance
+    } do
+      conn =
+        put(conn, Routes.platform_instance_path(conn, :update, platform_instance),
+          platform_instance: @invalid_attrs
+        )
+
       assert html_response(conn, 200) =~ "Edit Platform instance"
     end
   end
@@ -78,9 +126,14 @@ defmodule OliWeb.PlatformInstanceControllerTest do
   describe "delete platform_instance" do
     setup [:create_platform_instance]
 
-    test "deletes chosen platform_instance", %{conn: conn, admin: admin, platform_instance: platform_instance} do
+    test "deletes chosen platform_instance", %{
+      conn: conn,
+      admin: admin,
+      platform_instance: platform_instance
+    } do
       conn = delete(conn, Routes.platform_instance_path(conn, :delete, platform_instance))
       assert redirected_to(conn) == Routes.platform_instance_path(conn, :index)
+
       assert_error_sent 404, fn ->
         conn = recycle_author_session(conn, admin)
 

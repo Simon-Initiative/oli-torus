@@ -19,5 +19,4 @@ defmodule Oli.Qa.Warning do
     |> cast(attrs, ~w(review_id revision_id subtype content requires_fix is_dismissed)a)
     |> validate_required(~w(review_id subtype)a)
   end
-
 end

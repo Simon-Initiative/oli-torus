@@ -11,7 +11,7 @@ defmodule Oli.Rendering.Activity do
   require Logger
 
   @callback activity(%Context{}, %{}) :: [any()]
-  @callback error(%Context{}, %{}, {Atom.t, String.t, String.t}) :: [any()]
+  @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
 
   @doc """
   Renders an Oli activity given an activity-reference element and using the
@@ -23,11 +23,14 @@ defmodule Oli.Rendering.Activity do
   end
 
   # Renders an error message if the signature above does not match. Logging and rendering of errors
-  #can be configured using the render_opts in context
+  # can be configured using the render_opts in context
   def render(%Context{render_opts: render_opts} = context, element, writer) do
     error_id = Utils.random_string(8)
     error_msg = "Activity is invalid: #{Kernel.inspect(element)}"
-    if render_opts.log_errors, do: Logger.error("Render Error ##{error_id} #{error_msg}"), else: nil
+
+    if render_opts.log_errors,
+      do: Logger.error("Render Error ##{error_id} #{error_msg}"),
+      else: nil
 
     if render_opts.render_errors do
       writer.error(context, element, {:invalid, error_id, error_msg})
@@ -35,5 +38,4 @@ defmodule Oli.Rendering.Activity do
       []
     end
   end
-
 end

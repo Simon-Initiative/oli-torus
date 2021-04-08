@@ -3,7 +3,6 @@ defmodule OliWeb.ProjectVisibilityTest do
   alias Oli.Seeder
   alias Oli.Authoring.Course
   alias Oli.Publishing
-  alias OliWeb.Common.LtiSession
 
   import Phoenix.LiveViewTest
   @endpoint OliWeb.Endpoint
@@ -11,9 +10,16 @@ defmodule OliWeb.ProjectVisibilityTest do
   describe "visibility live test" do
     setup [:setup_session]
 
-    test "project visibility update", %{conn: conn, project: project, author: author, institution: institution} do
-
-      {:ok, view, _} = live_isolated(conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => project.slug })
+    test "project visibility update", %{
+      conn: conn,
+      project: project,
+      author: author,
+      institution: institution
+    } do
+      {:ok, view, _} =
+        live_isolated(conn, OliWeb.Projects.VisibilityLive,
+          session: %{"project_slug" => project.slug}
+        )
 
       assert view |> element("#visibility_option_selected") |> has_element?()
 
@@ -30,43 +36,18 @@ defmodule OliWeb.ProjectVisibilityTest do
       Publishing.publish_project(project)
 
       available_publications = Publishing.available_publications(author, institution)
-      assert Enum.count(available_publications) == 2
-    end
 
+      assert Enum.count(available_publications) == 1
+    end
   end
 
   defp setup_session(%{conn: conn}) do
-    user = user_fixture()
-
     map = Seeder.base_project_with_resource2()
 
-    section = section_fixture(%{
-      context_id: "some-context-id",
-      project_id: map.project.id,
-      publication_id: map.publication.id,
-      institution_id: map.institution.id
-    })
-
-    lti_params = Oli.Lti_1p3.TestHelpers.all_default_claims()
-                 |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
-
-    cache_lti_params("params-key", lti_params)
-
-    conn = Plug.Test.init_test_session(conn, lti_session: nil)
-      |> LtiSession.put_section_params(section.slug, "params-key")
+    conn =
+      Plug.Test.init_test_session(conn, lti_session: nil)
       |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
-    {:ok,
-      conn: conn,
-      map: map,
-      author: map.author,
-      institution: map.institution,
-      user: user,
-      project: map.project,
-      publication: map.publication,
-      section: section
-    }
+    {:ok, conn: conn, author: map.author, institution: map.institution, project: map.project}
   end
-
 end

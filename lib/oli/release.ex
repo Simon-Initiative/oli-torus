@@ -8,8 +8,8 @@ defmodule Oli.ReleaseTasks do
     seed()
   end
 
-  def reset(%{ force: true }) do
-    drop(%{ force: true })
+  def reset(%{force: true}) do
+    drop(%{force: true})
     create()
     migrate()
     seed()
@@ -22,18 +22,18 @@ defmodule Oli.ReleaseTasks do
   end
 
   def drop do
-    IO.puts "WARNING! This will completely erase all data from the database."
-    confirm = IO.gets "Are you sure you want to continue? (Enter YES to continue): "
+    IO.puts("WARNING! This will completely erase all data from the database.")
+    confirm = IO.gets("Are you sure you want to continue? (Enter YES to continue): ")
 
     if String.upcase(confirm) == "YES\n" do
-      drop(%{ force: true })
+      drop(%{force: true})
     else
-      IO.puts "drop operation cancelled by user."
+      IO.puts("drop operation cancelled by user.")
       :init.stop()
     end
   end
 
-  def drop(%{ force: true }) do
+  def drop(%{force: true}) do
     load_app()
 
     for repo <- repos() do
@@ -44,13 +44,19 @@ defmodule Oli.ReleaseTasks do
   defp drop_database(repo) do
     case repo.__adapter__.storage_down(repo.config) do
       :ok ->
-        IO.puts "The database for #{inspect repo} has been dropped"
+        IO.puts("The database for #{inspect(repo)} has been dropped")
+
       {:error, :already_down} ->
-        IO.puts "The database for #{inspect repo} has already been dropped"
+        IO.puts("The database for #{inspect(repo)} has already been dropped")
+
       {:error, term} when is_binary(term) ->
-        IO.puts :stderr, "The database for #{inspect repo} couldn't be dropped: #{term}"
+        IO.puts(:stderr, "The database for #{inspect(repo)} couldn't be dropped: #{term}")
+
       {:error, term} ->
-        IO.puts :stderr, "The database for #{inspect repo} couldn't be dropped: #{inspect term}"
+        IO.puts(
+          :stderr,
+          "The database for #{inspect(repo)} couldn't be dropped: #{inspect(term)}"
+        )
     end
   end
 
@@ -65,13 +71,15 @@ defmodule Oli.ReleaseTasks do
   defp ensure_repo_created(repo) do
     case repo.__adapter__.storage_up(repo.config) do
       :ok ->
-        IO.puts "The database for #{inspect repo} has been created"
+        IO.puts("The database for #{inspect(repo)} has been created")
         :ok
+
       {:error, :already_up} ->
-        IO.puts "The database for #{inspect repo} already exists"
+        IO.puts("The database for #{inspect(repo)} already exists")
         :ok
+
       {:error, term} ->
-        IO.puts :stderr, "The database for #{inspect repo} couldn't be created: #{term}"
+        IO.puts(:stderr, "The database for #{inspect(repo)} couldn't be created: #{term}")
         {:error, term}
     end
   end
@@ -83,7 +91,7 @@ defmodule Oli.ReleaseTasks do
       {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
     end
 
-    IO.puts "migrate complete."
+    IO.puts("migrate complete.")
   end
 
   def seed do
@@ -93,7 +101,7 @@ defmodule Oli.ReleaseTasks do
       {:ok, _, _} = Ecto.Migrator.with_repo(repo, &eval_seed(&1, "seeds.exs"))
     end
 
-    IO.puts "seed complete."
+    IO.puts("seed complete.")
   end
 
   def migrate_and_seed do

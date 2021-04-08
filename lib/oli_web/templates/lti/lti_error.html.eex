@@ -2,4 +2,4 @@
 
 <p>Reason: <span class="text-danger"><%= @reason %></span></p>
 
-<p>If you need help configuring your LTI connection, please <a href="<%= Routes.help_delivery_path(@conn, :index) %>">contact OLI Support</a></p>
+<p>If you need help configuring your LTI connection, please <a href="<%= Routes.help_path(@conn, :index) %>">contact OLI Support</a></p>

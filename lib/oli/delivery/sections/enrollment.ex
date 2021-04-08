@@ -6,9 +6,11 @@ defmodule Oli.Delivery.Sections.Enrollment do
     belongs_to :user, Oli.Accounts.User
     belongs_to :section, Oli.Delivery.Sections.Section
 
-    many_to_many :context_roles, Lti_1p3.DataProviders.EctoProvider.ContextRole, join_through: "enrollments_context_roles", on_replace: :delete
+    many_to_many :context_roles, Lti_1p3.DataProviders.EctoProvider.ContextRole,
+      join_through: "enrollments_context_roles",
+      on_replace: :delete
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

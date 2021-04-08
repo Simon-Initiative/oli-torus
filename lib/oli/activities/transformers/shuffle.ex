@@ -1,5 +1,4 @@
-defmodule  Oli.Activities.Transformers.Shuffle do
-
+defmodule Oli.Activities.Transformers.Shuffle do
   alias Oli.Activities.Model.Transformation
   alias Oli.Activities.Transformers.Transformer
 
@@ -12,5 +11,4 @@ defmodule  Oli.Activities.Transformers.Shuffle do
       collection -> {:ok, Map.put(model, path, Enum.shuffle(collection))}
     end
   end
-
 end

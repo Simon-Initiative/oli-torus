@@ -27,7 +27,8 @@ defmodule OliWeb.Common.LtiSession do
     lti_session = value_or(get_session(conn, @lti_session_key), %{})
 
     conn
-    |> put_session(@lti_session_key,
+    |> put_session(
+      @lti_session_key,
       lti_session
       |> Map.put(:user_params, lti_params_key)
     )
@@ -41,30 +42,4 @@ defmodule OliWeb.Common.LtiSession do
     |> value_or(%{})
     |> get_in([:user_params])
   end
-
-  @doc """
-  Puts the user sub and lti params key for a particular section
-  """
-  def put_section_params(conn, section_slug, lti_params_key) do
-    lti_session = value_or(get_session(conn, @lti_session_key), %{})
-
-    conn
-    |> put_session(@lti_session_key,
-      lti_session
-      |> Map.put(:sections,
-        value_or(lti_session[:sections], %{})
-        |> Map.put(section_slug, lti_params_key)
-      )
-    )
-  end
-
-  @doc """
-  Gets the latest lti params key for a particular user's section from the lti session
-  """
-  def get_section_params(conn, section_slug) do
-    get_session(conn, @lti_session_key)
-    |> value_or(%{})
-    |> get_in([:sections, section_slug])
-  end
-
 end
