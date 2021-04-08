@@ -98,16 +98,16 @@ export interface Response extends Identifiable {
 
 export interface ConditionalOutcome extends Identifiable {
   rule: Object;
-  actions: Action[];
+  actions: ActionDesc[];
 }
 
-export interface IsActionResult {
+export interface IsAction {
   attempt_guid: string;
   error?: string;
 }
 
 export type Action = NavigationAction | FeedbackAction | StateUpdateAction;
-export type ActionResult = NavigationActionResult | FeedbackActionResult | StateUpdateActionResult;
+export type ActionDesc = NavigationActionDesc | FeedbackActionDesc | StateUpdateActionDesc;
 
 export interface FeedbackActionCore {
   score: number;
@@ -122,29 +122,29 @@ export interface StateUpdateActionCore {
   update: Object;
 }
 
-export interface NavigationAction extends Identifiable, NavigationActionCore {
+export interface NavigationActionDesc extends Identifiable, NavigationActionCore {
+  type: 'NavigationActionDesc';
+}
+
+export interface NavigationAction extends NavigationActionCore, IsAction {
   type: 'NavigationAction';
 }
 
-export interface NavigationActionResult extends NavigationActionCore, IsActionResult {
-  type: 'NavigationActionResult';
+export interface FeedbackActionDesc extends Identifiable, FeedbackActionCore {
+  type: 'FeedbackActionDesc';
 }
 
-export interface FeedbackAction extends Identifiable, FeedbackActionCore {
+export interface FeedbackAction extends FeedbackActionCore, IsAction {
   type: 'FeedbackAction';
-}
-
-export interface FeedbackActionResult extends FeedbackActionCore, IsActionResult {
-  type: 'FeedbackActionResult';
   out_of: number;
 }
 
-export interface StateUpdateAction extends Identifiable, StateUpdateActionCore {
-  type: 'StateUpdateAction';
+export interface StateUpdateActionDesc extends Identifiable, StateUpdateActionCore {
+  type: 'StateUpdateActionDesc';
 }
 
-export interface StateUpdateActionResult extends StateUpdateActionCore, IsActionResult {
-  type: 'StateUpdateActionResult';
+export interface StateUpdateAction extends StateUpdateActionCore, IsAction {
+  type: 'StateUpdateAction';
 }
 
 

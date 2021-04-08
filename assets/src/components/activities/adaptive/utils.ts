@@ -1,25 +1,25 @@
 import guid from 'utils/guid';
 import * as ContentModel from 'data/content/model';
 import { AdaptiveModelSchema } from './schema';
-import { RichText, Operation, ScoringStrategy, Choice } from '../types';
+import { RichText, Operation, ScoringStrategy } from '../types';
 
-export const makeResponse = (rule: string, score: number, text: '') =>
-  ({ id: guid(), rule, score, feedback: fromText(text) });
 
 export const defaultMCModel: () => AdaptiveModelSchema = () => {
-  const choiceA: Choice = fromText('Choice A');
-  const choiceB: Choice = fromText('Choice B');
 
   return {
     content: {},
     authoring: {
       parts: [{
-        id: '1', // an MCQ only has one part, so it is safe to hardcode the id
+        id: '1', // One part for now
         scoringStrategy: ScoringStrategy.average,
-        responses: [
-          makeResponse(`input like {${choiceA.id}}`, 1, ''),
-          makeResponse(`input like {${choiceB.id}}`, 0, ''),
-        ],
+        responses: [],
+        outcomes: [{
+          id: 'outcome1',
+          rule: [],
+          actions: [
+            { id: 'action1', type: 'StateUpdateActionDesc', update: {} }
+          ]
+        }],
         hints: [
           fromText(''),
           fromText(''),

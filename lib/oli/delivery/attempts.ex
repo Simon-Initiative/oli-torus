@@ -885,23 +885,25 @@ defmodule Oli.Delivery.Attempts do
        ) do
     case Oli.Delivery.Evaluation.Evaluator.evaluate(part, evaluation_context) do
       {:ok, {feedback, %Result{score: score, out_of: out_of}}} ->
-        %Oli.Delivery.Attempts.FeedbackActionResult{
-          type: "FeedbackActionResult",
-          attempt_guid: attempt_guid,
-          feedback: feedback,
-          score: score,
-          out_of: out_of
-        }
+        {:ok,
+         %Oli.Delivery.Attempts.FeedbackActionResult{
+           type: "FeedbackActionResult",
+           attempt_guid: attempt_guid,
+           feedback: feedback,
+           score: score,
+           out_of: out_of
+         }}
 
       {:error, e} ->
-        %Oli.Delivery.Attempts.FeedbackActionResult{
-          type: "FeedbackActionResult",
-          attempt_guid: attempt_guid,
-          feedback: %{},
-          score: 0,
-          out_of: 0,
-          error: e
-        }
+        {:error,
+         %Oli.Delivery.Attempts.FeedbackActionResult{
+           type: "FeedbackActionResult",
+           attempt_guid: attempt_guid,
+           feedback: %{},
+           score: 0,
+           out_of: 0,
+           error: e
+         }}
     end
   end
 
@@ -910,25 +912,26 @@ defmodule Oli.Delivery.Attempts do
          %EvaluationContext{} = _,
          %Part{} = _
        ) do
-    %Oli.Delivery.Attempts.StateUpdateActionResult{
-      type: "StateUpdateActionResult",
-      attempt_guid: attempt_guid,
-      update: %{}
-    }
+    {:ok,
+     %Oli.Delivery.Attempts.StateUpdateActionResult{
+       type: "StateUpdateActionResult",
+       attempt_guid: attempt_guid,
+       update: %{}
+     }}
   end
 
   # Persist the result of a single evaluation for a single part_input submission.
   defp persist_single_evaluation({_, {:error, error}}, _), do: {:halt, {:error, error}}
 
   defp persist_single_evaluation(
-         {_, %Oli.Delivery.Attempts.NavigationActionResult{} = action_result},
+         {_, {:ok, %Oli.Delivery.Attempts.NavigationActionResult{} = action_result}},
          {:ok, results}
        ) do
     {:cont, {:ok, results ++ [action_result]}}
   end
 
   defp persist_single_evaluation(
-         {_, %Oli.Delivery.Attempts.StateUpdateActionResult{} = action_result},
+         {_, {:ok, %Oli.Delivery.Attempts.StateUpdateActionResult{} = action_result}},
          {:ok, results}
        ) do
     {:cont, {:ok, results ++ [action_result]}}
@@ -936,11 +939,12 @@ defmodule Oli.Delivery.Attempts do
 
   defp persist_single_evaluation(
          {%{attempt_guid: attempt_guid, input: input},
-          %Oli.Delivery.Attempts.FeedbackActionResult{
-            feedback: feedback,
-            score: score,
-            out_of: out_of
-          } = feedback_action},
+          {:ok,
+           %Oli.Delivery.Attempts.FeedbackActionResult{
+             feedback: feedback,
+             score: score,
+             out_of: out_of
+           } = feedback_action}},
          {:ok, results}
        ) do
     now = DateTime.utc_now()
@@ -1157,14 +1161,21 @@ defmodule Oli.Delivery.Attempts do
 
           case client_evaluations
                |> Enum.map(fn %{
-                                attempt_guid: _attempt_guid,
+                                attempt_guid: attempt_guid,
                                 client_evaluation: %ClientEvaluation{
                                   score: score,
                                   out_of: out_of,
                                   feedback: feedback
                                 }
                               } ->
-                 {:ok, {feedback, %Result{score: score, out_of: out_of}}}
+                 {:ok,
+                  %Oli.Delivery.Attempts.FeedbackActionResult{
+                    type: "FeedbackActionResult",
+                    attempt_guid: attempt_guid,
+                    feedback: feedback,
+                    score: score,
+                    out_of: out_of
+                  }}
                end)
                |> (fn evaluations -> {:ok, evaluations} end).()
                |> persist_evaluations(part_inputs, roll_up_fn)

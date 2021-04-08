@@ -488,11 +488,13 @@ defmodule Oli.Delivery.AttemptsTest do
              ) ==
                {:ok,
                 [
-                  %{
+                  %Oli.Delivery.Attempts.FeedbackActionResult{
                     attempt_guid: part1_attempt1.attempt_guid,
                     feedback: %Oli.Activities.Model.Feedback{content: "some-feedback", id: "1"},
                     out_of: 1,
-                    score: 1
+                    score: 1,
+                    error: nil,
+                    type: "FeedbackActionResult"
                   }
                 ]}
     end

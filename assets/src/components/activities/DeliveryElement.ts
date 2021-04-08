@@ -6,13 +6,13 @@ import {
   PartState,
   StudentResponse,
   ClientEvaluation,
-  ActionResult,
+  Action,
   Success
 } from './types';
 import { valueOr } from 'utils/common';
 
 export interface EvaluationResponse extends Success {
-  actions: ActionResult[];
+  actions: Action[];
 }
 
 // Notice that the hint attribute here is optional.  If a
