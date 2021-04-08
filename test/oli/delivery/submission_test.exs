@@ -739,7 +739,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
     } do
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "d"}}]
 
-      {:error, error} =
+      {:error, %{error: error}} =
         Attempts.submit_part_evaluations(section.slug, activity_attempt.attempt_guid, part_inputs)
 
       assert error == "no matching response found"

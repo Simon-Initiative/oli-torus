@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
-import { DeliveryElement, DeliveryElementProps,
-  EvaluationResponse, ResetActivityResponse, RequestHintResponse } from '../DeliveryElement';
+import {
+  DeliveryElement, DeliveryElementProps,
+  EvaluationResponse, ResetActivityResponse, RequestHintResponse,
+} from '../DeliveryElement';
 import { ImageCodingModelSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { Stem } from '../common/DisplayedStem';
@@ -37,7 +39,7 @@ const Input = (props: InputProps) => {
       className="form-control"
       onChange={(e: any) => props.onChange(e.target.value)}
       value={input}
-      disabled={props.isEvaluated}/>
+      disabled={props.isEvaluated} />
   );
 };
 
@@ -63,7 +65,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
 
   // tslint:disable-next-line:prefer-array-literal
-  const resourceRefs = useRef<(HTMLImageElement|String)[]>(new Array(resourceURLs.length));
+  const resourceRefs = useRef<(HTMLImageElement | String)[]>(new Array(resourceURLs.length));
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef2 = useRef<HTMLCanvasElement>(null);
   const resultRef = useRef<HTMLCanvasElement>(null);
@@ -71,15 +73,15 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
 
   const loadCSV = (url: string, i: number) => {
     fetch(url, { mode: 'cors' })
-      .then ((resp) => {
-        if (! resp.ok) {
+      .then((resp) => {
+        if (!resp.ok) {
           throw new Error('failed to load ' + lastPart(url) + ': '
-              + resp.statusText);
+            + resp.statusText);
         }
         return resp.text();
       })
-      .then (text => resourceRefs.current[i] = text)
-      .catch ((e) => {
+      .then(text => resourceRefs.current[i] = text)
+      .catch((e) => {
         throw new Error('failed to load ' + lastPart(url) + ': ' + e);
       });
   };
@@ -116,15 +118,18 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
 
     // get attributes for a ClientEvaluation
     const score = isCorrect ? 1 : 0;
-    const outOf =  1;
+    const outOf = 1;
     const feedback = model.feedback[score];
 
     const partState = attemptState.parts[0];
     props.onSubmitEvaluations(attemptState.attemptGuid,
       [{ attemptGuid: partState.attemptGuid, score, outOf, feedback }])
       .then((response: EvaluationResponse) => {
-        if (response.evaluations.length > 0) {
-          const { error } = response.evaluations[0];
+        if (response.actions.length > 0) {
+
+          const action: ActivityTypes.FeedbackAction
+            = response.actions[0] as ActivityTypes.FeedbackAction;
+          const { error } = action;
           const parts = [Object.assign({}, partState, { feedback, error })];
           const updated = Object.assign({}, attemptState, { score, outOf, parts });
           setAttemptState(updated);
@@ -134,28 +139,28 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
 
   const onRequestHint = () => {
     props.onRequestHint(attemptState.attemptGuid, attemptState.parts[0].attemptGuid)
-    .then((state: RequestHintResponse) => {
-      if (state.hint !== undefined) {
-        setHints([...hints, state.hint] as any);
-      }
-      setHasMoreHints(state.hasMoreHints);
-    });
+      .then((state: RequestHintResponse) => {
+        if (state.hint !== undefined) {
+          setHints([...hints, state.hint] as any);
+        }
+        setHasMoreHints(state.hasMoreHints);
+      });
   };
 
   const onReset = () => {
     props.onResetActivity(attemptState.attemptGuid)
-    .then((state: ResetActivityResponse) => {
-      setAttemptState(state.attemptState);
-      setModel(state.model as ImageCodingModelSchema);
-      setHints([]);
-      setHasMoreHints(props.state.parts[0].hasMoreHints);
-      // Do we want reset to reload starter code, discarding changes?
-      // setInput(model.starterCode);
-      clearOutput();
-    });
+      .then((state: ResetActivityResponse) => {
+        setAttemptState(state.attemptState);
+        setModel(state.model as ImageCodingModelSchema);
+        setHints([]);
+        setHasMoreHints(props.state.parts[0].hasMoreHints);
+        // Do we want reset to reload starter code, discarding changes?
+        // setInput(model.starterCode);
+        clearOutput();
+      });
   };
 
-  const updateOutput = (s:string) => {
+  const updateOutput = (s: string) => {
     // update local var so we can use it until next render
     currentOutput = s;
     setOutput(s);
@@ -179,8 +184,10 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     // clear output for new run
     clearOutput();
 
-    const ctx : EvalContext = { getCanvas, getResource, getResult, appendOutput,
-      solutionRun: false };
+    const ctx: EvalContext = {
+      getCanvas, getResource, getResult, appendOutput,
+      solutionRun: false,
+    };
     const e = Evaluator.execute(input, ctx);
     if (e != null) {
       setError(e.message);
@@ -188,7 +195,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   };
 
   const usesImages = () => {
-    return resourceURLs.some(url => ! url.endsWith('csv'));
+    return resourceURLs.some(url => !url.endsWith('csv'));
   };
 
   const solutionCorrect = () => {
@@ -202,8 +209,10 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   const imageCorrect = () => {
     // evaluate solution code if needed to "print" result image to solnCanvas.
     // only needs to be done once, setting solnCanvas.width > 0
-    const ctx : EvalContext = { getCanvas, getResource, getResult, appendOutput,
-      solutionRun: true };
+    const ctx: EvalContext = {
+      getCanvas, getResource, getResult, appendOutput,
+      solutionRun: true,
+    };
     const solnCanvas = getResult(true);
     if (solnCanvas && solnCanvas.width === 0) {
       const e = Evaluator.execute(model.solutionCode, ctx);
@@ -218,21 +227,21 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   };
 
   const evaluationSummary = isEvaluated
-    ? <Evaluation key="evaluation" attemptState={attemptState} context={writerContext}/>
+    ? <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
     : null;
 
   const reset = isEvaluated && !props.graded
     ? (<div className="d-flex">
-        <div className="flex-fill"></div>
-        <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
-      </div>
+      <div className="flex-fill"></div>
+      <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
+    </div>
     )
     : null;
 
   const ungradedDetails = props.graded ? null : [
     evaluationSummary,
     <Hints key="hints" onClick={onRequestHint} hints={hints} context={writerContext}
-      hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>];
+      hasMoreHints={hasMoreHints} isEvaluated={isEvaluated} />];
 
   const renderOutput = () => {
     if (output === '') {
@@ -250,8 +259,8 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   };
 
   const getCanvas = (n: number = 0) => {
-     // we currently only need exactly two temp canvases, one for src and
-     // one for destination of offscreen transformation.
+    // we currently only need exactly two temp canvases, one for src and
+    // one for destination of offscreen transformation.
     return n === 0 ? canvasRef.current : canvasRef2.current;
   };
 
@@ -269,15 +278,15 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   };
 
   const maybeSubmitButton = (model.isExample || props.graded)
-  ? null
-  : (
-    <button
-      className="btn btn-primary mt-2 float-right" disabled={isEvaluated} onClick={onSubmit}>
-      Submit
-    </button>
-  );
+    ? null
+    : (
+      <button
+        className="btn btn-primary mt-2 float-right" disabled={isEvaluated} onClick={onSubmit}>
+        Submit
+      </button>
+    );
 
-  const runButton  = (
+  const runButton = (
     <button
       className="btn btn-primary mt-2 float-left" disabled={isEvaluated} onClick={onRun}>
       Run
@@ -293,21 +302,21 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
           <Input
             input={input}
             isEvaluated={isEvaluated}
-            onChange={onInputChange}/>
+            onChange={onInputChange} />
           {runButton} {maybeSubmitButton}
         </div>
 
         {/* implementation relies on 2 hidden canvases for image operations */}
-         <canvas ref={canvasRef} style={{ display: 'none' }}/>
-         <canvas ref={canvasRef2} style={{ display: 'none' }}/>
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
+        <canvas ref={canvasRef2} style={{ display: 'none' }} />
 
         <div style={{ whiteSpace: 'pre-wrap' }}>
           <h5>Output:</h5>
           {renderOutput()}
           {errorMsg()}
           {/* output canvases for student and (hidden) correct solution */}
-          <canvas ref={resultRef} height="0" width="0"/>
-          <canvas ref={solnRef} style={{ display: 'none' }} height="0" width="0"/>
+          <canvas ref={resultRef} height="0" width="0" />
+          <canvas ref={solnRef} style={{ display: 'none' }} height="0" width="0" />
         </div>
 
         {!model.isExample && ungradedDetails}

@@ -76,10 +76,10 @@ export interface ActivityState {
   hasMoreHints: boolean;
 }
 
-export interface Choice extends Identifiable, HasContent {}
-export interface Stem extends Identifiable, HasContent {}
-export interface Hint extends Identifiable, HasContent {}
-export interface Feedback extends Identifiable, HasContent {}
+export interface Choice extends Identifiable, HasContent { }
+export interface Stem extends Identifiable, HasContent { }
+export interface Hint extends Identifiable, HasContent { }
+export interface Feedback extends Identifiable, HasContent { }
 export interface Transformation extends Identifiable {
   path: string;
   operation: Operation;
@@ -96,8 +96,61 @@ export interface Response extends Identifiable {
   feedback: Feedback;
 }
 
+export interface ConditionalOutcome extends Identifiable {
+  rule: Object;
+  actions: ActionDesc[];
+}
+
+export interface IsAction {
+  attempt_guid: string;
+  error?: string;
+}
+
+export type Action = NavigationAction | FeedbackAction | StateUpdateAction;
+export type ActionDesc = NavigationActionDesc | FeedbackActionDesc | StateUpdateActionDesc;
+
+export interface FeedbackActionCore {
+  score: number;
+  feedback: Feedback;
+}
+
+export interface NavigationActionCore {
+  to: string;
+}
+
+export interface StateUpdateActionCore {
+  update: Object;
+}
+
+export interface NavigationActionDesc extends Identifiable, NavigationActionCore {
+  type: 'NavigationActionDesc';
+}
+
+export interface NavigationAction extends NavigationActionCore, IsAction {
+  type: 'NavigationAction';
+}
+
+export interface FeedbackActionDesc extends Identifiable, FeedbackActionCore {
+  type: 'FeedbackActionDesc';
+}
+
+export interface FeedbackAction extends FeedbackActionCore, IsAction {
+  type: 'FeedbackAction';
+  out_of: number;
+}
+
+export interface StateUpdateActionDesc extends Identifiable, StateUpdateActionCore {
+  type: 'StateUpdateActionDesc';
+}
+
+export interface StateUpdateAction extends StateUpdateActionCore, IsAction {
+  type: 'StateUpdateAction';
+}
+
+
 export interface Part extends Identifiable {
   responses: Response[];
+  outcomes?: ConditionalOutcome[];
   hints: Hint[];
   scoringStrategy: ScoringStrategy;
 }

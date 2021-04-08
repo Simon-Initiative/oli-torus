@@ -18,7 +18,7 @@ defmodule Oli.Delivery.Attempts do
   alias Oli.Activities.State.ActivityState
   alias Oli.Resources.{Revision}
   alias Oli.Activities.Model
-  alias Oli.Activities.Model.Feedback
+  alias Oli.Activities.Model.Part
   alias Oli.Activities.Transformers
   alias Oli.Delivery.Attempts.{StudentInput, Result, Scoring, ClientEvaluation}
   alias Oli.Publishing.{PublishedResource, DeliveryResolver}
@@ -858,18 +858,92 @@ defmodule Oli.Delivery.Attempts do
           input: input.input
         }
 
-        Oli.Delivery.Evaluation.Evaluator.evaluate(part, context)
+        if is_adaptive_eval?(part) do
+          # Stub for the future adaptive rule engine evaluation
+          perform_adaptive_eval(attempt_guid, context, part)
+        else
+          perform_standard_eval(attempt_guid, context, part)
+        end
       end)
 
     {:ok, evaluations}
+  end
+
+  defp is_adaptive_eval?(%Part{} = part) do
+    case Map.get(part, :outcomes) do
+      nil -> false
+      [] -> false
+      _ -> true
+    end
+  end
+
+  defp perform_standard_eval(
+         attempt_guid,
+         %EvaluationContext{} = evaluation_context,
+         %Part{} = part
+       ) do
+    case Oli.Delivery.Evaluation.Evaluator.evaluate(part, evaluation_context) do
+      {:ok, {feedback, %Result{score: score, out_of: out_of}}} ->
+        {:ok,
+         %Oli.Delivery.Attempts.FeedbackActionResult{
+           type: "FeedbackActionResult",
+           attempt_guid: attempt_guid,
+           feedback: feedback,
+           score: score,
+           out_of: out_of
+         }}
+
+      {:error, e} ->
+        {:error,
+         %Oli.Delivery.Attempts.FeedbackActionResult{
+           type: "FeedbackActionResult",
+           attempt_guid: attempt_guid,
+           feedback: %{},
+           score: 0,
+           out_of: 0,
+           error: e
+         }}
+    end
+  end
+
+  defp perform_adaptive_eval(
+         attempt_guid,
+         %EvaluationContext{} = _,
+         %Part{} = _
+       ) do
+    {:ok,
+     %Oli.Delivery.Attempts.StateUpdateActionResult{
+       type: "StateUpdateActionResult",
+       attempt_guid: attempt_guid,
+       update: %{}
+     }}
   end
 
   # Persist the result of a single evaluation for a single part_input submission.
   defp persist_single_evaluation({_, {:error, error}}, _), do: {:halt, {:error, error}}
 
   defp persist_single_evaluation(
+         {_, {:ok, %Oli.Delivery.Attempts.NavigationActionResult{} = action_result}},
+         {:ok, results}
+       ) do
+    {:cont, {:ok, results ++ [action_result]}}
+  end
+
+  defp persist_single_evaluation(
+         {_, {:ok, %Oli.Delivery.Attempts.StateUpdateActionResult{} = action_result}},
+         {:ok, results}
+       ) do
+    {:cont, {:ok, results ++ [action_result]}}
+  end
+
+  defp persist_single_evaluation(
          {%{attempt_guid: attempt_guid, input: input},
-          {:ok, {%Feedback{} = feedback, %Result{out_of: out_of, score: score}}}},
+          {:ok,
+           %Oli.Delivery.Attempts.FeedbackActionResult{
+             feedback: feedback,
+             score: score,
+             out_of: out_of
+           } = feedback_action}},
          {:ok, results}
        ) do
     now = DateTime.utc_now()
@@ -890,10 +964,7 @@ defmodule Oli.Delivery.Attempts do
         {:halt, {:error, :error}}
 
       {1, _} ->
-        {:cont,
-         {:ok,
-          results ++
-            [%{attempt_guid: attempt_guid, feedback: feedback, score: score, out_of: out_of}]}}
+        {:cont, {:ok, results ++ [feedback_action]}}
 
       _ ->
         {:halt, {:error, :error}}
@@ -1089,14 +1160,21 @@ defmodule Oli.Delivery.Attempts do
 
           case client_evaluations
                |> Enum.map(fn %{
-                                attempt_guid: _attempt_guid,
+                                attempt_guid: attempt_guid,
                                 client_evaluation: %ClientEvaluation{
                                   score: score,
                                   out_of: out_of,
                                   feedback: feedback
                                 }
                               } ->
-                 {:ok, {feedback, %Result{score: score, out_of: out_of}}}
+                 {:ok,
+                  %Oli.Delivery.Attempts.FeedbackActionResult{
+                    type: "FeedbackActionResult",
+                    attempt_guid: attempt_guid,
+                    feedback: feedback,
+                    score: score,
+                    out_of: out_of
+                  }}
                end)
                |> (fn evaluations -> {:ok, evaluations} end).()
                |> persist_evaluations(part_inputs, roll_up_fn)

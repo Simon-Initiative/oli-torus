@@ -26,7 +26,7 @@ defmodule OliWeb.AttemptController do
     case Attempts.submit_part_evaluations(section.slug, activity_attempt_guid, [
            %{attempt_guid: attempt_guid, input: input}
          ]) do
-      {:ok, evaluations} -> json(conn, %{"type" => "success", "evaluations" => evaluations})
+      {:ok, evaluations} -> json(conn, %{"type" => "success", "actions" => evaluations})
       {:error, _} -> error(conn, 500, "server error")
     end
   end
@@ -78,8 +78,11 @@ defmodule OliWeb.AttemptController do
       end)
 
     case Attempts.submit_part_evaluations(section.slug, activity_attempt_guid, parsed) do
-      {:ok, evaluations} -> json(conn, %{"type" => "success", "evaluations" => evaluations})
-      {:error, _} -> error(conn, 500, "server error")
+      {:ok, evaluations} ->
+        json(conn, %{"type" => "success", "actions" => evaluations})
+
+      {:error, _} ->
+        error(conn, 500, "server error")
     end
   end
 
@@ -115,7 +118,7 @@ defmodule OliWeb.AttemptController do
            activity_attempt_guid,
            client_evaluations
          ) do
-      {:ok, evaluations} -> json(conn, %{"type" => "success", "evaluations" => evaluations})
+      {:ok, evaluations} -> json(conn, %{"type" => "success", "actions" => evaluations})
       {:error, _} -> error(conn, 500, "server error")
     end
   end
