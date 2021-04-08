@@ -6,13 +6,6 @@ defmodule Oli.Help.Providers.FreshdeskHelp do
 
   require Logger
 
-  @headers [
-    {"Content-type", "application/json"},
-    {"Accept", "application/json"},
-    {"Authorization",
-     "Basic " <> Base.encode64(System.get_env("FRESHDESK_API_KEY", "examplekey"))}
-  ]
-
   @impl Oli.Help.Dispatcher
   def dispatch(%HelpContent{} = contents) do
     url = System.get_env("FRESHDESK_API_URL", "example.edu")
@@ -27,7 +20,14 @@ defmodule Oli.Help.Providers.FreshdeskHelp do
         status: 2
       })
 
-    case http().post(url, body, @headers) do
+    headers = [
+      {"Content-type", "application/json"},
+      {"Accept", "application/json"},
+      {"Authorization",
+        "Basic " <> Base.encode64(System.get_env("FRESHDESK_API_KEY", "examplekey"))}
+    ]
+
+    case http().post(url, body, headers) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, body}
 
