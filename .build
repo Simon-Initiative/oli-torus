@@ -95,6 +95,9 @@ Oli.Delivery.Sections.html
 Oli.Delivery.Student.Summary.html
 Oli.Delivery.html
 Oli.Email.html
+Oli.Features.Feature.html
+Oli.Features.FeatureState.html
+Oli.Features.html
 Oli.Grading.GradebookRow.html
 Oli.Grading.GradebookScore.html
 Oli.Grading.html
@@ -233,6 +236,7 @@ OliWeb.Endpoint.html
 OliWeb.ErrorHelpers.html
 OliWeb.ErrorView.html
 OliWeb.FallbackController.html
+OliWeb.Features.FeaturesLive.html
 OliWeb.Gettext.html
 OliWeb.Grades.Export.html
 OliWeb.Grades.GradeSync.html
@@ -344,8 +348,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-70fe3ea8ae.js
-dist/sidebar_items-05ef41e547.js
+dist/search_items-cae180adc3.js
+dist/sidebar_items-b2c5f48168.js
 index.html
 license.html
 readme.html
