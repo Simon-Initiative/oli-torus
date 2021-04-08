@@ -5,7 +5,6 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'              # production release tags vX.Y.Z
       - 'v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+'     # release candidate tags vX.Y.Z-rc1
-      - deploy-test                          # manually trigger build and deploy to test
 
 jobs:
   deploy-release:
@@ -22,26 +21,12 @@ jobs:
           echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
           echo "::set-output name=deploy_host::$(if [[ ${{ github.event.ref }} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]] ; then echo proton.oli.cmu.edu ; else echo tokamak.oli.cmu.edu ; fi)"
 
-      - name: 📦💽 Package
-        uses: ./.github/actions/phoenix-builder
-        with:
-          build-sha: ${{ steps.info.outputs.sha_short }}
-
-      - name: 🗜️🚢 Zip it & ship it
-        run: |
-          zip -r oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip _build/prod/rel/oli
-          mkdir ~/.ssh
-          echo "${{ secrets.SIMON_BOT_PRIVATE_KEY}}" > ~/.ssh/simon-bot
-          chmod 600 ~/.ssh/simon-bot
-          sftp -i ~/.ssh/simon-bot -o StrictHostKeyChecking=no simon-bot@${{ steps.info.outputs.deploy_host }}  <<< $'cd /torus\n put oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip'
-
       - name: 🚢💰 Deploy using SSH
         uses: fifsky/ssh-action@master
         with:
           command: |
             cd /torus
             sh deploy.sh ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }}
-            # sh deploy.sh ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }} ${{ secrets.ACCESS_TOKEN }}
           host: ${{ steps.info.outputs.deploy_host }}
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
