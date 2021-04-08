@@ -2,7 +2,8 @@ import { Actions } from 'components/activities/check_all_that_apply/actions';
 import * as ContentModel from 'data/content/model';
 import produce from 'immer';
 import { CheckAllThatApplyModelSchema } from 'components/activities/check_all_that_apply/schema'
-import { createMatchRule, createRuleForIds, defaultCATAModel, getChoiceIds, getCorrectResponse,
+import {
+  createMatchRule, createRuleForIds, defaultCATAModel, getChoiceIds, getCorrectResponse,
   getHints,
   getIncorrectResponse, getResponseId, getResponses, getTargetedResponses,
   invertRule, unionRules,
@@ -42,7 +43,7 @@ function testResponse(text: string, rule: string, score: number = 0) {
 
 const testDefaultModel = defaultCATAModel;
 
-describe('check all that apply question', () => {
+describe('check all that apply question functionality', () => {
   const model = testDefaultModel();
 
   it('can switch from simple to targeted feedback mode', () => {

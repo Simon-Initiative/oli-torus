@@ -10,7 +10,7 @@ import {
 import { MultipleChoiceModelSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
-import { Maybe, writer } from 'tsmonad';
+import { Maybe } from 'tsmonad';
 import { Stem } from '../common/DisplayedStem';
 import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
@@ -158,7 +158,7 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
     <div className="text-info font-italic">
       {correctnessIcon}
       <span>Points: </span><span>{attemptState.score + ' out of '
-    + attemptState.outOf}</span></div>] : null;
+        + attemptState.outOf}</span></div>] : null;
 
   return (
     <div className={`activity multiple-choice-activity ${isEvaluated ? 'evaluated' : ''}`}>

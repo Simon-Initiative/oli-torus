@@ -12,6 +12,7 @@ import { Stem } from '../common/DisplayedStem';
 import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/Evaluation';
+import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 
 type Evaluation = {
   score: number,
@@ -161,6 +162,17 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
     <Hints key="hints" onClick={onRequestHint} hints={hints}
       hasMoreHints={hasMoreHints} isEvaluated={isEvaluated} context={writerContext} />];
 
+  const gradedDetails = props.graded && props.progressState === 'in_review' ? [
+    evaluationSummary] : null;
+
+  const correctnessIcon = attemptState.score === 0 ? <IconIncorrect /> : <IconCorrect />;
+
+  const gradedPoints = props.graded && props.progressState === 'in_review' ? [
+    <div className="text-info font-italic">
+      {correctnessIcon}
+      <span>Points: </span><span>{attemptState.score + ' out of '
+        + attemptState.outOf}</span></div>] : null;
+
   const maybeSubmitButton = props.graded
     ? null
     : (
@@ -175,11 +187,13 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
       <div className="activity-content">
         <div>
           <Stem stem={stem} context={writerContext} />
+          {gradedPoints}
           <Choices choices={choices} selected={selected}
             onSelect={onSelect} isEvaluated={isEvaluated} context={writerContext} />
           {maybeSubmitButton}
         </div>
         {ungradedDetails}
+        {gradedDetails}
       </div>
       {reset}
     </div>
