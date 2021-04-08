@@ -32,9 +32,9 @@ jobs:
 
       - name: 🗜️ Zip it
         run: |
-          zip -r oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip _build/prod/rel/oli
-          mkdir oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}
-          mv oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}
+          mkdir oli-torus-releases
+          cd _build/prod/rel/oli
+          zip -r ../../../../oli-torus-releases/oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip *
 
       - name: ⬆️💽 Upload release to S3 archive
         uses: jakejarvis/s3-sync-action@master
@@ -45,7 +45,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.SIMON_BOT_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.SIMON_BOT_AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: 'us-east-2'
-          SOURCE_DIR: 'oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}'
+          SOURCE_DIR: 'oli-torus-releases'
 
       # - name: 🚢💰 Deploy to test using SSH
       #   uses: fifsky/ssh-action@master
