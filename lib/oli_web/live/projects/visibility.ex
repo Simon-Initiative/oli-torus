@@ -49,7 +49,7 @@ defmodule OliWeb.Projects.VisibilityLive do
                 </div>
                 <div class="form-group">
                   <%= radio_button :visibility, :option, "selected", class: "form-check-input", checked: if  @project.visibility == :selected, do: true, else: false %>
-                  <%= label :visibility_option, "Only the selected list of users or institutions below", class: "form-check-label" %>
+                  <%= label :visibility_option, "Only the list of selected users or institutions below", class: "form-check-label" %>
                 </div>
               </form>
             </div>

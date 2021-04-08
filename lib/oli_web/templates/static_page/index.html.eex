@@ -1,6 +1,6 @@
 
 <section class="my-5" style="text-align: center">
-  <%= if author_signed_in?(@conn) do %>
+    <%= if author_signed_in?(@conn) do %>
     <h1><%= gettext "Welcome back %{name}!", name: @conn.assigns.current_author.name %></h1>
 
   <% else %>

@@ -78,5 +78,7 @@
     </script>
 
     <script>hljs.initHighlightingOnLoad();</script>
+
+    <%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>
   </body>
 </html>

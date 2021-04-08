@@ -40,7 +40,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> LtiSession.put_user_params(cache_keys.student)
         |> get(Routes.delivery_path(conn, :index))
 
-      assert html_response(conn, 302) =~ "redirected"
+      assert html_response(conn, 200) =~ "Online Consent Form"
     end
 
     test "handles instructor with no section or linked account", %{
@@ -80,7 +80,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> LtiSession.put_user_params(cache_keys.instructor)
         |> get(Routes.delivery_path(conn, :index))
 
-      assert html_response(conn, 302) =~ "redirect"
+      assert html_response(conn, 200) =~ "Online Consent Form"
     end
 
     test "handles instructor create section", %{
