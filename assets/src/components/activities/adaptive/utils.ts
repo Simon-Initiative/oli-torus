@@ -4,7 +4,7 @@ import { AdaptiveModelSchema } from './schema';
 import { RichText, Operation, ScoringStrategy } from '../types';
 
 
-export const defaultMCModel: () => AdaptiveModelSchema = () => {
+export const defaultModel: () => AdaptiveModelSchema = () => {
 
   return {
     content: {},

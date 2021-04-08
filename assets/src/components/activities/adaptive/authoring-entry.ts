@@ -21,11 +21,11 @@ export { AdaptiveAuthoring } from './AdaptiveAuthoring';
 import { Manifest, CreationContext } from '../types';
 import { registerCreationFunc } from '../creation';
 import { AdaptiveModelSchema } from './schema';
-import { defaultMCModel } from './utils';
+import { defaultModel } from './utils';
 const manifest: Manifest = require('./manifest.json');
 
 function createFn(content: CreationContext): Promise<AdaptiveModelSchema> {
-  return Promise.resolve(Object.assign({}, defaultMCModel()));
+  return Promise.resolve(Object.assign({}, defaultModel()));
 }
 
 registerCreationFunc(manifest, createFn);
