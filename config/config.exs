@@ -63,7 +63,7 @@ config :oli, :recaptcha,
   secret: System.get_env("RECAPTCHA_PRIVATE_KEY")
 
 # Configure help
-config :oli, :help, dispatcher: Oli.Help.Providers.EmailHelp
+config :oli, :help, dispatcher: Oli.Help.Providers.FreshdeskHelp
 
 config :lti_1p3,
   provider: Lti_1p3.DataProviders.EctoProvider,
