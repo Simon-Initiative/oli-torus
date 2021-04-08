@@ -1,0 +1,19 @@
+{
+  "id": "oli_adaptive",
+  "friendlyName": "Adaptive Activity",
+  "description": "Adaptive Activity",
+  "delivery": {
+    "element": "oli-adaptive-delivery",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "oli-adaptive-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "schemaPruning": {
+    "type": "keys",
+    "keys": [
+      "feedback"
+    ]
+  }
+}
