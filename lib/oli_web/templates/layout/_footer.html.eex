@@ -2,9 +2,9 @@
   <div class="container">
     <div class="row">
       <div class="col-sm text-left">
+        <a href='javascript:;' onclick="cookiePreferences();">Cookie Preferences</a>
       </div>
       <div class="col-sm text-center">
-        <a href='javascript:;' onclick="cookiePreferences();">Cookie Preferences</a>
       </div>
       <div class="col-sm text-right">
         Version <%= Application.fetch_env!(:oli, :build).version %> (<%= Application.fetch_env!(:oli, :build).sha |> String.upcase %>) <%= Timex.format!(Application.fetch_env!(:oli, :build).date, "%m/%d/%Y", :strftime) %>

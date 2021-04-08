@@ -1,5 +1,14 @@
 @import 'bootstrap';
 
+body {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+
+  // padding for footer
+  padding-bottom: 40px;
+}
+
 nav .nav-item a.user {
   color: inherit;
   display: flex;
@@ -85,4 +94,5 @@ main.container {
   @include clearfix;
   padding-right: 0;
   padding-left: 0;
+  display: block;
 }
