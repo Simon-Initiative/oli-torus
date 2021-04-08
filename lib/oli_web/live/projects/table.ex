@@ -29,6 +29,7 @@ defmodule OliWeb.Projects.Table do
       </thead>
       <tbody>
         <%= for project <- @projects do %>
+          <tr>
           <td><a href="<%= Routes.project_path(OliWeb.Endpoint, :overview, project) %>"><%= project.title %></td>
           <td><%= time_ago(assigns, project.inserted_at) %></td>
           <td>

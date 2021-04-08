@@ -17,6 +17,8 @@ const populateEntries = () => {
     components: ['./src/components.tsx'],
     resourceeditor: ['./src/components/resource/ResourceEditorApp.tsx'],
     activityeditor: ['./src/components/activity/ActivityEditorApp.tsx'],
+    authoring: ['./src/apps/AuthoringApp.tsx'],
+    delivery: ['./src/apps/DeliveryApp.tsx'],
   };
 
   const manifests = glob.sync("./src/components/activities/*/manifest.json", {});

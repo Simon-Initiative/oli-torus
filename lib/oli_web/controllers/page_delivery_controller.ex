@@ -40,6 +40,30 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp render_page(
+         %PageContext{summary: summary, page: %{content: %{"advancedDelivery" => true}}} =
+           context,
+         conn,
+         section_slug,
+         _
+       ) do
+
+    conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
+    user = conn.assigns.current_user
+
+    render(conn, "delivery.html", %{
+      summary: summary,
+      scripts: Activities.get_activity_scripts(),
+      section_slug: section_slug,
+      title: context.page.title,
+      resource_id: context.page.resource_id,
+      slug: context.page.slug,
+      previous_page: context.previous_page,
+      next_page: context.next_page,
+      user_id: user.id
+    })
+  end
+
+  defp render_page(
          %PageContext{
            summary: summary,
            progress_state: :not_started,
@@ -50,9 +74,10 @@ defmodule OliWeb.PageDeliveryController do
          section_slug,
          _
        ) do
+    
     # Only consider graded attempts
     resource_attempts = Enum.filter(resource_attempts, fn a -> a.revision.graded == true end)
-
+   
     attempts_taken = length(resource_attempts)
 
     # The call to "max" here accounts for the possibility that a publication could reduce the

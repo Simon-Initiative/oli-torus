@@ -14,6 +14,7 @@ alias Oli.Seeder
 alias Oli.Utils
 alias Oli.Snapshots.SnapshotSeeder
 alias Oli.Authoring.Collaborators
+alias Oli.Features
 
 # create system roles
 if !Oli.Repo.get_by(Oli.Accounts.SystemRole, id: 1) do
@@ -59,6 +60,9 @@ if !Oli.Repo.get_by(Oli.Authoring.Authors.ProjectRole, id: 1) do
     type: "contributor"
   })
 end
+
+# create feature flag states
+Features.bootstrap_feature_states()
 
 # create resource types
 existing_rts =

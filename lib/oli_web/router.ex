@@ -440,6 +440,7 @@ defmodule OliWeb.Router do
   scope "/admin", OliWeb do
     pipe_through [:browser, :authoring_protected, :workspace, :authoring, :admin]
     live "/accounts", Accounts.AccountsLive, session: {__MODULE__, :with_session, []}
+    live "/features", Features.FeaturesLive
 
     resources "/institutions", InstitutionController do
       resources "/registrations", RegistrationController, except: [:index, :show] do
