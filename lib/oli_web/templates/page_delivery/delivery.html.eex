@@ -8,10 +8,10 @@
 <script>
 
   const params = {
-    resourceId: <%= @context.resource_id %>,
-    sectionSlug: "<%= @context.section_slug %>",
-    userId: <%= @context.user_id %>,
-    pageSlug: "<%= @context.slug %>"
+    resourceId: <%= @resource_id %>,
+    sectionSlug: "<%= @section_slug %>",
+    userId: <%= @user_id %>,
+    pageSlug: "<%= @slug %>"
   };
 
   window.oliMountApplication(document.getElementById('delivery_container'), params);
