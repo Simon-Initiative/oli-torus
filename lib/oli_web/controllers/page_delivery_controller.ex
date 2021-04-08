@@ -72,10 +72,15 @@ defmodule OliWeb.PageDeliveryController do
 
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
 
+    resource_attempts = Enum.filter(resource_attempts, fn r -> r.date_evaluated != nil end)
+    |> Enum.sort(fn r1, r2 ->
+      r1.date_evaluated <= r2.date_evaluated
+    end)
+
     render(conn, "prologue.html", %{
       section_slug: section_slug,
       scripts: Activities.get_activity_scripts(),
-      resource_attempts: Enum.filter(resource_attempts, fn r -> r.date_evaluated != nil end),
+      resource_attempts: resource_attempts,
       summary: summary,
       previous_page: context.previous_page,
       next_page: context.next_page,
