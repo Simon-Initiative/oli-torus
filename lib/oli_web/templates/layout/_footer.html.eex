@@ -1,3 +1,5 @@
+<%= render OliWeb.SharedView, "_cookie_consent.html" %>
+
 <footer>
   <div class="container">
     <div class="row">
