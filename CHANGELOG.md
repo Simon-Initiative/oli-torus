@@ -5,16 +5,17 @@
 ### Enhancements
   - Add multi-project support to Revision History tool
   - Add Open and Free section support
+  - Feature flag support
 
 ### Bug fixes
- - Fix analytics / insights to not show parent course analytics after duplication
- - Remove help link in preview mode
- - Fix security vulnerability
- - Account for ingested pages that have missing objectives
- - Fix check all that apply + ordering activity submission in published projects
- - Fix issue where long lines in code blocks in activities overflow
- - Change how ids are determined in ingestion to avoid problems with unicode characters
- - Scope lock messages to a specific project
+  - Fix analytics / insights to not show parent course analytics after duplication
+  - Remove help link in preview mode
+  - Fix security vulnerability
+  - Account for ingested pages that have missing objectives
+  - Fix check all that apply + ordering activity submission in published projects
+  - Fix issue where long lines in code blocks in activities overflow
+  - Change how ids are determined in ingestion to avoid problems with unicode characters
+  - Scope lock messages to a specific project
 
 ## 0.7.2 (2021-3-30)
 
