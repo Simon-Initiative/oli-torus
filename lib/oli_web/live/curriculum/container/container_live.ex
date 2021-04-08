@@ -36,7 +36,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
       # Routing to missing container
       container_slug && is_nil(AuthoringResolver.from_revision_slug(project_slug, container_slug)) ->
-        {:ok, redirect(socket, to: Routes.resource_path(socket, :edit, project_slug, container_slug))}
+        {:ok,
+         redirect(socket, to: Routes.resource_path(socket, :edit, project_slug, container_slug))}
 
       # Implicitly routing to root container or explicitly routing to sub-container
       true ->
@@ -60,6 +61,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
            children: children,
            active: :curriculum,
            breadcrumbs: Breadcrumb.trail_to(project_slug, container.slug),
+           adaptivity_flag: Oli.Features.enabled?("adaptivity"),
            rollup: rollup,
            container: container,
            project: project,
@@ -296,7 +298,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     {:noreply,
      assign(socket,
-       numberings: Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
+       numberings:
+         Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
      )}
   end
 
@@ -394,7 +397,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     {:ok, rollup} = Rollup.new(children, socket.assigns.project.slug)
 
-    numberings = Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
+    numberings =
+      Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
 
     selected =
       case socket.assigns.selected do
@@ -458,7 +462,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   def handle_info(
         {:lock_acquired, publication_id, resource_id, author_id},
-        %{assigns: %{resources_being_edited: resources_being_edited, project: %{id: project_id}}} = socket
+        %{assigns: %{resources_being_edited: resources_being_edited, project: %{id: project_id}}} =
+          socket
       ) do
     # Check to see if the lock_acquired message is intended for this specific project/publication's resource.
     # This check could be optimized by crafting a more specific message that embeds the publication_id, but then the
@@ -478,7 +483,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   def handle_info(
         {:lock_released, publication_id, resource_id},
-        %{assigns: %{resources_being_edited: resources_being_edited, project: %{id: project_id}}} = socket
+        %{assigns: %{resources_being_edited: resources_being_edited, project: %{id: project_id}}} =
+          socket
       ) do
     if Publishing.get_unpublished_publication_id!(project_id) == publication_id do
       new_resources_being_edited = Map.delete(resources_being_edited, resource_id)
