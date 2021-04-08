@@ -4,10 +4,8 @@ on:
     branches:
       - master
       - hotfix-*          # include hotfix branches
-      # TODO: REMOVE
-      - s3-deployments
     tags:
-      - package           # manually trigger a package build
+      - package           # manually trigger a package build (no deployment)
       - deploy-test       # manually trigger build and deploy to test
 
 jobs:
@@ -49,7 +47,7 @@ jobs:
 
       - name: 🚢💰 Deploy to test using SSH
         uses: fifsky/ssh-action@master
-        if: ${{ (github.ref == 'refs/heads/master' || github.ref == 'refs/tags/deploy-test') && github.ref != 'refs/tags/package' }}
+        if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/tags/deploy-test' }}
         with:
           command: |
             cd /torus
