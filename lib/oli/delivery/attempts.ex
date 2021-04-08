@@ -921,14 +921,14 @@ defmodule Oli.Delivery.Attempts do
   defp persist_single_evaluation({_, {:error, error}}, _), do: {:halt, {:error, error}}
 
   defp persist_single_evaluation(
-         {_, {:ok, %Oli.Delivery.Attempts.NavigationActionResult{} = action_result}},
+         {_, %Oli.Delivery.Attempts.NavigationActionResult{} = action_result},
          {:ok, results}
        ) do
     {:cont, {:ok, results ++ [action_result]}}
   end
 
   defp persist_single_evaluation(
-         {_, {:ok, %Oli.Delivery.Attempts.StateUpdateActionResult{} = action_result}},
+         {_, %Oli.Delivery.Attempts.StateUpdateActionResult{} = action_result},
          {:ok, results}
        ) do
     {:cont, {:ok, results ++ [action_result]}}
@@ -936,12 +936,11 @@ defmodule Oli.Delivery.Attempts do
 
   defp persist_single_evaluation(
          {%{attempt_guid: attempt_guid, input: input},
-          {:ok,
-           %Oli.Delivery.Attempts.FeedbackActionResult{
-             feedback: feedback,
-             score: score,
-             out_of: out_of
-           } = feedback_action}},
+          %Oli.Delivery.Attempts.FeedbackActionResult{
+            feedback: feedback,
+            score: score,
+            out_of: out_of
+          } = feedback_action},
          {:ok, results}
        ) do
     now = DateTime.utc_now()

@@ -1,4 +1,4 @@
-defmodule Oli.Activities.Model.ConditionalOutome do
+defmodule Oli.Activities.Model.ConditionalOutcome do
   defstruct [:id, :rule, :actions]
 
   def parse(%{"id" => id, "rule" => rule, "actions" => actions}) do
@@ -6,7 +6,7 @@ defmodule Oli.Activities.Model.ConditionalOutome do
          |> Oli.Activities.ParseUtils.items_or_errors() do
       {:ok, parsed_actions} ->
         {:ok,
-         %Oli.Activities.Model.ConditionalOutome{
+         %Oli.Activities.Model.ConditionalOutcome{
            id: id,
            rule: rule,
            actions: parsed_actions
