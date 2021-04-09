@@ -348,6 +348,18 @@ defmodule OliWeb.Router do
     put "/activity/:activity_attempt_guid/evaluations", AttemptController, :submit_evaluations
   end
 
+  scope "/api/v1/state", OliWeb do
+    pipe_through [:api, :delivery_protected]
+
+    get "/", ExtrinsicStateController, :read_global
+    put "/", ExtrinsicStateController, :upsert_global
+    delete "/", ExtrinsicStateController, :delete_global
+
+    get "/course/:section_slug", ExtrinsicStateController, :read_section
+    put "/course/:section_slug", ExtrinsicStateController, :upsert_section
+    delete "/course/:section_slug", ExtrinsicStateController, :delete_section
+  end
+
   scope "/api/v1/lti", OliWeb, as: :api do
     pipe_through [:api, :authoring_protected]
 
@@ -423,7 +435,7 @@ defmodule OliWeb.Router do
     post "/link_account", DeliveryController, :process_link_account_user
     get "/create_and_link_account", DeliveryController, :create_and_link_account
     post "/create_and_link_account", DeliveryController, :process_create_and_link_account_user
-    post "/research_consent",  DeliveryController, :research_consent
+    post "/research_consent", DeliveryController, :research_consent
 
     post "/", DeliveryController, :create_section
   end

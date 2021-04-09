@@ -26,6 +26,7 @@ defmodule Oli.Accounts.User do
     field :phone_number_verified, :boolean
     field :address, :string
     field :research_opt_out, :boolean
+    field :state, :map
 
     # A user may optionally be linked to an author account
     belongs_to :author, Oli.Accounts.Author
@@ -63,7 +64,8 @@ defmodule Oli.Accounts.User do
       :phone_number_verified,
       :address,
       :author_id,
-      :research_opt_out
+      :research_opt_out,
+      :state
     ])
     |> validate_required([:sub])
     |> maybe_name_from_given_and_family()
