@@ -41,6 +41,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   preview: boolean;
   progressState: string;
   sectionSlug?: string;
+  userId: string;
 
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
   onSubmitActivity: (attemptGuid: string,
@@ -137,6 +138,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     const preview = valueOr(JSON.parse(this.getAttribute('preview') as any), false);
     const progressState = this.getAttribute('progress_state') as any;
     const sectionSlug = valueOr(this.getAttribute('section_slug'), undefined);
+    const userId = this.getAttribute('user_id') as any;
 
     this.progressState = progressState;
 
@@ -155,6 +157,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       onSubmitActivity: this.onSubmitActivity,
       onResetActivity: this.onResetActivity,
       onSubmitEvaluations: this.onSubmitEvaluations,
+      userId,
     };
   }
 

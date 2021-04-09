@@ -14,7 +14,8 @@ defmodule Oli.Rendering.Activity.Html do
           activity_map: activity_map,
           render_opts: render_opts,
           preview: preview,
-          progress_state: progress_state
+          progress_state: progress_state,
+          user: user
         } = context,
         %{"activity_id" => activity_id, "purpose" => purpose} = activity
       ) do
@@ -49,7 +50,7 @@ defmodule Oli.Rendering.Activity.Html do
         activity_html = [
           "<#{tag} class=\"activity-container\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{
             model_json
-          }\" preview=\"#{preview}\" progress_state=\"#{progress_state}\" section_slug=\"#{
+          }\" preview=\"#{preview}\" user_id=\"#{user.sub}\" progress_state=\"#{progress_state}\" section_slug=\"#{
             section_slug
           }\"></#{tag}>\n"
         ]

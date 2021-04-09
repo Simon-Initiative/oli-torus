@@ -9,7 +9,7 @@ defmodule OliWeb.Endpoint do
     secure: true
   ]
 
-  socket "/socket", OliWeb.UserSocket,
+  socket "/v1/api/state", OliWeb.UserSocket,
     websocket: true,
     longpoll: false
 

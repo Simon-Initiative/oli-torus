@@ -3,6 +3,8 @@ defmodule Oli.Delivery.ExtrinsicState do
 
   alias Oli.Accounts
 
+  alias Phoenix.PubSub
+
   def read_section(user_id, section_slug, keys \\ nil) do
     {:ok, %{}}
   end
@@ -25,8 +27,12 @@ defmodule Oli.Delivery.ExtrinsicState do
 
       user ->
         case Accounts.update_user(user, %{state: Map.merge(user.state, key_values)}) do
-          {:ok, u} -> {:ok, u.state}
-          e -> e
+          {:ok, u} ->
+            notify_global(user_id, u.state, key_values)
+            {:ok, u.state}
+
+          e ->
+            e
         end
     end
   end
@@ -70,5 +76,13 @@ defmodule Oli.Delivery.ExtrinsicState do
         Map.put(m, k, Map.get(state, k))
       end
     end)
+  end
+
+  defp notify_global(user_id, state, delta) do
+    PubSub.broadcast(
+      Oli.PubSub,
+      "global:" <> user_id,
+      {:delta, delta}
+    )
   end
 end

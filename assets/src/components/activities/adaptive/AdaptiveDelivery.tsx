@@ -1,39 +1,40 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import {
   DeliveryElement,
   DeliveryElementProps,
 } from '../DeliveryElement';
 import { AdaptiveModelSchema } from './schema';
+
+import { useGlobalState } from 'components/hooks/global';
 import * as ActivityTypes from '../types';
 import * as Extrinsic from 'data/persistence/extrinsic';
 
 const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
-  const [initialized, setInitialized] = useState(false);
-  const [data, setData] = useState({});
+  const [active, setActive] = useState(true);
+  const [handle, setHandle] = useState(null as any);
 
-  useEffect(() => {
-    if (!initialized) {
-      Extrinsic.read_global()
-        .then(result => {
-          setData(result);
-        })
-      setInitialized(true);
-    }
-  }, [initialized]);
+  const data = useGlobalState(props.userId, active);
 
   const scalar = () => {
-    Extrinsic.upsert_global({ test: 'hello', again: 'no' })
-      .then(r => Extrinsic.read_global())
-      .then(r => setData(r));
+    Extrinsic.upsert_global({ test: 'hello', again: 'no' });
   }
 
   const nested = () => {
-    Extrinsic.upsert_global({ apple: { orange: 1 }, banana: ['no', 'yes'] })
-      .then(r => Extrinsic.read_global())
-      .then(r => setData(r));
+    Extrinsic.upsert_global({ apple: { orange: 1 }, banana: ['no', 'yes'] });
   }
+
+  const timer = () => {
+    if (handle !== null) {
+      clearInterval(handle);
+      setHandle(null);
+    } else {
+      setHandle(setInterval(() => Extrinsic.upsert_global({ randomValue: Math.random() }), 500));
+    }
+  }
+
+  const toggle = () => setActive(!active);
 
   return (
     <div>
@@ -47,8 +48,16 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         </code>
       </pre>
 
-      <button onClick={scalar} className="btn btn-primary">Set Scalar</button>
-      <button onClick={nested} className="btn btn-primary">Set Nested</button>
+
+      <div className="form-check">
+        <input className="form-check-input" type="checkbox" value="" checked={active} onChange={toggle} />
+        <label className="form-check-label">
+          Subscribe To Global State
+        </label>
+      </div>
+      <button onClick={scalar} className="btn btn-primary btn-sm mr-2">Set Scalars</button>
+      <button onClick={nested} className="btn btn-primary btn-sm mr-2">Set Nested</button>
+      <button onClick={timer} className={`btn ${handle === null ? 'btn-primary' : 'btn-danger'} btn-sm`}>{handle === null ? 'Run Timer' : 'Stop Timer'}</button>
 
     </div>
   )

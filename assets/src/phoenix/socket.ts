@@ -9,8 +9,6 @@
 
 import { Socket } from 'phoenix';
 
-const socket = new Socket('/socket', { params: { token: (window as any).userToken } });
-
 // When you connect, you'll often need to authenticate the client.
 // For example, imagine you have an authentication plug, `MyAuth`,
 // which authenticates the session and assigns a `:current_user`.
@@ -53,12 +51,12 @@ const socket = new Socket('/socket', { params: { token: (window as any).userToke
 //     end
 //
 // Finally, connect to the socket:
-socket.connect();
 
-// Now that you are connected, you can join channels with a topic:
-// let channel = socket.channel("topic:subtopic", {})
-// channel.join()
-//  .receive("ok", resp => { console.log("Joined successfully", resp) })
-//  .receive("error", resp => { console.log("Unable to join", resp) })
 
-export default socket;
+export function initSocket() {
+
+  const socket = new Socket('/v1/api/state', { params: { token: (window as any).userToken } });
+  socket.connect();
+
+  return socket;
+}
