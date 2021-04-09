@@ -5,7 +5,7 @@ defmodule Oli.Delivery.Sections.Enrollment do
   schema "enrollments" do
     belongs_to :user, Oli.Accounts.User
     belongs_to :section, Oli.Delivery.Sections.Section
-    field :state, :map
+    field :state, :map, default: %{}
 
     many_to_many :context_roles, Lti_1p3.DataProviders.EctoProvider.ContextRole,
       join_through: "enrollments_context_roles",

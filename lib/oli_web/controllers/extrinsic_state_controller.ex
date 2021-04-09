@@ -24,7 +24,7 @@ defmodule OliWeb.ExtrinsicStateController do
     end
   end
 
-  def upsert_global(conn, %{"key_values" => key_values}) do
+  def upsert_global(conn, key_values) do
     user = conn.assigns.current_user
 
     case ExtrinsicState.upsert_global(user.sub, key_values) do

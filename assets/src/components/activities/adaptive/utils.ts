@@ -26,9 +26,7 @@ export const defaultModel: () => AdaptiveModelSchema = () => {
           fromText(''),
         ],
       }],
-      transformations: [
-        { id: guid(), path: 'choices', operation: Operation.shuffle },
-      ],
+      transformations: [],
       previewText: '',
     },
   };

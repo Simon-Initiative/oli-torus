@@ -6,3 +6,4 @@ export type ActivitySlug = string;
 export type ActivityTypeSlug = string;
 export type ElementId = number;
 export type UserEmail = string;
+export type SectionSlug = string;
