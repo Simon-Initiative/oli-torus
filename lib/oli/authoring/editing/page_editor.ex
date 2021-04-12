@@ -404,7 +404,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
         end
       end
 
-      {:ok, Map.put(update, "content", %{"model" => Enum.map(content, convert)})}
+      {:ok, put_in(update, ["content", "model"], Enum.map(content, convert))}
     else
       {:error, :not_found}
     end

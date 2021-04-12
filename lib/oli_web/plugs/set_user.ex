@@ -12,6 +12,7 @@ defmodule Oli.Plugs.SetCurrentUser do
     conn
     |> set_author
     |> set_user
+    |> set_user_token
   end
 
   def set_author(conn) do
@@ -43,6 +44,17 @@ defmodule Oli.Plugs.SetCurrentUser do
       end
     else
       conn
+    end
+  end
+
+  defp set_user_token(conn) do
+    case conn.assigns[:current_user] do
+      nil ->
+        conn
+
+      user ->
+        token = Phoenix.Token.sign(conn, "user socket", user.sub)
+        assign(conn, :user_token, token)
     end
   end
 end

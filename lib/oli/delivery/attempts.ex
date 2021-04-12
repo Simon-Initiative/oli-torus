@@ -626,6 +626,8 @@ defmodule Oli.Delivery.Attempts do
       # on activity attempt records is preloaded.
 
       {:ok, {Map.put(activity_attempt, :revision, revision), part_attempts}}
+    else
+      e -> IO.inspect(e)
     end
   end
 

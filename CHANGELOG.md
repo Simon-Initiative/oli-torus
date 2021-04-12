@@ -7,6 +7,7 @@
   - Add Open and Free section support
   - Feature flag support
   - Add research and cookie consent support
+  - Extrinsic user state endpoints
 
 ### Bug fixes
   - Fix analytics / insights to not show parent course analytics after duplication
@@ -17,7 +18,7 @@
   - Fix issue where long lines in code blocks in activities overflow
   - Change how ids are determined in ingestion to avoid problems with unicode characters
   - Scope lock messages to a specific project
-  - (Developer) Auto format Elixir code 
+  - (Developer) Auto format Elixir code
   - Fix attempts sort order
 
 ## 0.7.2 (2021-3-30)

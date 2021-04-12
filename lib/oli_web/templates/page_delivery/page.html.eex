@@ -3,6 +3,10 @@
  (Review)
 <% end %></h1>
 
+<script>
+window.userToken = "<%= assigns[:user_token] %>";
+</script>
+
 <%= render "_objectives.html", objectives: @objectives %>
 
 <%= if @progress_state == :in_review do %>
