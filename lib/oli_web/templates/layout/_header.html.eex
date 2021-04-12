@@ -1,5 +1,3 @@
-<%= render OliWeb.SharedView, "_cookie_consent.html" %>
-
 <nav class="navbar navbar-expand">
   <div class="container">
     <a class="navbar-brand oli-logo mr-auto" href="<%= Routes.static_page_path(@conn, :index) %>">
