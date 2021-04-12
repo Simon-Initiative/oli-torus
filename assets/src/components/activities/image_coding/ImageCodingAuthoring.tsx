@@ -118,35 +118,32 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
     return model.resourceURLs.some(url => url.endsWith('csv'));
   };
 
-
   const solutionParameters = () => {
-    if (usesImage()) {
-      return (
-        <div>
-          <Heading title="Solution Code" id="solution-code" />
-          <textarea
-            rows={5}
-            cols={80}
-            className="form-control"
-            value={model.solutionCode}
-            onChange={(e: any) => dispatch(ICActions.editSolutionCode(e.target.value))} />
-          <br/>
-          <p>Tolerance:&nbsp;
-            <input type="number" value={model.tolerance}
-                  onChange={(e: any) => dispatch(ICActions.editTolerance(e.target.value))}/>
-            &nbsp;(Average per-pixel error allowed.)
-          </p>
-        </div>
-      );
-    }
-
-    // else non-image problem evaluated by regex match to text output
     return (
-      <p><br/>Regex:&nbsp;
-        <input type="text" value={model.regex}
-              onChange={(e: any) => dispatch(ICActions.editRegex(e.target.value))}/>
-        &nbsp;Pattern for correct text output
-      </p>
+      <div>
+        <Heading title="Solution" id="solution-code" />
+
+        <p>Image problems: Solution Code {!usesImage() ? '-- add image to enable' : ''}</p>
+        <textarea
+          disabled={!usesImage()}
+          rows={5}
+          cols={80}
+          className="form-control"
+          value={model.solutionCode}
+          onChange={(e: any) => dispatch(ICActions.editSolutionCode(e.target.value))} />
+        <br/>
+        <p>Tolerance:&nbsp;
+          <input type="number" value={model.tolerance}  disabled={!usesImage()}
+                onChange={(e: any) => dispatch(ICActions.editTolerance(e.target.value))}/>
+          &nbsp;(Average per-pixel error allowed.)
+        </p>
+
+        <p>Text output problems:<br/>Regex:&nbsp;
+          <input type="text" value={model.regex} disabled={usesImage()}
+                onChange={(e: any) => dispatch(ICActions.editRegex(e.target.value))}/>
+          &nbsp;Pattern for correct text output
+        </p>
+      </div>
     );
   };
 
