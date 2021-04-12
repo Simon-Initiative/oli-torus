@@ -74,6 +74,10 @@
               {
                 "type": "text",
                 "text": "are used a lot, but what do they mean? In this section, we look at those two worlds, which you use every day."
+              },
+              {
+                "type": "a",
+                "idref": "u-analog_and_digital-m-contents_analog_and_digital-p-contents_analog_and_digital"
               }
             ],
             "id": "fde4b83671d84cedb41b94fdc5de578a"
