@@ -9,7 +9,7 @@ export type ExtrinsicDelete = {
   result: 'success',
 };
 
-export function read_global(keys: string[] | null = null) {
+export function readGlobal(keys: string[] | null = null) {
 
   const params = {
     method: 'GET',
@@ -19,7 +19,7 @@ export function read_global(keys: string[] | null = null) {
   return makeRequest<ExtrinsicRead>(params);
 }
 
-export function delete_global(keys: string[]) {
+export function deleteGlobal(keys: string[]) {
 
   const params = {
     method: 'DELETE',
@@ -29,7 +29,7 @@ export function delete_global(keys: string[]) {
   return makeRequest<ExtrinsicRead>(params);
 }
 
-export function upsert_global(keyValues: Object) {
+export function upsertGlobal(keyValues: Object) {
 
   const params = {
     method: 'PUT',
@@ -41,7 +41,7 @@ export function upsert_global(keyValues: Object) {
 }
 
 
-export function read_section(slug: SectionSlug, keys: string[] | null = null) {
+export function readSection(slug: SectionSlug, keys: string[] | null = null) {
 
   const params = {
     method: 'GET',
@@ -51,7 +51,7 @@ export function read_section(slug: SectionSlug, keys: string[] | null = null) {
   return makeRequest<ExtrinsicRead>(params);
 }
 
-export function delete_section(slug: SectionSlug, keys: string[]) {
+export function deleteSection(slug: SectionSlug, keys: string[]) {
 
   const params = {
     method: 'DELETE',
@@ -61,7 +61,7 @@ export function delete_section(slug: SectionSlug, keys: string[]) {
   return makeRequest<ExtrinsicRead>(params);
 }
 
-export function upsert_section(slug: SectionSlug, keyValues: Object) {
+export function upsertSection(slug: SectionSlug, keyValues: Object) {
 
   const params = {
     method: 'PUT',

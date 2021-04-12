@@ -21,11 +21,11 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   const data = useGlobalState(props.userId, active);
 
   const scalar = () => {
-    Extrinsic.upsert_global({ scalar: randomInt() });
+    Extrinsic.upsertGlobal({ scalar: randomInt() });
   };
 
   const nested = () => {
-    Extrinsic.upsert_global({ nested: { multiple: { levels: randomInt() } } });
+    Extrinsic.upsertGlobal({ nested: { multiple: { levels: randomInt() } } });
   };
 
   const save = () => {
@@ -42,7 +42,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       clearInterval(handle);
       setHandle(null);
     } else {
-      setHandle(setInterval(() => Extrinsic.upsert_global({ randomValue: randomInt() }), 100));
+      setHandle(setInterval(() => Extrinsic.upsertGlobal({ randomValue: randomInt() }), 100));
     }
   };
 
