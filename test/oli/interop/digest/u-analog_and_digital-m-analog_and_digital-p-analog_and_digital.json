@@ -77,7 +77,13 @@
               },
               {
                 "type": "a",
-                "idref": "u-analog_and_digital-m-contents_analog_and_digital-p-contents_analog_and_digital"
+                "idref": "u-analog_and_digital-m-contents_analog_and_digital-p-contents_analog_and_digital",
+                "children": [
+                  {
+                    "type": "text",
+                    "text": "the link text"
+                  }
+                ]
               }
             ],
             "id": "fde4b83671d84cedb41b94fdc5de578a"
