@@ -41,7 +41,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   preview: boolean;
   progressState: string;
   sectionSlug?: string;
-  userId: string;
+  userId: number;
 
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
   onSubmitActivity: (attemptGuid: string,

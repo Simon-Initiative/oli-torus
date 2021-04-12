@@ -50,7 +50,7 @@ defmodule Oli.Rendering.Activity.Html do
         activity_html = [
           "<#{tag} class=\"activity-container\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{
             model_json
-          }\" preview=\"#{preview}\" user_id=\"#{user.sub}\" progress_state=\"#{progress_state}\" section_slug=\"#{
+          }\" preview=\"#{preview}\" user_id=\"#{user.id}\" progress_state=\"#{progress_state}\" section_slug=\"#{
             section_slug
           }\"></#{tag}>\n"
         ]

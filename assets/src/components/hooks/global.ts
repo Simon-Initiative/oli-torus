@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { initSocket } from '../../phoenix/socket';
 
-export function useGlobalState(user: string, active: boolean) {
+export function useGlobalState(userId: number, active: boolean) {
 
   const [init, setInit] = useState(false);
   const [channel, setChannel] = useState(null as any);
@@ -29,7 +29,7 @@ export function useGlobalState(user: string, active: boolean) {
   useEffect(() => {
 
     if (!init) {
-      const c = initSocket().channel('global:' + user, {});
+      const c = initSocket().channel('global:' + userId, {});
 
       setInit(true);
       setChannel(c);

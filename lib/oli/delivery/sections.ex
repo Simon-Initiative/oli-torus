@@ -79,15 +79,13 @@ defmodule Oli.Delivery.Sections do
     Repo.all(query)
   end
 
-  def get_enrollment(section_slug, user_sub) do
+  def get_enrollment(section_slug, user_id) do
     query =
       from(
         e in Enrollment,
         join: s in Section,
         on: e.section_id == s.id,
-        join: u in User,
-        on: e.user_id == u.id,
-        where: u.sub == ^user_sub and s.slug == ^section_slug,
+        where: e.user_id == ^user_id and s.slug == ^section_slug,
         select: e
       )
 
