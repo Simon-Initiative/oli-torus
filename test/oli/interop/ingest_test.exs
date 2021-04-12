@@ -67,6 +67,22 @@ defmodule Oli.Interop.IngestTest do
       # verify that every practice page has a content attribute with a model
       assert Enum.all?(practice_pages, fn p -> Map.has_key?(p.content, "model") end)
 
+      # verify that the page that had a link to another page had that link rewired correctly
+      src = Enum.filter(practice_pages, fn p -> p.title == "Analog and Digital Page" end) |> hd
+
+      dest =
+        Enum.filter(practice_pages, fn p -> p.title == "Contents: Analog and Digital Page" end)
+        |> hd
+
+      link =
+        Enum.at(src.content["model"], 0)
+        |> Map.get("children")
+        |> Enum.at(1)
+        |> Map.get("children")
+        |> Enum.at(5)
+
+      assert link["href"] == "/course/link/#{dest.slug}"
+
       # spot check some elements to ensure that they were correctly constructed:
 
       # check an internal hierarchy node, one that contains references to only
