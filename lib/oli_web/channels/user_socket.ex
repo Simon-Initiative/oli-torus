@@ -23,7 +23,7 @@ defmodule OliWeb.UserSocket do
       {:ok, user_id} ->
         {:ok, assign(socket, :user, user_id)}
 
-      {:error, reason} ->
+      {:error, _} ->
         :error
     end
   end
