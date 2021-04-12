@@ -159,6 +159,7 @@ defmodule Oli.Delivery.Attempts do
         all_hints =
           part.hints
           |> Oli.Activities.ParseUtils.remove_empty()
+          |> IO.inspect()
 
         if length(all_hints) > length(shown_hints) do
           hint = Enum.at(all_hints, length(shown_hints))

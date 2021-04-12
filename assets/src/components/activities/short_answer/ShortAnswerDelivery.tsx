@@ -65,7 +65,6 @@ const Input = (props: InputProps) => {
 };
 
 const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
-
   const [model, setModel] = useState(props.model);
   const [attemptState, setAttemptState] = useState(props.state);
   const [hints, setHints] = useState(props.state.parts[0].hints);
@@ -145,7 +144,7 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
     <div className="text-info font-italic">
       {correctnessIcon}
       <span>Points: </span><span>{attemptState.score + ' out of '
-    + attemptState.outOf}</span></div>] : null;
+        + attemptState.outOf}</span></div>] : null;
 
   const maybeSubmitButton = props.graded
     ? null
