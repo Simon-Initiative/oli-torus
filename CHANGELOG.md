@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Bug fixes
+  - Support page-to-page links during course ingestion
+
 ## 0.8.0 (2021-4-12)
 
 ### Enhancements
@@ -21,6 +26,7 @@
   - (Developer) Auto format Elixir code
   - Fix attempts sort order
   - Fix feedback in live preview and page preview
+  - Image coding activity: clarify author solution entry UI
 
 ## 0.7.2 (2021-3-30)
 
