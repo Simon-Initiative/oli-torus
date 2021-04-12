@@ -2,8 +2,6 @@ defmodule Oli.Activities.Model.ConditionalOutcome do
   defstruct [:id, :rule, :actions]
 
   def parse(%{"id" => id, "rule" => rule, "actions" => actions}) do
-    IO.inspect(actions)
-
     case Enum.map(actions, &parse_action/1)
          |> Oli.Activities.ParseUtils.items_or_errors() do
       {:ok, parsed_actions} ->
