@@ -25,6 +25,7 @@ defmodule Oli.Accounts.User do
     field :phone_number, :string
     field :phone_number_verified, :boolean
     field :address, :string
+    field :guest, :boolean
     field :research_opt_out, :boolean
     field :state, :map, default: %{}
 
@@ -64,6 +65,7 @@ defmodule Oli.Accounts.User do
       :phone_number_verified,
       :address,
       :author_id,
+      :guest,
       :research_opt_out,
       :state
     ])
