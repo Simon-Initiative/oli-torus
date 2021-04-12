@@ -5,9 +5,9 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.23.0">
-    <meta name="project" content="OLI Torus v0.7.2">
+    <meta name="project" content="OLI Torus v0.8.0">
 
-    <title>Oli.Activities — OLI Torus v0.7.2</title>
+    <title>Oli.Activities — OLI Torus v0.8.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
     <script src="dist/sidebar_items-879912c70e.js"></script>
@@ -50,7 +50,7 @@
 OLI Torus
       </a>
       <strong class="sidebar-projectVersion">
-        v0.7.2
+        v0.8.0
       </strong>
     </div>
 
@@ -78,7 +78,7 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Activities <small class="app-vsn">(OLI Torus v0.7.2)</small>
+Oli.Activities <small class="app-vsn">(OLI Torus v0.8.0)</small>
 
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
@@ -294,8 +294,8 @@ Functions
   <a href="#change_registration/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_registration</span><span class="p" data-group-id="9316204863-1">(</span><span class="n">registration</span><span class="p" data-group-id="9316204863-1">)</span><span class="w">
-</span><span class="p" data-group-id="9316204863-2">%</span><span class="nc" data-group-id="9316204863-2">Ecto.Changeset</span><span class="p" data-group-id="9316204863-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="9316204863-3">%</span><span class="nc" data-group-id="9316204863-3">ActivityRegistration</span><span class="p" data-group-id="9316204863-3">{</span><span class="p" data-group-id="9316204863-3">}</span><span class="p" data-group-id="9316204863-2">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_registration</span><span class="p" data-group-id="4156489665-1">(</span><span class="n">registration</span><span class="p" data-group-id="4156489665-1">)</span><span class="w">
+</span><span class="p" data-group-id="4156489665-2">%</span><span class="nc" data-group-id="4156489665-2">Ecto.Changeset</span><span class="p" data-group-id="4156489665-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4156489665-3">%</span><span class="nc" data-group-id="4156489665-3">ActivityRegistration</span><span class="p" data-group-id="4156489665-3">{</span><span class="p" data-group-id="4156489665-3">}</span><span class="p" data-group-id="4156489665-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_registered_activity_map/0">
@@ -361,8 +361,8 @@ Functions
   <a href="#create_registered_activity_map/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_registered_activity_map</span><span class="p" data-group-id="1377199891-1">(</span><span class="n">philosophy</span><span class="p" data-group-id="1377199891-1">)</span><span class="w">
-</span><span class="p" data-group-id="1377199891-2">[</span><span class="p" data-group-id="1377199891-3">%</span><span class="nc" data-group-id="1377199891-3">ActivityMapEntry</span><span class="p" data-group-id="1377199891-3">{</span><span class="p" data-group-id="1377199891-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="1377199891-2">]</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_registered_activity_map</span><span class="p" data-group-id="8863649281-1">(</span><span class="n">philosophy</span><span class="p" data-group-id="8863649281-1">)</span><span class="w">
+</span><span class="p" data-group-id="8863649281-2">[</span><span class="p" data-group-id="8863649281-3">%</span><span class="nc" data-group-id="8863649281-3">ActivityMapEntry</span><span class="p" data-group-id="8863649281-3">{</span><span class="p" data-group-id="8863649281-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="8863649281-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_registration/1">
@@ -390,11 +390,11 @@ Functions
   <a href="#create_registration/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_registration</span><span class="p" data-group-id="9940258956-1">(</span><span class="p" data-group-id="9940258956-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="9940258956-2">}</span><span class="p" data-group-id="9940258956-1">)</span><span class="w">
-</span><span class="p" data-group-id="9940258956-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9940258956-4">%</span><span class="nc" data-group-id="9940258956-4">ActivityRegistration</span><span class="p" data-group-id="9940258956-4">{</span><span class="p" data-group-id="9940258956-4">}</span><span class="p" data-group-id="9940258956-3">}</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_registration</span><span class="p" data-group-id="6411760206-1">(</span><span class="p" data-group-id="6411760206-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="6411760206-2">}</span><span class="p" data-group-id="6411760206-1">)</span><span class="w">
+</span><span class="p" data-group-id="6411760206-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6411760206-4">%</span><span class="nc" data-group-id="6411760206-4">ActivityRegistration</span><span class="p" data-group-id="6411760206-4">{</span><span class="p" data-group-id="6411760206-4">}</span><span class="p" data-group-id="6411760206-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_registration</span><span class="p" data-group-id="9940258956-5">(</span><span class="p" data-group-id="9940258956-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9940258956-6">}</span><span class="p" data-group-id="9940258956-5">)</span><span class="w">
-</span><span class="p" data-group-id="9940258956-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9940258956-8">%</span><span class="nc" data-group-id="9940258956-8">Ecto.Changeset</span><span class="p" data-group-id="9940258956-8">{</span><span class="p" data-group-id="9940258956-8">}</span><span class="p" data-group-id="9940258956-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_registration</span><span class="p" data-group-id="6411760206-5">(</span><span class="p" data-group-id="6411760206-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="6411760206-6">}</span><span class="p" data-group-id="6411760206-5">)</span><span class="w">
+</span><span class="p" data-group-id="6411760206-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6411760206-8">%</span><span class="nc" data-group-id="6411760206-8">Ecto.Changeset</span><span class="p" data-group-id="6411760206-8">{</span><span class="p" data-group-id="6411760206-8">}</span><span class="p" data-group-id="6411760206-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_registration/1">
@@ -420,11 +420,11 @@ Functions
   <a href="#delete_registration/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_registration</span><span class="p" data-group-id="5008220448-1">(</span><span class="n">registration</span><span class="p" data-group-id="5008220448-1">)</span><span class="w">
-</span><span class="p" data-group-id="5008220448-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5008220448-3">%</span><span class="nc" data-group-id="5008220448-3">ActivityRegistration</span><span class="p" data-group-id="5008220448-3">{</span><span class="p" data-group-id="5008220448-3">}</span><span class="p" data-group-id="5008220448-2">}</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_registration</span><span class="p" data-group-id="2860448954-1">(</span><span class="n">registration</span><span class="p" data-group-id="2860448954-1">)</span><span class="w">
+</span><span class="p" data-group-id="2860448954-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2860448954-3">%</span><span class="nc" data-group-id="2860448954-3">ActivityRegistration</span><span class="p" data-group-id="2860448954-3">{</span><span class="p" data-group-id="2860448954-3">}</span><span class="p" data-group-id="2860448954-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_registration</span><span class="p" data-group-id="5008220448-4">(</span><span class="n">registration</span><span class="p" data-group-id="5008220448-4">)</span><span class="w">
-</span><span class="p" data-group-id="5008220448-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5008220448-6">%</span><span class="nc" data-group-id="5008220448-6">Ecto.Changeset</span><span class="p" data-group-id="5008220448-6">{</span><span class="p" data-group-id="5008220448-6">}</span><span class="p" data-group-id="5008220448-5">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_registration</span><span class="p" data-group-id="2860448954-4">(</span><span class="n">registration</span><span class="p" data-group-id="2860448954-4">)</span><span class="w">
+</span><span class="p" data-group-id="2860448954-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2860448954-6">%</span><span class="nc" data-group-id="2860448954-6">Ecto.Changeset</span><span class="p" data-group-id="2860448954-6">{</span><span class="p" data-group-id="2860448954-6">}</span><span class="p" data-group-id="2860448954-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="disable_activity_in_project/2">
@@ -538,10 +538,10 @@ Functions
   <a href="#get_registration!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_registration!</span><span class="p" data-group-id="2364856096-1">(</span><span class="mi">123</span><span class="p" data-group-id="2364856096-1">)</span><span class="w">
-</span><span class="p" data-group-id="2364856096-2">%</span><span class="nc" data-group-id="2364856096-2">ActivityRegistration</span><span class="p" data-group-id="2364856096-2">{</span><span class="p" data-group-id="2364856096-2">}</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_registration!</span><span class="p" data-group-id="5019942956-1">(</span><span class="mi">123</span><span class="p" data-group-id="5019942956-1">)</span><span class="w">
+</span><span class="p" data-group-id="5019942956-2">%</span><span class="nc" data-group-id="5019942956-2">ActivityRegistration</span><span class="p" data-group-id="5019942956-2">{</span><span class="p" data-group-id="5019942956-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_registration!</span><span class="p" data-group-id="2364856096-3">(</span><span class="mi">456</span><span class="p" data-group-id="2364856096-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_registration!</span><span class="p" data-group-id="5019942956-3">(</span><span class="mi">456</span><span class="p" data-group-id="5019942956-3">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -590,8 +590,8 @@ Functions
   <a href="#list_activity_registrations/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_activity_registrations</span><span class="p" data-group-id="6941333992-1">(</span><span class="p" data-group-id="6941333992-1">)</span><span class="w">
-</span><span class="p" data-group-id="6941333992-2">[</span><span class="p" data-group-id="6941333992-3">%</span><span class="nc" data-group-id="6941333992-3">ActivityRegistration</span><span class="p" data-group-id="6941333992-3">{</span><span class="p" data-group-id="6941333992-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="6941333992-2">]</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_activity_registrations</span><span class="p" data-group-id="3214661639-1">(</span><span class="p" data-group-id="3214661639-1">)</span><span class="w">
+</span><span class="p" data-group-id="3214661639-2">[</span><span class="p" data-group-id="3214661639-3">%</span><span class="nc" data-group-id="3214661639-3">ActivityRegistration</span><span class="p" data-group-id="3214661639-3">{</span><span class="p" data-group-id="3214661639-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="3214661639-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="register_activity/1">
@@ -661,11 +661,11 @@ Functions
   <a href="#update_registration/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_registration</span><span class="p" data-group-id="5341025225-1">(</span><span class="n">registration</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5341025225-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="5341025225-2">}</span><span class="p" data-group-id="5341025225-1">)</span><span class="w">
-</span><span class="p" data-group-id="5341025225-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5341025225-4">%</span><span class="nc" data-group-id="5341025225-4">ActivityRegistration</span><span class="p" data-group-id="5341025225-4">{</span><span class="p" data-group-id="5341025225-4">}</span><span class="p" data-group-id="5341025225-3">}</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_registration</span><span class="p" data-group-id="2869494507-1">(</span><span class="n">registration</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2869494507-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="2869494507-2">}</span><span class="p" data-group-id="2869494507-1">)</span><span class="w">
+</span><span class="p" data-group-id="2869494507-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2869494507-4">%</span><span class="nc" data-group-id="2869494507-4">ActivityRegistration</span><span class="p" data-group-id="2869494507-4">{</span><span class="p" data-group-id="2869494507-4">}</span><span class="p" data-group-id="2869494507-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_registration</span><span class="p" data-group-id="5341025225-5">(</span><span class="n">registration</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5341025225-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="5341025225-6">}</span><span class="p" data-group-id="5341025225-5">)</span><span class="w">
-</span><span class="p" data-group-id="5341025225-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5341025225-8">%</span><span class="nc" data-group-id="5341025225-8">Ecto.Changeset</span><span class="p" data-group-id="5341025225-8">{</span><span class="p" data-group-id="5341025225-8">}</span><span class="p" data-group-id="5341025225-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_registration</span><span class="p" data-group-id="2869494507-5">(</span><span class="n">registration</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2869494507-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="2869494507-6">}</span><span class="p" data-group-id="2869494507-5">)</span><span class="w">
+</span><span class="p" data-group-id="2869494507-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2869494507-8">%</span><span class="nc" data-group-id="2869494507-8">Ecto.Changeset</span><span class="p" data-group-id="2869494507-8">{</span><span class="p" data-group-id="2869494507-8">}</span><span class="p" data-group-id="2869494507-7">}</span></code></pre>
   </section>
 </section>
 
