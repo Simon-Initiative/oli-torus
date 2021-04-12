@@ -165,8 +165,8 @@ defmodule Oli.Interop.Ingest do
     {changed, children}
   end
 
-  defp rewire(%{"type" => "a", "idref" => idref}, link_builder) do
-    {true, %{"type" => "a", "href" => link_builder.(idref)}}
+  defp rewire(%{"type" => "a", "idref" => idref, "children" => children}, link_builder) do
+    {true, %{"type" => "a", "children" => children, "href" => link_builder.(idref)}}
   end
 
   defp rewire(%{"model" => model} = item, link_builder) do
