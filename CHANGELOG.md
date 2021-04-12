@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.0 (2021-4-12)
 
 ### Enhancements
   - Add multi-project support to Revision History tool
@@ -17,7 +17,7 @@
   - Fix issue where long lines in code blocks in activities overflow
   - Change how ids are determined in ingestion to avoid problems with unicode characters
   - Scope lock messages to a specific project
-  - (Developer) Auto format Elixir code 
+  - (Developer) Auto format Elixir code
   - Fix attempts sort order
 
 ## 0.7.2 (2021-3-30)
