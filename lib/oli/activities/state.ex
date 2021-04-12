@@ -8,12 +8,7 @@ defmodule Oli.Activities.State do
   returning those in a map of activity ids to the state.
   """
   def from_attempts(latest_attempts) do
-    IO.inspect("HERE")
-    IO.inspect(latest_attempts)
-
     Enum.map(latest_attempts, fn {id, {activity_attempt, part_attempts}} ->
-      IO.inspect(activity_attempt)
-
       {:ok, model} = Map.get(activity_attempt, :transformed_model) |> Model.parse()
 
       {id, ActivityState.from_attempt(activity_attempt, Map.values(part_attempts), model)}

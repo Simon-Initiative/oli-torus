@@ -32,7 +32,11 @@ defmodule OliWeb.ExtrinsicStateControllerTest do
       conn = again(conn, user)
 
       conn =
-        put(conn, Routes.extrinsic_state_path(conn, :upsert_global), %{"one" => "1", "two" => 2})
+        put(conn, Routes.extrinsic_state_path(conn, :upsert_global), %{
+          "one" => "1",
+          "two" => 2,
+          "three" => 3
+        })
 
       assert _ = json_response(conn, 200)
 
@@ -40,13 +44,19 @@ defmodule OliWeb.ExtrinsicStateControllerTest do
       conn = get(conn, Routes.extrinsic_state_path(conn, :read_global))
 
       assert keys = json_response(conn, 200)
-      assert length(Map.keys(keys)) == 2
+      assert length(Map.keys(keys)) == 3
 
       assert Map.get(keys, "one") == "1"
       assert Map.get(keys, "two") == 2
+      assert Map.get(keys, "three") == 3
 
       conn = again(conn, user)
-      conn = delete(conn, Routes.extrinsic_state_path(conn, :delete_global) <> "?keys[]=two")
+
+      conn =
+        delete(
+          conn,
+          Routes.extrinsic_state_path(conn, :delete_global) <> "?keys[]=two&keys[]=three"
+        )
 
       assert _ = json_response(conn, 200)
 
@@ -57,7 +67,6 @@ defmodule OliWeb.ExtrinsicStateControllerTest do
       assert length(Map.keys(keys)) == 1
 
       assert Map.get(keys, "one") == "1"
-      assert Map.get(keys, "two") == nil
     end
   end
 
@@ -85,7 +94,8 @@ defmodule OliWeb.ExtrinsicStateControllerTest do
           Routes.extrinsic_state_path(conn, :upsert_section, section.slug),
           %{
             "one" => "1",
-            "two" => 2
+            "two" => 2,
+            "three" => 3
           }
         )
 
@@ -96,17 +106,19 @@ defmodule OliWeb.ExtrinsicStateControllerTest do
       conn = get(conn, Routes.extrinsic_state_path(conn, :read_section, section.slug))
 
       assert keys = json_response(conn, 200)
-      assert length(Map.keys(keys)) == 2
+      assert length(Map.keys(keys)) == 3
 
       assert Map.get(keys, "one") == "1"
       assert Map.get(keys, "two") == 2
+      assert Map.get(keys, "three") == 3
 
       conn = again(conn, user)
 
       conn =
         delete(
           conn,
-          Routes.extrinsic_state_path(conn, :delete_section, section.slug) <> "?keys[]=two"
+          Routes.extrinsic_state_path(conn, :delete_section, section.slug) <>
+            "?keys[]=two&keys[]=three"
         )
 
       assert _ = json_response(conn, 200)
@@ -118,7 +130,74 @@ defmodule OliWeb.ExtrinsicStateControllerTest do
       assert length(Map.keys(keys)) == 1
 
       assert Map.get(keys, "one") == "1"
-      assert Map.get(keys, "two") == nil
+    end
+
+    test "not found when not enrolled in section", %{
+      conn: conn,
+      section: section
+    } do
+      conn = get(conn, Routes.extrinsic_state_path(conn, :read_section, section.slug))
+      assert response(conn, 404)
+    end
+
+    test "section storage is unique to each user", %{
+      conn: conn,
+      section: section,
+      user: user,
+      user2: user2
+    } do
+      {:ok, _enrollment} =
+        Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, _enrollment} =
+        Sections.enroll(user2.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        put(
+          conn,
+          Routes.extrinsic_state_path(conn, :upsert_section, section.slug),
+          %{
+            "one" => "1",
+            "two" => 2,
+            "three" => 3
+          }
+        )
+
+      assert _ = json_response(conn, 200)
+
+      conn = again(conn, user)
+
+      conn = get(conn, Routes.extrinsic_state_path(conn, :read_section, section.slug))
+
+      assert keys = json_response(conn, 200)
+      assert length(Map.keys(keys)) == 3
+
+      conn = again(conn, user2)
+
+      conn =
+        put(
+          conn,
+          Routes.extrinsic_state_path(conn, :upsert_section, section.slug),
+          %{
+            "user2" => "2"
+          }
+        )
+
+      assert _ = json_response(conn, 200)
+
+      conn = again(conn, user2)
+
+      conn = get(conn, Routes.extrinsic_state_path(conn, :read_section, section.slug))
+
+      assert keys = json_response(conn, 200)
+      assert length(Map.keys(keys)) == 1
+
+      conn = again(conn, user)
+
+      conn = get(conn, Routes.extrinsic_state_path(conn, :read_section, section.slug))
+
+      assert keys = json_response(conn, 200)
+      assert length(Map.keys(keys)) == 3
     end
   end
 

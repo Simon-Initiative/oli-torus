@@ -27,8 +27,11 @@ defmodule Oli.Delivery.ExtrinsicState do
   """
   def read_section(user_id, section_slug, keys \\ nil) do
     case Sections.get_enrollment(section_slug, user_id) do
-      nil -> {:error, {:not_found}}
-      e -> {:ok, filter_keys(e.state, keys)}
+      nil ->
+        {:error, {:not_found}}
+
+      e ->
+        {:ok, filter_keys(e.state, keys)}
     end
   end
 
@@ -103,7 +106,7 @@ defmodule Oli.Delivery.ExtrinsicState do
       user ->
         case Accounts.update_user(user, %{state: delete_keys(user.state, keys)}) do
           {:ok, u} ->
-            notify_global(user_id, :deletion, keys)
+            notify_global(user_id, :deletion, MapSet.to_list(keys))
             {:ok, u.state}
 
           e ->
@@ -126,7 +129,7 @@ defmodule Oli.Delivery.ExtrinsicState do
       e ->
         case Sections.update_enrollment(e, %{state: delete_keys(e.state, keys)}) do
           {:ok, u} ->
-            notify_section(user_id, section_slug, :deletion, keys)
+            notify_section(user_id, section_slug, :deletion, MapSet.to_list(keys))
             {:ok, u.state}
 
           e ->
@@ -162,7 +165,7 @@ defmodule Oli.Delivery.ExtrinsicState do
   defp notify_global(user_id, action, payload) do
     PubSub.broadcast(
       Oli.PubSub,
-      "global:" <> Integer.to_string(user_id),
+      "user_global_state:" <> Integer.to_string(user_id),
       {action, payload}
     )
   end
@@ -170,7 +173,7 @@ defmodule Oli.Delivery.ExtrinsicState do
   defp notify_section(user_id, section_slug, action, payload) do
     PubSub.broadcast(
       Oli.PubSub,
-      "section:" <> section_slug <> ":" <> Integer.to_string(user_id),
+      "user_section_state:" <> section_slug <> ":" <> Integer.to_string(user_id),
       {action, payload}
     )
   end

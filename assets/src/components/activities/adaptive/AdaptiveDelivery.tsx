@@ -22,19 +22,20 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
   const scalar = () => {
     Extrinsic.upsert_global({ scalar: randomInt() });
-  }
+  };
 
   const nested = () => {
     Extrinsic.upsert_global({ nested: { multiple: { levels: randomInt() } } });
-  }
+  };
 
   const save = () => {
     const local = randomInt();
-    props.onSaveActivity(props.state.attemptGuid, [{ attemptGuid: props.state.parts[0].attemptGuid, response: { input: { local } } }])
-      .then(result => {
+    props.onSaveActivity(props.state.attemptGuid,
+      [{ attemptGuid: props.state.parts[0].attemptGuid, response: { input: { local } } }])
+      .then((result: any) => {
         setLocal({ input: { local } });
       });
-  }
+  };
 
   const timer = () => {
     if (handle !== null) {
@@ -43,7 +44,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     } else {
       setHandle(setInterval(() => Extrinsic.upsert_global({ randomValue: randomInt() }), 100));
     }
-  }
+  };
 
   const toggle = () => setActive(!active);
 
@@ -62,14 +63,18 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         </pre>
 
         <div className="form-check">
-          <input className="form-check-input" type="checkbox" value="" checked={active} onChange={toggle} />
+          <input className="form-check-input" type="checkbox" value=""
+            checked={active} onChange={toggle} />
           <label className="form-check-label">
             Subscribe To Global State
           </label>
         </div>
         <button onClick={scalar} className="btn btn-primary btn-sm mr-2">Set Scalars</button>
         <button onClick={nested} className="btn btn-primary btn-sm mr-2">Set Nested</button>
-        <button onClick={timer} className={`btn ${handle === null ? 'btn-primary' : 'btn-danger'} btn-sm`}>{handle === null ? 'Run Timer' : 'Stop Timer'}</button>
+        <button onClick={timer} className={`btn ${handle === null
+          ? 'btn-primary' : 'btn-danger'} btn-sm`}>
+          {handle === null ? 'Run Timer' : 'Stop Timer'}
+        </button>
       </div>
 
       <h5>Attempt State</h5>
@@ -86,7 +91,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       </div>
 
     </div>
-  )
+  );
 };
 
 // Defines the web component, a simple wrapper over our React component above
