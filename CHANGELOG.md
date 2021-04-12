@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Bug fixes
+  - Support page-to-page links during course ingestion
+
 ## 0.8.0 (2021-4-12)
 
 ### Enhancements
