@@ -19,6 +19,7 @@
   - Scope lock messages to a specific project
   - (Developer) Auto format Elixir code 
   - Fix attempts sort order
+  - Image coding activity: clarify author solution entry UI
 
 ## 0.7.2 (2021-3-30)
 
