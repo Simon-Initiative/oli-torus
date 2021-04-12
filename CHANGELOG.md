@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.0 (2021-4-12)
 
 ### Enhancements
   - Add multi-project support to Revision History tool
