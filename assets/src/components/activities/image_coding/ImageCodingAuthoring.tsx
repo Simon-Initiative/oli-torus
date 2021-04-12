@@ -119,24 +119,24 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
   };
 
   const solutionParameters = () => {
-      return (
-        <div>
-          <Heading title="Solution" id="solution-code" />
+    return (
+      <div>
+        <Heading title="Solution" id="solution-code" />
 
-          <p>Image problems: Solution Code {!usesImage()? '-- add image to enable' :''}</p>
-          <textarea
-            disabled={!usesImage()}
-            rows={5}
-            cols={80}
-            className="form-control"
-            value={model.solutionCode}
-            onChange={(e: any) => dispatch(ICActions.editSolutionCode(e.target.value))} />
-          <br/>
-          <p>Tolerance:&nbsp;
-            <input type="number" value={model.tolerance}  disabled={!usesImage()}
-                  onChange={(e: any) => dispatch(ICActions.editTolerance(e.target.value))}/>
-            &nbsp;(Average per-pixel error allowed.)
-          </p>
+        <p>Image problems: Solution Code {!usesImage() ? '-- add image to enable' : ''}</p>
+        <textarea
+          disabled={!usesImage()}
+          rows={5}
+          cols={80}
+          className="form-control"
+          value={model.solutionCode}
+          onChange={(e: any) => dispatch(ICActions.editSolutionCode(e.target.value))} />
+        <br/>
+        <p>Tolerance:&nbsp;
+          <input type="number" value={model.tolerance}  disabled={!usesImage()}
+                onChange={(e: any) => dispatch(ICActions.editTolerance(e.target.value))}/>
+          &nbsp;(Average per-pixel error allowed.)
+        </p>
 
         <p>Text output problems:<br/>Regex:&nbsp;
           <input type="text" value={model.regex} disabled={usesImage()}
