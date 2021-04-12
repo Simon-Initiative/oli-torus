@@ -4,7 +4,8 @@ defmodule OliWeb.UserSocket do
   ## Channels
   # channel "room:*", OliWeb.RoomChannel
 
-  channel "global:*", OliWeb.GlobalUserStateChannel
+  channel "user_global_state:*", OliWeb.GlobalUserStateChannel
+  channel "user_section_state:*", OliWeb.SectionUserStateChannel
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After
