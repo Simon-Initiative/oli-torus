@@ -16,15 +16,6 @@ world_universities_and_domains_json =
       "[]"
   end
 
-countries_json =
-  case File.read("./priv/data/countries.json") do
-    {:ok, body} ->
-      body
-
-    _ ->
-      "[]"
-  end
-
 default_sha = if Mix.env() == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 
 config :oli,
@@ -41,8 +32,7 @@ config :oli,
   email_from_name: System.get_env("EMAIL_FROM_NAME", "OLI Torus"),
   email_from_address: System.get_env("EMAIL_FROM_ADDRESS", "admin@example.edu"),
   email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu"),
-  world_universities_and_domains_json: world_universities_and_domains_json,
-  countries_json: countries_json
+  world_universities_and_domains_json: world_universities_and_domains_json
 
 # Configure database
 config :oli, Oli.Repo, migration_timestamps: [type: :timestamptz]
