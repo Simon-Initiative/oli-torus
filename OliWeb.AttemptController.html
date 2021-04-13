@@ -10,7 +10,7 @@
     <title>OliWeb.AttemptController — OLI Torus v0.8.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-879912c70e.js"></script>
+    <script src="dist/sidebar_items-f9093cccfd.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -108,12 +108,16 @@ OliWeb.AttemptController <small class="app-vsn">(OLI Torus v0.8.0)</small>
 
   </div>
 
+    <div class="summary-synopsis"><p>Requests a new hint for a specific part attempt.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#new_activity/2">new_activity(conn, map)</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Creates a new attempt for an activity.</p></div>
 
 </div>
 <div class="summary-row">
@@ -122,12 +126,16 @@ OliWeb.AttemptController <small class="app-vsn">(OLI Torus v0.8.0)</small>
 
   </div>
 
+    <div class="summary-synopsis"><p>Requests a new attempt for a specific part of an activity. NOT IMPLEMENTED.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#save_activity/2">save_activity(conn, map)</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Saves user state for all parts for a specific activity attempt.</p></div>
 
 </div>
 <div class="summary-row">
@@ -136,12 +144,16 @@ OliWeb.AttemptController <small class="app-vsn">(OLI Torus v0.8.0)</small>
 
   </div>
 
+    <div class="summary-synopsis"><p>Saves user state for a specific part attempt.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#submit_activity/2">submit_activity(conn, map)</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Evaluates user state for all parts for a specific activity attempt.</p></div>
 
 </div>
 <div class="summary-row">
@@ -150,12 +162,16 @@ OliWeb.AttemptController <small class="app-vsn">(OLI Torus v0.8.0)</small>
 
   </div>
 
+    <div class="summary-synopsis"><p>Finalizes an activity attempt from the result of an activity driven evaluation.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#submit_part/2">submit_part(conn, map)</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Submit user state for server-side evaluation for a single part.</p></div>
 
 </div>
 
@@ -182,7 +198,7 @@ Functions
     </a>
     <h1 class="signature">get_hint(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L38" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L278" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -192,7 +208,7 @@ Functions
 
   <section class="docstring">
 
-
+<p>Requests a new hint for a specific part attempt.</p>
   </section>
 </section>
 <section class="detail" id="new_activity/2">
@@ -204,7 +220,7 @@ Functions
     </a>
     <h1 class="signature">new_activity(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L126" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L399" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -214,7 +230,7 @@ Functions
 
   <section class="docstring">
 
-
+<p>Creates a new attempt for an activity.</p>
   </section>
 </section>
 <section class="detail" id="new_part/2">
@@ -226,7 +242,7 @@ Functions
     </a>
     <h1 class="signature">new_part(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L34" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L266" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -236,7 +252,7 @@ Functions
 
   <section class="docstring">
 
-
+<p>Requests a new attempt for a specific part of an activity. NOT IMPLEMENTED.</p>
   </section>
 </section>
 <section class="detail" id="save_activity/2">
@@ -248,7 +264,7 @@ Functions
     </a>
     <h1 class="signature">save_activity(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L57" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L306" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -258,7 +274,7 @@ Functions
 
   <section class="docstring">
 
-
+<p>Saves user state for all parts for a specific activity attempt.</p>
   </section>
 </section>
 <section class="detail" id="save_part/2">
@@ -270,7 +286,7 @@ Functions
     </a>
     <h1 class="signature">save_part(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L8" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L220" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -280,7 +296,7 @@ Functions
 
   <section class="docstring">
 
-
+<p>Saves user state for a specific part attempt.</p>
   </section>
 </section>
 <section class="detail" id="submit_activity/2">
@@ -292,7 +308,7 @@ Functions
     </a>
     <h1 class="signature">submit_activity(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L69" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L327" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -302,7 +318,7 @@ Functions
 
   <section class="docstring">
 
-
+<p>Evaluates user state for all parts for a specific activity attempt.</p>
   </section>
 </section>
 <section class="detail" id="submit_evaluations/2">
@@ -314,7 +330,7 @@ Functions
     </a>
     <h1 class="signature">submit_evaluations(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L89" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L356" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -324,7 +340,7 @@ Functions
 
   <section class="docstring">
 
-
+<p>Finalizes an activity attempt from the result of an activity driven evaluation.</p>
   </section>
 </section>
 <section class="detail" id="submit_part/2">
@@ -336,7 +352,7 @@ Functions
     </a>
     <h1 class="signature">submit_part(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L19" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L244" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -346,7 +362,9 @@ Functions
 
   <section class="docstring">
 
-
+<p>Submit user state for server-side evaluation for a single part.</p><p>If this evaluation completes the activity attempt, a rolled up score will be calculdated
+across all parts and captured in the activity attempt, thus finalizing the activity
+attempt.</p>
   </section>
 </section>
 

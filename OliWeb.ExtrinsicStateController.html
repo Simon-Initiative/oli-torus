@@ -10,7 +10,7 @@
     <title>OliWeb.ExtrinsicStateController — OLI Torus v0.8.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-879912c70e.js"></script>
+    <script src="dist/sidebar_items-f9093cccfd.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -112,12 +112,16 @@ OliWeb.ExtrinsicStateController <small class="app-vsn">(OLI Torus v0.8.0)</small
 
   </div>
 
+    <div class="summary-synopsis"><p>Deletes one or more keys from a user's global context.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#delete_section/2">delete_section(conn, params)</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Deletes one or more keys from a section specific context for the user.</p></div>
 
 </div>
 <div class="summary-row">
@@ -126,12 +130,17 @@ OliWeb.ExtrinsicStateController <small class="app-vsn">(OLI Torus v0.8.0)</small
 
   </div>
 
+    <div class="summary-synopsis"><p>Reads state from the user's global context. State exists as key-value pairs. The
+values can be nested JSON structures or simple scalar attributes.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#read_section/2">read_section(conn, params)</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Reads state from the section context for a particular section for this user.</p></div>
 
 </div>
 <div class="summary-row">
@@ -140,12 +149,16 @@ OliWeb.ExtrinsicStateController <small class="app-vsn">(OLI Torus v0.8.0)</small
 
   </div>
 
+    <div class="summary-synopsis"><p>Inserts or updates top-level keys into the user's global context.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#upsert_section/2">upsert_section(conn, map)</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Inserts or updates top-level keys into a section specific context for the user.</p></div>
 
 </div>
 
@@ -172,7 +185,7 @@ Functions
     </a>
     <h1 class="signature">delete_global(conn, params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/extrinsic_state_controller.ex#L39" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/extrinsic_state_controller.ex#L151" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -182,7 +195,8 @@ Functions
 
   <section class="docstring">
 
-
+<p>Deletes one or more keys from a user's global context.</p><p>An example request, showing how to structure the keys parameter to contain the key names
+&quot;one&quot;, &quot;two&quot; and &quot;three&quot;:</p><pre><code class="nohighlight makeup elixir"><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">v1</span><span class="o">/</span><span class="n">state?</span><span class="n">keys</span><span class="p" data-group-id="8902993875-1">[</span><span class="p" data-group-id="8902993875-1">]</span><span class="o">=</span><span class="n">one</span><span class="o">&amp;</span><span class="n">keys</span><span class="p" data-group-id="8902993875-2">[</span><span class="p" data-group-id="8902993875-2">]</span><span class="o">=</span><span class="n">two</span><span class="o">&amp;</span><span class="n">keys</span><span class="o">=</span><span class="n">three</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_section/2">
@@ -194,7 +208,7 @@ Functions
     </a>
     <h1 class="signature">delete_section(conn, params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/extrinsic_state_controller.ex#L87" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/extrinsic_state_controller.ex#L242" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -204,7 +218,8 @@ Functions
 
   <section class="docstring">
 
-
+<p>Deletes one or more keys from a section specific context for the user.</p><p>An example request, showing how to structure the keys parameter to contain the key names
+&quot;one&quot;, &quot;two&quot; and &quot;three&quot;:</p><pre><code class="nohighlight makeup elixir"><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">v1</span><span class="o">/</span><span class="n">state</span><span class="o">/</span><span class="n">course</span><span class="o">/</span><span class="ss">:section_slug</span><span class="sc">?k</span><span class="n">eys</span><span class="p" data-group-id="7185475973-1">[</span><span class="p" data-group-id="7185475973-1">]</span><span class="o">=</span><span class="n">one</span><span class="o">&amp;</span><span class="n">keys</span><span class="p" data-group-id="7185475973-2">[</span><span class="p" data-group-id="7185475973-2">]</span><span class="o">=</span><span class="n">two</span><span class="o">&amp;</span><span class="n">keys</span><span class="o">=</span><span class="n">three</span></code></pre>
   </section>
 </section>
 <section class="detail" id="read_global/2">
@@ -216,7 +231,7 @@ Functions
     </a>
     <h1 class="signature">read_global(conn, params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/extrinsic_state_controller.ex#L9" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/extrinsic_state_controller.ex#L99" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -226,7 +241,10 @@ Functions
 
   <section class="docstring">
 
-
+<p>Reads state from the user's global context. State exists as key-value pairs. The
+values can be nested JSON structures or simple scalar attributes.</p><p>The optional <code class="inline">keys</code> query parameter allows one to read a subset of the top-level
+keys present in this context.  Omitting this parameter returns all top-level keys.</p><p>An example request, showing how to structure the keys parameter to contain the key names
+&quot;one&quot;, &quot;two&quot; and &quot;three&quot;:</p><pre><code class="nohighlight makeup elixir"><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">v1</span><span class="o">/</span><span class="n">state?</span><span class="n">keys</span><span class="p" data-group-id="8020470082-1">[</span><span class="p" data-group-id="8020470082-1">]</span><span class="o">=</span><span class="n">one</span><span class="o">&amp;</span><span class="n">keys</span><span class="p" data-group-id="8020470082-2">[</span><span class="p" data-group-id="8020470082-2">]</span><span class="o">=</span><span class="n">two</span><span class="o">&amp;</span><span class="n">keys</span><span class="o">=</span><span class="n">three</span></code></pre>
   </section>
 </section>
 <section class="detail" id="read_section/2">
@@ -238,7 +256,7 @@ Functions
     </a>
     <h1 class="signature">read_section(conn, params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/extrinsic_state_controller.ex#L57" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/extrinsic_state_controller.ex#L190" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -248,7 +266,10 @@ Functions
 
   <section class="docstring">
 
-
+<p>Reads state from the section context for a particular section for this user.</p><p>State exists as key-value pairs. The
+values can be nested JSON structures or simple scalar attributes.</p><p>The optional <code class="inline">keys</code> query parameter allows one to read a subset of the top-level
+keys present in this context.  Omitting this parameter returns all top-level keys.</p><p>An example request, showing how to structure the keys parameter to contain the key names
+&quot;one&quot;, &quot;two&quot; and &quot;three&quot;:</p><pre><code class="nohighlight makeup elixir"><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">v1</span><span class="o">/</span><span class="n">state</span><span class="o">/</span><span class="n">course</span><span class="o">/</span><span class="ss">:section_slug</span><span class="sc">?k</span><span class="n">eys</span><span class="p" data-group-id="0039492418-1">[</span><span class="p" data-group-id="0039492418-1">]</span><span class="o">=</span><span class="n">one</span><span class="o">&amp;</span><span class="n">keys</span><span class="p" data-group-id="0039492418-2">[</span><span class="p" data-group-id="0039492418-2">]</span><span class="o">=</span><span class="n">two</span><span class="o">&amp;</span><span class="n">keys</span><span class="o">=</span><span class="n">three</span></code></pre>
   </section>
 </section>
 <section class="detail" id="upsert_global/2">
@@ -260,7 +281,7 @@ Functions
     </a>
     <h1 class="signature">upsert_global(conn, key_values)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/extrinsic_state_controller.ex#L27" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/extrinsic_state_controller.ex#L125" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -270,7 +291,7 @@ Functions
 
   <section class="docstring">
 
-
+<p>Inserts or updates top-level keys into the user's global context.</p>
   </section>
 </section>
 <section class="detail" id="upsert_section/2">
@@ -282,7 +303,7 @@ Functions
     </a>
     <h1 class="signature">upsert_section(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/extrinsic_state_controller.ex#L75" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/extrinsic_state_controller.ex#L216" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -292,7 +313,7 @@ Functions
 
   <section class="docstring">
 
-
+<p>Inserts or updates top-level keys into a section specific context for the user.</p>
   </section>
 </section>
 

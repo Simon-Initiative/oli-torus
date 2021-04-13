@@ -209,6 +209,13 @@ OliWeb.ApiSchemas.CreationResponse.html
 OliWeb.ApiSchemas.UpdateResponse.html
 OliWeb.ApiSchemas.html
 OliWeb.ApiSpec.html
+OliWeb.AttemptController.ActivityAttemptBody.html
+OliWeb.AttemptController.ActivityEvaluationBody.html
+OliWeb.AttemptController.EvaluationResponse.html
+OliWeb.AttemptController.HintResponse.html
+OliWeb.AttemptController.NewActivityAttemptResponse.html
+OliWeb.AttemptController.UserStateUpdateBody.html
+OliWeb.AttemptController.UserStateUpdateResponse.html
 OliWeb.AttemptController.html
 OliWeb.Breadcrumb.BreadcrumbLive.html
 OliWeb.Breadcrumb.BreadcrumbTrailLive.html
@@ -243,6 +250,9 @@ OliWeb.EmailView.html
 OliWeb.Endpoint.html
 OliWeb.ErrorHelpers.html
 OliWeb.ErrorView.html
+OliWeb.ExtrinsicStateController.ExtrinsicReadResponse.html
+OliWeb.ExtrinsicStateController.ExtrinsicUpsertBody.html
+OliWeb.ExtrinsicStateController.ExtrinsicUpsertDeleteResponse.html
 OliWeb.ExtrinsicStateController.html
 OliWeb.FallbackController.html
 OliWeb.Features.FeaturesLive.html
@@ -359,8 +369,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-0aaa78272d.js
-dist/sidebar_items-879912c70e.js
+dist/search_items-a5cb32d5cd.js
+dist/sidebar_items-f9093cccfd.js
 index.html
 license.html
 readme.html
