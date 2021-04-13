@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Enhancements
+  - Add OpenAPI docs for user state service
+
 ### Bug fixes
   - Support page-to-page links during course ingestion
 
