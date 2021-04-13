@@ -4,6 +4,7 @@
 
 ### Enhancements
   - Add OpenAPI docs for user state service
+  - Enable OpenAPI docs on all environments at /api/v1/docs
 
 ### Bug fixes
   - Support page-to-page links during course ingestion

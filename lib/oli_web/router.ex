@@ -257,6 +257,12 @@ defmodule OliWeb.Router do
     # live "/:project_id/insights", Insights, session: {__MODULE__, :with_session, []}
   end
 
+  scope "/api/v1/docs" do
+    pipe_through [:browser]
+
+    get "/", OpenApiSpex.Plug.SwaggerUI, path: "/api/v1/openapi"
+  end
+
   scope "/api/v1" do
     pipe_through [:api]
 
@@ -488,12 +494,6 @@ defmodule OliWeb.Router do
       pipe_through [:browser]
 
       get "/uipalette", UIPaletteController, :index
-    end
-
-    scope "/dev" do
-      pipe_through [:browser]
-
-      get "/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/v1/openapi"
     end
 
     scope "/test", OliWeb do
