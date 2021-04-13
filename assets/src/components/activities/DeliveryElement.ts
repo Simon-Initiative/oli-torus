@@ -167,6 +167,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       bubbles: true,
       detail: {
         payload,
+        sectionSlug: this.props().sectionSlug,
         attemptGuid,
         partAttemptGuid,
         continuation,

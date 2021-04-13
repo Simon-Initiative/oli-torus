@@ -1,5 +1,6 @@
 defmodule OliWeb.AttemptController do
   use OliWeb, :controller
+  use OpenApiSpex.Controller
 
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Attempts.StudentInput
@@ -17,13 +18,12 @@ defmodule OliWeb.AttemptController do
   end
 
   def submit_part(conn, %{
+        "section_slug" => section_slug,
         "activity_attempt_guid" => activity_attempt_guid,
         "part_attempt_guid" => attempt_guid,
         "input" => input
       }) do
-    section = Attempts.get_section_by_activity_attempt_guid(activity_attempt_guid)
-
-    case Attempts.submit_part_evaluations(section.slug, activity_attempt_guid, [
+    case Attempts.submit_part_evaluations(section_slug, activity_attempt_guid, [
            %{attempt_guid: attempt_guid, input: input}
          ]) do
       {:ok, evaluations} -> json(conn, %{"type" => "success", "actions" => evaluations})
@@ -67,17 +67,16 @@ defmodule OliWeb.AttemptController do
   end
 
   def submit_activity(conn, %{
+        "section_slug" => section_slug,
         "activity_attempt_guid" => activity_attempt_guid,
         "partInputs" => part_inputs
       }) do
-    section = Attempts.get_section_by_activity_attempt_guid(activity_attempt_guid)
-
     parsed =
       Enum.map(part_inputs, fn %{"attemptGuid" => attempt_guid, "response" => input} ->
         %{attempt_guid: attempt_guid, input: %StudentInput{input: Map.get(input, "input")}}
       end)
 
-    case Attempts.submit_part_evaluations(section.slug, activity_attempt_guid, parsed) do
+    case Attempts.submit_part_evaluations(section_slug, activity_attempt_guid, parsed) do
       {:ok, evaluations} ->
         json(conn, %{"type" => "success", "actions" => evaluations})
 
@@ -87,11 +86,10 @@ defmodule OliWeb.AttemptController do
   end
 
   def submit_evaluations(conn, %{
+        "section_slug" => section_slug,
         "activity_attempt_guid" => activity_attempt_guid,
         "evaluations" => client_evaluations
       }) do
-    section = Attempts.get_section_by_activity_attempt_guid(activity_attempt_guid)
-
     client_evaluations =
       Enum.map(client_evaluations, fn %{
                                         "attemptGuid" => attempt_guid,
@@ -114,7 +112,7 @@ defmodule OliWeb.AttemptController do
       end)
 
     case Attempts.submit_client_evaluations(
-           section.slug,
+           section_slug,
            activity_attempt_guid,
            client_evaluations
          ) do
@@ -123,10 +121,11 @@ defmodule OliWeb.AttemptController do
     end
   end
 
-  def new_activity(conn, %{"activity_attempt_guid" => activity_attempt_guid}) do
-    section = Attempts.get_section_by_activity_attempt_guid(activity_attempt_guid)
-
-    case Attempts.reset_activity(section.slug, activity_attempt_guid) do
+  def new_activity(conn, %{
+        "section_slug" => section_slug,
+        "activity_attempt_guid" => activity_attempt_guid
+      }) do
+    case Attempts.reset_activity(section_slug, activity_attempt_guid) do
       {:ok, {attempt_state, model}} ->
         json(conn, %{"type" => "success", "attemptState" => attempt_state, "model" => model})
 
