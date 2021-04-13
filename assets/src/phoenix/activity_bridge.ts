@@ -132,25 +132,19 @@ export const initPreviewActivityBridge = (elementId: string) => {
     Persistence.evaluate(props.model, partInputs)
     .then((result: Persistence.Evaluated) => {
 
-      const evaluations = result.evaluations
-        .map((evaluation : any) => {
-          // handle any errors
-          if (evaluation.error) {
-            console.error('Evaluation error: ' + evaluation.error);
-            return;
-          }
-
+      const actions = result.evaluations
+        .map((e: any) => {
           return {
-            type: 'EvaluatedPart',
-            error: evaluation.error,
-            attempt_guid: evaluation.part_id,
-            out_of: evaluation.result.out_of,
-            score: evaluation.result.score,
-            feedback: evaluation.feedback,
+            type: 'FeedbackAction',
+            error: e.error,
+            attempt_guid: e.part_id,
+            out_of: e.result.out_of,
+            score: e.result.score,
+            feedback: e.feedback,
           };
         });
 
-      continuation({ type: 'success', evaluations }, undefined);
+      continuation({ type: 'success', actions }, undefined);
     });
   }
 
