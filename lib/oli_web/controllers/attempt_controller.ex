@@ -7,7 +7,7 @@ defmodule OliWeb.AttemptController do
   alias Oli.Delivery.Attempts.ClientEvaluation
   alias OpenApiSpex.Schema
 
-  @moduledoc tags: ["User State Service"]
+  @moduledoc tags: ["User State Service: Intrinsic State"]
 
   defmodule UserStateUpdateResponse do
     require OpenApiSpex
