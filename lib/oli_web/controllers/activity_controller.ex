@@ -338,19 +338,13 @@ defmodule OliWeb.ActivityController do
       }) do
     user = conn.assigns.current_user
 
-    case Sections.get_section_by(slug: section_slug) do
-      nil ->
-        error(conn, 404, "not found")
-
-      _ ->
-        if Sections.is_enrolled?(user.id, section_slug) do
-          case DeliveryResolver.from_resource_id(section_slug, activity_id) do
-            nil -> error(conn, 404, "not found")
-            rev -> json(conn, document_to_delivery_result(rev))
-          end
-        else
-          error(conn, 403, "unauthorized")
-        end
+    if Sections.is_enrolled?(user.id, section_slug) do
+      case DeliveryResolver.from_resource_id(section_slug, activity_id) do
+        nil -> error(conn, 404, "not found")
+        rev -> json(conn, document_to_delivery_result(rev))
+      end
+    else
+      error(conn, 403, "unauthorized")
     end
   end
 
@@ -379,25 +373,19 @@ defmodule OliWeb.ActivityController do
       }) do
     user = conn.assigns.current_user
 
-    case Sections.get_section_by(slug: section_slug) do
-      nil ->
-        error(conn, 404, "not found")
+    if Sections.is_enrolled?(user.id, section_slug) do
+      case DeliveryResolver.from_resource_id(section_slug, activity_ids) do
+        nil ->
+          error(conn, 404, "not found")
 
-      _ ->
-        if Sections.is_enrolled?(user.id, section_slug) do
-          case DeliveryResolver.from_resource_id(section_slug, activity_ids) do
-            nil ->
-              error(conn, 404, "not found")
-
-            revisions ->
-              json(conn, %{
-                "result" => "success",
-                "results" => Enum.map(revisions, &document_to_delivery_result/1)
-              })
-          end
-        else
-          error(conn, 403, "unauthorized")
-        end
+        revisions ->
+          json(conn, %{
+            "result" => "success",
+            "results" => Enum.map(revisions, &document_to_delivery_result/1)
+          })
+      end
+    else
+      error(conn, 403, "unauthorized")
     end
   end
 
