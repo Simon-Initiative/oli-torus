@@ -12,6 +12,7 @@ import { Stem } from '../common/DisplayedStem';
 import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/Evaluation';
+import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 
 type Evaluation = {
   score: number,
@@ -92,12 +93,8 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
         response: { input: selectionToInput(undefined) },
       }])
       .then((response: EvaluationResponse) => {
-        if (response.actions.length > 0) {
-
-          const action: ActivityTypes.FeedbackAction
-            = response.actions[0] as ActivityTypes.FeedbackAction;
-
-          const { score, out_of, feedback, error } = action;
+        if (response.evaluations.length > 0) {
+          const { score, out_of, feedback, error } = response.evaluations[0];
           const parts = [Object.assign({}, attemptState.parts[0], { feedback, error })];
           const updated = Object.assign({}, attemptState, { score, outOf: out_of, parts });
           setAttemptState(updated);
@@ -165,6 +162,17 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
     <Hints key="hints" onClick={onRequestHint} hints={hints}
       hasMoreHints={hasMoreHints} isEvaluated={isEvaluated} context={writerContext} />];
 
+  const gradedDetails = props.graded && props.progressState === 'in_review' ? [
+    evaluationSummary] : null;
+
+  const correctnessIcon = attemptState.score === 0 ? <IconIncorrect /> : <IconCorrect />;
+
+  const gradedPoints = props.graded && props.progressState === 'in_review' ? [
+    <div className="text-info font-italic">
+      {correctnessIcon}
+      <span>Points: </span><span>{attemptState.score + ' out of '
+        + attemptState.outOf}</span></div>] : null;
+
   const maybeSubmitButton = props.graded
     ? null
     : (
@@ -179,11 +187,13 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
       <div className="activity-content">
         <div>
           <Stem stem={stem} context={writerContext} />
+          {gradedPoints}
           <Choices choices={choices} selected={selected}
             onSelect={onSelect} isEvaluated={isEvaluated} context={writerContext} />
           {maybeSubmitButton}
         </div>
         {ungradedDetails}
+        {gradedDetails}
       </div>
       {reset}
     </div>
