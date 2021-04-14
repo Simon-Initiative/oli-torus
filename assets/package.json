@@ -16,6 +16,7 @@
     "test:watch": "jest --watch -o"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^1.5.1",
     "@types/jquery": "^3.3.38",
     "@types/nprogress": "^0.2.0",
     "@types/phoenix": "^1.4.4",
@@ -26,6 +27,7 @@
     "@types/react-transition-group": "~4.4.0",
     "@types/redux-logger": "^3.0.7",
     "bootstrap": "^4.5.0",
+    "chroma-js": "^2.1.1",
     "immer": "^6.0.3",
     "immutable": "^4.0.0-rc.12",
     "is-hotkey": "^0.1.6",

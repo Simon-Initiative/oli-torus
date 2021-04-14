@@ -13,7 +13,8 @@
     resourceId: <%= @resource_id %>,
     sectionSlug: "<%= @section_slug %>",
     userId: <%= @user_id %>,
-    pageSlug: "<%= @slug %>"
+    pageSlug: "<%= @slug %>",
+    content: "<%= Base.encode64(@content) %>"
   };
 
   window.oliMountApplication(document.getElementById('delivery_container'), params);

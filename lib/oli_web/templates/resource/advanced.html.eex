@@ -7,5 +7,12 @@
 <div id="editor" class="container"/>
 
 <script>
-  window.oliMountApplication(document.getElementById('editor'), "<%= Base.encode64(@context) %>");
+  const params = {
+    isAdmin: <%= @is_admin? %>,
+    revisionSlug: "<%= @revision_slug %>",
+    projectSlug: "<%= @project_slug %>",
+    content: "<%= Base.encode64(@context) %>"
+  };
+
+  window.oliMountApplication(document.getElementById('editor'), params);
 </script>

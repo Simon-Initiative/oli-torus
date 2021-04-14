@@ -1,13 +1,9 @@
 defmodule Oli.Activities.Model.Part do
   defstruct [:id, :scoring_strategy, :responses, :outcomes, :hints, :parts]
 
-  def parse(
-        %{
-          "id" => id,
-          "scoringStrategy" => scoring_strategy,
-          "responses" => responses
-        } = part
-      ) do
+  def parse(%{"id" => id} = part) do
+    responses = Map.get(part, "responses", [])
+    scoring_strategy = Map.get(part, "scoringStrategy", Oli.Resources.ScoringStrategy.get_id_by_type("average"))
     hints = Map.get(part, "hints", [])
     parts = Map.get(part, "parts", [])
     outcomes = Map.get(part, "outcomes", [])

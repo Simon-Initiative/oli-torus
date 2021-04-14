@@ -34,6 +34,15 @@ export type Evaluated = {
 
 export type Edited = { result: 'success', revisionSlug: string };
 
+export const get = (projectSlug: string, activityId: ResourceId) => {
+  const params = {
+    method: 'GET',
+    url: `/storage/project/${projectSlug}/resource/${activityId}`
+  };
+
+  return makeRequest<any>(params);
+};
+
 export function create(
   project: ProjectSlug, activityTypeSlug: ActivityTypeSlug,
   model: ActivityModelSchema, objectives: ResourceId[]) {

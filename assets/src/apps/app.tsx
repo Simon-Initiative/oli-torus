@@ -6,7 +6,7 @@ import { Maybe } from 'tsmonad';
 import { configureStore } from 'state/store';
 import { State } from 'state/index';
 
-export function defineApplication<T extends State>(Component : React.FunctionComponent) {
+export function defineApplication<T extends State>(Component : React.FunctionComponent<any>) {
 
   // TODO, allow a customized, per app state (both initial state and collection of reducers)
   // to be passed into this function, instead of simply using a shared common state
@@ -15,9 +15,22 @@ export function defineApplication<T extends State>(Component : React.FunctionCom
   (window as any).oliMountApplication
     = (mountPoint: any, params : any) => {
 
+      let parsedContent: any = {};
+      try {
+        parsedContent = JSON.parse(atob(params.content));
+      } catch (err) {
+        // should have been json, error handling
+      }
+      const props = {
+        ...params,
+        content: parsedContent
+      };
+
+      console.log('MOUNTED', {mountPoint, params, props})
+
       ReactDOM.render(
         <Provider store={store}>
-          <Component {...params} />
+          <Component {...props} />
           <ModalDisplay/>
         </Provider>,
         mountPoint,
