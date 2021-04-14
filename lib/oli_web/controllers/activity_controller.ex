@@ -314,11 +314,11 @@ defmodule OliWeb.ActivityController do
   document, for a particular course section.
   """
   @doc parameters: [
-         course: [
+         section_slug: [
            in: :url,
            schema: %OpenApiSpex.Schema{type: :string},
            required: true,
-           description: "The course identifier"
+           description: "The course section slug"
          ],
          resource: [
            in: :url,
@@ -333,24 +333,18 @@ defmodule OliWeb.ActivityController do
             OliWeb.ActivityController.DocumentAttributes}
        }
   def retrieve_delivery(conn, %{
-        "course" => course,
+        "section_slug" => section_slug,
         "resource" => activity_id
       }) do
     user = conn.assigns.current_user
 
-    case Sections.get_section_by(id: course) do
-      nil ->
-        error(conn, 404, "not found")
-
-      section ->
-        if Sections.is_enrolled?(user.id, section.slug) do
-          case DeliveryResolver.from_resource_id(section.slug, activity_id) do
-            nil -> error(conn, 404, "not found")
-            rev -> json(conn, document_to_delivery_result(rev))
-          end
-        else
-          error(conn, 403, "unauthorized")
-        end
+    if Sections.is_enrolled?(user.id, section_slug) do
+      case DeliveryResolver.from_resource_id(section_slug, activity_id) do
+        nil -> error(conn, 404, "not found")
+        rev -> json(conn, document_to_delivery_result(rev))
+      end
+    else
+      error(conn, 403, "unauthorized")
     end
   end
 
@@ -361,11 +355,11 @@ defmodule OliWeb.ActivityController do
   document, for a particular course section.
   """
   @doc parameters: [
-         course: [
+         section_slug: [
            in: :url,
            schema: %OpenApiSpex.Schema{type: :string},
            required: true,
-           description: "The course identifier"
+           description: "The course section slug"
          ]
        ],
        responses: %{
@@ -374,30 +368,24 @@ defmodule OliWeb.ActivityController do
             OliWeb.ActivityController.BulkDocumentResponse}
        }
   def bulk_retrieve_delivery(conn, %{
-        "course" => course,
+        "section_slug" => section_slug,
         "resourceIds" => activity_ids
       }) do
     user = conn.assigns.current_user
 
-    case Sections.get_section_by(id: course) do
-      nil ->
-        error(conn, 404, "not found")
+    if Sections.is_enrolled?(user.id, section_slug) do
+      case DeliveryResolver.from_resource_id(section_slug, activity_ids) do
+        nil ->
+          error(conn, 404, "not found")
 
-      section ->
-        if Sections.is_enrolled?(user.id, section.slug) do
-          case DeliveryResolver.from_resource_id(section.slug, activity_ids) do
-            nil ->
-              error(conn, 404, "not found")
-
-            revisions ->
-              json(conn, %{
-                "result" => "success",
-                "results" => Enum.map(revisions, &document_to_delivery_result/1)
-              })
-          end
-        else
-          error(conn, 403, "unauthorized")
-        end
+        revisions ->
+          json(conn, %{
+            "result" => "success",
+            "results" => Enum.map(revisions, &document_to_delivery_result/1)
+          })
+      end
+    else
+      error(conn, 403, "unauthorized")
     end
   end
 

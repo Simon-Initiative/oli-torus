@@ -13,7 +13,7 @@ defmodule OliWeb.DeliveryRetrieveTest do
       section: section,
       activity_id: activity_id
     } do
-      conn = get(conn, Routes.activity_path(conn, :retrieve_delivery, section.id, activity_id))
+      conn = get(conn, Routes.activity_path(conn, :retrieve_delivery, section.slug, activity_id))
 
       assert %{"content" => %{"stem" => "1"}} = json_response(conn, 200)
     end
@@ -27,7 +27,7 @@ defmodule OliWeb.DeliveryRetrieveTest do
       page_revision2: rev2
     } do
       conn =
-        post(conn, Routes.activity_path(conn, :bulk_retrieve_delivery, section.id), %{
+        post(conn, Routes.activity_path(conn, :bulk_retrieve_delivery, section.slug), %{
           "resourceIds" => [rev1.resource_id, rev2.resource_id]
         })
 
