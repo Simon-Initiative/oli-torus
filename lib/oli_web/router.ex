@@ -286,8 +286,8 @@ defmodule OliWeb.Router do
     put "/test/evaluate", Api.ActivityController, :evaluate
     put "/test/transform", Api.ActivityController, :transform
 
-    post "/:project/lock/:resource", API.LockController, :acquire
-    delete "/:project/lock/:resource", API.LockController, :release
+    post "/:project/lock/:resource", Api.LockController, :acquire
+    delete "/:project/lock/:resource", Api.LockController, :release
   end
 
   # Storage Service

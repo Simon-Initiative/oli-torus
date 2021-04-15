@@ -10,13 +10,6 @@ defmodule OliWeb.ActivityController do
   plug :fetch_project when action in [:edit]
   plug :authorize_project when action in [:edit]
 
-  @moduledoc """
-  The storage service allows activity implementations to read, write, update
-  and delete documents associated with an activity instance.
-  """
-
-  alias OpenApiSpex.Schema
-
   @doc false
   def edit(conn, %{
         "project_id" => project_slug,
