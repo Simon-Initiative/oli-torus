@@ -47,7 +47,9 @@ export type Manifest = {
 };
 
 export interface ActivityModelSchema {
+  resourceId?: number;
   authoring?: any;
+  content?: any;
 }
 
 export interface PartState {

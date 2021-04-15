@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { Provider } from "react-redux";
 import AdaptivePageView from "./formats/adaptive/AdaptivePageView";
 import store from "./store";
-import { loadActivity } from "./store/features/activities/slice";
+import { loadActivities } from "./store/features/activities/slice";
 import { loadPageState } from "./store/features/page/slice";
 
 export interface DeliveryProps {
@@ -24,8 +24,11 @@ export const Delivery: React.FunctionComponent<DeliveryProps> = (
       loadPageState({ userId, resourceId, sectionSlug, pageSlug, content })
     );
 
-    // temp
-    store.dispatch(loadActivity(content.model[0].activity_id));
+    // for now we'll just load *all* the sequence items up front
+    const activityIds = content.model
+      .filter((item: any) => item.type === "activity-reference")
+      .map((item: any) => item.activity_id);
+    store.dispatch(loadActivities(activityIds));
   }, []);
 
   const parentDivClasses: string[] = [];

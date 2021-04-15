@@ -299,9 +299,10 @@ defmodule OliWeb.ActivityController do
     end
   end
 
-  defp document_to_delivery_result(%{title: title, content: content}) do
+  defp document_to_delivery_result(%{resource_id: resource_id, title: title, content: content}) do
     %{
       "result" => "success",
+      "resourceId" => resource_id,
       "title" => title,
       "content" => Map.delete(content, "authoring")
     }
