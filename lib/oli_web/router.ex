@@ -344,13 +344,25 @@ defmodule OliWeb.Router do
   scope "/api/v1/state", OliWeb do
     pipe_through [:api, :delivery_protected]
 
-    get "/", Api.ExtrinsicStateController, :read_global
-    put "/", Api.ExtrinsicStateController, :upsert_global
-    delete "/", Api.ExtrinsicStateController, :delete_global
+    get "/", Api.GlobalStateController, :read
+    put "/", Api.GlobalStateController, :upsert
+    delete "/", Api.GlobalStateController, :delete
 
-    get "/course/:section_slug", Api.ExtrinsicStateController, :read_section
-    put "/course/:section_slug", Api.ExtrinsicStateController, :upsert_section
-    delete "/course/:section_slug", Api.ExtrinsicStateController, :delete_section
+    get "/course/:section_slug", Api.SectionStateController, :read
+    put "/course/:section_slug", Api.SectionStateController, :upsert
+    delete "/course/:section_slug", Api.SectionStateController, :delete
+
+    get "/course/:section_slug/resource_attempt/:resource_attempt_guid",
+        Api.ResourceAttemptStateController,
+        :read
+
+    put "/course/:section_slug/resource_attempt/:resource_attempt_guid",
+        Api.ResourceAttemptStateController,
+        :upsert
+
+    delete "/course/:section_slug/resource_attempt/:resource_attempt_guid",
+           Api.ResourceAttemptStateController,
+           :delete
   end
 
   scope "/api/v1/lti", OliWeb, as: :api do
