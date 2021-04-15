@@ -79,6 +79,16 @@ defmodule OliWeb.LtiControllerTest do
 
       assert html_response(conn, 200) =~ "Welcome to the Open Learning Initiative!"
       assert html_response(conn, 200) =~ "Register Your Institution"
+
+      # validate still works a user is already logged in
+      user = user_fixture()
+      conn = recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = post(conn, Routes.lti_path(conn, :login, body))
+
+      assert html_response(conn, 200) =~ "Welcome to the Open Learning Initiative!"
+      assert html_response(conn, 200) =~ "Register Your Institution"
     end
 
     test "launch successful for valid params and creates deployment on the fly", %{
