@@ -302,7 +302,7 @@ defmodule OliWeb.Router do
     post "/:resource", ActivityController, :create_secondary
   end
 
-  scope "/api/v1/storage/course/:course/resource", OliWeb do
+  scope "/api/v1/storage/course/:section_slug/resource", OliWeb do
     pipe_through [:api, :delivery_protected]
 
     get "/:resource", ActivityController, :retrieve_delivery
