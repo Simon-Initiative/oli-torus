@@ -22,10 +22,11 @@ export function selectImage(
     let selectedUrl: string | undefined = undefined;
 
     const mediaLibrary =
-      <ModalSelection title="Embed image" size={sizes.extraLarge}
+      <ModalSelection title="Select Image" size={sizes.extraLarge}
         onInsert={() => { dismiss(); resolve(selectedUrl); }}
         onCancel={() => dismiss()}
         disableInsert={true}
+        okLabel="Select"
       >
         <UrlOrUpload
           onUrlChange={(url: string) => selectedUrl = url}

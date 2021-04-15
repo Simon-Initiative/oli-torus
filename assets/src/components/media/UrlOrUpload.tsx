@@ -68,7 +68,7 @@ export const UrlOrUpload = (props: Props) => {
             onSelectionChange={props.onMediaSelectionChange} />
         : <div className="media-url">
             <input
-              className="w-100"
+              className="form-control w-100"
               placeholder="Enter the media URL address"
               value={url}
               onChange={({ target: { value } }) => {
