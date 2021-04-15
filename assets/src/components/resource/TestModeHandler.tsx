@@ -36,7 +36,6 @@ export const defaultState = (model: ActivityModelSchema) => {
 
 
 export interface TestModelHandlerProps {
-  children: any;
   model: ActivityModelSchema;
 }
 

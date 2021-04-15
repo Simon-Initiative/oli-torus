@@ -33,11 +33,11 @@ const populateEntries = () => {
   });
 
   const themePaths = [
-    ...glob.sync("./styles/themes/authoring/*.scss").map(p => ({prefix: 'authoring_theme_', themePath: p})),
-    ...glob.sync("./styles/themes/delivery/*.scss").map(p => ({prefix: 'delivery_theme_', themePath: p})),
+    ...glob.sync("./styles/themes/authoring/*.scss").map(p => ({ prefix: 'authoring_theme_', themePath: p })),
+    ...glob.sync("./styles/themes/delivery/*.scss").map(p => ({ prefix: 'delivery_theme_', themePath: p })),
   ];
 
-  const foundThemes = themePaths.map(({prefix, themePath}) => {
+  const foundThemes = themePaths.map(({ prefix, themePath }) => {
     const name = path.basename(themePath, '.scss');
     return {
       [prefix + name]: themePath,
@@ -61,17 +61,17 @@ module.exports = (env, options) => ({
   devtool: 'source-map',
   optimization: {
     chunkIds: "named",
-		splitChunks: {
-			cacheGroups: {
-				vendor: {
-					test: /node_modules/,
-					chunks: "initial",
-					name: "vendor",
-					priority: 10,
-					enforce: true
-				}
-			}
-		},
+    splitChunks: {
+      cacheGroups: {
+        vendor: {
+          test: /node_modules/,
+          chunks: "initial",
+          name: "vendor",
+          priority: 10,
+          enforce: true
+        }
+      }
+    },
     minimizer: [
       new UglifyJsPlugin({ cache: true, parallel: true, sourceMap: true }),
       new OptimizeCSSAssetsPlugin({})
@@ -98,7 +98,7 @@ module.exports = (env, options) => ({
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.js(x?)$/,
         exclude: /node_modules/,
         use: {
           loader: 'babel-loader'
@@ -129,14 +129,6 @@ module.exports = (env, options) => ({
           }
         ],
       },
-      {
-        test: /\.jsx$/,
-        exclude: /node_modules/,
-        use: {
-          loader: 'babel-loader'
-        }
-      },
-      { test: /\.(png|gif|jpg|jpeg|svg)$/, use: 'file-loader' },
       { test: /\.ts$/, use: ['babel-loader', 'ts-loader'], exclude: /node_modules/ },
       {
         test: /\.tsx$/, use: [
@@ -151,7 +143,8 @@ module.exports = (env, options) => ({
           },
           { loader: 'ts-loader' }
         ], exclude: /node_modules/
-      }
+      },
+      { test: /\.(png|gif|jpg|jpeg|svg)$/, use: 'file-loader' },
     ]
   },
   plugins: [

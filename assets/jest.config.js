@@ -18,15 +18,20 @@ module.exports = {
   transform: {
     "\\.(ts|tsx)$": "ts-jest"
   },
+  preset: "ts-jest",
   testRegex: "test/.*_test\.(ts|tsx|js)$",
   collectCoverage: true,
   testResultsProcessor: "./node_modules/jest-html-reporter",
   cacheDirectory: "./node_modules/.cache/jest",
   reporters: [
     "default",
-    ["./node_modules/jest-html-reporter", {
+    [
+      "./node_modules/jest-html-reporter",
+      {
         pageTitle: "Test Report",
         outputPath: "./test-results/results.html"
-    }]
-]
+      }
+    ]
+  ],
+  setupFilesAfterEnv: ['<rootDir>/setup-tests.js'],
 };
