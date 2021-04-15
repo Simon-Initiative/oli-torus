@@ -1,4 +1,4 @@
-defmodule OliWeb.ObjectivesController do
+defmodule OliWeb.Api.ObjectivesController do
   use OliWeb, :controller
   use OpenApiSpex.Controller
 

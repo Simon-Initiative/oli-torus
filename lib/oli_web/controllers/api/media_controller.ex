@@ -1,4 +1,4 @@
-defmodule OliWeb.MediaController do
+defmodule OliWeb.Api.MediaController do
   @moduledoc tags: ["Media Library Service"]
 
   @moduledoc """

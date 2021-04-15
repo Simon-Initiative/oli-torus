@@ -1,4 +1,4 @@
-defmodule OliWeb.LockController do
+defmodule OliWeb.Api.LockController do
   use OliWeb, :controller
 
   alias Oli.Authoring.Editing.PageEditor

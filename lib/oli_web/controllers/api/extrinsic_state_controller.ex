@@ -1,4 +1,4 @@
-defmodule OliWeb.ExtrinsicStateController do
+defmodule OliWeb.Api.ExtrinsicStateController do
   @moduledoc """
   Provides user state service endpoints for extrinsic state.
   """

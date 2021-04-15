@@ -1,4 +1,4 @@
-defmodule OliWeb.AttemptController do
+defmodule OliWeb.Api.AttemptController do
   use OliWeb, :controller
   use OpenApiSpex.Controller
 

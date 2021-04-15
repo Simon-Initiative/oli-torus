@@ -1593,4 +1593,15 @@ defmodule Oli.Delivery.Attempts do
     |> Snapshot.changeset(attrs)
     |> Repo.insert()
   end
+
+  @doc """
+  Gets a resource attempt by parameter.
+  ## Examples
+      iex> get_resource_attempt(attempt_guid: "123")
+      %ResourceAttempt{}
+      iex> get_section_by(attempt_guid: "notfound")
+      nil
+  """
+  def get_resource_attempt(clauses),
+    do: Repo.get_by(ResourceAttempt, clauses)
 end
