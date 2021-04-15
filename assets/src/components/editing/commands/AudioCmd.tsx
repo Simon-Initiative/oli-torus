@@ -25,7 +25,7 @@ export function selectAudio(projectSlug: string,
         onCancel={() => dismiss()}
         disableInsert={true}
       >
-        <MediaManager model={model}
+        <MediaManager
           projectSlug={projectSlug}
           onEdit={() => { }}
           mimeFilter={MIMETYPE_FILTERS.AUDIO}
