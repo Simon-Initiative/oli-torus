@@ -26,6 +26,9 @@ defmodule Oli.Content.Content.HtmlTest do
                ~r/<img.*src="https:\/\/upload.wikimedia.org\/wikipedia\/commons\/thumb\/f\/f9\/Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg\/480px-Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg"\/>/
 
       assert rendered_html_string =~
+               ~r/<figcaption>John Trumbull&#39;s &lt;b&gt;Declaration of Independence&lt;\/b&gt;,/
+
+      assert rendered_html_string =~
                "<p>The American colonials proclaimed &quot;no taxation without representation"
 
       assert rendered_html_string =~

@@ -288,7 +288,7 @@ defmodule Oli.Rendering.Content.Html do
           end
         }>"
       ] ++
-      [caption] ++
+      [escape_xml!(caption)] ++
       ["</figcaption>"] ++
       ["</figure>"] ++
       ["</div>"]
