@@ -41,6 +41,7 @@ defmodule OliWeb.Router do
   pipeline :lti do
     plug :fetch_session
     plug :fetch_flash
+    plug Oli.Plugs.SetCurrentUser
     plug :put_root_layout, {OliWeb.LayoutView, "lti.html"}
   end
 
