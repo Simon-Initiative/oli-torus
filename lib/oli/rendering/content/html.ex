@@ -298,11 +298,9 @@ defmodule Oli.Rendering.Content.Html do
 
   defp display_class(%{"display" => display}), do: display_class(display)
 
+  # float_left and float_right no longer supported as options
   defp display_class(display) do
     case display do
-      "float_left" -> "float-md-left"
-      "float_right" -> "float-md-right"
-      "block" -> "d-block"
       _ -> "d-block"
     end
   end

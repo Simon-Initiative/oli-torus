@@ -11,7 +11,7 @@ import { WriterContext } from './context';
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.
 
-function escapeHtml(unsafe: string) : string {
+function escapeHtml(unsafe: string): string {
   return unsafe
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -41,11 +41,12 @@ export class HtmlParser implements WriterImpl {
       .reduce((acc, mark) => `<${mark}>${acc}</${mark}>`, text);
   }
 
+  // float_left and float_right no longer supported as options
   private displayClass(attrs: any) {
     if (attrs.display) {
       switch (attrs.display) {
-        case 'float_left': return 'float-md-left';
-        case 'float_right': return 'float-md-right';
+        case 'float_left':
+        case 'float_right':
         case 'block':
         default: return 'd-block';
       }

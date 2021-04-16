@@ -4,16 +4,17 @@ import { MediaDisplayMode } from './model';
 
 const textLimit = 25;
 
+// float_left and float_right no longer supported as options
 export function displayModelToClassName(display: MediaDisplayMode | undefined) {
   switch (display) {
-    case 'float_left': return 'float-md-left';
-    case 'float_right': return 'float-md-right';
+    case 'float_left':
+    case 'float_right':
     case 'block': return 'd-block';
     default: return 'd-block';
   }
 }
 
-export function getContentDescription(content: StructuredContent) : JSX.Element {
+export function getContentDescription(content: StructuredContent): JSX.Element {
 
   if (content.children.length > 0) {
 

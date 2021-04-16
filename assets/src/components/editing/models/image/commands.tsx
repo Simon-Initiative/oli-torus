@@ -82,38 +82,6 @@ export const initCommands = (
     [
       {
         type: 'CommandDesc',
-        icon: () => 'align_horizontal_left',
-        description: () => 'Float left',
-        active: e => model.display === 'float_left',
-        command: {
-          execute: (c, e, p) => setDisplay('float_left'),
-          precondition: () => true,
-        },
-      },
-      {
-        type: 'CommandDesc',
-        icon: () => 'align_horizontal_center',
-        description: () => 'Center image',
-        active: e => model.display === 'block',
-        command: {
-          execute: (c, e, p) => setDisplay('block'),
-          precondition: () => true,
-        },
-      },
-      {
-        type: 'CommandDesc',
-        icon: () => 'align_horizontal_right',
-        description: () => 'Float right',
-        active: e => model.display === 'float_right',
-        command: {
-          execute: (c, e, p) => setDisplay('float_right'),
-          precondition: () => true,
-        },
-      },
-    ],
-    [
-      {
-        type: 'CommandDesc',
         icon: () => '',
         description: () => 'Alt text',
         command: {
