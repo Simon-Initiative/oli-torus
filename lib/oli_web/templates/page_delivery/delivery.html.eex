@@ -19,7 +19,5 @@
     activityGuidMapping: <%= raw(@activity_guid_mapping) %>,
   };
 
-  console.log(params);
-
   window.oliMountApplication(document.getElementById('delivery_container'), params);
 </script>
