@@ -5,11 +5,13 @@
 ### Enhancements
   - Add OpenAPI docs for user state service
   - Enable OpenAPI docs on all environments at /api/v1/docs
+  - Add ability to change images in pages and activities
 
 ### Bug fixes
   - Support page-to-page links during course ingestion
   - Use section slugs instead of ids in storage service URLs for delivery endpoints
   - Fix a crash when an existing logged-in user accesses the Register Institution page
+  - Remove support for image floating to fix display issues in text editors
 
 ## 0.8.0 (2021-4-12)
 

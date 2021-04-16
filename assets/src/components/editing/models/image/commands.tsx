@@ -3,6 +3,8 @@ import * as ContentModel from 'data/content/model';
 import { Modal } from 'components/editing/toolbars/Modal';
 import { useState } from 'react';
 import { modalActions } from 'actions/modal';
+import { commandDesc as imgCommandDesc, selectImage } from 'components/editing/commands/ImageCmd';
+import { Maybe } from 'tsmonad';
 
 interface Props {
   onDone: (params: any) => void;
@@ -46,6 +48,9 @@ export const initCommands = (
   model: ContentModel.Image,
   onEdit: (updated: Partial<ContentModel.Image>) => void): CommandDesc[][] => {
 
+  const setSrc = (src: string) => {
+    onEdit({ src });
+  };
   const setAlt = (alt: string) => {
     onEdit({ alt });
   };
@@ -57,32 +62,20 @@ export const initCommands = (
     [
       {
         type: 'CommandDesc',
-        icon: () => 'align_horizontal_left',
-        description: () => 'Float left',
-        active: e => model.display === 'float_left',
+        icon: () => 'insert_photo',
+        description: () => 'Select Image',
         command: {
-          execute: (c, e, p) => setDisplay('float_left'),
-          precondition: () => true,
-        },
-      },
-      {
-        type: 'CommandDesc',
-        icon: () => 'align_horizontal_center',
-        description: () => 'Center image',
-        active: e => model.display === 'block',
-        command: {
-          execute: (c, e, p) => setDisplay('block'),
-          precondition: () => true,
-        },
-      },
-      {
-        type: 'CommandDesc',
-        icon: () => 'align_horizontal_right',
-        description: () => 'Float right',
-        active: e => model.display === 'float_right',
-        command: {
-          execute: (c, e, p) => setDisplay('float_right'),
-          precondition: () => true,
+          execute: (context, editor) => {
+            const at = editor.selection as any;
+            selectImage(context.projectSlug, model.src)
+            .then(selection => Maybe.maybe(selection).caseOf({
+              just: src => setSrc(src),
+              nothing: () => {},
+            }));
+          },
+          precondition: (editor) => {
+            return true;
+          },
         },
       },
     ],

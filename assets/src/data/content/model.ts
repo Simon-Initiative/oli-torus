@@ -35,6 +35,7 @@ export function mutate<ModelElement>(obj: ModelElement, changes: Object): ModelE
 
 export type Selection = Range | null;
 
+// float_left and float_right no longer available as options and will render as block
 export type MediaDisplayMode = 'float_left' | 'float_right' | 'block';
 
 export type ModelElement
