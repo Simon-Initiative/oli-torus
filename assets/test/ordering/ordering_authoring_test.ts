@@ -1,14 +1,15 @@
 import { Actions } from 'components/activities/ordering/actions';
 import * as ContentModel from 'data/content/model';
 import produce from 'immer';
-import { OrderingModelSchema } from 'components/activities/ordering/schema'
-import { canMoveChoiceUp, canMoveChoiceDown, createMatchRule, createRuleForIds,
+import { OrderingModelSchema } from 'components/activities/ordering/schema';
+import {
+  canMoveChoiceUp, canMoveChoiceDown, createMatchRule, createRuleForIds,
   defaultOrderingModel, getChoiceIds, getCorrectResponse,
   getHints, getTargetedChoiceIds,
   getIncorrectResponse, getResponseId, getResponses, getTargetedResponses,
   invertRule, unionRules, getCorrectOrdering,
 } from 'components/activities/ordering/utils';
-import {Choice} from 'components/activities/types'
+import { Choice } from 'components/activities/types';
 
 const applyAction = (
   model: OrderingModelSchema,
@@ -30,15 +31,6 @@ function testFromText(text: string) {
       ],
       selection: null,
     },
-  };
-}
-
-function testResponse(text: string, rule: string, score: number = 0) {
-  return {
-    id: Math.random() + '',
-    feedback: testFromText(text),
-    rule,
-    score,
   };
 }
 
@@ -131,7 +123,8 @@ describe('ordering question', () => {
   it('can edit a choice', () => {
     const newChoiceContent = testFromText('new content').content;
     const firstChoice = model.choices[0];
-    expect(applyAction(model, Actions.editChoiceContent(firstChoice.id, newChoiceContent)).choices[0])
+    expect(applyAction(model, Actions.editChoiceContent(firstChoice.id, newChoiceContent))
+      .choices[0])
       .toHaveProperty('content', newChoiceContent);
   });
 
@@ -148,7 +141,7 @@ describe('ordering question', () => {
     const newModel = applyAction(toggled, Actions.removeChoice(firstChoice.id));
     newModel.authoring.targeted.forEach((assoc: any) => {
       expect(getChoiceIds(assoc)).not.toContain(firstChoice.id);
-    })
+    });
   });
 
   it('has one correct response', () => {
@@ -187,11 +180,11 @@ describe('ordering question', () => {
   });
 
   it('can create a match rule', () => {
-    expect(createMatchRule('id')).toBe(`input like {id}`);
+    expect(createMatchRule('id')).toBe('input like {id}');
   });
 
   it('can invert rules', () => {
-    expect(invertRule(createMatchRule('id'))).toBe(`(!(input like {id}))`);
+    expect(invertRule(createMatchRule('id'))).toBe('(!(input like {id}))');
   });
 
   it('can union rules', () => {
@@ -202,8 +195,8 @@ describe('ordering question', () => {
   it('can create rules to to match choice orderings', () => {
     const ordering1 = ['id1', 'id2', 'id3'];
     const ordering2 = ['id3', 'id2', 'id1'];
-    expect(createRuleForIds(ordering1)).toEqual("input like {id1 id2 id3}");
-    expect(createRuleForIds(ordering2)).toEqual("input like {id3 id2 id1}");
+    expect(createRuleForIds(ordering1)).toEqual('input like {id1 id2 id3}');
+    expect(createRuleForIds(ordering2)).toEqual('input like {id3 id2 id1}');
   });
 
   it('has at least 3 hints', () => {

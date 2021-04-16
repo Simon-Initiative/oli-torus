@@ -12,7 +12,9 @@
 ### Bug fixes
   - Support page-to-page links during course ingestion
   - Use section slugs instead of ids in storage service URLs for delivery endpoints
+  - Activity feedback fixes and unit tests
   - Remove support for image floating to fix display issues in text editors
+
 ## 0.8.0 (2021-4-12)
 
 ### Enhancements

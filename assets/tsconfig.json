@@ -1,29 +1,32 @@
 {
   "compilerOptions": {
-      "allowSyntheticDefaultImports": true,
-      "module": "es6",
-      "target": "es6",
-      "jsx": "preserve",
-      "moduleResolution": "node",
-      "emitDecoratorMetadata": true,
-      "experimentalDecorators": true,
-      "noImplicitAny": true,
-      "strictNullChecks": true,
-      "removeComments": false,
-      "inlineSources": true,
-      "sourceMap": true,
-      "noEmitHelpers": false,
-      "alwaysStrict": true,
-      "outDir": "./dev",
-      "baseUrl": ".",
-      "paths": {
-        "*": ["src/*"]
-      },
-      "types": [
-        "node",
-        "jest",
-        "jquery"
+    "allowSyntheticDefaultImports": true,
+    "module": "es6",
+    "target": "es6",
+    "jsx": "preserve",
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "removeComments": false,
+    "inlineSources": true,
+    "sourceMap": true,
+    "noEmitHelpers": false,
+    "alwaysStrict": true,
+    "outDir": "./dev",
+    "baseUrl": ".",
+    "paths": {
+      "*": [
+        "src/*"
       ]
+    },
+    "types": [
+      "node",
+      "jest",
+      "jquery"
+    ],
+    "esModuleInterop": true
   },
   "include": [
     "src/**/*",

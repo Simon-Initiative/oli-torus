@@ -37,6 +37,7 @@ const Input = (props: InputProps) => {
   if (props.inputType === 'numeric') {
     return (
       <input type="number"
+        aria-label="answer submission textbox"
         className="form-control"
         onChange={(e: any) => props.onChange(e.target.value)}
         value={input}
@@ -46,6 +47,7 @@ const Input = (props: InputProps) => {
   if (props.inputType === 'text') {
     return (
       <input type="text"
+        aria-label="answer submission textbox"
         className="form-control"
         onChange={(e: any) => props.onChange(e.target.value)}
         value={input}
@@ -54,6 +56,7 @@ const Input = (props: InputProps) => {
   }
   return (
     <textarea
+      aria-label="answer submission textbox"
       rows={5}
       cols={80}
       className="form-control"
@@ -64,8 +67,7 @@ const Input = (props: InputProps) => {
   );
 };
 
-const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
-
+export const ShortAnswerComponent = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
   const [model, setModel] = useState(props.model);
   const [attemptState, setAttemptState] = useState(props.state);
   const [hints, setHints] = useState(props.state.parts[0].hints);
@@ -154,6 +156,7 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
     ? null
     : (
       <button
+        aria-label="submit"
         className="btn btn-primary mt-2 float-right" disabled={isEvaluated} onClick={onSubmit}>
         Submit
       </button>
@@ -184,7 +187,7 @@ const ShortAnswer = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
 // Defines the web component, a simple wrapper over our React component above
 export class ShortAnswerDelivery extends DeliveryElement<ShortAnswerModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<ShortAnswerModelSchema>) {
-    ReactDOM.render(<ShortAnswer {...props} />, mountPoint);
+    ReactDOM.render(<ShortAnswerComponent {...props} />, mountPoint);
   }
 }
 
