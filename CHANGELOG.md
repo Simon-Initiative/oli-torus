@@ -5,6 +5,7 @@
 ### Enhancements
   - Add OpenAPI docs for user state service
   - Enable OpenAPI docs on all environments at /api/v1/docs
+  - Add ability to change images in pages and activities
 
 ### Bug fixes
   - Support page-to-page links during course ingestion
