@@ -3,10 +3,21 @@
 ## Unreleased
 
 ### Enhancements
+  - Add OpenAPI docs for user state service
+  - Enable OpenAPI docs on all environments at /api/v1/docs
+
+### Bug fixes
+  - Support page-to-page links during course ingestion
+  - Use section slugs instead of ids in storage service URLs for delivery endpoints
+
+## 0.8.0 (2021-4-12)
+
+### Enhancements
   - Add multi-project support to Revision History tool
   - Add Open and Free section support
   - Feature flag support
   - Add research and cookie consent support
+  - Extrinsic user state endpoints
 
 ### Bug fixes
   - Fix analytics / insights to not show parent course analytics after duplication
@@ -17,8 +28,11 @@
   - Fix issue where long lines in code blocks in activities overflow
   - Change how ids are determined in ingestion to avoid problems with unicode characters
   - Scope lock messages to a specific project
-  - (Developer) Auto format Elixir code 
+  - (Developer) Auto format Elixir code
   - Fix attempts sort order
+  - Fix feedback in live preview and page preview
+  - Remove unused "countries_json" configuration variable
+  - Image coding activity: clarify author solution entry UI
 
 ## 0.7.2 (2021-3-30)
 

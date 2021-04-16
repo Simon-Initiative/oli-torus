@@ -101,10 +101,10 @@ export class TestModeHandler extends React.Component<TestModelHandlerProps, Test
     Persistence.evaluate(this.state.model, partInputs)
       .then((result: Persistence.Evaluated) => {
 
-        const evaluations = result.evaluations
+        const actions = result.evaluations
           .map((e: any) => {
             return {
-              type: 'EvaluatedPart',
+              type: 'FeedbackAction',
               error: e.error,
               attempt_guid: e.part_id,
               out_of: e.result.out_of,
@@ -113,7 +113,7 @@ export class TestModeHandler extends React.Component<TestModelHandlerProps, Test
             };
           });
 
-        continuation({ type: 'success', evaluations }, undefined);
+        continuation({ type: 'success', actions }, undefined);
       });
   }
 
@@ -129,7 +129,7 @@ export class TestModeHandler extends React.Component<TestModelHandlerProps, Test
         };
       });
 
-    continuation({ type: 'success', evaluations: evaluatedParts }, undefined);
+    continuation({ type: 'success', actions: evaluatedParts }, undefined);
   }
 
   handleHint(continuation: Continuation, partId: string) {

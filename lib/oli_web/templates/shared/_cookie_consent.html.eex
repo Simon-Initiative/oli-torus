@@ -310,6 +310,10 @@
   }
   
   const cookiePreferences = () => {
+    const userOptions = consentOptions();
+    setChecked('#functionalCookies', userOptions.functionality);
+    setChecked('#analyticsCookies', userOptions.analytics);
+    setChecked('#targetingCookies', userOptions.targeting);
     $('#modal-cookie-consent').modal('hide');
     $('#modal-cookie-preferences').modal('show');
   }

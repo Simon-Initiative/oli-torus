@@ -79,6 +79,25 @@ defmodule Oli.Delivery.Sections do
     Repo.all(query)
   end
 
+  def get_enrollment(section_slug, user_id) do
+    query =
+      from(
+        e in Enrollment,
+        join: s in Section,
+        on: e.section_id == s.id,
+        where: e.user_id == ^user_id and s.slug == ^section_slug,
+        select: e
+      )
+
+    Repo.one(query)
+  end
+
+  def update_enrollment(%Enrollment{} = e, attrs) do
+    e
+    |> Enrollment.changeset(attrs)
+    |> Repo.update()
+  end
+
   @doc """
   Returns a listing of all open and free sections for a given user.
   """

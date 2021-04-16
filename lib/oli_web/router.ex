@@ -257,6 +257,12 @@ defmodule OliWeb.Router do
     # live "/:project_id/insights", Insights, session: {__MODULE__, :with_session, []}
   end
 
+  scope "/api/v1/docs" do
+    pipe_through [:browser]
+
+    get "/", OpenApiSpex.Plug.SwaggerUI, path: "/api/v1/openapi"
+  end
+
   scope "/api/v1" do
     pipe_through [:api]
 
@@ -296,7 +302,7 @@ defmodule OliWeb.Router do
     post "/:resource", ActivityController, :create_secondary
   end
 
-  scope "/api/v1/storage/course/:course/resource", OliWeb do
+  scope "/api/v1/storage/course/:section_slug/resource", OliWeb do
     pipe_through [:api, :delivery_protected]
 
     get "/:resource", ActivityController, :retrieve_delivery
@@ -320,32 +326,32 @@ defmodule OliWeb.Router do
     put "/objective/:objective", ObjectivesController, :update
   end
 
-  scope "/api/v1/attempt", OliWeb do
+  # User State Service, instrinsic state
+  scope "/api/v1/state/course/:section_slug/activity_attempt/:activity_attempt_guid", OliWeb do
     pipe_through [:api, :delivery_protected]
 
-    # post to create a new attempt
-    # put to submit a response
-    # patch to save response state
+    post "/", AttemptController, :new_activity
+    put "/", AttemptController, :submit_activity
+    patch "/", AttemptController, :save_activity
+    put "/evaluations", AttemptController, :submit_evaluations
 
-    post "/activity/:activity_attempt_guid/part/:part_attempt_guid", AttemptController, :new_part
+    post "/part_attempt/:part_attempt_guid", AttemptController, :new_part
+    put "/part_attempt/:part_attempt_guid", AttemptController, :submit_part
+    patch "/part_attempt/:part_attempt_guid", AttemptController, :save_part
+    get "/part_attempt/:part_attempt_guid/hint", AttemptController, :get_hint
+  end
 
-    put "/activity/:activity_attempt_guid/part/:part_attempt_guid",
-        AttemptController,
-        :submit_part
+  # User State Service, extrinsic state
+  scope "/api/v1/state", OliWeb do
+    pipe_through [:api, :delivery_protected]
 
-    patch "/activity/:activity_attempt_guid/part/:part_attempt_guid",
-          AttemptController,
-          :save_part
+    get "/", ExtrinsicStateController, :read_global
+    put "/", ExtrinsicStateController, :upsert_global
+    delete "/", ExtrinsicStateController, :delete_global
 
-    get "/activity/:activity_attempt_guid/part/:part_attempt_guid/hint",
-        AttemptController,
-        :get_hint
-
-    post "/activity/:activity_attempt_guid", AttemptController, :new_activity
-    put "/activity/:activity_attempt_guid", AttemptController, :submit_activity
-    patch "/activity/:activity_attempt_guid", AttemptController, :save_activity
-
-    put "/activity/:activity_attempt_guid/evaluations", AttemptController, :submit_evaluations
+    get "/course/:section_slug", ExtrinsicStateController, :read_section
+    put "/course/:section_slug", ExtrinsicStateController, :upsert_section
+    delete "/course/:section_slug", ExtrinsicStateController, :delete_section
   end
 
   scope "/api/v1/lti", OliWeb, as: :api do
@@ -423,7 +429,7 @@ defmodule OliWeb.Router do
     post "/link_account", DeliveryController, :process_link_account_user
     get "/create_and_link_account", DeliveryController, :create_and_link_account
     post "/create_and_link_account", DeliveryController, :process_create_and_link_account_user
-    post "/research_consent",  DeliveryController, :research_consent
+    post "/research_consent", DeliveryController, :research_consent
 
     post "/", DeliveryController, :create_section
   end
@@ -488,12 +494,6 @@ defmodule OliWeb.Router do
       pipe_through [:browser]
 
       get "/uipalette", UIPaletteController, :index
-    end
-
-    scope "/dev" do
-      pipe_through [:browser]
-
-      get "/swaggerui", OpenApiSpex.Plug.SwaggerUI, path: "/api/v1/openapi"
     end
 
     scope "/test", OliWeb do

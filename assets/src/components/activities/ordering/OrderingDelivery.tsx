@@ -124,8 +124,11 @@ export const OrderingComponent = (props: DeliveryElementProps<OrderingModelSchem
         response: { input: orderedChoiceIds(undefined) },
       }])
       .then((response: EvaluationResponse) => {
-        if (response.evaluations.length > 0) {
-          const { score, out_of, feedback, error } = response.evaluations[0];
+        if (response.actions.length > 0) {
+
+          const action: ActivityTypes.FeedbackAction
+            = response.actions[0] as ActivityTypes.FeedbackAction;
+          const { score, out_of, feedback, error } = action;
           const parts = [Object.assign({}, attemptState.parts[0], { feedback, error })];
           const updated = Object.assign({}, attemptState, { score, outOf: out_of, parts });
           setAttemptState(updated);

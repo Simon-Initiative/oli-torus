@@ -334,7 +334,8 @@ defmodule OliWeb.DeliveryController do
              Accounts.create_user(%{
                # generate a unique sub identifier which is also used so a user can access
                # their progress in the future or using a different browser
-               sub: UUID.uuid4()
+               sub: UUID.uuid4(),
+               guest: true,
              }) do
         Accounts.update_user_platform_roles(user, [
           PlatformRoles.get_role(:institution_learner)

@@ -36,7 +36,7 @@
                 <%= section.title %>
               </div>
               <div class="text-nowrap">
-                <%= link Routes.page_delivery_url(@conn, :index, section.slug), to: Routes.page_delivery_url(@conn, :index, section.slug), target: "_blank", id: "section_link_#{section.slug}", class: "mr-2" %>
+                <%= external_link Routes.page_delivery_url(@conn, :index, section.slug), to: Routes.page_delivery_url(@conn, :index, section.slug), id: "section_link_#{section.slug}", class: "mr-2" %>
                 <button class="clipboardjs btn btn-xs btn-primary" data-clipboard-target="#<%= "section_link_#{section.slug}" %>">
                   <i class="lar la-clipboard"></i> Copy
                 </button>

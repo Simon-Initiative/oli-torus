@@ -14,7 +14,7 @@ export const Evaluation = ({ attemptState, context }:
   const errorText = fromText('There was an error processing this response');
 
   let resultClass = 'incorrect';
-  if (error !== undefined) {
+  if (error !== undefined && error !== null) {
     resultClass = 'error';
   } else if (score === outOf) {
     resultClass = 'correct';

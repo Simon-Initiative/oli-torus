@@ -1,25 +1,18 @@
-import { ActivityModelSchema,
+import {
+  ActivityModelSchema,
   ActivityState,
   Hint,
   PartResponse,
   PartState,
   StudentResponse,
   ClientEvaluation,
-  Success } from './types';
+  Action,
+  Success,
+} from './types';
 import { valueOr } from 'utils/common';
 
-
-export interface EvaluatedPart {
-  type: 'EvaluatedPart';
-  attempt_guid: string;
-  out_of: number;
-  score: number;
-  feedback: any;
-  error?: string;
-}
-
 export interface EvaluationResponse extends Success {
-  evaluations: EvaluatedPart[];
+  actions: Action[];
 }
 
 // Notice that the hint attribute here is optional.  If a
@@ -48,6 +41,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   preview: boolean;
   progressState: string;
   sectionSlug?: string;
+  userId: number;
 
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
   onSubmitActivity: (attemptGuid: string,
@@ -144,6 +138,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     const preview = valueOr(JSON.parse(this.getAttribute('preview') as any), false);
     const progressState = this.getAttribute('progress_state') as any;
     const sectionSlug = valueOr(this.getAttribute('section_slug'), undefined);
+    const userId = this.getAttribute('user_id') as any;
 
     this.progressState = progressState;
 
@@ -162,6 +157,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       onSubmitActivity: this.onSubmitActivity,
       onResetActivity: this.onResetActivity,
       onSubmitEvaluations: this.onSubmitEvaluations,
+      userId,
     };
   }
 
@@ -171,6 +167,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       bubbles: true,
       detail: {
         payload,
+        sectionSlug: this.props().sectionSlug,
         attemptGuid,
         partAttemptGuid,
         continuation,

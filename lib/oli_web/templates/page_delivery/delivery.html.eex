@@ -1,11 +1,13 @@
 
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/delivery.js") %>"></script>
 
+
 <h1><%= @title %></h1>
 
 <div id="delivery_container" class="container"/>
 
 <script>
+  window.userToken = "<%= assigns[:user_token] %>";
 
   const params = {
     resourceId: <%= @resource_id %>,

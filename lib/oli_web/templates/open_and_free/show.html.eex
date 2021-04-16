@@ -15,7 +15,7 @@
     <tbody>
       <tr>
         <td><strong>URL:</strong></td>
-        <td><%= link Routes.page_delivery_url(@conn, :index, @section.slug), to: Routes.page_delivery_url(@conn, :index, @section.slug) %></td>
+        <td><%= external_link Routes.page_delivery_url(@conn, :index, @section.slug), to: Routes.page_delivery_url(@conn, :index, @section.slug) %></td>
       </tr>
 
       <tr>
