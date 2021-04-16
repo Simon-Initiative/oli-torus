@@ -105,6 +105,17 @@ module.exports = (env, options) => ({
         }
       },
       {
+        test: /\.ts(x?)$/, use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              cacheDirectory: true
+            },
+          },
+          { loader: 'ts-loader' }
+        ], exclude: /node_modules/
+      },
+      {
         test: /\.[s]?css$/,
         use: [
           MiniCssExtractPlugin.loader,
@@ -128,21 +139,6 @@ module.exports = (env, options) => ({
             }
           }
         ],
-      },
-      { test: /\.ts$/, use: ['babel-loader', 'ts-loader'], exclude: /node_modules/ },
-      {
-        test: /\.tsx$/, use: [
-          {
-            loader: 'babel-loader',
-            options: {
-              // This is a feature of `babel-loader` for webpack (not Babel itself).
-              // It enables caching results in ./node_modules/.cache/babel-loader/
-              // directory for faster rebuilds.
-              cacheDirectory: true
-            },
-          },
-          { loader: 'ts-loader' }
-        ], exclude: /node_modules/
       },
       { test: /\.(png|gif|jpg|jpeg|svg)$/, use: 'file-loader' },
     ]

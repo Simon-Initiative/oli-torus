@@ -38,7 +38,9 @@ const Selection = ({ selected, onDeselect, isEvaluated }: SelectionProps) => {
   return (
     <div className="mb-2" style={{ height: 34, borderBottom: '3px solid #333' }}>
       {selected.map(selection =>
-        <button onClick={() => onDeselect(id(selection))}
+        <button
+          key={id(selection)}
+          onClick={() => onDeselect(id(selection))}
           disabled={isEvaluated}
           className="choice-index mr-1">
           {index(selection) + 1}
@@ -58,7 +60,7 @@ interface ChoicesProps {
 const Choices = ({ choices, selected, context, onSelect, isEvaluated }: ChoicesProps) => {
   const isSelected = (choiceId: string) => !!selected.find(s => s === choiceId);
   return (
-    <div className="choices">
+    <div className="choices" aria-label="ordering choices">
       {choices.map((choice, index) =>
         <Choice
           key={choice.id}
@@ -84,6 +86,7 @@ interface ChoiceProps {
 const Choice = ({ choice, index, selected, context, onClick, isEvaluated }: ChoiceProps) => {
   return (
     <div key={choice.id}
+      aria-label={`choice ${index + 1}`}
       onClick={isEvaluated ? undefined : onClick}
       className={`choice ${selected ? 'selected' : ''}`}>
       <span className="choice-index">{index + 1}</span>
@@ -92,7 +95,7 @@ const Choice = ({ choice, index, selected, context, onClick, isEvaluated }: Choi
   );
 };
 
-const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
+export const OrderingComponent = (props: DeliveryElementProps<OrderingModelSchema>) => {
 
   const [model, setModel] = useState(props.model);
   const [attemptState, setAttemptState] = useState(props.state);
@@ -205,6 +208,7 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
     ? null
     : (
       <button
+        aria-label="submit"
         className="btn btn-primary mt-2 float-right"
         disabled={isEvaluated || selected.length !== choices.length}
         onClick={onSubmit}>
@@ -237,7 +241,7 @@ const Ordering = (props: DeliveryElementProps<OrderingModelSchema>) => {
 // Defines the web component, a simple wrapper over our React component above
 export class OrderingDelivery extends DeliveryElement<OrderingModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<OrderingModelSchema>) {
-    ReactDOM.render(<Ordering {...props} />, mountPoint);
+    ReactDOM.render(<OrderingComponent {...props} />, mountPoint);
   }
 }
 

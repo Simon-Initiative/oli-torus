@@ -7,7 +7,8 @@ module.exports = {
   moduleFileExtensions: [
     "ts",
     "tsx",
-    "js"
+    "js",
+    "jsx"
   ],
   moduleNameMapper: {
     "^components/(.*)": "<rootDir>/src/components/$1",
@@ -16,22 +17,16 @@ module.exports = {
     "^utils/(.*)": "<rootDir>/src/utils/$1",
   },
   transform: {
-    "\\.(ts|tsx)$": "ts-jest"
+    "^.+\\.tsx?$": "ts-jest",
   },
   preset: "ts-jest",
-  testRegex: "test/.*_test\.(ts|tsx|js)$",
+  globals: {
+    'ts-jest': {
+      babelConfig: 'babel.config.js'
+    }
+  },
+  testRegex: "test/.*_test\.[jt]sx?$",
   collectCoverage: true,
-  testResultsProcessor: "./node_modules/jest-html-reporter",
   cacheDirectory: "./node_modules/.cache/jest",
-  reporters: [
-    "default",
-    [
-      "./node_modules/jest-html-reporter",
-      {
-        pageTitle: "Test Report",
-        outputPath: "./test-results/results.html"
-      }
-    ]
-  ],
-  setupFilesAfterEnv: ['<rootDir>/setup-tests.js'],
+  setupFilesAfterEnv: ['<rootDir>/setup-tests.ts'],
 };

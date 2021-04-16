@@ -30,7 +30,7 @@ interface ChoicesProps {
 const Choices = ({ choices, selected, context, onSelect, isEvaluated }: ChoicesProps) => {
   const isSelected = (choiceId: ActivityTypes.ChoiceId) => !!selected.find(s => s === choiceId);
   return (
-    <div className="choices">
+    <div className="choices" aria-label="check all that apply choices">
       {choices.map((choice, index) =>
         <Choice
           key={choice.id}
@@ -55,6 +55,7 @@ interface ChoiceProps {
 const Choice = ({ choice, index, selected, context, onClick, isEvaluated }: ChoiceProps) => {
   return (
     <div key={choice.id}
+      aria-label={`choice ${index + 1}`}
       onClick={isEvaluated ? undefined : onClick}
       className={`choice ${selected ? 'selected' : ''}`}>
       <span className="choice-index">{index + 1}</span>
@@ -63,7 +64,8 @@ const Choice = ({ choice, index, selected, context, onClick, isEvaluated }: Choi
   );
 };
 
-const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSchema>) => {
+export const CheckAllThatApplyComponent = (props:
+  DeliveryElementProps<CheckAllThatApplyModelSchema>) => {
 
   const [model, setModel] = useState(props.model);
   const [attemptState, setAttemptState] = useState(props.state);
@@ -177,6 +179,7 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
     ? null
     : (
       <button
+        aria-label="submit"
         className="btn btn-primary mt-2 float-right" disabled={isEvaluated} onClick={onSubmit}>
         Submit
       </button>
@@ -203,7 +206,7 @@ const CheckAllThatApply = (props: DeliveryElementProps<CheckAllThatApplyModelSch
 // Defines the web component, a simple wrapper over our React component above
 export class CheckAllThatApplyDelivery extends DeliveryElement<CheckAllThatApplyModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<CheckAllThatApplyModelSchema>) {
-    ReactDOM.render(<CheckAllThatApply {...props} />, mountPoint);
+    ReactDOM.render(<CheckAllThatApplyComponent {...props} />, mountPoint);
   }
 }
 
