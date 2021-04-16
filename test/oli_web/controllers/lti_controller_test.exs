@@ -80,7 +80,7 @@ defmodule OliWeb.LtiControllerTest do
       assert html_response(conn, 200) =~ "Welcome to the Open Learning Initiative!"
       assert html_response(conn, 200) =~ "Register Your Institution"
 
-      # validate still works a user is already logged in
+      # validate still works when a user is already logged in
       user = user_fixture()
       conn = recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
