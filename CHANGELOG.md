@@ -12,6 +12,7 @@
 ### Bug fixes
   - Support page-to-page links during course ingestion
   - Use section slugs instead of ids in storage service URLs for delivery endpoints
+  - Fix a crash when an existing logged-in user accesses the Register Institution page
   - Activity feedback fixes and unit tests
   - Remove support for image floating to fix display issues in text editors
 
