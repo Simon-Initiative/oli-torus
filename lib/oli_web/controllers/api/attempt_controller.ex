@@ -54,6 +54,66 @@ defmodule OliWeb.Api.AttemptController do
     })
   end
 
+  defmodule BulkAttemptRetrievalResponse do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "Response from requesting a collection of activity attempts",
+      description:
+        "The response from a client request for many activity attempts, based off of activity attempt guids",
+      type: :object,
+      properties: %{
+        result: %Schema{type: :string, description: "Success"},
+        activityAttempts: %Schema{
+          type: :list,
+          description: "The activity attempts for the requested guids"
+        }
+      },
+      required: [:result, :activityAttempts],
+      example: %{
+        "result" => "success",
+        "activityAttempts" => [
+          %{
+            "attemptGuid" => "20595ef0-e5f1-474e-880d-f2c20f3a4459",
+            "score" => 1,
+            "outOf" => 2,
+            "partAttempts" => [
+              %{
+                "attemptGuid" => "d25f8881-9a4b-4e73-9998-e7de3b3e7485",
+                "partId" => "1",
+                "score" => 1,
+                "outOf" => 2,
+                "feedback" => %{
+                  "content" => "Partially correct."
+                },
+                "response" => %{
+                  "input" => "A"
+                }
+              }
+            ]
+          },
+          %{
+            "attemptGuid" => "30b59817-e193-488f-94b1-597420b8670e",
+            "score" => nil,
+            "outOf" => nil,
+            "partAttempts" => [
+              %{
+                "attemptGuid" => "7e1d90ef-0e75-4558-8266-5838f3aea2f3",
+                "partId" => "1",
+                "score" => nil,
+                "outOf" => nil,
+                "feedback" => nil,
+                "response" => %{
+                  "input" => "A"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    })
+  end
+
   defmodule HintResponse do
     require OpenApiSpex
 
@@ -154,6 +214,30 @@ defmodule OliWeb.Api.AttemptController do
     })
   end
 
+  defmodule BulkAttemptRequestBody do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "Activity attempt bulk request body",
+      description:
+        "The collection of activity attempts guids to retrieve activity attempt records from",
+      type: :object,
+      properties: %{
+        attemptGuids: %Schema{
+          type: :list,
+          description: "Collection of activity attempt guids"
+        }
+      },
+      required: [:evaluations],
+      example: %{
+        "attemptGuids" => [
+          "20595ef0-e5f1-474e-880d-f2c20f3a4459",
+          "30b59817-e193-488f-94b1-597420b8670e"
+        ]
+      }
+    })
+  end
+
   defmodule ActivityAttemptBody do
     require OpenApiSpex
 
@@ -181,6 +265,74 @@ defmodule OliWeb.Api.AttemptController do
         ]
       }
     })
+  end
+
+  @doc """
+  Retrieves a collection of activity attempt records for a collection of activity attempt guids.
+  """
+  @doc parameters: [
+         section_slug: [
+           in: :url,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The course section identifier"
+         ]
+       ],
+       request_body:
+         {"Bulk Attempt Body", "application/json", BulkAttemptRequestBody, required: true},
+       responses: %{
+         200 => {"Bulk Attempt Response", "application/json", BulkAttemptRetrievalResponse}
+       }
+  def bulk_retrieve(conn, %{
+        "attemptGuids" => attempt_guids
+      }) do
+    case Attempts.get_activity_attempts(attempt_guids) do
+      {:ok, attempts} ->
+        attempts = Enum.map(attempts, &to_client_view/1)
+        json(conn, %{"result" => "success", "activityAttempts" => attempts})
+    end
+  end
+
+  defp to_client_view(attempt) do
+    latest_part_attempt_by_part =
+      Enum.reduce(attempt.part_attempts, %{}, fn p, m ->
+        case Map.get(m, p.part_id) do
+          nil ->
+            Map.put(m, p.part_id, p)
+
+          pa ->
+            if Date.compare(pa.inserted_at, p.inserted_at) == :gt do
+              Map.put(m, p.part_id, pa)
+            else
+              Map.put(m, p.part_id, p)
+            end
+        end
+      end)
+
+    %{
+      activityId: attempt.resource_id,
+      revisionId: attempt.revision_id,
+      attemptGuid: attempt.attempt_guid,
+      attemptNumber: attempt.attempt_number,
+      score: attempt.score,
+      outOf: attempt.out_of,
+      dateEvaluated: attempt.date_evaluated,
+      model: Oli.Delivery.Page.ModelPruner.prune(attempt.transformed_model),
+      partAttempts:
+        Map.values(latest_part_attempt_by_part)
+        |> Enum.map(fn pa ->
+          %{
+            partId: pa.part_id,
+            attemptGuid: pa.attempt_guid,
+            attemptNumber: pa.attempt_number,
+            dateEvaluated: pa.date_evaluated,
+            score: pa.score,
+            outOf: pa.out_of,
+            response: pa.response,
+            feedback: pa.feedback
+          }
+        end)
+    }
   end
 
   @activity_attempt_parameters [

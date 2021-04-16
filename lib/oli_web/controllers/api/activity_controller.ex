@@ -307,10 +307,10 @@ defmodule OliWeb.Api.ActivityController do
   end
 
   @doc """
-  Retrieve a document for an activity for delivery purposes.
+  Bulk request a collection of activity documents for delivery purposes.
 
-  This retrieves the published revision of an activity document, either a primary or secondary
-  document, for a particular course section.
+  This retrieves the published revision of a collection activity document, either a primary or secondary
+  documents, for a particular course section.
   """
   @doc parameters: [
          section_slug: [

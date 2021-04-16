@@ -13,8 +13,13 @@
     resourceId: <%= @resource_id %>,
     sectionSlug: "<%= @section_slug %>",
     userId: <%= @user_id %>,
-    pageSlug: "<%= @slug %>"
+    pageSlug: "<%= @slug %>",
+    content: "<%= Base.encode64(@content) %>",
+    resourceAttemptState: <%= raw(@resource_attempt_state) %>,
+    activityGuidMapping: <%= raw(@activity_guid_mapping) %>,
   };
+
+  console.log(params);
 
   window.oliMountApplication(document.getElementById('delivery_container'), params);
 </script>

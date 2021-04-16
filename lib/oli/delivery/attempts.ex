@@ -1399,6 +1399,30 @@ defmodule Oli.Delivery.Attempts do
   end
 
   @doc """
+  Gets a collection of activity attempt records that pertain to a collection of activity
+  attempt guids. There is no guarantee that the ordering of the results of the activity attempts
+  will match the ordering of the input guids.  Any attempt guids that cannot be found are simply omitted
+  from the result.
+  ## Examples
+      iex> get_activity_attempts(["20595ef0-e5f1-474e-880d-f2c20f3a4459", "30b59817-e193-488f-94b1-597420b8670e"])
+      [%ActivityAttempt{}, %ActivityAttempt{}]
+      iex> get_activity_attempts(["20595ef0-e5f1-474e-880d-f2c20f3a4459", "a-missing-one"])
+      [%ActivityAttempt{}]
+      iex> get_activity_attempts(["a-missing-one"])
+      []
+  """
+  def get_activity_attempts(activity_attempt_guids) do
+    results =
+      Repo.all(
+        from activity_attempt in ActivityAttempt,
+          where: activity_attempt.attempt_guid in ^activity_attempt_guids,
+          preload: [:part_attempts]
+      )
+
+    {:ok, results}
+  end
+
+  @doc """
   Gets an activity attempt by a clause.
   ## Examples
       iex> get_activity_attempt_by(attempt_guid: "123")

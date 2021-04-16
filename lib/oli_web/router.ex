@@ -326,18 +326,31 @@ defmodule OliWeb.Router do
   end
 
   # User State Service, instrinsic state
-  scope "/api/v1/state/course/:section_slug/activity_attempt/:activity_attempt_guid", OliWeb do
+  scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
     pipe_through [:api, :delivery_protected]
 
-    post "/", Api.AttemptController, :new_activity
-    put "/", Api.AttemptController, :submit_activity
-    patch "/", Api.AttemptController, :save_activity
-    put "/evaluations", Api.AttemptController, :submit_evaluations
+    post "/", Api.AttemptController, :bulk_retrieve
 
-    post "/part_attempt/:part_attempt_guid", Api.AttemptController, :new_part
-    put "/part_attempt/:part_attempt_guid", Api.AttemptController, :submit_part
-    patch "/part_attempt/:part_attempt_guid", Api.AttemptController, :save_part
-    get "/part_attempt/:part_attempt_guid/hint", Api.AttemptController, :get_hint
+    post "/:activity_attempt_guid", Api.AttemptController, :new_activity
+    put "/:activity_attempt_guid", Api.AttemptController, :submit_activity
+    patch "/:activity_attempt_guid", Api.AttemptController, :save_activity
+    put "/:activity_attempt_guid/evaluations", Api.AttemptController, :submit_evaluations
+
+    post "/:activity_attempt_guidpart_attempt/:part_attempt_guid",
+         Api.AttemptController,
+         :new_part
+
+    put "/:activity_attempt_guidpart_attempt/:part_attempt_guid",
+        Api.AttemptController,
+        :submit_part
+
+    patch "/:activity_attempt_guidpart_attempt/:part_attempt_guid",
+          Api.AttemptController,
+          :save_part
+
+    get "/:activity_attempt_guidpart_attempt/:part_attempt_guid/hint",
+        Api.AttemptController,
+        :get_hint
   end
 
   # User State Service, extrinsic state
