@@ -22,7 +22,6 @@ interface DispatchProps {
 
 interface OwnProps {
   className?: string;
-  model: Media;
   projectSlug: string;
   mimeFilter?: string[] | undefined;
   selectionType: SELECTION_TYPES;

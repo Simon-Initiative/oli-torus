@@ -2,7 +2,7 @@ import * as React from 'react';
 import * as Immutable from 'immutable';
 import { Maybe } from 'tsmonad';
 import { MediaIcon } from './MediaIcon';
-import { Media, MediaItem, MediaRef } from 'types/media';
+import { Media, MediaItem } from 'types/media';
 import guid from 'utils/guid';
 import { convert, stringFormat } from 'utils/format';
 import { OrderedMediaLibrary } from '../OrderedMediaLibrary';
@@ -89,7 +89,6 @@ const popOpenImage = (e: any) => {
 export interface MediaManagerProps {
   className?: string;
   projectSlug: string;
-  model: Media;
   media: OrderedMediaLibrary;
   mimeFilter?: string[] | undefined;
   selectionType: SELECTION_TYPES;

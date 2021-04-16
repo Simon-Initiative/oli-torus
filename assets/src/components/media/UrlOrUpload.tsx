@@ -6,7 +6,6 @@ type Source = 'upload' | 'url';
 interface Props {
   toggleDisableInsert?: (b: boolean) => void;
   onUrlChange: (url: string) => void;
-  model: Media;
   projectSlug: string;
   mimeFilter?: string[] | undefined;
   selectionType: SELECTION_TYPES;
@@ -59,7 +58,7 @@ export const UrlOrUpload = (props: Props) => {
         </div>
       </div>
       {source === 'upload'
-        ? <MediaManager model={props.model}
+        ? <MediaManager
             toggleDisableInsert={props.toggleDisableInsert}
             projectSlug={props.projectSlug}
             onEdit={() => { }}
@@ -69,7 +68,7 @@ export const UrlOrUpload = (props: Props) => {
             onSelectionChange={props.onMediaSelectionChange} />
         : <div className="media-url">
             <input
-              className="w-100"
+              className="form-control w-100"
               placeholder="Enter the media URL address"
               value={url}
               onChange={({ target: { value } }) => {
