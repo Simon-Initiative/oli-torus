@@ -36,7 +36,7 @@ function testResponse(text: string, rule: string, score: number = 0) {
   };
 }
 
-function testDefaultModel(): ShortAnswerModelSchema {
+export function testDefaultModel(): ShortAnswerModelSchema {
 
   const responseA = testResponse('', 'input like {answer}', 1);
   const responseB = testResponse('', 'input like {.*}', 0);
@@ -100,7 +100,7 @@ describe('short answer question', () => {
     const response = model.authoring.parts[0].responses[0];
     expect(applyAction(model,
       ShortAnswerActions.editRule(response.id, newRule)).authoring.parts[0].responses[0])
-    .toHaveProperty('rule', newRule);
+      .toHaveProperty('rule', newRule);
   });
 
   it('can add and remove a response in text mode', () => {
@@ -146,7 +146,7 @@ describe('short answer question', () => {
     const firstHint = model.authoring.parts[0].hints[0];
     expect(applyAction(model,
       ShortAnswerActions.editHint(firstHint.id, newHintContent)).authoring.parts[0].hints[0])
-    .toHaveProperty('content', newHintContent);
+      .toHaveProperty('content', newHintContent);
   });
 
   it('can remove a hint', () => {
