@@ -7,33 +7,36 @@ import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
 import { Command, CommandDesc } from 'components/editing/commands/interfaces';
 import { UrlOrUpload } from 'components/media/UrlOrUpload';
+import { Maybe } from 'tsmonad';
 
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
 
-export function selectImage(projectSlug: string,
-  model: ContentModel.Image): Promise<ContentModel.Image> {
+export function selectImage(
+  projectSlug: string,
+  selectedUrl?: string,
+): Promise<string | undefined> {
 
   return new Promise((resolve, reject) => {
 
-    const selected: { img: any } = { img: null };
+    let selectedUrl: string | undefined = undefined;
 
     const mediaLibrary =
-      <ModalSelection title="Embed image" size={sizes.extraLarge}
-        onInsert={() => { dismiss(); resolve(selected.img); }}
+      <ModalSelection title="Select Image" size={sizes.extraLarge}
+        onInsert={() => { dismiss(); resolve(selectedUrl); }}
         onCancel={() => dismiss()}
         disableInsert={true}
+        okLabel="Select"
       >
         <UrlOrUpload
-          onUrlChange={(url: string) => selected.img = ContentModel.image(url)}
+          onUrlChange={(url: string) => selectedUrl = url}
           onMediaSelectionChange={(mediaOrUrl: MediaItem[]) =>
-            selected.img = ContentModel.image(mediaOrUrl[0].url)}
-          model={model}
+            selectedUrl = mediaOrUrl[0]?.url}
           projectSlug={projectSlug}
           onEdit={() => { }}
           mimeFilter={MIMETYPE_FILTERS.IMAGE}
           selectionType={SELECTION_TYPES.SINGLE}
-          initialSelectionPaths={model.src ? [model.src] : [selected.img as any]}
+          initialSelectionPaths={selectedUrl ? [selectedUrl] : []}
         />
       </ModalSelection>;
 
@@ -44,8 +47,11 @@ export function selectImage(projectSlug: string,
 const command: Command = {
   execute: (context, editor) => {
     const at = editor.selection as any;
-    selectImage(context.projectSlug, ContentModel.image())
-    .then(img => Transforms.insertNodes(editor, img, { at }));
+    selectImage(context.projectSlug)
+    .then(img => Maybe.maybe(img).caseOf({
+      just: (img: string) => Transforms.insertNodes(editor, ContentModel.image(img), { at }),
+      nothing: () => {},
+    }));
   },
   precondition: (editor) => {
     return true;

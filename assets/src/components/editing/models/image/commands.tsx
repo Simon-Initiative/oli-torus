@@ -3,6 +3,8 @@ import * as ContentModel from 'data/content/model';
 import { Modal } from 'components/editing/toolbars/Modal';
 import { useState } from 'react';
 import { modalActions } from 'actions/modal';
+import { commandDesc as imgCommandDesc, selectImage } from 'components/editing/commands/ImageCmd';
+import { Maybe } from 'tsmonad';
 
 interface Props {
   onDone: (params: any) => void;
@@ -46,6 +48,9 @@ export const initCommands = (
   model: ContentModel.Image,
   onEdit: (updated: Partial<ContentModel.Image>) => void): CommandDesc[][] => {
 
+  const setSrc = (src: string) => {
+    onEdit({ src });
+  };
   const setAlt = (alt: string) => {
     onEdit({ alt });
   };
@@ -54,6 +59,26 @@ export const initCommands = (
   };
 
   return [
+    [
+      {
+        type: 'CommandDesc',
+        icon: () => 'insert_photo',
+        description: () => 'Select Image',
+        command: {
+          execute: (context, editor) => {
+            const at = editor.selection as any;
+            selectImage(context.projectSlug, model.src)
+            .then(selection => Maybe.maybe(selection).caseOf({
+              just: src => setSrc(src),
+              nothing: () => {},
+            }));
+          },
+          precondition: (editor) => {
+            return true;
+          },
+        },
+      },
+    ],
     [
       {
         type: 'CommandDesc',
