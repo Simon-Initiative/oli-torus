@@ -1623,7 +1623,7 @@ defmodule Oli.Delivery.Attempts do
   ## Examples
       iex> get_resource_attempt(attempt_guid: "123")
       %ResourceAttempt{}
-      iex> get_section_by(attempt_guid: "notfound")
+      iex> get_resource_attempt(attempt_guid: "notfound")
       nil
   """
   def get_resource_attempt(clauses),
