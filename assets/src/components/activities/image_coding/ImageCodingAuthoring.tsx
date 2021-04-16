@@ -55,7 +55,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
             onCancel={() => dismiss()}
             disableInsert={true}
           >
-            <MediaManager model={model}
+            <MediaManager
               projectSlug={projectSlug}
               onEdit={() => { }}
               mimeFilter={MIMETYPE_FILTERS.IMAGE}
@@ -83,7 +83,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
             onCancel={() => dismiss()}
             disableInsert={true}
           >
-            <MediaManager model={model}
+            <MediaManager
               projectSlug={projectSlug}
               onEdit={() => { }}
               mimeFilter={MIMETYPE_FILTERS.CSV}

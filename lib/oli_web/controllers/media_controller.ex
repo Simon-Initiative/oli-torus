@@ -224,19 +224,19 @@ defmodule OliWeb.MediaController do
   defp prettify_error(reason) do
     case reason do
       {:file_exists} ->
-        "That file already exists in storage. A file can only be uploaded once."
+        "A file with that name already exists. Please rename your file or use the existing file."
 
       {:persistence} ->
-        "The file could not be saved in storage. Hopefully, this is a temporary problem, so give it another try, but let us know if it continues to fail."
+        "The file could not be uploaded. Please try again or contact support."
 
       {:not_found} ->
         "The project you are trying to upload to could not be found."
 
       %Ecto.Changeset{} = _changeset ->
-        "It looks like something is wrong with that file's metadata. Make sure the image is correct, and if you're still having issues let us know."
+        "The file metadata could not be read. Please make sure the file is valid or contact support."
 
       _ ->
-        "Something unexpected prevented that file from being uploaded. Try another file or reach out to us for support."
+        "An unexpected error has occurred. Please try again or contact support."
     end
   end
 end
