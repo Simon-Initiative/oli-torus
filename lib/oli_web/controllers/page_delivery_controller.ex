@@ -46,11 +46,21 @@ defmodule OliWeb.PageDeliveryController do
          section_slug,
          _
        ) do
-
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
     user = conn.assigns.current_user
 
+    {:ok, resource_attempt_state} = Jason.encode(Enum.at(context.resource_attempts, 0).state)
+
+    {:ok, activity_guid_mapping} =
+      context.activities
+      |> Map.keys()
+      |> Enum.map(fn activity_id -> Map.get(context.activities, activity_id).attempt_guid end)
+      |> Jason.encode()
+
     render(conn, "delivery.html", %{
+      resource_attempt_state: resource_attempt_state,
+      activity_guid_mapping: activity_guid_mapping,
+      content: Jason.encode!(context.page.content),
       summary: summary,
       scripts: Activities.get_activity_scripts(),
       section_slug: section_slug,
@@ -74,10 +84,9 @@ defmodule OliWeb.PageDeliveryController do
          section_slug,
          _
        ) do
-    
     # Only consider graded attempts
     resource_attempts = Enum.filter(resource_attempts, fn a -> a.revision.graded == true end)
-   
+
     attempts_taken = length(resource_attempts)
 
     # The call to "max" here accounts for the possibility that a publication could reduce the
@@ -97,10 +106,11 @@ defmodule OliWeb.PageDeliveryController do
 
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
 
-    resource_attempts = Enum.filter(resource_attempts, fn r -> r.date_evaluated != nil end)
-    |> Enum.sort(fn r1, r2 ->
-      r1.date_evaluated <= r2.date_evaluated
-    end)
+    resource_attempts =
+      Enum.filter(resource_attempts, fn r -> r.date_evaluated != nil end)
+      |> Enum.sort(fn r1, r2 ->
+        r1.date_evaluated <= r2.date_evaluated
+      end)
 
     render(conn, "prologue.html", %{
       section_slug: section_slug,

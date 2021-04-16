@@ -8,6 +8,7 @@ defmodule Oli.Rendering.Activity.ActivitySummary do
   @enforce_keys [
     :id,
     :script,
+    :attempt_guid,
     :state,
     :model,
     :delivery_element,
@@ -18,6 +19,8 @@ defmodule Oli.Rendering.Activity.ActivitySummary do
     :id,
     # path to the script
     :script,
+    # the attempt guid for the latest attempt
+    :attempt_guid,
     # already encoded json of the state of the attempt
     :state,
     # already encoded json of the model of the activity

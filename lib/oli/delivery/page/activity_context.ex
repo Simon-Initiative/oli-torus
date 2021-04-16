@@ -34,6 +34,7 @@ defmodule Oli.Delivery.Page.ActivityContext do
       {id,
        %ActivitySummary{
          id: id,
+         attempt_guid: state.attemptGuid,
          model: prepare_model(model),
          state: prepare_state(state),
          delivery_element: type.delivery_element,
