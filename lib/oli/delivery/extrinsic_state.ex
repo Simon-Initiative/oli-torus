@@ -14,6 +14,7 @@ defmodule Oli.Delivery.ExtrinsicState do
 
   alias Oli.Accounts
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Attempts
 
   alias Phoenix.PubSub
 
@@ -47,6 +48,21 @@ defmodule Oli.Delivery.ExtrinsicState do
     case Accounts.get_user_by(id: user_id) do
       nil -> {:error, {:not_found}}
       user -> {:ok, filter_keys(user.state, keys)}
+    end
+  end
+
+  @doc """
+  Reads extrinsic state for a user from a resource attempt context.  Returns {:ok, map} of the keys and their
+  values.
+
+  The optional `keys` parameter is a MapSet of the string key names to retrieve. If this
+  argument is not specified then all keys are returned, otherwise the return value is a map of
+  key value pairs filtered to this MapSet.
+  """
+  def read_attempt(attempt_guid, keys \\ nil) do
+    case Attempts.get_resource_attempt_by(attempt_guid: attempt_guid) do
+      nil -> {:error, {:not_found}}
+      attempt -> {:ok, filter_keys(attempt.state, keys)}
     end
   end
 
@@ -93,6 +109,28 @@ defmodule Oli.Delivery.ExtrinsicState do
   end
 
   @doc """
+  Updates or inserts key value pairs into the extrinsic state for a user for an attempt context.
+  Returns {:ok, map} of the new updated state.
+  """
+  def upsert_atttempt(attempt_guid, key_values) do
+    case Attempts.get_resource_attempt_by(attempt_guid: attempt_guid) do
+      nil ->
+        {:error, {:not_found}}
+
+      attempt ->
+        case Attempts.update_resource_attempt(attempt, %{
+               state: Map.merge(attempt.state, key_values)
+             }) do
+          {:ok, u} ->
+            {:ok, u.state}
+
+          e ->
+            e
+        end
+    end
+  end
+
+  @doc """
   Deletes one or more keys from the extrinsic state for a user for the global context. The
   keys are specified as a MapSet of string key names.
 
@@ -107,6 +145,28 @@ defmodule Oli.Delivery.ExtrinsicState do
         case Accounts.update_user(user, %{state: delete_keys(user.state, keys)}) do
           {:ok, u} ->
             notify_global(user_id, :deletion, MapSet.to_list(keys))
+            {:ok, u.state}
+
+          e ->
+            e
+        end
+    end
+  end
+
+  @doc """
+  Deletes one or more keys from the extrinsic state for a user for an attempt context. The
+  keys are specified as a MapSet of string key names.
+
+  Returns {:ok, map} of the new updated state.
+  """
+  def delete_attempt(attempt_guid, keys) do
+    case Attempts.get_resource_attempt_by(attempt_guid: attempt_guid) do
+      nil ->
+        {:error, {:not_found}}
+
+      attempt ->
+        case Attempts.update_resource_attempt(attempt, %{state: delete_keys(attempt.state, keys)}) do
+          {:ok, u} ->
             {:ok, u.state}
 
           e ->

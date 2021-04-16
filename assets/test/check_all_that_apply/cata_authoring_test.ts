@@ -1,8 +1,9 @@
 import { Actions } from 'components/activities/check_all_that_apply/actions';
 import * as ContentModel from 'data/content/model';
 import produce from 'immer';
-import { CheckAllThatApplyModelSchema } from 'components/activities/check_all_that_apply/schema'
-import { createMatchRule, createRuleForIds, defaultCATAModel, getChoiceIds, getCorrectResponse,
+import { CheckAllThatApplyModelSchema } from 'components/activities/check_all_that_apply/schema';
+import {
+  createMatchRule, createRuleForIds, defaultCATAModel, getChoiceIds, getCorrectResponse,
   getHints,
   getIncorrectResponse, getResponseId, getResponses, getTargetedResponses,
   invertRule, unionRules,
@@ -42,7 +43,7 @@ function testResponse(text: string, rule: string, score: number = 0) {
 
 const testDefaultModel = defaultCATAModel;
 
-describe('check all that apply question', () => {
+describe('check all that apply question functionality', () => {
   const model = testDefaultModel();
 
   it('can switch from simple to targeted feedback mode', () => {
@@ -97,7 +98,8 @@ describe('check all that apply question', () => {
   it('can edit a choice', () => {
     const newChoiceContent = testFromText('new content').content;
     const firstChoice = model.choices[0];
-    expect(applyAction(model, Actions.editChoiceContent(firstChoice.id, newChoiceContent)).choices[0])
+    expect(applyAction(model,
+      Actions.editChoiceContent(firstChoice.id, newChoiceContent)).choices[0])
       .toHaveProperty('content', newChoiceContent);
   });
 
@@ -115,7 +117,7 @@ describe('check all that apply question', () => {
     const newModel = applyAction(toggled, Actions.removeChoice(firstChoice.id));
     newModel.authoring.targeted.forEach((assoc: any) => {
       expect(getChoiceIds(assoc)).not.toContain(firstChoice.id);
-    })
+    });
   });
 
   it('has one correct response', () => {
@@ -154,11 +156,11 @@ describe('check all that apply question', () => {
   });
 
   it('can create a match rule', () => {
-    expect(createMatchRule('id')).toBe(`input like {id}`);
+    expect(createMatchRule('id')).toBe('input like {id}');
   });
 
   it('can invert rules', () => {
-    expect(invertRule(createMatchRule('id'))).toBe(`(!(input like {id}))`);
+    expect(invertRule(createMatchRule('id'))).toBe('(!(input like {id}))');
   });
 
   it('can union rules', () => {
@@ -170,7 +172,7 @@ describe('check all that apply question', () => {
     const toMatch = ['id1', 'id2'];
     const notToMatch = ['id3'];
     expect(createRuleForIds(toMatch, notToMatch))
-      .toEqual("(!(input like {id3})) && (input like {id2} && (input like {id1}))");
+      .toEqual('(!(input like {id3})) && (input like {id2} && (input like {id1}))');
   });
 
   it('has at least 3 hints', () => {

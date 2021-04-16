@@ -10,13 +10,13 @@ import { b64DecodeUnicode } from 'utils/decode';
 let store = configureStore();
 
 (window as any).oliMountApplication
-  = (mountPoint: any, paramString : any) => {
+  = (mountPoint: any, paramString: any) => {
     const params = JSON.parse(b64DecodeUnicode(paramString));
 
     ReactDOM.render(
       <Provider store={store}>
         <ResourceEditor {...params} />
-        <ModalDisplay/>
+        <ModalDisplay />
       </Provider>,
       mountPoint,
     );

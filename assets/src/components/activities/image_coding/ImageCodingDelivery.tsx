@@ -123,7 +123,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
 
     const partState = attemptState.parts[0];
     props.onSubmitEvaluations(attemptState.attemptGuid,
-      [{ attemptGuid: partState.attemptGuid, score, outOf, feedback }])
+      [{ attemptGuid: partState.attemptGuid, score, outOf, feedback, response: { input } }])
       .then((response: EvaluationResponse) => {
         if (response.actions.length > 0) {
 

@@ -13,63 +13,6 @@ defmodule OliWeb.ExtrinsicStateControllerTest do
     )
   end
 
-  describe "global extrinsic endpoints" do
-    setup [:setup_session]
-
-    test "can read and update", %{
-      conn: conn,
-      section: section,
-      user: user
-    } do
-      {:ok, _enrollment} =
-        Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-
-      conn = get(conn, Routes.extrinsic_state_path(conn, :read_global))
-
-      assert keys = json_response(conn, 200)
-      assert length(Map.keys(keys)) == 0
-
-      conn = again(conn, user)
-
-      conn =
-        put(conn, Routes.extrinsic_state_path(conn, :upsert_global), %{
-          "one" => "1",
-          "two" => 2,
-          "three" => 3
-        })
-
-      assert _ = json_response(conn, 200)
-
-      conn = again(conn, user)
-      conn = get(conn, Routes.extrinsic_state_path(conn, :read_global))
-
-      assert keys = json_response(conn, 200)
-      assert length(Map.keys(keys)) == 3
-
-      assert Map.get(keys, "one") == "1"
-      assert Map.get(keys, "two") == 2
-      assert Map.get(keys, "three") == 3
-
-      conn = again(conn, user)
-
-      conn =
-        delete(
-          conn,
-          Routes.extrinsic_state_path(conn, :delete_global) <> "?keys[]=two&keys[]=three"
-        )
-
-      assert _ = json_response(conn, 200)
-
-      conn = again(conn, user)
-      conn = get(conn, Routes.extrinsic_state_path(conn, :read_global))
-
-      assert keys = json_response(conn, 200)
-      assert length(Map.keys(keys)) == 1
-
-      assert Map.get(keys, "one") == "1"
-    end
-  end
-
   describe "section extrinsic endpoints" do
     setup [:setup_session]
 
@@ -81,7 +24,7 @@ defmodule OliWeb.ExtrinsicStateControllerTest do
       {:ok, _enrollment} =
         Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      conn = get(conn, Routes.extrinsic_state_path(conn, :read_section, section.slug))
+      conn = get(conn, Routes.section_state_path(conn, :read, section.slug))
 
       assert keys = json_response(conn, 200)
       assert length(Map.keys(keys)) == 0
@@ -91,7 +34,7 @@ defmodule OliWeb.ExtrinsicStateControllerTest do
       conn =
         put(
           conn,
-          Routes.extrinsic_state_path(conn, :upsert_section, section.slug),
+          Routes.section_state_path(conn, :upsert, section.slug),
           %{
             "one" => "1",
             "two" => 2,
@@ -103,7 +46,7 @@ defmodule OliWeb.ExtrinsicStateControllerTest do
 
       conn = again(conn, user)
 
-      conn = get(conn, Routes.extrinsic_state_path(conn, :read_section, section.slug))
+      conn = get(conn, Routes.section_state_path(conn, :read, section.slug))
 
       assert keys = json_response(conn, 200)
       assert length(Map.keys(keys)) == 3
@@ -117,14 +60,14 @@ defmodule OliWeb.ExtrinsicStateControllerTest do
       conn =
         delete(
           conn,
-          Routes.extrinsic_state_path(conn, :delete_section, section.slug) <>
+          Routes.section_state_path(conn, :delete, section.slug) <>
             "?keys[]=two&keys[]=three"
         )
 
       assert _ = json_response(conn, 200)
 
       conn = again(conn, user)
-      conn = get(conn, Routes.extrinsic_state_path(conn, :read_section, section.slug))
+      conn = get(conn, Routes.section_state_path(conn, :read, section.slug))
 
       assert keys = json_response(conn, 200)
       assert length(Map.keys(keys)) == 1
@@ -136,7 +79,7 @@ defmodule OliWeb.ExtrinsicStateControllerTest do
       conn: conn,
       section: section
     } do
-      conn = get(conn, Routes.extrinsic_state_path(conn, :read_section, section.slug))
+      conn = get(conn, Routes.section_state_path(conn, :read, section.slug))
       assert response(conn, 404)
     end
 
@@ -155,7 +98,7 @@ defmodule OliWeb.ExtrinsicStateControllerTest do
       conn =
         put(
           conn,
-          Routes.extrinsic_state_path(conn, :upsert_section, section.slug),
+          Routes.section_state_path(conn, :upsert, section.slug),
           %{
             "one" => "1",
             "two" => 2,
@@ -167,7 +110,7 @@ defmodule OliWeb.ExtrinsicStateControllerTest do
 
       conn = again(conn, user)
 
-      conn = get(conn, Routes.extrinsic_state_path(conn, :read_section, section.slug))
+      conn = get(conn, Routes.section_state_path(conn, :read, section.slug))
 
       assert keys = json_response(conn, 200)
       assert length(Map.keys(keys)) == 3
@@ -177,7 +120,7 @@ defmodule OliWeb.ExtrinsicStateControllerTest do
       conn =
         put(
           conn,
-          Routes.extrinsic_state_path(conn, :upsert_section, section.slug),
+          Routes.section_state_path(conn, :upsert, section.slug),
           %{
             "user2" => "2"
           }
@@ -187,14 +130,14 @@ defmodule OliWeb.ExtrinsicStateControllerTest do
 
       conn = again(conn, user2)
 
-      conn = get(conn, Routes.extrinsic_state_path(conn, :read_section, section.slug))
+      conn = get(conn, Routes.section_state_path(conn, :read, section.slug))
 
       assert keys = json_response(conn, 200)
       assert length(Map.keys(keys)) == 1
 
       conn = again(conn, user)
 
-      conn = get(conn, Routes.extrinsic_state_path(conn, :read_section, section.slug))
+      conn = get(conn, Routes.section_state_path(conn, :read, section.slug))
 
       assert keys = json_response(conn, 200)
       assert length(Map.keys(keys)) == 3

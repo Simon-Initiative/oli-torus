@@ -35,6 +35,7 @@ export type ClientEvaluation = {
   attemptGuid: string;
   score: number | null;
   outOf: number | null;
+  response: any;
   feedback: any;
 };
 
