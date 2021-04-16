@@ -28,5 +28,5 @@ module.exports = {
   testRegex: "test/.*_test\.[jt]sx?$",
   collectCoverage: true,
   cacheDirectory: "./node_modules/.cache/jest",
-  setupFilesAfterEnv: ['<rootDir>/setup-tests.ts'],
+  setupFilesAfterEnv: ['<rootDir>/setup-tests.js'],
 };

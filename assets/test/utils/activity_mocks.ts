@@ -1,6 +1,6 @@
 import { fromText } from 'components/activities/check_all_that_apply/utils';
-import { EvaluatedPart, EvaluationResponse, RequestHintResponse } from 'components/activities/DeliveryElement';
-import { ActivityState, PartState } from 'components/activities/types';
+import { EvaluationResponse, RequestHintResponse } from 'components/activities/DeliveryElement';
+import { Action, ActivityState, PartState } from 'components/activities/types';
 
 const partState: PartState = {
   attemptGuid: 'guid',
@@ -27,8 +27,8 @@ export const attemptState: ActivityState = {
   hasMoreHints: true,
 };
 
-const evaluatedPart: EvaluatedPart = {
-  type: 'EvaluatedPart',
+const feedbackAction: Action = {
+  type: 'FeedbackAction',
   attempt_guid: '1',
   out_of: 1,
   score: 1,
@@ -37,7 +37,7 @@ const evaluatedPart: EvaluatedPart = {
 
 const evaluationResponse: EvaluationResponse = {
   type: 'success',
-  evaluations: [evaluatedPart],
+  actions: [feedbackAction],
 };
 
 const requestHintResponse: RequestHintResponse = {
@@ -66,4 +66,5 @@ export const defaultDeliveryElementProps = {
   onSubmitEvaluations,
   state: attemptState,
   progressState: '',
+  userId: 1,
 };

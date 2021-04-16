@@ -51,6 +51,7 @@
     "whatwg-fetch": "^3.0.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^5.11.10",
     "@testing-library/react": "^11.2.6",
     "@types/jest": "^26.0.22",
     "@types/jquery": "^3.3.38",
