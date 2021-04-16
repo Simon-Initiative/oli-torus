@@ -144,7 +144,7 @@ defmodule OliWeb.Api.MediaController do
        ],
        responses: %{
          200 =>
-           {"Media Item Page", "application/json", OliWeb.MediaController.MediaItemPageSchema}
+           {"Media Item Page", "application/json", OliWeb.Api.MediaController.MediaItemPageSchema}
        }
   def index(conn, %{"project" => project_slug} = params) do
     options = ItemOptions.from_client_options(params)
@@ -195,11 +195,11 @@ defmodule OliWeb.Api.MediaController do
        ],
        request_body:
          {"Request body to add a media library item", "application/json",
-          OliWeb.MediaController.MediaItemUpload, required: true},
+          OliWeb.Api.MediaController.MediaItemUpload, required: true},
        responses: %{
          200 =>
            {"Media Item Upload Response", "application/json",
-            OliWeb.MediaController.MediaItemUploadResponse}
+            OliWeb.Api.MediaController.MediaItemUploadResponse}
        }
   def create(conn, %{"project" => project_slug, "file" => file, "name" => name}) do
     case Base.decode64(file) do

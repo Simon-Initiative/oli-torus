@@ -105,7 +105,7 @@ defmodule OliWeb.Api.ActivityController do
        ],
        request_body:
          {"Attributes for the document", "application/json",
-          OliWeb.ActivityController.DocumentAttributes, required: true},
+          OliWeb.Api.ActivityController.DocumentAttributes, required: true},
        responses: %{
          201 => {"Creation Response", "application/json", ApiSchemas.CreationResponse}
        }
@@ -200,7 +200,7 @@ defmodule OliWeb.Api.ActivityController do
        responses: %{
          200 =>
            {"Retrieval Response", "application/json",
-            OliWeb.ActivityController.DocumentAttributes}
+            OliWeb.Api.ActivityController.DocumentAttributes}
        }
   def retrieve(conn, %{
         "project" => project_slug,
@@ -230,11 +230,11 @@ defmodule OliWeb.Api.ActivityController do
        ],
        request_body:
          {"Attributes for the document", "application/json",
-          OliWeb.ActivityController.BulkDocumentRequestBody, required: true},
+          OliWeb.Api.ActivityController.BulkDocumentRequestBody, required: true},
        responses: %{
          200 =>
            {"Retrieval Response", "application/json",
-            OliWeb.ActivityController.BulkDocumentResponse}
+            OliWeb.Api.ActivityController.BulkDocumentResponse}
        }
   def bulk_retrieve(conn, %{
         "project" => project_slug,
@@ -288,7 +288,7 @@ defmodule OliWeb.Api.ActivityController do
        responses: %{
          200 =>
            {"Retrieval Response", "application/json",
-            OliWeb.ActivityController.DocumentAttributes}
+            OliWeb.Api.ActivityController.DocumentAttributes}
        }
   def retrieve_delivery(conn, %{
         "section_slug" => section_slug,
@@ -323,7 +323,7 @@ defmodule OliWeb.Api.ActivityController do
        responses: %{
          200 =>
            {"Retrieval Response", "application/json",
-            OliWeb.ActivityController.BulkDocumentResponse}
+            OliWeb.Api.ActivityController.BulkDocumentResponse}
        }
   def bulk_retrieve_delivery(conn, %{
         "section_slug" => section_slug,
@@ -378,7 +378,7 @@ defmodule OliWeb.Api.ActivityController do
        ],
        request_body:
          {"Attributes for the document", "application/json",
-          OliWeb.ActivityController.DocumentAttributes, required: true},
+          OliWeb.Api.ActivityController.DocumentAttributes, required: true},
        responses: %{
          200 => {"Update Response", "application/json", ApiSchemas.UpdateResponse}
        }

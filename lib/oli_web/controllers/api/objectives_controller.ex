@@ -64,7 +64,8 @@ defmodule OliWeb.Api.ObjectivesController do
        ],
        responses: %{
          200 =>
-           {"All objectives", "application/json", OliWeb.ObjectivesController.ObjectiveResponse}
+           {"All objectives", "application/json",
+            OliWeb.Api.ObjectivesController.ObjectiveResponse}
        }
   def index(conn, _) do
     objectives =
