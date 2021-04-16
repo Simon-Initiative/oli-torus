@@ -7,10 +7,10 @@
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.8.0">
 
-    <title>OliWeb.ObjectivesController — OLI Torus v0.8.0</title>
+    <title>OliWeb.Api.Helpers — OLI Torus v0.8.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-f9093cccfd.js"></script>
+    <script src="dist/sidebar_items-78d7724505.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -78,21 +78,15 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-OliWeb.ObjectivesController <small class="app-vsn">(OLI Torus v0.8.0)</small>
+OliWeb.Api.Helpers <small class="app-vsn">(OLI Torus v0.8.0)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/objectives_controller.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/helpers.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
 
       </h1>
 
-
-        <section id="moduledoc">
-<p>The objectives service is a collection of endpoints intended to be
-used by the authoring implementation of an activity to access, create,
-and update the objectives present in a course project.</p>
-        </section>
 
 
         <section id="summary" class="details-list">
@@ -110,29 +104,9 @@ and update the objectives present in a course project.</p>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#create/2">create(conn, _)</a>
+    <a href="#error/3">error(conn, code, reason)</a>
 
   </div>
-
-    <div class="summary-synopsis"><p>Create a new learning objective.</p></div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#index/2">index(conn, _)</a>
-
-  </div>
-
-    <div class="summary-synopsis"><p>List all learning objectives.</p></div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#update/2">update(conn, map)</a>
-
-  </div>
-
-    <div class="summary-synopsis"><p>Edit a learning objective.</p></div>
 
 </div>
 
@@ -150,16 +124,16 @@ and update the objectives present in a course project.</p>
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="create/2">
+<section class="detail" id="error/3">
 
   <div class="detail-header">
-    <a href="#create/2" class="detail-link" title="Link to this function">
+    <a href="#error/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">create(conn, _)</h1>
+    <h1 class="signature">error(conn, code, reason)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/objectives_controller.ex#L201" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/helpers.ex#L4" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -169,51 +143,7 @@ Functions
 
   <section class="docstring">
 
-<p>Create a new learning objective.</p>
-  </section>
-</section>
-<section class="detail" id="index/2">
 
-  <div class="detail-header">
-    <a href="#index/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">index(conn, _)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/objectives_controller.ex#L69" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-<p>List all learning objectives.</p>
-  </section>
-</section>
-<section class="detail" id="update/2">
-
-  <div class="detail-header">
-    <a href="#update/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">update(conn, map)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/objectives_controller.ex#L142" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-<p>Edit a learning objective.</p>
   </section>
 </section>
 

@@ -7,10 +7,10 @@
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.8.0">
 
-    <title>OliWeb.LockController — OLI Torus v0.8.0</title>
+    <title>OliWeb.Api.ActivityController.BulkDocumentResponse — OLI Torus v0.8.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-f9093cccfd.js"></script>
+    <script src="dist/sidebar_items-78d7724505.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -78,9 +78,9 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-OliWeb.LockController <small class="app-vsn">(OLI Torus v0.8.0)</small>
+OliWeb.Api.ActivityController.BulkDocumentResponse <small class="app-vsn">(OLI Torus v0.8.0)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lock_controller.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/activity_controller.ex#L46" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -98,22 +98,31 @@ OliWeb.LockController <small class="app-vsn">(OLI Torus v0.8.0)</small>
             Summary
           </h1>
 
+  <div class="summary-types summary">
+    <h2>
+      <a href="#types">Types</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:t/0">t()</a>
+
+  </div>
+
+</div>
+
+  </div>
+
   <div class="summary-functions summary">
     <h2>
       <a href="#functions">Functions</a>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#acquire/2">acquire(conn, map)</a>
+    <a href="#schema/0">schema()</a>
 
   </div>
 
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#release/2">release(conn, map)</a>
-
-  </div>
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/open_api_spex/3.10.0/OpenApiSpex.Schema.html#c:schema/0"><code class="inline">OpenApiSpex.Schema.schema/0</code></a>.</p></div>
 
 </div>
 
@@ -121,6 +130,48 @@ OliWeb.LockController <small class="app-vsn">(OLI Torus v0.8.0)</small>
 
         </section>
 
+
+        <section id="types" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#types">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Types
+          </h1>
+          <div class="types-list">
+<section class="detail" id="t:t/0">
+
+  <div class="detail-header">
+    <a href="#t:t/0" class="detail-link" title="Link to this type">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature">t()</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/activity_controller.ex#L49" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>t() :: %OliWeb.Api.ActivityController.BulkDocumentResponse{results: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()}</pre>
+
+      </div>
+
+
+  </section>
+</section>
+
+          </div>
+        </section>
 
         <section id="functions" class="details-list">
           <h1 class="section-heading">
@@ -131,16 +182,16 @@ OliWeb.LockController <small class="app-vsn">(OLI Torus v0.8.0)</small>
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="acquire/2">
+<section class="detail" id="schema/0">
 
   <div class="detail-header">
-    <a href="#acquire/2" class="detail-link" title="Link to this function">
+    <a href="#schema/0" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">acquire(conn, map)</h1>
+    <h1 class="signature">schema()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lock_controller.ex#L6" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/activity_controller.ex#L49" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -150,29 +201,7 @@ Functions
 
   <section class="docstring">
 
-
-  </section>
-</section>
-<section class="detail" id="release/2">
-
-  <div class="detail-header">
-    <a href="#release/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">release(conn, map)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/lock_controller.ex#L27" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
+<p>Callback implementation for <a href="https://hexdocs.pm/open_api_spex/3.10.0/OpenApiSpex.Schema.html#c:schema/0"><code class="inline">OpenApiSpex.Schema.schema/0</code></a>.</p>
   </section>
 </section>
 

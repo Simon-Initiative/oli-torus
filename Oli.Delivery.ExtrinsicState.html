@@ -10,7 +10,7 @@
     <title>Oli.Delivery.ExtrinsicState — OLI Torus v0.8.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-f9093cccfd.js"></script>
+    <script src="dist/sidebar_items-78d7724505.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -111,6 +111,16 @@ works on a collection of keys (or key value pairs).</p>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#delete_attempt/2">delete_attempt(attempt_guid, keys)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Deletes one or more keys from the extrinsic state for a user for an attempt context. The
+keys are specified as a MapSet of string key names.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#delete_global/2">delete_global(user_id, keys)</a>
 
   </div>
@@ -131,6 +141,16 @@ keys are specified as a MapSet of string key names.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#read_attempt/2">read_attempt(attempt_guid, keys \\ nil)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Reads extrinsic state for a user from a resource attempt context.  Returns {:ok, map} of the keys and their
+values.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#read_global/2">read_global(user_id, keys \\ nil)</a>
 
   </div>
@@ -147,6 +167,16 @@ values.</p></div>
 
     <div class="summary-synopsis"><p>Reads extrinsic state for a user for a specific section.  Returns {:ok, map} of the keys and their
 values.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#upsert_atttempt/2">upsert_atttempt(attempt_guid, key_values)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Updates or inserts key value pairs into the extrinsic state for a user for an attempt context.
+Returns {:ok, map} of the new updated state.</p></div>
 
 </div>
 <div class="summary-row">
@@ -184,6 +214,29 @@ Returns {:ok, map} of the new updated state.</p></div>
 Functions
           </h1>
           <div class="functions-list">
+<section class="detail" id="delete_attempt/2">
+
+  <div class="detail-header">
+    <a href="#delete_attempt/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">delete_attempt(attempt_guid, keys)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/extrinsic_state.ex#L162" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Deletes one or more keys from the extrinsic state for a user for an attempt context. The
+keys are specified as a MapSet of string key names.</p><p>Returns {:ok, map} of the new updated state.</p>
+  </section>
+</section>
 <section class="detail" id="delete_global/2">
 
   <div class="detail-header">
@@ -193,7 +246,7 @@ Functions
     </a>
     <h1 class="signature">delete_global(user_id, keys)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/extrinsic_state.ex#L101" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/extrinsic_state.ex#L139" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -216,7 +269,7 @@ keys are specified as a MapSet of string key names.</p><p>Returns {:ok, map} of 
     </a>
     <h1 class="signature">delete_section(user_id, section_slug, keys)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/extrinsic_state.ex#L124" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/extrinsic_state.ex#L184" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -230,6 +283,33 @@ keys are specified as a MapSet of string key names.</p><p>Returns {:ok, map} of 
 keys are specified as a MapSet of string key names.</p><p>Returns {:ok, map} of the new updated state.</p>
   </section>
 </section>
+<section class="detail" id="read_attempt/2">
+
+    <span id="read_attempt/1"></span>
+
+  <div class="detail-header">
+    <a href="#read_attempt/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">read_attempt(attempt_guid, keys \\ nil)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/extrinsic_state.ex#L62" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Reads extrinsic state for a user from a resource attempt context.  Returns {:ok, map} of the keys and their
+values.</p><p>The optional <code class="inline">keys</code> parameter is a MapSet of the string key names to retrieve. If this
+argument is not specified then all keys are returned, otherwise the return value is a map of
+key value pairs filtered to this MapSet.</p>
+  </section>
+</section>
 <section class="detail" id="read_global/2">
 
     <span id="read_global/1"></span>
@@ -241,7 +321,7 @@ keys are specified as a MapSet of string key names.</p><p>Returns {:ok, map} of 
     </a>
     <h1 class="signature">read_global(user_id, keys \\ nil)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/extrinsic_state.ex#L46" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/extrinsic_state.ex#L47" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -268,7 +348,7 @@ key value pairs filtered to this MapSet.</p>
     </a>
     <h1 class="signature">read_section(user_id, section_slug, keys \\ nil)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/extrinsic_state.ex#L28" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/extrinsic_state.ex#L29" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -284,6 +364,29 @@ argument is not specified then all keys are returned, otherwise the return value
 key value pairs filtered to this MapSet.</p>
   </section>
 </section>
+<section class="detail" id="upsert_atttempt/2">
+
+  <div class="detail-header">
+    <a href="#upsert_atttempt/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">upsert_atttempt(attempt_guid, key_values)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/extrinsic_state.ex#L115" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Updates or inserts key value pairs into the extrinsic state for a user for an attempt context.
+Returns {:ok, map} of the new updated state.</p>
+  </section>
+</section>
 <section class="detail" id="upsert_global/2">
 
   <div class="detail-header">
@@ -293,7 +396,7 @@ key value pairs filtered to this MapSet.</p>
     </a>
     <h1 class="signature">upsert_global(user_id, key_values)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/extrinsic_state.ex#L78" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/extrinsic_state.ex#L94" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -316,7 +419,7 @@ Returns {:ok, map} of the new updated state.</p>
     </a>
     <h1 class="signature">upsert_section(user_id, section_slug, key_values)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/extrinsic_state.ex#L57" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/extrinsic_state.ex#L73" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

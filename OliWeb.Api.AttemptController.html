@@ -7,10 +7,10 @@
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.8.0">
 
-    <title>OliWeb.AttemptController — OLI Torus v0.8.0</title>
+    <title>OliWeb.Api.AttemptController — OLI Torus v0.8.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-f9093cccfd.js"></script>
+    <script src="dist/sidebar_items-78d7724505.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -78,9 +78,9 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-OliWeb.AttemptController <small class="app-vsn">(OLI Torus v0.8.0)</small>
+OliWeb.Api.AttemptController <small class="app-vsn">(OLI Torus v0.8.0)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/attempt_controller.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -102,6 +102,15 @@ OliWeb.AttemptController <small class="app-vsn">(OLI Torus v0.8.0)</small>
     <h2>
       <a href="#functions">Functions</a>
     </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#bulk_retrieve/2">bulk_retrieve(conn, map)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Retrieves a collection of activity attempt records for a collection of activity attempt guids.</p></div>
+
+</div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#get_hint/2">get_hint(conn, map)</a>
@@ -189,6 +198,28 @@ OliWeb.AttemptController <small class="app-vsn">(OLI Torus v0.8.0)</small>
 Functions
           </h1>
           <div class="functions-list">
+<section class="detail" id="bulk_retrieve/2">
+
+  <div class="detail-header">
+    <a href="#bulk_retrieve/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">bulk_retrieve(conn, map)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/attempt_controller.ex#L286" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Retrieves a collection of activity attempt records for a collection of activity attempt guids.</p>
+  </section>
+</section>
 <section class="detail" id="get_hint/2">
 
   <div class="detail-header">
@@ -198,7 +229,7 @@ Functions
     </a>
     <h1 class="signature">get_hint(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L278" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/attempt_controller.ex#L430" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -220,7 +251,7 @@ Functions
     </a>
     <h1 class="signature">new_activity(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L399" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/attempt_controller.ex#L551" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -242,7 +273,7 @@ Functions
     </a>
     <h1 class="signature">new_part(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L266" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/attempt_controller.ex#L418" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -264,7 +295,7 @@ Functions
     </a>
     <h1 class="signature">save_activity(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L306" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/attempt_controller.ex#L458" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -286,7 +317,7 @@ Functions
     </a>
     <h1 class="signature">save_part(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L220" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/attempt_controller.ex#L372" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -308,7 +339,7 @@ Functions
     </a>
     <h1 class="signature">submit_activity(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L327" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/attempt_controller.ex#L479" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -330,7 +361,7 @@ Functions
     </a>
     <h1 class="signature">submit_evaluations(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L356" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/attempt_controller.ex#L508" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -352,7 +383,7 @@ Functions
     </a>
     <h1 class="signature">submit_part(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/attempt_controller.ex#L244" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/attempt_controller.ex#L396" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
