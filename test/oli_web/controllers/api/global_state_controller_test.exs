@@ -2,7 +2,6 @@ defmodule OliWeb.Api.GlobalStateControllerTest do
   use OliWeb.ConnCase
 
   alias Oli.Seeder
-  alias Lti_1p3.Tool.ContextRoles
 
   defp again(conn, user) do
     recycle(conn)
@@ -17,7 +16,6 @@ defmodule OliWeb.Api.GlobalStateControllerTest do
 
     test "can read and update", %{
       conn: conn,
-      section: section,
       user: user
     } do
       conn = get(conn, Routes.global_state_path(conn, :read))
