@@ -54,16 +54,15 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def img(%Context{} = _context, _, %{"src" => src} = attrs) do
-    alt =
+    maybeAlt =
       case attrs do
-        %{"alt" => alt} -> " alt=#{alt}"
+        %{"alt" => alt} -> " alt=#{escape_xml!(alt)}"
         _ -> ""
       end
 
-    # if attrs["caption"]
-    figure(attrs, [~s|<img class="#{display_class(attrs)}"#{alt} src="#{src}"/>\n|])
-    # else [~s|<img class="#{display_class(attrs)}"#{alt} src="#{src}"/>\n|]
-    # end
+    figure(attrs, [
+      ~s|<img class="#{display_class(attrs)}"#{maybeAlt} src="#{escape_xml!(src)}"/>\n|
+    ])
   end
 
   def youtube(%Context{} = _context, _, %{"src" => src} = attrs) do
@@ -72,8 +71,8 @@ defmodule Oli.Rendering.Content.Html do
     figure(Map.put(attrs, "full-width", true), [
       """
       <div class="youtube-wrapper">
-        <iframe id="#{src}" class="#{display_class(attrs)}" allowfullscreen src="https://www.youtube.com/embed/#{
-        src
+        <iframe id="#{escape_xml!(src)}" class="#{display_class(attrs)}" allowfullscreen src="https://www.youtube.com/embed/#{
+        escape_xml!(src)
       }"></iframe>
       </div>
       """
@@ -94,14 +93,14 @@ defmodule Oli.Rendering.Content.Html do
     figure(Map.put(attrs, "full-width", true), [
       """
       <div class="webpage-wrapper">
-        <iframe class="#{display_class(attrs)}" allowfullscreen src="#{src}"></iframe>
+        <iframe class="#{display_class(attrs)}" allowfullscreen src="#{escape_xml!(src)}"></iframe>
       </div>
       """
     ])
   end
 
   def audio(%Context{} = _context, _, %{"src" => src} = attrs) do
-    figure(attrs, [~s|<audio controls src="#{src}">
+    figure(attrs, [~s|<audio controls src="#{escape_xml!(src)}">
       Your browser does not support the <code>audio</code> element.
     </audio>\n|])
   end
@@ -109,7 +108,7 @@ defmodule Oli.Rendering.Content.Html do
   def table(%Context{} = _context, next, attrs) do
     caption =
       case attrs do
-        %{"caption" => caption} -> "<caption>#{caption}</caption>"
+        %{"caption" => caption} -> "<caption>#{escape_xml!(caption)}</caption>"
         _ -> ""
       end
 
@@ -155,7 +154,11 @@ defmodule Oli.Rendering.Content.Html do
           "language" => language
         } = attrs
       ) do
-    figure(attrs, [~s|<pre><code class="language-#{language}">|, next.(), "</code></pre>\n"])
+    figure(attrs, [
+      ~s|<pre><code class="language-#{escape_xml!(language)}">|,
+      next.(),
+      "</code></pre>\n"
+    ])
   end
 
   def code_line(%Context{} = _context, next, _) do
@@ -288,7 +291,7 @@ defmodule Oli.Rendering.Content.Html do
           end
         }>"
       ] ++
-      [caption] ++
+      [escape_xml!(caption)] ++
       ["</figcaption>"] ++
       ["</figure>"] ++
       ["</div>"]
