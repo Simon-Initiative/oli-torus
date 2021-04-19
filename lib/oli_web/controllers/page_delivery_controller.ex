@@ -49,15 +49,15 @@ defmodule OliWeb.PageDeliveryController do
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
     user = conn.assigns.current_user
 
-    {:ok, resource_attempt_state} = Jason.encode(Enum.at(context.resource_attempts, 0).state)
+    resource_attempt = Enum.at(context.resource_attempts, 0)
+    {:ok, resource_attempt_state} = Jason.encode(resource_attempt.state)
 
     {:ok, activity_guid_mapping} =
-      context.activities
-      |> Map.keys()
-      |> Enum.map(fn activity_id -> Map.get(context.activities, activity_id).attempt_guid end)
+      Oli.Delivery.Page.ActivityContext.to_thin_context_map(context.activities)
       |> Jason.encode()
 
     render(conn, "delivery.html", %{
+      resource_attempt_guid: resource_attempt.attempt_guid,
       resource_attempt_state: resource_attempt_state,
       activity_guid_mapping: activity_guid_mapping,
       content: Jason.encode!(context.page.content),
