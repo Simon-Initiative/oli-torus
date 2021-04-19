@@ -10,7 +10,7 @@ import {
 import { MultipleChoiceModelSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
-import { Maybe, writer } from 'tsmonad';
+import { Maybe } from 'tsmonad';
 import { Stem } from '../common/DisplayedStem';
 import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
@@ -34,7 +34,7 @@ interface ChoicesProps {
 
 const Choices = ({ choices, selected, context, onSelect, isEvaluated }: ChoicesProps) => {
   return (
-    <div className="choices">
+    <div className="choices" aria-label="multiple choice choices">
       {choices.map((choice, index) =>
         <Choice
           key={choice.id}
@@ -60,6 +60,7 @@ interface ChoiceProps {
 const Choice = ({ choice, index, selected, context, onClick, isEvaluated }: ChoiceProps) => {
   return (
     <div key={choice.id}
+      aria-label={`choice ${index + 1}`}
       onClick={isEvaluated ? undefined : onClick}
       className={`choice ${selected ? 'selected' : ''}`}>
       <span className="choice-index">{index + 1}</span>
@@ -68,7 +69,7 @@ const Choice = ({ choice, index, selected, context, onClick, isEvaluated }: Choi
   );
 };
 
-const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) => {
+export const MultipleChoiceComponent = (props: DeliveryElementProps<MultipleChoiceModelSchema>) => {
 
   const [model, setModel] = useState(props.model);
   const [attemptState, setAttemptState] = useState(props.state);
@@ -182,7 +183,7 @@ const MultipleChoice = (props: DeliveryElementProps<MultipleChoiceModelSchema>) 
 // Defines the web component, a simple wrapper over our React component above
 export class MultipleChoiceDelivery extends DeliveryElement<MultipleChoiceModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MultipleChoiceModelSchema>) {
-    ReactDOM.render(<MultipleChoice {...props} />, mountPoint);
+    ReactDOM.render(<MultipleChoiceComponent {...props} />, mountPoint);
   }
 }
 

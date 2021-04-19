@@ -34,11 +34,35 @@ defmodule Oli.Delivery.Page.ActivityContext do
       {id,
        %ActivitySummary{
          id: id,
+         attempt_guid: state.attemptGuid,
          model: prepare_model(model),
          state: prepare_state(state),
          delivery_element: type.delivery_element,
          script: type.delivery_script,
          graded: graded
+       }}
+    end)
+    |> Map.new()
+  end
+
+  @doc """
+  Takes a full context map produced by create_context_map/2 and 'thins' it out to
+  leave only the id, the delivery element name and the attempt guid. This is to allow
+  a page implementation that wishes to avoid injecting a potentially large number of
+  activities (and their full state and model) into a server rendered document.
+  """
+  def to_thin_context_map(context_map) do
+    Enum.map(context_map, fn {k,
+                              %{
+                                id: id,
+                                attempt_guid: attempt_guid,
+                                delivery_element: delivery_element
+                              }} ->
+      {k,
+       %{
+         id: id,
+         attemptGuid: attempt_guid,
+         deliveryElement: delivery_element
        }}
     end)
     |> Map.new()

@@ -41,6 +41,7 @@ defmodule OliWeb.Router do
   pipeline :lti do
     plug :fetch_session
     plug :fetch_flash
+    plug Oli.Plugs.SetCurrentUser
     plug :put_root_layout, {OliWeb.LayoutView, "lti.html"}
   end
 
@@ -232,7 +233,6 @@ defmodule OliWeb.Router do
     # Editors
     get "/:project_id/resource/:revision_slug", ResourceController, :edit
     get "/:project_id/resource/:revision_slug/preview", ResourceController, :preview
-    delete "/:project_id/resource/:revision_slug", ResourceController, :delete
     get "/:project_id/resource/:revision_slug/activity/:activity_slug", ActivityController, :edit
 
     # Collaborators
@@ -279,79 +279,104 @@ defmodule OliWeb.Router do
   scope "/api/v1/project", OliWeb do
     pipe_through [:api, :authoring_protected]
 
-    put "/:project/resource/:resource", ResourceController, :update
-    get "/:project/link", ResourceController, :index
+    put "/:project/resource/:resource", Api.ResourceController, :update
+    get "/:project/link", Api.ResourceController, :index
 
-    post "/:project/activity/:activity_type", ActivityController, :create
+    post "/:project/activity/:activity_type", Api.ActivityController, :create
 
-    put "/test/evaluate", ActivityController, :evaluate
-    put "/test/transform", ActivityController, :transform
+    put "/test/evaluate", Api.ActivityController, :evaluate
+    put "/test/transform", Api.ActivityController, :transform
 
-    post "/:project/lock/:resource", LockController, :acquire
-    delete "/:project/lock/:resource", LockController, :release
+    post "/:project/lock/:resource", Api.LockController, :acquire
+    delete "/:project/lock/:resource", Api.LockController, :release
   end
 
   # Storage Service
   scope "/api/v1/storage/project/:project/resource", OliWeb do
     pipe_through [:api, :authoring_protected]
 
-    get "/:resource", ActivityController, :retrieve
-    post "/", ActivityController, :bulk_retrieve
-    delete "/:resource", ActivityController, :delete
-    put "/:resource", ActivityController, :update
-    post "/:resource", ActivityController, :create_secondary
+    get "/:resource", Api.ActivityController, :retrieve
+    post "/", Api.ActivityController, :bulk_retrieve
+    delete "/:resource", Api.ActivityController, :delete
+    put "/:resource", Api.ActivityController, :update
+    post "/:resource", Api.ActivityController, :create_secondary
   end
 
   scope "/api/v1/storage/course/:section_slug/resource", OliWeb do
     pipe_through [:api, :delivery_protected]
 
-    get "/:resource", ActivityController, :retrieve_delivery
-    post "/", ActivityController, :bulk_retrieve_delivery
+    get "/:resource", Api.ActivityController, :retrieve_delivery
+    post "/", Api.ActivityController, :bulk_retrieve_delivery
   end
 
   # Media Service
   scope "/api/v1/media/project/:project", OliWeb do
     pipe_through [:api, :authoring_protected]
 
-    post "/", MediaController, :create
-    get "/", MediaController, :index
+    post "/", Api.MediaController, :create
+    get "/", Api.MediaController, :index
   end
 
   # Objectives Service
   scope "/api/v1/objectives/project/:project", OliWeb do
     pipe_through [:api, :authoring_protected]
 
-    post "/", ObjectivesController, :create
-    get "/", ObjectivesController, :index
-    put "/objective/:objective", ObjectivesController, :update
+    post "/", Api.ObjectivesController, :create
+    get "/", Api.ObjectivesController, :index
+    put "/objective/:objective", Api.ObjectivesController, :update
   end
 
   # User State Service, instrinsic state
-  scope "/api/v1/state/course/:section_slug/activity_attempt/:activity_attempt_guid", OliWeb do
+  scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
     pipe_through [:api, :delivery_protected]
 
-    post "/", AttemptController, :new_activity
-    put "/", AttemptController, :submit_activity
-    patch "/", AttemptController, :save_activity
-    put "/evaluations", AttemptController, :submit_evaluations
+    post "/", Api.AttemptController, :bulk_retrieve
 
-    post "/part_attempt/:part_attempt_guid", AttemptController, :new_part
-    put "/part_attempt/:part_attempt_guid", AttemptController, :submit_part
-    patch "/part_attempt/:part_attempt_guid", AttemptController, :save_part
-    get "/part_attempt/:part_attempt_guid/hint", AttemptController, :get_hint
+    post "/:activity_attempt_guid", Api.AttemptController, :new_activity
+    put "/:activity_attempt_guid", Api.AttemptController, :submit_activity
+    patch "/:activity_attempt_guid", Api.AttemptController, :save_activity
+    put "/:activity_attempt_guid/evaluations", Api.AttemptController, :submit_evaluations
+
+    post "/:activity_attempt_guidpart_attempt/:part_attempt_guid",
+         Api.AttemptController,
+         :new_part
+
+    put "/:activity_attempt_guidpart_attempt/:part_attempt_guid",
+        Api.AttemptController,
+        :submit_part
+
+    patch "/:activity_attempt_guidpart_attempt/:part_attempt_guid",
+          Api.AttemptController,
+          :save_part
+
+    get "/:activity_attempt_guidpart_attempt/:part_attempt_guid/hint",
+        Api.AttemptController,
+        :get_hint
   end
 
   # User State Service, extrinsic state
   scope "/api/v1/state", OliWeb do
     pipe_through [:api, :delivery_protected]
 
-    get "/", ExtrinsicStateController, :read_global
-    put "/", ExtrinsicStateController, :upsert_global
-    delete "/", ExtrinsicStateController, :delete_global
+    get "/", Api.GlobalStateController, :read
+    put "/", Api.GlobalStateController, :upsert
+    delete "/", Api.GlobalStateController, :delete
 
-    get "/course/:section_slug", ExtrinsicStateController, :read_section
-    put "/course/:section_slug", ExtrinsicStateController, :upsert_section
-    delete "/course/:section_slug", ExtrinsicStateController, :delete_section
+    get "/course/:section_slug", Api.SectionStateController, :read
+    put "/course/:section_slug", Api.SectionStateController, :upsert
+    delete "/course/:section_slug", Api.SectionStateController, :delete
+
+    get "/course/:section_slug/resource_attempt/:resource_attempt_guid",
+        Api.ResourceAttemptStateController,
+        :read
+
+    put "/course/:section_slug/resource_attempt/:resource_attempt_guid",
+        Api.ResourceAttemptStateController,
+        :upsert
+
+    delete "/course/:section_slug/resource_attempt/:resource_attempt_guid",
+           Api.ResourceAttemptStateController,
+           :delete
   end
 
   scope "/api/v1/lti", OliWeb, as: :api do

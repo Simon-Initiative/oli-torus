@@ -46,11 +46,21 @@ defmodule OliWeb.PageDeliveryController do
          section_slug,
          _
        ) do
-
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
     user = conn.assigns.current_user
 
+    resource_attempt = Enum.at(context.resource_attempts, 0)
+    {:ok, resource_attempt_state} = Jason.encode(resource_attempt.state)
+
+    {:ok, activity_guid_mapping} =
+      Oli.Delivery.Page.ActivityContext.to_thin_context_map(context.activities)
+      |> Jason.encode()
+
     render(conn, "delivery.html", %{
+      resource_attempt_guid: resource_attempt.attempt_guid,
+      resource_attempt_state: resource_attempt_state,
+      activity_guid_mapping: activity_guid_mapping,
+      content: Jason.encode!(context.page.content),
       summary: summary,
       scripts: Activities.get_activity_scripts(),
       section_slug: section_slug,
@@ -98,10 +108,11 @@ defmodule OliWeb.PageDeliveryController do
 
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
 
-    resource_attempts = Enum.filter(resource_attempts, fn r -> r.date_evaluated != nil end)
-    |> Enum.sort(fn r1, r2 ->
-      r1.date_evaluated <= r2.date_evaluated
-    end)
+    resource_attempts =
+      Enum.filter(resource_attempts, fn r -> r.date_evaluated != nil end)
+      |> Enum.sort(fn r1, r2 ->
+        r1.date_evaluated <= r2.date_evaluated
+      end)
 
     render(conn, "prologue.html", %{
       section_slug: section_slug,

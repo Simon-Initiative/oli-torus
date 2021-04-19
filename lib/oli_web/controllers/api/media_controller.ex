@@ -1,4 +1,4 @@
-defmodule OliWeb.MediaController do
+defmodule OliWeb.Api.MediaController do
   @moduledoc tags: ["Media Library Service"]
 
   @moduledoc """
@@ -144,7 +144,7 @@ defmodule OliWeb.MediaController do
        ],
        responses: %{
          200 =>
-           {"Media Item Page", "application/json", OliWeb.MediaController.MediaItemPageSchema}
+           {"Media Item Page", "application/json", OliWeb.Api.MediaController.MediaItemPageSchema}
        }
   def index(conn, %{"project" => project_slug} = params) do
     options = ItemOptions.from_client_options(params)
@@ -195,11 +195,11 @@ defmodule OliWeb.MediaController do
        ],
        request_body:
          {"Request body to add a media library item", "application/json",
-          OliWeb.MediaController.MediaItemUpload, required: true},
+          OliWeb.Api.MediaController.MediaItemUpload, required: true},
        responses: %{
          200 =>
            {"Media Item Upload Response", "application/json",
-            OliWeb.MediaController.MediaItemUploadResponse}
+            OliWeb.Api.MediaController.MediaItemUploadResponse}
        }
   def create(conn, %{"project" => project_slug, "file" => file, "name" => name}) do
     case Base.decode64(file) do
@@ -224,19 +224,19 @@ defmodule OliWeb.MediaController do
   defp prettify_error(reason) do
     case reason do
       {:file_exists} ->
-        "That file already exists in storage. A file can only be uploaded once."
+        "A file with that name already exists. Please rename your file or use the existing file."
 
       {:persistence} ->
-        "The file could not be saved in storage. Hopefully, this is a temporary problem, so give it another try, but let us know if it continues to fail."
+        "The file could not be uploaded. Please try again or contact support."
 
       {:not_found} ->
         "The project you are trying to upload to could not be found."
 
       %Ecto.Changeset{} = _changeset ->
-        "It looks like something is wrong with that file's metadata. Make sure the image is correct, and if you're still having issues let us know."
+        "The file metadata could not be read. Please make sure the file is valid or contact support."
 
       _ ->
-        "Something unexpected prevented that file from being uploaded. Try another file or reach out to us for support."
+        "An unexpected error has occurred. Please try again or contact support."
     end
   end
 end

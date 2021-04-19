@@ -107,7 +107,7 @@ export const initActivityBridge = (elementId: string) => {
     e.stopPropagation();
     makeRequest(
       `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/evaluations`,
-      'PUT', { input: e.detail.payload }, e.detail.continuation);
+      'PUT', { evaluations: e.detail.payload }, e.detail.continuation);
   }, false);
 };
 

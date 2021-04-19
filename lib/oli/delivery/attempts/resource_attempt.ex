@@ -8,6 +8,7 @@ defmodule Oli.Delivery.Attempts.ResourceAttempt do
     field :date_evaluated, :utc_datetime
     field :score, :float
     field :out_of, :float
+    field :state, :map, default: %{}
 
     belongs_to :resource_access, Oli.Delivery.Attempts.ResourceAccess
     belongs_to :revision, Oli.Resources.Revision
@@ -24,6 +25,7 @@ defmodule Oli.Delivery.Attempts.ResourceAttempt do
       :attempt_number,
       :score,
       :out_of,
+      :state,
       :date_evaluated,
       :resource_access_id,
       :revision_id

@@ -270,6 +270,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
          %ActivitySummary{
            id: resource_id,
+           attempt_guid: nil,
            model: ActivityContext.prepare_model(transformed, prune: false),
            state: ActivityContext.prepare_state(state),
            delivery_element: type.delivery_element,
