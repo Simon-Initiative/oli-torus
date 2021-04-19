@@ -22,7 +22,7 @@ export const ImageCodeEditor = (props: ImageCodeEditorProps) => {
         value={value}
         onChange={props.onChange}
         readOnly={props.disabled}
-        style={props.disabled ? { background:"#ECF0F1" } : {}}
+        style={props.disabled ? { background:'#ECF0F1' } : {}}
         setOptions={{
           showLineNumbers: false,
           tabSize: 4,
