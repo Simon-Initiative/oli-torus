@@ -1,52 +1,52 @@
 <nav class="previous-next-nav d-flex flex-row" aria-label="Page navigation">
 
-    <%= if @context.previous_page != nil do %>
-        <%= link to: Routes.resource_path(@conn, @action, @context.projectSlug, @context.previous_page.slug), class: "page-nav-link btn btn-outline-primary" do %>
+  <%= if @context.previous_page != nil do %>
+    <%= link to: Routes.resource_path(@conn, @action, @context.projectSlug, @context.previous_page.slug), class: "page-nav-link btn" do %>
+      <div class="d-flex flex-row">
+        <div>
+          <i class="fas fa-arrow-left nav-icon"></i>
+        </div>
+        <div class="d-flex flex-column flex-fill flex-ellipsize-fix text-right">
+          <div class="nav-label">Previous</div>
+          <div class="nav-title"><%= @context.previous_page.title %></div>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="page-nav-link-placeholder"></div>
+  <% end %>
+
+  <div class="flex-grow-1"></div>
+
+  <%= cond do %>
+    <% @context.next_page != nil -> %>
+        <%= link to: Routes.resource_path(@conn, @action, @context.projectSlug, @context.next_page.slug), class: "page-nav-link btn" do %>
           <div class="d-flex flex-row">
-            <div>
-              <i class="fas fa-arrow-left nav-icon"></i>
+            <div class="d-flex flex-column flex-fill flex-ellipsize-fix text-left">
+              <div class="nav-label">Next</div>
+              <div class="nav-title"><%= @context.next_page.title %></div>
             </div>
-            <div class="d-flex flex-column flex-fill flex-ellipsize-fix text-right">
-              <div class="nav-label">Previous</div>
-              <div class="nav-title"><%= @context.previous_page.title %></div>
+            <div>
+              <i class="fas fa-arrow-right nav-icon"></i>
             </div>
           </div>
         <% end %>
-    <% else %>
+
+    <% @action != :edit -> %>
+        <%= link to: "#", class: "page-nav-link btn", onclick: "window.close();" do %>
+          <div class="d-flex flex-row">
+            <div class="d-flex flex-column flex-fill flex-ellipsize-fix text-left">
+              <div class="nav-label">Complete</div>
+              <div class="nav-title"><%= @context.project.title %></div>
+            </div>
+            <div>
+              <i class="fas fa-check nav-icon"></i>
+            </div>
+          </div>
+        <% end %>
+
+    <% true -> %>
       <div class="page-nav-link-placeholder"></div>
-    <% end %>
-
-    <div class="flex-grow-1"></div>
-
-    <%= cond do %>
-      <% @context.next_page != nil -> %>
-          <%= link to: Routes.resource_path(@conn, @action, @context.projectSlug, @context.next_page.slug), class: "page-nav-link btn btn-outline-primary" do %>
-            <div class="d-flex flex-row">
-              <div class="d-flex flex-column flex-fill flex-ellipsize-fix">
-                <div class="text-left nav-label">Next</div>
-                <div class="nav-title text-left"><%= @context.next_page.title %></div>
-              </div>
-              <div>
-                <i class="fas fa-arrow-right nav-icon"></i>
-              </div>
-            </div>
-          <% end %>
-
-      <% @action != :edit -> %>
-          <%= link to: "#", class: "page-nav-link btn btn-outline-primary", onclick: "window.close();" do %>
-            <div class="d-flex flex-row">
-              <div class="d-flex flex-column flex-fill flex-ellipsize-fix">
-                <div class="text-left nav-label">Complete</div>
-                <div class="nav-title text-left"><%= @context.project.title %></div>
-              </div>
-              <div>
-                <i class="fas fa-check nav-icon"></i>
-              </div>
-            </div>
-          <% end %>
-
-      <% true -> %>
-        <div class="page-nav-link-placeholder"></div>
-    <% end %>
+  <% end %>
 
 </nav>
