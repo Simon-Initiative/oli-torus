@@ -4,8 +4,20 @@
   margin-top: 3rem;
   border-top: 1px solid $gray-400;
 
+  .page-nav-link, .page-nav-link-placeholder {
+    margin-top: 20px;
+  }
+
+  .page-nav-link.btn-outline-primary:hover {
+    .nav-label {
+      color: $white;
+    }
+  }
+
   .nav-label {
     display: none;
+    color: $dark;
+    transition: all ease-in-out 200ms;
   }
 
   .nav-title {
@@ -17,12 +29,9 @@
   }
 
   @media (min-width: 768px) {
-    li.page-item {
-      width: 40%;
-    }
-
-    a.page-link {
+    .page-nav-link, .page-nav-link-placeholder {
       padding: 16px;
+      width: 30%;
     }
 
     .nav-label {

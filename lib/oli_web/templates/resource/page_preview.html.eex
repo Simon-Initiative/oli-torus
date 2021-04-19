@@ -27,7 +27,7 @@
   <%= raw(@content_html) %>
 </div>
 
-<%= render OliWeb.ResourceView, "_preview_previous_next_nav.html", conn: @conn, context: @context %>
+<%= render OliWeb.ResourceView, "_preview_previous_next_nav.html", conn: @conn, context: @context, action: :preview %>
 
 
 <script>
