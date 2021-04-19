@@ -7,17 +7,20 @@ defmodule Oli.Activities.Model do
   boxes.  It is also easier to represent as a struct in this manner.
   """
 
-  defstruct [:parts, :transformations, :delivery, :authoring]
+  defstruct [:parts, :transformations, :delivery, :authoring, :rules]
 
   def parse(%{"authoring" => authoring} = model) when is_map(authoring) do
     with {:ok, parts} <- Oli.Activities.Model.Part.parse(Map.get(authoring, "parts", [])),
+         {:ok, rules} <-
+           Oli.Activities.Model.ConditionalOutcome.parse(Map.get(authoring, "rules", [])),
          {:ok, transformations} <-
            Oli.Activities.Model.Transformation.parse(Map.get(authoring, "transformations", [])) do
       {:ok,
        %Oli.Activities.Model{
          parts: parts,
+         rules: rules,
          transformations: transformations,
-         authoring: Map.drop(authoring, ["parts", "transformations"]),
+         authoring: Map.drop(authoring, ["parts", "transformations", "rules"]),
          delivery: Map.drop(model, ["authoring"])
        }}
     else
@@ -29,6 +32,7 @@ defmodule Oli.Activities.Model do
     {:ok,
      %Oli.Activities.Model{
        parts: [],
+       rules: [],
        transformations: [],
        authoring: authoring,
        delivery: Map.drop(model, ["authoring"])
@@ -39,6 +43,7 @@ defmodule Oli.Activities.Model do
     {:ok,
      %Oli.Activities.Model{
        parts: [],
+       rules: [],
        transformations: [],
        authoring: %{},
        delivery: model

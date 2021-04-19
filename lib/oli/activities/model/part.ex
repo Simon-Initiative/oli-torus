@@ -1,27 +1,24 @@
 defmodule Oli.Activities.Model.Part do
-  defstruct [:id, :scoring_strategy, :responses, :outcomes, :hints, :parts]
+  defstruct [:id, :scoring_strategy, :responses, :hints, :parts]
 
   def parse(
         %{
           "id" => id,
-          "scoringStrategy" => scoring_strategy,
-          "responses" => responses
+          "scoringStrategy" => scoring_strategy
         } = part
       ) do
     hints = Map.get(part, "hints", [])
     parts = Map.get(part, "parts", [])
-    outcomes = Map.get(part, "outcomes", [])
+    responses = Map.get(part, "responses", [])
 
     with {:ok, responses} <- Oli.Activities.Model.Response.parse(responses),
          {:ok, hints} <- Oli.Activities.Model.Hint.parse(hints),
-         {:ok, outcomes} <- Oli.Activities.Model.ConditionalOutcome.parse(outcomes),
          {:ok, parts} <- Oli.Activities.Model.Part.parse(parts) do
       {:ok,
        %Oli.Activities.Model.Part{
          responses: responses,
          hints: hints,
          parts: parts,
-         outcomes: outcomes,
          id: id,
          scoring_strategy: scoring_strategy
        }}

@@ -16,6 +16,7 @@
     pageSlug: "<%= @slug %>",
     content: "<%= Base.encode64(@content) %>",
     resourceAttemptState: <%= raw(@resource_attempt_state) %>,
+    resourceAttemptGuid: "<%= @resource_attempt_guid %>",
     activityGuidMapping: <%= raw(@activity_guid_mapping) %>,
   };
 
