@@ -15,6 +15,7 @@
   - Fix a crash when an existing logged-in user accesses the Register Institution page
   - Activity feedback fixes and unit tests
   - Remove support for image floating to fix display issues in text editors
+  - Change activity rule, outcome modeling for use in adaptive activities
 
 ## 0.8.0 (2021-4-12)
 
