@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Page.ActivityContext — OLI Torus v0.8.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-78d7724505.js"></script>
+    <script src="dist/sidebar_items-ed3564624f.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -131,6 +131,18 @@ resolved revisions.</p></div>
   </div>
 
 </div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#to_thin_context_map/1">to_thin_context_map(context_map)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Takes a full context map produced by create_context_map/2 and 'thins' it out to
+leave only the id, the delivery element name and the attempt guid. This is to allow
+a page implementation that wishes to avoid injecting a potentially large number of
+activities (and their full state and model) into a server rendered document.</p></div>
+
+</div>
 
   </div>
 
@@ -188,7 +200,7 @@ resolved revisions.</p>
     </a>
     <h1 class="signature">prepare_model(model, opts \\ [])</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/activity_context.ex#L48" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/activity_context.ex#L71" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -210,7 +222,7 @@ resolved revisions.</p>
     </a>
     <h1 class="signature">prepare_state(state)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/activity_context.ex#L57" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/activity_context.ex#L80" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -221,6 +233,31 @@ resolved revisions.</p>
   <section class="docstring">
 
 
+  </section>
+</section>
+<section class="detail" id="to_thin_context_map/1">
+
+  <div class="detail-header">
+    <a href="#to_thin_context_map/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">to_thin_context_map(context_map)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/activity_context.ex#L54" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Takes a full context map produced by create_context_map/2 and 'thins' it out to
+leave only the id, the delivery element name and the attempt guid. This is to allow
+a page implementation that wishes to avoid injecting a potentially large number of
+activities (and their full state and model) into a server rendered document.</p>
   </section>
 </section>
 
