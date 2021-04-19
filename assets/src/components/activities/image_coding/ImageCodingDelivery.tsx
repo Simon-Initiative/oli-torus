@@ -14,7 +14,7 @@ import { valueOr } from 'utils/common';
 import { Evaluator, EvalContext } from './Evaluator';
 import { lastPart } from './utils';
 import { defaultWriterContext } from 'data/content/writers/context';
-
+import { ImageCodeEditor } from './sections/ImageCodeEditor';
 
 type Evaluation = {
   score: number,
@@ -22,32 +22,7 @@ type Evaluation = {
   feedback: ActivityTypes.RichText,
 };
 
-type InputProps = {
-  input: any;
-  onChange: (input: any) => void;
-  isEvaluated: boolean;
-};
-
-const Input = (props: InputProps) => {
-
-  const input = props.input === null ? '' : props.input;
-
-  return (
-    <textarea
-      rows={7}
-      cols={80}
-      className="form-control"
-      onChange={(e: any) => props.onChange(e.target.value)}
-      value={input}
-      disabled={props.isEvaluated} />
-  );
-};
-
-export interface ImageCodingDeliveryProps extends DeliveryElementProps<ImageCodingModelSchema> {
-  // output: string;
-}
-
-const ImageCoding = (props: ImageCodingDeliveryProps) => {
+const ImageCoding = (props: DeliveryElementProps<ImageCodingModelSchema>) => {
 
   const [model, setModel] = useState(props.model);
   const [attemptState, setAttemptState] = useState(props.state);
@@ -89,7 +64,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   const loadImage = (url: string, i: number) => {
     const img = new Image();
     // Owing to a flaw in S3, we get CORS errors when image is loaded from cache if cached
-    // copy was obtainedf rom an earlier non-CORS request. Appending unique query string is
+    // copy was obtained from an earlier non-CORS request. Appending unique query string is
     // a simple hack to force fresh load.
     img.src = url + '?t=' + new Date().getTime();
     img.crossOrigin = 'anonymous';
@@ -298,11 +273,12 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
       <div className="activity-content">
         <Stem stem={stem} context={writerContext} />
 
-        <div className="">
-          <Input
-            input={input}
-            isEvaluated={isEvaluated}
+        <div>
+          <ImageCodeEditor
+            value={input}
+            disabled={isEvaluated}
             onChange={onInputChange} />
+
           {runButton} {maybeSubmitButton}
         </div>
 
@@ -328,7 +304,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
 
 // Defines the web component, a simple wrapper over our React component above
 export class ImageCodingDelivery extends DeliveryElement<ImageCodingModelSchema> {
-  render(mountPoint: HTMLDivElement, props: ImageCodingDeliveryProps) {
+  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<ImageCodingModelSchema>) {
     ReactDOM.render(<ImageCoding {...props} />, mountPoint);
   }
 }

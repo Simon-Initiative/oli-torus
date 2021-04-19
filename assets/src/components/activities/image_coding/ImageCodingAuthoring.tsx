@@ -20,6 +20,7 @@ import * as ContentModel from 'data/content/model';
 import { Feedback } from './sections/Feedback';
 import { lastPart } from './utils';
 import { CloseButton } from 'components/misc/CloseButton';
+import { ImageCodeEditor } from './sections/ImageCodeEditor';
 
 const store = configureStore();
 
@@ -124,13 +125,10 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
         <Heading title="Solution" id="solution-code" />
 
         <p>Image problems: Solution Code {!usesImage() ? '-- add image to enable' : ''}</p>
-        <textarea
+        <ImageCodeEditor
           disabled={!usesImage()}
-          rows={5}
-          cols={80}
-          className="form-control"
           value={model.solutionCode}
-          onChange={(e: any) => dispatch(ICActions.editSolutionCode(e.target.value))} />
+          onChange={(newValue: string) => dispatch(ICActions.editSolutionCode(newValue))}/>
         <br/>
         <p>Tolerance:&nbsp;
           <input type="number" value={model.tolerance}  disabled={!usesImage()}
@@ -180,13 +178,11 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
       <br/>
 
       <Heading title="Starter Code" id="starter-code" />
-      <textarea
-        rows={5}
-        cols={80}
-        className="form-control"
+      <ImageCodeEditor
+        disabled={false}
         value={model.starterCode}
-        onChange={(e: any) => dispatch(ICActions.editStarterCode(e.target.value))} />
-        <br/>
+        onChange={(newValue: string) => dispatch(ICActions.editStarterCode(newValue))} />
+      <br/>
 
       <div className="form-check mb-2">
         <input
@@ -205,7 +201,6 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
       {! model.isExample &&
 
         <div>
-
           {solutionParameters()}
 
           <Hints

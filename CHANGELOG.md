@@ -4,6 +4,7 @@
 
 ### Enhancements
   - Add OpenAPI docs for user state service
+  - Image coding activity: use highlighting/autoindenting code editor
 
 ### Bug fixes
   - Support page-to-page links during course ingestion
