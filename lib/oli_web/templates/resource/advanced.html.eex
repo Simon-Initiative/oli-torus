@@ -9,3 +9,5 @@
 <script>
   window.oliMountApplication(document.getElementById('editor'), "<%= Base.encode64(@context) %>");
 </script>
+
+<%= render OliWeb.ResourceView, "_preview_previous_next_nav.html", conn: @conn, context: @raw_context, action: :edit %>
