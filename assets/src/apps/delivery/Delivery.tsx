@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { Provider } from "react-redux";
 import AdaptivePageView from "./formats/adaptive/AdaptivePageView";
 import store from "./store";
-import { loadActivities } from "./store/features/activities/slice";
+import { loadActivities, loadActivityState } from "./store/features/activities/slice";
 import { loadPageState } from "./store/features/page/slice";
 
 export interface DeliveryProps {
@@ -12,23 +12,53 @@ export interface DeliveryProps {
   userId: number;
   pageSlug: string;
   content: any;
+  resourceAttemptState: any;
+  resourceAttemptGuid: string;
+  activityGuidMapping: any;
 }
 
 export const Delivery: React.FunctionComponent<DeliveryProps> = (
   props: DeliveryProps
 ) => {
   useEffect(() => {
-    const { userId, resourceId, sectionSlug, pageSlug, content } = props;
+    const {
+      userId,
+      resourceId,
+      sectionSlug,
+      pageSlug,
+      content,
+      resourceAttemptGuid,
+      resourceAttemptState,
+      activityGuidMapping,
+    } = props;
 
     store.dispatch(
-      loadPageState({ userId, resourceId, sectionSlug, pageSlug, content })
+      loadPageState({
+        userId,
+        resourceId,
+        sectionSlug,
+        pageSlug,
+        content,
+        resourceAttemptGuid,
+        resourceAttemptState,
+        activityGuidMapping,
+      })
     );
 
+    // for the moment load *all* the activity state
+    const attemptGuids = Object.keys(activityGuidMapping).map(
+      (activityResourceId) => {
+        const { attemptGuid } = activityGuidMapping[activityResourceId];
+        return attemptGuid;
+      }
+    );
+    store.dispatch(loadActivityState(attemptGuids));
+
     // for now we'll just load *all* the sequence items up front
-    const activityIds = content.model
+    /* const activityIds = content.model
       .filter((item: any) => item.type === "activity-reference")
       .map((item: any) => item.activity_id);
-    store.dispatch(loadActivities(activityIds));
+    store.dispatch(loadActivities(activityIds)); */
   }, []);
 
   const parentDivClasses: string[] = [];
