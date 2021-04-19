@@ -1,20 +1,8 @@
 defmodule Oli.Activities.Model.ConditionalOutcome do
-  defstruct [:id, :rule, :actions]
+  defstruct [:id, :conditions, :event, :name]
 
-  def parse(%{"id" => id, "rule" => rule, "actions" => actions}) do
-    case Enum.map(actions, &parse_action/1)
-         |> Oli.Activities.ParseUtils.items_or_errors() do
-      {:ok, parsed_actions} ->
-        {:ok,
-         %Oli.Activities.Model.ConditionalOutcome{
-           id: id,
-           rule: rule,
-           actions: parsed_actions
-         }}
-
-      {:error, _} ->
-        {:error, "invalid action definition in outcome #{id}"}
-    end
+  def parse(%{"id" => id}) do
+    {:ok, %Oli.Activities.Model.ConditionalOutcome{id: id}}
   end
 
   def parse(outcomes) when is_list(outcomes) do
