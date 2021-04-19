@@ -60,7 +60,9 @@ defmodule Oli.Rendering.Content.Html do
         _ -> ""
       end
 
-    figure(attrs, [~s|<img class="#{display_class(attrs)}"#{maybeAlt} src="#{escape_xml!(src)}"/>\n|])
+    figure(attrs, [
+      ~s|<img class="#{display_class(attrs)}"#{maybeAlt} src="#{escape_xml!(src)}"/>\n|
+    ])
   end
 
   def youtube(%Context{} = _context, _, %{"src" => src} = attrs) do
@@ -69,8 +71,8 @@ defmodule Oli.Rendering.Content.Html do
     figure(Map.put(attrs, "full-width", true), [
       """
       <div class="youtube-wrapper">
-        <iframe id="#{src}" class="#{display_class(attrs)}" allowfullscreen src="https://www.youtube.com/embed/#{
-          escape_xml!(src)
+        <iframe id="#{escape_xml!(src)}" class="#{display_class(attrs)}" allowfullscreen src="https://www.youtube.com/embed/#{
+        escape_xml!(src)
       }"></iframe>
       </div>
       """
@@ -152,7 +154,11 @@ defmodule Oli.Rendering.Content.Html do
           "language" => language
         } = attrs
       ) do
-    figure(attrs, [~s|<pre><code class="language-#{escape_xml!(language)}">|, next.(), "</code></pre>\n"])
+    figure(attrs, [
+      ~s|<pre><code class="language-#{escape_xml!(language)}">|,
+      next.(),
+      "</code></pre>\n"
+    ])
   end
 
   def code_line(%Context{} = _context, next, _) do
