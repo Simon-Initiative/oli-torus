@@ -15,10 +15,15 @@ $(function() {
       $('#select-submit').prop('disabled', true);
     }
   });
+
+  $('#select-project-form').on('submit', function() {
+    $('#select-submit').prop('disabled', true);
+    $('#select-submit').html('Creating section...')
+  });
 })
 </script>
 
-<%= form_for @conn, Routes.delivery_path(@conn, :create_section), fn _f -> %>
+<%= form_for @conn, Routes.delivery_path(@conn, :create_section), [id: "select-project-form"], fn _f -> %>
   <div class="text-center">
     <h3>Select a Project</h3>
     <p class="mt-3">
