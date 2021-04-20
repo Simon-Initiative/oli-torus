@@ -464,6 +464,7 @@ defmodule OliWeb.Router do
 
     live_dashboard "/dashboard",
       metrics: OliWeb.Telemetry,
+      ecto_repos: [Oli.Repo],
       session: {__MODULE__, :with_session, []}
 
     resources "/platform_instances", PlatformInstanceController
