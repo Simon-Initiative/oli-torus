@@ -104,8 +104,7 @@ defmodule Oli.Delivery.Page.PageContext do
 
     {:ok, summary} = Summary.get_summary(section_slug, user)
 
-    {previous, next} =
-      determine_previous_next(flatten_hierarchy(summary.hierarchy), page_revision)
+    {previous, next} = determine_previous_next(summary.hierarchy, page_revision)
 
     %PageContext{
       summary: summary,
@@ -119,9 +118,21 @@ defmodule Oli.Delivery.Page.PageContext do
     }
   end
 
-  defp flatten_hierarchy([]), do: []
+  def determine_previous_next(hierarchy, revision) do
+    flattened_hierarchy = flatten_hierarchy(hierarchy)
+    index = Enum.find_index(flattened_hierarchy, fn node -> node.revision.id == revision.id end)
 
-  defp flatten_hierarchy([h | t]) do
+    case {index, length(flattened_hierarchy) - 1} do
+      {nil, _} -> {nil, nil}
+      {_, 0} -> {nil, nil}
+      {0, _} -> {nil, Enum.at(flattened_hierarchy, 1).revision}
+      {a, a} -> {Enum.at(flattened_hierarchy, a - 1).revision, nil}
+      {a, _} -> {Enum.at(flattened_hierarchy, a - 1).revision, Enum.at(flattened_hierarchy, a + 1).revision}
+    end
+  end
+
+  def flatten_hierarchy([]), do: []
+  def flatten_hierarchy([h | t]) do
     if ResourceType.get_type_by_id(h.revision.resource_type_id) == "container" do
       []
     else
@@ -137,16 +148,4 @@ defmodule Oli.Delivery.Page.PageContext do
     |> ObjectivesRollup.rollup_objectives(resolver, section_slug)
   end
 
-  defp determine_previous_next(hierarchy, revision) do
-    index = Enum.find_index(hierarchy, fn node -> node.revision.id == revision.id end)
-
-    case {index, length(hierarchy) - 1} do
-      {nil, _} -> {nil, nil}
-      {_, nil} -> {nil, nil}
-      {_, 0} -> {nil, nil}
-      {0, _} -> {nil, Enum.at(hierarchy, 1).revision}
-      {a, a} -> {Enum.at(hierarchy, a - 1).revision, nil}
-      {a, _} -> {Enum.at(hierarchy, a - 1).revision, Enum.at(hierarchy, a + 1).revision}
-    end
-  end
 end

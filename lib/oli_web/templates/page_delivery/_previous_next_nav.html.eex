@@ -1,50 +1,47 @@
-<nav class="previous-next-nav" aria-label="Page navigation">
-  <ul class="pagination justify-content-center my-5">
+<nav class="previous-next-nav d-flex flex-row" aria-label="Page navigation">
 
-    <%= if @previous_page != nil do %>
-    <li class="page-item">
-      <%= link to: Routes.page_delivery_path(@conn, :page, @section_slug, @previous_page.slug), class: "page-link" do %>
-        <div class="d-flex flex-row">
-          <div>
-            <i class="fas fa-arrow-left nav-icon"></i>
-          </div>
-          <div class="d-flex flex-column flex-fill flex-ellipsize-fix text-right">
-            <div class="text-secondary nav-label">Previous</div>
-            <div class="nav-title"><%= @previous_page.title %></div>
-          </div>
+  <%= if @previous_page != nil do %>
+    <%= link to: Routes.page_delivery_path(@conn, :page, @section_slug, @previous_page.slug), class: "page-nav-link btn" do %>
+      <div class="d-flex flex-row">
+        <div>
+          <i class="fas fa-arrow-left nav-icon"></i>
         </div>
-      <% end %>
-    </li>
+        <div class="d-flex flex-column flex-fill flex-ellipsize-fix text-right">
+          <div class="nav-label">Previous</div>
+          <div class="nav-title"><%= @previous_page.title %></div>
+        </div>
+      </div>
     <% end %>
+  <% else %>
+    <div class="page-nav-link-placeholder"></div>
+  <% end %>
 
-    <%= if @next_page != nil do %>
-    <li class="page-item">
-      <%= link to: Routes.page_delivery_path(@conn, :page, @section_slug, @next_page.slug), class: "page-link" do %>
-        <div class="d-flex flex-row">
-          <div class="d-flex flex-column flex-fill flex-ellipsize-fix">
-            <div class="text-secondary text-left nav-label">Next</div>
-            <div class="nav-title"><%= @next_page.title %></div>
-          </div>
-          <div>
-            <i class="fas fa-arrow-right nav-icon"></i>
-          </div>
+  <div class="flex-grow-1"></div>
+
+  <%= if @next_page != nil do %>
+    <%= link to: Routes.page_delivery_path(@conn, :page, @section_slug, @next_page.slug), class: "page-nav-link btn" do %>
+      <div class="d-flex flex-row">
+        <div class="d-flex flex-column flex-fill flex-ellipsize-fix text-left">
+          <div class="nav-label">Next</div>
+          <div class="nav-title"><%= @next_page.title %></div>
         </div>
-      <% end %>
-    </li>
-    <% else %>
-    <li class="page-item">
-      <%= link to: Routes.page_delivery_path(@conn, :index, @section_slug), class: "page-link" do %>
-        <div class="d-flex flex-row">
-          <div class="d-flex flex-column flex-fill flex-ellipsize-fix">
-            <div class="text-secondary text-left nav-label">Complete</div>
-            <div class="nav-title"><%= @summary.title %></div>
-          </div>
-          <div>
-            <i class="fas fa-check nav-icon"></i>
-          </div>
+        <div>
+          <i class="fas fa-arrow-right nav-icon"></i>
         </div>
-      <% end %>
-    </li>
+      </div>
     <% end %>
-  </ul>
+  <% else %>
+    <%= link to: Routes.page_delivery_path(@conn, :index, @section_slug), class: "page-nav-link btn" do %>
+      <div class="d-flex flex-row">
+        <div class="d-flex flex-column flex-fill flex-ellipsize-fix text-left">
+          <div class="nav-label">Complete</div>
+          <div class="nav-title"><%= @summary.title %></div>
+        </div>
+        <div>
+          <i class="fas fa-check nav-icon"></i>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+
 </nav>

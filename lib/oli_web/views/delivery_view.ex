@@ -144,16 +144,10 @@ defmodule OliWeb.DeliveryView do
     user.author_id != nil
   end
 
-  def user_icon(_conn, user) do
+  def user_icon(user) do
     case user.picture do
       nil ->
-        ~E"""
-        <div class="user-icon">
-          <div class="user-img rounded-circle">
-            <span class="material-icons text-secondary">account_circle</span>
-          </div>
-        </div>
-        """
+        user_icon()
 
       picture ->
         ~E"""
@@ -162,5 +156,15 @@ defmodule OliWeb.DeliveryView do
         </div>
         """
     end
+  end
+
+  def user_icon() do
+    ~E"""
+    <div class="user-icon">
+      <div class="user-img rounded-circle">
+        <span class="material-icons text-secondary">account_circle</span>
+      </div>
+    </div>
+    """
   end
 end

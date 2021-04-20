@@ -16,3 +16,5 @@
 
   window.oliMountApplication(document.getElementById('editor'), params);
 </script>
+
+<%= render OliWeb.ResourceView, "_preview_previous_next_nav.html", conn: @conn, context: @raw_context, action: :edit %>

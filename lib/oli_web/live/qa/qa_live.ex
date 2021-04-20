@@ -4,6 +4,7 @@ defmodule OliWeb.Qa.QaLive do
   """
 
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  import Phoenix.HTML.Link
 
   alias Oli.Authoring.Course
   alias Oli.Accounts.Author
@@ -137,6 +138,10 @@ defmodule OliWeb.Qa.QaLive do
           <button class="btn btn-primary mt-3" id="button-publish"
             phx-click="review"
             phx-disable-with="Reviewing...">Run Review</button>
+
+          <%= link to: Routes.resource_path(OliWeb.Endpoint, :preview, @project.slug), class: "btn btn-outline-primary mt-3 ml-2", target: "preview-#{@project.slug}" do %>
+            Preview Course <i class="las la-external-link-alt ml-1"></i>
+          <% end %>
         </div>
       </div>
 

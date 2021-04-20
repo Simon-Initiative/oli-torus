@@ -230,9 +230,12 @@ defmodule OliWeb.Router do
     # Review/QA
     live "/:project_id/review", Qa.QaLive, session: {__MODULE__, :with_session, []}
 
+    # Preview
+    get "/:project_id/preview", ResourceController, :preview
+    get "/:project_id/preview/:revision_slug", ResourceController, :preview
+
     # Editors
     get "/:project_id/resource/:revision_slug", ResourceController, :edit
-    get "/:project_id/resource/:revision_slug/preview", ResourceController, :preview
     get "/:project_id/resource/:revision_slug/activity/:activity_slug", ActivityController, :edit
 
     # Collaborators
@@ -464,6 +467,7 @@ defmodule OliWeb.Router do
 
     live_dashboard "/dashboard",
       metrics: OliWeb.Telemetry,
+      ecto_repos: [Oli.Repo],
       session: {__MODULE__, :with_session, []}
 
     resources "/platform_instances", PlatformInstanceController

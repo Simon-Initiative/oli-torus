@@ -1,13 +1,15 @@
 defmodule OliWeb.ResourceController do
   use OliWeb, :controller
 
+  import OliWeb.ProjectPlugs
+
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Accounts
   alias Oli.Activities
   alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Common.Breadcrumb
-
-  import OliWeb.ProjectPlugs
+  alias Oli.Resources.Numbering
+  alias Oli.Delivery.Page.PageContext
 
   plug :fetch_project
   plug :authorize_project
@@ -31,15 +33,7 @@ defmodule OliWeb.ResourceController do
         )
 
       {:error, :not_found} ->
-        conn
-        |> put_view(OliWeb.SharedView)
-        |> render("_not_found.html",
-          title: "Not Found",
-          breadcrumbs: [
-            Breadcrumb.curriculum(project_slug),
-            Breadcrumb.new(%{full_title: "Not Found"})
-          ]
-        )
+        render_not_found(conn, project_slug)
     end
   end
 
@@ -54,39 +48,58 @@ defmodule OliWeb.ResourceController do
   def preview(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
     author = conn.assigns[:current_author]
 
-    %{content: %{"model" => model}} =
-      AuthoringResolver.from_revision_slug(project_slug, revision_slug)
+    case AuthoringResolver.from_revision_slug(project_slug, revision_slug) do
+      nil ->
+        render_not_found(conn, project_slug)
 
-    activity_ids = Oli.Authoring.Editing.Utils.activity_references(model) |> MapSet.to_list()
-    activity_revisions = AuthoringResolver.from_resource_id(project_slug, activity_ids)
+      %{content: %{"model" => model}} ->
+        activity_ids = Oli.Authoring.Editing.Utils.activity_references(model) |> MapSet.to_list()
+        activity_revisions = AuthoringResolver.from_resource_id(project_slug, activity_ids)
 
-    case PageEditor.create_context(project_slug, revision_slug, author) do
-      {:ok, context} ->
-        render(conn, "page_preview.html",
-          breadcrumbs: Breadcrumb.trail_to(project_slug, revision_slug),
-          objectives:
-            Oli.Delivery.Page.ObjectivesRollup.rollup_objectives(
-              activity_revisions,
-              AuthoringResolver,
-              project_slug
-            ),
-          content_html:
-            PageEditor.render_page_html(project_slug, revision_slug, author, preview: true),
-          context: context,
-          scripts: Activities.get_activity_scripts(),
-          preview_mode: true
-        )
+        case PageEditor.create_context(project_slug, revision_slug, author) do
+          {:ok, context} ->
+            render(conn, "page_preview.html",
+              breadcrumbs: Breadcrumb.trail_to(project_slug, revision_slug),
+              objectives:
+                Oli.Delivery.Page.ObjectivesRollup.rollup_objectives(
+                  activity_revisions,
+                  AuthoringResolver,
+                  project_slug
+                ),
+              content_html:
+                PageEditor.render_page_html(project_slug, revision_slug, author, preview: true),
+              context: context,
+              scripts: Activities.get_activity_scripts(),
+              preview_mode: true
+            )
 
-      {:error, :not_found} ->
-        conn
-        |> put_view(OliWeb.SharedView)
-        |> render("_not_found.html",
-          title: "Not Found",
-          breadcrumbs: [
-            Breadcrumb.curriculum(project_slug),
-            Breadcrumb.new(%{full_title: "Not Found"})
-          ]
-        )
+          {:error, :not_found} ->
+            render_not_found(conn, project_slug)
+        end
     end
   end
+
+  def preview(conn, %{"project_id" => project_slug}) do
+    # find the first page of the course and redirect to there. NOTE: this is not the most efficient method,
+    # but it should suffice for now until an improved preview landing page is added
+    [root_container_node] = Numbering.full_hierarchy(Oli.Publishing.AuthoringResolver, project_slug)
+    hierarchy = root_container_node.children
+    [first | _t] = PageContext.flatten_hierarchy(hierarchy)
+
+    conn
+    |> redirect(to: Routes.resource_path(conn, :preview, project_slug, first.revision.slug))
+  end
+
+  defp render_not_found(conn, project_slug) do
+    conn
+    |> put_view(OliWeb.SharedView)
+    |> render("_not_found.html",
+      title: "Not Found",
+      breadcrumbs: [
+        Breadcrumb.curriculum(project_slug),
+        Breadcrumb.new(%{full_title: "Not Found"})
+      ]
+    )
+  end
+
 end

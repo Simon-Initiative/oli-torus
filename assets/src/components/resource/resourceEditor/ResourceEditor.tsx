@@ -65,8 +65,6 @@ type ResourceEditorState = {
   activities: Immutable.Map<string, Activity>;
   editMode: boolean;
   persistence: 'idle' | 'pending' | 'inflight';
-  previewMode: boolean;
-  previewHtml: string;
   metaModifier: boolean;
 };
 
@@ -131,8 +129,6 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       activities: Immutable.Map<string, Activity>(
         Object.keys(activities).map((k) => [k, activities[k]]),
       ),
-      previewMode: false,
-      previewHtml: '',
       metaModifier: false,
     };
 
@@ -240,70 +236,6 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     this.setState({ messages: [...messages, message] });
   }
 
-  showPreviewMessage(isGraded: boolean) {
-    const content = isGraded ? (
-      <p>
-        This is a preview of your graded assessment, but it is being displayed as an ungraded page
-        to show feedback and hints
-      </p>
-    ) : (
-      <p>This is a preview of your ungraded page</p>
-    );
-
-    const message = createMessage({
-      canUserDismiss: false,
-      content: (
-        <div>
-          <strong>Preview Mode</strong>
-          <br />
-          {content}
-        </div>
-      ),
-      severity: Severity.Information,
-      actions: [
-        {
-          label: 'Exit Preview',
-          enabled: true,
-          btnClass: 'btn-warning',
-          execute: (message: Message) => {
-            // exit preview mode and remove preview message
-            this.setState({
-              messages: this.state.messages.filter((m) => m.guid !== message.guid),
-              previewMode: false,
-              previewHtml: '',
-            });
-          },
-        },
-      ],
-    });
-    this.setState({ messages: [...this.state.messages, message] });
-  }
-
-  onPreviewClick = () => {
-    const { previewMode } = this.state;
-    const { projectSlug, resourceSlug, graded } = this.props;
-
-    const enteringPreviewMode = !previewMode;
-
-    if (enteringPreviewMode) {
-      // otherwise, switch the current view to preview mode
-      this.setState({ previewMode: !previewMode, previewHtml: '' });
-      this.showPreviewMessage(graded);
-
-      fetch(`/project/${projectSlug}/resource/${resourceSlug}/preview`)
-        .then((res) => {
-          if (res.ok) {
-            return res.text();
-          }
-        })
-        .then((html) => {
-          if (html) {
-            this.setState({ previewHtml: html });
-          }
-        });
-    }
-  };
-
   update(update: Partial<Undoable>) {
     this.setState({ undoable: processUpdate(this.state.undoable, update) }, () => this.save());
   }
@@ -383,63 +315,16 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 
     const isSaving = this.state.persistence === 'inflight' || this.state.persistence === 'pending';
 
-    const PreviewButton = () =>
-      state.metaModifier ? (
-        <a
-          className={`btn btn-sm btn-outline-primary ml-3 ${isSaving ? 'disabled' : ''}`}
-          onClick={() =>
-            window.open(`/project/${projectSlug}/resource/${resourceSlug}/preview`, 'page-preview')
-          }
-        >
-          Preview Page <i className="las la-external-link-alt ml-1"></i>
-        </a>
-      ) : (
-        <button
-          role="button"
-          className="btn btn-sm btn-outline-primary ml-3"
-          onClick={this.onPreviewClick}
-          disabled={isSaving}
-        >
-          Preview Page
-        </button>
-      );
-
-    if (state.previewMode) {
-      return (
-        <div className="resource-editor row">
-          <div className="col-12 d-flex flex-column">
-            <Banner
-              dismissMessage={(msg) =>
-                this.setState({ messages: this.state.messages.filter((m) => msg.guid !== m.guid) })
-              }
-              executeAction={(message, action) => action.execute(message)}
-              messages={this.state.messages}
-            />
-            <div
-              className="preview-content delivery flex-grow-1"
-              dangerouslySetInnerHTML={{ __html: state.previewHtml }}
-              ref={(div) => {
-                // when this div is rendered and contains rendered preview html,
-                // find and execute all scripts required to run the delivery elements
-                if (div && state.previewHtml !== '') {
-                  const scripts = div.getElementsByTagName('script');
-                  for (const s of scripts) {
-                    if (s.innerText) {
-                      window.eval(s.innerText);
-                    }
-                  }
-
-                  // highlight all codeblocks
-                  div.querySelectorAll('pre code').forEach((block) => {
-                    (window as any).hljs.highlightBlock(block);
-                  });
-                }
-              }}
-            />
-          </div>
-        </div>
-      );
-    }
+    const PreviewButton = () => (
+      <a
+        className={`btn btn-sm btn-outline-primary ml-3 ${isSaving ? 'disabled' : ''}`}
+        onClick={() =>
+          window.open(`/project/${projectSlug}/preview/${resourceSlug}`, `preview-${projectSlug}`)
+        }
+      >
+        Preview <i className="las la-external-link-alt ml-1"></i>
+      </a>
+    );
 
     return (
       <div className="resource-editor row">
