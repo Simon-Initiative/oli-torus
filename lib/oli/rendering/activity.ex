@@ -26,7 +26,7 @@ defmodule Oli.Rendering.Activity do
   # can be configured using the render_opts in context
   def render(%Context{render_opts: render_opts} = context, element, writer) do
     error_id = Utils.random_string(8)
-    error_msg = "Activity is invalid: #{Kernel.inspect(element)}"
+    error_msg = "Activity error: #{Kernel.inspect(element)}"
 
     if render_opts.log_errors,
       do: Logger.error("Render Error ##{error_id} #{error_msg}"),

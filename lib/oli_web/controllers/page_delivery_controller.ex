@@ -56,7 +56,7 @@ defmodule OliWeb.PageDeliveryController do
       Oli.Delivery.Page.ActivityContext.to_thin_context_map(context.activities)
       |> Jason.encode()
 
-    render(conn, "delivery.html", %{
+    render(conn, "advanced_delivery.html", %{
       resource_attempt_guid: resource_attempt.attempt_guid,
       resource_attempt_state: resource_attempt_state,
       activity_guid_mapping: activity_guid_mapping,

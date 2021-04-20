@@ -10,17 +10,18 @@
     </a>
   </div>
 
-  <div id="wrapper">
+  <div id="wrapper d-block">
 
       <!-- Page Content -->
       <div id="content">
 
         <%= @inner_content %>
 
-        <%= render OliWeb.PageDeliveryView, "_previous_next_nav.html",
-          conn: @conn, section_slug: @section_slug, summary: @summary, previous_page: @previous_page, next_page: @next_page %>
-
       </div>
+
+      <%= render OliWeb.PageDeliveryView, "_previous_next_nav.html",
+        conn: @conn, section_slug: @section_slug, summary: @summary, previous_page: @previous_page, next_page: @next_page %>
+
   </div>
 
 <% end %>

@@ -1,11 +1,26 @@
 /** Delivery Styles **/
-@import "delivery/variables";
 
 body {
   flex: 1;
   position: relative;
   font-family: $font-family-sans-serif;
   font-size: $font-size-base;
+
+  $paragraph-margin-bottom: 1.5em;
+  $h1-font-size: $font-size-base * 2;
+  $h2-font-size: $font-size-base * 1.75;
+  $h3-font-size: $font-size-base * 1.5;
+  $h4-font-size: $font-size-base * 1.25;
+  $h5-font-size: $font-size-base * 1.125;
+  $h6-font-size: $font-size-base;
+
+  h1, .h1 { @include font-size($h1-font-size); }
+  h2, .h2 { @include font-size($h2-font-size); }
+  h3, .h3 { @include font-size($h3-font-size); }
+  h4, .h4 { @include font-size($h4-font-size); }
+  h5, .h5 { @include font-size($h5-font-size); }
+  h6, .h6 { @include font-size($h6-font-size); }
+
 }
 
 body.modal-open {
@@ -16,7 +31,12 @@ body.modal-open {
   font-family: 'Open Sans', sans-serif;
 }
 
-main.container {
+h1.title {
+  font-weight: 300;
+  color: $gray-800;
+  padding-bottom: .5em;
+  border-bottom: 1px solid $gray-400;
+  margin-bottom: 1em;
 }
 
 form .form-label-group .help-block {
