@@ -37,7 +37,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         conn
         |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
 
-      assert html_response(conn, 200) =~ "<h1>"
+      assert html_response(conn, 200) =~ "<h1 class=\"title\">"
     end
 
     test "handles student page access by a non enrolled student", %{
