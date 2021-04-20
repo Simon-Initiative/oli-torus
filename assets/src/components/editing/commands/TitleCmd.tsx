@@ -14,29 +14,34 @@ const parentTextTypes = {
   h6: true,
 };
 
-const selectedType = (editor: ReactEditor) => getNearestBlock(editor).caseOf({
-  just: n => (parentTextTypes as any)[n.type as string] ? n.type as string : 'p',
-  nothing: () => 'p',
-});
+const selectedType = (editor: ReactEditor) =>
+  getNearestBlock(editor).caseOf({
+    just: (n) => ((parentTextTypes as any)[n.type as string] ? (n.type as string) : 'p'),
+    nothing: () => 'p',
+  });
 
 const command: Command = {
   execute: (context, editor) => {
-
     const nextType = ((selected) => {
       switch (selected) {
         case 'h2':
         case 'h3':
         case 'h4':
         case 'h5':
-        case 'h6': return 'p';
-        case 'h1': return 'h2';
-        default: return 'h1';
+        case 'h6':
+          return 'p';
+        case 'h1':
+          return 'h2';
+        default:
+          return 'h1';
       }
     })(selectedType(editor));
 
-    Transforms.setNodes(editor,
+    Transforms.setNodes(
+      editor,
       { type: nextType },
-      { match: n => (parentTextTypes as any)[n.type as string] });
+      { match: (n) => (parentTextTypes as any)[n.type as string] },
+    );
   },
   precondition: (editor) => {
     return isTopLevel(editor) && isActive(editor, Object.keys(parentTextTypes));
@@ -46,9 +51,12 @@ const command: Command = {
 const icon = (editor: ReactEditor) => {
   const type = selectedType(editor);
   switch (type) {
-    case 'h1': return 'title';
-    case 'h2': return 'text_fields';
-    default: return 'title';
+    case 'h1':
+      return 'title';
+    case 'h2':
+      return 'text_fields';
+    default:
+      return 'title';
   }
 };
 
@@ -57,5 +65,5 @@ export const commandDesc: CommandDesc = {
   icon,
   description: () => 'Title (# or ##)',
   command,
-  active: editor => isActive(editor, ['h1', 'h2']),
+  active: (editor) => isActive(editor, ['h1', 'h2']),
 };

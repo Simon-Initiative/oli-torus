@@ -5,8 +5,7 @@ import { Maybe } from 'tsmonad';
 
 // Native input selection -- not slate
 export const cursorAtEndOfInput = (input: HTMLInputElement) => {
-  return input.selectionStart === input.selectionEnd
-    && input.selectionStart === input.value.length;
+  return input.selectionStart === input.selectionEnd && input.selectionStart === input.value.length;
 };
 export const cursorAtBeginningOfInput = (input: HTMLInputElement) => {
   return input.selectionStart === input.selectionEnd && input.selectionStart === 0;
@@ -14,7 +13,7 @@ export const cursorAtBeginningOfInput = (input: HTMLInputElement) => {
 
 // Returns true if a text node contains the mark string key
 export function hasMark(textNode: Text, mark: string): boolean {
-  return Object.keys(textNode).some(k => k === mark);
+  return Object.keys(textNode).some((k) => k === mark);
 }
 
 // Returns all the Text nodes in the current selection
@@ -25,17 +24,17 @@ export function textNodesInSelection(editor: ReactEditor) {
   }
 
   return Node.fragment(editor, selection)
-    .map(node => Array.from(Node.descendants(node))
-      .reduce((acc: Text[], [node]) => {
+    .map((node) =>
+      Array.from(Node.descendants(node)).reduce((acc: Text[], [node]) => {
         return Text.isText(node) ? acc.concat(node) : acc;
-      }, []))
+      }, []),
+    )
     .reduce((acc, curr) => acc.concat(curr), []);
 }
 
 export function isMarkActive(editor: ReactEditor, mark: Mark): boolean {
-
   const [match] = Editor.nodes(editor, {
-    match: n => n[mark] === true,
+    match: (n) => n[mark] === true,
     universal: true,
   });
 
@@ -48,8 +47,8 @@ export function marksInEntireSelection(editor: ReactEditor) {
   const textNodes = textNodesInSelection(editor);
   textNodes.forEach((text) => {
     Object.keys(text)
-      .filter(k => k in Marks)
-      .forEach(mark => marks[mark] ? marks[mark] += 1 : marks[mark] = 1);
+      .filter((k) => k in Marks)
+      .forEach((mark) => (marks[mark] ? (marks[mark] += 1) : (marks[mark] = 1)));
   });
   return Object.entries(marks)
     .filter(([, v]) => v === textNodes.length)
@@ -59,12 +58,11 @@ export function marksInEntireSelection(editor: ReactEditor) {
 // Returns a Mark[] of all marks that exist in any part of the current selection
 export function marksInPartOfSelection(editor: ReactEditor) {
   const marks: any = {};
-  textNodesInSelection(editor)
-    .forEach((text) => {
-      Object.keys(text)
-        .filter(k => k in Marks)
-        .forEach(mark => marks[mark] = true);
-    });
+  textNodesInSelection(editor).forEach((text) => {
+    Object.keys(text)
+      .filter((k) => k in Marks)
+      .forEach((mark) => (marks[mark] = true));
+  });
   return Object.keys(marks);
 }
 
@@ -74,7 +72,6 @@ export function toSimpleText(node: Node): string {
 }
 
 function toSimpleTextHelper(node: Node, text: string): string {
-
   return (node.children as any).reduce((p: string, c: any) => {
     let updatedText = p;
     if (c.text) {
@@ -94,7 +91,7 @@ export const isTopLevel = (editor: ReactEditor) => {
       return attrs && attrs.isTopLevel;
     },
   });
-  return nodes.every(node => node[1].length === 1);
+  return nodes.every((node) => node[1].length === 1);
 };
 
 export const getHighestTopLevel = (editor: ReactEditor): Maybe<Node> => {
@@ -117,12 +114,11 @@ export const getHighestTopLevel = (editor: ReactEditor): Maybe<Node> => {
   }
 };
 
-
 // For the current selection, walk up through the data model to find the
 // immediate block parent.
 export const getNearestBlock = (editor: ReactEditor): Maybe<Node> => {
   const block = Editor.above(editor, {
-    match: n => Editor.isBlock(editor, n),
+    match: (n) => Editor.isBlock(editor, n),
   });
   if (block) {
     return Maybe.just(block[0]);
@@ -132,9 +128,8 @@ export const getNearestBlock = (editor: ReactEditor): Maybe<Node> => {
 
 export const isActive = (editor: ReactEditor, type: string | string[]) => {
   const [match] = Editor.nodes(editor, {
-    match: n => typeof type === 'string'
-      ? n.type === type
-      : type.indexOf(n.type as string) > -1,
+    match: (n) =>
+      typeof type === 'string' ? n.type === type : type.indexOf(n.type as string) > -1,
   });
 
   return !!match;

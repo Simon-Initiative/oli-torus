@@ -6,9 +6,7 @@ import { Maybe } from 'tsmonad';
 import { configureStore } from 'state/store';
 import { State } from 'state/index';
 
-export function defineApplication<T extends State>(
-  Component: React.FunctionComponent<any>
-) {
+export function defineApplication<T extends State>(Component: React.FunctionComponent<any>) {
   // TODO, allow a customized, per app state (both initial state and collection of reducers)
   // to be passed into this function, instead of simply using a shared common state
   let store = configureStore();
@@ -25,14 +23,14 @@ export function defineApplication<T extends State>(
       content: parsedContent,
     };
 
-    console.log('MOUNTED', { mountPoint, params, props });
+    // console.log('MOUNTED', { mountPoint, params, props });
 
     ReactDOM.render(
       <Provider store={store}>
         <Component {...props} />
         <ModalDisplay />
       </Provider>,
-      mountPoint
+      mountPoint,
     );
   };
 

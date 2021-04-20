@@ -16,39 +16,47 @@ export type YouTubeCreationProps = {
   onEdit: (src: string) => void;
 };
 const YouTubeCreation = (props: YouTubeCreationProps) => {
-
   const [src, setSrc] = useState('');
 
   return (
     <div>
-
-      <p className="mb-4">Not sure which video you want to use?
-        Visit <a href="https://www.youtube.com" target="_blank">YouTube</a> to search and find it.
+      <p className="mb-4">
+        Not sure which video you want to use? Visit{' '}
+        <a href="https://www.youtube.com" target="_blank">
+          YouTube
+        </a>{' '}
+        to search and find it.
       </p>
 
       <form className="form">
         <label>Enter the YouTube Video ID (or just the entire video URL):</label>
-        <input type="text" value={src}
-          onChange={(e) => { props.onChange(e.target.value); setSrc(e.target.value); }}
-          onKeyPress={e => Settings.onEnterApply(e, () => props.onEdit(src))}
-          className="form-control mr-sm-2" />
+        <input
+          type="text"
+          value={src}
+          onChange={(e) => {
+            props.onChange(e.target.value);
+            setSrc(e.target.value);
+          }}
+          onKeyPress={(e) => Settings.onEnterApply(e, () => props.onEdit(src))}
+          className="form-control mr-sm-2"
+        />
         <div className="mb-2">
-          <small>e.g. https://www.youtube.com/watch?v=<strong>zHIIzcWqsP0</strong></small>
+          <small>
+            e.g. https://www.youtube.com/watch?v=<strong>zHIIzcWqsP0</strong>
+          </small>
         </div>
       </form>
-
     </div>
   );
 };
 
 export function selectYouTube(): Promise<string | null> {
-
   return new Promise((resolve, reject) => {
-
     const selected = { src: null };
 
-    const mediaLibrary =
-      <ModalSelection title="Insert YouTube video"
+    const mediaLibrary = (
+      <ModalSelection
+        title="Insert YouTube video"
         onInsert={() => {
           dismiss();
           resolve(selected.src ? selected.src : CUTE_OTTERS);
@@ -56,9 +64,16 @@ export function selectYouTube(): Promise<string | null> {
         onCancel={() => dismiss()}
       >
         <YouTubeCreation
-          onEdit={(src: string) => { dismiss(); resolve(src); }}
-          onChange={(src: string) => { selected.src = src as any; }} />
-      </ModalSelection>;
+          onEdit={(src: string) => {
+            dismiss();
+            resolve(src);
+          }}
+          onChange={(src: string) => {
+            selected.src = src as any;
+          }}
+        />
+      </ModalSelection>
+    );
 
     display(mediaLibrary);
   });
@@ -66,32 +81,27 @@ export function selectYouTube(): Promise<string | null> {
 
 const command: Command = {
   execute: (context, editor) => {
-
     const at = editor.selection as any;
 
-    selectYouTube()
-      .then((selectedSrc) => {
-        if (selectedSrc !== null) {
+    selectYouTube().then((selectedSrc) => {
+      if (selectedSrc !== null) {
+        let src = selectedSrc;
+        const hasParams = src.includes('?');
 
-          let src = selectedSrc;
-          const hasParams = src.includes('?');
-
-          if (hasParams) {
-            const queryString = src.substr(src.indexOf('?') + 1);
-            src = getQueryVariableFromString('v', queryString);
-          } else if (src.indexOf('/youtu.be/') !== -1) {
-            src = src.substr(src.lastIndexOf('/') + 1);
-          }
-
-          Transforms.insertNodes(
-            editor, ContentModel.youtube(src), { at });
+        if (hasParams) {
+          const queryString = src.substr(src.indexOf('?') + 1);
+          src = getQueryVariableFromString('v', queryString);
+        } else if (src.indexOf('/youtu.be/') !== -1) {
+          src = src.substr(src.lastIndexOf('/') + 1);
         }
-      });
+
+        Transforms.insertNodes(editor, ContentModel.youtube(src), { at });
+      }
+    });
   },
   precondition: (editor) => {
     return true;
   },
-
 };
 
 export const commandDesc: CommandDesc = {

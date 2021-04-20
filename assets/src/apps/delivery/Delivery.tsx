@@ -3,10 +3,7 @@ import React, { useEffect } from 'react';
 import { Provider } from 'react-redux';
 import AdaptivePageView from './formats/adaptive/AdaptivePageView';
 import store from './store';
-import {
-  loadActivities,
-  loadActivityState,
-} from './store/features/activities/slice';
+import { loadActivities, loadActivityState } from './store/features/activities/slice';
 import { loadPageState } from './store/features/page/slice';
 
 export interface DeliveryProps {
@@ -20,9 +17,7 @@ export interface DeliveryProps {
   activityGuidMapping: any;
 }
 
-export const Delivery: React.FunctionComponent<DeliveryProps> = (
-  props: DeliveryProps
-) => {
+export const Delivery: React.FunctionComponent<DeliveryProps> = (props: DeliveryProps) => {
   useEffect(() => {
     const {
       userId,
@@ -45,16 +40,14 @@ export const Delivery: React.FunctionComponent<DeliveryProps> = (
         resourceAttemptGuid,
         resourceAttemptState,
         activityGuidMapping,
-      })
+      }),
     );
 
     // for the moment load *all* the activity state
-    const attemptGuids = Object.keys(activityGuidMapping).map(
-      (activityResourceId) => {
-        const { attemptGuid } = activityGuidMapping[activityResourceId];
-        return attemptGuid;
-      }
-    );
+    const attemptGuids = Object.keys(activityGuidMapping).map((activityResourceId) => {
+      const { attemptGuid } = activityGuidMapping[activityResourceId];
+      return attemptGuid;
+    });
     store.dispatch(loadActivityState(attemptGuids));
   }, []);
 

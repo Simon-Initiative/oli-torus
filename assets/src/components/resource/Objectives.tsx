@@ -17,7 +17,6 @@ export type ObjectivesProps = {
 };
 
 export const Objectives = (props: ObjectivesProps) => {
-
   const { objectives, editMode, selected, onEdit, onRegisterNewObjective } = props;
 
   // Typeahed throws a bunch of warnings if it doesn't contain
@@ -26,8 +25,8 @@ export const Objectives = (props: ObjectivesProps) => {
 
   // The current 'selected' state of Typeahead must be the same shape as
   // the options objects. So we look up from our list of slugs those objects.
-  const map = Immutable.Map<ResourceId, Objective>(objectives.toArray().map(o => [o.id, o]));
-  const asObjectives = selected.toArray().map(s => map.get(s) as Objective);
+  const map = Immutable.Map<ResourceId, Objective>(objectives.toArray().map((o) => [o.id, o]));
+  const asObjectives = selected.toArray().map((s) => map.get(s) as Objective);
 
   return (
     <div className="flex-grow-1 objectives">
@@ -35,13 +34,12 @@ export const Objectives = (props: ObjectivesProps) => {
         id={id}
         multiple={true}
         disabled={!editMode}
-        onChange={(updated: (Objective & {customOption?: boolean})[]) => {
+        onChange={(updated: (Objective & { customOption?: boolean })[]) => {
           // we can safely assume that only one objective will ever be selected at a time
-          const createdObjective = updated.find(o => o.customOption);
+          const createdObjective = updated.find((o) => o.customOption);
           if (createdObjective) {
             create(props.projectSlug, createdObjective.title)
               .then((result) => {
-
                 if (result.result === 'success') {
                   onRegisterNewObjective({
                     id: result.resourceId,
@@ -73,7 +71,7 @@ export const Objectives = (props: ObjectivesProps) => {
             // This check handles some weirdness where Typeahead fires onChange when
             // there really isn't a change.
             if (updated.length !== selected.size) {
-              const updatedObjectives = updated.map(o => o.id);
+              const updatedObjectives = updated.map((o) => o.id);
               onEdit(Immutable.List<ResourceId>(updatedObjectives));
             }
           }

@@ -1,10 +1,10 @@
-import React, { CSSProperties, useEffect } from "react";
+import React, { CSSProperties, useEffect } from 'react';
 
 // TODO: fix typing
 const Image: React.FC<any> = (props) => {
   const { x, y, z, width, height, src, alt, customCssClass } = props.model;
   const imageStyles: CSSProperties = {
-    position: "absolute",
+    position: 'absolute',
     top: y,
     left: x,
     width,
@@ -28,7 +28,7 @@ const Image: React.FC<any> = (props) => {
   );
 };
 
-export const tagName = "janus-image";
+export const tagName = 'janus-image';
 
 // TODO: redo web component
 

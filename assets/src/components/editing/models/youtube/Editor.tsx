@@ -9,10 +9,9 @@ import { displayModelToClassName } from 'data/content/utils';
 
 export const CUTE_OTTERS = 'zHIIzcWqsP0';
 
-export interface YouTubeProps extends EditorProps<ContentModel.YouTube> { }
+export interface YouTubeProps extends EditorProps<ContentModel.YouTube> {}
 
 export const YouTubeEditor = (props: YouTubeProps) => {
-
   const { attributes, children, editor, model } = props;
 
   const editMode = getEditMode(editor);
@@ -22,22 +21,23 @@ export const YouTubeEditor = (props: YouTubeProps) => {
 
   const { src } = model;
   const parameters = 'disablekb=1&modestbranding=1&showinfo=0&rel=0&controls=0';
-  const fullSrc = 'https://www.youtube.com/embed/' +
-    (src === '' ? CUTE_OTTERS : src) + '?' + parameters;
+  const fullSrc =
+    'https://www.youtube.com/embed/' + (src === '' ? CUTE_OTTERS : src) + '?' + parameters;
 
   const onEdit = (updated: ContentModel.YouTube) => {
     updateModel<ContentModel.YouTube>(editor, model, updated);
   };
 
-  const update = (attrs: Partial<ContentModel.YouTube>) =>
-    Object.assign({}, model, attrs);
+  const update = (attrs: Partial<ContentModel.YouTube>) => Object.assign({}, model, attrs);
 
   const setCaption = (caption: string) => {
     onEdit(update({ caption }));
   };
 
-  const borderStyle = focused && selected
-    ? { border: 'solid 3px lightblue', borderRadius: 0 } : { border: 'solid 3px transparent' };
+  const borderStyle =
+    focused && selected
+      ? { border: 'solid 3px lightblue', borderRadius: 0 }
+      : { border: 'solid 3px transparent' };
 
   // Note that it is important that any interactive portions of a void editor
   // must be enclosed inside of a "contentEditable=false" container. Otherwise,
@@ -47,13 +47,15 @@ export const YouTubeEditor = (props: YouTubeProps) => {
     <div
       {...attributes}
       style={{ userSelect: 'none' }}
-      className={'youtube-editor ' + displayModelToClassName(model.display)}>
+      className={'youtube-editor ' + displayModelToClassName(model.display)}
+    >
       <div
         contentEditable={false}
-        onClick={e => Transforms.select(editor, ReactEditor.findPath(editor, model))}
-        className="embed-responsive embed-responsive-16by9 img-thumbnail" style={borderStyle}>
-        <iframe className="embed-responsive-item"
-          src={fullSrc} allowFullScreen></iframe>
+        onClick={(e) => Transforms.select(editor, ReactEditor.findPath(editor, model))}
+        className="embed-responsive embed-responsive-16by9 img-thumbnail"
+        style={borderStyle}
+      >
+        <iframe className="embed-responsive-item" src={fullSrc} allowFullScreen></iframe>
       </div>
       <div contentEditable={false}>
         <Settings.Input

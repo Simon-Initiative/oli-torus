@@ -6,7 +6,6 @@ import * as Settings from 'components/editing/models/settings/Settings';
 
 export interface AudioProps extends EditorProps<ContentModel.Audio> {}
 export const AudioEditor = (props: AudioProps) => {
-
   const { attributes, children, editor, model } = props;
 
   const editMode = getEditMode(editor);
@@ -15,8 +14,7 @@ export const AudioEditor = (props: AudioProps) => {
     updateModel<ContentModel.Audio>(editor, model, updated);
   };
 
-  const update = (attrs: Partial<ContentModel.Audio>) =>
-    Object.assign({}, model, attrs);
+  const update = (attrs: Partial<ContentModel.Audio>) => Object.assign({}, model, attrs);
 
   const setCaption = (caption: string) => {
     onEdit(update({ caption }));
@@ -39,7 +37,7 @@ export const AudioEditor = (props: AudioProps) => {
               <Settings.Input
                 editMode={editMode}
                 value={model.caption}
-                onChange={value => setCaption(value)}
+                onChange={(value) => setCaption(value)}
                 editor={editor}
                 model={model}
                 placeholder="Set a caption for this audio file"

@@ -16,29 +16,32 @@ export function selectImage(
   projectSlug: string,
   selectedUrl?: string,
 ): Promise<string | undefined> {
-
   return new Promise((resolve, reject) => {
-
     let selectedUrl: string | undefined = undefined;
 
-    const mediaLibrary =
-      <ModalSelection title="Select Image" size={sizes.extraLarge}
-        onInsert={() => { dismiss(); resolve(selectedUrl); }}
+    const mediaLibrary = (
+      <ModalSelection
+        title="Select Image"
+        size={sizes.extraLarge}
+        onInsert={() => {
+          dismiss();
+          resolve(selectedUrl);
+        }}
         onCancel={() => dismiss()}
         disableInsert={true}
         okLabel="Select"
       >
         <UrlOrUpload
-          onUrlChange={(url: string) => selectedUrl = url}
-          onMediaSelectionChange={(mediaOrUrl: MediaItem[]) =>
-            selectedUrl = mediaOrUrl[0]?.url}
+          onUrlChange={(url: string) => (selectedUrl = url)}
+          onMediaSelectionChange={(mediaOrUrl: MediaItem[]) => (selectedUrl = mediaOrUrl[0]?.url)}
           projectSlug={projectSlug}
-          onEdit={() => { }}
+          onEdit={() => {}}
           mimeFilter={MIMETYPE_FILTERS.IMAGE}
           selectionType={SELECTION_TYPES.SINGLE}
           initialSelectionPaths={selectedUrl ? [selectedUrl] : []}
         />
-      </ModalSelection>;
+      </ModalSelection>
+    );
 
     display(mediaLibrary);
   });
@@ -47,11 +50,12 @@ export function selectImage(
 const command: Command = {
   execute: (context, editor) => {
     const at = editor.selection as any;
-    selectImage(context.projectSlug)
-    .then(img => Maybe.maybe(img).caseOf({
-      just: (img: string) => Transforms.insertNodes(editor, ContentModel.image(img), { at }),
-      nothing: () => {},
-    }));
+    selectImage(context.projectSlug).then((img) =>
+      Maybe.maybe(img).caseOf({
+        just: (img: string) => Transforms.insertNodes(editor, ContentModel.image(img), { at }),
+        nothing: () => {},
+      }),
+    );
   },
   precondition: (editor) => {
     return true;

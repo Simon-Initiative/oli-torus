@@ -1,7 +1,7 @@
-import chroma from "chroma-js";
-import React, { useEffect } from "react";
-import guid from "utils/guid";
-import Markup from "./Markup";
+import chroma from 'chroma-js';
+import React, { useEffect } from 'react';
+import guid from 'utils/guid';
+import Markup from './Markup';
 
 export interface MarkupTree {
   tag: string;
@@ -13,19 +13,15 @@ export interface MarkupTree {
   children?: MarkupTree[];
 }
 
-export const getStylesToOverwrite = (
-  node: MarkupTree,
-  child: MarkupTree,
-  fontSize?: any
-) => {
+export const getStylesToOverwrite = (node: MarkupTree, child: MarkupTree, fontSize?: any) => {
   const style: any = {};
   if (
-    (node.style.styleName === "Heading" || node.style.styleName === "Title") &&
+    (node.style.styleName === 'Heading' || node.style.styleName === 'Title') &&
     node.children?.length === 1 &&
-    child.tag === "span"
+    child.tag === 'span'
   ) {
     // PMP-526
-    style.backgroundColor = "";
+    style.backgroundColor = '';
   }
   if (!(child.style && child.style.fontSize) && fontSize) {
     style.fontSize = `${fontSize}px`;
@@ -39,7 +35,7 @@ export const renderFlow = (
   styleOverrides: any,
   state: any[] = [],
   fontSize?: any,
-  specialTag?: string
+  specialTag?: string,
 ) => {
   // clone styles
   const styles: any = { ...treeNode.style };
@@ -48,12 +44,13 @@ export const renderFlow = (
     // override styles
     styles[s] = styleOverrides[s];
   });
-  // if style have 'baselineShift = superscript' or 'baselineShift = subscript', need to handle them separately
-  let customTag = "";
-  if (styles?.baselineShift === "superscript") {
-    customTag = "sup";
-  } else if (styles?.baselineShift === "subscript") {
-    customTag = "sub";
+  // if style have 'baselineShift = superscript' or 'baselineShift = subscript'
+  // need to handle them separately
+  let customTag = '';
+  if (styles?.baselineShift === 'superscript') {
+    customTag = 'sup';
+  } else if (styles?.baselineShift === 'subscript') {
+    customTag = 'sub';
   }
   return (
     <Markup
@@ -74,7 +71,7 @@ export const renderFlow = (
             getStylesToOverwrite(treeNode, child, fontSize),
             state,
             fontSize,
-            customTag
+            customTag,
           );
         })}
     </Markup>
@@ -82,41 +79,30 @@ export const renderFlow = (
 };
 
 const TextFlow: React.FC<any> = (props) => {
-  const {
-    x = 0,
-    y = 0,
-    width,
-    z = 0,
-    customCssClass,
-    nodes,
-    palette,
-    fontSize,
-  } = props.model;
+  const { x = 0, y = 0, width, z = 0, customCssClass, nodes, palette, fontSize } = props.model;
   const styles: any = {
-    position: "absolute",
+    position: 'absolute',
     top: y,
     left: x,
     width,
     zIndex: z,
-    wordWrap: "break-word",
+    wordWrap: 'break-word',
   };
   if (fontSize) {
     styles.fontSize = `${fontSize}px`;
   }
   if (palette) {
-    styles.borderWidth = `${
-      palette?.lineThickness ? palette?.lineThickness + "px" : "1px"
-    }`;
-    (styles.borderStyle = "solid"),
+    styles.borderWidth = `${palette?.lineThickness ? palette?.lineThickness + 'px' : '1px'}`;
+    (styles.borderStyle = 'solid'),
       (styles.borderColor = `rgba(${
         palette?.lineColor || palette?.lineColor === 0
-          ? chroma(palette?.lineColor).rgb().join(",")
-          : "255, 255, 255"
+          ? chroma(palette?.lineColor).rgb().join(',')
+          : '255, 255, 255'
       },${palette?.lineAlpha})`),
       (styles.backgroundColor = `rgba(${
         palette?.fillColor || palette?.fillColor === 0
-          ? chroma(palette?.fillColor).rgb().join(",")
-          : "255, 255, 255"
+          ? chroma(palette?.fillColor).rgb().join(',')
+          : '255, 255, 255'
       },${palette?.fillAlpha})`);
   }
   useEffect(() => {
@@ -128,7 +114,7 @@ const TextFlow: React.FC<any> = (props) => {
 
   // due to custom elements, objects will be JSON
   let tree: MarkupTree[] = [];
-  if (nodes && typeof nodes === "string") {
+  if (nodes && typeof nodes === 'string') {
     tree = JSON.parse(nodes as string) as MarkupTree[];
   } else if (Array.isArray(nodes)) {
     tree = nodes;
@@ -142,26 +128,15 @@ const TextFlow: React.FC<any> = (props) => {
   }
 
   return (
-    <div
-      id={props.id}
-      data-janus-type={props.type}
-      className={customCssClass}
-      style={styles}
-    >
+    <div id={props.id} data-janus-type={props.type} className={customCssClass} style={styles}>
       {tree?.map((subtree: MarkupTree) =>
-        renderFlow(
-          `textflow-${guid()}`,
-          subtree,
-          styleOverrides,
-          props.state,
-          fontSize
-        )
+        renderFlow(`textflow-${guid()}`, subtree, styleOverrides, props.state, fontSize),
       )}
     </div>
   );
 };
 
-export const tagName = "janus-text-flow";
+export const tagName = 'janus-text-flow';
 
 // TODO: restore web component
 

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
 type Size = {
-  rows: number,
-  columns: number,
+  rows: number;
+  columns: number;
 };
 
 const initialSize: Size = { rows: 1, columns: 1 };
@@ -36,14 +36,15 @@ const cellStyle = (isHighlighted: boolean) => ({
 });
 
 const range = (n: number) =>
-  Array.apply(null, { length: n }).map(Number.call, Number).map((v: any) => v + 1);
+  Array.apply(null, { length: n })
+    .map(Number.call, Number)
+    .map((v: any) => v + 1);
 
 export type SizePickerProps = {
   onTableCreate: (rows: number, columns: number) => void;
 };
 
 export const SizePicker = (props: SizePickerProps) => {
-
   const [size, setSize] = useState(initialSize);
 
   const isHighlighted = (row: number, col: number) => size.rows >= row && size.columns >= col;
@@ -54,30 +55,25 @@ export const SizePicker = (props: SizePickerProps) => {
   const rows = range(numRows);
   const cols = range(numCols);
 
-  const width = (numCols * 19 + 15) + 'px';
-  const height = (numRows * 25 + 35) + 'px';
+  const width = numCols * 19 + 15 + 'px';
+  const height = numRows * 25 + 35 + 'px';
 
   const mapRow = (row: number) => {
     const cells = cols.map((col: number) => (
       <div
         key={'col' + col}
         style={cellContainerStyle}
-        onMouseEnter={e => setSize({ rows: row, columns: col })}
-        onMouseDown={
-          (e) => {
-            setSize({ rows: 1, columns: 1 });
-            props.onTableCreate(row, col);
-          }
-        }>
+        onMouseEnter={(e) => setSize({ rows: row, columns: col })}
+        onMouseDown={(e) => {
+          setSize({ rows: 1, columns: 1 });
+          props.onTableCreate(row, col);
+        }}
+      >
         <div style={cellStyle(isHighlighted(row, col))} />
       </div>
     ));
 
-    return (
-      <div key={'row' + row}>
-        {cells}
-      </div>
-    );
+    return <div key={'row' + row}>{cells}</div>;
   };
 
   const gridStyle = {
@@ -94,7 +90,6 @@ export const SizePicker = (props: SizePickerProps) => {
     color: '#808080',
     textAlign: 'center',
   } as any;
-
 
   const sizeLabel = size.rows + ' by ' + size.columns;
 

@@ -10,9 +10,8 @@ import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolba
 import { initCommands } from './commands';
 import { displayModelToClassName } from 'data/content/utils';
 
-export interface ImageProps extends EditorProps<ContentModel.Image> { }
+export interface ImageProps extends EditorProps<ContentModel.Image> {}
 export const ImageEditor = (props: ImageProps) => {
-
   const { attributes, children, editor, model } = props;
 
   const focused = useFocused();
@@ -20,21 +19,22 @@ export const ImageEditor = (props: ImageProps) => {
 
   const editMode = getEditMode(editor);
 
-  const commands = initCommands(model, img => onEdit(update(img)));
+  const commands = initCommands(model, (img) => onEdit(update(img)));
 
   const onEdit = (updated: ContentModel.Image) => {
     updateModel<ContentModel.Image>(editor, props.model, updated);
   };
 
-  const update = (attrs: Partial<ContentModel.Image>) =>
-    Object.assign({}, model, attrs);
+  const update = (attrs: Partial<ContentModel.Image>) => Object.assign({}, model, attrs);
 
   const setCaption = (caption: string) => {
     onEdit(update({ caption }));
   };
 
-  const imageStyle = ReactEditor.isFocused(editor) && selected
-    ? { border: 'solid 3px lightblue', borderRadius: 0 } : { border: 'solid 3px transparent' };
+  const imageStyle =
+    ReactEditor.isFocused(editor) && selected
+      ? { border: 'solid 3px lightblue', borderRadius: 0 }
+      : { border: 'solid 3px transparent' };
 
   // Note that it is important that any interactive portions of a void editor
   // must be enclosed inside of a "contentEditable=false" container. Otherwise,
@@ -45,10 +45,11 @@ export const ImageEditor = (props: ImageProps) => {
     <div
       {...attributes}
       style={{ userSelect: 'none' }}
-      className={'image-editor text-center ' + displayModelToClassName(model.display)}>
+      className={'image-editor text-center ' + displayModelToClassName(model.display)}
+    >
       <figure contentEditable={false}>
         <HoveringToolbar
-          isOpen={e => focused && selected}
+          isOpen={(e) => focused && selected}
           showArrow
           target={
             <img
@@ -64,13 +65,12 @@ export const ImageEditor = (props: ImageProps) => {
           contentLocation={({ popoverRect, targetRect }) => {
             return {
               top: targetRect.top + window.pageYOffset - 50,
-              left: targetRect.left + window.pageXOffset
-                + targetRect.width / 2 - popoverRect.width / 2,
+              left:
+                targetRect.left + window.pageXOffset + targetRect.width / 2 - popoverRect.width / 2,
             };
-          }}>
-          <FormattingToolbar
-            commandDescs={commands}
-            commandContext={props.commandContext} />
+          }}
+        >
+          <FormattingToolbar commandDescs={commands} commandContext={props.commandContext} />
         </HoveringToolbar>
 
         <figcaption contentEditable={false}>

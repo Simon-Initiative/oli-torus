@@ -14,9 +14,7 @@ import { valueOr } from 'utils/common';
 import { Maybe } from 'tsmonad';
 
 const getDescription = (props: ActivityBlockProps) => {
-  return props.previewText !== ''
-    ? props.previewText
-    : <i>Empty</i>;
+  return props.previewText !== '' ? props.previewText : <i>Empty</i>;
 };
 
 interface ActivityBlockProps {
@@ -43,13 +41,14 @@ const ActivityBlock = (props: ActivityBlockProps) => {
 
   const renderLivePreview = (props: ActivityBlockProps) => (
     <div className="card-body">
-
       {props.children}
 
       <div className="activity-preview-info">
         This is a live preview of your activity.
-        <button className="btn btn-xs btn-link ml-2"
-          onClick={() => props.onUpdatePreferences({ live_preview_display: 'hidden' })}>
+        <button
+          className="btn btn-xs btn-link ml-2"
+          onClick={() => props.onUpdatePreferences({ live_preview_display: 'hidden' })}
+        >
           <i className="lar la-eye-slash"></i> Hide
         </button>
       </div>
@@ -60,8 +59,10 @@ const ActivityBlock = (props: ActivityBlockProps) => {
     <div className="card-body">
       <div className="activity-preview-info d-flex">
         <div className="flex-grow-1 px-4 preview-text">{props.previewText}</div>
-        <button className="btn btn-xs btn-link flex-shrink-0 ml-2"
-          onClick={() => props.onUpdatePreferences({ live_preview_display: 'show' })}>
+        <button
+          className="btn btn-xs btn-link flex-shrink-0 ml-2"
+          onClick={() => props.onUpdatePreferences({ live_preview_display: 'show' })}
+        >
           <i className="lar la-eye"></i> Live Preview
         </button>
       </div>
@@ -70,43 +71,42 @@ const ActivityBlock = (props: ActivityBlockProps) => {
 
   return (
     <div className="activity-block resource-content-frame card">
-      <div className="card-header px-2"
+      <div
+        className="card-header px-2"
         draggable={props.editMode}
-        onDragStart={e => props.onDragStart(e, id)}
-        onDragEnd={props.onDragEnd}>
+        onDragStart={(e) => props.onDragStart(e, id)}
+        onDragEnd={props.onDragEnd}
+      >
         <div className="d-flex flex-row align-items-center">
-
           <div className="d-flex align-items-center flex-grow-1">
             <DragHandle style={{ height: 24, marginRight: 10 }} />
 
             <EditLink
               label={props.label}
-              href={`/project/${props.projectSlug}/resource/${props.resourceSlug}/activity/${props.contentItem.activitySlug}`} />
-
+              href={`/project/${props.projectSlug}/resource/${props.resourceSlug}/activity/${props.contentItem.activitySlug}`}
+            />
           </div>
 
           <Purpose
             purpose={props.contentItem.purpose}
             purposes={props.purposes}
             editMode={props.editMode}
-            onEdit={props.onEditPurpose} />
+            onEdit={props.onEditPurpose}
+          />
 
           <DeleteButton editMode={props.content.size > 1} onClick={props.onRemove} />
         </div>
       </div>
 
-      <ObjectivesList objectives={props.objectives} ></ObjectivesList>
+      <ObjectivesList objectives={props.objectives}></ObjectivesList>
 
       {props.preferences.caseOf({
-        just: ({ live_preview_display }) => live_preview_display !== 'hidden'
-          ? renderLivePreview(props)
-          : renderHidden(props),
+        just: ({ live_preview_display }) =>
+          live_preview_display !== 'hidden' ? renderLivePreview(props) : renderHidden(props),
         nothing: () => renderLivePreview(props),
       })}
 
-      <div className="reorder-mode-description">
-        {getDescription(props)}
-      </div>
+      <div className="reorder-mode-description">{getDescription(props)}</div>
     </div>
   );
 };
@@ -119,9 +119,7 @@ interface DispatchProps {
   onUpdatePreferences: (p: Partial<Preferences>) => any;
 }
 
-type OwnProps = {
-
-};
+type OwnProps = {};
 
 const mapStateToProps = (state: State, ownProps: OwnProps): StateProps => {
   const { preferences } = state.preferences;

@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import {
-  DeliveryElement, DeliveryElementProps,
-  EvaluationResponse, ResetActivityResponse, RequestHintResponse,
+  DeliveryElement,
+  DeliveryElementProps,
+  EvaluationResponse,
+  ResetActivityResponse,
+  RequestHintResponse,
 } from '../DeliveryElement';
 import { ImageCodingModelSchema } from './schema';
 import * as ActivityTypes from '../types';
@@ -15,11 +18,10 @@ import { Evaluator, EvalContext } from './Evaluator';
 import { lastPart } from './utils';
 import { defaultWriterContext } from 'data/content/writers/context';
 
-
 type Evaluation = {
-  score: number,
-  outOf: number,
-  feedback: ActivityTypes.RichText,
+  score: number;
+  outOf: number;
+  feedback: ActivityTypes.RichText;
 };
 
 type InputProps = {
@@ -29,7 +31,6 @@ type InputProps = {
 };
 
 const Input = (props: InputProps) => {
-
   const input = props.input === null ? '' : props.input;
 
   return (
@@ -39,7 +40,8 @@ const Input = (props: InputProps) => {
       className="form-control"
       onChange={(e: any) => props.onChange(e.target.value)}
       value={input}
-      disabled={props.isEvaluated} />
+      disabled={props.isEvaluated}
+    />
   );
 };
 
@@ -48,7 +50,6 @@ export interface ImageCodingDeliveryProps extends DeliveryElementProps<ImageCodi
 }
 
 const ImageCoding = (props: ImageCodingDeliveryProps) => {
-
   const [model, setModel] = useState(props.model);
   const [attemptState, setAttemptState] = useState(props.state);
   const [hints, setHints] = useState(props.state.parts[0].hints);
@@ -75,12 +76,11 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     fetch(url, { mode: 'cors' })
       .then((resp) => {
         if (!resp.ok) {
-          throw new Error('failed to load ' + lastPart(url) + ': '
-            + resp.statusText);
+          throw new Error('failed to load ' + lastPart(url) + ': ' + resp.statusText);
         }
         return resp.text();
       })
-      .then(text => resourceRefs.current[i] = text)
+      .then((text) => (resourceRefs.current[i] = text))
       .catch((e) => {
         throw new Error('failed to load ' + lastPart(url) + ': ' + e);
       });
@@ -106,11 +106,11 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   }, []);
 
   const onInputChange = (input: string) => {
-
     setInput(input);
 
-    props.onSaveActivity(attemptState.attemptGuid,
-      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input } }]);
+    props.onSaveActivity(attemptState.attemptGuid, [
+      { attemptGuid: attemptState.parts[0].attemptGuid, response: { input } },
+    ]);
   };
 
   const onSubmit = () => {
@@ -122,13 +122,14 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     const feedback = model.feedback[score];
 
     const partState = attemptState.parts[0];
-    props.onSubmitEvaluations(attemptState.attemptGuid,
-      [{ attemptGuid: partState.attemptGuid, score, outOf, feedback, response: { input } }])
+    props
+      .onSubmitEvaluations(attemptState.attemptGuid, [
+        { attemptGuid: partState.attemptGuid, score, outOf, feedback, response: { input } },
+      ])
       .then((response: EvaluationResponse) => {
         if (response.actions.length > 0) {
-
-          const action: ActivityTypes.FeedbackAction
-            = response.actions[0] as ActivityTypes.FeedbackAction;
+          const action: ActivityTypes.FeedbackAction = response
+            .actions[0] as ActivityTypes.FeedbackAction;
           const { error } = action;
           const parts = [Object.assign({}, partState, { feedback, error })];
           const updated = Object.assign({}, attemptState, { score, outOf, parts });
@@ -138,7 +139,8 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   };
 
   const onRequestHint = () => {
-    props.onRequestHint(attemptState.attemptGuid, attemptState.parts[0].attemptGuid)
+    props
+      .onRequestHint(attemptState.attemptGuid, attemptState.parts[0].attemptGuid)
       .then((state: RequestHintResponse) => {
         if (state.hint !== undefined) {
           setHints([...hints, state.hint] as any);
@@ -148,16 +150,15 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   };
 
   const onReset = () => {
-    props.onResetActivity(attemptState.attemptGuid)
-      .then((state: ResetActivityResponse) => {
-        setAttemptState(state.attemptState);
-        setModel(state.model as ImageCodingModelSchema);
-        setHints([]);
-        setHasMoreHints(props.state.parts[0].hasMoreHints);
-        // Do we want reset to reload starter code, discarding changes?
-        // setInput(model.starterCode);
-        clearOutput();
-      });
+    props.onResetActivity(attemptState.attemptGuid).then((state: ResetActivityResponse) => {
+      setAttemptState(state.attemptState);
+      setModel(state.model as ImageCodingModelSchema);
+      setHints([]);
+      setHasMoreHints(props.state.parts[0].hasMoreHints);
+      // Do we want reset to reload starter code, discarding changes?
+      // setInput(model.starterCode);
+      clearOutput();
+    });
   };
 
   const updateOutput = (s: string) => {
@@ -185,7 +186,10 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     clearOutput();
 
     const ctx: EvalContext = {
-      getCanvas, getResource, getResult, appendOutput,
+      getCanvas,
+      getResource,
+      getResult,
+      appendOutput,
       solutionRun: false,
     };
     const e = Evaluator.execute(input, ctx);
@@ -195,7 +199,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   };
 
   const usesImages = () => {
-    return resourceURLs.some(url => !url.endsWith('csv'));
+    return resourceURLs.some((url) => !url.endsWith('csv'));
   };
 
   const solutionCorrect = () => {
@@ -210,7 +214,10 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     // evaluate solution code if needed to "print" result image to solnCanvas.
     // only needs to be done once, setting solnCanvas.width > 0
     const ctx: EvalContext = {
-      getCanvas, getResource, getResult, appendOutput,
+      getCanvas,
+      getResource,
+      getResult,
+      appendOutput,
       solutionRun: true,
     };
     const solnCanvas = getResult(true);
@@ -226,22 +233,31 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     return diff < model.tolerance;
   };
 
-  const evaluationSummary = isEvaluated
-    ? <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
-    : null;
+  const evaluationSummary = isEvaluated ? (
+    <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
+  ) : null;
 
-  const reset = isEvaluated && !props.graded
-    ? (<div className="d-flex">
-      <div className="flex-fill"></div>
-      <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
-    </div>
-    )
-    : null;
+  const reset =
+    isEvaluated && !props.graded ? (
+      <div className="d-flex">
+        <div className="flex-fill"></div>
+        <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
+      </div>
+    ) : null;
 
-  const ungradedDetails = props.graded ? null : [
-    evaluationSummary,
-    <Hints key="hints" onClick={onRequestHint} hints={hints} context={writerContext}
-      hasMoreHints={hasMoreHints} isEvaluated={isEvaluated} />];
+  const ungradedDetails = props.graded
+    ? null
+    : [
+        evaluationSummary,
+        <Hints
+          key="hints"
+          onClick={onRequestHint}
+          hints={hints}
+          context={writerContext}
+          hasMoreHints={hasMoreHints}
+          isEvaluated={isEvaluated}
+        />,
+      ];
 
   const renderOutput = () => {
     if (output === '') {
@@ -255,7 +271,12 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
       return null;
     }
 
-    return <p><span style={{ color: 'red' }}>Error: </span>{error}</p>;
+    return (
+      <p>
+        <span style={{ color: 'red' }}>Error: </span>
+        {error}
+      </p>
+    );
   };
 
   const getCanvas = (n: number = 0) => {
@@ -265,7 +286,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   };
 
   const getResource = (name: string) => {
-    const i = resourceURLs.findIndex(url => lastPart(url) === name);
+    const i = resourceURLs.findIndex((url) => lastPart(url) === name);
     if (i < 0 || i >= resourceRefs.current.length) {
       return null;
     }
@@ -277,18 +298,19 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     return solution ? solnRef.current : resultRef.current;
   };
 
-  const maybeSubmitButton = (model.isExample || props.graded)
-    ? null
-    : (
+  const maybeSubmitButton =
+    model.isExample || props.graded ? null : (
       <button
-        className="btn btn-primary mt-2 float-right" disabled={isEvaluated} onClick={onSubmit}>
+        className="btn btn-primary mt-2 float-right"
+        disabled={isEvaluated}
+        onClick={onSubmit}
+      >
         Submit
       </button>
     );
 
   const runButton = (
-    <button
-      className="btn btn-primary mt-2 float-left" disabled={isEvaluated} onClick={onRun}>
+    <button className="btn btn-primary mt-2 float-left" disabled={isEvaluated} onClick={onRun}>
       Run
     </button>
   );
@@ -299,10 +321,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
         <Stem stem={stem} context={writerContext} />
 
         <div className="">
-          <Input
-            input={input}
-            isEvaluated={isEvaluated}
-            onChange={onInputChange} />
+          <Input input={input} isEvaluated={isEvaluated} onChange={onInputChange} />
           {runButton} {maybeSubmitButton}
         </div>
 

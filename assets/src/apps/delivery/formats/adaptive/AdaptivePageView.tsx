@@ -7,7 +7,8 @@ const AdaptivePageView: React.FC = () => {
   const page = useSelector(selectPageContent);
   const fieldRef = React.useRef<HTMLInputElement>(null);
 
-  const defaultClasses: any[] = ['lesson-loaded', 'lessonView']; // TODO: 'previewView' instead based on context
+  // TODO: 'previewView' instead based on context
+  const defaultClasses: any[] = ['lesson-loaded', 'lessonView'];
   const [pageClasses, setPageClasses] = useState<any[]>([]);
   const [ensembleClasses, setEnsembleClasses] = useState<any[]>([]);
 
@@ -18,7 +19,7 @@ const AdaptivePageView: React.FC = () => {
     backgroundStyles.backgroundImage = `url('${page.custom.backgroundImageURL}')`;
   }
   if (page?.custom?.backgroundImageScaleContent) {
-    backgroundClasses.push(`background-scaled`);
+    backgroundClasses.push('background-scaled');
   }
 
   useEffect(() => {

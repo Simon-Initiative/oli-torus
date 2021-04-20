@@ -9,7 +9,7 @@ const command: Command = {
     if (!selection) return;
 
     if (isActive(editor, 'a')) {
-      return Transforms.unwrapNodes(editor, { match: node => node.type === 'a' });
+      return Transforms.unwrapNodes(editor, { match: (node) => node.type === 'a' });
     }
 
     const href = Editor.string(editor, selection);
@@ -25,5 +25,5 @@ export const commandDesc: CommandDesc = {
   icon: () => 'insert_link',
   description: () => 'Link (⌘L)',
   command,
-  active: e => isActive(e, 'a'),
+  active: (e) => isActive(e, 'a'),
 };

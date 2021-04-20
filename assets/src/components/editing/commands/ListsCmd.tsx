@@ -6,7 +6,6 @@ const listCommandMaker = (listType: string): Command => {
   return {
     execute: (context, editor) => {
       SlateEditor.withoutNormalizing(editor, () => {
-
         const active = isActiveList(editor);
 
         // Not a list, create one
@@ -18,16 +17,20 @@ const listCommandMaker = (listType: string): Command => {
 
         // Wrong type of list, toggle
         if (!isActive(editor, [listType])) {
-          Transforms.setNodes(editor, { type: listType }, {
-            match: n => n.type === (listType === 'ol' ? 'ul' : 'ol'),
-            mode: 'all',
-          });
+          Transforms.setNodes(
+            editor,
+            { type: listType },
+            {
+              match: (n) => n.type === (listType === 'ol' ? 'ul' : 'ol'),
+              mode: 'all',
+            },
+          );
           return;
         }
 
         // Is a list, unwrap it
         Transforms.unwrapNodes(editor, {
-          match: n => n.type === 'ul' || n.type === 'ol',
+          match: (n) => n.type === 'ul' || n.type === 'ol',
           split: true,
           mode: 'all',
         });
@@ -36,8 +39,7 @@ const listCommandMaker = (listType: string): Command => {
       });
     },
     precondition: (editor) => {
-      return isTopLevel(editor) && isActive(editor, ['p'])
-        || isActiveList(editor);
+      return (isTopLevel(editor) && isActive(editor, ['p'])) || isActiveList(editor);
     },
   };
 };
@@ -47,7 +49,7 @@ export const ulCommandDesc: CommandDesc = {
   icon: () => 'format_list_bulleted',
   description: () => 'Unordered List (* )',
   command: listCommandMaker('ul'),
-  active: editor => isActive(editor, ['ul']),
+  active: (editor) => isActive(editor, ['ul']),
 };
 
 export const olCommandDesc: CommandDesc = {
@@ -55,5 +57,5 @@ export const olCommandDesc: CommandDesc = {
   icon: () => 'format_list_numbered',
   description: () => 'Ordered List (1. )',
   command: listCommandMaker('ol'),
-  active: editor => isActive(editor, ['ol']),
+  active: (editor) => isActive(editor, ['ol']),
 };

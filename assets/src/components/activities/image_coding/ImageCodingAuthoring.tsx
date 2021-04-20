@@ -24,9 +24,8 @@ import { CloseButton } from 'components/misc/CloseButton';
 const store = configureStore();
 
 const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
-
   const dispatch = (action: any) => {
-    const nextModel = produce(props.model, draftState => action(draftState));
+    const nextModel = produce(props.model, (draftState) => action(draftState));
     props.onEdit(nextModel);
   };
 
@@ -42,80 +41,94 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
   const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
   const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
 
-  function selectImage(projectSlug: string,
-    model: ContentModel.Image): Promise<ContentModel.Image> {
-
+  function selectImage(
+    projectSlug: string,
+    model: ContentModel.Image,
+  ): Promise<ContentModel.Image> {
     return new Promise((resolve, reject) => {
-
       const selected = { img: null };
 
-      const mediaLibrary =
-          <ModalSelection title="Select an image" size={sizes.extraLarge}
-            onInsert={() => { dismiss(); resolve(selected.img as any); }}
-            onCancel={() => dismiss()}
-            disableInsert={true}
-          >
-            <MediaManager
-              projectSlug={projectSlug}
-              onEdit={() => { }}
-              mimeFilter={MIMETYPE_FILTERS.IMAGE}
-              selectionType={SELECTION_TYPES.SINGLE}
-              initialSelectionPaths={model.src ? [model.src] : [selected.img as any]}
-              onSelectionChange={(images: MediaItem[]) => {
-                (selected as any).img = ContentModel.image(images[0].url);
-              }} />
-          </ModalSelection>;
+      const mediaLibrary = (
+        <ModalSelection
+          title="Select an image"
+          size={sizes.extraLarge}
+          onInsert={() => {
+            dismiss();
+            resolve(selected.img as any);
+          }}
+          onCancel={() => dismiss()}
+          disableInsert={true}
+        >
+          <MediaManager
+            projectSlug={projectSlug}
+            onEdit={() => {}}
+            mimeFilter={MIMETYPE_FILTERS.IMAGE}
+            selectionType={SELECTION_TYPES.SINGLE}
+            initialSelectionPaths={model.src ? [model.src] : [selected.img as any]}
+            onSelectionChange={(images: MediaItem[]) => {
+              (selected as any).img = ContentModel.image(images[0].url);
+            }}
+          />
+        </ModalSelection>
+      );
 
       display(mediaLibrary);
     });
   }
 
-  function selectSpreadsheet(projectSlug: string,
-    model: ContentModel.Image): Promise<ContentModel.Image> {
-
+  function selectSpreadsheet(
+    projectSlug: string,
+    model: ContentModel.Image,
+  ): Promise<ContentModel.Image> {
     return new Promise((resolve, reject) => {
-
       const selected = { file: null };
 
-      const mediaLibrary =
-          <ModalSelection title="Select a csv file" size={sizes.extraLarge}
-            onInsert={() => { dismiss(); resolve(selected.file as any); }}
-            onCancel={() => dismiss()}
-            disableInsert={true}
-          >
-            <MediaManager
-              projectSlug={projectSlug}
-              onEdit={() => { }}
-              mimeFilter={MIMETYPE_FILTERS.CSV}
-              selectionType={SELECTION_TYPES.SINGLE}
-              initialSelectionPaths={model.src ? [model.src] : [selected.file as any]}
-              onSelectionChange={(files: MediaItem[]) => {
-                (selected as any).file = ContentModel.image(files[0].url);
-              }} />
-          </ModalSelection>;
+      const mediaLibrary = (
+        <ModalSelection
+          title="Select a csv file"
+          size={sizes.extraLarge}
+          onInsert={() => {
+            dismiss();
+            resolve(selected.file as any);
+          }}
+          onCancel={() => dismiss()}
+          disableInsert={true}
+        >
+          <MediaManager
+            projectSlug={projectSlug}
+            onEdit={() => {}}
+            mimeFilter={MIMETYPE_FILTERS.CSV}
+            selectionType={SELECTION_TYPES.SINGLE}
+            initialSelectionPaths={model.src ? [model.src] : [selected.file as any]}
+            onSelectionChange={(files: MediaItem[]) => {
+              (selected as any).file = ContentModel.image(files[0].url);
+            }}
+          />
+        </ModalSelection>
+      );
 
       display(mediaLibrary);
     });
   }
 
-  const addImage = (e : any) => {
+  const addImage = (e: any) => {
     selectImage(projectSlug, ContentModel.image()).then((img) => {
       dispatch(ICActions.addResourceURL(img.src));
     });
   };
 
-  const addSpreadsheet = (e : any) => {
+  const addSpreadsheet = (e: any) => {
     selectSpreadsheet(projectSlug, ContentModel.image()).then((img) => {
       dispatch(ICActions.addResourceURL(img.src));
     });
   };
 
   const usesImage = () => {
-    return model.resourceURLs.some(url => !url.endsWith('csv'));
+    return model.resourceURLs.some((url) => !url.endsWith('csv'));
   };
 
   const usesSpreadsheet = () => {
-    return model.resourceURLs.some(url => url.endsWith('csv'));
+    return model.resourceURLs.some((url) => url.endsWith('csv'));
   };
 
   const solutionParameters = () => {
@@ -130,17 +143,30 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
           cols={80}
           className="form-control"
           value={model.solutionCode}
-          onChange={(e: any) => dispatch(ICActions.editSolutionCode(e.target.value))} />
-        <br/>
-        <p>Tolerance:&nbsp;
-          <input type="number" value={model.tolerance}  disabled={!usesImage()}
-                onChange={(e: any) => dispatch(ICActions.editTolerance(e.target.value))}/>
+          onChange={(e: any) => dispatch(ICActions.editSolutionCode(e.target.value))}
+        />
+        <br />
+        <p>
+          Tolerance:&nbsp;
+          <input
+            type="number"
+            value={model.tolerance}
+            disabled={!usesImage()}
+            onChange={(e: any) => dispatch(ICActions.editTolerance(e.target.value))}
+          />
           &nbsp;(Average per-pixel error allowed.)
         </p>
 
-        <p>Text output problems:<br/>Regex:&nbsp;
-          <input type="text" value={model.regex} disabled={usesImage()}
-                onChange={(e: any) => dispatch(ICActions.editRegex(e.target.value))}/>
+        <p>
+          Text output problems:
+          <br />
+          Regex:&nbsp;
+          <input
+            type="text"
+            value={model.regex}
+            disabled={usesImage()}
+            onChange={(e: any) => dispatch(ICActions.editRegex(e.target.value))}
+          />
           &nbsp;Pattern for correct text output
         </p>
       </div>
@@ -153,31 +179,32 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
         projectSlug={props.projectSlug}
         editMode={props.editMode}
         stem={model.stem}
-        onEditStem={content => dispatch(ICActions.editStem(content))} />
+        onEditStem={(content) => dispatch(ICActions.editStem(content))}
+      />
 
       <Heading title="Resources" id="images" />
-        <div>
-          <ul className="list-group">
-            {model.resourceURLs.map((url, i) =>
-              <li className="list-group-item" key={i}>
-                {lastPart(url)}
-                <CloseButton
-                  className="pl-3 pr-1"
-                  editMode={props.editMode}
-                  onClick={() => dispatch(ICActions.removeResourceURL(url))}/>
-              </li>)}
-          </ul>
-          <button
-            className="btn btn-primary mt-2" onClick={addImage} disabled={usesSpreadsheet()}>
-            Add Image...
-          </button>
-          &nbsp;&nbsp;&nbsp;
-          <button
-            className="btn btn-primary mt-2" onClick={addSpreadsheet} disabled={usesImage()}>
-            Add Spreadsheet...
-          </button>
-        </div>
-      <br/>
+      <div>
+        <ul className="list-group">
+          {model.resourceURLs.map((url, i) => (
+            <li className="list-group-item" key={i}>
+              {lastPart(url)}
+              <CloseButton
+                className="pl-3 pr-1"
+                editMode={props.editMode}
+                onClick={() => dispatch(ICActions.removeResourceURL(url))}
+              />
+            </li>
+          ))}
+        </ul>
+        <button className="btn btn-primary mt-2" onClick={addImage} disabled={usesSpreadsheet()}>
+          Add Image...
+        </button>
+        &nbsp;&nbsp;&nbsp;
+        <button className="btn btn-primary mt-2" onClick={addSpreadsheet} disabled={usesImage()}>
+          Add Spreadsheet...
+        </button>
+      </div>
+      <br />
 
       <Heading title="Starter Code" id="starter-code" />
       <textarea
@@ -185,8 +212,9 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
         cols={80}
         className="form-control"
         value={model.starterCode}
-        onChange={(e: any) => dispatch(ICActions.editStarterCode(e.target.value))} />
-        <br/>
+        onChange={(e: any) => dispatch(ICActions.editStarterCode(e.target.value))}
+      />
+      <br />
 
       <div className="form-check mb-2">
         <input
@@ -202,10 +230,8 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
         </label>
       </div>
 
-      {! model.isExample &&
-
+      {!model.isExample && (
         <div>
-
           {solutionParameters()}
 
           <Hints
@@ -214,14 +240,16 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
             editMode={props.editMode}
             onAddHint={() => dispatch(ICActions.addHint())}
             onEditHint={(id, content) => dispatch(ICActions.editHint(id, content))}
-            onRemoveHint={id => dispatch(ICActions.removeHint(id))} />
+            onRemoveHint={(id) => dispatch(ICActions.removeHint(id))}
+          />
 
-          <Feedback {...sharedProps}
+          <Feedback
+            {...sharedProps}
             projectSlug={props.projectSlug}
-            onEditResponse={(score, content) => dispatch(ICActions.editFeedback(score, content))} />
+            onEditResponse={(score, content) => dispatch(ICActions.editFeedback(score, content))}
+          />
         </div>
-      }
-
+      )}
     </React.Fragment>
   );
 };
@@ -231,7 +259,7 @@ export class ImageCodingAuthoring extends AuthoringElement<ImageCodingModelSchem
     ReactDOM.render(
       <Provider store={store}>
         <ImageCoding {...props} />
-        <ModalDisplay/>
+        <ModalDisplay />
       </Provider>,
       mountPoint,
     );

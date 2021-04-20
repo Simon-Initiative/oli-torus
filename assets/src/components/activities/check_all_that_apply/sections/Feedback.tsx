@@ -19,8 +19,12 @@ export const Feedback = (props: PropsWithChildren<FeedbackProps>) => {
 
   return (
     <div className={'mt-5 ' + classNames(['feedback'])}>
-      <Heading title="Answer Choice Feedback" subtitle="Providing feedback when a student answers a
-        question is one of the best ways to reinforce their understanding." id="feedback" />
+      <Heading
+        title="Answer Choice Feedback"
+        subtitle="Providing feedback when a student answers a
+        question is one of the best ways to reinforce their understanding."
+        id="feedback"
+      />
       <div className="form-check mb-2">
         <input
           className="form-check-input"
@@ -39,9 +43,11 @@ export const Feedback = (props: PropsWithChildren<FeedbackProps>) => {
         <Description>
           <IconCorrect /> Feedback for Correct Answer
         </Description>
-        <RichTextEditor projectSlug={projectSlug}
-          editMode={editMode} text={getCorrectResponse(model).feedback.content}
-          onEdit={content => onEditResponseFeedback(getCorrectResponse(model).id, content)}
+        <RichTextEditor
+          projectSlug={projectSlug}
+          editMode={editMode}
+          text={getCorrectResponse(model).feedback.content}
+          onEdit={(content) => onEditResponseFeedback(getCorrectResponse(model).id, content)}
         />
       </div>
       {props.children}
@@ -49,9 +55,11 @@ export const Feedback = (props: PropsWithChildren<FeedbackProps>) => {
         <Description>
           <IconIncorrect /> Catch-all Feedback for Incorrect Answers
         </Description>
-        <RichTextEditor projectSlug={projectSlug}
-          editMode={editMode} text={getIncorrectResponse(model).feedback.content}
-          onEdit={content => onEditResponseFeedback(getIncorrectResponse(model).id, content)}
+        <RichTextEditor
+          projectSlug={projectSlug}
+          editMode={editMode}
+          text={getIncorrectResponse(model).feedback.content}
+          onEdit={(content) => onEditResponseFeedback(getIncorrectResponse(model).id, content)}
         />
       </div>
     </div>
