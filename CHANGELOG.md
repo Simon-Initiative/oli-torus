@@ -9,6 +9,7 @@
   - Add extrinsic user state at the resource attempt level
   - Add bulk fetch endpoint for retrieving collection of activity attempts
   - Add sequential page navigation to editor and full course preview
+  - Enable ecto repository stats in live dashboard
 
 ### Bug fixes
   - Support page-to-page links during course ingestion
@@ -17,6 +18,7 @@
   - Activity feedback fixes and unit tests
   - Remove support for image floating to fix display issues in text editors
   - Change activity rule, outcome modeling for use in adaptive activities
+  - Fix an issue when creating section allows multiple sections to be created
 
 ## 0.8.0 (2021-4-12)
 
