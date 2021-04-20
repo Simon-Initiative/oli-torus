@@ -10,7 +10,7 @@
     <title>Oli.Resources.Numbering — OLI Torus v0.8.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-ed3564624f.js"></script>
+    <script src="dist/sidebar_items-5c01017745.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -111,7 +111,7 @@ Oli.Resources.Numbering <small class="app-vsn">(OLI Torus v0.8.0)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#full_hierarchy/2">full_hierarchy(resolver, project_slug_or_context)</a>
+    <a href="#full_hierarchy/2">full_hierarchy(resolver, project_or_section_slug)</a>
 
   </div>
 
@@ -127,7 +127,7 @@ Oli.Resources.Numbering <small class="app-vsn">(OLI Torus v0.8.0)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#number_full_tree/2">number_full_tree(resolver, project_slug_or_context)</a>
+    <a href="#number_full_tree/2">number_full_tree(resolver, project_or_section_slug)</a>
 
   </div>
 
@@ -143,7 +143,7 @@ Oli.Resources.Numbering <small class="app-vsn">(OLI Torus v0.8.0)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#path_from_root_to/3">path_from_root_to(resolver, project_slug_or_context, revision_slug)</a>
+    <a href="#path_from_root_to/3">path_from_root_to(resolver, project_or_section_slug, revision_slug)</a>
 
   </div>
 
@@ -201,7 +201,7 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">full_hierarchy(resolver, project_slug_or_context)</h1>
+    <h1 class="signature">full_hierarchy(resolver, project_or_section_slug)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L39" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -216,7 +216,7 @@ Functions
       <h2>Specs</h2>
       <div class="specs">
 
-          <pre>full_hierarchy(resolver(), project_slug_or_context()) :: [
+          <pre>full_hierarchy(resolver(), project_or_section_slug()) :: [
   %Oli.Utils.HierarchyNode{
     children: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     numbering: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -230,7 +230,7 @@ Functions
   <a href="#full_hierarchy/2-parameters" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Parameters
 </h2>
-<ul><li>resolver</li><li>project_slug_or_context: The project slug or the context id.</li></ul>
+<ul><li>resolver</li><li>project_or_section_slug: The project slug or the section slug.</li></ul>
   </section>
 </section>
 <section class="detail" id="full_hierarchy_helper/3">
@@ -262,7 +262,7 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">number_full_tree(resolver, project_slug_or_context)</h1>
+    <h1 class="signature">number_full_tree(resolver, project_or_section_slug)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L153" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -277,7 +277,7 @@ Functions
       <h2>Specs</h2>
       <div class="specs">
 
-          <pre>number_full_tree(resolver(), project_slug_or_context()) :: %{
+          <pre>number_full_tree(resolver(), project_or_section_slug()) :: %{
   required(revision_id()) =&gt; %Oli.Resources.Numbering{
     container: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     count: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -397,7 +397,7 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">path_from_root_to(resolver, project_slug_or_context, revision_slug)</h1>
+    <h1 class="signature">path_from_root_to(resolver, project_or_section_slug, revision_slug)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L84" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -412,7 +412,7 @@ Functions
       <h2>Specs</h2>
       <div class="specs">
 
-          <pre>path_from_root_to(resolver(), project_slug_or_context(), revision_slug()) ::
+          <pre>path_from_root_to(resolver(), project_or_section_slug(), revision_slug()) ::
   {:ok,
    [
      %Oli.Resources.Revision{
@@ -455,7 +455,7 @@ Functions
   <a href="#path_from_root_to/3-parameters" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Parameters
 </h2>
-<ul><li>project_slug_or_context: The project slug or context id.</li><li>revision_slug: The revision slug we want to find from the root container.</li></ul><h2 id="path_from_root_to/3-examples" class="section-heading">
+<ul><li>project_or_section_slug: The project slug or section slug.</li><li>revision_slug: The revision slug we want to find from the root container.</li></ul><h2 id="path_from_root_to/3-examples" class="section-heading">
   <a href="#path_from_root_to/3-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
