@@ -96,3 +96,10 @@ main.container {
   padding-left: 0;
   display: block;
 }
+
+@media (min-width: 0) {
+  main.container {
+    padding-left: 1em;
+    padding-right: 1em;
+  }
+}
