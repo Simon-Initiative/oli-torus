@@ -1,5 +1,5 @@
-import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { RootState } from "../../rootReducer";
+import { createSelector, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { RootState } from '../../rootReducer';
 
 export interface PageState {
   userId: number;
@@ -15,16 +15,16 @@ export interface PageState {
 const initialState: PageState = {
   userId: -1,
   resourceId: -1,
-  sectionSlug: "",
-  pageSlug: "",
+  sectionSlug: '',
+  pageSlug: '',
   content: null,
-  resourceAttemptGuid: "",
+  resourceAttemptGuid: '',
   resourceAttemptState: {},
-  activityGuidMapping: {}
+  activityGuidMapping: {},
 };
 
 const pageSlice = createSlice({
-  name: "page",
+  name: 'page',
   initialState,
   reducers: {
     loadPageState: (state, action: PayloadAction<PageState>) => {

@@ -7,19 +7,19 @@ import {
   EntityState,
   PayloadAction,
   Slice,
-} from "@reduxjs/toolkit";
+} from '@reduxjs/toolkit';
 import {
   getActivityForDelivery,
   getBulkActivitiesForDelivery,
-} from "data/persistence/activity";
-import { getBulkAttemptState } from "data/persistence/state/intrinsic";
-import { ResourceId } from "data/types";
-import { RootState } from "../../rootReducer";
+} from 'data/persistence/activity';
+import { getBulkAttemptState } from 'data/persistence/state/intrinsic';
+import { ResourceId } from 'data/types';
+import { RootState } from '../../rootReducer';
 import {
   loadPageState,
   selectPageContent,
   selectSectionSlug,
-} from "../page/slice";
+} from '../page/slice';
 
 interface IActivity {
   // TODO
@@ -33,9 +33,9 @@ export interface ActivitiesState extends EntityState<IActivity> {
 const adapter: EntityAdapter<IActivity> = createEntityAdapter<IActivity>();
 
 const slice: Slice<ActivitiesState> = createSlice({
-  name: "activities",
+  name: 'activities',
   initialState: adapter.getInitialState({
-    currentActivityId: "",
+    currentActivityId: '',
   }),
   reducers: {
     setActivities(state, action: PayloadAction<{ activities: IActivity[] }>) {
@@ -126,7 +126,7 @@ export const loadActivityState = createAsyncThunk(
       return activity;
     });
 
-    console.log("GOT STATE", { results, activities });
+    console.log('GOT STATE', { results, activities });
     // TODO: upsert instead?
     thunkApi.dispatch(setActivities({ activities }));
   }

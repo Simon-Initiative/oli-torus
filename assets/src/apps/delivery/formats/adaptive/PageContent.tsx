@@ -1,8 +1,8 @@
-import React from "react";
-import { useSelector } from "react-redux";
-import { selectCurrentActivity } from "../../store/features/activities/slice";
-import { selectPageContent } from "../../store/features/page/slice";
-import ActivityRenderer from "./ActivityRenderer";
+import React from 'react';
+import { useSelector } from 'react-redux';
+import { selectCurrentActivity } from '../../store/features/activities/slice';
+import { selectPageContent } from '../../store/features/page/slice';
+import ActivityRenderer from './ActivityRenderer';
 
 // TODO: need to factor this into a "legacy" flagged behavior
 const InjectedStyles: React.FC = () => {

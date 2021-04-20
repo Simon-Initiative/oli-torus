@@ -1,8 +1,8 @@
-import { combineReducers } from "@reduxjs/toolkit";
+import { combineReducers } from '@reduxjs/toolkit';
 import activitiesReducer, {
   ActivitiesSlice,
-} from "./features/activities/slice";
-import pageReducer, { PageSlice } from "./features/page/slice";
+} from './features/activities/slice';
+import pageReducer, { PageSlice } from './features/page/slice';
 
 const rootReducer = combineReducers({
   [PageSlice]: pageReducer,

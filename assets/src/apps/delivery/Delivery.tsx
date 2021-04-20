@@ -1,10 +1,13 @@
-import useWindowSize from "components/hooks/useWindowSize";
-import React, { useEffect } from "react";
-import { Provider } from "react-redux";
-import AdaptivePageView from "./formats/adaptive/AdaptivePageView";
-import store from "./store";
-import { loadActivities, loadActivityState } from "./store/features/activities/slice";
-import { loadPageState } from "./store/features/page/slice";
+import useWindowSize from 'components/hooks/useWindowSize';
+import React, { useEffect } from 'react';
+import { Provider } from 'react-redux';
+import AdaptivePageView from './formats/adaptive/AdaptivePageView';
+import store from './store';
+import {
+  loadActivities,
+  loadActivityState,
+} from './store/features/activities/slice';
+import { loadPageState } from './store/features/page/slice';
 
 export interface DeliveryProps {
   resourceId: number;
@@ -53,12 +56,6 @@ export const Delivery: React.FunctionComponent<DeliveryProps> = (
       }
     );
     store.dispatch(loadActivityState(attemptGuids));
-
-    // for now we'll just load *all* the sequence items up front
-    /* const activityIds = content.model
-      .filter((item: any) => item.type === "activity-reference")
-      .map((item: any) => item.activity_id);
-    store.dispatch(loadActivities(activityIds)); */
   }, []);
 
   const parentDivClasses: string[] = [];
@@ -71,7 +68,7 @@ export const Delivery: React.FunctionComponent<DeliveryProps> = (
 
   return (
     <Provider store={store}>
-      <div className={parentDivClasses.join(" ")}>
+      <div className={parentDivClasses.join(' ')}>
         <div className="mainView" role="main" style={{ width: windowWidth }}>
           <AdaptivePageView />
         </div>
