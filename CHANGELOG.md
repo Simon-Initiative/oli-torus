@@ -8,6 +8,7 @@
   - Add ability to change images in pages and activities
   - Add extrinsic user state at the resource attempt level
   - Add bulk fetch endpoint for retrieving collection of activity attempts
+  - Add sequential page navigation to editor and full course preview
 
 ### Bug fixes
   - Support page-to-page links during course ingestion
