@@ -52,7 +52,7 @@ defmodule Oli.Delivery.Sections do
         e in Enrollment,
         join: s in Section,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.slug == ^section_slug
+        where: e.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted
       )
 
     case Repo.one(query) do
@@ -71,7 +71,7 @@ defmodule Oli.Delivery.Sections do
         e in Enrollment,
         join: s in Section,
         on: e.section_id == s.id,
-        where: s.slug == ^section_slug,
+        where: s.slug == ^section_slug and s.status != :deleted,
         preload: [:user, :context_roles],
         select: e
       )
@@ -85,7 +85,7 @@ defmodule Oli.Delivery.Sections do
         e in Enrollment,
         join: s in Section,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.slug == ^section_slug,
+        where: e.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted,
         select: e
       )
 
@@ -107,7 +107,7 @@ defmodule Oli.Delivery.Sections do
         s in Section,
         join: e in Enrollment,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.open_and_free == true,
+        where: e.user_id == ^user_id and s.open_and_free == true and s.status != :deleted,
         preload: [:project, :publication],
         select: s
       )
@@ -135,7 +135,7 @@ defmodule Oli.Delivery.Sections do
     Repo.all(
       from(
         s in Section,
-        where: s.open_and_free == true,
+        where: s.open_and_free == true and s.status != :deleted,
         select: s
       )
     )
@@ -198,7 +198,7 @@ defmodule Oli.Delivery.Sections do
         on: s.lti_1p3_deployment_id == d.id,
         join: r in Registration,
         on: d.registration_id == r.id,
-        where: s.context_id == ^context_id and r.issuer == ^issuer and r.client_id == ^client_id,
+        where: s.context_id == ^context_id and s.status != :deleted and r.issuer == ^issuer and r.client_id == ^client_id,
         select: s
     )
   end
@@ -235,7 +235,7 @@ defmodule Oli.Delivery.Sections do
       ** (Ecto.NoResultsError)
   """
   def get_sections_by_publication(publication) do
-    from(s in Section, where: s.publication_id == ^publication.id) |> Repo.all()
+    from(s in Section, where: s.publication_id == ^publication.id and s.status != :deleted) |> Repo.all()
   end
 
   @doc """
@@ -249,7 +249,7 @@ defmodule Oli.Delivery.Sections do
       ** (Ecto.NoResultsError)
   """
   def get_sections_by_project(project) do
-    from(s in Section, where: s.project_id == ^project.id) |> Repo.all()
+    from(s in Section, where: s.project_id == ^project.id and s.status != :deleted) |> Repo.all()
   end
 
   @doc """
@@ -281,15 +281,15 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Deletes a section.
+  Deletes a section by marking the record as deleted.
   ## Examples
-      iex> delete_section(section)
+      iex> soft_delete_section(section)
       {:ok, %Section{}}
-      iex> delete_section(section)
+      iex> soft_delete_section(section)
       {:error, %Ecto.Changeset{}}
   """
-  def delete_section(%Section{} = section) do
-    Repo.delete(section)
+  def soft_delete_section(%Section{} = section) do
+    update_section(section, %{status: :deleted})
   end
 
   @doc """

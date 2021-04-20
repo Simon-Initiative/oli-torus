@@ -13,6 +13,7 @@ defmodule Oli.Delivery.Sections.Section do
     field :context_id, :string
     field :slug, :string
     field :open_and_free, :boolean, default: false
+    field :status, Ecto.Enum, values: [:active, :deleted], default: :active
 
     field :grade_passback_enabled, :boolean, default: false
     field :line_items_service_url, :string
@@ -43,6 +44,7 @@ defmodule Oli.Delivery.Sections.Section do
       :context_id,
       :slug,
       :open_and_free,
+      :status,
       :grade_passback_enabled,
       :line_items_service_url,
       :nrps_enabled,

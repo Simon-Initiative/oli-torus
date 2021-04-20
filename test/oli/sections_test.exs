@@ -209,9 +209,9 @@ defmodule Oli.SectionsTest do
       assert section == Sections.get_section!(section.id)
     end
 
-    test "delete_section/1 deletes the section", %{section: section} do
-      assert {:ok, %Section{}} = Sections.delete_section(section)
-      assert_raise Ecto.NoResultsError, fn -> Sections.get_section!(section.id) end
+    test "soft_delete_section/1 marks the section as deleted", %{section: section} do
+      assert {:ok, %Section{}} = Sections.soft_delete_section(section)
+      assert Sections.get_section!(section.id).status == :deleted
     end
 
     test "change_section/1 returns a section changeset", %{section: section} do

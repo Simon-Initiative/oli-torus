@@ -21,7 +21,7 @@ defmodule Oli.Publishing.DeliveryResolver do
             on: m.publication_id == s.publication_id,
             join: rev in Revision,
             on: rev.id == m.revision_id,
-            where: s.slug == ^section_slug and m.resource_id in ^resource_ids,
+            where: s.slug == ^section_slug and s.status != :deleted and m.resource_id in ^resource_ids,
             select: rev
         )
 
@@ -42,7 +42,7 @@ defmodule Oli.Publishing.DeliveryResolver do
           on: m.publication_id == s.publication_id,
           join: rev in Revision,
           on: rev.id == m.revision_id,
-          where: s.slug == ^section_slug and m.resource_id == ^resource_id,
+          where: s.slug == ^section_slug and s.status != :deleted and m.resource_id == ^resource_id,
           select: rev
       )
     end
@@ -63,7 +63,7 @@ defmodule Oli.Publishing.DeliveryResolver do
           on: m.revision_id == rev2.id,
           join: s in Section,
           on: s.publication_id == m.publication_id,
-          where: rev.slug == ^revision_slug and s.slug == ^section_slug,
+          where: rev.slug == ^revision_slug and s.slug == ^section_slug and s.status != :deleted,
           limit: 1,
           select: rev2
       )
@@ -79,7 +79,7 @@ defmodule Oli.Publishing.DeliveryResolver do
         from p in Publication,
           join: s in Section,
           on: p.id == s.publication_id,
-          where: s.slug == ^section_slug,
+          where: s.slug == ^section_slug and s.status != :deleted,
           select: p
       )
     end
@@ -98,7 +98,7 @@ defmodule Oli.Publishing.DeliveryResolver do
           on: m.publication_id == p.id,
           join: rev in Revision,
           on: rev.id == m.revision_id,
-          where: m.resource_id == p.root_resource_id and s.slug == ^section_slug,
+          where: m.resource_id == p.root_resource_id and s.slug == ^section_slug and s.status != :deleted,
           select: rev
       )
     end
@@ -122,7 +122,7 @@ defmodule Oli.Publishing.DeliveryResolver do
           on: rev.id == m.revision_id,
           where:
             (rev.resource_type_id == ^page_id or rev.resource_type_id == ^container_id) and
-              s.slug == ^section_slug,
+              s.slug == ^section_slug and s.status != :deleted,
           select: rev
       )
     end

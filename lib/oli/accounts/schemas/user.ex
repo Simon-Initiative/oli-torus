@@ -1,7 +1,7 @@
 defmodule Oli.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
-  import Oli.Utils, only: [maybe_name_from_given_and_family: 1]
+  import Oli.Utils
 
   schema "users" do
     # user fields are based on the openid connect core standard, most of which are provided via LTI 1.3
@@ -94,7 +94,7 @@ defimpl Lti_1p3.Tool.Lti_1p3_User, for: Oli.Accounts.User do
         preload: [:context_roles],
         join: s in Section,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.slug == ^section_slug,
+        where: e.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted,
         select: e
 
     case Repo.one(query) do

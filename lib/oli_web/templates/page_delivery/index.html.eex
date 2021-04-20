@@ -4,11 +4,16 @@
 
   <%= if is_instructor?(@conn, @section_slug) do %>
 
-  <div class="d-flex flex-row">
+  <div class="d-flex flex-row my-2">
     <div class="flex-fill"></div>
     <div>
       <%= link "Manage Grades", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section_slug), class: "btn btn-link btn-sm" %>
     </div>
+    <%= if user_role(@section, @current_user) == :administrator do %>
+      <div>
+        <%= link "Manage Section", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSection, @section_slug), class: "btn btn-warning btn-sm" %>
+      </div>
+    <% end %>
   </div>
 
   <% end %>
@@ -18,6 +23,7 @@
 
     <%= render "_outline.html", conn: @conn, section_slug: @section_slug, summary: @summary, nodes: @summary.hierarchy, active_page: nil %>
   </div>
+
 </div>
 
 <script>
@@ -28,7 +34,7 @@
     const button = document.createElement("button");
     button.onclick = (_e) =>
       window.open(window.location.href, "_blank");
-    button.innerHTML = "Open with full window";
+    button.innerHTML = "Open in new window <i class='fas fa-external-link-alt'></i>";
     button.className = "btn btn-primary"
     const container = document.getElementById("index-container");
     container.innerHTML = "";

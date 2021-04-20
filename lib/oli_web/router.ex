@@ -432,6 +432,7 @@ defmodule OliWeb.Router do
         :review_attempt
 
     live "/:section_slug/grades", Grades.GradesLive, session: {__MODULE__, :with_section_user, []}
+    live "/:section_slug/manage", Delivery.ManageSection, session: {__MODULE__, :with_section_user, []}
     get "/:section_slug/grades/export", PageDeliveryController, :export_gradebook
   end
 
