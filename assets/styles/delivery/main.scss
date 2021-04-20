@@ -1,18 +1,19 @@
 /** Delivery Styles **/
 
+$paragraph-margin-bottom: 1.5em;
+$h1-font-size: $font-size-base * 2;
+$h2-font-size: $font-size-base * 1.75;
+$h3-font-size: $font-size-base * 1.5;
+$h4-font-size: $font-size-base * 1.25;
+$h5-font-size: $font-size-base * 1.125;
+$h6-font-size: $font-size-base;
+
 body {
   flex: 1;
   position: relative;
   font-family: $font-family-sans-serif;
   font-size: $font-size-base;
-
-  $paragraph-margin-bottom: 1.5em;
-  $h1-font-size: $font-size-base * 2;
-  $h2-font-size: $font-size-base * 1.75;
-  $h3-font-size: $font-size-base * 1.5;
-  $h4-font-size: $font-size-base * 1.25;
-  $h5-font-size: $font-size-base * 1.125;
-  $h6-font-size: $font-size-base;
+  padding-bottom: $footer-height;
 
   h1, .h1 { @include font-size($h1-font-size); }
   h2, .h2 { @include font-size($h2-font-size); }
@@ -31,102 +32,8 @@ body.modal-open {
   font-family: 'Open Sans', sans-serif;
 }
 
-h1.title {
-  font-weight: 300;
-  color: $gray-800;
-  padding-bottom: .5em;
-  border-bottom: 1px solid $gray-400;
-  margin-bottom: 1em;
-}
-
 form .form-label-group .help-block {
   color: #dc3545;
-}
-
-.activity-purpose {
-  text-transform: uppercase;
-  background-color: orangered;
-  color: white;
-}
-
-.content-purpose {
-  .content-purpose-label {
-    text-transform: uppercase;
-    padding: 4px;
-  }
-
-  .content-purpose-content {
-    padding: 20px;
-  }
-
-  &.example {
-    border: 1px solid $content-purpose-example-color;
-    margin-bottom: 1rem;
-
-    .content-purpose-label {
-      background-color: $content-purpose-example-color;
-      color: $white;
-    }
-  }
-
-  &.learnmore {
-    border: 1px solid $content-purpose-learnmore-color;
-    margin-bottom: 1rem;
-
-    .content-purpose-label {
-      background-color: $content-purpose-learnmore-color;
-      color: $white;
-    }
-  }
-}
-
-.activity-purpose {
-  padding: 4px 8px;
-  font-weight: 200;
-
-  &.checkpoint {
-    background-color: $activity-purpose-checkpoint-color;
-
-    &::before {
-      font-family: 'Line Awesome Free';
-      font-weight: 900;
-      margin-right: 8px;
-      content: '\f46c';
-    }
-  }
-
-  &.didigetthis {
-    background-color: $activity-purpose-didigetthis-color;
-
-    &::before {
-      font-family: 'Line Awesome Free';
-      font-weight: 900;
-      margin-right: 8px;
-      content: '\f256';
-    }
-  }
-
-  &.learnbydoing {
-    background-color: $activity-purpose-learnbydoing-color;
-
-    &::before {
-      font-family: 'Line Awesome Free';
-      font-weight: 900;
-      margin-right: 8px;
-      content: '\f51c';
-    }
-  }
-
-  &.manystudentswonder {
-    background-color: $activity-purpose-manystudentswonder-color;
-
-    &::before {
-      font-family: 'Line Awesome Free';
-      font-weight: 900;
-      margin-right: 8px;
-      content: '\f5da';
-    }
-  }
 }
 
 .custom-select {

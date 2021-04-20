@@ -1,6 +1,6 @@
 <%= render OliWeb.SharedView, "_cookie_consent.html" %>
 
-<footer>
+<footer class="footer">
   <div class="container">
     <div class="row">
       <div class="col-sm text-left">

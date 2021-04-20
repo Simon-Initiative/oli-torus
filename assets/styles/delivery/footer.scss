@@ -1,0 +1,10 @@
+footer.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: $footer-height;
+  line-height: $footer-height;
+
+  background-color: $footer-bg-color;
+  color: $footer-color;
+}

@@ -1,0 +1,84 @@
+@import "delivery/variables";
+
+.content-purpose {
+  .content-purpose-label {
+    text-transform: uppercase;
+    padding: 4px;
+  }
+
+  .content-purpose-content {
+    padding: 20px;
+  }
+
+  &.example {
+    border: 1px solid $content-purpose-example-color;
+    margin-bottom: 1rem;
+
+    .content-purpose-label {
+      background-color: $content-purpose-example-color;
+      color: $white;
+    }
+  }
+
+  &.learnmore {
+    border: 1px solid $content-purpose-learnmore-color;
+    margin-bottom: 1rem;
+
+    .content-purpose-label {
+      background-color: $content-purpose-learnmore-color;
+      color: $white;
+    }
+  }
+}
+
+.activity-purpose {
+  padding: 4px 8px;
+  font-weight: 200;
+  text-transform: uppercase;
+  background-color: orangered;
+  color: white;
+
+  &.checkpoint {
+    background-color: $activity-purpose-checkpoint-color;
+
+    &::before {
+      font-family: 'Line Awesome Free';
+      font-weight: 900;
+      margin-right: 8px;
+      content: '\f46c';
+    }
+  }
+
+  &.didigetthis {
+    background-color: $activity-purpose-didigetthis-color;
+
+    &::before {
+      font-family: 'Line Awesome Free';
+      font-weight: 900;
+      margin-right: 8px;
+      content: '\f256';
+    }
+  }
+
+  &.learnbydoing {
+    background-color: $activity-purpose-learnbydoing-color;
+
+    &::before {
+      font-family: 'Line Awesome Free';
+      font-weight: 900;
+      margin-right: 8px;
+      content: '\f51c';
+    }
+  }
+
+  &.manystudentswonder {
+    background-color: $activity-purpose-manystudentswonder-color;
+
+    &::before {
+      font-family: 'Line Awesome Free';
+      font-weight: 900;
+      margin-right: 8px;
+      content: '\f5da';
+    }
+  }
+}

@@ -47,12 +47,20 @@ table {
   table-layout: fixed;
 
   th {
-    background-color: rgb(232, 244, 250);
+    background-color: rgba($blue, 15%);
   }
 
   caption {
     @extend .text-center;
   }
+}
+
+img.d-block {
+  margin-bottom: 1.5em;
+}
+
+figure > img.d-block {
+  margin-bottom: initial;
 }
 
 img.d-block,

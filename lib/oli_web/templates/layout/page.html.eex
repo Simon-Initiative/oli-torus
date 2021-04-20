@@ -17,10 +17,10 @@
 
         <%= @inner_content %>
 
-      </div>
+        <%= render OliWeb.PageDeliveryView, "_previous_next_nav.html",
+          conn: @conn, section_slug: @section_slug, summary: @summary, previous_page: @previous_page, next_page: @next_page %>
 
-      <%= render OliWeb.PageDeliveryView, "_previous_next_nav.html",
-        conn: @conn, section_slug: @section_slug, summary: @summary, previous_page: @previous_page, next_page: @next_page %>
+      </div>
 
   </div>
 

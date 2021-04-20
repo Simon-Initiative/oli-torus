@@ -66,8 +66,6 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def youtube(%Context{} = _context, _, %{"src" => src} = attrs) do
-    # if attrs["caption"]
-    # do
     figure(Map.put(attrs, "full-width", true), [
       """
       <div class="youtube-wrapper">
@@ -77,16 +75,6 @@ defmodule Oli.Rendering.Content.Html do
       </div>
       """
     ])
-
-    # else
-    #   [
-    #     """
-    #     <div class="youtube-wrapper #{display_class(attrs)}">
-    #       <iframe id="#{src}" allowfullscreen src="https://www.youtube.com/embed/#{src}"></iframe>
-    #     </div>
-    #     """
-    #   ]
-    # end
   end
 
   def iframe(%Context{} = _context, _, %{"src" => src} = attrs) do
@@ -270,8 +258,10 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   # Accessible captions are created using a combination of the <figure /> and <figcaption /> elements.
+  defp figure(%{"caption" => ""} = _attrs, content), do: content
+
   defp figure(%{"caption" => caption} = attrs, content) do
-    [~s|<div class="figure-wrapper #{display_class(attrs)}">|] ++
+    [~s|<div class="figure-wrapper text-center #{display_class(attrs)}">|] ++
       [
         "<figure#{
           if attrs["full-width"] do
