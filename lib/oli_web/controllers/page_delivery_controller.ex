@@ -69,8 +69,7 @@ defmodule OliWeb.PageDeliveryController do
       slug: context.page.slug,
       previous_page: context.previous_page,
       next_page: context.next_page,
-      user_id: user.id,
-      content: Jason.encode!(context.page.content)
+      user_id: user.id
     })
   end
 

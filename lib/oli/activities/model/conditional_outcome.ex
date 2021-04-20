@@ -14,12 +14,4 @@ defmodule Oli.Activities.Model.ConditionalOutcome do
     {:error, "invalid conditional outcome"}
   end
 
-  defp parse_action(%{"type" => "FeedbackActionDesc"} = action),
-    do: Oli.Activities.Model.FeedbackAction.parse(action)
-
-  defp parse_action(%{"type" => "NavigationActionDesc"} = action),
-    do: Oli.Activities.Model.NavigationAction.parse(action)
-
-  defp parse_action(%{"type" => "StateUpdateActionDesc"} = action),
-    do: Oli.Activities.Model.StateUpdateAction.parse(action)
 end
