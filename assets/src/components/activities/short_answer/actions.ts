@@ -7,16 +7,15 @@ import { toSimpleText } from 'data/content/text';
 import { Identifiable } from 'data/content/model';
 
 export class ShortAnswerActions {
-
   private static getById<T extends Identifiable>(slice: T[], id: string): Maybe<T> {
-    return Maybe.maybe(slice.find(c => c.id === id));
+    return Maybe.maybe(slice.find((c) => c.id === id));
   }
 
   private static getResponse = (draftState: ShortAnswerModelSchema, id: string) => {
     return ShortAnswerActions.getById(draftState.authoring.parts[0].responses, id);
-  }
-  private static getHint = (draftState: ShortAnswerModelSchema,
-    id: string) => ShortAnswerActions.getById(draftState.authoring.parts[0].hints, id)
+  };
+  private static getHint = (draftState: ShortAnswerModelSchema, id: string) =>
+    ShortAnswerActions.getById(draftState.authoring.parts[0].hints, id);
 
   static setModel(model: ShortAnswerModelSchema) {
     return (draftState: ShortAnswerModelSchema) => {
@@ -36,14 +35,13 @@ export class ShortAnswerActions {
 
   static editFeedback(id: string, content: RichText) {
     return (draftState: ShortAnswerModelSchema) => {
-      ShortAnswerActions.getResponse(draftState, id).lift(r => r.feedback.content = content);
+      ShortAnswerActions.getResponse(draftState, id).lift((r) => (r.feedback.content = content));
     };
-
   }
 
   static editRule(id: string, rule: string) {
     return (draftState: ShortAnswerModelSchema) => {
-      ShortAnswerActions.getResponse(draftState, id).lift(r => r.rule = rule);
+      ShortAnswerActions.getResponse(draftState, id).lift((r) => (r.rule = rule));
     };
   }
 
@@ -61,15 +59,14 @@ export class ShortAnswerActions {
       const index = draftState.authoring.parts[0].responses.length - 1;
       draftState.authoring.parts[0].responses.splice(index, 0, response);
     };
-
   }
 
   static removeReponse(id: string) {
     return (draftState: ShortAnswerModelSchema) => {
-      draftState.authoring.parts[0].responses = draftState.authoring.parts[0].responses
-      .filter(r => r.id !== id);
+      draftState.authoring.parts[0].responses = draftState.authoring.parts[0].responses.filter(
+        (r) => r.id !== id,
+      );
     };
-
   }
 
   static addHint() {
@@ -79,22 +76,20 @@ export class ShortAnswerActions {
       const bottomOutIndex = draftState.authoring.parts[0].hints.length - 1;
       draftState.authoring.parts[0].hints.splice(bottomOutIndex, 0, newHint);
     };
-
   }
 
   static editHint(id: string, content: RichText) {
     return (draftState: ShortAnswerModelSchema) => {
-      ShortAnswerActions.getHint(draftState, id).lift(hint => hint.content = content);
+      ShortAnswerActions.getHint(draftState, id).lift((hint) => (hint.content = content));
     };
-
   }
 
   static removeHint(id: string) {
     return (draftState: ShortAnswerModelSchema) => {
-      draftState.authoring.parts[0].hints = draftState.authoring.parts[0].hints
-      .filter(h => h.id !== id);
+      draftState.authoring.parts[0].hints = draftState.authoring.parts[0].hints.filter(
+        (h) => h.id !== id,
+      );
     };
-
   }
 
   static setInputType(inputType: InputType) {
@@ -114,7 +109,5 @@ export class ShortAnswerActions {
 
       draftState.inputType = inputType;
     };
-
   }
 }
-

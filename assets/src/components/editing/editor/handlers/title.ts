@@ -11,11 +11,14 @@ export const onKeyDown = (editor: SlateEditor, e: React.KeyboardEvent) => {
 // Handles exiting a header item via Enter key, setting the next block back to normal (p)
 function handleTitleTermination(editor: SlateEditor, e: React.KeyboardEvent) {
   if (editor.selection && Range.isCollapsed(editor.selection)) {
-
     const [match] = SlateEditor.nodes(editor, {
-      match: n => n.type === 'h1' || n.type === 'h2'
-        || n.type === 'h3' || n.type === 'h4'
-        || n.type === 'h5' || n.type === 'h6',
+      match: (n) =>
+        n.type === 'h1' ||
+        n.type === 'h2' ||
+        n.type === 'h3' ||
+        n.type === 'h4' ||
+        n.type === 'h5' ||
+        n.type === 'h6',
     });
 
     if (match) {
@@ -25,7 +28,6 @@ function handleTitleTermination(editor: SlateEditor, e: React.KeyboardEvent) {
 
       // If the cursor is at the end of the block
       if (Point.equals(editor.selection.focus, end)) {
-
         // Insert it ahead of the next node
         const nextMatch = SlateEditor.next(editor, { at: path });
         if (nextMatch) {
@@ -40,8 +42,10 @@ function handleTitleTermination(editor: SlateEditor, e: React.KeyboardEvent) {
 
           // But if there is no next node, insert it at end
         } else {
-          Transforms.insertNodes(editor, ContentModel.p(),
-          { mode: 'highest', at: SlateEditor.end(editor, []) });
+          Transforms.insertNodes(editor, ContentModel.p(), {
+            mode: 'highest',
+            at: SlateEditor.end(editor, []),
+          });
 
           const newNext = SlateEditor.next(editor, { at: path });
           if (newNext) {

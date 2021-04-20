@@ -12,27 +12,30 @@ import { Socket } from 'phoenix';
 import NProgress from 'nprogress';
 import { LiveSocket } from 'phoenix_live_view';
 import { Hooks } from 'hooks';
-import { initActivityBridge, initPreviewActivityBridge } from './activity_bridge';
+import {
+  initActivityBridge,
+  initPreviewActivityBridge,
+} from './activity_bridge';
 
-const csrfToken
-  = (document as any).querySelector('meta[name="csrf-token"]').getAttribute('content');
-const liveSocket
-  = new LiveSocket('/live', Socket, {
-    hooks: Hooks,
-    params: { _csrf_token: csrfToken },
-    metadata: {
-      keydown: (e: any, el: any) => {
-        return {
-          key: e.key,
-          shiftKey: e.shiftKey,
-        };
-      },
+const csrfToken = (document as any)
+  .querySelector('meta[name="csrf-token"]')
+  .getAttribute('content');
+const liveSocket = new LiveSocket('/live', Socket, {
+  hooks: Hooks,
+  params: { _csrf_token: csrfToken },
+  metadata: {
+    keydown: (e: any, el: any) => {
+      return {
+        key: e.key,
+        shiftKey: e.shiftKey,
+      };
     },
-  });
+  },
+});
 
 // Show progress bar on live navigation and form submits
-window.addEventListener('phx:page-loading-start', info => NProgress.start());
-window.addEventListener('phx:page-loading-stop', info => NProgress.done());
+window.addEventListener('phx:page-loading-start', (info) => NProgress.start());
+window.addEventListener('phx:page-loading-stop', (info) => NProgress.done());
 
 (window as any).initActivityBridge = initActivityBridge;
 (window as any).initPreviewActivityBridge = initPreviewActivityBridge;

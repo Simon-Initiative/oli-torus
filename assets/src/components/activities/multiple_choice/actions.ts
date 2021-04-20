@@ -7,15 +7,15 @@ import { Identifiable } from 'data/content/model';
 
 export class MCActions {
   private static getById<T extends Identifiable>(slice: T[], id: string): Maybe<T> {
-    return Maybe.maybe(slice.find(c => c.id === id));
+    return Maybe.maybe(slice.find((c) => c.id === id));
   }
-  private static getChoice = (draftState: MultipleChoiceModelSchema,
-    id: string) => MCActions.getById(draftState.choices, id)
+  private static getChoice = (draftState: MultipleChoiceModelSchema, id: string) =>
+    MCActions.getById(draftState.choices, id);
   private static getResponse = (draftState: MultipleChoiceModelSchema, id: string) => {
     return MCActions.getById(draftState.authoring.parts[0].responses, id);
-  }
-  private static getHint = (draftState: MultipleChoiceModelSchema,
-    id: string) => MCActions.getById(draftState.authoring.parts[0].hints, id)
+  };
+  private static getHint = (draftState: MultipleChoiceModelSchema, id: string) =>
+    MCActions.getById(draftState.authoring.parts[0].hints, id);
 
   static editStem(content: RichText) {
     return (draftState: MultipleChoiceModelSchema) => {
@@ -30,27 +30,29 @@ export class MCActions {
       const newChoice: Choice = fromText('');
       draftState.choices.push(newChoice);
       draftState.authoring.parts[0].responses.push(
-        makeResponse(`input like {${newChoice.id}}`, 0, ''));
+        makeResponse(`input like {${newChoice.id}}`, 0, ''),
+      );
     };
   }
 
   static editChoice(id: string, content: RichText) {
     return (draftState: MultipleChoiceModelSchema) => {
-      MCActions.getChoice(draftState, id).lift(choice => choice.content = content);
+      MCActions.getChoice(draftState, id).lift((choice) => (choice.content = content));
     };
   }
 
   static removeChoice(id: string) {
     return (draftState: MultipleChoiceModelSchema) => {
-      draftState.choices = draftState.choices.filter(c => c.id !== id);
-      draftState.authoring.parts[0].responses = draftState.authoring.parts[0].responses
-        .filter(r => r.rule !== `input like {${id}}`);
+      draftState.choices = draftState.choices.filter((c) => c.id !== id);
+      draftState.authoring.parts[0].responses = draftState.authoring.parts[0].responses.filter(
+        (r) => r.rule !== `input like {${id}}`,
+      );
     };
   }
 
   static editFeedback(id: string, content: RichText) {
     return (draftState: MultipleChoiceModelSchema) => {
-      MCActions.getResponse(draftState, id).lift(r => r.feedback.content = content);
+      MCActions.getResponse(draftState, id).lift((r) => (r.feedback.content = content));
     };
   }
 
@@ -66,16 +68,15 @@ export class MCActions {
 
   static editHint(id: string, content: RichText) {
     return (draftState: MultipleChoiceModelSchema) => {
-      MCActions.getHint(draftState, id).lift(hint => hint.content = content);
+      MCActions.getHint(draftState, id).lift((hint) => (hint.content = content));
     };
   }
 
   static removeHint(id: string) {
     return (draftState: MultipleChoiceModelSchema) => {
-      draftState.authoring.parts[0].hints = draftState.authoring.parts[0].hints
-      .filter(h => h.id !== id);
+      draftState.authoring.parts[0].hints = draftState.authoring.parts[0].hints.filter(
+        (h) => h.id !== id,
+      );
     };
-
   }
 }
-

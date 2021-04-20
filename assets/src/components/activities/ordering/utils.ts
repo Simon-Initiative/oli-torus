@@ -1,12 +1,16 @@
 import guid from 'utils/guid';
-import { OrderingModelSchema as Ordering, ChoiceIdsToResponseId,
-  TargetedOrdering, SimpleOrdering } from './schema';
+import {
+  OrderingModelSchema as Ordering,
+  ChoiceIdsToResponseId,
+  TargetedOrdering,
+  SimpleOrdering,
+} from './schema';
 import { RichText, Operation, ScoringStrategy, ChoiceId, Choice } from '../types';
 import { create, ID, Identifiable, Paragraph } from 'data/content/model';
 
 // Helper. Assumes a correct ID is given
 export function getByIdUnsafe<T extends Identifiable>(slice: T[], id: string): T {
-  return slice.find(c => c.id === id) || slice[0];
+  return slice.find((c) => c.id === id) || slice[0];
 }
 
 // Types
@@ -29,16 +33,17 @@ export const canMoveChoice = (model: Ordering, id: ChoiceId, direction: ChoiceMo
   const canMoveDown = thisChoiceIndex < lastChoiceIndex;
 
   switch (direction) {
-    case 'up': return canMoveUp;
-    case 'down': return canMoveDown;
+    case 'up':
+      return canMoveUp;
+    case 'down':
+      return canMoveDown;
   }
 };
-export const canMoveChoiceUp = (model: Ordering, id: ChoiceId) =>
-  canMoveChoice(model, id, 'up');
+export const canMoveChoiceUp = (model: Ordering, id: ChoiceId) => canMoveChoice(model, id, 'up');
 export const canMoveChoiceDown = (model: Ordering, id: ChoiceId) =>
   canMoveChoice(model, id, 'down');
 export const getChoiceIndex = (model: Ordering, id: ChoiceId) =>
-  model.choices.findIndex(choice => choice.id === id);
+  model.choices.findIndex((choice) => choice.id === id);
 export const getChoice = (model: Ordering, id: ChoiceId) => getByIdUnsafe(model.choices, id);
 // FIX
 export const getChoiceIds = ([choiceIds]: ChoiceIdsToResponseId) => choiceIds;
@@ -53,19 +58,21 @@ export const getResponseId = ([, responseId]: ChoiceIdsToResponseId) => response
 export const getCorrectResponse = (model: Ordering) =>
   getResponse(model, getResponseId(model.authoring.correct));
 export const getIncorrectResponse = (model: Ordering) => {
-  const responsesWithoutCorrect = getResponses(model)
-    .filter(response => response.id !== getCorrectResponse(model).id);
+  const responsesWithoutCorrect = getResponses(model).filter(
+    (response) => response.id !== getCorrectResponse(model).id,
+  );
 
   switch (model.type) {
     case 'SimpleOrdering':
       return responsesWithoutCorrect[0];
     case 'TargetedOrdering':
-      return responsesWithoutCorrect
-        .filter(r1 => !getTargetedResponses(model).find(r2 => r1.id === r2.id))[0];
+      return responsesWithoutCorrect.filter(
+        (r1) => !getTargetedResponses(model).find((r2) => r1.id === r2.id),
+      )[0];
   }
 };
 export const getTargetedResponses = (model: TargetedOrdering) =>
-  model.authoring.targeted.map(assoc => getResponse(model, getResponseId(assoc)));
+  model.authoring.targeted.map((assoc) => getResponse(model, getResponseId(assoc)));
 
 // Hints
 export const getHints = (model: Ordering) => model.authoring.parts[0].hints;
@@ -80,11 +87,11 @@ export const unionRules = (rules: string[]) => rules.reduce(unionTwoRules);
 
 // Other
 export function setDifference<T>(subtractedFrom: T[], toSubtract: T[]) {
-  return subtractedFrom.filter(x => !toSubtract.includes(x));
+  return subtractedFrom.filter((x) => !toSubtract.includes(x));
 }
 
 // Model creation
-export const defaultOrderingModel : () => Ordering = () => {
+export const defaultOrderingModel: () => Ordering = () => {
   const choice1: Choice = fromText('Choice 1');
   const choice2: Choice = fromText('Choice 2');
 
@@ -94,37 +101,31 @@ export const defaultOrderingModel : () => Ordering = () => {
   return {
     type: 'SimpleOrdering',
     stem: fromText(''),
-    choices: [
-      choice1,
-      choice2,
-    ],
+    choices: [choice1, choice2],
     authoring: {
-      parts: [{
-        id: '1', // a only has one part, so it is safe to hardcode the id
-        scoringStrategy: ScoringStrategy.average,
-        responses: [
-          correctResponse,
-          incorrectResponse,
-        ],
-        hints: [
-          fromText(''),
-          fromText(''),
-          fromText(''),
-        ],
-      }],
-      correct: [[choice1.id, choice2.id], correctResponse.id],
-      transformations: [
-        { id: guid(), path: 'choices', operation: Operation.shuffle },
+      parts: [
+        {
+          id: '1', // a only has one part, so it is safe to hardcode the id
+          scoringStrategy: ScoringStrategy.average,
+          responses: [correctResponse, incorrectResponse],
+          hints: [fromText(''), fromText(''), fromText('')],
+        },
       ],
+      correct: [[choice1.id, choice2.id], correctResponse.id],
+      transformations: [{ id: guid(), path: 'choices', operation: Operation.shuffle }],
       previewText: '',
     },
   };
 };
 
-export const makeResponse = (rule: string, score: number, text: '') =>
-  ({ id: guid(), rule, score, feedback: fromText(text) });
+export const makeResponse = (rule: string, score: number, text: '') => ({
+  id: guid(),
+  rule,
+  score,
+  feedback: fromText(text),
+});
 
-export function fromText(text: string): { id: string, content: RichText } {
+export function fromText(text: string): { id: string; content: RichText } {
   return {
     id: guid() + '',
     content: {

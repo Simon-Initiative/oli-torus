@@ -80,9 +80,9 @@ export const fetchActivity = createAsyncThunk(
     const activity = await getActivityForDelivery(sectionSlug, activityId);
     // TODO: need a sequence ID and/or some other ID than db id to use here
     thunkApi.dispatch(
-      upsertActivity({ activity: { ...activity, id: activityId.toString() } })
+      upsertActivity({ activity: { ...activity, id: activityId.toString() } }),
     );
-  }
+  },
 );
 
 export const loadActivities = createAsyncThunk(
@@ -91,11 +91,11 @@ export const loadActivities = createAsyncThunk(
     const sectionSlug = selectSectionSlug(thunkApi.getState() as RootState);
     const activities = await getBulkActivitiesForDelivery(
       sectionSlug,
-      activityIds
+      activityIds,
     );
     // TODO: need a sequence ID and/or some other ID than db id to use here
     thunkApi.dispatch(setActivities({ activities }));
-  }
+  },
 );
 
 export const loadActivityState = createAsyncThunk(
@@ -106,15 +106,15 @@ export const loadActivityState = createAsyncThunk(
 
     // TODO: map back to activities in model and update everything
     const { model: sequence } = selectPageContent(
-      thunkApi.getState() as RootState
+      thunkApi.getState() as RootState,
     );
     const activities = results.map((result) => {
       const sequenceEntry = sequence.find(
-        (entry: any) => entry.activity_id === result.activityId
+        (entry: any) => entry.activity_id === result.activityId,
       );
       if (!sequenceEntry) {
         console.warn(
-          `Activity ${result.activityId} not found in the page model!`
+          `Activity ${result.activityId} not found in the page model!`,
         );
         return;
       }
@@ -126,10 +126,10 @@ export const loadActivityState = createAsyncThunk(
       return activity;
     });
 
-    console.log('GOT STATE', { results, activities });
+    // console.log('GOT STATE', { results, activities });
     // TODO: upsert instead?
     thunkApi.dispatch(setActivities({ activities }));
-  }
+  },
 );
 
 // SELECTORS
@@ -137,10 +137,10 @@ export const selectState = (state: RootState) =>
   state[ActivitiesSlice] as ActivitiesState;
 export const selectCurrentActivityId = createSelector(
   selectState,
-  (state) => state.currentActivityId
+  (state) => state.currentActivityId,
 );
 const { selectAll, selectById, selectTotal } = adapter.getSelectors(
-  selectState
+  selectState,
 );
 export const selectAllActivities = selectAll;
 export const selectActivityById = selectById;
@@ -149,7 +149,7 @@ export const selectTotalActivities = selectTotal;
 export const selectCurrentActivity = createSelector(
   (state: RootState) => [state, selectCurrentActivityId(state)],
   ([state, currentActivityId]: [RootState, string]) =>
-    selectActivityById(state, currentActivityId)
+    selectActivityById(state, currentActivityId),
 );
 
 export default slice.reducer;

@@ -17,7 +17,9 @@
         "ter-func-call-spacing": false,
         "prefer-template": false,
         "align": [true, "statements"],
-        "no-console": [true, "log"]
+        "no-console": [true, "log"],
+        "ter-arrow-parens": [true, "always"],
+        "semicolon": false
     },
     "rulesDirectory": []
 }

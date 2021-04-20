@@ -7,11 +7,11 @@ import { Identifiable } from 'data/content/model';
 
 export class ICActions {
   private static getById<T extends Identifiable>(slice: T[], id: string): Maybe<T> {
-    return Maybe.maybe(slice.find(c => c.id === id));
+    return Maybe.maybe(slice.find((c) => c.id === id));
   }
 
-  private static getHint = (draftState: ImageCodingModelSchema,
-    id: string) => ICActions.getById(draftState.authoring.parts[0].hints, id)
+  private static getHint = (draftState: ImageCodingModelSchema, id: string) =>
+    ICActions.getById(draftState.authoring.parts[0].hints, id);
 
   static editStem(content: RichText) {
     return (draftState: ImageCodingModelSchema) => {
@@ -49,7 +49,7 @@ export class ICActions {
 
   static removeResourceURL(value: string) {
     return (draftState: ImageCodingModelSchema) => {
-      draftState.resourceURLs = draftState.resourceURLs.filter(url => url !== value);
+      draftState.resourceURLs = draftState.resourceURLs.filter((url) => url !== value);
     };
   }
 
@@ -83,16 +83,15 @@ export class ICActions {
 
   static editHint(id: string, content: RichText) {
     return (draftState: ImageCodingModelSchema) => {
-      ICActions.getHint(draftState, id).lift(hint => hint.content = content);
+      ICActions.getHint(draftState, id).lift((hint) => (hint.content = content));
     };
   }
 
   static removeHint(id: string) {
     return (draftState: ImageCodingModelSchema) => {
-      draftState.authoring.parts[0].hints = draftState.authoring.parts[0].hints
-      .filter(h => h.id !== id);
+      draftState.authoring.parts[0].hints = draftState.authoring.parts[0].hints.filter(
+        (h) => h.id !== id,
+      );
     };
-
   }
 }
-

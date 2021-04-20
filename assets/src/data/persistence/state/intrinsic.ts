@@ -7,7 +7,7 @@ export type BulkAttemptRetrieved = {
 
 export const getBulkAttemptState = async (
   sectionSlug: string,
-  attemptGuids: string[]
+  attemptGuids: string[],
 ) => {
   const params = {
     method: 'POST',

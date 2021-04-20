@@ -20,8 +20,9 @@ function handleVoidNewline(editor: ReactEditor, e: KeyboardEvent) {
 
       if (schemaItem.isVoid) {
         const path = ReactEditor.findPath(editor, node);
-        Transforms.insertNodes(editor, ContentModel.p(),
-          { at: Path.next(path) });
+        Transforms.insertNodes(editor, ContentModel.p(), {
+          at: Path.next(path),
+        });
 
         Transforms.select(editor, Path.next(path));
       }

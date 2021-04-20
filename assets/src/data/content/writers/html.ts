@@ -1,9 +1,29 @@
 import { WriterImpl, Next } from './writer';
 import {
-  ModelElement, Image, HeadingSix, Paragraph, HeadingOne,
-  HeadingTwo, HeadingThree, HeadingFour, HeadingFive, YouTube, Audio,
-  Table, TableRow, TableHeader, TableData, OrderedList, UnorderedList,
-  ListItem, Math, MathLine, Code, CodeLine, Blockquote, Hyperlink,
+  ModelElement,
+  Image,
+  HeadingSix,
+  Paragraph,
+  HeadingOne,
+  HeadingTwo,
+  HeadingThree,
+  HeadingFour,
+  HeadingFive,
+  YouTube,
+  Audio,
+  Table,
+  TableRow,
+  TableHeader,
+  TableData,
+  OrderedList,
+  UnorderedList,
+  ListItem,
+  Math,
+  MathLine,
+  Code,
+  CodeLine,
+  Blockquote,
+  Hyperlink,
 } from '../model';
 import { Text } from 'slate';
 import { WriterContext } from './context';
@@ -35,9 +55,9 @@ export class HtmlParser implements WriterImpl {
       sup: 'sup',
     };
     return Object.keys(textEntity)
-      .filter(attr => textEntity[attr] === true)
-      .map(attr => supportedMarkTags[attr])
-      .filter(mark => mark)
+      .filter((attr) => textEntity[attr] === true)
+      .map((attr) => supportedMarkTags[attr])
+      .filter((mark) => mark)
       .reduce((acc, mark) => `<${mark}>${acc}</${mark}>`, text);
   }
 
@@ -48,7 +68,8 @@ export class HtmlParser implements WriterImpl {
         case 'float_left':
         case 'float_right':
         case 'block':
-        default: return 'd-block';
+        default:
+          return 'd-block';
       }
     }
     return '';
@@ -59,14 +80,14 @@ export class HtmlParser implements WriterImpl {
       return content;
     }
 
-    return (
-      `<div class="figure-wrapper ${this.displayClass(attrs)}">
+    return `<div class="figure-wrapper ${this.displayClass(attrs)}">
         <figure${attrs['full-width'] ? ' class="full-width"' : ''}>
           ${content}
-          <figcaption${attrs['full-width'] ? ' class="full-width"' : ''}>${attrs.caption}</figcaption>
+          <figcaption${attrs['full-width'] ? ' class="full-width"' : ''}>${
+      attrs.caption
+    }</figcaption>
         </figure>
-      </div>`
-    );
+      </div>`;
   }
 
   p = (context: WriterContext, next: Next, x: Paragraph) => `<p>${next()}</p>\n`;
@@ -78,28 +99,31 @@ export class HtmlParser implements WriterImpl {
   h6 = (context: WriterContext, next: Next, x: HeadingSix) => `<h6>${next()}</h6>\n`;
   img = (context: WriterContext, next: Next, attrs: Image) => {
     const alt = attrs.alt ? ` alt="${attrs.alt}"` : '';
-    return this.figure(attrs, `<img class="${this.displayClass(attrs)}"${alt} src="${attrs.src}"/>\n`);
-  }
+    return this.figure(
+      attrs,
+      `<img class="${this.displayClass(attrs)}"${alt} src="${attrs.src}"/>\n`,
+    );
+  };
   youtube = (context: any, next: Next, attrs: YouTube) => {
     return this.figure(
       Object.assign(attrs, { 'full-width': true }),
       `<div class="youtube-wrapper ${this.displayClass(attrs)}">
-          <iframe id="${attrs.src}" allowfullscreen src="https://www.youtube.com/embed/${attrs.src}"></iframe>
+          <iframe id="${attrs.src}" allowfullscreen src="https://www.youtube.com/embed/${
+        attrs.src
+      }"></iframe>
         </div>`,
     );
-  }
+  };
   audio = (context: WriterContext, next: Next, attrs: Audio) =>
     this.figure(
       attrs,
       `<audio controls src="${attrs.src}">Your browser does not support the <code>audio</code> element.</audio>\n`,
-    )
+    );
   table = (context: WriterContext, next: Next, attrs: Table) => {
-    const caption = attrs.caption
-      ? `<caption>${attrs.caption}</caption>`
-      : '';
+    const caption = attrs.caption ? `<caption>${attrs.caption}</caption>` : '';
 
     return `<table>${caption}${next()}</table>\n`;
-  }
+  };
   tr = (context: WriterContext, next: Next, x: TableRow) => `<tr>${next()}</tr>\n`;
   th = (context: WriterContext, next: Next, x: TableHeader) => `<th>${next()}</th>\n`;
   td = (context: WriterContext, next: Next, x: TableData) => `<td>${next()}</td>\n`;
@@ -109,10 +133,10 @@ export class HtmlParser implements WriterImpl {
   math = (context: WriterContext, next: Next, x: Math) => `<div>${next()}</div>\n`;
   mathLine = (context: WriterContext, next: Next, x: MathLine) => `${next()}\n`;
   code = (context: WriterContext, next: Next, attrs: Code) =>
-    this.figure(attrs, `<pre><code class="language-${attrs.language}">${next()}</code></pre>\n`)
+    this.figure(attrs, `<pre><code class="language-${attrs.language}">${next()}</code></pre>\n`);
   codeLine = (context: WriterContext, next: Next, x: CodeLine) => `${next()}\n`;
   blockquote = (context: WriterContext, next: Next, x: Blockquote) =>
-    `<blockquote>${next()}</blockquote>\n`
+    `<blockquote>${next()}</blockquote>\n`;
   a = (context: WriterContext, next: Next, { href }: Hyperlink) => {
     if (href.startsWith('/course/link/')) {
       let internalHref = href;
@@ -127,11 +151,13 @@ export class HtmlParser implements WriterImpl {
     }
 
     // tslint:disable-next-line:max-line-length
-    return `<a class="external-link" href="${this.escapeXml(href)}" target="_blank">${next()}</a>\n`;
-  }
+    return `<a class="external-link" href="${this.escapeXml(
+      href,
+    )}" target="_blank">${next()}</a>\n`;
+  };
   text = (context: WriterContext, textEntity: Text) =>
-    this.wrapWithMarks(escapeHtml(textEntity.text), textEntity)
+    this.wrapWithMarks(escapeHtml(textEntity.text), textEntity);
 
   unsupported = (context: WriterContext, { type }: ModelElement) =>
-    '<div class="content invalid">Content element is invalid</div>\n'
+    '<div class="content invalid">Content element is invalid</div>\n';
 }

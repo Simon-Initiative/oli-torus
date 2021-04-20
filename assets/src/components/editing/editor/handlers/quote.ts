@@ -10,9 +10,8 @@ export const onKeyDown = (editor: SlateEditor, e: KeyboardEvent) => {
 
 function handleTermination(editor: SlateEditor, e: KeyboardEvent) {
   if (editor.selection && Range.isCollapsed(editor.selection)) {
-
     const [quoteMatch] = SlateEditor.nodes(editor, {
-      match: n => n.type === 'blockquote',
+      match: (n) => n.type === 'blockquote',
     });
 
     if (quoteMatch) {
@@ -30,7 +29,9 @@ function handleTermination(editor: SlateEditor, e: KeyboardEvent) {
         Transforms.removeNodes(editor);
 
         // Insert it ahead of the next node
-        Transforms.insertNodes(editor, ContentModel.p(), { at: Path.next(path) });
+        Transforms.insertNodes(editor, ContentModel.p(), {
+          at: Path.next(path),
+        });
         Transforms.select(editor, Path.next(path));
 
         e.preventDefault();

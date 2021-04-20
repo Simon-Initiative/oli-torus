@@ -24,24 +24,22 @@ export const dropHandler = (
     if (data) {
       const droppedContent = JSON.parse(data) as DragPayload;
 
-      const sourceIndex = content.findIndex(c => c.id === droppedContent.id);
+      const sourceIndex = content.findIndex((c) => c.id === droppedContent.id);
 
       if (sourceIndex === -1) {
-
         // This is a cross window drop, we insert it but have to have to
         // ensure that for activities that we create a new activity for
         // tied to this project
         if (droppedContent.type === 'ActivityPayload') {
-
           if (droppedContent.project !== projectSlug) {
-
             Persistence.create(
               droppedContent.project,
               droppedContent.activity.typeSlug,
-              droppedContent.activity.model, [])
-              .then((result: Persistence.Created) => {
-                onEditContentList(content.insert(index, droppedContent.reference));
-              });
+              droppedContent.activity.model,
+              [],
+            ).then((result: Persistence.Created) => {
+              onEditContentList(content.insert(index, droppedContent.reference));
+            });
           } else {
             onEditContentList(content.insert(index, droppedContent.reference));
           }
@@ -86,7 +84,7 @@ export const dropHandler = (
 
         // Remove it if we find the same identified content item
         const inserted = content
-          .filter(contentItem => parsedContent.id !== contentItem.id)
+          .filter((contentItem) => parsedContent.id !== contentItem.id)
           // Then insert it
           .insert(index, parsedContent);
 
@@ -94,8 +92,7 @@ export const dropHandler = (
 
         // scroll to inserted item
         scrollToResourceEditor(parsedContent.id);
-      } catch (err) {
-      }
+      } catch (err) {}
     }
   }
 };
