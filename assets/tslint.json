@@ -19,7 +19,8 @@
         "align": [true, "statements"],
         "no-console": [true, "log"],
         "ter-arrow-parens": [true, "always"],
-        "semicolon": false
+        "semicolon": false,
+        "ter-indent": false
     },
     "rulesDirectory": []
 }
