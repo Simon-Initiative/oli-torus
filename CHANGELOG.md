@@ -4,10 +4,22 @@
 
 ### Enhancements
   - Add OpenAPI docs for user state service
-  - Image coding activity: use highlighting/autoindenting code editor
+  - Enable OpenAPI docs on all environments at /api/v1/docs
+  - Add ability to change images in pages and activities
+  - Add extrinsic user state at the resource attempt level
+  - Add bulk fetch endpoint for retrieving collection of activity attempts
+  - Add sequential page navigation to editor and full course preview
+  - Enable ecto repository stats in live dashboard
+  - Image code activity: use syntax highlighting/autoindenting editor
 
 ### Bug fixes
   - Support page-to-page links during course ingestion
+  - Use section slugs instead of ids in storage service URLs for delivery endpoints
+  - Fix a crash when an existing logged-in user accesses the Register Institution page
+  - Activity feedback fixes and unit tests
+  - Remove support for image floating to fix display issues in text editors
+  - Change activity rule, outcome modeling for use in adaptive activities
+  - Fix an issue when creating section allows multiple sections to be created
 
 ## 0.8.0 (2021-4-12)
 
