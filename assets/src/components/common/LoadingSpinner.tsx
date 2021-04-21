@@ -13,6 +13,7 @@ export interface LoadingSpinnerProps {
   size?: LoadingSpinnerSize;
 }
 
+// eslint-disable-next-line
 export interface LoadingSpinnerState {
 
 }
@@ -33,8 +34,8 @@ export class LoadingSpinner
     const sizeClass = size === LoadingSpinnerSize.Small
       ? 'ls-small'
       : size === LoadingSpinnerSize.Large
-      ? 'ls-large'
-      : 'ls-normal';
+        ? 'ls-large'
+        : 'ls-normal';
 
     return (
       <div className={'LoadingSpinner ' + sizeClass}>

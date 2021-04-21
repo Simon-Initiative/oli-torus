@@ -22,9 +22,11 @@ import { Manifest, CreationContext } from '../types';
 import { registerCreationFunc } from '../creation';
 import { CheckAllThatApplyModelSchema } from './schema';
 import { defaultCATAModel } from './utils';
-const manifest : Manifest = require('./manifest.json');
 
-function createFn(content: CreationContext) : Promise<CheckAllThatApplyModelSchema> {
+// eslint-disable-next-line
+const manifest: Manifest = require('./manifest.json');
+
+function createFn(content: CreationContext): Promise<CheckAllThatApplyModelSchema> {
   return Promise.resolve(Object.assign({}, defaultCATAModel()));
 }
 

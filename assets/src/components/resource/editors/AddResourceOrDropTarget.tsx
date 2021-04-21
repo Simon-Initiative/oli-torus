@@ -1,3 +1,4 @@
+import React from 'react';
 import { ActivityEditorMap } from 'data/content/editors';
 import { ResourceContext, ResourceContent, Activity } from 'data/content/resource';
 import { Objective } from 'data/content/objective';

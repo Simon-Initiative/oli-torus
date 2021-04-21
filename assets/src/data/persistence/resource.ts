@@ -3,20 +3,20 @@ import { makeRequest } from './common';
 import { PageContent, AttachedObjectives } from '../content/resource';
 
 export type ResourceUpdate = {
-  title: string,
-  objectives: AttachedObjectives,
-  content: PageContent,
-  releaseLock: boolean,
+  title: string;
+  objectives: AttachedObjectives;
+  content: PageContent;
+  releaseLock: boolean;
 };
 
-export type Edited = { type: 'success', revisionSlug: string };
+export type Edited = { type: 'success'; revisionSlug: string };
 
 export function edit(
   project: ProjectSlug,
   resource: ResourceSlug,
   pendingUpdate: ResourceUpdate,
-  releaseLock: boolean) {
-
+  releaseLock: boolean,
+) {
   const update = Object.assign({}, pendingUpdate, { releaseLock });
 
   const params = {
@@ -28,17 +28,13 @@ export function edit(
   return makeRequest<Edited>(params);
 }
 
-export type Page = { id: string, title: string};
-export type PagesReceived = { type: 'success', pages: Page[] };
+export type Page = { id: string; title: string };
+export type PagesReceived = { type: 'success'; pages: Page[] };
 
 // Requests all of the page details for a course for the purpose
 // of constructing links
-export function pages(
-  project: ProjectSlug, current?: string) {
-
-  const currentSlug = current === undefined
-    ? ''
-    : `?current=${current}`;
+export function pages(project: ProjectSlug, current?: string) {
+  const currentSlug = current === undefined ? '' : `?current=${current}`;
 
   const params = {
     method: 'GET',
@@ -47,4 +43,3 @@ export function pages(
 
   return makeRequest<PagesReceived>(params);
 }
-

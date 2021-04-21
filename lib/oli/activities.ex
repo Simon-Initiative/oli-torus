@@ -184,9 +184,9 @@ defmodule Oli.Activities do
   @doc """
   Returns a list of script urls for all registered activities
   """
-  def get_activity_scripts() do
+  def get_activity_scripts(scriptType \\ :authoring_script) do
     list_activity_registrations()
-    |> Enum.map(fn r -> Map.get(r, :authoring_script) end)
+    |> Enum.map(fn r -> Map.get(r, scriptType) end)
   end
 
   @doc """

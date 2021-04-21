@@ -18,9 +18,8 @@ import { getHints, isTargetedCATA } from 'components/activities/check_all_that_a
 const store = configureStore();
 
 const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSchema>) => {
-
   const dispatch = (action: any) =>
-    props.onEdit(produce(props.model, draftState => action(draftState)));
+    props.onEdit(produce(props.model, (draftState) => action(draftState)));
 
   const sharedProps = {
     model: props.model,
@@ -30,36 +29,46 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
 
   return (
     <React.Fragment>
-      <Stem {...sharedProps}
+      <Stem
+        {...sharedProps}
         stem={props.model.stem}
-        onEditStem={content => dispatch(Actions.editStem(content))}
+        onEditStem={(content) => dispatch(Actions.editStem(content))}
       />
 
-      <Choices {...sharedProps}
+      <Choices
+        {...sharedProps}
         onAddChoice={() => dispatch(Actions.addChoice())}
         onEditChoiceContent={(id, content) => dispatch(Actions.editChoiceContent(id, content))}
-        onRemoveChoice={id => dispatch(Actions.removeChoice(id))}
-        onToggleChoiceCorrectness={choiceId => dispatch(Actions.toggleChoiceCorrectness(choiceId))}
+        onRemoveChoice={(id) => dispatch(Actions.removeChoice(id))}
+        onToggleChoiceCorrectness={(choiceId) =>
+          dispatch(Actions.toggleChoiceCorrectness(choiceId))
+        }
       />
 
-      <Feedback {...sharedProps}
+      <Feedback
+        {...sharedProps}
         onToggleFeedbackMode={() => dispatch(Actions.toggleType())}
         onEditResponseFeedback={(responseId, feedbackContent) =>
-          dispatch(Actions.editResponseFeedback(responseId, feedbackContent))}
+          dispatch(Actions.editResponseFeedback(responseId, feedbackContent))
+        }
       >
-        {isTargetedCATA(props.model)
-          ? <TargetedFeedback {...sharedProps}
-              model={props.model}
-              onEditResponseFeedback={(responseId, feedbackContent) =>
-                dispatch(Actions.editResponseFeedback(responseId, feedbackContent))}
-              onAddTargetedFeedback={() => dispatch(Actions.addTargetedFeedback())}
-              onRemoveTargetedFeedback={(responseId: ActivityTypes.ResponseId) =>
-                dispatch(Actions.removeTargetedFeedback(responseId))}
-              onEditTargetedFeedbackChoices={
-                (responseId: ActivityTypes.ResponseId, choiceIds: ActivityTypes.ChoiceId[]) =>
-                  dispatch(Actions.editTargetedFeedbackChoices(responseId, choiceIds))}
+        {isTargetedCATA(props.model) ? (
+          <TargetedFeedback
+            {...sharedProps}
+            model={props.model}
+            onEditResponseFeedback={(responseId, feedbackContent) =>
+              dispatch(Actions.editResponseFeedback(responseId, feedbackContent))
+            }
+            onAddTargetedFeedback={() => dispatch(Actions.addTargetedFeedback())}
+            onRemoveTargetedFeedback={(responseId: ActivityTypes.ResponseId) =>
+              dispatch(Actions.removeTargetedFeedback(responseId))
+            }
+            onEditTargetedFeedbackChoices={(
+              responseId: ActivityTypes.ResponseId,
+              choiceIds: ActivityTypes.ChoiceId[],
+            ) => dispatch(Actions.editTargetedFeedbackChoices(responseId, choiceIds))}
           />
-          : null}
+        ) : null}
       </Feedback>
 
       <Hints
@@ -68,7 +77,8 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
         editMode={props.editMode}
         onAddHint={() => dispatch(Actions.addHint())}
         onEditHint={(id, content) => dispatch(Actions.editHint(id, content))}
-        onRemoveHint={id => dispatch(Actions.removeHint(id))} />
+        onRemoveHint={(id) => dispatch(Actions.removeHint(id))}
+      />
     </React.Fragment>
   );
 };
@@ -84,6 +94,6 @@ export class CheckAllThatApplyAuthoring extends AuthoringElement<CheckAllThatApp
     );
   }
 }
-
+// eslint-disable-next-line
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
 window.customElements.define(manifest.authoring.element, CheckAllThatApplyAuthoring);

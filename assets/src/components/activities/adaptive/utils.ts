@@ -48,7 +48,7 @@ export function fromText(text: string): { id: string, content: RichText } {
   };
 }
 
-export const feedback = (text: string, match: string | number, score: number = 0) => ({
+export const feedback = (text: string, match: string | number, score = 0) => ({
   ...fromText(text),
   match,
   score,

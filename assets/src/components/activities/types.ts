@@ -48,7 +48,9 @@ export type Manifest = {
 };
 
 export interface ActivityModelSchema {
+  resourceId?: number;
   authoring?: any;
+  content?: any;
 }
 
 export interface PartState {
@@ -98,6 +100,7 @@ export interface Response extends Identifiable {
 }
 
 export interface ConditionalOutcome extends Identifiable {
+  // eslint-disable-next-line
   rule: Object;
   actions: ActionDesc[];
 }
@@ -120,6 +123,7 @@ export interface NavigationActionCore {
 }
 
 export interface StateUpdateActionCore {
+  // eslint-disable-next-line
   update: Object;
 }
 
@@ -171,7 +175,7 @@ export enum EvaluationStrategy {
 export enum Operation {
   'shuffle' = 'shuffle',
 }
-
+// eslint-disable-next-line
 export interface CreationContext extends ResourceContext {
 
 }

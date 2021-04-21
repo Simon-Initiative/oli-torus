@@ -18,9 +18,8 @@ import { canMoveChoice, getHints, isTargetedOrdering } from 'components/activiti
 const store = configureStore();
 
 const Ordering = (props: AuthoringElementProps<OrderingModelSchema>) => {
-
   const dispatch = (action: any) =>
-    props.onEdit(produce(props.model, draftState => action(draftState)));
+    props.onEdit(produce(props.model, (draftState) => action(draftState)));
 
   const sharedProps = {
     model: props.model,
@@ -30,39 +29,47 @@ const Ordering = (props: AuthoringElementProps<OrderingModelSchema>) => {
 
   return (
     <React.Fragment>
-      <Stem {...sharedProps}
+      <Stem
+        {...sharedProps}
         stem={props.model.stem}
-        onEditStem={content => dispatch(Actions.editStem(content))}
+        onEditStem={(content) => dispatch(Actions.editStem(content))}
       />
 
-      <Choices {...sharedProps}
+      <Choices
+        {...sharedProps}
         onAddChoice={() => dispatch(Actions.addChoice())}
         onEditChoiceContent={(id, content) => dispatch(Actions.editChoiceContent(id, content))}
-        onRemoveChoice={id => dispatch(Actions.removeChoice(id))}
-        canMoveChoiceUp={id => canMoveChoice(props.model, id, 'up')}
-        canMoveChoiceDown={id => canMoveChoice(props.model, id, 'down')}
-        onMoveChoiceUp={id => dispatch(Actions.moveChoice('up', id))}
-        onMoveChoiceDown={id => dispatch(Actions.moveChoice('down', id))}
+        onRemoveChoice={(id) => dispatch(Actions.removeChoice(id))}
+        canMoveChoiceUp={(id) => canMoveChoice(props.model, id, 'up')}
+        canMoveChoiceDown={(id) => canMoveChoice(props.model, id, 'down')}
+        onMoveChoiceUp={(id) => dispatch(Actions.moveChoice('up', id))}
+        onMoveChoiceDown={(id) => dispatch(Actions.moveChoice('down', id))}
       />
 
-      <Feedback {...sharedProps}
+      <Feedback
+        {...sharedProps}
         onToggleFeedbackMode={() => dispatch(Actions.toggleType())}
         onEditResponseFeedback={(responseId, feedbackContent) =>
-          dispatch(Actions.editResponseFeedback(responseId, feedbackContent))}
+          dispatch(Actions.editResponseFeedback(responseId, feedbackContent))
+        }
       >
-        {isTargetedOrdering(props.model)
-          ? <TargetedFeedback {...sharedProps}
-              model={props.model}
-              onEditResponseFeedback={(responseId, feedbackContent) =>
-                dispatch(Actions.editResponseFeedback(responseId, feedbackContent))}
-              onAddTargetedFeedback={() => dispatch(Actions.addTargetedFeedback())}
-              onRemoveTargetedFeedback={(responseId: ActivityTypes.ResponseId) =>
-                dispatch(Actions.removeTargetedFeedback(responseId))}
-              onEditTargetedFeedbackChoices={
-                (responseId: ActivityTypes.ResponseId, choiceIds: ActivityTypes.ChoiceId[]) =>
-                  dispatch(Actions.editTargetedFeedbackChoices(responseId, choiceIds))}
+        {isTargetedOrdering(props.model) ? (
+          <TargetedFeedback
+            {...sharedProps}
+            model={props.model}
+            onEditResponseFeedback={(responseId, feedbackContent) =>
+              dispatch(Actions.editResponseFeedback(responseId, feedbackContent))
+            }
+            onAddTargetedFeedback={() => dispatch(Actions.addTargetedFeedback())}
+            onRemoveTargetedFeedback={(responseId: ActivityTypes.ResponseId) =>
+              dispatch(Actions.removeTargetedFeedback(responseId))
+            }
+            onEditTargetedFeedbackChoices={(
+              responseId: ActivityTypes.ResponseId,
+              choiceIds: ActivityTypes.ChoiceId[],
+            ) => dispatch(Actions.editTargetedFeedbackChoices(responseId, choiceIds))}
           />
-          : null}
+        ) : null}
       </Feedback>
 
       <Hints
@@ -71,7 +78,8 @@ const Ordering = (props: AuthoringElementProps<OrderingModelSchema>) => {
         editMode={props.editMode}
         onAddHint={() => dispatch(Actions.addHint())}
         onEditHint={(id, content) => dispatch(Actions.editHint(id, content))}
-        onRemoveHint={id => dispatch(Actions.removeHint(id))} />
+        onRemoveHint={(id) => dispatch(Actions.removeHint(id))}
+      />
     </React.Fragment>
   );
 };
@@ -87,6 +95,6 @@ export class OrderingAuthoring extends AuthoringElement<OrderingModelSchema> {
     );
   }
 }
-
+// eslint-disable-next-line
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
 window.customElements.define(manifest.authoring.element, OrderingAuthoring);

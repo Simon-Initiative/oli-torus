@@ -1,12 +1,16 @@
 import guid from 'utils/guid';
-import { CheckAllThatApplyModelSchema as CATA, ChoiceIdsToResponseId,
-  TargetedCATA, SimpleCATA } from './schema';
+import {
+  CheckAllThatApplyModelSchema as CATA,
+  ChoiceIdsToResponseId,
+  TargetedCATA,
+  SimpleCATA,
+} from './schema';
 import { RichText, Operation, ScoringStrategy, ChoiceId, Choice } from '../types';
 import { create, ID, Identifiable, Paragraph } from 'data/content/model';
 
 // Helper. Assumes a correct ID is given
 export function getByIdUnsafe<T extends Identifiable>(slice: T[], id: string): T {
-  return slice.find(c => c.id === id) || slice[0];
+  return slice.find((c) => c.id === id) || slice[0];
 }
 
 // Types
@@ -36,7 +40,7 @@ export const getCorrectResponse = (model: CATA) =>
 export const getIncorrectResponse = (model: CATA) =>
   getResponse(model, getResponseId(model.authoring.incorrect));
 export const getTargetedResponses = (model: TargetedCATA) =>
-  model.authoring.targeted.map(assoc => getResponse(model, getResponseId(assoc)));
+  model.authoring.targeted.map((assoc) => getResponse(model, getResponseId(assoc)));
 
 // Hints
 export const getHints = (model: CATA) => model.authoring.parts[0].hints;
@@ -45,8 +49,8 @@ export const getHint = (model: CATA, id: ID) => getByIdUnsafe(getHints(model), i
 // Rules
 export const createRuleForIds = (toMatch: ID[], notToMatch: ID[]) =>
   unionRules(
-    toMatch.map(createMatchRule)
-    .concat(notToMatch.map(id => invertRule(createMatchRule(id)))));
+    toMatch.map(createMatchRule).concat(notToMatch.map((id) => invertRule(createMatchRule(id)))),
+  );
 export const createMatchRule = (id: string) => `input like {${id}}`;
 export const invertRule = (rule: string) => `(!(${rule}))`;
 export const unionTwoRules = (rule1: string, rule2: string) => `${rule2} && (${rule1})`;
@@ -54,53 +58,50 @@ export const unionRules = (rules: string[]) => rules.reduce(unionTwoRules);
 
 // Other
 export function setDifference<T>(subtractedFrom: T[], toSubtract: T[]) {
-  return subtractedFrom.filter(x => !toSubtract.includes(x));
+  return subtractedFrom.filter((x) => !toSubtract.includes(x));
 }
 
 // Model creation
-export const defaultCATAModel : () => CATA = () => {
+export const defaultCATAModel: () => CATA = () => {
   const correctChoice: Choice = fromText('Choice 1');
   const incorrectChoice: Choice = fromText('Choice 2');
 
-  const correctResponse = makeResponse(createRuleForIds(
-    [correctChoice.id], [incorrectChoice.id]), 1, '');
+  const correctResponse = makeResponse(
+    createRuleForIds([correctChoice.id], [incorrectChoice.id]),
+    1,
+    '',
+  );
   const incorrectResponse = makeResponse(invertRule(correctResponse.rule), 0, '');
 
   return {
     type: 'SimpleCATA',
     stem: fromText(''),
-    choices: [
-      correctChoice,
-      incorrectChoice,
-    ],
+    choices: [correctChoice, incorrectChoice],
     authoring: {
-      parts: [{
-        id: '1', // a only has one part, so it is safe to hardcode the id
-        scoringStrategy: ScoringStrategy.average,
-        responses: [
-          correctResponse,
-          incorrectResponse,
-        ],
-        hints: [
-          fromText(''),
-          fromText(''),
-          fromText(''),
-        ],
-      }],
+      parts: [
+        {
+          id: '1', // a only has one part, so it is safe to hardcode the id
+          scoringStrategy: ScoringStrategy.average,
+          responses: [correctResponse, incorrectResponse],
+          hints: [fromText(''), fromText(''), fromText('')],
+        },
+      ],
       correct: [[correctChoice.id], correctResponse.id],
       incorrect: [[incorrectChoice.id], incorrectResponse.id],
-      transformations: [
-        { id: guid(), path: 'choices', operation: Operation.shuffle },
-      ],
+      transformations: [{ id: guid(), path: 'choices', operation: Operation.shuffle }],
       previewText: '',
     },
   };
 };
 
-export const makeResponse = (rule: string, score: number, text: '') =>
-  ({ id: guid(), rule, score, feedback: fromText(text) });
+export const makeResponse = (rule: string, score: number, text: '') => ({
+  id: guid(),
+  rule,
+  score,
+  feedback: fromText(text),
+});
 
-export function fromText(text: string): { id: string, content: RichText } {
+export function fromText(text: string): { id: string; content: RichText } {
   return {
     id: guid() + '',
     content: {
@@ -116,7 +117,7 @@ export function fromText(text: string): { id: string, content: RichText } {
   };
 }
 
-export const feedback = (text: string, match: string | number, score: number = 0) => ({
+export const feedback = (text: string, match: string | number, score = 0) => ({
   ...fromText(text),
   match,
   score,

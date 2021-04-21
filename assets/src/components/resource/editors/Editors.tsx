@@ -2,7 +2,11 @@ import * as Immutable from 'immutable';
 import React, { useState } from 'react';
 import isHotkey from 'is-hotkey';
 import {
-  ResourceContent, Activity, ActivityPurposes, ContentPurposes, ResourceContext,
+  ResourceContent,
+  Activity,
+  ActivityPurposes,
+  ContentPurposes,
+  ResourceContext,
 } from 'data/content/resource';
 import { ActivityEditorMap } from 'data/content/editors';
 import { ProjectSlug, ResourceSlug } from 'data/types';
@@ -18,13 +22,13 @@ import { getDragPayload } from './dragndrop/utils';
 import { dragStartHandler } from './dragndrop/handlers/dragStart';
 
 export type EditorsProps = {
-  editMode: boolean;              // Whether or not we can edit
-  content: Immutable.List<ResourceContent>;     // Content of the resource
+  editMode: boolean; // Whether or not we can edit
+  content: Immutable.List<ResourceContent>; // Content of the resource
   onEdit: (content: ResourceContent, index: number) => void;
   onEditContentList: (content: Immutable.List<ResourceContent>) => void;
   onRemove: (index: number) => void;
   onAddItem: (c: ResourceContent, index: number, a?: Activity) => void;
-  editorMap: ActivityEditorMap;   // Map of activity types to activity elements
+  editorMap: ActivityEditorMap; // Map of activity types to activity elements
   graded: boolean;
   activities: Immutable.Map<string, Activity>;
   projectSlug: ProjectSlug;
@@ -37,18 +41,21 @@ export type EditorsProps = {
 
 // The list of editors
 export const Editors = (props: EditorsProps) => {
-
-  const objectivesMap = props.resourceContext.allObjectives.reduce(
-    (m: any, o) => {
-      m[o.id] = o.title;
-      return m;
-    },
-    {},
-  );
+  const objectivesMap = props.resourceContext.allObjectives.reduce((m: any, o) => {
+    m[o.id] = o.title;
+    return m;
+  }, {});
 
   const {
-    editorMap, editMode, graded, content, activities, projectSlug,
-    resourceSlug, onEditContentList, onAddItem,
+    editorMap,
+    editMode,
+    graded,
+    content,
+    activities,
+    projectSlug,
+    resourceSlug,
+    onEditContentList,
+    onAddItem,
   } = props;
 
   const [assistive, setAssistive] = useState('');
@@ -60,15 +67,13 @@ export const Editors = (props: EditorsProps) => {
   const onDrop = dropHandler(content, onEditContentList, projectSlug, onDragEnd, editMode);
 
   const editors = content.map((c, index) => {
-
     const onEdit = (u: ResourceContent) => props.onEdit(u, index);
     const onRemove = () => props.onRemove(index);
     const onEditPurpose = (purpose: string) => {
       props.onEdit(Object.assign(c, { purpose }), index);
     };
 
-    const purposes = c.type === 'activity-reference'
-      ? ActivityPurposes : ContentPurposes;
+    const purposes = c.type === 'activity-reference' ? ActivityPurposes : ContentPurposes;
 
     const dragPayload = getDragPayload(c, activities, projectSlug);
     const onDragStart = dragStartHandler(dragPayload, c, setActiveDragId);
@@ -95,17 +100,30 @@ export const Editors = (props: EditorsProps) => {
       onRemove,
     };
 
-    const editor = createEditor(c, index, activities, editorMap,
-      editMode, resourceSlug,  projectSlug, graded, objectivesMap, editorProps, onEdit);
+    const editor = createEditor(
+      c,
+      index,
+      activities,
+      editorMap,
+      editMode,
+      resourceSlug,
+      projectSlug,
+      graded,
+      objectivesMap,
+      editorProps,
+      onEdit,
+    );
 
     return (
-      <div key={c.id}
+      <div
+        key={c.id}
         id={`re${c.id}`}
         className={classNames([
           'resource-block-editor-and-controls',
-          c.id, c.id === activeDragId ? 'is-dragging' : '',
-        ])}>
-
+          c.id,
+          c.id === activeDragId ? 'is-dragging' : '',
+        ])}
+      >
         <AddResourceOrDropTarget
           id={c.id}
           objectives={props.objectives}
@@ -117,15 +135,17 @@ export const Editors = (props: EditorsProps) => {
           editorMap={editorMap}
           resourceContext={props.resourceContext}
           onAddItem={onAddItem}
-          onDrop={onDrop} />
+          onDrop={onDrop}
+        />
 
-        <div className={classNames(['resource-block-editor', isReorderMode ? 'reorder-mode' : ''])}
+        <div
+          className={classNames(['resource-block-editor', isReorderMode ? 'reorder-mode' : ''])}
           onKeyDown={handleKeyDown}
-          onFocus={e => onFocus(index)}
+          onFocus={(e) => onFocus(index)}
           role="option"
           aria-describedby="content-list-operation"
-          tabIndex={index + 1}>
-
+          tabIndex={index + 1}
+        >
           {editor}
         </div>
       </div>
@@ -145,7 +165,8 @@ export const Editors = (props: EditorsProps) => {
         editorMap={editorMap}
         resourceContext={props.resourceContext}
         onAddItem={onAddItem}
-        onDrop={onDrop} />
+        onDrop={onDrop}
+      />
     </div>
   );
 };

@@ -90,6 +90,7 @@ export interface Activity {
   typeSlug: ActivityTypeSlug;
   model: ActivityModelSchema;
   transformed: ActivityModelSchema | null;
+  // eslint-disable-next-line
   objectives: Object;
 }
 

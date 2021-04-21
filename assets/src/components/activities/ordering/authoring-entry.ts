@@ -22,9 +22,11 @@ import { Manifest, CreationContext } from '../types';
 import { registerCreationFunc } from '../creation';
 import { OrderingModelSchema } from './schema';
 import { defaultOrderingModel } from './utils';
-const manifest : Manifest = require('./manifest.json');
 
-function createFn(content: CreationContext) : Promise<OrderingModelSchema> {
+// eslint-disable-next-line
+const manifest: Manifest = require('./manifest.json');
+
+function createFn(content: CreationContext): Promise<OrderingModelSchema> {
   return Promise.resolve(Object.assign({}, defaultOrderingModel()));
 }
 

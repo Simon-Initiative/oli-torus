@@ -160,7 +160,7 @@ export const MultipleChoiceComponent = (props: DeliveryElementProps<MultipleChoi
   const correctnessIcon = attemptState.score === 0 ? <IconIncorrect /> : <IconCorrect />;
 
   const gradedPoints = props.graded && props.progressState === 'in_review' ? [
-    <div className="text-info font-italic">
+    <div key="correct" className="text-info font-italic">
       {correctnessIcon}
       <span>Points: </span><span>{attemptState.score + ' out of '
         + attemptState.outOf}</span></div>] : null;
@@ -188,5 +188,6 @@ export class MultipleChoiceDelivery extends DeliveryElement<MultipleChoiceModelS
 }
 
 // Register the web component:
+// eslint-disable-next-line
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
 window.customElements.define(manifest.delivery.element, MultipleChoiceDelivery);

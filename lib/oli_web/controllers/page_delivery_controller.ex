@@ -62,7 +62,7 @@ defmodule OliWeb.PageDeliveryController do
       activity_guid_mapping: activity_guid_mapping,
       content: Jason.encode!(context.page.content),
       summary: summary,
-      scripts: Activities.get_activity_scripts(),
+      scripts: Activities.get_activity_scripts(:delivery_script),
       section_slug: section_slug,
       title: context.page.title,
       resource_id: context.page.resource_id,
@@ -84,6 +84,7 @@ defmodule OliWeb.PageDeliveryController do
          section_slug,
          _
        ) do
+
     # Only consider graded attempts
     resource_attempts = Enum.filter(resource_attempts, fn a -> a.revision.graded == true end)
 

@@ -16,9 +16,8 @@ import produce from 'immer';
 const store = configureStore();
 
 const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>) => {
-
   const dispatch = (action: any) => {
-    const nextModel = produce(props.model, draftState => action(draftState));
+    const nextModel = produce(props.model, (draftState) => action(draftState));
     props.onEdit(nextModel);
   };
 
@@ -36,20 +35,26 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
         projectSlug={props.projectSlug}
         editMode={props.editMode}
         stem={props.model.stem}
-        onEditStem={content => dispatch(MCActions.editStem(content))} />
-      <Choices {...sharedProps}
+        onEditStem={(content) => dispatch(MCActions.editStem(content))}
+      />
+      <Choices
+        {...sharedProps}
         onAddChoice={() => dispatch(MCActions.addChoice())}
         onEditChoice={(id, content) => dispatch(MCActions.editChoice(id, content))}
-        onRemoveChoice={id => dispatch(MCActions.removeChoice(id))} />
-      <Feedback {...sharedProps}
-        onEditResponse={(id, content) => dispatch(MCActions.editFeedback(id, content))} />
+        onRemoveChoice={(id) => dispatch(MCActions.removeChoice(id))}
+      />
+      <Feedback
+        {...sharedProps}
+        onEditResponse={(id, content) => dispatch(MCActions.editFeedback(id, content))}
+      />
       <Hints
         projectSlug={props.projectSlug}
         hints={props.model.authoring.parts[0].hints}
         editMode={props.editMode}
         onAddHint={() => dispatch(MCActions.addHint())}
         onEditHint={(id, content) => dispatch(MCActions.editHint(id, content))}
-        onRemoveHint={id => dispatch(MCActions.removeHint(id))} />
+        onRemoveHint={(id) => dispatch(MCActions.removeHint(id))}
+      />
     </React.Fragment>
   );
 };
@@ -59,12 +64,12 @@ export class MultipleChoiceAuthoring extends AuthoringElement<MultipleChoiceMode
     ReactDOM.render(
       <Provider store={store}>
         <MultipleChoice {...props} />
-        <ModalDisplay/>
+        <ModalDisplay />
       </Provider>,
       mountPoint,
     );
   }
 }
-
+// eslint-disable-next-line
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
 window.customElements.define(manifest.authoring.element, MultipleChoiceAuthoring);

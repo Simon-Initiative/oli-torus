@@ -15,21 +15,33 @@ interface Props extends ModelEditorProps {
   projectSlug: ProjectSlug;
 }
 export const Choices = (props: Props) => {
-  const { onAddChoice, onEditChoiceContent, onRemoveChoice, onToggleChoiceCorrectness,
-    editMode, model, projectSlug } = props;
+  const {
+    onAddChoice,
+    onEditChoiceContent,
+    onRemoveChoice,
+    onToggleChoiceCorrectness,
+    editMode,
+    model,
+    projectSlug,
+  } = props;
 
   const { choices } = model;
 
   return (
     <div className="my-5">
       <Heading title="Answer Choices" id="choices" />
-      {choices.map((choice, index) =>
+      {choices.map((choice, index) => (
         <div key={choice.id} className="mb-3">
           <div className="d-flex align-items-center mb-2">
             <div className="material-icons mr-2">
-              <button style={{ border: 'none', background: 'none',
-                color: isCorrectChoice(model, choice.id) ? '#00bc8c' : '#888' }}
-                onClick={() => onToggleChoiceCorrectness(choice.id)}>
+              <button
+                style={{
+                  border: 'none',
+                  background: 'none',
+                  color: isCorrectChoice(model, choice.id) ? '#00bc8c' : '#888',
+                }}
+                onClick={() => onToggleChoiceCorrectness(choice.id)}
+              >
                 {isCorrectChoice(model, choice.id) ? 'check_circle' : 'check_circle_outline'}
               </button>
             </div>
@@ -40,19 +52,23 @@ export const Choices = (props: Props) => {
             <RichTextEditor
               className="flex-fill"
               projectSlug={projectSlug}
-              editMode={editMode} text={choice.content}
-              onEdit={content => onEditChoiceContent(choice.id, content)} />
-            {index > 0 && <CloseButton
-              className="pl-3 pr-1"
-              onClick={() => onRemoveChoice(choice.id)}
-              editMode={editMode} />}
+              editMode={editMode}
+              text={choice.content}
+              onEdit={(content) => onEditChoiceContent(choice.id, content)}
+            />
+            {index > 0 && (
+              <CloseButton
+                className="pl-3 pr-1"
+                onClick={() => onRemoveChoice(choice.id)}
+                editMode={editMode}
+              />
+            )}
           </div>
-        </div>)}
-      <button
-        className="btn btn-sm btn-primary my-2"
-        disabled={!editMode}
-        onClick={onAddChoice}>Add answer choice
+        </div>
+      ))}
+      <button className="btn btn-sm btn-primary my-2" disabled={!editMode} onClick={onAddChoice}>
+        Add answer choice
       </button>
-    </div >
+    </div>
   );
 };

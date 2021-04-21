@@ -48,13 +48,13 @@ export const convert = {
    * @param value value to convert to string
    * @param decimalPlaces number of decimal places to include in result
    */
-  toByteNotation: (value: number, decimalPlaces: number = 2) => {
+  toByteNotation: (value: number, decimalPlaces = 2) => {
     if (!Number.isFinite(value)) {
       return null;
     }
 
     const UNIT_MAP = {
-      b:  1,
+      b: 1,
       kb: 1 << 10,
       mb: 1 << 20,
       gb: 1 << 30,
@@ -89,7 +89,7 @@ export const convert = {
     const teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen',
       'seventeen', 'eighteen', 'nineteen'];
 
-    const convertMillions = (num: number) : string => {
+    const convertMillions = (num: number): string => {
       if (num >= 1000000) {
         return convertMillions(Math.floor(num / 1000000))
           + ' million ' + convertThousands(num % 1000000);
@@ -135,7 +135,7 @@ export const stringFormat = {
    * @param maxLength max length of the truncated string
    * @param postfixLength optional length of the end part of the truncated string to include
    */
-  ellipsize: (text: string, maxLength: number, postfixLength: number = 0) => {
+  ellipsize: (text: string, maxLength: number, postfixLength = 0) => {
     if (maxLength <= postfixLength + 3) {
       throw Error('maxLength must be greater than postfixLength + 3');
     }
@@ -161,9 +161,11 @@ export const stringFormat = {
     fontSize: number, fontWeight?: number, fontStyle?: string) => {
     const MAX_TEXT_LENGTH = 500;
     const ellipsizeWidth = measureTextWidth({
-      text: '...', fontFamily, fontSize, fontWeight, fontStyle });
+      text: '...', fontFamily, fontSize, fontWeight, fontStyle
+    });
     const textWidth = measureTextWidth({
-      text, fontFamily, fontSize, fontWeight, fontStyle });
+      text, fontFamily, fontSize, fontWeight, fontStyle
+    });
 
     if (textWidth <= maxWidth) {
       return text;
@@ -174,9 +176,10 @@ export const stringFormat = {
       return '...';
     }
 
-    const findLargestString = (str: string) : string => {
+    const findLargestString = (str: string): string => {
       return measureTextWidth({
-        text: `${str}...`, fontFamily, fontSize, fontWeight, fontStyle }) <= maxWidth
+        text: `${str}...`, fontFamily, fontSize, fontWeight, fontStyle
+      }) <= maxWidth
         ? str
         : findLargestString(str.substr(0, str.length - 1));
     };

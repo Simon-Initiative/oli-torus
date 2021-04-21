@@ -68,9 +68,11 @@ const SORT_MAPPINGS = {
 } as any;
 
 const getSortMappingKey = (orderBy: string, order?: string) => {
-  return Object.keys(SORT_MAPPINGS).find(key =>
-    orderBy === SORT_MAPPINGS[key].orderBy
-    && (order === undefined || order === SORT_MAPPINGS[key].order));
+  return Object.keys(SORT_MAPPINGS).find(
+    (key) =>
+      orderBy === SORT_MAPPINGS[key].orderBy &&
+      (order === undefined || order === SORT_MAPPINGS[key].order),
+  );
 };
 
 const popOpenImage = (e: any) => {
@@ -78,8 +80,8 @@ const popOpenImage = (e: any) => {
   const w = window.open(
     link.href,
     link.target || '_blank',
-    'menubar=no,toolbar=no,location=no,directories=no,status=no,scrollbars=no,'
-    + 'resizable=no,dependent,width=800,height=620',
+    'menubar=no,toolbar=no,location=no,directories=no,status=no,scrollbars=no,' +
+    'resizable=no,dependent,width=800,height=620',
   );
 
   // allow the link to work if popup is blocked
@@ -94,9 +96,13 @@ export interface MediaManagerProps {
   selectionType: SELECTION_TYPES;
   initialSelectionPaths: string[];
   onEdit: (updated: Media) => void;
-  onLoadCourseMediaNextPage: (projectSlug: string,
-    mimeFilter: string[] | undefined, searchText: string,
-    orderBy: string, order: string) => Promise<Maybe<Immutable.List<MediaItem>>>;
+  onLoadCourseMediaNextPage: (
+    projectSlug: string,
+    mimeFilter: string[] | undefined,
+    searchText: string,
+    orderBy: string,
+    order: string,
+  ) => Promise<Maybe<Immutable.List<MediaItem>>>;
   onResetMedia: () => void;
   onSelectionChange: (selection: MediaItem[]) => void;
   onLoadMediaItemByPath: (projectSlug: string, path: string) => Promise<Maybe<MediaItem>>;
@@ -143,32 +149,46 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
   }
 
   componentDidMount() {
-    const { mimeFilter, initialSelectionPaths,
-      onLoadCourseMediaNextPage, onLoadMediaItemByPath } = this.props;
+    const {
+      mimeFilter,
+      initialSelectionPaths,
+      onLoadCourseMediaNextPage,
+      onLoadMediaItemByPath,
+    } = this.props;
     const { searchText, orderBy, order } = this.state;
 
-    onLoadCourseMediaNextPage(this.props.projectSlug, mimeFilter as string[],
-      searchText as string, orderBy, order);
+    onLoadCourseMediaNextPage(
+      this.props.projectSlug,
+      mimeFilter as string[],
+      searchText as string,
+      orderBy,
+      order,
+    );
 
     // load initial selection data
     if (initialSelectionPaths) {
-      Promise
-        .all(initialSelectionPaths.filter(path => path).map(path =>
-          onLoadMediaItemByPath(this.props.projectSlug, path.replace(/^[./]+/, ''))))
+      Promise.all(
+        initialSelectionPaths
+          .filter((path) => path)
+          .map((path) => onLoadMediaItemByPath(this.props.projectSlug, path.replace(/^[./]+/, ''))),
+      )
         .then((mediaItems) => {
           this.setState({
             selection: Immutable.List(
-              mediaItems.map(mi =>
-                mi.caseOf({
-                  just: item => item.guid,
-                  nothing: () => undefined,
-                }) as string,
-              ).filter(i => i),
+              mediaItems
+                .map(
+                  (mi) =>
+                    mi.caseOf({
+                      just: (item) => item.guid,
+                      nothing: () => undefined,
+                    }) as string,
+                )
+                .filter((i) => i),
             ),
             error: Maybe.nothing<string>(),
           });
         })
-        .catch(e => this.setState({ error: Maybe.just(e.message) }));
+        .catch((e) => this.setState({ error: Maybe.just(e.message) }));
     }
   }
 
@@ -209,16 +229,23 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       return;
     }
 
-    if (!isLoadingMedia && this.scrollView.scrollTop + PAGELOAD_TRIGGER_MARGIN_PX
-      > (this.scrollContent.offsetHeight - this.scrollView.offsetHeight)) {
-      onLoadCourseMediaNextPage(this.props.projectSlug, filteredMimeTypes,
-        searchText as string, orderBy, order);
+    if (
+      !isLoadingMedia &&
+      this.scrollView.scrollTop + PAGELOAD_TRIGGER_MARGIN_PX >
+      this.scrollContent.offsetHeight - this.scrollView.offsetHeight
+    ) {
+      onLoadCourseMediaNextPage(
+        this.props.projectSlug,
+        filteredMimeTypes,
+        searchText as string,
+        orderBy,
+        order,
+      );
     }
   }
 
   onFileUpload(files: FileList) {
-    const { mimeFilter, onLoadCourseMediaNextPage,
-      onResetMedia } = this.props;
+    const { mimeFilter, onLoadCourseMediaNextPage, onResetMedia } = this.props;
     const { searchText, orderBy, order } = this.state;
 
     // get a list of the files to upload
@@ -231,15 +258,20 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     uploadFiles(this.props.projectSlug, fileList)
       .then((result: any) => {
         onResetMedia();
-        onLoadCourseMediaNextPage(this.props.projectSlug,
-          mimeFilter as string[], searchText as string, orderBy, order)
+        onLoadCourseMediaNextPage(
+          this.props.projectSlug,
+          mimeFilter as string[],
+          searchText as string,
+          orderBy,
+          order,
+        )
           // select the most recently uploaded item
           .then((mediaItems) => {
             mediaItems.lift((files) => {
               if (files.size > 0) {
-                Maybe
-                  .maybe(files.find(f => f.url === (result[0] && result[0].url)))
-                  .lift(file => this.onSelect(file.guid));
+                Maybe.maybe(
+                  files.find((f) => f.url === (result[0] && result[0].url)),
+                ).lift((file) => this.onSelect(file.guid));
               }
             });
           })
@@ -272,7 +304,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     } else if (selectionType === SELECTION_TYPES.MULTI) {
       if (this.isSelected(guid)) {
         // unselect item
-        updatedSelection = updatedSelection.remove(updatedSelection.findIndex(s => s === guid));
+        updatedSelection = updatedSelection.remove(updatedSelection.findIndex((s) => s === guid));
       } else {
         // select item
         updatedSelection = updatedSelection.push(guid);
@@ -288,7 +320,8 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     const mediaLibrary = media;
     if (mediaLibrary) {
       onSelectionChange(
-        updatedSelection.map(s => mediaLibrary.getItem(s)).toArray() as MediaItem[]);
+        updatedSelection.map((s) => mediaLibrary.getItem(s)).toArray() as MediaItem[],
+      );
       this.props.toggleDisableInsert && this.props.toggleDisableInsert(false);
     }
   }
@@ -298,8 +331,13 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     const { orderBy, order, filteredMimeTypes } = this.state;
 
     onResetMedia();
-    onLoadCourseMediaNextPage(this.props.projectSlug, filteredMimeTypes,
-      searchText, orderBy, order);
+    onLoadCourseMediaNextPage(
+      this.props.projectSlug,
+      filteredMimeTypes,
+      searchText,
+      orderBy,
+      order,
+    );
   }
 
   onSortChange(sortKey: string) {
@@ -312,14 +350,18 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     });
 
     onResetMedia();
-    onLoadCourseMediaNextPage(this.props.projectSlug,
-      filteredMimeTypes, searchText as string,
-      SORT_MAPPINGS[sortKey].orderBy, SORT_MAPPINGS[sortKey].order);
+    onLoadCourseMediaNextPage(
+      this.props.projectSlug,
+      filteredMimeTypes,
+      searchText as string,
+      SORT_MAPPINGS[sortKey].orderBy,
+      SORT_MAPPINGS[sortKey].order,
+    );
   }
 
   isItemSelectable = (selectionType: SELECTION_TYPES, item: MediaItem) =>
-    selectionType !== SELECTION_TYPES.NONE
-    && (!this.props.mimeFilter || this.props.mimeFilter.includes(item.mimeType))
+    selectionType !== SELECTION_TYPES.NONE &&
+    (!this.props.mimeFilter || this.props.mimeFilter.includes(item.mimeType));
 
   renderMediaList() {
     const { media, selectionType } = this.props;
@@ -341,29 +383,30 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
           <div className="date-col">Date Modified</div>
           <div className="size-col">Size</div>
         </div>
-        <div className="list-body" ref={el => this.setupScrollListener(el as HTMLElement)}>
-          <div ref={el => this.scrollContent = el as HTMLElement}>
-            {mediaItems.map(item => (
-              <div key={item.guid}
+        <div className="list-body" ref={(el) => this.setupScrollListener(el as HTMLElement)}>
+          <div ref={(el) => (this.scrollContent = el as HTMLElement)}>
+            {mediaItems.map((item) => (
+              <div
+                key={item.guid}
                 className={
-                  `media-item ${this.isSelected(item.guid) ? 'selected' : ''} `
-                  + `${this.isItemSelectable(selectionType, item) ? 'selectable' : 'not-selectable'}`}
-                onClick={() => this.isItemSelectable(selectionType, item)
-                  ? this.onSelect(item.guid)
-                  : null}>
+                  `media-item ${this.isSelected(item.guid) ? 'selected' : ''} ` +
+                  `${this.isItemSelectable(selectionType, item) ? 'selectable' : 'not-selectable'}`
+                }
+                onClick={() =>
+                  this.isItemSelectable(selectionType, item) ? this.onSelect(item.guid) : null
+                }
+              >
                 <div className="sel-col">
                   <input
                     type="checkbox"
                     readOnly
                     className="selection-check"
                     checked={this.isSelected(item.guid)}
-                    onClick={() => this.onSelect(item.guid)} />
+                    onClick={() => this.onSelect(item.guid)}
+                  />
                 </div>
                 <div className="name-col">
-                  <MediaIcon
-                    filename={item.fileName}
-                    mimeType={item.mimeType}
-                    url={item.url} />
+                  <MediaIcon filename={item.fileName} mimeType={item.mimeType} url={item.url} />
                   {` ${item.fileName}`}
                 </div>
                 <div className="refs-col">
@@ -373,11 +416,13 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
                 <div className="size-col">{convert.toByteNotation(item.fileSize)}</div>
               </div>
             ))}
-            {isLoadingMedia && !allItemsLoaded
-              ? <LoadingSpinner key="loading"
-                size={LoadingSpinnerSize.Small} message={PAGE_LOADING_MESSAGE} />
-              : null
-            }
+            {isLoadingMedia && !allItemsLoaded ? (
+              <LoadingSpinner
+                key="loading"
+                size={LoadingSpinnerSize.Small}
+                message={PAGE_LOADING_MESSAGE}
+              />
+            ) : null}
           </div>
         </div>
       </div>
@@ -394,40 +439,39 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     const mediaItems: MediaItem[] = media.getItems() as MediaItem[];
 
     return (
-      <div className="media-grid" ref={el => this.setupScrollListener(el as HTMLElement)}>
-        <div className="scroll-content" ref={el => this.scrollContent = el as HTMLElement}>
-          {mediaItems.map(item => (
-            <div key={item.guid}
-              className={`media-item ${this.isSelected(item.guid) ? 'selected' : ''} `
-                + `${this.isItemSelectable(selectionType, item) ? 'selectable' : 'not-selectable'}`}
-              onClick={() => this.isItemSelectable(selectionType, item)
-                ? this.onSelect(item.guid)
-                : null}>
+      <div className="media-grid" ref={(el) => this.setupScrollListener(el as HTMLElement)}>
+        <div className="scroll-content" ref={(el) => (this.scrollContent = el as HTMLElement)}>
+          {mediaItems.map((item) => (
+            <div
+              key={item.guid}
+              className={
+                `media-item ${this.isSelected(item.guid) ? 'selected' : ''} ` +
+                `${this.isItemSelectable(selectionType, item) ? 'selectable' : 'not-selectable'}`
+              }
+              onClick={() =>
+                this.isItemSelectable(selectionType, item) ? this.onSelect(item.guid) : null
+              }
+            >
               <input
                 type="checkbox"
                 readOnly
                 className="selection-check"
                 checked={this.isSelected(item.guid)}
-                onClick={() => this.onSelect(item.guid)} />
-              <MediaIcon
-                filename={item.fileName}
-                mimeType={item.mimeType}
-                url={item.url} />
+                onClick={() => this.onSelect(item.guid)}
+              />
+              <MediaIcon filename={item.fileName} mimeType={item.mimeType} url={item.url} />
               <div className="name">
                 {stringFormat.ellipsize(item.fileName, MAX_NAME_LENGTH, 5)}
               </div>
             </div>
           ))}
         </div>
-        {isLoadingMedia && !allItemsLoaded
-          ? (
-            <div className="loading">
-              <i className="fas fa-circle-notch fa-spin fa-1x fa-fw" />
-              {PAGE_LOADING_MESSAGE}
-            </div>
-          )
-          : null
-        }
+        {isLoadingMedia && !allItemsLoaded ? (
+          <div className="loading">
+            <i className="fas fa-circle-notch fa-spin fa-1x fa-fw" />
+            {PAGE_LOADING_MESSAGE}
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -436,17 +480,16 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     const { media } = this.props;
     const { selection, showDetails } = this.state;
 
-    const selectedMediaItems = selection
-      .map(guid => media.data.get(guid)) as Immutable.List<MediaItem>;
+    const selectedMediaItems = selection.map((guid) =>
+      media.data.get(guid),
+    ) as Immutable.List<MediaItem>;
 
     const mediaItemRefs = media.references;
 
     if (selectedMediaItems.size > 1) {
       return (
         <div className="media-selection-details">
-          <div className="details-title">
-            Multiple Items Selected
-          </div>
+          <div className="details-title">Multiple Items Selected</div>
         </div>
       );
     }
@@ -459,24 +502,29 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       return (
         <div className="media-selection-details">
           <div className="details-title">
-            <span>Selected: <a
-              href={selectedItem.url}
-              target="_blank"
-              onClick={popOpenImage}>
-              {stringFormat.ellipsize(selectedItem.fileName, 65, 5)}</a>
+            <span>
+              Selected:{' '}
+              <a href={selectedItem.url} rel="noreferrer" target="_blank" onClick={popOpenImage}>
+                {stringFormat.ellipsize(selectedItem.fileName, 65, 5)}
+              </a>
             </span>
-            {showDetails
-              ? <span role="button" onClick={detailsOnClick}
-                className="material-icons">keyboard_arrow_down</span>
-              : <span role="button" onClick={detailsOnClick}
-                className="material-icons">keyboard_arrow_up</span>}
+            {showDetails ? (
+              <span role="button" onClick={detailsOnClick} className="material-icons">
+                keyboard_arrow_down
+              </span>
+            ) : (
+              <span role="button" onClick={detailsOnClick} className="material-icons">
+                keyboard_arrow_up
+              </span>
+            )}
           </div>
-          {showDetails &&
+          {showDetails && (
             <div className="details-content">
               <MediaIcon
                 filename={selectedItem.fileName}
                 mimeType={selectedItem.mimeType}
-                url={selectedItem.url} />
+                url={selectedItem.url}
+              />
               <div className="details-info">
                 <div className="detail-row date-created">
                   <b>Uploaded:</b> {relativeToNow(new Date(selectedItem.dateCreated))}
@@ -486,7 +534,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
                 </div>
               </div>
             </div>
-          }
+          )}
         </div>
       );
     }
@@ -496,9 +544,11 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     const { error } = this.state;
 
     return error.caseOf({
-      just: error => <div className="alert alert-danger fade show" role="alert">
-        {error}
-      </div>,
+      just: (error) => (
+        <div className="alert alert-danger fade show" role="alert">
+          {error}
+        </div>
+      ),
       nothing: () => null,
     });
   }
@@ -506,10 +556,16 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
   displayMediaOfType = (mimeFilter: string[] | undefined) => {
     const { searchText, orderBy, order } = this.state;
     this.props.onResetMedia();
-    this.props.onLoadCourseMediaNextPage(this.props.projectSlug, mimeFilter,
-      searchText as string, orderBy, order)
-      .then(_ => this.setState({ filteredMimeTypes: mimeFilter }));
-  }
+    this.props
+      .onLoadCourseMediaNextPage(
+        this.props.projectSlug,
+        mimeFilter,
+        searchText as string,
+        orderBy,
+        order,
+      )
+      .then((_) => this.setState({ filteredMimeTypes: mimeFilter }));
+  };
 
   mimeTypeFilter = (type: string[] | undefined) => {
     const { filteredMimeTypes } = this.state;
@@ -518,10 +574,10 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     }
 
     const filtersAreSame = (arr1: string[], arr2: string[]) =>
-      arr1.reduce((acc, curr, i) => curr === arr2[i] ? acc : false, true);
+      arr1.reduce((acc, curr, i) => (curr === arr2[i] ? acc : false), true);
 
     return filtersAreSame(filteredMimeTypes, type) ? 'active' : '';
-  }
+  };
 
   render() {
     const { className, mimeFilter, media } = this.props;
@@ -529,7 +585,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
 
     const id = guid();
 
-    const mediaCount = ({ numResults: media.totalItemsLoaded, totalResults: media.totalItems });
+    const mediaCount = { numResults: media.totalItemsLoaded, totalResults: media.totalItems };
 
     return (
       <div className={`media-manager ${className || ''}`}>
@@ -541,21 +597,25 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
             accept={mimeFilter && `${mimeFilter}`}
             multiple
             onChange={({ target: { files } }) => this.onFileUpload(files as FileList)}
-            type="file" />
+            type="file"
+          />
           <button
             className="btn btn-primary media-toolbar-item upload"
-            onClick={() => this.onUploadClick(id)}>
+            onClick={() => this.onUploadClick(id)}
+          >
             <i className="fa fa-upload" /> Upload
           </button>
           <div className="media-toolbar-item btn-group layout-control">
             <button
               className={`btn btn-outline-primary ${layout === LAYOUTS.GRID ? 'selected' : ''}`}
-              onClick={() => this.onChangeLayout(LAYOUTS.GRID)}>
+              onClick={() => this.onChangeLayout(LAYOUTS.GRID)}
+            >
               <i className="fa fa-th" /> Grid
             </button>
             <button
               className={`btn btn-outline-primary ${layout === LAYOUTS.LIST ? 'selected' : ''}`}
-              onClick={() => this.onChangeLayout(LAYOUTS.LIST)}>
+              onClick={() => this.onChangeLayout(LAYOUTS.LIST)}
+            >
               <i className="fa fa-th-list" /> List
             </button>
           </div>
@@ -564,23 +624,21 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
 
           <div className="media-toolbar-item sort-control dropdown">
             Sort by:&nbsp;
-            <span
-              className="dropdown-toggle sort-btn"
-              id="dropdownMenu2"
-              data-toggle="dropdown">
+            <span className="dropdown-toggle sort-btn" id="dropdownMenu2" data-toggle="dropdown">
               <i className={SORT_MAPPINGS[getSortMappingKey(orderBy, order) as any].icon} />
               {` ${getSortMappingKey(orderBy, order)}`}
             </span>
             <div className="dropdown-menu">
-              {Object.keys(SORT_MAPPINGS).map(sortKey =>
+              {Object.keys(SORT_MAPPINGS).map((sortKey) => (
                 <button
                   key={sortKey}
                   type="button"
                   className="dropdown-item"
-                  onClick={() => this.onSortChange(sortKey)}>
+                  onClick={() => this.onSortChange(sortKey)}
+                >
                   {sortKey}
-                </button>,
-              )}
+                </button>
+              ))}
             </div>
           </div>
           <div className="media-toolbar-item search">
@@ -590,22 +648,29 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
                 className="form-control"
                 placeholder="Search"
                 value={searchText}
-                onChange={({ target: { value } }) => this.onSearch(value)} />
+                onChange={({ target: { value } }) => this.onSearch(value)}
+              />
             </div>
           </div>
         </div>
         <div className="media-library">
           <ol className="media-sidebar text-center">
-            <li className={this.mimeTypeFilter(MIMETYPE_FILTERS.ALL)}
-              onClick={() => this.displayMediaOfType(MIMETYPE_FILTERS.ALL)}>
+            <li
+              className={this.mimeTypeFilter(MIMETYPE_FILTERS.ALL)}
+              onClick={() => this.displayMediaOfType(MIMETYPE_FILTERS.ALL)}
+            >
               All Media
             </li>
-            <li className={this.mimeTypeFilter(MIMETYPE_FILTERS.IMAGE)}
-              onClick={() => this.displayMediaOfType(MIMETYPE_FILTERS.IMAGE)}>
+            <li
+              className={this.mimeTypeFilter(MIMETYPE_FILTERS.IMAGE)}
+              onClick={() => this.displayMediaOfType(MIMETYPE_FILTERS.IMAGE)}
+            >
               Images
-              </li>
-            <li className={this.mimeTypeFilter(MIMETYPE_FILTERS.AUDIO)}
-              onClick={() => this.displayMediaOfType(MIMETYPE_FILTERS.AUDIO)}>
+            </li>
+            <li
+              className={this.mimeTypeFilter(MIMETYPE_FILTERS.AUDIO)}
+              onClick={() => this.displayMediaOfType(MIMETYPE_FILTERS.AUDIO)}
+            >
               Audio
             </li>
             <li className="video d-flex flex-column">
@@ -614,18 +679,17 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
             </li>
           </ol>
           <div className="media-content">
-            {layout === LAYOUTS.GRID
-              ? (this.renderMediaGrid())
-              : (this.renderMediaList())
-            }
+            {layout === LAYOUTS.GRID ? this.renderMediaGrid() : this.renderMediaList()}
             {this.renderMediaSelectionDetails()}
           </div>
         </div>
         <div className="media-infobar">
           <div className="flex-spacer" />
-          {mediaCount && mediaCount.totalResults > -Infinity &&
-            <div>Showing {mediaCount.numResults} of {mediaCount.totalResults}</div>
-          }
+          {mediaCount && mediaCount.totalResults > -Infinity && (
+            <div>
+              Showing {mediaCount.numResults} of {mediaCount.totalResults}
+            </div>
+          )}
         </div>
       </div>
     );

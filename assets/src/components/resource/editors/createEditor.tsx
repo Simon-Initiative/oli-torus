@@ -37,7 +37,6 @@ export const createEditor = (
   editorProps: any,
   onEdit: (content: ResourceContent) => void,
 ): JSX.Element => {
-
   if (content.type === 'content') {
     return (
       <ContentBlock {...editorProps} contentItem={content} index={index}>
@@ -48,8 +47,9 @@ export const createEditor = (
           onEdit={onEdit}
           projectSlug={projectSlug}
           toolbarItems={getToolbarForResourceType(
-            graded ? ResourceType.assessment : ResourceType.page)}
-          />
+            graded ? ResourceType.assessment : ResourceType.page,
+          )}
+        />
       </ContentBlock>
     );
   }
@@ -57,10 +57,7 @@ export const createEditor = (
   const activity = activities.get(content.activitySlug);
 
   if (activity !== undefined) {
-
-    const editor = editorMap[activity.typeSlug]
-      ? editorMap[activity.typeSlug]
-      : unsupported;
+    const editor = editorMap[activity.typeSlug] ? editorMap[activity.typeSlug] : unsupported;
 
     const previewText = activity.model.authoring?.previewText;
 
@@ -70,17 +67,14 @@ export const createEditor = (
     // model if the transformed model is null (which results from failure to transform)
     const model = valueOr(activity.transformed, activity.model);
 
-    const slugsAsKeys = Object.keys(activity.objectives)
-      .reduce((map: any, key) => {
-        (activity.objectives as any)[key as any].forEach((slug: string) => {
-          map[slug] = true;
-        });
-        return map;
-      },
-        {});
+    const slugsAsKeys = Object.keys(activity.objectives).reduce((map: any, key) => {
+      (activity.objectives as any)[key as any].forEach((slug: string) => {
+        map[slug] = true;
+      });
+      return map;
+    }, {});
 
-    const objectives = Object.keys(slugsAsKeys)
-      .map(slug => objectivesMap[slug]);
+    const objectives = Object.keys(slugsAsKeys).map((slug) => objectivesMap[slug]);
 
     const props = {
       model: JSON.stringify(model),
@@ -97,20 +91,18 @@ export const createEditor = (
         projectSlug={projectSlug}
         resourceSlug={resourceSlug}
         objectives={objectives}
-        previewText={previewText}>
-
+        previewText={previewText}
+      >
         <TestModeHandler model={model}>
           {React.createElement(editor.deliveryElement, props as any)}
         </TestModeHandler>
-
       </ActivityBlock>
     );
   }
 
   return (
     <div className="alert alert-danger">
-      There was a problem rendering this content block.
-      The content type may not be supported.
+      There was a problem rendering this content block. The content type may not be supported.
     </div>
   );
 };

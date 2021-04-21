@@ -20,8 +20,9 @@ const MoveButton = ({ choiceId, predicate, onClick, icon }: MoveButtonProps) => 
     <div className="material-icons" style={{ height: 12, lineHeight: '12px' }}>
       <button
         style={{ padding: 0, border: 'none', background: 'none', height: '100%' }}
-        onClick={() => onClick(choiceId)}>
-          {icon}
+        onClick={() => onClick(choiceId)}
+      >
+        {icon}
       </button>
     </div>
   );
@@ -38,16 +39,30 @@ interface Props extends ModelEditorProps {
   projectSlug: ProjectSlug;
 }
 export const Choices = (props: Props) => {
-  const { onAddChoice, onEditChoiceContent, onRemoveChoice, onMoveChoiceUp, onMoveChoiceDown,
-    canMoveChoiceUp, canMoveChoiceDown, editMode, model, projectSlug } = props;
+  const {
+    onAddChoice,
+    onEditChoiceContent,
+    onRemoveChoice,
+    onMoveChoiceUp,
+    onMoveChoiceDown,
+    canMoveChoiceUp,
+    canMoveChoiceDown,
+    editMode,
+    model,
+    projectSlug,
+  } = props;
 
   const { choices } = model;
 
   return (
     <div className="my-5">
-      <Heading title="Answer Choices" subtitle="Arrange the answer choices to set the correct ordering." id="choices" />
+      <Heading
+        title="Answer Choices"
+        subtitle="Arrange the answer choices to set the correct ordering."
+        id="choices"
+      />
 
-      {choices.map((choice, index) =>
+      {choices.map((choice, index) => (
         <div key={choice.id} className="mb-3">
           <div style={{ marginLeft: 24 }} className="d-flex align-items-center mb-2">
             Choice {index + 1}
@@ -59,28 +74,34 @@ export const Choices = (props: Props) => {
                 choiceId={choice.id}
                 predicate={canMoveChoiceUp}
                 onClick={onMoveChoiceUp}
-                icon="arrow_drop_up" />
+                icon="arrow_drop_up"
+              />
               <MoveButton
                 choiceId={choice.id}
                 predicate={canMoveChoiceDown}
                 onClick={onMoveChoiceDown}
-                icon="arrow_drop_down" />
+                icon="arrow_drop_down"
+              />
             </div>
             <RichTextEditor
               className="flex-fill"
               projectSlug={projectSlug}
-              editMode={editMode} text={choice.content}
-              onEdit={content => onEditChoiceContent(choice.id, content)} />
-            {index > 0 && <CloseButton
-              className="pl-3 pr-1"
-              onClick={() => onRemoveChoice(choice.id)}
-              editMode={editMode} />}
+              editMode={editMode}
+              text={choice.content}
+              onEdit={(content) => onEditChoiceContent(choice.id, content)}
+            />
+            {index > 0 && (
+              <CloseButton
+                className="pl-3 pr-1"
+                onClick={() => onRemoveChoice(choice.id)}
+                editMode={editMode}
+              />
+            )}
           </div>
-        </div>)}
-      <button
-        className="btn btn-sm btn-primary my-2"
-        disabled={!editMode}
-        onClick={onAddChoice}>Add answer choice
+        </div>
+      ))}
+      <button className="btn btn-sm btn-primary my-2" disabled={!editMode} onClick={onAddChoice}>
+        Add answer choice
       </button>
     </div>
   );

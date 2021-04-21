@@ -25,8 +25,9 @@ const command: Command = {
   precondition: (editor: ReactEditor) => {
     return isTopLevel(editor);
   },
-
+  // eslint-disable-next-line
   obtainParameters: (context, editor, onDone, onCancel) => {
+    // eslint-disable-next-line
     return <SizePicker onTableCreate={(rows, columns) => onDone({ rows, columns })} />;
   },
 };

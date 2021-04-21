@@ -22,24 +22,18 @@ interface ItemProps extends FeedbackProps {
 }
 
 export const Item = (props: ItemProps) => {
-
   const { response, editMode, onEditResponse } = props;
   const [value, setValue] = useState(parseInputFromRule(response.rule));
 
   const onEditRule = (input: string) => {
-
     if (input !== '.*') {
-
       setValue(input);
 
-      const rule = props.model.inputType === 'numeric'
-        ? `input = {${input}}`
-        : `input like {${input}}`;
+      const rule =
+        props.model.inputType === 'numeric' ? `input = {${input}}` : `input like {${input}}`;
 
       props.onEditResponseRule(response.id, rule);
-
     }
-
   };
 
   if (response.score === 1) {
@@ -47,17 +41,20 @@ export const Item = (props: ItemProps) => {
       <div className="my-3" key={response.id}>
         <Description>
           <IconCorrect /> Feedback for Correct Answer:
-          <input type={props.model.inputType === 'numeric' ? 'number' : 'text'}
+          <input
+            type={props.model.inputType === 'numeric' ? 'number' : 'text'}
             className="form-control my-2"
             placeholder="Enter correct answer..."
             onChange={(e: any) => onEditRule(e.target.value)}
-            value={value} />
+            value={value}
+          />
         </Description>
         <RichTextEditor
           projectSlug={props.projectSlug}
           editMode={editMode}
           text={response.feedback.content}
-          onEdit={content => onEditResponse(response.id, content)}/>
+          onEdit={(content) => onEditResponse(response.id, content)}
+        />
       </div>
     );
   }
@@ -71,7 +68,8 @@ export const Item = (props: ItemProps) => {
           projectSlug={props.projectSlug}
           editMode={editMode}
           text={response.feedback.content}
-          onEdit={content => onEditResponse(response.id, content)}/>
+          onEdit={(content) => onEditResponse(response.id, content)}
+        />
       </div>
     );
   }
@@ -81,36 +79,47 @@ export const Item = (props: ItemProps) => {
       <div className="d-flex flex-column flex-grow-1">
         <Description>
           <IconIncorrect /> Feedback for Incorrect Answer:
-          <input type={props.model.inputType === 'numeric' ? 'number' : 'text'}
+          <input
+            type={props.model.inputType === 'numeric' ? 'number' : 'text'}
             className="form-control"
             onChange={(e: any) => onEditRule(e.target.value)}
-            value={value} />
+            value={value}
+          />
         </Description>
         <RichTextEditor
           projectSlug={props.projectSlug}
-          editMode={editMode} text={response.feedback.content}
-          onEdit={content => onEditResponse(response.id, content)}/>
+          editMode={editMode}
+          text={response.feedback.content}
+          onEdit={(content) => onEditResponse(response.id, content)}
+        />
       </div>
       <CloseButton
         className="pl-3 pr-1"
         onClick={() => props.onRemoveResponse(response.id)}
-        editMode={editMode} />
+        editMode={editMode}
+      />
     </div>
   );
 };
 
 export const Feedback = (props: FeedbackProps) => {
-
   const { model, editMode, onAddResponse } = props;
-  const { authoring: { parts } } = model;
+  const {
+    authoring: { parts },
+  } = model;
 
   return (
     <div className="my-5">
-      <Heading title="Feedback" subtitle="Providing feedback when a student answers a
-        question is one of the best ways to reinforce their understanding." id="feedback" />
+      <Heading
+        title="Feedback"
+        subtitle="Providing feedback when a student answers a
+        question is one of the best ways to reinforce their understanding."
+        id="feedback"
+      />
 
-      {parts[0].responses.map((response: Response, index) =>
-        <Item key={response.id} {...props} response={response} />)}
+      {parts[0].responses.map((response: Response, index) => (
+        <Item key={response.id} {...props} response={response} />
+      ))}
 
       <button className="btn btn-sm btn-primary my-2" disabled={!editMode} onClick={onAddResponse}>
         Add Feedback

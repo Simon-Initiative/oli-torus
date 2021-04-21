@@ -22,11 +22,18 @@ interface Option {
   id: string;
   label: string;
 }
-type OptionMap = {[id: string]: Option[]};
+type OptionMap = { [id: string]: Option[] };
 
 export const TargetedFeedback = (props: Props) => {
-  const { model, editMode, projectSlug, onEditResponseFeedback, onAddTargetedFeedback,
-    onRemoveTargetedFeedback, onEditTargetedFeedbackChoices } = props;
+  const {
+    model,
+    editMode,
+    projectSlug,
+    onEditResponseFeedback,
+    onAddTargetedFeedback,
+    onRemoveTargetedFeedback,
+    onEditTargetedFeedbackChoices,
+  } = props;
 
   const createSelection = (assocs: ChoiceIdsToResponseId[]) =>
     assocs.reduce((acc, assoc) => {
@@ -35,12 +42,12 @@ export const TargetedFeedback = (props: Props) => {
     }, {} as OptionMap);
 
   const toOptions = (choiceIds: ChoiceId[]) =>
-    choiceIds.map(id => ({
+    choiceIds.map((id) => ({
       id,
-      label: (model.choices.findIndex(choice => choice.id === id) + 1).toString(),
+      label: (model.choices.findIndex((choice) => choice.id === id) + 1).toString(),
     }));
 
-  const allChoiceOptions = toOptions(model.choices.map(choice => choice.id));
+  const allChoiceOptions = toOptions(model.choices.map((choice) => choice.id));
   const selected = createSelection(model.authoring.targeted);
 
   return (
@@ -59,28 +66,38 @@ export const TargetedFeedback = (props: Props) => {
                 selected={selected[response.id]}
                 selectHintOnEnter
                 multiple
-                onChange={selection => onEditTargetedFeedbackChoices(
-                  response.id, selection.map(s => s.id))}
+                onChange={(selection) =>
+                  onEditTargetedFeedbackChoices(
+                    response.id,
+                    selection.map((s) => s.id),
+                  )
+                }
               />
             </Description>
             <div className="d-flex align-items-center" style={{ flex: 1 }}>
-              <RichTextEditor projectSlug={projectSlug}
+              <RichTextEditor
+                projectSlug={projectSlug}
                 className="flex-fill"
-                editMode={editMode} text={response.feedback.content}
-                onEdit={content => onEditResponseFeedback(response.id, content)}/>
+                editMode={editMode}
+                text={response.feedback.content}
+                onEdit={(content) => onEditResponseFeedback(response.id, content)}
+              />
               <CloseButton
                 className="pl-3 pr-1"
                 onClick={() => onRemoveTargetedFeedback(response.id)}
-                editMode={editMode} />
+                editMode={editMode}
+              />
             </div>
           </div>
         );
       })}
-        <button
-          className="btn btn-sm btn-primary my-2"
-          disabled={!editMode}
-          onClick={onAddTargetedFeedback}>Add targeted feedback
-        </button>
+      <button
+        className="btn btn-sm btn-primary my-2"
+        disabled={!editMode}
+        onClick={onAddTargetedFeedback}
+      >
+        Add targeted feedback
+      </button>
     </>
   );
 };

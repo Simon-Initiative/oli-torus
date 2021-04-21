@@ -5,8 +5,11 @@ import * as Immutable from 'immutable';
 import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
 import {
-  ResourceContent, ResourceContext,
-  Activity, ActivityMap, createDefaultStructuredContent,
+  ResourceContent,
+  ResourceContext,
+  Activity,
+  ActivityMap,
+  createDefaultStructuredContent,
 } from 'data/content/resource';
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
@@ -17,80 +20,87 @@ import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { ProjectSlug, ResourceSlug, ResourceId } from 'data/types';
 import * as Persistence from 'data/persistence/resource';
 import {
-  UndoableState, processRedo, processUndo, processUpdate, init,
-  registerUndoRedoHotkeys, unregisterUndoRedoHotkeys,
+  UndoableState,
+  processRedo,
+  processUndo,
+  processUpdate,
+  init,
+  registerUndoRedoHotkeys,
+  unregisterUndoRedoHotkeys,
 } from '../undo';
 import { releaseLock, acquireLock, NotAcquired } from 'data/persistence/lock';
 import { Message, Severity, createMessage } from 'data/messages/messages';
 import { Banner } from '../../messages/Banner';
 import { create } from 'data/persistence/objective';
 import {
-  registerUnload, registerKeydown, registerKeyup, registerWindowBlur, unregisterUnload,
-  unregisterKeydown, unregisterKeyup, unregisterWindowBlur,
+  registerUnload,
+  registerKeydown,
+  registerKeyup,
+  registerWindowBlur,
+  unregisterUnload,
+  unregisterKeydown,
+  unregisterKeyup,
+  unregisterWindowBlur,
 } from './listeners';
 import { loadPreferences } from 'state/preferences';
 
 export interface ResourceEditorProps extends ResourceContext {
-  editorMap: ActivityEditorMap;   // Map of activity types to activity elements
+  editorMap: ActivityEditorMap; // Map of activity types to activity elements
   activities: ActivityMap;
   onLoadPreferences: () => void;
 }
 
 // This is the state of our resource that is undoable
 type Undoable = {
-  title: string,
-  content: Immutable.List<ResourceContent>,
-  objectives: Immutable.List<ResourceId>,
+  title: string;
+  content: Immutable.List<ResourceContent>;
+  objectives: Immutable.List<ResourceId>;
 };
 
 type ResourceEditorState = {
-  messages: Message[],
-  undoable: UndoableState<Undoable>,
-  allObjectives: Immutable.List<Objective>,
-  childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>,
-  activities: Immutable.Map<string, Activity>,
-  editMode: boolean,
-  persistence: 'idle' | 'pending' | 'inflight',
-  metaModifier: boolean,
+  messages: Message[];
+  undoable: UndoableState<Undoable>;
+  allObjectives: Immutable.List<Objective>;
+  childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
+  activities: Immutable.Map<string, Activity>;
+  editMode: boolean;
+  persistence: 'idle' | 'pending' | 'inflight';
+  metaModifier: boolean;
 };
 
 // Creates a function that when invoked submits a save request
 function prepareSaveFn(
-  project: ProjectSlug, resource: ResourceSlug, update: Persistence.ResourceUpdate) {
-
+  project: ProjectSlug,
+  resource: ResourceSlug,
+  update: Persistence.ResourceUpdate,
+) {
   return (releaseLock: boolean) => Persistence.edit(project, resource, update, releaseLock);
 }
 
 // Ensures that there is some default content if the initial content
 // of this resource is empty
 function withDefaultContent(content: ResourceContent[]) {
-  return content.length > 0
-    ? content
-    : [createDefaultStructuredContent()];
+  return content.length > 0 ? content : [createDefaultStructuredContent()];
 }
 
-function mapChildrenObjectives(objectives: Objective[])
-  : Immutable.Map<ResourceId, Immutable.List<Objective>> {
-
-  return objectives.reduce(
-    (map, o) => {
-      if (o.parentId !== null) {
-        let updatedMap = map;
-        if (o.parentId !== null && !map.has(o.parentId)) {
-          updatedMap = updatedMap.set(o.parentId, Immutable.List());
-        }
-        const appended = (updatedMap.get(o.parentId) as any).push(o);
-        return updatedMap.set(o.parentId, appended);
+function mapChildrenObjectives(
+  objectives: Objective[],
+): Immutable.Map<ResourceId, Immutable.List<Objective>> {
+  return objectives.reduce((map, o) => {
+    if (o.parentId !== null) {
+      let updatedMap = map;
+      if (o.parentId !== null && !map.has(o.parentId)) {
+        updatedMap = updatedMap.set(o.parentId, Immutable.List());
       }
-      return map;
-    },
-    Immutable.Map<ResourceId, Immutable.List<Objective>>(),
-  );
+      const appended = (updatedMap.get(o.parentId) as any).push(o);
+      return updatedMap.set(o.parentId, appended);
+    }
+    return map;
+  }, Immutable.Map<ResourceId, Immutable.List<Objective>>());
 }
 
 // The resource editor
 export class ResourceEditor extends React.Component<ResourceEditorProps, ResourceEditorState> {
-
   persistence: PersistenceStrategy;
   windowUnloadListener: any;
   undoRedoListener: any;
@@ -117,7 +127,8 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       allObjectives: Immutable.List<Objective>(allObjectives),
       childrenObjectives: mapChildrenObjectives(allObjectives),
       activities: Immutable.Map<string, Activity>(
-        Object.keys(activities).map(k => [k, activities[k]])),
+        Object.keys(activities).map((k) => [k, activities[k]]),
+      ),
       metaModifier: false,
     };
 
@@ -126,40 +137,43 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     this.update = this.update.bind(this);
     this.undo = this.undo.bind(this);
     this.redo = this.redo.bind(this);
-
   }
 
   componentDidMount() {
-
     const { projectSlug, resourceSlug, onLoadPreferences } = this.props;
 
     onLoadPreferences();
 
-    this.persistence.initialize(
-      acquireLock.bind(undefined, projectSlug, resourceSlug),
-      releaseLock.bind(undefined, projectSlug, resourceSlug),
-      () => { },
-      failure => this.publishErrorMessage(failure),
-      persistence => this.setState({ persistence }),
-    ).then((editMode) => {
-      this.setState({ editMode });
-      if (editMode) {
-        this.windowUnloadListener = registerUnload(this.persistence);
-        this.undoRedoListener = registerUndoRedoHotkeys(this.undo.bind(this), this.redo.bind(this));
-        this.keydownListener = registerKeydown(this);
-        this.keyupListener = registerKeyup(this);
-        this.windowBlurListener = registerWindowBlur(this);
-      } else {
-        if (this.persistence.getLockResult().type === 'not_acquired') {
-          const notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired;
-          this.editingLockedMessage(notAcquired.user);
+    this.persistence
+      .initialize(
+        acquireLock.bind(undefined, projectSlug, resourceSlug),
+        releaseLock.bind(undefined, projectSlug, resourceSlug),
+        // eslint-disable-next-line
+        () => { },
+        (failure) => this.publishErrorMessage(failure),
+        (persistence) => this.setState({ persistence }),
+      )
+      .then((editMode) => {
+        this.setState({ editMode });
+        if (editMode) {
+          this.windowUnloadListener = registerUnload(this.persistence);
+          this.undoRedoListener = registerUndoRedoHotkeys(
+            this.undo.bind(this),
+            this.redo.bind(this),
+          );
+          this.keydownListener = registerKeydown(this);
+          this.keyupListener = registerKeyup(this);
+          this.windowBlurListener = registerWindowBlur(this);
+        } else {
+          if (this.persistence.getLockResult().type === 'not_acquired') {
+            const notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired;
+            this.editingLockedMessage(notAcquired.user);
+          }
         }
-      }
-    });
+      });
   }
 
   componentWillUnmount() {
-
     this.persistence.destroy();
 
     unregisterUnload(this.windowUnloadListener);
@@ -182,18 +196,30 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
   publishErrorMessage(failure: any) {
     let message;
     switch (failure?.status) {
-      case 423: message = 'refresh the page to re-gain edit access.'; break;
-      case 404: message = 'this page was not found. Try reopening it from the Curriculum.'; break;
-      case 403: message = 'you\'re not able to access this page. Did your login expire?'; break;
+      case 423:
+        message = 'refresh the page to re-gain edit access.';
+        break;
+      case 404:
+        message = 'this page was not found. Try reopening it from the Curriculum.';
+        break;
+      case 403:
+        message = "you're not able to access this page. Did your login expire?";
+        break;
       case 500:
-      default: message = 'there was a general problem on our end. Please try refreshing the page and trying again.'; break;
+      default:
+        message =
+          // tslint:disable-next-line
+          'there was a general problem on our end. Please try refreshing the page and trying again.';
+        break;
     }
 
-    this.addAsUnique(createMessage({
-      guid: 'general-error',
-      canUserDismiss: true,
-      content: 'Your changes weren\'t saved: ' + message,
-    }));
+    this.addAsUnique(
+      createMessage({
+        guid: 'general-error',
+        canUserDismiss: true,
+        content: "Your changes weren't saved: " + message,
+      }),
+    );
   }
 
   createObjectiveErrorMessage(failure: any) {
@@ -207,14 +233,12 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
   }
 
   addAsUnique(message: Message) {
-    const messages = this.state.messages.filter(m => m.guid !== message.guid);
+    const messages = this.state.messages.filter((m) => m.guid !== message.guid);
     this.setState({ messages: [...messages, message] });
   }
 
   update(update: Partial<Undoable>) {
-    this.setState(
-      { undoable: processUpdate(this.state.undoable, update) },
-      () => this.save());
+    this.setState({ undoable: processUpdate(this.state.undoable, update) }, () => this.save());
   }
 
   save() {
@@ -227,22 +251,18 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       releaseLock: false,
     };
 
-    this.persistence.save(
-      prepareSaveFn(projectSlug, resourceSlug, toSave));
+    this.persistence.save(prepareSaveFn(projectSlug, resourceSlug, toSave));
   }
 
   undo() {
-    this.setState({ undoable: processUndo(this.state.undoable) },
-      () => this.save());
+    this.setState({ undoable: processUndo(this.state.undoable) }, () => this.save());
   }
 
   redo() {
-    this.setState({ undoable: processRedo(this.state.undoable) },
-      () => this.save());
+    this.setState({ undoable: processRedo(this.state.undoable) }, () => this.save());
   }
 
   render() {
-
     const props = this.props;
     const state = this.state;
 
@@ -265,12 +285,9 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 
     const onRegisterNewObjective = (title: string): Promise<Objective> => {
       return new Promise((resolve, reject) => {
-
         create(props.projectSlug, title)
           .then((result) => {
-
             if (result.result === 'success') {
-
               const objective = {
                 id: result.resourceId,
                 title,
@@ -279,12 +296,13 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 
               this.setState({
                 allObjectives: this.state.allObjectives.push(objective),
-                childrenObjectives:
-                  this.state.childrenObjectives.set(objective.id, Immutable.List<Objective>()),
+                childrenObjectives: this.state.childrenObjectives.set(
+                  objective.id,
+                  Immutable.List<Objective>(),
+                ),
               });
 
               resolve(objective);
-
             } else {
               throw result;
             }
@@ -293,17 +311,18 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
             this.createObjectiveErrorMessage(e);
             console.error('objective creation failed', e);
           });
-
       });
     };
 
-    const isSaving =
-      (this.state.persistence === 'inflight' || this.state.persistence === 'pending');
+    const isSaving = this.state.persistence === 'inflight' || this.state.persistence === 'pending';
 
     const PreviewButton = () => (
       <a
         className={`btn btn-sm btn-outline-primary ml-3 ${isSaving ? 'disabled' : ''}`}
-        onClick={() => window.open(`/project/${projectSlug}/preview/${resourceSlug}`, `preview-${projectSlug}`)}>
+        onClick={() =>
+          window.open(`/project/${projectSlug}/preview/${resourceSlug}`, `preview-${projectSlug}`)
+        }
+      >
         Preview <i className="las la-external-link-alt ml-1"></i>
       </a>
     );
@@ -312,15 +331,17 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       <div className="resource-editor row">
         <div className="col-12">
           <Banner
-            dismissMessage={msg => this.setState(
-              { messages: this.state.messages.filter(m => msg.guid !== m.guid) })}
+            dismissMessage={(msg) =>
+              this.setState({ messages: this.state.messages.filter((m) => msg.guid !== m.guid) })
+            }
             executeAction={(message, action) => action.execute(message)}
             messages={this.state.messages}
           />
           <TitleBar
             title={state.undoable.current.title}
             onTitleEdit={onTitleEdit}
-            editMode={this.state.editMode}>
+            editMode={this.state.editMode}
+          >
             <PersistenceStatus persistence={this.state.persistence} />
 
             <PreviewButton />
@@ -328,7 +349,9 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
             <UndoRedo
               canRedo={this.state.undoable.redoStack.size > 0}
               canUndo={this.state.undoable.undoStack.size > 0}
-              onUndo={this.undo} onRedo={this.redo} />
+              onUndo={this.undo}
+              onRedo={this.redo}
+            />
           </TitleBar>
           <div>
             <Editors
@@ -338,14 +361,15 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
               childrenObjectives={this.state.childrenObjectives}
               onRegisterNewObjective={onRegisterNewObjective}
               activities={this.state.activities}
-              onRemove={index => onEdit(this.state.undoable.current.content.delete(index))}
+              onRemove={(index) => onEdit(this.state.undoable.current.content.delete(index))}
               onEdit={(c, index) => {
                 onEdit(this.state.undoable.current.content.set(index, c));
               }}
               onEditContentList={onEdit}
               content={this.state.undoable.current.content}
               onAddItem={onAddItem}
-              resourceContext={props} />
+              resourceContext={props}
+            />
           </div>
         </div>
       </div>
@@ -353,9 +377,8 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
   }
 }
 
-interface StateProps {
-
-}
+// eslint-disable-next-line
+interface StateProps { }
 
 interface DispatchProps {
   onLoadPreferences: () => void;
