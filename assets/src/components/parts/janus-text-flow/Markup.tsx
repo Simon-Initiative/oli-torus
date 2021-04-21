@@ -15,6 +15,7 @@ const styleFilter = (styles: any) => {
 
 // supporting SS templates which look like
 // "some {stage.value} thing, and {q:1234|stage.value} other thing"
+// eslint-disable-next-line
 const getVars = /[^{\}]+(?=})/g;
 const templatizeText = (text: string, state: any) => {
   const vars = text.match(getVars);
@@ -39,7 +40,7 @@ const templatizeText = (text: string, state: any) => {
 
   return templatizedText;
 };
-
+/*eslint-disable */
 const Markup: React.FC<any> = ({
   tag,
   href,
@@ -50,6 +51,7 @@ const Markup: React.FC<any> = ({
   children,
   state = [],
 }) => {
+  /*eslint-enable */
   const el = useRef<any>(null);
 
   useEffect(() => {
@@ -81,6 +83,8 @@ const Markup: React.FC<any> = ({
     renderStyles.backgroundColor = '';
   }
   let processedText = templatizeText(text.replace(/ \s/g, '\u00a0 '), state);
+
+  // eslint-disable-next-line
   if (!children.length && !processedText) {
     // empty elements in HTML don't stay in the flow
     // add a non breaking space instead of nothing
@@ -266,6 +270,7 @@ const Markup: React.FC<any> = ({
         </ul>
       );
     case 'li':
+      // eslint-disable-next-line
       const listStyle = { ...renderStyles, display: 'list-item' };
       return (
         <li ref={el} key={key} style={listStyle}>

@@ -1,5 +1,5 @@
 export type EvalContext = {
-  getResource: (name: string) => HTMLImageElement | String | null;
+  getResource: (name: string) => HTMLImageElement | string | null;
   getCanvas: (n: number) => HTMLCanvasElement | null;
   // getTempCanvas: () => HTMLCanvasElement | null;
   getResult: (solution: boolean) => HTMLCanvasElement | null;
@@ -9,9 +9,12 @@ export type EvalContext = {
 
 declare global {
   interface Window {
+    // eslint-disable-next-line
     SimpleImage: Function;
+    // eslint-disable-next-line
     SimpleTable: Function;
     print: () => void;
+    // eslint-disable-next-line
     Evaluator: Function;
   }
 }
@@ -86,6 +89,8 @@ export class Evaluator {
     // Loop, finding the next
     let newCode = code;
     let gensym = 0;
+
+    // eslint-disable-next-line
     while (1) {
       const oldCode = newCode;
       const pvar = 'pxyz' + gensym;
@@ -232,6 +237,7 @@ export class Evaluator {
     try {
       diff = Evaluator.imageDiff(studentData, solnData);
     } finally {
+      // eslint-disable-next-line
       return diff;
     }
   };

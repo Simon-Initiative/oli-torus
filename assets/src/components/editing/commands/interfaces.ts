@@ -19,6 +19,7 @@ export type Command = {
   // (prevents commands from violating model constraints)
   precondition: (editor: ReactEditor) => boolean,
   // execute: run when the command is called (usually to create an element and insert it)
+  // eslint-disable-next-line
   execute: (context: CommandContext, editor: ReactEditor, params?: Object) => void,
   // obtainParameters: allow the command to gather additional info before running the command
   // (for example, show a size picker for table insertion)

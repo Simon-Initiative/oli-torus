@@ -5,6 +5,7 @@ type Props = {
   onDone: (event: React.MouseEvent<HTMLSpanElement, MouseEvent>) => void;
   onCancel: (event: React.MouseEvent<HTMLSpanElement, MouseEvent>) => void;
 };
+// eslint-disable-next-line
 export const Modal = React.memo((props: Props) => {
   return (
     <div className="overlay full-screen">

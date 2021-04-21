@@ -20,7 +20,7 @@ function insertionAreEqual(prevProps: InsertionToolbarProps, nextProps: Insertio
     prevProps.isPerformingAsyncAction === nextProps.isPerformingAsyncAction
   );
 }
-
+// eslint-disable-next-line
 export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
   const { toolbarItems } = props;
   const ref = useRef();
@@ -87,6 +87,7 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
                     if (t.command.obtainParameters === undefined) {
                       return <ToolbarButton {...shared} />;
                     }
+                    // eslint-disable-next-line
                     return <DropdownToolbarButton {...shared} />;
                   }),
                 ].filter((x) => x)}

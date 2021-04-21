@@ -61,7 +61,8 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
         >
           <MediaManager
             projectSlug={projectSlug}
-            onEdit={() => {}}
+            // eslint-disable-next-line
+            onEdit={() => { }}
             mimeFilter={MIMETYPE_FILTERS.IMAGE}
             selectionType={SELECTION_TYPES.SINGLE}
             initialSelectionPaths={model.src ? [model.src] : [selected.img as any]}
@@ -96,7 +97,8 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
         >
           <MediaManager
             projectSlug={projectSlug}
-            onEdit={() => {}}
+            // eslint-disable-next-line
+            onEdit={() => { }}
             mimeFilter={MIMETYPE_FILTERS.CSV}
             selectionType={SELECTION_TYPES.SINGLE}
             initialSelectionPaths={model.src ? [model.src] : [selected.file as any]}
@@ -265,6 +267,6 @@ export class ImageCodingAuthoring extends AuthoringElement<ImageCodingModelSchem
     );
   }
 }
-
+// eslint-disable-next-line
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
 window.customElements.define(manifest.authoring.element, ImageCodingAuthoring);

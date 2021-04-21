@@ -10,6 +10,7 @@ type HoveringToolbarProps = {
   contentLocation?: ContentLocationGetter;
   target?: JSX.Element;
 };
+// eslint-disable-next-line
 export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
   const editor = useSlate();
 

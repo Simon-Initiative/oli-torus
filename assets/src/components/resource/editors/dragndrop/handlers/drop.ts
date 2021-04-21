@@ -92,7 +92,9 @@ export const dropHandler = (
 
         // scroll to inserted item
         scrollToResourceEditor(parsedContent.id);
-      } catch (err) {}
+      }
+      // eslint-disable-next-line
+      catch (err) { }
     }
   }
 };

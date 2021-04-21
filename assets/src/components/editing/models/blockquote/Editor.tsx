@@ -1,7 +1,8 @@
+import React from 'react';
 import * as ContentModel from 'data/content/model';
 import { EditorProps } from 'components/editing/models/interfaces';
-
-export interface BlockQuoteProps extends EditorProps<ContentModel.Blockquote> {}
+// eslint-disable-next-line
+export interface BlockQuoteProps extends EditorProps<ContentModel.Blockquote> { }
 
 export const BlockQuoteEditor = (props: BlockQuoteProps) => {
 

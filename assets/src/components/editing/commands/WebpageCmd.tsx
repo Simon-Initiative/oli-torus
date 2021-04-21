@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { CommandDesc, Command } from 'components/editing/commands/interfaces';
 import { Transforms } from 'slate';
 import * as ContentModel from 'data/content/model';

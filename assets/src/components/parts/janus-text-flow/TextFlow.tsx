@@ -1,4 +1,5 @@
 import chroma from 'chroma-js';
+import { AnyAaaaRecord } from 'dns';
 import React, { useEffect } from 'react';
 import guid from 'utils/guid';
 import Markup from './Markup';
@@ -78,7 +79,7 @@ export const renderFlow = (
   );
 };
 
-const TextFlow: React.FC<any> = (props) => {
+const TextFlow: React.FC<any> = (props: any) => {
   const { x = 0, y = 0, width, z = 0, customCssClass, nodes, palette, fontSize } = props.model;
   const styles: any = {
     position: 'absolute',
@@ -94,16 +95,14 @@ const TextFlow: React.FC<any> = (props) => {
   if (palette) {
     styles.borderWidth = `${palette?.lineThickness ? palette?.lineThickness + 'px' : '1px'}`;
     (styles.borderStyle = 'solid'),
-      (styles.borderColor = `rgba(${
-        palette?.lineColor || palette?.lineColor === 0
-          ? chroma(palette?.lineColor).rgb().join(',')
-          : '255, 255, 255'
-      },${palette?.lineAlpha})`),
-      (styles.backgroundColor = `rgba(${
-        palette?.fillColor || palette?.fillColor === 0
-          ? chroma(palette?.fillColor).rgb().join(',')
-          : '255, 255, 255'
-      },${palette?.fillAlpha})`);
+      (styles.borderColor = `rgba(${palette?.lineColor || palette?.lineColor === 0
+        ? chroma(palette?.lineColor).rgb().join(',')
+        : '255, 255, 255'
+        },${palette?.lineAlpha})`),
+      (styles.backgroundColor = `rgba(${palette?.fillColor || palette?.fillColor === 0
+        ? chroma(palette?.fillColor).rgb().join(',')
+        : '255, 255, 255'
+        },${palette?.fillAlpha})`);
   }
   useEffect(() => {
     // all activities *must* emit onReady

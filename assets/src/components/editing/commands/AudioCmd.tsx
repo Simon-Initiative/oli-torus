@@ -31,7 +31,8 @@ export function selectAudio(
       >
         <MediaManager
           projectSlug={projectSlug}
-          onEdit={() => {}}
+          // eslint-disable-next-line
+          onEdit={() => { }}
           mimeFilter={MIMETYPE_FILTERS.AUDIO}
           selectionType={SELECTION_TYPES.SINGLE}
           initialSelectionPaths={[model.src]}

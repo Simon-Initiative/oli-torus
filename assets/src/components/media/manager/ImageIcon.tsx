@@ -11,7 +11,9 @@ export interface ImageIconProps {
  * ImageIcon React Stateless Component
  */
 export const ImageIcon: React.StatelessComponent<ImageIconProps> = ({
+  // eslint-disable-next-line
   className,
+  // eslint-disable-next-line
   url,
 }) => {
   return (

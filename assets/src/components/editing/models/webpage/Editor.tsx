@@ -7,6 +7,7 @@ import { EditorProps } from 'components/editing/models/interfaces';
 import * as Settings from 'components/editing/models/settings/Settings';
 import { displayModelToClassName } from 'data/content/utils';
 
+// eslint-disable-next-line
 export interface WebpageProps extends EditorProps<ContentModel.Webpage> { }
 
 export const WebpageEditor = (props: WebpageProps) => {
@@ -52,7 +53,7 @@ export const WebpageEditor = (props: WebpageProps) => {
         className="embed-responsive embed-responsive-16by9 img-thumbnail position-relative"
         style={borderStyle}>
         <iframe className="embed-responsive-item" src={src} allowFullScreen></iframe>
-        <div className="position-absolute"style={{ top: 0, bottom: 0, left: 0, right: 0 }}></div>
+        <div className="position-absolute" style={{ top: 0, bottom: 0, left: 0, right: 0 }}></div>
       </div>
       <div contentEditable={false}>
         <Settings.Input

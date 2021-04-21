@@ -11,7 +11,7 @@ const builtInPartTypes: any = {
 // it should render any activity? not just adaptive?
 // the adaptive-activity web component should render
 // the parts
-const ActivityRenderer: React.FC<any> = (props) => {
+const ActivityRenderer: React.FC<any> = (props: any) => {
   // console.log('AR', { props });
   return (
     <div>

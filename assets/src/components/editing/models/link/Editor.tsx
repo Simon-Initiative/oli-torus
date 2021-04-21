@@ -7,7 +7,7 @@ import { LinkablePages } from 'components/editing/models/link/utils';
 import { EditLink } from 'components/editing/models/link/EditLink';
 import { DisplayLink } from 'components/editing/models/link/DisplayLink';
 import * as Persistence from 'data/persistence/resource';
-
+// eslint-disable-next-line
 export interface Props extends EditorProps<ContentModel.Hyperlink> { }
 
 export const LinkEditor = (props: Props) => {

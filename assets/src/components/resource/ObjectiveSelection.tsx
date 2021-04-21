@@ -13,6 +13,7 @@ type ObjectNodeProps = {
   objective: Objective;
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
   level: number;
+  // eslint-disable-next-line
   selected: Object;
   toggleSelected: (id: ResourceId) => void;
 };
@@ -27,17 +28,17 @@ const ObjectiveNode = (props: ObjectNodeProps) => {
     myChildren === undefined
       ? null
       : myChildren
-          .toArray()
-          .map((o) => (
-            <ObjectiveNode
-              key={o.id}
-              selected={props.selected}
-              toggleSelected={props.toggleSelected}
-              objective={o}
-              childrenObjectives={childrenObjectives}
-              level={level + 1}
-            />
-          ));
+        .toArray()
+        .map((o) => (
+          <ObjectiveNode
+            key={o.id}
+            selected={props.selected}
+            toggleSelected={props.toggleSelected}
+            objective={o}
+            childrenObjectives={childrenObjectives}
+            level={level + 1}
+          />
+        ));
 
   return (
     <div key={objective.id}>
@@ -55,6 +56,7 @@ const ObjectiveNode = (props: ObjectNodeProps) => {
 };
 
 const ObjectiveTree = (
+  // eslint-disable-next-line
   props: ObjectiveSelectionProps & { selected: Object; toggleSelected: (slug: ResourceId) => void },
 ) => {
   return (

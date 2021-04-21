@@ -107,6 +107,6 @@ export class ShortAnswerAuthoring extends AuthoringElement<ShortAnswerModelSchem
     );
   }
 }
-
+// eslint-disable-next-line
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
 window.customElements.define(manifest.authoring.element, ShortAnswerAuthoring);

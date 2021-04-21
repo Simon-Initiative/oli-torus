@@ -2,6 +2,7 @@
 import { Part, Transformation, ActivityModelSchema } from '../types';
 
 export interface AdaptiveModelSchema extends ActivityModelSchema {
+  // eslint-disable-next-line
   content: Object;
   authoring: {
     parts: Part[];

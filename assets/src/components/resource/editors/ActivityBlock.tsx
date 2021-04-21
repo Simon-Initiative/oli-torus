@@ -119,6 +119,7 @@ interface DispatchProps {
   onUpdatePreferences: (p: Partial<Preferences>) => any;
 }
 
+// eslint-disable-next-line
 type OwnProps = {};
 
 const mapStateToProps = (state: State, ownProps: OwnProps): StateProps => {

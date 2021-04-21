@@ -123,6 +123,7 @@ export class Actions {
         case 'SimpleOrdering':
           return;
         case 'TargetedOrdering':
+          // eslint-disable-next-line
           const response = makeResponse(createRuleForIds([]), 0, '');
 
           getResponses(model).push(response);
@@ -153,6 +154,7 @@ export class Actions {
         case 'SimpleOrdering':
           break;
         case 'TargetedOrdering':
+          // eslint-disable-next-line
           const assoc = model.authoring.targeted.find(
             (assoc) => getResponseId(assoc) === responseId,
           );
@@ -205,6 +207,7 @@ const updateResponseRules = (model: Ordering) => {
       getIncorrectResponse(model).rule = invertRule(getCorrectResponse(model).rule);
       return;
     case 'TargetedOrdering':
+      // eslint-disable-next-line
       const targetedRules: string[] = [];
       model.authoring.targeted.forEach((assoc) => {
         const targetedRule = createRuleForIds(getChoiceIds(assoc));

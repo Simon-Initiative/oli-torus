@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { CommandDesc } from 'components/editing/commands/interfaces';
 import * as ContentModel from 'data/content/model';
 import { Modal } from 'components/editing/toolbars/Modal';
@@ -73,7 +74,8 @@ export const initCommands = (
             selectImage(context.projectSlug, model.src).then((selection) =>
               Maybe.maybe(selection).caseOf({
                 just: (src) => setSrc(src),
-                nothing: () => {},
+                // eslint-disable-next-line
+                nothing: () => { },
               }),
             );
           },

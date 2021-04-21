@@ -2,12 +2,17 @@ import { getBaseURL } from './config';
 
 const fetch = (window as any).fetch;
 
+// eslint-disable-next-line
+export type Headers = Object;
+// eslint-disable-next-line
+export type QueryParams = Object;
+
 export type HttpRequestParams = {
   method?: string;
   url: string;
   body?: string | FormData;
-  headers?: Object;
-  query?: Object;
+  headers?: Headers;
+  query?: QueryParams;
   hasTextResult?: boolean;
 };
 

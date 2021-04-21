@@ -3,7 +3,7 @@ import * as ContentModel from 'data/content/model';
 import { ImageCodingModelSchema } from './schema';
 import { RichText, ScoringStrategy } from '../types';
 
-export const defaultICModel : () => ImageCodingModelSchema = () => {
+export const defaultICModel: () => ImageCodingModelSchema = () => {
 
   return {
     stem: fromText(''),
@@ -53,7 +53,7 @@ export function lastPart(path: string): string {
   return path.substring(path.lastIndexOf('/') + 1);
 }
 
-export const feedback = (text: string, match: string | number, score: number = 0) => ({
+export const feedback = (text: string, match: string | number, score = 0) => ({
   ...fromText(text),
   match,
   score,

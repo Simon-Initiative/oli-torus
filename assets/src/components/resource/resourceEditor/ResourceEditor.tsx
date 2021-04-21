@@ -148,7 +148,8 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       .initialize(
         acquireLock.bind(undefined, projectSlug, resourceSlug),
         releaseLock.bind(undefined, projectSlug, resourceSlug),
-        () => {},
+        // eslint-disable-next-line
+        () => { },
         (failure) => this.publishErrorMessage(failure),
         (persistence) => this.setState({ persistence }),
       )
@@ -376,7 +377,8 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
   }
 }
 
-interface StateProps {}
+// eslint-disable-next-line
+interface StateProps { }
 
 interface DispatchProps {
   onLoadPreferences: () => void;

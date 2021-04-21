@@ -9,7 +9,8 @@ import { displayModelToClassName } from 'data/content/utils';
 
 export const CUTE_OTTERS = 'zHIIzcWqsP0';
 
-export interface YouTubeProps extends EditorProps<ContentModel.YouTube> {}
+// eslint-disable-next-line
+export interface YouTubeProps extends EditorProps<ContentModel.YouTube> { }
 
 export const YouTubeEditor = (props: YouTubeProps) => {
   const { attributes, children, editor, model } = props;

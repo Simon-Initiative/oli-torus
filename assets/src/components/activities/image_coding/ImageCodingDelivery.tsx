@@ -44,7 +44,7 @@ const Input = (props: InputProps) => {
     />
   );
 };
-
+// eslint-disable-next-line
 export interface ImageCodingDeliveryProps extends DeliveryElementProps<ImageCodingModelSchema> {
   // output: string;
 }
@@ -66,7 +66,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
 
   // tslint:disable-next-line:prefer-array-literal
-  const resourceRefs = useRef<(HTMLImageElement | String)[]>(new Array(resourceURLs.length));
+  const resourceRefs = useRef<(HTMLImageElement | string)[]>(new Array(resourceURLs.length));
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef2 = useRef<HTMLCanvasElement>(null);
   const resultRef = useRef<HTMLCanvasElement>(null);
@@ -248,16 +248,16 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   const ungradedDetails = props.graded
     ? null
     : [
-        evaluationSummary,
-        <Hints
-          key="hints"
-          onClick={onRequestHint}
-          hints={hints}
-          context={writerContext}
-          hasMoreHints={hasMoreHints}
-          isEvaluated={isEvaluated}
-        />,
-      ];
+      evaluationSummary,
+      <Hints
+        key="hints"
+        onClick={onRequestHint}
+        hints={hints}
+        context={writerContext}
+        hasMoreHints={hasMoreHints}
+        isEvaluated={isEvaluated}
+      />,
+    ];
 
   const renderOutput = () => {
     if (output === '') {
@@ -279,7 +279,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     );
   };
 
-  const getCanvas = (n: number = 0) => {
+  const getCanvas = (n = 0) => {
     // we currently only need exactly two temp canvases, one for src and
     // one for destination of offscreen transformation.
     return n === 0 ? canvasRef.current : canvasRef2.current;
@@ -353,5 +353,6 @@ export class ImageCodingDelivery extends DeliveryElement<ImageCodingModelSchema>
 }
 
 // Register the web component:
+// eslint-disable-next-line
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
 window.customElements.define(manifest.delivery.element, ImageCodingDelivery);

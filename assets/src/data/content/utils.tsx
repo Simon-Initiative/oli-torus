@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { StructuredContent } from './resource';
 import { toSimpleText } from './text';
 import { MediaDisplayMode } from './model';
@@ -15,6 +16,8 @@ export function displayModelToClassName(display: MediaDisplayMode | undefined) {
 }
 
 export function getContentDescription(content: StructuredContent): JSX.Element {
+
+  let simpleText;
 
   if (content.children.length > 0) {
 
@@ -47,7 +50,7 @@ export function getContentDescription(content: StructuredContent): JSX.Element {
         case 'h6':
         case 'p':
         case 'blockquote':
-          const simpleText = toSimpleText(item).trim();
+          simpleText = toSimpleText(item).trim();
           if (simpleText !== '') {
             return <span>{simpleText}</span>;
           }

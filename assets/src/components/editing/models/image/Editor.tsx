@@ -9,8 +9,8 @@ import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
 import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolbar';
 import { initCommands } from './commands';
 import { displayModelToClassName } from 'data/content/utils';
-
-export interface ImageProps extends EditorProps<ContentModel.Image> {}
+// eslint-disable-next-line
+export interface ImageProps extends EditorProps<ContentModel.Image> { }
 export const ImageEditor = (props: ImageProps) => {
   const { attributes, children, editor, model } = props;
 

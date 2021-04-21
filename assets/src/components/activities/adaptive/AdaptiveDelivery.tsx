@@ -103,5 +103,6 @@ export class AdaptiveDelivery extends DeliveryElement<AdaptiveModelSchema> {
 }
 
 // Register the web component:
+// eslint-disable-next-line
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
 window.customElements.define(manifest.delivery.element, AdaptiveDelivery);

@@ -16,7 +16,7 @@ function highestPriority(messages: Msg[], severity: Severity): Msg[] {
 
   return m.length > 0 ? [m.pop() as any] : [];
 }
-
+// eslint-disable-next-line
 export class Banner extends React.PureComponent<BannerProps, {}> {
   constructor(props: BannerProps) {
     super(props);

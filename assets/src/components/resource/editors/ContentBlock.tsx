@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { DragHandle } from '../DragHandle';
 import { DeleteButton } from 'components/misc/DeleteButton';
 import { getContentDescription } from 'data/content/utils';

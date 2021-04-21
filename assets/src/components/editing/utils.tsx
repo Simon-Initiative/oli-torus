@@ -99,6 +99,8 @@ export const getHighestTopLevel = (editor: ReactEditor): Maybe<Node> => {
     return Maybe.nothing();
   }
   let [node, path] = Editor.node(editor, editor.selection);
+
+  // eslint-disable-next-line
   while (true) {
     // TopLevel node is selected, only Editor node as parent
     if (path.length === 1) {

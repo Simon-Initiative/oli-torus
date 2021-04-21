@@ -110,11 +110,11 @@ export const OrderingComponent = (props: DeliveryElementProps<OrderingModelSchem
     props.state.parts[0].response === null
       ? []
       : props.state.parts[0].response.input
-          .split(' ')
-          .reduce(
-            (acc: ActivityTypes.ChoiceId[], curr: ActivityTypes.ChoiceId) => acc.concat([curr]),
-            [],
-          ),
+        .split(' ')
+        .reduce(
+          (acc: ActivityTypes.ChoiceId[], curr: ActivityTypes.ChoiceId) => acc.concat([curr]),
+          [],
+        ),
   );
 
   const { stem, choices } = model;
@@ -146,6 +146,7 @@ export const OrderingComponent = (props: DeliveryElementProps<OrderingModelSchem
   };
 
   const updateSelection = (id: string) => {
+    // eslint-disable-next-line
     const newSelection = !!selected.find((s) => s === id)
       ? selected.filter((s) => s !== id)
       : selected.concat([id]);
@@ -204,16 +205,16 @@ export const OrderingComponent = (props: DeliveryElementProps<OrderingModelSchem
   const ungradedDetails = props.graded
     ? null
     : [
-        evaluationSummary,
-        <Hints
-          key="hints"
-          onClick={onRequestHint}
-          hints={hints}
-          hasMoreHints={hasMoreHints}
-          isEvaluated={isEvaluated}
-          context={writerContext}
-        />,
-      ];
+      evaluationSummary,
+      <Hints
+        key="hints"
+        onClick={onRequestHint}
+        hints={hints}
+        hasMoreHints={hasMoreHints}
+        isEvaluated={isEvaluated}
+        context={writerContext}
+      />,
+    ];
 
   const gradedDetails =
     props.graded && props.progressState === 'in_review' ? [evaluationSummary] : null;
@@ -223,12 +224,12 @@ export const OrderingComponent = (props: DeliveryElementProps<OrderingModelSchem
   const gradedPoints =
     props.graded && props.progressState === 'in_review'
       ? [
-          <div className="text-info font-italic">
-            {correctnessIcon}
-            <span>Points: </span>
-            <span>{attemptState.score + ' out of ' + attemptState.outOf}</span>
-          </div>,
-        ]
+        <div key="reviewed" className=" text-info font-italic">
+          {correctnessIcon}
+          < span > Points: </span >
+          <span>{attemptState.score + ' out of ' + attemptState.outOf}</span>
+        </div >,
+      ]
       : null;
 
   const maybeSubmitButton = props.graded ? null : (
@@ -278,5 +279,6 @@ export class OrderingDelivery extends DeliveryElement<OrderingModelSchema> {
 }
 
 // Register the web component:
+// eslint-disable-next-line
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
 window.customElements.define(manifest.delivery.element, OrderingDelivery);

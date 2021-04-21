@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import * as React from 'react';
 
 type Size = {
   rows: number;
@@ -36,6 +37,7 @@ const cellStyle = (isHighlighted: boolean) => ({
 });
 
 const range = (n: number) =>
+  // eslint-disable-next-line
   Array.apply(null, { length: n })
     .map(Number.call, Number)
     .map((v: any) => v + 1);
@@ -45,7 +47,7 @@ export type SizePickerProps = {
 };
 
 export const SizePicker = (props: SizePickerProps) => {
-  const [size, setSize] = useState(initialSize);
+  const [size, setSize] = React.useState(initialSize);
 
   const isHighlighted = (row: number, col: number) => size.rows >= row && size.columns >= col;
 

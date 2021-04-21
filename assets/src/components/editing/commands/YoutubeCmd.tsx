@@ -1,3 +1,4 @@
+import React from 'react';
 import { CommandDesc, Command } from 'components/editing/commands/interfaces';
 import { Transforms } from 'slate';
 import * as ContentModel from 'data/content/model';
@@ -22,7 +23,7 @@ const YouTubeCreation = (props: YouTubeCreationProps) => {
     <div>
       <p className="mb-4">
         Not sure which video you want to use? Visit{' '}
-        <a href="https://www.youtube.com" target="_blank">
+        <a href="https://www.youtube.com" target="_blank" rel="noreferrer">
           YouTube
         </a>{' '}
         to search and find it.

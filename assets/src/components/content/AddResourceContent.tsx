@@ -159,7 +159,7 @@ export const AddResourceContent = ({
     const editorDesc: EditorDesc = editorMap[k];
     const enabled = editorDesc.globallyAvailable || editorDesc.enabledForProject;
     return (
-      <React.Fragment>
+      <React.Fragment key={editorDesc.slug}>
         {enabled && (
           <button
             className="btn btn-sm insert-activity-btn"

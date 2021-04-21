@@ -42,7 +42,7 @@ export class OrderedMediaLibrary extends Immutable.Record(defaultContent) {
     return this.data.get(guid);
   }
 
-  getItems(offset: number = 0, count: number = this.items.size) {
+  getItems(offset = 0, count: number = this.items.size) {
     return this.items
       .slice(offset, count)
       .map((guid) => this.data.get(guid))

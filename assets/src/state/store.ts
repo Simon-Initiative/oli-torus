@@ -3,6 +3,7 @@ import { composeWithDevTools } from 'redux-devtools-extension';
 import { createLogger } from 'redux-logger';
 import thunk from 'redux-thunk';
 import rootReducer, { State, initState } from 'state';
+import nextReducer from './index';
 
 export function configureStore(initialState?: any) {
   const logger = createLogger({
@@ -32,7 +33,7 @@ export function configureStore(initialState?: any) {
 
   if ((module as any).hot) {
     (module as any).hot.accept('./index', () => {
-      const nextReducer = require('./index');
+
       store.replaceReducer(nextReducer);
     });
   }

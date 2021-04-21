@@ -43,7 +43,7 @@ function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
     && !!prevProps.selection && !!nextProps.selection
     && Range.includes(prevProps.selection, nextProps.selection);
 }
-
+// eslint-disable-next-line
 export const Editor = React.memo((props: EditorProps) => {
 
   const [isPerformingAsyncAction, setIsPerformingAsyncAction] = useState(false);
@@ -116,6 +116,7 @@ export const Editor = React.memo((props: EditorProps) => {
         onPaste={async (
           e: React.ClipboardEvent<HTMLDivElement>,
           editor: SlateEditor,
+          // eslint-disable-next-line
           next: Function,
         ) => {
           setIsPerformingAsyncAction(true);

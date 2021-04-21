@@ -8,7 +8,8 @@ const questionTypes: { value: string; displayValue: string }[] = [
 type OptionsProps = {
   editMode: boolean;
 };
-export const QuestionTypeDropdown = ({}: OptionsProps) => {
+// eslint-disable-next-line
+export const QuestionTypeDropdown = ({ }: OptionsProps) => {
   const onChange = (v: ChangeEvent<HTMLSelectElement>) => null;
 
   return (

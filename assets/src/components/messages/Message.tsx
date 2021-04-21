@@ -14,7 +14,7 @@ const classesForSeverity = {
   [Messages.Severity.Information]: 'alert alert-info',
   [Messages.Severity.Task]: 'alert alert-light',
 };
-
+// eslint-disable-next-line
 export class Message extends React.PureComponent<MessageProps, {}> {
   nav: any;
 

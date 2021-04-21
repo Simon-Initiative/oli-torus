@@ -70,6 +70,6 @@ export class MultipleChoiceAuthoring extends AuthoringElement<MultipleChoiceMode
     );
   }
 }
-
+// eslint-disable-next-line
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
 window.customElements.define(manifest.authoring.element, MultipleChoiceAuthoring);

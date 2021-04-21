@@ -6,7 +6,7 @@ import { RichText, Operation, ScoringStrategy, Choice } from '../types';
 export const makeResponse = (rule: string, score: number, text: '') =>
   ({ id: guid(), rule, score, feedback: fromText(text) });
 
-export const defaultMCModel : () => MultipleChoiceModelSchema = () => {
+export const defaultMCModel: () => MultipleChoiceModelSchema = () => {
   const choiceA: Choice = fromText('Choice A');
   const choiceB: Choice = fromText('Choice B');
 
@@ -54,7 +54,7 @@ export function fromText(text: string): { id: string, content: RichText } {
   };
 }
 
-export const feedback = (text: string, match: string | number, score: number = 0) => ({
+export const feedback = (text: string, match: string | number, score = 0) => ({
   ...fromText(text),
   match,
   score,

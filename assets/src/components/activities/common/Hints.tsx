@@ -33,7 +33,7 @@ export const Hints = ({
 
       {/* Deer in headlights hint */}
       <Description>
-        "Deer in headlights" hint - restate the problem for students who are totally confused
+        &quot;Deer in headlights&quot; hint - restate the problem for students who are totally confused
       </Description>
       <RichTextEditor
         className="mb-3"
@@ -45,7 +45,7 @@ export const Hints = ({
 
       {/* Cognitive hints */}
       <div className="mb-2">
-        <Description>One or more "Cognitive" hints - explain how to solve the problem</Description>
+        <Description>One or more &quot;Cognitive&quot; hints - explain how to solve the problem</Description>
       </div>
       {cognitiveHints.map((hint, index) => (
         <React.Fragment key={hint.id}>
@@ -72,7 +72,7 @@ export const Hints = ({
 
       {/* Bottom-out hint */}
       <Description>
-        "Bottom out" hint - explain the answer for students who are still lost
+        &quot;Bottom out&quot; hint - explain the answer for students who are still lost
       </Description>
       <RichTextEditor
         className="mb-3"

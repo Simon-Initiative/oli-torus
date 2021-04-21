@@ -117,7 +117,8 @@ class ActivityEditor extends React.Component<ActivityEditorProps, ActivityEditor
       .initialize(
         acquireLock.bind(undefined, projectSlug, resourceSlug),
         releaseLock.bind(undefined, projectSlug, resourceSlug),
-        () => {},
+        // eslint-disable-next-line
+        () => { },
         (failure) => this.publishErrorMessage(failure),
         (persistence) => this.setState({ persistence }),
       )
@@ -308,13 +309,13 @@ class ActivityEditor extends React.Component<ActivityEditorProps, ActivityEditor
     );
   }
 }
-
-interface StateProps {}
+// eslint-disable-next-line
+interface StateProps { }
 
 interface DispatchProps {
   onLoadPreferences: () => void;
 }
-
+// eslint-disable-next-line
 type OwnProps = {};
 
 const mapStateToProps = (state: State, ownProps: OwnProps): StateProps => {

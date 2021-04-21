@@ -5,8 +5,8 @@ import { updateModel, getEditMode } from 'components/editing/models/utils';
 import * as ContentModel from 'data/content/model';
 import { EditorProps } from 'components/editing/models/interfaces';
 import * as Settings from 'components/editing/models/settings/Settings';
-
-export interface CodeProps extends EditorProps<ContentModel.Code> {}
+// eslint-disable-next-line
+export interface CodeProps extends EditorProps<ContentModel.Code> { }
 
 export const CodeEditor = (props: CodeProps) => {
   const { model, editor } = props;

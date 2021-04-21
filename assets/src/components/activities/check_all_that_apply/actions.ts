@@ -101,6 +101,7 @@ export class Actions {
         case 'SimpleCATA':
           return;
         case 'TargetedCATA':
+          // eslint-disable-next-line
           const response = makeResponse(
             createRuleForIds(
               [],
@@ -138,6 +139,7 @@ export class Actions {
         case 'SimpleCATA':
           break;
         case 'TargetedCATA':
+          // eslint-disable-next-line
           const assoc = model.authoring.targeted.find(
             (assoc) => getResponseId(assoc) === responseId,
           );
@@ -200,7 +202,9 @@ const updateResponseRules = (model: CATA) => {
       getIncorrectResponse(model).rule = invertRule(getCorrectResponse(model).rule);
       break;
     case 'TargetedCATA':
+      // eslint-disable-next-line
       const targetedRules: string[] = [];
+      // eslint-disable-next-line
       const allChoiceIds = model.choices.map((choice) => choice.id);
       model.authoring.targeted.forEach((assoc) => {
         const targetedRule = createRuleForIds(

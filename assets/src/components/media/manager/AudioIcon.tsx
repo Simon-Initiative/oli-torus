@@ -8,7 +8,9 @@ export interface AudioIconProps {
  * AudioIcon React Stateless Component
  */
 export const AudioIcon: React.StatelessComponent<AudioIconProps> = ({
+  // eslint-disable-next-line
   className,
+  // eslint-disable-next-line
   children,
 }) => {
   return (
