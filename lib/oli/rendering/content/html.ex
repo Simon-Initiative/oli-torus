@@ -5,7 +5,10 @@ defmodule Oli.Rendering.Content.Html do
   Important: any changes to this file must be replicated in writers/html.ts for activity rendering.
   """
   alias Oli.Rendering.Context
+  alias Oli.Utils
   alias Phoenix.HTML
+
+  require Logger
 
   @behaviour Oli.Rendering.Content
 
@@ -65,6 +68,10 @@ defmodule Oli.Rendering.Content.Html do
     ])
   end
 
+  def img(%Context{} = context, _, e) do
+    missing_media(context, e)
+  end
+
   def youtube(%Context{} = _context, _, %{"src" => src} = attrs) do
     figure(Map.put(attrs, "full-width", true), [
       """
@@ -77,6 +84,10 @@ defmodule Oli.Rendering.Content.Html do
     ])
   end
 
+  def youtube(%Context{} = context, _, e) do
+    missing_media(context, e)
+  end
+
   def iframe(%Context{} = _context, _, %{"src" => src} = attrs) do
     figure(Map.put(attrs, "full-width", true), [
       """
@@ -87,10 +98,18 @@ defmodule Oli.Rendering.Content.Html do
     ])
   end
 
+  def iframe(%Context{} = context, _, e) do
+    missing_media(context, e)
+  end
+
   def audio(%Context{} = _context, _, %{"src" => src} = attrs) do
     figure(attrs, [~s|<audio controls src="#{escape_xml!(src)}">
       Your browser does not support the <code>audio</code> element.
     </audio>\n|])
+  end
+
+  def audio(%Context{} = context, _, e) do
+    missing_media(context, e)
   end
 
   def table(%Context{} = _context, next, attrs) do
@@ -149,6 +168,20 @@ defmodule Oli.Rendering.Content.Html do
     ])
   end
 
+  def code(
+        %Context{} = context,
+        next,
+        attrs
+      ) do
+    maybe_log_error(context, attrs)
+
+    figure(attrs, [
+      ~s|<pre><code class="language-none">|,
+      next.(),
+      "</code></pre>\n"
+    ])
+  end
+
   def code_line(%Context{} = _context, next, _) do
     [next.(), "\n"]
   end
@@ -163,6 +196,11 @@ defmodule Oli.Rendering.Content.Html do
     else
       external_link(context, next, href)
     end
+  end
+
+  def a(%Context{} = context, next, e) do
+    maybe_log_error(context, e)
+    external_link(context, next, "#")
   end
 
   defp internal_link(%Context{section_slug: section_slug}, next, href) do
@@ -296,5 +334,29 @@ defmodule Oli.Rendering.Content.Html do
     case display do
       _ -> "d-block"
     end
+  end
+
+  defp missing_media(%Context{render_opts: render_opts} = context, element) do
+    error_id = Utils.random_string(8)
+    error_msg = "Rendering error: #{Kernel.inspect(element)}"
+
+    if render_opts.log_errors,
+      do: Logger.error("Render Error ##{error_id} #{error_msg}"),
+      else: nil
+
+    if render_opts.render_errors do
+      error(context, element, {:invalid, error_id, error_msg})
+    else
+      []
+    end
+  end
+
+  defp maybe_log_error(%Context{render_opts: render_opts}, element) do
+    error_id = Utils.random_string(8)
+    error_msg = "Rendering error: #{Kernel.inspect(element)}"
+
+    if render_opts.log_errors,
+      do: Logger.error("Render Error ##{error_id} #{error_msg}"),
+      else: nil
   end
 end
