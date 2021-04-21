@@ -19,8 +19,8 @@ $workspace-sidebar-bg: $gray-100 !default;
 $workspace-sidebar-link-color: $gray-800 !default;
 $workspace-bg:  $white !default;
 
-$code-color: rgba(0,0,0,.84);
-$font-family-monospace: "Source Code Pro", "Courier New", Courier, monospace;
+$code-color: rgba(0,0,0,.84) !default;
+$font-family-monospace: "Source Code Pro", "Courier New", Courier, monospace !default;
 
 // Master z-index list
 // Because of the inherent global nature of z-index, all z-indexes used should be defined and

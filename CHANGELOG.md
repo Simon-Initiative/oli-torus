@@ -10,6 +10,7 @@
   - Add bulk fetch endpoint for retrieving collection of activity attempts
   - Add sequential page navigation to editor and full course preview
   - Enable ecto repository stats in live dashboard
+  - Add ability to unlink a course section from an LMS
 
 ### Bug fixes
   - Support page-to-page links during course ingestion

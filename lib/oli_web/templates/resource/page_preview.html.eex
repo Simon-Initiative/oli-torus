@@ -19,7 +19,7 @@
   </div>
 </div>
 
-<h1><%= @context.title %></h1>
+<h1 class="title"><%= @context.title %></h1>
 
 <%= render OliWeb.PageDeliveryView, "_objectives.html", objectives: @objectives %>
 

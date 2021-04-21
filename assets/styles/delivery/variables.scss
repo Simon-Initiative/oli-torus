@@ -8,8 +8,8 @@
 @import '../../node_modules/bootstrap/scss/_variables.scss';
 
 /** OLI specific variables **/
-$code-color: rgba(0,0,0,.84);
-$font-family-monospace: "Source Code Pro", "Courier New", Courier, monospace;
+$code-color: rgba(0,0,0,.84) !default;
+$font-family-monospace: "Source Code Pro", "Courier New", Courier, monospace !default;
 
 $choice-selected-bg: lighten($primary, 42%) !default;
 $choice-selected-bg-hover: lighten($choice-selected-bg, 5%) !default;
@@ -32,3 +32,9 @@ $activity-purpose-checkpoint-color: lighten($blue, 10%) !default;
 $activity-purpose-didigetthis-color: lighten($purple, 10%) !default;
 $activity-purpose-learnbydoing-color: lighten($green, 10%) !default;
 $activity-purpose-manystudentswonder-color: lighten($cyan, 10%) !default;
+
+$title-color: $gray-800 !default;
+
+$footer-bg-color: $gray-100 !default;
+$footer-color: $gray-900 !default;
+$footer-height: 60px !default;

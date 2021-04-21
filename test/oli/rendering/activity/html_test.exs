@@ -78,8 +78,8 @@ defmodule Oli.Content.Activity.HtmlTest do
                  Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
                assert rendered_html_string =~
-                        "<div class=\"activity invalid alert alert-danger\">Activity is invalid"
-             end) =~ "Activity is invalid"
+                        "<div class=\"activity invalid alert alert-danger\">Activity error"
+             end) =~ "Activity error"
     end
 
     test "handles missing activity from activity-map gracefully", %{author: author} do
