@@ -1,0 +1,22 @@
+[
+  {
+    "type": "content",
+    "id": 2635423624,
+    "children": [
+      {
+        "type": "code",
+        "id": 2652513352,
+        "children": [
+          {
+            "type": "code_line",
+            "children": [
+              {
+                "text": "this is text from the code block"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

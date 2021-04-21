@@ -47,16 +47,32 @@ defmodule Oli.Rendering.Content.Plaintext do
     ["[image with src #{src}] "]
   end
 
+  def img(%Context{} = _context, _, _) do
+    ["[image with missing src] "]
+  end
+
   def youtube(%Context{} = _context, _, %{"src" => src}) do
     ["[youtube with src #{src}] "]
+  end
+
+  def youtube(%Context{} = _context, _, _) do
+    ["[youtube with missing src] "]
   end
 
   def iframe(%Context{} = _context, _, %{"src" => src}) do
     ["[iframe with src #{src}] "]
   end
 
+  def iframe(%Context{} = _context, _, _) do
+    ["[iframe with missing src] "]
+  end
+
   def audio(%Context{} = _context, _, %{"src" => src}) do
-    ["[audio with src #{src} "]
+    ["[audio with src #{src}] "]
+  end
+
+  def audio(%Context{} = _context, _, _) do
+    ["[audio with missing src] "]
   end
 
   def table(%Context{} = _context, next, _) do
@@ -95,9 +111,7 @@ defmodule Oli.Rendering.Content.Plaintext do
     [next.()]
   end
 
-  def code(%Context{} = _context, next, %{
-        "language" => _language
-      }) do
+  def code(%Context{} = _context, next, _) do
     ["[Code]: ", next.(), " "]
   end
 
@@ -110,7 +124,11 @@ defmodule Oli.Rendering.Content.Plaintext do
   end
 
   def a(%Context{} = _context, next, %{"href" => href}) do
-    ["[link to #{href}", next.(), " "]
+    ["[link to #{href} ", next.(), " "]
+  end
+
+  def a(%Context{} = _context, next, _) do
+    ["[link with missing href ", next.(), " "]
   end
 
   def definition(%Context{} = _context, next, _) do

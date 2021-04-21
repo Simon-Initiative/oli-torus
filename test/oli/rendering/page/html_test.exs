@@ -105,5 +105,68 @@ defmodule Oli.Content.Page.HtmlTest do
                         "<div class=\"page-item unsupported\">Page item of type 'some-unsupported-page-item' is not supported"
              end) =~ "Page item is not supported"
     end
+
+    test "handles missing language attributes on codeblocks gracefully", %{author: author} do
+      robustnesss_test(
+        author,
+        "./test/oli/rendering/page/missing_language.json",
+        "this is text from the code block"
+      )
+    end
+
+    test "handles links that are missing hrefs", %{author: author} do
+      robustnesss_test(
+        author,
+        "./test/oli/rendering/page/link_missing_href.json",
+        "website"
+      )
+    end
+
+    test "renders malformed images robustly", %{author: author} do
+      robustnesss_test(
+        author,
+        "./test/oli/rendering/page/image_missing_src.json",
+        "some specific content"
+      )
+    end
+
+    test "renders malformed youtube videos robustly", %{author: author} do
+      robustnesss_test(
+        author,
+        "./test/oli/rendering/page/youtube_missing_src.json",
+        "some specific content"
+      )
+    end
+
+    test "renders malformed audio robustly", %{author: author} do
+      robustnesss_test(
+        author,
+        "./test/oli/rendering/page/audio_missing_src.json",
+        "some specific content"
+      )
+    end
+
+    test "renders malformed iframe robustly", %{author: author} do
+      robustnesss_test(
+        author,
+        "./test/oli/rendering/page/iframe_missing_src.json",
+        "some specific content"
+      )
+    end
+
+    defp robustnesss_test(author, file, to_check) do
+      {:ok, page_content} = read_json_file(file)
+
+      assert capture_log(fn ->
+               context = %Context{user: author, activity_map: %{}}
+               rendered_html = Page.render(context, page_content, Page.Html)
+
+               rendered_html_string =
+                 Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+               # ensure unsupported page item doesnt prevent rendering over other valid items
+               assert rendered_html_string =~ to_check
+             end) =~ "Render Error"
+    end
   end
 end
