@@ -261,6 +261,7 @@ OliWeb.Curriculum.EntryLive.html
 OliWeb.Curriculum.LearningSummaryLive.html
 OliWeb.Curriculum.Rollup.html
 OliWeb.Curriculum.Settings.html
+OliWeb.Delivery.ManageSection.html
 OliWeb.DeliveryController.html
 OliWeb.DeliveryView.html
 OliWeb.DeploymentController.html
@@ -377,8 +378,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-da4944a186.js
-dist/sidebar_items-5c01017745.js
+dist/search_items-1cb1f99e91.js
+dist/sidebar_items-35bbc24e9c.js
 index.html
 license.html
 readme.html
