@@ -33,7 +33,7 @@ $(function() {
   <div>
     <%= if assigns[:author] != nil do %>
       <div class="my-5">
-        <h4>My Projects</h4>
+        <h4>Available Projects</h4>
         <%= if Enum.count(@my_publications) > 0 do %>
           <table class="table table-hover">
             <thead>
