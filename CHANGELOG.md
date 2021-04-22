@@ -22,6 +22,7 @@
   - Change activity rule, outcome modeling for use in adaptive activities
   - Fix an issue when creating section allows multiple sections to be created
   - Improved rendering robustness when content elements are missing key attributes
+  - Disable access to OpenAPI docs in production
 
 ## 0.8.0 (2021-4-12)
 
