@@ -137,6 +137,4 @@ const TextFlow: React.FC<any> = (props: any) => {
 
 export const tagName = 'janus-text-flow';
 
-// TODO: restore web component
-
 export default TextFlow;

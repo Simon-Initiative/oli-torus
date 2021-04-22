@@ -14,6 +14,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Resources.ResourceType
   alias Oli.Grading
+  alias Oli.PartComponents
 
   def index(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
@@ -63,6 +64,7 @@ defmodule OliWeb.PageDeliveryController do
       content: Jason.encode!(context.page.content),
       summary: summary,
       scripts: Activities.get_activity_scripts(:delivery_script),
+      part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
       section_slug: section_slug,
       title: context.page.title,
       resource_id: context.page.resource_id,
