@@ -11,7 +11,6 @@ defmodule Oli.PartComponents.PartComponentRegistration do
     field :delivery_element, :string
     field :icon, :string
     field :title, :string
-    field :allow_client_evaluation, :boolean, default: false
     field :globally_available, :boolean, default: false
 
     many_to_many :projects, Oli.Authoring.Course.Project,
@@ -32,7 +31,6 @@ defmodule Oli.PartComponents.PartComponentRegistration do
       :authoring_element,
       :delivery_script,
       :authoring_script,
-      :allow_client_evaluation,
       :globally_available
     ])
     |> validate_required([

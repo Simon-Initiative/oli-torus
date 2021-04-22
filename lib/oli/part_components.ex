@@ -16,7 +16,6 @@ defmodule Oli.PartComponents do
       authoring_element: manifest.authoring.element,
       delivery_script: manifest.id <> "_delivery.js",
       delivery_element: manifest.delivery.element,
-      allow_client_evaluation: manifest.allowClientEvaluation,
       globally_available: manifest.global,
       description: manifest.description,
       title: manifest.friendlyName,

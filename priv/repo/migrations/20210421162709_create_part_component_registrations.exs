@@ -11,7 +11,6 @@ defmodule Oli.Repo.Migrations.CreatePartComponentRegistrations do
       add :authoring_element, :string
       add :delivery_script, :text
       add :authoring_script, :text
-      add :allow_client_evaluation, :boolean
       add :globally_available, :boolean, default: false, null: false
 
       timestamps(type: :timestamptz)
