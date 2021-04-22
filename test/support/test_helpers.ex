@@ -8,6 +8,7 @@ defmodule Oli.TestHelpers do
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing
+  alias Oli.PartComponents
 
   import Mox
 
@@ -300,5 +301,23 @@ defmodule Oli.TestHelpers do
            })
        }}
     end)
+  end
+
+  def part_component_registration_fixture(attrs \\ %{}) do
+    params =
+      attrs
+      |> Enum.into(%{
+        authoring_script: "test_part_component_authoring.js",
+        authoring_element: "test-part-component-authoring",
+        delivery_script: "test_part_component_delivery.js",
+        delivery_element: "test-part-component-delivery",
+        globally_available: false,
+        description: "test part component for testing",
+        title: "Test Part Component",
+        icon: "nothing",
+        slug: "test_part_component"
+      })
+
+      {:ok, registration} = PartComponents.create_registration(params)
   end
 end
