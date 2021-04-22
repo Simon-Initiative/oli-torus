@@ -17,6 +17,7 @@ import { valueOr } from 'utils/common';
 import { Evaluator, EvalContext } from './Evaluator';
 import { lastPart } from './utils';
 import { defaultWriterContext } from 'data/content/writers/context';
+import { ImageCodeEditor } from './sections/ImageCodeEditor';
 
 type Evaluation = {
   score: number;
@@ -248,16 +249,16 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   const ungradedDetails = props.graded
     ? null
     : [
-      evaluationSummary,
-      <Hints
-        key="hints"
-        onClick={onRequestHint}
-        hints={hints}
-        context={writerContext}
-        hasMoreHints={hasMoreHints}
-        isEvaluated={isEvaluated}
-      />,
-    ];
+        evaluationSummary,
+        <Hints
+          key="hints"
+          onClick={onRequestHint}
+          hints={hints}
+          context={writerContext}
+          hasMoreHints={hasMoreHints}
+          isEvaluated={isEvaluated}
+        />,
+      ];
 
   const renderOutput = () => {
     if (output === '') {
@@ -320,8 +321,8 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
       <div className="activity-content">
         <Stem stem={stem} context={writerContext} />
 
-        <div className="">
-          <Input input={input} isEvaluated={isEvaluated} onChange={onInputChange} />
+        <div>
+          <ImageCodeEditor value={input} disabled={isEvaluated} onChange={onInputChange} />
           {runButton} {maybeSubmitButton}
         </div>
 

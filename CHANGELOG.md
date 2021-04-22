@@ -11,6 +11,7 @@
   - Add sequential page navigation to editor and full course preview
   - Enable ecto repository stats in live dashboard
   - Add ability to unlink a course section from an LMS
+  - Image code activity: use syntax highlighting code editor
 
 ### Bug fixes
   - Support page-to-page links during course ingestion
