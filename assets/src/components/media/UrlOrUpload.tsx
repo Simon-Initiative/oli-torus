@@ -59,31 +59,32 @@ export const UrlOrUpload = (props: Props) => {
       </div>
       {source === 'upload'
         ? <MediaManager
-            toggleDisableInsert={props.toggleDisableInsert}
-            projectSlug={props.projectSlug}
-            onEdit={() => { }}
-            mimeFilter={props.mimeFilter}
-            selectionType={SELECTION_TYPES.SINGLE}
-            initialSelectionPaths={props.initialSelectionPaths}
-            onSelectionChange={props.onMediaSelectionChange} />
+          toggleDisableInsert={props.toggleDisableInsert}
+          projectSlug={props.projectSlug}
+          // eslint-disable-next-line
+          onEdit={() => { }}
+          mimeFilter={props.mimeFilter}
+          selectionType={SELECTION_TYPES.SINGLE}
+          initialSelectionPaths={props.initialSelectionPaths}
+          onSelectionChange={props.onMediaSelectionChange} />
         : <div className="media-url">
-            <input
-              className="form-control w-100"
-              placeholder="Enter the media URL address"
-              value={url}
-              onChange={({ target: { value } }) => {
-                setUrl(value);
-                onUrlChange(value);
+          <input
+            className="form-control w-100"
+            placeholder="Enter the media URL address"
+            value={url}
+            onChange={({ target: { value } }) => {
+              setUrl(value);
+              onUrlChange(value);
 
-                if (!toggleDisableInsert) {
-                  return;
-                }
-                return value.trim()
-                  ? toggleDisableInsert(false)
-                  : toggleDisableInsert(true);
-              }}
-            />
-          </div>
+              if (!toggleDisableInsert) {
+                return;
+              }
+              return value.trim()
+                ? toggleDisableInsert(false)
+                : toggleDisableInsert(true);
+            }}
+          />
+        </div>
       }
     </>
   );

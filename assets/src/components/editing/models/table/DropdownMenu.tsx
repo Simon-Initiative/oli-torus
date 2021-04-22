@@ -9,7 +9,6 @@ interface Props {
   model: ContentModel.TableData | ContentModel.TableHeader;
 }
 export const DropdownMenu = (props: Props) => {
-
   const ref = useRef();
   const { editor, model } = props;
 
@@ -52,7 +51,6 @@ export const DropdownMenu = (props: Props) => {
     }
     const row: ContentModel.TableRow = ContentModel.tr(tds);
     Transforms.insertNodes(editor, row, { at: Path.next(parentPath) });
-
   };
 
   const onAddColumnBefore = () => {
@@ -104,7 +102,7 @@ export const DropdownMenu = (props: Props) => {
   };
 
   const onDeleteTable = () => {
-    const [tableEntry] = Editor.nodes(editor, { match: n => n.type === 'table' });
+    const [tableEntry] = Editor.nodes(editor, { match: (n) => n.type === 'table' });
     if (!tableEntry) return;
     const [, path] = tableEntry;
     Transforms.removeNodes(editor, { at: path });
@@ -112,47 +110,50 @@ export const DropdownMenu = (props: Props) => {
 
   return (
     <div ref={ref as any} className="dropdown table-dropdown" contentEditable={false}>
-      <button type="button"
+      <button
+        type="button"
         className="dropdown-toggle btn"
         data-reference="parent"
-        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        data-toggle="dropdown"
+        aria-haspopup="true"
+        aria-expanded="false"
+      >
         <span className="sr-only">Toggle Table Cell Options</span>
       </button>
       <div className="dropdown-menu">
-
-        <button type="button"
-          className="dropdown-item"
-          onClick={onToggleHeader}>Toggle Header</button>
+        <button type="button" className="dropdown-item" onClick={onToggleHeader}>
+          Toggle Header
+        </button>
 
         <div className="dropdown-divider"></div>
 
         <h6 className="dropdown-header">Insert</h6>
-        <button type="button"
-          className="dropdown-item"
-          onClick={onAddRowBefore}>Row before</button>
-        <button type="button"
-          className="dropdown-item"
-          onClick={onAddRowAfter}>Row after</button>
-        <button type="button"
-          className="dropdown-item"
-          onClick={onAddColumnBefore}>Column before</button>
-        <button type="button"
-          className="dropdown-item"
-          onClick={onAddColumnAfter}>Column after</button>
+        <button type="button" className="dropdown-item" onClick={onAddRowBefore}>
+          Row before
+        </button>
+        <button type="button" className="dropdown-item" onClick={onAddRowAfter}>
+          Row after
+        </button>
+        <button type="button" className="dropdown-item" onClick={onAddColumnBefore}>
+          Column before
+        </button>
+        <button type="button" className="dropdown-item" onClick={onAddColumnAfter}>
+          Column after
+        </button>
 
         <div className="dropdown-divider"></div>
 
         <h6 className="dropdown-header">Delete</h6>
-        <button type="button"
-          className="dropdown-item"
-          onClick={onDeleteRow}>Row</button>
-        <button type="button"
-          className="dropdown-item"
-          onClick={onDeleteColumn}>Column</button>
+        <button type="button" className="dropdown-item" onClick={onDeleteRow}>
+          Row
+        </button>
+        <button type="button" className="dropdown-item" onClick={onDeleteColumn}>
+          Column
+        </button>
 
-        <button type="button"
-          className="dropdown-item"
-          onClick={onDeleteTable}>Table</button>
+        <button type="button" className="dropdown-item" onClick={onDeleteTable}>
+          Table
+        </button>
       </div>
     </div>
   );

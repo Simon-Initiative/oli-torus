@@ -245,7 +245,8 @@ defmodule Oli.Grading do
           rev.deleted == false and
             rev.graded == true and
             rev.resource_type_id == ^resource_type_id and
-            s.slug == ^section_slug,
+            s.slug == ^section_slug and
+            s.status != :deleted,
         select: rev
     )
   end

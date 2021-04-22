@@ -14,11 +14,13 @@ type InsertionToolbarProps = {
 };
 
 function insertionAreEqual(prevProps: InsertionToolbarProps, nextProps: InsertionToolbarProps) {
-  return prevProps.commandContext === nextProps.commandContext
-    && prevProps.toolbarItems === nextProps.toolbarItems
-    && prevProps.isPerformingAsyncAction === nextProps.isPerformingAsyncAction;
+  return (
+    prevProps.commandContext === nextProps.commandContext &&
+    prevProps.toolbarItems === nextProps.toolbarItems &&
+    prevProps.isPerformingAsyncAction === nextProps.isPerformingAsyncAction
+  );
 }
-
+// eslint-disable-next-line
 export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
   const { toolbarItems } = props;
   const ref = useRef();
@@ -48,14 +50,14 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
 
   return (
     <div
-      onMouseDown={e => e.preventDefault()}
+      onMouseDown={(e) => e.preventDefault()}
       ref={ref as any}
       className={classNames(['toolbar add-resource-content', isPopoverOpen ? 'active' : ''])}
     >
       <div className="insert-button-container">
         <Popover
           containerClassName="add-resource-popover"
-          onClickOutside={e => setIsPopoverOpen(false)}
+          onClickOutside={(e) => setIsPopoverOpen(false)}
           isOpen={isPopoverOpen}
           align="start"
           transitionDuration={0}
@@ -63,38 +65,49 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
           content={
             <div className="hovering-toolbar">
               <div className="btn-group btn-group-vertical btn-group-sm" role="group">
-                {[...toolbarItems.map((t, i) => {
-                  if (t.type !== 'CommandDesc') {
-                    return <Spacer key={'spacer-' + i} />;
-                  }
-                  if (!t.command.precondition(editor)) {
-                    return null;
-                  }
+                {[
+                  ...toolbarItems.map((t, i) => {
+                    if (t.type !== 'CommandDesc') {
+                      return <Spacer key={'spacer-' + i} />;
+                    }
+                    if (!t.command.precondition(editor)) {
+                      return null;
+                    }
 
-                  const shared = {
-                    style: 'btn-dark',
-                    key: t.description(editor),
-                    icon: t.icon(editor),
-                    tooltip: t.description(editor),
-                    command: t.command,
-                    context: props.commandContext,
-                    setParentPopoverOpen: setIsPopoverOpen,
-                  };
+                    const shared = {
+                      style: 'btn-dark',
+                      key: t.description(editor),
+                      icon: t.icon(editor),
+                      tooltip: t.description(editor),
+                      command: t.command,
+                      context: props.commandContext,
+                      setParentPopoverOpen: setIsPopoverOpen,
+                    };
 
-                  if (t.command.obtainParameters === undefined) {
-                    return <ToolbarButton {...shared} />;
-                  }
-                  return <DropdownToolbarButton {...shared} />;
-                })].filter(x => x)}
+                    if (t.command.obtainParameters === undefined) {
+                      return <ToolbarButton {...shared} />;
+                    }
+                    // eslint-disable-next-line
+                    return <DropdownToolbarButton {...shared} />;
+                  }),
+                ].filter((x) => x)}
               </div>
             </div>
-          }>
-          {ref => <div ref={ref} className="insert-button"
-            onClick={() => setIsPopoverOpen(!isPopoverOpen)}>
-            {props.isPerformingAsyncAction
-              ? <LoadingSpinner size={LoadingSpinnerSize.Normal} />
-              : <i className="fa fa-plus"></i>}
-          </div>}
+          }
+        >
+          {(ref) => (
+            <div
+              ref={ref}
+              className="insert-button"
+              onClick={() => setIsPopoverOpen(!isPopoverOpen)}
+            >
+              {props.isPerformingAsyncAction ? (
+                <LoadingSpinner size={LoadingSpinnerSize.Normal} />
+              ) : (
+                <i className="fa fa-plus"></i>
+              )}
+            </div>
+          )}
         </Popover>
       </div>
     </div>

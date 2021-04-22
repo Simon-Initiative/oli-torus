@@ -5,7 +5,10 @@ defmodule Oli.Rendering.Content.Html do
   Important: any changes to this file must be replicated in writers/html.ts for activity rendering.
   """
   alias Oli.Rendering.Context
+  alias Oli.Utils
   alias Phoenix.HTML
+
+  require Logger
 
   @behaviour Oli.Rendering.Content
 
@@ -54,62 +57,65 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def img(%Context{} = _context, _, %{"src" => src} = attrs) do
-    alt =
+    maybeAlt =
       case attrs do
-        %{"alt" => alt} -> " alt=#{alt}"
+        %{"alt" => alt} -> " alt=#{escape_xml!(alt)}"
         _ -> ""
       end
 
-    # if attrs["caption"]
-    figure(attrs, [~s|<img class="#{display_class(attrs)}"#{alt} src="#{src}"/>\n|])
-    # else [~s|<img class="#{display_class(attrs)}"#{alt} src="#{src}"/>\n|]
-    # end
+    figure(attrs, [
+      ~s|<img class="#{display_class(attrs)}"#{maybeAlt} src="#{escape_xml!(src)}"/>\n|
+    ])
+  end
+
+  def img(%Context{} = context, _, e) do
+    missing_media(context, e)
   end
 
   def youtube(%Context{} = _context, _, %{"src" => src} = attrs) do
-    # if attrs["caption"]
-    # do
     figure(Map.put(attrs, "full-width", true), [
       """
       <div class="youtube-wrapper">
-        <iframe id="#{src}" class="#{display_class(attrs)}" allowfullscreen src="https://www.youtube.com/embed/#{
-        src
+        <iframe id="#{escape_xml!(src)}" class="#{display_class(attrs)}" allowfullscreen src="https://www.youtube.com/embed/#{
+        escape_xml!(src)
       }"></iframe>
       </div>
       """
     ])
+  end
 
-    # else
-    #   [
-    #     """
-    #     <div class="youtube-wrapper #{display_class(attrs)}">
-    #       <iframe id="#{src}" allowfullscreen src="https://www.youtube.com/embed/#{src}"></iframe>
-    #     </div>
-    #     """
-    #   ]
-    # end
+  def youtube(%Context{} = context, _, e) do
+    missing_media(context, e)
   end
 
   def iframe(%Context{} = _context, _, %{"src" => src} = attrs) do
     figure(Map.put(attrs, "full-width", true), [
       """
       <div class="webpage-wrapper">
-        <iframe class="#{display_class(attrs)}" allowfullscreen src="#{src}"></iframe>
+        <iframe class="#{display_class(attrs)}" allowfullscreen src="#{escape_xml!(src)}"></iframe>
       </div>
       """
     ])
   end
 
+  def iframe(%Context{} = context, _, e) do
+    missing_media(context, e)
+  end
+
   def audio(%Context{} = _context, _, %{"src" => src} = attrs) do
-    figure(attrs, [~s|<audio controls src="#{src}">
+    figure(attrs, [~s|<audio controls src="#{escape_xml!(src)}">
       Your browser does not support the <code>audio</code> element.
     </audio>\n|])
+  end
+
+  def audio(%Context{} = context, _, e) do
+    missing_media(context, e)
   end
 
   def table(%Context{} = _context, next, attrs) do
     caption =
       case attrs do
-        %{"caption" => caption} -> "<caption>#{caption}</caption>"
+        %{"caption" => caption} -> "<caption>#{escape_xml!(caption)}</caption>"
         _ -> ""
       end
 
@@ -155,7 +161,25 @@ defmodule Oli.Rendering.Content.Html do
           "language" => language
         } = attrs
       ) do
-    figure(attrs, [~s|<pre><code class="language-#{language}">|, next.(), "</code></pre>\n"])
+    figure(attrs, [
+      ~s|<pre><code class="language-#{escape_xml!(language)}">|,
+      next.(),
+      "</code></pre>\n"
+    ])
+  end
+
+  def code(
+        %Context{} = context,
+        next,
+        attrs
+      ) do
+    maybe_log_error(context, attrs)
+
+    figure(attrs, [
+      ~s|<pre><code class="language-none">|,
+      next.(),
+      "</code></pre>\n"
+    ])
   end
 
   def code_line(%Context{} = _context, next, _) do
@@ -172,6 +196,11 @@ defmodule Oli.Rendering.Content.Html do
     else
       external_link(context, next, href)
     end
+  end
+
+  def a(%Context{} = context, next, e) do
+    maybe_log_error(context, e)
+    external_link(context, next, "#")
   end
 
   defp internal_link(%Context{section_slug: section_slug}, next, href) do
@@ -267,8 +296,10 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   # Accessible captions are created using a combination of the <figure /> and <figcaption /> elements.
+  defp figure(%{"caption" => ""} = _attrs, content), do: content
+
   defp figure(%{"caption" => caption} = attrs, content) do
-    [~s|<div class="figure-wrapper #{display_class(attrs)}">|] ++
+    [~s|<div class="figure-wrapper text-center #{display_class(attrs)}">|] ++
       [
         "<figure#{
           if attrs["full-width"] do
@@ -288,7 +319,7 @@ defmodule Oli.Rendering.Content.Html do
           end
         }>"
       ] ++
-      [caption] ++
+      [escape_xml!(caption)] ++
       ["</figcaption>"] ++
       ["</figure>"] ++
       ["</div>"]
@@ -303,5 +334,29 @@ defmodule Oli.Rendering.Content.Html do
     case display do
       _ -> "d-block"
     end
+  end
+
+  defp missing_media(%Context{render_opts: render_opts} = context, element) do
+    error_id = Utils.random_string(8)
+    error_msg = "Rendering error: #{Kernel.inspect(element)}"
+
+    if render_opts.log_errors,
+      do: Logger.error("Render Error ##{error_id} #{error_msg}"),
+      else: nil
+
+    if render_opts.render_errors do
+      error(context, element, {:invalid, error_id, error_msg})
+    else
+      []
+    end
+  end
+
+  defp maybe_log_error(%Context{render_opts: render_opts}, element) do
+    error_id = Utils.random_string(8)
+    error_msg = "Rendering error: #{Kernel.inspect(element)}"
+
+    if render_opts.log_errors,
+      do: Logger.error("Render Error ##{error_id} #{error_msg}"),
+      else: nil
   end
 end

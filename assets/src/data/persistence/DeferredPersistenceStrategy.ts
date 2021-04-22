@@ -20,7 +20,7 @@ export interface DeferredPersistenceStrategy {
  */
 export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
 
-  constructor(quietPeriodInMs : number = 2000, maxDeferredTimeInMs = 5000) {
+  constructor(quietPeriodInMs = 2000, maxDeferredTimeInMs = 5000) {
     super();
     this.quietPeriodInMs = quietPeriodInMs;
     this.maxDeferredTimeInMs = maxDeferredTimeInMs;
@@ -72,7 +72,7 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
     }
   }
 
-  persist() : Promise<{}> {
+  persist(): Promise<unknown> {
 
     return new Promise((resolve, reject) => {
       this.inFlight = true;
@@ -106,7 +106,7 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
           }
           resolve(result);
         })
-        .catch((err : any) => {
+        .catch((err: any) => {
 
           if (this.stateChangeCallback !== null) {
             this.stateChangeCallback(this.pending === null ? 'idle' : 'pending');
@@ -122,12 +122,12 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
     });
   }
 
-  doDestroy() : boolean {
+  doDestroy(): boolean {
     return this.flushPendingChanges();
   }
 
 
-  flushPendingChanges() : boolean {
+  flushPendingChanges(): boolean {
 
     if (this.timer !== null) {
       clearTimeout(this.timer);

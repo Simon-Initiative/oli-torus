@@ -9,8 +9,11 @@ const isItalicHotkey = isHotkey('mod+i');
 const isCodeHotkey = isHotkey('mod+;');
 const isLinkHotkey = isHotkey('mod+l');
 
-export const hotkeyHandler = (editor: ReactEditor, e: KeyboardEvent,
-  commandContext: CommandContext) => {
+export const hotkeyHandler = (
+  editor: ReactEditor,
+  e: KeyboardEvent,
+  commandContext: CommandContext,
+) => {
   if (isBoldHotkey(e)) {
     toggleMark(editor, 'strong');
   } else if (isItalicHotkey(e)) {

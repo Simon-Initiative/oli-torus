@@ -22,9 +22,11 @@ import { Manifest, CreationContext } from '../types';
 import { registerCreationFunc } from '../creation';
 import { ImageCodingModelSchema } from './schema';
 import { defaultICModel } from './utils';
-const manifest : Manifest = require('./manifest.json');
 
-function createFn(content: CreationContext) : Promise<ImageCodingModelSchema> {
+// eslint-disable-next-line
+const manifest: Manifest = require('./manifest.json');
+
+function createFn(content: CreationContext): Promise<ImageCodingModelSchema> {
   return Promise.resolve(Object.assign({}, defaultICModel()));
 }
 

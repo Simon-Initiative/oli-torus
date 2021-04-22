@@ -2,7 +2,6 @@ import * as React from 'react';
 import * as Messages from 'data/messages/messages';
 import { classNames } from 'utils/classNames';
 
-
 export interface MessageProps {
   message: Messages.Message;
   dismissMessage: (message: Messages.Message) => void;
@@ -15,10 +14,8 @@ const classesForSeverity = {
   [Messages.Severity.Information]: 'alert alert-info',
   [Messages.Severity.Task]: 'alert alert-light',
 };
-
-export class Message
-  extends React.PureComponent<MessageProps, {}> {
-
+// eslint-disable-next-line
+export class Message extends React.PureComponent<MessageProps, {}> {
   nav: any;
 
   constructor(props: MessageProps) {
@@ -43,7 +40,9 @@ export class Message
         style={{ whiteSpace: 'nowrap' }}
         disabled={!action.enabled}
         onClick={() => this.props.executeAction(message, action)}
-        type="button">{action.label}
+        type="button"
+      >
+        {action.label}
       </button>
     );
   }
@@ -52,8 +51,7 @@ export class Message
     if (message.canUserDismiss || message.actions.length > 0) {
       return (
         <div className="form-inline my-2 my-lg-0">
-          {message.actions.map(
-            (a: Messages.MessageAction) => this.renderMessageAction(message, a))}
+          {message.actions.map((a: Messages.MessageAction) => this.renderMessageAction(message, a))}
           {message.canUserDismiss && this.renderCloseButton()}
         </div>
       );
@@ -64,28 +62,26 @@ export class Message
     return (
       <button
         onClick={this.onDismiss.bind(this)}
-        type="button" className="close" aria-label="Close">
+        type="button"
+        className="close"
+        aria-label="Close"
+      >
         <span aria-hidden="true">&times;</span>
       </button>
     );
   }
 
   renderMessage(content: JSX.Element | string) {
-    return (
-      <div>
-        {content}
-      </div>
-    );
+    return <div>{content}</div>;
   }
 
   render(): JSX.Element {
-
     const { message } = this.props;
-    const classes = 'message d-flex justify-content-between '
-      + classesForSeverity[message.severity];
+    const classes =
+      'message d-flex justify-content-between ' + classesForSeverity[message.severity];
 
     return (
-      <div className={classes} ref={nav => this.nav = nav}>
+      <div className={classes} ref={(nav) => (this.nav = nav)}>
         {this.renderMessage(message.content)}
         {this.renderActions(message)}
       </div>

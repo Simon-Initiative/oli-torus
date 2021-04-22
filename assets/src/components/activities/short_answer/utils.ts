@@ -11,7 +11,7 @@ export const parseInputFromRule = (rule: string) => {
   return rule.substring(rule.indexOf('{') + 1, rule.indexOf('}'));
 };
 
-export const defaultModel : () => ShortAnswerModelSchema = () => {
+export const defaultModel: () => ShortAnswerModelSchema = () => {
 
   return {
     stem: fromText(''),
@@ -37,7 +37,7 @@ export const defaultModel : () => ShortAnswerModelSchema = () => {
 };
 
 
-export const feedback = (text: string, match: string | number, score: number = 0) => ({
+export const feedback = (text: string, match: string | number, score = 0) => ({
   ...fromText(text),
   match,
   score,

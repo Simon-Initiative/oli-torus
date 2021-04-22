@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { DragHandle } from '../DragHandle';
 import { DeleteButton } from 'components/misc/DeleteButton';
 import { getContentDescription } from 'data/content/utils';
@@ -7,19 +8,17 @@ import { Purpose } from 'components/content/Purpose';
 import { classNames } from 'utils/classNames';
 
 const getDescription = (item: ResourceContent) => {
-  return item.type === 'content'
-    ? getContentDescription(item)
-    : '';
+  return item.type === 'content' ? getContentDescription(item) : '';
 };
 
 type PurposeContainerProps = {
-  children?: JSX.Element | JSX.Element[],
+  children?: JSX.Element | JSX.Element[];
   contentItem: StructuredContent;
-  purposes: PurposeType[],
+  purposes: PurposeType[];
 };
 
 const maybeRenderDeliveryPurposeContainer = (props: PurposeContainerProps) => {
-  const purposeLabel = props.purposes.find(p => p.value === props.contentItem.purpose)?.label;
+  const purposeLabel = props.purposes.find((p) => p.value === props.contentItem.purpose)?.label;
 
   if (props.contentItem.purpose === 'none') {
     return props.children;
@@ -36,7 +35,7 @@ const maybeRenderDeliveryPurposeContainer = (props: PurposeContainerProps) => {
 };
 interface ContentBlockProps {
   editMode: boolean;
-  children?: JSX.Element | JSX.Element[] ;
+  children?: JSX.Element | JSX.Element[];
   content: Immutable.List<ResourceContent>;
   purposes: PurposeType[];
   contentItem: StructuredContent;
@@ -50,44 +49,45 @@ export const ContentBlock = (props: ContentBlockProps) => {
   const id = `content-header-${props.index}`;
 
   return (
-    <div className={classNames([
-      'content-block',
-      'resource-content-frame',
-      'card',
-      `purpose-${props.contentItem.purpose}`,
-    ])}
+    <div
+      className={classNames([
+        'content-block',
+        'resource-content-frame',
+        'card',
+        `purpose-${props.contentItem.purpose}`,
+      ])}
       draggable={props.editMode}
-      onDragStart={e => props.onDragStart(e, id)}
-      onDragEnd={props.onDragEnd}>
+      onDragStart={(e) => props.onDragStart(e, id)}
+      onDragEnd={props.onDragEnd}
+    >
       <div id={id} className="card-header px-2">
         <div className="d-flex flex-row align-items-center">
           <div className="d-flex align-items-center flex-grow-1">
             <DragHandle style={{ height: 24, marginRight: 10 }} />
-
           </div>
 
           <Purpose
             purpose={props.contentItem.purpose}
             purposes={props.purposes}
             editMode={props.editMode}
-            onEdit={props.onEditPurpose} />
+            onEdit={props.onEditPurpose}
+          />
 
-          <DeleteButton
-            editMode={props.content.size > 1}
-            onClick={props.onRemove} />
+          <DeleteButton editMode={props.content.size > 1} onClick={props.onRemove} />
         </div>
       </div>
       <div className="card-body">
-        <div draggable={props.editMode}
-          onDragStart={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-
+        <div
+          draggable={props.editMode}
+          onDragStart={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
           {maybeRenderDeliveryPurposeContainer(props)}
-
         </div>
       </div>
-      <div className="reorder-mode-description">
-        {getDescription(props.contentItem)}
-      </div>
+      <div className="reorder-mode-description">{getDescription(props.contentItem)}</div>
     </div>
   );
 };

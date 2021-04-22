@@ -7,7 +7,7 @@ type ModalDisplayProps = {
   modal: ModalState;
 };
 
-const ModalDisplay = (props: ModalDisplayProps) : JSX.Element => {
+const ModalDisplay = (props: ModalDisplayProps): JSX.Element => {
 
   const modals = props.modal
     .toArray()
@@ -23,8 +23,10 @@ const ModalDisplay = (props: ModalDisplayProps) : JSX.Element => {
 };
 
 interface StateProps { modal: ModalState; }
-interface OwnProps {}
-interface DispatchProps {}
+// eslint-disable-next-line
+interface OwnProps { }
+// eslint-disable-next-line
+interface DispatchProps { }
 
 const mapStateToProps = (state: State, ownProps: OwnProps): StateProps => {
   const { modal } = state;

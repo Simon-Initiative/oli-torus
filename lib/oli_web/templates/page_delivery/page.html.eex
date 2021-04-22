@@ -1,5 +1,5 @@
 
-<h1><%= @title %><%= if @progress_state == :in_review do %>
+<h1 class="title"><%= @title %><%= if @progress_state == :in_review do %>
  (Review)
 <% end %></h1>
 

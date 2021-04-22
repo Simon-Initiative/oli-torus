@@ -22,6 +22,8 @@ import { Manifest, CreationContext } from '../types';
 import { registerCreationFunc } from '../creation';
 import { AdaptiveModelSchema } from './schema';
 import { defaultModel } from './utils';
+
+// eslint-disable-next-line
 const manifest: Manifest = require('./manifest.json');
 
 function createFn(content: CreationContext): Promise<AdaptiveModelSchema> {

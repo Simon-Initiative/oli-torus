@@ -1,5 +1,5 @@
 export type EvalContext = {
-  getResource: (name:string) => HTMLImageElement | String | null;
+  getResource: (name: string) => HTMLImageElement | string | null;
   getCanvas: (n: number) => HTMLCanvasElement | null;
   // getTempCanvas: () => HTMLCanvasElement | null;
   getResult: (solution: boolean) => HTMLCanvasElement | null;
@@ -9,17 +9,18 @@ export type EvalContext = {
 
 declare global {
   interface Window {
+    // eslint-disable-next-line
     SimpleImage: Function;
+    // eslint-disable-next-line
     SimpleTable: Function;
     print: () => void;
-    Evaluator : Function;
+    // eslint-disable-next-line
+    Evaluator: Function;
   }
 }
 
 export class Evaluator {
-
   static printOne(something: any, ctx: EvalContext) {
-
     // special case for rendering result image
     if (something instanceof SimpleImageImpl) {
       const canvas = ctx.getResult(ctx.solutionRun);
@@ -47,14 +48,14 @@ export class Evaluator {
     ctx.appendOutput(toPrint + spacer);
   }
 
-  static myprint(ctx : EvalContext, ...args: any): void {
+  static myprint(ctx: EvalContext, ...args: any): void {
     for (let i = 0; i < args.length; i += 1) {
       this.printOne(args[i], ctx);
     }
 
     const lastArg = args[args.length - 1];
     const hasBreak = lastArg instanceof SimpleImageImpl || lastArg === '\n';
-    if (! hasBreak) {
+    if (!hasBreak) {
       this.printOne('\n', ctx);
     }
   }
@@ -63,7 +64,7 @@ export class Evaluator {
 
   // Given code, return sugared up code, or may throw error.
   // expands: for (part: composite) {
-  static sugarCode(code : string) {
+  static sugarCode(code: string) {
     const reWeak = /for *\([ \w+().-]*:[ \w+().-]*\) *\{/g;
     // important: the g is required to avoid infinite loop
     // weak: for ( stuff* : stuff*) {
@@ -80,27 +81,45 @@ export class Evaluator {
       // alert(matched);
       if (matched.search(reStrong) === -1) {
         throw new Error(
-          "Attempt to use 'for(part: composite)' form, but it looks wrong: " + result[0]);
+          "Attempt to use 'for(part: composite)' form, but it looks wrong: " + result[0],
+        );
       }
     }
 
     // Loop, finding the next
     let newCode = code;
     let gensym = 0;
+
+    // eslint-disable-next-line
     while (1) {
       const oldCode = newCode;
       const pvar = 'pxyz' + gensym;
       const ivar = 'ixyz' + gensym;
       gensym += 1;
-      const replacement = 'var ' + pvar + ' = Evaluator.getArray($2); ' +
-        'for (var ' + ivar + '=0; ' + ivar + '<' + pvar + '.length; ' + ivar + '++) {' +
-        'var $1 = ' + pvar + '[' + ivar + '];';
+      const replacement =
+        'var ' +
+        pvar +
+        ' = Evaluator.getArray($2); ' +
+        'for (var ' +
+        ivar +
+        '=0; ' +
+        ivar +
+        '<' +
+        pvar +
+        '.length; ' +
+        ivar +
+        '++) {' +
+        'var $1 = ' +
+        pvar +
+        '[' +
+        ivar +
+        '];';
       newCode = newCode.replace(reStrong, replacement);
       if (newCode === oldCode) {
         break;
       }
     }
-    return(newCode);
+    return newCode;
     // return code.replace(reStrong, replacement);
 
     // someday: could look for reWeak, compare to where reStrong applied,
@@ -114,8 +133,8 @@ export class Evaluator {
 
   // Wrapper called on the composite by the for(part: composite) sugar, and it does
   // some basic error checking.
-  static getArray(obj : any) {
-    if (obj && typeof(obj) === 'object') {
+  static getArray(obj: any) {
+    if (obj && typeof obj === 'object') {
       if (obj instanceof Array) {
         return obj;
       }
@@ -128,31 +147,40 @@ export class Evaluator {
   }
 
   // Called from user-facing functions, checks number of arguments.
-  static funCheck(funName : string, expectedLen : number, actualLen : number) {
+  static funCheck(funName: string, expectedLen: number, actualLen: number) {
     if (expectedLen !== actualLen) {
-      const s1 = (actualLen === 1) ? '' :'s';  // pluralize correctly
-      const s2 = (expectedLen === 1) ? '' :'s';
-      const message = funName + '() called with ' + actualLen + ' value' + s1 + ', but expected ' +
-        expectedLen + ' value' + s2 + '.';
+      const s1 = actualLen === 1 ? '' : 's'; // pluralize correctly
+      const s2 = expectedLen === 1 ? '' : 's';
+      const message =
+        funName +
+        '() called with ' +
+        actualLen +
+        ' value' +
+        s1 +
+        ', but expected ' +
+        expectedLen +
+        ' value' +
+        s2 +
+        '.';
       // someday: think about "values" vs. "arguments" here
       throw new Error(message);
     }
   }
 
-
-  static execute (src : string,  ctx: EvalContext) : Error | null {
-
+  static execute(src: string, ctx: EvalContext): Error | null {
     // set up environment for calls by user code
-    const print = (...args: any) => { Evaluator.myprint(ctx, ...args); };
+    const print = (...args: any) => {
+      Evaluator.myprint(ctx, ...args);
+    };
 
     class SimpleImage extends SimpleImageImpl {
-      constructor(name : string) {
+      constructor(name: string) {
         super(name, ctx);
       }
     }
 
     class SimpleTable extends SimpleTableImpl {
-      constructor(name : string) {
+      constructor(name: string) {
         super(name, ctx);
       }
     }
@@ -168,7 +196,6 @@ export class Evaluator {
 
       // Use Function to execute in global scope. Note user vars persist.
       Function(code)();
-
     } catch (e) {
       e.userError = true;
       return e;
@@ -180,14 +207,13 @@ export class Evaluator {
   // Computes and returns the image diff, or 999 for error.
   // todo: structure error cases better.
   static getResultDiff = function (ctx: EvalContext) {
-
     const studentCanvas = ctx.getResult(false);
     if (!studentCanvas) throw new Error('Failed to get student result image');
 
     // width = 0 => student run failed or they didn't run at all. Can't getImageData
     // this is possible, not a system error.
     if (studentCanvas.width === 0) {
-      return(999);
+      return 999;
     }
 
     const solnCanvas = ctx.getResult(true);
@@ -195,51 +221,50 @@ export class Evaluator {
       throw new Error('Failed to get solution image');
     }
 
-    let studentData = new Uint8ClampedArray;
+    let studentData = new Uint8ClampedArray();
     let context = studentCanvas.getContext('2d');
     if (context) {
       studentData = context.getImageData(0, 0, studentCanvas.width, studentCanvas.height).data;
     }
 
-    let solnData = new Uint8ClampedArray;
+    let solnData = new Uint8ClampedArray();
     context = solnCanvas.getContext('2d');
     if (context) {
       solnData = context.getImageData(0, 0, solnCanvas.width, solnCanvas.height).data;
     }
 
-    let diff = 999;  // default if imageDiff throws size mismatch error
+    let diff = 999; // default if imageDiff throws size mismatch error
     try {
       diff = Evaluator.imageDiff(studentData, solnData);
     } finally {
+      // eslint-disable-next-line
       return diff;
     }
   };
 
   // Given the student and ans data arrays, compute per-pixel diff number.
-  static imageDiff = function (studentData : Uint8ClampedArray, ansData : Uint8ClampedArray) {
+  static imageDiff = function (studentData: Uint8ClampedArray, ansData: Uint8ClampedArray) {
     if (studentData.length === 0) {
-      throw('Could not get student image data');
+      throw 'Could not get student image data';
     }
     if (ansData.length === 0) {
-      throw('Could not get solution image data');
+      throw 'Could not get solution image data';
     }
     if (studentData.length !== ansData.length) {
-      throw("image array lengths don't match " + studentData.length + ' ' + ansData.length);
+      throw "image array lengths don't match " + studentData.length + ' ' + ansData.length;
     }
 
     let diff = 0;
     for (let i = 0; i < studentData.length; i += 4) {
-      diff += Math.abs(studentData[i] - ansData[i]);  // R
-      diff += Math.abs(studentData[i + 1] - ansData[i + 1]);  // G
-      diff += Math.abs(studentData[i + 2] - ansData[i + 2]);  // B
-
+      diff += Math.abs(studentData[i] - ansData[i]); // R
+      diff += Math.abs(studentData[i + 1] - ansData[i + 1]); // G
+      diff += Math.abs(studentData[i + 2] - ansData[i + 2]); // B
     }
-    diff = diff / (studentData.length / 4.0);  // error-per-pixel
+    diff = diff / (studentData.length / 4.0); // error-per-pixel
 
     return diff;
   };
 }
-
 
 // -- SimpleImage support -- //
 
@@ -249,7 +274,7 @@ export class SimplePixel {
   x: number;
   y: number;
 
-  constructor (simpleImage : SimpleImageImpl, x : number, y: number) {
+  constructor(simpleImage: SimpleImageImpl, x: number, y: number) {
     this.simpleImage = simpleImage;
     this.x = x;
     this.y = y;
@@ -302,8 +327,8 @@ export class SimplePixel {
   };
 }
 
-  // Relies on invisible canvas, inited either with a "foo.jpg" url,
-  // or an htmlImage from loadImage().
+// Relies on invisible canvas, inited either with a "foo.jpg" url,
+// or an htmlImage from loadImage().
 export class SimpleImageImpl {
   width: number;
   height: number;
@@ -311,7 +336,7 @@ export class SimpleImageImpl {
   imageData: ImageData;
   ctx: EvalContext;
 
-  constructor (imageName : string, ctx: EvalContext) {
+  constructor(imageName: string, ctx: EvalContext) {
     let htmlImage = null;
     if (typeof imageName === 'string') {
       htmlImage = ctx.getResource(imageName) as HTMLImageElement;
@@ -330,9 +355,9 @@ export class SimpleImageImpl {
     this.height = htmlImage.height;
     this.ctx = ctx;
 
-     // console.log(this);
+    // console.log(this);
 
-     // render to temp canvas to get image data
+    // render to temp canvas to get image data
     const canvas = ctx.getCanvas(0);
     if (!canvas) throw new Error('Failed to get canvas for ' + name);
     const context = canvas.getContext('2d');
@@ -342,7 +367,7 @@ export class SimpleImageImpl {
     context.canvas.height = this.height;
     context.drawImage(htmlImage, 0, 0);
 
-     // Do this last so it gets the actual image data.
+    // Do this last so it gets the actual image data.
     this.imageData = context.getImageData(0, 0, this.width, this.height);
   }
 
@@ -360,16 +385,15 @@ export class SimpleImageImpl {
       throw new Error('need x and y values passed to this function');
     } else if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
       throw new Error('x/y out of bounds x:' + x + ' y:' + y);
-    }
-    else return (x + y * this.width) * 4;
+    } else return (x + y * this.width) * 4;
   };
 
   // --setters--
 
   // Clamp values to be in the range 0..255. Used by setRed() et al.
-  clamp = function (value : number) {
-      // value = Math.floor(value);  // .js is always float, so this line
-      // is probably unncessary, unless we get into some deep JIT level.
+  clamp = function (value: number) {
+    // value = Math.floor(value);  // .js is always float, so this line
+    // is probably unncessary, unless we get into some deep JIT level.
     if (value < 0) return 0;
     if (value > 255) {
       // console.log('clamping pixel value: ' + value);
@@ -384,10 +408,10 @@ export class SimpleImageImpl {
     const index = this.getIndex(x, y);
     this.imageData.data[index] = this.clamp(value);
 
-       // This is how you would write back each pixel individually.
-       // It gives terrible performance (on Firefox anyway).
-       // this.context.putImageData(this.imageData, 0, 0, x, y, 1, 1);
-       // dx dy dirtyX dirtyY dirtyWidth dirtyHeight
+    // This is how you would write back each pixel individually.
+    // It gives terrible performance (on Firefox anyway).
+    // this.context.putImageData(this.imageData, 0, 0, x, y, 1, 1);
+    // dx dy dirtyX dirtyY dirtyWidth dirtyHeight
   };
 
   // Sets the green value for the given x,y
@@ -411,7 +435,7 @@ export class SimpleImageImpl {
     this.imageData.data[index + 3] = this.clamp(value);
   };
 
-  setZoom = function (n : number) {
+  setZoom = function (n: number) {
     this.zoom = n;
   };
 
@@ -450,14 +474,14 @@ export class SimpleImageImpl {
   toArray = function () {
     const array = [];
     // 1. simple-way (this is as good or faster in various browser tests)
-      // var array = new Array(this.getWidth() * this.getHeight()); // 2. alloc way
-      // var i = 0;  // 2.
-      // nip 2012-7  .. change to cache-friendly y/x ordering
-      // Non-firefox browsers may benefit.
+    // var array = new Array(this.getWidth() * this.getHeight()); // 2. alloc way
+    // var i = 0;  // 2.
+    // nip 2012-7  .. change to cache-friendly y/x ordering
+    // Non-firefox browsers may benefit.
     for (let y = 0; y < this.getHeight(); y += 1) {
       for (let x = 0; x < this.getWidth(); x += 1) {
-          // array[i += 1] = new SimplePixel(this, x, y);  // 2.
-        array.push(new SimplePixel(this, x, y));  // 1.
+        // array[i += 1] = new SimplePixel(this, x, y);  // 2.
+        array.push(new SimplePixel(this, x, y)); // 1.
       }
     }
     return array;
@@ -465,7 +489,6 @@ export class SimpleImageImpl {
 
   // Change the size of the image to the given, scaling the pixels.
   setSize = function (newWidth: number, newHeight: number) {
-
     // flush any changes from buffer to a temp canvas to be used as src
     const srcCanvas = this.ctx.getCanvas(0);
     srcCanvas.width = this.width;
@@ -494,7 +517,7 @@ export class SimpleImageImpl {
   // to keep its proportions.
   // Useful to set a back image to match the size of the front
   // image for bluescreen.
-  setSameSize = function (otherImage : SimpleImageImpl) {
+  setSameSize = function (otherImage: SimpleImageImpl) {
     if (!this.width) return;
 
     const wscale = otherImage.width / this.width;
@@ -509,7 +532,7 @@ export class SimpleImageImpl {
 
   // Draws to the given canvas, setting its size.
   // Used to implement printing of an image.
-  drawTo = function (toCanvas : HTMLCanvasElement) {
+  drawTo = function (toCanvas: HTMLCanvasElement) {
     if (!this.zoom) {
       toCanvas.width = this.width;
       toCanvas.height = this.height;
@@ -534,7 +557,7 @@ export class SimpleImageImpl {
       const toData = toContext.createImageData(toCanvas.width, toCanvas.height);
       for (let x = 0; x < toCanvas.width; x += 1) {
         for (let y = 0; y < toCanvas.height; y += 1) {
-          const iNew =  (x + y * toCanvas.width) * 4;
+          const iNew = (x + y * toCanvas.width) * 4;
           const iOld = (Math.floor(x / this.zoom) + Math.floor(y / this.zoom) * this.width) * 4;
           for (let j = 0; j < 4; j += 1) {
             toData.data[iNew + j] = this.imageData.data[iOld + j];
@@ -564,10 +587,10 @@ export class SimpleImageImpl {
 // Simple Table Support //
 
 export class Row {
-  table : SimpleTableImpl ;
-  array : string[];
+  table: SimpleTableImpl;
+  array: string[];
 
-  constructor (table : SimpleTableImpl, rowArray: string[]) {
+  constructor(table: SimpleTableImpl, rowArray: string[]) {
     this.table = table;
     this.array = rowArray;
   }
@@ -602,19 +625,20 @@ export class SimpleTableImpl {
   fields: string[];
   rows: Row[];
 
-  constructor (filename: string, ctx: EvalContext) {
+  constructor(filename: string, ctx: EvalContext) {
     const text = ctx.getResource(filename) as string;
 
-    const lines = text.split(/\n|\r\n/);  // test: this does work with DOS line endings
+    const lines = text.split(/\n|\r\n/); // test: this does work with DOS line endings
 
     // todo: could have some logic about if the first row is the field names or not
     this.fields = SimpleTableImpl.splitCSV(lines[0], 0);
-    lines.splice(0, 1);  // remove 0th element
+    lines.splice(0, 1); // remove 0th element
 
     const rows = [];
     for (const line of lines) {
       const parts = SimpleTableImpl.splitCSV(line, this.fields.length);
-      if (parts.length !== 0) {  // essentially we skip blank lines
+      if (parts.length !== 0) {
+        // essentially we skip blank lines
         rows.push(new Row(this, parts));
       }
     }
@@ -627,11 +651,10 @@ export class SimpleTableImpl {
   // The elements are whitespace trimmed.
   // Can make this more sophisticated about CSV format later.
   static splitCSV(line: string, columns: number) {
-    const trimmed = line.replace(/^\s+|\s+$/g, '');  // .trim() effectively, and below
+    const trimmed = line.replace(/^\s+|\s+$/g, ''); // .trim() effectively, and below
     if (trimmed === '') return [];
 
-    const fields = trimmed.split(/,/, -1)
-      .map(field => field.replace(/^\s+|\s+$/g, ''));
+    const fields = trimmed.split(/,/, -1).map((field) => field.replace(/^\s+|\s+$/g, ''));
 
     // hack: file can omit blank data from RHS .. add it back on
     while (columns && fields.length < columns) {
@@ -657,7 +680,7 @@ export class SimpleTableImpl {
   // Returns the index for a field name (case sensitive).
   // Used internally by row.getField()
   getFieldIndex = function (fieldName: string) {
-    return this.fields.findIndex((f : string) => f === fieldName);
+    return this.fields.findIndex((f: string) => f === fieldName);
   };
 
   // Returns the number of rows.
@@ -678,5 +701,4 @@ export class SimpleTableImpl {
   toArray = function () {
     return this.rows;
   };
-
 }

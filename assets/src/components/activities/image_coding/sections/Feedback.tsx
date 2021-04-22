@@ -18,36 +18,39 @@ interface ItemProps extends FeedbackProps {
 }
 
 export const Item = (props: ItemProps) => {
-
   const { feedback, score, editMode, onEditResponse } = props;
 
   return (
     <div className="my-3" key={feedback.id}>
       <Description>
-        {score === 1 ? <IconCorrect /> : <IconIncorrect/>}
+        {score === 1 ? <IconCorrect /> : <IconIncorrect />}
         Feedback for {score === 1 ? 'Correct' : 'Incorrect'} Answer:
       </Description>
       <RichTextEditor
         projectSlug={props.projectSlug}
         editMode={editMode}
         text={feedback.content}
-        onEdit={content => onEditResponse(score, content)}/>
+        onEdit={(content) => onEditResponse(score, content)}
+      />
     </div>
   );
-
 };
 
 export const Feedback = (props: FeedbackProps) => {
-
   const { model } = props;
 
   return (
     <div className="my-5">
-      <Heading title="Feedback" subtitle="Providing feedback when a student answers a
-        question is one of the best ways to reinforce their understanding." id="feedback" />
+      <Heading
+        title="Feedback"
+        subtitle="Providing feedback when a student answers a
+        question is one of the best ways to reinforce their understanding."
+        id="feedback"
+      />
 
-      {model.feedback.map((f: FeedbackItem, index) =>
-        <Item key={index} {...props} feedback={f} score={index}/>)}
+      {model.feedback.map((f: FeedbackItem, index) => (
+        <Item key={index} {...props} feedback={f} score={index} />
+      ))}
     </div>
   );
 };

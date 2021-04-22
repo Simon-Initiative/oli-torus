@@ -22,9 +22,11 @@ import { Manifest, CreationContext } from '../types';
 import { registerCreationFunc } from '../creation';
 import { MultipleChoiceModelSchema } from './schema';
 import { defaultMCModel } from './utils';
-const manifest : Manifest = require('./manifest.json');
 
-function createFn(content: CreationContext) : Promise<MultipleChoiceModelSchema> {
+// eslint-disable-next-line
+const manifest: Manifest = require('./manifest.json');
+
+function createFn(content: CreationContext): Promise<MultipleChoiceModelSchema> {
   return Promise.resolve(Object.assign({}, defaultMCModel()));
 }
 

@@ -5,9 +5,7 @@ import { PersistenceState } from 'data/persistence/PersistenceStrategy';
 // the end user.  Nothing is displayed until an edit
 // has been triggered.  Then either 'Saving...' or
 // 'All changes saved" is displayed.
-export const PersistenceStatus = ({ persistence }
-  : {persistence: PersistenceState}) => {
-
+export const PersistenceStatus = ({ persistence }: { persistence: PersistenceState }) => {
   const [hasSavedOnce, setHasSavedOnce] = useState(false);
 
   if (persistence !== 'idle' && !hasSavedOnce) {
@@ -21,9 +19,5 @@ export const PersistenceStatus = ({ persistence }
     label = 'Saving...';
   }
 
-  return (
-    <div>
-      {label}
-    </div>
-  );
+  return <div>{label}</div>;
 };

@@ -25,7 +25,7 @@ export const withTables = (editor: Editor) => {
 
     if (selection && Range.isCollapsed(selection)) {
       const [cell] = Editor.nodes(editor, {
-        match: n => n.type === 'td',
+        match: (n) => n.type === 'td',
       });
 
       if (cell) {
@@ -46,7 +46,7 @@ export const withTables = (editor: Editor) => {
 
     if (selection && Range.isCollapsed(selection)) {
       const [cell] = Editor.nodes(editor, {
-        match: n => n.type === 'td',
+        match: (n) => n.type === 'td',
       });
 
       if (cell) {

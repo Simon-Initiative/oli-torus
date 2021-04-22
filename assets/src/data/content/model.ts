@@ -29,6 +29,7 @@ export const code = () => ({
   children: [{ type: 'code_line', children: [{ text: '' }] }],
 });
 
+// eslint-disable-next-line
 export function mutate<ModelElement>(obj: ModelElement, changes: Object): ModelElement {
   return Object.assign({}, obj, changes) as ModelElement;
 }
@@ -227,12 +228,13 @@ export enum CodeLanguages {
 }
 
 const toObj = (arr: string[]) => arr
-  .reduce((p: Object, c: string) => { (p as any)[c] = true; return p; }, {});
+  .reduce((p: unknown, c: string) => { (p as any)[c] = true; return p; }, {});
 
 export type SchemaConfig = {
   isVoid: boolean,
   isBlock: boolean,
   isTopLevel: boolean,
+  // eslint-disable-next-line
   validChildren: Object,
 };
 

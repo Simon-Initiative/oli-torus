@@ -1,6 +1,8 @@
 /*! gettext.js - Guillaume Potier - MIT Licensed */
 
-  // default values that could be overriden in i18n() construct
+/*eslint-disable */
+
+// default values that could be overriden in i18n() construct
 const defaults = {
   domain: 'messages',
   locale: (document !== undefined
@@ -29,22 +31,22 @@ const dictionary: any = {};
 const pluralForms: any = {};
 const ctxtDelimiter = defaults.ctxt_delimiter;
 
-  // sprintf equivalent, takes a string and some arguments to make a computed string
-  // eg: strfmt("%1 dogs are in %2", 7, "the kitchen"); => "7 dogs are in the kitchen"
-  // eg: strfmt("I like %1, bananas and %1", "apples"); => "I like apples, bananas and apples"
-  // NB: removes msg context if there is one present
+// sprintf equivalent, takes a string and some arguments to make a computed string
+// eg: strfmt("%1 dogs are in %2", 7, "the kitchen"); => "7 dogs are in the kitchen"
+// eg: strfmt("I like %1, bananas and %1", "apples"); => "I like apples, bananas and apples"
+// NB: removes msg context if there is one present
 const strfmt = function (fmt: any) {
   const args = arguments;
 
   return fmt
-  // put space after double % to prevent placeholder replacement of such matches
-  .replace(/%%/g, '%% ')
-  // replace placeholders
-  .replace(/%(\d+)/g, (str: any, p1: any) => {
-    return args[p1];
-  })
-  // replace double % and space with single %
-  .replace(/%% /g, '%');
+    // put space after double % to prevent placeholder replacement of such matches
+    .replace(/%%/g, '%% ')
+    // replace placeholders
+    .replace(/%(\d+)/g, (str: any, p1: any) => {
+      return args[p1];
+    })
+    // replace double % and space with single %
+    .replace(/%% /g, '%');
 };
 
 const removeContext = function (str: any) {
@@ -90,9 +92,9 @@ const getPluralFunc = function (pluralForm: any) {
     ' return { nplurals: nplurals, plural: (plural === true ? 1 : (plural ? plural : 0)) };');
 };
 
-  // Proper translation function that handle plurals and directives
-  // Contains juicy parts of
-  // https://github.com/Orange-OpenSource/gettext.js/blob/master/lib.gettext.js
+// Proper translation function that handle plurals and directives
+// Contains juicy parts of
+// https://github.com/Orange-OpenSource/gettext.js/blob/master/lib.gettext.js
 const t = function (messages: any, n: any, options: any) {
   // Singular is very easy, just pass dictionnary message through strfmt
   if (!options.plural_form) {
@@ -105,12 +107,12 @@ const t = function (messages: any, n: any, options: any) {
   if (options.plural_func) {
     plural = options.plural_func(n);
 
-  // if plural form never interpreted before, do it now and store it
+    // if plural form never interpreted before, do it now and store it
   } else if (!pluralFuncs[locale]) {
     pluralFuncs[locale] = getPluralFunc(pluralForms[locale]);
     plural = pluralFuncs[locale](n);
 
-  // we have the plural function, compute the plural result
+    // we have the plural function, compute the plural result
   } else {
     plural = pluralFuncs[locale](n);
   }
@@ -169,7 +171,7 @@ export function setLocale(loc: any) {
 export function getLocale() {
   return locale;
 }
-  // getter/setter for domain
+// getter/setter for domain
 export function textdomain(d: any) {
   if (!d) {
     return domain;
@@ -203,7 +205,7 @@ export function dcnpgettext(d: any, msgctxt: any, msgid: any, msgidPlural: any, 
   }
 
   let translation;
-  const options : any = { plural_form: false };
+  const options: any = { plural_form: false };
   const key = msgctxt ? msgctxt + ctxtDelimiter + msgid : msgid;
   let exist;
   const locales = expandLocale(locale);
@@ -244,3 +246,4 @@ export function dcnpgettext(d: any, msgctxt: any, msgid: any, msgidPlural: any, 
     [exist ? translation : [msgid, msgidPlural], n, options].concat(
       Array.prototype.slice.call(arguments, 5)));
 }
+/*eslint-enable */

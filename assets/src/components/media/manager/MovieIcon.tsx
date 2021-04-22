@@ -8,7 +8,9 @@ export interface MovieIconProps {
  * MovieIcon React Stateless Component
  */
 export const MovieIcon: React.StatelessComponent<MovieIconProps> = ({
+  // eslint-disable-next-line
   className,
+  // eslint-disable-next-line
   children,
 }) => {
   return (

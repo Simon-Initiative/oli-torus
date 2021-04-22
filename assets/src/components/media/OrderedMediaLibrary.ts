@@ -42,8 +42,11 @@ export class OrderedMediaLibrary extends Immutable.Record(defaultContent) {
     return this.data.get(guid);
   }
 
-  getItems(offset: number = 0, count: number = this.items.size) {
-    return this.items.slice(offset, count).map(guid => this.data.get(guid)).toArray();
+  getItems(offset = 0, count: number = this.items.size) {
+    return this.items
+      .slice(offset, count)
+      .map((guid) => this.data.get(guid))
+      .toArray();
   }
 
   allItemsLoaded() {
@@ -52,9 +55,10 @@ export class OrderedMediaLibrary extends Immutable.Record(defaultContent) {
 
   load(items: Immutable.List<MediaItem>, totalItems: number) {
     return this.with({
-      data: this.data.merge(items.reduce(
-        (acc, i) => acc.set(i.guid, i), Immutable.Map<string, MediaItem>())),
-      items: this.items.concat(items.map(i => i.guid)) as Immutable.List<string>,
+      data: this.data.merge(
+        items.reduce((acc, i) => acc.set(i.guid, i), Immutable.Map<string, MediaItem>()),
+      ),
+      items: this.items.concat(items.map((i) => i.guid)) as Immutable.List<string>,
       totalItems,
       totalItemsLoaded: this.totalItemsLoaded + items.size,
     });

@@ -49,20 +49,20 @@ defmodule OliWeb.PageDeliveryController do
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
     user = conn.assigns.current_user
 
-    {:ok, resource_attempt_state} = Jason.encode(Enum.at(context.resource_attempts, 0).state)
+    resource_attempt = Enum.at(context.resource_attempts, 0)
+    {:ok, resource_attempt_state} = Jason.encode(resource_attempt.state)
 
     {:ok, activity_guid_mapping} =
-      context.activities
-      |> Map.keys()
-      |> Enum.map(fn activity_id -> Map.get(context.activities, activity_id).attempt_guid end)
+      Oli.Delivery.Page.ActivityContext.to_thin_context_map(context.activities)
       |> Jason.encode()
 
-    render(conn, "delivery.html", %{
+    render(conn, "advanced_delivery.html", %{
+      resource_attempt_guid: resource_attempt.attempt_guid,
       resource_attempt_state: resource_attempt_state,
       activity_guid_mapping: activity_guid_mapping,
       content: Jason.encode!(context.page.content),
       summary: summary,
-      scripts: Activities.get_activity_scripts(),
+      scripts: Activities.get_activity_scripts(:delivery_script),
       section_slug: section_slug,
       title: context.page.title,
       resource_id: context.page.resource_id,
@@ -84,6 +84,7 @@ defmodule OliWeb.PageDeliveryController do
          section_slug,
          _
        ) do
+
     # Only consider graded attempts
     resource_attempts = Enum.filter(resource_attempts, fn a -> a.revision.graded == true end)
 

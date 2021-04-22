@@ -19,6 +19,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Rendering.Activity.ActivitySummary
   alias Oli.Activities
+  alias Oli.Resources.Numbering
+  alias Oli.Delivery.Page.PageContext
 
   import Ecto.Query, warn: false
 
@@ -189,7 +191,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
     editor_map = Activities.create_registered_activity_map(project_slug)
 
     with {:ok, publication} <-
-           Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+           Publishing.get_unpublished_publication_by_slug!(project_slug) |> Repo.preload(:project) |> trap_nil(),
          {:ok, %{content: content} = revision} <-
            AuthoringResolver.from_revision_slug(project_slug, revision_slug) |> trap_nil(),
          {:ok, objectives} <-
@@ -197,18 +199,30 @@ defmodule Oli.Authoring.Editing.PageEditor do
          {:ok, objectives_with_parent_reference} <-
            construct_parent_references(objectives) |> trap_nil(),
          {:ok, activities} <- create_activities_map(project_slug, publication.id, content) do
+
+      # Create the resource editing context that we will supply to the client side editor
+
+      [root_container_node] = Numbering.full_hierarchy(Oli.Publishing.AuthoringResolver, project_slug)
+      hierarchy = root_container_node.children
+      {previous, next} = PageContext.determine_previous_next(hierarchy, revision)
+
       {:ok,
-       create(
-         publication.id,
-         revision,
-         project_slug,
-         revision_slug,
-         author,
-         objectives_with_parent_reference,
-         revision.objectives,
-         activities,
-         editor_map
-       )}
+        %Oli.Authoring.Editing.ResourceContext{
+          authorEmail: author.email,
+          projectSlug: project_slug,
+          resourceSlug: revision_slug,
+          editorMap: editor_map,
+          objectives: revision.objectives,
+          allObjectives: objectives_with_parent_reference,
+          title: revision.title,
+          graded: revision.graded,
+          content: convert_to_activity_slugs(revision.content, publication.id),
+          activities: activities,
+          project: publication.project,
+          previous_page: previous,
+          next_page: next
+        }
+      }
     else
       _ -> {:error, :not_found}
     end
@@ -474,32 +488,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
         parentId: Map.get(parents, r.resource_id)
       }
     end)
-  end
-
-  # Create the resource editing context that we will supply to the client side editor
-  defp create(
-         publication_id,
-         revision,
-         project_slug,
-         revision_slug,
-         author,
-         all_objectives,
-         objectives,
-         activities,
-         editor_map
-       ) do
-    %Oli.Authoring.Editing.ResourceContext{
-      authorEmail: author.email,
-      projectSlug: project_slug,
-      resourceSlug: revision_slug,
-      editorMap: editor_map,
-      objectives: objectives,
-      allObjectives: all_objectives,
-      title: revision.title,
-      graded: revision.graded,
-      content: convert_to_activity_slugs(revision.content, publication_id),
-      activities: activities
-    }
   end
 
   # Retrieve the latest (current) revision for a resource given the

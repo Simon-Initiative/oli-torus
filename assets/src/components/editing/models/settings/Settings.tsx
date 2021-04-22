@@ -15,8 +15,13 @@ export const onEnterApply = (e: React.KeyboardEvent, onApply: () => void) => {
 
 export const Action = ({ icon, onClick, tooltip, id }: any) => {
   return (
-    <span id={id} data-toggle="tooltip" data-placement="top" title={tooltip}
-      style={{ cursor: 'pointer ' }}>
+    <span
+      id={id}
+      data-toggle="tooltip"
+      data-placement="top"
+      title={tooltip}
+      style={{ cursor: 'pointer ' }}
+    >
       <i onClick={onClick} className={icon + ' mr-2'}></i>
     </span>
   );
@@ -24,9 +29,16 @@ export const Action = ({ icon, onClick, tooltip, id }: any) => {
 
 export const ActionMaterial = ({ icon, onClick, tooltip, id }: any) => {
   return (
-    <span id={id} data-toggle="tooltip" data-placement="top" title={tooltip}
-      style={{ cursor: 'pointer ' }}>
-      <i onClick={onClick} className="material-icons">{icon}</i>
+    <span
+      id={id}
+      data-toggle="tooltip"
+      data-placement="top"
+      title={tooltip}
+      style={{ cursor: 'pointer ' }}
+    >
+      <i onClick={onClick} className="material-icons">
+        {icon}
+      </i>
     </span>
   );
 };
@@ -50,12 +62,17 @@ export const Select = (props: SelectProps) => {
       ref={ref as any}
       className="form-control form-control-sm mb-2"
       value={value}
-      onBlur={e => ReactEditor.deselect(editor)}
+      onBlur={(e) => ReactEditor.deselect(editor)}
       onChange={(e) => {
         setValue(e.target.value);
         onChange(e.target.value);
-      }}>
-      {options.map(o => <option key={o} value={o}>{o}</option>)}
+      }}
+    >
+      {options.map((o) => (
+        <option key={o} value={o}>
+          {o}
+        </option>
+      ))}
     </select>
   );
 };
@@ -85,7 +102,7 @@ export const Input = (props: InputProps) => {
         setValue(e.target.value);
         onChange(e.target.value);
       }}
-      onBlur={e => ReactEditor.deselect(editor)}
+      onBlur={(e) => ReactEditor.deselect(editor)}
       onKeyDown={(e) => {
         const input = ref.current;
         if (!input) {
@@ -97,15 +114,20 @@ export const Input = (props: InputProps) => {
         };
         const path = ReactEditor.findPath(editor, model);
 
-        if (e.key === 'Enter' || e.key === 'ArrowDown' && cursorAtEndOfInput(input)
-          || (e.key === 'ArrowRight' && cursorAtEndOfInput(input))) {
+        if (
+          e.key === 'Enter' ||
+          (e.key === 'ArrowDown' && cursorAtEndOfInput(input)) ||
+          (e.key === 'ArrowRight' && cursorAtEndOfInput(input))
+        ) {
           e.preventDefault();
           e.stopPropagation();
           const next = Editor.next(editor, { at: path });
           return next && changeSelection(next[1]);
         }
-        if (e.key === 'ArrowUp' && cursorAtBeginningOfInput(input)
-          || (e.key === 'ArrowLeft' && cursorAtBeginningOfInput(input))) {
+        if (
+          (e.key === 'ArrowUp' && cursorAtBeginningOfInput(input)) ||
+          (e.key === 'ArrowLeft' && cursorAtBeginningOfInput(input))
+        ) {
           e.preventDefault();
           e.stopPropagation();
           return changeSelection(path);
@@ -116,13 +138,7 @@ export const Input = (props: InputProps) => {
   );
 };
 
-export const ToolPopupButton = ({
-  setIsPopoverOpen,
-  isPopoverOpen,
-  contentFn,
-  label,
-}: any) => {
-
+export const ToolPopupButton = ({ setIsPopoverOpen, isPopoverOpen, contentFn, label }: any) => {
   return (
     <div style={{ float: 'right' }}>
       <Popover
@@ -133,10 +149,18 @@ export const ToolPopupButton = ({
         isOpen={isPopoverOpen}
         padding={25}
         position={['bottom', 'top', 'left', 'right']}
-        content={contentFn}>
-        {ref => <button ref={ref} onClick={() => setIsPopoverOpen(true)} className="btn btn-light btn-sm mt-1">
-          <i className="fas fa-cog mr-1"></i>{label ? `${label} Options` : 'Options'}
-        </button>}
+        content={contentFn}
+      >
+        {(ref) => (
+          <button
+            ref={ref}
+            onClick={() => setIsPopoverOpen(true)}
+            className="btn btn-light btn-sm mt-1"
+          >
+            <i className="fas fa-cog mr-1"></i>
+            {label ? `${label} Options` : 'Options'}
+          </button>
+        )}
       </Popover>
     </div>
   );

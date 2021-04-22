@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { CommandDesc } from 'components/editing/commands/interfaces';
 import * as ContentModel from 'data/content/model';
 import { Modal } from 'components/editing/toolbars/Modal';
@@ -18,25 +19,28 @@ const ImageModal = ({ onDone, onCancel, model }: Props) => {
       onCancel={(e) => {
         onCancel();
       }}
-      onDone={() => onDone(value)}>
+      onDone={() => onDone(value)}
+    >
       <div>
         <h3 className="mb-2">Alternative Text</h3>
-        <p className="mb-4">Write a short description of this image
-        for visitors who are unable to see it.
+        <p className="mb-4">
+          Write a short description of this image for visitors who are unable to see it.
         </p>
-        <div className="m-auto" style={{
-          width: 300,
-          height: 200,
-          backgroundImage: `url(${model.src})`,
-          backgroundPosition: '50% 50%',
-          backgroundSize: 'contain',
-          backgroundRepeat: 'no-repeat',
-        }}>
-        </div>
+        <div
+          className="m-auto"
+          style={{
+            width: 300,
+            height: 200,
+            backgroundImage: `url(${model.src})`,
+            backgroundPosition: '50% 50%',
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+          }}
+        ></div>
         <input
           className="settings-input"
           value={value}
-          onChange={e => setValue(e.target.value)}
+          onChange={(e) => setValue(e.target.value)}
           placeholder={'E.g., "Stack of blueberry pancakes with powdered sugar"'}
         />
       </div>
@@ -46,8 +50,8 @@ const ImageModal = ({ onDone, onCancel, model }: Props) => {
 
 export const initCommands = (
   model: ContentModel.Image,
-  onEdit: (updated: Partial<ContentModel.Image>) => void): CommandDesc[][] => {
-
+  onEdit: (updated: Partial<ContentModel.Image>) => void,
+): CommandDesc[][] => {
   const setSrc = (src: string) => {
     onEdit({ src });
   };
@@ -67,11 +71,13 @@ export const initCommands = (
         command: {
           execute: (context, editor) => {
             const at = editor.selection as any;
-            selectImage(context.projectSlug, model.src)
-            .then(selection => Maybe.maybe(selection).caseOf({
-              just: src => setSrc(src),
-              nothing: () => {},
-            }));
+            selectImage(context.projectSlug, model.src).then((selection) =>
+              Maybe.maybe(selection).caseOf({
+                just: (src) => setSrc(src),
+                // eslint-disable-next-line
+                nothing: () => { },
+              }),
+            );
           },
           precondition: (editor) => {
             return true;

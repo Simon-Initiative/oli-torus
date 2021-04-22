@@ -12,29 +12,36 @@ import { Command, CommandDesc } from 'components/editing/commands/interfaces';
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
 
-export function selectAudio(projectSlug: string,
-  model: ContentModel.Audio): Promise<ContentModel.Audio> {
-
+export function selectAudio(
+  projectSlug: string,
+  model: ContentModel.Audio,
+): Promise<ContentModel.Audio> {
   return new Promise((resolve, reject) => {
-
     const selected = { img: null };
 
-    const mediaLibrary =
-      <ModalSelection title="Embed audio"
-        onInsert={() => { dismiss(); resolve(selected.img as any); }}
+    const mediaLibrary = (
+      <ModalSelection
+        title="Embed audio"
+        onInsert={() => {
+          dismiss();
+          resolve(selected.img as any);
+        }}
         onCancel={() => dismiss()}
         disableInsert={true}
       >
         <MediaManager
           projectSlug={projectSlug}
+          // eslint-disable-next-line
           onEdit={() => { }}
           mimeFilter={MIMETYPE_FILTERS.AUDIO}
           selectionType={SELECTION_TYPES.SINGLE}
           initialSelectionPaths={[model.src]}
           onSelectionChange={(images: MediaItem[]) => {
             (selected as any).img = ContentModel.audio(images[0].url);
-          }} />
-      </ModalSelection>;
+          }}
+        />
+      </ModalSelection>
+    );
 
     display(mediaLibrary);
   });
@@ -43,8 +50,9 @@ export function selectAudio(projectSlug: string,
 const command: Command = {
   execute: (context, editor: ReactEditor) => {
     const at = editor.selection as any;
-    selectAudio(context.projectSlug, ContentModel.audio())
-      .then(img => Transforms.insertNodes(editor, img, { at }));
+    selectAudio(context.projectSlug, ContentModel.audio()).then((img) =>
+      Transforms.insertNodes(editor, img, { at }),
+    );
   },
   precondition: (editor: ReactEditor) => {
     return true;

@@ -1,7 +1,11 @@
 import { SectionSlug } from 'data/types';
 import { makeRequest } from './common';
 
+// eslint-disable-next-line
 export type ExtrinsicRead = Object;
+
+// eslint-disable-next-line
+export type KeyValues = Object;
 export type ExtrinsicUpsert = {
   result: 'success',
 };
@@ -29,7 +33,7 @@ export function deleteGlobal(keys: string[]) {
   return makeRequest<ExtrinsicRead>(params);
 }
 
-export function upsertGlobal(keyValues: Object) {
+export function upsertGlobal(keyValues: KeyValues) {
 
   const params = {
     method: 'PUT',
@@ -61,7 +65,8 @@ export function deleteSection(slug: SectionSlug, keys: string[]) {
   return makeRequest<ExtrinsicRead>(params);
 }
 
-export function upsertSection(slug: SectionSlug, keyValues: Object) {
+
+export function upsertSection(slug: SectionSlug, keyValues: KeyValues) {
 
   const params = {
     method: 'PUT',

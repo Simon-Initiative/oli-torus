@@ -229,9 +229,12 @@ defmodule OliWeb.Router do
     # Review/QA
     live "/:project_id/review", Qa.QaLive, session: {__MODULE__, :with_session, []}
 
+    # Preview
+    get "/:project_id/preview", ResourceController, :preview
+    get "/:project_id/preview/:revision_slug", ResourceController, :preview
+
     # Editors
     get "/:project_id/resource/:revision_slug", ResourceController, :edit
-    get "/:project_id/resource/:revision_slug/preview", ResourceController, :preview
     get "/:project_id/resource/:revision_slug/activity/:activity_slug", ActivityController, :edit
 
     # Collaborators
@@ -256,10 +259,12 @@ defmodule OliWeb.Router do
     # live "/:project_id/insights", Insights, session: {__MODULE__, :with_session, []}
   end
 
-  scope "/api/v1/docs" do
-    pipe_through [:browser]
+  if Application.fetch_env!(:oli, :env) == :dev or Application.fetch_env!(:oli, :env) == :test do
+    scope "/api/v1/docs" do
+      pipe_through [:browser]
 
-    get "/", OpenApiSpex.Plug.SwaggerUI, path: "/api/v1/openapi"
+      get "/", OpenApiSpex.Plug.SwaggerUI, path: "/api/v1/openapi"
+    end
   end
 
   scope "/api/v1" do
@@ -429,6 +434,10 @@ defmodule OliWeb.Router do
         :review_attempt
 
     live "/:section_slug/grades", Grades.GradesLive, session: {__MODULE__, :with_section_user, []}
+
+    live "/:section_slug/manage", Delivery.ManageSection,
+      session: {__MODULE__, :with_section_user, []}
+
     get "/:section_slug/grades/export", PageDeliveryController, :export_gradebook
   end
 
@@ -464,6 +473,7 @@ defmodule OliWeb.Router do
 
     live_dashboard "/dashboard",
       metrics: OliWeb.Telemetry,
+      ecto_repos: [Oli.Repo],
       session: {__MODULE__, :with_session, []}
 
     resources "/platform_instances", PlatformInstanceController

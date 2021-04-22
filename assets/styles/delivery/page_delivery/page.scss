@@ -1,5 +1,13 @@
 @import "delivery/variables";
 
+h1.title {
+  font-weight: 300;
+  color: $title-color;
+  padding-bottom: .5em;
+  border-bottom: 1px solid $gray-400;
+  margin-bottom: 1em;
+}
+
 #wrapper {
   display: flex;
   width: 100%;
