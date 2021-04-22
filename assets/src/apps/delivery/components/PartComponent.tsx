@@ -45,7 +45,6 @@ const WebComponent: React.FC<any> = (props) => {
         state: JSON.stringify(props.state),
     };
 
-
     let wcTagName = props.type;
     if (!wcTagName || !customElements.get(wcTagName)) {
         // TODO: create unknown component?
