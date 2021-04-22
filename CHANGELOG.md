@@ -10,6 +10,14 @@
 
 ### Enhancements
 
+### Bug Fixes
+
+- Update changelog
+
+## 0.9.0 (2021-4-22)
+
+### Enhancements
+
 - Add OpenAPI docs for user state service
 - Enable OpenAPI docs on all environments at /api/v1/docs
 - Add ability to change images in pages and activities
