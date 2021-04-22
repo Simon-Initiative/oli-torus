@@ -26,8 +26,7 @@ defmodule OliWeb.DeliveryView do
         Routes.delivery_path(conn, :open_and_free_index)
 
       true ->
-        "#"
-#        Routes.delivery_path(conn, :index)
+        Routes.delivery_path(conn, :index)
     end
   end
 
