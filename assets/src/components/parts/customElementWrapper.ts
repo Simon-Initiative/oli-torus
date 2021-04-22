@@ -61,7 +61,7 @@ class Slot extends React.Component {
   }
 
   render() {
-    const ref = (r) => {
+    const ref = (r: any) => {
       if (!r) {
         this.ref.removeEventListener('__react', this._listener);
       } else {
