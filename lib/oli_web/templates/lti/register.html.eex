@@ -184,3 +184,4 @@
     </div>
   </div>
 </div>
+<%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>

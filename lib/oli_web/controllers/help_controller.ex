@@ -1,38 +1,23 @@
 defmodule OliWeb.HelpController do
   use OliWeb, :controller
-  import Oli.Utils
   require Logger
 
   alias Oli.Help.HelpContent
 
-  @spec index(Plug.Conn.t(), any) :: Plug.Conn.t()
-  def index(conn, _params) do
-    render_help_page(conn, "index.html", title: "Help")
-  end
-
-  @spec sent(Plug.Conn.t(), any) :: Plug.Conn.t()
-  def sent(conn, _params) do
-    render_help_page(conn, "success.html", title: "Help")
-  end
-
   def create(conn, params) do
     with {:ok, true} <- validate_recapture(Map.get(params, "g-recaptcha-response")),
-         {:ok, content_params} <- additional_help_context(conn, params),
+         {:ok, content_params} <- additional_help_context(conn, Map.get(params, "help")),
          {:ok, help_content} <- HelpContent.parse(content_params),
          {:ok, _} <-
            Oli.Help.Dispatcher.dispatch(
              Application.fetch_env!(:oli, :help)[:dispatcher],
              help_content
            ) do
-      conn
-      |> put_flash(:info, "Your help request has been successfully submitted")
-      |> redirect(to: value_or(params["redirect_to"], Routes.help_path(conn, :sent)))
+      json(conn, %{"result" => "success", "info" => "Your help request has been successfully submitted"})
     else
       {:error, message} ->
         Logger.error("Error when processing help message #{inspect(message)}")
-        conn
-        |> put_flash(:error, "Help request failed, please try again")
-        |> redirect(to: Routes.help_path(conn, :index))
+        error(conn, 500, "We are unable to forward your help request at the moment")
     end
   end
 
@@ -43,14 +28,14 @@ defmodule OliWeb.HelpController do
     end
   end
 
-  defp render_help_page(conn, page, keywords) do
-    render(conn, page, Keyword.put_new(keywords, :active, :help))
-  end
-
   defp additional_help_context(conn, params) do
     user_agent = Enum.at(get_req_header(conn, "user-agent"), 0)
     accept = Enum.at(get_req_header(conn, "accept"), 0)
     accept_language = Enum.at(get_req_header(conn, "accept-language"), 0)
+
+    user_agent = if user_agent === nil, do: "", else: user_agent
+    accept = if accept === nil, do: "", else: accept
+    accept_language = if accept_language === nil, do: "", else: accept_language
 
     remote_ip =
       conn.remote_ip
@@ -102,4 +87,11 @@ defmodule OliWeb.HelpController do
       {:ok, content_params}
     end
   end
+
+  defp error(conn, code, reason) do
+    conn
+    |> send_resp(code, reason)
+    |> halt()
+  end
+
 end

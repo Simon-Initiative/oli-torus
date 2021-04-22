@@ -1,6 +1,6 @@
 <div class="workspace-sidebar">
   <div class="container">
-    <%= link "Help", to: Routes.help_path(@conn, :index), class: "justify-content-end small" %>
+    <a href='javascript:;' onclick="showHelpModal();" class="justify-content-end small">Help</a>
   </div>
   <div class="user">
     <%= account_link @conn %>
