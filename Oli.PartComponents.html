@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.23.0">
+    <meta name="project" content="OLI Torus v0.9.0">
+
+    <title>Oli.PartComponents — OLI Torus v0.9.0</title>
+    <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
+
+    <script src="dist/sidebar_items-8a45ae97f3.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+
+  </head>
+  <body data-type="modules">
+    <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+
+<div class="main">
+
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" title="Collapse/expand sidebar"></span>
+</button>
+
+<section class="sidebar">
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
+    </button>
+    <label class="search-label">
+      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectDetails">
+      <a href="http://oli.cmu.edu" class="sidebar-projectName">
+OLI Torus
+      </a>
+      <strong class="sidebar-projectVersion">
+        v0.9.0
+      </strong>
+    </div>
+
+      <a href="http://oli.cmu.edu">
+        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
+      </a>
+
+  </div>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list" href="#full-list">Modules</a></li>
+
+
+      <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+      <h1>
+Oli.PartComponents <small class="app-vsn">(OLI Torus v0.9.0)</small>
+
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/part_components.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+
+      </h1>
+
+
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#change_registration/1">change_registration(registration)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns an <code class="inline">%Ecto.Changeset{}</code> for tracking registration changes.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create_registered_part_component_map/0">create_registered_part_component_map()</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create_registered_part_component_map/1">create_registered_part_component_map(project_slug)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the list of part components visible for author to use in particular project.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create_registration/1">create_registration(attrs \\ %{})</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Creates a registration.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#delete_registration/1">delete_registration(registration)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Deletes a registration.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#disable_part_component_in_project/2">disable_part_component_in_project(project_slug, part_component_slug)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#enable_part_component_in_project/2">enable_part_component_in_project(project_slug, part_component_slug)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_part_component_scripts/1">get_part_component_scripts(scriptType \\ :authoring_script)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a list of script urls for all registered parts</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_registration/1">get_registration(id)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_registration!/1">get_registration!(id)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Gets a single registration.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_registration_by_slug/1">get_registration_by_slug(slug)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#list_part_component_registrations/0">list_part_component_registrations()</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the list of part_component_registrations.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#part_components_for_project/1">part_components_for_project(project)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#register_part_component/1">register_part_component(manifest)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#set_global_status/2">set_global_status(part_component_slug, status)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#update_registration/2">update_registration(registration, attrs)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Updates a registration.</p></div>
+
+</div>
+
+  </div>
+
+        </section>
+
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions
+          </h1>
+          <div class="functions-list">
+<section class="detail" id="change_registration/1">
+
+  <div class="detail-header">
+    <a href="#change_registration/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">change_registration(registration)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/part_components.ex#L267" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Returns an <code class="inline">%Ecto.Changeset{}</code> for tracking registration changes.</p><h2 id="change_registration/1-examples" class="section-heading">
+  <a href="#change_registration/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_registration</span><span class="p" data-group-id="8842305816-1">(</span><span class="n">registration</span><span class="p" data-group-id="8842305816-1">)</span><span class="w">
+</span><span class="p" data-group-id="8842305816-2">%</span><span class="nc" data-group-id="8842305816-2">Ecto.Changeset</span><span class="p" data-group-id="8842305816-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="8842305816-3">%</span><span class="nc" data-group-id="8842305816-3">PartComponentRegistration</span><span class="p" data-group-id="8842305816-3">{</span><span class="p" data-group-id="8842305816-3">}</span><span class="p" data-group-id="8842305816-2">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="create_registered_part_component_map/0">
+
+  <div class="detail-header">
+    <a href="#create_registered_part_component_map/0" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create_registered_part_component_map()</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/part_components.ex#L32" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="create_registered_part_component_map/1">
+
+  <div class="detail-header">
+    <a href="#create_registered_part_component_map/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create_registered_part_component_map(project_slug)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/part_components.ex#L52" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>create_registered_part_component_map(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()) ::
+  %Oli.PartComponents.PartComponentMapEntry{
+    authoringElement: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    deliveryElement: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    description: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    enabledForProject: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    friendlyName: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    globallyAvailable: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    icon: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+  }
+  | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}</pre>
+
+      </div>
+
+<p>Returns the list of part components visible for author to use in particular project.</p><h2 id="create_registered_part_component_map/1-examples" class="section-heading">
+  <a href="#create_registered_part_component_map/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_registered_part_component_map</span><span class="p" data-group-id="3168210975-1">(</span><span class="n">philosophy</span><span class="p" data-group-id="3168210975-1">)</span><span class="w">
+</span><span class="p" data-group-id="3168210975-2">[</span><span class="p" data-group-id="3168210975-3">%</span><span class="nc" data-group-id="3168210975-3">PartComponentMapEntry</span><span class="p" data-group-id="3168210975-3">{</span><span class="p" data-group-id="3168210975-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="3168210975-2">]</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="create_registration/1">
+
+    <span id="create_registration/0"></span>
+
+  <div class="detail-header">
+    <a href="#create_registration/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create_registration(attrs \\ %{})</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/part_components.ex#L218" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Creates a registration.</p><h2 id="create_registration/1-examples" class="section-heading">
+  <a href="#create_registration/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_registration</span><span class="p" data-group-id="1708644476-1">(</span><span class="p" data-group-id="1708644476-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="1708644476-2">}</span><span class="p" data-group-id="1708644476-1">)</span><span class="w">
+</span><span class="p" data-group-id="1708644476-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1708644476-4">%</span><span class="nc" data-group-id="1708644476-4">PartComponentRegistration</span><span class="p" data-group-id="1708644476-4">{</span><span class="p" data-group-id="1708644476-4">}</span><span class="p" data-group-id="1708644476-3">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_registration</span><span class="p" data-group-id="1708644476-5">(</span><span class="p" data-group-id="1708644476-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1708644476-6">}</span><span class="p" data-group-id="1708644476-5">)</span><span class="w">
+</span><span class="p" data-group-id="1708644476-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1708644476-8">%</span><span class="nc" data-group-id="1708644476-8">Ecto.Changeset</span><span class="p" data-group-id="1708644476-8">{</span><span class="p" data-group-id="1708644476-8">}</span><span class="p" data-group-id="1708644476-7">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="delete_registration/1">
+
+  <div class="detail-header">
+    <a href="#delete_registration/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">delete_registration(registration)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/part_components.ex#L254" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Deletes a registration.</p><h2 id="delete_registration/1-examples" class="section-heading">
+  <a href="#delete_registration/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_registration</span><span class="p" data-group-id="1974285959-1">(</span><span class="n">registration</span><span class="p" data-group-id="1974285959-1">)</span><span class="w">
+</span><span class="p" data-group-id="1974285959-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1974285959-3">%</span><span class="nc" data-group-id="1974285959-3">PartComponentRegistration</span><span class="p" data-group-id="1974285959-3">{</span><span class="p" data-group-id="1974285959-3">}</span><span class="p" data-group-id="1974285959-2">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_registration</span><span class="p" data-group-id="1974285959-4">(</span><span class="n">registration</span><span class="p" data-group-id="1974285959-4">)</span><span class="w">
+</span><span class="p" data-group-id="1974285959-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1974285959-6">%</span><span class="nc" data-group-id="1974285959-6">Ecto.Changeset</span><span class="p" data-group-id="1974285959-6">{</span><span class="p" data-group-id="1974285959-6">}</span><span class="p" data-group-id="1974285959-5">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="disable_part_component_in_project/2">
+
+  <div class="detail-header">
+    <a href="#disable_part_component_in_project/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">disable_part_component_in_project(project_slug, part_component_slug)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/part_components.ex#L110" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="enable_part_component_in_project/2">
+
+  <div class="detail-header">
+    <a href="#enable_part_component_in_project/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">enable_part_component_in_project(project_slug, part_component_slug)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/part_components.ex#L80" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="get_part_component_scripts/1">
+
+    <span id="get_part_component_scripts/0"></span>
+
+  <div class="detail-header">
+    <a href="#get_part_component_scripts/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_part_component_scripts(scriptType \\ :authoring_script)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/part_components.ex#L183" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Returns a list of script urls for all registered parts</p>
+  </section>
+</section>
+<section class="detail" id="get_registration/1">
+
+  <div class="detail-header">
+    <a href="#get_registration/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_registration(id)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/part_components.ex#L204" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="get_registration!/1">
+
+  <div class="detail-header">
+    <a href="#get_registration!/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_registration!(id)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/part_components.ex#L202" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Gets a single registration.</p><p>Raises <a href="https://hexdocs.pm/ecto/3.5.8/Ecto.NoResultsError.html"><code class="inline">Ecto.NoResultsError</code></a> if the PartComponentRegistration does not exist.</p><h2 id="get_registration!/1-examples" class="section-heading">
+  <a href="#get_registration!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_registration!</span><span class="p" data-group-id="7953086930-1">(</span><span class="mi">123</span><span class="p" data-group-id="7953086930-1">)</span><span class="w">
+</span><span class="p" data-group-id="7953086930-2">%</span><span class="nc" data-group-id="7953086930-2">PartComponentRegistration</span><span class="p" data-group-id="7953086930-2">{</span><span class="p" data-group-id="7953086930-2">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_registration!</span><span class="p" data-group-id="7953086930-3">(</span><span class="mi">456</span><span class="p" data-group-id="7953086930-3">)</span><span class="w">
+</span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="get_registration_by_slug/1">
+
+  <div class="detail-header">
+    <a href="#get_registration_by_slug/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_registration_by_slug(slug)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/part_components.ex#L38" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="list_part_component_registrations/0">
+
+  <div class="detail-header">
+    <a href="#list_part_component_registrations/0" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">list_part_component_registrations()</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/part_components.ex#L176" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Returns the list of part_component_registrations.</p><h2 id="list_part_component_registrations/0-examples" class="section-heading">
+  <a href="#list_part_component_registrations/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_part_component_registrations</span><span class="p" data-group-id="0306955596-1">(</span><span class="p" data-group-id="0306955596-1">)</span><span class="w">
+</span><span class="p" data-group-id="0306955596-2">[</span><span class="p" data-group-id="0306955596-3">%</span><span class="nc" data-group-id="0306955596-3">PartComponentRegistration</span><span class="p" data-group-id="0306955596-3">{</span><span class="p" data-group-id="0306955596-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="0306955596-2">]</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="part_components_for_project/1">
+
+  <div class="detail-header">
+    <a href="#part_components_for_project/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">part_components_for_project(project)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/part_components.ex#L132" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="register_part_component/1">
+
+  <div class="detail-header">
+    <a href="#register_part_component/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">register_part_component(manifest)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/part_components.ex#L13" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="set_global_status/2">
+
+  <div class="detail-header">
+    <a href="#set_global_status/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">set_global_status(part_component_slug, status)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/part_components.ex#L157" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="update_registration/2">
+
+  <div class="detail-header">
+    <a href="#update_registration/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">update_registration(registration, attrs)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/part_components.ex#L236" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Updates a registration.</p><h2 id="update_registration/2-examples" class="section-heading">
+  <a href="#update_registration/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_registration</span><span class="p" data-group-id="6572962694-1">(</span><span class="n">registration</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6572962694-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="6572962694-2">}</span><span class="p" data-group-id="6572962694-1">)</span><span class="w">
+</span><span class="p" data-group-id="6572962694-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6572962694-4">%</span><span class="nc" data-group-id="6572962694-4">PartComponentRegistration</span><span class="p" data-group-id="6572962694-4">{</span><span class="p" data-group-id="6572962694-4">}</span><span class="p" data-group-id="6572962694-3">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_registration</span><span class="p" data-group-id="6572962694-5">(</span><span class="n">registration</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6572962694-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="6572962694-6">}</span><span class="p" data-group-id="6572962694-5">)</span><span class="w">
+</span><span class="p" data-group-id="6572962694-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6572962694-8">%</span><span class="nc" data-group-id="6572962694-8">Ecto.Changeset</span><span class="p" data-group-id="6572962694-8">{</span><span class="p" data-group-id="6572962694-8">}</span><span class="p" data-group-id="6572962694-7">}</span></code></pre>
+  </section>
+</section>
+
+          </div>
+        </section>
+
+      <footer class="footer">
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.23.0) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
+          </span>
+          <span class="line">
+            Designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+          </span>
+        </p>
+        <p>
+
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
+          <button class="line footer-button display-shortcuts-help">
+            Display keyboard shortcuts
+          </button>
+          <button class="line footer-button night-mode-toggle">
+            Toggle night mode
+          </button>
+          <button class="line footer-button display-quick-switch">
+            Go to a HexDocs package
+          </button>
+          <button class="line footer-button tooltips-toggle">
+            <span class="tooltips-option-disable">Disable tooltips</span>
+            <span class="tooltips-option-enable">Enable tooltips</span>
+          </button>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+  </body>
+</html>
