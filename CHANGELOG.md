@@ -4,7 +4,11 @@
 
 ### Enhancements
 
+- Add support for detecting problematic database queries
+
 ### Bug fixes
+
+- Add missing database indexes, rework resolver queries
 
 ## 0.9.0 (2021-4-22)
 
