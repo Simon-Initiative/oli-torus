@@ -2,6 +2,11 @@ defmodule Oli.Utils.Database do
   alias Oli.Repo
   require Logger
 
+  @doc """
+  Explains the query plan for a given raw, string based query.  Options to either inline log
+  the result and return the query, or to just return to analyzed result.  Results can be in either
+  json, text, or yaml format.  Default is to log output as JSON.
+  """
   def explain_sql(query, params, opts \\ []) when is_binary(query) do
     opts = put_defaults(opts)
 
@@ -19,6 +24,29 @@ defmodule Oli.Utils.Database do
     end
   end
 
+  @doc """
+  Explains the query plan for a given Ecto based query.  Options to either inline log
+  the result and return the query, or to just return to analyzed result.  Results can be in either
+  json, text, or yaml format.  Default is to log output as JSON.
+
+  Use this inline for development on a query by query basis like:
+  ```
+  from(s in Section,
+        join: p in Publication,
+        on: p.id == s.publication_id,
+        join: m in PublishedResource,
+        on: m.publication_id == p.id,
+        join: rev in Revision,
+        on: rev.id == m.revision_id,
+        where:
+          (rev.resource_type_id == ^page_id or rev.resource_type_id == ^container_id) and
+            s.slug == ^section_slug,
+        select: rev
+      )
+      |> Oli.Utils.Database.explain()
+      |> Repo.all()
+  ```
+  """
   def explain(query, opts \\ []) do
     opts = put_defaults(opts)
 
@@ -38,6 +66,10 @@ defmodule Oli.Utils.Database do
     end
   end
 
+  @doc """
+  Logs as a warning the query and stacktrace of the caller if the query contains a sequential
+  table scan or if the query exceeds a maxiumum cost threshold.
+  """
   def flag_problem_queries(query, cost_threshold) do
     result = explain(query, log_output: false)
 
