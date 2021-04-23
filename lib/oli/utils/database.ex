@@ -29,12 +29,9 @@ defmodule Oli.Utils.Database do
 
     sql = "EXPLAIN (#{analyze_to_sql(opts[:analyze])}, #{format_to_sql(opts[:format])}) #{sql}"
 
-    {:error, explain} =
-      Repo.transaction(fn ->
-        Repo
-        |> Ecto.Adapters.SQL.query!(sql, params)
-        |> Repo.rollback()
-      end)
+    explain =
+      Repo
+      |> Ecto.Adapters.SQL.query!(sql, params)
 
     if opts[:log_output] do
       log_output(explain, opts[:format])
@@ -42,6 +39,62 @@ defmodule Oli.Utils.Database do
     else
       explain
     end
+  end
+
+  def flag_problem_queries(query, cost_threshold) do
+    result = explain(query, log_output: false)
+
+    explanation =
+      Map.get(result, :rows)
+      |> List.first()
+
+    count = count_sequential(explanation)
+    cost = explanation |> hd |> hd |> Map.get("Plan") |> Map.get("Total Cost")
+
+    if count > 0 do
+      output_problematic(result, "A query with #{count} sequential scans was detected")
+    end
+
+    if cost >= cost_threshold do
+      output_problematic(result, "A query with #{cost} total compute cost was detected")
+    end
+  end
+
+  defp output_problematic(result, reason) do
+    trace =
+      try do
+        raise "Problematic Query"
+      rescue
+        _ -> Exception.format_stacktrace()
+      end
+
+    Logger.warn(reason)
+    Logger.warn(trace)
+    log_output(result, :json)
+  end
+
+  defp count_sequential(explanation) do
+    count_sequential(explanation, 0)
+  end
+
+  defp count_sequential(list, count) when is_list(list) do
+    Enum.reduce(list, count, fn item, c -> c + count_sequential(item, c) end)
+  end
+
+  defp count_sequential(%{"Plan" => %{"Plans" => plans}}, count) do
+    count_sequential(plans, count)
+  end
+
+  defp count_sequential(%{"Plan" => plan}, count) do
+    count_sequential(plan, count)
+  end
+
+  defp count_sequential(%{"Node Type" => "Seq Scan"}, count) do
+    count + 1
+  end
+
+  defp count_sequential(_, count) do
+    count
   end
 
   defp put_defaults(opts) do
