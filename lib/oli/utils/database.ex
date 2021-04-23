@@ -68,7 +68,7 @@ defmodule Oli.Utils.Database do
 
   @doc """
   Logs as a warning the query and stacktrace of the caller if the query contains a sequential
-  table scan or if the query exceeds a maxiumum cost threshold.
+  table scan or if the query equals or exceeds a cost threshold.
   """
   def flag_problem_queries(query, cost_threshold) do
     result = explain(query, log_output: false)
