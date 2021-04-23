@@ -29,6 +29,9 @@ config :oli,
   local_activity_manifests:
     Path.wildcard(File.cwd!() <> "/assets/src/components/activities/*/manifest.json")
     |> Enum.map(&File.read!/1),
+  local_part_component_manifests:
+    Path.wildcard(File.cwd!() <> "/assets/src/components/parts/*/manifest.json")
+    |> Enum.map(&File.read!/1),
   email_from_name: System.get_env("EMAIL_FROM_NAME", "OLI Torus"),
   email_from_address: System.get_env("EMAIL_FROM_ADDRESS", "admin@example.edu"),
   email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu"),
