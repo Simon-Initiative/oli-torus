@@ -2,6 +2,26 @@ defmodule Oli.Utils.Database do
   alias Oli.Repo
   require Logger
 
+  def explain_sql(query, params, opts \\ []) when is_binary(query) do
+    opts = put_defaults(opts)
+
+    sql = "EXPLAIN (#{analyze_to_sql(opts[:analyze])}, #{format_to_sql(opts[:format])}) #{query}"
+
+    {:error, explain} =
+      Repo.transaction(fn ->
+        Repo
+        |> Ecto.Adapters.SQL.query!(sql, params)
+        |> Repo.rollback()
+      end)
+
+    if opts[:log_output] do
+      log_output(explain, opts[:format])
+      query
+    else
+      explain
+    end
+  end
+
   def explain(query, opts \\ []) do
     opts = put_defaults(opts)
 
