@@ -7,12 +7,9 @@ defmodule Oli.Utils.Database do
 
     sql = "EXPLAIN (#{analyze_to_sql(opts[:analyze])}, #{format_to_sql(opts[:format])}) #{query}"
 
-    {:error, explain} =
-      Repo.transaction(fn ->
-        Repo
-        |> Ecto.Adapters.SQL.query!(sql, params)
-        |> Repo.rollback()
-      end)
+    explain =
+      Repo
+      |> Ecto.Adapters.SQL.query!(sql, params)
 
     if opts[:log_output] do
       log_output(explain, opts[:format])
