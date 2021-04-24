@@ -1,0 +1,33 @@
+<h1>Show Brand</h1>
+
+<ul>
+
+  <li>
+    <strong>Name:</strong>
+    <%= @brand.name %>
+  </li>
+
+  <li>
+    <strong>Logo:</strong>
+    <%= @brand.logo %>
+  </li>
+
+  <li>
+    <strong>Logo dark:</strong>
+    <%= @brand.logo_dark %>
+  </li>
+
+  <li>
+    <strong>Favicons:</strong>
+    <%= @brand.favicons %>
+  </li>
+
+  <li>
+    <strong>Favicons dark:</strong>
+    <%= @brand.favicons_dark %>
+  </li>
+
+</ul>
+
+<span><%= link "Edit", to: Routes.brand_path(@conn, :edit, @brand) %></span>
+<span><%= link "Back", to: Routes.brand_path(@conn, :index) %></span>

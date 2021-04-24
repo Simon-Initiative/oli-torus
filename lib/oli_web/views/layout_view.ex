@@ -11,6 +11,7 @@ defmodule OliWeb.LayoutView do
       account_linked?: 1,
       logo_link_path: 1
     ]
+  import Oli.Branding
 
   alias Oli.Authoring
   alias Oli.Accounts.AuthorPreferences
@@ -30,7 +31,7 @@ defmodule OliWeb.LayoutView do
   end
 
   def get_title(assigns) do
-    live_title_tag(assigns[:page_title] || assigns[:title] || "Open Learning Initiative",
+    live_title_tag(assigns[:page_title] || assigns[:title] || brand_name(),
       suffix: ""
     )
   end

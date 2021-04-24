@@ -1,0 +1,34 @@
+<h1>Listing Brands</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Logo</th>
+      <th>Logo dark</th>
+      <th>Favicons</th>
+      <th>Favicons dark</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for brand <- @brands do %>
+    <tr>
+      <td><%= brand.name %></td>
+      <td><%= brand.logo %></td>
+      <td><%= brand.logo_dark %></td>
+      <td><%= brand.favicons %></td>
+      <td><%= brand.favicons_dark %></td>
+
+      <td>
+        <span><%= link "Show", to: Routes.brand_path(@conn, :show, brand) %></span>
+        <span><%= link "Edit", to: Routes.brand_path(@conn, :edit, brand) %></span>
+        <span><%= link "Delete", to: Routes.brand_path(@conn, :delete, brand), method: :delete, data: [confirm: "Are you sure?"] %></span>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<span><%= link "New Brand", to: Routes.brand_path(@conn, :new) %></span>

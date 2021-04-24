@@ -1,0 +1,5 @@
+<h1>Edit Brand</h1>
+
+<%= render "form.html", Map.put(assigns, :action, Routes.brand_path(@conn, :update, @brand)) %>
+
+<span><%= link "Back", to: Routes.brand_path(@conn, :index) %></span>

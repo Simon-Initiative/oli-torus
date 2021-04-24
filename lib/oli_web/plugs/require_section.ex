@@ -2,12 +2,15 @@ defmodule Oli.Plugs.RequireSection do
   import Plug.Conn
   import Phoenix.Controller
 
+  alias Oli.Repo
+
   def init(opts), do: opts
 
   def call(conn, _opts) do
     case conn.path_params do
       %{"section_slug" => section_slug} ->
-        case Oli.Delivery.Sections.get_section_by(slug: section_slug) do
+        case Oli.Delivery.Sections.get_section_by(slug: section_slug)
+          |> Repo.preload([:publication, :project, :brand, lti_1p3_deployment: [registration: [:brand]]]) do
           nil ->
             section_not_found(conn)
 

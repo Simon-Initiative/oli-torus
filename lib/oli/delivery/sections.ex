@@ -172,8 +172,9 @@ defmodule Oli.Delivery.Sections do
       iex> get_section_by(slug: "111")
       nil
   """
-  def get_section_by(clauses),
-    do: Repo.get_by(Section, clauses) |> Repo.preload([:publication, :project])
+  def get_section_by(clauses) do
+    Repo.get_by(Section, clauses) |> Repo.preload([:publication, :project])
+  end
 
   @doc """
   Gets a section using the given LTI params

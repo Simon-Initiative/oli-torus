@@ -52,7 +52,7 @@ defmodule OliWeb.Accounts.AccountsLive do
     {:ok, model} =
       AccountsModel.new(users_model: users_model, authors_model: authors_model, author: author)
 
-    {:ok, assign(socket, model: model, title: "Account Management", active: :accounts)}
+    {:ok, assign(socket, model: model, title: "Manage Accounts", active: :accounts)}
   end
 
   def render_role_column(assigns, %{system_role_id: system_role_id} = row, _) do

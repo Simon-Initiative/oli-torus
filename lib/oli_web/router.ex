@@ -170,6 +170,8 @@ defmodule OliWeb.Router do
     pipe_through [:api]
     get "/api/v1/legacy_support", LegacySupportController, :index
     post "/access_tokens", LtiController, :access_tokens
+
+    get "/site.webmanifest", StaticPageController, :site_webmanifest
   end
 
   scope "/.well-known", OliWeb do
@@ -505,6 +507,9 @@ defmodule OliWeb.Router do
 
     # Open and free sections
     resources "/open_and_free", OpenAndFreeController
+
+    # Branding
+    resources "/brands", BrandController
   end
 
   scope "/project", OliWeb do
