@@ -4,6 +4,8 @@
 
 ### Enhancements
 
+- Allow adaptive pages to render without application chrome
+
 ### Bug fixes
 
 ## 0.9.0 (2021-4-22)
