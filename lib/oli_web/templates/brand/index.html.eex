@@ -1,34 +1,37 @@
-<h1>Listing Brands</h1>
 
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Logo</th>
-      <th>Logo dark</th>
-      <th>Favicons</th>
-      <th>Favicons dark</th>
+<div class="container">
+  <div class="d-flex flex-row mb-2">
+    <div class="flex-grow-1"></div>
+    <div><%= link "New Brand", to: Routes.brand_path(@conn, :new), class: "btn btn-md btn-outline-primary" %></div>
+  </div>
 
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-<%= for brand <- @brands do %>
-    <tr>
-      <td><%= brand.name %></td>
-      <td><%= brand.logo %></td>
-      <td><%= brand.logo_dark %></td>
-      <td><%= brand.favicons %></td>
-      <td><%= brand.favicons_dark %></td>
+  <%= if Enum.count(@brands) == 0 do %>
+    <div class="my-5 text-center">
+      There are no brands
+    </div>
+  <% else %>
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Logo</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+    <%= for brand <- @brands do %>
+        <tr>
+          <td><%= brand.name %></td>
+          <td><%= brand.logo %></td>
 
-      <td>
-        <span><%= link "Show", to: Routes.brand_path(@conn, :show, brand) %></span>
-        <span><%= link "Edit", to: Routes.brand_path(@conn, :edit, brand) %></span>
-        <span><%= link "Delete", to: Routes.brand_path(@conn, :delete, brand), method: :delete, data: [confirm: "Are you sure?"] %></span>
-      </td>
-    </tr>
-<% end %>
-  </tbody>
-</table>
+          <td class="text-nowrap">
+            <%= link "Details", to: Routes.brand_path(@conn, :show, brand), class: "btn btn-md btn-sm btn-outline-primary" %>
+            <%# <%= link "Remove", to: Routes.brand_path(@conn, :delete, brand), method: :delete, data: [confirm: "Are you sure you want to permanently remove the brand \"#{brand.name}\"?"], class: "btn btn-sm btn-outline-danger ml-2" %>
+          </td>
+        </tr>
+    <% end %>
+      </tbody>
+    </table>
+  <% end %>
 
-<span><%= link "New Brand", to: Routes.brand_path(@conn, :new) %></span>
+</div>

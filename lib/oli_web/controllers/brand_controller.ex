@@ -61,6 +61,6 @@ defmodule OliWeb.BrandController do
   end
 
   defp render_workspace_page(conn, template, assigns) do
-    render(conn, template, Keyword.merge(assigns, active: :branding, title: "Branding"))
+    render(conn, template, Keyword.merge(assigns, active: :brands, title: "Brands"))
   end
 end
