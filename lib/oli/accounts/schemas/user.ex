@@ -34,7 +34,7 @@ defmodule Oli.Accounts.User do
 
     has_many :enrollments, Oli.Delivery.Sections.Enrollment
 
-    has_many :consent_cookies, Oli.Consent.Cookies
+    has_many :consent_cookies, Oli.Consent.CookiesConsent
 
     many_to_many :platform_roles, Lti_1p3.DataProviders.EctoProvider.PlatformRole,
       join_through: "users_platform_roles",

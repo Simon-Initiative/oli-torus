@@ -3,7 +3,6 @@ defmodule Oli.Consent do
 
   alias Oli.Repo
   alias Oli.Consent.CookiesConsent
-  alias Oli.Accounts.User
 
   @doc """
   Creates or updates cookie consent.

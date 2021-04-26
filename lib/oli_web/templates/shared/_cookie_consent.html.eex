@@ -382,7 +382,7 @@
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(cookies),
+        body: JSON.stringify({cookies: cookies}),
       }).then((response) => response.json())
               .then((json) => {
                 return json

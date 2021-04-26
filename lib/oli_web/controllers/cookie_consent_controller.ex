@@ -2,11 +2,10 @@ defmodule OliWeb.CookieConsentController do
   use OliWeb, :controller
   require Logger
 
-  alias Oli.Repo
   alias Oli.Consent
 
   def persist_cookies(conn, params) do
-    cookies = Map.get(params, "_json")
+    cookies = Map.get(params, "cookies")
     current_user = Map.get(conn.assigns, :current_user)
     if current_user != nil do
       Enum.each(cookies, fn cookie ->
@@ -17,9 +16,11 @@ defmodule OliWeb.CookieConsentController do
 
         Consent.insert_cookie(name, value, expiration, current_user.id)
       end)
+      json(conn, %{"result" => "success", "info" => "cookies persisted"})
+    else
+      json(conn, %{"result" => "success", "info" => "user not found"})
     end
 
-    json(conn, %{"result" => "success", "info" => "cookie persist processed"})
   end
 
   def retrieve(conn, _params) do
