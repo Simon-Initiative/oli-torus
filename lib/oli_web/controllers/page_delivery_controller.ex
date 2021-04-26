@@ -47,7 +47,13 @@ defmodule OliWeb.PageDeliveryController do
          section_slug,
          _
        ) do
-    conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
+    layout =
+      case Map.get(context.page.content, "displayApplicationChrome", true) do
+        true -> "page.html"
+        false -> "chromeless.html"
+      end
+
+    conn = put_root_layout(conn, {OliWeb.LayoutView, layout})
     user = conn.assigns.current_user
 
     resource_attempt = Enum.at(context.resource_attempts, 0)
@@ -58,6 +64,7 @@ defmodule OliWeb.PageDeliveryController do
       |> Jason.encode()
 
     render(conn, "advanced_delivery.html", %{
+      additional_stylesheets: Map.get(context.page.content, "additionalStylesheets", []),
       resource_attempt_guid: resource_attempt.attempt_guid,
       resource_attempt_state: resource_attempt_state,
       activity_guid_mapping: activity_guid_mapping,
@@ -86,7 +93,6 @@ defmodule OliWeb.PageDeliveryController do
          section_slug,
          _
        ) do
-
     # Only consider graded attempts
     resource_attempts = Enum.filter(resource_attempts, fn a -> a.revision.graded == true end)
 
