@@ -23,6 +23,7 @@
   - Fix an issue when creating section allows multiple sections to be created
   - Improved rendering robustness when content elements are missing key attributes
   - Disable access to OpenAPI docs in production
+  - Fix help and logo links on register institution page, change help form to modal
 
 ## 0.8.0 (2021-4-12)
 
