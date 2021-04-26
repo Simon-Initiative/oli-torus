@@ -4,9 +4,12 @@
 
 ### Enhancements
 
+- Add support for detecting problematic database queries
 - Allow adaptive pages to render without application chrome
 
 ### Bug fixes
+
+- Add missing database indexes, rework resolver queries
 
 ## 0.9.0 (2021-4-22)
 
