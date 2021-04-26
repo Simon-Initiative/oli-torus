@@ -1,7 +1,8 @@
-@import "authoring/variables";
+@import 'authoring/variables';
 @import 'bootstrap';
 
-.editors .structured-content, .rich-text-editor {
+.editors .structured-content,
+.rich-text-editor {
   .table-editor {
     clear: both;
 
@@ -20,7 +21,8 @@
       border-collapse: collapse;
       table-layout: fixed;
 
-      td, th {
+      td,
+      th {
         position: relative;
       }
 
@@ -57,13 +59,13 @@
   blockquote {
     clear: both;
     margin-top: 12px;
-    font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+    font-family: Georgia, Cambria, 'Times New Roman', Times, serif;
     font-size: 1.3em;
     line-height: 1.5em;
-    letter-spacing: -.003em;
-    color: rgba(0,0,0,.84);
+    letter-spacing: -0.003em;
+    color: rgba(0, 0, 0, 0.84);
 
-    border-left: 3px solid rgba(0,0,0,.84);
+    border-left: 3px solid rgba(0, 0, 0, 0.84);
     padding-left: 10px;
     padding-top: 2px;
     padding-bottom: 2px;
@@ -79,17 +81,18 @@
   }
 
   code {
-    font-family: "Source Code Pro", "Courier New", Courier, monospace;
-    color: rgba(0,0,0,.84);
-    background: rgba(0,0,0,.05);
-    letter-spacing: -.003em;
+    font-family: 'Source Code Pro', 'Courier New', Courier, monospace;
+    color: rgba(0, 0, 0, 0.84);
+    background: rgba(0, 0, 0, 0.05);
+    letter-spacing: -0.003em;
   }
 
   img {
     @extend .img-fluid;
   }
 
-  ul li, ol li {
+  ul li,
+  ol li {
     margin-bottom: 14px;
   }
 
@@ -141,6 +144,24 @@
 
   .image-editor {
     clear: both;
+
+    .image-resize-selection-box-border {
+      position: absolute;
+      border: 1px solid rgb(0, 150, 253);
+      background-color: rgba(0, 0, 0, 0);
+      z-index: 30;
+      border-color: rgb(26, 115, 232);
+    }
+
+    .image-resize-selection-box-handle {
+      border: 1px solid rgb(255, 255, 255);
+      width: 7px;
+      height: 7px;
+      font-size: 0px;
+      z-index: 40;
+      background-color: rgb(26, 115, 232);
+      position: absolute;
+    }
   }
 
   .settings-input {
@@ -148,7 +169,7 @@
     border: 0;
     width: 100%;
     height: auto;
-    color: rgba($color: $body-color, $alpha: .68);
+    color: rgba($color: $body-color, $alpha: 0.68);
     background: transparent;
     outline: none;
   }
