@@ -262,11 +262,15 @@
 </div>
 <script>
   $(function () {
+    retrieveCookies();
+  });
+
+  const processConsent = () => {
     let optInCookie = getCookie('_cky_opt_in');
     let dismissOptIn = getCookie('_cky_opt_in_dismiss');
     if (optInCookie === "") {
       const days = 365 * 24 * 60 * 60 * 1000;
-      setCookie("_cky_opt_in", "false", days);
+      setCookies([{name: "_cky_opt_in", value: "false", duration: days}]);
       optInCookie = "false";
     }
 
@@ -276,10 +280,10 @@
       setChecked('#analyticsCookies', userOptions.analytics);
       setChecked('#targetingCookies', userOptions.targeting);
       const minutes = 60 * 60 * 1000;
-      setCookie("_cky_opt_in_dismiss", "true", minutes);
+      setCookies([{name: "_cky_opt_in_dismiss", value: "true", duration: minutes}]);
       $('#modal-cookie-consent').modal('show');
     }
-  });
+  }
   
   const setChecked = (selector, checked) => {
     let elem = document.querySelector(selector);
@@ -290,8 +294,8 @@
   const storeConsent = () => {
     const userOptions = consentOptions();
     const days = 365 * 24 * 60 * 60 * 1000;
-    setCookie("_cky_opt_choices", JSON.stringify(userOptions), days);
-    setCookie("_cky_opt_in", "true", days);
+    setCookies([{name: "_cky_opt_choices", value: JSON.stringify(userOptions), duration: days},
+            {name: "_cky_opt_in", value: "true", duration: days}]);
     $('#modal-cookie-consent').modal('hide');
   }
   
@@ -326,8 +330,8 @@
       targeting: document.querySelector('#targetingCookies').checked
     }
     const days = 365 * 24 * 60 * 60 * 1000;
-    setCookie("_cky_opt_choices", JSON.stringify(userOptions), days);
-    setCookie("_cky_opt_in", "true", days);
+    setCookies([{name: "_cky_opt_choices", value: JSON.stringify(userOptions), duration: days},
+            {name: "_cky_opt_in", value: "true", duration: days}]);
     $('#modal-cookie-preferences').modal('hide');
   }
   
@@ -337,12 +341,21 @@
     label.innerHTML = 'Off';
     if (checkbox.checked) label.innerHTML = 'On';
   }
-  
+
+  const setCookies = (cookies) => {
+    cookies.forEach((cookie) => {
+      const d = new Date();
+      d.setTime(d.getTime() + cookie.duration);
+      cookie.duration = d.toUTCString();
+      cookie.expires = d.toISOString();
+      setCookie(cookie.name, cookie.value, cookie.duration);
+    })
+    persistCookie(cookies);
+  }
+
   const setCookie = (cname, cvalue, duration) => {
-    const d = new Date();
-    d.setTime(d.getTime() + duration);
-    const expires = "expires=" + d.toUTCString();
-    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/;samesite=lax";
+    const expires = "expires=" + duration;
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/;SameSite=None; Secure";
   }
   
   const getCookie = (cname) => {
@@ -359,5 +372,55 @@
       }
     }
     return "";
+  }
+
+  const persistCookie = (cookies) => {
+    const pf = async () => {
+      await fetch('<%= Routes.cookie_consent_path(@conn, :persist_cookies) %>', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(cookies),
+      }).then((response) => response.json())
+              .then((json) => {
+                return json
+              })
+              .catch((error) => {
+                console.error(error);
+                return error
+              });
+    }
+    pf();
+  }
+
+  const retrieveCookies = () => {
+    const pf = async () => {
+      await fetch('<%= Routes.cookie_consent_path(@conn, :retrieve) %>', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      }).then((response) => response.json())
+              .then((json) => {
+                const dateNow = new Date();
+                json.forEach((c) => {
+                  const expiration = new Date(c.expiration);
+                  if (expiration > dateNow) {
+                    c.duration = d.toUTCString();
+                    setCookie(c.name, c.value, c.duration);
+                  }
+                })
+                processConsent();
+                return json
+              })
+              .catch((error) => {
+                console.error(error);
+                return error
+              });
+    }
+    pf();
   }
 </script>
