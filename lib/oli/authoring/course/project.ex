@@ -22,6 +22,9 @@ defmodule Oli.Authoring.Course.Project do
     many_to_many :activity_registrations, Oli.Activities.ActivityRegistration,
       join_through: Oli.Activities.ActivityRegistrationProject
 
+    many_to_many :part_component_registrations, Oli.PartComponents.PartComponentRegistration,
+      join_through: Oli.PartComponents.PartComponentRegistrationProject
+
     has_many :publications, Oli.Publishing.Publication
 
     timestamps(type: :utc_datetime)

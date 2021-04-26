@@ -1,4 +1,7 @@
 
+<%= for script <- @part_scripts do %>
+  <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
+<% end %>
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/delivery.js") %>"></script>
 
 <h1 class="title"><%= @title %></h1>

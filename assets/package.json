@@ -9,7 +9,7 @@
     "watch": "webpack --mode development --watch",
     "build": "npm run clean && npm run lint && npm run test && npm run deploy",
     "clean": "del --force coverage/** ../priv/static",
-    "lint": "eslint --quiet 'src/**/*.ts*'",
+    "lint": "eslint --quiet \"src/**/*.ts*\"",
     "test": "jest",
     "test:watch": "jest --watch -o"
   },

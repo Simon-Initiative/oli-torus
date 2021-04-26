@@ -1,9 +1,21 @@
-import React, { CSSProperties, useEffect } from 'react';
+/* eslint-disable react/prop-types */
+import React, { CSSProperties, useEffect, useState } from 'react';
 
 // TODO: fix typing
 const Image: React.FC<any> = (props) => {
-  // eslint-disable-next-line
-  const { x, y, z, width, height, src, alt, customCssClass } = props.model;
+  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
+  const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+
+  useEffect(() => {
+    if (typeof props?.model === 'string') {
+      setModel(JSON.parse(props.model));
+    }
+    if (typeof props?.state === 'string') {
+      setState(JSON.parse(props.state));
+    }
+  }, [props]);
+
+  const { x, y, z, width, height, src, alt, customCssClass } = model;
   const imageStyles: CSSProperties = {
     position: 'absolute',
     top: y,

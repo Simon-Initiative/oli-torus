@@ -1,0 +1,14 @@
+{
+  "id": "janus_text_flow",
+  "friendlyName": "Text",
+  "description": "Displays static text that can render portions of adaptive state.",
+  "global": true,
+  "delivery": {
+    "element": "janus-text-flow",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-text-flow",
+    "entry": "./authoring-entry.ts"
+  }
+}

@@ -19,6 +19,8 @@ world_universities_and_domains_json =
 default_sha = if Mix.env() == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 
 config :oli,
+  problematic_query_detection: :disabled,
+  problematic_query_cost_threshold: 150,
   ecto_repos: [Oli.Repo],
   build: %{
     version: Mix.Project.config()[:version],
@@ -28,6 +30,9 @@ config :oli,
   },
   local_activity_manifests:
     Path.wildcard(File.cwd!() <> "/assets/src/components/activities/*/manifest.json")
+    |> Enum.map(&File.read!/1),
+  local_part_component_manifests:
+    Path.wildcard(File.cwd!() <> "/assets/src/components/parts/*/manifest.json")
     |> Enum.map(&File.read!/1),
   email_from_name: System.get_env("EMAIL_FROM_NAME", "OLI Torus"),
   email_from_address: System.get_env("EMAIL_FROM_ADDRESS", "admin@example.edu"),
