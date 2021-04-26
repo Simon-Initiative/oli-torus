@@ -287,7 +287,6 @@ OliWeb.Grades.GradeSync.html
 OliWeb.Grades.GradesLive.html
 OliWeb.Grades.LineItems.html
 OliWeb.HelpController.html
-OliWeb.HelpDeliveryView.html
 OliWeb.HelpView.html
 OliWeb.IngestController.html
 OliWeb.IngestView.html
@@ -384,8 +383,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-cbd22944e6.js
-dist/sidebar_items-562166510a.js
+dist/search_items-4782dc9e74.js
+dist/sidebar_items-cbbe39dae8.js
 index.html
 license.html
 readme.html
