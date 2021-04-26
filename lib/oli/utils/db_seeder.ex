@@ -547,7 +547,7 @@ defmodule Oli.Seeder do
     {:ok, container_revision} =
       Oli.Resources.update_revision(container_revision, %{children: children})
 
-    create_published_resource(publication, container_resource, container_revision)
+    Publishing.upsert_published_resource(publication, container_revision)
 
     Map.put(map, :container, %{resource: container_resource, revision: container_revision})
   end

@@ -15,15 +15,15 @@ defmodule Oli.Publishing.DeliveryResolver do
   def from_resource_id(section_slug, resource_ids) when is_list(resource_ids) do
     fn ->
       revisions =
-        Repo.all(
-          from s in Section,
-            join: m in PublishedResource,
-            on: m.publication_id == s.publication_id,
-            join: rev in Revision,
-            on: rev.id == m.revision_id,
-            where: s.slug == ^section_slug and s.status != :deleted and m.resource_id in ^resource_ids,
-            select: rev
+        from(s in Section,
+          join: m in PublishedResource,
+          on: m.publication_id == s.publication_id,
+          join: rev in Revision,
+          on: rev.id == m.revision_id,
+          where: s.slug == ^section_slug and m.resource_id in ^resource_ids,
+          select: rev
         )
+        |> Repo.all()
 
       # order them according to the resource_ids
       map = Enum.reduce(revisions, %{}, fn e, m -> Map.put(m, e.resource_id, e) end)
@@ -36,15 +36,15 @@ defmodule Oli.Publishing.DeliveryResolver do
   @impl Resolver
   def from_resource_id(section_slug, resource_id) do
     fn ->
-      Repo.one(
-        from s in Section,
-          join: m in PublishedResource,
-          on: m.publication_id == s.publication_id,
-          join: rev in Revision,
-          on: rev.id == m.revision_id,
-          where: s.slug == ^section_slug and s.status != :deleted and m.resource_id == ^resource_id,
-          select: rev
+      from(s in Section,
+        join: m in PublishedResource,
+        on: m.publication_id == s.publication_id,
+        join: rev in Revision,
+        on: rev.id == m.revision_id,
+        where: s.slug == ^section_slug and m.resource_id == ^resource_id,
+        select: rev
       )
+      |> Repo.one()
     end
     |> run()
     |> emit([:oli, :resolvers, :delivery], :duration)
@@ -53,20 +53,20 @@ defmodule Oli.Publishing.DeliveryResolver do
   @impl Resolver
   def from_revision_slug(section_slug, revision_slug) do
     fn ->
-      Repo.one(
-        from rev in Revision,
-          join: r in Resource,
-          on: r.id == rev.resource_id,
-          join: m in PublishedResource,
-          on: m.resource_id == r.id,
-          join: rev2 in Revision,
-          on: m.revision_id == rev2.id,
-          join: s in Section,
-          on: s.publication_id == m.publication_id,
-          where: rev.slug == ^revision_slug and s.slug == ^section_slug and s.status != :deleted,
-          limit: 1,
-          select: rev2
+      from(rev in Revision,
+        join: r in Resource,
+        on: r.id == rev.resource_id,
+        join: m in PublishedResource,
+        on: m.resource_id == r.id,
+        join: rev2 in Revision,
+        on: m.revision_id == rev2.id,
+        where:
+          m.publication_id in subquery(published_publication(section_slug)) and
+            rev.slug == ^revision_slug,
+        limit: 1,
+        select: rev2
       )
+      |> Repo.one()
     end
     |> run()
     |> emit([:oli, :resolvers, :delivery], :duration)
@@ -79,7 +79,7 @@ defmodule Oli.Publishing.DeliveryResolver do
         from p in Publication,
           join: s in Section,
           on: p.id == s.publication_id,
-          where: s.slug == ^section_slug and s.status != :deleted,
+          where: s.slug == ^section_slug,
           select: p
       )
     end
@@ -90,17 +90,19 @@ defmodule Oli.Publishing.DeliveryResolver do
   @impl Resolver
   def root_container(section_slug) do
     fn ->
-      Repo.one(
-        from s in Section,
-          join: p in Publication,
-          on: p.id == s.publication_id,
-          join: m in PublishedResource,
-          on: m.publication_id == p.id,
-          join: rev in Revision,
-          on: rev.id == m.revision_id,
-          where: m.resource_id == p.root_resource_id and s.slug == ^section_slug and s.status != :deleted,
-          select: rev
+      from(s in Section,
+        join: p in Publication,
+        on: p.id == s.publication_id,
+        join: m in PublishedResource,
+        on: m.publication_id == p.id,
+        join: rev in Revision,
+        on: rev.id == m.revision_id,
+        where:
+          m.resource_id == p.root_resource_id and s.slug == ^section_slug and
+            s.status != :deleted,
+        select: rev
       )
+      |> Repo.one()
     end
     |> run()
     |> emit([:oli, :resolvers, :delivery], :duration)
@@ -112,19 +114,19 @@ defmodule Oli.Publishing.DeliveryResolver do
     container_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
     fn ->
-      Repo.all(
-        from s in Section,
-          join: p in Publication,
-          on: p.id == s.publication_id,
-          join: m in PublishedResource,
-          on: m.publication_id == p.id,
-          join: rev in Revision,
-          on: rev.id == m.revision_id,
-          where:
-            (rev.resource_type_id == ^page_id or rev.resource_type_id == ^container_id) and
-              s.slug == ^section_slug and s.status != :deleted,
-          select: rev
+      from(s in Section,
+        join: p in Publication,
+        on: p.id == s.publication_id,
+        join: m in PublishedResource,
+        on: m.publication_id == p.id,
+        join: rev in Revision,
+        on: rev.id == m.revision_id,
+        where:
+          (rev.resource_type_id == ^page_id or rev.resource_type_id == ^container_id) and
+            s.slug == ^section_slug,
+        select: rev
       )
+      |> Repo.all()
     end
     |> run()
     |> emit([:oli, :resolvers, :delivery], :duration)
@@ -153,5 +155,12 @@ defmodule Oli.Publishing.DeliveryResolver do
     end
     |> run()
     |> emit([:oli, :resolvers, :authoring], :duration)
+  end
+
+  defp published_publication(section_slug) do
+    from(s in Section,
+      where: s.slug == ^section_slug,
+      select: s.publication_id
+    )
   end
 end

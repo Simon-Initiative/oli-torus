@@ -1,4 +1,4 @@
-<%= render OliWeb.LayoutView, "_delivery_header.html", assigns %>
+<%= render OliWeb.LayoutView, "_delivery_header.html", Map.put(assigns, :block_logo_link, true) %>
 
 <div class="container form-container">
   <div class="row my-3">
@@ -184,3 +184,4 @@
     </div>
   </div>
 </div>
+<%= render OliWeb.LayoutView, "_delivery_footer.html", assigns %>

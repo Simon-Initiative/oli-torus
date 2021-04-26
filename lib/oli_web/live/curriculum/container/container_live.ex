@@ -234,8 +234,16 @@ defmodule OliWeb.Curriculum.ContainerLive do
       children: [],
       content:
         case type do
-          "Adaptive" -> %{"model" => [], "advancedAuthoring" => true, "advancedDelivery" => true}
-          _ -> %{"model" => []}
+          "Adaptive" ->
+            %{
+              "model" => [],
+              "advancedAuthoring" => true,
+              "advancedDelivery" => true,
+              "displayApplicationChrome" => false
+            }
+
+          _ ->
+            %{"model" => []}
         end,
       title:
         case type do

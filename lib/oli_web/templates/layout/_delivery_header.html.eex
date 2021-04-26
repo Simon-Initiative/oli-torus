@@ -1,12 +1,13 @@
 <nav class="navbar navbar-expand">
   <div class="container">
-    <a class="navbar-brand oli-logo mr-auto" href="<%= logo_link_path(@conn) %>">
+    <a class="navbar-brand oli-logo mr-auto" href="<%= if Map.get(assigns, :block_logo_link) !== nil and
+     Map.get(assigns, :block_logo_link) === true, do: "#", else: logo_link_path(@conn) %>">
       <img src="/images/oli-icon.png" width="30" height="30" class="d-inline-block align-top mr-2" alt="">
       Open Learning <span style="font-weight: 200">Initiative</span>
     </a>
     <%= if not preview_mode(@conn) do %>
       <div class="nav-item my-2 my-lg-0 mr-2">
-        <a  href="<%= Routes.help_path(@conn, :index) %>">Help</a>
+        <a href='javascript:;' onclick="showHelpModal();">Help</a>
       </div>
     <% end %>
 
