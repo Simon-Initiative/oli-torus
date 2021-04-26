@@ -5,6 +5,7 @@
 ### Enhancements
 
 - Add support for detecting problematic database queries
+- Allow adaptive pages to render without application chrome
 
 ### Bug fixes
 
