@@ -190,6 +190,7 @@ Oli.Slack.html
 Oli.Snapshots.SnapshotSeeder.html
 Oli.Timing.html
 Oli.UserIdentities.UserIdentity.html
+Oli.Utils.Database.html
 Oli.Utils.HierarchyNode.html
 Oli.Utils.Purposes.html
 Oli.Utils.Recaptcha.html
@@ -383,8 +384,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-73d97b3f41.js
-dist/sidebar_items-d51f3c37d7.js
+dist/search_items-cbd22944e6.js
+dist/sidebar_items-562166510a.js
 index.html
 license.html
 readme.html
