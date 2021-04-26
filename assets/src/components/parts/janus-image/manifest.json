@@ -1,0 +1,14 @@
+{
+  "id": "janus_image",
+  "friendlyName": "Image",
+  "description": "Displays an image from a url.",
+  "global": true,
+  "delivery": {
+    "element": "janus-image",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-image",
+    "entry": "./authoring-entry.ts"
+  }
+}

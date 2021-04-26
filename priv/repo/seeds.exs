@@ -93,6 +93,14 @@ Oli.Registrar.register_local_activities(
   ])
 )
 
+# Seed the database with the locally implemented part component types
+Oli.Registrar.register_local_part_components(
+  MapSet.new([
+    "janus_text_flow",
+    "janus_image",
+  ])
+)
+
 # create themes
 [
   %Oli.Authoring.Theme{

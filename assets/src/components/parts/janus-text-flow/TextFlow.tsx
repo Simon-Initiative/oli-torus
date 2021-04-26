@@ -1,6 +1,5 @@
 import chroma from 'chroma-js';
-import { AnyAaaaRecord } from 'dns';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import guid from 'utils/guid';
 import Markup from './Markup';
 
@@ -80,7 +79,20 @@ export const renderFlow = (
 };
 
 const TextFlow: React.FC<any> = (props: any) => {
-  const { x = 0, y = 0, width, z = 0, customCssClass, nodes, palette, fontSize } = props.model;
+  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
+  const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+
+  useEffect(() => {
+    if (typeof props?.model === 'string') {
+      setModel(JSON.parse(props.model));
+    }
+    if (typeof props?.state === 'string') {
+      setState(JSON.parse(props.state));
+    }
+  }, [props]);
+
+  const { x = 0, y = 0, width, z = 0, customCssClass, nodes, palette, fontSize } = model;
+
   const styles: any = {
     position: 'absolute',
     top: y,
@@ -95,14 +107,16 @@ const TextFlow: React.FC<any> = (props: any) => {
   if (palette) {
     styles.borderWidth = `${palette?.lineThickness ? palette?.lineThickness + 'px' : '1px'}`;
     (styles.borderStyle = 'solid'),
-      (styles.borderColor = `rgba(${palette?.lineColor || palette?.lineColor === 0
-        ? chroma(palette?.lineColor).rgb().join(',')
-        : '255, 255, 255'
-        },${palette?.lineAlpha})`),
-      (styles.backgroundColor = `rgba(${palette?.fillColor || palette?.fillColor === 0
-        ? chroma(palette?.fillColor).rgb().join(',')
-        : '255, 255, 255'
-        },${palette?.fillAlpha})`);
+      (styles.borderColor = `rgba(${
+        palette?.lineColor || palette?.lineColor === 0
+          ? chroma(palette?.lineColor).rgb().join(',')
+          : '255, 255, 255'
+      },${palette?.lineAlpha})`),
+      (styles.backgroundColor = `rgba(${
+        palette?.fillColor || palette?.fillColor === 0
+          ? chroma(palette?.fillColor).rgb().join(',')
+          : '255, 255, 255'
+      },${palette?.fillAlpha})`);
   }
   useEffect(() => {
     // all activities *must* emit onReady
@@ -129,14 +143,12 @@ const TextFlow: React.FC<any> = (props: any) => {
   return (
     <div id={props.id} data-janus-type={props.type} className={customCssClass} style={styles}>
       {tree?.map((subtree: MarkupTree) =>
-        renderFlow(`textflow-${guid()}`, subtree, styleOverrides, props.state, fontSize),
+        renderFlow(`textflow-${guid()}`, subtree, styleOverrides, state, fontSize),
       )}
     </div>
   );
 };
 
 export const tagName = 'janus-text-flow';
-
-// TODO: restore web component
 
 export default TextFlow;
