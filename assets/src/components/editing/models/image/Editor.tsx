@@ -9,18 +9,152 @@ import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
 import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolbar';
 import { initCommands } from './commands';
 import { displayModelToClassName } from 'data/content/utils';
-import ResizeConsumer from 'components/common/resizer/ResizeConsumer';
-import ResizeProvider from 'components/common/resizer/ResizeProvider';
+import {
+  MousePosition,
+  useMousePosition,
+} from 'components/editing/models/image/resizer/useMousePosition';
+import { resizeHandleStyles } from 'components/editing/models/image/resizer/utils';
+import { BoundingRect, Position } from 'components/editing/models/image/resizer/types';
+
+// TODO:
+// Save image width/height in model
+// Constrain sizes to min/max
+// Constrain proportions when dragging from corner
+// Decide on re-saving image?
+
+const isCorner = (position: Position) => ['nw', 'ne', 'sw', 'se'].includes(position);
+
+const clientBoundingRect = (element: HTMLElement | null): BoundingRect | null => {
+  if (!element) {
+    return null;
+  }
+  const { left, top, width, height } = element.getBoundingClientRect();
+  console.log('elem', left, top, width, height);
+  return {
+    top,
+    left,
+    width,
+    height,
+  };
+};
+
+const offsetBoundingRect = (element: HTMLElement | null): BoundingRect | null => {
+  if (!element) {
+    return null;
+  }
+  const { offsetTop, offsetLeft, offsetWidth, offsetHeight } = element;
+  return {
+    top: offsetTop,
+    left: offsetLeft,
+    width: offsetWidth,
+    height: offsetHeight,
+  };
+};
+
+const boundingRectFromMousePosition = (
+  initialClientBoundingRect: BoundingRect | null,
+  initialOffsetBoundingRect: BoundingRect | null,
+  { x, y }: MousePosition,
+  dragHandle: Position | undefined,
+) => {
+  if (!x || !y || !initialClientBoundingRect || !initialOffsetBoundingRect || !dragHandle) {
+    return null;
+  }
+  const { top, left, width, height } = initialOffsetBoundingRect;
+  let differenceLeft = 0,
+    differenceTop = 0;
+
+  switch (dragHandle) {
+    case 'nw':
+      differenceLeft = initialClientBoundingRect.left - x;
+      differenceTop = initialClientBoundingRect.top - y;
+      return {
+        left: left - differenceLeft,
+        top: top - differenceTop,
+        width: width + differenceLeft,
+        height: height + differenceTop,
+      };
+    case 'n':
+      differenceTop = initialClientBoundingRect.top - y;
+      return {
+        left: left,
+        top: top - differenceTop,
+        width: width,
+        height: height + differenceTop,
+      };
+    case 'ne':
+      differenceLeft = initialClientBoundingRect.left + initialClientBoundingRect.width - x;
+      differenceTop = initialClientBoundingRect.top - y;
+      return {
+        left: left,
+        top: top - differenceTop,
+        width: width - differenceLeft,
+        height: height + differenceTop,
+      };
+    case 'w':
+      differenceLeft = initialClientBoundingRect.left - x;
+      return {
+        left: left - differenceLeft,
+        top,
+        width: width + differenceLeft,
+        height: height,
+      };
+    case 'e':
+      differenceLeft = initialClientBoundingRect.left + initialClientBoundingRect.width - x;
+      return {
+        left: left,
+        top: top,
+        width: width - differenceLeft,
+        height: height,
+      };
+    case 'sw':
+      differenceLeft = initialClientBoundingRect.left - x;
+      differenceTop = initialClientBoundingRect.top + initialClientBoundingRect.height - y;
+      return {
+        left: left - differenceLeft,
+        top: top,
+        width: width + differenceLeft,
+        height: height - differenceTop,
+      };
+    case 's':
+      differenceTop = initialClientBoundingRect.top + initialClientBoundingRect.height - y;
+      return {
+        left: left,
+        top: top,
+        width: width,
+        height: height - differenceTop,
+      };
+    case 'se':
+      differenceLeft = initialClientBoundingRect.left + initialClientBoundingRect.width - x;
+      differenceTop = initialClientBoundingRect.top + initialClientBoundingRect.height - y;
+      return {
+        left: left,
+        top: top,
+        width: width - differenceLeft,
+        height: height - differenceTop,
+      };
+    default:
+      throw new Error('unhandled drag handle in Image Editor boundingRect');
+  }
+};
+
+const newSize = (boundingRect: BoundingRect | null) => {
+  if (!boundingRect) return undefined;
+  const { width, height } = boundingRect;
+  return { width, height };
+};
+
 // eslint-disable-next-line
 export interface ImageProps extends EditorProps<ContentModel.Image> {}
-export const ImageEditor = (props: ImageProps) => {
+export const ImageEditor = (props: ImageProps): JSX.Element => {
   const { attributes, children, editor, model } = props;
-  const [mousePosition, setMousePosition] = useState({ left: 0, top: 0 });
 
   const focused = useFocused();
   const selected = useSelected();
 
   const imageRef = useRef<HTMLImageElement>(null);
+
+  const [resizingFrom, setResizingFrom] = useState<Position | undefined>(undefined);
 
   const editMode = getEditMode(editor);
 
@@ -36,126 +170,80 @@ export const ImageEditor = (props: ImageProps) => {
     onEdit(update({ caption }));
   };
 
-  // const imageStyle =
-  //   ReactEditor.isFocused(editor) && selected
-  //     ? { border: 'solid 3px lightblue', borderRadius: 0 }
-  //     : { border: 'solid 3px transparent' };
+  const { x, y } = useMousePosition();
 
-  // Note that it is important that any interactive portions of a void editor
-  // must be enclosed inside of a "contentEditable=false" container. Otherwise,
-  // slate does some weird things that non-deterministically interface with click
-  // events.
+  const boundResizeStyles = resizeHandleStyles(
+    resizingFrom === undefined
+      ? offsetBoundingRect(imageRef.current)
+      : boundingRectFromMousePosition(
+          clientBoundingRect(imageRef.current),
+          offsetBoundingRect(imageRef.current),
+          { x, y },
+          resizingFrom,
+        ),
+  );
 
-  console.log('model', model);
-  const MARKER_SIZE = 4;
-  const offsetByMarkerSize = ({ left, top, cursor }: any) => ({
-    left: left - MARKER_SIZE,
-    top: top - MARKER_SIZE,
-    cursor: cursor,
-  });
+  const onMouseDown = (position: Position) => (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    console.log('on mouse down');
+    e.preventDefault();
+    setResizingFrom(position);
+  };
 
-  let imageElement;
+  const onMouseUp = (_e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    console.log('on mouse up, updating image size');
+    // TODO: Update with new width and height of image
+    console.log(
+      'newsize',
+      newSize(
+        boundingRectFromMousePosition(
+          clientBoundingRect(imageRef.current),
+          offsetBoundingRect(imageRef.current),
+          { x, y },
+          resizingFrom,
+        ),
+      ),
+    );
+    setResizingFrom(undefined);
+  };
+
+  const resizeHandle = (position: Position) => (
+    <div
+      onMouseDown={onMouseDown(position)}
+      className="resize-selection-box-handle"
+      style={boundResizeStyles(position)}
+    ></div>
+  );
+
+  let resizer;
   if (ReactEditor.isFocused(editor) && selected && imageRef.current) {
-    const { offsetTop, offsetLeft, offsetWidth, offsetHeight } = imageRef.current;
-    const positionStyle = (
-      position: 'border' | 'nw' | 'n' | 'ne' | 'w' | 'e' | 'sw' | 's' | 'se',
-    ) => {
-      switch (position) {
-        case 'border':
-          return { left: offsetLeft, top: offsetTop, width: offsetWidth, height: offsetHeight };
-        case 'nw':
-          return { left: offsetLeft, top: offsetTop, cursor: 'nw-resize' };
-        case 'n':
-          return {
-            left: offsetLeft + Math.round(offsetWidth / 2),
-            top: offsetTop,
-            cursor: 'n-resize',
-          };
-        case 'ne':
-          return { left: offsetLeft + offsetWidth, top: offsetTop, cursor: 'ne-resize' };
-        case 'w':
-          return {
-            left: offsetLeft,
-            top: offsetTop + Math.round(offsetHeight / 2),
-            cursor: 'w-resize',
-          };
-        case 'e':
-          return {
-            left: offsetLeft + offsetWidth,
-            top: offsetTop + Math.round(offsetHeight / 2),
-            cursor: 'e-resize',
-          };
-        case 'sw':
-          return { left: offsetLeft, top: offsetTop + offsetHeight, cursor: 'sw-resize' };
-        case 's':
-          return {
-            left: offsetLeft + Math.round(offsetWidth / 2),
-            top: offsetTop + offsetHeight,
-            cursor: 's-resize',
-          };
-        case 'se':
-          return {
-            left: offsetLeft + offsetWidth,
-            top: offsetTop + offsetHeight,
-            cursor: 'se-resize',
-          };
-      }
-    };
-
-    console.log('mousePosition', mousePosition);
-
-    imageElement = (
-      <div>
-        <div className="image-resize-selection-box-border" style={positionStyle('border')}></div>
+    resizer = (
+      <>
         <div
-          onMouseDown={(e) => {
-            e.preventDefault();
-            setMousePosition({ left: e.pageX, top: e.pageY });
-          }}
-          onMouseMove={(e) => {
-            e.preventDefault();
-            setMousePosition({ left: e.pageX, top: e.pageY });
-          }}
-          // onMouseUp={() => {}}
-          className="image-resize-selection-box-handle"
-          style={offsetByMarkerSize(positionStyle('nw'))}
+          style={Object.assign(boundResizeStyles('border'), {
+            position: 'absolute' as any,
+            border: '2px solid rgb(0, 150, 253)',
+            backgroundColor: 'rgba(0, 0, 0, 0)',
+            zIndex: 30,
+            borderColor: 'rgb(26, 115, 232)',
+          })}
         ></div>
-        <div
-          className="image-resize-selection-box-handle"
-          style={offsetByMarkerSize(positionStyle('n'))}
-        ></div>
-        <div
-          className="image-resize-selection-box-handle"
-          style={offsetByMarkerSize(positionStyle('ne'))}
-        ></div>
-        <div
-          className="image-resize-selection-box-handle"
-          style={offsetByMarkerSize(positionStyle('w'))}
-        ></div>
-        <div
-          className="image-resize-selection-box-handle"
-          style={offsetByMarkerSize(positionStyle('e'))}
-        ></div>
-        <div
-          className="image-resize-selection-box-handle"
-          style={offsetByMarkerSize(positionStyle('sw'))}
-        ></div>
-        <div
-          className="image-resize-selection-box-handle"
-          style={offsetByMarkerSize(positionStyle('s'))}
-        ></div>
-        <div
-          className="image-resize-selection-box-handle"
-          style={offsetByMarkerSize(positionStyle('se'))}
-        ></div>
-      </div>
+        {resizeHandle('nw')}
+        {resizeHandle('n')}
+        {resizeHandle('ne')}
+        {resizeHandle('w')}
+        {resizeHandle('e')}
+        {resizeHandle('sw')}
+        {resizeHandle('s')}
+        {resizeHandle('se')}
+      </>
     );
   } else {
-    imageElement = null;
+    resizer = null;
   }
 
   return (
     <div
+      onMouseUp={onMouseUp}
       {...attributes}
       style={{ userSelect: 'none' }}
       className={'image-editor text-center ' + displayModelToClassName(model.display)}
@@ -165,25 +253,18 @@ export const ImageEditor = (props: ImageProps) => {
           isOpen={() => focused && selected}
           showArrow
           target={
-            <ResizeProvider>
-              <ResizeConsumer
-                className="image-resize"
-                onSizeChanged={(size) => undefined}
-                updateDataAttributesBySize={(size) => console.log('size', size)}
-              >
-                {/* {imageElement} */}
-                <img
-                  ref={imageRef}
-                  onClick={(e) => {
-                    ReactEditor.focus(editor);
-                    Transforms.select(editor, ReactEditor.findPath(editor, model));
-                  }}
-                  className={displayModelToClassName(model.display)}
-                  // style={imageStyle}
-                  src={model.src}
-                />
-              </ResizeConsumer>
-            </ResizeProvider>
+            <div>
+              {resizer}
+              <img
+                ref={imageRef}
+                onClick={(e) => {
+                  ReactEditor.focus(editor);
+                  Transforms.select(editor, ReactEditor.findPath(editor, model));
+                }}
+                className={displayModelToClassName(model.display)}
+                src={model.src}
+              />
+            </div>
           }
           contentLocation={({ popoverRect, targetRect }) => {
             return {
