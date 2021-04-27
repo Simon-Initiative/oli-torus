@@ -11,8 +11,8 @@ defmodule Oli.Activities.Realizer do
 
   alias Oli.Resources.Revision
 
-  def realize(%Revision{content: %{"model" => model}}) do
-    Enum.filter(model, fn %{"type" => type} -> type == "activity-reference" end)
+  def realize(%Revision{content: content}) do
+    Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} -> type == "activity-reference" end)
     |> Enum.map(fn %{"activity_id" => id} -> id end)
   end
 end

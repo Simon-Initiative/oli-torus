@@ -31,6 +31,9 @@ defmodule Oli.Authoring.Editing.Utils do
     {MapSet.difference(activities2, activities1), MapSet.difference(activities1, activities2)}
   end
 
+  @doc """
+  Returns a MapSet of all activity ids found in the page content hierarchy.
+  """
   def activity_references(content) do
     case content do
       nil ->
@@ -40,7 +43,7 @@ defmodule Oli.Authoring.Editing.Utils do
         MapSet.new()
 
       _ ->
-        Enum.filter(content, fn %{"type" => type} -> type == "activity-reference" end)
+        Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} -> type == "activity-reference" end)
         |> Enum.map(fn %{"activity_id" => id} -> id end)
         |> MapSet.new()
     end

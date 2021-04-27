@@ -1,6 +1,7 @@
 defmodule Oli.Interop.Ingest do
   alias Oli.Repo
   alias Oli.Publishing.ChangeTracker
+  alias Oli.Resources.PageContent
 
   @project_key "_project"
   @hierarchy_key "_hierarchy"
@@ -210,19 +211,18 @@ defmodule Oli.Interop.Ingest do
     end)
   end
 
-  defp rewire_activity_references(%{"model" => model} = content, activity_map) do
-    rewired =
-      Enum.map(model, fn e ->
-        case e do
-          %{"type" => "activity-reference", "activity_id" => original} = ref ->
-            Map.put(ref, "activity_id", Map.get(activity_map, original).resource_id)
+  defp rewire_activity_references(content, activity_map) do
 
-          other ->
-            other
-        end
-      end)
+    PageContent.map(content, fn e ->
+      case e do
+        %{"type" => "activity-reference", "activity_id" => original} = ref ->
+          Map.put(ref, "activity_id", Map.get(activity_map, original).resource_id)
 
-    Map.put(content, "model", rewired)
+        other ->
+          other
+      end
+    end)
+
   end
 
   # Create one page

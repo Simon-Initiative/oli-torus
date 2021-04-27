@@ -122,7 +122,7 @@ defmodule Oli.CloneTest do
       PageEditor.acquire_lock(project.slug, base_revision.slug, author1.email)
 
       some_new_content = %{
-        "content" => %{"model" => [%{"type" => "p", "children" => [%{"text" => "A paragraph."}]}]}
+        "content" => %{"model" => [%{"type" => "content", "children" => [%{"text" => "A paragraph."}]}]}
       }
 
       PageEditor.edit(project.slug, base_revision.slug, author1.email, some_new_content)
@@ -149,7 +149,7 @@ defmodule Oli.CloneTest do
       PageEditor.acquire_lock(duplicated.slug, duplicated_revision.slug, author2.email)
 
       some_new_content = %{
-        "content" => %{"model" => [%{"type" => "p", "children" => [%{"text" => "A paragraph."}]}]}
+        "content" => %{"model" => [%{"type" => "content", "children" => [%{"text" => "A paragraph."}]}]}
       }
 
       PageEditor.edit(duplicated.slug, duplicated_revision.slug, author2.email, some_new_content)

@@ -59,9 +59,7 @@ defmodule Oli.Resources.PageContent do
   convenience function, over top of map_reduce.
   """
   def map(content, map_fn) do
-    {mapped, _} = map_reduce(content, 0, fn e, acc ->
-      {map_fn.(e), 0}
-    end)
+    {mapped, _} = map_reduce(content, 0, fn e, _ -> {map_fn.(e), 0} end)
 
     mapped
   end
