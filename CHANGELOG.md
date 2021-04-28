@@ -6,6 +6,7 @@
 
 - Add support for detecting problematic database queries
 - Allow adaptive pages to render without application chrome
+- Save cookie preferences in delivered courses
 - Add support for page content grouping
 
 ### Bug fixes
