@@ -72,6 +72,8 @@ Oli.Authoring.MediaLibrary.html
 Oli.Authoring.ProjectSearch.html
 Oli.Authoring.Theme.html
 Oli.Authoring.html
+Oli.Consent.CookiesConsent.html
+Oli.Consent.html
 Oli.Delivery.ActivityProvider.html
 Oli.Delivery.Attempts.ActivityAttempt.html
 Oli.Delivery.Attempts.ClientEvaluation.html
@@ -259,6 +261,7 @@ OliWeb.Common.Modal.html
 OliWeb.Common.Table.ColumnSpec.html
 OliWeb.Common.Table.SortableTable.html
 OliWeb.Common.Table.SortableTableModel.html
+OliWeb.CookieConsentController.html
 OliWeb.Curriculum.ActivityDelta.html
 OliWeb.Curriculum.ContainerLive.html
 OliWeb.Curriculum.DetailsLive.html
@@ -383,8 +386,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-4782dc9e74.js
-dist/sidebar_items-cbbe39dae8.js
+dist/search_items-6fa0fe2a24.js
+dist/sidebar_items-c6b656b578.js
 index.html
 license.html
 readme.html
