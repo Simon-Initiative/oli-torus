@@ -37,27 +37,26 @@ export type EditorProps = {
 };
 
 function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
-  return prevProps.editMode === nextProps.editMode
-    && prevProps.toolbarItems === nextProps.toolbarItems
-    && prevProps.value === nextProps.value
-    && !!prevProps.selection && !!nextProps.selection
-    && Range.includes(prevProps.selection, nextProps.selection);
+  return (
+    prevProps.editMode === nextProps.editMode &&
+    prevProps.toolbarItems === nextProps.toolbarItems &&
+    prevProps.value === nextProps.value &&
+    !!prevProps.selection &&
+    !!nextProps.selection &&
+    Range.includes(prevProps.selection, nextProps.selection)
+  );
 }
 // eslint-disable-next-line
 export const Editor = React.memo((props: EditorProps) => {
-
   const [isPerformingAsyncAction, setIsPerformingAsyncAction] = useState(false);
 
   const commandContext = props.commandContext;
 
   const editor: ReactEditor & SlateEditor = useMemo(
     () =>
-      withMarkdown(commandContext)(
-        withReact(
-          withTables(
-            withInlines(
-              withVoids(
-                createEditor()))))), []);
+      withMarkdown(commandContext)(withReact(withTables(withInlines(withVoids(createEditor()))))),
+    [],
+  );
   const [installed, setInstalled] = useState(false);
 
   // Install the custom normalizer, only once
@@ -90,10 +89,10 @@ export const Editor = React.memo((props: EditorProps) => {
   }, []);
 
   const renderLeaf = useCallback(({ attributes, children, leaf }: any) => {
-    const markup =
-      Object
-        .keys(leaf)
-        .reduce((m, k) => k !== 'text' ? markFor(k as Mark, m) : m, children);
+    const markup = Object.keys(leaf).reduce(
+      (m, k) => (k !== 'text' ? markFor(k as Mark, m) : m),
+      children,
+    );
     return <span {...attributes}>{markup}</span>;
   }, []);
 
@@ -119,24 +118,23 @@ export const Editor = React.memo((props: EditorProps) => {
           // eslint-disable-next-line
           next: Function,
         ) => {
-          console.log('pasting 1')
           setIsPerformingAsyncAction(true);
           await onPaste(editor, e, props.commandContext.projectSlug);
           setIsPerformingAsyncAction(false);
           next();
-        }}>
-
+        }}
+      >
         <InsertionToolbar
           isPerformingAsyncAction={isPerformingAsyncAction}
           toolbarItems={props.toolbarItems}
           commandContext={props.commandContext}
         />
 
-        <HoveringToolbar
-          isOpen={shouldShowFormattingToolbar}>
+        <HoveringToolbar isOpen={shouldShowFormattingToolbar}>
           <FormattingToolbar
             commandDescs={formatMenuCommands}
-            commandContext={props.commandContext} />
+            commandContext={props.commandContext}
+          />
         </HoveringToolbar>
 
         <Editable
@@ -145,7 +143,8 @@ export const Editor = React.memo((props: EditorProps) => {
           renderElement={renderElement}
           renderLeaf={renderLeaf}
           placeholder="Enter some content here..."
-          onKeyDown={onKeyDown} />
+          onKeyDown={onKeyDown}
+        />
       </Slate>
     </React.Fragment>
   );

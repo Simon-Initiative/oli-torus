@@ -9,140 +9,18 @@ import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
 import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolbar';
 import { initCommands } from './commands';
 import { displayModelToClassName } from 'data/content/utils';
+import { useMousePosition } from 'components/editing/models/image/resizer/useMousePosition';
 import {
-  MousePosition,
-  useMousePosition,
-} from 'components/editing/models/image/resizer/useMousePosition';
-import { resizeHandleStyles } from 'components/editing/models/image/resizer/utils';
-import { BoundingRect, Position } from 'components/editing/models/image/resizer/types';
+  boundingRectFromMousePosition,
+  clientBoundingRect,
+  offsetBoundingRect,
+  resizeHandleStyles,
+} from 'components/editing/models/image/resizer/utils';
+import { Position } from 'components/editing/models/image/resizer/types';
 
 // TODO:
-// Save image width/height in model
 // Constrain sizes to min/max
 // Constrain proportions when dragging from corner
-// Decide on re-saving image?
-
-const isCorner = (position: Position) => ['nw', 'ne', 'sw', 'se'].includes(position);
-
-const clientBoundingRect = (element: HTMLElement | null): BoundingRect | null => {
-  if (!element) {
-    return null;
-  }
-  const { left, top, width, height } = element.getBoundingClientRect();
-  console.log('elem', left, top, width, height);
-  return {
-    top,
-    left,
-    width,
-    height,
-  };
-};
-
-const offsetBoundingRect = (element: HTMLElement | null): BoundingRect | null => {
-  if (!element) {
-    return null;
-  }
-  const { offsetTop, offsetLeft, offsetWidth, offsetHeight } = element;
-  return {
-    top: offsetTop,
-    left: offsetLeft,
-    width: offsetWidth,
-    height: offsetHeight,
-  };
-};
-
-const boundingRectFromMousePosition = (
-  initialClientBoundingRect: BoundingRect | null,
-  initialOffsetBoundingRect: BoundingRect | null,
-  { x, y }: MousePosition,
-  dragHandle: Position | undefined,
-) => {
-  if (!x || !y || !initialClientBoundingRect || !initialOffsetBoundingRect || !dragHandle) {
-    return null;
-  }
-  const { top, left, width, height } = initialOffsetBoundingRect;
-  let differenceLeft = 0,
-    differenceTop = 0;
-
-  switch (dragHandle) {
-    case 'nw':
-      differenceLeft = initialClientBoundingRect.left - x;
-      differenceTop = initialClientBoundingRect.top - y;
-      return {
-        left: left - differenceLeft,
-        top: top - differenceTop,
-        width: width + differenceLeft,
-        height: height + differenceTop,
-      };
-    case 'n':
-      differenceTop = initialClientBoundingRect.top - y;
-      return {
-        left: left,
-        top: top - differenceTop,
-        width: width,
-        height: height + differenceTop,
-      };
-    case 'ne':
-      differenceLeft = initialClientBoundingRect.left + initialClientBoundingRect.width - x;
-      differenceTop = initialClientBoundingRect.top - y;
-      return {
-        left: left,
-        top: top - differenceTop,
-        width: width - differenceLeft,
-        height: height + differenceTop,
-      };
-    case 'w':
-      differenceLeft = initialClientBoundingRect.left - x;
-      return {
-        left: left - differenceLeft,
-        top,
-        width: width + differenceLeft,
-        height: height,
-      };
-    case 'e':
-      differenceLeft = initialClientBoundingRect.left + initialClientBoundingRect.width - x;
-      return {
-        left: left,
-        top: top,
-        width: width - differenceLeft,
-        height: height,
-      };
-    case 'sw':
-      differenceLeft = initialClientBoundingRect.left - x;
-      differenceTop = initialClientBoundingRect.top + initialClientBoundingRect.height - y;
-      return {
-        left: left - differenceLeft,
-        top: top,
-        width: width + differenceLeft,
-        height: height - differenceTop,
-      };
-    case 's':
-      differenceTop = initialClientBoundingRect.top + initialClientBoundingRect.height - y;
-      return {
-        left: left,
-        top: top,
-        width: width,
-        height: height - differenceTop,
-      };
-    case 'se':
-      differenceLeft = initialClientBoundingRect.left + initialClientBoundingRect.width - x;
-      differenceTop = initialClientBoundingRect.top + initialClientBoundingRect.height - y;
-      return {
-        left: left,
-        top: top,
-        width: width - differenceLeft,
-        height: height - differenceTop,
-      };
-    default:
-      throw new Error('unhandled drag handle in Image Editor boundingRect');
-  }
-};
-
-const newSize = (boundingRect: BoundingRect | null) => {
-  if (!boundingRect) return undefined;
-  const { width, height } = boundingRect;
-  return { width, height };
-};
 
 // eslint-disable-next-line
 export interface ImageProps extends EditorProps<ContentModel.Image> {}
@@ -170,39 +48,37 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
     onEdit(update({ caption }));
   };
 
-  const { x, y } = useMousePosition();
+  const mousePosition = useMousePosition();
 
-  const boundResizeStyles = resizeHandleStyles(
-    resizingFrom === undefined
-      ? offsetBoundingRect(imageRef.current)
-      : boundingRectFromMousePosition(
-          clientBoundingRect(imageRef.current),
-          offsetBoundingRect(imageRef.current),
-          { x, y },
-          resizingFrom,
-        ),
-  );
+  const boundResizeStyles = !imageRef.current
+    ? {}
+    : resizeHandleStyles(
+        !resizingFrom || !mousePosition
+          ? offsetBoundingRect(imageRef.current)
+          : boundingRectFromMousePosition(
+              clientBoundingRect(imageRef.current),
+              offsetBoundingRect(imageRef.current),
+              mousePosition,
+              resizingFrom,
+            ),
+      );
 
   const onMouseDown = (position: Position) => (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    console.log('on mouse down');
     e.preventDefault();
     setResizingFrom(position);
   };
 
-  const onMouseUp = (_e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    console.log('on mouse up, updating image size');
-    // TODO: Update with new width and height of image
-    console.log(
-      'newsize',
-      newSize(
-        boundingRectFromMousePosition(
-          clientBoundingRect(imageRef.current),
-          offsetBoundingRect(imageRef.current),
-          { x, y },
-          resizingFrom,
-        ),
-      ),
-    );
+  const onMouseUp = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    if (imageRef.current && resizingFrom) {
+      const { clientX, clientY } = e;
+      const { width, height } = boundingRectFromMousePosition(
+        clientBoundingRect(imageRef.current),
+        offsetBoundingRect(imageRef.current),
+        { x: clientX, y: clientY },
+        resizingFrom,
+      );
+      onEdit(update({ width, height }));
+    }
     setResizingFrom(undefined);
   };
 
@@ -218,15 +94,7 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
   if (ReactEditor.isFocused(editor) && selected && imageRef.current) {
     resizer = (
       <>
-        <div
-          style={Object.assign(boundResizeStyles('border'), {
-            position: 'absolute' as any,
-            border: '2px solid rgb(0, 150, 253)',
-            backgroundColor: 'rgba(0, 0, 0, 0)',
-            zIndex: 30,
-            borderColor: 'rgb(26, 115, 232)',
-          })}
-        ></div>
+        <div className="resize-selection-box-border" style={boundResizeStyles('border')}></div>
         {resizeHandle('nw')}
         {resizeHandle('n')}
         {resizeHandle('ne')}
@@ -256,8 +124,10 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
             <div>
               {resizer}
               <img
+                width={model.width}
+                height={model.height}
                 ref={imageRef}
-                onClick={(e) => {
+                onClick={() => {
                   ReactEditor.focus(editor);
                   Transforms.select(editor, ReactEditor.findPath(editor, model));
                 }}

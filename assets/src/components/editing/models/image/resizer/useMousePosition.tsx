@@ -1,18 +1,15 @@
+import { Nullish } from '@testing-library/dom';
 import { useState, useEffect } from 'react';
 
 export interface MousePosition {
-  x: number | null;
-  y: number | null;
+  x: number;
+  y: number;
 }
 
 export const useMousePosition = () => {
-  const [mousePosition, setMousePosition] = useState<MousePosition>({
-    x: null,
-    y: null,
-  });
+  const [mousePosition, setMousePosition] = useState<Nullish<MousePosition>>(null);
 
   const updateMousePosition = (ev: MouseEvent) => {
-    // console.log(ev.clientX, ev.clientY);
     setMousePosition({ x: ev.clientX, y: ev.clientY });
   };
 

@@ -63,8 +63,22 @@ defmodule Oli.Rendering.Content.Html do
         _ -> ""
       end
 
+    maybeWidth =
+      case attrs do
+        %{"width" => width} -> " width=#{escape_xml!(width)}"
+        _ -> ""
+      end
+
+    maybeHeight =
+      case attrs do
+        %{"height" => height} -> " height=#{escape_xml!(height)}"
+        _ -> ""
+      end
+
     figure(attrs, [
-      ~s|<img class="#{display_class(attrs)}"#{maybeAlt} src="#{escape_xml!(src)}"/>\n|
+      ~s|<img class="#{display_class(attrs)}"#{maybeAlt}#{maybeWidth}#{maybeHeight} src="#{
+        escape_xml!(src)
+      }"/>\n|
     ])
   end
 

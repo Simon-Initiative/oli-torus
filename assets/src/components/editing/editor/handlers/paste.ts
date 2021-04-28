@@ -8,8 +8,6 @@ export const onPaste = async (
   e: React.ClipboardEvent<HTMLDivElement>,
   projectSlug: string,
 ) => {
-  console.log('pasting')
-  console.log('e.clipboarddata', e.clipboardData)
   if (!e.clipboardData) {
     return Promise.resolve();
   }
@@ -17,7 +15,6 @@ export const onPaste = async (
   // The clipboard item 'type' attr is a mime-type. look for image/xxx.
   // 'Rich' images e.g. from google docs do not work.
   const images = [...e.clipboardData.items].filter(({ type }) => type.includes('image/'));
-  console.log('images', images)
   if (images.length === 0) {
     return Promise.resolve();
   }
