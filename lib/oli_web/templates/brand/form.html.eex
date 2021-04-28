@@ -37,16 +37,23 @@
 
   <h6 class="text-secondary mb-4">Dark Mode</h6>
 
+  <div class="text-secondary my-2">Dark Logo (Optional)</div>
   <div class="form-group">
-    <%= label f, :logo_dark, "Dark Logo", class: "control-label" %>
     <%= file_input f, :logo_dark, class: "form-control-file" %>
     <%= error_tag f, :logo_dark %>
   </div>
 
+  <div class="text-secondary my-2">Dark Favicons (Optional)</div>
   <div class="form-group">
-    <%= label f, :favicons_dark, "Dark Favicons", class: "control-label" %>
     <%= file_input f, :favicons_dark, multiple: true, class: "form-control-file" %>
     <%= error_tag f, :favicons_dark %>
+  </div>
+
+  <div class="text-secondary my-2">Institution (Optional)</div>
+  <div class="form-label-group">
+    <%= select f, :institution_id, @available_institutions, prompt: "Select Institution", class: "form-control " <> error_class(f, :institution_id, "is-invalid"),
+      autofocus: focusHelper(f, :institution_id) %>
+    <%= error_tag f, :institution_id %>
   </div>
 
   <div>

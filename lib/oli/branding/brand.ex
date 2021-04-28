@@ -26,8 +26,6 @@ defmodule Oli.Branding.Brand do
       |> Map.put("slug", slug)
       |> cast_upload_to_url(slug, [:logo, :logo_dark, :favicons, :favicons_dark])
 
-    IO.inspect attrs
-
     brand
     |> cast(attrs, [:name, :slug, :logo, :logo_dark, :favicons, :favicons_dark, :institution_id])
     |> validate_required([:name, :logo, :favicons])
@@ -42,8 +40,6 @@ defmodule Oli.Branding.Brand do
   def cast_upload_to_url(attrs, slug, term) do
     media_url = Application.fetch_env!(:oli, :media_url)
     term = to_string(term)
-
-    IO.inspect {attrs[term], term, attrs}
 
     case attrs[term] do
       %Plug.Upload{filename: filename} ->

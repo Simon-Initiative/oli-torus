@@ -5,8 +5,15 @@ defmodule OliWeb.BrandController do
 
   alias Oli.Branding
   alias Oli.Branding.Brand
+  alias Oli.Repo
   alias ExAws.S3
   alias ExAws
+  alias Oli.Institutions
+
+  defp available_institutions() do
+    Institutions.list_institutions()
+    |> Enum.map(fn institution -> {institution.name, institution.id} end)
+  end
 
   def index(conn, _params) do
     brands = Branding.list_brands()
@@ -15,10 +22,10 @@ defmodule OliWeb.BrandController do
 
   def new(conn, _params) do
     changeset = Branding.change_brand(%Brand{})
-    render_workspace_page(conn, "new.html", changeset: changeset)
+    render_workspace_page(conn, "new.html", changeset: changeset, available_institutions: available_institutions())
   end
 
-  def create(conn, %{"brand" => brand_params} = params) do
+  def create(conn, %{"brand" => brand_params}) do
     case Branding.create_brand(brand_params) do
       {:ok, brand} ->
         # upload files to S3, we assume these will succeed but simply log an error if they do not
@@ -29,19 +36,19 @@ defmodule OliWeb.BrandController do
         |> redirect(to: Routes.brand_path(conn, :show, brand))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render_workspace_page(conn, "new.html", changeset: changeset)
+        render_workspace_page(conn, "new.html", changeset: changeset, available_institutions: available_institutions())
     end
   end
 
   def show(conn, %{"id" => id}) do
-    brand = Branding.get_brand!(id)
+    brand = Branding.get_brand!(id) |> Repo.preload([:institution])
     render_workspace_page(conn, "show.html", brand: brand)
   end
 
   def edit(conn, %{"id" => id}) do
     brand = Branding.get_brand!(id)
     changeset = Branding.change_brand(brand)
-    render_workspace_page(conn, "edit.html", brand: brand, changeset: changeset)
+    render_workspace_page(conn, "edit.html", brand: brand, changeset: changeset, available_institutions: available_institutions())
   end
 
   def update(conn, %{"id" => id, "brand" => brand_params}) do
@@ -56,7 +63,7 @@ defmodule OliWeb.BrandController do
         |> redirect(to: Routes.brand_path(conn, :show, brand))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render_workspace_page(conn, "edit.html", brand: brand, changeset: changeset)
+        render_workspace_page(conn, "edit.html", brand: brand, changeset: changeset, available_institutions: available_institutions())
     end
   end
 

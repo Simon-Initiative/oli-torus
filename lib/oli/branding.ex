@@ -27,6 +27,22 @@ defmodule Oli.Branding do
   end
 
   @doc """
+  Returns the list of available brands for an institution.
+
+  ## Examples
+
+      iex> list_available_brands(institution_id)
+      [%Brand{}, ...]
+
+  """
+  def list_available_brands(institution_id) do
+    from(b in Brand,
+      where: b.institution_id == ^institution_id or is_nil(b.institution_id)
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Gets a single brand.
 
   Raises `Ecto.NoResultsError` if the Brand does not exist.

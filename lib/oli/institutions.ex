@@ -31,7 +31,7 @@ defmodule Oli.Institutions do
       ** (Ecto.NoResultsError)
   """
   def get_institution!(id),
-    do: Repo.get!(Institution, id) |> Repo.preload(registrations: [:deployments])
+    do: Repo.get!(Institution, id) |> Repo.preload(registrations: [:deployments, :brand])
 
   @doc """
   Creates a institution.
@@ -107,7 +107,7 @@ defmodule Oli.Institutions do
       %Registration{}
 
   """
-  def get_registration!(id), do: Repo.get!(Registration, id) |> Repo.preload([:deployments])
+  def get_registration!(id), do: Repo.get!(Registration, id) |> Repo.preload([:deployments, :brand])
 
   @doc """
   Creates a registration.
