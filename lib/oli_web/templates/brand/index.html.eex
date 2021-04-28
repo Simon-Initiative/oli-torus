@@ -1,6 +1,5 @@
-
 <div class="container">
-  <div class="d-flex flex-row mb-2">
+  <div class="d-flex flex-row mt-4 mb-2">
     <div class="flex-grow-1"></div>
     <div><%= link "New Brand", to: Routes.brand_path(@conn, :new), class: "btn btn-md btn-outline-primary" %></div>
   </div>
@@ -13,20 +12,27 @@
     <table class="table table-striped table-bordered">
       <thead>
         <tr>
-          <th>Name</th>
           <th>Logo</th>
+          <th>Name</th>
+          <th>Usage</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
     <%= for brand <- @brands do %>
         <tr>
+          <td>
+            <img src="<%= brand.logo %>" height="40" />
+            <img src="<%= brand.logo_dark %>" height="40" />
+          </td>
           <td><%= brand.name %></td>
-          <td><%= brand.logo %></td>
+
+          <td>
+            <%# TODO: add usage statistics %>
+          </td>
 
           <td class="text-nowrap">
             <%= link "Details", to: Routes.brand_path(@conn, :show, brand), class: "btn btn-md btn-sm btn-outline-primary" %>
-            <%# <%= link "Remove", to: Routes.brand_path(@conn, :delete, brand), method: :delete, data: [confirm: "Are you sure you want to permanently remove the brand \"#{brand.name}\"?"], class: "btn btn-sm btn-outline-danger ml-2" %>
           </td>
         </tr>
     <% end %>

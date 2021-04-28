@@ -1,31 +1,55 @@
-<%= form_for @changeset, @action, fn f -> %>
+<%# <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.2/dropzone.js" integrity="sha512-4p9OjnfBk18Aavg91853yEZCA7ywJYcZpFt+YB+p+gLNPFIAlt2zMBGzTxREYh+sHFsttK0CTYephWaY7I3Wbw==" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.2/dropzone.css" integrity="sha512-7uSoC3grlnRktCWoO4LjHMjotq8gf9XDFQerPuaph+cqR7JC9XKGdvN+UwZMC14aAaBDItdRj3DcSDs4kMWUgg==" crossorigin="anonymous" /> %>
+
+
+<%= form_for @changeset, @action, [multipart: true], fn f -> %>
   <%= if @changeset.action do %>
     <div class="alert alert-danger">
       <p>Oops, something went wrong! Please check the errors below.</p>
     </div>
   <% end %>
 
-  <%= label f, :name %>
-  <%= text_input f, :name %>
-  <%= error_tag f, :name %>
 
-  <%= label f, :logo %>
-  <%= text_input f, :logo %>
-  <%= error_tag f, :logo %>
+  <div class="form-label-group">
+    <%= text_input f, :name, class: "form-control " <> error_class(f, :name, "is-invalid"),
+      placeholder: "Brand Name", required: true, autofocus: focusHelper(f, :name, default: true) %>
+    <%= label f, :name, "Brand Name", class: "control-label" %>
+    <%= error_tag f, :name %>
+  </div>
 
-  <%= label f, :logo_dark %>
-  <%= text_input f, :logo_dark %>
-  <%= error_tag f, :logo_dark %>
+  <div class="form-group">
+    <%= label f, :logo, "Logo", class: "control-label" %>
+    <%= file_input f, :logo, class: "form-control-file" %>
+    <%= error_tag f, :logo %>
+  </div>
 
-  <%= label f, :favicons %>
-  <%= text_input f, :favicons %>
-  <%= error_tag f, :favicons %>
+  <%# <script>
+    new Dropzone("#logoDropZone", {url: '<%= Routes.brand_path(@conn, :upload) ', paramName: 'upload'});
+  </script> %>
 
-  <%= label f, :favicons_dark %>
-  <%= text_input f, :favicons_dark %>
-  <%= error_tag f, :favicons_dark %>
+  <div class="form-group">
+    <%= label f, :favicons, "Favicons", class: "control-label" %>
+    <%= file_input f, :favicons, multiple: true, class: "form-control-file" %>
+    <%= error_tag f, :favicons %>
+  </div>
+
+  <hr class="mt-4" />
+
+  <h6 class="text-secondary mb-4">Dark Mode</h6>
+
+  <div class="form-group">
+    <%= label f, :logo_dark, "Dark Logo", class: "control-label" %>
+    <%= file_input f, :logo_dark, class: "form-control-file" %>
+    <%= error_tag f, :logo_dark %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :favicons_dark, "Dark Favicons", class: "control-label" %>
+    <%= file_input f, :favicons_dark, multiple: true, class: "form-control-file" %>
+    <%= error_tag f, :favicons_dark %>
+  </div>
 
   <div>
-    <%= submit "Save" %>
+    <%= submit "Save", class: "btn btn-md btn-primary btn-block" %>
   </div>
 <% end %>

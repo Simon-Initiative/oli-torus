@@ -204,8 +204,8 @@ defmodule Oli.Branding do
       name: Keyword.get(default_branding, :name),
       logo: Keyword.get(default_branding, :logo),
       logo_dark: dark_or_default(default_branding, :logo),
-      favicons: Keyword.get(default_branding, :name),
-      favicons_dark: dark_or_default(default_branding, :name),
+      favicons: Keyword.get(default_branding, :favicons),
+      favicons_dark: dark_or_default(default_branding, :favicons_dark),
     }
   end
 

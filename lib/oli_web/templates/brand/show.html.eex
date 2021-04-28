@@ -1,33 +1,89 @@
-<h1>Show Brand</h1>
 
-<ul>
+<style>
+  .logo-container {
+    border-radius: 6px;
+    padding: 10px;
+    display: inline-block;
+  }
 
-  <li>
-    <strong>Name:</strong>
+  .logo-container img {
+    height: 40px;
+  }
+
+  .checkered-light {
+    background-color: #efefef;
+    background-size: 30px 30px;
+    background-position: 0 0, 15px 15px;
+    background-image: linear-gradient(45deg, white 25%, transparent 25%, transparent 75%, white 75%, white),
+                      linear-gradient(45deg, white 25%, transparent 25%, transparent 75%, white 75%, white);
+  }
+
+  .checkered-dark {
+    background-color: #222222;
+    background-size: 30px 30px;
+    background-position: 0 0, 15px 15px;
+    background-image: linear-gradient(45deg, black 25%, transparent 25%, transparent 75%, black 75%, black),
+                      linear-gradient(45deg, black 25%, transparent 25%, transparent 75%, black 75%, black);
+  }
+
+</style>
+
+<div class="container">
+
+  <span>
+    <%= link to: Routes.brand_path(@conn, :index) do %>
+      <i class="las la-arrow-left"></i> Back
+    <% end %>
+  </span>
+
+  <h3 class="my-3">
     <%= @brand.name %>
-  </li>
+    <%= link "Remove", to: Routes.brand_path(@conn, :delete, @brand), method: :delete, data: [confirm: "Are you sure you want to permanently remove the brand \"#{@brand.name}\"?"], class: "btn btn-sm btn-outline-danger ml-2 float-right" %>
+    <%= link "Edit", to: Routes.brand_path(@conn, :edit, @brand), class: "btn btn-sm btn-outline-primary ml-2 float-right" %>
+  </h3>
 
-  <li>
-    <strong>Logo:</strong>
-    <%= @brand.logo %>
-  </li>
+  <table class="table">
+    <tbody>
+      <tr>
+        <td><strong>Logo:</strong></td>
+        <td>
+          <div class="logo-container checkered-light">
+            <img src="<%= @brand.logo %>" />
+          </div>
+        </td>
+      </tr>
 
-  <li>
-    <strong>Logo dark:</strong>
-    <%= @brand.logo_dark %>
-  </li>
+      <tr>
+        <td><strong>Logo (Dark):</strong></td>
+        <td>
+          <%= case @brand.logo_dark do %>
+            <% nil -> %>
+              <span class="text-secondary font-italic">None</span>
+            <% logo_dark -> %>
+              <div class="logo-container checkered-dark">
+                <img src="<%= @brand.logo_dark %>" />
+              </div>
+          <% end %>
+        </td>
+      </tr>
 
-  <li>
-    <strong>Favicons:</strong>
-    <%= @brand.favicons %>
-  </li>
+      <tr>
+        <td><strong>Favicons:</strong></td>
+        <td><%= @brand.favicons %></td>
+      </tr>
 
-  <li>
-    <strong>Favicons dark:</strong>
-    <%= @brand.favicons_dark %>
-  </li>
+      <tr>
+        <td><strong>Favicons (Dark):</strong></td>
+        <td>
+          <%= case @brand.logo_dark do %>
+            <% nil -> %>
+              <span class="text-secondary font-italic">None</span>
+            <% logo_dark -> %>
+              <%= @brand.favicons_dark %>
+          <% end %>
+        </td>
+      </tr>
 
-</ul>
-
-<span><%= link "Edit", to: Routes.brand_path(@conn, :edit, @brand) %></span>
-<span><%= link "Back", to: Routes.brand_path(@conn, :index) %></span>
+    </tbody>
+  </table>
+</div>
