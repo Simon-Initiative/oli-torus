@@ -93,7 +93,7 @@ const aspectRatioConversion = (
     | { width: number; height: number }
     | { width: number; aspectRatio: number }
     | { height: number; aspectRatio: number },
-) => {
+): any => {
   switch (true) {
     case (data as any).width !== undefined && (data as any).height !== undefined:
       return (data as any).width / (data as any).height;
@@ -120,112 +120,76 @@ const aspectRatioConversion = (
 
 const normalize = (factor: number, data: { width: number } | { height: number }) => {};
 
-/**
- * Resizing is split into three cases.
- * 1. Resizing from the W or E positions:
- *  a. Aspect ratio cannot be maintained, and the mouse position directly
- *  determines the change in width.
- * 2. Resizing from the NW, N, NE, SW, S, SW positions:
- *  a. Aspect ratio is maintained
- *  The mouse position determines the change in width or height by the dimension
- *  which has changed less. This allows maintaining aspect ratio
- *  b. aspect ratio is not maintained
- *  The mouse position directly determines the change in width and height
- * @param initialClientBoundingRect
- * @param initialOffsetBoundingRect
- * @param param2
- * @param dragHandle
- * @returns
- */
 export const boundingRectFromMousePosition = (
   initialClientBoundingRect: BoundingRect,
   initialOffsetBoundingRect: BoundingRect,
   { x, y }: MousePosition,
   dragHandle: Position,
 ): BoundingRect => {
-  const { top, left, width, height } = initialOffsetBoundingRect;
+  const {
+    top: offsetTop,
+    left: offsetLeft,
+    width: offsetWidth,
+    height: offsetHeight,
+  } = initialOffsetBoundingRect;
+  const {
+    top: clientTop,
+    left: clientLeft,
+    width: clientWidth,
+    height: clientHeight,
+  } = initialClientBoundingRect;
   let fromLeft = 0,
-    fromTop = 0,
-    difference = 0;
+    fromTop = 0;
 
   const MIN_SIZE = 10;
   const atLeast = (a: number, min: number) => (a < min ? min : a);
   const atMost = (a: number, max: number) => (a > max ? max : a);
+  const aspectRatio: number = aspectRatioConversion({ width: offsetWidth, height: offsetHeight });
+  const delta = (first: number, second: number) => Math.min(first, second);
+
+  const constrain = (first: number, second: number) =>
+    first === delta(first, second) ? first : second;
 
   switch (true) {
     case dragHandle === 'nw':
-      // normalize below
-      fromLeft = x - initialClientBoundingRect.left;
-      fromTop = y - initialClientBoundingRect.top;
-      difference = Math.min(fromLeft, fromTop);
+      fromLeft = x - clientLeft;
+      fromTop = aspectRatioConversion({ height: y - clientTop, aspectRatio });
 
       return {
         left: atMost(
-          left + (difference === fromLeft ? difference : fromTop),
-          left + width - MIN_SIZE,
+          offsetLeft + constrain(fromLeft, fromTop),
+          offsetLeft + offsetWidth - MIN_SIZE,
         ),
-        top: atMost(top + (difference === fromTop ? difference : fromLeft), height - MIN_SIZE),
-        width: atLeast(width - (difference === fromLeft ? difference : fromTop), 2 * MIN_SIZE),
-        height: atLeast(height - (difference === fromTop ? difference : fromLeft), 2 * MIN_SIZE),
-      };
-    case dragHandle === 'n':
-      fromTop = initialClientBoundingRect.top - y;
-      return {
-        left: left,
-        top: top + fromTop,
-        width: width,
-        height: height - fromTop,
+        top: atMost(offsetTop + constrain(fromTop, fromLeft), offsetHeight - MIN_SIZE),
+        width: atLeast(offsetWidth - constrain(fromLeft, fromTop), 2 * MIN_SIZE),
+        height: atLeast(offsetHeight - constrain(fromTop, fromLeft), 2 * MIN_SIZE),
       };
     case dragHandle === 'ne':
-      fromLeft = initialClientBoundingRect.left + initialClientBoundingRect.width - x;
-      fromTop = initialClientBoundingRect.top - y;
+      fromLeft = x - (clientLeft + clientWidth);
+      fromTop = y - clientTop;
       return {
-        left: left,
-        top: top + fromTop,
-        width: width + fromLeft,
-        height: height - fromTop,
-      };
-    case dragHandle === 'w':
-      fromLeft = initialClientBoundingRect.left - x;
-      return {
-        left: left + fromLeft,
-        top,
-        width: width - fromLeft,
-        height: height,
-      };
-    case dragHandle === 'e':
-      fromLeft = initialClientBoundingRect.left + initialClientBoundingRect.width - x;
-      return {
-        left: left,
-        top: top,
-        width: width + fromLeft,
-        height: height,
+        left: offsetLeft,
+        top: offsetTop + constrain(fromTop, fromLeft),
+        width: offsetWidth + constrain(fromLeft, fromTop),
+        height: offsetHeight - constrain(fromTop, fromLeft),
       };
     case dragHandle === 'sw':
-      fromLeft = initialClientBoundingRect.left - x;
-      fromTop = initialClientBoundingRect.top + initialClientBoundingRect.height - y;
+      fromLeft = x - clientLeft;
+      fromTop = y - (clientTop + clientHeight);
       return {
-        left: left + fromLeft,
-        top: top,
-        width: width - fromLeft,
-        height: height + fromTop,
-      };
-    case dragHandle === 's':
-      fromTop = initialClientBoundingRect.top + initialClientBoundingRect.height - y;
-      return {
-        left: left,
-        top: top,
-        width: width,
-        height: height + fromTop,
+        left: offsetLeft + constrain(fromLeft, fromTop),
+        top: offsetTop,
+        width: offsetWidth - constrain(fromLeft, fromTop),
+        height: offsetHeight + constrain(fromTop, fromLeft),
       };
     case dragHandle === 'se':
-      fromLeft = initialClientBoundingRect.left + initialClientBoundingRect.width - x;
-      fromTop = initialClientBoundingRect.top + initialClientBoundingRect.height - y;
+      fromLeft = x - (clientLeft + clientWidth);
+      fromTop = y - (clientTop + clientHeight);
       return {
-        left: left,
-        top: top,
-        width: width + fromLeft,
-        height: height + fromTop,
+        left: offsetLeft,
+        top: offsetTop,
+        width: offsetWidth + constrain(fromLeft, fromTop),
+        height: offsetHeight + constrain(fromTop, fromLeft),
       };
     default:
       throw new Error('unhandled drag handle in Image Editor boundingRect');

@@ -69,6 +69,7 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
   };
 
   const onMouseUp = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    setResizingFrom(undefined);
     if (imageRef.current && resizingFrom) {
       const { clientX, clientY } = e;
       const { width, height } = boundingRectFromMousePosition(
@@ -79,7 +80,6 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
       );
       onEdit(update({ width, height }));
     }
-    setResizingFrom(undefined);
   };
 
   const resizeHandle = (position: Position) => (
@@ -96,12 +96,8 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
       <>
         <div className="resize-selection-box-border" style={boundResizeStyles('border')}></div>
         {resizeHandle('nw')}
-        {resizeHandle('n')}
         {resizeHandle('ne')}
-        {resizeHandle('w')}
-        {resizeHandle('e')}
         {resizeHandle('sw')}
-        {resizeHandle('s')}
         {resizeHandle('se')}
       </>
     );
