@@ -150,7 +150,7 @@ defmodule Oli.Delivery.Sections do
       iex> get_section!(456)
       ** (Ecto.NoResultsError)
   """
-  def get_section!(id), do: Repo.get!(Section, id)
+  def get_section!(id), do: Repo.get!(Section, id) |> Repo.preload([:brand])
 
   @doc """
   Gets a section's publication

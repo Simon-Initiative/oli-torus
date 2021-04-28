@@ -14,6 +14,21 @@
   <table class="table">
     <tbody>
       <tr>
+        <td><strong>Brand:</strong></td>
+        <td>
+          <%= case  @section.brand do %>
+            <% nil -> %>
+              <span class="text-secondary font-italic">None</span>
+
+            <% brand -> %>
+              <div class="logo-container">
+                <img src="<%= brand.logo %>" />
+              </div>
+          <% end %>
+        </td>
+      </tr>
+
+      <tr>
         <td><strong>URL:</strong></td>
         <td><%= external_link Routes.page_delivery_url(@conn, :index, @section.slug), to: Routes.page_delivery_url(@conn, :index, @section.slug) %></td>
       </tr>

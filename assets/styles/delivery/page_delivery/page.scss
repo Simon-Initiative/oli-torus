@@ -3,7 +3,7 @@
 h1.title {
   font-weight: 300;
   color: $title-color;
-  padding-bottom: .5em;
+  padding-bottom: 0.5em;
   border-bottom: 1px solid $gray-400;
   margin-bottom: 1em;
 }
@@ -43,7 +43,6 @@ h1.title {
   width: 100%;
   flex: 1;
   margin-top: 20px;
-  padding: 0 30px;
 }
 
 /** override styles for devices medium-sized and smaller */
@@ -58,7 +57,6 @@ h1.title {
 }
 
 .rolled-up-objectives {
-
   margin: 10px;
   margin-top: 20px;
 
