@@ -6,8 +6,10 @@
 
 - Add support for detecting problematic database queries
 - Allow adaptive pages to render without application chrome
+- Save cookie preferences in delivered courses
 
 ### Bug fixes
+
 - Fix help and logo links on register institution page, change help form to modal
 
 - Add missing database indexes, rework resolver queries
