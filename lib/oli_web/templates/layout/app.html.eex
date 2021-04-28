@@ -1,5 +1,5 @@
 
-<div class="container">
+<div>
   <%= if get_flash(@conn, :info) do %>
     <p class="alert alert-info mb-3" role="alert"><%= get_flash(@conn, :info) %></p>
   <% end %>

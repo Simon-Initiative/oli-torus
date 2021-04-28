@@ -65,6 +65,9 @@ defmodule OliWeb.ViewHelpers do
 
       _ ->
         cond do
+          user.guest ->
+            :open_and_free
+
           PlatformRoles.has_roles?(user, @admin_roles, :any) ->
             :administrator
 
