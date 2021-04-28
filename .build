@@ -181,6 +181,7 @@ Oli.Resources.Container.html
 Oli.Resources.Numbering.html
 Oli.Resources.Objective.html
 Oli.Resources.Page.html
+Oli.Resources.PageContent.html
 Oli.Resources.Resource.html
 Oli.Resources.ResourceType.html
 Oli.Resources.Revision.html
@@ -386,8 +387,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-6fa0fe2a24.js
-dist/sidebar_items-c6b656b578.js
+dist/search_items-2ad80fee73.js
+dist/sidebar_items-c54cf20d17.js
 index.html
 license.html
 readme.html
