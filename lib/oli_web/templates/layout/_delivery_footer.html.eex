@@ -1,4 +1,4 @@
-<%= render OliWeb.SharedView, "_cookie_consent.html" %>
+<%= render OliWeb.SharedView, "_cookie_consent.html", conn: @conn %>
 <%= render OliWeb.SharedView, "_help.html", conn: @conn %>
 <footer class="footer">
   <div class="container">
