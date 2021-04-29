@@ -18,7 +18,7 @@
 
   <% end %>
 
-  <div id="index-container" class="course-outline list-group">
+  <div id="index-container" class="course-outline list-group mb-5">
     <h5 class="text-primary border-bottom border-primary">Course Overview</h5>
 
     <%= render "_outline.html", conn: @conn, section_slug: @section_slug, summary: @summary, nodes: @summary.hierarchy, active_page: nil %>

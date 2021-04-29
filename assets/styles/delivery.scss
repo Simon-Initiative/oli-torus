@@ -13,7 +13,7 @@ body {
 
 .delivery {
   @import "delivery/variables";
-  @import "../node_modules/bootstrap/scss/bootstrap";
+  @import "bootstrap";
   @import "common/**/*.scss";
   @import "components/**/*.scss";
   @import "delivery/**/*.scss";

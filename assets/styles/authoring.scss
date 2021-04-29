@@ -13,7 +13,7 @@ body {
 
 .authoring {
   @import "authoring/variables";
-  @import "../node_modules/bootstrap/scss/bootstrap";
+  @import "bootstrap";
   @import "common/**/*.scss";
   @import "components/**/*.scss";
   @import "authoring/**/*.scss";
