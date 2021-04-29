@@ -12,7 +12,6 @@ config :oli,
     favicons: "/favicons",
     dark: [
       logo: "/images/oli_torus_logo_dark.png",
-      favicons: "/favicons_dark",
     ]
   ]
 

@@ -145,13 +145,6 @@ defmodule Oli.Branding do
     "#{favicons_dir}/#{name}"
   end
 
-  def favicons_dark(name, section \\nil) do
-    favicons_dir = brand_with_defaults(section)
-      |> Map.get(:favicons_dark)
-
-    "#{favicons_dir}/#{name}"
-  end
-
   defp brand_with_defaults(section) do
     Map.merge(get_default_brand(), get_most_relevant_brand(section))
   end
@@ -221,7 +214,6 @@ defmodule Oli.Branding do
       logo: Keyword.get(default_branding, :logo),
       logo_dark: dark_or_default(default_branding, :logo),
       favicons: Keyword.get(default_branding, :favicons),
-      favicons_dark: dark_or_default(default_branding, :favicons_dark),
     }
   end
 

@@ -8,7 +8,6 @@ defmodule Oli.Repo.Migrations.CreateBrands do
       add :logo, :string
       add :logo_dark, :string
       add :favicons, :string
-      add :favicons_dark, :string
 
       add :institution_id, references(:institutions, on_delete: :nilify_all)
 

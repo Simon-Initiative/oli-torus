@@ -3,9 +3,9 @@ defmodule OliWeb.BrandControllerTest do
 
   alias Oli.Branding
 
-  @create_attrs %{favicons: "some favicons", favicons_dark: "some favicons_dark", logo: "some logo", logo_dark: "some logo_dark", name: "some name"}
-  @update_attrs %{favicons: "some updated favicons", favicons_dark: "some updated favicons_dark", logo: "some updated logo", logo_dark: "some updated logo_dark", name: "some updated name"}
-  @invalid_attrs %{favicons: nil, favicons_dark: nil, logo: nil, logo_dark: nil, name: nil}
+  @create_attrs %{favicons: "some favicons", logo: "some logo", logo_dark: "some logo_dark", name: "some name"}
+  @update_attrs %{favicons: "some updated favicons", logo: "some updated logo", logo_dark: "some updated logo_dark", name: "some updated name"}
+  @invalid_attrs %{favicons: nil, logo: nil, logo_dark: nil, name: nil}
 
   def fixture(:brand) do
     {:ok, brand} = Branding.create_brand(@create_attrs)

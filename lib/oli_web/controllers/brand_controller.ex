@@ -89,27 +89,30 @@ defmodule OliWeb.BrandController do
         upload("#{brand_path}/#{logo.filename}", logo)
     end
 
+    valid_favicon_names = [
+      "favicon",
+      "favicon-32x32",
+      "favicon-16x16",
+      "apple-touch-icon",
+      "android-chrome-512x512",
+      "android-chrome-192x192",
+    ]
+
     case brand_params["favicons"] do
       nil -> nil
       favicons ->
-        Enum.each(favicons, fn f ->
+        favicons
+        |> Enum.filter(fn f -> Regex.replace(~r/\.[^.]+$/, f.filename, "") in valid_favicon_names end)
+        |> Enum.each(fn f ->
           upload("#{brand_path}/favicons/#{f.filename}", f)
         end)
     end
 
-    # logo_dark and favicons_dark are optional
+    # logo_dark is optional
     case brand_params["logo_dark"] do
       nil -> nil
       logo_dark ->
         upload("#{brand_path}/#{logo_dark.filename}", logo_dark)
-    end
-
-    case brand_params["favicons_dark"] do
-      nil -> nil
-      favicons_dark ->
-        Enum.each(favicons_dark, fn f ->
-          upload("#{brand_path}/favicons_dark/#{f.filename}", f)
-        end)
     end
   end
 

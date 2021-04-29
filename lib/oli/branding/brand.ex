@@ -9,7 +9,6 @@ defmodule Oli.Branding.Brand do
     field :name, :string
     field :slug, :string
     field :favicons, :string
-    field :favicons_dark, :string
     field :logo, :string
     field :logo_dark, :string
 
@@ -24,10 +23,10 @@ defmodule Oli.Branding.Brand do
     slug = value_or(attrs["slug"], Slug.generate("brands", attrs["name"]))
     attrs = attrs
       |> Map.put("slug", slug)
-      |> cast_upload_to_url(slug, [:logo, :logo_dark, :favicons, :favicons_dark])
+      |> cast_upload_to_url(slug, [:logo, :logo_dark, :favicons])
 
     brand
-    |> cast(attrs, [:name, :slug, :logo, :logo_dark, :favicons, :favicons_dark, :institution_id])
+    |> cast(attrs, [:name, :slug, :logo, :logo_dark, :favicons, :institution_id])
     |> validate_required([:name, :logo, :favicons])
   end
 

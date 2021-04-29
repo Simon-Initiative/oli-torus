@@ -1,5 +1,16 @@
-<div class="container">
+<style>
+  .icons {
+    height: 150px;
+  }
 
+  .icons figure {
+    width: 64px;
+    height: 64px;
+    margin-right: 2rem;
+  }
+</style>
+
+<div class="container">
   <span>
     <%= link to: Routes.brand_path(@conn, :index) do %>
       <i class="las la-arrow-left"></i> Back
@@ -39,18 +50,44 @@
 
       <tr>
         <td><strong>Favicons:</strong></td>
-        <td><%= @brand.favicons %></td>
-      </tr>
-
-      <tr>
-        <td><strong>Favicons (Dark):</strong></td>
         <td>
-          <%= case @brand.favicons_dark do %>
-            <% nil -> %>
-              <span class="text-secondary font-italic">None</span>
-            <% favicons_dark -> %>
-              <%= favicons_dark %>
-          <% end %>
+          <div><%= @brand.favicons %></div>
+          <div class="icons my-2">
+            <figure class="figure align-top text-center d-inline-block">
+              <img src="<%= @brand.favicons %>/favicon.ico" class="figure-img img-fluid text-center" alt="favicon.ico">
+              <figcaption class="figure-caption">favicon.ico</figcaption>
+            </figure>
+
+            <figure class="figure align-top text-center d-inline-block">
+              <img src="<%= @brand.favicons %>/favicon-32x32.png" class="figure-img img-fluid text-center" alt="favicon-32x32.png">
+              <figcaption class="figure-caption">favicon-32x32.png</figcaption>
+            </figure>
+
+
+            <figure class="figure align-top text-center d-inline-block">
+              <img src="<%= @brand.favicons %>/favicon-16x16.png" class="figure-img img-fluid text-center" alt="favicon-16x16.png">
+              <figcaption class="figure-caption">favicon-16x16.png</figcaption>
+            </figure>
+
+
+            <figure class="figure align-top text-center d-inline-block">
+              <img src="<%= @brand.favicons %>/apple-touch-icon.png" class="figure-img img-fluid text-center" alt="apple-touch-icon.png">
+              <figcaption class="figure-caption">apple-touch-icon.png</figcaption>
+            </figure>
+
+
+            <figure class="figure align-top text-center d-inline-block">
+              <img src="<%= @brand.favicons %>/android-chrome-512x512.png" class="figure-img img-fluid text-center" alt="android-chrome-512x512.png">
+              <figcaption class="figure-caption">android-chrome-512x512.png</figcaption>
+            </figure>
+
+
+            <figure class="figure align-top text-center d-inline-block">
+              <img src="<%= @brand.favicons %>/android-chrome-192x192.png" class="figure-img img-fluid text-center" alt="android-chrome-192x192.png">
+              <figcaption class="figure-caption">android-chrome-192x192.png</figcaption>
+            </figure>
+
+          </div>
         </td>
       </tr>
 

@@ -6,9 +6,9 @@ defmodule Oli.BrandingTest do
   describe "brands" do
     alias Oli.Branding.Brand
 
-    @valid_attrs %{favicons: "some favicons", favicons_dark: "some favicons_dark", logo: "some logo", logo_dark: "some logo_dark", name: "some name"}
-    @update_attrs %{favicons: "some updated favicons", favicons_dark: "some updated favicons_dark", logo: "some updated logo", logo_dark: "some updated logo_dark", name: "some updated name"}
-    @invalid_attrs %{favicons: nil, favicons_dark: nil, logo: nil, logo_dark: nil, name: nil}
+    @valid_attrs %{favicons: "some favicons", logo: "some logo", logo_dark: "some logo_dark", name: "some name"}
+    @update_attrs %{favicons: "some updated favicons", logo: "some updated logo", logo_dark: "some updated logo_dark", name: "some updated name"}
+    @invalid_attrs %{favicons: nil, logo: nil, logo_dark: nil, name: nil}
 
     def brand_fixture(attrs \\ %{}) do
       {:ok, brand} =
@@ -32,7 +32,6 @@ defmodule Oli.BrandingTest do
     test "create_brand/1 with valid data creates a brand" do
       assert {:ok, %Brand{} = brand} = Branding.create_brand(@valid_attrs)
       assert brand.favicons == "some favicons"
-      assert brand.favicons_dark == "some favicons_dark"
       assert brand.logo == "some logo"
       assert brand.logo_dark == "some logo_dark"
       assert brand.name == "some name"
@@ -46,7 +45,6 @@ defmodule Oli.BrandingTest do
       brand = brand_fixture()
       assert {:ok, %Brand{} = brand} = Branding.update_brand(brand, @update_attrs)
       assert brand.favicons == "some updated favicons"
-      assert brand.favicons_dark == "some updated favicons_dark"
       assert brand.logo == "some updated logo"
       assert brand.logo_dark == "some updated logo_dark"
       assert brand.name == "some updated name"
@@ -157,12 +155,5 @@ defmodule Oli.BrandingTest do
       assert Branding.favicons("icon.png", section) == "some favicons/icon.png"
     end
 
-    @tag capture_log: true
-    test "favicons_dark returns dark mode favicons", %{section: section} do
-      section_brand = brand_fixture()
-      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
-
-      assert Branding.favicons_dark("icon.png", section) == "some favicons_dark/icon.png"
-    end
   end
 end
