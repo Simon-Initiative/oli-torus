@@ -6,7 +6,7 @@ export interface MousePosition {
   y: number;
 }
 
-export const useMousePosition = () => {
+export const useMousePosition = (): Nullish<MousePosition> => {
   const [mousePosition, setMousePosition] = useState<Nullish<MousePosition>>(null);
 
   const updateMousePosition = (ev: MouseEvent) => {

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { useFocused, useSelected, ReactEditor } from 'slate-react';
 import { updateModel, getEditMode } from 'components/editing/models/utils';
 import * as ContentModel from 'data/content/model';
@@ -9,17 +9,8 @@ import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
 import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolbar';
 import { initCommands } from './commands';
 import { displayModelToClassName } from 'data/content/utils';
-import { useMousePosition } from 'components/editing/models/image/resizer/useMousePosition';
-import {
-  boundingRectFromMousePosition,
-  clientBoundingRect,
-  offsetBoundingRect,
-  resizeHandleStyles,
-} from 'components/editing/models/image/resizer/utils';
-import { Position } from 'components/editing/models/image/resizer/types';
+import { Resizer } from 'components/misc/resizer/Resizer';
 
-// TODO:
-// Constrain sizes to min/max
 // Constrain proportions when dragging from corner
 
 // eslint-disable-next-line
@@ -31,8 +22,6 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
   const selected = useSelected();
 
   const imageRef = useRef<HTMLImageElement>(null);
-
-  const [resizingFrom, setResizingFrom] = useState<Position | undefined>(undefined);
 
   const editMode = getEditMode(editor);
 
@@ -48,66 +37,8 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
     onEdit(update({ caption }));
   };
 
-  const mousePosition = useMousePosition();
-
-  const boundResizeStyles = !imageRef.current
-    ? {}
-    : resizeHandleStyles(
-        !resizingFrom || !mousePosition
-          ? offsetBoundingRect(imageRef.current)
-          : boundingRectFromMousePosition(
-              clientBoundingRect(imageRef.current),
-              offsetBoundingRect(imageRef.current),
-              mousePosition,
-              resizingFrom,
-            ),
-      );
-
-  const onMouseDown = (position: Position) => (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    e.preventDefault();
-    setResizingFrom(position);
-  };
-
-  const onMouseUp = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    setResizingFrom(undefined);
-    if (imageRef.current && resizingFrom) {
-      const { clientX, clientY } = e;
-      const { width, height } = boundingRectFromMousePosition(
-        clientBoundingRect(imageRef.current),
-        offsetBoundingRect(imageRef.current),
-        { x: clientX, y: clientY },
-        resizingFrom,
-      );
-      onEdit(update({ width, height }));
-    }
-  };
-
-  const resizeHandle = (position: Position) => (
-    <div
-      onMouseDown={onMouseDown(position)}
-      className="resize-selection-box-handle"
-      style={boundResizeStyles(position)}
-    ></div>
-  );
-
-  let resizer;
-  if (ReactEditor.isFocused(editor) && selected && imageRef.current) {
-    resizer = (
-      <>
-        <div className="resize-selection-box-border" style={boundResizeStyles('border')}></div>
-        {resizeHandle('nw')}
-        {resizeHandle('ne')}
-        {resizeHandle('sw')}
-        {resizeHandle('se')}
-      </>
-    );
-  } else {
-    resizer = null;
-  }
-
   return (
     <div
-      onMouseUp={onMouseUp}
       {...attributes}
       style={{ userSelect: 'none' }}
       className={'image-editor text-center ' + displayModelToClassName(model.display)}
@@ -118,7 +49,13 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
           showArrow
           target={
             <div>
-              {resizer}
+              {(ReactEditor.isFocused(editor) && selected && imageRef.current && (
+                <Resizer
+                  displayRef={imageRef}
+                  onResize={({ width, height }) => onEdit(update({ width, height }))}
+                />
+              )) ||
+                null}
               <img
                 width={model.width}
                 height={model.height}
