@@ -8,6 +8,7 @@
 - Allow adaptive pages to render without application chrome
 - Save cookie preferences in delivered courses
 - Add support for page content grouping
+- Add image resizing
 
 ### Bug fixes
 
