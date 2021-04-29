@@ -65,15 +65,6 @@
 
     <%= render OliWeb.LayoutView, "_delivery_header.html", assigns %>
 
-    <dark-mode-toggle
-      id="dark-mode-toggle-1"
-      legend="Theme Switcher"
-      appearance="switch"
-      dark="Dark"
-      light="Light"
-      remember="Remember this"
-    ></dark-mode-toggle>
-
     <main role="main" class="container">
 
       <%= Map.get(assigns, :inner_layout) || @inner_content %>

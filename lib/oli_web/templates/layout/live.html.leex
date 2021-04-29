@@ -1,26 +1,26 @@
 
 <%= if live_flash(@flash, :info) do %>
-<div class="alert alert-info" role="alert">
+  <div class="alert alert-info" role="alert">
 
-  <%= live_flash(@flash, :info) %>
+    <%= live_flash(@flash, :info) %>
 
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close" phx-click="lv:clear-flash" phx-value-key="info">
-    <span aria-hidden="true">&times;</span>
-  </button>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close" phx-click="lv:clear-flash" phx-value-key="info">
+      <span aria-hidden="true">&times;</span>
+    </button>
 
   </div>
 <% end %>
 
 <%= if live_flash(@flash, :error) do %>
-<div class="alert alert-danger" role="alert">
+  <div class="alert alert-danger" role="alert">
 
-  <%= live_flash(@flash, :error) %>
+    <%= live_flash(@flash, :error) %>
 
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close" phx-click="lv:clear-flash" phx-value-key="error">
-    <span aria-hidden="true">&times;</span>
-  </button>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close" phx-click="lv:clear-flash" phx-value-key="error">
+      <span aria-hidden="true">&times;</span>
+    </button>
 
-</div>
+  </div>
 <% end %>
 
 <script>

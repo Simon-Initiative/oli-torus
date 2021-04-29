@@ -1,4 +1,4 @@
-<div class="content">
+<div class="content mt-3 mb-5">
   <h1><%= @summary.title %></h1>
   <p class="text-secondary"><%= @summary.description %></p>
 
@@ -18,7 +18,7 @@
 
   <% end %>
 
-  <div id="index-container" class="course-outline list-group mb-5">
+  <div id="index-container" class="course-outline list-group">
     <h5 class="text-primary border-bottom border-primary">Course Overview</h5>
 
     <%= render "_outline.html", conn: @conn, section_slug: @section_slug, summary: @summary, nodes: @summary.hierarchy, active_page: nil %>
