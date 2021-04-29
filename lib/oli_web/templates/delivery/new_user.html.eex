@@ -11,7 +11,7 @@
       </div>
     </div>
 
-    <%= form_for @conn, Routes.delivery_path(@conn, :create_user, @section.slug), fn f -> %>
+    <%= form_for @conn, Routes.delivery_path(@conn, :create_user, @section.slug), fn _f -> %>
       <div class="form-label-group">
         <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
 

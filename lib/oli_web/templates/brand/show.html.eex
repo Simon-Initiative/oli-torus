@@ -31,7 +31,7 @@
               <span class="text-secondary font-italic">None</span>
             <% logo_dark -> %>
               <div class="logo-container checkered-dark">
-                <img src="<%= @brand.logo_dark %>" />
+                <img src="<%= logo_dark %>" />
               </div>
           <% end %>
         </td>

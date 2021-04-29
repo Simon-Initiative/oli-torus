@@ -1,9 +1,19 @@
 defmodule OliWeb.ViewHelpers do
   use Phoenix.HTML
 
+  import Oli.Branding
+
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.PlatformRoles
   alias Oli.Delivery.Sections.Section
+
+  def brand_logo_html(conn) do
+    section = conn.assigns[:section]
+    ~E"""
+      <img src="<%= brand_logo_url(section) %>" height="40" class="d-dark-none d-inline-block align-top mr-2" alt="<%= brand_name(section) %>">
+      <img src="<%= brand_logo_url_dark(section) %>" height="40" class="d-light-none d-inline-block align-top mr-2"  alt="<%= brand_name(section) %>">
+    """
+  end
 
   def is_admin?(%{:assigns => assigns}) do
     admin_role_id = Oli.Accounts.SystemRole.role_id().admin

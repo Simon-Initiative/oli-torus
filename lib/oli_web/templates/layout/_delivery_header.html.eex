@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand">
   <div class="container">
     <a class="navbar-brand oli-logo mr-auto" href="<%= logo_link_path(@conn) %>">
-      <img src="<%= brand_logo_url(assigns[:section]) %>" height="40" class="d-inline-block align-top mr-2" alt="<%= brand_name(assigns[:section]) %>">
+      <%= brand_logo_html(@conn) %>
     </a>
     <%= if not preview_mode(@conn) do %>
       <div class="nav-item my-2 my-lg-0 mr-2">

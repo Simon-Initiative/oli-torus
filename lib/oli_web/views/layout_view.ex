@@ -101,6 +101,6 @@ defmodule OliWeb.LayoutView do
   end
 
   def theme_url(conn, :delivery) do
-    Routes.static_path(conn, "/css/delivery_theme_oli.css")
+    Routes.static_path(conn, "/css/delivery_oli_light.css")
   end
 end

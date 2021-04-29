@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand">
   <div class="container">
     <a class="navbar-brand oli-logo mr-auto" href="<%= Routes.static_page_path(@conn, :index) %>">
-      <img src="<%= brand_logo_url() %>" height="40" class="d-inline-block align-top mr-2" alt="<%= brand_name() %>">
+      <%= brand_logo_html(@conn) %>
     </a>
 
     <div class="nav-item my-2 my-lg-0 mr-2">

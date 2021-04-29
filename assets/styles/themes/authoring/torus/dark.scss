@@ -1,0 +1,324 @@
+/**
+ * OLI Torus Authoring Theme (dark)
+ *
+ * Theme-specific variables and custom styles
+ */
+
+$white: #fff;
+$gray-100: #f8f9fa;
+$gray-200: #ebebeb;
+$gray-300: #dee2e6;
+$gray-400: #ced4da;
+$gray-500: #adb5bd;
+$gray-600: #888;
+$gray-700: #444;
+$gray-800: #303030;
+$gray-900: #222;
+$black: #000;
+
+$blue: #2c67c4;
+$indigo: #6610f2;
+$purple: #6f42c1;
+$pink: #e83e8c;
+$red: #e74c3c;
+$orange: #fd7e14;
+$yellow: #f39c12;
+$green: #00bc8c;
+$teal: #20c997;
+$cyan: #3498db;
+
+$primary: $blue;
+$secondary: $gray-600;
+$success: $green;
+$info: $cyan;
+$warning: $yellow;
+$danger: $red;
+$light: $gray-500;
+$dark: $gray-800;
+
+$yiq-contrasted-threshold: 175;
+
+// Body
+
+$body-bg: $gray-900;
+$body-color: $white;
+
+// Links
+
+$link-color: $primary;
+
+// Fonts
+
+$text-muted: $gray-600;
+
+// Tables
+
+$table-accent-bg: $gray-800;
+
+$table-border-color: $gray-700;
+
+// Forms
+
+$input-bg: $body-bg;
+$input-disabled-bg: $gray-700;
+
+$input-color: $body-color;
+$input-border-color: $gray-800;
+
+$input-group-addon-color: $gray-500;
+$input-group-addon-bg: $gray-700;
+
+$custom-file-color: $gray-500;
+$custom-file-border-color: $body-bg;
+
+// Dropdowns
+
+$dropdown-bg: $gray-900;
+$dropdown-border-color: $gray-700;
+$dropdown-divider-bg: $gray-700;
+
+$dropdown-link-color: $white;
+$dropdown-link-hover-color: $white;
+$dropdown-link-hover-bg: $primary;
+
+// Navs
+
+$nav-link-padding-x: 2rem;
+$nav-link-disabled-color: $gray-500;
+
+$nav-tabs-border-color: $gray-700;
+$nav-tabs-link-hover-border-color: $nav-tabs-border-color $nav-tabs-border-color transparent;
+$nav-tabs-link-active-color: $white;
+$nav-tabs-link-active-border-color: $nav-tabs-border-color $nav-tabs-border-color transparent;
+
+// Navbar
+
+$navbar-padding-y: 1rem;
+
+$navbar-dark-color: rgba($white, 0.6);
+$navbar-dark-hover-color: $white;
+
+$navbar-light-color: rgba($gray-900, 0.7);
+$navbar-light-hover-color: $gray-900;
+$navbar-light-active-color: $gray-900;
+$navbar-light-toggler-border-color: rgba($gray-900, 0.1);
+
+// Pagination
+
+$pagination-color: $white;
+$pagination-bg: $success;
+$pagination-border-width: 0;
+$pagination-border-color: transparent;
+
+$pagination-hover-color: $white;
+$pagination-hover-bg: lighten($success, 10%);
+$pagination-hover-border-color: transparent;
+
+$pagination-active-bg: $pagination-hover-bg;
+$pagination-active-border-color: transparent;
+
+$pagination-disabled-color: $white;
+$pagination-disabled-bg: darken($success, 15%);
+$pagination-disabled-border-color: transparent;
+
+// Jumbotron
+
+$jumbotron-bg: $gray-800;
+
+// Cards
+
+$card-cap-bg: $gray-700;
+$card-bg: $gray-800;
+
+// Popovers
+
+$popover-bg: $gray-800;
+$popover-header-bg: $gray-700;
+
+// Toasts
+
+$toast-background-color: $gray-700;
+
+$toast-header-background-color: $gray-800;
+
+// Modals
+
+$modal-content-bg: $gray-800;
+$modal-content-border-color: $gray-700;
+
+$modal-header-border-color: $gray-700;
+
+// Progress bars
+
+$progress-bg: $gray-700;
+
+// List group
+
+$list-group-bg: $gray-800;
+$list-group-border-color: $gray-700;
+
+$list-group-hover-bg: $gray-700;
+
+// Breadcrumbs
+
+$breadcrumb-bg: $gray-700;
+
+// Close
+
+$close-color: $white;
+$close-text-shadow: none;
+
+// Code
+
+$pre-color: inherit;
+
+/** OLI specific varaibles **/
+
+$workspace-header-bg: $gray-900;
+$workspace-sidebar-bg: $gray-700;
+$workspace-sidebar-link-color: $white;
+$workspace-bg: $gray-900;
+/** Theme-specific custom styles for authoring **/
+
+.resource-block-editor {
+  .resource-content-frame {
+    &.card {
+      .card-body {
+        background-color: $body-bg;
+      }
+    }
+  }
+
+  .toolbar {
+    .toolbar-buttons {
+      background-color: transparentize($color: $gray-700, $amount: 0);
+    }
+  }
+}
+
+.table {
+  .thead-light th {
+    background-color: $gray-800;
+    color: $body-color;
+  }
+}
+
+.review .reviews .review-links .review-link {
+  .review-link-header {
+    color: $gray-600;
+  }
+
+  &.active {
+    .review-link-header {
+      color: $gray-800;
+    }
+  }
+}
+
+.container-editor {
+  .curriculum-entry {
+    &.active {
+      background-color: $gray-600;
+    }
+  }
+}
+
+.code-editor {
+  .code-editor-content {
+    background: #282c34;
+  }
+}
+
+.blockquote {
+  border-color: $gray-600;
+
+  &::before {
+    color: transparentize($color: $gray-600, $amount: 0.3);
+  }
+}
+
+.settings-editor-wrapper {
+  .settings-editor {
+    color: $gray-900;
+  }
+}
+
+/**
+* Multi-select Input
+*/
+.rbt-input-multi.form-control.rbt-input {
+  background-color: $body-bg;
+  border-color: $gray-700;
+
+  input {
+    color: $body-color;
+  }
+}
+
+.rbt-input-multi.focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.rbt-input-multi.form-control[disabled] {
+  background-color: $body-bg;
+}
+
+.rbt-input-multi.is-invalid.focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.rbt-input-multi.is-valid.focus {
+  border-color: #28a745;
+  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.rbt-input-multi input::-moz-placeholder {
+  color: $gray-100;
+}
+
+.rbt-input-multi input:-ms-input-placeholder {
+  color: $gray-100;
+}
+
+.rbt-input-multi input::-webkit-input-placeholder {
+  color: $gray-100;
+}
+
+.rbt-menu.dropdown-menu .dropdown-item {
+  color: $body-color;
+}
+
+/**
+* Token
+*/
+.rbt-token {
+  background-color: darken(#007bff, 20%);
+  color: $white;
+}
+
+.rbt-token-disabled {
+  background-color: $gray-800;
+  color: $gray-200;
+}
+
+.rbt-token-active {
+  background-color: #007bff;
+}
+
+.objective-selection {
+  .existing-objectives {
+    background-color: $body-bg;
+
+    .selected {
+      background-color: lighten($color: $body-bg, $amount: 30%);
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// IMPORTANT: DO NOT MODIFY BELOW
+// This import is required and must always be the last item in this style sheet
+///////////////////////////////////////////////////////////////////////////////
+@import "authoring.scss";

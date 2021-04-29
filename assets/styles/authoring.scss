@@ -12,9 +12,10 @@ body {
 }
 
 .authoring {
-  @import 'authoring/variables';
-  @import '../node_modules/bootstrap/scss/bootstrap';
-  @import 'common/**/*.scss';
-  @import 'components/**/*.scss';
-  @import 'authoring/**/*.scss';
+  @import "authoring/variables";
+  @import "../node_modules/bootstrap/scss/bootstrap";
+  @import "common/**/*.scss";
+  @import "components/**/*.scss";
+  @import "authoring/**/*.scss";
+  @import "display.scss";
 }

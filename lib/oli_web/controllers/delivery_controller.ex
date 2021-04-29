@@ -7,7 +7,7 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Institutions
   alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
   alias Oli.Accounts
-  alias Oli.Accounts.{Author, User, UserEnrollment}
+  alias Oli.Accounts.Author
 
   @allow_configure_section_roles [
     PlatformRoles.get_role(:system_administrator),
@@ -341,7 +341,7 @@ defmodule OliWeb.DeliveryController do
         |> Pow.Plug.create(user)
         |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
       else
-        {:error, changeset} ->
+        {:error, _} ->
           render(conn, "new_user.html", error: "Something went wrong, please try again")
       end
     else

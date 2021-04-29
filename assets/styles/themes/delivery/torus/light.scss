@@ -1,10 +1,10 @@
-/** Theme-specific variables for delivery **/
+/**
+ * OLI Torus Delivery Theme (light)
+ *
+ * Theme-specific variables and custom styles
+ */
 
-// Overwrite Bootstrap and Torus delivery variables here
-// You can find them in node_modules/bootstrap/scss/_variables.scss and styles/authoring/variables.scss
-// Copy the variables you need into this file, don't modify files under node_modules/ or styles/authoring
-
-$white:    #fff;
+$white: #fff;
 $gray-100: #f8f9fa;
 $gray-200: #e9ecef;
 $gray-300: #dee2e6;
@@ -14,27 +14,27 @@ $gray-600: #6c757d;
 $gray-700: #495057;
 $gray-800: #343a40;
 $gray-900: #212529;
-$black:    #000;
+$black: #000;
 
-$blue:    #2C67C4;
-$indigo:  #6610f2;
-$purple:  #6f42c1;
-$pink:    #d63384;
-$red:     #dc3545;
-$orange:  #fd7e14;
-$yellow:  #ffc107;
-$green:   #28a745;
-$teal:    #20c997;
-$cyan:    #3498DB;
+$blue: #2c67c4;
+$indigo: #6610f2;
+$purple: #6f42c1;
+$pink: #d63384;
+$red: #dc3545;
+$orange: #fd7e14;
+$yellow: #ffc107;
+$green: #28a745;
+$teal: #20c997;
+$cyan: #3498db;
 
-$primary:       #2C67C4;
-$secondary:     $gray-600;
-$success:       $green;
-$info:          $cyan;
-$warning:       $yellow;
-$danger:        $red;
-$light:         $gray-100;
-$dark:          $gray-800;
+$primary: #2c67c4;
+$secondary: $gray-600;
+$success: $green;
+$info: $cyan;
+$warning: $yellow;
+$danger: $red;
+$light: $gray-100;
+$dark: $gray-800;
 
 $body-bg: $white;
 $body-color: $gray-900;
@@ -60,3 +60,9 @@ $activity-purpose-checkpoint-color: lighten($blue, 10%);
 $activity-purpose-didigetthis-color: lighten($purple, 10%);
 $activity-purpose-learnbydoing-color: lighten($green, 10%);
 $activity-purpose-manystudentswonder-color: lighten($cyan, 10%);
+
+///////////////////////////////////////////////////////////////////////////////
+// IMPORTANT: DO NOT MODIFY BELOW
+// This import is required and must always be the last item in this style sheet
+///////////////////////////////////////////////////////////////////////////////
+@import "delivery.scss";
