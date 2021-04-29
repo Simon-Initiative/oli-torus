@@ -114,33 +114,31 @@ export const boundingRectFromMousePosition = (
   mousePosition: MousePosition,
   dragHandle: Position,
 ): BoundingRect =>
-  // constrainRect(
-  boundingRectHelper(
-    initialClientBoundingRect,
+  constrainRect(
+    boundingRectHelper(
+      initialClientBoundingRect,
+      initialOffsetBoundingRect,
+      mousePosition,
+      dragHandle,
+    ),
     initialOffsetBoundingRect,
-    mousePosition,
-    dragHandle,
   );
-// initialOffsetBoundingRect.width,
-// initialOffsetBoundingRect.height,
-// );
 
-// const constrainRect = (
-//   { top, left, width, height }: BoundingRect,
-//   initialWidth: number,
-//   initialHeight: number,
-// ) => {
-//   const MIN_SIZE = 10;
-//   const atLeast = (a: number, min: number) => (a < min ? min : a);
-//   const atMost = (a: number, max: number) => (a > max ? max : a);
+const constrainRect = (
+  { top, left, width, height }: BoundingRect,
+  { top: initialTop, left: initialLeft, width: initialWidth, height: initialHeight }: BoundingRect,
+) => {
+  const MIN_SIZE = 10;
+  const atLeast = (a: number, min: number) => (a < min ? min : a);
+  const atMost = (a: number, max: number) => (a > max ? max : a);
 
-//   return {
-//     top: atMost(top, initialHeight - MIN_SIZE),
-//     left: atMost(left, initialWidth - MIN_SIZE),
-//     width: atLeast(width, MIN_SIZE),
-//     height: atLeast(height, MIN_SIZE),
-//   };
-// };
+  return {
+    top: atMost(top, initialTop + initialHeight - MIN_SIZE),
+    left: atMost(left, initialLeft + initialWidth - MIN_SIZE),
+    width: atLeast(width, MIN_SIZE),
+    height: atLeast(height, MIN_SIZE),
+  };
+};
 
 const boundingRectHelper = (
   initialClientBoundingRect: BoundingRect,

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useFocused, useSelected, ReactEditor } from 'slate-react';
 import { updateModel, getEditMode } from 'components/editing/models/utils';
 import * as ContentModel from 'data/content/model';
@@ -10,8 +10,6 @@ import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolba
 import { initCommands } from './commands';
 import { displayModelToClassName } from 'data/content/utils';
 import { Resizer } from 'components/misc/resizer/Resizer';
-
-// Constrain proportions when dragging from corner
 
 // eslint-disable-next-line
 export interface ImageProps extends EditorProps<ContentModel.Image> {}
@@ -49,13 +47,12 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
           showArrow
           target={
             <div>
-              {(ReactEditor.isFocused(editor) && selected && imageRef.current && (
+              {ReactEditor.isFocused(editor) && selected && imageRef.current && (
                 <Resizer
                   displayRef={imageRef}
                   onResize={({ width, height }) => onEdit(update({ width, height }))}
                 />
-              )) ||
-                null}
+              )}
               <img
                 width={model.width}
                 height={model.height}
