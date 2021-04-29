@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { useFocused, useSelected, ReactEditor } from 'slate-react';
 import { updateModel, getEditMode } from 'components/editing/models/utils';
 import * as ContentModel from 'data/content/model';

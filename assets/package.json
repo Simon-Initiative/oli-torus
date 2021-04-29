@@ -31,7 +31,6 @@
     "react-bootstrap-typeahead": "^5.0.0-alpha.1",
     "react-dom": "^16.9.0",
     "react-redux": "^7.1.3",
-    "react-resize-context": "^3.0.0",
     "react-tiny-popover": "^5.0.1",
     "react-transition-group": "~4.4.1",
     "redux": "^4.0.5",
