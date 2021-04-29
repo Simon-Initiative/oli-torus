@@ -326,29 +326,12 @@ defmodule OliWeb.DeliveryController do
         "user_details" => user_details,
         "g-recaptcha-response" => g_recaptcha_response
       }) do
-    redirect_to = value_or(user_details["redirect_to"], Routes.delivery_path(conn, :index))
 
-    with g_recaptcha_response when g_recaptcha_response != "" <- g_recaptcha_response,
-         {:success, true} <- Oli.Utils.Recaptcha.verify(g_recaptcha_response) do
-      with {:ok, user} <-
-             Accounts.create_user(%{
-               # generate a unique sub identifier which is also used so a user can access
-               # their progress in the future or using a different browser
-               sub: UUID.uuid4(),
-               guest: true,
-             }) do
-        Accounts.update_user_platform_roles(user, [
-          PlatformRoles.get_role(:institution_learner)
-        ])
+    # Verify the recaptcha, but when load-testing is enabled we must bypass this verification
+    if Oli.Utils.LoadTesting.enabled?() or recaptcha_verified?(g_recaptcha_response) do
 
-        conn
-        |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
-        |> Pow.Plug.create(user)
-        |> redirect(to: redirect_to)
-      else
-        {:error, changeset} ->
-          render(conn, "new_user.html", changeset: changeset, redirect_to: redirect_to)
-      end
+      redirect_to = value_or(user_details["redirect_to"], Routes.delivery_path(conn, :index))
+      create(conn, user, redirect_to)
     else
       _ ->
         changeset =
@@ -358,4 +341,36 @@ defmodule OliWeb.DeliveryController do
         render(conn, "new_user.html", changeset: changeset, redirect_to: redirect_to)
     end
   end
+
+  defp recaptcha_verified?() do
+    g_recaptcha_response != "" and Oli.Utils.Recaptcha.verify(g_recaptcha_response) == {:success, true}
+  end
+
+  defp create(conn, user, redirect_to) do
+
+    case Accounts.create_user(%{
+      # generate a unique sub identifier which is also used so a user can access
+      # their progress in the future or using a different browser
+      sub: UUID.uuid4(),
+      guest: true,
+    }) do
+
+      {:ok, user} ->
+
+        Accounts.update_user_platform_roles(user, [
+          PlatformRoles.get_role(:institution_learner)
+        ])
+
+        conn
+        |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
+        |> Pow.Plug.create(user)
+        |> redirect(to: redirect_to)
+
+      {:error, changeset} ->
+        render(conn, "new_user.html", changeset: changeset, redirect_to: redirect_to)
+    end
+
+  end
+
+
 end

@@ -20,6 +20,7 @@ defmodule OliWeb.Router do
     plug :put_root_layout, {OliWeb.LayoutView, "default.html"}
     plug :put_layout, {OliWeb.LayoutView, "app.html"}
     plug :put_secure_browser_headers
+    plug Oli.Plugs.LoadTestingCSRFBypass
     plug :protect_from_forgery
     plug Plug.Telemetry, event_prefix: [:oli, :plug]
     plug Oli.Plugs.SetCurrentUser
