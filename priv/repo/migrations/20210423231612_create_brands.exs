@@ -25,5 +25,7 @@ defmodule Oli.Repo.Migrations.CreateBrands do
     alter table(:sections) do
       add :brand_id, references(:brands, on_delete: :nilify_all)
     end
+
+    drop table(:themes)
   end
 end

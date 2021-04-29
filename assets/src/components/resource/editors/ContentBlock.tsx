@@ -25,7 +25,7 @@ const maybeRenderDeliveryPurposeContainer = (props: PurposeContainerProps) => {
   }
 
   return (
-    <div className="content-block-structured-content delivery">
+    <div className="content-block-structured-content">
       <div className={`content-purpose ${props.contentItem.purpose}`}>
         <div className="content-purpose-label">{purposeLabel}</div>
         <div className="content-purpose-content">{props.children}</div>
@@ -78,6 +78,7 @@ export const ContentBlock = (props: ContentBlockProps) => {
       </div>
       <div className="card-body delivery">
         <div
+          className="content"
           draggable={props.editMode}
           onDragStart={(e) => {
             e.preventDefault();

@@ -37,18 +37,6 @@
   <div class="row my-4">
     <div class="col-3">
       <h4 class="mb-3">Preferences</h4>
-        <%= form_for @conn, Routes.workspace_path(@conn, :update_theme), fn f -> %>
-          <div class="form-group">
-            <%= label f, :id, "Editor Theme", class: "control-label" %>
-            <%= select f,
-              :id,
-              Enum.map(@themes, fn t -> if t.default, do: {"#{t.name} (Default)", t.id}, else: {t.name, t.id} end),
-              value: @active_theme.id,
-              class: "form-control",
-              onchange: "this.form.submit();" %>
-          </div>
-        <% end %>
-
         <%= form_for @conn, Routes.workspace_path(@conn, :update_live_preview_display), fn f -> %>
           <%
           hide_previews_checked = case @preferences do

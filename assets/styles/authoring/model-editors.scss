@@ -1,7 +1,7 @@
 @import "authoring/variables";
-@import 'bootstrap';
 
-.editors .structured-content, .rich-text-editor {
+.editors .structured-content,
+.rich-text-editor {
   .table-editor {
     clear: both;
 
@@ -20,12 +20,9 @@
       border-collapse: collapse;
       table-layout: fixed;
 
-      td, th {
-        position: relative;
-      }
-
+      td,
       th {
-        background-color: rgb(232, 244, 250);
+        position: relative;
       }
 
       .table-dropdown {
@@ -41,12 +38,11 @@
           justify-items: center;
           align-items: center;
           outline: none;
-          border: 1px solid rgb(204, 222, 251);
-          background-color: white;
+          border: 1px solid $gray-500;
           border-radius: 2px;
         }
         button.dropdown-toggle::after {
-          color: rgb(204, 222, 251);
+          color: $gray-500;
           margin: 0;
           vertical-align: 0;
         }
@@ -60,10 +56,10 @@
     font-family: Georgia, Cambria, "Times New Roman", Times, serif;
     font-size: 1.3em;
     line-height: 1.5em;
-    letter-spacing: -.003em;
-    color: rgba(0,0,0,.84);
+    letter-spacing: -0.003em;
+    color: rgba(0, 0, 0, 0.84);
 
-    border-left: 3px solid rgba(0,0,0,.84);
+    border-left: 3px solid rgba(0, 0, 0, 0.84);
     padding-left: 10px;
     padding-top: 2px;
     padding-bottom: 2px;
@@ -80,16 +76,17 @@
 
   code {
     font-family: "Source Code Pro", "Courier New", Courier, monospace;
-    color: rgba(0,0,0,.84);
-    background: rgba(0,0,0,.05);
-    letter-spacing: -.003em;
+    color: rgba(0, 0, 0, 0.84);
+    background: rgba(0, 0, 0, 0.05);
+    letter-spacing: -0.003em;
   }
 
   img {
     @extend .img-fluid;
   }
 
-  ul li, ol li {
+  ul li,
+  ol li {
     margin-bottom: 14px;
   }
 
@@ -148,7 +145,7 @@
     border: 0;
     width: 100%;
     height: auto;
-    color: rgba($color: $body-color, $alpha: .68);
+    color: rgba($color: $body-color, $alpha: 0.68);
     background: transparent;
     outline: none;
   }

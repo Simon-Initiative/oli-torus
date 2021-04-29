@@ -1,7 +1,10 @@
-@import 'bootstrap';
-
-#content {
-  h1, h2, h3, h4, h5, h6 {
+.content {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     clear: both;
   }
 
@@ -11,10 +14,10 @@
     font-family: Georgia, Cambria, "Times New Roman", Times, serif;
     font-size: 1.3em;
     line-height: 1.5em;
-    letter-spacing: -.003em;
-    color: rgba(0,0,0,.84);
+    letter-spacing: -0.003em;
+    color: rgba(0, 0, 0, 0.84);
 
-    border-left: 3px solid rgba(0,0,0,.84);
+    border-left: 3px solid rgba(0, 0, 0, 0.84);
     padding-left: 20px;
     margin-left: -23px;
     padding-bottom: 2px;
@@ -31,12 +34,13 @@
 
   code {
     font-family: "Source Code Pro", "Courier New", Courier, monospace;
-    color: rgba(0,0,0,.84);
-    background: rgba(0,0,0,.05);
-    letter-spacing: -.003em;
+    color: rgba(0, 0, 0, 0.84);
+    background: rgba(0, 0, 0, 0.05);
+    letter-spacing: -0.003em;
   }
 
-  ul li, ol li {
+  ul li,
+  ol li {
     margin-bottom: 14px;
   }
 
@@ -117,7 +121,8 @@
     @extend .img-thumbnail;
   }
 
-  .youtube-wrapper, .webpage-wrapper iframe {
+  .youtube-wrapper,
+  .webpage-wrapper iframe {
     clear: both;
     @extend .embed-responsive-item;
   }

@@ -13,8 +13,6 @@ defmodule OliWeb.LayoutView do
     ]
   import Oli.Branding
 
-  alias Oli.Authoring
-  alias Oli.Accounts.AuthorPreferences
   alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
 
@@ -84,23 +82,4 @@ defmodule OliWeb.LayoutView do
     render(layout, Map.put(assigns, :inner_layout, content))
   end
 
-  def theme_url(%{:assigns => assigns} = _conn, :authoring) do
-    case assigns do
-      %{current_author: current_author} ->
-        case current_author do
-          %{preferences: %AuthorPreferences{theme: url}} ->
-            url
-
-          _ ->
-            Authoring.get_default_theme!().url
-        end
-
-      _ ->
-        Authoring.get_default_theme!().url
-    end
-  end
-
-  def theme_url(conn, :delivery) do
-    Routes.static_path(conn, "/css/delivery_oli_light.css")
-  end
 end
