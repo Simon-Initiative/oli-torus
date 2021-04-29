@@ -52,8 +52,8 @@ defmodule OliWeb.ResourceController do
       nil ->
         render_not_found(conn, project_slug)
 
-      %{content: %{"model" => model}} ->
-        activity_ids = Oli.Authoring.Editing.Utils.activity_references(model) |> MapSet.to_list()
+      %{content: content} ->
+        activity_ids = Oli.Authoring.Editing.Utils.activity_references(content) |> MapSet.to_list()
         activity_revisions = AuthoringResolver.from_resource_id(project_slug, activity_ids)
 
         case PageEditor.create_context(project_slug, revision_slug, author) do

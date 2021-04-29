@@ -19,13 +19,18 @@ defmodule Oli.Rendering.Page do
   """
   def render(%Context{render_opts: render_opts} = context, page_model, writer)
       when is_list(page_model) do
-    Enum.map(page_model, fn element ->
+
+    # We do not currently support groups in basic Torus pages, but using PageContent.map here
+    # allows us to "read through" any groups that we might happen to encounter
+    {_, output} = Oli.Resources.PageContent.map_reduce(%{"model" => page_model}, [], fn element, output ->
       case element do
         %{"type" => "content"} ->
-          writer.content(context, element)
+          {element, output ++ writer.content(context, element)}
 
         %{"type" => "activity-reference"} ->
-          writer.activity(context, element)
+          {element, output ++ writer.activity(context, element)}
+
+        %{"type" => "group"} -> {element, output}
 
         _ ->
           error_id = Utils.random_string(8)
@@ -36,12 +41,14 @@ defmodule Oli.Rendering.Page do
             else: nil
 
           if render_opts.render_errors do
-            writer.error(context, element, {:unsupported, error_id, error_msg})
+            {element, output ++ writer.error(context, element, {:unsupported, error_id, error_msg})}
           else
-            []
+            {element, output}
           end
       end
     end)
+
+    output
   end
 
   # Renders an error message if the signature above does not match. Logging and rendering of errors
