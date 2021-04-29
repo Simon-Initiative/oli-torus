@@ -2,16 +2,28 @@ defmodule OliWeb.ViewHelpers do
   use Phoenix.HTML
 
   import Oli.Branding
+  import Oli.Utils, only: [value_or: 2]
 
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.PlatformRoles
   alias Oli.Delivery.Sections.Section
+  alias Oli.Branding.Brand
 
-  def brand_logo_html(conn) do
+  def brand_logo_html(conn_or_brand, opts \\ [])
+  def brand_logo_html(%Brand{name: name, logo: logo, logo_dark: logo_dark}, opts) do
+    class = Keyword.get(opts, :class, "")
+    ~E"""
+      <img src="<%= logo %>" height="40" class="d-dark-none <%= class %>" alt="<%= name %>">
+      <img src="<%= value_or(logo_dark, logo) %>" height="40" class="d-light-none <%= class %>"  alt="<%= name %>">
+    """
+  end
+
+  def brand_logo_html(conn, opts) do
+    class = Keyword.get(opts, :class, "")
     section = conn.assigns[:section]
     ~E"""
-      <img src="<%= brand_logo_url(section) %>" height="40" class="d-dark-none d-inline-block align-top mr-2" alt="<%= brand_name(section) %>">
-      <img src="<%= brand_logo_url_dark(section) %>" height="40" class="d-light-none d-inline-block align-top mr-2"  alt="<%= brand_name(section) %>">
+      <img src="<%= brand_logo_url(section) %>" height="40" class="d-dark-none <%= class %>" alt="<%= brand_name(section) %>">
+      <img src="<%= brand_logo_url_dark(section) %>" height="40" class="d-light-none <%= class %>"  alt="<%= brand_name(section) %>">
     """
   end
 

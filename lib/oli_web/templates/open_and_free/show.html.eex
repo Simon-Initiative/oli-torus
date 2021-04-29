@@ -21,9 +21,10 @@
               <span class="text-secondary font-italic">None</span>
 
             <% brand -> %>
-              <div class="logo-container">
-                <img src="<%= brand.logo %>" />
-              </div>
+              <a href="<%= Routes.brand_path(@conn, :show, brand) %>" class="logo-container">
+                <%= brand.name %>
+              </a>
+              <%= brand_logo_html(brand, class: "my-1 d-block") %>
           <% end %>
         </td>
       </tr>

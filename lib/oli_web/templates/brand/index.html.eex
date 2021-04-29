@@ -22,8 +22,7 @@
     <%= for brand <- @brands do %>
         <tr>
           <td>
-            <img src="<%= brand.logo %>" height="40" />
-            <img src="<%= brand.logo_dark %>" height="40" />
+            <%= brand_logo_html(brand) %>
           </td>
           <td><%= brand.name %></td>
 
