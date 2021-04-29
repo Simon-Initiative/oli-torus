@@ -141,7 +141,7 @@ export const Editors = (props: EditorsProps) => {
         <div
           className={classNames(['resource-block-editor', isReorderMode ? 'reorder-mode' : ''])}
           onKeyDown={handleKeyDown}
-          onFocus={(e) => onFocus(index)}
+          onFocus={(_e) => onFocus(index)}
           role="option"
           aria-describedby="content-list-operation"
           tabIndex={index + 1}

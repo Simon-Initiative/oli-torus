@@ -149,7 +149,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
         acquireLock.bind(undefined, projectSlug, resourceSlug),
         releaseLock.bind(undefined, projectSlug, resourceSlug),
         // eslint-disable-next-line
-        () => { },
+        () => {},
         (failure) => this.publishErrorMessage(failure),
         (persistence) => this.setState({ persistence }),
       )
@@ -269,6 +269,8 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     const { projectSlug, resourceSlug } = this.props;
 
     const onEdit = (content: Immutable.List<ResourceContent>) => {
+      console.log('previous content', props.content);
+      console.log('new content', content);
       this.update({ content });
     };
 
@@ -378,7 +380,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 }
 
 // eslint-disable-next-line
-interface StateProps { }
+interface StateProps {}
 
 interface DispatchProps {
   onLoadPreferences: () => void;

@@ -90,7 +90,7 @@ module.exports = (env, options) => ({
   },
   entry: populateEntries(),
   output: {
-    filename: '[name].js',
+    filename: '[name].[contenthash].js',
     path: path.resolve(__dirname, '../priv/static/js')
   },
   resolve: {
@@ -110,13 +110,18 @@ module.exports = (env, options) => ({
     rules: [
       {
         test: /\.js(x?)$/,
-        exclude: /node_modules/,
+        include: path.resolve(__dirname, 'src'),
         use: {
-          loader: 'babel-loader'
+          loader: 'babel-loader',
+          options: {
+            cache: true,
+          }
         }
       },
       {
-        test: /\.ts(x?)$/, use: [
+        test: /\.ts(x?)$/,
+        include: path.resolve(__dirname, 'src'),
+        use: [
           {
             loader: 'babel-loader',
             options: {
@@ -124,7 +129,7 @@ module.exports = (env, options) => ({
             },
           },
           { loader: 'ts-loader' }
-        ], exclude: /node_modules/
+        ]
       },
       {
         test: /\.[s]?css$/,
