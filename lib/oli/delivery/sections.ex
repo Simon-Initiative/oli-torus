@@ -195,6 +195,28 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Gets a single section by slug and preloads associations
+  ## Examples
+      iex> get_section_by_slug"123")
+      %Section{}
+      iex> get_section_by_slug("111")
+      nil
+  """
+  def get_section_by_slug(slug) do
+    from(s in Section,
+      left_join: pub in assoc(s, :publication),
+      left_join: proj in assoc(s, :project),
+      left_join: b in assoc(s, :brand),
+      left_join: d in assoc(s, :lti_1p3_deployment),
+      left_join: r in assoc(d, :registration),
+      left_join: rb in assoc(r, :brand),
+      where: s.slug == ^slug,
+      preload: [publication: pub, project: proj, brand: b, lti_1p3_deployment: {d, registration: {r, brand: rb}}]
+    )
+    |> Repo.one()
+  end
+
+  @doc """
   Gets a section using the given LTI params
 
   ## Examples
