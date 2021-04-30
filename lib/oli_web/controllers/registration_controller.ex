@@ -56,7 +56,7 @@ defmodule OliWeb.RegistrationController do
   end
 
   def edit(conn, %{"institution_id" => institution_id, "id" => id}) do
-    registration = Institutions.get_registration!(id)
+    registration = Institutions.get_registration_preloaded!(id)
     changeset = Institutions.change_registration(registration)
 
     render(conn, "edit.html",

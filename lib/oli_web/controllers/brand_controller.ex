@@ -7,7 +7,7 @@ defmodule OliWeb.BrandController do
   alias Oli.Branding.Brand
   alias Oli.Repo
   alias ExAws.S3
-  alias ExAws
+  alias Oli.HTTP
   alias Oli.Institutions
 
   defp available_institutions() do
@@ -26,7 +26,7 @@ defmodule OliWeb.BrandController do
   end
 
   def create(conn, %{"brand" => brand_params}) do
-    case Branding.create_brand(brand_params) do
+    case Branding.create_brand(Brand.cast_file_params(brand_params)) do
       {:ok, brand} ->
         # upload files to S3, we assume these will succeed but simply log an error if they do not
         upload_brand_assets(brand, brand_params)
@@ -54,7 +54,7 @@ defmodule OliWeb.BrandController do
   def update(conn, %{"id" => id, "brand" => brand_params}) do
     brand = Branding.get_brand!(id)
 
-    case Branding.update_brand(brand, brand_params) do
+    case Branding.update_brand(brand, Brand.cast_file_params(brand_params)) do
       {:ok, brand} ->
         upload_brand_assets(brand, brand_params)
 
@@ -131,7 +131,7 @@ defmodule OliWeb.BrandController do
 
   defp upload_file(bucket, path, contents) do
     S3.put_object(bucket, path, contents, [{:acl, :public_read}])
-    |> ExAws.request()
+    |> HTTP.aws.request()
   end
 
 end

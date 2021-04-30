@@ -20,23 +20,26 @@ defmodule Oli.Branding.Brand do
 
   @doc false
   def changeset(brand, attrs) do
-    slug = value_or(attrs["slug"], Slug.generate("brands", attrs["name"]))
-    attrs = attrs
-      |> Map.put("slug", slug)
-      |> cast_upload_to_url(slug, [:logo, :logo_dark, :favicons])
-
     brand
     |> cast(attrs, [:name, :slug, :logo, :logo_dark, :favicons, :institution_id])
     |> validate_required([:name, :logo, :favicons])
+    |> Slug.update_never("brands")
   end
 
-  def cast_upload_to_url(attrs, slug, terms) when is_list(terms) do
+  def cast_file_params(params) do
+    slug = value_or(params["slug"], Slug.generate("brands", params["name"]))
+    params
+      |> Map.put("slug", slug)
+      |> cast_upload_to_url(slug, [:logo, :logo_dark, :favicons])
+  end
+
+  defp cast_upload_to_url(attrs, slug, terms) when is_list(terms) do
     Enum.reduce(terms, attrs, fn term, acc ->
       cast_upload_to_url(acc, slug, term)
     end)
   end
 
-  def cast_upload_to_url(attrs, slug, term) do
+  defp cast_upload_to_url(attrs, slug, term) do
     media_url = Application.fetch_env!(:oli, :media_url)
     term = to_string(term)
 
@@ -51,4 +54,5 @@ defmodule Oli.Branding.Brand do
         attrs
     end
   end
+
 end

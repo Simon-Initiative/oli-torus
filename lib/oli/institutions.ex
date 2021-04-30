@@ -107,7 +107,28 @@ defmodule Oli.Institutions do
       %Registration{}
 
   """
-  def get_registration!(id), do: Repo.get!(Registration, id) |> Repo.preload([:deployments, :brand])
+  def get_registration!(id), do: Repo.get!(Registration, id)
+
+  @doc """
+  Gets a single registration with preloaded associations.
+
+  Raises if the Registration does not exist.
+
+  ## Examples
+
+      iex> get_registration_preloaded!(123)
+      %Registration{}
+
+  """
+  def get_registration_preloaded!(id) do
+    from(r in Registration,
+      left_join: d in assoc(r, :deployments),
+      left_join: b in assoc(r, :brand),
+      where: r.id == ^id,
+      preload: [deployments: d, brand: b]
+    )
+    |> Repo.one!()
+  end
 
   @doc """
   Creates a registration.

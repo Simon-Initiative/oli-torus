@@ -150,7 +150,25 @@ defmodule Oli.Delivery.Sections do
       iex> get_section!(456)
       ** (Ecto.NoResultsError)
   """
-  def get_section!(id), do: Repo.get!(Section, id) |> Repo.preload([:brand])
+  def get_section!(id), do: Repo.get!(Section, id)
+
+  @doc """
+  Gets a single section with preloaded associations.
+  Raises `Ecto.NoResultsError` if the Section does not exist.
+  ## Examples
+      iex> get_section_preloaded!(123)
+      %Section{}
+      iex> get_section_preloaded!(456)
+      ** (Ecto.NoResultsError)
+  """
+  def get_section_preloaded!(id) do
+    from(s in Section,
+      left_join: b in assoc(s, :brand),
+      where: s.id == ^id,
+      preload: [brand: b]
+    )
+    |> Repo.one!()
+  end
 
   @doc """
   Gets a section's publication

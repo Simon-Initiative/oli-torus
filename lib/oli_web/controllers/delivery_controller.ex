@@ -316,9 +316,9 @@ defmodule OliWeb.DeliveryController do
     |> redirect(to: Routes.static_page_path(conn, :index))
   end
 
-  def new_user(conn, _params) do
+  def enroll(conn, _params) do
     section = conn.assigns.section
-    render(conn, "new_user.html", section: section)
+    render(conn, "enroll.html", section: section)
   end
 
   def create_user(conn, %{"g-recaptcha-response" => g_recaptcha_response}) do

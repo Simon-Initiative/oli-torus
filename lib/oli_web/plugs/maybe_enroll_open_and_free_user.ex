@@ -16,7 +16,7 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
       case Pow.Plug.current_user(conn) do
         nil ->
           conn
-          |> redirect(to: Routes.delivery_path(conn, :new_user, section_slug))
+          |> redirect(to: Routes.delivery_path(conn, :enroll, section_slug))
           |> halt()
 
         user ->

@@ -5,6 +5,7 @@ config :oli,
   s3_media_bucket_name: "torus-media-test",
   media_url: "d1od6xouqrpl5k.cloudfront.net",
   http_client: Oli.Test.MockHTTP,
+  aws_client: Oli.Test.MockAws,
   slack_webhook_url: nil,
   branding: [
     name: "OLI Torus Test",

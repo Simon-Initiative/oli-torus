@@ -450,7 +450,7 @@ defmodule OliWeb.Router do
   scope "/sections", OliWeb do
     pipe_through [:browser, :require_section, :delivery_layout, :pow_email_layout]
 
-    get "/:section_slug/new_user", DeliveryController, :new_user
+    get "/:section_slug/enroll", DeliveryController, :enroll
     post "/:section_slug/create_user", DeliveryController, :create_user
 
   end
