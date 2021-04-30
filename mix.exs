@@ -129,12 +129,16 @@ defmodule Oli.MixProject do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
+      test: ["ecto.reset", "test"],
 
       # runs tests and produces a coverage report
       "test.coverage": ["ecto.reset", "coveralls.html"],
 
       # runs tests and produces a coverage report
-      "test.coverage.xml": ["ecto.reset", "coveralls.xml"]
+      "test.coverage.xml": ["ecto.reset", "coveralls.xml"],
+
+      # runs tests in deterministic order, only shows one failure at a time and reruns tests if any changes are made
+      "test.watch": ["ecto.reset", "test.watch --stale --max-failures 1 --trace --seed 0"]
     ]
   end
 end
