@@ -27,6 +27,25 @@ defmodule Oli.Branding do
   end
 
   @doc """
+  Returns the list of brands with stats.
+
+  ## Examples
+
+      iex> list_brands()
+      [{%Brand{}, registrations_count, sections_count}, ...]
+
+  """
+  def list_brands_with_stats do
+    from(b in Brand,
+      left_join: r in assoc(b, :registrations),
+      left_join: s in assoc(b, :sections),
+      group_by: b.id,
+      select: {b, count(r.id), count(s.id)}
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Returns the list of available brands for an institution.
 
   ## Examples

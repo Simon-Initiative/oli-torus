@@ -12,22 +12,24 @@
     <table class="table table-striped table-bordered">
       <thead>
         <tr>
-          <th>Logo</th>
           <th>Name</th>
+          <th>Logo</th>
           <th>Usage</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-    <%= for brand <- @brands do %>
+    <%= for {brand, r_count, s_count} <- @brands do %>
         <tr>
-          <td>
-            <%= brand_logo_html(brand) %>
-          </td>
           <td><%= brand.name %></td>
 
           <td>
-            <%# TODO: add usage statistics %>
+            <%= brand_logo_html(brand) %>
+          </td>
+
+          <td>
+            <div><%= s_count %> Sections</div>
+            <div><%= r_count %> Registrations</div>
           </td>
 
           <td class="text-nowrap">

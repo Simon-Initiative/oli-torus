@@ -13,7 +13,9 @@ defmodule Oli.Branding.Brand do
     field :logo_dark, :string
 
     belongs_to :institution, Oli.Institutions.Institution
+
     has_many :registrations, Oli.Lti_1p3.Tool.Registration
+    has_many :sections, Oli.Delivery.Sections.Section
 
     timestamps(type: :utc_datetime)
   end

@@ -16,7 +16,7 @@ defmodule OliWeb.BrandController do
   end
 
   def index(conn, _params) do
-    brands = Branding.list_brands()
+    brands = Branding.list_brands_with_stats()
     render_workspace_page(conn, "index.html", brands: brands)
   end
 
