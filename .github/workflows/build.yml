@@ -43,7 +43,7 @@ jobs:
         run: set -a;source oli.env && mix clean && mix compile --warnings-as-errors
 
       - name: ▶️ Run tests
-        run: set -a;source oli.env && mix coveralls.github
+        run: set -a;source oli.env && mix test
 
   ts-build-test:
     runs-on: ubuntu-latest

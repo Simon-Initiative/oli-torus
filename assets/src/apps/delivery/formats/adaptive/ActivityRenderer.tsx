@@ -1,11 +1,5 @@
-import Image, { tagName as ImageTag } from 'components/parts/janus-image/Image';
-import TextFlow, { tagName as TextFlowTag } from 'components/parts/janus-text-flow/TextFlow';
+import PartComponent from '../../components/PartComponent';
 import React from 'react';
-
-const builtInPartTypes: any = {
-  [TextFlowTag]: TextFlow,
-  [ImageTag]: Image,
-};
 
 // NOTE: this should not be rendering the parts directly eventually
 // it should render any activity? not just adaptive?
@@ -16,11 +10,13 @@ const ActivityRenderer: React.FC<any> = (props: any) => {
   return (
     <div>
       {props.parts.map((partDefinition: any) => {
-        const PartComponent = builtInPartTypes[partDefinition.type];
         const partProps = {
+          id: partDefinition.id,
+          type: partDefinition.type,
           model: partDefinition.custom,
           state: [],
-          onReady: () => true,
+          onInit: async () => true,
+          onReady: async () => true,
         };
         return <PartComponent key={partDefinition.id} {...partProps} />;
       })}

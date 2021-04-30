@@ -14,6 +14,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Resources.ResourceType
   alias Oli.Grading
+  alias Oli.PartComponents
 
   def index(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
@@ -46,7 +47,13 @@ defmodule OliWeb.PageDeliveryController do
          section_slug,
          _
        ) do
-    conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
+    layout =
+      case Map.get(context.page.content, "displayApplicationChrome", true) do
+        true -> "page.html"
+        false -> "chromeless.html"
+      end
+
+    conn = put_root_layout(conn, {OliWeb.LayoutView, layout})
     user = conn.assigns.current_user
 
     resource_attempt = Enum.at(context.resource_attempts, 0)
@@ -57,12 +64,14 @@ defmodule OliWeb.PageDeliveryController do
       |> Jason.encode()
 
     render(conn, "advanced_delivery.html", %{
+      additional_stylesheets: Map.get(context.page.content, "additionalStylesheets", []),
       resource_attempt_guid: resource_attempt.attempt_guid,
       resource_attempt_state: resource_attempt_state,
       activity_guid_mapping: activity_guid_mapping,
       content: Jason.encode!(context.page.content),
       summary: summary,
       scripts: Activities.get_activity_scripts(:delivery_script),
+      part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
       section_slug: section_slug,
       title: context.page.title,
       resource_id: context.page.resource_id,
@@ -84,7 +93,6 @@ defmodule OliWeb.PageDeliveryController do
          section_slug,
          _
        ) do
-
     # Only consider graded attempts
     resource_attempts = Enum.filter(resource_attempts, fn a -> a.revision.graded == true end)
 

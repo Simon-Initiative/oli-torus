@@ -166,14 +166,16 @@ defmodule OliWeb.Router do
 
     get "/", StaticPageController, :index
     get "/unauthorized", StaticPageController, :unauthorized
-    resources "/help", HelpController, only: [:index, :create]
-    get "/help/sent", HelpController, :sent
   end
 
   scope "/", OliWeb do
     pipe_through [:api]
     get "/api/v1/legacy_support", LegacySupportController, :index
     post "/access_tokens", LtiController, :access_tokens
+
+    post "/help/create", HelpController, :create
+    post "/consent/cookie", CookieConsentController, :persist_cookies
+    get "/consent/cookie/", CookieConsentController, :retrieve
 
     get "/site.webmanifest", StaticPageController, :site_webmanifest
   end
@@ -410,6 +412,7 @@ defmodule OliWeb.Router do
     post "/register", LtiController, :request_registration
 
     get "/authorize_redirect", LtiController, :authorize_redirect
+
   end
 
   scope "/sections", OliWeb do

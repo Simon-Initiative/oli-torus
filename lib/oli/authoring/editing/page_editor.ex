@@ -246,11 +246,12 @@ defmodule Oli.Authoring.Editing.PageEditor do
     end
   end
 
-  defp create_activity_summary_map(publication_id, %{"model" => content}) do
+  defp create_activity_summary_map(publication_id, content) do
     # Now see if we even have any activities that need to be mapped
     found_activities =
-      Enum.filter(content, fn c -> Map.get(c, "type") == "activity-reference" end)
-      |> Enum.map(fn c -> Map.get(c, "activity_id") end)
+      Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} -> type == "activity-reference" end)
+      |> Enum.map(fn %{"activity_id" => id} -> id end)
+
 
     if length(found_activities) != 0 do
       # get a view of all current registered activity types
@@ -301,11 +302,11 @@ defmodule Oli.Authoring.Editing.PageEditor do
   # From the array of maps found in a resource revision content, produce a
   # map of the content of the activity revisions that pertain to the
   # current publication
-  defp create_activities_map(_, publication_id, %{"model" => content}) do
+  defp create_activities_map(_, publication_id, content) do
     # Now see if we even have any activities that need to be mapped
     found_activities =
-      Enum.filter(content, fn c -> Map.get(c, "type") == "activity-reference" end)
-      |> Enum.map(fn c -> Map.get(c, "activity_id") end)
+      Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} -> type == "activity-reference" end)
+      |> Enum.map(fn %{"activity_id" => id} -> id end)
 
     if length(found_activities) != 0 do
       # create a mapping of registered activity type id to the registered activity slug
@@ -344,8 +345,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   # deleted state of the activity revision correct.
   defp resurrect_or_delete_activity_references(revision, change, project_slug) do
     if Map.get(change, :deleted) do
-      content = Map.get(revision.content, "model")
-      deletions = activity_references(content)
+      deletions = activity_references(revision.content)
       delete_activity_references(project_slug, revision, MapSet.new(), deletions)
     else
       # Handle the case where this change does not include content
@@ -353,11 +353,10 @@ defmodule Oli.Authoring.Editing.PageEditor do
         nil ->
           {revision, []}
 
-        map ->
+        content2 ->
           # First calculate the difference, if any, between the current revision and the
           # change that we are about to commit
-          content1 = Map.get(revision.content, "model")
-          content2 = Map.get(map, "model")
+          content1 = revision.content
 
           {additions, deletions} = diff_activity_references(content1, content2)
 
@@ -392,9 +391,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
   # Reverse references found in a resource update for activites. They will
   # come from the client as activity revision slugs, we store them internally
   # as activity ids.
-  defp convert_to_activity_ids(%{"content" => %{"model" => content}} = update) do
+  defp convert_to_activity_ids(%{"content" => content} = update) do
     found_activities =
-      Enum.filter(content, fn c -> Map.get(c, "type") == "activity-reference" end)
+      Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} -> type == "activity-reference" end)
       |> Enum.map(fn c -> Map.get(c, "activitySlug") end)
 
     slug_to_id =
@@ -410,16 +409,17 @@ defmodule Oli.Authoring.Editing.PageEditor do
       end
 
     if Enum.all?(found_activities, fn slug -> Map.has_key?(slug_to_id, slug) end) do
-      convert = fn c ->
+
+      content = Oli.Resources.PageContent.map(content, fn c ->
         if Map.get(c, "type") == "activity-reference" do
           slug = Map.get(c, "activitySlug")
           Map.delete(c, "activitySlug") |> Map.put("activity_id", Map.get(slug_to_id, slug))
         else
           c
         end
-      end
+      end)
 
-      {:ok, put_in(update, ["content", "model"], Enum.map(content, convert))}
+      {:ok, Map.put(update, "content", content)}
     else
       {:error, :not_found}
     end
@@ -432,10 +432,10 @@ defmodule Oli.Authoring.Editing.PageEditor do
   end
 
   # For the activity ids found in content, convert them to activity revision slugs
-  defp convert_to_activity_slugs(%{"model" => model} = content, publication_id) do
+  defp convert_to_activity_slugs(content, publication_id) do
     found_activities =
-      Enum.filter(model, fn c -> Map.get(c, "type") == "activity-reference" end)
-      |> Enum.map(fn c -> Map.get(c, "activity_id") end)
+      Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} -> type == "activity-reference" end)
+      |> Enum.map(fn %{"activity_id" => id} -> id end)
 
     id_to_slug =
       case found_activities do
@@ -449,16 +449,16 @@ defmodule Oli.Authoring.Editing.PageEditor do
           end)
       end
 
-    convert = fn c ->
+
+    Oli.Resources.PageContent.map(content, fn c ->
       if Map.get(c, "type") == "activity-reference" do
         id = Map.get(c, "activity_id")
         Map.delete(c, "activity_id") |> Map.put("activitySlug", Map.get(id_to_slug, id))
       else
         c
       end
-    end
+    end)
 
-    Map.put(content, "model", Enum.map(model, convert))
   end
 
   # Take a list of maps containing the title, resource_id, and children (as a list of resource_ids)

@@ -1,4 +1,7 @@
 
+<%= for script <- @part_scripts do %>
+  <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
+<% end %>
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/delivery.js") %>"></script>
 
 <h1 class="title"><%= @title %></h1>
@@ -7,6 +10,18 @@
 
 <script>
   window.userToken = "<%= assigns[:user_token] %>";
+
+  <%= if @previous_page != nil do %>
+    const previousPageURL = "<%= Routes.page_delivery_path(@conn, :page, @section_slug, @previous_page.slug) %>";
+  <% else %>
+    const previousPageURL = null;
+  <% end %>
+
+  <%= if @next_page != nil do %>
+    const nextPageURL = "<%= Routes.page_delivery_path(@conn, :page, @section_slug, @next_page.slug) %>";
+  <% else %>
+    const nextPageURL = null;
+  <% end %>
 
   const params = {
     resourceId: <%= @resource_id %>,
@@ -17,6 +32,8 @@
     resourceAttemptState: <%= raw(@resource_attempt_state) %>,
     resourceAttemptGuid: "<%= @resource_attempt_guid %>",
     activityGuidMapping: <%= raw(@activity_guid_mapping) %>,
+    previousPageURL,
+    nextPageURL,
   };
 
   window.oliMountApplication(document.getElementById('delivery_container'), params);

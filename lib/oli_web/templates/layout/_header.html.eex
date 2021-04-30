@@ -1,22 +1,23 @@
 <nav class="navbar navbar-expand">
-  <div class="container">
-    <a class="navbar-brand oli-logo mr-auto" href="<%= Routes.static_page_path(@conn, :index) %>">
-      <%= brand_logo_html(@conn, class: "d-inline-block align-top mr-2") %>
-    </a>
 
-    <div class="nav-item my-2 my-lg-0 mr-2">
-      <a  href="<%= Routes.help_path(@conn, :index) %>">Help</a>
-    </div>
+    <div class="container">
+        <a class="navbar-brand oli-logo mr-auto" href="<%= Routes.static_page_path(@conn, :index) %>">
+            <%= brand_logo_html(@conn, class: "d-inline-block align-top mr-2") %>
+        </a>
 
-    <%= if author_signed_in?(@conn) do %>
-      <div>
-        <%= link "My Projects", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive), class: "btn btn-primary mx-2" %>
-        <%= link "Sign out", to: Routes.pow_session_path(@conn, :delete), method: :delete, class: "btn btn-link ml-2" %>
-      </div>
-    <% else %>
-      <%= if @conn.request_path == "/" do %>
+        <div class="nav-item my-2 my-lg-0 mr-2">
+            <a href="javascript:" onclick="showHelpModal();">Help</a>
+        </div>
+
+        <%= if author_signed_in?(@conn) do %>
+        <div>
+            <%= link "My Projects", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive), class: "btn btn-primary mx-2" %>
+            <%= link "Sign out", to: Routes.pow_session_path(@conn, :delete), method: :delete, class: "btn btn-link ml-2" %>
+        </div>
+        <% else %>
+        <%= if @conn.request_path == "/" do %>
         <%= link "Sign in", to: Routes.pow_session_path(@conn, :new), class: "btn btn-primary my-2 my-sm-0" %>
       <% end %>
     <% end %>
-  </div>
+    </div>
 </nav>

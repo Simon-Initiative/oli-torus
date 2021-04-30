@@ -1,3 +1,4 @@
+/* eslint-disable */
 const webpack = require('webpack');
 const path = require('path');
 const glob = require('glob');
@@ -32,6 +33,16 @@ const populateEntries = () => {
     };
   });
 
+  const partComponentManifests = glob.sync('./src/components/parts/*/manifest.json', {});
+  const foundParts = partComponentManifests.map((partComponentManifestPath) => {
+    const manifest = require(partComponentManifestPath);
+    const rootPath = partComponentManifestPath.substr(0, partComponentManifestPath.indexOf('manifest.json'));
+    return {
+      [manifest.id + '_authoring']: [rootPath + manifest.authoring.entry],
+      [manifest.id + '_delivery']: [rootPath + manifest.delivery.entry],
+    };
+  });
+
   const themePaths = [
     ...glob.sync("./styles/themes/authoring/*/light.scss").map(p => ({ prefix: 'authoring_', themePath: p })),
     ...glob.sync("./styles/themes/authoring/*/dark.scss").map(p => ({ prefix: 'authoring_', themePath: p })),
@@ -50,12 +61,12 @@ const populateEntries = () => {
 
   // Merge the attributes of all found activities and the initialEntries
   // into one single object.
-  const merged = [...foundActivities, ...foundThemes].reduce((p, c) => Object.assign({}, p, c), initialEntries);
+  const merged = [...foundActivities, ...foundParts, ...foundThemes].reduce((p, c) => Object.assign({}, p, c), initialEntries);
 
   // Validate: We should have (2 * foundActivities.length) + number of keys in initialEntries
   // If we don't it is likely due to a naming collision in two or more manifests
-  if (Object.keys(merged).length != Object.keys(initialEntries).length + (2 * foundActivities.length) + foundThemes.length) {
-    throw new Error('Encountered a possible naming collision in activity manifests. Aborting.');
+  if (Object.keys(merged).length != Object.keys(initialEntries).length + (2 * foundActivities.length) + (2 * foundParts.length) + foundThemes.length) {
+    throw new Error('Encountered a possible naming collision in activity or part manifests. Aborting.');
   }
 
   return merged;

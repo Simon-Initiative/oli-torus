@@ -11,27 +11,33 @@
   "content": {
     "model": [
       {
-        "type": "content",
-        "id": "1380138112",
+        "type": "group",
+        "layout": "vertical",
         "children": [
           {
-            "type": "image",
-            "children": [],
-            "src": "../webcontent/1x1.png"
+            "type": "content",
+            "id": "1380138112",
+            "children": [
+              {
+                "type": "image",
+                "children": [],
+                "src": "../webcontent/1x1.png"
+              }
+            ]
+          },
+          {
+            "type": "activity-reference",
+            "activity_id": "mcq"
+          },
+          {
+            "type": "activity-reference",
+            "activity_id": "cata"
+          },
+          {
+            "type": "activity-reference",
+            "activity_id": "single_response"
           }
         ]
-      },
-      {
-        "type": "activity-reference",
-        "activity_id": "mcq"
-      },
-      {
-        "type": "activity-reference",
-        "activity_id": "cata"
-      },
-      {
-        "type": "activity-reference",
-        "activity_id": "single_response"
       }
     ]
   },

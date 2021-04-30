@@ -34,6 +34,17 @@ defmodule OliWeb.LayoutView do
     )
   end
 
+  @doc """
+  Allows a delivery content template to specify any number of additional stylesheets, via URLs,
+  to be included in the head portion of the document.
+  """
+  def additional_stylesheets(assigns) do
+    Map.get(assigns, :additional_stylesheets, [])
+    |> URI.encode()
+    |> Enum.map(fn url -> "\n<link rel=\"stylesheet\" href=\"#{url}\">" end)
+    |> raw()
+  end
+
   def active_or_nil(assigns) do
     get_in(assigns, [Access.key(:active, nil)])
   end
