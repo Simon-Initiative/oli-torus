@@ -11,7 +11,8 @@ defmodule Oli.Delivery.Page.PageContext do
     :activities,
     :objectives,
     :previous_page,
-    :next_page
+    :next_page,
+    :latest_attempts
   ]
   defstruct [
     :summary,
@@ -21,7 +22,8 @@ defmodule Oli.Delivery.Page.PageContext do
     :activities,
     :objectives,
     :previous_page,
-    :next_page
+    :next_page,
+    :latest_attempts
   ]
 
   alias Oli.Delivery.Page.ActivityContext
@@ -114,7 +116,8 @@ defmodule Oli.Delivery.Page.PageContext do
       activities: activities,
       objectives: rollup_objectives(latest_attempts, DeliveryResolver, section_slug),
       previous_page: previous,
-      next_page: next
+      next_page: next,
+      latest_attempts: latest_attempts
     }
   end
 

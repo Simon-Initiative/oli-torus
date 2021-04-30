@@ -6,7 +6,7 @@ from_boolean_env = fn key, default ->
     |> (case do
       "true" -> :enabled
       _ -> :disabled
-    end),
+    end)
 end
 
 

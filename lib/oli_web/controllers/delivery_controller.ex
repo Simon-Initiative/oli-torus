@@ -327,26 +327,25 @@ defmodule OliWeb.DeliveryController do
         "g-recaptcha-response" => g_recaptcha_response
       }) do
 
+    redirect_to = value_or(user_details["redirect_to"], Routes.delivery_path(conn, :index))
+    IO.inspect redirect_to
     # Verify the recaptcha, but when load-testing is enabled we must bypass this verification
     if Oli.Utils.LoadTesting.enabled?() or recaptcha_verified?(g_recaptcha_response) do
-
-      redirect_to = value_or(user_details["redirect_to"], Routes.delivery_path(conn, :index))
-      create(conn, user, redirect_to)
+      create(conn, redirect_to)
     else
-      _ ->
-        changeset =
-          Accounts.change_user(%User{}, user_details)
-          |> Ecto.Changeset.add_error(:captcha, "failed, please try again")
+      changeset =
+        Accounts.change_user(%User{}, user_details)
+        |> Ecto.Changeset.add_error(:captcha, "failed, please try again")
 
-        render(conn, "new_user.html", changeset: changeset, redirect_to: redirect_to)
+      render(conn, "new_user.html", changeset: changeset, redirect_to: redirect_to)
     end
   end
 
-  defp recaptcha_verified?() do
+  defp recaptcha_verified?(g_recaptcha_response) do
     g_recaptcha_response != "" and Oli.Utils.Recaptcha.verify(g_recaptcha_response) == {:success, true}
   end
 
-  defp create(conn, user, redirect_to) do
+  defp create(conn, redirect_to) do
 
     case Accounts.create_user(%{
       # generate a unique sub identifier which is also used so a user can access

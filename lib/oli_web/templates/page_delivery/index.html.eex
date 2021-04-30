@@ -42,3 +42,9 @@
   }
 
 </script>
+
+<%= if Oli.Utils.LoadTesting.enabled?() do %>
+<!--
+__OVERVIEW_PAGES__<%= encode_pages(@conn, @section_slug, @summary.hierarchy) %>__OVERVIEW_PAGES__
+-->
+<% end %>
