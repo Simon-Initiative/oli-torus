@@ -328,7 +328,7 @@ defmodule OliWeb.DeliveryController do
       }) do
 
     redirect_to = value_or(user_details["redirect_to"], Routes.delivery_path(conn, :index))
-    IO.inspect redirect_to
+
     # Verify the recaptcha, but when load-testing is enabled we must bypass this verification
     if Oli.Utils.LoadTesting.enabled?() or recaptcha_verified?(g_recaptcha_response) do
       create(conn, redirect_to)
