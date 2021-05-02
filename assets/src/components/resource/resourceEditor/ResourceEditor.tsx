@@ -269,8 +269,6 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     const { projectSlug, resourceSlug } = this.props;
 
     const onEdit = (content: Immutable.List<ResourceContent>) => {
-      console.log('previous content', props.content);
-      console.log('new content', content);
       this.update({ content });
     };
 
@@ -365,9 +363,14 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
               activities={this.state.activities}
               onRemove={(index) => onEdit(this.state.undoable.current.content.delete(index))}
               onEdit={(c, index) => {
+                console.log('content', this.state.undoable.current.content);
+                console.log('index', index);
                 onEdit(this.state.undoable.current.content.set(index, c));
               }}
-              onEditContentList={onEdit}
+              onEditContentList={(content) => {
+                console.log('reordering', this.state.undoable.current.content, content);
+                onEdit(content);
+              }}
               content={this.state.undoable.current.content}
               onAddItem={onAddItem}
               resourceContext={props}

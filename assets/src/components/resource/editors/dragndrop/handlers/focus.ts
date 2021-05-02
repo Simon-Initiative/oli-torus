@@ -10,11 +10,12 @@ export const focusHandler = (
   editorMap: ActivityEditorMap,
   activities: Immutable.Map<string, Activity>,
 ) => (index: number) => {
+  console.log('focusing');
   const item = content.get(index) as ResourceContent;
-  const desc = item.type === 'content'
-    ? getContentDescription(item)
-    : getFriendlyName(item, editorMap, activities);
+  const desc =
+    item.type === 'content'
+      ? getContentDescription(item)
+      : getFriendlyName(item, editorMap, activities);
 
-  setAssistive(
-    `Listbox. ${index + 1} of ${content.size}. ${desc}.`);
+  setAssistive(`Listbox. ${index + 1} of ${content.size}. ${desc}.`);
 };
