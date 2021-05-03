@@ -9,6 +9,7 @@
 - Save cookie preferences in delivered courses
 - Add support for page content grouping
 - Introduce load testing support
+- Add support for course package delete
 
 ### Bug fixes
 
