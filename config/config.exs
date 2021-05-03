@@ -19,6 +19,7 @@ world_universities_and_domains_json =
 default_sha = if Mix.env() == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 
 config :oli,
+  load_testing_mode: :disabled,
   problematic_query_detection: :disabled,
   problematic_query_cost_threshold: 150,
   ecto_repos: [Oli.Repo],
@@ -37,7 +38,15 @@ config :oli,
   email_from_name: System.get_env("EMAIL_FROM_NAME", "OLI Torus"),
   email_from_address: System.get_env("EMAIL_FROM_ADDRESS", "admin@example.edu"),
   email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu"),
-  world_universities_and_domains_json: world_universities_and_domains_json
+  world_universities_and_domains_json: world_universities_and_domains_json,
+  branding: [
+    name: System.get_env("BRANDING_NAME", "OLI Torus"),
+    logo: System.get_env("BRANDING_LOGO", "/images/oli_torus_logo.png"),
+    favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons"),
+    dark: [
+      logo: System.get_env("BRANDING_LOGO_DARK"),
+    ]
+  ]
 
 # Configure database
 config :oli, Oli.Repo, migration_timestamps: [type: :timestamptz]

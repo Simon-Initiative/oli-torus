@@ -1,0 +1,29 @@
+<div class="container">
+  <script src="https://www.google.com/recaptcha/api.js"></script>
+
+  <%= render OliWeb.SharedView, "_form_container.html", Map.merge(assigns, %{title: "Enroll in Open and Free", bs_col_class: "col-sm-10 col-md-8 col-lg-6 col-xl-5 mx-auto"}) do %>
+
+    <div class="course-card-link card h-100 mb-4">
+      <img src="<%= Routes.static_path(@conn, "/images/course_default.jpg") %>" class="card-img-top" alt="course image">
+      <div class="card-body">
+        <h5 class="card-title"><%= @section.title %></h5>
+        <p class="card-text"><%= @section.project.description %></p>
+      </div>
+    </div>
+
+    <%= form_for @conn, Routes.delivery_path(@conn, :create_user, @section.slug), fn _f -> %>
+      <div class="form-label-group">
+        <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
+
+        <%= case assigns[:error] do %>
+          <% error -> %>
+            <span class="help-block text-danger"><%= error %></span>
+        <% end %>
+      </div>
+
+      <%= submit "Enroll", class: "btn btn-md btn-primary btn-block" %>
+    <% end %>
+
+  <% end %>
+
+</div>

@@ -1,0 +1,75 @@
+<%# <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.2/dropzone.js" integrity="sha512-4p9OjnfBk18Aavg91853yEZCA7ywJYcZpFt+YB+p+gLNPFIAlt2zMBGzTxREYh+sHFsttK0CTYephWaY7I3Wbw==" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.2/dropzone.css" integrity="sha512-7uSoC3grlnRktCWoO4LjHMjotq8gf9XDFQerPuaph+cqR7JC9XKGdvN+UwZMC14aAaBDItdRj3DcSDs4kMWUgg==" crossorigin="anonymous" /> %>
+
+
+<%= form_for @changeset, @action, [multipart: true], fn f -> %>
+  <%= if @changeset.action do %>
+    <div class="alert alert-danger">
+      <p>Oops, something went wrong! Please check the errors below.</p>
+    </div>
+  <% end %>
+
+
+  <div class="form-label-group">
+    <%= text_input f, :name, class: "form-control " <> error_class(f, :name, "is-invalid"),
+      placeholder: "Brand Name", required: true, autofocus: focusHelper(f, :name, default: true) %>
+    <%= label f, :name, "Brand Name", class: "control-label" %>
+    <%= error_tag f, :name %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :logo, "Logo", class: "control-label" %>
+    <%= file_input f, :logo, class: "form-control-file", accept: ".png,.gif" %>
+    <%= error_tag f, :logo %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :logo_dark, "Dark Logo (Optional)", class: "control-label" %>
+    <%= file_input f, :logo_dark, class: "form-control-file", accept: ".png,.gif" %>
+    <%= error_tag f, :logo_dark %>
+  </div>
+
+  <%# <script>
+    new Dropzone("#logoDropZone", {url: '<%= Routes.brand_path(@conn, :upload) ', paramName: 'upload'});
+  </script> %>
+
+  <hr class="mt-4" />
+
+  <div class="my-2">Favicons</div>
+  <p class="text-secondary my-2">
+    Favicons are the icons that are shown in the browser tab and on mobile devices.
+    Multiple favicons can be selected and uploaded. File names must match the following:
+    <ul>
+      <li>favicon.ico</li>
+      <li>favicon-32x32.png</li>
+      <li>favicon-16x16.png</li>
+      <li>apple-touch-icon.png</li>
+      <li>android-chrome-512x512.png</li>
+      <li>android-chrome-192x192.png</li>
+    </ul>
+  </p>
+
+  <div class="form-group">
+    <%= file_input f, :favicons, multiple: true, class: "form-control-file", accept: ".ico,.gif,.png" %>
+    <%= error_tag f, :favicons %>
+  </div>
+
+  <hr class="mt-4" />
+
+  <div class="my-2">Institution (Optional)</div>
+
+  <p class="text-secondary my-2">
+    Associate this brand with a specific institution.
+    This will limit the visibility of this brand to only registrations that belong to the institution.
+  </p>
+
+  <div class="form-label-group">
+    <%= select f, :institution_id, @available_institutions, prompt: "Select Institution", class: "form-control " <> error_class(f, :institution_id, "is-invalid"),
+      autofocus: focusHelper(f, :institution_id) %>
+    <%= error_tag f, :institution_id %>
+  </div>
+
+  <div>
+    <%= submit "Save", class: "btn btn-md btn-primary btn-block" %>
+  </div>
+<% end %>

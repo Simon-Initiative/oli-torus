@@ -8,4 +8,14 @@ defmodule Oli.HTTP do
         HTTPoison
     end
   end
+
+  def aws do
+    case Application.fetch_env(:oli, :aws_client) do
+      {:ok, aws_client} ->
+        aws_client
+
+      :error ->
+        ExAws
+    end
+  end
 end

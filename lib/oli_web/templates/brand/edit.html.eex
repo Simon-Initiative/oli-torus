@@ -1,0 +1,11 @@
+<div class="container">
+  <span>
+    <%= link to: Routes.brand_path(@conn, :index) do %>
+      <i class="las la-arrow-left"></i> Back
+    <% end %>
+  </span>
+
+  <%= render OliWeb.SharedView, "_form_container.html", Map.put(assigns, :title, "Edit Brand") do %>
+    <%= render "form.html", Map.put(assigns, :action, Routes.brand_path(@conn, :update, @brand)) %>
+  <% end %>
+</div>

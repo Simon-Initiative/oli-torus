@@ -8,11 +8,13 @@
 - Allow adaptive pages to render without application chrome
 - Save cookie preferences in delivered courses
 - Add support for page content grouping
+- Introduce load testing support
 
 ### Bug fixes
 
 - Fix help and logo links on register institution page, change help form to modal
 - Add missing database indexes, rework resolver queries
+- Fix ability to request hints
 
 ## 0.9.0 (2021-4-22)
 

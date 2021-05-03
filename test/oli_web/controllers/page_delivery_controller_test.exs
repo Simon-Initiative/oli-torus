@@ -7,6 +7,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   alias Oli.Seeder
   alias Oli.Delivery.Attempts.{ResourceAttempt, PartAttempt, ResourceAccess}
   alias Lti_1p3.Tool.ContextRoles
+  alias OliWeb.Router.Helpers, as: Routes
 
   describe "page_delivery_controller index" do
     setup [:setup_session]
@@ -388,18 +389,18 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       # redirected to enroll page
-      assert html_response(conn, 302) =~ "/course/users?redirect_to=%2Fsections%2Fsome_title"
+      assert html_response(conn, 302) =~ Routes.delivery_path(conn, :enroll, section.slug)
 
       conn =
         recycle(conn)
-        |> post(Routes.delivery_path(conn, :create_user), %{
+        |> post(Routes.delivery_path(conn, :create_user, section.slug), %{
           "user_details" => %{
             "redirect_to" => "/sections/some_title"
           },
           "g-recaptcha-response" => "some-valid-capcha-data"
         })
 
-      assert html_response(conn, 302) =~ "/sections/some_title"
+      assert html_response(conn, 302) =~ Routes.page_delivery_path(conn, :index, section.slug)
       user = Pow.Plug.current_user(conn)
 
       # make the same request with a user logged in

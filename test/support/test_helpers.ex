@@ -13,6 +13,7 @@ defmodule Oli.TestHelpers do
   import Mox
 
   Mox.defmock(Oli.Test.MockHTTP, for: HTTPoison.Base)
+  Mox.defmock(Oli.Test.MockAws, for: ExAws.Behaviour)
 
   def yesterday() do
     {:ok, datetime} = DateTime.now("Etc/UTC")

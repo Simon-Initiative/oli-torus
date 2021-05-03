@@ -20,6 +20,7 @@ defmodule OliWeb.Router do
     plug :put_root_layout, {OliWeb.LayoutView, "default.html"}
     plug :put_layout, {OliWeb.LayoutView, "app.html"}
     plug :put_secure_browser_headers
+    plug Oli.Plugs.LoadTestingCSRFBypass
     plug :protect_from_forgery
     plug Plug.Telemetry, event_prefix: [:oli, :plug]
     plug Oli.Plugs.SetCurrentUser
@@ -63,6 +64,10 @@ defmodule OliWeb.Router do
   # set the layout to be workspace
   pipeline :workspace do
     plug :put_root_layout, {OliWeb.LayoutView, "workspace.html"}
+  end
+
+  pipeline :delivery_layout do
+    plug :put_root_layout, {OliWeb.LayoutView, "delivery.html"}
   end
 
   pipeline :maybe_enroll_open_and_free do
@@ -168,9 +173,12 @@ defmodule OliWeb.Router do
     pipe_through [:api]
     get "/api/v1/legacy_support", LegacySupportController, :index
     post "/access_tokens", LtiController, :access_tokens
+
     post "/help/create", HelpController, :create
     post "/consent/cookie", CookieConsentController, :persist_cookies
-    get "/consent/cookie", CookieConsentController, :retrieve
+    get "/consent/cookie/", CookieConsentController, :retrieve
+
+    get "/site.webmanifest", StaticPageController, :site_webmanifest
   end
 
   scope "/.well-known", OliWeb do
@@ -210,7 +218,7 @@ defmodule OliWeb.Router do
 
     # Project
     put "/:project_id", ProjectController, :update
-    post "/:project_id", ProjectController, :delete
+    delete "/:project_id", ProjectController, :delete
 
     # Objectives
     live "/:project_id/objectives", Objectives.Objectives,
@@ -343,19 +351,19 @@ defmodule OliWeb.Router do
     patch "/:activity_attempt_guid", Api.AttemptController, :save_activity
     put "/:activity_attempt_guid/evaluations", Api.AttemptController, :submit_evaluations
 
-    post "/:activity_attempt_guidpart_attempt/:part_attempt_guid",
+    post "/:activity_attempt_guid/part_attempt/:part_attempt_guid",
          Api.AttemptController,
          :new_part
 
-    put "/:activity_attempt_guidpart_attempt/:part_attempt_guid",
+    put "/:activity_attempt_guid/part_attempt/:part_attempt_guid",
         Api.AttemptController,
         :submit_part
 
-    patch "/:activity_attempt_guidpart_attempt/:part_attempt_guid",
+    patch "/:activity_attempt_guid/part_attempt/:part_attempt_guid",
           Api.AttemptController,
           :save_part
 
-    get "/:activity_attempt_guidpart_attempt/:part_attempt_guid/hint",
+    get "/:activity_attempt_guid/part_attempt/:part_attempt_guid/hint",
         Api.AttemptController,
         :get_hint
   end
@@ -417,9 +425,9 @@ defmodule OliWeb.Router do
   scope "/sections", OliWeb do
     pipe_through [
       :browser,
+      :require_section,
       :maybe_enroll_open_and_free,
       :delivery_protected,
-      :require_section,
       :pow_email_layout
     ]
 
@@ -443,11 +451,12 @@ defmodule OliWeb.Router do
     get "/:section_slug/grades/export", PageDeliveryController, :export_gradebook
   end
 
-  scope "/course", OliWeb do
-    pipe_through [:browser, :pow_email_layout]
+  scope "/sections", OliWeb do
+    pipe_through [:browser, :require_section, :delivery_layout, :pow_email_layout]
 
-    get "/users", DeliveryController, :new_user
-    post "/users", DeliveryController, :create_user
+    get "/:section_slug/enroll", DeliveryController, :enroll
+    post "/:section_slug/create_user", DeliveryController, :create_user
+
   end
 
   scope "/course", OliWeb do
@@ -507,6 +516,9 @@ defmodule OliWeb.Router do
 
     # Open and free sections
     resources "/open_and_free", OpenAndFreeController
+
+    # Branding
+    resources "/brands", BrandController
   end
 
   scope "/project", OliWeb do
@@ -520,6 +532,19 @@ defmodule OliWeb.Router do
     ]
 
     live "/:project_id/history/:slug", RevisionHistory, session: {__MODULE__, :with_session, []}
+  end
+
+  # routes only accessible when load testing mode is enabled. These routes exist solely
+  # to allow the load testing framework to do things like query for the available open and free
+  # sections, to query for all of the pages in an individual section, etc.
+  if Oli.Utils.LoadTesting.enabled?() do
+
+    scope "/api/v1/testing", OliWeb do
+      pipe_through [:api]
+
+      get "/openfree", OpenAndFreeController, :index_api
+    end
+
   end
 
   # routes only accessible to developers

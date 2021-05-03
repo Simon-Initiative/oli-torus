@@ -13,7 +13,7 @@
   <div id="wrapper d-block">
 
       <!-- Page Content -->
-      <div id="content">
+      <div id="content" class="content">
 
         <%= @inner_content %>
 

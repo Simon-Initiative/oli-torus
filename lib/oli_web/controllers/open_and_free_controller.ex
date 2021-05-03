@@ -12,6 +12,22 @@ defmodule OliWeb.OpenAndFreeController do
     render_workspace_page(conn, "index.html", sections: sections)
   end
 
+  @doc """
+  Provides API access to the open and free sections that are open for registration.
+  """
+  def index_api(conn, _params) do
+    sections = Sections.list_open_and_free_sections()
+    |> Enum.filter(fn s -> s.registration_open end)
+    |> Enum.map(fn section ->
+      %{
+        slug: section.slug,
+        url: Routes.page_delivery_path(conn, :index, section.slug)
+      }
+    end)
+
+    json(conn, sections)
+  end
+
   def new(conn, _params) do
     changeset = Sections.change_section(%Section{open_and_free: true, registration_open: true})
     render_workspace_page(conn, "new.html", changeset: changeset)
@@ -49,12 +65,12 @@ defmodule OliWeb.OpenAndFreeController do
   end
 
   def show(conn, %{"id" => id}) do
-    section = Sections.get_section!(id)
+    section = Sections.get_section_preloaded!(id)
     render_workspace_page(conn, "show.html", section: section)
   end
 
   def edit(conn, %{"id" => id}) do
-    section = Sections.get_section!(id)
+    section = Sections.get_section_preloaded!(id)
     changeset = Sections.change_section(section)
 
     render_workspace_page(conn, "edit.html",
@@ -65,7 +81,7 @@ defmodule OliWeb.OpenAndFreeController do
   end
 
   def update(conn, %{"id" => id, "section" => section_params}) do
-    section = Sections.get_section!(id)
+    section = Sections.get_section_preloaded!(id)
 
     case Sections.update_section(section, section_params) do
       {:ok, section} ->

@@ -1,0 +1,108 @@
+<style>
+  .icons {
+    height: 150px;
+  }
+
+  .icons figure {
+    width: 64px;
+    height: 64px;
+    margin-right: 2rem;
+  }
+</style>
+
+<div class="container">
+  <span>
+    <%= link to: Routes.brand_path(@conn, :index) do %>
+      <i class="las la-arrow-left"></i> Back
+    <% end %>
+  </span>
+
+  <h3 class="my-3">
+    <%= @brand.name %>
+    <%= link "Remove", to: Routes.brand_path(@conn, :delete, @brand), method: :delete, data: [confirm: "Are you sure you want to permanently remove the brand \"#{@brand.name}\"?"], class: "btn btn-sm btn-outline-danger ml-2 float-right" %>
+    <%= link "Edit", to: Routes.brand_path(@conn, :edit, @brand), class: "btn btn-sm btn-outline-primary ml-2 float-right" %>
+  </h3>
+
+  <table class="table">
+    <tbody>
+      <tr>
+        <td><strong>Logo:</strong></td>
+        <td>
+          <div class="logo-container checkered-light">
+            <img src="<%= @brand.logo %>" />
+          </div>
+        </td>
+      </tr>
+
+      <tr>
+        <td><strong>Logo (Dark):</strong></td>
+        <td>
+          <%= case @brand.logo_dark do %>
+            <% nil -> %>
+              <span class="text-secondary font-italic">None</span>
+            <% logo_dark -> %>
+              <div class="logo-container checkered-dark">
+                <img src="<%= logo_dark %>" />
+              </div>
+          <% end %>
+        </td>
+      </tr>
+
+      <tr>
+        <td><strong>Favicons:</strong></td>
+        <td>
+          <div><%= @brand.favicons %></div>
+          <div class="icons my-2">
+            <figure class="figure align-top text-center d-inline-block">
+              <img src="<%= @brand.favicons %>/favicon.ico" class="figure-img img-fluid text-center" alt="favicon.ico">
+              <figcaption class="figure-caption">favicon.ico</figcaption>
+            </figure>
+
+            <figure class="figure align-top text-center d-inline-block">
+              <img src="<%= @brand.favicons %>/favicon-32x32.png" class="figure-img img-fluid text-center" alt="favicon-32x32.png">
+              <figcaption class="figure-caption">favicon-32x32.png</figcaption>
+            </figure>
+
+
+            <figure class="figure align-top text-center d-inline-block">
+              <img src="<%= @brand.favicons %>/favicon-16x16.png" class="figure-img img-fluid text-center" alt="favicon-16x16.png">
+              <figcaption class="figure-caption">favicon-16x16.png</figcaption>
+            </figure>
+
+
+            <figure class="figure align-top text-center d-inline-block">
+              <img src="<%= @brand.favicons %>/apple-touch-icon.png" class="figure-img img-fluid text-center" alt="apple-touch-icon.png">
+              <figcaption class="figure-caption">apple-touch-icon.png</figcaption>
+            </figure>
+
+
+            <figure class="figure align-top text-center d-inline-block">
+              <img src="<%= @brand.favicons %>/android-chrome-512x512.png" class="figure-img img-fluid text-center" alt="android-chrome-512x512.png">
+              <figcaption class="figure-caption">android-chrome-512x512.png</figcaption>
+            </figure>
+
+
+            <figure class="figure align-top text-center d-inline-block">
+              <img src="<%= @brand.favicons %>/android-chrome-192x192.png" class="figure-img img-fluid text-center" alt="android-chrome-192x192.png">
+              <figcaption class="figure-caption">android-chrome-192x192.png</figcaption>
+            </figure>
+
+          </div>
+        </td>
+      </tr>
+
+      <tr>
+        <td><strong>Institution:</strong></td>
+        <td>
+          <%= case @brand.institution do %>
+            <% nil -> %>
+              <span class="text-secondary font-italic">None</span>
+            <% institution -> %>
+              <%= institution.name %>
+          <% end %>
+        </td>
+      </tr>
+
+    </tbody>
+  </table>
+</div>
