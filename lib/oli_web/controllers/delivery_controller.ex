@@ -350,9 +350,11 @@ defmodule OliWeb.DeliveryController do
         {:error, _} ->
           render(conn, "new_user.html", error: "Something went wrong, please try again")
       end
-  else
-    _ ->
+
+    else
       render(conn, "new_user.html", error: "ReCaptcha failed, please try again")
+    end
+
   end
 
 end
