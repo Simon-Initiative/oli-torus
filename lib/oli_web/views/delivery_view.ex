@@ -2,6 +2,7 @@ defmodule OliWeb.DeliveryView do
   use OliWeb, :view
 
   alias Oli.Delivery.Sections.Section
+  alias Oli.Accounts.User
 
   defp is_preview_mode?(conn) do
     conn.assigns[:preview_mode] == true
@@ -17,12 +18,22 @@ defmodule OliWeb.DeliveryView do
     end
   end
 
+  defp is_open_and_free_user?(conn) do
+    case conn.assigns[:current_user] do
+      %User{guest: guest} ->
+        guest
+
+      _ ->
+        false
+    end
+  end
+
   def logo_link_path(conn) do
     cond do
       is_preview_mode?(conn) ->
         "#"
 
-      is_open_and_free_section?(conn) ->
+      is_open_and_free_section?(conn) or is_open_and_free_user?(conn) ->
         Routes.delivery_path(conn, :open_and_free_index)
 
       true ->

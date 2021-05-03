@@ -1,8 +1,0 @@
-/** Import theme specific variables before delivery base */
-@import 'dark/variables.scss';
-@import 'delivery.scss';
-
-/** Override specific styles for theme customization */
-.delivery {
-  @import 'dark/custom.scss';
-}

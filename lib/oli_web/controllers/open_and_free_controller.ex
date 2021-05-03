@@ -65,12 +65,12 @@ defmodule OliWeb.OpenAndFreeController do
   end
 
   def show(conn, %{"id" => id}) do
-    section = Sections.get_section!(id)
+    section = Sections.get_section_preloaded!(id)
     render_workspace_page(conn, "show.html", section: section)
   end
 
   def edit(conn, %{"id" => id}) do
-    section = Sections.get_section!(id)
+    section = Sections.get_section_preloaded!(id)
     changeset = Sections.change_section(section)
 
     render_workspace_page(conn, "edit.html",
@@ -81,7 +81,7 @@ defmodule OliWeb.OpenAndFreeController do
   end
 
   def update(conn, %{"id" => id, "section" => section_params}) do
-    section = Sections.get_section!(id)
+    section = Sections.get_section_preloaded!(id)
 
     case Sections.update_section(section, section_params) do
       {:ok, section} ->

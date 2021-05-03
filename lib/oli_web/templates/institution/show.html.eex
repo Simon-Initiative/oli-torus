@@ -65,6 +65,21 @@
                       <tbody>
 
                         <tr>
+                          <td><strong>Brand:</strong></td>
+                          <td>
+                            <%= case registration.brand do %>
+                              <% nil -> %>
+                                <span class="text-secondary font-italic">None</span>
+
+                              <% brand -> %>
+                                <div class="logo-container">
+                                  <img src="<%= brand.logo %>" />
+                                </div>
+                            <% end %>
+                          </td>
+                        </tr>
+
+                        <tr>
                           <td><strong>Issuer:</strong></td>
                           <td><%= registration.issuer %></td>
                         </tr>
@@ -114,6 +129,7 @@
                             <%= link "Add a Deployment", to: Routes.institution_registration_deployment_path(@conn, :new, @institution.id, registration.id), class: "btn btn-sm btn-outline-primary" %>
                           </td>
                         </tr>
+
                       </tbody>
                     </table>
                   </div>

@@ -12,7 +12,7 @@ defmodule Oli.InstitutionsTest do
       jwk = jwk_fixture()
       registration = registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
 
-      registration = registration |> Repo.preload([:deployments])
+      # registration = registration |> Repo.preload([:deployments])
 
       %{institution: institution, jwk: jwk, registration: registration}
     end

@@ -13,6 +13,7 @@ defmodule Oli.Lti_1p3.Tool.Registration do
     has_many :deployments, Lti_1p3.DataProviders.EctoProvider.Deployment
     belongs_to :tool_jwk, Lti_1p3.DataProviders.EctoProvider.Jwk, foreign_key: :tool_jwk_id
     belongs_to :institution, Oli.Institutions.Institution
+    belongs_to :brand, Oli.Branding.Brand
 
     timestamps(type: :utc_datetime)
   end
@@ -28,7 +29,8 @@ defmodule Oli.Lti_1p3.Tool.Registration do
       :auth_login_url,
       :auth_server,
       :tool_jwk_id,
-      :institution_id
+      :institution_id,
+      :brand_id
     ])
     |> validate_required([
       :issuer,

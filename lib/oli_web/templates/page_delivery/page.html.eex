@@ -31,7 +31,7 @@ window.userToken = "<%= assigns[:user_token] %>";
 </div>
 <% end %>
 
-<div id="eventIntercept">
+<div id="eventIntercept" class="content">
   <%= raw(@html) %>
 </div>
 

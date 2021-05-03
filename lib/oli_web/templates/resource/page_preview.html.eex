@@ -23,7 +23,7 @@
 
 <%= render OliWeb.PageDeliveryView, "_objectives.html", objectives: @objectives %>
 
-<div id="eventIntercept">
+<div id="eventIntercept" class="content">
   <%= raw(@content_html) %>
 </div>
 
