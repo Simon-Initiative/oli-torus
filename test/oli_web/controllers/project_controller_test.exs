@@ -2,6 +2,7 @@ defmodule OliWeb.ProjectControllerTest do
   use OliWeb.ConnCase
   alias Oli.Repo
   alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Course
   alias Oli.Activities
   alias Oli.Activities.ActivityRegistrationProject
 
@@ -66,6 +67,14 @@ defmodule OliWeb.ProjectControllerTest do
 
     test "redirects back to workspace when data is invalid", %{conn: conn} do
       conn = post(conn, Routes.project_path(conn, :create), project: @invalid_attrs)
+      assert html_response(conn, 302) =~ "/projects"
+    end
+  end
+
+  describe "delete project" do
+    test "redirects back to workspace when project is deleted", %{conn: conn, project: project} do
+      conn = post(conn, Routes.project_path(conn, :delete, project), title: project.title)
+      refute Course.get_project_by_slug(project.slug)
       assert html_response(conn, 302) =~ "/projects"
     end
   end

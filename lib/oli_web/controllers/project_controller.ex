@@ -203,7 +203,7 @@ defmodule OliWeb.ProjectController do
 
   defp delete_project(conn, project) do
     case Course.update_project(project, %{status: :deleted}) do
-      {:ok, project} ->
+      {:ok, _project} ->
         conn
         |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
 

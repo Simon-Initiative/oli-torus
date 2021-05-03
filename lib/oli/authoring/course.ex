@@ -63,10 +63,8 @@ defmodule Oli.Authoring.Course do
 
   def get_project!(id), do: Repo.get!(Project, id)
   def get_project_by_slug(nil), do: nil
-#  def get_project_by_slug(slug) when is_binary(slug), do: Repo.get_by(Project, slug: slug)
 
   def get_project_by_slug(slug) when is_binary(slug) do
-    Repo.get_by(Project, slug: slug)
     Repo.one(
       from p in Project,
       where: p.slug == ^slug and p.status == :active,

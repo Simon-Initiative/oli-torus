@@ -3,6 +3,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
   alias Oli.Accounts
   alias OliWeb.Common.LtiSession
+  alias Oli.Publishing
 
   describe "delivery_controller index" do
     setup [:setup_session]
@@ -116,6 +117,21 @@ defmodule OliWeb.DeliveryControllerTest do
         |> get(Routes.delivery_path(conn, :link_account))
 
       assert html_response(conn, 200) =~ "Link Existing Account"
+    end
+  end
+
+  describe "delivery_controller deleted_project" do
+    setup [:setup_session]
+
+    test "removes deleted project from available publications", %{conn: conn, project: project, author: author,
+      institution: institution} do
+
+      Publishing.publish_project(project)
+
+      post(conn, Routes.project_path(conn, :delete, project), title: project.title)
+
+      available_publications = Publishing.available_publications(author, institution)
+      assert available_publications == []
     end
   end
 
