@@ -162,12 +162,12 @@
         <div class="container form-container">
           <div><p>Please type <strong><%= @project.title %></strong> below to confirm.</p></div>
               <%= form_for @conn, Routes.project_path(@conn, :delete, @project), fn f -> %>
-              <div>
+              <div class="mt-2">
                 <%= text_input f, :title, class: "form-control", id: "delete-confirm-title", required: true %>
               </div>
 
-              <div class="d-flex flex-row-reverse">
-                <button id="delete-modal-submit" type="submit" class="btn btn-outline-danger text-danger mt-2" disabled>Delete this course</button>
+              <div class="d-flex">
+                <button id="delete-modal-submit" type="submit" class="btn btn-outline-danger mt-2 flex-fill" disabled>Delete this course</button>
               </div>
 
               <% end %>
