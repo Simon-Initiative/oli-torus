@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.23.0">
+    <meta name="project" content="OLI Torus v0.9.0">
+
+    <title>Oli.Branding — OLI Torus v0.9.0</title>
+    <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
+
+    <script src="dist/sidebar_items-a4f0419e1a.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+
+  </head>
+  <body data-type="modules">
+    <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+
+<div class="main">
+
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" title="Collapse/expand sidebar"></span>
+</button>
+
+<section class="sidebar">
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
+    </button>
+    <label class="search-label">
+      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectDetails">
+      <a href="http://oli.cmu.edu" class="sidebar-projectName">
+OLI Torus
+      </a>
+      <strong class="sidebar-projectVersion">
+        v0.9.0
+      </strong>
+    </div>
+
+      <a href="http://oli.cmu.edu">
+        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
+      </a>
+
+  </div>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list" href="#full-list">Modules</a></li>
+
+
+      <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+      <h1>
+Oli.Branding <small class="app-vsn">(OLI Torus v0.9.0)</small>
+
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/branding.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+
+      </h1>
+
+
+        <section id="moduledoc">
+<p>The Branding context.</p>
+        </section>
+
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#brand_logo_url/1">brand_logo_url(section \\ nil)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#brand_logo_url_dark/1">brand_logo_url_dark(section \\ nil)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#brand_name/1">brand_name(section \\ nil)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#change_brand/2">change_brand(brand, attrs \\ %{})</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns an <code class="inline">%Ecto.Changeset{}</code> for tracking brand changes.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create_brand/1">create_brand(attrs \\ %{})</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Creates a brand.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#delete_brand/1">delete_brand(brand)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Deletes a brand.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#favicons/2">favicons(name, section \\ nil)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_brand!/1">get_brand!(id)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Gets a single brand.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#list_available_brands/1">list_available_brands(institution_id)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the list of available brands for an institution.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#list_brands/0">list_brands()</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the list of brands.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#list_brands_with_stats/0">list_brands_with_stats()</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the list of brands with stats.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#update_brand/2">update_brand(brand, attrs)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Updates a brand.</p></div>
+
+</div>
+
+  </div>
+
+        </section>
+
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions
+          </h1>
+          <div class="functions-list">
+<section class="detail" id="brand_logo_url/1">
+
+    <span id="brand_logo_url/0"></span>
+
+  <div class="detail-header">
+    <a href="#brand_logo_url/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">brand_logo_url(section \\ nil)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/branding.ex#L150" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="brand_logo_url_dark/1">
+
+    <span id="brand_logo_url_dark/0"></span>
+
+  <div class="detail-header">
+    <a href="#brand_logo_url_dark/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">brand_logo_url_dark(section \\ nil)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/branding.ex#L155" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="brand_name/1">
+
+    <span id="brand_name/0"></span>
+
+  <div class="detail-header">
+    <a href="#brand_name/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">brand_name(section \\ nil)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/branding.ex#L145" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="change_brand/2">
+
+    <span id="change_brand/1"></span>
+
+  <div class="detail-header">
+    <a href="#change_brand/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">change_brand(brand, attrs \\ %{})</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/branding.ex#L141" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Returns an <code class="inline">%Ecto.Changeset{}</code> for tracking brand changes.</p><h2 id="change_brand/2-examples" class="section-heading">
+  <a href="#change_brand/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_brand</span><span class="p" data-group-id="2580849420-1">(</span><span class="n">brand</span><span class="p" data-group-id="2580849420-1">)</span><span class="w">
+</span><span class="p" data-group-id="2580849420-2">%</span><span class="nc" data-group-id="2580849420-2">Ecto.Changeset</span><span class="p" data-group-id="2580849420-2">{</span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="2580849420-3">%</span><span class="nc" data-group-id="2580849420-3">Brand</span><span class="p" data-group-id="2580849420-3">{</span><span class="p" data-group-id="2580849420-3">}</span><span class="p" data-group-id="2580849420-2">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="create_brand/1">
+
+    <span id="create_brand/0"></span>
+
+  <div class="detail-header">
+    <a href="#create_brand/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create_brand(attrs \\ %{})</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/branding.ex#L92" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Creates a brand.</p><h2 id="create_brand/1-examples" class="section-heading">
+  <a href="#create_brand/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_brand</span><span class="p" data-group-id="0127563367-1">(</span><span class="p" data-group-id="0127563367-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="0127563367-2">}</span><span class="p" data-group-id="0127563367-1">)</span><span class="w">
+</span><span class="p" data-group-id="0127563367-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0127563367-4">%</span><span class="nc" data-group-id="0127563367-4">Brand</span><span class="p" data-group-id="0127563367-4">{</span><span class="p" data-group-id="0127563367-4">}</span><span class="p" data-group-id="0127563367-3">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_brand</span><span class="p" data-group-id="0127563367-5">(</span><span class="p" data-group-id="0127563367-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="0127563367-6">}</span><span class="p" data-group-id="0127563367-5">)</span><span class="w">
+</span><span class="p" data-group-id="0127563367-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0127563367-8">%</span><span class="nc" data-group-id="0127563367-8">Ecto.Changeset</span><span class="p" data-group-id="0127563367-8">{</span><span class="p" data-group-id="0127563367-8">}</span><span class="p" data-group-id="0127563367-7">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="delete_brand/1">
+
+  <div class="detail-header">
+    <a href="#delete_brand/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">delete_brand(brand)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/branding.ex#L128" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Deletes a brand.</p><h2 id="delete_brand/1-examples" class="section-heading">
+  <a href="#delete_brand/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_brand</span><span class="p" data-group-id="1328150664-1">(</span><span class="n">brand</span><span class="p" data-group-id="1328150664-1">)</span><span class="w">
+</span><span class="p" data-group-id="1328150664-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1328150664-3">%</span><span class="nc" data-group-id="1328150664-3">Brand</span><span class="p" data-group-id="1328150664-3">{</span><span class="p" data-group-id="1328150664-3">}</span><span class="p" data-group-id="1328150664-2">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_brand</span><span class="p" data-group-id="1328150664-4">(</span><span class="n">brand</span><span class="p" data-group-id="1328150664-4">)</span><span class="w">
+</span><span class="p" data-group-id="1328150664-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1328150664-6">%</span><span class="nc" data-group-id="1328150664-6">Ecto.Changeset</span><span class="p" data-group-id="1328150664-6">{</span><span class="p" data-group-id="1328150664-6">}</span><span class="p" data-group-id="1328150664-5">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="favicons/2">
+
+    <span id="favicons/1"></span>
+
+  <div class="detail-header">
+    <a href="#favicons/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">favicons(name, section \\ nil)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/branding.ex#L160" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="get_brand!/1">
+
+  <div class="detail-header">
+    <a href="#get_brand!/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_brand!(id)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/branding.ex#L78" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Gets a single brand.</p><p>Raises <a href="https://hexdocs.pm/ecto/3.5.8/Ecto.NoResultsError.html"><code class="inline">Ecto.NoResultsError</code></a> if the Brand does not exist.</p><h2 id="get_brand!/1-examples" class="section-heading">
+  <a href="#get_brand!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_brand!</span><span class="p" data-group-id="6839800991-1">(</span><span class="mi">123</span><span class="p" data-group-id="6839800991-1">)</span><span class="w">
+</span><span class="p" data-group-id="6839800991-2">%</span><span class="nc" data-group-id="6839800991-2">Brand</span><span class="p" data-group-id="6839800991-2">{</span><span class="p" data-group-id="6839800991-2">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_brand!</span><span class="p" data-group-id="6839800991-3">(</span><span class="mi">456</span><span class="p" data-group-id="6839800991-3">)</span><span class="w">
+</span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="list_available_brands/1">
+
+  <div class="detail-header">
+    <a href="#list_available_brands/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">list_available_brands(institution_id)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/branding.ex#L57" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Returns the list of available brands for an institution.</p><h2 id="list_available_brands/1-examples" class="section-heading">
+  <a href="#list_available_brands/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_available_brands</span><span class="p" data-group-id="5945585818-1">(</span><span class="n">institution_id</span><span class="p" data-group-id="5945585818-1">)</span><span class="w">
+</span><span class="p" data-group-id="5945585818-2">[</span><span class="p" data-group-id="5945585818-3">%</span><span class="nc" data-group-id="5945585818-3">Brand</span><span class="p" data-group-id="5945585818-3">{</span><span class="p" data-group-id="5945585818-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="5945585818-2">]</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="list_brands/0">
+
+  <div class="detail-header">
+    <a href="#list_brands/0" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">list_brands()</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/branding.ex#L25" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Returns the list of brands.</p><h2 id="list_brands/0-examples" class="section-heading">
+  <a href="#list_brands/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_brands</span><span class="p" data-group-id="1887933593-1">(</span><span class="p" data-group-id="1887933593-1">)</span><span class="w">
+</span><span class="p" data-group-id="1887933593-2">[</span><span class="p" data-group-id="1887933593-3">%</span><span class="nc" data-group-id="1887933593-3">Brand</span><span class="p" data-group-id="1887933593-3">{</span><span class="p" data-group-id="1887933593-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="1887933593-2">]</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="list_brands_with_stats/0">
+
+  <div class="detail-header">
+    <a href="#list_brands_with_stats/0" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">list_brands_with_stats()</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/branding.ex#L38" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Returns the list of brands with stats.</p><h2 id="list_brands_with_stats/0-examples" class="section-heading">
+  <a href="#list_brands_with_stats/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_brands</span><span class="p" data-group-id="9506545195-1">(</span><span class="p" data-group-id="9506545195-1">)</span><span class="w">
+</span><span class="p" data-group-id="9506545195-2">[</span><span class="p" data-group-id="9506545195-3">{</span><span class="p" data-group-id="9506545195-4">%</span><span class="nc" data-group-id="9506545195-4">Brand</span><span class="p" data-group-id="9506545195-4">{</span><span class="p" data-group-id="9506545195-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">registrations_count</span><span class="p">,</span><span class="w"> </span><span class="n">sections_count</span><span class="p" data-group-id="9506545195-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="9506545195-2">]</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="update_brand/2">
+
+  <div class="detail-header">
+    <a href="#update_brand/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">update_brand(brand, attrs)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/branding.ex#L110" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Updates a brand.</p><h2 id="update_brand/2-examples" class="section-heading">
+  <a href="#update_brand/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_brand</span><span class="p" data-group-id="7815151449-1">(</span><span class="n">brand</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7815151449-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="7815151449-2">}</span><span class="p" data-group-id="7815151449-1">)</span><span class="w">
+</span><span class="p" data-group-id="7815151449-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7815151449-4">%</span><span class="nc" data-group-id="7815151449-4">Brand</span><span class="p" data-group-id="7815151449-4">{</span><span class="p" data-group-id="7815151449-4">}</span><span class="p" data-group-id="7815151449-3">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_brand</span><span class="p" data-group-id="7815151449-5">(</span><span class="n">brand</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7815151449-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7815151449-6">}</span><span class="p" data-group-id="7815151449-5">)</span><span class="w">
+</span><span class="p" data-group-id="7815151449-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7815151449-8">%</span><span class="nc" data-group-id="7815151449-8">Ecto.Changeset</span><span class="p" data-group-id="7815151449-8">{</span><span class="p" data-group-id="7815151449-8">}</span><span class="p" data-group-id="7815151449-7">}</span></code></pre>
+  </section>
+</section>
+
+          </div>
+        </section>
+
+      <footer class="footer">
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.23.0) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
+          </span>
+          <span class="line">
+            Designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+          </span>
+        </p>
+        <p>
+
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
+          <button class="line footer-button display-shortcuts-help">
+            Display keyboard shortcuts
+          </button>
+          <button class="line footer-button night-mode-toggle">
+            Toggle night mode
+          </button>
+          <button class="line footer-button display-quick-switch">
+            Go to a HexDocs package
+          </button>
+          <button class="line footer-button tooltips-toggle">
+            <span class="tooltips-option-disable">Disable tooltips</span>
+            <span class="tooltips-option-enable">Enable tooltips</span>
+          </button>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+  </body>
+</html>

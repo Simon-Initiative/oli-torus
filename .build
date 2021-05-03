@@ -70,8 +70,9 @@ Oli.Authoring.MediaLibrary.ItemOptions.html
 Oli.Authoring.MediaLibrary.MediaItem.html
 Oli.Authoring.MediaLibrary.html
 Oli.Authoring.ProjectSearch.html
-Oli.Authoring.Theme.html
 Oli.Authoring.html
+Oli.Branding.Brand.html
+Oli.Branding.html
 Oli.Consent.CookiesConsent.html
 Oli.Consent.html
 Oli.Delivery.ActivityProvider.html
@@ -136,6 +137,7 @@ Oli.PartComponents.PartComponentRegistrationProject.html
 Oli.PartComponents.html
 Oli.Plugs.AuthorizeProject.html
 Oli.Plugs.EnsureAdmin.html
+Oli.Plugs.LoadTestingCSRFBypass.html
 Oli.Plugs.MaybeEnrollOpenAndFreeUser.html
 Oli.Plugs.NoCache.html
 Oli.Plugs.RegistrationCaptcha.html
@@ -195,6 +197,7 @@ Oli.Timing.html
 Oli.UserIdentities.UserIdentity.html
 Oli.Utils.Database.html
 Oli.Utils.HierarchyNode.html
+Oli.Utils.LoadTesting.html
 Oli.Utils.Purposes.html
 Oli.Utils.Recaptcha.html
 Oli.Utils.Slug.html
@@ -247,6 +250,8 @@ OliWeb.ApiSchemas.CreationResponse.html
 OliWeb.ApiSchemas.UpdateResponse.html
 OliWeb.ApiSchemas.html
 OliWeb.ApiSpec.html
+OliWeb.BrandController.html
+OliWeb.BrandView.html
 OliWeb.Breadcrumb.BreadcrumbLive.html
 OliWeb.Breadcrumb.BreadcrumbTrailLive.html
 OliWeb.ChangesetView.html
@@ -387,8 +392,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-2ad80fee73.js
-dist/sidebar_items-c54cf20d17.js
+dist/search_items-d955cc1d37.js
+dist/sidebar_items-a4f0419e1a.js
 index.html
 license.html
 readme.html

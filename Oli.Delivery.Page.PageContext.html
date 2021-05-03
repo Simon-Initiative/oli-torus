@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Page.PageContext — OLI Torus v0.9.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-c54cf20d17.js"></script>
+    <script src="dist/sidebar_items-a4f0419e1a.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -168,7 +168,7 @@ Functions
     </a>
     <h1 class="signature">create_page_context(section_slug, page_slug, user)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L47" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L49" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -184,6 +184,7 @@ Functions
           <pre>create_page_context(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), Oli.Accounts.User) ::
   %Oli.Delivery.Page.PageContext{
     activities: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    latest_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     next_page: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     objectives: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     page: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -213,7 +214,7 @@ to a renderer.</p>
     </a>
     <h1 class="signature">create_page_context(section_slug, page_slug, attempt_guid, user)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L70" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L72" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -229,6 +230,7 @@ to a renderer.</p>
           <pre>create_page_context(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), Oli.Accounts.User) ::
   %Oli.Delivery.Page.PageContext{
     activities: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    latest_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     next_page: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     objectives: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     page: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -258,7 +260,7 @@ to a renderer.</p>
     </a>
     <h1 class="signature">determine_previous_next(hierarchy, revision)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L121" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L124" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -280,7 +282,7 @@ to a renderer.</p>
     </a>
     <h1 class="signature">flatten_hierarchy(list)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L134" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L137" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
