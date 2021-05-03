@@ -126,7 +126,7 @@ export const loadActivityState = createAsyncThunk(
       return activity;
     });
 
-    // console.log('GOT STATE', { results, activities });
+    console.log('GOT STATE', { results, activities });
     // TODO: upsert instead?
     thunkApi.dispatch(setActivities({ activities }));
   },

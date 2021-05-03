@@ -40,3 +40,76 @@ function hasContent(item: any) {
     return true;
   }
 }
+
+export const isString = (val: unknown): boolean => typeof val === 'string';
+
+export const isNumber = (val: string | number): boolean =>
+  typeof val === 'number' && !Number.isNaN(val);
+
+export const parseBoolean = (input: string | boolean | number): boolean =>
+  input === true ||
+  input === 1 ||
+  input.toString().toLowerCase() === 'true' ||
+  input.toString().toLowerCase() === '1';
+
+export const isStringArray = (s: unknown): boolean =>
+  typeof s === 'string' && s.charAt(0) === '[' && s.charAt(s.length - 1) === ']';
+
+// this function is needed because of getting some values like
+// [some, thing, silly] vs ["some", "thing", "silly"]
+// otherwise we could just parse
+export const parseArray = (val: unknown): unknown[] => {
+  if (Array.isArray(val)) {
+    return val;
+  }
+
+  if (isStringArray(val)) {
+    try {
+      // its possible that we just get arrays of numbers which this should
+      // work fine for or even a normal stringified array
+      const json = JSON.parse(val as string);
+      if (Array.isArray(json)) {
+        return json;
+      }
+    } catch (err) {
+      // guess it wasn't valid, now we'll try to parse it
+    }
+    const inner = (val as string).substring(1, (val as string).length - 1);
+    const isNested = isStringArray(inner);
+    if (isNested) {
+      // NOTE this will only support ONE level of nesting
+      // otherwise the comma will break it again
+      // maybe there is some better regex way
+      // tagging them with newline just for something to target for the split
+      const innerEls = inner
+        .replace(/\], \[/g, '],\n[')
+        .replace(/\],\[/g, '],\n[')
+        .split(/,\n/g);
+      return innerEls.map(parseArray);
+    } else {
+      const elements = inner.split(',');
+      const isEmpty = elements.length === 1 && elements[0] === '';
+      const parsedArray = isEmpty ? [] : elements;
+      if (isNested) {
+        return parsedArray.map(parseArray);
+      }
+
+      return parsedArray.map((element) => {
+        if (element.match(/^\s+$/)) {
+          return element;
+        } else {
+          return element.trim();
+        }
+      });
+    }
+  }
+
+  if (!val) {
+    return [];
+  }
+
+  // if we hit this, it was something WAY off
+  const err = new Error('not a valid array');
+  // console.error(err, { val });
+  throw err;
+};
