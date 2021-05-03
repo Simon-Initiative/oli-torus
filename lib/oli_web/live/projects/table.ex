@@ -25,12 +25,19 @@ defmodule OliWeb.Projects.Table do
           <%= th(assigns, "Title", @sort_by, @sort_order, "title") %>
           <%= th(assigns, "Created", @sort_by, @sort_order, "created") %>
           <%= th(assigns, "Collaborators", @sort_by, @sort_order, "author") %>
+          <%= th(assigns, "Status", @sort_by, @sort_order, "status") %>
         </tr>
       </thead>
       <tbody>
         <%= for project <- @projects do %>
           <tr>
-          <td><a href="<%= Routes.project_path(OliWeb.Endpoint, :overview, project) %>"><%= project.title %></td>
+          <td>
+            <%= if project.status == :deleted do %>
+              <span><%= project.title %></span>
+            <% else %>
+              <a href="<%= Routes.project_path(OliWeb.Endpoint, :overview, project) %>"><%= project.title %></td>
+            <% end %>
+
           <td><%= time_ago(assigns, project.inserted_at) %></td>
           <td>
             <ul>
@@ -38,6 +45,13 @@ defmodule OliWeb.Projects.Table do
               <li><%= author.name %> (<%= author.email %>)</li>
             <% end %>
             </ul>
+          </td>
+          <td>
+            <%= if project.status == :deleted do %>
+              <span class="text-danger">Deleted</span>
+            <% else %>
+              <span class="text-success">Active</span>
+            <% end %>
           </td>
           </tr>
         <% end %>

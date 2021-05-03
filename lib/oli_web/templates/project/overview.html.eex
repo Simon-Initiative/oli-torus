@@ -1,8 +1,10 @@
-<div class="overview container">
+<div class="overview container" xmlns="http://www.w3.org/1999/html">
   <div class="row">
     <div class="col-12">
 
-      <h2>Details</h2>
+      <div class="card mt-4">
+        <div class="card-body">
+      <h4>Details</h4>
 
 
       <%= form_for @changeset, Routes.project_path(@conn, :update, @project), fn f -> %>
@@ -21,7 +23,8 @@
         </div>
 
       <% end %>
-
+        </div>
+      </div>
       <div class="card mt-4">
         <div class="card-body">
       <h4>Collaborators</h4>
@@ -43,7 +46,7 @@
             <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
             <%= error_tag f, :captcha %>
           </div>
-          <div class="input-group-append">
+          <div class="d-flex flex-row-reverse">
             <%= submit "Send Invite",
               id: "button-create-collaborator",
               class: "btn btn-primary",
@@ -69,7 +72,7 @@
       </div>
       <div class="card mt-4">
         <div class="card-body">
-          <h4>Activities Enabled</h4>
+          <h4>Activities enabled</h4>
           <table class="table table-sm">
             <thead class="thead-light">
             <tr>
@@ -103,7 +106,7 @@
 
       <div class="row my-4">
         <div class="col-12">
-          <h4>Datashop Export</h4>
+          <h4>Datashop export</h4>
           <%= case Oli.Publishing.get_latest_published_publication_by_slug!(@project.slug) do %>
             <% nil -> %>
               <p class="mb-2">
@@ -113,6 +116,61 @@
             <% _pub -> %>
               <%= button("Download Datashop Export", to: Routes.project_path(@conn, :download_datashop, @project), method: :post, class: "btn btn-primary") %>
           <% end %>
+        </div>
+      </div>
+
+      <div class="row my-4">
+        <div class="col-12">
+          <h4>Delete this course</h4>
+          <button type="button" class="btn btn-danger" onclick="showDeleteModal()">Delete this Course</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script>
+  const showDeleteModal = () => {
+    $('#delete-modal').modal('show');
+  }
+  $(function () {
+    const deleteTitleInput = document.querySelector('#delete-confirm-title');
+    if (deleteTitleInput) {
+      deleteTitleInput.addEventListener("input", function (e) {
+        const value = e.target.value;
+        console.log(value)
+        const deleteSubmitButton = document.querySelector('#delete-modal-submit')
+        if (value === '<%= @project.title %>') {
+          deleteSubmitButton.disabled = false;
+        } else {
+          deleteSubmitButton.disabled = true;
+        }
+      });
+    }
+  });
+</script>
+<div class="modal fade" id="delete-modal" tabindex="-1" role="dialog" aria-labelledby="delete-modal" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Are you absolutely sure?</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="container form-container">
+          <div><p>Please type <strong><%= @project.title %></strong> below to confirm.</p></div>
+              <%= form_for @conn, Routes.project_path(@conn, :delete, @project), fn f -> %>
+              <div>
+                <%= text_input f, :title, class: "form-control", id: "delete-confirm-title", required: true %>
+              </div>
+
+              <div class="d-flex flex-row-reverse">
+                <button id="delete-modal-submit" type="submit" class="btn btn-outline-danger text-danger mt-2" disabled>Delete this course</button>
+              </div>
+
+              <% end %>
         </div>
       </div>
     </div>

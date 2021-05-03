@@ -165,6 +165,19 @@ defmodule OliWeb.ProjectController do
     end
   end
 
+  def delete(conn, %{"project_id" => project_slug, "title" => title}) do
+    case Course.get_project_by_slug(project_slug) do
+      nil ->
+        error(conn, 404, "not found")
+      project ->
+        if project.title === title do
+          delete_project(conn, project)
+        else
+          error(conn, 404, "not found")
+        end
+      end
+  end
+
   def download_datashop(conn, _project_params) do
     project = conn.assigns.project
 
@@ -187,4 +200,32 @@ defmodule OliWeb.ProjectController do
         |> render("overview.html")
     end
   end
+
+  defp delete_project(conn, project) do
+    case Course.update_project(project, %{status: :deleted}) do
+      {:ok, project} ->
+        conn
+        |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        overview_params = %{
+          breadcrumbs: [Breadcrumb.new(%{full_title: "Overview"})],
+          active: :overview,
+          collaborators: Accounts.project_authors(project),
+          activities_enabled: Activities.activities_for_project(project),
+          changeset: changeset
+        }
+        conn
+        |> Map.put(:assigns, Map.merge(conn.assigns, overview_params))
+        |> put_flash(:error, "Project could not be deleted.")
+        |> render("overview.html")
+    end
+  end
+
+  defp error(conn, code, reason) do
+    conn
+    |> Plug.Conn.send_resp(code, reason)
+    |> Plug.Conn.halt()
+  end
+
 end

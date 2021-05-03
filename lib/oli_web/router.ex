@@ -170,7 +170,7 @@ defmodule OliWeb.Router do
     post "/access_tokens", LtiController, :access_tokens
     post "/help/create", HelpController, :create
     post "/consent/cookie", CookieConsentController, :persist_cookies
-    get "/consent/cookie/", CookieConsentController, :retrieve
+    get "/consent/cookie", CookieConsentController, :retrieve
   end
 
   scope "/.well-known", OliWeb do
@@ -210,7 +210,7 @@ defmodule OliWeb.Router do
 
     # Project
     put "/:project_id", ProjectController, :update
-    delete "/:project_id", ProjectController, :delete
+    post "/:project_id", ProjectController, :delete
 
     # Objectives
     live "/:project_id/objectives", Objectives.Objectives,
