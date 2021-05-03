@@ -281,7 +281,6 @@ OliWeb.DeliveryController.html
 OliWeb.DeliveryView.html
 OliWeb.DeploymentController.html
 OliWeb.DeploymentView.html
-OliWeb.EditorTestController.html
 OliWeb.EditorTestView.html
 OliWeb.EmailView.html
 OliWeb.Endpoint.html
@@ -377,7 +376,6 @@ OliWeb.SharedView.html
 OliWeb.StaticPageController.html
 OliWeb.StaticPageView.html
 OliWeb.Telemetry.html
-OliWeb.UIPaletteController.html
 OliWeb.UIPaletteView.html
 OliWeb.UserSocket.html
 OliWeb.ViewHelpers.html
@@ -392,8 +390,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-d955cc1d37.js
-dist/sidebar_items-a4f0419e1a.js
+dist/search_items-579a69ad4f.js
+dist/sidebar_items-2d3e3b16d9.js
 index.html
 license.html
 readme.html
