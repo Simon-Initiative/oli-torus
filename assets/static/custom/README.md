@@ -1,0 +1,1 @@
+This folder is reserved for custom branding assets. Contents will be ignored from source control.

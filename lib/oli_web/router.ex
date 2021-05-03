@@ -65,6 +65,10 @@ defmodule OliWeb.Router do
     plug :put_root_layout, {OliWeb.LayoutView, "workspace.html"}
   end
 
+  pipeline :delivery_layout do
+    plug :put_root_layout, {OliWeb.LayoutView, "delivery.html"}
+  end
+
   pipeline :maybe_enroll_open_and_free do
     plug Oli.Plugs.SetDefaultPow, :user
     plug Oli.Plugs.MaybeEnrollOpenAndFreeUser
@@ -168,9 +172,12 @@ defmodule OliWeb.Router do
     pipe_through [:api]
     get "/api/v1/legacy_support", LegacySupportController, :index
     post "/access_tokens", LtiController, :access_tokens
+
     post "/help/create", HelpController, :create
     post "/consent/cookie", CookieConsentController, :persist_cookies
     get "/consent/cookie/", CookieConsentController, :retrieve
+
+    get "/site.webmanifest", StaticPageController, :site_webmanifest
   end
 
   scope "/.well-known", OliWeb do
@@ -417,9 +424,9 @@ defmodule OliWeb.Router do
   scope "/sections", OliWeb do
     pipe_through [
       :browser,
+      :require_section,
       :maybe_enroll_open_and_free,
       :delivery_protected,
-      :require_section,
       :pow_email_layout
     ]
 
@@ -443,11 +450,12 @@ defmodule OliWeb.Router do
     get "/:section_slug/grades/export", PageDeliveryController, :export_gradebook
   end
 
-  scope "/course", OliWeb do
-    pipe_through [:browser, :pow_email_layout]
+  scope "/sections", OliWeb do
+    pipe_through [:browser, :require_section, :delivery_layout, :pow_email_layout]
 
-    get "/users", DeliveryController, :new_user
-    post "/users", DeliveryController, :create_user
+    get "/:section_slug/enroll", DeliveryController, :enroll
+    post "/:section_slug/create_user", DeliveryController, :create_user
+
   end
 
   scope "/course", OliWeb do
@@ -507,6 +515,9 @@ defmodule OliWeb.Router do
 
     # Open and free sections
     resources "/open_and_free", OpenAndFreeController
+
+    # Branding
+    resources "/brands", BrandController
   end
 
   scope "/project", OliWeb do

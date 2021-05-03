@@ -4,11 +4,11 @@
  * These along with any bootstrap variables can be overridden by a specific theme.
  * When creating a new variable, make sure you use !default so it can be overridden.
  **/
-@import '../../node_modules/bootstrap/scss/_functions.scss';
-@import '../../node_modules/bootstrap/scss/_variables.scss';
+@import "../../node_modules/bootstrap/scss/_functions.scss";
+@import "../../node_modules/bootstrap/scss/_variables.scss";
 
 /** OLI specific variables **/
-$code-color: rgba(0,0,0,.84) !default;
+$code-color: rgba(0, 0, 0, 0.84) !default;
 $font-family-monospace: "Source Code Pro", "Courier New", Courier, monospace !default;
 
 $choice-selected-bg: lighten($primary, 42%) !default;

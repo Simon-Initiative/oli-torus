@@ -11,9 +11,8 @@ defmodule OliWeb.LayoutView do
       account_linked?: 1,
       logo_link_path: 1
     ]
+  import Oli.Branding
 
-  alias Oli.Authoring
-  alias Oli.Accounts.AuthorPreferences
   alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
 
@@ -30,7 +29,7 @@ defmodule OliWeb.LayoutView do
   end
 
   def get_title(assigns) do
-    live_title_tag(assigns[:page_title] || assigns[:title] || "Open Learning Initiative",
+    live_title_tag(assigns[:page_title] || assigns[:title] || brand_name(),
       suffix: ""
     )
   end
@@ -94,23 +93,4 @@ defmodule OliWeb.LayoutView do
     render(layout, Map.put(assigns, :inner_layout, content))
   end
 
-  def theme_url(%{:assigns => assigns} = _conn, :authoring) do
-    case assigns do
-      %{current_author: current_author} ->
-        case current_author do
-          %{preferences: %AuthorPreferences{theme: url}} ->
-            url
-
-          _ ->
-            Authoring.get_default_theme!().url
-        end
-
-      _ ->
-        Authoring.get_default_theme!().url
-    end
-  end
-
-  def theme_url(conn, :delivery) do
-    Routes.static_path(conn, "/css/delivery_theme_oli.css")
-  end
 end

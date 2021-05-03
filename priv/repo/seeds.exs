@@ -93,38 +93,6 @@ Oli.Registrar.register_local_activities(
   ])
 )
 
-# Seed the database with the locally implemented part component types
-Oli.Registrar.register_local_part_components(
-  MapSet.new([
-    "janus_text_flow",
-    "janus_image",
-  ])
-)
-
-# create themes
-[
-  %Oli.Authoring.Theme{
-    id: 1,
-    name: "Automatic",
-    url: nil,
-    default: true
-  },
-  %Oli.Authoring.Theme{
-    id: 2,
-    name: "Light",
-    url: "/css/authoring_theme_light.css",
-    default: false
-  },
-  %Oli.Authoring.Theme{
-    id: 3,
-    name: "Dark",
-    url: "/css/authoring_theme_dark.css",
-    default: false
-  }
-]
-|> Enum.map(&Oli.Authoring.Theme.changeset/1)
-|> Enum.map(fn t -> Oli.Repo.insert!(t, on_conflict: :replace_all, conflict_target: :id) end)
-
 # create a default active lti_1p3 jwk
 if !Oli.Repo.get_by(Lti_1p3.DataProviders.EctoProvider.Jwk, id: 1) do
   %{private_key: private_key} = Lti_1p3.KeyGenerator.generate_key_pair()

@@ -12,9 +12,10 @@ body {
 }
 
 .delivery {
-  @import 'delivery/variables';
-  @import '../node_modules/bootstrap/scss/bootstrap';
-  @import 'common/**/*.scss';
-  @import 'components/**/*.scss';
-  @import 'delivery/**/*.scss';
+  @import "delivery/variables";
+  @import "bootstrap";
+  @import "common/**/*.scss";
+  @import "components/**/*.scss";
+  @import "delivery/**/*.scss";
+  @import "display.scss";
 }

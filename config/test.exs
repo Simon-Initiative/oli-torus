@@ -5,7 +5,16 @@ config :oli,
   s3_media_bucket_name: "torus-media-test",
   media_url: "d1od6xouqrpl5k.cloudfront.net",
   http_client: Oli.Test.MockHTTP,
-  slack_webhook_url: nil
+  aws_client: Oli.Test.MockAws,
+  slack_webhook_url: nil,
+  branding: [
+    name: "OLI Torus Test",
+    logo: "/images/oli_torus_logo.png",
+    favicons: "/favicons",
+    dark: [
+      logo: "/images/oli_torus_logo_dark.png",
+    ]
+  ]
 
 # Configure your database
 config :oli, Oli.Repo,

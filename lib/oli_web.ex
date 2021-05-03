@@ -105,6 +105,7 @@ defmodule OliWeb do
 
       import Oli.Accounts, only: [author_signed_in?: 1, user_signed_in?: 1]
       import Oli.Utils
+      import Oli.Branding
     end
   end
 

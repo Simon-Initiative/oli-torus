@@ -7,6 +7,7 @@ defmodule OliWeb.OpenAndFree.SectionForm do
   alias Oli.Predefined
   alias Oli.Authoring.Course
   alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Branding
 
   @impl true
   def mount(_params, session, socket) do
@@ -17,9 +18,13 @@ defmodule OliWeb.OpenAndFree.SectionForm do
       "cancel" => cancel
     } = session
 
+    available_brands = Branding.list_brands()
+      |> Enum.map(fn brand -> {brand.name, brand.id} end)
+
     socket =
       socket
       |> assign(:timezones, Predefined.timezones())
+      |> assign(:available_brands, available_brands)
       |> assign(:action, action)
       |> assign(:submit_text, submit_text)
       |> assign(:cancel, cancel)
@@ -39,7 +44,7 @@ defmodule OliWeb.OpenAndFree.SectionForm do
       <% end %>
 
       <%= if @action == Routes.open_and_free_path(@socket, :create) do %>
-        <div class="form-label-group"
+        <div id="projects-typeahead" class="form-label-group"
           phx-hook="ProjectsTypeahead"
           phx-update="ignore">
           <%= text_input f, :project_name, class: "project-name typeahead form-control " <> error_class(f, :project_id, "is-invalid"),
@@ -84,24 +89,37 @@ defmodule OliWeb.OpenAndFree.SectionForm do
         });
       </script>
 
+      <div class="text-secondary my-1">Time Zone</div>
       <div class="form-label-group">
         <%= select f, :time_zone, @timezones, prompt: "Select Timezone", class: "form-control " <> error_class(f, :time_zone, "is-invalid"),
           required: true, autofocus: focusHelper(f, :time_zone) %>
         <%= error_tag f, :time_zone %>
       </div>
 
-      <div class="form-row d-flex flex-row px-1">
-        <div class="flex-grow-1">
-          <p class="my-1">Registration Availability</p>
-        </div>
-        <div>
-          <div class="form-label-group" phx-update="ignore">
-            <%= checkbox f, :registration_open, class: "form-control " <> error_class(f, :registration_open, "is-invalid"), autofocus: focusHelper(f, :registration_open),
-              data_on: "Open", data_off: "Closed", data_toggle: "toggle", data_onstyle: "success", data_size: "sm", data_width: "100px" %>
+      <div class="text-secondary my-2">Brand</div>
+      <div class="form-label-group">
+        <%= select f, :brand_id, @available_brands, prompt: "Select Brand", class: "form-control " <> error_class(f, :brand_id, "is-invalid"),
+          autofocus: focusHelper(f, :brand_id) %>
+        <%= error_tag f, :brand_id %>
+      </div>
 
-            <%= error_tag f, :registration_open %>
-          </div>
+      <div class="form-row d-flex flex-row px-1 my-4">
+        <div class="flex-grow-1 mr-2">
+          Registration Availability
         </div>
+
+        <div class="custom-control custom-switch" style="width: 88px;">
+          <%= checkbox f, :registration_open, class: "custom-control-input" <> error_class(f, :registration_open, "is-invalid"), autofocus: focusHelper(f, :registration_open) %>
+          <%= label f, :registration_open, "Open", class: "custom-control-label" %>
+          <%= error_tag f, :registration_open %>
+        </div>
+
+        <script>
+          $('#section_registration_open').change(function() {
+            console.log(this)
+            $('label[for="section_registration_open"]').text(this.checked ? 'Open' : 'Closed');
+          });
+        </script>
       </div>
 
       <div>

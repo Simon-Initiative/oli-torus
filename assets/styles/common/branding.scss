@@ -1,0 +1,25 @@
+.logo-container {
+  border-radius: 6px;
+  padding: 10px;
+  display: inline-block;
+}
+
+.logo-container img {
+  height: 40px;
+}
+
+.checkered-light {
+  background-color: #efefef;
+  background-size: 30px 30px;
+  background-position: 0 0, 15px 15px;
+  background-image: linear-gradient(45deg, white 25%, transparent 25%, transparent 75%, white 75%, white),
+    linear-gradient(45deg, white 25%, transparent 25%, transparent 75%, white 75%, white);
+}
+
+.checkered-dark {
+  background-color: #222222;
+  background-size: 30px 30px;
+  background-position: 0 0, 15px 15px;
+  background-image: linear-gradient(45deg, black 25%, transparent 25%, transparent 75%, black 75%, black),
+    linear-gradient(45deg, black 25%, transparent 25%, transparent 75%, black 75%, black);
+}

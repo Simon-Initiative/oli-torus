@@ -10,7 +10,6 @@ database_url =
     """
 
 config :oli, Oli.Repo,
-  # ssl: true,
   url: database_url,
   database: System.get_env("DB_NAME", "oli"),
   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),

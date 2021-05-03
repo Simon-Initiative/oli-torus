@@ -15,7 +15,7 @@ defmodule OliWeb.ActivityManageController do
     render(
       %{conn | assigns: Map.merge(conn.assigns, params)},
       "index.html",
-      Keyword.put_new([title: "Manage"], :active, :activity_manage)
+      Keyword.put_new([title: "Manage Activities"], :active, :activity_manage)
     )
   end
 

@@ -1,9 +1,7 @@
 @use 'delivery/variables' as delivery;
-@import 'bootstrap';
 @import "authoring/variables.scss";
 
 .editors {
-
   .resource-content-frame {
     width: 100%;
 
@@ -28,7 +26,7 @@
 
       .activity-preview-info {
         background-color: $card-cap-bg;
-        color: rgba($color: $body-color, $alpha: .8);
+        color: rgba($color: $body-color, $alpha: 0.8);
         text-align: center;
         font-style: italic;
         font-size: 14px;
@@ -47,7 +45,7 @@
       background-color: $card-cap-bg;
       border-bottom-left-radius: 8px;
       border-bottom-right-radius: 8px;
-      color: rgba($color: $body-color, $alpha: .8);
+      color: rgba($color: $body-color, $alpha: 0.8);
       font-size: 14px;
       padding: 6px 1.6rem;
       font-style: normal;
@@ -112,12 +110,12 @@
       text-align: left;
       &.dropdown-toggle::after {
         float: right;
-        margin-top: .7em;
+        margin-top: 0.7em;
       }
 
       &:hover {
         border-color: rgba($color: $body-color, $alpha: 0.6);
-        background:rgba($color: $body-color, $alpha: 0.05);
+        background: rgba($color: $body-color, $alpha: 0.05);
       }
 
       &:disabled {
@@ -154,14 +152,14 @@
     display: flex;
     height: 20px;
     opacity: 0;
-    transition: all .15s ease-in-out;
+    transition: all 0.15s ease-in-out;
 
     &.hovered {
       height: 100px;
       opacity: 1;
 
       &::after {
-        content: 'drop to place here';
+        content: "drop to place here";
         margin: 20px 0;
         padding: 20px;
         background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='8' ry='8' stroke='%23DEDEDEFF' stroke-width='4' stroke-dasharray='6%2c 14' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
@@ -179,5 +177,4 @@
       height: 200px;
     }
   }
-
 }
