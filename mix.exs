@@ -30,7 +30,7 @@ defmodule Oli.MixProject do
       docs: [
         # The main page in the docs
         main: "Oli",
-        logo: "assets/static/images/oli-icon.png",
+        logo: "assets/static/images/torus-icon.png",
         extras: ["README.md", "LICENSE.md"]
       ],
       releases: [
