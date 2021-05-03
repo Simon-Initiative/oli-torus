@@ -36,12 +36,19 @@ defmodule OliWeb.PageDeliveryView do
     |> Base.encode64()
   end
 
-  def encode_activity_attempts(latest_attempts) do
+  def encode_activity_attempts(registered_activity_slug_map, latest_attempts) do
     Map.keys(latest_attempts)
     |> Enum.map(fn activity_id ->
       {activity_attempt, part_attempts_map} = Map.get(latest_attempts, activity_id)
       {:ok, model} = Oli.Activities.Model.parse(activity_attempt.transformed_model)
-      Oli.Activities.State.ActivityState.from_attempt(activity_attempt, Map.values(part_attempts_map), model)
+      state = Oli.Activities.State.ActivityState.from_attempt(activity_attempt, Map.values(part_attempts_map), model)
+
+      activity_type_slug = Map.get(registered_activity_slug_map, activity_attempt.revision.activity_type_id)
+
+      state
+      |> Map.from_struct()
+      |> Map.put(:answers, Oli.Utils.LoadTesting.provide_answers(activity_type_slug, activity_attempt.transformed_model))
+
     end)
     |> Jason.encode!()
     |> Base.encode64()
