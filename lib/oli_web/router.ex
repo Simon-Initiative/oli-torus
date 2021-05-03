@@ -20,6 +20,7 @@ defmodule OliWeb.Router do
     plug :put_root_layout, {OliWeb.LayoutView, "default.html"}
     plug :put_layout, {OliWeb.LayoutView, "app.html"}
     plug :put_secure_browser_headers
+    plug Oli.Plugs.LoadTestingCSRFBypass
     plug :protect_from_forgery
     plug Plug.Telemetry, event_prefix: [:oli, :plug]
     plug Oli.Plugs.SetCurrentUser
@@ -350,19 +351,19 @@ defmodule OliWeb.Router do
     patch "/:activity_attempt_guid", Api.AttemptController, :save_activity
     put "/:activity_attempt_guid/evaluations", Api.AttemptController, :submit_evaluations
 
-    post "/:activity_attempt_guidpart_attempt/:part_attempt_guid",
+    post "/:activity_attempt_guid/part_attempt/:part_attempt_guid",
          Api.AttemptController,
          :new_part
 
-    put "/:activity_attempt_guidpart_attempt/:part_attempt_guid",
+    put "/:activity_attempt_guid/part_attempt/:part_attempt_guid",
         Api.AttemptController,
         :submit_part
 
-    patch "/:activity_attempt_guidpart_attempt/:part_attempt_guid",
+    patch "/:activity_attempt_guid/part_attempt/:part_attempt_guid",
           Api.AttemptController,
           :save_part
 
-    get "/:activity_attempt_guidpart_attempt/:part_attempt_guid/hint",
+    get "/:activity_attempt_guid/part_attempt/:part_attempt_guid/hint",
         Api.AttemptController,
         :get_hint
   end
@@ -531,6 +532,19 @@ defmodule OliWeb.Router do
     ]
 
     live "/:project_id/history/:slug", RevisionHistory, session: {__MODULE__, :with_session, []}
+  end
+
+  # routes only accessible when load testing mode is enabled. These routes exist solely
+  # to allow the load testing framework to do things like query for the available open and free
+  # sections, to query for all of the pages in an individual section, etc.
+  if Oli.Utils.LoadTesting.enabled?() do
+
+    scope "/api/v1/testing", OliWeb do
+      pipe_through [:api]
+
+      get "/openfree", OpenAndFreeController, :index_api
+    end
+
   end
 
   # routes only accessible to developers

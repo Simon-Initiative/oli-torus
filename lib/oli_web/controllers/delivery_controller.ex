@@ -321,17 +321,23 @@ defmodule OliWeb.DeliveryController do
     render(conn, "enroll.html", section: section)
   end
 
+  defp recaptcha_verified?(g_recaptcha_response) do
+    g_recaptcha_response != "" and Oli.Utils.Recaptcha.verify(g_recaptcha_response) == {:success, true}
+  end
+
   def create_user(conn, %{"g-recaptcha-response" => g_recaptcha_response}) do
-    with g_recaptcha_response when g_recaptcha_response != "" <- g_recaptcha_response,
-         {:success, true} <- Oli.Utils.Recaptcha.verify(g_recaptcha_response),
-         section <- conn.assigns.section do
+
+    if Oli.Utils.LoadTesting.enabled?() or recaptcha_verified?(g_recaptcha_response) do
+
+      section = conn.assigns.section
+
       with {:ok, user} <-
-             Accounts.create_user(%{
-               # generate a unique sub identifier which is also used so a user can access
-               # their progress in the future or using a different browser
-               sub: UUID.uuid4(),
-               guest: true,
-             }) do
+            Accounts.create_user(%{
+              # generate a unique sub identifier which is also used so a user can access
+              # their progress in the future or using a different browser
+              sub: UUID.uuid4(),
+              guest: true,
+            }) do
         Accounts.update_user_platform_roles(user, [
           PlatformRoles.get_role(:institution_learner)
         ])
@@ -344,9 +350,11 @@ defmodule OliWeb.DeliveryController do
         {:error, _} ->
           render(conn, "new_user.html", error: "Something went wrong, please try again")
       end
+
     else
-      _ ->
-        render(conn, "new_user.html", error: "ReCaptcha failed, please try again")
+      render(conn, "new_user.html", error: "ReCaptcha failed, please try again")
     end
+
   end
+
 end
