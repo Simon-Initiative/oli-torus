@@ -1,4 +1,4 @@
-@import "bootstrap";
+@import 'bootstrap';
 
 .content {
   h1,
@@ -13,7 +13,7 @@
   blockquote {
     clear: both;
     margin-top: 12px;
-    font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+    font-family: Georgia, Cambria, 'Times New Roman', Times, serif;
     font-size: 1.3em;
     line-height: 1.5em;
     letter-spacing: -0.003em;
@@ -34,6 +34,12 @@
     text-align: left;
   }
 
+  code {
+    font-family: 'Source Code Pro', 'Courier New', Courier, monospace;
+    color: rgba(0, 0, 0, 0.84);
+    background: rgba(0, 0, 0, 0.05);
+    letter-spacing: -0.003em;
+  }
   ul li,
   ol li {
     margin-bottom: 14px;
@@ -70,6 +76,7 @@
     margin-left: auto;
     margin-right: auto;
   }
+
   img.float-md-right,
   img.float-md-left,
   iframe.float-md-right,

@@ -23,10 +23,10 @@ import { dragStartHandler } from './dragndrop/handlers/dragStart';
 
 export type EditorsProps = {
   editMode: boolean; // Whether or not we can edit
-  content: Immutable.List<ResourceContent>; // Content of the resource
-  onEdit: (content: ResourceContent, index: number) => void;
-  onEditContentList: (content: Immutable.List<ResourceContent>) => void;
-  onRemove: (index: number) => void;
+  content: Immutable.OrderedMap<string, ResourceContent>; // Content of the resource
+  onEdit: (content: ResourceContent, key: string) => void;
+  onEditContentList: (content: Immutable.OrderedMap<string, ResourceContent>) => void;
+  onRemove: (key: string) => void;
   onAddItem: (c: ResourceContent, index: number, a?: Activity) => void;
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
   graded: boolean;
@@ -66,17 +66,18 @@ export const Editors = (props: EditorsProps) => {
   const onDragEnd = dragEndHandler(setActiveDragId);
   const onDrop = dropHandler(content, onEditContentList, projectSlug, onDragEnd, editMode);
 
-  const editors = content.map((c, index) => {
-    const onEdit = (u: ResourceContent) => props.onEdit(u, index);
-    const onRemove = () => props.onRemove(index);
+  const editors = content.entrySeq().map(([contentKey, contentValue], index) => {
+    const onEdit = (u: ResourceContent) => props.onEdit(u, contentKey);
+    const onRemove = () => props.onRemove(contentKey);
     const onEditPurpose = (purpose: string) => {
-      props.onEdit(Object.assign(c, { purpose }), index);
+      props.onEdit(Object.assign(contentValue, { purpose }), contentKey);
     };
 
-    const purposes = c.type === 'activity-reference' ? ActivityPurposes : ContentPurposes;
+    const purposes =
+      contentValue.type === 'activity-reference' ? ActivityPurposes : ContentPurposes;
 
-    const dragPayload = getDragPayload(c, activities, projectSlug);
-    const onDragStart = dragStartHandler(dragPayload, c, setActiveDragId);
+    const dragPayload = getDragPayload(contentValue, activities, projectSlug);
+    const onDragStart = dragStartHandler(dragPayload, contentValue, setActiveDragId);
 
     // register keydown handlers
     const isShiftArrowDown = isHotkey('shift+down');
@@ -84,9 +85,9 @@ export const Editors = (props: EditorsProps) => {
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
       if (isShiftArrowDown(e.nativeEvent)) {
-        onMove(index, false);
+        onMove(contentKey, false);
       } else if (isShiftArrowUp(e.nativeEvent)) {
-        onMove(index, true);
+        onMove(contentKey, true);
       }
     };
 
@@ -101,7 +102,7 @@ export const Editors = (props: EditorsProps) => {
     };
 
     const editor = createEditor(
-      c,
+      contentValue,
       index,
       activities,
       editorMap,
@@ -116,16 +117,16 @@ export const Editors = (props: EditorsProps) => {
 
     return (
       <div
-        key={c.id}
-        id={`re${c.id}`}
+        key={'control-container-' + contentKey}
+        id={`re${contentKey}`}
         className={classNames([
           'resource-block-editor-and-controls',
-          c.id,
-          c.id === activeDragId ? 'is-dragging' : '',
+          contentKey,
+          contentKey === activeDragId ? 'is-dragging' : '',
         ])}
       >
         <AddResourceOrDropTarget
-          id={c.id}
+          id={contentKey}
           objectives={props.objectives}
           childrenObjectives={props.childrenObjectives}
           onRegisterNewObjective={props.onRegisterNewObjective}
@@ -141,7 +142,7 @@ export const Editors = (props: EditorsProps) => {
         <div
           className={classNames(['resource-block-editor', isReorderMode ? 'reorder-mode' : ''])}
           onKeyDown={handleKeyDown}
-          onFocus={(e) => onFocus(index)}
+          onFocus={(_e) => onFocus(contentKey)}
           role="option"
           aria-describedby="content-list-operation"
           tabIndex={index + 1}
@@ -159,7 +160,7 @@ export const Editors = (props: EditorsProps) => {
       <AddResourceOrDropTarget
         {...props}
         id="last"
-        index={editors.size}
+        index={editors.size || 0}
         editMode={editMode}
         isReorderMode={isReorderMode}
         editorMap={editorMap}

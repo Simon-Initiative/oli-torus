@@ -4,21 +4,26 @@ import { getFriendlyName } from '../utils';
 import * as Immutable from 'immutable';
 
 export const moveHandler = (
-  content: Immutable.List<ResourceContent>,
-  onEditContentList: (content: Immutable.List<ResourceContent>) => void,
+  content: Immutable.OrderedMap<string, ResourceContent>,
+  onEditContentList: (content: Immutable.OrderedMap<string, ResourceContent>) => void,
   editorMap: ActivityEditorMap,
   activities: Immutable.Map<string, Activity>,
-  setAssisstive: (s: string) => void,
-) => (index: number, up: boolean) => {
-  if (index === 0 && up) return;
+  setAssistive: (s: string) => void,
+) => (key: string, up: boolean) => {
+  if (content.first<ResourceContent>().id === key && up) return;
 
-  const item = content.get(index) as ResourceContent;
-  const inserted = content.remove(index).insert(index + (up ? -1 : 1), item as any);
+  const item = content.get(key) as ResourceContent;
+  const index = content.keySeq().indexOf(key);
+
+  const prefix = content.delete(key).take(index + (up ? -1 : 1));
+  const suffix = content.delete(key).skip(index + (up ? -1 : 1));
+
+  const inserted = prefix.concat([[key, item]]).concat(suffix);
 
   onEditContentList(inserted);
 
-  const newIndex = inserted.findIndex((c) => c.id === item.id);
+  const newIndex = inserted.keySeq().findIndex((k) => k === key);
   const desc = item.type === 'content' ? 'Content' : getFriendlyName(item, editorMap, activities);
 
-  setAssisstive(`Listbox. ${newIndex + 1} of ${content.size}. ${desc}.`);
+  setAssistive(`Listbox. ${newIndex + 1} of ${content.size}. ${desc}.`);
 };

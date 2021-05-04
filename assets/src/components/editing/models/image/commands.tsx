@@ -4,7 +4,7 @@ import * as ContentModel from 'data/content/model';
 import { Modal } from 'components/editing/toolbars/Modal';
 import { useState } from 'react';
 import { modalActions } from 'actions/modal';
-import { commandDesc as imgCommandDesc, selectImage } from 'components/editing/commands/ImageCmd';
+import { selectImage } from 'components/editing/commands/ImageCmd';
 import { Maybe } from 'tsmonad';
 
 interface Props {
@@ -75,7 +75,7 @@ export const initCommands = (
               Maybe.maybe(selection).caseOf({
                 just: (src) => setSrc(src),
                 // eslint-disable-next-line
-                nothing: () => { },
+                nothing: () => {},
               }),
             );
           },
