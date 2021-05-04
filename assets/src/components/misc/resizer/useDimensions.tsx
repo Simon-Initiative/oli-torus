@@ -5,7 +5,7 @@ import { useState, useLayoutEffect, useRef } from 'react';
 // Hook to give a client (default) or offset bounding rect and a ref
 // to point at the element you want the dimensions for
 export const useDimensions = (
-  offset: boolean = false,
+  offset = false,
 ): [React.RefObject<HTMLElement>, BoundingRect | undefined] => {
   const ref = useRef<HTMLElement>(null);
   const [dimensions, setDimensions] = useState<BoundingRect | undefined>();
