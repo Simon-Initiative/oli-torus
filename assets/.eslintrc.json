@@ -20,8 +20,5 @@
   "plugins": [
     "react",
     "@typescript-eslint"
-  ],
-  "rules": {
-    "no-unused-vars": ["warning", { "argsIgnorePattern": "^_" }]
-  }
+  ]
 }
