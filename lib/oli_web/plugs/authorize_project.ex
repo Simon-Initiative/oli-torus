@@ -16,7 +16,7 @@ defmodule Oli.Plugs.AuthorizeProject do
         |> Plug.Conn.halt()
 
       project ->
-        if Accounts.can_access?(conn.assigns[:current_author], project) do
+        if Accounts.can_access?(conn.assigns[:current_author], project) && project.status === :active do
           conn
           |> Plug.Conn.assign(:project, project)
           |> Plug.Conn.assign(:project_id, project.slug)

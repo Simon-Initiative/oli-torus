@@ -218,7 +218,7 @@ defmodule OliWeb.Router do
 
     # Project
     put "/:project_id", ProjectController, :update
-    post "/:project_id", ProjectController, :delete
+    delete "/:project_id", ProjectController, :delete
 
     # Objectives
     live "/:project_id/objectives", Objectives.Objectives,

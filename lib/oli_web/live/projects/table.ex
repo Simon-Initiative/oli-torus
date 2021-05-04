@@ -25,7 +25,9 @@ defmodule OliWeb.Projects.Table do
           <%= th(assigns, "Title", @sort_by, @sort_order, "title") %>
           <%= th(assigns, "Created", @sort_by, @sort_order, "created") %>
           <%= th(assigns, "Collaborators", @sort_by, @sort_order, "author") %>
-          <%= th(assigns, "Status", @sort_by, @sort_order, "status") %>
+          <%= if @is_admin do %>
+            <%= th(assigns, "Status", @sort_by, @sort_order, "status") %>
+          <% end %>
         </tr>
       </thead>
       <tbody>
@@ -46,13 +48,15 @@ defmodule OliWeb.Projects.Table do
             <% end %>
             </ul>
           </td>
-          <td>
-            <%= if project.status == :deleted do %>
-              <span class="text-danger">Deleted</span>
-            <% else %>
-              <span class="text-success">Active</span>
-            <% end %>
-          </td>
+          <%= if @is_admin do %>
+            <td>
+              <%= if project.status == :deleted do %>
+                <span class="text-danger">Deleted</span>
+              <% else %>
+                <span class="text-success">Active</span>
+              <% end %>
+            </td>
+          <% end %>
           </tr>
         <% end %>
       </tbody>

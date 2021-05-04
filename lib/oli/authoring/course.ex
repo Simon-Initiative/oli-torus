@@ -47,7 +47,7 @@ defmodule Oli.Authoring.Course do
     case author do
       # Admin authors have access to every project
       %{system_role_id: ^admin_role_id} -> Repo.all(Project)
-      _ -> Repo.preload(author, [:projects]).projects |> Enum.filter(fn p -> p.status === :active end)
+      _ -> Repo.preload(author, [:projects]).projects
     end
   end
 
@@ -63,14 +63,7 @@ defmodule Oli.Authoring.Course do
 
   def get_project!(id), do: Repo.get!(Project, id)
   def get_project_by_slug(nil), do: nil
-
-  def get_project_by_slug(slug) when is_binary(slug) do
-    Repo.one(
-      from p in Project,
-      where: p.slug == ^slug and p.status == :active,
-      select: p
-    )
-  end
+  def get_project_by_slug(slug) when is_binary(slug), do: Repo.get_by(Project, slug: slug)
 
   def create_and_attach_resource(project, attrs) do
     with {:ok, %{resource: resource, revision: revision}} <-

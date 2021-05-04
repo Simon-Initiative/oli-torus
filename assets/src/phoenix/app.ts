@@ -15,6 +15,7 @@ import { Hooks } from 'hooks';
 import {
   initActivityBridge,
   initPreviewActivityBridge,
+  showPackageDeleteModal,
 } from './activity_bridge';
 
 const csrfToken = (document as any)
@@ -39,11 +40,13 @@ window.addEventListener('phx:page-loading-stop', (info) => NProgress.done());
 
 (window as any).initActivityBridge = initActivityBridge;
 (window as any).initPreviewActivityBridge = initPreviewActivityBridge;
+(window as any).showPackageDeleteModal = showPackageDeleteModal;
 
 // Global functions and objects:
 (window as any).OLI = {
   initActivityBridge,
   initPreviewActivityBridge,
+  showPackageDeleteModal,
 };
 
 // connect if there are any LiveViews on the page
