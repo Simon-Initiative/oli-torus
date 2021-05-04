@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useFocused, useSelected, ReactEditor } from 'slate-react';
 import { updateModel, getEditMode } from 'components/editing/models/utils';
 import * as ContentModel from 'data/content/model';
@@ -9,13 +9,17 @@ import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
 import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolbar';
 import { initCommands } from './commands';
 import { displayModelToClassName } from 'data/content/utils';
+import { Resizer } from 'components/misc/resizer/Resizer';
+
 // eslint-disable-next-line
-export interface ImageProps extends EditorProps<ContentModel.Image> { }
-export const ImageEditor = (props: ImageProps) => {
+export interface ImageProps extends EditorProps<ContentModel.Image> {}
+export const ImageEditor = (props: ImageProps): JSX.Element => {
   const { attributes, children, editor, model } = props;
 
   const focused = useFocused();
   const selected = useSelected();
+
+  const imageRef = useRef<HTMLImageElement>(null);
 
   const editMode = getEditMode(editor);
 
@@ -31,16 +35,6 @@ export const ImageEditor = (props: ImageProps) => {
     onEdit(update({ caption }));
   };
 
-  const imageStyle =
-    ReactEditor.isFocused(editor) && selected
-      ? { border: 'solid 3px lightblue', borderRadius: 0 }
-      : { border: 'solid 3px transparent' };
-
-  // Note that it is important that any interactive portions of a void editor
-  // must be enclosed inside of a "contentEditable=false" container. Otherwise,
-  // slate does some weird things that non-deterministically interface with click
-  // events.
-
   return (
     <div
       {...attributes}
@@ -49,18 +43,28 @@ export const ImageEditor = (props: ImageProps) => {
     >
       <figure contentEditable={false}>
         <HoveringToolbar
-          isOpen={(e) => focused && selected}
+          isOpen={() => focused && selected}
           showArrow
           target={
-            <img
-              onClick={(e) => {
-                ReactEditor.focus(editor);
-                Transforms.select(editor, ReactEditor.findPath(editor, model));
-              }}
-              className={displayModelToClassName(model.display)}
-              style={imageStyle}
-              src={model.src}
-            />
+            <div>
+              {ReactEditor.isFocused(editor) && selected && imageRef.current && (
+                <Resizer
+                  element={imageRef.current}
+                  onResize={({ width, height }) => onEdit(update({ width, height }))}
+                />
+              )}
+              <img
+                width={model.width}
+                height={model.height}
+                ref={imageRef}
+                onClick={() => {
+                  ReactEditor.focus(editor);
+                  Transforms.select(editor, ReactEditor.findPath(editor, model));
+                }}
+                className={displayModelToClassName(model.display)}
+                src={model.src}
+              />
+            </div>
           }
           contentLocation={({ popoverRect, targetRect }) => {
             return {

@@ -355,8 +355,6 @@ export class SimpleImageImpl {
     this.height = htmlImage.height;
     this.ctx = ctx;
 
-    // console.log(this);
-
     // render to temp canvas to get image data
     const canvas = ctx.getCanvas(0);
     if (!canvas) throw new Error('Failed to get canvas for ' + name);
@@ -396,7 +394,6 @@ export class SimpleImageImpl {
     // is probably unncessary, unless we get into some deep JIT level.
     if (value < 0) return 0;
     if (value > 255) {
-      // console.log('clamping pixel value: ' + value);
       return 255;
     }
     return value;

@@ -1,5 +1,5 @@
-@import "authoring/variables";
-@import "bootstrap";
+@import 'authoring/variables';
+@import 'bootstrap';
 
 .editors .structured-content,
 .rich-text-editor {
@@ -54,7 +54,7 @@
   blockquote {
     clear: both;
     margin-top: 12px;
-    font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+    font-family: Georgia, Cambria, 'Times New Roman', Times, serif;
     font-size: 1.3em;
     line-height: 1.5em;
     letter-spacing: -0.003em;
@@ -76,7 +76,7 @@
   }
 
   code {
-    font-family: "Source Code Pro", "Courier New", Courier, monospace;
+    font-family: 'Source Code Pro', 'Courier New', Courier, monospace;
     color: rgba(0, 0, 0, 0.84);
     background: rgba(0, 0, 0, 0.05);
     letter-spacing: -0.003em;
@@ -103,7 +103,6 @@
   img.d-block,
   iframe.d-block {
     max-width: 100%;
-    max-height: 800px;
     margin-left: auto;
     margin-right: auto;
   }
@@ -135,6 +134,24 @@
       @extend .mr-0;
       @extend .mb-0;
     }
+  }
+
+  .resize-selection-box-border {
+    position: absolute;
+    border: 2px solid rgb(0, 150, 253);
+    background-color: rgba(0, 0, 0, 0);
+    z-index: 30;
+    border-color: rgb(26, 115, 232);
+  }
+
+  .resize-selection-box-handle {
+    border: 1px solid rgb(255, 255, 255);
+    width: 9px;
+    height: 9px;
+    font-size: 0px;
+    z-index: 40;
+    background-color: rgb(26, 115, 232);
+    position: absolute;
   }
 
   .image-editor {

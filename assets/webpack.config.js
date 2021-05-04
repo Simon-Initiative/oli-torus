@@ -11,7 +11,6 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 // Determines the entry points for the webpack by looking at activity
 // implementations in src/components/activities folder
 const populateEntries = () => {
-
   // These are the non-activity bundles
   const initialEntries = {
     app: ['babel-polyfill', './src/phoenix/app.ts'],
@@ -22,7 +21,7 @@ const populateEntries = () => {
     delivery: ['./src/apps/DeliveryApp.tsx'],
   };
 
-  const manifests = glob.sync("./src/components/activities/*/manifest.json", {});
+  const manifests = glob.sync('./src/components/activities/*/manifest.json', {});
 
   const foundActivities = manifests.map((manifestPath) => {
     const manifest = require(manifestPath);
@@ -36,7 +35,10 @@ const populateEntries = () => {
   const partComponentManifests = glob.sync('./src/components/parts/*/manifest.json', {});
   const foundParts = partComponentManifests.map((partComponentManifestPath) => {
     const manifest = require(partComponentManifestPath);
-    const rootPath = partComponentManifestPath.substr(0, partComponentManifestPath.indexOf('manifest.json'));
+    const rootPath = partComponentManifestPath.substr(
+      0,
+      partComponentManifestPath.indexOf('manifest.json'),
+    );
     return {
       [manifest.id + '_authoring']: [rootPath + manifest.authoring.entry],
       [manifest.id + '_delivery']: [rootPath + manifest.delivery.entry],
@@ -44,10 +46,18 @@ const populateEntries = () => {
   });
 
   const themePaths = [
-    ...glob.sync("./styles/themes/authoring/*/light.scss").map(p => ({ prefix: 'authoring_', themePath: p })),
-    ...glob.sync("./styles/themes/authoring/*/dark.scss").map(p => ({ prefix: 'authoring_', themePath: p })),
-    ...glob.sync("./styles/themes/delivery/*/light.scss").map(p => ({ prefix: 'delivery_', themePath: p })),
-    ...glob.sync("./styles/themes/delivery/*/dark.scss").map(p => ({ prefix: 'delivery_', themePath: p })),
+    ...glob
+      .sync('./styles/themes/authoring/*/light.scss')
+      .map((p) => ({ prefix: 'authoring_', themePath: p })),
+    ...glob
+      .sync('./styles/themes/authoring/*/dark.scss')
+      .map((p) => ({ prefix: 'authoring_', themePath: p })),
+    ...glob
+      .sync('./styles/themes/delivery/*/light.scss')
+      .map((p) => ({ prefix: 'delivery_', themePath: p })),
+    ...glob
+      .sync('./styles/themes/delivery/*/dark.scss')
+      .map((p) => ({ prefix: 'delivery_', themePath: p })),
   ];
 
   const foundThemes = themePaths.map(({ prefix, themePath }) => {
@@ -61,12 +71,23 @@ const populateEntries = () => {
 
   // Merge the attributes of all found activities and the initialEntries
   // into one single object.
-  const merged = [...foundActivities, ...foundParts, ...foundThemes].reduce((p, c) => Object.assign({}, p, c), initialEntries);
+  const merged = [...foundActivities, ...foundParts, ...foundThemes].reduce(
+    (p, c) => Object.assign({}, p, c),
+    initialEntries,
+  );
 
   // Validate: We should have (2 * foundActivities.length) + number of keys in initialEntries
   // If we don't it is likely due to a naming collision in two or more manifests
-  if (Object.keys(merged).length != Object.keys(initialEntries).length + (2 * foundActivities.length) + (2 * foundParts.length) + foundThemes.length) {
-    throw new Error('Encountered a possible naming collision in activity or part manifests. Aborting.');
+  if (
+    Object.keys(merged).length !=
+    Object.keys(initialEntries).length +
+      2 * foundActivities.length +
+      2 * foundParts.length +
+      foundThemes.length
+  ) {
+    throw new Error(
+      'Encountered a possible naming collision in activity or part manifests. Aborting.',
+    );
   }
 
   return merged;
@@ -75,27 +96,14 @@ const populateEntries = () => {
 module.exports = (env, options) => ({
   devtool: 'source-map',
   optimization: {
-    chunkIds: "named",
-    splitChunks: {
-      cacheGroups: {
-        vendor: {
-          test: /node_modules/,
-          chunks: "initial",
-          name: "vendor",
-          priority: 10,
-          enforce: true
-        }
-      }
-    },
     minimizer: [
       new UglifyJsPlugin({ cache: true, parallel: true, sourceMap: true }),
-      new OptimizeCSSAssetsPlugin({})
-    ]
+      new OptimizeCSSAssetsPlugin({}),
+    ],
   },
   entry: populateEntries(),
   output: {
-    filename: '[name].js',
-    path: path.resolve(__dirname, '../priv/static/js')
+    path: path.resolve(__dirname, '../priv/static/js'),
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.scss'],
@@ -114,21 +122,26 @@ module.exports = (env, options) => ({
     rules: [
       {
         test: /\.js(x?)$/,
-        exclude: /node_modules/,
+        include: path.resolve(__dirname, 'src'),
         use: {
-          loader: 'babel-loader'
-        }
+          loader: 'babel-loader',
+          options: {
+            cache: true,
+          },
+        },
       },
       {
-        test: /\.ts(x?)$/, use: [
+        test: /\.ts(x?)$/,
+        include: path.resolve(__dirname, 'src'),
+        use: [
           {
             loader: 'babel-loader',
             options: {
-              cacheDirectory: true
+              cacheDirectory: true,
             },
           },
-          { loader: 'ts-loader' }
-        ], exclude: /node_modules/
+          { loader: 'ts-loader' },
+        ],
       },
       {
         test: /\.[s]?css$/,
@@ -144,25 +157,25 @@ module.exports = (env, options) => ({
             loader: 'sass-loader',
             options: {
               sassOptions: {
-                includePaths: [
-                  path.join(__dirname, 'src'),
-                  path.join(__dirname, 'styles'),
-                ],
+                includePaths: [path.join(__dirname, 'src'), path.join(__dirname, 'styles')],
                 importer: globImporter(),
               },
-              sourceMap: true
-            }
-          }
+              sourceMap: true,
+            },
+          },
         ],
       },
-      { test: /\.(png|gif|jpg|jpeg|svg)$/, use: 'file-loader' },
-    ]
+      {
+        test: /\.(png|gif|jpg|jpeg|svg)$/,
+        type: 'asset/resource',
+      },
+    ],
   },
   plugins: [
     new webpack.ProvidePlugin({
       React: 'react',
     }),
     new MiniCssExtractPlugin({ filename: '../css/[name].css' }),
-    new CopyWebpackPlugin([{ from: 'static/', to: '../' }]),
-  ]
+    new CopyWebpackPlugin({ patterns: [{ from: 'static/', to: '../' }] }),
+  ],
 });

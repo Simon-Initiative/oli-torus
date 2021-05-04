@@ -230,7 +230,6 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     }
 
     const diff = Evaluator.getResultDiff(ctx);
-    // console.log('Avg solution diff = ' + diff);
     return diff < model.tolerance;
   };
 

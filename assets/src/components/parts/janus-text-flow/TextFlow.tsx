@@ -120,8 +120,6 @@ const TextFlow: React.FC<any> = (props: any) => {
   }
   useEffect(() => {
     // all activities *must* emit onReady
-    // console.log('TEXTFLOW ONE TIME', props.id);
-
     props.onReady({ id: `${props.id}` });
   }, []);
 
