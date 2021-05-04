@@ -14,11 +14,7 @@ interface Props {
   constrainProportions?: boolean;
 }
 
-export const Resizer: FunctionComponent<Props> = ({
-  onResize,
-  element,
-  constrainProportions,
-}): ReactElement => {
+export const Resizer = ({ onResize, element, constrainProportions }: Props): ReactElement => {
   const [resizingFrom, setResizingFrom] = useState<Position | undefined>(undefined);
   const mousePosition = useMousePosition();
 
