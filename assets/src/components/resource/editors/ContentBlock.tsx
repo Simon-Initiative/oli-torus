@@ -59,7 +59,6 @@ export const ContentBlock = (props: ContentBlockProps) => {
       draggable={props.editMode}
       onDragStart={(e) => props.onDragStart(e, id)}
       onDragEnd={props.onDragEnd}
-      // onClick={(e) => debugger}
     >
       <div id={id} className="card-header px-2">
         <div className="d-flex flex-row align-items-center">
@@ -82,7 +81,7 @@ export const ContentBlock = (props: ContentBlockProps) => {
           draggable={props.editMode}
           onDragStart={(e) => {
             // e.preventDefault();
-            // e.stopPropagation();
+            e.stopPropagation();
           }}
         >
           {maybeRenderDeliveryPurposeContainer(props)}

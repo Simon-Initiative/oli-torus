@@ -8,7 +8,6 @@ import {
 } from 'components/editing/utils';
 
 export function shouldShowInsertionToolbar(editor: ReactEditor) {
-  console.log(!!editor, editor.selection, ReactEditor.isFocused(editor));
   const { selection } = editor;
   const isSelectionCollapsed =
     selection && ReactEditor.isFocused(editor) && Range.isCollapsed(selection);

@@ -43,7 +43,7 @@ function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
     prevProps.value === nextProps.value &&
     !!prevProps.selection &&
     !!nextProps.selection &&
-    Range.includes(prevProps.selection, nextProps.selection)
+    Range.equals(prevProps.selection, nextProps.selection)
   );
 }
 // eslint-disable-next-line

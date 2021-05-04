@@ -49,7 +49,7 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
             <div>
               {ReactEditor.isFocused(editor) && selected && imageRef.current && (
                 <Resizer
-                  displayRef={imageRef}
+                  element={imageRef.current}
                   onResize={({ width, height }) => onEdit(update({ width, height }))}
                 />
               )}

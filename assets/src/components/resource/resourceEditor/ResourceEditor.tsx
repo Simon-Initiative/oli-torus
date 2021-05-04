@@ -53,7 +53,7 @@ export interface ResourceEditorProps extends ResourceContext {
 // This is the state of our resource that is undoable
 type Undoable = {
   title: string;
-  content: Immutable.List<ResourceContent>;
+  content: Immutable.OrderedMap<string, ResourceContent>;
   objectives: Immutable.List<ResourceId>;
 };
 
@@ -79,8 +79,12 @@ function prepareSaveFn(
 
 // Ensures that there is some default content if the initial content
 // of this resource is empty
-function withDefaultContent(content: ResourceContent[]) {
-  return content.length > 0 ? content : [createDefaultStructuredContent()];
+function withDefaultContent(content: ResourceContent[]): [string, ResourceContent][] {
+  if (content.length > 0) {
+    return content.map((contentItem) => [contentItem.id, contentItem]);
+  }
+  const defaultContent = createDefaultStructuredContent();
+  return [[defaultContent.id, defaultContent]];
 }
 
 function mapChildrenObjectives(
@@ -121,7 +125,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       undoable: init({
         title,
         objectives: Immutable.List<ResourceId>(objectives.attached),
-        content: Immutable.List<ResourceContent>(withDefaultContent(content.model)),
+        content: Immutable.OrderedMap<string, ResourceContent>(withDefaultContent(content.model)),
       }),
       persistence: 'idle',
       allObjectives: Immutable.List<Objective>(allObjectives),
@@ -247,7 +251,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     const toSave: Persistence.ResourceUpdate = {
       objectives: { attached: this.state.undoable.current.objectives.toArray() },
       title: this.state.undoable.current.title,
-      content: { model: this.state.undoable.current.content.toArray() },
+      content: { model: this.state.undoable.current.content.toArray().map(([k, v]) => v) },
       releaseLock: false,
     };
 
@@ -268,7 +272,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 
     const { projectSlug, resourceSlug } = this.props;
 
-    const onEdit = (content: Immutable.List<ResourceContent>) => {
+    const onEdit = (content: Immutable.OrderedMap<string, ResourceContent>) => {
       this.update({ content });
     };
 
@@ -277,7 +281,12 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     };
 
     const onAddItem = (c: ResourceContent, index: number, a?: Activity) => {
-      this.update({ content: this.state.undoable.current.content.insert(index, c) });
+      this.update({
+        content: this.state.undoable.current.content
+          .take(index)
+          .concat([[c.id, c]])
+          .concat(this.state.undoable.current.content.skip(index)),
+      });
       if (a) {
         this.setState({ activities: this.state.activities.set(a.activitySlug, a) });
       }
@@ -361,16 +370,9 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
               childrenObjectives={this.state.childrenObjectives}
               onRegisterNewObjective={onRegisterNewObjective}
               activities={this.state.activities}
-              onRemove={(index) => onEdit(this.state.undoable.current.content.delete(index))}
-              onEdit={(c, index) => {
-                console.log('content', this.state.undoable.current.content);
-                console.log('index', index);
-                onEdit(this.state.undoable.current.content.set(index, c));
-              }}
-              onEditContentList={(content) => {
-                console.log('reordering', this.state.undoable.current.content, content);
-                onEdit(content);
-              }}
+              onRemove={(key) => onEdit(this.state.undoable.current.content.delete(key))}
+              onEdit={(c, key) => onEdit(this.state.undoable.current.content.set(key, c))}
+              onEditContentList={onEdit}
               content={this.state.undoable.current.content}
               onAddItem={onAddItem}
               resourceContext={props}

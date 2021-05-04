@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, ReactElement, useEffect, useState } from 'react';
+import React, { FunctionComponent, ReactElement, useEffect, useState } from 'react';
 import { useMousePosition } from 'components/misc/resizer/useMousePosition';
 import {
   boundingRectFromMousePosition,
@@ -10,48 +10,47 @@ import { BoundingRect, Position } from 'components/misc/resizer/types';
 
 interface Props {
   onResize: (boundingRect: BoundingRect) => void;
-  displayRef: React.RefObject<HTMLElement>;
-  allowDistortion?: boolean;
+  element: HTMLElement;
+  constrainProportions?: boolean;
 }
 
-export const Resizer = ({
+export const Resizer: FunctionComponent<Props> = ({
   onResize,
-  displayRef,
-  allowDistortion,
-}: PropsWithChildren<Props>): ReactElement => {
+  element,
+  constrainProportions,
+}): ReactElement => {
   const [resizingFrom, setResizingFrom] = useState<Position | undefined>(undefined);
-
-  const onMouseUp = (e: MouseEvent) => {
-    if (displayRef.current && resizingFrom) {
-      const { clientX, clientY } = e;
-      onResize(
-        boundingRectFromMousePosition(
-          clientBoundingRect(displayRef.current),
-          offsetBoundingRect(displayRef.current),
-          { x: clientX, y: clientY },
-          resizingFrom,
-        ),
-      );
-    }
-    setResizingFrom(undefined);
-  };
+  const mousePosition = useMousePosition();
 
   useEffect(() => {
+    const onMouseUp = (e: MouseEvent) => {
+      if (element && resizingFrom) {
+        const { clientX, clientY } = e;
+        onResize(
+          boundingRectFromMousePosition(
+            clientBoundingRect(element),
+            offsetBoundingRect(element),
+            { x: clientX, y: clientY },
+            resizingFrom,
+          ),
+        );
+      }
+      setResizingFrom(undefined);
+    };
+
     window.addEventListener('mouseup', onMouseUp);
 
     return () => window.removeEventListener('mouseup', onMouseUp);
-  }, [resizingFrom, displayRef.current]);
+  }, [resizingFrom, element]);
 
-  const mousePosition = useMousePosition();
-
-  const boundResizeStyles = !displayRef.current
+  const boundResizeStyles = !element
     ? {}
     : resizeHandleStyles(
         !resizingFrom || !mousePosition
-          ? offsetBoundingRect(displayRef.current)
+          ? offsetBoundingRect(element)
           : boundingRectFromMousePosition(
-              clientBoundingRect(displayRef.current),
-              offsetBoundingRect(displayRef.current),
+              clientBoundingRect(element),
+              offsetBoundingRect(element),
               mousePosition,
               resizingFrom,
             ),
@@ -77,7 +76,7 @@ export const Resizer = ({
       {resizeHandle('ne')}
       {resizeHandle('sw')}
       {resizeHandle('se')}
-      {allowDistortion && (
+      {!constrainProportions && (
         <>
           {resizeHandle('n')}
           {resizeHandle('s')}
