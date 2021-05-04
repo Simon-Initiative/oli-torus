@@ -1,4 +1,4 @@
-import { Nullish } from '@testing-library/dom';
+import { Nullish } from 'types/nullish';
 import { useState, useEffect } from 'react';
 
 export interface MousePosition {
