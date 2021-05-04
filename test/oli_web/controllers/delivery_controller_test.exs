@@ -128,7 +128,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
       Publishing.publish_project(project)
 
-      post(conn, Routes.project_path(conn, :delete, project), title: project.title)
+      delete(conn, Routes.project_path(conn, :delete, project), title: project.title)
 
       available_publications = Publishing.available_publications(author, institution)
       assert available_publications == []
