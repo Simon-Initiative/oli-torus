@@ -10,7 +10,7 @@
     <title>OliWeb.PageDeliveryView — OLI Torus v0.9.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-2d3e3b16d9.js"></script>
+    <script src="dist/sidebar_items-3feafed8d5.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -134,7 +134,7 @@ OliWeb.PageDeliveryView <small class="app-vsn">(OLI Torus v0.9.0)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#encode_activity_attempts/1">encode_activity_attempts(latest_attempts)</a>
+    <a href="#encode_activity_attempts/2">encode_activity_attempts(registered_activity_slug_map, latest_attempts)</a>
 
   </div>
 
@@ -142,6 +142,13 @@ OliWeb.PageDeliveryView <small class="app-vsn">(OLI Torus v0.9.0)</small>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#encode_pages/3">encode_pages(conn, section_slug, hierarchy)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#encode_url/1">encode_url(url)</a>
 
   </div>
 
@@ -226,7 +233,7 @@ Functions
     </a>
     <h1 class="signature">calculate_score_percentage(resource_access)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L50" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L62" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -283,16 +290,16 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="encode_activity_attempts/1">
+<section class="detail" id="encode_activity_attempts/2">
 
   <div class="detail-header">
-    <a href="#encode_activity_attempts/1" class="detail-link" title="Link to this function">
+    <a href="#encode_activity_attempts/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">encode_activity_attempts(latest_attempts)</h1>
+    <h1 class="signature">encode_activity_attempts(registered_activity_slug_map, latest_attempts)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L39" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L44" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -315,6 +322,28 @@ Functions
     <h1 class="signature">encode_pages(conn, section_slug, hierarchy)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L32" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="encode_url/1">
+
+  <div class="detail-header">
+    <a href="#encode_url/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">encode_url(url)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L39" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

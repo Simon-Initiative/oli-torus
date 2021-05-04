@@ -10,7 +10,7 @@
     <title>Oli.Utils.LoadTesting — OLI Torus v0.9.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-2d3e3b16d9.js"></script>
+    <script src="dist/sidebar_items-3feafed8d5.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -109,6 +109,17 @@ Oli.Utils.LoadTesting <small class="app-vsn">(OLI Torus v0.9.0)</small>
   </div>
 
 </div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#provide_answers/2">provide_answers(activity_type_slug, transformed_model)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>For a given activity type slug and the transformed activity model, construct JSON
+that represents a collection of valid answers (not necessarily correct) to all parts. Represent
+this as a map of part ids to each answer.</p></div>
+
+</div>
 
   </div>
 
@@ -144,6 +155,30 @@ Functions
   <section class="docstring">
 
 
+  </section>
+</section>
+<section class="detail" id="provide_answers/2">
+
+  <div class="detail-header">
+    <a href="#provide_answers/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">provide_answers(activity_type_slug, transformed_model)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/load_testing.ex#L14" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>For a given activity type slug and the transformed activity model, construct JSON
+that represents a collection of valid answers (not necessarily correct) to all parts. Represent
+this as a map of part ids to each answer.</p><p>For unsupported parts (or entire activities), simply omit those parts from the returned map.</p>
   </section>
 </section>
 
