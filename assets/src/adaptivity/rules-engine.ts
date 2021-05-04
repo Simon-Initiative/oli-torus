@@ -16,6 +16,15 @@ import mathOperators from './operators/math';
 import rangeOperators from './operators/range';
 import { evalScript, getAssignScript } from './scripting';
 
+export interface JanusRuleProperties extends RuleProperties {
+  id?: string;
+  disabled: boolean;
+  default: boolean;
+  correct: boolean;
+  additionalScore?: number;
+  forceProgress?: boolean;
+}
+
 const engineOperators: any = {
   ...containsOperators,
   ...rangeOperators,
@@ -56,8 +65,11 @@ const evaluateValueExpression = (value: string, env: Environment) => {
   return evalScript(value, env).result;
 };
 
-const processRules = (rules: RuleProperties[], env: Environment) => {
-  rules.forEach((rule) => {
+const processRules = (rules: JanusRuleProperties[], env: Environment) => {
+  rules.forEach((rule, index) => {
+    // tweak priority to match order
+    rule.priority = index + 1;
+    rule.event.params = { ...rule.event.params, order: rule.priority };
     applyToEveryCondition(rule.conditions, (condition: ConditionProperties) => {
       const ogValue = condition.value;
       let modifiedValue = ogValue;
@@ -76,7 +88,7 @@ const processRules = (rules: RuleProperties[], env: Environment) => {
 
 export const check = async (
   state: Record<string, any>,
-  rules: RuleProperties[],
+  rules: JanusRuleProperties[],
 ): Promise<Event[]> => {
   // setup script env context
   const assignScript = getAssignScript(state);
@@ -85,13 +97,14 @@ export const check = async (
   // TODO: check result for errors
   // $log.info('eval1', result);
   // evaluate all rule conditions against context
-  processRules(rules, env);
+  const enabledRules = rules.filter((r) => !r.disabled);
+  processRules(enabledRules, env);
 
   // finally run check
   const engine: Engine = rulesEngineFactory();
   const facts: Record<string, any> = env.toObj();
 
-  rules.forEach((rule) => {
+  enabledRules.forEach((rule) => {
     // $log.info('RULE: ', JSON.stringify(rule, null, 4));
     engine.addRule(rule);
   });
@@ -99,5 +112,7 @@ export const check = async (
   const checkResult: EngineResult = await engine.run(facts);
 
   // for now just returning only success events
-  return checkResult.events;
+  const successEvents = checkResult.events.sort((a, b) => a.params?.order - b.params?.order);
+
+  return successEvents;
 };
