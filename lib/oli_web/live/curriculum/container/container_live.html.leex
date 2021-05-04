@@ -64,7 +64,7 @@
           </div>
         <% end %>
         <%= for {child, index} <- Enum.with_index(@children) do %>
-          <%= live_component @socket, DropTarget, index: index %>
+          <%= live_component @socket, DropTarget, id: index, index: index %>
           <%= live_component @socket, EntryLive, %{
                   id: child.slug,
                   editor: Map.get(@resources_being_edited, child.resource_id),
@@ -80,7 +80,7 @@
                   numberings: @numberings
                 } %>
         <% end %>
-        <%= live_component @socket, DropTarget, index: length(@children) %>
+        <%= live_component @socket, DropTarget, id: "last", index: length(@children) %>
       </div>
       <div class="mt-5">
         Add new
