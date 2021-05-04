@@ -31,8 +31,13 @@ defmodule OliWeb.PageDeliveryView do
 
   def encode_pages(conn, section_slug, hierarchy) do
     Oli.Utils.HierarchyNode.flatten_pages(hierarchy)
-    |> Enum.map(fn revision -> Routes.page_delivery_path(conn, :page, section_slug, revision.slug) end)
+    |> Enum.map(fn revision -> %{slug: revision.slug, url: Routes.page_delivery_path(conn, :page, section_slug, revision.slug), graded: revision.graded} end)
     |> Jason.encode!()
+    |> Base.encode64()
+  end
+
+  def encode_url(url) do
+    Jason.encode!(%{"url" => url})
     |> Base.encode64()
   end
 
