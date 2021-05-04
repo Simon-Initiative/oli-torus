@@ -551,17 +551,5 @@ defmodule OliWeb.Router do
   if Application.fetch_env!(:oli, :env) == :dev or Application.fetch_env!(:oli, :env) == :test do
     # web interface for viewing sent emails during development
     forward "/dev/sent_emails", Bamboo.SentEmailViewerPlug
-
-    scope "/dev", OliWeb do
-      pipe_through [:browser]
-
-      get "/uipalette", UIPaletteController, :index
-    end
-
-    scope "/test", OliWeb do
-      pipe_through [:browser]
-
-      get "/editor", EditorTestController, :index
-    end
   end
 end
