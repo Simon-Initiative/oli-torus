@@ -95,7 +95,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   defp apply_action(socket, :edit, %{"project_id" => project_id, "revision_slug" => revision_slug}) do
     socket
-    |> assign(:page_title, "Details")
+    |> assign(:page_title, "Options")
     |> assign(:revision, AuthoringResolver.from_revision_slug(project_id, revision_slug))
   end
 

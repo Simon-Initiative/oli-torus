@@ -38,15 +38,13 @@ defmodule OliWeb.Curriculum.EntryLive do
                 <% end %>
               </div>
               <%= if is_container?(@child) do %>
-                <%= live_patch to: Routes.container_path(@socket, :edit, @project.slug, @container.slug, @child.slug),
-                class: "button" do %>
+                <%= live_patch to: Routes.container_path(@socket, :edit, @project.slug, @container.slug, @child.slug), class: "button" do %>
                   <button class="btn btn-sm">
                     <i class="material-icons">more_vert</i>
                   </button>
                 <% end %>
               <% else %>
-                <%= live_patch to: Routes.container_path(@socket, :edit, @project.slug, @container.slug, @child.slug),
-                  class: "button" do %>
+                <%= live_patch to: Routes.container_path(@socket, :edit, @project.slug, @container.slug, @child.slug), class: "button" do %>
                   <button class="btn btn-sm">
                     <i class="material-icons">more_vert</i>
                   </button>

@@ -1,4 +1,4 @@
-defmodule OliWeb.Curriculum.Details do
+defmodule OliWeb.Curriculum.Options do
   use OliWeb, :live_component
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Resources.ScoringStrategy
