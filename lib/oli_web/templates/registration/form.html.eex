@@ -47,6 +47,13 @@
     <%= error_tag f, :auth_server %>
   </div>
 
+  <div class="text-secondary my-2">Brand</div>
+  <div class="form-label-group">
+    <%= select f, :brand_id, @available_brands, prompt: "Select Brand", class: "form-control " <> error_class(f, :brand_id, "is-invalid"),
+      autofocus: focusHelper(f, :brand_id) %>
+    <%= error_tag f, :brand_id %>
+  </div>
+
   <%= hidden_input f, :institution_id, value: @institution_id  %>
 
   <div>

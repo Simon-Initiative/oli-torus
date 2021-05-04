@@ -26,6 +26,7 @@ defmodule Oli.Delivery.Sections.Section do
     belongs_to :institution, Oli.Institutions.Institution
     belongs_to :project, Oli.Authoring.Course.Project
     belongs_to :publication, Oli.Publishing.Publication
+    belongs_to :brand, Oli.Branding.Brand
 
     has_many :enrollments, Oli.Delivery.Sections.Enrollment
 
@@ -52,7 +53,8 @@ defmodule Oli.Delivery.Sections.Section do
       :lti_1p3_deployment_id,
       :institution_id,
       :project_id,
-      :publication_id
+      :publication_id,
+      :brand_id
     ])
     |> validate_required([:title, :time_zone, :registration_open, :project_id, :publication_id])
     |> Slug.update_never("sections")

@@ -177,7 +177,8 @@ defmodule OliWeb.PageDeliveryController do
         objectives: context.objectives,
         slug: context.page.slug,
         resource_attempt: hd(context.resource_attempts),
-        attempt_guid: hd(context.resource_attempts).attempt_guid
+        attempt_guid: hd(context.resource_attempts).attempt_guid,
+        latest_attempts: context.latest_attempts
       }
     )
   end

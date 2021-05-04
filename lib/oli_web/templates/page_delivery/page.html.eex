@@ -31,7 +31,7 @@ window.userToken = "<%= assigns[:user_token] %>";
 </div>
 <% end %>
 
-<div id="eventIntercept">
+<div id="eventIntercept" class="content">
   <%= raw(@html) %>
 </div>
 
@@ -45,4 +45,11 @@ window.userToken = "<%= assigns[:user_token] %>";
 
 <%= if @progress_state == :in_review do %>
 <%= link "Exit", to: Routes.page_delivery_path(@conn, :page, @section_slug, @slug), class: "btn btn-primary btn-lg" %>
+<% end %>
+
+
+<%= if Oli.Utils.LoadTesting.enabled?() do %>
+<!--
+__ACTIVITY_ATTEMPTS__<%= encode_activity_attempts(@latest_attempts) %>__ACTIVITY_ATTEMPTS__
+-->
 <% end %>

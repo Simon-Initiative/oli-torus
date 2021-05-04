@@ -1,6 +1,6 @@
 <script src="https://www.google.com/recaptcha/api.js"></script>
 
-<%= render OliWeb.SharedView, "_form_container.html", Map.put(assigns, :title, value_or(assigns[:title], "Create an Account")) do %>
+<%= render OliWeb.SharedView, "_form_container.html", Map.merge(assigns, %{title: value_or(assigns[:title], "Create an Account"), bs_col_class: "col-sm-10 col-md-8 col-lg-6 col-xl-5 mx-auto"}) do %>
   <%# social media sign in links %>
   <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw link %>
 

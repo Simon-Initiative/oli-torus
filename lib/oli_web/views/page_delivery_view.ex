@@ -29,6 +29,24 @@ defmodule OliWeb.PageDeliveryView do
     end
   end
 
+  def encode_pages(conn, section_slug, hierarchy) do
+    Oli.Utils.HierarchyNode.flatten_pages(hierarchy)
+    |> Enum.map(fn revision -> Routes.page_delivery_path(conn, :page, section_slug, revision.slug) end)
+    |> Jason.encode!()
+    |> Base.encode64()
+  end
+
+  def encode_activity_attempts(latest_attempts) do
+    Map.keys(latest_attempts)
+    |> Enum.map(fn activity_id ->
+      {activity_attempt, part_attempts_map} = Map.get(latest_attempts, activity_id)
+      {:ok, model} = Oli.Activities.Model.parse(activity_attempt.transformed_model)
+      Oli.Activities.State.ActivityState.from_attempt(activity_attempt, Map.values(part_attempts_map), model)
+    end)
+    |> Jason.encode!()
+    |> Base.encode64()
+  end
+
   def calculate_score_percentage(resource_access) do
     case {resource_access.score, resource_access.out_of} do
       {nil, nil} ->

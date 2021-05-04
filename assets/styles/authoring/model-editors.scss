@@ -26,10 +26,6 @@
         position: relative;
       }
 
-      th {
-        background-color: rgb(232, 244, 250);
-      }
-
       .table-dropdown {
         position: absolute;
         top: 5px;
@@ -43,12 +39,11 @@
           justify-items: center;
           align-items: center;
           outline: none;
-          border: 1px solid rgb(204, 222, 251);
-          background-color: white;
+          border: 1px solid $gray-500;
           border-radius: 2px;
         }
         button.dropdown-toggle::after {
-          color: rgb(204, 222, 251);
+          color: $gray-500;
           margin: 0;
           vertical-align: 0;
         }

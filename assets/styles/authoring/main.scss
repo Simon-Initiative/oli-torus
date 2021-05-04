@@ -26,13 +26,13 @@ body.modal-open {
 }
 
 .oli-logo {
-  font-family: 'Open Sans', sans-serif;
+  font-family: "Open Sans", sans-serif;
 }
 
 .screenreader-text {
   position: absolute;
   left: -999px;
-  width:1px;
+  width: 1px;
   height: 1px;
   top: auto;
 
@@ -54,8 +54,9 @@ p:last-of-type {
   margin: 0;
 }
 
-form .form-label-group .help-block {
-  color: #dc3545;
+form .form-label-group .help-block,
+form .form-group .help-block {
+  color: $danger;
 }
 
 i.unicode-icon {

@@ -1,4 +1,4 @@
-<div class="px-3 my-3">
+<div class="content mt-3 mb-5">
   <h1><%= @summary.title %></h1>
   <p class="text-secondary"><%= @summary.description %></p>
 
@@ -42,3 +42,9 @@
   }
 
 </script>
+
+<%= if Oli.Utils.LoadTesting.enabled?() do %>
+<!--
+__OVERVIEW_PAGES__<%= encode_pages(@conn, @section_slug, @summary.hierarchy) %>__OVERVIEW_PAGES__
+-->
+<% end %>

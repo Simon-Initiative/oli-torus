@@ -1,14 +1,19 @@
 use Mix.Config
 
+from_boolean_env = fn key, default ->
+  System.get_env(key, default)
+  |> String.downcase()
+  |> case do
+    "true" -> :enabled
+    _ -> :disabled
+  end
+end
+
 config :oli,
   env: :dev,
   problematic_query_detection:
-    System.get_env("DEV_PROBLEMATIC_QUERY_DETECTION_ENABLED", "false")
-    |> String.downcase()
-    |> (case do
-          "true" -> :enabled
-          _ -> :disabled
-        end),
+    from_boolean_env.("DEV_PROBLEMATIC_QUERY_DETECTION_ENABLED", "false"),
+  load_testing_mode: from_boolean_env.("LOAD_TESTING_MODE", "false"),
   s3_media_bucket_name: "torus-media-dev",
   media_url: "torus-media-dev.s3.amazonaws.com",
   slack_webhook_url: System.get_env("SLACK_WEBHOOK_URL")

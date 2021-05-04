@@ -1,8 +1,0 @@
-/** Import theme specific variables before authoring base */
-@import 'dark/variables.scss';
-@import 'authoring.scss';
-
-/** Override specific styles for theme customization */
-.authoring {
-  @import 'dark/custom.scss';
-}

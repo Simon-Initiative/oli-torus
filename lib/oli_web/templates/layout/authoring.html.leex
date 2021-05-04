@@ -6,17 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <%= get_title(assigns) %>
 
+    <link rel="apple-touch-icon" sizes="180x180" href="<%= favicons("apple-touch-icon.png") %>">
+    <link rel="icon" type="image/png" sizes="16x16" href="<%= favicons("favicon-16x16.png") %>">
+    <link rel="icon" type="image/png" sizes="32x32" href="<%= favicons("favicon-32x32.png") %>">
+    <link rel="manifest" href="/site.webmanifest">
+
+    <!-- This page supports both dark and light color schemes, defaults to light. -->
+    <meta name="color-scheme" content="light dark">
+
     <!-- Theme CSS (contains all bootstrap styles as well as custom styles for a specific theme) -->
-    <%= case theme_url(@conn, :authoring) do %>
-      <% nil -> %>
-        <link id="authoring-theme" rel="stylesheet" href="/css/authoring_theme_light.css" media="screen and (prefers-color-scheme: light)"/>
-        <link id="delivery-theme" rel="stylesheet" href="/css/delivery_theme_oli.css" media="screen and (prefers-color-scheme: light)"/>
-        <link id="authoring-theme-dark" rel="stylesheet" href="/css/authoring_theme_dark.css" media="screen and (prefers-color-scheme: dark)"/>
-        <link id="delivery-theme-dark" rel="stylesheet" href="/css/delivery_theme_dark.css" media="screen and (prefers-color-scheme: dark)"/>
-      <% url -> %>
-        <link id="authoring-theme" rel="stylesheet" href="<%= url %>" />
-        <link id="delivery-theme" rel="stylesheet" href="<%= theme_url(@conn, :delivery) %>" />
-    <% end %>
+    <link id="authoring-theme-light" rel="stylesheet" href="/css/authoring_torus_light.css" media="screen and (prefers-color-scheme: light)"/>
+    <link id="authoring-theme-dark" rel="stylesheet" href="/css/authoring_torus_dark.css" media="screen and (prefers-color-scheme: dark)"/>
+
+    <link id="delivery-theme-light" rel="stylesheet" href="/css/delivery_torus_light.css" media="(prefers-color-scheme: light)"/>
+    <link id="delivery-theme-dark" rel="stylesheet" href="/css/delivery_torus_dark.css" media="(prefers-color-scheme: dark)"/>
 
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
@@ -42,9 +45,6 @@
 
     <!-- Bootstrap typeahead https://github.com/bassjobsen/Bootstrap-3-Typeahead -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js" integrity="sha512-HWlJyU4ut5HkEj0QsK/IxBCY55n5ZpskyjVlAoV9Z7XQwwkqXoYdCIC93/htL3Gu5H3R4an/S0h2NXfbZk3g7w==" crossorigin="anonymous"></script>
-
-    <!-- Bootstrap Toggle https://gitbrent.github.io/bootstrap4-toggle -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap4-toggle/3.6.1/bootstrap4-toggle.min.js" integrity="sha512-bAjB1exAvX02w2izu+Oy4J96kEr1WOkG6nRRlCtOSQ0XujDtmAstq5ytbeIxZKuT9G+KzBmNq5d23D6bkGo8Kg==" crossorigin="anonymous"></script>
 
     <!-- Bootstrap Datetimepicker https://bootstrap-datepicker.readthedocs.io/ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js" integrity="sha512-T/tUfKSV1bihCnd+MxKD0Hm1uBBroVYBOYSk1knyvQ9VyZJpc/ALb4P0r6ubwVPSGB2GvjeoMAJJImBG12TiaQ==" crossorigin="anonymous"></script>

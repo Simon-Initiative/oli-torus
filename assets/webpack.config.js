@@ -47,17 +47,25 @@ const populateEntries = () => {
 
   const themePaths = [
     ...glob
-      .sync('./styles/themes/authoring/*.scss')
-      .map((p) => ({ prefix: 'authoring_theme_', themePath: p })),
+      .sync('./styles/themes/authoring/*/light.scss')
+      .map((p) => ({ prefix: 'authoring_', themePath: p })),
     ...glob
-      .sync('./styles/themes/delivery/*.scss')
-      .map((p) => ({ prefix: 'delivery_theme_', themePath: p })),
+      .sync('./styles/themes/authoring/*/dark.scss')
+      .map((p) => ({ prefix: 'authoring_', themePath: p })),
+    ...glob
+      .sync('./styles/themes/delivery/*/light.scss')
+      .map((p) => ({ prefix: 'delivery_', themePath: p })),
+    ...glob
+      .sync('./styles/themes/delivery/*/dark.scss')
+      .map((p) => ({ prefix: 'delivery_', themePath: p })),
   ];
 
   const foundThemes = themePaths.map(({ prefix, themePath }) => {
-    const name = path.basename(themePath, '.scss');
+    const theme = path.basename(path.dirname(themePath));
+    const colorScheme = path.basename(themePath, '.scss');
+
     return {
-      [prefix + name]: themePath,
+      [prefix + theme + '_' + colorScheme]: themePath,
     };
   });
 
