@@ -69,7 +69,7 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
   rules.forEach((rule, index) => {
     // tweak priority to match order
     rule.priority = index + 1;
-    rule.event.params = { ...rule.event.params, order: rule.priority };
+    rule.event.params = { ...rule.event.params, order: rule.priority, correct: !!rule.correct };
     applyToEveryCondition(rule.conditions, (condition: ConditionProperties) => {
       const ogValue = condition.value;
       let modifiedValue = ogValue;
