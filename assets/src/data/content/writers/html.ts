@@ -99,9 +99,11 @@ export class HtmlParser implements WriterImpl {
   h6 = (context: WriterContext, next: Next, x: HeadingSix) => `<h6>${next()}</h6>\n`;
   img = (context: WriterContext, next: Next, attrs: Image) => {
     const alt = attrs.alt ? ` alt="${attrs.alt}"` : '';
+    const width = attrs.width ? ` width="${attrs.width}"` : '';
+    const height = attrs.height ? ` height="${attrs.height}"` : '';
     return this.figure(
       attrs,
-      `<img class="${this.displayClass(attrs)}"${alt} src="${attrs.src}"/>\n`,
+      `<img class="${this.displayClass(attrs)}"${alt}${width}${height} src="${attrs.src}"/>\n`,
     );
   };
   youtube = (context: any, next: Next, attrs: YouTube) => {

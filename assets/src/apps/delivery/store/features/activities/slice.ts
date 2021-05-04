@@ -8,18 +8,11 @@ import {
   PayloadAction,
   Slice,
 } from '@reduxjs/toolkit';
-import {
-  getActivityForDelivery,
-  getBulkActivitiesForDelivery,
-} from 'data/persistence/activity';
+import { getActivityForDelivery, getBulkActivitiesForDelivery } from 'data/persistence/activity';
 import { getBulkAttemptState } from 'data/persistence/state/intrinsic';
 import { ResourceId } from 'data/types';
 import { RootState } from '../../rootReducer';
-import {
-  loadPageState,
-  selectPageContent,
-  selectSectionSlug,
-} from '../page/slice';
+import { loadPageState, selectPageContent, selectSectionSlug } from '../page/slice';
 
 interface IActivity {
   // TODO
@@ -79,9 +72,7 @@ export const fetchActivity = createAsyncThunk(
     const sectionSlug = selectSectionSlug(thunkApi.getState() as RootState);
     const activity = await getActivityForDelivery(sectionSlug, activityId);
     // TODO: need a sequence ID and/or some other ID than db id to use here
-    thunkApi.dispatch(
-      upsertActivity({ activity: { ...activity, id: activityId.toString() } }),
-    );
+    thunkApi.dispatch(upsertActivity({ activity: { ...activity, id: activityId.toString() } }));
   },
 );
 
@@ -89,10 +80,7 @@ export const loadActivities = createAsyncThunk(
   `${ActivitiesSlice}/loadActivities`,
   async (activityIds: ResourceId[], thunkApi) => {
     const sectionSlug = selectSectionSlug(thunkApi.getState() as RootState);
-    const activities = await getBulkActivitiesForDelivery(
-      sectionSlug,
-      activityIds,
-    );
+    const activities = await getBulkActivitiesForDelivery(sectionSlug, activityIds);
     // TODO: need a sequence ID and/or some other ID than db id to use here
     thunkApi.dispatch(setActivities({ activities }));
   },
@@ -105,17 +93,11 @@ export const loadActivityState = createAsyncThunk(
     const results = await getBulkAttemptState(sectionSlug, attemptGuids);
 
     // TODO: map back to activities in model and update everything
-    const { model: sequence } = selectPageContent(
-      thunkApi.getState() as RootState,
-    );
+    const { model: sequence } = selectPageContent(thunkApi.getState() as RootState);
     const activities = results.map((result) => {
-      const sequenceEntry = sequence.find(
-        (entry: any) => entry.activity_id === result.activityId,
-      );
+      const sequenceEntry = sequence.find((entry: any) => entry.activity_id === result.activityId);
       if (!sequenceEntry) {
-        console.warn(
-          `Activity ${result.activityId} not found in the page model!`,
-        );
+        console.warn(`Activity ${result.activityId} not found in the page model!`);
         return;
       }
       const activity = {
@@ -126,30 +108,24 @@ export const loadActivityState = createAsyncThunk(
       return activity;
     });
 
-    console.log('GOT STATE', { results, activities });
-    // TODO: upsert instead?
     thunkApi.dispatch(setActivities({ activities }));
   },
 );
 
 // SELECTORS
-export const selectState = (state: RootState) =>
-  state[ActivitiesSlice] as ActivitiesState;
+export const selectState = (state: RootState) => state[ActivitiesSlice] as ActivitiesState;
 export const selectCurrentActivityId = createSelector(
   selectState,
   (state) => state.currentActivityId,
 );
-const { selectAll, selectById, selectTotal } = adapter.getSelectors(
-  selectState,
-);
+const { selectAll, selectById, selectTotal } = adapter.getSelectors(selectState);
 export const selectAllActivities = selectAll;
 export const selectActivityById = selectById;
 export const selectTotalActivities = selectTotal;
 
 export const selectCurrentActivity = createSelector(
   (state: RootState) => [state, selectCurrentActivityId(state)],
-  ([state, currentActivityId]: [RootState, string]) =>
-    selectActivityById(state, currentActivityId),
+  ([state, currentActivityId]: [RootState, string]) => selectActivityById(state, currentActivityId),
 );
 
 export default slice.reducer;
