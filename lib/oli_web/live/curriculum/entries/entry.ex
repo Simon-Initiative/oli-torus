@@ -5,9 +5,10 @@ defmodule OliWeb.Curriculum.EntryLive do
 
   use Phoenix.LiveComponent
   use Phoenix.HTML
-  alias OliWeb.Curriculum.{DetailsLive, LearningSummaryLive}
-  alias Oli.Resources.ResourceType
-  alias OliWeb.Router.Helpers, as: Routes
+
+  import OliWeb.Curriculum.Utils
+
+  alias OliWeb.Curriculum.{Actions, DetailsLive, LearningSummaryLive}
   alias OliWeb.Common.Links
 
   def render(assigns) do
@@ -22,56 +23,36 @@ defmodule OliWeb.Curriculum.EntryLive do
       phx-value-index="<%= assigns.index %>"
       data-drag-index="<%= assigns.index %>"
       phx-hook="DragSource"
-      class="p-2 flex-1 d-flex justify-content-start curriculum-entry<%= if @selected do " active" else "" end %>">
+      class="p-2 flex-grow-1 d-flex curriculum-entry <%= if @selected do "active" else "" end %>">
 
-      <div class="text-truncate" style="width: 100%;">
-        <div class="d-flex align-items-top">
-          <div class="d-flex flex-column w-100">
-            <div class="d-flex justify-content-between">
-              <div class="curriculum-title-line d-flex align-items-center">
-                <%= icon(assigns) %>
-                <%= Links.resource_link(@child, [], @project, @numberings, "ml-1 mr-1 entry-title") %>
-                <%= if @editor do %>
-                  <span class="badge">
-                    <%= Map.get(@editor, :name) || "Someone" %> is editing this
-                  </span>
-                <% end %>
-              </div>
-              <%= if is_container?(@child) do %>
-                <%= live_patch to: Routes.container_path(@socket, :edit, @project.slug, @container.slug, @child.slug), class: "button" do %>
-                  <button class="btn btn-sm">
-                    <i class="material-icons">more_vert</i>
-                  </button>
-                <% end %>
-              <% else %>
-                <%= live_patch to: Routes.container_path(@socket, :edit, @project.slug, @container.slug, @child.slug), class: "button" do %>
-                  <button class="btn btn-sm">
-                    <i class="material-icons">more_vert</i>
-                  </button>
-                <% end %>
-              <% end %>
-            </div>
-            <div class="container">
-              <div class="row">
-                <%= case @view do
-                  "Details" ->
-                    live_component @socket, DetailsLive, assigns
-                  "Learning Summary" ->
-                    live_component @socket, LearningSummaryLive, assigns
-                  _ ->
-                    nil
-                end %>
-              </div>
-            </div>
-          </div>
+      <div class="flex-grow-1 d-flex flex-column align-self-center">
+        <div class="flex-1">
+          <%= icon(assigns) %>
+          <%= Links.resource_link(@child, [], @project, @numberings, "ml-1 mr-1 entry-title") %>
+          <%= if @editor do %>
+            <span class="badge">
+              <%= Map.get(@editor, :name) || "Someone" %> is editing this
+            </span>
+          <% end %>
         </div>
+        <div>
+          <%= case @view do
+            "Details" ->
+              live_component @socket, DetailsLive, assigns
+            "Learning Summary" ->
+              live_component @socket, LearningSummaryLive, assigns
+            _ ->
+              nil
+          end %>
+        </div>
+      </div>
+
+      <%# prevent dragging of actions menu and modals %>
+      <div draggable="true" ondragstart="event.preventDefault(); event.stopPropagation();">
+        <%= live_component @socket, Actions, assigns %>
       </div>
     </div>
     """
-  end
-
-  def is_container?(rev) do
-    ResourceType.get_type_by_id(rev.resource_type_id) == "container"
   end
 
   def icon(%{child: child} = assigns) do
@@ -80,5 +61,20 @@ defmodule OliWeb.Curriculum.EntryLive do
       <%= if is_container?(child) do "folder" else if child.graded do "check_box" else "description" end end %>
     </i>
     """
+    if is_container?(child) do
+      ~L"""
+      <i class="las la-archive font-bold fa-lg mx-2"></i>
+      """
+    else
+      if child.graded do
+        ~L"""
+        <i class="lar la-list-alt fa-lg mx-2"></i>
+        """
+      else
+        ~L"""
+        <i class="lar la-file-alt fa-lg mx-2"></i>
+        """
+      end
+    end
   end
 end
