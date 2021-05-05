@@ -52,8 +52,20 @@ defmodule OliWeb.ResourceController do
       nil ->
         render_not_found(conn, project_slug)
 
+      %{content: %{"advancedDelivery" => true}} = revision ->
+        put_root_layout(conn, {OliWeb.LayoutView, "chromeless.html"})
+        |> render("advanced_page_preview.html",
+          revision: revision,
+          scripts: Activities.get_activity_scripts(),
+          user: author,
+          project_slug: project_slug,
+          title: revision.title
+        )
+
       %{content: content} ->
-        activity_ids = Oli.Authoring.Editing.Utils.activity_references(content) |> MapSet.to_list()
+        activity_ids =
+          Oli.Authoring.Editing.Utils.activity_references(content) |> MapSet.to_list()
+
         activity_revisions = AuthoringResolver.from_resource_id(project_slug, activity_ids)
 
         case PageEditor.create_context(project_slug, revision_slug, author) do
@@ -82,7 +94,9 @@ defmodule OliWeb.ResourceController do
   def preview(conn, %{"project_id" => project_slug}) do
     # find the first page of the course and redirect to there. NOTE: this is not the most efficient method,
     # but it should suffice for now until an improved preview landing page is added
-    [root_container_node] = Numbering.full_hierarchy(Oli.Publishing.AuthoringResolver, project_slug)
+    [root_container_node] =
+      Numbering.full_hierarchy(Oli.Publishing.AuthoringResolver, project_slug)
+
     hierarchy = root_container_node.children
     [first | _t] = PageContext.flatten_hierarchy(hierarchy)
 
@@ -101,5 +115,4 @@ defmodule OliWeb.ResourceController do
       ]
     )
   end
-
 end

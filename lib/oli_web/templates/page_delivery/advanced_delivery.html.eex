@@ -34,6 +34,7 @@
     activityGuidMapping: <%= raw(@activity_guid_mapping) %>,
     previousPageURL,
     nextPageURL,
+    previewMode: false
   };
 
   window.oliMountApplication(document.getElementById('delivery_container'), params);
