@@ -47,7 +47,7 @@ defmodule Oli.Authoring.ProjectSearch do
         on: id_and_rank.id == p.id,
         where: exists(from(pub in Publication, where: parent_as(:project).id == pub.project_id)),
         order_by: [desc: id_and_rank.rank],
-        select: %{slug: p.slug, title: p.title, description: p.description, version: p.version}
+        select: %{slug: p.slug, title: p.title, description: p.description, version: p.version, status: p.status}
     )
   end
 
