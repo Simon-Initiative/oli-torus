@@ -10,6 +10,7 @@ defmodule OliWeb.ResourceController do
   alias OliWeb.Common.Breadcrumb
   alias Oli.Resources.Numbering
   alias Oli.Delivery.Page.PageContext
+  alias Oli.PartComponents
 
   plug :fetch_project
   plug :authorize_project
@@ -56,7 +57,9 @@ defmodule OliWeb.ResourceController do
         put_root_layout(conn, {OliWeb.LayoutView, "chromeless.html"})
         |> render("advanced_page_preview.html",
           revision: revision,
-          scripts: Activities.get_activity_scripts(),
+          additional_stylesheets: Map.get(revision.content, "additionalStylesheets", []),
+          scripts: Activities.get_activity_scripts(:delivery_script),
+          part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
           user: author,
           project_slug: project_slug,
           title: revision.title

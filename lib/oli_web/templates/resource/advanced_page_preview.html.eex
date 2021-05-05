@@ -1,8 +1,12 @@
-<script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/delivery.js") %>"></script>
+<%= for script <- @part_scripts do %>
+  <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
+<% end %>
 
 <%= for script <- @scripts do %>
   <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
 <% end %>
+
+<script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/delivery.js") %>"></script>
 
 <div id="delivery_container" class="container"></div>
 
