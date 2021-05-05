@@ -134,7 +134,7 @@ defmodule OliWeb.OpenAndFree.SectionForm do
 
   @impl true
   def handle_event("search", %{"search" => search}, socket) do
-    projects = Course.search_published_projects(search)
+    projects = Course.search_published_projects(search) |> Enum.filter(fn p -> p.status === :active end)
 
     {:noreply, push_event(socket, "projects", %{projects: projects})}
   end
