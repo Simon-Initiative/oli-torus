@@ -93,6 +93,27 @@ describe('Operators', () => {
       expect(notContainsExactlyOperator(null, null)).toEqual(true);
       expect(notContainsAnyOfOperator(null, null)).toEqual(true);
     });
+
+    it('should match the content of arrays and strings for exactly', () => {
+      expect(containsExactlyOperator(['a', 'b'], ['a', 'b'])).toEqual(true);
+      expect(containsExactlyOperator('abc', 'abc')).toEqual(true);
+    });
+
+    it('should match string contains as partial', () => {
+      expect(containsOperator('abcd', 'abc')).toEqual(true);
+      expect(notContainsOperator('abcd', 'cde')).toEqual(true);
+    });
+
+    it('should check stringy arrays', () => {
+      expect(containsOperator('[a,b,c]', 'a')).toEqual(true);
+      expect(containsOperator([9, 8, 7], '9,8')).toEqual(true);
+    });
+
+    it('should check contains only', () => {
+      expect(containsOnlyOperator([8, 3, 1], [1, 3, 8])).toEqual(true);
+      expect(containsOnlyOperator([8, 3, 1], [1, 3])).toEqual(false);
+      expect(containsOnlyOperator([8, 3, 1], '3,1,8')).toEqual(true);
+    });
   });
 
   describe('Range Operators', () => {
