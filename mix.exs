@@ -74,6 +74,7 @@ defmodule Oli.MixProject do
       {:csv, "~> 2.3"},
       {:dialyxir, "~> 0.5.0", only: [:dev], runtime: true},
       {:ecto_sql, "~> 3.5.2"},
+      {:eflame, "~> 1.0", only: :dev},
       {:ecto_psql_extras, "~> 0.2"},
       {:ex_aws, "~> 2.1.6"},
       {:ex_aws_s3, "~> 2.0"},

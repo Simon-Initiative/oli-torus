@@ -17,16 +17,24 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.PartComponents
 
   def index(conn, %{"section_slug" => section_slug}) do
-    user = conn.assigns.current_user
+    :eflame.apply(
+      fn ->
+        user = conn.assigns.current_user
 
-    if Sections.is_enrolled?(user.id, section_slug) do
-      case Summary.get_summary(section_slug, user) do
-        {:ok, summary} -> render(conn, "index.html", section_slug: section_slug, summary: summary)
-        {:error, _} -> render(conn, "error.html")
-      end
-    else
-      render(conn, "not_authorized.html")
-    end
+        if Sections.is_enrolled?(user.id, section_slug) do
+          case Summary.get_summary(section_slug, user) do
+            {:ok, summary} ->
+              render(conn, "index.html", section_slug: section_slug, summary: summary)
+
+            {:error, _} ->
+              render(conn, "error.html")
+          end
+        else
+          render(conn, "not_authorized.html")
+        end
+      end,
+      []
+    )
   end
 
   def page(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
@@ -169,7 +177,8 @@ defmodule OliWeb.PageDeliveryController do
         progress_state: context.progress_state,
         section_slug: section_slug,
         scripts: Enum.map(all_activities, fn a -> a.delivery_script end),
-        activity_type_slug_mapping: Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a.slug) end),
+        activity_type_slug_mapping:
+          Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a.slug) end),
         summary: context.summary,
         previous_page: context.previous_page,
         next_page: context.next_page,

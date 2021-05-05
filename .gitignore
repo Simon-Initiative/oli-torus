@@ -60,3 +60,4 @@ registrations.json
 docker-compose.override.yml
 supervisord.log
 supervisord.pid
+stacks.out
