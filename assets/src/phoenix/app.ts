@@ -15,8 +15,10 @@ import { Hooks } from 'hooks';
 import {
   initActivityBridge,
   initPreviewActivityBridge,
-  showPackageDeleteModal,
 } from './activity_bridge';
+import { showModal } from './modal';
+import { enableSubmitWhenTitleMatches } from './package_delete';
+import { onReady } from './ready';
 
 const csrfToken = (document as any)
   .querySelector('meta[name="csrf-token"]')
@@ -40,13 +42,14 @@ window.addEventListener('phx:page-loading-stop', (info) => NProgress.done());
 
 (window as any).initActivityBridge = initActivityBridge;
 (window as any).initPreviewActivityBridge = initPreviewActivityBridge;
-(window as any).showPackageDeleteModal = showPackageDeleteModal;
 
 // Global functions and objects:
 (window as any).OLI = {
   initActivityBridge,
   initPreviewActivityBridge,
-  showPackageDeleteModal,
+  showModal,
+  enableSubmitWhenTitleMatches,
+  onReady
 };
 
 // connect if there are any LiveViews on the page

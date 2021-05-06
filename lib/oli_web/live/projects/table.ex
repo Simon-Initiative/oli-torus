@@ -37,9 +37,9 @@ defmodule OliWeb.Projects.Table do
             <%= if project.status == :deleted do %>
               <span><%= project.title %></span>
             <% else %>
-              <a href="<%= Routes.project_path(OliWeb.Endpoint, :overview, project) %>"><%= project.title %></td>
+              <a href="<%= Routes.project_path(OliWeb.Endpoint, :overview, project) %>"><%= project.title %></a>
             <% end %>
-
+          </td>
           <td><%= time_ago(assigns, project.inserted_at) %></td>
           <td>
             <ul>

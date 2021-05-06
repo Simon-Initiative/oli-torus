@@ -122,29 +122,14 @@
       <div class="row my-4">
         <div class="col-12">
           <h4>Delete this course</h4>
-          <button type="button" class="btn btn-danger" onclick="OLI.showPackageDeleteModal('delete-package-modal')">Delete this Course</button>
+          <button type="button" class="btn btn-danger" onclick="OLI.showModal('delete-package-modal')">Delete this Course</button>
         </div>
       </div>
 
     </div>
   </div>
 </div>
-<script>
-  $(function () {
-    const deleteTitleInput = document.querySelector('#delete-confirm-title');
-    if (deleteTitleInput) {
-      deleteTitleInput.addEventListener("input", function (e) {
-        const value = e.target.value;
-        const deleteSubmitButton = document.querySelector('#delete-modal-submit')
-        if (value === '<%= @project.title %>') {
-          deleteSubmitButton.disabled = false;
-        } else {
-          deleteSubmitButton.disabled = true;
-        }
-      });
-    }
-  });
-</script>
+
 <div class="modal fade" id="delete-package-modal" tabindex="-1" role="dialog" aria-labelledby="delete-modal" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
@@ -175,3 +160,7 @@
     </div>
   </div>
 </div>
+
+<script>
+  OLI.onReady(() => OLI.enableSubmitWhenTitleMatches('#delete-confirm-title', '#delete-modal-submit', '<%= @project.title %>'));
+</script>

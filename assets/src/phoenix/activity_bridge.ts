@@ -45,11 +45,6 @@ function makeRequest(url: string, method: string, body: any, continuation: any) 
     .catch((error) => continuation(undefined, error));
 }
 
-export const showPackageDeleteModal = (elementId: string) => {
-  const modal = document.getElementById(elementId) as any;
-  (window as any).$(modal).modal('show');
-}
-
 export const initActivityBridge = (elementId: string) => {
   const div = document.getElementById(elementId) as any;
 

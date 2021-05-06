@@ -18,7 +18,8 @@ defmodule OliWeb.OpenAndFree.SectionForm do
       "cancel" => cancel
     } = session
 
-    available_brands = Branding.list_brands()
+    available_brands =
+      Branding.list_brands()
       |> Enum.map(fn brand -> {brand.name, brand.id} end)
 
     socket =
@@ -134,7 +135,7 @@ defmodule OliWeb.OpenAndFree.SectionForm do
 
   @impl true
   def handle_event("search", %{"search" => search}, socket) do
-    projects = Course.search_published_projects(search) |> Enum.filter(fn p -> p.status === :active end)
+    projects = Course.search_published_projects(search)
 
     {:noreply, push_event(socket, "projects", %{projects: projects})}
   end
