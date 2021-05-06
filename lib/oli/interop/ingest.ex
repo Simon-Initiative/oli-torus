@@ -212,7 +212,6 @@ defmodule Oli.Interop.Ingest do
   end
 
   defp rewire_activity_references(content, activity_map) do
-
     PageContent.map(content, fn e ->
       case e do
         %{"type" => "activity-reference", "activity_id" => original} = ref ->
@@ -222,7 +221,6 @@ defmodule Oli.Interop.Ingest do
           other
       end
     end)
-
   end
 
   # Create one page

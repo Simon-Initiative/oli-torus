@@ -11,6 +11,7 @@ defmodule OliWeb.LayoutView do
       account_linked?: 1,
       logo_link_path: 1
     ]
+
   import Oli.Branding
 
   alias Oli.Publishing.AuthoringResolver
@@ -92,5 +93,4 @@ defmodule OliWeb.LayoutView do
   def render_layout(layout, assigns, do: content) do
     render(layout, Map.put(assigns, :inner_layout, content))
   end
-
 end

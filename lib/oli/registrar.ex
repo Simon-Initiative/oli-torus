@@ -40,7 +40,7 @@ defmodule Oli.Registrar do
           m
         end
 
-        PartComponents.register_part_component(m)
+      PartComponents.register_part_component(m)
     end)
   end
 end

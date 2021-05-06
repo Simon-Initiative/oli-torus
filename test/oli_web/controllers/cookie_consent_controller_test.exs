@@ -39,6 +39,7 @@ defmodule OliWeb.CookieConsentControllerTest do
         )
 
       assert keys2 = json_response(conn2, 200)
+
       assert keys2 == [
                %{
                  "expiration" => "2022-04-26T18:17:21Z",

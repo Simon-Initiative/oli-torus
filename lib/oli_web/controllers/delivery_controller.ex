@@ -49,12 +49,11 @@ defmodule OliWeb.DeliveryController do
 
       # section has been configured
       {_author, section} ->
-        if (user.research_opt_out === nil) do
+        if user.research_opt_out === nil do
           render_research_consent(conn)
         else
           redirect_to_page_delivery(conn, section)
         end
-
     end
   end
 
@@ -77,7 +76,7 @@ defmodule OliWeb.DeliveryController do
   defp render_research_consent(conn) do
     conn
     |> assign(:opt_out, nil)
-    |> render( "research_consent.html")
+    |> render("research_consent.html")
   end
 
   defp render_configure_section(conn, author) do
@@ -105,13 +104,14 @@ defmodule OliWeb.DeliveryController do
     section = Sections.get_section_from_lti_params(lti_params)
 
     case Accounts.update_user(user, %{research_opt_out: consent !== "true"}) do
-      {:ok, _} -> redirect_to_page_delivery(conn, section)
+      {:ok, _} ->
+        redirect_to_page_delivery(conn, section)
+
       {:error, _} ->
         conn
         |> put_flash(:error, "Unable to persist research consent option")
         |> redirect_to_page_delivery(section)
     end
-
   end
 
   def link_account(conn, _params) do
@@ -322,22 +322,21 @@ defmodule OliWeb.DeliveryController do
   end
 
   defp recaptcha_verified?(g_recaptcha_response) do
-    g_recaptcha_response != "" and Oli.Utils.Recaptcha.verify(g_recaptcha_response) == {:success, true}
+    g_recaptcha_response != "" and
+      Oli.Utils.Recaptcha.verify(g_recaptcha_response) == {:success, true}
   end
 
   def create_user(conn, %{"g-recaptcha-response" => g_recaptcha_response}) do
-
     if Oli.Utils.LoadTesting.enabled?() or recaptcha_verified?(g_recaptcha_response) do
-
       section = conn.assigns.section
 
       with {:ok, user} <-
-            Accounts.create_user(%{
-              # generate a unique sub identifier which is also used so a user can access
-              # their progress in the future or using a different browser
-              sub: UUID.uuid4(),
-              guest: true,
-            }) do
+             Accounts.create_user(%{
+               # generate a unique sub identifier which is also used so a user can access
+               # their progress in the future or using a different browser
+               sub: UUID.uuid4(),
+               guest: true
+             }) do
         Accounts.update_user_platform_roles(user, [
           PlatformRoles.get_role(:institution_learner)
         ])
@@ -350,11 +349,8 @@ defmodule OliWeb.DeliveryController do
         {:error, _} ->
           render(conn, "new_user.html", error: "Something went wrong, please try again")
       end
-
     else
       render(conn, "new_user.html", error: "ReCaptcha failed, please try again")
     end
-
   end
-
 end

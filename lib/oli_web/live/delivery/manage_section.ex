@@ -3,7 +3,7 @@ defmodule OliWeb.Delivery.ManageSection do
 
   import OliWeb.ViewHelpers,
     only: [
-      user_role: 2,
+      user_role: 2
     ]
 
   alias Oli.Delivery.Sections
@@ -12,10 +12,11 @@ defmodule OliWeb.Delivery.ManageSection do
   def mount(_params, session, socket) do
     %{
       "section" => section,
-      "current_user" => current_user,
+      "current_user" => current_user
     } = session
 
-    socket = socket
+    socket =
+      socket
       |> assign(:section, section)
       |> assign(:current_user, current_user)
 

@@ -110,8 +110,7 @@ defmodule Oli.Delivery.TestModeTest do
               [
                 %{part_id: "1", error: "error in evaluation"},
                 %{part_id: "2", result: _, feedback: _}
-              ]} =
-               Attempts.perform_test_evaluation(content, part_inputs)
+              ]} = Attempts.perform_test_evaluation(content, part_inputs)
     end
   end
 end
