@@ -18,24 +18,19 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Utils.FlameGraph
 
   def index(conn, %{"section_slug" => section_slug}) do
-    FlameGraph.create(
-      fn ->
-        user = conn.assigns.current_user
+    user = conn.assigns.current_user
 
-        if Sections.is_enrolled?(user.id, section_slug) do
-          case Summary.get_summary(section_slug, user) do
-            {:ok, summary} ->
-              render(conn, "index.html", section_slug: section_slug, summary: summary)
+    if Sections.is_enrolled?(user.id, section_slug) do
+      case Summary.get_summary(section_slug, user) do
+        {:ok, summary} ->
+          render(conn, "index.html", section_slug: section_slug, summary: summary)
 
-            {:error, _} ->
-              render(conn, "error.html")
-          end
-        else
-          render(conn, "not_authorized.html")
-        end
-      end,
-      "overview-page"
-    )
+        {:error, _} ->
+          render(conn, "error.html")
+      end
+    else
+      render(conn, "not_authorized.html")
+    end
   end
 
   def page(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
