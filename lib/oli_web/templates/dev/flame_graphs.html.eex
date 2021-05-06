@@ -1,0 +1,8 @@
+
+<ul>
+  <%= for url <- @flame_graphs do %>
+  <li>
+    <a href="<%= url %>"><%= url %></a>
+  </li>
+  <% end %>
+</ul>

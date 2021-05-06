@@ -15,9 +15,10 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Resources.ResourceType
   alias Oli.Grading
   alias Oli.PartComponents
+  alias Oli.Utils.FlameGraph
 
   def index(conn, %{"section_slug" => section_slug}) do
-    :eflame.apply(
+    FlameGraph.create(
       fn ->
         user = conn.assigns.current_user
 
@@ -33,7 +34,7 @@ defmodule OliWeb.PageDeliveryController do
           render(conn, "not_authorized.html")
         end
       end,
-      []
+      "overview-page"
     )
   end
 
