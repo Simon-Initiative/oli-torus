@@ -11,6 +11,7 @@ defmodule Oli.Authoring.Course.Project do
     field :title, :string
     field :version, :string
     field :visibility, Ecto.Enum, values: [:authors, :selected, :global], default: :authors
+    field :status, Ecto.Enum, values: [:active, :deleted], default: :active
 
     belongs_to :parent_project, Oli.Authoring.Course.Project, foreign_key: :project_id
     belongs_to :family, Oli.Authoring.Course.Family
@@ -33,7 +34,7 @@ defmodule Oli.Authoring.Course.Project do
   @doc false
   def changeset(project, attrs \\ %{}) do
     project
-    |> cast(attrs, [:title, :slug, :description, :version, :family_id, :project_id, :visibility])
+    |> cast(attrs, [:title, :slug, :description, :version, :family_id, :project_id, :visibility, :status])
     |> validate_required([:title, :version, :family_id])
     |> Slug.update_never("projects")
   end

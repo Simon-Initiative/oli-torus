@@ -388,7 +388,6 @@
                 return json
               })
               .catch((error) => {
-                console.error(error);
                 return error
               });
     }
@@ -417,7 +416,6 @@
                 return json
               })
               .catch((error) => {
-                console.error(error);
                 return error
               });
     }

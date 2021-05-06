@@ -18,7 +18,8 @@ defmodule OliWeb.OpenAndFree.SectionForm do
       "cancel" => cancel
     } = session
 
-    available_brands = Branding.list_brands()
+    available_brands =
+      Branding.list_brands()
       |> Enum.map(fn brand -> {brand.name, brand.id} end)
 
     socket =
