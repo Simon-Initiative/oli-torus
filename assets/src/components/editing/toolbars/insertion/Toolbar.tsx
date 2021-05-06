@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { useSlate } from 'slate-react';
+import { useFocused, useSelected, useSlate } from 'slate-react';
 import { ToolbarItem, CommandContext } from '../../commands/interfaces';
 import Popover from 'react-tiny-popover';
 import { hideToolbar, showToolbar, ToolbarButton, Spacer, DropdownToolbarButton } from '../common';
@@ -25,6 +25,7 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
   const { toolbarItems } = props;
   const ref = useRef();
   const editor = useSlate();
+  const focused = useFocused();
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
@@ -37,7 +38,7 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
 
     const reposition = () => positionInsertion(el, editor);
 
-    if (shouldShowInsertionToolbar(editor)) {
+    if (focused && shouldShowInsertionToolbar(editor)) {
       reposition();
       showToolbar(el);
     } else {
@@ -45,7 +46,10 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
     }
 
     window.addEventListener('resize', reposition);
-    return () => window.removeEventListener('resize', reposition);
+    return () => {
+      hideToolbar(el);
+      window.removeEventListener('resize', reposition);
+    };
   });
 
   return (

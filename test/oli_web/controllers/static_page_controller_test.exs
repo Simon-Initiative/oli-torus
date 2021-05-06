@@ -3,6 +3,6 @@ defmodule OliWeb.StaticPageControllerTest do
 
   test "GET /", %{conn: conn} do
     conn = get(conn, "/")
-    assert html_response(conn, 200) =~ "Welcome to OLI Authoring!"
+    assert html_response(conn, 200) =~ "Welcome to OLI Torus!"
   end
 end

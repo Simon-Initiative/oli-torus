@@ -10,8 +10,8 @@ const scrollToResourceEditor = (contentId: string) => {
 };
 
 export const dropHandler = (
-  content: Immutable.List<ResourceContent>,
-  onEditContentList: (content: Immutable.List<ResourceContent>) => void,
+  content: Immutable.OrderedMap<string, ResourceContent>,
+  onEditContentList: (content: Immutable.OrderedMap<string, ResourceContent>) => void,
   projectSlug: string,
   onDragEnd: () => void,
   editMode: boolean,
@@ -24,7 +24,7 @@ export const dropHandler = (
     if (data) {
       const droppedContent = JSON.parse(data) as DragPayload;
 
-      const sourceIndex = content.findIndex((c) => c.id === droppedContent.id);
+      const sourceIndex = content.keySeq().findIndex((k) => k === droppedContent.id);
 
       if (sourceIndex === -1) {
         // This is a cross window drop, we insert it but have to have to
@@ -38,15 +38,35 @@ export const dropHandler = (
               droppedContent.activity.model,
               [],
             ).then((result: Persistence.Created) => {
-              onEditContentList(content.insert(index, droppedContent.reference));
+              onEditContentList(
+                content
+                  .take(index)
+                  .concat([[droppedContent.id, droppedContent.reference]])
+                  .concat(content.skip(index)),
+              );
             });
           } else {
-            onEditContentList(content.insert(index, droppedContent.reference));
+            onEditContentList(
+              content
+                .take(index)
+                .concat([[droppedContent.id, droppedContent.reference]])
+                .concat(content.skip(index)),
+            );
           }
         } else if (droppedContent.type === 'content') {
-          onEditContentList(content.insert(index, droppedContent));
+          onEditContentList(
+            content
+              .take(index)
+              .concat([[droppedContent.id, droppedContent]])
+              .concat(content.skip(index)),
+          );
         } else {
-          onEditContentList(content.insert(index, droppedContent.data));
+          onEditContentList(
+            content
+              .take(index)
+              .concat([[droppedContent.id, droppedContent.data]])
+              .concat(content.skip(index)),
+          );
         }
 
         // scroll to inserted item
@@ -66,7 +86,10 @@ export const dropHandler = (
           toInsert = droppedContent.data;
         }
 
-        const reordered = content.remove(sourceIndex).insert(adjusted, toInsert);
+        const prefix = content.delete(droppedContent.id).take(adjusted);
+        const suffix = content.delete(droppedContent.id).skip(adjusted);
+        const reordered = prefix.concat([[toInsert.id, toInsert]]).concat(suffix);
+
         onEditContentList(reordered);
 
         // scroll to moved item
@@ -86,15 +109,15 @@ export const dropHandler = (
         const inserted = content
           .filter((contentItem) => parsedContent.id !== contentItem.id)
           // Then insert it
-          .insert(index, parsedContent);
+          .set(parsedContent.id, parsedContent);
 
         onEditContentList(inserted);
 
         // scroll to inserted item
         scrollToResourceEditor(parsedContent.id);
+      } catch (err) {
+        // eslint-disable-next-line
       }
-      // eslint-disable-next-line
-      catch (err) { }
     }
   }
 };
