@@ -1,8 +1,20 @@
 
-<ul>
-  <%= for url <- @flame_graphs do %>
-  <li>
-    <a href="<%= url %>"><%= url %></a>
-  </li>
-  <% end %>
-</ul>
+<div class="container">
+
+  <h3>Flame Graphs</h3>
+
+  <p>The following tagged flame graphs have been generated and captured.</p>
+
+  <ul class="mt-5">
+    <%= for url <- @flame_graphs do %>
+    <li>
+      <a href="<%= url %>"><%= url %></a>
+    </li>
+    <% end %>
+  </ul>
+
+  <div class="alert alert-info mt-5" role="alert">
+    Only one instance of a flame graph is saved for each tag. To rebuild the SVGs from the source stack files, reload this page.
+  </div>
+
+</div>
