@@ -15,7 +15,6 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Resources.ResourceType
   alias Oli.Grading
   alias Oli.PartComponents
-  alias Oli.Utils.FlameGraph
 
   def index(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
