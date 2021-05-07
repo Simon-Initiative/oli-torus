@@ -1,6 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { RootState } from '../../../rootReducer';
-import { loadActivities, loadActivityState } from '../../activities/slice';
+import { loadActivities, loadActivityState } from '../../groups/actions/deck';
 import { LayoutType, selectCurrentGroup, setGroups } from '../../groups/slice';
 import { loadPageState, PageSlice, PageState } from '../slice';
 

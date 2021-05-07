@@ -51,12 +51,5 @@ export const selectState = (state: RootState): PageState => state[PageSlice];
 export const selectSectionSlug = createSelector(selectState, (state) => state.sectionSlug);
 export const selectPageSlug = createSelector(selectState, (state) => state.pageSlug);
 export const selectPageContent = createSelector(selectState, (state) => state.content);
-export const selectSequence = createSelector(selectPageContent, (content) => {
-  const [firstChild] = content.model;
-  if (firstChild.type === 'group') {
-    return firstChild.children;
-  }
-  return content.model;
-});
 
 export default pageSlice.reducer;
