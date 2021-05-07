@@ -99,6 +99,7 @@ Oli.Registrar.register_local_part_components(
     "janus_text_flow",
     "janus_image",
     "janus_input_text",
+    "janus_input_number",
   ])
 )
 
