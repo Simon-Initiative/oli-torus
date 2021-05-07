@@ -5,6 +5,11 @@ defmodule Oli.Authoring.ProjectSearch do
   alias Oli.Publishing.Publication
   alias Oli.Repo
 
+  @doc """
+  Searches the title, description, slug, and version of all active course projects
+  for the search string.  Returns an array of maps containing those same attributes
+  of each matching course project.
+  """
   def search(search_string) do
     search_string
     |> normalize()
@@ -41,13 +46,16 @@ defmodule Oli.Authoring.ProjectSearch do
 
   defp run(search_string) do
     Repo.all(
-      from p in Project,
+      from(p in Project,
         as: :project,
         join: id_and_rank in matching_title_description_slug(search_string),
         on: id_and_rank.id == p.id,
-        where: exists(from(pub in Publication, where: parent_as(:project).id == pub.project_id)),
+        where:
+          exists(from(pub in Publication, where: parent_as(:project).id == pub.project_id)) and
+            p.status == :active,
         order_by: [desc: id_and_rank.rank],
         select: %{slug: p.slug, title: p.title, description: p.description, version: p.version}
+      )
     )
   end
 

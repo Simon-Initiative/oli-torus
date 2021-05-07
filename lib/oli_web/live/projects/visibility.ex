@@ -30,12 +30,12 @@ defmodule OliWeb.Projects.VisibilityLive do
     ~L"""
     <div class="card">
       <div class="card-body ">
-        <div class="row justify-content-center">
-          <div class="col-sm-8 p-3 text-center">
-            <h5 class="card-title">Course builder visibility</h5>
+        <div class="row ">
+          <div class="col-sm-8 p-3">
+            <h4 class="card-title">Course builder visibility</h4>
           </div>
         </div>
-        <div class="row justify-content-center">
+        <div class="row">
           <div class="col-sm-8">
             <div class="form-check form-switch">
               <form phx-change="option" id="visibility_option">
@@ -56,14 +56,14 @@ defmodule OliWeb.Projects.VisibilityLive do
           </div>
         </div>
         <%= if @project.visibility == :selected do %>
-          <div class="row justify-content-center">
+          <div class="row">
             <div class="col-sm-8 text-center">
               <p class="card-text">Below is a list of users and/or institutions that have been granted
                 permission
                 to create course instances in their LMS using this project</p>
             </div>
           </div>
-          <div class="row justify-content-center">
+          <div class="row">
             <div class="col-sm-8">
               <ul class="nav nav-tabs">
                 <li class="nav-item">

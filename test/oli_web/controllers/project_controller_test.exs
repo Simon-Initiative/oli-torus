@@ -70,6 +70,13 @@ defmodule OliWeb.ProjectControllerTest do
     end
   end
 
+  describe "delete project" do
+    test "redirects back to workspace when project is deleted", %{conn: conn, project: project} do
+      conn = delete(conn, Routes.project_path(conn, :delete, project), title: project.title)
+      assert html_response(conn, 302) =~ "/projects"
+    end
+  end
+
   describe "update project" do
     test "performs update when data is valid", %{conn: conn, project: project} do
       put(conn, Routes.project_path(conn, :update, project), project: @update_attrs)
