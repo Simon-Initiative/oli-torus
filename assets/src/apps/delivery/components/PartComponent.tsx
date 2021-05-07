@@ -6,6 +6,8 @@ const WebComponent: React.FC<any> = (props) => {
     const wcEvents: any = {
         init: props.onInit,
         ready: props.onReady,
+        save: props.onSave,
+        submit: props.onSubmit,
     };
 
     const wcEventHandler = async (e: any) => {

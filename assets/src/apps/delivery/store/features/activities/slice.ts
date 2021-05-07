@@ -8,11 +8,11 @@ import {
   PayloadAction,
   Slice,
 } from '@reduxjs/toolkit';
-import { getActivityForDelivery, getBulkActivitiesForAuthoring, getBulkActivitiesForDelivery } from 'data/persistence/activity';
+import { getActivityForDelivery, getBulkActivitiesForAuthoring } from 'data/persistence/activity';
 import { getBulkAttemptState } from 'data/persistence/state/intrinsic';
 import { ResourceId } from 'data/types';
 import { RootState } from '../../rootReducer';
-import { loadPageState, selectPageContent, selectSectionSlug, selectSequence } from '../page/slice';
+import { loadPageState, selectSectionSlug, selectSequence } from '../page/slice';
 
 interface IActivity {
   // TODO
@@ -133,7 +133,8 @@ export const loadActivityState = createAsyncThunk(
 );
 
 // SELECTORS
-export const selectState = (state: RootState) => state[ActivitiesSlice] as ActivitiesState;
+export const selectState = (state: RootState): ActivitiesState =>
+  state[ActivitiesSlice] as ActivitiesState;
 export const selectCurrentActivityId = createSelector(
   selectState,
   (state) => state.currentActivityId,
@@ -146,6 +147,11 @@ export const selectTotalActivities = selectTotal;
 export const selectCurrentActivity = createSelector(
   (state: RootState) => [state, selectCurrentActivityId(state)],
   ([state, currentActivityId]: [RootState, string]) => selectActivityById(state, currentActivityId),
+);
+
+export const selectCurrentActivityContent = createSelector(
+  selectCurrentActivity,
+  (activity) => activity?.content,
 );
 
 export default slice.reducer;

@@ -47,7 +47,7 @@ export const PageSlice = pageSlice.name;
 
 export const { loadPageState } = pageSlice.actions;
 
-export const selectState = (state: RootState) => state[PageSlice];
+export const selectState = (state: RootState): PageState => state[PageSlice];
 export const selectSectionSlug = createSelector(selectState, (state) => state.sectionSlug);
 export const selectPageSlug = createSelector(selectState, (state) => state.pageSlug);
 export const selectPageContent = createSelector(selectState, (state) => state.content);
