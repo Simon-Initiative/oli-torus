@@ -58,7 +58,7 @@ const InputNumber: React.FC<any> = (props) => {
 
   const saveInputText = (val: string, isEnabled = true) => {
     return;
-    //TODO props.onSavePart is not yet implemented
+    //TODO props.onSavePart is not yet implemented.
     props.onSavePart({
       activityId: `${id}`,
       partResponses: [
