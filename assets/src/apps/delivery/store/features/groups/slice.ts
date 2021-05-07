@@ -1,5 +1,6 @@
 import {
   createEntityAdapter,
+  createSelector,
   createSlice,
   EntityAdapter,
   EntityState,
@@ -32,6 +33,9 @@ const slice: Slice<GroupsState> = createSlice({
     currentGroupId: -1,
   }),
   reducers: {
+    setCurrentGroupId(state, action: PayloadAction<{ groupId: number }>) {
+      state.currentGroupId = action.payload.groupId;
+    },
     setGroups(state, action: PayloadAction<{ groups: IGroup[] }>) {
       // groups aren't currently having resourceIds so we need to set id via index
       const groups = action.payload.groups.map((group, index) => {
@@ -39,15 +43,21 @@ const slice: Slice<GroupsState> = createSlice({
         return { ...group, id };
       });
       adapter.setAll(state, groups);
+      // for now just select first one (dont even have a multi group concept yet)
+      state.currentGroupId = groups[0].id;
     },
   },
 });
 
 export const GroupsSlice = slice.name;
 
-export const { setGroups } = slice.actions;
+export const { setCurrentGroupId, setGroups } = slice.actions;
 
 export const selectState = (state: RootState): GroupsState => state[GroupsSlice] as GroupsState;
 export const { selectAll, selectById, selectTotal } = adapter.getSelectors(selectState);
+export const selectCurrentGroup = createSelector(
+  selectState,
+  (state: GroupsState) => state.entities[state.currentGroupId],
+);
 
 export default slice.reducer;
