@@ -23,6 +23,8 @@ export function defineApplication<T extends State>(Component: React.FunctionComp
       content: parsedContent,
     };
 
+    // console.log('MOUNT UP', props);
+
     ReactDOM.render(
       <Provider store={store}>
         <Component {...props} />

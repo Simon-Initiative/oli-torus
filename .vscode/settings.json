@@ -2,5 +2,8 @@
     "editor.tabSize": 2,
     "files.trimTrailingWhitespace": true,
     "typescript.tsdk": "node_modules/typescript/lib",
-    "jest.rootPath": "./assets"
+    "jest.rootPath": "./assets",
+    "files.exclude": {
+        "**/node_modules": true
+    }
 }

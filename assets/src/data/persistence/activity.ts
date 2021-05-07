@@ -36,6 +36,8 @@ export type Retrieved = {
   resourceId: ResourceId;
   title: string;
   content: ActivityModelSchema;
+  authoring?: any;
+  objectives?: any; // TODO typing
 };
 
 export type BulkRetrieved = {
@@ -45,10 +47,7 @@ export type BulkRetrieved = {
 
 export type Edited = { result: 'success'; revisionSlug: string };
 
-export const getActivityForAuthoring = (
-  projectSlug: string,
-  activityId: ResourceId,
-) => {
+export const getActivityForAuthoring = (projectSlug: string, activityId: ResourceId) => {
   const params = {
     method: 'GET',
     url: `/storage/project/${projectSlug}/resource/${activityId}`,
@@ -57,7 +56,7 @@ export const getActivityForAuthoring = (
   return makeRequest<Retrieved>(params);
 };
 
-export const getBulkActivitiesForAuthoring = (
+export const getBulkActivitiesForAuthoring = async (
   projectSlug: string,
   activityIds: ResourceId[],
 ) => {
@@ -67,13 +66,24 @@ export const getBulkActivitiesForAuthoring = (
     body: JSON.stringify({ resourceIds: activityIds }),
   };
 
-  return makeRequest<BulkRetrieved>(params);
+  const response = await makeRequest<BulkRetrieved>(params);
+  if (response.result !== 'success') {
+    throw new Error(`Server ${response.status} error: ${response.message}`);
+  }
+
+  return response.results.map((result: Retrieved) => {
+    const { resourceId: id, title, content, authoring, objectives } = result;
+    return {
+      id,
+      title,
+      content,
+      authoring,
+      objectives,
+    };
+  });
 };
 
-export const getActivityForDelivery = (
-  sectionSlug: string,
-  activityId: ResourceId,
-) => {
+export const getActivityForDelivery = (sectionSlug: string, activityId: ResourceId) => {
   const params = {
     method: 'GET',
     url: `/storage/course/${sectionSlug}/resource/${activityId}`,
@@ -158,10 +168,7 @@ export function transform(model: ActivityModelSchema) {
   return makeRequest<Transformed>(params);
 }
 
-export function evaluate(
-  model: ActivityModelSchema,
-  partResponses: PartResponse[],
-) {
+export function evaluate(model: ActivityModelSchema, partResponses: PartResponse[]) {
   const params = {
     method: 'PUT',
     body: JSON.stringify({ model, partResponses }),

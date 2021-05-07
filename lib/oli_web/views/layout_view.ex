@@ -11,6 +11,7 @@ defmodule OliWeb.LayoutView do
       account_linked?: 1,
       logo_link_path: 1
     ]
+
   import Oli.Branding
 
   alias Oli.Publishing.AuthoringResolver
@@ -40,7 +41,7 @@ defmodule OliWeb.LayoutView do
   """
   def additional_stylesheets(assigns) do
     Map.get(assigns, :additional_stylesheets, [])
-    |> URI.encode()
+    |> Enum.map(&URI.encode(&1))
     |> Enum.map(fn url -> "\n<link rel=\"stylesheet\" href=\"#{url}\">" end)
     |> raw()
   end
@@ -92,5 +93,4 @@ defmodule OliWeb.LayoutView do
   def render_layout(layout, assigns, do: content) do
     render(layout, Map.put(assigns, :inner_layout, content))
   end
-
 end

@@ -8,11 +8,11 @@ import {
   PayloadAction,
   Slice,
 } from '@reduxjs/toolkit';
-import { getActivityForDelivery, getBulkActivitiesForDelivery } from 'data/persistence/activity';
+import { getActivityForDelivery, getBulkActivitiesForAuthoring, getBulkActivitiesForDelivery } from 'data/persistence/activity';
 import { getBulkAttemptState } from 'data/persistence/state/intrinsic';
 import { ResourceId } from 'data/types';
 import { RootState } from '../../rootReducer';
-import { loadPageState, selectPageContent, selectSectionSlug } from '../page/slice';
+import { loadPageState, selectPageContent, selectSectionSlug, selectSequence } from '../page/slice';
 
 interface IActivity {
   // TODO
@@ -51,7 +51,13 @@ const slice: Slice<ActivitiesState> = createSlice({
     builder.addCase(loadPageState, (state, action) => {
       const { content } = action.payload;
       // for now auto set current to index 0
-      state.currentActivityId = content.model[0].custom.sequenceId;
+      // until layouts are supported, 2 choices here
+      const [rootContainer] = content.model;
+      if (rootContainer.type === 'group') {
+        state.currentActivityId = rootContainer.children[0].custom.sequenceId;
+      } else {
+        state.currentActivityId = rootContainer.custom.sequenceId;
+      }
     });
   },
 });
@@ -80,7 +86,21 @@ export const loadActivities = createAsyncThunk(
   `${ActivitiesSlice}/loadActivities`,
   async (activityIds: ResourceId[], thunkApi) => {
     const sectionSlug = selectSectionSlug(thunkApi.getState() as RootState);
-    const activities = await getBulkActivitiesForDelivery(sectionSlug, activityIds);
+    const results = await getBulkActivitiesForAuthoring(sectionSlug, activityIds);
+    const sequence = selectSequence(thunkApi.getState() as RootState);
+    const activities = results.map((result) => {
+      const sequenceEntry = sequence.find((entry: any) => entry.activity_id === result.id);
+      if (!sequenceEntry) {
+        console.warn(`Activity ${result.id} not found in the page model!`);
+        return;
+      }
+      const activity = {
+        id: sequenceEntry.custom.sequenceId,
+        resourceId: sequenceEntry.activity_id,
+        content: result.content,
+      };
+      return activity;
+    });
     // TODO: need a sequence ID and/or some other ID than db id to use here
     thunkApi.dispatch(setActivities({ activities }));
   },
@@ -93,7 +113,7 @@ export const loadActivityState = createAsyncThunk(
     const results = await getBulkAttemptState(sectionSlug, attemptGuids);
 
     // TODO: map back to activities in model and update everything
-    const { model: sequence } = selectPageContent(thunkApi.getState() as RootState);
+    const sequence = selectSequence(thunkApi.getState() as RootState);
     const activities = results.map((result) => {
       const sequenceEntry = sequence.find((entry: any) => entry.activity_id === result.activityId);
       if (!sequenceEntry) {

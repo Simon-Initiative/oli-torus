@@ -15,6 +15,7 @@ export interface DeliveryProps {
   resourceAttemptState: any;
   resourceAttemptGuid: string;
   activityGuidMapping: any;
+  previewMode?: boolean;
 }
 
 export const Delivery: React.FunctionComponent<DeliveryProps> = (props: DeliveryProps) => {
@@ -28,6 +29,7 @@ export const Delivery: React.FunctionComponent<DeliveryProps> = (props: Delivery
       resourceAttemptGuid,
       resourceAttemptState,
       activityGuidMapping,
+      previewMode,
     } = props;
 
     store.dispatch(
@@ -40,15 +42,29 @@ export const Delivery: React.FunctionComponent<DeliveryProps> = (props: Delivery
         resourceAttemptGuid,
         resourceAttemptState,
         activityGuidMapping,
+        previewMode: !!previewMode,
       }),
     );
 
     // for the moment load *all* the activity state
-    const attemptGuids = Object.keys(activityGuidMapping).map((activityResourceId) => {
-      const { attemptGuid } = activityGuidMapping[activityResourceId];
-      return attemptGuid;
-    });
-    store.dispatch(loadActivityState(attemptGuids));
+    if (!previewMode && !!activityGuidMapping) {
+      const attemptGuids = Object.keys(activityGuidMapping).map((activityResourceId) => {
+        const { attemptGuid } = activityGuidMapping[activityResourceId];
+        return attemptGuid;
+      });
+      store.dispatch(loadActivityState(attemptGuids));
+    }
+
+    if (previewMode) {
+      let activityIds;
+      const [rootContainer] = content.model;
+      if (rootContainer.type === 'group') {
+        activityIds = rootContainer.children.map((child: any) => child.activity_id);
+      } else {
+        activityIds = content.model.map((child: any) => child.activity_id);
+      }
+      store.dispatch(loadActivities(activityIds));
+    }
   }, []);
 
   const parentDivClasses: string[] = [];
