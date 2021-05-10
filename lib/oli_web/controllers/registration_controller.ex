@@ -8,15 +8,23 @@ defmodule OliWeb.RegistrationController do
   def available_brands(institution_id) do
     institution = Institutions.get_institution!(institution_id)
     available_brands = Branding.list_available_brands(institution_id)
-    institution_brands = available_brands
+
+    institution_brands =
+      available_brands
       |> Enum.filter(fn b -> b.institution_id != nil end)
       |> Enum.map(fn brand -> {brand.name, brand.id} end)
-    other_brands = available_brands
+
+    other_brands =
+      available_brands
       |> Enum.filter(fn b -> b.institution_id == nil end)
       |> Enum.map(fn brand -> {brand.name, brand.id} end)
 
     []
-    |> Enum.concat(if Enum.count(institution_brands) > 0, do: ["#{institution.name} Brands": institution_brands], else: [])
+    |> Enum.concat(
+      if Enum.count(institution_brands) > 0,
+        do: ["#{institution.name} Brands": institution_brands],
+        else: []
+    )
     |> Enum.concat(if Enum.count(other_brands) > 0, do: ["Other Brands": other_brands], else: [])
   end
 

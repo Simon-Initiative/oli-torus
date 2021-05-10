@@ -24,7 +24,7 @@ defmodule Oli.Help.Providers.FreshdeskHelp do
       {"Content-type", "application/json"},
       {"Accept", "application/json"},
       {"Authorization",
-        "Basic " <> Base.encode64(System.get_env("FRESHDESK_API_KEY", "examplekey"))}
+       "Basic " <> Base.encode64(System.get_env("FRESHDESK_API_KEY", "examplekey"))}
     ]
 
     case http().post(url, body, headers) do

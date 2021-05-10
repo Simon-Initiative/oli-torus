@@ -1,9 +1,7 @@
 defmodule Oli.Features.Feature do
-
   defstruct [
     :id,
     :label,
-    :description,
+    :description
   ]
-
 end

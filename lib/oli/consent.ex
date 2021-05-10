@@ -27,10 +27,9 @@ defmodule Oli.Consent do
   def retrieve_cookies(user_id) do
     query =
       from c in CookiesConsent,
-           where: c.user_id == ^user_id,
-           select: c
+        where: c.user_id == ^user_id,
+        select: c
 
     Repo.all(query)
   end
-
 end

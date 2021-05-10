@@ -1,5 +1,4 @@
 defmodule Oli.Utils.LoadTesting do
-
   def enabled?() do
     Application.fetch_env!(:oli, :load_testing_mode) == :enabled
   end
@@ -12,32 +11,35 @@ defmodule Oli.Utils.LoadTesting do
   For unsupported parts (or entire activities), simply omit those parts from the returned map.
   """
   def provide_answers(activity_type_slug, transformed_model) do
-
     case activity_type_slug do
-
       "oli_check_all_that_apply" ->
-        Map.put(%{}, get_first_part_id(transformed_model), %{"input" => choices(transformed_model) |> hd})
+        Map.put(%{}, get_first_part_id(transformed_model), %{
+          "input" => choices(transformed_model) |> hd
+        })
 
       "oli_multiple_choice" ->
-        Map.put(%{}, get_first_part_id(transformed_model), %{"input" => choices(transformed_model) |> hd})
+        Map.put(%{}, get_first_part_id(transformed_model), %{
+          "input" => choices(transformed_model) |> hd
+        })
 
       "oli_ordering" ->
-        Map.put(%{}, get_first_part_id(transformed_model), %{"input" => choices(transformed_model) |> Enum.join(" ")})
+        Map.put(%{}, get_first_part_id(transformed_model), %{
+          "input" => choices(transformed_model) |> Enum.join(" ")
+        })
 
       "oli_short_answer" ->
-
-        input = case Map.get(transformed_model, "inputType", "text") do
-          "text" -> "answer"
-          "textarea" -> "longer answer"
-          "numeric" -> 0
-        end
+        input =
+          case Map.get(transformed_model, "inputType", "text") do
+            "text" -> "answer"
+            "textarea" -> "longer answer"
+            "numeric" -> 0
+          end
 
         Map.put(%{}, get_first_part_id(transformed_model), %{"input" => input})
 
-      _ -> %{}
-
+      _ ->
+        %{}
     end
-
   end
 
   defp get_first_part_id(transformed_model) do
@@ -48,5 +50,4 @@ defmodule Oli.Utils.LoadTesting do
     transformed_model["choices"]
     |> Enum.map(fn c -> c["id"] end)
   end
-
 end

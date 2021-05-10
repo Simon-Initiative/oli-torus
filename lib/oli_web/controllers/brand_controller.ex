@@ -22,7 +22,11 @@ defmodule OliWeb.BrandController do
 
   def new(conn, _params) do
     changeset = Branding.change_brand(%Brand{})
-    render_workspace_page(conn, "new.html", changeset: changeset, available_institutions: available_institutions())
+
+    render_workspace_page(conn, "new.html",
+      changeset: changeset,
+      available_institutions: available_institutions()
+    )
   end
 
   def create(conn, %{"brand" => brand_params}) do
@@ -36,7 +40,10 @@ defmodule OliWeb.BrandController do
         |> redirect(to: Routes.brand_path(conn, :show, brand))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render_workspace_page(conn, "new.html", changeset: changeset, available_institutions: available_institutions())
+        render_workspace_page(conn, "new.html",
+          changeset: changeset,
+          available_institutions: available_institutions()
+        )
     end
   end
 
@@ -48,7 +55,12 @@ defmodule OliWeb.BrandController do
   def edit(conn, %{"id" => id}) do
     brand = Branding.get_brand!(id)
     changeset = Branding.change_brand(brand)
-    render_workspace_page(conn, "edit.html", brand: brand, changeset: changeset, available_institutions: available_institutions())
+
+    render_workspace_page(conn, "edit.html",
+      brand: brand,
+      changeset: changeset,
+      available_institutions: available_institutions()
+    )
   end
 
   def update(conn, %{"id" => id, "brand" => brand_params}) do
@@ -63,7 +75,11 @@ defmodule OliWeb.BrandController do
         |> redirect(to: Routes.brand_path(conn, :show, brand))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render_workspace_page(conn, "edit.html", brand: brand, changeset: changeset, available_institutions: available_institutions())
+        render_workspace_page(conn, "edit.html",
+          brand: brand,
+          changeset: changeset,
+          available_institutions: available_institutions()
+        )
     end
   end
 
@@ -84,7 +100,9 @@ defmodule OliWeb.BrandController do
     brand_path = "brands/#{brand.slug}"
 
     case brand_params["logo"] do
-      nil -> nil
+      nil ->
+        nil
+
       logo ->
         upload("#{brand_path}/#{logo.filename}", logo)
     end
@@ -95,14 +113,18 @@ defmodule OliWeb.BrandController do
       "favicon-16x16",
       "apple-touch-icon",
       "android-chrome-512x512",
-      "android-chrome-192x192",
+      "android-chrome-192x192"
     ]
 
     case brand_params["favicons"] do
-      nil -> nil
+      nil ->
+        nil
+
       favicons ->
         favicons
-        |> Enum.filter(fn f -> Regex.replace(~r/\.[^.]+$/, f.filename, "") in valid_favicon_names end)
+        |> Enum.filter(fn f ->
+          Regex.replace(~r/\.[^.]+$/, f.filename, "") in valid_favicon_names
+        end)
         |> Enum.each(fn f ->
           upload("#{brand_path}/favicons/#{f.filename}", f)
         end)
@@ -110,7 +132,9 @@ defmodule OliWeb.BrandController do
 
     # logo_dark is optional
     case brand_params["logo_dark"] do
-      nil -> nil
+      nil ->
+        nil
+
       logo_dark ->
         upload("#{brand_path}/#{logo_dark.filename}", logo_dark)
     end
@@ -124,6 +148,7 @@ defmodule OliWeb.BrandController do
     case upload_file(bucket_name, path, contents) do
       {:ok, %{status_code: 200}} ->
         nil
+
       _ ->
         Logger.error("Failed to upload file to S3 '#{path}'", file)
     end
@@ -131,7 +156,6 @@ defmodule OliWeb.BrandController do
 
   defp upload_file(bucket, path, contents) do
     S3.put_object(bucket, path, contents, [{:acl, :public_read}])
-    |> HTTP.aws.request()
+    |> HTTP.aws().request()
   end
-
 end

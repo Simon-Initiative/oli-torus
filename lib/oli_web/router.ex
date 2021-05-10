@@ -584,5 +584,14 @@ defmodule OliWeb.Router do
 
       post("/rules", Api.RulesEngineController, :execute)
     end
+
+    scope "/dev", OliWeb do
+      pipe_through([
+        :browser,
+        :admin
+      ])
+
+      get("/flame_graphs", DevController, :flame_graphs)
+    end
   end
 end

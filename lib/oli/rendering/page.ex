@@ -19,34 +19,36 @@ defmodule Oli.Rendering.Page do
   """
   def render(%Context{render_opts: render_opts} = context, page_model, writer)
       when is_list(page_model) do
-
     # We do not currently support groups in basic Torus pages, but using PageContent.map here
     # allows us to "read through" any groups that we might happen to encounter
-    {_, output} = Oli.Resources.PageContent.map_reduce(%{"model" => page_model}, [], fn element, output ->
-      case element do
-        %{"type" => "content"} ->
-          {element, output ++ writer.content(context, element)}
+    {_, output} =
+      Oli.Resources.PageContent.map_reduce(%{"model" => page_model}, [], fn element, output ->
+        case element do
+          %{"type" => "content"} ->
+            {element, output ++ writer.content(context, element)}
 
-        %{"type" => "activity-reference"} ->
-          {element, output ++ writer.activity(context, element)}
+          %{"type" => "activity-reference"} ->
+            {element, output ++ writer.activity(context, element)}
 
-        %{"type" => "group"} -> {element, output}
-
-        _ ->
-          error_id = Utils.random_string(8)
-          error_msg = "Page item is not supported: #{Kernel.inspect(element)}"
-
-          if render_opts.log_errors,
-            do: Logger.error("Render Error ##{error_id} #{error_msg}"),
-            else: nil
-
-          if render_opts.render_errors do
-            {element, output ++ writer.error(context, element, {:unsupported, error_id, error_msg})}
-          else
+          %{"type" => "group"} ->
             {element, output}
-          end
-      end
-    end)
+
+          _ ->
+            error_id = Utils.random_string(8)
+            error_msg = "Page item is not supported: #{Kernel.inspect(element)}"
+
+            if render_opts.log_errors,
+              do: Logger.error("Render Error ##{error_id} #{error_msg}"),
+              else: nil
+
+            if render_opts.render_errors do
+              {element,
+               output ++ writer.error(context, element, {:unsupported, error_id, error_msg})}
+            else
+              {element, output}
+            end
+        end
+      end)
 
     output
   end

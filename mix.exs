@@ -74,6 +74,7 @@ defmodule Oli.MixProject do
       {:csv, "~> 2.3"},
       {:dialyxir, "~> 0.5.0", only: [:dev], runtime: true},
       {:ecto_sql, "~> 3.5.2"},
+      {:eflame, "~> 1.0"},
       {:ecto_psql_extras, "~> 0.2"},
       {:ex_aws, "~> 2.1.6"},
       {:ex_aws_s3, "~> 2.0"},
@@ -114,6 +115,7 @@ defmodule Oli.MixProject do
       {:telemetry, "~> 0.4.1"},
       {:telemetry_poller, "~> 0.4"},
       {:telemetry_metrics, "~> 0.4"},
+      {:telemetry_metrics_prometheus, "~> 1.0.0"},
       {:timex, "~> 3.5"},
       {:uuid, "~> 1.1"},
       {:xml_builder, "~> 2.1.1"}
