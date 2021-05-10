@@ -114,14 +114,15 @@ const Dropdown: React.FC<any> = (props) => {
       // If a prompt is blank and the selectedIndex is not set or is set to -1, set empty first option
       options.push(<option key="-1" value="-1"></option>);
     }
-
-    for (let i = 0; i < optionLabels.length; i++) {
-      // Set selected if selectedIndex equals current index
-      options.push(
-        <option key={i + 1} value={i + 1} selected={i + 1 === selection}>
-          {optionLabels[i]}
-        </option>,
-      );
+    if (optionLabels) {
+      for (let i = 0; i < optionLabels.length; i++) {
+        // Set selected if selectedIndex equals current index
+        options.push(
+          <option key={i + 1} value={i + 1} selected={i + 1 === selection}>
+            {optionLabels[i]}
+          </option>,
+        );
+      }
     }
     return options;
   };
