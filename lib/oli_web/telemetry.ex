@@ -8,6 +8,7 @@ defmodule OliWeb.Telemetry do
 
   def init(_arg) do
     children = [
+      {TelemetryMetricsPrometheus, [metrics: metrics()]},
       {:telemetry_poller, measurements: periodic_measurements(), period: 10_000}
     ]
 
@@ -16,6 +17,24 @@ defmodule OliWeb.Telemetry do
 
   def metrics do
     [
+      last_value("vm.memory.total", unit: :byte),
+      last_value("vm.total_run_queue_lengths.total"),
+      last_value("vm.total_run_queue_lengths.cpu"),
+      last_value("vm.total_run_queue_lengths.io"),
+      last_value("vm.system_counts.process_count"),
+      distribution("oli.plug.stop.duration",
+        reporter_options: [buckets: 1..20 |> Enum.map(&(&1 * 25))],
+        unit: {:native, :millisecond}
+      ),
+      distribution("oli.repo.query.total_time",
+        reporter_options: [buckets: 1..40 |> Enum.map(&(&1 * 5))],
+        unit: {:native, :millisecond}
+      ),
+      distribution("oli.resolvers.delivery.duration",
+        reporter_options: [buckets: 1..40 |> Enum.map(&(&1 * 5))],
+        unit: {:native, :millisecond}
+      ),
+
       # Phoenix Metrics
       summary("phoenix.endpoint.stop.duration",
         unit: {:native, :millisecond}

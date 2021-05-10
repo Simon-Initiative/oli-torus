@@ -10,6 +10,7 @@
 - Add support for page content grouping
 - Add image resizing
 - Introduce load testing support
+- Expose telemetry metrics for Prometheus metrics scraping
 - Add support for course package delete
 
 ### Bug fixes
