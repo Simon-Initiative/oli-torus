@@ -98,6 +98,7 @@ Oli.Registrar.register_local_part_components(
   MapSet.new([
     "janus_text_flow",
     "janus_image",
+    "janus_dropdown"
   ])
 )
 
