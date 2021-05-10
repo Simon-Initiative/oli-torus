@@ -7,7 +7,7 @@ defmodule OliWeb.Curriculum.MoveModal do
   def render(%{slug: slug} = assigns) do
     ~L"""
     <div class="modal fade show" style="display: block" id="move_<%= slug %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
-      <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+      <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title">Move Item</h5>

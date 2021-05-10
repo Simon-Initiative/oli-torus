@@ -9,8 +9,8 @@ defmodule OliWeb.Curriculum.Actions do
     ~L"""
     <div class="entry-actions">
       <div class="dropdown">
-        <button class="btn dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
-        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+        <button class="btn dropdown-toggle" type="button" data-toggle="dropdown" data-target="dropdownMenu_<%= @child.slug %>" aria-haspopup="true" aria-expanded="false"></button>
+        <div class="dropdown-menu dropdown-menu-right" id="dropdownMenu_<%= @child.slug %>" aria-labelledby="dropdownMenuButton_<%= @child.slug %>">
           <button type="button" class="dropdown-item" phx-click="show_details_modal" phx-value-slug="<%= @child.slug %>"><i class="las la-sliders-h mr-1"></i> Details</button>
           <button type="button" class="dropdown-item" phx-click="show_move_modal" phx-value-slug="<%= @child.slug %>"><i class="las la-arrow-circle-right mr-1"></i> Move to...</button>
           <div class="dropdown-divider"></div>

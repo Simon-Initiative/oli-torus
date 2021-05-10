@@ -1,8 +1,8 @@
 
 <%= case @modal do %>
   <% nil -> %>
-  <% %{component: component, assigns: modal_assigns} -> %>
-    <%= live_component @socket, component, Enum.into(modal_assigns, assigns) %>
+  <% %{component: component, assigns: assigns} -> %>
+    <%= live_component @socket, component, assigns %>
 <% end %>
 <div id="curriculum-container" class="container container-editor">
   <div class="row">

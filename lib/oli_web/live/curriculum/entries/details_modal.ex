@@ -15,14 +15,13 @@ defmodule OliWeb.Curriculum.DetailsModal do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(:changeset, changeset)
-     |> assign(:anything, "")}
+     |> assign(:changeset, changeset)}
   end
 
   def render(%{changeset: changeset, revision: revision} = assigns) do
     ~L"""
     <div class="modal fade show" style="display: block" id="details_<%= revision.slug %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
-      <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+      <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
           <%= f = form_for @changeset, "#",
             id: "revision-settings-form",
@@ -40,7 +39,7 @@ defmodule OliWeb.Curriculum.DetailsModal do
                 <div class="form-group">
                   <%= label f, "Title" %>
                   <%= text_input f, :title, class: "form-control", aria_describedby: "title", placeholder: "Title" %>
-                  <small id="title" class="form-text text-muted">The title used to identify this <%= resource_type_label(revision) %>.</small>
+                  <small id="title" class="form-text text-muted">The title is used to identify this <%= resource_type_label(revision) %>.</small>
                 </div>
 
                 <%= if !is_container?(@revision) do %>
