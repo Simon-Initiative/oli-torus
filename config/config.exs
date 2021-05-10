@@ -19,6 +19,7 @@ world_universities_and_domains_json =
 default_sha = if Mix.env() == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 
 config :oli,
+  node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "10")),
   load_testing_mode: :disabled,
   problematic_query_detection: :disabled,
   problematic_query_cost_threshold: 150,
