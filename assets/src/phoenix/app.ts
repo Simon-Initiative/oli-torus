@@ -16,6 +16,9 @@ import {
   initActivityBridge,
   initPreviewActivityBridge,
 } from './activity_bridge';
+import { showModal } from './modal';
+import { enableSubmitWhenTitleMatches } from './package_delete';
+import { onReady } from './ready';
 
 const csrfToken = (document as any)
   .querySelector('meta[name="csrf-token"]')
@@ -44,6 +47,9 @@ window.addEventListener('phx:page-loading-stop', (info) => NProgress.done());
 (window as any).OLI = {
   initActivityBridge,
   initPreviewActivityBridge,
+  showModal,
+  enableSubmitWhenTitleMatches,
+  onReady
 };
 
 // connect if there are any LiveViews on the page

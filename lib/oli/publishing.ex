@@ -108,7 +108,7 @@ defmodule Oli.Publishing do
         on: pub.project_id == u.project_id and u.max_date == pub.updated_at,
         join: proj in Project,
         on: pub.project_id == proj.id,
-        where: pub.published == true and proj.visibility == :global,
+        where: pub.published == true and proj.visibility == :global and proj.status == :active,
         preload: [:project],
         distinct: true,
         select: pub
@@ -133,7 +133,7 @@ defmodule Oli.Publishing do
         left_join: v in ProjectVisibility,
         on: proj.id == v.project_id,
         where:
-          pub.published == true and
+          pub.published == true and proj.status == :active and
             (a.id == ^author.id or proj.visibility == :global or
                (proj.visibility == :selected and
                   (v.author_id == ^author.id or v.institution_id == ^institution.id))),

@@ -10,6 +10,7 @@ export interface PageState {
   resourceAttemptState: any;
   resourceAttemptGuid: string;
   activityGuidMapping: any;
+  previewMode: boolean;
 }
 
 const initialState: PageState = {
@@ -21,6 +22,7 @@ const initialState: PageState = {
   resourceAttemptGuid: '',
   resourceAttemptState: {},
   activityGuidMapping: {},
+  previewMode: false,
 };
 
 const pageSlice = createSlice({
@@ -36,6 +38,7 @@ const pageSlice = createSlice({
       state.resourceAttemptGuid = action.payload.resourceAttemptGuid;
       state.resourceAttemptState = action.payload.resourceAttemptState;
       state.activityGuidMapping = action.payload.activityGuidMapping;
+      state.previewMode = !!action.payload.previewMode;
     },
   },
 });
@@ -45,17 +48,15 @@ export const PageSlice = pageSlice.name;
 export const { loadPageState } = pageSlice.actions;
 
 export const selectState = (state: RootState) => state[PageSlice];
-export const selectSectionSlug = createSelector(
-  selectState,
-  (state) => state.sectionSlug,
-);
-export const selectPageSlug = createSelector(
-  selectState,
-  (state) => state.pageSlug,
-);
-export const selectPageContent = createSelector(
-  selectState,
-  (state) => state.content,
-);
+export const selectSectionSlug = createSelector(selectState, (state) => state.sectionSlug);
+export const selectPageSlug = createSelector(selectState, (state) => state.pageSlug);
+export const selectPageContent = createSelector(selectState, (state) => state.content);
+export const selectSequence = createSelector(selectPageContent, (content) => {
+  const [firstChild] = content.model;
+  if (firstChild.type === 'group') {
+    return firstChild.children;
+  }
+  return content.model;
+});
 
 export default pageSlice.reducer;
