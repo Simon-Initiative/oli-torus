@@ -5,10 +5,9 @@ module.exports = (env, options) => ({
   target: 'node',
   entry: {
     rules: ['./src/adaptivity/rules.ts']
-    // test: ['./src/adaptivity/test.ts']
   },
   output: {
-    path: path.resolve(__dirname, '../_node'),
+    path: path.resolve(__dirname, '../priv/node'),
     libraryTarget: 'commonjs2'
   },
   resolve: {

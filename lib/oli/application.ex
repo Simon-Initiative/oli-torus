@@ -22,7 +22,7 @@ defmodule Oli.Application do
       # Start the NodeJS bridge
       %{
         id: NodeJS,
-        start: {NodeJS, :start_link, [[path: "./_node", pool_size: 4]]}
+        start: {NodeJS, :start_link, [[path: "./priv/node", pool_size: 4]]}
       },
 
       # Starts the nonce cleanup task, call Lti_1p3.Nonces.cleanup_nonce_store/0 at 1:01 UTC every day

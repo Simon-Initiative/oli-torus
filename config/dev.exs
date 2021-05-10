@@ -79,7 +79,7 @@ config :oli, OliWeb.Endpoint,
       "--config",
       "webpack.config.node.js",
       "--mode",
-      "development",
+      "production",
       "--watch",
       "--watch-options-stdin",
       cd: Path.expand("../assets", __DIR__)

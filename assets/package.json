@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "deploy": "webpack --mode production",
+    "deploy-node": "webpack --mode production --config webpack.config.node.js",
     "watch": "webpack --mode development --watch --help=verbose",
     "build": "npm run clean && npm run lint && npm run test && npm run deploy",
     "clean": "del --force coverage/** ../priv/static",
