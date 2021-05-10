@@ -51,6 +51,7 @@ const Dropdown: React.FC<any> = (props) => {
     const val = Number(event.target.value);
     // Update/set the value
     setSelection(val);
+    //TODO add save state code later
   };
 
   useEffect(() => {
