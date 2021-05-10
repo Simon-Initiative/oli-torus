@@ -21,8 +21,8 @@ const InputText: React.FC<any> = (props) => {
   const saveInputText = (val: string) => {
     return;
     //TODO props.onSavePart is not yet implemented
-    props.onSavePart({
-      activityId: `${id}`,
+    /* props.onSavePart({
+      id: `${id}`,
       partResponses: [
         {
           id: `stage.${id}.enabled`,
@@ -43,7 +43,7 @@ const InputText: React.FC<any> = (props) => {
           value: val.length,
         },
       ],
-    });
+    }); */
   };
   const handleOnChange = (event: any) => {
     const val = event.target.value;
@@ -69,12 +69,11 @@ const InputText: React.FC<any> = (props) => {
 
   useEffect(() => {
     //TODO handle value changes on state updates
-    console.log({ state });
   }, [state]);
 
   useEffect(() => {
     props.onReady({
-      activityId: `${id}`,
+      id: `${id}`,
       partResponses: [],
     });
   }, []);

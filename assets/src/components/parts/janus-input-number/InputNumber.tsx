@@ -53,14 +53,14 @@ const InputNumber: React.FC<any> = (props) => {
   }, [props]);
 
   useEffect(() => {
-    console.log({ state });
+    //TODO handle value changes on state updates
   }, [state]);
 
   const saveInputText = (val: string, isEnabled = true) => {
     return;
     //TODO props.onSavePart is not yet implemented.
-    props.onSavePart({
-      activityId: `${id}`,
+    /* props.onSavePart({
+      id: `${id}`,
       partResponses: [
         {
           id: `stage.${id}.value`,
@@ -75,7 +75,7 @@ const InputNumber: React.FC<any> = (props) => {
           value: isEnabled,
         },
       ],
-    });
+    }); */
   };
 
   const handleOnChange = (event: any) => {
@@ -99,7 +99,7 @@ const InputNumber: React.FC<any> = (props) => {
 
   useEffect(() => {
     props.onReady({
-      activityId: `${id}`,
+      id: `${id}`,
       partResponses: [
         {
           id: `stage.${id}.value`,

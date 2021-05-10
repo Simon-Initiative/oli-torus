@@ -55,8 +55,8 @@ const NavigationButton: React.FC<any> = (props) => {
   const handleButtonPress = () => {
     return;
     //TODO onSubmitActivity not yet implemented
-    props.onSubmitActivity({
-      activityId: `${id}`,
+    /* props.onSubmitActivity({
+      id: `${id}`,
       partResponses: [
         {
           id: `stage.${id}.Selected`,
@@ -65,14 +65,14 @@ const NavigationButton: React.FC<any> = (props) => {
           value: true,
         },
       ],
-    });
+    }); */
   };
   if (buttonSelected) {
     setButtonSelected(false);
     handleButtonPress();
     //TODO onSubmitActivity not yet implemented
     /*  props.onSaveActivity({
-      activityId: `${id}`,
+      id: `${id}`,
       partResponses: [
         {
           id: `stage.${id}.Selected`,
@@ -94,12 +94,11 @@ const NavigationButton: React.FC<any> = (props) => {
 
   useEffect(() => {
     //TODO handle value changes on state updates
-    console.log({ state });
   }, [state]);
 
   useEffect(() => {
     props.onReady({
-      activityId: `${id}`,
+      id: `${id}`,
       partResponses: [
         {
           id: `stage.${id}.Selected`,

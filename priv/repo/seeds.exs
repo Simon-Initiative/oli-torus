@@ -100,7 +100,7 @@ Oli.Registrar.register_local_part_components(
     "janus_image",
     "janus_input_text",
     "janus_input_number",
-    "janus-navigation-button",
+    "janus_navigation_button",
   ])
 )
 
