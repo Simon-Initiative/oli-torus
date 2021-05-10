@@ -92,6 +92,7 @@ defmodule Oli.MixProject do
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:mox, "~> 0.5", only: :test},
       {:nimble_parsec, "~> 0.5"},
+      {:nodejs, "~> 2.0"},
       {:open_api_spex, "~> 3.9"},
       {:phoenix, "~> 1.5.6"},
       {:phoenix_ecto, "~> 4.0"},

@@ -73,6 +73,16 @@ config :oli, OliWeb.Endpoint,
       "--watch",
       "--watch-options-stdin",
       cd: Path.expand("../assets", __DIR__)
+    ],
+    node: [
+      "node_modules/webpack/bin/webpack.js",
+      "--config",
+      "webpack.config.node.js",
+      "--mode",
+      "development",
+      "--watch",
+      "--watch-options-stdin",
+      cd: Path.expand("../assets", __DIR__)
     ]
   ]
 
