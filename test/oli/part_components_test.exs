@@ -31,10 +31,10 @@ defmodule Oli.PartComponentsTest do
       project_parts = PartComponents.part_components_for_project(project)
 
       assert Enum.member?(project_parts, %{
-              enabled: false,
-              global: false,
-              slug: "test_part_component",
-              title: "Test Part Component"
+               enabled: false,
+               global: false,
+               slug: "test_part_component",
+               title: "Test Part Component"
              })
     end
   end

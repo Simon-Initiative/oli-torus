@@ -50,6 +50,8 @@ window.userToken = "<%= assigns[:user_token] %>";
 
 <%= if Oli.Utils.LoadTesting.enabled?() do %>
 <!--
-__ACTIVITY_ATTEMPTS__<%= encode_activity_attempts(@latest_attempts) %>__ACTIVITY_ATTEMPTS__
+__FINALIZATION_URL__<%= encode_url(Routes.page_delivery_path(@conn, :finalize_attempt, @section_slug, @slug, @attempt_guid)) %>__FINALIZATION_URL__
+
+__ACTIVITY_ATTEMPTS__<%= encode_activity_attempts(@activity_type_slug_mapping, @latest_attempts) %>__ACTIVITY_ATTEMPTS__
 -->
 <% end %>

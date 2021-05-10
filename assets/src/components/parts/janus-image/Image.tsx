@@ -26,8 +26,6 @@ const Image: React.FC<any> = (props) => {
   };
   useEffect(() => {
     // all activities *must* emit onReady
-    // console.log('IMAGE ONE TIME', props.id);
-    // eslint-disable-next-line
     props.onReady({ id: `${props.id}` });
   }, []);
   return (

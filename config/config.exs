@@ -44,7 +44,7 @@ config :oli,
     logo: System.get_env("BRANDING_LOGO", "/images/oli_torus_logo.png"),
     favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons"),
     dark: [
-      logo: System.get_env("BRANDING_LOGO_DARK"),
+      logo: System.get_env("BRANDING_LOGO_DARK")
     ]
   ]
 

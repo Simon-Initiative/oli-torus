@@ -2,16 +2,17 @@ use Mix.Config
 
 from_boolean_env = fn key, default ->
   System.get_env(key, default)
-    |> String.downcase()
-    |> (case do
-      "true" -> :enabled
-      _ -> :disabled
-    end)
+  |> String.downcase()
+  |> case do
+    "true" -> :enabled
+    _ -> :disabled
+  end
 end
 
 config :oli,
   env: :dev,
-  problematic_query_detection: from_boolean_env.("DEV_PROBLEMATIC_QUERY_DETECTION_ENABLED", "false"),
+  problematic_query_detection:
+    from_boolean_env.("DEV_PROBLEMATIC_QUERY_DETECTION_ENABLED", "false"),
   load_testing_mode: from_boolean_env.("LOAD_TESTING_MODE", "false"),
   s3_media_bucket_name: "torus-media-dev",
   media_url: "torus-media-dev.s3.amazonaws.com",
@@ -69,7 +70,8 @@ config :oli, OliWeb.Endpoint,
       "node_modules/webpack/bin/webpack.js",
       "--mode",
       "development",
-      "--watch-stdin",
+      "--watch",
+      "--watch-options-stdin",
       cd: Path.expand("../assets", __DIR__)
     ]
   ]

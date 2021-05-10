@@ -8,13 +8,17 @@
 - Allow adaptive pages to render without application chrome
 - Save cookie preferences in delivered courses
 - Add support for page content grouping
+- Add image resizing
 - Introduce load testing support
+- Expose telemetry metrics for Prometheus metrics scraping
+- Add support for course package delete
 
 ### Bug fixes
 
 - Fix help and logo links on register institution page, change help form to modal
 - Add missing database indexes, rework resolver queries
 - Fix ability to request hints
+- Fix content editing after drag and drop in resource editors
 
 ## 0.9.0 (2021-4-22)
 

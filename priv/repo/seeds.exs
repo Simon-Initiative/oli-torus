@@ -93,6 +93,14 @@ Oli.Registrar.register_local_activities(
   ])
 )
 
+# Seed the database with the locally implemented part component types
+Oli.Registrar.register_local_part_components(
+  MapSet.new([
+    "janus_text_flow",
+    "janus_image",
+  ])
+)
+
 # create a default active lti_1p3 jwk
 if !Oli.Repo.get_by(Lti_1p3.DataProviders.EctoProvider.Jwk, id: 1) do
   %{private_key: private_key} = Lti_1p3.KeyGenerator.generate_key_pair()

@@ -4,8 +4,6 @@
 <% end %>
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/delivery.js") %>"></script>
 
-<h1 class="title"><%= @title %></h1>
-
 <div id="delivery_container" class="container"></div>
 
 <script>
@@ -34,6 +32,7 @@
     activityGuidMapping: <%= raw(@activity_guid_mapping) %>,
     previousPageURL,
     nextPageURL,
+    previewMode: false
   };
 
   window.oliMountApplication(document.getElementById('delivery_container'), params);

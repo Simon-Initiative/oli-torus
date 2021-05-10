@@ -248,15 +248,16 @@ defmodule Oli.PublishingTest do
 
       # Update a page
       page_content = %{
-        "content" => %{"model" => [%{"type" => "content", "children" => [%{"text" => "A paragraph."}]}]}
+        "content" => %{
+          "model" => [%{"type" => "content", "children" => [%{"text" => "A paragraph."}]}]
+        }
       }
 
       # The page should not be able to be edited without re-acquiring the lock
       {:error, {:lock_not_acquired, _}} =
         PageEditor.edit(project.slug, original_revision.slug, author.email, page_content)
 
-      {:acquired} =
-        PageEditor.acquire_lock(project.slug, original_revision.slug, author.email)
+      {:acquired} = PageEditor.acquire_lock(project.slug, original_revision.slug, author.email)
 
       {:ok, updated_page_revision} =
         PageEditor.edit(project.slug, original_revision.slug, author.email, page_content)
@@ -346,7 +347,10 @@ defmodule Oli.PublishingTest do
       {:ok, %Publication{} = p1} = Publishing.publish_project(project)
 
       # make some edits
-      content = %{"model" => [%{"type" => "content", "children" => [%{"text" => "A paragraph."}]}]}
+      content = %{
+        "model" => [%{"type" => "content", "children" => [%{"text" => "A paragraph."}]}]
+      }
+
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       {:ok, _updated_revision} =

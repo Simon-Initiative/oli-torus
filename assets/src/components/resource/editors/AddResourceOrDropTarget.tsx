@@ -8,17 +8,17 @@ import * as Immutable from 'immutable';
 import { DropTarget } from './dragndrop/DropTarget';
 
 export type AddResourceOrDropTargetProps = {
-  isReorderMode: boolean,
-  id: string,
-  index: number,
-  editMode: boolean,
-  editorMap: ActivityEditorMap,
-  resourceContext: ResourceContext,
-  onDrop: (e: React.DragEvent<HTMLDivElement>, index: number) => void,
-  onAddItem: (c: ResourceContent, index: number, a?: Activity) => void,
-  objectives: Immutable.List<Objective>,
-  childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>,
-  onRegisterNewObjective: (text: string) => Promise<Objective>,
+  isReorderMode: boolean;
+  id: string;
+  index: number;
+  editMode: boolean;
+  editorMap: ActivityEditorMap;
+  resourceContext: ResourceContext;
+  onDrop: (e: React.DragEvent<HTMLDivElement>, index: number) => void;
+  onAddItem: (c: ResourceContent, index: number, a?: Activity) => void;
+  objectives: Immutable.List<Objective>;
+  childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
+  onRegisterNewObjective: (text: string) => Promise<Objective>;
 };
 
 export const AddResourceOrDropTarget = (props: AddResourceOrDropTargetProps) => {

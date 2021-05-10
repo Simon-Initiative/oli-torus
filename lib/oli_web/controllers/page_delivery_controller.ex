@@ -21,8 +21,11 @@ defmodule OliWeb.PageDeliveryController do
 
     if Sections.is_enrolled?(user.id, section_slug) do
       case Summary.get_summary(section_slug, user) do
-        {:ok, summary} -> render(conn, "index.html", section_slug: section_slug, summary: summary)
-        {:error, _} -> render(conn, "error.html")
+        {:ok, summary} ->
+          render(conn, "index.html", section_slug: section_slug, summary: summary)
+
+        {:error, _} ->
+          render(conn, "error.html")
       end
     else
       render(conn, "not_authorized.html")
@@ -155,6 +158,8 @@ defmodule OliWeb.PageDeliveryController do
 
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
 
+    all_activities = Activities.list_activity_registrations()
+
     render(
       conn,
       if ResourceType.get_type_by_id(context.page.resource_type_id) == "container" do
@@ -166,7 +171,9 @@ defmodule OliWeb.PageDeliveryController do
         page: context.page,
         progress_state: context.progress_state,
         section_slug: section_slug,
-        scripts: Activities.get_activity_scripts(),
+        scripts: Enum.map(all_activities, fn a -> a.delivery_script end),
+        activity_type_slug_mapping:
+          Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a.slug) end),
         summary: context.summary,
         previous_page: context.previous_page,
         next_page: context.next_page,

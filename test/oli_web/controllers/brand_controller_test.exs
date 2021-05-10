@@ -7,15 +7,37 @@ defmodule OliWeb.BrandControllerTest do
   alias Oli.Branding.Brand
 
   @create_attrs %{
-    "favicons" => [%Plug.Upload{path: Path.absname("priv/data/oli_favicons/favicon.ico"), filename: "some_favicon.ico"}],
-    "logo" => %Plug.Upload{path: Path.absname("priv/data/oli_logo.png"), filename: "some_logo.png"},
-    "logo_dark" => %Plug.Upload{path: Path.absname("priv/data/oli_logo.png"), filename: "some_logo_dark.png"},
+    "favicons" => [
+      %Plug.Upload{
+        path: Path.absname("priv/data/oli_favicons/favicon.ico"),
+        filename: "some_favicon.ico"
+      }
+    ],
+    "logo" => %Plug.Upload{
+      path: Path.absname("priv/data/oli_logo.png"),
+      filename: "some_logo.png"
+    },
+    "logo_dark" => %Plug.Upload{
+      path: Path.absname("priv/data/oli_logo.png"),
+      filename: "some_logo_dark.png"
+    },
     "name" => "some name"
   }
   @update_attrs %{
-    "favicons" => [%Plug.Upload{path: Path.absname("priv/data/oli_favicons/favicon.ico"), filename: "some_updated_favicon.ico"}],
-    "logo" => %Plug.Upload{path: Path.absname("priv/data/oli_logo.png"), filename: "some_update_logo.png"},
-    "logo_dark" => %Plug.Upload{path: Path.absname("priv/data/oli_logo.png"), filename: "some_update_logo_dark.png"},
+    "favicons" => [
+      %Plug.Upload{
+        path: Path.absname("priv/data/oli_favicons/favicon.ico"),
+        filename: "some_updated_favicon.ico"
+      }
+    ],
+    "logo" => %Plug.Upload{
+      path: Path.absname("priv/data/oli_logo.png"),
+      filename: "some_update_logo.png"
+    },
+    "logo_dark" => %Plug.Upload{
+      path: Path.absname("priv/data/oli_logo.png"),
+      filename: "some_update_logo_dark.png"
+    },
     "name" => "some updated name"
   }
   @invalid_attrs %{
@@ -88,7 +110,6 @@ defmodule OliWeb.BrandControllerTest do
     setup [:create_and_signin_admin, :create_brand]
 
     test "redirects when data is valid", %{conn: conn, brand: brand, admin: admin} do
-
       Oli.Test.MockAws
       |> expect(:request, 2, fn %ExAws.Operation.S3{} ->
         {:ok, %{status_code: 200}}
@@ -126,7 +147,9 @@ defmodule OliWeb.BrandControllerTest do
 
   defp create_and_signin_admin(%{conn: conn}) do
     admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().admin})
-    conn = conn
+
+    conn =
+      conn
       |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     %{conn: conn, admin: admin}

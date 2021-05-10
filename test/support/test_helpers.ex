@@ -319,6 +319,6 @@ defmodule Oli.TestHelpers do
         slug: "test_part_component"
       })
 
-      {:ok, _registration} = PartComponents.create_registration(params)
+    {:ok, _registration} = PartComponents.create_registration(params)
   end
 end

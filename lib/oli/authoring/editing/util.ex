@@ -35,14 +35,16 @@ defmodule Oli.Authoring.Editing.Utils do
   Returns a MapSet of all activity ids found in the page content hierarchy.
   """
   def activity_references(content) do
-
     case content do
-      %{"model" => _} -> Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} -> type == "activity-reference" end)
+      %{"model" => _} ->
+        Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
+          type == "activity-reference"
+        end)
         |> Enum.map(fn %{"activity_id" => id} -> id end)
         |> MapSet.new()
 
-      _ -> MapSet.new([])
+      _ ->
+        MapSet.new([])
     end
-
   end
 end

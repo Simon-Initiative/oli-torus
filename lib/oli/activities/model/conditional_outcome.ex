@@ -13,5 +13,4 @@ defmodule Oli.Activities.Model.ConditionalOutcome do
   def parse(_) do
     {:error, "invalid conditional outcome"}
   end
-
 end

@@ -13,7 +13,10 @@ defmodule OliWeb.HelpController do
              Application.fetch_env!(:oli, :help)[:dispatcher],
              help_content
            ) do
-      json(conn, %{"result" => "success", "info" => "Your help request has been successfully submitted"})
+      json(conn, %{
+        "result" => "success",
+        "info" => "Your help request has been successfully submitted"
+      })
     else
       {:error, message} ->
         Logger.error("Error when processing help message #{inspect(message)}")
@@ -93,5 +96,4 @@ defmodule OliWeb.HelpController do
     |> send_resp(code, reason)
     |> halt()
   end
-
 end

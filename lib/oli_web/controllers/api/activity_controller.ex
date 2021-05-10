@@ -167,9 +167,10 @@ defmodule OliWeb.Api.ActivityController do
     }
   end
 
-  defp document_to_result(%{objectives: objectives, title: title, content: content}) do
+  defp document_to_result(%{objectives: objectives, title: title, content: content, resource_id: resource_id}) do
     %{
       "result" => "success",
+      "resourceId" => resource_id,
       "objectives" => objectives,
       "title" => title,
       "content" => Map.delete(content, "authoring"),
@@ -257,10 +258,11 @@ defmodule OliWeb.Api.ActivityController do
     end
   end
 
-  defp document_to_delivery_result(%{title: title, content: content}) do
+  defp document_to_delivery_result(%{title: title, content: content, resource_id: resource_id}) do
     %{
       "result" => "success",
       "title" => title,
+      "resourceId" => resource_id,
       "content" => Map.delete(content, "authoring")
     }
   end
