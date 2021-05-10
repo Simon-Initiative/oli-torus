@@ -16,18 +16,33 @@ defmodule OliWeb.ResourceControllerTest do
       assert html_response(conn, 200) =~ "Not Found"
     end
 
-    test "renders next page links", %{conn: conn, project: project, revision1: revision1, revision2: revision2} do
+    test "renders next page links", %{
+      conn: conn,
+      project: project,
+      revision1: revision1,
+      revision2: revision2
+    } do
       conn = get(conn, Routes.resource_path(conn, :preview, project.slug, revision1.slug))
 
-      assert html_response(conn, 200) =~ "<a class=\"page-nav-link btn\" href=\"/project/#{project.slug}/preview/#{revision2.slug}\">"
+      assert html_response(conn, 200) =~
+               "<a class=\"page-nav-link btn\" href=\"/project/#{project.slug}/preview/#{
+                 revision2.slug
+               }\">"
     end
 
-    test "renders prev page links", %{conn: conn, project: project, revision1: revision1, revision2: revision2} do
+    test "renders prev page links", %{
+      conn: conn,
+      project: project,
+      revision1: revision1,
+      revision2: revision2
+    } do
       conn = get(conn, Routes.resource_path(conn, :preview, project.slug, revision2.slug))
 
-      assert html_response(conn, 200) =~ "<a class=\"page-nav-link btn\" href=\"/project/#{project.slug}/preview/#{revision1.slug}\">"
+      assert html_response(conn, 200) =~
+               "<a class=\"page-nav-link btn\" href=\"/project/#{project.slug}/preview/#{
+                 revision1.slug
+               }\">"
     end
-
   end
 
   describe "update resource" do
@@ -64,19 +79,39 @@ defmodule OliWeb.ResourceControllerTest do
   end
 
   describe "preview" do
-    test "renders page preview with next page links", %{conn: conn, project: project, revision1: revision1, revision2: revision2} do
+    test "renders page preview with next page links", %{
+      conn: conn,
+      project: project,
+      revision1: revision1,
+      revision2: revision2
+    } do
       conn = get(conn, Routes.resource_path(conn, :preview, project.slug, revision1.slug))
 
-      assert html_response(conn, 200) =~ "<nav class=\"previous-next-nav d-flex flex-row\" aria-label=\"Page navigation\">"
-      assert html_response(conn, 200) =~ "<a class=\"page-nav-link btn\" href=\"/project/#{project.slug}/preview/#{revision2.slug}\">"
+      assert html_response(conn, 200) =~
+               "<nav class=\"previous-next-nav d-flex flex-row\" aria-label=\"Page navigation\">"
+
+      assert html_response(conn, 200) =~
+               "<a class=\"page-nav-link btn\" href=\"/project/#{project.slug}/preview/#{
+                 revision2.slug
+               }\">"
+
       assert html_response(conn, 200) =~ "<div class=\"nav-label\">Next</div>"
       assert html_response(conn, 200) =~ "<div class=\"nav-title\">#{revision2.title}</div>"
     end
 
-    test "renders page preview with prev page links", %{conn: conn, project: project, revision1: revision1, revision2: revision2} do
+    test "renders page preview with prev page links", %{
+      conn: conn,
+      project: project,
+      revision1: revision1,
+      revision2: revision2
+    } do
       conn = get(conn, Routes.resource_path(conn, :preview, project.slug, revision2.slug))
 
-      assert html_response(conn, 200) =~ "<a class=\"page-nav-link btn\" href=\"/project/#{project.slug}/preview/#{revision1.slug}\">"
+      assert html_response(conn, 200) =~
+               "<a class=\"page-nav-link btn\" href=\"/project/#{project.slug}/preview/#{
+                 revision1.slug
+               }\">"
+
       assert html_response(conn, 200) =~ "<div class=\"nav-label\">Previous</div>"
       assert html_response(conn, 200) =~ "<div class=\"nav-title\">#{revision1.title}</div>"
     end
@@ -86,9 +121,15 @@ defmodule OliWeb.ResourceControllerTest do
       assert html_response(conn, 200) =~ "Not Found"
     end
 
-    test "redirects to first resource if no revision slug is given", %{conn: conn, project: project, revision1: revision1} do
+    test "redirects to first resource if no revision slug is given", %{
+      conn: conn,
+      project: project,
+      revision1: revision1
+    } do
       conn = get(conn, Routes.resource_path(conn, :preview, project.slug))
-      assert html_response(conn, 302) =~ Routes.resource_path(conn, :preview, project.slug, revision1.slug)
+
+      assert html_response(conn, 302) =~
+               Routes.resource_path(conn, :preview, project.slug, revision1.slug)
     end
   end
 

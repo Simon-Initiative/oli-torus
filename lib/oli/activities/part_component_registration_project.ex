@@ -14,6 +14,8 @@ defmodule Oli.PartComponents.PartComponentRegistrationProject do
     author_project
     |> cast(attrs, [:part_component_registration_id, :project_id])
     |> validate_required([:part_component_registration_id, :project_id])
-    |> unique_constraint(:part_component_registration_id, name: :index_part_component_registration_project)
+    |> unique_constraint(:part_component_registration_id,
+      name: :index_part_component_registration_project
+    )
   end
 end

@@ -126,15 +126,26 @@ defmodule Oli.Delivery.Page.PageContext do
     index = Enum.find_index(flattened_hierarchy, fn node -> node.revision.id == revision.id end)
 
     case {index, length(flattened_hierarchy) - 1} do
-      {nil, _} -> {nil, nil}
-      {_, 0} -> {nil, nil}
-      {0, _} -> {nil, Enum.at(flattened_hierarchy, 1).revision}
-      {a, a} -> {Enum.at(flattened_hierarchy, a - 1).revision, nil}
-      {a, _} -> {Enum.at(flattened_hierarchy, a - 1).revision, Enum.at(flattened_hierarchy, a + 1).revision}
+      {nil, _} ->
+        {nil, nil}
+
+      {_, 0} ->
+        {nil, nil}
+
+      {0, _} ->
+        {nil, Enum.at(flattened_hierarchy, 1).revision}
+
+      {a, a} ->
+        {Enum.at(flattened_hierarchy, a - 1).revision, nil}
+
+      {a, _} ->
+        {Enum.at(flattened_hierarchy, a - 1).revision,
+         Enum.at(flattened_hierarchy, a + 1).revision}
     end
   end
 
   def flatten_hierarchy([]), do: []
+
   def flatten_hierarchy([h | t]) do
     if ResourceType.get_type_by_id(h.revision.resource_type_id) == "container" do
       []
@@ -150,5 +161,4 @@ defmodule Oli.Delivery.Page.PageContext do
     Enum.map(latest_attempts, fn {_, {%{revision: revision}, _}} -> revision end)
     |> ObjectivesRollup.rollup_objectives(resolver, section_slug)
   end
-
 end

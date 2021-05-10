@@ -157,8 +157,9 @@ defmodule Oli.Branding do
     |> Map.get(:logo_dark)
   end
 
-  def favicons(name, section \\nil) do
-    favicons_dir = brand_with_defaults(section)
+  def favicons(name, section \\ nil) do
+    favicons_dir =
+      brand_with_defaults(section)
       |> Map.get(:favicons)
 
     "#{favicons_dir}/#{name}"
@@ -184,15 +185,18 @@ defmodule Oli.Branding do
 
       %Section{lti_1p3_deployment: %Ecto.Association.NotLoaded{}} ->
         section
-        |> ensure_preloaded([lti_1p3_deployment: [registration: [:brand]]])
+        |> ensure_preloaded(lti_1p3_deployment: [registration: [:brand]])
         |> get_most_relevant_brand()
 
       %Section{lti_1p3_deployment: %Deployment{registration: %Ecto.Association.NotLoaded{}}} ->
         section
-        |> ensure_preloaded([lti_1p3_deployment: [registration: [:brand]]])
+        |> ensure_preloaded(lti_1p3_deployment: [registration: [:brand]])
         |> get_most_relevant_brand()
 
-      %Section{brand: section_brand, lti_1p3_deployment: %Deployment{registration: %Registration{brand: registration_brand}}} ->
+      %Section{
+        brand: section_brand,
+        lti_1p3_deployment: %Deployment{registration: %Registration{brand: registration_brand}}
+      } ->
         section_registration_or_default(section_brand, registration_brand)
 
       _ ->
@@ -208,21 +212,24 @@ defmodule Oli.Branding do
             # no brand defined for section or registration, use default compiled branding
             get_default_brand()
 
-          brand -> brand
+          brand ->
+            brand
         end
 
-      brand -> brand
+      brand ->
+        brand
     end
   end
 
   defp ensure_preloaded(section, associations) do
-    Logger.warning "The section association #{Kernel.inspect(associations)} has not been preloaded for branding. "
-      <> "The association will be loaded now but may result in performance issues."
+    Logger.warning(
+      "The section association #{Kernel.inspect(associations)} has not been preloaded for branding. " <>
+        "The association will be loaded now but may result in performance issues."
+    )
 
     section
     |> Repo.preload(associations)
   end
-
 
   # creates a brand object from the compiled default branding config
   defp get_default_brand() do
@@ -232,7 +239,7 @@ defmodule Oli.Branding do
       name: Keyword.get(default_branding, :name),
       logo: Keyword.get(default_branding, :logo),
       logo_dark: dark_or_default(default_branding, :logo),
-      favicons: Keyword.get(default_branding, :favicons),
+      favicons: Keyword.get(default_branding, :favicons)
     }
   end
 

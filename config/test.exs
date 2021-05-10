@@ -2,13 +2,12 @@ use Mix.Config
 
 from_boolean_env = fn key, default ->
   System.get_env(key, default)
-    |> String.downcase()
-    |> (case do
-      "true" -> :enabled
-      _ -> :disabled
-    end)
+  |> String.downcase()
+  |> case do
+    "true" -> :enabled
+    _ -> :disabled
+  end
 end
-
 
 config :oli,
   env: :test,
@@ -23,7 +22,7 @@ config :oli,
     logo: "/images/oli_torus_logo.png",
     favicons: "/favicons",
     dark: [
-      logo: "/images/oli_torus_logo_dark.png",
+      logo: "/images/oli_torus_logo_dark.png"
     ]
   ]
 

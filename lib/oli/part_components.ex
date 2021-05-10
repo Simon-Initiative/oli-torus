@@ -1,5 +1,4 @@
 defmodule Oli.PartComponents do
-
   import Ecto.Query, warn: false
   alias Oli.Repo
 
@@ -39,7 +38,7 @@ defmodule Oli.PartComponents do
     Repo.one(from p in PartComponentRegistration, where: p.slug == ^slug)
   end
 
-   @doc """
+  @doc """
   Returns the list of part components visible for author to use in particular project.
 
   ## Examples
@@ -48,7 +47,8 @@ defmodule Oli.PartComponents do
       [%PartComponentMapEntry{}, ...]
 
   """
-  @spec create_registered_part_component_map(String.t()) :: %PartComponentMapEntry{} | {:error, any}
+  @spec create_registered_part_component_map(String.t()) ::
+          %PartComponentMapEntry{} | {:error, any}
   def create_registered_part_component_map(project_slug) do
     with {:ok, project} <-
            Course.get_project_by_slug(project_slug)
@@ -85,9 +85,9 @@ defmodule Oli.PartComponents do
            Course.get_project_by_slug(project_slug)
            |> trap_nil("The project was not found.") do
       case Repo.get_by(
-        PartComponentRegistrationProject,
+             PartComponentRegistrationProject,
              %{
-              part_component_registration_id: part_component_registration.id,
+               part_component_registration_id: part_component_registration.id,
                project_id: project.id
              }
            ) do
@@ -118,7 +118,7 @@ defmodule Oli.PartComponents do
            Repo.get_by(
              PartComponentRegistrationProject,
              %{
-              part_component_registration_id: part_component_registration.id,
+               part_component_registration_id: part_component_registration.id,
                project_id: project.id
              }
            )
@@ -133,9 +133,11 @@ defmodule Oli.PartComponents do
     project = project |> Repo.preload([:part_component_registrations])
 
     project_part_components =
-      Enum.reduce(project.part_component_registrations, MapSet.new(), fn a, m -> MapSet.put(m, a.id) end)
+      Enum.reduce(project.part_component_registrations, MapSet.new(), fn a, m ->
+        MapSet.put(m, a.id)
+      end)
 
-      part_components_enabled =
+    part_components_enabled =
       Enum.reduce(list_part_component_registrations(), [], fn a, m ->
         enabled_for_project =
           a.globally_available === true or MapSet.member?(project_part_components, a.id)

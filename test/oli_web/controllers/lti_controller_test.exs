@@ -82,7 +82,9 @@ defmodule OliWeb.LtiControllerTest do
 
       # validate still works when a user is already logged in
       user = user_fixture()
-      conn = recycle(conn)
+
+      conn =
+        recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
