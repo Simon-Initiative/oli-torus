@@ -1,0 +1,14 @@
+{
+    "id": "janus_multi_line_text",
+    "friendlyName": "MultiLineTextInput",
+    "description": "Displays a Multiline input text",
+    "global": true,
+    "delivery": {
+        "element": "janus-multi-line-text",
+        "entry": "./delivery-entry.ts"
+    },
+    "authoring": {
+        "element": "janus-multi-line-text",
+        "entry": "./authoring-entry.ts"
+    }
+}
