@@ -7,7 +7,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Authoring.Course
-  alias OliWeb.Curriculum.{Rollup, ActivityDelta, DropTarget, EntryLive}
+  alias OliWeb.Curriculum.{Rollup, ActivityDelta, DropTarget, EntryLive, DetailsModal, MoveModal, DeleteModal}
   alias Oli.Resources.ScoringStrategy
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Accounts.Author
@@ -69,6 +69,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
            author: Repo.get(Author, author_id),
            view: "Simple",
            selected: nil,
+           modal: nil,
            resources_being_edited: get_resources_being_edited(container.children, project.id),
            numberings: Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug)
          )}
@@ -144,6 +145,50 @@ defmodule OliWeb.Curriculum.ContainerLive do
       Subscriber.unsubscribe_to_locks_released(project_slug, child.resource_id)
     end)
   end
+
+  def handle_event("show_details_modal", %{"slug" => slug}, socket) do
+    %{container: container, project: project} = socket.assigns
+    assigns = %{
+      id: "move_#{slug}",
+      container: container,
+      revision: Enum.find(socket.assigns.children, fn r -> r.slug == slug end),
+      project: project,
+    }
+    {:noreply, assign(socket,
+      modal: %{component: DetailsModal, assigns: assigns}
+    )}
+  end
+
+  def handle_event("show_move_modal", %{"slug" => slug}, socket) do
+    assigns = %{
+      id: "move_#{slug}",
+      slug: slug,
+    }
+    {:noreply, assign(socket,
+      modal: %{component: MoveModal, assigns: assigns}
+    )}
+  end
+
+  def handle_event("show_delete_modal", %{"slug" => slug}, socket) do
+    %{container: container, project: project, author: author} = socket.assigns
+    assigns = %{
+      id: "delete_#{slug}",
+      revision: Enum.find(socket.assigns.children, fn r -> r.slug == slug end),
+      container: container,
+      project: project,
+      author: author,
+    }
+    {:noreply, assign(socket,
+      modal: %{component: DeleteModal, assigns: assigns}
+    )}
+  end
+
+  def handle_event("cancel", _, socket) do
+    {:noreply, assign(socket, modal: nil)}
+  end
+
+  # handle any cancel events a modal might generate from being closed
+  def handle_event("cancel_modal", params, socket), do: handle_event("cancel", params, socket)
 
   # handle change of selection
   def handle_event("select", %{"slug" => slug}, socket) do

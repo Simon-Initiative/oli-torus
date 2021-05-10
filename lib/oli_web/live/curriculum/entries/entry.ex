@@ -47,7 +47,7 @@ defmodule OliWeb.Curriculum.EntryLive do
         </div>
       </div>
 
-      <%# prevent dragging of actions menu and modals %>
+      <%# prevent dragging of actions menu and modals using this draggable wrapper %>
       <div draggable="true" ondragstart="event.preventDefault(); event.stopPropagation();">
         <%= live_component @socket, Actions, assigns %>
       </div>
