@@ -196,6 +196,7 @@ Oli.Snapshots.SnapshotSeeder.html
 Oli.Timing.html
 Oli.UserIdentities.UserIdentity.html
 Oli.Utils.Database.html
+Oli.Utils.FlameGraph.html
 Oli.Utils.HierarchyNode.html
 Oli.Utils.LoadTesting.html
 Oli.Utils.Purposes.html
@@ -281,6 +282,8 @@ OliWeb.DeliveryController.html
 OliWeb.DeliveryView.html
 OliWeb.DeploymentController.html
 OliWeb.DeploymentView.html
+OliWeb.DevController.html
+OliWeb.DevView.html
 OliWeb.EditorTestView.html
 OliWeb.EmailView.html
 OliWeb.Endpoint.html
@@ -390,8 +393,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-f6284b0fba.js
-dist/sidebar_items-146bcdb08b.js
+dist/search_items-f964cca71f.js
+dist/sidebar_items-69d46c057a.js
 index.html
 license.html
 readme.html
