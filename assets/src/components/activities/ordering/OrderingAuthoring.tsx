@@ -14,6 +14,7 @@ import { configureStore } from 'state/store';
 import produce from 'immer';
 import { TargetedFeedback } from 'components/activities/ordering/sections/TargetedFeedback';
 import { canMoveChoice, getHints, isTargetedOrdering } from 'components/activities/ordering/utils';
+import { toggleAnswerChoiceShuffling } from 'components/activities/common/utils';
 
 const store = configureStore();
 
@@ -37,6 +38,7 @@ const Ordering = (props: AuthoringElementProps<OrderingModelSchema>) => {
 
       <Choices
         {...sharedProps}
+        onShuffle={() => dispatch(toggleAnswerChoiceShuffling())}
         onAddChoice={() => dispatch(Actions.addChoice())}
         onEditChoiceContent={(id, content) => dispatch(Actions.editChoiceContent(id, content))}
         onRemoveChoice={(id) => dispatch(Actions.removeChoice(id))}

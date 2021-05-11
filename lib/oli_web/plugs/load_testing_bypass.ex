@@ -1,9 +1,7 @@
 defmodule Oli.Plugs.LoadTestingCSRFBypass do
-
   def init(opts), do: opts
 
   def call(conn, _opts) do
-
     # During load testing, we allow CSRF checks to be bypassed to simplify
     # load testing scenario implementation
     if Oli.Utils.LoadTesting.enabled?() do
@@ -12,7 +10,5 @@ defmodule Oli.Plugs.LoadTestingCSRFBypass do
     else
       conn
     end
-
   end
-
 end

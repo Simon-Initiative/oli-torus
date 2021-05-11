@@ -37,9 +37,9 @@ defmodule Oli.Resources.Numbering do
   """
   @spec full_hierarchy(resolver, project_or_section_slug) :: [%HierarchyNode{}]
   def full_hierarchy(resolver, project_or_section_slug) do
-
-    revisions_by_id = resolver.all_revisions_in_hierarchy(project_or_section_slug)
-    |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
+    revisions_by_id =
+      resolver.all_revisions_in_hierarchy(project_or_section_slug)
+      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
 
     full_hierarchy_helper(
       number_full_tree(resolver, project_or_section_slug),

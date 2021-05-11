@@ -20,5 +20,4 @@ defmodule Oli.Utils.HierarchyNode do
       Enum.reduce(node.children, all, &flatten_pages(&1, &2))
     end
   end
-
 end

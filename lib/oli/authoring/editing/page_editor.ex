@@ -191,7 +191,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
     editor_map = Activities.create_registered_activity_map(project_slug)
 
     with {:ok, publication} <-
-           Publishing.get_unpublished_publication_by_slug!(project_slug) |> Repo.preload(:project) |> trap_nil(),
+           Publishing.get_unpublished_publication_by_slug!(project_slug)
+           |> Repo.preload(:project)
+           |> trap_nil(),
          {:ok, %{content: content} = revision} <-
            AuthoringResolver.from_revision_slug(project_slug, revision_slug) |> trap_nil(),
          {:ok, objectives} <-
@@ -199,30 +201,30 @@ defmodule Oli.Authoring.Editing.PageEditor do
          {:ok, objectives_with_parent_reference} <-
            construct_parent_references(objectives) |> trap_nil(),
          {:ok, activities} <- create_activities_map(project_slug, publication.id, content) do
-
       # Create the resource editing context that we will supply to the client side editor
 
-      [root_container_node] = Numbering.full_hierarchy(Oli.Publishing.AuthoringResolver, project_slug)
+      [root_container_node] =
+        Numbering.full_hierarchy(Oli.Publishing.AuthoringResolver, project_slug)
+
       hierarchy = root_container_node.children
       {previous, next} = PageContext.determine_previous_next(hierarchy, revision)
 
       {:ok,
-        %Oli.Authoring.Editing.ResourceContext{
-          authorEmail: author.email,
-          projectSlug: project_slug,
-          resourceSlug: revision_slug,
-          editorMap: editor_map,
-          objectives: revision.objectives,
-          allObjectives: objectives_with_parent_reference,
-          title: revision.title,
-          graded: revision.graded,
-          content: convert_to_activity_slugs(revision.content, publication.id),
-          activities: activities,
-          project: publication.project,
-          previous_page: previous,
-          next_page: next
-        }
-      }
+       %Oli.Authoring.Editing.ResourceContext{
+         authorEmail: author.email,
+         projectSlug: project_slug,
+         resourceSlug: revision_slug,
+         editorMap: editor_map,
+         objectives: revision.objectives,
+         allObjectives: objectives_with_parent_reference,
+         title: revision.title,
+         graded: revision.graded,
+         content: convert_to_activity_slugs(revision.content, publication.id),
+         activities: activities,
+         project: publication.project,
+         previous_page: previous,
+         next_page: next
+       }}
     else
       _ -> {:error, :not_found}
     end
@@ -238,7 +240,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
          render_context <- %Rendering.Context{
            user: author,
            preview: Keyword.get(options, :preview, false),
-           activity_map: activities
+           activity_map: activities,
+           project_slug: project_slug
          } do
       Rendering.Page.render(render_context, content["model"], Rendering.Page.Html)
     else
@@ -249,9 +252,10 @@ defmodule Oli.Authoring.Editing.PageEditor do
   defp create_activity_summary_map(publication_id, content) do
     # Now see if we even have any activities that need to be mapped
     found_activities =
-      Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} -> type == "activity-reference" end)
+      Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
+        type == "activity-reference"
+      end)
       |> Enum.map(fn %{"activity_id" => id} -> id end)
-
 
     if length(found_activities) != 0 do
       # get a view of all current registered activity types
@@ -305,7 +309,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
   defp create_activities_map(_, publication_id, content) do
     # Now see if we even have any activities that need to be mapped
     found_activities =
-      Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} -> type == "activity-reference" end)
+      Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
+        type == "activity-reference"
+      end)
       |> Enum.map(fn %{"activity_id" => id} -> id end)
 
     if length(found_activities) != 0 do
@@ -393,7 +399,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
   # as activity ids.
   defp convert_to_activity_ids(%{"content" => content} = update) do
     found_activities =
-      Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} -> type == "activity-reference" end)
+      Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
+        type == "activity-reference"
+      end)
       |> Enum.map(fn c -> Map.get(c, "activitySlug") end)
 
     slug_to_id =
@@ -409,15 +417,15 @@ defmodule Oli.Authoring.Editing.PageEditor do
       end
 
     if Enum.all?(found_activities, fn slug -> Map.has_key?(slug_to_id, slug) end) do
-
-      content = Oli.Resources.PageContent.map(content, fn c ->
-        if Map.get(c, "type") == "activity-reference" do
-          slug = Map.get(c, "activitySlug")
-          Map.delete(c, "activitySlug") |> Map.put("activity_id", Map.get(slug_to_id, slug))
-        else
-          c
-        end
-      end)
+      content =
+        Oli.Resources.PageContent.map(content, fn c ->
+          if Map.get(c, "type") == "activity-reference" do
+            slug = Map.get(c, "activitySlug")
+            Map.delete(c, "activitySlug") |> Map.put("activity_id", Map.get(slug_to_id, slug))
+          else
+            c
+          end
+        end)
 
       {:ok, Map.put(update, "content", content)}
     else
@@ -434,7 +442,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
   # For the activity ids found in content, convert them to activity revision slugs
   defp convert_to_activity_slugs(content, publication_id) do
     found_activities =
-      Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} -> type == "activity-reference" end)
+      Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
+        type == "activity-reference"
+      end)
       |> Enum.map(fn %{"activity_id" => id} -> id end)
 
     id_to_slug =
@@ -449,7 +459,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
           end)
       end
 
-
     Oli.Resources.PageContent.map(content, fn c ->
       if Map.get(c, "type") == "activity-reference" do
         id = Map.get(c, "activity_id")
@@ -458,7 +467,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
         c
       end
     end)
-
   end
 
   # Take a list of maps containing the title, resource_id, and children (as a list of resource_ids)

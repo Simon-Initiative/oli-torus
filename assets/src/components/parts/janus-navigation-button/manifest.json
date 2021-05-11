@@ -1,0 +1,14 @@
+{
+    "id": "janus_navigation_button",
+    "friendlyName": "NavigationButton",
+    "description": "Displays an button",
+    "global": true,
+    "delivery": {
+        "element": "janus-navigation-button",
+        "entry": "./delivery-entry.ts"
+    },
+    "authoring": {
+        "element": "janus-navigation-button",
+        "entry": "./authoring-entry.ts"
+    }
+}

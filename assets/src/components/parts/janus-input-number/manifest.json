@@ -1,0 +1,14 @@
+{
+    "id": "janus_input_number",
+    "friendlyName": "InputNumber",
+    "description": "Displays an number input",
+    "global": true,
+    "delivery": {
+        "element": "janus-input-number",
+        "entry": "./delivery-entry.ts"
+    },
+    "authoring": {
+        "element": "janus-input-number",
+        "entry": "./authoring-entry.ts"
+    }
+}

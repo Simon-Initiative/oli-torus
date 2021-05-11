@@ -82,11 +82,11 @@ export const CheckAllThatApplyComponent = (
     props.state.parts[0].response === null
       ? []
       : props.state.parts[0].response.input
-        .split(' ')
-        .reduce(
-          (acc: ActivityTypes.ChoiceId[], curr: ActivityTypes.ChoiceId) => acc.concat([curr]),
-          [],
-        ),
+          .split(' ')
+          .reduce(
+            (acc: ActivityTypes.ChoiceId[], curr: ActivityTypes.ChoiceId) => acc.concat([curr]),
+            [],
+          ),
   );
 
   const { stem, choices } = model;
@@ -182,16 +182,16 @@ export const CheckAllThatApplyComponent = (
   const ungradedDetails = props.graded
     ? null
     : [
-      evaluationSummary,
-      <Hints
-        key="hints"
-        onClick={onRequestHint}
-        hints={hints}
-        hasMoreHints={hasMoreHints}
-        isEvaluated={isEvaluated}
-        context={writerContext}
-      />,
-    ];
+        evaluationSummary,
+        <Hints
+          key="hints"
+          onClick={onRequestHint}
+          hints={hints}
+          hasMoreHints={hasMoreHints}
+          isEvaluated={isEvaluated}
+          context={writerContext}
+        />,
+      ];
 
   const gradedDetails =
     props.graded && props.progressState === 'in_review' ? [evaluationSummary] : null;
@@ -201,12 +201,12 @@ export const CheckAllThatApplyComponent = (
   const gradedPoints =
     props.graded && props.progressState === 'in_review'
       ? [
-        <div key="correct" className="text-info font-italic">
-          {correctnessIcon}
-          <span>Points: </span>
-          <span>{attemptState.score + ' out of ' + attemptState.outOf}</span>
-        </div>,
-      ]
+          <div key="correct" className="text-info font-italic">
+            {correctnessIcon}
+            <span>Points: </span>
+            <span>{attemptState.score + ' out of ' + attemptState.outOf}</span>
+          </div>,
+        ]
       : null;
 
   const maybeSubmitButton = props.graded ? null : (

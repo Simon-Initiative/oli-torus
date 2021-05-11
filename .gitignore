@@ -40,6 +40,9 @@ npm-debug.log
 # Since we are building assets from assets/ we ignore priv/static
 /priv/static/
 
+# Ignore generated flame graph stack files
+/_flame_graph_stacks/
+
 # Ignore branding and other custom assets
 /assets/static/custom/*
 !/assets/static/custom/README.md
@@ -60,3 +63,4 @@ registrations.json
 docker-compose.override.yml
 supervisord.log
 supervisord.pid
+stacks.out

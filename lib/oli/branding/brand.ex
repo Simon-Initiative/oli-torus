@@ -30,9 +30,10 @@ defmodule Oli.Branding.Brand do
 
   def cast_file_params(params) do
     slug = value_or(params["slug"], Slug.generate("brands", params["name"]))
+
     params
-      |> Map.put("slug", slug)
-      |> cast_upload_to_url(slug, [:logo, :logo_dark, :favicons])
+    |> Map.put("slug", slug)
+    |> cast_upload_to_url(slug, [:logo, :logo_dark, :favicons])
   end
 
   defp cast_upload_to_url(attrs, slug, terms) when is_list(terms) do
@@ -56,5 +57,4 @@ defmodule Oli.Branding.Brand do
         attrs
     end
   end
-
 end

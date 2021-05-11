@@ -211,7 +211,12 @@ defmodule Oli.Delivery.Sections do
       left_join: r in assoc(d, :registration),
       left_join: rb in assoc(r, :brand),
       where: s.slug == ^slug,
-      preload: [publication: pub, project: proj, brand: b, lti_1p3_deployment: {d, registration: {r, brand: rb}}]
+      preload: [
+        publication: pub,
+        project: proj,
+        brand: b,
+        lti_1p3_deployment: {d, registration: {r, brand: rb}}
+      ]
     )
     |> Repo.one()
   end
@@ -239,7 +244,9 @@ defmodule Oli.Delivery.Sections do
         on: s.lti_1p3_deployment_id == d.id,
         join: r in Registration,
         on: d.registration_id == r.id,
-        where: s.context_id == ^context_id and s.status != :deleted and r.issuer == ^issuer and r.client_id == ^client_id,
+        where:
+          s.context_id == ^context_id and s.status != :deleted and r.issuer == ^issuer and
+            r.client_id == ^client_id,
         select: s
     )
   end
@@ -276,7 +283,8 @@ defmodule Oli.Delivery.Sections do
       ** (Ecto.NoResultsError)
   """
   def get_sections_by_publication(publication) do
-    from(s in Section, where: s.publication_id == ^publication.id and s.status != :deleted) |> Repo.all()
+    from(s in Section, where: s.publication_id == ^publication.id and s.status != :deleted)
+    |> Repo.all()
   end
 
   @doc """

@@ -217,11 +217,19 @@ defmodule Oli.Rendering.Content.Html do
     external_link(context, next, "#")
   end
 
-  defp internal_link(%Context{section_slug: section_slug}, next, href) do
+  defp internal_link(
+         %Context{section_slug: section_slug, preview: preview, project_slug: project_slug},
+         next,
+         href
+       ) do
     href =
       case section_slug do
         nil ->
-          "#"
+          if preview do
+            "/project/#{project_slug}/preview/#{revision_slug_from_course_link(href)}"
+          else
+            "#"
+          end
 
         section_slug ->
           # rewrite internal link using section slug and revision slug

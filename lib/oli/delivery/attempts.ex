@@ -475,7 +475,9 @@ defmodule Oli.Delivery.Attempts do
         on: s.publication_id == p.publication_id,
         join: r in Revision,
         on: p.revision_id == r.id,
-        where: s.slug == ^section_slug and s.status != :deleted and r.graded == true and r.resource_id == ^resource_id,
+        where:
+          s.slug == ^section_slug and s.status != :deleted and r.graded == true and
+            r.resource_id == ^resource_id,
         select: a
     )
   end
@@ -506,7 +508,8 @@ defmodule Oli.Delivery.Attempts do
         join: s in Section,
         on: a.section_id == s.id,
         where:
-          a.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted and a.resource_id == ^resource_id,
+          a.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted and
+            a.resource_id == ^resource_id,
         select: a
     )
   end
@@ -715,7 +718,8 @@ defmodule Oli.Delivery.Attempts do
           a.id == ra2.resource_access_id and ra1.id < ra2.id and
             ra1.resource_access_id == ra2.resource_access_id,
         where:
-          a.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted and a.resource_id == ^resource_id and
+          a.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted and
+            a.resource_id == ^resource_id and
             is_nil(ra2),
         select: ra1
     )

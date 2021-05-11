@@ -3,4 +3,4 @@ export interface WriterContext {
 }
 
 export const defaultWriterContext = (params: Partial<WriterContext> = {}) =>
-  (Object.assign({}, params));
+  Object.assign({}, params);

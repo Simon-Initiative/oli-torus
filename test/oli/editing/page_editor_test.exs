@@ -45,10 +45,14 @@ defmodule Oli.EditingTest do
       PageEditor.acquire_lock(project.slug, revision1.slug, author1.email)
 
       some_new_content = %{
-        "content" => %{"model" => [%{
-          "type" => "content",
-          "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
-        }]}
+        "content" => %{
+          "model" => [
+            %{
+              "type" => "content",
+              "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
+            }
+          ]
+        }
       }
 
       PageEditor.edit(project.slug, revision1.slug, author1.email, some_new_content)
@@ -133,10 +137,15 @@ defmodule Oli.EditingTest do
       project: project,
       revision1: revision1
     } do
-      content = %{"model" => [%{
-        "type" => "content",
-        "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
-      }]}
+      content = %{
+        "model" => [
+          %{
+            "type" => "content",
+            "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
+          }
+        ]
+      }
+
       title = "a new title"
       PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
 
@@ -184,10 +193,14 @@ defmodule Oli.EditingTest do
         locked_by_id: author.id
       })
 
-      content = %{"model" => [%{
-        "type" => "content",
-        "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
-      }]}
+      content = %{
+        "model" => [
+          %{
+            "type" => "content",
+            "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
+          }
+        ]
+      }
 
       {:ok, updated_revision} =
         PageEditor.edit(project.slug, revision1.slug, author.email, %{"content" => content})
@@ -209,10 +222,14 @@ defmodule Oli.EditingTest do
         locked_by_id: author.id
       })
 
-      content = %{"model" => [%{
-        "type" => "content",
-        "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
-      }]}
+      content = %{
+        "model" => [
+          %{
+            "type" => "content",
+            "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
+          }
+        ]
+      }
 
       {:ok, updated_revision} =
         PageEditor.edit(project.slug, revision1.slug, author.email, %{"content" => content})
@@ -232,10 +249,15 @@ defmodule Oli.EditingTest do
       {:acquired} = Locks.acquire(project.slug, publication.id, page1.id, author2.id)
 
       # now try to make the edit with the original user
-      content = %{"model" => [%{
-        "type" => "content",
-        "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
-      }]}
+      content = %{
+        "model" => [
+          %{
+            "type" => "content",
+            "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
+          }
+        ]
+      }
+
       PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
 
       result =
@@ -251,10 +273,15 @@ defmodule Oli.EditingTest do
       author2: author2,
       revision1: revision1
     } do
-      content = %{"model" => [%{
-        "type" => "content",
-        "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
-      }]}
+      content = %{
+        "model" => [
+          %{
+            "type" => "content",
+            "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
+          }
+        ]
+      }
+
       PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
 
       result =
@@ -275,10 +302,12 @@ defmodule Oli.EditingTest do
 
     test "edit/4 fails when the resource slug is invalid", %{project: project, author: author} do
       # try to make the edit on a resource that isn't found via a revision slug
-      content = [%{
-        "type" => "content",
-        "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
-      }]
+      content = [
+        %{
+          "type" => "content",
+          "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
+        }
+      ]
 
       result =
         PageEditor.edit(project.slug, "some_missing_slug", author.email, %{"content" => content})
@@ -288,10 +317,14 @@ defmodule Oli.EditingTest do
 
     test "edit/4 fails when the project slug is invalid", %{author: author, revision1: revision1} do
       # try to make the edit on a resource that isn't found via a revision slug
-      content = %{"model" => [%{
-        "type" => "content",
-        "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
-      }]}
+      content = %{
+        "model" => [
+          %{
+            "type" => "content",
+            "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
+          }
+        ]
+      }
 
       result =
         PageEditor.edit("some_missing_slug", revision1.slug, author.email, %{"content" => content})
@@ -304,10 +337,14 @@ defmodule Oli.EditingTest do
       revision1: revision1
     } do
       # try to make the edit using an unauthorized author
-      content = %{"model" => [%{
-        "type" => "content",
-        "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
-      }]}
+      content = %{
+        "model" => [
+          %{
+            "type" => "content",
+            "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
+          }
+        ]
+      }
 
       {:ok, author2} =
         Author.noauth_changeset(%Author{}, %{
