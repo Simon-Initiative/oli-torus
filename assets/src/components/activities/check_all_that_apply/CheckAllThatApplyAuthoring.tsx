@@ -14,6 +14,7 @@ import { configureStore } from 'state/store';
 import produce from 'immer';
 import { TargetedFeedback } from 'components/activities/check_all_that_apply/sections/TargetedFeedback';
 import { getHints, isTargetedCATA } from 'components/activities/check_all_that_apply/utils';
+import { toggleAnswerChoiceShuffling } from 'components/activities/common/utils';
 
 const store = configureStore();
 
@@ -37,6 +38,7 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
 
       <Choices
         {...sharedProps}
+        onShuffle={() => dispatch(toggleAnswerChoiceShuffling())}
         onAddChoice={() => dispatch(Actions.addChoice())}
         onEditChoiceContent={(id, content) => dispatch(Actions.editChoiceContent(id, content))}
         onRemoveChoice={(id) => dispatch(Actions.removeChoice(id))}
