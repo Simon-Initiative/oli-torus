@@ -12,7 +12,7 @@ defmodule OliWeb.Projects.Cards do
             <small>No projects yet</small>
             <p>Create a new project to get started, or ask a friend to invite you to their project.</p>
           <% else %>
-            <div class="card-links">
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-3 g-4">
               <%= for project <- @projects do %>
                 <%= live_component @socket, Card, project: project, author_count: length(Map.get(@authors, project.id)) %>
               <% end %>

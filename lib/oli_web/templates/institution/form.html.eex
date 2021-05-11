@@ -1,44 +1,38 @@
 <%= form_for @changeset, @action, fn f -> %>
-  <%= if @changeset.action do %>
-    <div class="alert alert-danger">
-      <p>Something went wrong, please check the errors below.</p>
-    </div>
-  <% end %>
-
-  <div class="form-label-group">
-    <%= text_input f, :name, class: "form-control " <> error_class(f, :name, "is-invalid"),
+<%= if @changeset.action do %>
+  <div class="alert alert-danger">
+    <p>Something went wrong, please check the errors below.</p>
+  </div>
+<% end %>
+<div class="form-label-group">
+  <%= text_input f, :name, class: "form-control " <> error_class(f, :name, "is-invalid"),
       placeholder: "Institution Name", required: true, autofocus: focusHelper(f, :name, default: true) %>
-    <%= label f, :name, "Institution Name", class: "control-label" %>
-    <%= error_tag f, :name %>
-  </div>
-
-  <div class="form-label-group">
-    <%= text_input f, :institution_url, class: "form-control " <> error_class(f, :institution_url, "is-invalid"),
+  <%= label f, :name, "Institution Name", class: "control-label" %>
+  <%= error_tag f, :name %>
+</div>
+<div class="form-label-group">
+  <%= text_input f, :institution_url, class: "form-control " <> error_class(f, :institution_url, "is-invalid"),
       placeholder: "Institution URL", required: true, autofocus: focusHelper(f, :institution_url)  %>
-    <%= label f, :institution_url, "Institution URL" %>
-    <%= error_tag f, :institution_url %>
-  </div>
-
-  <div class="form-label-group">
-    <%= email_input f, :institution_email, class: "form-control " <> error_class(f, :institution_email, "is-invalid"),
-      placeholder: "Contact Email", required: true, autofocus: focusHelper(f, :institution_email) %>
-    <%= label f, :institution_email, "Institution Email", class: "control-label" %>
-    <%= error_tag f, :institution_email %>
-  </div>
-
-  <div class="form-label-group">
-    <%= select f, :country_code, @country_codes, prompt: "Select Country", class: "form-control " <> error_class(f, :country_code, "is-invalid"),
+  <%= label f, :institution_url, "Institution URL" %>
+  <%= error_tag f, :institution_url %>
+</div>
+<div class="form-label-group">
+  <%= email_input f, :institution_email, class: "form-control " <> error_class(f, :institution_email, "is-invalid"),
+      placeholder: "Institution Email", required: true, autofocus: focusHelper(f, :institution_email) %>
+  <%= label f, :institution_email, "Institution Email", class: "control-label" %>
+  <%= error_tag f, :institution_email %>
+</div>
+<div class="form-label-group">
+  <%= select f, :country_code, @country_codes, prompt: "Select Country", class: "form-control " <> error_class(f, :country_code, "is-invalid"),
       required: true, autofocus: focusHelper(f, :country_code) %>
-    <%= error_tag f, :country_code %>
-  </div>
-
-  <div class="form-label-group">
-    <%= select f, :timezone, @timezones, prompt: "Select Timezone", class: "form-control " <> error_class(f, :timezone, "is-invalid"),
+  <%= error_tag f, :country_code %>
+</div>
+<div class="form-label-group">
+  <%= select f, :timezone, @timezones, prompt: "Select Timezone", class: "form-control " <> error_class(f, :timezone, "is-invalid"),
       required: true, autofocus: focusHelper(f, :timezone) %>
-    <%= error_tag f, :timezone %>
-  </div>
-
-  <div>
-    <%= submit "Save", class: "btn btn-md btn-primary btn-block" %>
-  </div>
+  <%= error_tag f, :timezone %>
+</div>
+<div>
+  <%= submit "Save", class: "btn btn-md btn-primary btn-block" %>
+</div>
 <% end %>
