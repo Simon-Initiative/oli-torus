@@ -1,0 +1,14 @@
+{
+    "id": "janus_input_text",
+    "friendlyName": "InputText",
+    "description": "Displays an input text",
+    "global": true,
+    "delivery": {
+        "element": "janus-input-text",
+        "entry": "./delivery-entry.ts"
+    },
+    "authoring": {
+        "element": "janus-input-text",
+        "entry": "./authoring-entry.ts"
+    }
+}
