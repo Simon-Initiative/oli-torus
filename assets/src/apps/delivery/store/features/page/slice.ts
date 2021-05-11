@@ -1,4 +1,5 @@
 import { createSelector, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import guid from 'utils/guid';
 import { RootState } from '../../rootReducer';
 
 export interface PageState {
@@ -39,6 +40,10 @@ const pageSlice = createSlice({
       state.resourceAttemptState = action.payload.resourceAttemptState;
       state.activityGuidMapping = action.payload.activityGuidMapping;
       state.previewMode = !!action.payload.previewMode;
+
+      if (state.previewMode && !state.resourceAttemptGuid) {
+        state.resourceAttemptGuid = `preview_${guid()}`;
+      }
     },
   },
 });
@@ -51,5 +56,10 @@ export const selectState = (state: RootState): PageState => state[PageSlice];
 export const selectSectionSlug = createSelector(selectState, (state) => state.sectionSlug);
 export const selectPageSlug = createSelector(selectState, (state) => state.pageSlug);
 export const selectPageContent = createSelector(selectState, (state) => state.content);
+export const selectPreviewMode = createSelector(selectState, (state) => state.previewMode);
+export const selectResourceAttemptGuid = createSelector(
+  selectState,
+  (state) => state.resourceAttemptGuid,
+);
 
 export default pageSlice.reducer;

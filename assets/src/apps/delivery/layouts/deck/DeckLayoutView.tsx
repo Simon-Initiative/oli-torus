@@ -1,8 +1,9 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import ActivityRenderer from '../../formats/adaptive/ActivityRenderer';
 import { selectCurrentActivity } from '../../store/features/activities/slice';
+import { initializeActivity } from '../../store/features/groups/actions/deck';
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
@@ -28,6 +29,7 @@ const InjectedStyles: React.FC = () => {
 };
 
 const DeckLayoutView: React.FC<LayoutProps> = ({ pageContent, previewMode }) => {
+  const dispatch = useDispatch();
   const fieldRef = React.useRef<HTMLInputElement>(null);
   const currentActivity = useSelector(selectCurrentActivity);
 
@@ -73,6 +75,10 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageContent, previewMode }) => 
     if (!currentActivity) {
       return;
     }
+
+    // dispatch to update state
+    dispatch(initializeActivity(currentActivity.resourceId));
+
     // set loaded and userRole class when currentActivity is loaded
     const customClasses = currentActivity.custom?.customCssClass;
     /* if (currentActivity.custom?.layerRef) {

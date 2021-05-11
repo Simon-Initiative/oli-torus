@@ -1,21 +1,127 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { getBulkActivitiesForAuthoring } from 'data/persistence/activity';
-import { getBulkAttemptState } from 'data/persistence/state/intrinsic';
+import {
+  getBulkAttemptState,
+  getPageAttemptState,
+  writePageAttemptState,
+} from 'data/persistence/state/intrinsic';
 import { ResourceId } from 'data/types';
 import { RootState } from '../../../rootReducer';
-import { setActivities, setCurrentActivityId } from '../../activities/slice';
-import { selectSectionSlug } from '../../page/slice';
+import {
+  selectCurrentActivityId,
+  setActivities,
+  setCurrentActivityId,
+} from '../../activities/slice';
+import { selectPreviewMode, selectResourceAttemptGuid, selectSectionSlug } from '../../page/slice';
 import { selectSequence } from '../selectors/deck';
 import { GroupsSlice } from '../slice';
+import { getNextQBEntry, getParentBank } from './navUtils';
+import { SequenceBank, SequenceEntry, SequenceEntryType } from './sequence';
+
+export const initializeActivity = createAsyncThunk(
+  `${GroupsSlice}/deck/initializeActivity`,
+  async (activityId: ResourceId, thunkApi) => {
+    const rootState = thunkApi.getState() as RootState;
+    const isPreviewMode = selectPreviewMode(rootState);
+    const sectionSlug = selectSectionSlug(rootState);
+    const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
+    const sequence = selectSequence(rootState);
+    const currentSequenceId = sequence.find((entry) => entry.activity_id === activityId)?.custom
+      .sequenceId;
+    if (!currentSequenceId) {
+      throw new Error(`Activity ${activityId} not found in sequence!`);
+    }
+    const currentState = await getPageAttemptState(sectionSlug, resourceAttemptGuid, isPreviewMode);
+    const currentVisitCount = currentState[`session.visits.${currentSequenceId}`] || 0;
+    // TODO: more state
+    const sessionState = {
+      [`session.visits.${currentSequenceId}`]: currentVisitCount + 1,
+    };
+
+    await writePageAttemptState(sectionSlug, resourceAttemptGuid, sessionState, isPreviewMode);
+  },
+);
+
+const getSessionVisitHistory = async (
+  sectionSlug: string,
+  resourceAttemptGuid: string,
+  isPreviewMode = false,
+) => {
+  const pageAttemptState = await getPageAttemptState(
+    sectionSlug,
+    resourceAttemptGuid,
+    isPreviewMode,
+  );
+  return Object.keys(pageAttemptState)
+    .filter((key) => key.indexOf('session.visits.') === 0)
+    .map((visitKey: string) => ({
+      sequenceId: visitKey.replace('session.visits.', ''),
+      visitCount: pageAttemptState[visitKey] as number,
+    }));
+};
 
 export const navigateToNextActivity = createAsyncThunk(
   `${GroupsSlice}/deck/navigateToNextActivity`,
   async (_, thunkApi) => {
     const rootState = thunkApi.getState() as RootState;
+    const isPreviewMode = selectPreviewMode(rootState);
+    const sectionSlug = selectSectionSlug(rootState);
+    const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const sequence = selectSequence(rootState);
-    const nextActivityId = 1;
+    const currentActivityId = selectCurrentActivityId(rootState);
+    const currentIndex = sequence.findIndex(
+      (entry) => entry.custom.sequenceId === currentActivityId,
+    );
+    let nextSequenceEntry: SequenceEntry<SequenceEntryType> | null = null;
+    let navError = '';
+    if (currentIndex >= 0) {
+      const nextIndex = currentIndex + 1;
+      nextSequenceEntry = sequence[nextIndex];
 
-    thunkApi.dispatch(setCurrentActivityId({ activityId: nextActivityId }));
+      const parentBank = getParentBank(sequence, currentIndex);
+      const visitHistory = await getSessionVisitHistory(
+        sectionSlug,
+        resourceAttemptGuid,
+        isPreviewMode,
+      );
+      if (parentBank) {
+        nextSequenceEntry = getNextQBEntry(sequence, parentBank, visitHistory);
+      }
+      while (nextSequenceEntry?.custom?.isBank || nextSequenceEntry?.custom?.isLayer) {
+        while (nextSequenceEntry && nextSequenceEntry?.custom?.isBank) {
+          // this runs when we're about to enter a QB for the first time
+          nextSequenceEntry = getNextQBEntry(
+            sequence,
+            nextSequenceEntry as SequenceEntry<SequenceBank>,
+            visitHistory,
+          );
+        }
+        while (nextSequenceEntry && nextSequenceEntry?.custom?.isLayer) {
+          // for layers if you try to navigate it should go to first child
+          const firstChild = sequence.find(
+            (entry) =>
+              entry.custom?.layerRef ===
+              (nextSequenceEntry as SequenceEntry<SequenceEntryType>).custom.sequenceId,
+          );
+          if (!firstChild) {
+            navError = 'Target Layer has no children!';
+          }
+          nextSequenceEntry = firstChild;
+        }
+      }
+      if (!nextSequenceEntry) {
+        // If is end of sequence, return and set isEnd to truthy
+        // thunkApi.dispatch(setIsEnd({ isEnd: true }));
+        return;
+      }
+    } else {
+      navError = `Current Activity ${currentActivityId} not found in sequence`;
+    }
+    if (navError) {
+      throw new Error(navError);
+    }
+
+    thunkApi.dispatch(setCurrentActivityId({ activityId: nextSequenceEntry?.custom.sequenceId }));
   },
 );
 
