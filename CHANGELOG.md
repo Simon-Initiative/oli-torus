@@ -12,6 +12,7 @@
 - Introduce load testing support
 - Expose telemetry metrics for Prometheus metrics scraping
 - Add support for course package delete
+- Add support for disabling answer choice shuffling in multiple choice, check all that apply, ordering questions
 
 ### Bug fixes
 
@@ -19,6 +20,9 @@
 - Add missing database indexes, rework resolver queries
 - Fix ability to request hints
 - Fix content editing after drag and drop in resource editors
+- Fix internal links in page preview mode
+- Fix projects view project card styling
+- Fix problem with inputs causing clipping in Firefox
 
 ## 0.9.0 (2021-4-22)
 
