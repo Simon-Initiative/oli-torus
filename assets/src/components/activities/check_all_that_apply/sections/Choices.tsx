@@ -6,6 +6,7 @@ import { ChoiceId, RichText } from '../../types';
 import { CloseButton } from 'components/misc/CloseButton';
 import { ProjectSlug } from 'data/types';
 import { isCorrectChoice } from '../utils';
+import { isShuffled, ShuffleChoicesOption } from 'components/activities/common/utils';
 
 interface Props extends ModelEditorProps {
   onAddChoice: () => void;
@@ -13,6 +14,7 @@ interface Props extends ModelEditorProps {
   onToggleChoiceCorrectness: (choiceId: ChoiceId) => void;
   onRemoveChoice: (id: string) => void;
   projectSlug: ProjectSlug;
+  onShuffle: () => void;
 }
 export const Choices = (props: Props) => {
   const {
@@ -23,6 +25,7 @@ export const Choices = (props: Props) => {
     editMode,
     model,
     projectSlug,
+    onShuffle,
   } = props;
 
   const { choices } = model;
@@ -30,6 +33,9 @@ export const Choices = (props: Props) => {
   return (
     <div className="my-5">
       <Heading title="Answer Choices" id="choices" />
+
+      <ShuffleChoicesOption onShuffle={onShuffle} model={model} />
+
       {choices.map((choice, index) => (
         <div key={choice.id} className="mb-3">
           <div className="d-flex align-items-center mb-2">

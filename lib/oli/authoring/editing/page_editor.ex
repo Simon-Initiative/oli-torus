@@ -240,7 +240,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
          render_context <- %Rendering.Context{
            user: author,
            preview: Keyword.get(options, :preview, false),
-           activity_map: activities
+           activity_map: activities,
+           project_slug: project_slug
          } do
       Rendering.Page.render(render_context, content["model"], Rendering.Page.Html)
     else

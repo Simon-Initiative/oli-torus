@@ -20,7 +20,7 @@
                 <%= text_input f,
             :full_name,
             class: "form-control" <> error_class(f, :full_name, "is-invalid"),
-            placeholder: "John Dow",
+            placeholder: "Full Name",
             required: true,
             autofocus: true %>
                 <%= label f, :full_name, "Full Name", class: "control-label" %>
@@ -30,7 +30,7 @@
                 <%= email_input f,
             :email,
             class: "form-control" <> error_class(f, :email, "is-invalid"),
-            placeholder: "author@example.edu",
+            placeholder: "Email Address",
             required: true %>
                 <%= label f, :email, "Email Address", class: "control-label" %>
                 <%= error_tag f, :email %>
@@ -79,20 +79,20 @@
               class: "btn btn-primary",
               phx_disable_with: "Requesting help..." %>
               </div>
-              </form>
-            </div>
+            </form>
           </div>
         </div>
       </div>
+    </div>
   </div>
 </div>
 </div>
 <script>
   let helpRecapture = null;
-
+  
   const showHelpModal = () => {
     $('#help-modal').modal('show');
-
+  
     document.getElementById('location').value = document.referrer
     if (typeof document.cookie == "undefined" || typeof navigator == "undefined" || !navigator.cookieEnabled) {
       document.getElementById('cookies_enabled').value = false;
@@ -109,13 +109,13 @@
       });
     }
   }
-
+  
   const helpForm = document.querySelector('#form-request-help')
   if (helpForm) {
     helpForm.addEventListener("submit", async function (event) {
       event.preventDefault();
       const form = event.target;
-
+  
       const result = await fetch('<%= Routes.help_path(@conn, :create) %>', {
         method: form.method,
         body: new URLSearchParams([...(new FormData(form))]),
