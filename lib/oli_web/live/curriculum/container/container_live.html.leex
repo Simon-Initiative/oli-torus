@@ -1,6 +1,7 @@
 
 <%= case @modal do %>
   <% nil -> %>
+
   <% %{component: component, assigns: assigns} -> %>
     <%= live_component @socket, component, assigns %>
 <% end %>

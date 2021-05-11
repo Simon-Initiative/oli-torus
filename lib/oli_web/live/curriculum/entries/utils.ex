@@ -1,4 +1,6 @@
 defmodule OliWeb.Curriculum.Utils do
+  use Phoenix.HTML
+
   alias Oli.Resources.ResourceType
 
   def is_container?(rev) do

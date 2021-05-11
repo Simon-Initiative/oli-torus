@@ -48,9 +48,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
             AuthoringResolver.from_revision_slug(project_slug, container_slug)
           end
 
-        children =
-          ContainerEditor.list_all_container_children(container, project)
-          |> Repo.preload([:resource, :author])
+        children = ContainerEditor.list_all_container_children(container, project)
 
         {:ok, rollup} = Rollup.new(children, project.slug)
 
@@ -160,9 +158,12 @@ defmodule OliWeb.Curriculum.ContainerLive do
   end
 
   def handle_event("show_move_modal", %{"slug" => slug}, socket) do
+    %{container: container, project: project} = socket.assigns
     assigns = %{
       id: "move_#{slug}",
-      slug: slug,
+      revision: Enum.find(socket.assigns.children, fn r -> r.slug == slug end),
+      container: container,
+      project: project,
     }
     {:noreply, assign(socket,
       modal: %{component: MoveModal, assigns: assigns}
@@ -444,9 +445,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     # in the case of a change to the container, we simplify by just pulling a new view of
     # the container and its contents. This handles addition, removal, reordering from the
     # local user as well as a collaborator
-    children =
-      ContainerEditor.list_all_container_children(revision, socket.assigns.project)
-      |> Repo.preload([:resource, :author])
+    children = ContainerEditor.list_all_container_children(revision, socket.assigns.project)
 
     {:ok, rollup} = Rollup.new(children, socket.assigns.project.slug)
 

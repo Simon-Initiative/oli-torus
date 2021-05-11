@@ -67,6 +67,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   """
   def list_all_container_children(container, %Project{} = project) do
     AuthoringResolver.from_resource_id(project.slug, container.children)
+    |> Repo.preload([:resource, :author])
   end
 
   @doc """

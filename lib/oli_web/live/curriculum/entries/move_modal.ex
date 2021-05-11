@@ -4,9 +4,9 @@ defmodule OliWeb.Curriculum.MoveModal do
 
   alias OliWeb.Curriculum.HierarchyPicker
 
-  def render(%{slug: slug} = assigns) do
+  def render(%{revision: revision, container: container, project: project} = assigns) do
     ~L"""
-    <div class="modal fade show" style="display: block" id="move_<%= slug %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    <div class="modal fade show" style="display: block" id="move_<%= revision.slug %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -16,11 +16,15 @@ defmodule OliWeb.Curriculum.MoveModal do
               </button>
             </div>
             <div class="modal-body">
-              <%= live_component @socket, HierarchyPicker, id: "move_#{slug}" %>
+            <%= live_component @socket, HierarchyPicker,
+              id: "hierarchy_picker_#{revision.slug}",
+              project: project,
+              container: container,
+              revision: revision %>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-dismiss="modal" phx-click="cancel">Cancel</button>
-              <button type="submit" class="btn btn-primary" onclick="$('#move_<%= slug %>').modal('hide')">Move</button>
+              <button type="submit" class="btn btn-primary" onclick="$('#move_<%= revision.slug %>').modal('hide')">Move</button>
             </div>
         </div>
       </div>
