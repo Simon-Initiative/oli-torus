@@ -130,9 +130,9 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageContent, previewMode }) => 
   return (
     <div ref={fieldRef} className={activityClasses.join(' ')}>
       <DeckLayoutHeader
-        pageName="PageTODO"
-        userName="UserTODO"
-        activityName="ActivityNameTODO"
+        pageName="TODO: (Page Name)"
+        userName="TODO: (User Name)"
+        activityName="TODO: (Activity Name)"
         scoreValue={0}
         showScore={true}
         themeId={pageContent?.custom?.themeId}
@@ -144,7 +144,10 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageContent, previewMode }) => 
           <div id="stage-stage">
             <div className="stage-content-wrapper">
               {currentActivity ? (
-                <ActivityRenderer parts={currentActivity?.content?.partsLayout} />
+                <ActivityRenderer
+                  config={currentActivity?.content?.custom}
+                  parts={currentActivity?.content?.partsLayout}
+                />
               ) : (
                 <div>loading...</div>
               )}
