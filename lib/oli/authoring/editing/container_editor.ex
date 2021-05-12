@@ -107,13 +107,44 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     result
   end
 
+  @doc """
+  Creates and adds a new page or container as a child of a container.
+  """
+  def move_to(
+        %Revision{} = revision,
+        %Revision{} = old_container,
+        %Revision{} = new_container,
+        %Author{} = author,
+        %Project{} = project
+      ) do
+    # ensure that the removal and attachment either all succeeds or all fails
+    result =
+      Repo.transaction(fn ->
+        with {:ok, _} <- remove_from_container(old_container, project.slug, revision, author),
+             {:ok, _} <- append_to_container(new_container, project.slug, revision, author) do
+          revision
+        else
+          {:error, e} -> Repo.rollback(e)
+        end
+      end)
+
+    {status, _} = result
+
+    if status == :ok do
+      broadcast_update(old_container.resource_id, project.slug)
+      broadcast_update(new_container.resource_id, project.slug)
+    end
+
+    result
+  end
+
   def broadcast_update(resource_id, project_slug) do
     updated_container = AuthoringResolver.from_resource_id(project_slug, resource_id)
     Broadcaster.broadcast_revision(updated_container, project_slug)
   end
 
   @doc """
-  Removes a child from a container, and marks that child as deleted.
+  Removes a child from a container, and marks that child as deleted by default.
   """
   def remove_child(container, project, author, revision_slug) do
     with {:ok, %{id: resource_id}} <-
@@ -168,7 +199,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     # Change here to enable "cross project drag and drop -> if resource is not found (nil),
     # create new resource in this project by cloning the existing resource
 
-    # Get the resource idd associated with the source revision
+    # Get the resource id associated with the source revision
 
     with {:ok, %{id: resource_id}} <- Resources.get_resource_from_slug(source) |> trap_nil() do
       source_index = Enum.find_index(container.children, fn id -> id == resource_id end)
@@ -216,6 +247,21 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
         result ->
           result
       end
+    else
+      _ -> {:error, :not_found}
+    end
+  end
+
+  defp remove_from_container(container, project_slug, revision, author) do
+    with {:ok, %{id: resource_id}} <-
+           Resources.get_resource_from_slug(revision.slug) |> trap_nil() do
+      # Create a change that removes the child
+      removal = %{
+        children: Enum.filter(container.children, fn id -> id !== resource_id end),
+        author_id: author.id
+      }
+
+      ChangeTracker.track_revision(project_slug, container, removal)
     else
       _ -> {:error, :not_found}
     end

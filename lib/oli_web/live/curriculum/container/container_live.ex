@@ -7,7 +7,17 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Authoring.Course
-  alias OliWeb.Curriculum.{Rollup, ActivityDelta, DropTarget, EntryLive, DetailsModal, MoveModal, DeleteModal}
+
+  alias OliWeb.Curriculum.{
+    Rollup,
+    ActivityDelta,
+    DropTarget,
+    EntryLive,
+    DetailsModal,
+    MoveModal,
+    DeleteModal
+  }
+
   alias Oli.Resources.ScoringStrategy
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Accounts.Author
@@ -144,44 +154,104 @@ defmodule OliWeb.Curriculum.ContainerLive do
     end)
   end
 
+  def handle_event("HierarchyPicker.select", %{"slug" => slug}, socket) do
+    %{modal: %{assigns: %{project: project} = modal_assigns}} = socket.assigns
+
+    container =
+      case slug do
+        "" ->
+          AuthoringResolver.root_container(project.slug)
+
+        slug ->
+          AuthoringResolver.from_revision_slug(project.slug, slug)
+      end
+
+    children = ContainerEditor.list_all_container_children(container, project)
+    breadcrumbs = Breadcrumb.trail_to(project.slug, container.slug)
+
+    modal_assigns =
+      modal_assigns
+      |> put_in([:container], container)
+      |> put_in([:children], children)
+      |> put_in([:breadcrumbs], breadcrumbs)
+      |> put_in([:selection], container.slug)
+
+    {:noreply, update_modal_assigns(socket, modal_assigns)}
+  end
+
+  def handle_event("move_item", %{"slug" => slug}, socket) do
+    %{
+      modal: %{
+        assigns: %{project: project, revision: revision, container: old_container}
+      },
+      author: author
+    } = socket.assigns
+
+    new_container =
+      case slug do
+        "" ->
+          AuthoringResolver.root_container(project.slug)
+
+        slug ->
+          AuthoringResolver.from_revision_slug(project.slug, slug)
+      end
+
+    ContainerEditor.move_to(revision, old_container, new_container, author, project)
+
+    {:noreply, assign(socket, modal: nil)}
+  end
+
   def handle_event("show_details_modal", %{"slug" => slug}, socket) do
     %{container: container, project: project} = socket.assigns
+
     assigns = %{
-      id: "move_#{slug}",
+      id: "details_#{slug}",
       container: container,
       revision: Enum.find(socket.assigns.children, fn r -> r.slug == slug end),
-      project: project,
+      project: project
     }
-    {:noreply, assign(socket,
-      modal: %{component: DetailsModal, assigns: assigns}
-    )}
+
+    {:noreply,
+     assign(socket,
+       modal: %{component: DetailsModal, assigns: assigns}
+     )}
   end
 
   def handle_event("show_move_modal", %{"slug" => slug}, socket) do
     %{container: container, project: project} = socket.assigns
+
     assigns = %{
       id: "move_#{slug}",
       revision: Enum.find(socket.assigns.children, fn r -> r.slug == slug end),
       container: container,
       project: project,
+      breadcrumbs: Breadcrumb.trail_to(project.slug, container.slug),
+      children: ContainerEditor.list_all_container_children(container, project),
+      numberings: Numbering.number_full_tree(AuthoringResolver, project.slug),
+      selection: nil
     }
-    {:noreply, assign(socket,
-      modal: %{component: MoveModal, assigns: assigns}
-    )}
+
+    {:noreply,
+     assign(socket,
+       modal: %{component: MoveModal, assigns: assigns}
+     )}
   end
 
   def handle_event("show_delete_modal", %{"slug" => slug}, socket) do
     %{container: container, project: project, author: author} = socket.assigns
+
     assigns = %{
       id: "delete_#{slug}",
       revision: Enum.find(socket.assigns.children, fn r -> r.slug == slug end),
       container: container,
       project: project,
-      author: author,
+      author: author
     }
-    {:noreply, assign(socket,
-      modal: %{component: DeleteModal, assigns: assigns}
-    )}
+
+    {:noreply,
+     assign(socket,
+       modal: %{component: DeleteModal, assigns: assigns}
+     )}
   end
 
   def handle_event("cancel", _, socket) do
@@ -371,12 +441,22 @@ defmodule OliWeb.Curriculum.ContainerLive do
      )}
   end
 
-  def active_class(active_view, view) do
+  defp active_class(active_view, view) do
     if active_view == view do
       " active"
     else
       ""
     end
+  end
+
+  defp update_modal_assigns(socket, updated_assigns) do
+    %{modal: %{assigns: assigns} = modal} = socket.assigns
+
+    modal =
+      modal
+      |> put_in([:assigns], Enum.into(updated_assigns, assigns))
+
+    assign(socket, modal: modal)
   end
 
   defp has_renderable_change?(page1, page2) do
