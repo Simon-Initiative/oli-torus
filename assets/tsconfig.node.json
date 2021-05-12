@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "module": "commonjs",
+    "target": "es5",
+    "jsx": "preserve",
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "removeComments": false,
+    "inlineSources": true,
+    "sourceMap": true,
+    "noEmitHelpers": false,
+    "alwaysStrict": true,
+    "outDir": "../_node",
+    "baseUrl": ".",
+    "paths": {
+      "*": [
+        "src/*"
+      ]
+    },
+    "types": [
+      "node",
+      "jest",
+      "jquery"
+    ],
+    "esModuleInterop": true
+  },
+  "include": [
+    "src/adaptivity/rules.ts"
+  ],
+
+  "exclude": [
+    "node_modules"
+  ]
+}

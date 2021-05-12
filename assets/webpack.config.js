@@ -18,7 +18,7 @@ const populateEntries = () => {
     resourceeditor: ['./src/components/resource/ResourceEditorApp.tsx'],
     activityeditor: ['./src/components/activity/ActivityEditorApp.tsx'],
     authoring: ['./src/apps/AuthoringApp.tsx'],
-    delivery: ['./src/apps/DeliveryApp.tsx'],
+    delivery: ['./src/apps/DeliveryApp.tsx']
   };
 
   const manifests = glob.sync('./src/components/activities/*/manifest.json', {});
@@ -117,6 +117,7 @@ module.exports = (env, options) => ({
       utils: path.resolve(__dirname, 'src/utils'),
       styles: path.resolve(__dirname, 'styles'),
     },
+    fallback: { "vm": require.resolve("vm-browserify") }
   },
   module: {
     rules: [
@@ -176,6 +177,6 @@ module.exports = (env, options) => ({
       React: 'react',
     }),
     new MiniCssExtractPlugin({ filename: '../css/[name].css' }),
-    new CopyWebpackPlugin({ patterns: [{ from: 'static/', to: '../' }] }),
+    new CopyWebpackPlugin({ patterns: [{ from: 'static/', to: '../' }] })
   ],
 });
