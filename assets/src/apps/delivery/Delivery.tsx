@@ -24,6 +24,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   userId,
   resourceId,
   sectionSlug,
+  pageTitle = '',
   pageSlug,
   content,
   resourceAttemptGuid,
@@ -44,6 +45,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         userId,
         resourceId,
         sectionSlug,
+        pageTitle,
         pageSlug,
         content,
         resourceAttemptGuid,
@@ -65,7 +67,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   return (
     <div className={parentDivClasses.join(' ')}>
       <div className="mainView" role="main" style={{ width: windowWidth }}>
-        <LayoutView previewMode={previewMode} pageContent={content} />
+        <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />
       </div>
     </div>
   );

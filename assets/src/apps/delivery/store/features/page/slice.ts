@@ -7,6 +7,7 @@ export interface PageState {
   resourceId: number;
   sectionSlug: string;
   pageSlug: string;
+  pageTitle: string;
   content: any; // TODO typing
   resourceAttemptState: any;
   resourceAttemptGuid: string;
@@ -19,6 +20,7 @@ const initialState: PageState = {
   resourceId: -1,
   sectionSlug: '',
   pageSlug: '',
+  pageTitle: '',
   content: null,
   resourceAttemptGuid: '',
   resourceAttemptState: {},
@@ -34,6 +36,7 @@ const pageSlice = createSlice({
       state.userId = action.payload.userId;
       state.resourceId = action.payload.resourceId;
       state.pageSlug = action.payload.pageSlug;
+      state.pageTitle = action.payload.pageTitle;
       state.sectionSlug = action.payload.sectionSlug;
       state.content = action.payload.content;
       state.resourceAttemptGuid = action.payload.resourceAttemptGuid;
@@ -54,6 +57,7 @@ export const { loadPageState } = pageSlice.actions;
 
 export const selectState = (state: RootState): PageState => state[PageSlice];
 export const selectSectionSlug = createSelector(selectState, (state) => state.sectionSlug);
+export const selectPageTitle = createSelector(selectState, (state) => state.pageTitle);
 export const selectPageSlug = createSelector(selectState, (state) => state.pageSlug);
 export const selectPageContent = createSelector(selectState, (state) => state.content);
 export const selectPreviewMode = createSelector(selectState, (state) => state.previewMode);

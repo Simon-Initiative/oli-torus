@@ -28,7 +28,7 @@ const InjectedStyles: React.FC = () => {
   );
 };
 
-const DeckLayoutView: React.FC<LayoutProps> = ({ pageContent, previewMode }) => {
+const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, previewMode }) => {
   const dispatch = useDispatch();
   const fieldRef = React.useRef<HTMLInputElement>(null);
   const currentActivity = useSelector(selectCurrentActivity);
@@ -130,7 +130,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageContent, previewMode }) => 
   return (
     <div ref={fieldRef} className={activityClasses.join(' ')}>
       <DeckLayoutHeader
-        pageName="TODO: (Page Name)"
+        pageName={pageTitle}
         userName="TODO: (User Name)"
         activityName="TODO: (Activity Name)"
         scoreValue={0}
