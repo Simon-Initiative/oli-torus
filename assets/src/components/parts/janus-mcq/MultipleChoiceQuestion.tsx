@@ -1,23 +1,10 @@
 /* eslint-disable react/prop-types */
+import { usePrevious } from 'components/hooks/usePrevious';
 import { shuffle } from 'lodash';
-import React, { CSSProperties, MutableRefObject, useEffect, useRef, useState } from 'react';
+import React, { CSSProperties, useEffect, useState } from 'react';
 import { renderFlow } from '../janus-text-flow/TextFlow';
+import { JanusMultipleChoiceQuestionProperties, JanusMultipleChoiceQuestionItemProperties } from './MultipleChoiceQuestionType';
 
-export function usePrevious<T>(
-  value: T,
-): MutableRefObject<T | undefined>['current'] {
-  // The ref object is a generic container whose current property is mutable ...
-  // ... and can hold any value, similar to an instance property on a class
-  const ref = useRef<T>();
-
-  // Store current value in ref
-  useEffect(() => {
-      ref.current = value;
-  }, [value]); // Only re-run if value changes
-
-  // Return previous value (happens before update in useEffect above)
-  return ref.current;
-}
 
 // SS assumes the unstyled "text" of the label is the text value
 // there should only be one node in a label text, but we'll concat them jic
@@ -53,7 +40,7 @@ const MCQItemContent: React.FC<any> = ({ nodes, state }) => {
       </div>
   );
 };
-const MCQItem: React.FC<any> = ({
+const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   nodes,
   state,
   multipleSelection,
@@ -111,7 +98,7 @@ const MCQItem: React.FC<any> = ({
       </div>
   );
 };
-const MultipleChoiceQuestion: React.FC<any> = (props) => {
+const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const id: string = props.id;
