@@ -7,6 +7,9 @@ lib/oli/analytics/test.xml
 *.iws
 /.idea/
 
+# The directory where the NodeJS Elixir bridge will read files from
+/priv/node/
+
 # The directory Mix will write compiled artifacts to.
 /_build/
 

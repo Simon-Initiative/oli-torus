@@ -19,6 +19,14 @@ defmodule Oli.Application do
       # Start the endpoint when the application starts
       OliWeb.Endpoint,
 
+      # Start the NodeJS bridge
+      %{
+        id: NodeJS,
+        start:
+          {NodeJS, :start_link,
+           [[path: "./priv/node", pool_size: Application.fetch_env!(:oli, :node_js_pool_size)]]}
+      },
+
       # Starts the nonce cleanup task, call Lti_1p3.Nonces.cleanup_nonce_store/0 at 1:01 UTC every day
       %{
         id: "cleanup_nonce_store_daily",
