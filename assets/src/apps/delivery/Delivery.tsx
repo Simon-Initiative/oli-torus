@@ -12,6 +12,7 @@ export interface DeliveryProps {
   resourceId: number;
   sectionSlug: string;
   userId: number;
+  pageTitle: string;
   pageSlug: string;
   content: any;
   resourceAttemptState: any;
