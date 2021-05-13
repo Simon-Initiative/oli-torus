@@ -23,6 +23,7 @@
 - Fix internal links in page preview mode
 - Fix projects view project card styling
 - Fix problem with inputs causing clipping in Firefox
+- Fix problem with difficulty selecting and focusing in Firefox
 
 ## 0.9.0 (2021-4-22)
 
