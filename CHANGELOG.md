@@ -13,6 +13,7 @@
 - Expose telemetry metrics for Prometheus metrics scraping
 - Add support for course package delete
 - Add support for disabling answer choice shuffling in multiple choice, check all that apply, ordering questions
+- Add support for moving curriculum items
 
 ### Bug fixes
 
