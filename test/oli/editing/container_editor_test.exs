@@ -135,4 +135,36 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
       assert Enum.find_index(container.children, fn c -> revision.resource_id == c end) == 0
     end
   end
+
+  describe "nested container editing" do
+    setup do
+      Seeder.base_project_with_resource3()
+    end
+
+    test "move_to/4 moves a curriculum item from one container to another", %{
+      author: author,
+      project: project,
+      container: %{revision: root_container},
+      revision1: page1_revision,
+      unit1_container: %{revision: unit1_container}
+    } do
+      assert length(root_container.children) == 3
+
+      {:ok, _} =
+        ContainerEditor.move_to(page1_revision, root_container, unit1_container, author, project)
+
+      root_container =
+        AuthoringResolver.from_resource_id(project.slug, root_container.resource_id)
+
+      unit1_container =
+        AuthoringResolver.from_resource_id(project.slug, unit1_container.resource_id)
+
+      # Ensure that the edit has inserted the moved page into unit1 container
+      assert length(root_container.children) == 2
+      assert length(unit1_container.children) == 3
+
+      assert Enum.find_index(unit1_container.children, fn c -> page1_revision.resource_id == c end) ==
+               2
+    end
+  end
 end

@@ -16,39 +16,7 @@ defmodule OliWeb.Curriculum.HierarchyPicker do
   use Phoenix.LiveComponent
   use Phoenix.HTML
 
-  import Oli.Utils, only: [value_or: 2]
-
-  alias OliWeb.Common.Breadcrumb
   alias Oli.Resources.Numbering
-  alias Oli.Publishing.AuthoringResolver
-  alias Oli.Authoring.Editing.ContainerEditor
-
-  # def update(assigns, socket) do
-  #   IO.inspect({assigns, socket.assigns}, label: "update")
-
-  #   %{project: project, revision: revision, container: container} = assigns
-
-  #   # IO.inspect {assigns[:breadcrumbs], assigns[:children], assigns[:numberings]}
-
-  #   {:ok,
-  #    assign(socket,
-  #      project: project,
-  #      revision: revision,
-  #      container: container,
-  #      breadcrumbs:
-  #        value_or(assigns[:breadcrumbs], Breadcrumb.trail_to(project.slug, container.slug)),
-  #      children:
-  #        value_or(
-  #          assigns[:children],
-  #          ContainerEditor.list_all_container_children(container, project)
-  #        ),
-  #      numberings:
-  #        value_or(
-  #          assigns[:numberings],
-  #          Numbering.number_full_tree(AuthoringResolver, project.slug)
-  #        )
-  #    )}
-  # end
 
   def render(assigns) do
     ~L"""
@@ -147,27 +115,6 @@ defmodule OliWeb.Curriculum.HierarchyPicker do
       _ -> false
     end
   end
-
-  # def handle_event("select", %{"slug" => slug}, socket) do
-  #   %{project: project, revision: revision} = socket.assigns
-
-  #   container =
-  #     case slug do
-  #       "" ->
-  #         AuthoringResolver.root_container(project.slug)
-
-  #       slug ->
-  #         AuthoringResolver.from_revision_slug(project.slug, slug)
-  #     end
-
-  #   # send update_selection event to liveview
-  #   # send(self(), {:update_selection, container})
-
-  #   children = ContainerEditor.list_all_container_children(container, project)
-  #   breadcrumbs = Breadcrumb.trail_to(project.slug, container.slug)
-
-  #   {:noreply, assign(socket, container: container, children: children, breadcrumbs: breadcrumbs)}
-  # end
 
   defp previous_slug(breadcrumbs) do
     previous = Enum.at(breadcrumbs, length(breadcrumbs) - 2)

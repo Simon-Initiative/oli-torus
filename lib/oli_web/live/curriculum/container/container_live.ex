@@ -179,24 +179,20 @@ defmodule OliWeb.Curriculum.ContainerLive do
     {:noreply, update_modal_assigns(socket, modal_assigns)}
   end
 
-  def handle_event("move_item", %{"slug" => slug}, socket) do
+  def handle_event("move_item", %{"selection" => selection}, socket) do
     %{
       modal: %{
-        assigns: %{project: project, revision: revision, container: old_container}
+        assigns: %{
+          project: project,
+          revision: revision,
+          old_container: old_container,
+          container: new_container
+        }
       },
       author: author
     } = socket.assigns
 
-    new_container =
-      case slug do
-        "" ->
-          AuthoringResolver.root_container(project.slug)
-
-        slug ->
-          AuthoringResolver.from_revision_slug(project.slug, slug)
-      end
-
-    ContainerEditor.move_to(revision, old_container, new_container, author, project)
+    {:ok, _} = ContainerEditor.move_to(revision, old_container, new_container, author, project)
 
     {:noreply, assign(socket, modal: nil)}
   end
@@ -223,6 +219,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     assigns = %{
       id: "move_#{slug}",
       revision: Enum.find(socket.assigns.children, fn r -> r.slug == slug end),
+      old_container: container,
       container: container,
       project: project,
       breadcrumbs: Breadcrumb.trail_to(project.slug, container.slug),

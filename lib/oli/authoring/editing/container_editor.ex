@@ -108,7 +108,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   end
 
   @doc """
-  Creates and adds a new page or container as a child of a container.
+  Moves a page or container into another container.
   """
   def move_to(
         %Revision{} = revision,
@@ -132,7 +132,6 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
     if status == :ok do
       broadcast_update(old_container.resource_id, project.slug)
-      broadcast_update(new_container.resource_id, project.slug)
     end
 
     result
@@ -253,18 +252,13 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   end
 
   defp remove_from_container(container, project_slug, revision, author) do
-    with {:ok, %{id: resource_id}} <-
-           Resources.get_resource_from_slug(revision.slug) |> trap_nil() do
-      # Create a change that removes the child
-      removal = %{
-        children: Enum.filter(container.children, fn id -> id !== resource_id end),
-        author_id: author.id
-      }
+    # Create a change that removes the child
+    removal = %{
+      children: Enum.filter(container.children, fn id -> id !== revision.resource_id end),
+      author_id: author.id
+    }
 
-      ChangeTracker.track_revision(project_slug, container, removal)
-    else
-      _ -> {:error, :not_found}
-    end
+    ChangeTracker.track_revision(project_slug, container, removal)
   end
 
   defp append_to_container(container, project_slug, revision_to_attach, author) do

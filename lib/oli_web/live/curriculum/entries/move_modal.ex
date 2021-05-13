@@ -32,7 +32,7 @@ defmodule OliWeb.Curriculum.MoveModal do
                 class="btn btn-primary"
                 onclick="$('#move_<%= @revision.slug %>').modal('hide')"
                 phx-click="move_item"
-                phx-value-slug="<%= @selection %>"
+                phx-value-selection="<%= @selection %>"
                 <%= if @selection == nil, do: "disabled" %>>
                 Move
               </button>

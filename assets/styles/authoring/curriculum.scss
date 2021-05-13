@@ -31,6 +31,10 @@
     box-shadow: 1px 1px 8px 1px rgba($color: $gray-400, $alpha: 0.33);
     cursor: grab;
 
+    &:active {
+      cursor: grabbing;
+    }
+
     &.active {
       border-color: $primary;
     }
