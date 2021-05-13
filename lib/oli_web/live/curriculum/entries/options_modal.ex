@@ -1,4 +1,4 @@
-defmodule OliWeb.Curriculum.DetailsModal do
+defmodule OliWeb.Curriculum.OptionsModal do
   use Phoenix.LiveComponent
   use Phoenix.HTML
 
@@ -20,7 +20,7 @@ defmodule OliWeb.Curriculum.DetailsModal do
 
   def render(%{changeset: changeset, revision: revision} = assigns) do
     ~L"""
-    <div class="modal fade show" style="display: block" id="details_<%= revision.slug %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    <div class="modal fade show" style="display: block" id="options_<%= revision.slug %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
           <%= f = form_for @changeset, "#",
@@ -30,7 +30,7 @@ defmodule OliWeb.Curriculum.DetailsModal do
             phx_submit: "save" %>
 
               <div class="modal-header">
-                <h5 class="modal-title text-truncate"><%= resource_type_label(revision) |> String.capitalize() %> Details</h5>
+                <h5 class="modal-title text-truncate"><%= resource_type_label(revision) |> String.capitalize() %> Options</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                   <span aria-hidden="true">&times;</span>
                 </button>
@@ -71,7 +71,7 @@ defmodule OliWeb.Curriculum.DetailsModal do
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal" phx-click="cancel">Cancel</button>
-                <%= submit "Save", phx_disable_with: "Saving...", class: "btn btn-primary", onclick: "$('#details_#{revision.slug}').modal('hide')" %>
+                <%= submit "Save", phx_disable_with: "Saving...", class: "btn btn-primary", onclick: "$('#options_#{revision.slug}').modal('hide')" %>
               </div>
           </form>
         </div>
@@ -95,11 +95,15 @@ defmodule OliWeb.Curriculum.DetailsModal do
 
   defp save_revision(socket, revision_params) do
     %{container: container, project: project, revision: revision} = socket.assigns
+
     case ContainerEditor.edit_page(project, revision.slug, revision_params) do
       {:ok, _} ->
         {:noreply,
          socket
-         |> put_flash(:info, "#{resource_type_label(revision) |> String.capitalize()} details saved")
+         |> put_flash(
+           :info,
+           "#{resource_type_label(revision) |> String.capitalize()} options saved"
+         )
          |> push_redirect(to: Routes.container_path(socket, :index, project.slug, container.slug))}
 
       {:error, %Ecto.Changeset{} = changeset} ->

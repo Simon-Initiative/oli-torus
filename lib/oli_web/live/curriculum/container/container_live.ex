@@ -13,7 +13,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     ActivityDelta,
     DropTarget,
     EntryLive,
-    DetailsModal,
+    OptionsModal,
     MoveModal,
     DeleteModal
   }
@@ -197,11 +197,11 @@ defmodule OliWeb.Curriculum.ContainerLive do
     {:noreply, assign(socket, modal: nil)}
   end
 
-  def handle_event("show_details_modal", %{"slug" => slug}, socket) do
+  def handle_event("show_options_modal", %{"slug" => slug}, socket) do
     %{container: container, project: project} = socket.assigns
 
     assigns = %{
-      id: "details_#{slug}",
+      id: "options_#{slug}",
       container: container,
       revision: Enum.find(socket.assigns.children, fn r -> r.slug == slug end),
       project: project
@@ -209,7 +209,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     {:noreply,
      assign(socket,
-       modal: %{component: DetailsModal, assigns: assigns}
+       modal: %{component: OptionsModal, assigns: assigns}
      )}
   end
 
