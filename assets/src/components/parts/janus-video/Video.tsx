@@ -16,11 +16,21 @@ const Video: React.FC<any> = (props) => {
     }
   }, [props]);
 
-  const { x, y, z, width, height, src, alt, customCssClass,autoPlay = false,
+  const {
+    x,
+    y,
+    z,
+    width,
+    height,
+    src,
+    alt,
+    customCssClass,
+    autoPlay = false,
     startTime,
     endTime,
     enableReplay = true,
-    subtitles } = model;
+    subtitles,
+  } = model;
   const videoStyles: CSSProperties = {
     position: 'absolute',
     top: y,
@@ -36,47 +46,44 @@ const Video: React.FC<any> = (props) => {
   let videoId = src;
   let isYoutubeSrc = false;
 
-
-
   const getYoutubeId = (url: any) => {
     const match = url.match(youtubeRegex);
     return match && match[1].length == 11 ? match[1] : false;
-};
-const youtubeOpts: any = {
+  };
+  const youtubeOpts: any = {
     width: width?.toString(),
     height: height?.toString(),
     playerVars: {
-        autoplay: autoPlay ? 1 : 0,
-        loop: autoPlay ? 1 : 0,
-        controls: enableReplay ? 1 : 0,
+      autoplay: autoPlay ? 1 : 0,
+      loop: autoPlay ? 1 : 0,
+      controls: enableReplay ? 1 : 0,
     },
-};
-// if (youtubeRegex.test(finalSrc)) {
-//     isYoutubeSrc = true;
-//     // If Youtube video, get ID and create embed url
-//     videoId = getYoutubeId(src);
+  };
+  if (youtubeRegex.test(finalSrc)) {
+      isYoutubeSrc = true;
+      // If Youtube video, get ID and create embed url
+      videoId = getYoutubeId(src);
 
-//     if (startTime && startTime >= 0) {
-//         youtubeOpts.playerVars = {
-//             ...youtubeOpts.playerVars,
-//             start: startTime || 0,
-//         };
-//         if (endTime && endTime >= 0) {
-//             youtubeOpts.playerVars = {
-//                 ...youtubeOpts.playerVars,
-//                 end: endTime || 0,
-//             };
-//         }
-//     }
-// } else {
-//     if (startTime && startTime >= 0) {
-//         finalSrc = `${finalSrc}#t=${startTime}`;
-//         if (endTime && endTime >= 0) {
-//             finalSrc = `${finalSrc},${endTime}`;
-//         }
-//     }
-// }
-
+      if (startTime && startTime >= 0) {
+          youtubeOpts.playerVars = {
+              ...youtubeOpts.playerVars,
+              start: startTime || 0,
+          };
+          if (endTime && endTime >= 0) {
+              youtubeOpts.playerVars = {
+                  ...youtubeOpts.playerVars,
+                  end: endTime || 0,
+              };
+          }
+      }
+  } else {
+      if (startTime && startTime >= 0) {
+          finalSrc = `${finalSrc}#t=${startTime}`;
+          if (endTime && endTime >= 0) {
+              finalSrc = `${finalSrc},${endTime}`;
+          }
+      }
+  }
 
   useEffect(() => {
     // all activities *must* emit onReady
@@ -99,8 +106,7 @@ const youtubeOpts: any = {
     // if (triggerCheck) {
     //     onSubmitActivity({ Id: `${id}`, partResponses: [] });
     // }
-};
-
+  };
 
   let isVideoStarted = false;
   const handleVideoPlay = () => {
@@ -118,9 +124,9 @@ const youtubeOpts: any = {
     //     isVideoCompleted: false,
     //     videoState: 'playing',
     // });
-};
+  };
 
-const handleVideoPause = () => {
+  const handleVideoPause = () => {
     setVideoIsPlayerStarted(true);
     // saveState({
     //     isVideoPlayerStarted: true,
@@ -133,55 +139,54 @@ const handleVideoPause = () => {
     //     isVideoCompleted: false,
     //     videoState: 'paused',
     // });
-};
+  };
 
-const iframeTag = (
-  <YouTube
+  const iframeTag = (
+    <YouTube
       videoId={videoId}
       opts={youtubeOpts}
       onPlay={handleVideoPlay}
       onEnd={handleVideoEnd}
       onPause={handleVideoPause}
-  />
-);
-const videoTag = (
+    />
+  );
+  const videoTag = (
     <video
-            width={width}
-            height={height}
-            className={customCssClass}
-            autoPlay={autoPlay}
-            loop={autoPlay}
-            controls={enableReplay}
-            onEnded={handleVideoEnd}
-            onPlay={handleVideoPlay}
-            onPause={handleVideoPause}
-        >
-            <source src={src} />
-            {subtitles &&
-                subtitles.length > 0 &&
-                subtitles.map((subtitle : any) => {
-                    const defaults =
-                        subtitles.length === 1 ? true : subtitle.default;
-                    return (
-                        <track
-                            key={subtitle.src}
-                            src={subtitle.src}
-                            srcLang={subtitle.language}
-                            label={subtitle.language}
-                            kind="subtitles"
-                            default={defaults || false}
-                        />
-                    );
-                })}
-        </video>
+      width={width}
+      height={height}
+      className={customCssClass}
+      autoPlay={autoPlay}
+      loop={autoPlay}
+      controls={enableReplay}
+      onEnded={handleVideoEnd}
+      onPlay={handleVideoPlay}
+      onPause={handleVideoPause}
+    >
+      <source src={src} />
+      {subtitles &&
+        subtitles.length > 0 &&
+        subtitles.map((subtitle: any) => {
+          const defaults = subtitles.length === 1 ? true : subtitle.default;
+          return (
+            <track
+              key={subtitle.src}
+              src={subtitle.src}
+              srcLang={subtitle.language}
+              label={subtitle.language}
+              kind="subtitles"
+              default={defaults || false}
+            />
+          );
+        })}
+    </video>
   );
 
   const elementTag = youtubeRegex.test(src) ? iframeTag : videoTag;
-    return (
-        <div data-janus-type={props.type} style={videoStyles}>
-            {elementTag}
-        </div>
-    );
+  return (
+    <div data-janus-type={props.type} style={videoStyles}>
+      {elementTag}
+    </div>
+  );
 };
 
 export const tagName = 'janus-video';

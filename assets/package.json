@@ -46,7 +46,8 @@
     "typescript": "^3.7.5",
     "vm-browserify": "^1.1.2",
     "whatwg-fetch": "^3.0.0",
-    "react-youtube": "^7.13.0"
+    "react-youtube": "^7.13.0",
+    "swiper": "^6.4.7"
   },
   "devDependencies": {
     "@babel/core": "^7.13.15",

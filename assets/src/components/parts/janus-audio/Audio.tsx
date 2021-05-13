@@ -15,13 +15,22 @@ const Audio: React.FC<any> = (props) => {
     }
   }, [props]);
 
-  const { x, y, z, width, height, src, alt, customCssClass,
-        triggerCheck,
-        autoPlay,
-        startTime,
-        endTime,
-        enableReplay,
-        subtitles } = model;
+  const {
+    x,
+    y,
+    z,
+    width,
+    height,
+    src,
+    alt,
+    customCssClass,
+    triggerCheck,
+    autoPlay,
+    startTime,
+    endTime,
+    enableReplay,
+    subtitles,
+  } = model;
   const audioStyles: CSSProperties = {
     position: 'absolute',
     top: y,
@@ -30,33 +39,30 @@ const Audio: React.FC<any> = (props) => {
     height,
     zIndex: z,
     outline: 'none',
-    filter:
-        'sepia(20%) saturate(70%) grayscale(1) contrast(99%) invert(12%)',
-};
-const onReady = props.onReady;
-const [showControls, setShowControls] = useState(true);
+    filter: 'sepia(20%) saturate(70%) grayscale(1) contrast(99%) invert(12%)',
+  };
+  const onReady = props.onReady;
+  const [showControls, setShowControls] = useState(true);
 
+  let finalSrc = src;
+  // if (startTime && startTime >= 0) {
+  //     finalSrc = `${finalSrc}#t=${startTime || 0}`;
+  //     if (endTime && endTime >= 0) {
+  //         finalSrc = `${finalSrc},${endTime}`;
+  //     }
+  // }
 
-let finalSrc = src;
-// if (startTime && startTime >= 0) {
-//     finalSrc = `${finalSrc}#t=${startTime || 0}`;
-//     if (endTime && endTime >= 0) {
-//         finalSrc = `${finalSrc},${endTime}`;
-//     }
-// }
-
-let isAudioStarted = false;
-// handle the Audio player start
-const handleAudioEnd = () => {
+  let isAudioStarted = false;
+  // handle the Audio player start
+  const handleAudioEnd = () => {
     if (!enableReplay) {
-        setShowControls(false);
+      setShowControls(false);
     }
-};
-const handleAudioPlay = (data: any) => {
+  };
+  const handleAudioPlay = (data: any) => {
     if (isAudioStarted) return;
     //Need this otherwise, save state will called on every second
     isAudioStarted = true;
-    console.log('Audio has started playing');
     // saveState({
     //     isAudioPlayerStarted: true,
     //     currentTime: data.target.currentTime,
@@ -64,9 +70,9 @@ const handleAudioPlay = (data: any) => {
     //     isAudioCompleted: false,
     //     audioState: 'playing',
     // });
-};
+  };
 
-const handleAudioPause = (data: any) => {
+  const handleAudioPause = (data: any) => {
     // saveState({
     //     isAudioPlayerStarted: true,
     //     currentTime: data.target.currentTime,
@@ -74,46 +80,45 @@ const handleAudioPause = (data: any) => {
     //     isAudioCompleted: false,
     //     audioState: 'paused',
     // });
-};
-useEffect(() => {
+  };
+  useEffect(() => {
     onReady({
-        Id: props.id,
-        partResponses: [],
+      Id: props.id,
+      partResponses: [],
     });
-}, []);
+  }, []);
 
-return (
+  return (
     <audio
-        data-janus-type={props.type}
-        className={customCssClass}
-        style={audioStyles}
-        autoPlay={autoPlay}
-        controls={showControls}
-        controlsList="nodownload"
-        onEnded={handleAudioEnd}
-        onPlay={handleAudioPlay}
-        onPause={handleAudioPause}
+      data-janus-type={props.type}
+      className={customCssClass}
+      style={audioStyles}
+      autoPlay={autoPlay}
+      controls={showControls}
+      controlsList="nodownload"
+      onEnded={handleAudioEnd}
+      onPlay={handleAudioPlay}
+      onPause={handleAudioPause}
     >
-        <source src={finalSrc} />
+      <source src={finalSrc} />
 
-        {subtitles &&
-            subtitles.length > 0 &&
-            subtitles.map((subtitle: any) => {
-                const defaults =
-                    subtitles.length === 1 ? true : subtitle.default;
-                return (
-                    <track
-                        key={subtitle.src}
-                        src={subtitle.src}
-                        srcLang={subtitle.language}
-                        label={subtitle.language}
-                        kind="subtitles"
-                        default={defaults || false}
-                    />
-                );
-            })}
+      {subtitles &&
+        subtitles.length > 0 &&
+        subtitles.map((subtitle: any) => {
+          const defaults = subtitles.length === 1 ? true : subtitle.default;
+          return (
+            <track
+              key={subtitle.src}
+              src={subtitle.src}
+              srcLang={subtitle.language}
+              label={subtitle.language}
+              kind="subtitles"
+              default={defaults || false}
+            />
+          );
+        })}
     </audio>
-);
+  );
 };
 
 export const tagName = 'janus-audio';

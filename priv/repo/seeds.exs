@@ -106,6 +106,7 @@ Oli.Registrar.register_local_part_components(
     "janus_audio",
     "janus_video",
     "janus_slider",
+    "janus_carousel"
   ])
 )
 
