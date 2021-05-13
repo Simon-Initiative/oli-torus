@@ -2,6 +2,8 @@ defmodule OliWeb.Curriculum.MoveModal do
   use Phoenix.LiveComponent
   use Phoenix.HTML
 
+  import OliWeb.Curriculum.Utils
+
   alias OliWeb.Curriculum.HierarchyPicker
 
   def render(assigns) do
@@ -10,7 +12,7 @@ defmodule OliWeb.Curriculum.MoveModal do
       <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title">Move Item</h5>
+              <h5 class="modal-title">Move <%= resource_type_label(@revision) |> String.capitalize() %></h5>
               <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button>
@@ -33,7 +35,7 @@ defmodule OliWeb.Curriculum.MoveModal do
                 onclick="$('#move_<%= @revision.slug %>').modal('hide')"
                 phx-click="move_item"
                 phx-value-selection="<%= @selection %>"
-                <%= if @selection == nil, do: "disabled" %>>
+                <%= if can_move?(@old_container, @selection) , do: "", else: "disabled" %>>
                 Move
               </button>
             </div>
@@ -41,5 +43,9 @@ defmodule OliWeb.Curriculum.MoveModal do
       </div>
     </div>
     """
+  end
+
+  defp can_move?(old_container, selected_slug) do
+    selected_slug != nil && selected_slug != old_container.slug
   end
 end
