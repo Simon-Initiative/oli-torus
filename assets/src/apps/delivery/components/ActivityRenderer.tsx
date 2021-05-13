@@ -1,4 +1,4 @@
-import PartComponent from '../../components/PartComponent';
+import PartComponent from './PartComponent';
 import React, { CSSProperties } from 'react';
 import chroma from 'chroma-js';
 
@@ -7,7 +7,9 @@ import chroma from 'chroma-js';
 // the adaptive-activity web component should render
 // the parts
 const ActivityRenderer: React.FC<any> = (props: any) => {
-  const { config } = props;
+  const { activity } = props;
+
+  const config = activity.content.custom;
 
   const styles: CSSProperties = {
     width: config.width || 1300,
@@ -52,7 +54,7 @@ const ActivityRenderer: React.FC<any> = (props: any) => {
 
   return (
     <div className="content" style={styles}>
-      {props.parts.map((partDefinition: any) => {
+      {activity.content.partsLayout.map((partDefinition: any) => {
         const partProps = {
           id: partDefinition.id,
           type: partDefinition.type,

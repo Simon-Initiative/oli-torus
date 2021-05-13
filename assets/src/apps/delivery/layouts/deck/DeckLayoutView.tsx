@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import ActivityRenderer from '../../formats/adaptive/ActivityRenderer';
+import ActivityRenderer from '../../components/ActivityRenderer';
 import { selectCurrentActivity } from '../../store/features/activities/slice';
 import { initializeActivity } from '../../store/features/groups/actions/deck';
 import { LayoutProps } from '../layouts';
@@ -80,7 +80,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     dispatch(initializeActivity(currentActivity.resourceId));
 
     // set loaded and userRole class when currentActivity is loaded
-    const customClasses = currentActivity.custom?.customCssClass;
+    const customClasses = currentActivity.content?.custom?.customCssClass;
     /* if (currentActivity.custom?.layerRef) {
       customClasses = `${customClasses} ${getCustomClassAncestry(
         currentActivity.custom?.layerRef,
@@ -144,10 +144,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           <div id="stage-stage">
             <div className="stage-content-wrapper">
               {currentActivity ? (
-                <ActivityRenderer
-                  config={currentActivity?.content?.custom}
-                  parts={currentActivity?.content?.partsLayout}
-                />
+                <ActivityRenderer activity={currentActivity} />
               ) : (
                 <div>loading...</div>
               )}
