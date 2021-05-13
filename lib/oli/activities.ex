@@ -143,6 +143,9 @@ defmodule Oli.Activities do
         m ++
           [
             %{
+              id: a.id,
+              authoring_element: a.authoring_element,
+              delivery_element: a.delivery_element,
               slug: a.slug,
               title: a.title,
               global: a.globally_available,

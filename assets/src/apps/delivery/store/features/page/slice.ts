@@ -13,6 +13,7 @@ export interface PageState {
   resourceAttemptGuid: string;
   activityGuidMapping: any;
   previewMode: boolean;
+  activityTypes: any[];
 }
 
 const initialState: PageState = {
@@ -26,6 +27,7 @@ const initialState: PageState = {
   resourceAttemptState: {},
   activityGuidMapping: {},
   previewMode: false,
+  activityTypes: [],
 };
 
 const pageSlice = createSlice({
@@ -43,6 +45,7 @@ const pageSlice = createSlice({
       state.resourceAttemptState = action.payload.resourceAttemptState;
       state.activityGuidMapping = action.payload.activityGuidMapping;
       state.previewMode = !!action.payload.previewMode;
+      state.activityTypes = action.payload.activityTypes;
 
       if (state.previewMode && !state.resourceAttemptGuid) {
         state.resourceAttemptGuid = `preview_${guid()}`;
@@ -65,5 +68,6 @@ export const selectResourceAttemptGuid = createSelector(
   selectState,
   (state) => state.resourceAttemptGuid,
 );
+export const selectActivityTypes = createSelector(selectState, (state) => state.activityTypes);
 
 export default pageSlice.reducer;

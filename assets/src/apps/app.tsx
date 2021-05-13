@@ -18,9 +18,16 @@ export function defineApplication<T extends State>(Component: React.FunctionComp
     } catch (err) {
       // should have been json, error handling
     }
+    let parsedActivityTypes: any = [];
+    try {
+      parsedActivityTypes = JSON.parse(atob(params.activityTypes));
+    } catch (err) {
+      // should have been json, error handling
+    }
     const props = {
       ...params,
       content: parsedContent,
+      activityTypes: parsedActivityTypes
     };
 
     // console.log('MOUNT UP', props);

@@ -186,6 +186,9 @@ export const loadActivities = createAsyncThunk(
         id: sequenceEntry.custom.sequenceId,
         resourceId: sequenceEntry.activity_id,
         content: result.content,
+        authoring: result.authoring || null,
+        activityType: result.activityType,
+        title: result.title,
       };
       return activity;
     });

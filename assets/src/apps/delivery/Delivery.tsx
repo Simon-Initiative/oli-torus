@@ -19,6 +19,7 @@ export interface DeliveryProps {
   resourceAttemptGuid: string;
   activityGuidMapping: any;
   previewMode?: boolean;
+  activityTypes?: any[];
 }
 
 const Delivery: React.FC<DeliveryProps> = ({
@@ -31,6 +32,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   resourceAttemptGuid,
   resourceAttemptState,
   activityGuidMapping,
+  activityTypes = [],
   previewMode = false,
 }) => {
   const dispatch = useDispatch();
@@ -53,6 +55,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         resourceAttemptState,
         activityGuidMapping,
         previewMode: !!previewMode,
+        activityTypes,
       }),
     );
   }, []);
