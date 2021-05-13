@@ -5,6 +5,7 @@ import { ModelEditorProps } from '../schema';
 import { ChoiceId, RichText } from '../../types';
 import { CloseButton } from 'components/misc/CloseButton';
 import { ProjectSlug } from 'data/types';
+import { ShuffleChoicesOption } from 'components/activities/common/utils';
 
 interface MoveButtonProps {
   choiceId: ChoiceId;
@@ -37,6 +38,7 @@ interface Props extends ModelEditorProps {
   onMoveChoiceDown: (id: ChoiceId) => void;
   onRemoveChoice: (id: ChoiceId) => void;
   projectSlug: ProjectSlug;
+  onShuffle: () => void;
 }
 export const Choices = (props: Props) => {
   const {
@@ -50,6 +52,7 @@ export const Choices = (props: Props) => {
     editMode,
     model,
     projectSlug,
+    onShuffle,
   } = props;
 
   const { choices } = model;
@@ -61,6 +64,8 @@ export const Choices = (props: Props) => {
         subtitle="Arrange the answer choices to set the correct ordering."
         id="choices"
       />
+
+      <ShuffleChoicesOption onShuffle={onShuffle} model={model} />
 
       {choices.map((choice, index) => (
         <div key={choice.id} className="mb-3">

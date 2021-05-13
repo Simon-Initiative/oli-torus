@@ -169,13 +169,14 @@ defmodule OliWeb.ProjectController do
     case Course.get_project_by_slug(project_slug) do
       nil ->
         error(conn, 404, "not found")
+
       project ->
         if project.title === title do
           delete_project(conn, project)
         else
           error(conn, 404, "not found")
         end
-      end
+    end
   end
 
   def download_datashop(conn, _project_params) do
@@ -215,6 +216,7 @@ defmodule OliWeb.ProjectController do
           activities_enabled: Activities.activities_for_project(project),
           changeset: changeset
         }
+
         conn
         |> Map.put(:assigns, Map.merge(conn.assigns, overview_params))
         |> put_flash(:error, "Project could not be deleted.")
@@ -227,5 +229,4 @@ defmodule OliWeb.ProjectController do
     |> Plug.Conn.send_resp(code, reason)
     |> Plug.Conn.halt()
   end
-
 end

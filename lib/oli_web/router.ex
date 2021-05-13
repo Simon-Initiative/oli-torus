@@ -579,6 +579,12 @@ defmodule OliWeb.Router do
     # web interface for viewing sent emails during development
     forward("/dev/sent_emails", Bamboo.SentEmailViewerPlug)
 
+    scope "/api/v1/testing", OliWeb do
+      pipe_through([:api])
+
+      post("/rules", Api.RulesEngineController, :execute)
+    end
+
     scope "/dev", OliWeb do
       pipe_through([
         :browser,

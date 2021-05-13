@@ -8,12 +8,14 @@ import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 import { CloseButton } from 'components/misc/CloseButton';
 import { ProjectSlug } from 'data/types';
 import * as Lang from 'utils/lang';
+import { ShuffleChoicesOption } from 'components/activities/common/utils';
 
 interface ChoicesProps extends ModelEditorProps {
   onAddChoice: () => void;
   onEditChoice: (id: string, content: RichText) => void;
   onRemoveChoice: (id: string) => void;
   projectSlug: ProjectSlug;
+  onShuffle: () => void;
 }
 export const Choices = ({
   onAddChoice,
@@ -22,6 +24,7 @@ export const Choices = ({
   editMode,
   model,
   projectSlug,
+  onShuffle,
 }: ChoicesProps) => {
   const {
     authoring: { parts },
@@ -57,6 +60,9 @@ export const Choices = ({
         )}
         id="choices"
       />
+
+      <ShuffleChoicesOption onShuffle={onShuffle} model={model} />
+
       <Description>
         <IconCorrect /> {Lang.dgettext('mcq', 'Correct Choice')}
       </Description>

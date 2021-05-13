@@ -12,6 +12,7 @@ import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import produce from 'immer';
+import { toggleAnswerChoiceShuffling } from 'components/activities/common/utils';
 
 const store = configureStore();
 
@@ -39,6 +40,7 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
       />
       <Choices
         {...sharedProps}
+        onShuffle={() => dispatch(toggleAnswerChoiceShuffling())}
         onAddChoice={() => dispatch(MCActions.addChoice())}
         onEditChoice={(id, content) => dispatch(MCActions.editChoice(id, content))}
         onRemoveChoice={(id) => dispatch(MCActions.removeChoice(id))}

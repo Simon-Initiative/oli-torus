@@ -23,7 +23,7 @@ defmodule OliWeb.Endpoint do
   plug(Plug.Static,
     at: "/",
     from: :oli,
-    gzip: false,
+    gzip: true,
     only: ~w(css fonts images js custom favicons favicon.ico robots.txt flame_graphs)
   )
 
