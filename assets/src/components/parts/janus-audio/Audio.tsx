@@ -44,7 +44,7 @@ const Audio: React.FC<any> = (props) => {
   const onReady = props.onReady;
   const [showControls, setShowControls] = useState(true);
 
-  let finalSrc = src;
+  const finalSrc = src;
   // if (startTime && startTime >= 0) {
   //     finalSrc = `${finalSrc}#t=${startTime || 0}`;
   //     if (endTime && endTime >= 0) {
