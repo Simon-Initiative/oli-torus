@@ -5,6 +5,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   use OliWeb, :live_view
 
+  import Oli.Utils, only: [value_or: 2]
+
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Authoring.Course
 
@@ -20,6 +22,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   alias Oli.Resources.ScoringStrategy
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Repo
   alias Oli.Publishing
@@ -64,6 +67,17 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
         subscriptions = subscribe(container, children, rollup, project.slug)
 
+        author = Repo.get(Author, author_id)
+
+        view_pref =
+          case author.preferences do
+            %{curriculum_view: curriculum_view} ->
+              curriculum_view
+
+            _ ->
+              "Basic"
+          end
+
         {:ok,
          assign(socket,
            children: children,
@@ -74,8 +88,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
            container: container,
            project: project,
            subscriptions: subscriptions,
-           author: Repo.get(Author, author_id),
-           view: "Simple",
+           author: author,
+           view: view_pref,
            selected: nil,
            modal: nil,
            resources_being_edited: get_resources_being_edited(container.children, project.id),
@@ -86,6 +100,9 @@ defmodule OliWeb.Curriculum.ContainerLive do
   end
 
   def handle_params(%{"view" => view}, _, socket) do
+    %{author: author} = socket.assigns
+    {:ok, _updated} = update_author_view_pref(author, view)
+
     {:noreply, assign(socket, view: view)}
   end
 
@@ -180,7 +197,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     {:noreply, update_modal_assigns(socket, modal_assigns)}
   end
 
-  def handle_event("move_item", %{"selection" => selection}, socket) do
+  def handle_event("move_item", %{"selection" => _selection}, socket) do
     %{
       modal: %{
         assigns: %{
@@ -448,12 +465,13 @@ defmodule OliWeb.Curriculum.ContainerLive do
      )}
   end
 
-  defp active_class(active_view, view) do
-    if active_view == view do
-      " active"
-    else
-      ""
-    end
+  defp update_author_view_pref(author, curriculum_view) do
+    updated_preferences =
+      value_or(author.preferences, %Accounts.AuthorPreferences{})
+      |> Map.put(:curriculum_view, curriculum_view)
+      |> Map.from_struct()
+
+    Accounts.update_author(author, %{preferences: updated_preferences})
   end
 
   defp update_modal_assigns(socket, updated_assigns) do

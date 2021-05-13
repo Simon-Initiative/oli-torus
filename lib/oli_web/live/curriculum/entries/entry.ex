@@ -38,7 +38,7 @@ defmodule OliWeb.Curriculum.EntryLive do
         </div>
         <div>
           <%= case @view do
-            "Details" ->
+            "Detailed" ->
               live_component @socket, DetailsLive, assigns
             "Learning Summary" ->
               live_component @socket, LearningSummaryLive, assigns
