@@ -22,6 +22,7 @@ defmodule OliWeb.Curriculum.EntryLive do
       phx-value-slug="<%= @child.slug %>"
       phx-value-index="<%= assigns.index %>"
       data-drag-index="<%= assigns.index %>"
+      data-drag-slug="<%= @child.slug %>"
       phx-hook="DragSource"
       class="p-2 flex-grow-1 d-flex curriculum-entry <%= if @selected do "active" else "" end %>">
 
@@ -61,6 +62,7 @@ defmodule OliWeb.Curriculum.EntryLive do
       <%= if is_container?(child) do "folder" else if child.graded do "check_box" else "description" end end %>
     </i>
     """
+
     if is_container?(child) do
       ~L"""
       <i class="las la-archive font-bold fa-lg mx-2"></i>

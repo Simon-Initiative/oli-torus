@@ -79,7 +79,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
            selected: nil,
            modal: nil,
            resources_being_edited: get_resources_being_edited(container.children, project.id),
-           numberings: Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug)
+           numberings: Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug),
+           dragging: nil
          )}
     end
   end
@@ -338,6 +339,15 @@ defmodule OliWeb.Curriculum.ContainerLive do
       end
 
     {:noreply, socket}
+  end
+
+  # handle drag events
+  def handle_event("dragstart", drag_slug, socket) do
+    {:noreply, assign(socket, dragging: drag_slug)}
+  end
+
+  def handle_event("dragend", _, socket) do
+    {:noreply, assign(socket, dragging: nil)}
   end
 
   # handle clicking of the "Add Graded Assessment" or "Add Practice Page" buttons
