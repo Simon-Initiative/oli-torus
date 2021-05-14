@@ -62,16 +62,16 @@ form .form-label-group .help-block {
     font-weight: 500;
   }
 
-  .page {
+  .page-link {
     border-bottom: none;
   }
 
-  .page:first-child {
+  .page-link:first-of-type {
     border-top-left-radius: $list-group-border-radius;
     border-top-right-radius: $list-group-border-radius;
   }
 
-  .page:last-child {
+  .page-link:last-of-type {
     border-bottom-left-radius: $list-group-border-radius;
     border-bottom-right-radius: $list-group-border-radius;
     margin-bottom: 20px;
