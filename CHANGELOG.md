@@ -24,6 +24,7 @@
 - Fix projects view project card styling
 - Fix problem with inputs causing clipping in Firefox
 - Fix problem with difficulty selecting and focusing in Firefox
+- Fix problem where containers with no children were rendered as pages in delivery
 
 ## 0.9.0 (2021-4-22)
 

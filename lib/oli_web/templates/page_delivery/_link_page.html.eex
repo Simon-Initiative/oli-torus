@@ -1,4 +1,4 @@
-<% link_class = "list-group-item list-group-item-action " <> if @active_page == @node.revision.slug, do: "active", else: "" %>
+<% link_class = "page list-group-item list-group-item-action " <> if @active_page == @node.revision.slug, do: "active", else: "" %>
 <%= link to: Routes.page_delivery_path(@conn, :page, @section_slug, @node.revision.slug), class: link_class do %>
   <div class="d-flex w-100 justify-content-between">
     <span class="page-title">
