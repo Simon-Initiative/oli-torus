@@ -11,6 +11,8 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     content: { custom: config, partsLayout },
   } = props.model;
 
+  const attemptState = props.state;
+
   const parts = partsLayout || [];
 
   const handlePartInit = async (...args) => {
@@ -21,8 +23,14 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     console.log('onPartReady', args);
   };
 
-  const handlePartSave = async (...args) => {
-    console.log('onPartSave', args);
+  const handlePartSave = async ({ id, responses }: { id: string; responses: any[] }) => {
+    console.log('onPartSave', { id, responses });
+    // part attempt guid should be located in attemptState.parts matched to id (i think)
+    const partAttemptGuid = 'partattempt1234';
+    const response: ActivityTypes.StudentResponse = {
+      input: responses
+    };
+    props.onSavePart(attemptState.attemptGuid, partAttemptGuid, response);
   };
 
   const handlePartSubmit = async (...args) => {
