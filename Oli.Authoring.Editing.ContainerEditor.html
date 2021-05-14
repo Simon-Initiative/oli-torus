@@ -10,7 +10,7 @@
     <title>Oli.Authoring.Editing.ContainerEditor — OLI Torus v0.9.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-3e98476bad.js"></script>
+    <script src="dist/sidebar_items-0639fc7a36.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -142,11 +142,20 @@ the items within a container.</p>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#move_to/5">move_to(revision, old_container, new_container, author, project)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Moves a page or container into another container.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#remove_child/4">remove_child(container, project, author, revision_slug)</a>
 
   </div>
 
-    <div class="summary-synopsis"><p>Removes a child from a container, and marks that child as deleted.</p></div>
+    <div class="summary-synopsis"><p>Removes a child from a container, and marks that child as deleted by default.</p></div>
 
 </div>
 <div class="summary-row">
@@ -180,7 +189,7 @@ Functions
     </a>
     <h1 class="signature">add_new(container, attrs, author, project)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L75" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L76" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -202,7 +211,7 @@ Functions
     </a>
     <h1 class="signature">broadcast_update(resource_id, project_slug)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L109" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L141" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -266,16 +275,16 @@ Functions
 <p>Lists all top level resource revisions contained in a container.</p>
   </section>
 </section>
-<section class="detail" id="remove_child/4">
+<section class="detail" id="move_to/5">
 
   <div class="detail-header">
-    <a href="#remove_child/4" class="detail-link" title="Link to this function">
+    <a href="#move_to/5" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">remove_child(container, project, author, revision_slug)</h1>
+    <h1 class="signature">move_to(revision, old_container, new_container, author, project)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L117" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L113" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -285,7 +294,29 @@ Functions
 
   <section class="docstring">
 
-<p>Removes a child from a container, and marks that child as deleted.</p>
+<p>Moves a page or container into another container.</p>
+  </section>
+</section>
+<section class="detail" id="remove_child/4">
+
+  <div class="detail-header">
+    <a href="#remove_child/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">remove_child(container, project, author, revision_slug)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L149" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Removes a child from a container, and marks that child as deleted by default.</p>
   </section>
 </section>
 <section class="detail" id="reorder_child/5">
@@ -297,7 +328,7 @@ Functions
     </a>
     <h1 class="signature">reorder_child(container, project, author, source, index)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L166" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/container_editor.ex#L198" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

@@ -10,7 +10,7 @@
     <title>OliWeb.LiveHelpers — OLI Torus v0.9.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-3e98476bad.js"></script>
+    <script src="dist/sidebar_items-0639fc7a36.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -89,77 +89,6 @@ OliWeb.LiveHelpers <small class="app-vsn">(OLI Torus v0.9.0)</small>
 
 
 
-        <section id="summary" class="details-list">
-          <h1 class="section-heading">
-            <a class="hover-link" href="#summary">
-              <span class="icon-link" aria-hidden="true"></span>
-              <span class="sr-only">Link to this section</span>
-            </a>
-            Summary
-          </h1>
-
-  <div class="summary-functions summary">
-    <h2>
-      <a href="#functions">Functions</a>
-    </h2>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#live_modal/3">live_modal(_, component, opts)</a>
-
-  </div>
-
-    <div class="summary-synopsis"><p>Renders a component inside the <a href="OliWeb.ModalComponent.html"><code class="inline">OliWeb.ModalComponent</code></a> component.</p></div>
-
-</div>
-
-  </div>
-
-        </section>
-
-
-        <section id="functions" class="details-list">
-          <h1 class="section-heading">
-            <a class="hover-link" href="#functions">
-              <span class="icon-link" aria-hidden="true"></span>
-              <span class="sr-only">Link to this section</span>
-            </a>
-Functions
-          </h1>
-          <div class="functions-list">
-<section class="detail" id="live_modal/3">
-
-  <div class="detail-header">
-    <a href="#live_modal/3" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">live_modal(_, component, opts)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/live_helpers.ex#L18" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-<p>Renders a component inside the <a href="OliWeb.ModalComponent.html"><code class="inline">OliWeb.ModalComponent</code></a> component.</p><p>The rendered modal receives a <code class="inline">:return_to</code> option to properly update
-the URL when the modal is closed.</p><h2 id="live_modal/3-examples" class="section-heading">
-  <a href="#live_modal/3-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
-  Examples
-</h2>
-<pre><code class="nohighlight makeup elixir"><span class="o">&lt;</span><span class="p">%</span><span class="o">=</span><span class="w"> </span><span class="n">live_modal</span><span class="w"> </span><span class="na">@socket</span><span class="p">,</span><span class="w"> </span><span class="nc">OliWeb.TestXXLive.FormComponent</span><span class="p">,</span><span class="w">
-  </span><span class="ss">id</span><span class="p">:</span><span class="w"> </span><span class="na">@resource</span><span class="o">.</span><span class="n">id</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="ss">:new</span><span class="p">,</span><span class="w">
-  </span><span class="ss">action</span><span class="p">:</span><span class="w"> </span><span class="na">@live_action</span><span class="p">,</span><span class="w">
-  </span><span class="ss">resource</span><span class="p">:</span><span class="w"> </span><span class="na">@resource</span><span class="p">,</span><span class="w">
-  </span><span class="ss">return_to</span><span class="p">:</span><span class="w"> </span><span class="nc">Routes</span><span class="o">.</span><span class="n">resource_path</span><span class="p" data-group-id="7163860090-1">(</span><span class="na">@socket</span><span class="p">,</span><span class="w"> </span><span class="ss">:index</span><span class="p" data-group-id="7163860090-1">)</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span></code></pre>
-  </section>
-</section>
-
-          </div>
-        </section>
 
       <footer class="footer">
         <p>
