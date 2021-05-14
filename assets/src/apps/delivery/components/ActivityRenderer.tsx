@@ -15,7 +15,7 @@ import {
   StudentResponse,
   Success,
 } from 'components/activities/types';
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { selectPreviewMode } from '../store/features/page/slice';
 
@@ -24,7 +24,6 @@ interface ActivityRendererProps {
 }
 
 const ActivityRenderer: React.FC<ActivityRendererProps> = ({ activity }) => {
-  console.log('ACTIVITY', activity);
   const isPreviewMode = useSelector(selectPreviewMode);
   const currentUserId = 1; // TODO from state
 
@@ -52,10 +51,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({ activity }) => {
     hasMoreAttempts: false,
     hasMoreHints: false,
   };
-
-  /* const config = activity.content.custom;
-
-  return <PartsLayoutRenderer parts={activity?.content.partsLayout} config={config} />; */
 
   const onSaveActivity = async (attemptGuid: string, partResponses: PartResponse[]) => {
     const result: Success = {
@@ -94,6 +89,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({ activity }) => {
     partAttemptGuid: string,
     response: StudentResponse,
   ) => {
+    console.log('onSavePart (ActivityRenderer)', { attemptGuid, partAttemptGuid, response });
     const result: Success = {
       type: 'success',
     };
@@ -131,7 +127,47 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({ activity }) => {
     return result;
   };
 
-  const props = {
+  const bridgeEvents: Record<string, any> = {
+    saveActivity: onSaveActivity,
+    submitActivity: onSubmitActivity,
+    resetActivity: onResetActivity,
+    savePart: onSavePart,
+    submitPart: onSubmitPart,
+    resetPart: onResetPart,
+    submitEvaluations: onSubmitEvaluations,
+  };
+
+  const wcEventHandler = async (e: CustomEvent) => {
+    const handler = bridgeEvents[e.type];
+    if (handler) {
+      const { continuation, attemptGuid, partAttemptGuid, payload } = e.detail;
+      const result = await handler(attemptGuid, partAttemptGuid, payload);
+      if (continuation) {
+        continuation(result);
+      }
+    }
+  };
+
+  const ref = useRef(null);
+  useEffect(() => {
+    if (ref.current) {
+      const wc = ref.current as any;
+      Object.keys(bridgeEvents).forEach((eventName) => {
+        wc.addEventListener(eventName, wcEventHandler);
+      });
+    }
+    return () => {
+      if (ref.current) {
+        const wc = ref.current as any;
+        Object.keys(bridgeEvents).forEach((eventName) => {
+          wc.removeEventListener(eventName, wcEventHandler);
+        });
+      }
+    };
+  }, [ref.current]);
+
+  const elementProps = {
+    ref,
     graded: false,
     model: JSON.stringify(activity),
     state: JSON.stringify(activityState),
@@ -147,7 +183,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({ activity }) => {
     onSubmitEvaluations,
     onSubmitPart,
   };
-  return React.createElement(activity.activityType?.delivery_element, props, null);
+
+  return React.createElement(activity.activityType?.delivery_element, elementProps, null);
 };
 
 export default ActivityRenderer;
