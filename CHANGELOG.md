@@ -26,6 +26,7 @@
 - Fix problem with inputs causing clipping in Firefox
 - Fix problem with difficulty selecting and focusing in Firefox
 - Fix problem where containers with no children were rendered as pages in delivery
+- Fix some style inconsistencies in delivery and dark mode
 
 ## 0.9.0 (2021-4-22)
 
