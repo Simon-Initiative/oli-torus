@@ -62,7 +62,7 @@ const Slider: React.FC<any> = (props) => {
   const [isSliderEnabled, setIsSliderEnabled] = useState(true);
 
   const inputWidth: any = document.getElementById(`${id}`)?.getBoundingClientRect().width;
-  const thumbWidth: any = document.getElementById('slider-thumb')?.getBoundingClientRect().width;
+  const thumbWidth: any = document.getElementById(`slider-thumb-${id}`)?.getBoundingClientRect().width;
   const thumbHalfWidth: any = thumbWidth / 2;
   const thumbPosition =
     ((sliderValue - minimum) / (maximum - minimum)) * (inputWidth - thumbWidth + thumbHalfWidth);
@@ -97,9 +97,9 @@ const Slider: React.FC<any> = (props) => {
         <div className="rangeWrap">
           <div style={divStyles}>
             {showDataTip && (
-              <div className="rangeValue" id={'rangeV'}>
+              <div className="rangeValue" id={`rangeV-${id}`}>
                 <span
-                  id="slider-thumb"
+                  id={`slider-thumb-${id}`}
                   style={{
                     left: `${invertScale ? undefined : thumbPosition}px`,
                     marginLeft: `${invertScale ? undefined : thumbMargin}px`,
