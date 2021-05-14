@@ -1,13 +1,9 @@
-<%= if @live_action in [:edit] do %>
-  <%= live_modal @socket, OliWeb.Curriculum.Settings,
-   container: @container,
-   id: @revision.id,
-   title: @page_title,
-   action: @live_action,
-   revision: @revision,
-   project: @project,
-   author: @author,
-   return_to: Routes.container_path(@socket, :index, @project.slug, @container.slug) %>
+
+<%= case @modal do %>
+  <% nil -> %>
+
+  <% %{component: component, assigns: assigns} -> %>
+    <%= live_component @socket, component, assigns %>
 <% end %>
 <div id="curriculum-container" class="container container-editor">
   <div class="row">
@@ -20,36 +16,37 @@
   <div class="row">
     <div class="col-12">
       <div class="change-view-buttons">
+        <span class="text-secondary mr-2">View</span>
         <div class="btn-group btn-group-toggle" data-toggle="buttons">
           <label
-            title="Simple"
+            title="Basic"
             data-toggle="tooltip"
             phx-click="change-view"
-            phx-value-view="Simple"
-            class="btn btn-sm btn-secondary <%= if @view == "Simple" do "active" else "" end %> %>">
+            phx-value-view="Basic"
+            class="btn btn-xs btn-outline-secondary p-2 <%= if @view == "Basic" do "active" else "" end %> %>">
             <input type="radio" name="options" id="view-1"
-              <%= if @view == "Simple" do "checked" else "" end %>
-            > <span><i class="far fa-square"></i></span>
+              <%= if @view == "Basic" do "checked" else "" end %>
+            > <span>Basic</span>
           </label>
 
           <label
-            title="Details"
+            title="Detailed"
             data-toggle="tooltip"
             phx-click="change-view"
-            phx-value-view="Details" class="btn btn-sm btn-secondary <%= if @view == "Details" do "active" else "" end %>">
+            phx-value-view="Detailed" class="btn btn-xs btn-outline-secondary p-2 <%= if @view == "Detailed" do "active" else "" end %>">
             <input type="radio" name="options" id="view-2"
-              <%= if @view == "Details" do "checked" else "" end %>
-            > <span><i class="fas fa-th-large"></i></span>
+              <%= if @view == "Detailed" do "checked" else "" end %>
+            > <span>Detailed</span>
           </label>
 
           <label
             title="Learning Summary"
             data-toggle="tooltip"
             phx-click="change-view"
-            phx-value-view="Learning Summary" class="btn btn-sm btn-secondary <%= if @view == "Learning Summary" do "active" else "" end %>">
+            phx-value-view="Learning Summary" class="btn btn-xs btn-outline-secondary p-2 <%= if @view == "Learning Summary" do "active" else "" end %>">
             <input type="radio" name="options" id="view-3"
               <%= if @view == "Learning Summary" do "checked" else "" end %>
-            > <span><i class="fas fa-table"></i></span>
+            > <span>Learning</span>
           </label>
         </div>
       </div>
@@ -63,11 +60,12 @@
             <p>There's nothing here.</p>
           </div>
         <% end %>
-        <%= for {child, index} <- Enum.with_index(@children) do %>
-          <%= live_component @socket, DropTarget, index: index %>
+        <%= for {child, index} <- Enum.filter(@children, fn c -> c.slug != @dragging end) |> Enum.with_index() do %>
+          <%= live_component @socket, DropTarget, id: index, index: index %>
           <%= live_component @socket, EntryLive, %{
                   id: child.slug,
                   editor: Map.get(@resources_being_edited, child.resource_id),
+                  author: @author,
                   selected: child == @selected,
                   container: @container,
                   child: child,
@@ -80,22 +78,22 @@
                   numberings: @numberings
                 } %>
         <% end %>
-        <%= live_component @socket, DropTarget, index: length(@children) %>
+        <%= live_component @socket, DropTarget, id: "last", index: length(@children) %>
       </div>
       <div class="mt-5">
-        Add new
-        <button phx-click="add" phx-value-type="Unscored" class="btn btn-sm btn-outline-primary ml-2" type="button">
+        <span class="text-secondary mr-2">Add new</span>
+        <button phx-click="add" phx-value-type="Unscored" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
           Practice Page
         </button>
-        <button phx-click="add" phx-value-type="Scored" class="btn btn-sm btn-outline-primary ml-2" type="button">
+        <button phx-click="add" phx-value-type="Scored" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
           Graded Assessment
         </button>
         <%= if @adaptivity_flag do %>
-          <button phx-click="add" phx-value-type="Adaptive" class="btn btn-sm btn-outline-primary ml-2" type="button">
+          <button phx-click="add" phx-value-type="Adaptive" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
             Adaptive Page
           </button>
         <% end %>
-        <button phx-click="add" phx-value-type="Container" class="btn btn-sm btn-outline-primary ml-2" type="button">
+        <button phx-click="add" phx-value-type="Container" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
           <%= new_container_name(@numberings, @container) %>
         </button>
       </div>

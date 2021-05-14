@@ -12,10 +12,11 @@ defmodule Oli.Accounts.AuthorPreferences do
   embedded_schema do
     field :theme, :string
     field :live_preview_display, :string
+    field :curriculum_view, :string
   end
 
   def changeset(preferences, attrs \\ %{}) do
     preferences
-    |> cast(attrs, [:theme, :live_preview_display])
+    |> cast(attrs, [:theme, :live_preview_display, :curriculum_view])
   end
 end

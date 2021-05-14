@@ -13,7 +13,7 @@
     right: 0;
     display: flex;
     z-index: 999;
-    background-color: rgba(255,255,255,.97);
+    background-color: rgba(255, 255, 255, 0.97);
     width: 100%;
     padding: 0;
     margin: 0;
@@ -38,7 +38,7 @@
     text-align: center;
 
     .overlay-content {
-      color: rgba(0,0,0,.68);
+      color: rgba(0, 0, 0, 0.68);
       line-height: 1.4;
       margin-bottom: 30px;
       border: none;
@@ -47,6 +47,12 @@
   }
 
   .overlay-actions {
-
   }
+}
+
+.fix-position {
+  position: fixed;
+  right: 0;
+  left: 0;
+  overflow: hidden;
 }

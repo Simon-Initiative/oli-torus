@@ -5,11 +5,24 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   use OliWeb, :live_view
 
+  import Oli.Utils, only: [value_or: 2]
+
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Authoring.Course
-  alias OliWeb.Curriculum.{Rollup, ActivityDelta, DropTarget, EntryLive}
+
+  alias OliWeb.Curriculum.{
+    Rollup,
+    ActivityDelta,
+    DropTarget,
+    EntryLive,
+    OptionsModal,
+    MoveModal,
+    DeleteModal
+  }
+
   alias Oli.Resources.ScoringStrategy
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Repo
   alias Oli.Publishing
@@ -48,13 +61,22 @@ defmodule OliWeb.Curriculum.ContainerLive do
             AuthoringResolver.from_revision_slug(project_slug, container_slug)
           end
 
-        children =
-          ContainerEditor.list_all_container_children(container, project)
-          |> Repo.preload([:resource, :author])
+        children = ContainerEditor.list_all_container_children(container, project)
 
         {:ok, rollup} = Rollup.new(children, project.slug)
 
         subscriptions = subscribe(container, children, rollup, project.slug)
+
+        author = Repo.get(Author, author_id)
+
+        view_pref =
+          case author.preferences do
+            %{curriculum_view: curriculum_view} ->
+              curriculum_view
+
+            _ ->
+              "Basic"
+          end
 
         {:ok,
          assign(socket,
@@ -66,16 +88,21 @@ defmodule OliWeb.Curriculum.ContainerLive do
            container: container,
            project: project,
            subscriptions: subscriptions,
-           author: Repo.get(Author, author_id),
-           view: "Simple",
+           author: author,
+           view: view_pref,
            selected: nil,
+           modal: nil,
            resources_being_edited: get_resources_being_edited(container.children, project.id),
-           numberings: Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug)
+           numberings: Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug),
+           dragging: nil
          )}
     end
   end
 
   def handle_params(%{"view" => view}, _, socket) do
+    %{author: author} = socket.assigns
+    {:ok, _updated} = update_author_view_pref(author, view)
+
     {:noreply, assign(socket, view: view)}
   end
 
@@ -95,7 +122,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   defp apply_action(socket, :edit, %{"project_id" => project_id, "revision_slug" => revision_slug}) do
     socket
-    |> assign(:page_title, "Change settings")
+    |> assign(:page_title, "Options")
     |> assign(:revision, AuthoringResolver.from_revision_slug(project_id, revision_slug))
   end
 
@@ -144,6 +171,110 @@ defmodule OliWeb.Curriculum.ContainerLive do
       Subscriber.unsubscribe_to_locks_released(project_slug, child.resource_id)
     end)
   end
+
+  def handle_event("HierarchyPicker.select", %{"slug" => slug}, socket) do
+    %{modal: %{assigns: %{project: project} = modal_assigns}} = socket.assigns
+
+    container =
+      case slug do
+        "" ->
+          AuthoringResolver.root_container(project.slug)
+
+        slug ->
+          AuthoringResolver.from_revision_slug(project.slug, slug)
+      end
+
+    children = ContainerEditor.list_all_container_children(container, project)
+    breadcrumbs = Breadcrumb.trail_to(project.slug, container.slug)
+
+    modal_assigns =
+      modal_assigns
+      |> put_in([:container], container)
+      |> put_in([:children], children)
+      |> put_in([:breadcrumbs], breadcrumbs)
+      |> put_in([:selection], container.slug)
+
+    {:noreply, update_modal_assigns(socket, modal_assigns)}
+  end
+
+  def handle_event("move_item", %{"selection" => _selection}, socket) do
+    %{
+      modal: %{
+        assigns: %{
+          project: project,
+          revision: revision,
+          old_container: old_container,
+          container: new_container
+        }
+      },
+      author: author
+    } = socket.assigns
+
+    {:ok, _} = ContainerEditor.move_to(revision, old_container, new_container, author, project)
+
+    {:noreply, assign(socket, modal: nil)}
+  end
+
+  def handle_event("show_options_modal", %{"slug" => slug}, socket) do
+    %{container: container, project: project} = socket.assigns
+
+    assigns = %{
+      id: "options_#{slug}",
+      container: container,
+      revision: Enum.find(socket.assigns.children, fn r -> r.slug == slug end),
+      project: project
+    }
+
+    {:noreply,
+     assign(socket,
+       modal: %{component: OptionsModal, assigns: assigns}
+     )}
+  end
+
+  def handle_event("show_move_modal", %{"slug" => slug}, socket) do
+    %{container: container, project: project} = socket.assigns
+
+    assigns = %{
+      id: "move_#{slug}",
+      revision: Enum.find(socket.assigns.children, fn r -> r.slug == slug end),
+      old_container: container,
+      container: container,
+      project: project,
+      breadcrumbs: Breadcrumb.trail_to(project.slug, container.slug),
+      children: ContainerEditor.list_all_container_children(container, project),
+      numberings: Numbering.number_full_tree(AuthoringResolver, project.slug),
+      selection: nil
+    }
+
+    {:noreply,
+     assign(socket,
+       modal: %{component: MoveModal, assigns: assigns}
+     )}
+  end
+
+  def handle_event("show_delete_modal", %{"slug" => slug}, socket) do
+    %{container: container, project: project, author: author} = socket.assigns
+
+    assigns = %{
+      id: "delete_#{slug}",
+      revision: Enum.find(socket.assigns.children, fn r -> r.slug == slug end),
+      container: container,
+      project: project,
+      author: author
+    }
+
+    {:noreply,
+     assign(socket,
+       modal: %{component: DeleteModal, assigns: assigns}
+     )}
+  end
+
+  def handle_event("cancel", _, socket) do
+    {:noreply, assign(socket, modal: nil)}
+  end
+
+  # handle any cancel events a modal might generate from being closed
+  def handle_event("cancel_modal", params, socket), do: handle_event("cancel", params, socket)
 
   # handle change of selection
   def handle_event("select", %{"slug" => slug}, socket) do
@@ -225,6 +356,15 @@ defmodule OliWeb.Curriculum.ContainerLive do
       end
 
     {:noreply, socket}
+  end
+
+  # handle drag events
+  def handle_event("dragstart", drag_slug, socket) do
+    {:noreply, assign(socket, dragging: drag_slug)}
+  end
+
+  def handle_event("dragend", _, socket) do
+    {:noreply, assign(socket, dragging: nil)}
   end
 
   # handle clicking of the "Add Graded Assessment" or "Add Practice Page" buttons
@@ -325,12 +465,23 @@ defmodule OliWeb.Curriculum.ContainerLive do
      )}
   end
 
-  def active_class(active_view, view) do
-    if active_view == view do
-      " active"
-    else
-      ""
-    end
+  defp update_author_view_pref(author, curriculum_view) do
+    updated_preferences =
+      value_or(author.preferences, %Accounts.AuthorPreferences{})
+      |> Map.put(:curriculum_view, curriculum_view)
+      |> Map.from_struct()
+
+    Accounts.update_author(author, %{preferences: updated_preferences})
+  end
+
+  defp update_modal_assigns(socket, updated_assigns) do
+    %{modal: %{assigns: assigns} = modal} = socket.assigns
+
+    modal =
+      modal
+      |> put_in([:assigns], Enum.into(updated_assigns, assigns))
+
+    assign(socket, modal: modal)
   end
 
   defp has_renderable_change?(page1, page2) do
@@ -399,9 +550,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     # in the case of a change to the container, we simplify by just pulling a new view of
     # the container and its contents. This handles addition, removal, reordering from the
     # local user as well as a collaborator
-    children =
-      ContainerEditor.list_all_container_children(revision, socket.assigns.project)
-      |> Repo.preload([:resource, :author])
+    children = ContainerEditor.list_all_container_children(revision, socket.assigns.project)
 
     {:ok, rollup} = Rollup.new(children, socket.assigns.project.slug)
 
