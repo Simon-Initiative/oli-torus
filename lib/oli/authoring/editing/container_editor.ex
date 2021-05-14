@@ -132,6 +132,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
     if status == :ok do
       broadcast_update(old_container.resource_id, project.slug)
+      broadcast_update(new_container.resource_id, project.slug)
     end
 
     result
