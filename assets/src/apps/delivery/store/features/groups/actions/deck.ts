@@ -12,7 +12,7 @@ import {
   setActivities,
   setCurrentActivityId,
 } from '../../activities/slice';
-import { selectPreviewMode, selectResourceAttemptGuid, selectSectionSlug } from '../../page/slice';
+import { selectActivityTypes, selectPreviewMode, selectResourceAttemptGuid, selectSectionSlug } from '../../page/slice';
 import { selectSequence } from '../selectors/deck';
 import { GroupsSlice } from '../slice';
 import { getNextQBEntry, getParentBank } from './navUtils';
@@ -173,21 +173,24 @@ export const navigateToActivity = createAsyncThunk(
 export const loadActivities = createAsyncThunk(
   `${GroupsSlice}/deck/loadActivities`,
   async (activityIds: ResourceId[], thunkApi) => {
-    const sectionSlug = selectSectionSlug(thunkApi.getState() as RootState);
+    const rootState = thunkApi.getState() as RootState;
+    const sectionSlug = selectSectionSlug(rootState);
     const results = await getBulkActivitiesForAuthoring(sectionSlug, activityIds);
-    const sequence = selectSequence(thunkApi.getState() as RootState);
+    const sequence = selectSequence(rootState);
+    const activityTypes = selectActivityTypes(rootState);
     const activities = results.map((result) => {
       const sequenceEntry = sequence.find((entry: any) => entry.activity_id === result.id);
       if (!sequenceEntry) {
         console.warn(`Activity ${result.id} not found in the page model!`);
         return;
       }
+      const activityType = activityTypes.find((t) => t.id === result.activityType);
       const activity = {
         id: sequenceEntry.custom.sequenceId,
         resourceId: sequenceEntry.activity_id,
         content: result.content,
         authoring: result.authoring || null,
-        activityType: result.activityType,
+        activityType,
         title: result.title,
       };
       return activity;
