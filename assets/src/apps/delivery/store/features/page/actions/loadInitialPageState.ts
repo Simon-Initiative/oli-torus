@@ -2,6 +2,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { writePageAttemptState } from 'data/persistence/state/intrinsic';
 import guid from 'utils/guid';
 import { RootState } from '../../../rootReducer';
+import { setExtrinsicState, setResourceAttemptGuid } from '../../attempt/slice';
 import { loadActivities, loadActivityState } from '../../groups/actions/deck';
 import { selectSequence } from '../../groups/selectors/deck';
 import { LayoutType, selectCurrentGroup, setGroups } from '../../groups/slice';
@@ -28,6 +29,7 @@ export const loadInitialPageState = createAsyncThunk(
     if (currentGroup?.layout === LayoutType.DECK) {
       // write initial session state (TODO: factor out elsewhere)
       const resourceAttemptGuid = selectResourceAttemptGuid(getState() as RootState);
+      dispatch(setResourceAttemptGuid({ guid: resourceAttemptGuid }));
       const sequence = selectSequence(getState() as RootState);
       const sessionState = sequence.reduce((acc, entry) => {
         acc[`session.visits.${entry.custom.sequenceId}`] = 0;
@@ -39,6 +41,7 @@ export const loadInitialPageState = createAsyncThunk(
         sessionState,
         params.previewMode,
       );
+      dispatch(setExtrinsicState({ state: sessionState }));
       let activityAttemptMapping;
       if (params.previewMode) {
         // need to load activities from the authoring api

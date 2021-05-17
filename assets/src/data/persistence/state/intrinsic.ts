@@ -141,17 +141,19 @@ const writeActivityAttemptStateServer = async (
 export const writePartAttemptState = async (
   sectionSlug: string,
   attemptGuid: string,
+  partAttemptGuid: string,
   input: any,
   finalize = false,
   previewMode = false,
 ): Promise<any> =>
   previewMode
-    ? writePartAttemptStateClient(sectionSlug, attemptGuid, input, finalize)
-    : writePartAttemptStateServer(sectionSlug, attemptGuid, input, finalize);
+    ? writePartAttemptStateClient(sectionSlug, attemptGuid, partAttemptGuid, input, finalize)
+    : writePartAttemptStateServer(sectionSlug, attemptGuid, partAttemptGuid, input, finalize);
 
 const writePartAttemptStateClient = async (
   sectionSlug: string,
   attemptGuid: string,
+  partAttemptGuid: string,
   input: any,
   finalize = false,
 ) => {
@@ -165,15 +167,16 @@ const writePartAttemptStateClient = async (
 const writePartAttemptStateServer = async (
   sectionSlug: string,
   attemptGuid: string,
+  partAttemptGuid: string,
   input: any,
   finalize = false,
 ) => {
   const method = finalize ? 'PUT' : 'PATCH';
-  const url = `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}/part_attempt/${attemptGuid}`;
+  const url = `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}/part_attempt/${partAttemptGuid}`;
   const result = await makeRequest({
     url,
     method,
-    body: JSON.stringify({ input }),
+    body: JSON.stringify({ response: input }),
   });
   return { result };
 };

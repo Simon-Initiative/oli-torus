@@ -1,4 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { ActivityState } from 'components/activities/types';
 import { getBulkActivitiesForAuthoring } from 'data/persistence/activity';
 import {
   getBulkAttemptState,
@@ -13,6 +14,7 @@ import {
   setActivities,
   setCurrentActivityId,
 } from '../../activities/slice';
+import { loadActivityAttemptState } from '../../attempt/slice';
 import {
   selectActivityTypes,
   selectPreviewMode,
@@ -220,19 +222,32 @@ export const loadActivities = createAsyncThunk(
           };
         });
       }
-      const activity = {
+      const activityModel = {
         id: sequenceEntry.custom.sequenceId,
-        attemptGuid: attemptEntry?.attemptGuid,
-        attemptNumber: result.attemptNumber || 1,
         resourceId: sequenceEntry.activity_id,
         content: isPreviewMode ? result.content : result.model,
         authoring: result.authoring || null,
         activityType,
         title: result.title,
-        partAttempts,
       };
-      return activity;
+      const attemptState: ActivityState = {
+        attemptGuid: attemptEntry?.attemptGuid || '',
+        activityId: activityModel.resourceId,
+        attemptNumber: result.attemptNumber || 1,
+        dateEvaluated: result.dateEvaluated || null,
+        score: result.score || null,
+        outOf: result.outOf || null,
+        parts: partAttempts,
+        hasMoreAttempts: result.hasMoreAttempts || true,
+        hasMoreHints: result.hasMoreHints || true,
+      };
+      return { model: activityModel, state: attemptState };
     });
-    thunkApi.dispatch(setActivities({ activities }));
+
+    const models = activities.map((a) => a?.model);
+    const states = activities.map((a) => a?.state);
+
+    thunkApi.dispatch(loadActivityAttemptState({ attempts: states }));
+    thunkApi.dispatch(setActivities({ activities: models }));
   },
 );

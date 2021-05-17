@@ -26,11 +26,18 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   const handlePartSave = async ({ id, responses }: { id: string; responses: any[] }) => {
     console.log('onPartSave', { id, responses });
     // part attempt guid should be located in attemptState.parts matched to id (i think)
-    const partAttemptGuid = 'partattempt1234';
+    const partAttempt = attemptState.parts.find(p => p.partId === id);
+    if (!partAttempt) {
+      // throw err? if this happens we can't proceed...
+      console.error(`part attempt guid for ${id} not found!`);
+      return;
+    }
     const response: ActivityTypes.StudentResponse = {
       input: responses
     };
-    props.onSavePart(attemptState.attemptGuid, partAttemptGuid, response);
+    const result = await props.onSavePart(attemptState.attemptGuid, partAttempt?.attemptGuid, response);
+    // BS: this is the result from the layout pushed down, need to push down to part here?
+    return result;
   };
 
   const handlePartSubmit = async (...args) => {

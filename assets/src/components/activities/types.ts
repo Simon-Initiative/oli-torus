@@ -1,5 +1,6 @@
-import { ResourceContext } from 'data/content/resource';
 import { ID, Identifiable, ModelElement, Selection } from 'data/content/model';
+import { ResourceContext } from 'data/content/resource';
+import { ResourceId } from 'data/types';
 
 export type ChoiceId = ID;
 export type ResponseId = ID;
@@ -64,13 +65,14 @@ export interface PartState {
   response: any;
   feedback: any;
   hints: [];
-  partId: number;
+  partId: string | number;
   hasMoreAttempts: boolean;
   hasMoreHints: boolean;
   error?: string;
 }
 
 export interface ActivityState {
+  activityId?: ResourceId;
   attemptGuid: string;
   attemptNumber: number;
   dateEvaluated: Date | null;

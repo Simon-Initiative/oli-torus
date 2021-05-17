@@ -16,19 +16,26 @@ import {
   Success,
 } from 'components/activities/types';
 import React, { useEffect, useRef } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { selectPreviewMode } from '../store/features/page/slice';
+import { selectActivtyAttemptState } from '../store/features/attempt/slice';
+import { savePartState } from '../store/features/attempt/actions/savePart';
 
 interface ActivityRendererProps {
   activity: ActivityModelSchema;
 }
 
 const ActivityRenderer: React.FC<ActivityRendererProps> = ({ activity }) => {
+  const dispatch = useDispatch();
   const isPreviewMode = useSelector(selectPreviewMode);
   const currentUserId = 1; // TODO from state
 
+  const currentAttemptState = useSelector((state) =>
+    selectActivtyAttemptState(state, activity.resourceId),
+  );
+
   const activityState: ActivityState = {
-    attemptGuid: 'TODO1234',
+    attemptGuid: 'foo',
     attemptNumber: 1,
     dateEvaluated: null,
     score: null,
@@ -90,9 +97,13 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({ activity }) => {
     response: StudentResponse,
   ) => {
     console.log('onSavePart (ActivityRenderer)', { attemptGuid, partAttemptGuid, response });
-    const result: Success = {
-      type: 'success',
-    };
+    const responseMap = response.input.reduce((result, item) => {
+      result[item.key] = item;
+      return result;
+    }, {});
+    const result = await dispatch(savePartState({ attemptGuid, partAttemptGuid, response: responseMap }));
+    // result will be the thunk action which might be rejected
+    // TODO: throw here to send failures back down?
     return result;
   };
 
@@ -170,7 +181,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({ activity }) => {
     ref,
     graded: false,
     model: JSON.stringify(activity),
-    state: JSON.stringify(activityState),
+    state: JSON.stringify(currentAttemptState),
     preview: isPreviewMode,
     progressState: 'progressState',
     userId: currentUserId,
