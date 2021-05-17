@@ -309,8 +309,11 @@ defmodule OliWeb.Api.AttemptController do
         end
       end)
 
+    revision = Oli.Resources.get_revision!(attempt.revision_id)
+
     %{
       activityId: attempt.resource_id,
+      activityType: revision.activity_type_id,
       revisionId: attempt.revision_id,
       attemptGuid: attempt.attempt_guid,
       attemptNumber: attempt.attempt_number,

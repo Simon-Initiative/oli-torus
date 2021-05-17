@@ -157,6 +157,24 @@ defmodule Oli.Activities do
     Enum.sort_by(activities_enabled, & &1.global, :desc)
   end
 
+  # TODO only get needed for section... hide authoring sometimes
+  def activities_for_section() do
+    Enum.reduce(list_activity_registrations(), [], fn a, m ->
+      m ++
+        [
+          %{
+            id: a.id,
+            authoring_element: a.authoring_element,
+            authoring_script: a.authoring_script,
+            delivery_element: a.delivery_element,
+            delivery_script: a.delivery_script,
+            slug: a.slug,
+            title: a.title,
+          }
+        ]
+    end)
+  end
+
   def set_global_status(activity_slug, status) do
     with {:ok, activity_registration} <-
            get_registration_by_slug(activity_slug)

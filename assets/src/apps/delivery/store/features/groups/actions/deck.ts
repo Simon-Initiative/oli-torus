@@ -203,21 +203,26 @@ export const loadActivities = createAsyncThunk(
 export const loadActivityState = createAsyncThunk(
   `${GroupsSlice}/deck/loadActivityState`,
   async (attemptGuids: string[], thunkApi) => {
-    const sectionSlug = selectSectionSlug(thunkApi.getState() as RootState);
+    const rootState = thunkApi.getState() as RootState;
+    const sectionSlug = selectSectionSlug(rootState);
     const results = await getBulkAttemptState(sectionSlug, attemptGuids);
 
     // TODO: map back to activities in model and update everything
-    const sequence = selectSequence(thunkApi.getState() as RootState);
+    const sequence = selectSequence(rootState);
+    const activityTypes = selectActivityTypes(rootState);
     const activities = results.map((result) => {
       const sequenceEntry = sequence.find((entry: any) => entry.activity_id === result.activityId);
       if (!sequenceEntry) {
         console.warn(`Activity ${result.activityId} not found in the page model!`);
         return;
       }
+      const activityType = activityTypes.find((t) => t.id === result.activityType);
       const activity = {
         id: sequenceEntry.custom.sequenceId,
         resourceId: sequenceEntry.activity_id,
         content: result.model,
+        activityType,
+        title: result.title,
       };
       return activity;
     });
