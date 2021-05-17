@@ -219,6 +219,42 @@ defmodule Oli.Seeder do
     |> Map.put(:revision2, revision2)
   end
 
+  def base_project_with_resource3() do
+    mappings = base_project_with_resource2()
+
+    %{
+      container: %{resource: container_resource, revision: container_revision},
+      publication: publication,
+      project: project,
+      author: author
+    } = mappings
+
+    %{resource: unit1_resource, revision: unit1_revision} =
+      create_container("Unit 1", publication, project, author)
+
+    # create some nested children
+    %{resource: nested_page1, revision: nested_revision1} =
+      create_page("Nested Page One", publication, project, author)
+
+    %{resource: nested_page2, revision: nested_revision2} =
+      create_page("Nested Page Two", publication, project, author, create_sample_content())
+
+    unit1_revision =
+      attach_pages_to([nested_page1, nested_page2], unit1_resource, unit1_revision, publication)
+
+    container_revision =
+      attach_pages_to([unit1_resource], container_resource, container_revision, publication)
+
+    Map.merge(mappings, %{
+      container: %{resource: container_resource, revision: container_revision},
+      unit1_container: %{resource: unit1_resource, revision: unit1_revision},
+      nested_page1: nested_page1,
+      nested_revision1: nested_revision1,
+      nested_page2: nested_page2,
+      nested_revision2: nested_revision2
+    })
+  end
+
   def create_section(map) do
     params = %{
       end_date: ~D[2010-04-17],
@@ -433,6 +469,35 @@ defmodule Oli.Seeder do
         resource_id: resource.id
       })
       |> Repo.insert()
+
+    create_published_resource(publication, resource, revision)
+
+    %{resource: resource, revision: revision}
+  end
+
+  def create_container(title, publication, project, author, children \\ []) do
+    {:ok, resource} =
+      Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert()
+
+    {:ok, _} =
+      Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{
+        project_id: project.id,
+        resource_id: resource.id
+      })
+      |> Repo.insert()
+
+    {:ok, revision} =
+      Oli.Resources.create_revision(%{
+        author_id: author.id,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: children,
+        content: %{},
+        deleted: false,
+        slug: Oli.Utils.Slug.generate("revisions", title),
+        title: title,
+        resource_id: resource.id
+      })
 
     create_published_resource(publication, resource, revision)
 

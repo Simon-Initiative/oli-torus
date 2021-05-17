@@ -15,13 +15,30 @@ body {
   font-size: $font-size-base;
   padding-bottom: $footer-height;
 
-  h1, .h1 { @include font-size($h1-font-size); }
-  h2, .h2 { @include font-size($h2-font-size); }
-  h3, .h3 { @include font-size($h3-font-size); }
-  h4, .h4 { @include font-size($h4-font-size); }
-  h5, .h5 { @include font-size($h5-font-size); }
-  h6, .h6 { @include font-size($h6-font-size); }
-
+  h1,
+  .h1 {
+    @include font-size($h1-font-size);
+  }
+  h2,
+  .h2 {
+    @include font-size($h2-font-size);
+  }
+  h3,
+  .h3 {
+    @include font-size($h3-font-size);
+  }
+  h4,
+  .h4 {
+    @include font-size($h4-font-size);
+  }
+  h5,
+  .h5 {
+    @include font-size($h5-font-size);
+  }
+  h6,
+  .h6 {
+    @include font-size($h6-font-size);
+  }
 }
 
 body.modal-open {
@@ -29,7 +46,7 @@ body.modal-open {
 }
 
 .oli-logo {
-  font-family: 'Open Sans', sans-serif;
+  font-family: "Open Sans", sans-serif;
 }
 
 form .form-label-group .help-block {
@@ -38,4 +55,26 @@ form .form-label-group .help-block {
 
 .custom-select {
   -webkit-appearance: none;
+}
+
+.course-outline {
+  .container-title {
+    font-weight: 500;
+  }
+
+  .page-link {
+    border-bottom: none;
+  }
+
+  .page-link:first-of-type {
+    border-top-left-radius: $list-group-border-radius;
+    border-top-right-radius: $list-group-border-radius;
+  }
+
+  .page-link:last-of-type {
+    border-bottom-left-radius: $list-group-border-radius;
+    border-bottom-right-radius: $list-group-border-radius;
+    margin-bottom: 20px;
+    border-bottom: $list-group-border-width solid $list-group-border-color;
+  }
 }

@@ -1,10 +1,11 @@
 <%= for node <- @nodes do %>
-  <%= if !Enum.empty?(node.children) do
-    render "container.html", node: node, conn: @conn, section_slug: @section_slug, summary: @summary, active_page: @active_page
-  else
-    case node.revision.graded do
-      false -> render "_link_page.html", node: node, conn: @conn, section_slug: @section_slug, summary: @summary, active_page: @active_page
-      true -> render "_link_assessment.html", node: node, conn: @conn, section_slug: @section_slug, summary: @summary, active_page: @active_page
-    end
-  end %>
+  <%= if container?(node.revision) do %>
+    <%= render "container.html", node: node, conn: @conn, section_slug: @section_slug, summary: @summary, active_page: @active_page %>
+  <% else %>
+    <%= if node.revision.graded do %>
+      <%= render "_link_assessment.html", node: node, conn: @conn, section_slug: @section_slug, summary: @summary, active_page: @active_page %>
+    <% else %>
+      <%= render "_link_page.html", node: node, conn: @conn, section_slug: @section_slug, summary: @summary, active_page: @active_page %>
+    <% end %>
+  <% end %>
 <% end %>

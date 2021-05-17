@@ -25,6 +25,7 @@
     resourceId: <%= @resource_id %>,
     sectionSlug: "<%= @section_slug %>",
     userId: <%= @user_id %>,
+    pageTitle: "<%= @title %>",
     pageSlug: "<%= @slug %>",
     content: "<%= Base.encode64(@content) %>",
     resourceAttemptState: <%= raw(@resource_attempt_state) %>,

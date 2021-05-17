@@ -48,7 +48,6 @@
       flex-wrap: none;
       margin-bottom: 8px;
     }
-
   }
 
   .workspace-sidebar {
@@ -57,7 +56,6 @@
     padding: 24px;
     background-color: $workspace-sidebar-bg;
     box-shadow: 0px 0px 4px 0px rgba(50, 50, 50, 0.15);
-    z-index: 1;
 
     a {
       display: flex;
@@ -87,7 +85,8 @@
     .account-link {
       height: 48px;
       display: inline-block;
-      margin: 0;	      margin: 0;
+      margin: 0;
+      margin: 0;
       width: 100%;
       white-space: nowrap;
       text-overflow: ellipsis;

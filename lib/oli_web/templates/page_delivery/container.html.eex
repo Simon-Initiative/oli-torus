@@ -1,5 +1,9 @@
-<div class="mb-2 mt-2"><%= container_title(@node) %></div>
+<div class="container-title mb-2"><%= container_title(@node) %></div>
 
-<div class="course-outline" style="padding-left: <%= @node.numbering.level * 20 %>px">
-  <%= render "_outline.html", nodes: @node.children, conn: @conn, section_slug: @section_slug, summary: @summary, active_page: nil %>
+<div class="course-outline-container" style="padding-left: <%= @node.numbering.level * 20 %>px">
+  <%= if Enum.empty?(@node.children) do %>
+    <span class="text-secondary">There are no items</span>
+  <% else %>
+    <%= render "_outline.html", nodes: @node.children, conn: @conn, section_slug: @section_slug, summary: @summary, active_page: nil %>
+  <% end %>
 </div>

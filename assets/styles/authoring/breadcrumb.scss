@@ -1,0 +1,13 @@
+.hierarchy-picker {
+  .hierarchy-navigation {
+    .breadcrumb {
+      min-height: 32px;
+
+      .breadcrumb-item {
+        .btn-link:disabled {
+          color: $body-color;
+        }
+      }
+    }
+  }
+}

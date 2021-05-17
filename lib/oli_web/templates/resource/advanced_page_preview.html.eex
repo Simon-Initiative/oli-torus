@@ -18,6 +18,7 @@
     sectionSlug: "<%= @project_slug %>",
     userId: <%= @user.id %>,
     pageSlug: "<%= @revision.slug %>",
+    pageTitle: "<%= @title %>",
     content: "<%= Jason.encode!(@revision.content) |> Base.encode64() %>",
     resourceAttemptState: null,
     resourceAttemptGuid: null,

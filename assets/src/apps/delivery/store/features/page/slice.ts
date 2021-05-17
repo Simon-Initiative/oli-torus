@@ -1,4 +1,5 @@
 import { createSelector, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import guid from 'utils/guid';
 import { RootState } from '../../rootReducer';
 
 export interface PageState {
@@ -6,6 +7,7 @@ export interface PageState {
   resourceId: number;
   sectionSlug: string;
   pageSlug: string;
+  pageTitle: string;
   content: any; // TODO typing
   resourceAttemptState: any;
   resourceAttemptGuid: string;
@@ -18,6 +20,7 @@ const initialState: PageState = {
   resourceId: -1,
   sectionSlug: '',
   pageSlug: '',
+  pageTitle: '',
   content: null,
   resourceAttemptGuid: '',
   resourceAttemptState: {},
@@ -33,12 +36,17 @@ const pageSlice = createSlice({
       state.userId = action.payload.userId;
       state.resourceId = action.payload.resourceId;
       state.pageSlug = action.payload.pageSlug;
+      state.pageTitle = action.payload.pageTitle;
       state.sectionSlug = action.payload.sectionSlug;
       state.content = action.payload.content;
       state.resourceAttemptGuid = action.payload.resourceAttemptGuid;
       state.resourceAttemptState = action.payload.resourceAttemptState;
       state.activityGuidMapping = action.payload.activityGuidMapping;
       state.previewMode = !!action.payload.previewMode;
+
+      if (state.previewMode && !state.resourceAttemptGuid) {
+        state.resourceAttemptGuid = `preview_${guid()}`;
+      }
     },
   },
 });
@@ -47,16 +55,15 @@ export const PageSlice = pageSlice.name;
 
 export const { loadPageState } = pageSlice.actions;
 
-export const selectState = (state: RootState) => state[PageSlice];
+export const selectState = (state: RootState): PageState => state[PageSlice];
 export const selectSectionSlug = createSelector(selectState, (state) => state.sectionSlug);
+export const selectPageTitle = createSelector(selectState, (state) => state.pageTitle);
 export const selectPageSlug = createSelector(selectState, (state) => state.pageSlug);
 export const selectPageContent = createSelector(selectState, (state) => state.content);
-export const selectSequence = createSelector(selectPageContent, (content) => {
-  const [firstChild] = content.model;
-  if (firstChild.type === 'group') {
-    return firstChild.children;
-  }
-  return content.model;
-});
+export const selectPreviewMode = createSelector(selectState, (state) => state.previewMode);
+export const selectResourceAttemptGuid = createSelector(
+  selectState,
+  (state) => state.resourceAttemptGuid,
+);
 
 export default pageSlice.reducer;
