@@ -9,9 +9,10 @@ defmodule Oli.Delivery.Attempts do
     PartAttempt,
     ResourceAccess,
     ResourceAttempt,
-    ActivityAttempt,
-    Snapshot
+    ActivityAttempt
   }
+
+  alias Oli.Delivery.Snapshots
 
   alias Oli.Delivery.Evaluation.{EvaluationContext}
   alias Oli.Activities
@@ -412,10 +413,11 @@ defmodule Oli.Delivery.Attempts do
 
     attempts =
       Repo.all(
-        from ra in ResourceAttempt,
+        from(ra in ResourceAttempt,
           where: ra.resource_access_id == ^id,
           select: ra,
           preload: [:revision]
+        )
       )
 
     attempt_representation =
@@ -434,11 +436,12 @@ defmodule Oli.Delivery.Attempts do
   """
   def get_graded_attempts_from_access(resource_access_id) do
     Repo.all(
-      from a in ResourceAttempt,
+      from(a in ResourceAttempt,
         join: r in Revision,
         on: a.revision_id == r.id,
         where: a.resource_access_id == ^resource_access_id and r.graded == true,
         select: a
+      )
     )
   end
 
@@ -449,7 +452,7 @@ defmodule Oli.Delivery.Attempts do
   """
   def get_graded_resource_access_for_context(section_slug) do
     Repo.all(
-      from a in ResourceAccess,
+      from(a in ResourceAccess,
         join: s in Section,
         on: a.section_id == s.id,
         join: p in PublishedResource,
@@ -458,6 +461,7 @@ defmodule Oli.Delivery.Attempts do
         on: p.revision_id == r.id,
         where: s.slug == ^section_slug and s.status != :deleted and r.graded == true,
         select: a
+      )
     )
   end
 
@@ -468,7 +472,7 @@ defmodule Oli.Delivery.Attempts do
   """
   def get_resource_access_for_page(section_slug, resource_id) do
     Repo.all(
-      from a in ResourceAccess,
+      from(a in ResourceAccess,
         join: s in Section,
         on: a.section_id == s.id,
         join: p in PublishedResource,
@@ -479,6 +483,7 @@ defmodule Oli.Delivery.Attempts do
           s.slug == ^section_slug and s.status != :deleted and r.graded == true and
             r.resource_id == ^resource_id,
         select: a
+      )
     )
   end
 
@@ -489,7 +494,7 @@ defmodule Oli.Delivery.Attempts do
   """
   def get_user_resource_accesses_for_context(section_slug, user_id) do
     Repo.all(
-      from a in ResourceAccess,
+      from(a in ResourceAccess,
         join: s in Section,
         on: a.section_id == s.id,
         join: p in PublishedResource,
@@ -499,29 +504,20 @@ defmodule Oli.Delivery.Attempts do
         where: s.slug == ^section_slug and s.status != :deleted and a.user_id == ^user_id,
         distinct: a.id,
         select: a
+      )
     )
   end
 
   defp get_resource_access(resource_id, section_slug, user_id) do
     Repo.one(
-      from a in ResourceAccess,
+      from(a in ResourceAccess,
         join: s in Section,
         on: a.section_id == s.id,
         where:
           a.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted and
             a.resource_id == ^resource_id,
         select: a
-    )
-  end
-
-  def get_snapshots_for_publication(publication_id) do
-    Repo.all(
-      from snapshot in Snapshot,
-        join: section in Section,
-        on: snapshot.section_id == section.id,
-        where: section.publication_id == ^publication_id,
-        select: snapshot,
-        preload: [:part_attempt, :user]
+      )
     )
   end
 
@@ -529,7 +525,7 @@ defmodule Oli.Delivery.Attempts do
     student_role_id = Lti_1p3.Tool.ContextRoles.get_role(:context_learner).id
 
     Repo.all(
-      from section in Section,
+      from(section in Section,
         join: enrollment in Enrollment,
         on: enrollment.section_id == section.id,
         join: user in Oli.Accounts.User,
@@ -550,6 +546,7 @@ defmodule Oli.Delivery.Attempts do
         left_join: context_role in Lti_1p3.DataProviders.EctoProvider.ContextRole,
         on: er.context_role_id == context_role.id and context_role.id == ^student_role_id,
         select: %{part_attempt: pattempt, user: user}
+      )
     )
     # TODO: This should be done in the query, but can't get the syntax right
     |> Enum.map(
@@ -663,7 +660,7 @@ defmodule Oli.Delivery.Attempts do
   def get_latest_attempts(resource_attempt_id) do
     results =
       Repo.all(
-        from aa1 in ActivityAttempt,
+        from(aa1 in ActivityAttempt,
           join: r in assoc(aa1, :revision),
           left_join: aa2 in ActivityAttempt,
           on:
@@ -679,6 +676,7 @@ defmodule Oli.Delivery.Attempts do
             aa1.resource_attempt_id == ^resource_attempt_id and is_nil(aa2.id) and is_nil(pa2.id),
           preload: [revision: r],
           select: {pa1, aa1}
+        )
       )
 
     Enum.reduce(results, %{}, fn {part_attempt, activity_attempt}, m ->
@@ -708,7 +706,7 @@ defmodule Oli.Delivery.Attempts do
   """
   def get_latest_resource_attempt(resource_id, section_slug, user_id) do
     Repo.one(
-      from a in ResourceAccess,
+      from(a in ResourceAccess,
         join: s in Section,
         on: a.section_id == s.id,
         join: ra1 in ResourceAttempt,
@@ -722,6 +720,7 @@ defmodule Oli.Delivery.Attempts do
             a.resource_id == ^resource_id and
             is_nil(ra2),
         select: ra1
+      )
     )
     |> Repo.preload([:revision])
   end
@@ -1109,13 +1108,13 @@ defmodule Oli.Delivery.Attempts do
         end
 
       case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
-           |> persist_evaluations(part_inputs, roll_up_fn)
-           |> generate_snapshots(section_slug, part_inputs) do
+           |> persist_evaluations(part_inputs, roll_up_fn) do
         {:ok, results} -> results
         {:error, error} -> Repo.rollback(error)
         _ -> Repo.rollback("unknown error")
       end
     end)
+    |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
   end
 
   @doc """
@@ -1138,6 +1137,14 @@ defmodule Oli.Delivery.Attempts do
     activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
     activity_registration_slug = activity_attempt.revision.activity_type.slug
 
+    part_inputs =
+      Enum.map(client_evaluations, fn %{
+                                        attempt_guid: attempt_guid,
+                                        client_evaluation: %ClientEvaluation{input: input}
+                                      } ->
+        %{attempt_guid: attempt_guid, input: input}
+      end)
+
     case Oli.Activities.get_registration_by_slug(activity_registration_slug) do
       %Activities.ActivityRegistration{allow_client_evaluation: true} ->
         Repo.transaction(fn ->
@@ -1155,14 +1162,6 @@ defmodule Oli.Delivery.Attempts do
               {true, client_evaluations} -> {roll_up, client_evaluations}
               {false, client_evaluations} -> {no_roll_up, client_evaluations}
             end
-
-          part_inputs =
-            Enum.map(client_evaluations, fn %{
-                                              attempt_guid: attempt_guid,
-                                              client_evaluation: %ClientEvaluation{input: input}
-                                            } ->
-              %{attempt_guid: attempt_guid, input: input}
-            end)
 
           case client_evaluations
                |> Enum.map(fn %{
@@ -1183,13 +1182,13 @@ defmodule Oli.Delivery.Attempts do
                   }}
                end)
                |> (fn evaluations -> {:ok, evaluations} end).()
-               |> persist_evaluations(part_inputs, roll_up_fn)
-               |> generate_snapshots(section_slug, part_inputs) do
+               |> persist_evaluations(part_inputs, roll_up_fn) do
             {:ok, results} -> results
             {:error, error} -> Repo.rollback(error)
             _ -> Repo.rollback("unknown error")
           end
         end)
+        |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
 
       _ ->
         {:error, "Activity type does not allow client evaluation"}
@@ -1197,36 +1196,53 @@ defmodule Oli.Delivery.Attempts do
   end
 
   def submit_graded_page(section_slug, resource_attempt_guid) do
-    Repo.transaction(fn ->
-      # get the resource attempt record, ensure it isn't already evaluated
-      resource_attempt = get_resource_attempt_by(attempt_guid: resource_attempt_guid)
+    result =
+      Repo.transaction(fn ->
+        # get the resource attempt record, ensure it isn't already evaluated
+        resource_attempt = get_resource_attempt_by(attempt_guid: resource_attempt_guid)
 
-      if resource_attempt.date_evaluated == nil do
-        Enum.each(resource_attempt.activity_attempts, fn a ->
-          # some activities will finalize themselves ahead of a graded page
-          # submission.  so we only submit those that are still yet to be finalized.
-          if a.date_evaluated == nil do
-            submit_graded_page_activity(section_slug, a.attempt_guid)
+        if resource_attempt.date_evaluated == nil do
+          # Collect all of the part attempt guids for all of the activities that
+          # get finalized
+          part_attempt_guids =
+            Enum.map(resource_attempt.activity_attempts, fn a ->
+              # some activities will finalize themselves ahead of a graded page
+              # submission.  so we only submit those that are still yet to be finalized.
+              if a.date_evaluated == nil do
+                submit_graded_page_activity(a.attempt_guid)
+              else
+                []
+              end
+            end)
+            |> List.flatten()
+            |> Enum.map(fn part_attempt -> part_attempt.attempt_guid end)
+
+          case roll_up_activities_to_resource_attempt(resource_attempt_guid) do
+            {:ok, _} ->
+              case roll_up_resource_attempts_to_access(
+                     section_slug,
+                     resource_attempt.resource_access_id
+                   ) do
+                {:ok, results} -> {results, part_attempt_guids}
+                {:error, error} -> Repo.rollback(error)
+              end
+
+            {:error, error} ->
+              Repo.rollback(error)
           end
-        end)
-
-        case roll_up_activities_to_resource_attempt(resource_attempt_guid) do
-          {:ok, _} ->
-            case roll_up_resource_attempts_to_access(
-                   section_slug,
-                   resource_attempt.resource_access_id
-                 ) do
-              {:ok, results} -> results
-              {:error, error} -> Repo.rollback(error)
-            end
-
-          {:error, error} ->
-            Repo.rollback(error)
+        else
+          Repo.rollback({:already_submitted})
         end
-      else
-        Repo.rollback({:already_submitted})
-      end
-    end)
+      end)
+
+    case result do
+      {:ok, {results, part_attempt_guids}} ->
+        Snapshots.queue_or_create_snapshot(part_attempt_guids, section_slug)
+        {:ok, results}
+
+      e ->
+        e
+    end
   end
 
   defp roll_up_activities_to_resource_attempt(resource_attempt_guid) do
@@ -1266,7 +1282,7 @@ defmodule Oli.Delivery.Attempts do
     })
   end
 
-  defp submit_graded_page_activity(section_slug, activity_attempt_guid) do
+  defp submit_graded_page_activity(activity_attempt_guid) do
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
     if Enum.all?(part_attempts, fn pa -> pa.response != nil end) do
@@ -1286,98 +1302,13 @@ defmodule Oli.Delivery.Attempts do
         end)
 
       case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
-           |> persist_evaluations(part_inputs, roll_up_fn)
-           |> generate_snapshots(section_slug, part_inputs) do
-        {:ok, results} -> results
+           |> persist_evaluations(part_inputs, roll_up_fn) do
+        {:ok, _} -> part_attempts
         {:error, error} -> Repo.rollback(error)
       end
     else
       Repo.rollback({:not_all_answered})
     end
-  end
-
-  def generate_snapshots({:ok, _} = previous_in_pipline, section_slug, part_inputs) do
-    part_attempt_guids =
-      Enum.map(part_inputs, fn %{attempt_guid: attempt_guid} -> attempt_guid end)
-
-    results =
-      Repo.all(
-        from pa in PartAttempt,
-          join: aa in ActivityAttempt,
-          on: pa.activity_attempt_id == aa.id,
-          join: ra in ResourceAttempt,
-          on: aa.resource_attempt_id == ra.id,
-          join: a in ResourceAccess,
-          on: ra.resource_access_id == a.id,
-          join: r1 in Revision,
-          on: ra.revision_id == r1.id,
-          join: r2 in Revision,
-          on: aa.revision_id == r2.id,
-          where: pa.attempt_guid in ^part_attempt_guids,
-          select: {pa, aa, ra, a, r1, r2}
-      )
-
-    # determine all referenced objective ids by the parts that we find
-    objective_ids =
-      Enum.reduce(results, MapSet.new([]), fn {pa, _, _, _, _, r}, m ->
-        Enum.reduce(Map.get(r.objectives, pa.part_id, []), m, fn id, n -> MapSet.put(n, id) end)
-      end)
-      |> MapSet.to_list()
-
-    objective_revisions_by_id =
-      DeliveryResolver.from_resource_id(section_slug, objective_ids)
-      |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.resource_id, e.id) end)
-
-    # Now for each part attempt that we evaluated:
-    Enum.each(results, fn {part_attempt, _, _, _, _, activity_revision} = result ->
-      # Look at the attached objectives for that part for that revision
-      attached_objectives = Map.get(activity_revision.objectives, part_attempt.part_id, [])
-
-      case attached_objectives do
-        # If there are no attached objectives, create one record recoring nils for the objectives
-        [] ->
-          create_individual_snapshot(result, nil, nil)
-
-        # Otherwise create one record for each objective
-        objective_ids ->
-          Enum.each(objective_ids, fn id ->
-            create_individual_snapshot(result, id, Map.get(objective_revisions_by_id, id))
-          end)
-      end
-    end)
-
-    previous_in_pipline
-  end
-
-  def generate_snapshots(previous, _, _), do: previous
-
-  defp create_individual_snapshot(
-         {part_attempt, activity_attempt, resource_attempt, resource_access, resource_revision,
-          activity_revision},
-         objective_id,
-         revision_id
-       ) do
-    {:ok, _} =
-      create_snapshot(%{
-        resource_id: resource_access.resource_id,
-        user_id: resource_access.user_id,
-        section_id: resource_access.section_id,
-        resource_attempt_number: resource_attempt.attempt_number,
-        graded: resource_revision.graded,
-        activity_id: activity_attempt.resource_id,
-        revision_id: activity_attempt.revision_id,
-        activity_type_id: activity_revision.activity_type_id,
-        attempt_number: activity_attempt.attempt_number,
-        part_id: part_attempt.part_id,
-        correct: part_attempt.score == part_attempt.out_of,
-        score: part_attempt.score,
-        out_of: part_attempt.out_of,
-        hints: length(part_attempt.hints),
-        part_attempt_number: part_attempt.attempt_number,
-        part_attempt_id: part_attempt.id,
-        objective_id: objective_id,
-        objective_revision_id: revision_id
-      })
   end
 
   @doc """
@@ -1390,7 +1321,7 @@ defmodule Oli.Delivery.Attempts do
   """
   def get_section_by_activity_attempt_guid(activity_attempt_guid) do
     Repo.one(
-      from activity_attempt in ActivityAttempt,
+      from(activity_attempt in ActivityAttempt,
         join: resource_attempt in ResourceAttempt,
         on: resource_attempt.id == activity_attempt.resource_attempt_id,
         join: resource_access in ResourceAccess,
@@ -1399,6 +1330,7 @@ defmodule Oli.Delivery.Attempts do
         on: section.id == resource_access.section_id,
         where: activity_attempt.attempt_guid == ^activity_attempt_guid,
         select: section
+      )
     )
   end
 
@@ -1418,9 +1350,10 @@ defmodule Oli.Delivery.Attempts do
   def get_activity_attempts(activity_attempt_guids) do
     results =
       Repo.all(
-        from activity_attempt in ActivityAttempt,
+        from(activity_attempt in ActivityAttempt,
           where: activity_attempt.attempt_guid in ^activity_attempt_guids,
           preload: [:part_attempts]
+        )
       )
 
     {:ok, results}
@@ -1477,7 +1410,7 @@ defmodule Oli.Delivery.Attempts do
 
   defp get_latest_part_attempts(activity_attempt_guid) do
     Repo.all(
-      from aa in ActivityAttempt,
+      from(aa in ActivityAttempt,
         join: pa1 in PartAttempt,
         on: aa.id == pa1.activity_attempt_id,
         left_join: pa2 in PartAttempt,
@@ -1486,6 +1419,7 @@ defmodule Oli.Delivery.Attempts do
             pa1.activity_attempt_id == pa2.activity_attempt_id,
         where: aa.attempt_guid == ^activity_attempt_guid and is_nil(pa2),
         select: pa1
+      )
     )
   end
 
@@ -1606,20 +1540,6 @@ defmodule Oli.Delivery.Attempts do
   def update_resource_attempt(resource_attempt, attrs) do
     ResourceAttempt.changeset(resource_attempt, attrs)
     |> Repo.update()
-  end
-
-  @doc """
-  Creates a part attempt snapshot.
-  ## Examples
-      iex> create_snapshot(%{field: value})
-      {:ok, %Snapshot{}}
-      iex> create_snapshot(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-  """
-  def create_snapshot(attrs \\ %{}) do
-    %Snapshot{}
-    |> Snapshot.changeset(attrs)
-    |> Repo.insert()
   end
 
   @doc """
