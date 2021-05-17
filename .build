@@ -85,7 +85,6 @@ Oli.Delivery.Attempts.ResourceAccess.html
 Oli.Delivery.Attempts.ResourceAttempt.html
 Oli.Delivery.Attempts.Result.html
 Oli.Delivery.Attempts.Scoring.html
-Oli.Delivery.Attempts.Snapshot.html
 Oli.Delivery.Attempts.StateUpdateActionResult.html
 Oli.Delivery.Attempts.StudentInput.html
 Oli.Delivery.Attempts.html
@@ -103,6 +102,10 @@ Oli.Delivery.Sections.AuthorSection.html
 Oli.Delivery.Sections.Enrollment.html
 Oli.Delivery.Sections.Section.html
 Oli.Delivery.Sections.html
+Oli.Delivery.Snapshots.Snapshot.html
+Oli.Delivery.Snapshots.Utils.html
+Oli.Delivery.Snapshots.Worker.html
+Oli.Delivery.Snapshots.html
 Oli.Delivery.Student.Summary.html
 Oli.Delivery.html
 Oli.Email.html
@@ -399,8 +402,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-524fdc3ced.js
-dist/sidebar_items-0639fc7a36.js
+dist/search_items-5a6f713ac3.js
+dist/sidebar_items-004cabded4.js
 index.html
 license.html
 readme.html

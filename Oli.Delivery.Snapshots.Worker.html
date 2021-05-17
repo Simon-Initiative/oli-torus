@@ -7,10 +7,10 @@
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.9.0">
 
-    <title>Oli.Delivery.Attempts.Snapshot — OLI Torus v0.9.0</title>
+    <title>Oli.Delivery.Snapshots.Worker — OLI Torus v0.9.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-0639fc7a36.js"></script>
+    <script src="dist/sidebar_items-004cabded4.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -78,9 +78,9 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Delivery.Attempts.Snapshot <small class="app-vsn">(OLI Torus v0.9.0)</small>
+Oli.Delivery.Snapshots.Worker <small class="app-vsn">(OLI Torus v0.9.0)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/snapshot.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/snapshots/worker.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -88,7 +88,104 @@ Oli.Delivery.Attempts.Snapshot <small class="app-vsn">(OLI Torus v0.9.0)</small>
       </h1>
 
 
+        <section id="moduledoc">
+<p>An Oban worker driven snapshot creator.  Snapshot creation jobs take a section slug and a collection of
+part attempt guids as parameters and create the necessary snapshot records from that information and a
+broader context from the resource attempt hierarchy and attached objectives.</p><p>If the job fails, it will be retried up to a total of the configured maximum attempts.</p>
+        </section>
 
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#perform_now/2">perform_now(part_attempt_guids, section_slug)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Allows immediate execution of the snapshot creation logic. Used to bypass queueing during testing scenarios.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#to_attrs/3">to_attrs(arg, objective_id, revision_id)</a>
+
+  </div>
+
+</div>
+
+  </div>
+
+        </section>
+
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions
+          </h1>
+          <div class="functions-list">
+<section class="detail" id="perform_now/2">
+
+  <div class="detail-header">
+    <a href="#perform_now/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">perform_now(part_attempt_guids, section_slug)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/snapshots/worker.ex#L37" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Allows immediate execution of the snapshot creation logic. Used to bypass queueing during testing scenarios.</p>
+  </section>
+</section>
+<section class="detail" id="to_attrs/3">
+
+  <div class="detail-header">
+    <a href="#to_attrs/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">to_attrs(arg, objective_id, revision_id)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/snapshots/worker.ex#L97" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+
+          </div>
+        </section>
 
       <footer class="footer">
         <p>
