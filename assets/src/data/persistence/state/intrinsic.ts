@@ -89,8 +89,13 @@ const writePageAttemptStateServer = async (
   state: any,
 ) => {
   const method = 'PUT';
-  const url = `/course/${sectionSlug}/resource_attempt/${resourceAttemptGuid}`;
-  return [];
+  const url = `/state/course/${sectionSlug}/resource_attempt/${resourceAttemptGuid}`;
+  const result = await makeRequest({
+    url,
+    method,
+    body: JSON.stringify(state),
+  });
+  return { result };
 };
 
 export const writeActivityAttemptState = async (

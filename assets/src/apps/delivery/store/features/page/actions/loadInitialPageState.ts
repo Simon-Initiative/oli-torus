@@ -1,5 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { writePageAttemptState } from 'data/persistence/state/intrinsic';
+import guid from 'utils/guid';
 import { RootState } from '../../../rootReducer';
 import { loadActivities, loadActivityState } from '../../groups/actions/deck';
 import { selectSequence } from '../../groups/selectors/deck';
@@ -38,18 +39,22 @@ export const loadInitialPageState = createAsyncThunk(
         sessionState,
         params.previewMode,
       );
+      let activityAttemptMapping;
       if (params.previewMode) {
         // need to load activities from the authoring api
         const activityIds = currentGroup.children.map((child: any) => child.activity_id);
-        dispatch(loadActivities(activityIds));
+        activityAttemptMapping = activityIds.map((id) => ({
+          id,
+          attemptGuid: `preview_${guid()}`,
+        }));
       } else {
-        // need to load activities from the delivery (attempt) api
-        const attemptGuids = Object.keys(params.activityGuidMapping).map((activityResourceId) => {
-          const { attemptGuid } = params.activityGuidMapping[activityResourceId];
-          return attemptGuid;
-        });
-        dispatch(loadActivityState(attemptGuids));
+        activityAttemptMapping = Object.keys(params.activityGuidMapping).map(
+          (activityResourceId) => {
+            return params.activityGuidMapping[activityResourceId];
+          },
+        );
       }
+      dispatch(loadActivities(activityAttemptMapping));
     }
   },
 );
