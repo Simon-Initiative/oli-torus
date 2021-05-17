@@ -10,7 +10,7 @@ defmodule OliWeb.Curriculum.DropTarget do
     <div phx-hook="DropTarget"
       id="drop-target-<%= assigns.index %>"
       data-drop-index="<%= assigns.index %>"
-      style="height: 15px;"
+      class="drop-target"
     >
     </div>
     """

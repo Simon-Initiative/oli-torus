@@ -36,6 +36,12 @@ export type EditorProps = {
   className?: string;
 };
 
+// Necessary to work around FireFox focus and selection issues with Slate
+// https://github.com/ianstormtaylor/slate/issues/1984
+function emptyOnFocus() {
+  return;
+}
+
 function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
   return (
     prevProps.editMode === nextProps.editMode &&
@@ -112,6 +118,7 @@ export const Editor = React.memo((props: EditorProps) => {
         editor={editor}
         value={props.value}
         onChange={onChange}
+        onFocus={emptyOnFocus}
         onPaste={async (
           e: React.ClipboardEvent<HTMLDivElement>,
           editor: SlateEditor,

@@ -10,8 +10,8 @@ defmodule OliWeb.PageDeliveryView do
     ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_instructor))
   end
 
-  def container?(page) do
-    ResourceType.get_type_by_id(page.resource_type_id) == "container"
+  def container?(rev) do
+    ResourceType.get_type_by_id(rev.resource_type_id) == "container"
   end
 
   def container_title(hierarchy_node) do

@@ -13,6 +13,7 @@
 - Expose telemetry metrics for Prometheus metrics scraping
 - Add support for course package delete
 - Add support for disabling answer choice shuffling in multiple choice, check all that apply, ordering questions
+- Add support for moving curriculum items
 
 ### Bug fixes
 
@@ -23,6 +24,9 @@
 - Fix internal links in page preview mode
 - Fix projects view project card styling
 - Fix problem with inputs causing clipping in Firefox
+- Fix problem with difficulty selecting and focusing in Firefox
+- Fix problem where containers with no children were rendered as pages in delivery
+- Fix some style inconsistencies in delivery and dark mode
 
 ## 0.9.0 (2021-4-22)
 
