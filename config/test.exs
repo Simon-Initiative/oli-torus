@@ -37,7 +37,6 @@ config :oli, Oli.Repo,
   ownership_timeout: 600_000
 
 config :oli, Oban,
-  repo: Oli.Repo,
   plugins: false,
   queues: false
 
