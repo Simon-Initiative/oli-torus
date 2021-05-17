@@ -14,6 +14,7 @@
 - Add support for course package delete
 - Add support for disabling answer choice shuffling in multiple choice, check all that apply, ordering questions
 - Add support for moving curriculum items
+- Allow analytic snapshot creation to run asynchronous to the rest of the attempt finalization code
 
 ### Bug fixes
 
