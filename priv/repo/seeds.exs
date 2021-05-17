@@ -103,6 +103,7 @@ Oli.Registrar.register_local_part_components(
     "janus_navigation_button",
     "janus_multi_line_text",
     "janus_dropdown",
+    "janus_mcq",
   ])
 )
 

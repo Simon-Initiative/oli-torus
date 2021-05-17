@@ -1,0 +1,14 @@
+{
+    "id": "janus_mcq",
+    "friendlyName": "MultipleChoiceQuestion",
+    "description": "Displays a Multiple Choice Question",
+    "global": true,
+    "delivery": {
+        "element": "janus-mcq",
+        "entry": "./delivery-entry.ts"
+    },
+    "authoring": {
+        "element": "janus-mcq",
+        "entry": "./authoring-entry.ts"
+    }
+}
