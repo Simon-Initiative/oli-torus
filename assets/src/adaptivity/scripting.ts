@@ -2,6 +2,10 @@ import { Environment, Evaluator, Lexer, Parser } from 'janus-script';
 import { parseArray } from 'utils/common';
 import { CapiVariable, CapiVariableTypes } from './capi';
 
+// for use by client side scripting evalution
+export const defaultGlobalEnv = new Environment();
+// window['defaultGlobalEnv'] = defaultGlobalEnv;
+
 export const stateVarToJanusScriptAssign = (v: CapiVariable): string => {
   let val: any = v.value;
   let isValueVar = false;
@@ -64,4 +68,16 @@ export const getAssignScript = (state: Record<string, any>): string => {
   });
   const letStatements = vars.map(stateVarToJanusScriptAssign);
   return letStatements.join('');
+};
+
+export const getEnvState = (env: Environment): Record<string, any> => {
+  // should be array instead?
+  return env.toObj();
+};
+
+export const getValues = (identifiers: string[], env?: Environment) => {
+  const jIds = identifiers.map((id) => `{${id}}`);
+  const script = `[${jIds.join(',')}]`;
+  const { result } = evalScript(script, env);
+  return result;
 };

@@ -27,6 +27,9 @@ const templatizeText = (text: string, state: any) => {
   // check for state items that were included in the string
   const vals = vars.map((v) => {
     const stateItem = state.find((item: any) => item.id === v);
+    if (!stateItem) {
+      return;
+    }
 
     // return stateItem or stateItem.value if set
     return !!stateItem?.value && Array.isArray(stateItem.value)
