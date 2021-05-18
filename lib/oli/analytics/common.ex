@@ -1,12 +1,12 @@
 defmodule Oli.Analytics.Common do
   import Ecto.Query, warn: false
-  alias Oli.Delivery.Attempts.Snapshot
+  alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
 
   def analytics_by_activity(project_slug) do
     activity_num_attempts_rel_difficulty =
-      from project in Project,
+      from(project in Project,
         where: project.slug == ^project_slug,
         join: section in Section,
         on: section.project_id == project.id,
@@ -24,9 +24,10 @@ defmodule Oli.Analytics.Common do
               snapshot.id
             )
         }
+      )
 
     activity_correctness =
-      from project in Project,
+      from(project in Project,
         where: project.slug == ^project_slug,
         join: section in Section,
         on: section.project_id == project.id,
@@ -40,9 +41,10 @@ defmodule Oli.Analytics.Common do
           is_first_try_correct:
             fragment("bool_or(? is true and ? = 1)", snapshot.correct, snapshot.attempt_number)
         }
+      )
 
     corrections =
-      from correctness in subquery(activity_correctness),
+      from(correctness in subquery(activity_correctness),
         group_by: [correctness.activity_id],
         select: %{
           activity_id: correctness.activity_id,
@@ -63,8 +65,9 @@ defmodule Oli.Analytics.Common do
             ) /
               count(correctness.user_id)
         }
+      )
 
-    from a in subquery(corrections),
+    from(a in subquery(corrections),
       join: b in subquery(activity_num_attempts_rel_difficulty),
       on: a.activity_id == b.activity_id,
       select: %{
@@ -74,5 +77,6 @@ defmodule Oli.Analytics.Common do
         number_of_attempts: b.number_of_attempts,
         relative_difficulty: b.relative_difficulty
       }
+    )
   end
 end

@@ -1,6 +1,6 @@
 defmodule Oli.Analytics.ByPage do
   import Ecto.Query, warn: false
-  alias Oli.Delivery.Attempts.Snapshot
+  alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Repo
   alias Oli.Analytics.Common
   alias Oli.Publishing
@@ -9,7 +9,7 @@ defmodule Oli.Analytics.ByPage do
 
   def query_against_project_slug(project_slug) do
     activity_pages =
-      from project in Project,
+      from(project in Project,
         where: project.slug == ^project_slug,
         join: section in Section,
         on: section.project_id == project.id,
@@ -20,9 +20,10 @@ defmodule Oli.Analytics.ByPage do
           activity_id: snapshot.activity_id,
           page_id: snapshot.resource_id
         }
+      )
 
     Repo.all(
-      from page in subquery(Publishing.query_unpublished_revisions_by_type(project_slug, "page")),
+      from(page in subquery(Publishing.query_unpublished_revisions_by_type(project_slug, "page")),
         left_join: pairing in subquery(activity_pages),
         on: page.resource_id == pairing.page_id,
         left_join:
@@ -41,6 +42,7 @@ defmodule Oli.Analytics.ByPage do
           relative_difficulty: analytics.relative_difficulty
         },
         preload: [:resource_type]
+      )
     )
   end
 end

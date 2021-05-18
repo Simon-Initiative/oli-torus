@@ -39,7 +39,10 @@ const PageContent: React.FC = () => {
       <div id="stage-stage">
         <div className="stage-content-wrapper">
           {currentActivity ? (
-            <ActivityRenderer parts={currentActivity?.content?.partsLayout} />
+            <ActivityRenderer
+              config={currentActivity?.content?.custom}
+              parts={currentActivity?.content?.partsLayout}
+            />
           ) : (
             <div>loading...</div>
           )}

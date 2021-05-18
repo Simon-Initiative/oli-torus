@@ -3,7 +3,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
   alias Oli.Delivery.Attempts
   alias Oli.Activities.Model.Part
-  alias Oli.Delivery.Attempts.{ActivityAttempt, PartAttempt, StudentInput, Snapshot}
+  alias Oli.Delivery.Attempts.{ActivityAttempt, PartAttempt, StudentInput}
+  alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Student.Summary
 
