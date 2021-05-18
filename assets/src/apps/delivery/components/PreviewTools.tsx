@@ -108,9 +108,9 @@ const PreviewTools: React.FC<any> = (props: PreviewToolsProps): any | false => {
       return { ...s.custom };
     });
 
-  // Navigates to Ensemble
-  const navigate = (ensembleId: any) => {
-    dispatch(navigateToActivity(ensembleId));
+  // Navigates to Activity
+  const navigate = (activityId: any) => {
+    dispatch(navigateToActivity(activityId));
   };
 
   // Toggle the menu open/closed
