@@ -1,0 +1,102 @@
+#PreviewTools {
+  box-shadow: 0px 0px 5px 1px $black;
+  background: $gray-100;
+  @media (prefers-color-scheme: dark) {
+    background: $gray-700;
+  }
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 70px;
+  left: 0;
+  z-index: 10000;
+  width: 60px;
+  min-width: 0;
+  border-radius: 0px 5px 5px 0px;
+
+  .action-picker {
+    padding: 12px;
+  }
+  &.opened {
+    top: 70px;
+    bottom: 0;
+    min-width: 350px;
+    width: auto;
+    height: calc(100% - 70px);
+  }
+  .pt-header {
+    position: relative;
+    padding: 8px;
+    border-bottom: 1px solid $gray-400;
+    @media (prefers-color-scheme: dark) {
+      border-bottom: 1px solid $gray-800;
+    }
+    > button {
+      float: right;
+      margin-top: 5px;
+      border: none;
+      background: transparent;
+    }
+    > div {
+      display: flex;
+      background: $gray-100;
+      align-items: center;
+      @media (prefers-color-scheme: dark) {
+        background: $gray-700;
+      }
+      padding: 7px;
+      margin: 0;
+    }
+    .pt-title {
+      margin-left: 8px;
+      color: $black;
+      @media (prefers-color-scheme: dark) {
+        color: $white;
+      }
+      font-size: 18px;
+    }
+  }
+  .pt-body {
+    overflow: auto;
+    color: $gray-800;
+    @media (prefers-color-scheme: dark) {
+      color: $white;
+    }
+    .preview-tools-view {
+      overflow: auto;
+      counter-reset: li;
+
+      ol {
+        list-style: none;
+      }
+      li {
+        counter-increment: li;
+
+        a {
+          color: $gray-800;
+          @media (prefers-color-scheme: dark) {
+            color: $white;
+          }
+          display: block;
+          position: relative;
+          padding: 8px 8px;
+          text-decoration: none;
+
+          &:hover,
+          &.selected {
+            color: $primary;
+          }
+        }
+        a::before {
+          content: '.' counter(li);
+          display: inline-block;
+          width: 1em;
+          left: -1em;
+          position: absolute;
+          text-align: right;
+          direction: rtl;
+        }
+      }
+    }
+  }
+}
