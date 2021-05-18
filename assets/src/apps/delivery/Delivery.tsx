@@ -2,6 +2,7 @@
 import useWindowSize from 'components/hooks/useWindowSize';
 import React, { useEffect } from 'react';
 import { Provider, useDispatch, useSelector } from 'react-redux';
+import PreviewTools from './components/PreviewTools';
 import DeckLayoutView from './layouts/deck/DeckLayoutView';
 import { LayoutProps } from './layouts/layouts';
 import store from './store';
@@ -67,6 +68,7 @@ const Delivery: React.FC<DeliveryProps> = ({
 
   return (
     <div className={parentDivClasses.join(' ')}>
+      {previewMode && <PreviewTools model={content?.model} />}
       <div className="mainView" role="main" style={{ width: windowWidth }}>
         <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />
       </div>
