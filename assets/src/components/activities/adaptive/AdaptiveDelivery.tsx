@@ -37,7 +37,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       return;
     }
     const response: ActivityTypes.StudentResponse = {
-      input: responses.map((pr) => ({ ...pr, key: `${id}.${pr.key}` })),
+      input: responses.map((pr) => ({ ...pr, path: `${id}.${pr.key}` })),
     };
     const result = await props.onSavePart(
       attemptState.attemptGuid,
@@ -110,7 +110,19 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     styles.height = config.height;
   }
 
-  return (
+  const renderAsLayer = config?.renderAsLayer || false;
+
+  return renderAsLayer ? (
+    <React.Fragment>
+      <PartsLayoutRenderer
+        parts={parts}
+        onPartInit={handlePartInit}
+        onPartReady={handlePartReady}
+        onPartSave={handlePartSave}
+        onPartSubmit={handlePartSubmit}
+      />
+    </React.Fragment>
+  ) : (
     <div className="content" style={styles}>
       <PartsLayoutRenderer
         parts={parts}

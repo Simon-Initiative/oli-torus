@@ -2,10 +2,11 @@
 import { usePrevious } from 'components/hooks/usePrevious';
 import { shuffle } from 'lodash';
 import React, { CSSProperties, useEffect, useState } from 'react';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { renderFlow } from '../janus-text-flow/TextFlow';
 import {
-  JanusMultipleChoiceQuestionProperties,
   JanusMultipleChoiceQuestionItemProperties,
+  JanusMultipleChoiceQuestionProperties,
 } from './MultipleChoiceQuestionType';
 
 // SS assumes the unstyled "text" of the label is the text value
@@ -100,6 +101,7 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   );
 };
 const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties> = (props) => {
+  const [ready, setReady] = useState<boolean>(false);
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const id: string = props.id;
@@ -116,13 +118,71 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
   } = model;
 
   useEffect(() => {
+    let pModel;
+    let pState;
     if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
     if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
+    if (!pModel) {
+      return;
+    }
+    props.onInit({
+      id,
+      responses: [
+        {
+          key: 'enabled',
+          type: CapiVariableTypes.BOOLEAN,
+          value: enabled,
+        },
+        {
+          key: 'numberOfSelectedChoices',
+          type: CapiVariableTypes.NUMBER,
+          value: numberOfSelectedChoices,
+        },
+        {
+          key: 'selectedChoice',
+          type: CapiVariableTypes.NUMBER,
+          value: selectedChoice,
+        },
+        {
+          key: 'selectedChoiceText',
+          type: CapiVariableTypes.NUMBER,
+          value: selectedChoiceText,
+        },
+        {
+          key: 'selectedChoices',
+          type: CapiVariableTypes.ARRAY,
+          value: selectedChoices,
+        },
+        {
+          key: 'selectedChoicesText',
+          type: CapiVariableTypes.ARRAY,
+          value: selectedChoicesText,
+        },
+      ],
+    });
+    setReady(true);
   }, [props]);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
 
   // Set up the styles
   const styles: CSSProperties = {
@@ -161,60 +221,6 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
   );
   const prevSelectedChoice = usePrevious<number>(selectedChoice);
   const prevSelectedChoices = usePrevious<any[]>(selectedChoices);
-
-  useEffect(() => {
-    //TODO handle value changes on state updates
-  }, [state]);
-
-  useEffect(() => {
-    props.onReady({
-      activityId: `${id}`,
-      partResponses: [
-        {
-          id: `stage.${id}.enabled`,
-          key: 'enabled',
-          type: 4,
-          value: enabled,
-        },
-        {
-          id: `stage.${id}.randomize`,
-          key: 'randomize',
-          type: 4,
-          value: randomized,
-        },
-        {
-          id: `stage.${id}.numberOfSelectedChoices`,
-          key: 'numberOfSelectedChoices',
-          type: 1,
-          value: numberOfSelectedChoices,
-        },
-        {
-          id: `stage.${id}.selectedChoice`,
-          key: 'selectedChoice',
-          type: 1,
-          value: selectedChoice,
-        },
-        {
-          id: `stage.${id}.selectedChoiceText`,
-          key: 'selectedChoiceText',
-          type: 1,
-          value: selectedChoiceText,
-        },
-        {
-          id: `stage.${id}.selectedChoices`,
-          key: 'selectedChoices',
-          type: 3,
-          value: selectedChoices,
-        },
-        {
-          id: `stage.${id}.selectedChoicesText`,
-          key: 'selectedChoicesText',
-          type: 3,
-          value: selectedChoicesText,
-        },
-      ],
-    });
-  }, []);
 
   useEffect(() => {
     // we need to set up a new list so that we can shuffle while maintaining correct index/values
@@ -320,9 +326,9 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     return selected;
   };
 
-  return (
+  return ready ? (
     <div
-      data-janus-type={props.type}
+      data-part-type={props.type}
       id={id}
       style={styles}
       className={`mcq-input ${customCssClass}`}
@@ -346,7 +352,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
         />
       ))}
     </div>
-  );
+  ) : null;
 };
 
 export const tagName = 'janus-mcq';

@@ -3,9 +3,9 @@ import { PartResponse, StudentResponse } from 'components/activities/types';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import ActivityRenderer from '../../components/ActivityRenderer';
-import { selectCurrentActivity } from '../../store/features/activities/slice';
 import { savePartState } from '../../store/features/attempt/actions/savePart';
 import { initializeActivity } from '../../store/features/groups/actions/deck';
+import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
@@ -33,7 +33,7 @@ const InjectedStyles: React.FC = () => {
 const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, previewMode }) => {
   const dispatch = useDispatch();
   const fieldRef = React.useRef<HTMLInputElement>(null);
-  const currentActivity = useSelector(selectCurrentActivity);
+  const currentActivityTree = useSelector(selectCurrentActivityTree);
 
   const defaultClasses: any[] = ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'];
   const [pageClasses, setPageClasses] = useState<string[]>([]);
@@ -74,6 +74,11 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   }, [pageContent]);
 
   useEffect(() => {
+    if (!currentActivityTree) {
+      return;
+    }
+
+    const currentActivity = currentActivityTree[currentActivityTree.length - 1];
     if (!currentActivity) {
       return;
     }
@@ -119,7 +124,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         setActivityClasses([...new Set([...defaultClasses, 'vft'])].map((str) => str.trim()));
       }
     }
-  }, [currentActivity]);
+  }, [currentActivityTree]);
 
   useEffect(() => {
     // clear the body classes in prep for the real classes
@@ -157,8 +162,8 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     console.log('DECK HANDLE SAVE PART', { activityId, attemptGuid, partAttemptGuid, response });
     const statePrefix = `${activityId}|stage`;
     const responseMap = response.input.reduce(
-      (result: { [x: string]: any }, item: { key: any }) => {
-        result[item.key] = { ...item, key: `${statePrefix}.${item.key}` };
+      (result: { [x: string]: any }, item: { key: string; path: string }) => {
+        result[item.key] = { ...item, path: `${statePrefix}.${item.path}` };
         return result;
       },
       {},
@@ -167,6 +172,29 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       savePartState({ attemptGuid, partAttemptGuid, response: responseMap }),
     );
     return result;
+  };
+
+  const renderedActivities = () => {
+    if (!currentActivityTree || !currentActivityTree.length) {
+      return <div>loading...</div>;
+    }
+    console.log('RENDER CAT', currentActivityTree);
+    return currentActivityTree.map((activity, index) => {
+      const mutableActivity = JSON.parse(JSON.stringify(activity));
+      const isLast = index === currentActivityTree.length - 1;
+      if (!isLast) {
+        mutableActivity.content.custom.renderAsLayer = true;
+      }
+      return (
+        <ActivityRenderer
+          key={mutableActivity.id}
+          activity={mutableActivity}
+          onActivitySave={handleActivitySave}
+          onActivitySubmit={handleActivitySubmit}
+          onActivitySavePart={handleActivitySavePart}
+        />
+      );
+    });
   };
 
   return (
@@ -184,18 +212,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         <div className="stageContainer columnRestriction" style={contentStyles}>
           <InjectedStyles />
           <div id="stage-stage">
-            <div className="stage-content-wrapper">
-              {currentActivity ? (
-                <ActivityRenderer
-                  activity={currentActivity}
-                  onActivitySave={handleActivitySave}
-                  onActivitySubmit={handleActivitySubmit}
-                  onActivitySavePart={handleActivitySavePart}
-                />
-              ) : (
-                <div>loading...</div>
-              )}
-            </div>
+            <div className="stage-content-wrapper">{renderedActivities()}</div>
           </div>
         </div>
       ) : (

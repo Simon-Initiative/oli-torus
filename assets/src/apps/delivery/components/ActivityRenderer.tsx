@@ -1,6 +1,5 @@
 /* eslint-disable react/prop-types */
 import {
-  DeliveryElementProps,
   EvaluationResponse,
   PartActivityResponse,
   RequestHintResponse,
@@ -16,10 +15,9 @@ import {
   Success,
 } from 'components/activities/types';
 import React, { useEffect, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { selectPreviewMode } from '../store/features/page/slice';
+import { useSelector } from 'react-redux';
 import { selectActivtyAttemptState } from '../store/features/attempt/slice';
-import { savePartState } from '../store/features/attempt/actions/savePart';
+import { selectPreviewMode } from '../store/features/page/slice';
 
 interface ActivityRendererProps {
   activity: ActivityModelSchema;
@@ -35,6 +33,8 @@ interface ActivityRendererProps {
 
 const defaultHandler = async () => true;
 
+// the activity renderer should be capable of handling *any* activity type, not just adaptive
+// most events should be simply bubbled up to the layout renderer for handling
 const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   activity,
   onActivitySave = defaultHandler,
@@ -46,7 +46,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   onActivityResetPart = defaultHandler,
   onActivitySubmitEvaluations = defaultHandler,
 }) => {
-  const dispatch = useDispatch();
   const isPreviewMode = useSelector(selectPreviewMode);
   const currentUserId = 1; // TODO from state
 

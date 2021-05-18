@@ -111,7 +111,7 @@ const InputText: React.FC<any> = (props) => {
   );
 
   return ready ? (
-    <div data-janus-type={props.type} style={styles} className={`short-text-input ${cssClass}`}>
+    <div data-part-type={props.type} style={styles} className={`short-text-input ${cssClass}`}>
       <label htmlFor={id}>{showLabel && label ? label : <span>&nbsp;</span>}</label>
       <input
         name="janus-input-text"
