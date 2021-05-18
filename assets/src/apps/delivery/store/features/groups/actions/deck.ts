@@ -171,7 +171,8 @@ export const navigateToActivity = createAsyncThunk(
   async (sequenceId: string, thunkApi) => {
     const rootState = thunkApi.getState() as RootState;
     const sequence = selectSequence(rootState);
-    const nextActivityId = 1;
+    const nextActivityId = sequence.filter((s) => s.custom?.sequenceId === sequenceId)[0].custom
+      ?.sequenceId;
 
     thunkApi.dispatch(setCurrentActivityId({ activityId: nextActivityId }));
   },

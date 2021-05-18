@@ -58,6 +58,12 @@ const populateEntries = () => {
     ...glob
       .sync('./styles/themes/delivery/*/dark.scss')
       .map((p) => ({ prefix: 'delivery_', themePath: p })),
+    ...glob
+      .sync('./styles/themes/preview/*/light.scss')
+      .map((p) => ({ prefix: 'preview_', themePath: p })),
+    ...glob
+      .sync('./styles/themes/preview/*/dark.scss')
+      .map((p) => ({ prefix: 'preview_', themePath: p })),
   ];
 
   const foundThemes = themePaths.map(({ prefix, themePath }) => {
