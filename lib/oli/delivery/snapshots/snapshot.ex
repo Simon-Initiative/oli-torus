@@ -1,4 +1,4 @@
-defmodule Oli.Delivery.Attempts.Snapshot do
+defmodule Oli.Delivery.Snapshots.Snapshot do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -6,45 +6,45 @@ defmodule Oli.Delivery.Attempts.Snapshot do
 
   schema "snapshots" do
     # The page, activity and part that this snapshot pertains to
-    belongs_to :resource, Oli.Resources.Resource
-    belongs_to :activity, Oli.Resources.Resource
-    field :part_id, :string
-    belongs_to :part_attempt, Oli.Delivery.Attempts.PartAttempt
+    belongs_to(:resource, Oli.Resources.Resource)
+    belongs_to(:activity, Oli.Resources.Resource)
+    field(:part_id, :string)
+    belongs_to(:part_attempt, Oli.Delivery.Attempts.PartAttempt)
 
     # Which user and section
-    belongs_to :user, Oli.Accounts.User
-    belongs_to :section, Oli.Delivery.Sections.Section
+    belongs_to(:user, Oli.Accounts.User)
+    belongs_to(:section, Oli.Delivery.Sections.Section)
 
     # At the time of the attempt which objectives and their revisions
     # that were attached to this part
-    belongs_to :objective, Oli.Resources.Resource
-    belongs_to :objective_revision, Oli.Resources.Revision
+    belongs_to(:objective, Oli.Resources.Resource)
+    belongs_to(:objective_revision, Oli.Resources.Revision)
 
     # The exact revision of the activity at the time of this attempt
-    belongs_to :revision, Oli.Resources.Revision
+    belongs_to(:revision, Oli.Resources.Revision)
 
     # A reference to the type of the activity
-    field :activity_type_id, :id
+    field(:activity_type_id, :id)
 
     # Attempt number, but to determine attempt counts one should probably aggregate record instances.
     # The attempt number is useful to power a query like:
     # "What percentage of first attempts are correct?"
-    field :attempt_number, :integer
-    field :part_attempt_number, :integer
-    field :resource_attempt_number, :integer
+    field(:attempt_number, :integer)
+    field(:part_attempt_number, :integer)
+    field(:resource_attempt_number, :integer)
 
     # Whether or not this attempt was correct (true) or error (false)
-    field :correct, :boolean
+    field(:correct, :boolean)
 
     # Was this an attempt in a graded context
-    field :graded, :boolean
+    field(:graded, :boolean)
 
     # The raw score and out of points
-    field :score, :float
-    field :out_of, :float
+    field(:score, :float)
+    field(:out_of, :float)
 
     # Count of the number of hints received during this attempt
-    field :hints, :integer
+    field(:hints, :integer)
 
     timestamps(type: :utc_datetime)
   end

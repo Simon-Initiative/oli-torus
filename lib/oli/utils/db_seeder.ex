@@ -13,7 +13,7 @@ defmodule Oli.Seeder do
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
-  alias Oli.Delivery.Attempts.Snapshot
+  alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Qa.Reviews
   alias Oli.Activities
 

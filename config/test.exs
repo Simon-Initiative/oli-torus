@@ -36,6 +36,10 @@ config :oli, Oli.Repo,
   timeout: 600_000,
   ownership_timeout: 600_000
 
+config :oli, Oban,
+  plugins: false,
+  queues: false
+
 # Configure reCAPTCHA
 config :oli, :recaptcha,
   verify_url: "https://www.google.com/recaptcha/api/siteverify",

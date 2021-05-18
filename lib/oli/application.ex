@@ -19,6 +19,9 @@ defmodule Oli.Application do
       # Start the endpoint when the application starts
       OliWeb.Endpoint,
 
+      # Start the Oban background job processor
+      {Oban, oban_config()},
+
       # Start the NodeJS bridge
       %{
         id: NodeJS,
@@ -51,5 +54,9 @@ defmodule Oli.Application do
   def config_change(changed, _new, removed) do
     OliWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp oban_config do
+    Application.fetch_env!(:oli, Oban)
   end
 end

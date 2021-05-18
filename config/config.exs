@@ -60,6 +60,11 @@ config :oli, OliWeb.Endpoint,
   render_errors: [view: OliWeb.ErrorView, accepts: ~w(html json)],
   pubsub_server: Oli.PubSub
 
+config :oli, Oban,
+  repo: Oli.Repo,
+  plugins: [Oban.Plugins.Pruner],
+  queues: [default: 10, snapshots: 20]
+
 # Configure reCAPTCHA
 config :oli, :recaptcha,
   verify_url: "https://www.google.com/recaptcha/api/siteverify",

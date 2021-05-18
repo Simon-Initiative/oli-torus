@@ -1,0 +1,14 @@
+{
+  "id": "janus_video",
+  "friendlyName": "Video",
+  "description": "Displays an video from a url.",
+  "global": true,
+  "delivery": {
+    "element": "janus-video",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-video",
+    "entry": "./authoring-entry.ts"
+  }
+}
