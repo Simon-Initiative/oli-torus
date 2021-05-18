@@ -33,7 +33,7 @@ defmodule OliWeb.Pow.AuthorRoutes do
     if conn.params["provider"] do
       # this is a social provider login, we need to check if it is simply a login action or a link account action
       link_account_callback_path =
-        Routes.delivery_path(conn, :link_account_callback, conn.params["provider"])
+        Routes.authoring_delivery_path(conn, :link_account_callback, conn.params["provider"])
 
       case conn do
         %Plug.Conn{request_path: ^link_account_callback_path} ->
@@ -94,7 +94,7 @@ defmodule OliWeb.Pow.AuthorRoutes do
         [provider],
         _query_params
       ) do
-    Routes.delivery_path(conn, :process_link_account_provider, provider)
+    Routes.authoring_delivery_path(conn, :process_link_account_provider, provider)
   end
 
   def path_for(
@@ -104,7 +104,7 @@ defmodule OliWeb.Pow.AuthorRoutes do
         [provider],
         _query_params
       ) do
-    Routes.delivery_path(conn, :process_link_account_provider, provider)
+    Routes.authoring_delivery_path(conn, :process_link_account_provider, provider)
   end
 
   def path_for(conn, plug, verb, vars, query_params),

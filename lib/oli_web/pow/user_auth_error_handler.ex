@@ -7,7 +7,7 @@ defmodule OliWeb.Pow.UserAuthErrorHandler do
     conn
     |> put_view(OliWeb.DeliveryView)
     |> put_status(401)
-    |> render("signin_required.html")
+    |> render("lms_signin_required.html")
     |> halt()
   end
 end

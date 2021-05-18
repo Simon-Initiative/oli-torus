@@ -2,7 +2,7 @@
   <%# social media sign in links %>
   <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw link %>
     <hr class="my-4">
-    <%= form_for @changeset, @action, [as: :user], fn f -> %>
+    <%= form_for @changeset, Routes.authoring_pow_registration_path(@conn, :edit), [as: :user], fn f -> %>
     <div class="form-label-group">
       <%= password_input f, :current_password, class: "form-control " <> error_class(f, :current_password, "is-invalid"),
         placeholder: "Current Password", required: true, autofocus: focusHelper(f, :current_password, default: true) %>

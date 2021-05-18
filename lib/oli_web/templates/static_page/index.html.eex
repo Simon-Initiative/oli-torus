@@ -8,7 +8,7 @@
     <p>Create, deliver and continuously improve your course content using your web browser.</p>
 
     <p>
-      <a href="<%= Routes.pow_registration_path(@conn, :new) %>" class="btn btn-outline-primary">Create an Account <i class="fa fa-arrow-right"></i></a>
+      <a href="<%= Routes.authoring_pow_registration_path(@conn, :new) %>" class="btn btn-outline-primary">Create an Account <i class="fa fa-arrow-right"></i></a>
     </p>
   <% end %>
 </section>

@@ -5,7 +5,7 @@
   <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw link %>
 
   <hr class="my-4">
-  <%= form_for @changeset, @action, [as: :user], fn f -> %>
+  <%= form_for @changeset, Routes.authoring_pow_registration_path(@conn, :create), [as: :user], fn f -> %>
     <div class="form-label-group">
       <%= email_input f, Pow.Ecto.Schema.user_id_field(@changeset), class: "form-control " <> error_class(f, Pow.Ecto.Schema.user_id_field(@changeset), "is-invalid"),
         placeholder: "Email", required: true, autofocus: focusHelper(f, Pow.Ecto.Schema.user_id_field(@changeset), default: true) %>
@@ -52,6 +52,6 @@
 
     <%= submit "Register", class: "btn btn-md btn-primary btn-block" %>
     <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.static_page_path(@conn, :index)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
-    <%= link "Sign in to Existing Account", to: value_or(assigns[:sign_in_path], Routes.pow_session_path(@conn, :new)), class: "btn btn-md btn-link btn-block" %>
+    <%= link "Sign in to Existing Account", to: value_or(assigns[:sign_in_path], Routes.authoring_pow_session_path(@conn, :new)), class: "btn btn-md btn-link btn-block" %>
   <% end %>
 <% end %>

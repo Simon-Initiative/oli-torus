@@ -12,11 +12,11 @@
         <%= if author_signed_in?(@conn) do %>
         <div>
             <%= link "My Projects", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive), class: "btn btn-primary mx-2" %>
-            <%= link "Sign out", to: Routes.pow_session_path(@conn, :delete), method: :delete, class: "btn btn-link ml-2" %>
+            <%= link "Sign out", to: Routes.authoring_pow_session_path(@conn, :delete), method: :delete, class: "btn btn-link ml-2" %>
         </div>
         <% else %>
         <%= if @conn.request_path == "/" do %>
-        <%= link "Sign in", to: Routes.pow_session_path(@conn, :new), class: "btn btn-primary my-2 my-sm-0" %>
+        <%= link "Sign in", to: Routes.authoring_pow_session_path(@conn, :new), class: "btn btn-primary my-2 my-sm-0" %>
       <% end %>
     <% end %>
     </div>

@@ -15,7 +15,42 @@ defmodule OliWeb.Pow.PowHelpers do
   end
 
   def get_pow_config(:author) do
-    Application.fetch_env!(:oli, :pow)
+    [
+      repo: Oli.Repo,
+      user: Oli.Accounts.Author,
+      current_user_assigns_key: :current_author,
+      session_key: "author_auth",
+      plug: Pow.Plug.Session,
+      web_module: OliWeb,
+      routes_backend: OliWeb.Pow.AuthorRoutes,
+      extensions: [PowResetPassword, PowEmailConfirmation, PowPersistentSession, PowInvitation],
+      controller_callbacks: Pow.Extension.Phoenix.ControllerCallbacks,
+      mailer_backend: OliWeb.Pow.Mailer,
+      web_mailer_module: OliWeb,
+      pow_assent: [
+        user_identities_context: OliWeb.Pow.UserIdentities,
+        providers: [
+          google: [
+            client_id: System.get_env("GOOGLE_CLIENT_ID"),
+            client_secret: System.get_env("GOOGLE_CLIENT_SECRET"),
+            strategy: Assent.Strategy.Google,
+            authorization_params: [
+              scope: "email profile"
+            ],
+            session_params: ["type"]
+          ],
+          github: [
+            client_id: System.get_env("GITHUB_CLIENT_ID"),
+            client_secret: System.get_env("GITHUB_CLIENT_SECRET"),
+            strategy: Assent.Strategy.Github,
+            authorization_params: [
+              scope: "read:user user:email"
+            ],
+            session_params: ["type"]
+          ]
+        ]
+      ]
+    ]
   end
 
   def use_pow_config(conn, :user) do
