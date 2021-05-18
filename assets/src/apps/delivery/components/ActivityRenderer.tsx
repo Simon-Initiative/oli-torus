@@ -23,9 +23,29 @@ import { savePartState } from '../store/features/attempt/actions/savePart';
 
 interface ActivityRendererProps {
   activity: ActivityModelSchema;
+  onActivitySave?: any;
+  onActivitySubmit?: any;
+  onActivityReset?: any;
+  onActivitySavePart?: any;
+  onActivitySubmitPart?: any;
+  onActivityResetPart?: any;
+  onActivityRequestHint?: any;
+  onActivitySubmitEvaluations?: any;
 }
 
-const ActivityRenderer: React.FC<ActivityRendererProps> = ({ activity }) => {
+const defaultHandler = async () => true;
+
+const ActivityRenderer: React.FC<ActivityRendererProps> = ({
+  activity,
+  onActivitySave = defaultHandler,
+  onActivitySubmit = defaultHandler,
+  onActivityReset = defaultHandler,
+  onActivitySavePart = defaultHandler,
+  onActivitySubmitPart = defaultHandler,
+  onActivityRequestHint = defaultHandler,
+  onActivityResetPart = defaultHandler,
+  onActivitySubmitEvaluations = defaultHandler,
+}) => {
   const dispatch = useDispatch();
   const isPreviewMode = useSelector(selectPreviewMode);
   const currentUserId = 1; // TODO from state
@@ -60,6 +80,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({ activity }) => {
   };
 
   const onSaveActivity = async (attemptGuid: string, partResponses: PartResponse[]) => {
+    await onActivitySave(activity.id, attemptGuid, partResponses);
+    // TODO: use something from parent call to determine if is actually a success
     const result: Success = {
       type: 'success',
     };
@@ -67,6 +89,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({ activity }) => {
   };
 
   const onSubmitActivity = async (attemptGuid: string, partResponses: PartResponse[]) => {
+    await onActivitySubmit(activity.id, attemptGuid, partResponses);
+    // TODO: use something from parent call to determine if is actually a success
     const result: EvaluationResponse = {
       type: 'success',
       actions: [],
@@ -75,6 +99,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({ activity }) => {
   };
 
   const onResetActivity = async (attemptGuid: string) => {
+    await onActivityReset(activity.id, attemptGuid);
+    // TODO
     const result: ResetActivityResponse = {
       type: 'success',
       attemptState: activityState,
@@ -84,6 +110,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({ activity }) => {
   };
 
   const onRequestHint = async (attemptGuid: string, partAttemptGuid: string) => {
+    await onActivityRequestHint(activity.id, attemptGuid, partAttemptGuid);
     const result: RequestHintResponse = {
       type: 'success',
       hasMoreHints: false,
@@ -97,13 +124,9 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({ activity }) => {
     response: StudentResponse,
   ) => {
     console.log('onSavePart (ActivityRenderer)', { attemptGuid, partAttemptGuid, response });
-    const responseMap = response.input.reduce((result, item) => {
-      result[item.key] = item;
-      return result;
-    }, {});
-    const result = await dispatch(savePartState({ attemptGuid, partAttemptGuid, response: responseMap }));
-    // result will be the thunk action which might be rejected
-    // TODO: throw here to send failures back down?
+
+    const result = await onActivitySavePart(activity.id, attemptGuid, partAttemptGuid, response);
+
     return result;
   };
 
@@ -112,6 +135,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({ activity }) => {
     partAttemptGuid: string,
     response: StudentResponse,
   ) => {
+    await onActivitySubmitPart(activity.id, attemptGuid, partAttemptGuid, response);
     const result: EvaluationResponse = {
       type: 'success',
       actions: [],
@@ -120,6 +144,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({ activity }) => {
   };
 
   const onResetPart = async (attemptGuid: string, partAttemptGuid: string) => {
+    await onActivityResetPart(activity.id, attemptGuid, partAttemptGuid);
     const result: PartActivityResponse = {
       type: 'success',
       attemptState: partState,
@@ -131,6 +156,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({ activity }) => {
     attemptGuid: string,
     clientEvaluations: ClientEvaluation[],
   ) => {
+    await onActivitySubmitEvaluations(activity.id, attemptGuid, clientEvaluations);
+
     const result: EvaluationResponse = {
       type: 'success',
       actions: [],
@@ -145,6 +172,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({ activity }) => {
     savePart: onSavePart,
     submitPart: onSubmitPart,
     resetPart: onResetPart,
+    requestHint: onRequestHint,
     submitEvaluations: onSubmitEvaluations,
   };
 

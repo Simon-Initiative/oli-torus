@@ -1,8 +1,10 @@
 /* eslint-disable react/prop-types */
+import { PartResponse, StudentResponse } from 'components/activities/types';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import ActivityRenderer from '../../components/ActivityRenderer';
 import { selectCurrentActivity } from '../../store/features/activities/slice';
+import { savePartState } from '../../store/features/attempt/actions/savePart';
 import { initializeActivity } from '../../store/features/groups/actions/deck';
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
@@ -127,6 +129,46 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     document.body.classList.add(...pageClasses);
   }, [pageClasses]);
 
+  const handleActivitySave = async (
+    activityId: string | number,
+    attemptGuid: string,
+    partResponses: PartResponse[],
+  ) => {
+    console.log('DECK HANDLE SAVE', { activityId, attemptGuid, partResponses });
+
+    return true;
+  };
+
+  const handleActivitySubmit = async (
+    activityId: string | number,
+    attemptGuid: string,
+    partResponses: PartResponse[],
+  ) => {
+    console.log('DECK HANDLE SUBMIT', { activityId, attemptGuid, partResponses });
+    return true;
+  };
+
+  const handleActivitySavePart = async (
+    activityId: string | number,
+    attemptGuid: string,
+    partAttemptGuid: string,
+    response: StudentResponse,
+  ) => {
+    console.log('DECK HANDLE SAVE PART', { activityId, attemptGuid, partAttemptGuid, response });
+    const statePrefix = `${activityId}|stage`;
+    const responseMap = response.input.reduce(
+      (result: { [x: string]: any }, item: { key: any }) => {
+        result[item.key] = { ...item, key: `${statePrefix}.${item.key}` };
+        return result;
+      },
+      {},
+    );
+    const result = await dispatch(
+      savePartState({ attemptGuid, partAttemptGuid, response: responseMap }),
+    );
+    return result;
+  };
+
   return (
     <div ref={fieldRef} className={activityClasses.join(' ')}>
       <DeckLayoutHeader
@@ -144,7 +186,12 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           <div id="stage-stage">
             <div className="stage-content-wrapper">
               {currentActivity ? (
-                <ActivityRenderer activity={currentActivity} />
+                <ActivityRenderer
+                  activity={currentActivity}
+                  onActivitySave={handleActivitySave}
+                  onActivitySubmit={handleActivitySubmit}
+                  onActivitySavePart={handleActivitySavePart}
+                />
               ) : (
                 <div>loading...</div>
               )}

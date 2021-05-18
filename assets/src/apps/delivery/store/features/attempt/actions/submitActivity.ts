@@ -1,13 +1,13 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { writeActivityAttemptState } from 'data/persistence/state/intrinsic';
 import { RootState } from '../../../rootReducer';
-import { writePartAttemptState } from 'data/persistence/state/intrinsic';
 import { selectPreviewMode, selectSectionSlug } from '../../page/slice';
 import { AttemptSlice, selectById, upsertActivityAttemptState } from '../slice';
 
-export const savePartState = createAsyncThunk(
-  `${AttemptSlice}/savePartState`,
+export const submitActivityState = createAsyncThunk(
+  `${AttemptSlice}/submitActivityState`,
   async (payload: any, { dispatch, getState }) => {
-    const { attemptGuid, partAttemptGuid, response } = payload;
+    const { attemptGuid, partResponses } = payload;
     const rootState = getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
@@ -15,31 +15,21 @@ export const savePartState = createAsyncThunk(
     // update redux state to match optimistically
     const attemptRecord = selectById(rootState, attemptGuid);
     if (attemptRecord) {
-      const partAttemptRecord = attemptRecord.parts.find((p) => p.attemptGuid === partAttemptGuid);
-      if (partAttemptRecord) {
-        const updated = {
-          ...attemptRecord,
-          parts: attemptRecord.parts.map((p) => {
-            const result = { ...p };
-            if (p.attemptGuid === partAttemptRecord.attemptGuid) {
-              result.response = response;
-            }
-            return result;
-          }),
-        };
-        await dispatch(upsertActivityAttemptState({ attempt: updated }));
-      }
+      const updated = {
+        ...attemptRecord,
+        parts: partResponses,
+      };
+      await dispatch(upsertActivityAttemptState({ attempt: updated }));
     }
 
     // in preview mode the write function will write to the scripting env
     // in order for that to process properly we need to attach the sequenceId
 
-    return writePartAttemptState(
+    return writeActivityAttemptState(
       sectionSlug,
       attemptGuid,
-      partAttemptGuid,
-      response,
-      false,
+      partResponses,
+      true,
       isPreviewMode,
     );
   },
