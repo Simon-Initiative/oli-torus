@@ -18,5 +18,5 @@ export interface StateVariable {
   id: string;
   key: string;
   type: number;
-  value: boolean;
+  value: any;
 }

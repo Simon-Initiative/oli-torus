@@ -60,7 +60,7 @@ const Dropdown: React.FC<any> = (props) => {
   }, [props]);
 
   useEffect(() => {
-    handleActivityStateChange(state);
+    handleStateChange(state);
   }, [state]);
 
   useEffect(() => {
@@ -149,7 +149,7 @@ const Dropdown: React.FC<any> = (props) => {
     });
   };
 
-  const handleActivityStateChange = (stateData: StateVariable[]) => {
+  const handleStateChange = (stateData: StateVariable[]) => {
     // override text value from state
     //** Changed `stage.${id}` to `stage.${id}.` and this might need to be done in all the components*
     //** reason of doing this is if there are multiple variables with Ids - dropdownInput, dropdownInput2 & dropdownInput3/

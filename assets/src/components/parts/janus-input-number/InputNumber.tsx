@@ -1,6 +1,8 @@
 /* eslint-disable react/prop-types */
+import { CapiVariableTypes } from 'adaptivity/capi';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { StateVariable } from '../types/parts';
 
 const InputNumber: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -53,29 +55,41 @@ const InputNumber: React.FC<any> = (props) => {
   }, [props]);
 
   useEffect(() => {
-    //TODO handle value changes on state updates
+    handleStateChange(state);
   }, [state]);
 
-  const saveInputText = (val: string, isEnabled = true) => {
-    return;
-    //TODO props.onSavePart is not yet implemented.
-    /* props.onSavePart({
+  const handleStateChange = (data: StateVariable[]) => {
+    const interested = data.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
+    if (interested?.length) {
+      interested.forEach((stateVar) => {
+        if (stateVar.key === 'value') {
+          setInputNumberValue(stateVar.value as number);
+        }
+        if (stateVar.key === 'enabled') {
+          setInputNumberEnabled(stateVar.value as boolean);
+        }
+      });
+    }
+  };
+
+  const saveInputText = (val: number, isEnabled = true) => {
+    props.onSave({
       id: `${id}`,
       partResponses: [
         {
-          id: `stage.${id}.value`,
+          id: `${id}.value`,
           key: 'value',
-          type: 2,
+          type: CapiVariableTypes.NUMBER,
           value: val,
         },
         {
-          id: `stage.${id}.enabled`,
+          id: `${id}.enabled`,
           key: 'enabled',
-          type: 4,
+          type: CapiVariableTypes.BOOLEAN,
           value: isEnabled,
         },
       ],
-    }); */
+    });
   };
 
   const handleOnChange = (event: any) => {
