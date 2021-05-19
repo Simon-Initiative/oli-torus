@@ -67,6 +67,7 @@ defmodule OliWeb.PageDeliveryController do
       |> Jason.encode()
 
     render(conn, "advanced_delivery.html", %{
+      review_mode: context.review_mode,
       additional_stylesheets: Map.get(context.page.content, "additionalStylesheets", []),
       resource_attempt_guid: resource_attempt.attempt_guid,
       resource_attempt_state: resource_attempt_state,
@@ -169,6 +170,7 @@ defmodule OliWeb.PageDeliveryController do
       end,
       %{
         page: context.page,
+        review_mode: context.review_mode,
         progress_state: context.progress_state,
         section_slug: section_slug,
         scripts: Enum.map(all_activities, fn a -> a.delivery_script end),

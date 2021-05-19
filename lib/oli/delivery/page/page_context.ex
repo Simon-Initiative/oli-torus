@@ -51,7 +51,9 @@ defmodule Oli.Delivery.Page.PageContext do
   def create_for_review(section_slug, attempt_guid, user) do
     {progress_state, resource_attempts, latest_attempts, activities, page_revision} =
       case PageLifecycle.review(attempt_guid) do
-        {:ok, {state, {resource_attempt, latest_attempts}}} ->
+        {:ok,
+         {state,
+          %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: latest_attempts}}} ->
           page_revision = Oli.Resources.get_revision!(resource_attempt.revision_id)
 
           {state, [resource_attempt], latest_attempts,

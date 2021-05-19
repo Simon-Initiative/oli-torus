@@ -4,7 +4,7 @@ defmodule Oli.Delivery.Attempts.Core do
   alias Oli.Repo
 
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.{Section, Enrollment}
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.Revision
 
