@@ -14,13 +14,13 @@ import {
   StudentResponse,
   Success,
 } from 'components/activities/types';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { selectActivtyAttemptState } from '../store/features/attempt/slice';
 import { selectPreviewMode } from '../store/features/page/slice';
 
 interface ActivityRendererProps {
   activity: ActivityModelSchema;
+  attempt: ActivityState;
   onActivitySave?: any;
   onActivitySubmit?: any;
   onActivityReset?: any;
@@ -31,12 +31,15 @@ interface ActivityRendererProps {
   onActivitySubmitEvaluations?: any;
 }
 
-const defaultHandler = async () => true;
+const defaultHandler = async () => {
+  return true;
+};
 
 // the activity renderer should be capable of handling *any* activity type, not just adaptive
 // most events should be simply bubbled up to the layout renderer for handling
 const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   activity,
+  attempt,
   onActivitySave = defaultHandler,
   onActivitySubmit = defaultHandler,
   onActivityReset = defaultHandler,
@@ -48,10 +51,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
 }) => {
   const isPreviewMode = useSelector(selectPreviewMode);
   const currentUserId = 1; // TODO from state
-
-  const currentAttemptState = useSelector((state) =>
-    selectActivtyAttemptState(state, activity.resourceId),
-  );
 
   const activityState: ActivityState = {
     attemptGuid: 'foo',
@@ -175,40 +174,46 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     submitEvaluations: onSubmitEvaluations,
   };
 
-  const wcEventHandler = async (e: CustomEvent) => {
-    const handler = bridgeEvents[e.type];
-    if (handler) {
-      const { continuation, attemptGuid, partAttemptGuid, payload } = e.detail;
-      const result = await handler(attemptGuid, partAttemptGuid, payload);
-      if (continuation) {
-        continuation(result);
-      }
-    }
-  };
+  const [isReady, setIsReady] = useState(false);
 
-  const ref = useRef(null);
   useEffect(() => {
-    if (ref.current) {
-      const wc = ref.current as any;
-      Object.keys(bridgeEvents).forEach((eventName) => {
-        wc.addEventListener(eventName, wcEventHandler);
-      });
-    }
-    return () => {
-      if (ref.current) {
-        const wc = ref.current as any;
-        Object.keys(bridgeEvents).forEach((eventName) => {
-          wc.removeEventListener(eventName, wcEventHandler);
-        });
+    // listen at the document level for events coming from activities
+    // because using a ref to listen to the specific activity gets messed up
+    // with the React render cycle, need to start listening *BEFORE* it renders
+    const wcEventHandler = async (e: CustomEvent) => {
+      const { continuation, attemptGuid, partAttemptGuid, payload } = e.detail;
+      let isForMe = false;
+      if (attemptGuid === attempt.attemptGuid) {
+        /* console.log('EVENT FOR ME', { e, activity, attempt }); */
+        isForMe = true;
+      }
+      const handler = bridgeEvents[e.type];
+      if (isForMe && handler) {
+        const result = await handler(attemptGuid, partAttemptGuid, payload);
+        if (continuation) {
+          continuation(result);
+        }
       }
     };
-  }, [ref.current]);
+
+    Object.keys(bridgeEvents).forEach((eventName) => {
+      document.addEventListener(eventName, wcEventHandler);
+    });
+
+    setIsReady(true);
+
+    return () => {
+      Object.keys(bridgeEvents).forEach((eventName) => {
+        document.removeEventListener(eventName, wcEventHandler);
+      });
+      setIsReady(false);
+    };
+  }, []);
 
   const elementProps = {
-    ref,
     graded: false,
     model: JSON.stringify(activity),
-    state: JSON.stringify(currentAttemptState),
+    state: JSON.stringify(attempt), // TODO: send *all* state, not just this one (expensive!)
     preview: isPreviewMode,
     progressState: 'progressState',
     userId: currentUserId,
@@ -222,6 +227,10 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     onSubmitPart,
   };
 
+  // don't render until we're already listening!
+  if (!isReady) {
+    return null;
+  }
   return React.createElement(activity.activityType?.delivery_element, elementProps, null);
 };
 

@@ -12,7 +12,9 @@ interface PartsLayoutRendererProps {
   onPartSubmit?: any;
 }
 
-const defaultHandler = async () => true;
+const defaultHandler = async () => {
+  return true;
+};
 
 const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
   parts,

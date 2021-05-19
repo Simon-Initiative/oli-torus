@@ -1,11 +1,11 @@
 /* eslint-disable react/prop-types */
-import { PartResponse, StudentResponse } from 'components/activities/types';
+import { ActivityState, PartResponse, StudentResponse } from 'components/activities/types';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import ActivityRenderer from '../../components/ActivityRenderer';
 import { savePartState } from '../../store/features/attempt/actions/savePart';
 import { initializeActivity } from '../../store/features/groups/actions/deck';
-import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
+import { selectCurrentActivityTreeWithAttemptState } from '../../store/features/groups/selectors/deck';
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
@@ -33,7 +33,7 @@ const InjectedStyles: React.FC = () => {
 const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, previewMode }) => {
   const dispatch = useDispatch();
   const fieldRef = React.useRef<HTMLInputElement>(null);
-  const currentActivityTree = useSelector(selectCurrentActivityTree);
+  const currentActivityTree = useSelector(selectCurrentActivityTreeWithAttemptState);
 
   const defaultClasses: any[] = ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'];
   const [pageClasses, setPageClasses] = useState<string[]>([]);
@@ -78,7 +78,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       return;
     }
 
-    const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+    const { activity: currentActivity } = currentActivityTree[currentActivityTree.length - 1];
     if (!currentActivity) {
       return;
     }
@@ -178,7 +178,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     if (!currentActivityTree || !currentActivityTree.length) {
       return <div>loading...</div>;
     }
-    return currentActivityTree.map((activity, index) => {
+    return currentActivityTree.map(({ activity, attempt }, index) => {
       const mutableActivity = JSON.parse(JSON.stringify(activity));
       const isLast = index === currentActivityTree.length - 1;
       if (!isLast) {
@@ -188,6 +188,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         <ActivityRenderer
           key={mutableActivity.id}
           activity={mutableActivity}
+          attempt={attempt as ActivityState}
           onActivitySave={handleActivitySave}
           onActivitySubmit={handleActivitySubmit}
           onActivitySavePart={handleActivitySavePart}

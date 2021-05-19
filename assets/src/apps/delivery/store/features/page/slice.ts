@@ -69,5 +69,9 @@ export const selectResourceAttemptGuid = createSelector(
   (state) => state.resourceAttemptGuid,
 );
 export const selectActivityTypes = createSelector(selectState, (state) => state.activityTypes);
+export const selectActivityGuidMapping = createSelector(
+  selectState,
+  (state: PageState) => state.activityGuidMapping,
+);
 
 export default pageSlice.reducer;
