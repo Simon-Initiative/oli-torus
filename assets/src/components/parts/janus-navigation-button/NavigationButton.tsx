@@ -107,7 +107,7 @@ const NavigationButton: React.FC<any> = (props) => {
       btnVisible: visible,
       btnaccessibilityText: '',
     };
-    const interested = stateData.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
+    const interested = stateData.filter((stateVar) => stateVar.id.indexOf(`${id}.`) === 0);
     let isTitleSet = false;
     interested.forEach((stateVar) => {
       if (stateVar.key === 'title') {

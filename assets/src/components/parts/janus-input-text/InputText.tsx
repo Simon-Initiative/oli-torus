@@ -74,7 +74,7 @@ const InputText: React.FC<any> = (props) => {
 
   const handleStateChange = (vars: StateVariable[]) => {
     // override text value from state
-    const activity = vars.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
+    const activity = vars.filter((stateVar) => stateVar.id.indexOf(`${id}.`) === 0);
     if (activity?.length) {
       activity.forEach((stateVar) => {
         if (stateVar.key === 'text' && stateVar.value) {
@@ -86,7 +86,7 @@ const InputText: React.FC<any> = (props) => {
             activityId: `${id}`,
             partResponses: [
               {
-                id: `stage.${id}.textLength`,
+                id: `${id}.textLength`,
                 key: 'textLength',
                 type: CapiVariableTypes.NUMBER,
                 value: stateText.length,

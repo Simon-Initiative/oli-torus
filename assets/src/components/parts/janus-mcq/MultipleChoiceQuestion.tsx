@@ -172,7 +172,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
   const handleStateChange = (stateData: StateVariable[]) => {
     // this runs every time state is updated from *any* source
     // the global variable state
-    const interested = stateData.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
+    const interested = stateData.filter((stateVar) => stateVar.id.indexOf(`${id}.`) === 0);
     if (interested?.length) {
       interested.forEach((stateVar) => {
         switch (stateVar.key) {

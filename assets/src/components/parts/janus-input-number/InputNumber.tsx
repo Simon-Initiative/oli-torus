@@ -59,7 +59,7 @@ const InputNumber: React.FC<any> = (props) => {
   }, [state]);
 
   const handleStateChange = (data: StateVariable[]) => {
-    const interested = data.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
+    const interested = data.filter((stateVar) => stateVar.id.indexOf(`${id}.`) === 0);
     if (interested?.length) {
       interested.forEach((stateVar) => {
         if (stateVar.key === 'value') {

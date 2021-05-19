@@ -96,7 +96,7 @@ const MultiLineTextInput: React.FC<any> = (props) => {
 
   const handleStateChange = (stateData: StateVariable[]) => {
     // override text value from state
-    const activity = stateData.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
+    const activity = stateData.filter((stateVar) => stateVar.id.indexOf(`${id}.`) === 0);
     activity.forEach((stateVar) => {
       if (stateVar && stateVar.value && stateVar.key === 'text') {
         const stateText = stateVar.value.toString();
