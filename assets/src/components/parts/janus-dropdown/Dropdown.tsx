@@ -161,24 +161,26 @@ const Dropdown: React.FC<any> = (props) => {
       interested.forEach((stateVar) => {
         switch (stateVar.key) {
           case 'selectedIndex':
-            // handle selectedItem, which is a number/index
-            // eslint-disable-next-line no-case-declarations
-            const stateSelection = Number(stateVar.value);
-            if (selection !== stateSelection) {
-              setSelection(stateSelection);
-              setSelectedItem(optionLabels[stateSelection - 1]);
+            {
+              // handle selectedItem, which is a number/index
+              const stateSelection = Number(stateVar.value);
+              if (selection !== stateSelection) {
+                setSelection(stateSelection);
+                setSelectedItem(optionLabels[stateSelection - 1]);
+              }
             }
             break;
           case 'selectedItem':
             // handle selectedItem, which is a string
-            // eslint-disable-next-line no-case-declarations
-            const stateSelectedItem = String(stateVar.value);
-            if (selectedItem !== stateSelectedItem) {
-              const selectionIndex: number = optionLabels.findIndex((str: string) =>
-                stateSelectedItem.includes(str),
-              );
-              setSelectedItem(stateSelectedItem);
-              setSelection(selectionIndex + 1);
+            {
+              const stateSelectedItem = String(stateVar.value);
+              if (selectedItem !== stateSelectedItem) {
+                const selectionIndex: number = optionLabels.findIndex((str: string) =>
+                  stateSelectedItem.includes(str),
+                );
+                setSelectedItem(stateSelectedItem);
+                setSelection(selectionIndex + 1);
+              }
             }
             break;
           case 'enabled':
