@@ -5,12 +5,16 @@ export interface AdaptivityState {
   isGoodFeedback: boolean;
   currentFeedbacks: any[];
   nextActivityId: string;
+  lastCheckTriggered: any; // timestamp
+  lastCheckResults: any[];
 }
 
 const initialState: AdaptivityState = {
   isGoodFeedback: false,
   currentFeedbacks: [],
   nextActivityId: '',
+  lastCheckTriggered: null,
+  lastCheckResults: [],
 };
 
 const slice: Slice<AdaptivityState> = createSlice({
@@ -23,12 +27,23 @@ const slice: Slice<AdaptivityState> = createSlice({
     setNextActivityId: (state, action: PayloadAction<{ activityId: string }>) => {
       state.nextActivityId = action.payload.activityId;
     },
+    setLastCheckTriggered: (state, action: PayloadAction<{ timestamp: any }>) => {
+      state.lastCheckTriggered = action.payload.timestamp;
+    },
+    setLastCheckResults: (state, action: PayloadAction<{ results: any[] }>) => {
+      state.lastCheckResults = action.payload.results;
+    },
   },
 });
 
 export const AdaptivitySlice = slice.name;
 
-export const { setIsGoodFeedback, setNextActivityId } = slice.actions;
+export const {
+  setIsGoodFeedback,
+  setNextActivityId,
+  setLastCheckTriggered,
+  setLastCheckResults,
+} = slice.actions;
 
 // selectors
 export const selectState = (state: RootState): AdaptivityState =>
@@ -44,6 +59,16 @@ export const selectCurrentFeedbacks = createSelector(
 export const selectNextActivityId = createSelector(
   selectState,
   (state: AdaptivityState) => state.nextActivityId,
+);
+
+export const selectLastCheckTriggered = createSelector(
+  selectState,
+  (state: AdaptivityState) => state.lastCheckTriggered,
+);
+
+export const selectLastCheckResults = createSelector(
+  selectState,
+  (state: AdaptivityState) => state.lastCheckResults,
 );
 
 export default slice.reducer;

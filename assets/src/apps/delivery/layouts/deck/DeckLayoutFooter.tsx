@@ -9,6 +9,8 @@ import { triggerCheck } from '../../store/features/adaptivity/actions/triggerChe
 import {
   selectCurrentFeedbacks,
   selectIsGoodFeedback,
+  selectLastCheckResults,
+  selectLastCheckTriggered,
   selectNextActivityId,
   setIsGoodFeedback,
   setNextActivityId,
@@ -90,12 +92,63 @@ const DeckLayoutFooter: React.FC = () => {
   const currentFeedbacks = useSelector(selectCurrentFeedbacks);
   const nextActivityId: string = useSelector(selectNextActivityId);
 
+  const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
+  const lastCheckResults = useSelector(selectLastCheckResults);
+
   const [isLoading, setIsLoading] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
   const [displayFeedbackHeader, setDisplayFeedbackHeader] = useState<boolean>(false);
   const [displayFeedbackIcon, setDisplayFeedbackIcon] = useState(false);
   const [nextButtonText, setNextButtonText] = useState('Next');
   const [nextCheckButtonText, setNextCheckButtonText] = useState('Next');
+
+  useEffect(() => {
+    if (!lastCheckTimestamp) {
+      return;
+    }
+    // when this changes, notify that check has started
+  }, [lastCheckTimestamp]);
+
+  useEffect(() => {
+    if (!lastCheckResults || !lastCheckResults.length) {
+      return;
+    }
+    // when this changes, notify check has completed
+
+    const correctEvents = lastCheckResults
+      .filter((r) => r.params.correct)
+      .sort((a, b) => a.params.order - b.params.order);
+    if (correctEvents.length) {
+      // for now do the first "correct" thing
+      const { actions } = correctEvents[0].params;
+      const actionsByType = actions.reduce(
+        (collect: any, action: any) => {
+          collect[action.type].push(action);
+          return collect;
+        },
+        {
+          feedback: [],
+          navigation: [],
+          mutateState: [],
+        },
+      );
+
+      // if there is feedback show that and queue up the navigation
+      // if any mutate, just do them
+      // if nav, do it if no feedback
+      if (actionsByType.feedback.length === 0) {
+        if (actionsByType.navigation.length !== 1) {
+          // this is an error, shouldn't have more than one nav action
+          console.warn('Multiple nav actions??', actionsByType);
+        }
+        const [navAction] = actionsByType.navigation;
+        const navTarget = navAction.params.target;
+        if (navTarget === 'next') {
+          dispatch(navigateToNextActivity());
+        }
+      }
+    }
+  }, [lastCheckResults]);
 
   // util / handler funcs
   const checkHandler = () => {

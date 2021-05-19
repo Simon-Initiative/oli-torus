@@ -42,6 +42,7 @@ export const selectCurrentActivityTree = createSelector(
     const tree = lineage.map((entry) =>
       (activities as any[]).find((a) => a.id === entry.custom.sequenceId),
     );
+    // filtering out undefined, however TODO make sure they are loaded ahead of time!
     return tree.filter((t) => t);
   },
 );

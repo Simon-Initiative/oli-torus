@@ -178,7 +178,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     if (!currentActivityTree || !currentActivityTree.length) {
       return <div>loading...</div>;
     }
-    console.log('RENDER CAT', currentActivityTree);
     return currentActivityTree.map((activity, index) => {
       const mutableActivity = JSON.parse(JSON.stringify(activity));
       const isLast = index === currentActivityTree.length - 1;

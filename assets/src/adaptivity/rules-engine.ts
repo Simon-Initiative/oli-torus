@@ -111,8 +111,22 @@ export const check = async (
 
   const checkResult: EngineResult = await engine.run(facts);
 
-  // for now just returning only success events
+  console.log('RE CHECK', { checkResult });
+  let resultEvents: Event[] = [];
   const successEvents = checkResult.events.sort((a, b) => a.params?.order - b.params?.order);
+  // if there are any correct in the success, get rid of the incorrect (defaultWrong most likely)
+  if(successEvents.some(evt => evt.params?.correct === true)) {
+    resultEvents = successEvents.filter(evt => evt.params?.correct === true);
+  } else {
+    // the failedEvents might be just because the invalid condition didn't trip
+    // can't use these
+    /* const failedEvents = checkResult.failureEvents
+      .filter((evt) => evt.params?.correct === false)
+      .sort((a, b) => a.params?.order - b.params?.order);
+    console.log('INCORRECT RESULT', { failedEvents }); */
+    // should only have "incorrect" at this point
+    resultEvents = successEvents;
+  }
 
-  return successEvents;
+  return resultEvents;
 };
